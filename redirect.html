@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
+</head>
+<body>
+    <p id="error"></p>
+    <script>
+        const clientId = "CLIENT_ID";
+        const clientSecret = "CLIENT_SECRET";
+        const redirectURI = "{URL}"
+
+        const queryParams = new URLSearchParams(window.location.search)
+        const queryCode = queryParams.get('code')
+        if(!queryCode) {
+            //handle error properly to ensure good feedback
+            window.alert("Invalid code provided");
+            location.href = '/error.html';
+        }
+
+        const saveInformationToLocalStorage = (parameters) => {
+            const objectKeys = Object.keys(parameters)
+            for(let key of objectKeys) {
+                window.localStorage.setItem(key, parameters[key]);
+            }
+        }
+        
+        const fetchTokenWithAccessCode = async (accessCode) => {
+            try {
+                const body = {
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    code: accessCode,
+                    grant_type: "authorization_code",
+                    redirect_uri: redirectURI
+                }
+                const response = await axios.post('https://auth.atlassian.com/oauth/token',body)
+                const {
+                    access_token: accessToken,
+                    expires_in: expiresIn,
+                    refresh_token: refreshToken,
+                } = response.data;
+                const createdAt = Math.floor(new Date().getTime()/1000.0);
+                const expiryTimestamp = String(expiresIn + createdAt);
+                //Save the required information to storage
+                saveInformationToLocalStorage({
+                    accessToken,
+                    refreshToken,
+                    expiryTimestamp
+                });
+                //redirect to required page
+                location.href = '/';
+            } catch (error) {
+                //handle error properly.
+                console.error(error);
+                window.alert("Error code while fetching Token");
+                let errorParagraph = document.getElementById('error');
+                errorParagraph.innerHTML = `Error Fetching Token ${error.message}`;
+            }
+        }
+
+        fetchTokenWithAccessCode(queryCode);
+    </script>
+</body>
+</html>
