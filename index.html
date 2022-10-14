@@ -8,14 +8,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
 </head>
 <body>
+    <div id="jira-div" style="display: none;">
+        <input type="text" placeholder="Input Jira" id="issue-id" />
+        <input type="button" value="Fetch Jira Issue" onclick="fetchJiraIssue()" />
+    </div>
     <p id="data">Loading...</p>
-    <div id="projects"></div>
     <script>
         const jiraApiLink = "https://api.atlassian.com/ex/jira";
-        const clientId = "CLIENT_ID";
-        const clientSecret = "CLIENT_SECRET";
-        const redirectURI = `{URL}/redirect.html`;
-        const scopeIdForJira = 'SCOPE_ID'; 
+        const redirectURI = `http://localhost:5500/redirect.html`;
+        const apiURL = "http://localhost:3000";
+        const clientId = "nbxQOOlWwj1PscEuzGHqNe6zG2FilApj";
         const scope = "read:jira-work read:jira-user offline_access"; //Jira read work access
 
         const saveInformationToLocalStorage = (parameters) => {
@@ -29,127 +31,67 @@
             return window.localStorage.getItem(key);
         }
 
-        const getCurrentTimeStamp = () => {
-            return Math.floor(new Date().getTime()/1000.0);
-        }
-
-        const sendRequest = async (method, parameters, withToken = true) => {
-            try {
-                let config = {}
-                if(withToken){
-                    const accessToken = fetchFromLocalStorage("accessToken");
-                    config = {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                        }
-                    }
-                }
-                const response = await axios[method](...parameters, config);
-                return {
-                    error: false,
-                    data: response.data
-                };
-            } catch (error) {
-                if(error.response?.status === 401) {
-                    refreshAccessToken()                 
-                }
-                else if(error.response?.status === 403){
-                    //refresh token invalid, restart authentication
-                    window.localStorage.clear()
-                    initializeApplication()
-                }else{
-                    //handle other error appropriately
-                    window.localStorage.clear()
-                    console.error(error)
-                    document.getElementById('data').innerHTML = 'Unable To fetch data';
-                }
-                return {
-                    error: true
-                }
-            }
-        }
-
-        const fetchScopeId = async () => {
-            const url = `${jiraApiLink}/oauth/token/accessible-resources`;
-            const parameters = [url]
-            const {
-                error,
-                data: availableResources
-            } = await sendRequest('get', parameters);
-            if(!error) {
-                const scopeId = availableResources[0]?.id;
-                console.log(scopeId);
-            }
-        }
-
         const fetchAccessCode = () => {
             const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${scope}&redirect_uri=${redirectURI}&response_type=code&prompt=consent`;
             window.location.href = url;
         }
 
-        const refreshAccessToken = async () => {
-           const refreshToken = fetchFromLocalStorage("refreshToken");
-            const body = {
-                client_id: clientId,
-                client_secret: clientSecret,
-                refresh_token: refreshToken,
-                grant_type: "refresh_token"
-            }
-            const url = 'https://auth.atlassian.com/oauth/token';
-            const parameters = [url, body];
-            const {
-                error,
-                data: responseData
-            } = await sendRequest('post', parameters, false, 'restart');
-            if(!error) {
+        const refreshAccessToken = async (accessCode) => {
+            try {
+                const response = await axios.get(`${apiURL}/?code=${accessCode}`)
                 const {
-                    access_token: accessToken,
-                    expires_in: expiresIn,
-                    refresh_token: updatedRefreshToken
-                } = responseData;
-                const createdAt = getCurrentTimeStamp();
-                const expiryTimestamp = String(expiresIn + createdAt);
-                //Save the required information to storage
+                    accessToken,
+                    expiryTimestamp,
+                    refreshToken,
+                } = response.data;
                 saveInformationToLocalStorage({
                     accessToken,
-                    refreshToken: updatedRefreshToken,
-                    expiryTimestamp
+                    refreshToken,
+                    expiryTimestamp,
                 });
-                await initializeApplication();
+                document.getElementById("data").style.display = "none";
+                document.getElementById("jira-div").style.display = "";
+            } catch (error) {
+                console.error(error.message)
+                window.localStorage.clear()
+                fetchAccessCode();
             }
         }
 
-        const callJiraEndPoint = async () => {
-            //this fetches all Recent Projects From Jira
-            const url = `${jiraApiLink}/${scopeIdForJira}/rest/api/3/project/recent`;
-            const parameters = [url]
-            const {
-                error,
-                data: projects
-            } = await sendRequest('get', parameters, true, 'refresh')
-            if(!error) {
-                let projectHtml;
-                if(projects.length > 0) {
-                    projectHtml = `<ul>`;
-                    for(let project of projects) {
-                        projectHtml += `<li>${project.name}</li>`;
+        const fetchJiraIssue = async () => {
+            const dataDisplay = document.getElementById('data');
+            dataDisplay.style.display = "none";
+            try {
+                const issueId = document.getElementById('issue-id').value;
+                if(issueId !== ""){
+                    //this fetches all Recent Projects From Jira
+                    const scopeIdForJira = fetchFromLocalStorage('scopeId');
+                    const accessToken = fetchFromLocalStorage('accessToken');
+                    const url = `${jiraApiLink}/${scopeIdForJira}/rest/api/3/issue/${issueId}`;
+                    const config = {
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                        }
                     }
-                    projectHtml += `<ul>`;
-                }else{
-                    projectHtml = `<b>EMPTY DATA</b>`
+                    const response = await axios.get(url, config)
+                    dataDisplay.innerHTML = `${JSON.stringify(response.data)}`;
+                    dataDisplay.style.display = "";
                 }
-                document.getElementById('projects').innerHTML = projectHtml;
-                document.getElementById('data').innerHTML = '';
+            } catch (error) {
+                //handle error properly
+                console.log(error.message);
+                document.getElementById('data')
+                dataDisplay.innerHTML = `<span color='red'>Unable to fetch Issue: ${error.response?.data?.errorMessages}</span>`;
+                dataDisplay.style.display = "";
             }
         }
 
         const initializeApplication = async () => {
             //call this function when application is initialized or when accessToken expires
             const accessToken = fetchFromLocalStorage("accessToken");
-            console.log('check',accessToken);
             let expiryTimestamp = Number(fetchFromLocalStorage("expiryTimestamp"));
             if(isNaN(expiryTimestamp)) expiryTimestamp = 0;
-            const currentTimestamp = getCurrentTimeStamp();
+            const currentTimestamp = Math.floor(new Date().getTime()/1000.0);
             if((currentTimestamp > expiryTimestamp) || (!accessToken)){
                 const refreshToken = fetchFromLocalStorage("refreshToken");
                 if(!refreshToken) {
@@ -158,7 +100,8 @@
                     await refreshAccessToken();
                 }
             }else{
-                await callJiraEndPoint()
+                document.getElementById("data").style.display = "none";
+                document.getElementById("jira-div").style.display = "";
             }
         }
 

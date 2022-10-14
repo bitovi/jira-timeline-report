@@ -10,9 +10,7 @@
 <body>
     <p id="error"></p>
     <script>
-        const clientId = "CLIENT_ID";
-        const clientSecret = "CLIENT_SECRET";
-        const redirectURI = "{URL}"
+        const apiURL = "http://localhost:3000";
 
         const queryParams = new URLSearchParams(window.location.search)
         const queryCode = queryParams.get('code')
@@ -31,35 +29,25 @@
         
         const fetchTokenWithAccessCode = async (accessCode) => {
             try {
-                const body = {
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    code: accessCode,
-                    grant_type: "authorization_code",
-                    redirect_uri: redirectURI
-                }
-                const response = await axios.post('https://auth.atlassian.com/oauth/token',body)
+                const response = await axios.get(`${apiURL}/access-token?code=${accessCode}`)
                 const {
-                    access_token: accessToken,
-                    expires_in: expiresIn,
-                    refresh_token: refreshToken,
+                    accessToken,
+                    expiryTimestamp,
+                    refreshToken,
+                    scopeId
                 } = response.data;
-                const createdAt = Math.floor(new Date().getTime()/1000.0);
-                const expiryTimestamp = String(expiresIn + createdAt);
-                //Save the required information to storage
                 saveInformationToLocalStorage({
                     accessToken,
                     refreshToken,
-                    expiryTimestamp
+                    expiryTimestamp,
+                    scopeId,
                 });
-                //redirect to required page
+                //redirect to data page
                 location.href = '/';
             } catch (error) {
                 //handle error properly.
                 console.error(error);
-                window.alert("Error code while fetching Token");
-                let errorParagraph = document.getElementById('error');
-                errorParagraph.innerHTML = `Error Fetching Token ${error.message}`;
+                // location.href = '/error.html';
             }
         }
 
