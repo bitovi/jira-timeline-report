@@ -15,10 +15,10 @@
     <p id="data">Loading...</p>
     <script>
         const jiraApiLink = "https://api.atlassian.com/ex/jira";
-        const redirectURI = `http://localhost:5500/redirect.html`;
+        const redirectURI = `http://localhost:3000/redirect.html`;
         const apiURL = "http://localhost:3000";
-        const clientId = "nbxQOOlWwj1PscEuzGHqNe6zG2FilApj";
-        const scope = "read:jira-work read:jira-user offline_access"; //Jira read work access
+        const clientId = "PMKVJGnNMzldY4is3fx1Hu446cstfeDs";
+        const scope = "read:jira-work"; //Jira read work access
 
         const saveInformationToLocalStorage = (parameters) => {
             const objectKeys = Object.keys(parameters)
