@@ -1,7 +1,0 @@
-{
-    "port": 5500,
-    "host": "localhost",
-    "root": "/",
-    "file": "error.html",
-    "logLevel": 2
-}
