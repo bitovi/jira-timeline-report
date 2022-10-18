@@ -4,11 +4,11 @@ const axios = require("axios");
     try {
         const codeKey = refresh ? 'refresh_token' : 'code';
         const body = {
-            client_id: process.env.CLIENT_ID,
-            client_secret: process.env.CLIENT_SECRET,
+            client_id: process.env.CLIENT_JIRA_CLIENT_ID,
+            client_secret: process.env.JIRA_CLIENT_SECRET,
             [codeKey]: code,
             grant_type: refresh ? "refresh_token" : "authorization_code",
-            redirect_uri: process.env.CALLBACK_URI ?? 'http://localhost:5500',
+            redirect_uri: process.env.CLIENT_JIRA_CALLBACK_URL,
         }
         const response = await axios.post('https://auth.atlassian.com/oauth/token',body)
         const {

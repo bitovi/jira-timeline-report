@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start-local": "node server/server.js & npm run client",
+    "start-local": "node server/server.js",
     "client": "HOME=./ node_modules/.bin/live-server",
     "server": "node server/server.js"
   },

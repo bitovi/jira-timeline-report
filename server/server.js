@@ -2,6 +2,7 @@ const express = require('express')
 const dotenv = require('dotenv')
 const { fetchTokenWithAccessCode } = require('./helper')
 const cors = require('cors');
+const path = require('path');
 
 // configurations
 dotenv.config()
@@ -14,11 +15,22 @@ const port = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
+app.use(express.static(path.join(__dirname,'..', 'public')))
+
 
 // Application routes
+const makeIndex = require("../pages/index.html");
 app.get('/', (req, res) => {
-    res.status(200).send({ data: 'JIRA AUTH BACKEND' })
-})
+	res.send(makeIndex(req));
+});
+
+const makeOAuthCallback = require("../pages/oauth-callback.html");
+app.get('/oauth-callback', (req, res) => {
+	res.send(makeOAuthCallback(req));
+});
+
+
+
 
 app.get('/access-token', async (req, res) => {
 
