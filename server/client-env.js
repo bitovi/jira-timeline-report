@@ -5,6 +5,5 @@ module.exports = function(){
 			env[prop.replace("CLIENT_","")] = process.env[prop];
 		}
 	}
-	console.log(env);
 	return env;
 }

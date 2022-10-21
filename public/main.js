@@ -10,7 +10,10 @@ async function main(jiraHelpers) {
 
 	const accessToken = await jiraHelpers.getAccessToken();
 
-	mainElement.textContent = "Got Access Token "+accessToken;
+	mainElement.textContent = "Got Access Token "+ accessToken;
+
+	const issue = await jiraHelpers.fetchJiraIssue('BACKEND-100');
+	console.log(issue);
 
 	const fields = await jiraHelpers.fetchJiraFields();
 
@@ -30,8 +33,6 @@ async function main(jiraHelpers) {
 		fields: ["summary",STORY_POINTS_FIELD],
 		expand: ["changelog"]
 	})
-
-	console.log(issues);
 
 	//const issue = await jiraHelpers.fetchJiraIssueChangelog("YUMPOS-985");
 	const issueResults = issues.map( (issue) => {

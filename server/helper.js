@@ -16,7 +16,7 @@ const axios = require("axios");
             expires_in: expiresIn,
             refresh_token: refreshToken,
         } = response.data;
-        const createdAt = Math.floor(new Date().getTime()/1000.0);
+        const createdAt = Math.floor(new Date().getTime()/1000.0) - 50; //Substracting 50seconds from expiry time
         const expiryTimestamp = String(expiresIn + createdAt);
         let scopeId;
         if(!refresh) {

@@ -20,17 +20,14 @@ app.use(express.static(path.join(__dirname,'..', 'public')))
 
 // Application routes
 const makeIndex = require("../pages/index.html");
+const makeOAuthCallback = require("../pages/oauth-callback.html");
 app.get('/', (req, res) => {
 	res.send(makeIndex(req));
 });
 
-const makeOAuthCallback = require("../pages/oauth-callback.html");
 app.get('/oauth-callback', (req, res) => {
 	res.send(makeOAuthCallback(req));
 });
-
-
-
 
 app.get('/access-token', async (req, res) => {
 
@@ -46,21 +43,23 @@ app.get('/access-token', async (req, res) => {
         if(error) {
             //handle properly
             return res.status(400).json({
+                error: true,
                 message,
             });
         }else {
             data = accessData;
         }
-        res.json({
+        return res.json({
+            error: false,
             ...data
         })
     } catch (error) {
         console.log(error);
         res.status(500).json({
+            error: true,
             message: `${error.message}`,
         });
     }
-
 });
 
 // Start server
