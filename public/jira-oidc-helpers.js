@@ -87,7 +87,6 @@ function JiraOIDCHelpers({
 				} catch (error) {
 						//handle error properly.
 						console.error(error);
-						// location.href = '/error.html';
 				}
 		},
 		fetchJiraIssue: async (issueId) => {
@@ -222,7 +221,7 @@ function JiraOIDCHelpers({
 			}
 			const currentTimestamp = Math.floor(new Date().getTime()/1000.0);
 			const timeDifference = expiryTimestamp - currentTimestamp;
-			const timeToExpiryForRefresh = 600; //in seconds
+			const timeToExpiryForRefresh = 300; //in seconds
 			return timeDifference <= timeToExpiryForRefresh;
 	}
 	}

@@ -12,7 +12,7 @@ async function main(jiraHelpers) {
 
 	mainElement.textContent = "Got Access Token "+ accessToken;
 
-	const issue = await jiraHelpers.fetchJiraIssue('BACKEND-100');
+	const issue = await jiraHelpers.fetchJiraIssue('PICK-ISSUE');
 	console.log(issue);
 
 	const fields = await jiraHelpers.fetchJiraFields();
@@ -20,48 +20,7 @@ async function main(jiraHelpers) {
 	mainElement.textContent = "Requesting field definitions";
 
 	const fieldMap = makeFieldNameToIdMap(fields);
-	const STORY_POINTS_FIELD = fieldMap["Story Points"];
-
-	//console.log(fieldMap);
-
-	// customfield_10029 //-> story points
-	// customfield_10175
-	// customfield_10176
-	mainElement.textContent = "Getting stories";
-	const issues = await jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog({
-		jql: `project = "YUMPOS" and "Actual Release[Labels]" in (4.0.0) and issueType not in (Initiatives, Epic)`,
-		fields: ["summary",STORY_POINTS_FIELD],
-		expand: ["changelog"]
-	})
-
-	//const issue = await jiraHelpers.fetchJiraIssueChangelog("YUMPOS-985");
-	const issueResults = issues.map( (issue) => {
-		if(issue.fields.summary.includes("Employee Edits section")) {
-			debugger;
-		}
-		return {
-			summary: issue.fields.summary,
-			storyPoints: issue.fields[STORY_POINTS_FIELD],
-			//changeLogComplete: isChangelogComplete(issue.changelog),
-			inDevDays: calculateTimeInStatus(issue.changelog) / (1000*60*60*24)
-		}
-	})
-	console.table(issueResults)
-
-	/*
-	field: "status"
-	fieldId: "status"
-	fieldtype: "jira"
-	from: "10012"
-	fromString: "To Do"
-	to: "10055"
-	toString: "Refinement"
-	*/
-
-	// get all stories for a fixVersion
-		// get points
-	// get all changelog for those issues
-			// find status changes
+	console.log(fieldMap);
 }
 
 
