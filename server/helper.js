@@ -34,7 +34,6 @@ const axios = require("axios");
     } catch (error) {
         //handle error properly.
         console.error(error);
-        console.error(error?.response);
         return {
             error: true,
             message: `${error?.response?.message}` ?? `${error.message}`
@@ -43,20 +42,16 @@ const axios = require("axios");
 }
 
 const fetchScopeId = async (accessToken) => {
-    try {
-        let config = {}
-        config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            }
+    let config = {}
+    config = {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
         }
-        const url = `https://api.atlassian.com/oauth/token/accessible-resources`;
-        const response = await axios.get(url, config);
-        const scopeId = response.data[0]?.id;
-        return scopeId;
-    } catch (error) {
-        throw new Error(error);
     }
+    const url = `https://api.atlassian.com/oauth/token/accessible-resources`;
+    const response = await axios.get(url, config);
+    const scopeId = response.data[0]?.id;
+    return scopeId;
 }
 
 module.exports = {
