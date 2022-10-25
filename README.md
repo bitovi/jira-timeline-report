@@ -1,6 +1,6 @@
 ## Jira OAuth Integration
 
-This is a simple Jira oAuth template or starter-pack. It helps bootstrap your Jira application.
+This is a simple Jira oAuth template or starter-pack. It helps bootstrap your Jira application with OAuth2.0 already setup.
 
 
 ## How to use
@@ -31,9 +31,11 @@ Note: All environment variables that start with CLIENT will be sent to the clien
 
 ### Navigating the files
 
-- The pages folder contain the html files that are rendered.
-- The public folder contain the javascript files that are included in the html files.
-- The jira-oidc-helpers contain all the helpers required to interact with Jira and save your tokens to the local storage.
+- The server folder contains a server.js that bootstraps an express application that renders the application
+- It has an endpoint that fetches the access Token from Jira and refreshes the access token when expired.
+- The pages folder contains the html files that are rendered.
+- The public folder contains the javascript files that are included in the html files.
+- The jira-oidc-helpers is a javascript file with all the helpers required to interact with Jira and save your access and refresh tokens to the local storage.
 - You will make changes to the main.js files based on your use-case. Everything you need to make your request has been layered in your jira-oidc-helpers.
 - All you need to do is to call the jiraFetch helper with the url path you want from your main and handle the data how you see fit. e.g
 ```js
