@@ -23,7 +23,7 @@ Your environment variables can be gotten from Jira following the steps below
 - Navigate to the developer console, it can be found on the top right corner of the screen.
 - Create your app and choose OAuth2.0, put in the app name and accept the terms.
 - Click Permissions, add the Jira Api scope then configure it. Ensure to include the scopes you want and save.
-- Click Authorization, input the callback url, as default for this application locally, use htpp://localhost:3000 and save.
+- Click Authorization, input the callback url, as default for this application locally, use htpp://localhost:3000, if you do not change the PORT in the server and save.
 - Find Settings and scroll down to copy your CLIENT_ID and CLIENT_SECRET.
 - The CLIENT_JIRA_API_URL is https://api.atlassian.com.
 
@@ -39,4 +39,3 @@ Note: All environment variables that start with CLIENT will be sent to the clien
 ```js
     const issue = await jiraHelper.jiraFetch(urlPath);
 ```
-
