@@ -1,5 +1,3 @@
-
-
 async function main(jiraHelpers) {
 	mainElement.textContent = "Checking for Jira Access Token";
 

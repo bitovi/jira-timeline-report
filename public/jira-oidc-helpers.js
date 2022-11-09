@@ -53,11 +53,13 @@ function JiraOIDCHelpers({
 		},
 
 		refreshableFetch: async (url, options) => {
-			if(!jiraHelpers.hasValidAccessToken) {
+			if(!jiraHelpers.hasValidAccessToken()) {
 				if(!refreshingRequest) {
-					refreshingRequest = jiraHelpers.refreshAccessToken;
-					await refreshingRequest();
+					refreshingRequest = jiraHelpers.refreshAccessToken();
+					await refreshingRequest;
 					refreshingRequest = null;
+				}else{
+					await refreshingRequest;
 				}
 			}
 			const accessToken = jiraHelpers.fetchFromLocalStorage("accessToken");
