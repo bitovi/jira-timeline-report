@@ -1,0 +1,19 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - id: deploy
+      uses: bitovi/github-actions-node-app-to-aws-vm@main
+      with:
+        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
+        dot_env: ${{ secrets.DOT_ENV }}
+        aws_default_region: us-east-1
+
+        app_port: 3000

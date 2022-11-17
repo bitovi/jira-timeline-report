@@ -9,4 +9,4 @@ COPY package-lock.json .
 RUN npm ci
 
 EXPOSE $PORT
-CMD npm run server
+CMD npm run start-local
