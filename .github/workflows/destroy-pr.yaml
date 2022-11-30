@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - id: destroy
+      # TODO: use published version after merge of action
+      # uses: bitovi/github-actions-deploy-docker-to-ec2@v0.2.0
       uses: bitovi/github-actions-deploy-docker-to-ec2@add-public-dns-config
       with:
         aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
@@ -25,3 +27,4 @@ jobs:
         dot_env: ${{ secrets.DOT_ENV }}
         aws_resource_identifier: ${{ github.event.inputs.aws_resource_identifier }}
         app_port: 3000
+        domain_name: bitovi-jira.com
