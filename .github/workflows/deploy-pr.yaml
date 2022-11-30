@@ -14,8 +14,8 @@ jobs:
     - id: deploy
       uses: bitovi/github-actions-deploy-docker-to-ec2@add-public-dns-config
       with:
-        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_DEVOPS_TRAINING}}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEVOPS_TRAINING}}
+        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
         aws_default_region: us-east-1
         dot_env: ${{ secrets.DOT_ENV }}
 
