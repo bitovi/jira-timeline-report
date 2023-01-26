@@ -25,6 +25,7 @@ jobs:
         domain_name: bitovi-jira.com
         root_domain: true
         app_port: 3000
+        stack_destroy: true
     - if: ${{ steps.deploy.outputs.vm_url != '' }}
       name: Print result created
       run: |
