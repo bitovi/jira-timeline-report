@@ -1,0 +1,350 @@
+:root {
+    --complete-color: #0070c6;
+    --ontrack-color: #77ae99;
+    --behind-color: #f5de7d;
+    --unknown-color: #ffd9be;
+    --notstarted-color: rgb(134, 134, 134);
+}
+
+body {
+    margin: 8px;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-flow: column;
+    gap: 24px;
+    background-color: white;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+}
+
+.form-label {
+    color: gray;
+    font-size: 0.9em;
+}
+
+steerco-timeline {
+    height: 780px;
+    width: 1280px;
+    display: block;
+}
+
+.calendar_wrapper {
+    padding: 24px 24px 0px 24px;
+    display: flex;
+    position: relative;
+}
+
+.calendar_wrapper .calendar {
+    border-right: 1px dotted black;
+    border-left: 1px dotted black;
+    color: black;
+    flex: 1;
+}
+
+.calendar_wrapper .calendar .calendar_title {
+    margin-bottom: 16px;
+    font-weight: 600;
+    font-size: 18px;
+    text-align: center;
+}
+
+.calendar_wrapper .calendar .calendar_month_wrapper {
+    display: flex;
+    flex-flow: row;
+    justify-content: space-between;
+}
+
+.calendar_wrapper .calendar .calendar_month_wrapper .calendar_month {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    flex: 1;
+    height: 75px;
+    position: relative;
+}
+
+.gantt .release_time {
+    border: solid 1px rgb(134, 134, 134);
+    background-color: rgb(149, 149, 149);
+    text-align: right;
+    position: relative;
+    z-index: -2;
+    /* Pattern 2 */
+    /*background-image: repeating-linear-gradient(26deg, rgba(255,255,255, 0.25), rgba(255,255,255, 0.25) 2px, transparent 3px, transparent 7px);*/
+    color: white;
+    text-shadow: rgb(0 0 0) 0px 0px 3px;
+}
+
+.gantt .uat_time,
+.gantt .dev_time,
+.gantt .qa_time {
+    bottom: 6px;
+    position: absolute;
+    right: 0px;
+    z-index: -1;
+    box-sizing: border-box;
+}
+
+.gantt .uat_time {
+    /* Pattern 3 */
+    /*background-image: repeating-linear-gradient(-26deg, rgba(255,255,255, 0.25), rgba(255,255,255, 0.25) 2px, transparent 3px, transparent 7px);*/
+    border-bottom: solid 3px blueviolet;
+    bottom: 0px;
+}
+
+.gantt .qa_time {
+    /* Pattern 3 */
+    /*background-image: repeating-linear-gradient(-26deg, rgba(255,255,255, 0.25), rgba(255,255,255, 0.25) 2px, transparent 3px, transparent 7px);*/
+    border-bottom: solid 3px #d28ccf;
+    bottom: 3px;
+}
+
+.gantt .dev_time {
+    /* Pattern 1 */
+    /*background-image: repeating-linear-gradient(-45deg, rgba(255,255,255, 0.25), rgba(255,255,255, 0.25) 1px, transparent 1px, transparent 6px);*/
+    border-bottom: solid 3px tan;
+}
+
+.gantt .status-complete {
+    background-color: var(--complete-color);
+    color: white;
+}
+
+.gantt .status-ontrack {
+    background-color: var(--ontrack-color);
+    color: white;
+}
+
+.gantt .status-behind {
+    background-color: var(--behind-color);
+}
+
+.gantt .dev_time {
+    left: 0px;
+    right: auto;
+}
+
+.gantt .today {
+    width: 2px;
+    background-color: orange;
+    height: 150%;
+    position: absolute;
+    top: -50%;
+    z-index: -100;
+}
+
+.dotted-left {
+    border-left: 1px dotted black;
+}
+
+.calendar_wrapper .calendar .calendar_month_wrapper .calendar_month .calendar_month_name {
+    text-align: center;
+    min-width: 50px;
+}
+
+.calendar_wrapper .calendar .calendar_month_wrapper .calendar_month .calendar_month_line {
+    width: 100%;
+    height: 1px;
+    background-color: black;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.calendar_wrapper .calendar .calendar_month_wrapper .calendar_month .calendar_month_release {
+    padding: 8px;
+    width: 60px;
+    background-color: #0070c0;
+    text-align: center;
+    color: white;
+    margin-left: 4px;
+    margin-right: 4px;
+    z-index: 100;
+    border: 1px solid black;
+}
+
+.release_wrapper {
+    display: flex;
+    flex-flow: row;
+    gap: 16px;
+    padding: 0px 32px;
+}
+
+.release_wrapper .release_box {
+    border-radius: 12px;
+    /*background-color: #e7e6e6;*/
+    padding: 30px 5px 5px 5px;
+    position: relative;
+    flex: 1;
+}
+
+.release_wrapper .release_box .release_box_header_bubble {
+    min-width: 80px;
+    min-height: 20px;
+
+    font-weight: 500;
+    padding: 8px 16px;
+    /*border-radius: 30px 30px 30px 0px;*/
+    position: absolute;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 1;
+    text-align: center;
+    top: -25px;
+    left: 0px;
+}
+
+/* This needs to be easily overwritten */
+.release_box_header_bubble {
+    background-color: rgb(150, 150, 150);
+    color: white;
+}
+
+.release_wrapper .release_box {
+    position: relative;
+}
+
+.release_wrapper .release_box .release_box_title {
+    color: #0070c0;
+    padding: 8px;
+    margin-bottom: 16px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.release_wrapper .release_box .release_box_subtitle {
+    display: flex;
+    flex-flow: column;
+    gap: 4px;
+}
+
+.release_box_subtitle_wrapper {
+    display: flex;
+    flex-flow: row;
+    gap: 8px;
+    color: #4e4e4e;
+
+}
+
+.extra-timings .release_box_subtitle_wrapper {
+    font-family: monospace;
+}
+
+
+.release_wrapper .release_box .release_box_subtitle .release_box_subtitle_wrapper .release_box_subtitle_key {}
+
+.release_box .release_box_body {
+    padding: 0px 0px 0px 17px;
+}
+
+.release_box .release_box_body.extra-timings {
+    padding: 0px;
+    color: black;
+    list-style-type: none;
+}
+
+
+.release_box_body span {
+    font-family: monospace;
+    padding: 0px 1px;
+    /*font-weight: bold;*/
+}
+
+.simple-timings .status-complete {
+    color: var(--complete-color);
+}
+
+.simple-timings .status-ontrack {
+    color: var(--ontrack-color);
+}
+
+.simple-timings .status-behind {
+    color: var(--behind-color);
+}
+
+.simple-timings .status-unknown {
+    color: var(--unknown-color);
+}
+
+.simple-timings .status-notstarted {
+    color: var(--notstarted-color);
+}
+
+
+.release_box .status-icon.status-complete {
+    background-color: var(--complete-color);
+    color: white;
+}
+
+.release_box .status-icon.status-ontrack {
+    background-color: var(--ontrack-color);
+    color: white;
+}
+
+.release_box .status-icon.status-behind {
+    color: black;
+    background-color: var(--behind-color);
+}
+
+.release_box .status-icon.status-unknown {
+    color: black;
+    background-color: var(--unknown-color);
+}
+
+.release_box .status-icon.status-notstarted {
+    color: white;
+    background-color: var(--notstarted-color);
+}
+
+
+.basic-table {
+    border: solid 1px #DDEEEE;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font: normal 13px Arial, sans-serif;
+}
+
+.basic-table thead th {
+    background-color: #DDEFEF;
+    border: solid 1px #DDEEEE;
+    color: #336B6B;
+    padding: 10px;
+    text-align: left;
+    text-shadow: 1px 1px 1px #fff;
+}
+
+.basic-table tbody td {
+    border: solid 1px #DDEEEE;
+    color: #333;
+    padding: 10px;
+
+}
+
+.release-timeline-item {
+    position: absolute;
+    transform: translate(-50%, 0);
+    border: solid 1px gray;
+    padding: 10px;
+    z-index: 100;
+    top: 1px;
+}
+
+.gantt.simple-timings .release-timeline-item {
+    color: white;
+}
+
+.gantt.extra-timings {
+    position: relative;
+    top: -50px;
+    padding: 0px 24px;
+}
+
+.gantt.simple-timings {
+    position: relative;
+    top: -50px;
+    padding: 0px 24px;
+    height: 40px;
+}

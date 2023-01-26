@@ -1,8 +1,8 @@
 const getSafeEnv = require("../server/client-env");
 
-module.exports = function(){
+module.exports = function () {
 
-return `<!DOCTYPE html>
+	return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -14,11 +14,10 @@ return `<!DOCTYPE html>
 <body>
 		<h1>Jira QA Metrics: OAuth Callback</h1>
 		<div id="mainElement">Loading ... </div>
-
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
-		<script src="./jira-oidc-helpers.js"></script>
-		<script src="./oauth-callback.js"></script>
-		<script>
+		<script type="module">
+			import JiraOIDCHelpers from "./jira-oidc-helpers.js";
+			import oauthCallback from "./oauth-callback.js";
 			const jiraHelpers = JiraOIDCHelpers(${JSON.stringify(getSafeEnv())});
 			oauthCallback(jiraHelpers);
 		</script>
