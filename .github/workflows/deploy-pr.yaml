@@ -25,7 +25,7 @@ jobs:
         dot_env: ${{ secrets.DOT_ENV }}
 
         domain_name: bitovi-jira.com
-        root_domain: true
+        root_domain: true 
         app_port: 3000
 
     - if: ${{ steps.deploy.outputs.vm_url != '' }}
