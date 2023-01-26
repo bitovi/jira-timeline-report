@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [ root-domain ]
+    branches: [ main ]
 
 jobs:
   EC2-Deploy:
@@ -26,13 +26,3 @@ jobs:
         root_domain: true
         app_port: 3000
         stack_destroy: true
-    - if: ${{ steps.deploy.outputs.vm_url != '' }}
-      name: Print result created
-      run: |
-        echo "## VM Created! :rocket:" >> $GITHUB_STEP_SUMMARY
-        echo " ${{ steps.deploy.outputs.vm_url }}" >> $GITHUB_STEP_SUMMARY
-    - if: ${{ steps.deploy.outputs.vm_url == '' }}
-      name: Print result destroyed
-      run: |
-        echo "## VM Destroyed! :boom:" >> $GITHUB_STEP_SUMMARY
-        echo "Buckets and whole infrastructure should be gone now!" >> $GITHUB_STEP_SUMMARY
