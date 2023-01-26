@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ root-domain ]
 
 jobs:
   EC2-Deploy:
@@ -13,7 +13,7 @@ jobs:
     steps:
     - id: deploy
       name: Deploy
-      uses: bitovi/github-actions-deploy-docker-to-ec2@v0.4.2
+      uses: bitovi/github-actions-deploy-docker-to-ec2@v0.4.5
       with:
         aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
@@ -23,6 +23,7 @@ jobs:
         dot_env: ${{ secrets.DOT_ENV }}
 
         domain_name: bitovi-jira.com
+        root_domain: true
         app_port: 3000
     - if: ${{ steps.deploy.outputs.vm_url != '' }}
       name: Print result created
