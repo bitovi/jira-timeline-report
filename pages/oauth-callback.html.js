@@ -17,7 +17,7 @@ module.exports = function () {
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
 		<script type="module">
 			import JiraOIDCHelpers from "./jira-oidc-helpers.js";
-			import oauthCallback from "./oauth-callback.js";
+			import oauthCallback from "./oauth-cb.js";
 			const jiraHelpers = JiraOIDCHelpers(${JSON.stringify(getSafeEnv())});
 			oauthCallback(jiraHelpers);
 		</script>
