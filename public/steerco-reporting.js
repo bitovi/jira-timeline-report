@@ -3,14 +3,14 @@ import { StacheElement, type, ObservableObject } from "//unpkg.com/can@6/core.mj
 //import bootstrap from "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" assert {type: 'css'};
 import sheet from "./steerco-reporting.css" assert {type: 'css'};
 
-import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
+import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS, parseDateISOString } from "./date-helpers.js";
 import semver from "./semver.js";
 
 import {
     addStatusToInitiative, addStatusToEpic,
     addStatusToRelease, getBusinessDatesCount, inPartnerReviewStatuses
 } from "./status-helpers.js";
-import "./capacity-planning.js";
+
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: "short" });
 
@@ -554,8 +554,8 @@ function isPartnerReviewWork(issue) {
 }
 function sortByStartDate(issues) {
     return issues.sort((issueA, issueB) => {
-        const dateA = Date.parse(issueA[START_DATE_KEY]),
-            dateB = Date.parse(issueB[START_DATE_KEY]);
+        const dateA = parseDateISOString(issueA[START_DATE_KEY]),
+            dateB = parseDateISOString(issueB[START_DATE_KEY]);
         return dateA - dateB;
     })
 }
@@ -563,7 +563,7 @@ function sortByStartDate(issues) {
 function getLastDateFrom(initiatives, property) {
     const values = initiatives.filter(
         init => init[property]
-    ).map(init => Date.parse(init[property]))
+    ).map(init => parseDateISOString(init[property]))
         .filter((number) => !isNaN(number));
     return values.length ? new Date(Math.max(...values)) : undefined;
 }
@@ -601,9 +601,11 @@ function epicTimingData(epics) {
 }
 
 function endDateFromList(issues, property = DUE_DATE_KEY) {
+    console.log(issues, property);
+
     const values = issues.filter(
         issue => issue[property]
-    ).map(issue => Date.parse(issue[property]))
+    ).map(issue => parseDateISOString(issue[property]))
         .filter((number) => !isNaN(number));
     return values.length ? new Date(Math.max(...values)) : undefined;
 }
@@ -612,14 +614,14 @@ function endDateFromList(issues, property = DUE_DATE_KEY) {
 function firstDateFromList(issues) {
     const values = issues.filter(
         issue => issue[START_DATE_KEY]
-    ).map(issue => Date.parse(issue[START_DATE_KEY]));
+    ).map(issue => parseDateISOString(issue[START_DATE_KEY]));
     return values.length ? new Date(Math.min(...values)) : undefined;
 }
 
 function getFirstDateFrom(initiatives, property) {
     const values = initiatives.filter(
         init => init[property]?.[START_DATE_KEY]
-    ).map(init => Date.parse(init[property][START_DATE_KEY]));
+    ).map(init => parseDateISOString(init[property][START_DATE_KEY]));
     return values.length ? new Date(Math.min(...values)) : undefined;
 }
 
@@ -648,6 +650,12 @@ function toCVSFormat(issues, serverInfo) {
         }
     })
 }
+
+function newDateFromYYYYMMDD(dateString) {
+    const [year, month, day] = dateString.split("-");
+    return new Date(year, month - 1, day);
+}
+
 function addWorkingBusinessDays(issues) {
 
 
@@ -660,6 +668,8 @@ function addWorkingBusinessDays(issues) {
                 weightedEstimate = issue["Story Points"];
             }
         }
+
+
 
         return {
             ...issue,

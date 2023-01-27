@@ -19,6 +19,7 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
         }
     }
     if (!currentDate) {
+        console.log(epic["Due date"])
         currentDate = new Date(epic["Due date"]);
     }
     if (!dueDateWasPriorToTheFirstChangeAfterTheCheckpoint) {
@@ -32,6 +33,20 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
         dueDateWasPriorToTheFirstChangeAfterTheCheckpoint: dueDateWasPriorToTheFirstChangeAfterTheCheckpoint,
         daysChanged: Math.round((currentDate - dueDateWasPriorToTheFirstChangeAfterTheCheckpoint) / DAY_IN_MS)
     }
+}
+
+export function parseDateISOString(s) {
+    if (!s) return s;
+
+    // if this is a date already, assume we need to correct timezone
+    if (s instanceof Date) {
+        // fix timezone to UTC
+        return new Date(s.getTime() + s.getTimezoneOffset() * 60 * 1000);
+    }
+
+    let ds = s.split(/\D/).map(s => parseInt(s));
+    ds[1] = ds[1] - 1; // adjust month
+    return new Date(...ds);
 }
 
 export const DAY_IN_MS = 1000 * 60 * 60 * 24;
