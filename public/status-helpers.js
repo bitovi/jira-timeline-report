@@ -3,6 +3,8 @@ const inDevStatus = { "In Development": true, "To Do": true };
 const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
 export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
 const inDoneStatus = { "Done": true, "Cancelled": true };
+const blockedStatus = { "Blocked": true }
+
 
 const WIGGLE_ROOM = 0;
 
@@ -85,6 +87,9 @@ export function getInitiativeDevStatus(initiative) {
     if (initiative?.dev?.issues?.every(epic => isStatusDevComplete(epic))) {
         console.warn("The dev epics for", initiative, "are complete, but the issue is not in QA");
         return "complete"
+    }
+		if (initiative?.dev?.issues?.some(epic => epic.Status === "Blocked")) {
+        return "blocked"
     }
     return timedStatus(initiative.dev)
 }

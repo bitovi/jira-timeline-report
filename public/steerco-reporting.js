@@ -1,7 +1,9 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject } from "//unpkg.com/can@6/core.mjs";
 //import bootstrap from "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" assert {type: 'css'};
-import sheet from "./steerco-reporting.css" assert {type: 'css'};
+
+import "./css/css.js";
+
 
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS, parseDateISOString } from "./date-helpers.js";
 import semver from "./semver.js";
@@ -28,7 +30,7 @@ const LABELS_KEY = "Labels";
 const STATUS_KEY = "Status";
 const FIX_VERSIONS_KEY = "Fix versions";
 
-document.adoptedStyleSheets = [sheet];
+
 
 export class SteercoReporter extends StacheElement {
     static view = `
@@ -601,8 +603,6 @@ function epicTimingData(epics) {
 }
 
 function endDateFromList(issues, property = DUE_DATE_KEY) {
-    console.log(issues, property);
-
     const values = issues.filter(
         issue => issue[property]
     ).map(issue => parseDateISOString(issue[property]))
@@ -627,7 +627,6 @@ function getFirstDateFrom(initiatives, property) {
 
 function sortReadyFirst(initiatives) {
     return initiatives.sort((a, b) => {
-        console.log(a.Status)
         if (a.Status === "Ready") {
             return -1;
         }

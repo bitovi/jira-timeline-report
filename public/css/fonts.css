@@ -1,0 +1,19 @@
+.font-mono {
+	font-family: var(--font-mono);
+}
+
+.font-sans {
+	font-family: var(--font-sans);
+}
+
+
+
+.text-sm {
+	font-size: 0.875rem; /* 14px */
+	line-height: 1.25rem; /* 20px */
+}
+
+.text-xs {
+	font-size: var(--space-3); /* 12px */
+	line-height: var(--space-4); /* 16px */
+}

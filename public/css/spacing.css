@@ -1,0 +1,9 @@
+.py-0px {
+	padding-top: var(--space-0px);
+	padding-bottom: var(--space-0px);
+}
+
+.px-1px {
+	padding-left: var(--space-1px);
+	padding-right: var(--space-1px);
+}
