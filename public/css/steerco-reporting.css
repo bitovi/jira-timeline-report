@@ -19,11 +19,6 @@ body {
     font-size: 0.9em;
 }
 
-steerco-timeline {
-    height: 780px;
-    width: 1280px;
-    display: block;
-}
 
 .calendar_wrapper {
     padding: 24px 24px 0px 24px;

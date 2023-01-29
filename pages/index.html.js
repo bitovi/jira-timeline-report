@@ -10,8 +10,8 @@ module.exports = function (env) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>Timeline Reporting App</title>
 	</head>
-	<body class='container'>
-			<h1>Timeline Reporting App</h1>
+	<body class='place-center w-1280'>
+			<h1>Jira Timeline Report</h1>
 			<div id="mainElement">Loading ... </div>
 			<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
 			<script type="module">

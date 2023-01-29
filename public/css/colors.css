@@ -82,3 +82,7 @@
 	background-color: var(--blocked-color);
 	color: var(--white-color);
 }
+
+.color-border-slate-900 {
+	border-color: var(--slate-900-color)
+}
