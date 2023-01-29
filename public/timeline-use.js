@@ -8,7 +8,7 @@ class TimelineUse extends HTMLElement {
   connectedCallback(){
 		this.update();
 
-		this.converter = new showdown.Converter();
+		this.converter = new showdown.Converter({tables: true});
 
 		if(POLL) {
 			setInterval( this.update.bind(this), 3000);

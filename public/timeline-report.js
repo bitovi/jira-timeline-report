@@ -34,6 +34,10 @@ const FIX_VERSIONS_KEY = "Fix versions";
 
 export class TimelineReport extends StacheElement {
     static view = `
+					<details class='border-solid-1px-slate-900 p2'>
+						<summary>Use</summary>
+						<timeline-use></timeline-use>
+					</details>
 					<details class='border-solid-1px-slate-900 p2' open:from="not(this.jql)">
 
 						<summary>
@@ -52,10 +56,7 @@ export class TimelineReport extends StacheElement {
 							<input type='checkbox' checked:bind='this.showExtraTimings'/>
 						</div>
 					</details>
-					<details class='border-solid-1px-slate-900 p2'>
-						<summary>Use</summary>
-						<timeline-use></timeline-use>
-					</details>
+
 
 					{{# if(this.releases) }}
 

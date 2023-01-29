@@ -61,7 +61,7 @@ class SteercoTimeline extends StacheElement {
 				</div>
 				<ul class="release_box_body">
 					{{# for(initiative of release.initiatives) }}
-					 <li class='font-sans text-sm {{# unless(this.showExtraTimings) }} color-text-{{initiative.devStatus}} {{/ }}'>
+					 <li class='font-sans text-sm {{# unless(this.showExtraTimings) }} color-text-{{initiative.status}} {{/ }}'>
 					  {{# if(this.showExtraTimings) }}
 						<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
 							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
