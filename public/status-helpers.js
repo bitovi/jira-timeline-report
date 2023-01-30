@@ -9,6 +9,7 @@ const blockedStatus = { "Blocked": true }
 const WIGGLE_ROOM = 0;
 
 export function addStatusToRelease(release) {
+		
 		return {
 				...release,
 				status: getReleaseStatus(release),
@@ -22,9 +23,21 @@ function getReleaseStatus(release) {
 		// if everything is complete
 		if (release.initiatives.filter(i => i.status !== "complete").length === 0) {
 				return "complete"
-		} else {
-				return getInitiativeStatus(release);
 		}
+		const latest = release.initiatives.reduce( (acc, cur)=> {
+			if(!acc) {
+				return cur;
+			}
+			if(cur.team.due > acc.team.due) {
+				return cur;
+			} else {
+				return acc;
+			}
+		})
+		if(latest.status !== "notstarted") {
+			return latest.status;
+		}
+		return getInitiativeStatus(release);
 }
 function getReleaseDevStatus(release) {
 		return getInitiativeDevStatus(release);

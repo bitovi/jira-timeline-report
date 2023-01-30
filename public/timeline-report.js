@@ -344,9 +344,6 @@ export class TimelineReport extends StacheElement {
         return semverReleases.map((release, index) => {
             const initiatives = releasesToInitiatives[release].map((i) => {
                 const timedEpics = (issuesMappedByParentKey[i[ISSUE_KEY]] || []).map((e) => {
-                    if (e.Summary === "UAT: Hardware, Void and Refund") {
-                        //debugger;
-                    }
                     const { dueDateWasPriorToTheFirstChangeAfterTheCheckpoint } = howMuchHasDueDateMovedForwardChangedSince(e,
                         new Date(new Date().getTime() - this.compareToDaysPrior * DAY_IN_MS)
                     )

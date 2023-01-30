@@ -104,7 +104,7 @@ class SteercoTimeline extends StacheElement {
 
             const div = document.createElement("div");
             if (release.team.due) {
-                div.className = "release-timeline-item status-" + release.status;
+                div.className = "release-timeline-item color-text-and-bg-" + release.status;
                 div.style.left = ((release.team.due - firstDay) / totalTime * 100) + "%";
                 div.appendChild(document.createTextNode("M" + release.shortVersion))
             }

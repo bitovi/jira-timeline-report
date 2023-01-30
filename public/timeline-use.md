@@ -1,16 +1,24 @@
-## Using this Jira Report
+## Overview
 
-The following walks through how to use this JIRA report.
+This report is used to generate a high level overview of upcoming milestones as something
+that can be put in a PowerPoint or Google Slide.
 
-- What your jira setup needs to look like:
-- How "dev" vs "qa" vs "uat" epics are calculated
-- How the timings are calculated
-- How status is calculated
-- How to debug
-- What the "comparison" does
+There are two different versions:
+
+- A summary view that gives a broad picture of each release and its features
+- A detailed view that includes the timing and status of each feature's QA and UAT workflows
+
+## Need help or Have Questions?
+
+This project is supported by Bitovi, an Agile Project Management consultancy. For bugs or feature requests, please submit a [Github Issue](https://github.com/bitovi/jira-timeline-report/issues)
+
+You can get help or ask questions on our:
+
+- [Slack Community](https://www.bitovi.com/community/slack)
+- [Twitter](https://twitter.com/bitovi)
 
 
-### Issue configuration
+## Issue configuration
 
 
 In summary, initiatives need to have a `Fix version` and children epics that have a `Start date` and `Due date`. Use
@@ -35,7 +43,7 @@ The following are optional and provide more data:
 
 
 
-### How timings are calculated
+## How timings are calculated
 
 All timings 'roll up' from the epics. Any timing data on initiatives is ignored. For a given initiative,
 the "dev" timing is the `Start date` of the earliest "dev" epic and the end date of
@@ -44,7 +52,7 @@ the "dev" epic with the latest `Due date`. The same happens for QA and UAT timin
 A similar thing happens for release timing. A release's "dev" timing starts with the earliest "dev" epic across all
 of the release's dev epics and ends with the `End date` of the latest epic. The same happens for QA and UAT timing.
 
-### How is status calculated
+## How is status calculated
 
 Keeping statuses consistent across epics and initiatives can be hard. This tool tries to
 account for that. For example, if an initiative's _dev_ epics are all past __InDev__, the initiative
@@ -82,5 +90,8 @@ This tool uses the work statuses and timings to calculate which status to show
 	- _dev_ status - Works just like an initiative's _dev_ status, except it does not look at the release's status.
 	- _qa_ status - Works just like an initiative's _qa_ status, except it does not look at the release's status.
 	- _uat_ status - Works just like an initiative's _uat_ status, except it does not look at the release's status.
-	- releases's status
-		- Matches the status of the latest, "long-pole" initiative
+	- releases's status - Matches the status of the latest, "long-pole" initiative, unless it's "NotStarted"; else shows "OnTrack" or "Unknown"
+
+## Debugging
+
+At the end of this page, there is a detailed breakdown.  
