@@ -1,0 +1,49 @@
+.py-0px {
+	padding-top: var(--space-0px);
+	padding-bottom: var(--space-0px);
+}
+
+.px-1px {
+	padding-left: var(--space-1px);
+	padding-right: var(--space-1px);
+}
+
+.p2 {
+	padding: var(--space-2);
+}
+
+.border-1px {
+	border-width: var(--space-1px);
+}
+
+.border-solid-1px-slate-900 {
+	border-style: solid;
+	border-width: var(--space-1px);
+	border-color: var(--slate-900-color);
+}
+
+.w-full-border-box {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.w-1280 {
+	width: 1280px;
+}
+.h-780 {
+	height: 780px;
+}
+
+/* LAYOUT */
+.place-center {
+  margin: 0 auto;
+}
+.border-box {
+	box-sizing: border-box;
+}
+.block {
+	display: block;
+}
+.overflow-hidden {
+	overflow: hidden;
+}

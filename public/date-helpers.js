@@ -19,7 +19,6 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
         }
     }
     if (!currentDate) {
-        console.log(epic["Due date"])
         currentDate = new Date(epic["Due date"]);
     }
     if (!dueDateWasPriorToTheFirstChangeAfterTheCheckpoint) {

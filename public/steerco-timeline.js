@@ -26,24 +26,24 @@ class SteercoTimeline extends StacheElement {
 
 		{{# for(release of this.releases) }}
 			<div class='release_box'>
-				<div class="release_box_header_bubble status-icon status-{{release.status}}">{{release.shortName}}</div>
+				<div class="release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
 				<div class="release_box_subtitle">
 					{{# if(not(eq(release.release, "Next")))}}
 						{{# if(this.showExtraTimings) }}
 						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key status-icon status-{{release.devStatus}}">Dev</span>
+								<span class="release_box_subtitle_key color-text-and-bg-{{release.devStatus}}">Dev</span>
 								<span class="release_box_subtitle_value">
 									{{ this.prettyDate(release.dev.due) }}{{this.wasReleaseDate(release.dev)}}
 								</span>
 						</div>
 						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key status-icon status-{{release.qaStatus}}">QA&nbsp;</span>
+								<span class="release_box_subtitle_key color-text-and-bg-{{release.qaStatus}}">QA&nbsp;</span>
 								<span class="release_box_subtitle_value">
 									{{ this.prettyDate(release.qa.due) }}{{this.wasReleaseDate(release.qa)}}
 								</span>
 						</div>
 						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key status-{{release.uatStatus}}">UAT</span>
+								<span class="release_box_subtitle_key color-text-and-bg-{{release.uatStatus}}">UAT</span>
 								<span class="release_box_subtitle_value">
 									{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
 								</span>
@@ -61,11 +61,11 @@ class SteercoTimeline extends StacheElement {
 				</div>
 				<ul class="release_box_body">
 					{{# for(initiative of release.initiatives) }}
-					 <li class='status-{{initiative.devStatus}} '>
+					 <li class='font-sans text-sm {{# unless(this.showExtraTimings) }} color-text-{{initiative.status}} {{/ }}'>
 					  {{# if(this.showExtraTimings) }}
-						<span class='status-icon status-{{initiative.devStatus}}'>D</span><span
-							class='status-icon status-{{initiative.qaStatus}}'>Q</span><span
-							class='status-icon status-{{initiative.uatStatus}}'>U</span>
+						<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
+							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
+							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
 						{{/ if }}
 						{{initiative.Summary}}
 					 </li>
@@ -104,7 +104,7 @@ class SteercoTimeline extends StacheElement {
 
             const div = document.createElement("div");
             if (release.team.due) {
-                div.className = "release-timeline-item status-" + release.status;
+                div.className = "release-timeline-item color-text-and-bg-" + release.status;
                 div.style.left = ((release.team.due - firstDay) / totalTime * 100) + "%";
                 div.appendChild(document.createTextNode("M" + release.shortVersion))
             }
@@ -116,7 +116,6 @@ class SteercoTimeline extends StacheElement {
     releaseGanttWithTimeline() {
         const { firstDay, lastDay } = this.calendarData;
         const totalTime = (lastDay - firstDay);
-        console.log("f", firstDay, "l", lastDay);
 
         return this.releases.map((release, index) => {
 

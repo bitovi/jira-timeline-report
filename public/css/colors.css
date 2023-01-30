@@ -1,0 +1,88 @@
+
+
+.color-bg-complete {
+	background-color: var(--complete-color);
+}
+.color-bg-ontrack {
+	background-color: var(--ontrack-color);
+}
+.color-bg-behind {
+	background-color: var(--behind-color);
+}
+.color-bg-unknown {
+	background-color: var(--unknown-color);
+}
+.color-bg-notstarted {
+	background-color: var(--notstarted-color);
+}
+.color-bg-blocked {
+	background-color: var(--blocked-color);
+}
+
+.color-bg-complete {
+	background-color: var(--complete-color);
+}
+.color-bg-ontrack {
+	background-color: var(--ontrack-color);
+}
+.color-bg-behind {
+	background-color: var(--behind-color);
+}
+.color-bg-unknown {
+	background-color: var(--unknown-color);
+}
+.color-bg-notstarted {
+	background-color: var(--notstarted-color);
+}
+.color-bg-blocked {
+	background-color: var(--blocked-color);
+}
+
+
+.color-text-complete {
+	color: var(--complete-color);
+}
+.color-text-ontrack {
+	color: var(--ontrack-color);
+}
+.color-text-behind {
+	color: var(--behind-color);
+}
+.color-text-unknown {
+	color: var(--unknown-color);
+}
+.color-text-notstarted {
+	color: var(--notstarted-color);
+}
+.color-text-blocked {
+	color: var(--blocked-color);
+}
+
+.color-text-and-bg-complete {
+	background-color: var(--complete-color);
+	color: var(--white-color);
+}
+.color-text-and-bg-ontrack {
+	background-color: var(--ontrack-color);
+	color: var(--white-color);
+}
+.color-text-and-bg-behind {
+	background-color: var(--behind-color);
+	color: var(--black-color);
+}
+.color-text-and-bg-unknown {
+	background-color: var(--unknown-color);
+	color: var(--black-color);
+}
+.color-text-and-bg-notstarted {
+	background-color: var(--notstarted-color);
+	color: var(--white-color);
+}
+.color-text-and-bg-blocked {
+	background-color: var(--blocked-color);
+	color: var(--white-color);
+}
+
+.color-border-slate-900 {
+	border-color: var(--slate-900-color)
+}

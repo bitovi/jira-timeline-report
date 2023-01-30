@@ -1,10 +1,3 @@
-:root {
-    --complete-color: #0070c6;
-    --ontrack-color: #77ae99;
-    --behind-color: #f5de7d;
-    --unknown-color: #ffd9be;
-    --notstarted-color: rgb(134, 134, 134);
-}
 
 body {
     margin: 8px;
@@ -26,11 +19,6 @@ body {
     font-size: 0.9em;
 }
 
-steerco-timeline {
-    height: 780px;
-    width: 1280px;
-    display: block;
-}
 
 .calendar_wrapper {
     padding: 24px 24px 0px 24px;
@@ -197,11 +185,7 @@ steerco-timeline {
     left: 0px;
 }
 
-/* This needs to be easily overwritten */
-.release_box_header_bubble {
-    background-color: rgb(150, 150, 150);
-    color: white;
-}
+
 
 .release_wrapper .release_box {
     position: relative;
@@ -247,11 +231,7 @@ steerco-timeline {
 }
 
 
-.release_box_body span {
-    font-family: monospace;
-    padding: 0px 1px;
-    /*font-weight: bold;*/
-}
+
 
 .simple-timings .status-complete {
     color: var(--complete-color);

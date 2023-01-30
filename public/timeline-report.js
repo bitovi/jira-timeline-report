@@ -1,10 +1,13 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject } from "//unpkg.com/can@6/core.mjs";
 //import bootstrap from "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" assert {type: 'css'};
-import sheet from "./steerco-reporting.css" assert {type: 'css'};
+
+import "./css/css.js";
+
 
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS, parseDateISOString } from "./date-helpers.js";
 import semver from "./semver.js";
+import "./timeline-use.js";
 
 import {
     addStatusToInitiative, addStatusToEpic,
@@ -28,31 +31,38 @@ const LABELS_KEY = "Labels";
 const STATUS_KEY = "Status";
 const FIX_VERSIONS_KEY = "Fix versions";
 
-document.adoptedStyleSheets = [sheet];
 
-export class SteercoReporter extends StacheElement {
+export class TimelineReport extends StacheElement {
     static view = `
-					<h1>Release Report</h1>
+					<details class='border-solid-1px-slate-900 p2'>
+						<summary>Use</summary>
+						<timeline-use></timeline-use>
+					</details>
+					<details class='border-solid-1px-slate-900 p2' open:from="not(this.jql)">
 
-					<div>
-						<label class="form-label">JQL to retrieve initiatives and epics:</label>
-						<input class="form-control" value:bind='this.jql'/>
-					</div>
-					<div>
-						<label class="form-label">Compare to {{this.compareToDaysPrior}} days ago:</label>
-						<input class="form-control" type='range' valueAsNumber:bind:on:input='this.compareToDaysPrior' min="0" max="90"/>
-					</div>
-					<div>
-						<label class="form-label">Show Dev and QA timings:</label>
-						<input type='checkbox' checked:bind='this.showExtraTimings'/>
-					</div>
+						<summary>
+							Configure
+						</summary>
+						<div>
+							<label class="form-label">Specify a JQL to load your project's initiatives and epics.</label>
+							<input class="w-full-border-box" value:bind='this.jql'/>
+						</div>
+						<div>
+							<label class="form-label">Compare to {{this.compareToDaysPrior}} days ago:</label>
+							<input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.compareToDaysPrior' min="0" max="90"/>
+						</div>
+						<div>
+							<label class="form-label">Show Dev and QA timings:</label>
+							<input type='checkbox' checked:bind='this.showExtraTimings'/>
+						</div>
+					</details>
 
 
 					{{# if(this.releases) }}
 
-
-						<h2>Timeline</h2>
-						<steerco-timeline releases:from="this.releases" showExtraTimings:from="this.showExtraTimings"/>
+						<steerco-timeline
+							class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
+							releases:from="this.releases" showExtraTimings:from="this.showExtraTimings"/>
 
 						<h2>Release Breakdown</h2>
 						{{# for(release of this.releasesAndNext) }}
@@ -187,7 +197,9 @@ export class SteercoReporter extends StacheElement {
 						{{/ for }}
 
 					{{ else }}
-						Loading ...
+						{{# if(this.jql) }}
+							Loading ...
+						{{/ if }}
 					{{/ if}}
 
 	`;
@@ -332,9 +344,6 @@ export class SteercoReporter extends StacheElement {
         return semverReleases.map((release, index) => {
             const initiatives = releasesToInitiatives[release].map((i) => {
                 const timedEpics = (issuesMappedByParentKey[i[ISSUE_KEY]] || []).map((e) => {
-                    if (e.Summary === "UAT: Hardware, Void and Refund") {
-                        //debugger;
-                    }
                     const { dueDateWasPriorToTheFirstChangeAfterTheCheckpoint } = howMuchHasDueDateMovedForwardChangedSince(e,
                         new Date(new Date().getTime() - this.compareToDaysPrior * DAY_IN_MS)
                     )
@@ -423,7 +432,7 @@ export class SteercoReporter extends StacheElement {
 
 
 
-customElements.define("steerco-reporter", SteercoReporter);
+customElements.define("timeline-report", TimelineReport);
 
 
 
@@ -601,8 +610,6 @@ function epicTimingData(epics) {
 }
 
 function endDateFromList(issues, property = DUE_DATE_KEY) {
-    console.log(issues, property);
-
     const values = issues.filter(
         issue => issue[property]
     ).map(issue => parseDateISOString(issue[property]))
@@ -627,7 +634,6 @@ function getFirstDateFrom(initiatives, property) {
 
 function sortReadyFirst(initiatives) {
     return initiatives.sort((a, b) => {
-        console.log(a.Status)
         if (a.Status === "Ready") {
             return -1;
         }
