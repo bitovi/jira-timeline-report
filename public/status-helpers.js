@@ -9,7 +9,7 @@ const blockedStatus = { "Blocked": true }
 const WIGGLE_ROOM = 0;
 
 export function addStatusToRelease(release) {
-		
+
 		return {
 				...release,
 				status: getReleaseStatus(release),
@@ -34,7 +34,7 @@ function getReleaseStatus(release) {
 				return acc;
 			}
 		})
-		if(latest.status !== "notstarted") {
+		if(latest.status !== "notstarted" && latest.status !== "unknown") {
 			return latest.status;
 		}
 		return getInitiativeStatus(release);
