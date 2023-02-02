@@ -8,6 +8,14 @@ There are two different versions:
 - A summary view that gives a broad picture of each release and its features
 - A detailed view that includes the timing and status of each feature's QA and UAT workflows
 
+## Privacy Policy
+
+This project does NOT save any JIRA data.  In fact, other than transporting an access token
+to the browser, no JIRA data even flows through our servers.  
+
+All the code is open source in [Github Issue](https://github.com/bitovi/jira-timeline-report) so you can verify this yourself or host it yourself.
+
+
 ## Need help or Have Questions?
 
 This project is supported by Bitovi, an Agile Project Management consultancy. For bugs or feature requests, please submit a [Github Issue](https://github.com/bitovi/jira-timeline-report/issues)

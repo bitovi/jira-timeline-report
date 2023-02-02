@@ -63,6 +63,14 @@ export class TimelineReport extends StacheElement {
 						<steerco-timeline
 							class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
 							releases:from="this.releases" showExtraTimings:from="this.showExtraTimings"/>
+						<div class='border-solid-1px-slate-900 p2'>
+							<span class='color-text-and-bg-notstarted p2 inline-block'>Not Started</span>
+							<span class='color-text-and-bg-blocked p2 inline-block'>On Track</span>
+							<span class='color-text-and-bg-complete p2 inline-block'>Complete</span>
+							<span class='color-text-and-bg-behind p2 inline-block'>Behind</span>
+							<span class='color-text-and-bg-unknown p2 inline-block'>Unknown</span>
+						</div>
+
 
 						<h2>Release Breakdown</h2>
 						{{# for(release of this.releasesAndNext) }}

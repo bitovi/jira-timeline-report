@@ -84,5 +84,14 @@
 }
 
 .color-border-slate-900 {
-	border-color: var(--slate-900-color)
+	border-color: var(--slate-900-color);
+}
+
+
+.color-bg-slate-300 {
+	background-color: var(--slate-300-color)
+}
+
+.color-bg-even-slate-300 > *:nth-child(even) {
+	background-color: var(--slate-300-color)
 }

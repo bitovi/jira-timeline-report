@@ -16,14 +16,53 @@ const inDoneStatus = { "Done": true };
 class SteercoTimeline extends StacheElement {
     static view = `
 
-		<div class='calendar_wrapper'>{{this.calendarHTML}}</div>
-		<div class='gantt {{# if(this.showExtraTimings) }}extra-timings{{else}}simple-timings{{/ if}}'>{{# for(chart of this.releaseGantt) }}
-			{{chart}}
-		{{/}}
-			<div class='today' style="margin-left: {{this.todayMarginLeft}}%"></div>
-		</div>
-		<div class='release_wrapper {{# if(this.showExtraTimings) }}extra-timings{{else}}simple-timings{{/ if}}'>
+		{{# if(this.showExtraTimings) }}
+			<div style="display: grid; grid-template-columns: auto repeat(6, [col] 1fr); grid-template-rows: repeat({{this.releases.length}}, auto)"
+				class='p2 mb-10'>
+				<div></div>
 
+				<div style="grid-column: 2 / span 3" class="text-center">Q1</div>
+				<div style="grid-column: 5 / span 3" class="text-center">Q2</div>
+
+				<div></div>
+				<div class='border-b-solid-2px-slate-900 text-center'>Jan</div>
+				<div class='border-b-solid-2px-slate-900 text-center'>Feb</div>
+				<div class='border-b-solid-2px-slate-900 text-center'>Mar</div>
+				<div class='border-b-solid-2px-slate-900 text-center'>Apr</div>
+				<div class='border-b-solid-2px-slate-900 text-center'>May</div>
+				<div class='border-b-solid-2px-slate-900 text-center'>Jun</div>
+
+				<!-- VERTICAL COLUMNS -->
+				<div style="grid-column: 2; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
+					class='border-l-solid-1px-slate-900 border-b-solid-1px-slate-900'></div>
+				<div style="grid-column: 3; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
+					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
+				<div style="grid-column: 4; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
+					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
+				<div style="grid-column: 5; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
+					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
+				<div style="grid-column: 6; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
+					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
+				<div style="grid-column: 7; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
+					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900 border-r-solid-1px-slate-900'></div>
+
+				{{# for(release of this.releases) }}
+					<div class='p2'>{{release.shortVersion}}</div>
+					{{this.getReleaseTimeline(release, scope.index)}}
+				{{/ for }}
+
+			</div>
+		{{ else }}
+
+			<div class='calendar_wrapper'>{{this.calendarHTML}}</div>
+			<div class='gantt simple-timings'>{{# for(chart of this.releaseGantt) }}
+				  {{chart}}
+			  {{/}}
+				<div class='today' style="margin-left: {{this.todayMarginLeft}}%"></div>
+			</div>
+
+		{{/ if }}
+		<div class='release_wrapper {{# if(this.showExtraTimings) }}extra-timings{{else}}simple-timings{{/ if}}'>
 		{{# for(release of this.releases) }}
 			<div class='release_box'>
 				<div class="release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
@@ -90,6 +129,76 @@ class SteercoTimeline extends StacheElement {
     get calendarHTML() {
         return stache.safeString(this.calendarData.html);
     }
+		getReleaseTimeline(release, index){
+			const base = {
+				gridColumn: '2 / span 6',
+				gridRow: `${index+3}`,
+			};
+
+			const background = document.createElement("div");
+
+			Object.assign(background.style, {
+				...base,
+				zIndex: 0
+			});
+
+			background.className = (index % 2 ? "color-bg-slate-300" : "")
+
+			const root = document.createElement("div");
+
+			Object.assign(root.style, {
+				...base,
+				position: "relative",
+				zIndex: 20
+			});
+
+			root.className = "py-1"
+
+			const { firstDay, lastDay } = this.calendarData;
+			const totalTime = (lastDay - firstDay);
+
+			if (release.team.start && release.team.due) {
+
+					function getPositions(work) {
+
+						const start = Math.max(firstDay, work.start);
+						const end = Math.min(lastDay, work.due);
+						const startExtends = work.start < firstDay;
+						const endExtends = work.due > lastDay;
+
+						return {
+							start, end, startExtends, endExtends,
+							style: {
+								width: Math.max( (((end - start) / totalTime) * 100), 0) + "%",
+								marginLeft: (((start - firstDay) / totalTime) * 100) +"%"
+							}
+						}
+					}
+
+
+					const dev = document.createElement("div");
+					dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.devStatus;
+
+					Object.assign(dev.style, getPositions(release.dev).style);
+					root.appendChild(dev);
+
+					const qa = document.createElement("div");
+					qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.qaStatus;
+
+					Object.assign(qa.style, getPositions(release.qa).style);
+					root.appendChild(qa);
+
+
+					const uat = document.createElement("div");
+					uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.uatStatus;
+					Object.assign(uat.style, getPositions(release.uat).style);
+					root.appendChild(uat);
+			}
+			const frag = document.createDocumentFragment();
+			frag.appendChild(background);
+			frag.appendChild(root);
+			return stache.safeString(frag);
+		}
     get todayMarginLeft() {
         const { firstDay, lastDay } = this.calendarData;
         const totalTime = (lastDay - firstDay);
