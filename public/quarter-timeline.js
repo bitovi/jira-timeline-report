@@ -4,7 +4,7 @@ function monthDiff(dateFromSring, dateToString) {
     return dateTo.getMonth() - dateFrom.getMonth() + 12 * (dateTo.getFullYear() - dateFrom.getFullYear());
 }
 
-export function getQuartersAndMonths(){
+export function getQuartersAndMonths(startDate, endDate){
 	// figure out which quarters startDate and endDate are within
 	const quarterStartDate = new Date(
 			startDate.getFullYear(),
@@ -46,7 +46,7 @@ export function getQuartersAndMonths(){
 
 		quartersList.push({
 			number: Math.floor(firstMonth.getMonth() / 3) + 1,
-			name: "Q"+ Math.floor(firstMonth.getMonth() / 3) + 1
+			name: "Q"+ (Math.floor(firstMonth.getMonth() / 3) + 1)
 		});
 
 		months.push({

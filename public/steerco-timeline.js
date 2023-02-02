@@ -1,7 +1,7 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject, stache } from "//unpkg.com/can@6/core.mjs";
 
-import { getCalendarHtml, getQuarter } from "./quarter-timeline.js";
+import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" })
@@ -21,16 +21,15 @@ class SteercoTimeline extends StacheElement {
 				class='p2 mb-10'>
 				<div></div>
 
-				<div style="grid-column: 2 / span 3" class="text-center">Q1</div>
-				<div style="grid-column: 5 / span 3" class="text-center">Q2</div>
+
+				<div style="grid-column: 2 / span 3" class="text-center">{{this.quartersAndMonths.quarters[0].name}}</div>
+				<div style="grid-column: 5 / span 3" class="text-center">{{this.quartersAndMonths.quarters[1].name}}</div>
 
 				<div></div>
-				<div class='border-b-solid-2px-slate-900 text-center'>Jan</div>
-				<div class='border-b-solid-2px-slate-900 text-center'>Feb</div>
-				<div class='border-b-solid-2px-slate-900 text-center'>Mar</div>
-				<div class='border-b-solid-2px-slate-900 text-center'>Apr</div>
-				<div class='border-b-solid-2px-slate-900 text-center'>May</div>
-				<div class='border-b-solid-2px-slate-900 text-center'>Jun</div>
+				{{# for(month of this.quartersAndMonths.months)}}
+					<div class='border-b-solid-2px-slate-900 text-center'>{{month.name}}</div>
+				{{/ for }}
+				
 
 				<!-- VERTICAL COLUMNS -->
 				<div style="grid-column: 2; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
@@ -125,6 +124,16 @@ class SteercoTimeline extends StacheElement {
         const endDate = lastRelease.team.due;
         return getCalendarHtml(startDate, endDate);
     }
+		get quartersAndMonths(){
+			const startDate = new Date(
+					new Date().getFullYear(),
+					Math.floor(new Date().getMonth() / 3) * 3
+			);
+			const hasDate = this.releases.filter(r => r.team.due);
+			const lastRelease = hasDate[hasDate.length - 1];
+			const endDate = lastRelease.team.due;
+			return getQuartersAndMonths(startDate, endDate);
+		}
     //const {html, firstDay, lastDay}
     get calendarHTML() {
         return stache.safeString(this.calendarData.html);
