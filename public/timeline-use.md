@@ -13,8 +13,7 @@ There are two different versions:
 This project does NOT save any JIRA data.  In fact, other than transporting an access token
 to the browser, no JIRA data even flows through our servers.  
 
-All the code is open source in [Github Issue](https://github.com/bitovi/jira-timeline-report) so you can verify this yourself or 
-host it yourself.
+All the code is open source in [Github Issue](https://github.com/bitovi/jira-timeline-report) so you can verify this yourself or host it yourself.
 
 
 ## Need help or Have Questions?
