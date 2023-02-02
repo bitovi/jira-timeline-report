@@ -1,7 +1,7 @@
 import showdown from "./showdown.js"
 
 
-const POLL = true;
+const POLL = false;
 
 
 class TimelineUse extends HTMLElement {
