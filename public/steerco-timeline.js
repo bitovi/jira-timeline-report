@@ -130,8 +130,8 @@ class SteercoTimeline extends StacheElement {
 					Math.floor(new Date().getMonth() / 3) * 3
 			);
 			const hasDate = this.releases.filter(r => r.team.due);
-			const lastRelease = hasDate[hasDate.length - 1];
-			const endDate = lastRelease.team.due;
+			const lastRelease = hasDate.length && hasDate[hasDate.length - 1];
+			const endDate = lastRelease ? lastRelease.team.due : new Date();
 			return getQuartersAndMonths(startDate, endDate);
 		}
 		//const {html, firstDay, lastDay}
