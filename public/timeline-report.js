@@ -18,6 +18,7 @@ import {
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: "short" });
 
 import { estimateExtraPoints } from "./confidence.js";
+import {saveJSONToUrl} from "./shared/state-storage.js";
 
 import "./steerco-timeline.js";
 
@@ -241,22 +242,7 @@ export class TimelineReport extends StacheElement {
                 })
             }
         },
-        jql: {
-            value({ lastSet, listenTo, resolve }) {
-                if (lastSet.value) {
-                    resolve(lastSet.value)
-                } else {
-                    resolve(new URL(window.location).searchParams.get("jql") || "");
-                }
-
-                listenTo(lastSet, (value) => {
-                    const newUrl = new URL(window.location);
-                    newUrl.searchParams.set("jql", value)
-                    history.pushState({}, '', newUrl);
-                    resolve(value);
-                })
-            }
-        },
+        jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic)", String, {parse: x => ""+x, stringify: x => ""+x}),
         mode: {
             type: String,
         },
