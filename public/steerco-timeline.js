@@ -7,14 +7,14 @@ import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-hel
 const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" })
 
 const inQAStatus = { "QA": true, "In QA": true };
-const inDevStatus = { "In Development": true };
+const inDevStatus = { "In Development": true, "Development": true };
 const inPartnerReviewStatus = { "Partner Review": true };
 const inDoneStatus = { "Done": true };
 
 
 
 class SteercoTimeline extends StacheElement {
-    static view = `
+		static view = `
 
 		{{# if(this.showExtraTimings) }}
 			<div style="display: grid; grid-template-columns: auto repeat(6, [col] 1fr); grid-template-rows: repeat({{this.releases.length}}, auto)"
@@ -29,7 +29,7 @@ class SteercoTimeline extends StacheElement {
 				{{# for(month of this.quartersAndMonths.months)}}
 					<div class='border-b-solid-2px-slate-900 text-center'>{{month.name}}</div>
 				{{/ for }}
-				
+
 
 				<!-- VERTICAL COLUMNS -->
 				<div style="grid-column: 2; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
@@ -55,8 +55,8 @@ class SteercoTimeline extends StacheElement {
 
 			<div class='calendar_wrapper'>{{this.calendarHTML}}</div>
 			<div class='gantt simple-timings'>{{# for(chart of this.releaseGantt) }}
-				  {{chart}}
-			  {{/}}
+					{{chart}}
+				{{/}}
 				<div class='today' style="margin-left: {{this.todayMarginLeft}}%"></div>
 			</div>
 
@@ -100,7 +100,7 @@ class SteercoTimeline extends StacheElement {
 				<ul class="release_box_body">
 					{{# for(initiative of release.initiatives) }}
 					 <li class='font-sans text-sm {{# unless(this.showExtraTimings) }} color-text-{{initiative.status}} {{/ }}'>
-					  {{# if(this.showExtraTimings) }}
+						{{# if(this.showExtraTimings) }}
 						<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
 							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
 							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
@@ -114,16 +114,16 @@ class SteercoTimeline extends StacheElement {
 
 		</div>
 	`
-    get calendarData() {
-        const startDate = new Date(
-            new Date().getFullYear(),
-            Math.floor(new Date().getMonth() / 3) * 3
-        );
-        const hasDate = this.releases.filter(r => r.team.due);
-        const lastRelease = hasDate[hasDate.length - 1];
-        const endDate = lastRelease.team.due;
-        return getCalendarHtml(startDate, endDate);
-    }
+		get calendarData() {
+				const startDate = new Date(
+						new Date().getFullYear(),
+						Math.floor(new Date().getMonth() / 3) * 3
+				);
+				const hasDate = this.releases.filter(r => r.team.due);
+				const lastRelease = hasDate.length && hasDate[hasDate.length - 1];
+				const endDate = lastRelease ? lastRelease.team.due : new Date();
+				return getCalendarHtml(startDate, endDate);
+		}
 		get quartersAndMonths(){
 			const startDate = new Date(
 					new Date().getFullYear(),
@@ -134,10 +134,10 @@ class SteercoTimeline extends StacheElement {
 			const endDate = lastRelease.team.due;
 			return getQuartersAndMonths(startDate, endDate);
 		}
-    //const {html, firstDay, lastDay}
-    get calendarHTML() {
-        return stache.safeString(this.calendarData.html);
-    }
+		//const {html, firstDay, lastDay}
+		get calendarHTML() {
+				return stache.safeString(this.calendarData.html);
+		}
 		getReleaseTimeline(release, index){
 			const base = {
 				gridColumn: '2 / span 6',
@@ -208,98 +208,98 @@ class SteercoTimeline extends StacheElement {
 			frag.appendChild(root);
 			return stache.safeString(frag);
 		}
-    get todayMarginLeft() {
-        const { firstDay, lastDay } = this.calendarData;
-        const totalTime = (lastDay - firstDay);
-        return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
-    }
-    releaseTimeline() {
-        const { firstDay, lastDay } = this.calendarData;
-        const totalTime = (lastDay - firstDay);
-        console.log("f", firstDay, "l", lastDay);
+		get todayMarginLeft() {
+				const { firstDay, lastDay } = this.calendarData;
+				const totalTime = (lastDay - firstDay);
+				return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
+		}
+		releaseTimeline() {
+				const { firstDay, lastDay } = this.calendarData;
+				const totalTime = (lastDay - firstDay);
+				console.log("f", firstDay, "l", lastDay);
 
-        return this.releases.map((release, index) => {
+				return this.releases.map((release, index) => {
 
-            const div = document.createElement("div");
-            if (release.team.due) {
-                div.className = "release-timeline-item color-text-and-bg-" + release.status;
-                div.style.left = ((release.team.due - firstDay) / totalTime * 100) + "%";
-                div.appendChild(document.createTextNode("M" + release.shortVersion))
-            }
-
-
-            return div;
-        })
-    }
-    releaseGanttWithTimeline() {
-        const { firstDay, lastDay } = this.calendarData;
-        const totalTime = (lastDay - firstDay);
-
-        return this.releases.map((release, index) => {
-
-            const div = document.createElement("div");
-
-            if (release.team.start && release.team.due) {
-                const width = ((release.team.due - release.team.start) / totalTime);
-
-                //div.style.top = (index * 20)+"px";
-                div.style.width = (width * 100) + "%";
-                div.style.marginLeft = ((release.team.start - firstDay) / totalTime * 100) + "%";
-
-                div.className = "release_time " //+this.releaseQaStatus(release);
+						const div = document.createElement("div");
+						if (release.team.due) {
+								div.className = "release-timeline-item color-text-and-bg-" + release.status;
+								div.style.left = ((release.team.due - firstDay) / totalTime * 100) + "%";
+								div.appendChild(document.createTextNode("M" + release.shortVersion))
+						}
 
 
-                const dev = document.createElement("div");
-                dev.className = "dev_time " //+this.releaseDevStatus(release);
+						return div;
+				})
+		}
+		releaseGanttWithTimeline() {
+				const { firstDay, lastDay } = this.calendarData;
+				const totalTime = (lastDay - firstDay);
 
-                const devWidth = ((release.dev.due - release.dev.start) / totalTime);
-                dev.style.width = (devWidth / width * 100) + "%";
-                div.appendChild(dev);
+				return this.releases.map((release, index) => {
 
-                const qa = document.createElement("div");
-                qa.className = "qa_time " //+this.releaseDevStatus(release);
+						const div = document.createElement("div");
 
-                const qaWidth = ((release.qa.due - release.qa.start) / totalTime);
-                qa.style.width = (qaWidth / width * 100) + "%";
-                div.appendChild(qa);
+						if (release.team.start && release.team.due) {
+								const width = ((release.team.due - release.team.start) / totalTime);
 
+								//div.style.top = (index * 20)+"px";
+								div.style.width = (width * 100) + "%";
+								div.style.marginLeft = ((release.team.start - firstDay) / totalTime * 100) + "%";
 
-                const uat = document.createElement("div");
-                uat.className = "uat_time "; //+this.releaseUatStatus(release);
-                const uatWidth = ((release.uat.due - release.uat.start) / totalTime);
-
-                uat.style.width = (uatWidth / width * 100) + "%";
-                div.appendChild(uat);
-
-                div.appendChild(document.createTextNode(release.shortName))
-
-            }
+								div.className = "release_time " //+this.releaseQaStatus(release);
 
 
-            return div;
-        })
-    }
-    get releaseGantt() {
-        if (this.showExtraTimings) {
-            return this.releaseGanttWithTimeline();
-        } else {
-            return this.releaseTimeline();
-        }
-    }
-    prettyDate(date) {
-        return date ? dateFormatter.format(date) : "";
-    }
-    wasReleaseDate(release) {
+								const dev = document.createElement("div");
+								dev.className = "dev_time " //+this.releaseDevStatus(release);
 
-        const current = release.due;
-        const was = release.dueLastPeriod;
+								const devWidth = ((release.dev.due - release.dev.start) / totalTime);
+								dev.style.width = (devWidth / width * 100) + "%";
+								div.appendChild(dev);
 
-        if (current - DAY_IN_MS > was) {
-            return " (" + this.prettyDate(was) + ")";
-        } else {
-            return ""
-        }
-    }
+								const qa = document.createElement("div");
+								qa.className = "qa_time " //+this.releaseDevStatus(release);
+
+								const qaWidth = ((release.qa.due - release.qa.start) / totalTime);
+								qa.style.width = (qaWidth / width * 100) + "%";
+								div.appendChild(qa);
+
+
+								const uat = document.createElement("div");
+								uat.className = "uat_time "; //+this.releaseUatStatus(release);
+								const uatWidth = ((release.uat.due - release.uat.start) / totalTime);
+
+								uat.style.width = (uatWidth / width * 100) + "%";
+								div.appendChild(uat);
+
+								div.appendChild(document.createTextNode(release.shortName))
+
+						}
+
+
+						return div;
+				})
+		}
+		get releaseGantt() {
+				if (this.showExtraTimings) {
+						return this.releaseGanttWithTimeline();
+				} else {
+						return this.releaseTimeline();
+				}
+		}
+		prettyDate(date) {
+				return date ? dateFormatter.format(date) : "";
+		}
+		wasReleaseDate(release) {
+
+				const current = release.due;
+				const was = release.dueLastPeriod;
+
+				if (current - DAY_IN_MS > was) {
+						return " (" + this.prettyDate(was) + ")";
+				} else {
+						return ""
+				}
+		}
 }
 
 

@@ -1,5 +1,4 @@
 const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
-const inDevStatus = { "In Development": true, "To Do": true };
 const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
 export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
 const inDoneStatus = { "Done": true, "Cancelled": true };

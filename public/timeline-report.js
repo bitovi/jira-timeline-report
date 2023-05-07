@@ -449,7 +449,7 @@ function filterByIssueType(issues, issueType) {
 }
 
 function filterInitiatives(issues) {
-    return filterByIssueType(issues, "Initiatives")
+    return issues.filter(issue => issue[ISSUE_TYPE_KEY].includes("Initiative"))
 }
 
 function goodStuffFromIssue(issue) {
