@@ -27,7 +27,7 @@ export function getQuartersAndMonths(startDate, endDate){
 
 	// keep track of release indexes
 	const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
-	const quarters = monthDiffResult / 3;
+	const quarters = Math.max( monthDiffResult / 3, 2);
 
 	function month(d) {
 			return d.toLocaleString('default', { month: 'short' });
@@ -35,7 +35,7 @@ export function getQuartersAndMonths(startDate, endDate){
 
 	const quartersList = [];
 	const months = []
-
+	console.log({quarters});
 	for (let i = 0; i < quarters; i++) {
 		const firstMonth = new Date(quarterStartDate);
 		firstMonth.setMonth(firstMonth.getMonth() + i * 3);
@@ -96,7 +96,7 @@ export function getCalendarHtml(startDate, endDate) {
 
     // keep track of release indexes
     const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
-    const quarters = monthDiffResult / 3;
+    const quarters = Math.max( monthDiffResult / 3, 2);
 
     function month(d) {
         return d.toLocaleString('default', { month: 'short' });

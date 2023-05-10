@@ -16,6 +16,12 @@ import {
 
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: "short" });
+const booleanParsing = {
+	parse: x => {
+		return ({"": true, "true": true, "false": false})[x];
+	},
+	stringify: x => ""+x
+};
 
 import { estimateExtraPoints } from "./confidence.js";
 import {saveJSONToUrl} from "./shared/state-storage.js";
@@ -54,7 +60,9 @@ export class TimelineReport extends StacheElement {
 						</div>
 						<div>
 							<label class="form-label">Show Dev and QA timings:</label>
-							<input type='checkbox' checked:bind='this.showExtraTimings'/>
+							<input type='checkbox' checked:bind='this.showExtraTimings'/>.
+							<label class="form-label">Show Work in UAT:</label>
+							<input type='checkbox' checked:bind='this.showInitiativesInUAT'/>.
 						</div>
 					</details>
 
@@ -226,22 +234,8 @@ export class TimelineReport extends StacheElement {
             type: type.convert(Number),
             default: 15
         },
-        showExtraTimings: {
-            value({ lastSet, listenTo, resolve }) {
-                if (lastSet.value) {
-                    resolve(!!lastSet.value)
-                } else {
-                    resolve((new URL(window.location).searchParams.get("showExtraTimings") === "true") || false);
-                }
-
-                listenTo(lastSet, (value) => {
-                    const newUrl = new URL(window.location);
-                    newUrl.searchParams.set("showExtraTimings", value ? "true" : "false")
-                    history.pushState({}, '', newUrl);
-                    resolve(value);
-                })
-            }
-        },
+        showExtraTimings: saveJSONToUrl("showExtraTimings", false, Boolean, booleanParsing),
+				showInitiativesInUAT: saveJSONToUrl("showInitiativesInUAT", true, Boolean, booleanParsing),
         jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic)", String, {parse: x => ""+x, stringify: x => ""+x}),
         mode: {
             type: String,
@@ -322,10 +316,13 @@ export class TimelineReport extends StacheElement {
             return [];
         }
         const issuesMappedByParentKey = this.issuesMappedByParentKey;
+
+				const extraRemovedStatuses = this.showInitiativesInUAT ? [] : inPartnerReviewStatuses;
+
         const releasesToInitiatives = mapReleasesToIssues(
             filterReleases(
                 filterOutStatuses(
-                    filterInitiatives(this.rawIssues), ["Done", "Cancelled", "Duplicate", ...inPartnerReviewStatuses]),
+                    filterInitiatives(this.rawIssues), ["Done", "Cancelled", "Duplicate", extraRemovedStatuses]),
                 this.getReleaseValue
             ),
             this.getReleaseValue

@@ -39,7 +39,7 @@ function getReleaseStatus(release) {
 		return getInitiativeStatus(release);
 }
 function getReleaseDevStatus(release) {
-		return getInitiativeDevStatus(release);
+	return getInitiativeDevStatus(release);
 }
 function getReleaseQaStatus(release) {
 		return getInitiativeQaStatus(release);
@@ -106,11 +106,12 @@ function timedStatus(timedRecord) {
 
 
 export function getInitiativeDevStatus(initiative) {
+
 		// check if epic statuses are complete
 		if (isStatusDevComplete(initiative)) {
 				return "complete";
 		}
-		if (initiative?.dev?.issues?.every(epic => isStatusDevComplete(epic))) {
+		if (initiative?.dev?.issues?.length && initiative?.dev?.issues?.every(epic => isStatusDevComplete(epic))) {
 				console.warn("The dev epics for", initiative, "are complete, but the issue is not in QA");
 				return "complete"
 		}
@@ -124,7 +125,7 @@ function getInitiativeQaStatus(initiative) {
 		if (isStatusQAComplete(initiative)) {
 				return "complete";
 		}
-		if (initiative.qa.length && initiative.qa.issues.every(epic => isStatusQAComplete(epic))) {
+		if (initiative.qa.issues.length && initiative.qa.issues.every(epic => isStatusQAComplete(epic))) {
 				console.warn("The qa epics for", initiative, "are complete, but the issue is not in UAT");
 				return "complete"
 		}

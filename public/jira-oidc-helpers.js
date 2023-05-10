@@ -88,6 +88,7 @@ export default function JiraOIDCHelpers({
 					refreshToken,
 					scopeId
 				} = response.data;
+
 				jiraHelpers.saveInformationToLocalStorage({
 					accessToken,
 					refreshToken,
