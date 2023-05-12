@@ -322,7 +322,7 @@ export class TimelineReport extends StacheElement {
         const releasesToInitiatives = mapReleasesToIssues(
             filterReleases(
                 filterOutStatuses(
-                    filterInitiatives(this.rawIssues), ["Done", "Cancelled", "Duplicate", extraRemovedStatuses]),
+                    filterInitiatives(this.rawIssues), ["Done", "Cancelled", "Duplicate", ...extraRemovedStatuses]),
                 this.getReleaseValue
             ),
             this.getReleaseValue
