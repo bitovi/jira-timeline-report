@@ -74,7 +74,8 @@ export class TimelineReport extends StacheElement {
 							releases:from="this.releases" showExtraTimings:from="this.showExtraTimings"/>
 						<div class='border-solid-1px-slate-900 p2'>
 							<span class='color-text-and-bg-notstarted p2 inline-block'>Not Started</span>
-							<span class='color-text-and-bg-blocked p2 inline-block'>On Track</span>
+							<span class='color-text-and-bg-ontrack p2 inline-block'>On Track</span>
+							<span class='color-text-and-bg-blocked p2 inline-block'>Blocked</span>
 							<span class='color-text-and-bg-complete p2 inline-block'>Complete</span>
 							<span class='color-text-and-bg-behind p2 inline-block'>Behind</span>
 							<span class='color-text-and-bg-unknown p2 inline-block'>Unknown</span>
@@ -322,7 +323,7 @@ export class TimelineReport extends StacheElement {
         const releasesToInitiatives = mapReleasesToIssues(
             filterReleases(
                 filterOutStatuses(
-                    filterInitiatives(this.rawIssues), ["Done", "Cancelled", "Duplicate", extraRemovedStatuses]),
+                    filterInitiatives(this.rawIssues), ["Done", "Cancelled", "Duplicate", ...extraRemovedStatuses]),
                 this.getReleaseValue
             ),
             this.getReleaseValue
