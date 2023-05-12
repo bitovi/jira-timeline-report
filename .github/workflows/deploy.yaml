@@ -4,6 +4,10 @@ on:
   push:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   EC2-Deploy:
     runs-on: ubuntu-latest
@@ -31,6 +35,7 @@ jobs:
       run: |
         echo "## VM Created! :rocket:" >> $GITHUB_STEP_SUMMARY
         echo " ${{ steps.deploy.outputs.vm_url }}" >> $GITHUB_STEP_SUMMARY
+
     - if: ${{ steps.deploy.outputs.vm_url == '' }}
       name: Print result destroyed
       run: |
