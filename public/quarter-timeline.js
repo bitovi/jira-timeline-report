@@ -35,7 +35,7 @@ export function getQuartersAndMonths(startDate, endDate){
 
 	const quartersList = [];
 	const months = []
-	console.log({quarters});
+
 	for (let i = 0; i < quarters; i++) {
 		const firstMonth = new Date(quarterStartDate);
 		firstMonth.setMonth(firstMonth.getMonth() + i * 3);

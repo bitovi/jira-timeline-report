@@ -16,14 +16,14 @@ const inDoneStatus = { "Done": true };
 class SteercoTimeline extends StacheElement {
 		static view = `
 
-		{{# if(this.showExtraTimings) }}
-			<div style="display: grid; grid-template-columns: auto repeat(6, [col] 1fr); grid-template-rows: repeat({{this.releases.length}}, auto)"
+		{{# if(this.showGanttGrid) }}
+			<div style="display: grid; grid-template-columns: auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRows}}, auto)"
 				class='p2 mb-10'>
 				<div></div>
 
-
-				<div style="grid-column: 2 / span 3" class="text-center">{{this.quartersAndMonths.quarters[0].name}}</div>
-				<div style="grid-column: 5 / span 3" class="text-center">{{this.quartersAndMonths.quarters[1].name}}</div>
+				{{# for(quarter of this.quartersAndMonths.quarters) }}
+					<div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
+				{{ / for }}
 
 				<div></div>
 				{{# for(month of this.quartersAndMonths.months)}}
@@ -32,28 +32,24 @@ class SteercoTimeline extends StacheElement {
 
 
 				<!-- VERTICAL COLUMNS -->
-				<div style="grid-column: 2; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-900 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 3; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 4; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 5; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 6; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 7; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900 border-r-solid-1px-slate-900'></div>
+				{{# for(month of this.quartersAndMonths.months)}}
+					<div style="grid-column: {{ plus(scope.index, 2) }}; grid-row: 3 / span {{this.gridRows}}; z-index: 10"
+						class='border-l-solid-1px-slate-900 border-b-solid-1px-slate-900'></div>
+				{{/ for }}
 
-				{{# for(release of this.releases) }}
-					<div class='p2'>{{release.shortVersion}}</div>
-					{{this.getReleaseTimeline(release, scope.index)}}
+				<!-- <div style="grid-column: 7; grid-row: 3 / span {{this.gridRows}}; z-index: 10"
+					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900 border-r-solid-1px-slate-900'></div> -->
+
+				{{# for(initiative of this.initiatives) }}
+					<div class='p2'>{{initiative.Summary}}</div>
+					{{this.getReleaseTimeline(initiative, scope.index)}}
 				{{/ for }}
 
 			</div>
 		{{ else }}
 
 			<div class='calendar_wrapper'>{{this.calendarHTML}}</div>
+
 			<div class='gantt simple-timings'>{{# for(chart of this.releaseGantt) }}
 					{{chart}}
 				{{/}}
@@ -62,76 +58,37 @@ class SteercoTimeline extends StacheElement {
 
 		{{/ if }}
 		<div class='release_wrapper {{# if(this.showExtraTimings) }}extra-timings{{else}}simple-timings{{/ if}}'>
-		{{# for(release of this.releases) }}
-			<div class='release_box'>
-				<div class="release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
-				<div class="release_box_subtitle">
-					{{# if(not(eq(release.release, "Next")))}}
-						{{# if(this.showExtraTimings) }}
-						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key color-text-and-bg-{{release.devStatus}}">Dev</span>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.dev.due) }}{{this.wasReleaseDate(release.dev)}}
-								</span>
-						</div>
-						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key color-text-and-bg-{{release.qaStatus}}">QA&nbsp;</span>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.qa.due) }}{{this.wasReleaseDate(release.qa)}}
-								</span>
-						</div>
-						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key color-text-and-bg-{{release.uatStatus}}">UAT</span>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
-								</span>
-						</div>
-						{{ else }}
-						<div class="release_box_subtitle_wrapper">
-								<b>Target Delivery</b>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
-								</span>
-						</div>
-						{{/ if }}
 
-					{{/ if }}
-				</div>
-				<ul class="release_box_body">
-					{{# for(initiative of release.initiatives) }}
-					 <li class='font-sans text-sm {{# unless(this.showExtraTimings) }} color-text-{{initiative.status}} {{/ }}'>
-						{{# if(this.showExtraTimings) }}
-						<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
-							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
-							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
-						{{/ if }}
-						{{initiative.Summary}}
-					 </li>
-					{{/ for}}
-				</ul>
-			</div>
-		{{/ }}
 
 		</div>
 	`
-		get calendarData() {
-				const startDate = new Date(
-						new Date().getFullYear(),
-						Math.floor(new Date().getMonth() / 3) * 3
-				);
-				const hasDate = this.releases.filter(r => r.team.due);
-				const lastRelease = hasDate.length && hasDate[hasDate.length - 1];
-				const endDate = lastRelease ? lastRelease.team.due : new Date();
-				return getCalendarHtml(startDate, endDate);
+		get showGanttGrid(){
+			return this.showExtraTimings || this.initiatives;
 		}
-		get quartersAndMonths(){
+		get gridRows() {
+			return this.initiatives ? this.initiatives.length : this.releases.length;
+		}
+
+		get startAndEndDate(){
 			const startDate = new Date(
 					new Date().getFullYear(),
 					Math.floor(new Date().getMonth() / 3) * 3
 			);
-			const hasDate = this.releases.filter(r => r.team.due);
-			const lastRelease = hasDate.length && hasDate[hasDate.length - 1];
-			const endDate = lastRelease ? lastRelease.team.due : new Date();
+			let hasDate;
+			if(this.releases) {
+				hasDate = this.releases.filter(r => r.team.due);
+			} else if(this.initiatives) {
+				hasDate = this.initiatives.filter(r => r.team.due);
+			}
+
+			return {endDate: new Date( Math.max(...hasDate.map(r => r.team.due)) ), startDate};
+		}
+		get calendarData() {
+				const {startDate, endDate} = this.startAndEndDate;
+				return getCalendarHtml(startDate, endDate);
+		}
+		get quartersAndMonths(){
+			const {startDate, endDate} = this.startAndEndDate;
 			return getQuartersAndMonths(startDate, endDate);
 		}
 		//const {html, firstDay, lastDay}
@@ -140,7 +97,7 @@ class SteercoTimeline extends StacheElement {
 		}
 		getReleaseTimeline(release, index){
 			const base = {
-				gridColumn: '2 / span 6',
+				gridColumn: '2 / span '+this.quartersAndMonths.months.length,
 				gridRow: `${index+3}`,
 			};
 
@@ -216,7 +173,6 @@ class SteercoTimeline extends StacheElement {
 		releaseTimeline() {
 				const { firstDay, lastDay } = this.calendarData;
 				const totalTime = (lastDay - firstDay);
-				console.log("f", firstDay, "l", lastDay);
 
 				return this.releases.map((release, index) => {
 
@@ -224,7 +180,7 @@ class SteercoTimeline extends StacheElement {
 						if (release.team.due) {
 								div.className = "release-timeline-item color-text-and-bg-" + release.status;
 								div.style.left = ((release.team.due - firstDay) / totalTime * 100) + "%";
-								div.appendChild(document.createTextNode("M" + release.shortVersion))
+								div.appendChild(document.createTextNode(release.shortVersion))
 						}
 
 
@@ -299,6 +255,9 @@ class SteercoTimeline extends StacheElement {
 				} else {
 						return ""
 				}
+		}
+		plus(first, second) {
+			return first + second;
 		}
 }
 

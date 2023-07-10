@@ -1,3 +1,6 @@
+const START_DATE_KEY = "Start date";
+const DUE_DATE_KEY = "Due date";
+
 // ! I'm not sure why changelog has both Start Date and duedate.
 export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) {
 
@@ -49,3 +52,76 @@ export function parseDateISOString(s) {
 }
 
 export const DAY_IN_MS = 1000 * 60 * 60 * 24;
+
+
+
+export function sortByStartDate(issues) {
+    return issues.sort((issueA, issueB) => {
+        const dateA = parseDateISOString(issueA[START_DATE_KEY]),
+            dateB = parseDateISOString(issueB[START_DATE_KEY]);
+        return dateA - dateB;
+    })
+}
+
+export function getLastDateFrom(initiatives, property) {
+    const values = initiatives.filter(
+        init => init[property]
+    ).map(init => parseDateISOString(init[property]))
+        .filter((number) => !isNaN(number));
+    return values.length ? new Date(Math.max(...values)) : undefined;
+}
+export function getDateFromLastPeriod(initiatives, lowercasePhase, checkpoint) {
+    const dates = initiatives.map(initiative => {
+        if (initiative[lowercasePhase]) {
+            const { dueDateWasPriorToTheFirstChangeAfterTheCheckpoint }
+                = howMuchHasDueDateMovedForwardChangedSince(initiative[lowercasePhase], checkpoint);
+            return dueDateWasPriorToTheFirstChangeAfterTheCheckpoint;
+        }
+    }).filter(d => d) // remove undefineds
+
+    const date = Math.max(...dates);
+    return new Date(date);
+}
+
+
+export function epicTimingData(epics) {
+    const sorted = sortByStartDate(epics);
+    const due = endDateFromList(sorted),
+        dueLastPeriod = endDateFromList(sorted, "dueLastPeriod");
+
+    return {
+        issues: sorted,
+        start: firstDateFromList(sorted),
+        due: endDateFromList(sorted),
+        dueLastPeriod: endDateFromList(sorted, "dueLastPeriod"),
+        workingBusinessDays: epics.reduce((acc, cur) => {
+            return acc + (cur.workingBusinessDays || 0)
+        }, 0),
+        weightedEstimate: epics.reduce((acc, cur) => {
+            return acc + (cur.weightedEstimate || 0)
+        }, 0)
+    }
+}
+
+export function endDateFromList(issues, property = DUE_DATE_KEY) {
+    const values = issues.filter(
+        issue => issue[property]
+    ).map(issue => parseDateISOString(issue[property]))
+        .filter((number) => !isNaN(number));
+    return values.length ? new Date(Math.max(...values)) : undefined;
+}
+
+
+export function firstDateFromList(issues) {
+    const values = issues.filter(
+        issue => issue[START_DATE_KEY]
+    ).map(issue => parseDateISOString(issue[START_DATE_KEY]));
+    return values.length ? new Date(Math.min(...values)) : undefined;
+}
+
+export function getFirstDateFrom(initiatives, property) {
+    const values = initiatives.filter(
+        init => init[property]?.[START_DATE_KEY]
+    ).map(init => parseDateISOString(init[property][START_DATE_KEY]));
+    return values.length ? new Date(Math.min(...values)) : undefined;
+}
