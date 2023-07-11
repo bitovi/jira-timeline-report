@@ -11,7 +11,7 @@ module.exports = function (env) {
 			<title>Timeline Reporting App</title>
 	</head>
 	<body class='place-center w-1280'>
-			<h1>Jira Timeline Report</h1>
+			<nav id="nav"><h1>Jira Timeline Report</h1></nav>
 			<div id="mainElement">Loading ... </div>
 			<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
 			<script type="module">

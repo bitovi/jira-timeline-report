@@ -17,3 +17,8 @@
 	font-size: var(--space-3); /* 12px */
 	line-height: var(--space-4); /* 16px */
 }
+
+
+.no-underline {
+	text-decoration-line: none;
+}

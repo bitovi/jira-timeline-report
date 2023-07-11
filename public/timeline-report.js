@@ -62,17 +62,20 @@ export class TimelineReport extends StacheElement {
               <input type='checkbox' checked:bind='this.showOnlySemverReleases'/>.
             </div>
             <div>
-              <label class="form-label">Show Dev, QA and UAT timings:</label>
-              <input type='checkbox' checked:bind='this.showExtraTimings'/>.
+              <label class="form-label">Break out Dev, QA, and UAT timings:</label>
+              <input type='checkbox' checked:bind='this.breakOutTimings'/>.
             </div>
+
             <div>
-              <label class="form-label">Show Work in UAT:</label>
-              <input type='checkbox' checked:bind='this.showInitiativesInUAT'/>.
+              <label class="form-label">Hide Initiatives in UAT:</label>
+              <input type='checkbox' checked:bind='this.hideInitiativesInUAT'/>.
             </div>
+
             <div>
               <label class="form-label">Show releases in timeline:</label>
               <input type='checkbox' checked:bind='this.showReleasesInTimeline'/>.
             </div>
+
             <div>
               <label class="form-label">Compare to {{this.compareToDaysPrior}} days ago:</label>
               <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.compareToDaysPrior' min="0" max="90"/>
@@ -82,17 +85,27 @@ export class TimelineReport extends StacheElement {
 
 
 
+					{{# if(this.releases) }}
+					<steerco-timeline
+						class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
+						releases:from="this.releases"
+						initiatives:from="this.initiativesWithAStartAndEndDate"
+						breakOutTimings:from="this.breakOutTimings"
+						showReleasesInTimeline:from="this.showReleasesInTimeline"
+						/>
 
-          {{# if(this.releases) }}
-
-          <steerco-timeline
-            class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
-            initiatives:from="this.initiativesWithTimedEpics" showExtraTimings:from="this.showExtraTimings"/>
 
 
-            <steerco-timeline
-              class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
-              releases:from="this.releases" showExtraTimings:from="this.showExtraTimings"/>
+						{{# if(this.showReleasesInTimeline) }}
+
+						{{ else }}
+							<steerco-timeline
+								class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
+								initiatives:from="this.initiativesWithAStartAndEndDate" breakOutTimings:from="this.breakOutTimings"/>
+						{{/ if }}
+
+
+
 
             <div class='border-solid-1px-slate-900 p2'>
               <span class='color-text-and-bg-notstarted p2 inline-block'>Not Started</span>
@@ -258,8 +271,8 @@ export class TimelineReport extends StacheElement {
             default: 15
         },
         showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-        showExtraTimings: saveJSONToUrl("showExtraTimings", false, Boolean, booleanParsing),
-        showInitiativesInUAT: saveJSONToUrl("showInitiativesInUAT", true, Boolean, booleanParsing),
+        breakOutTimings: saveJSONToUrl("breakOutTimings", false, Boolean, booleanParsing),
+        hideInitiativesInUAT: saveJSONToUrl("hideInitiativesInUAT", false, Boolean, booleanParsing),
         showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
         jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic) order by Rank", String, {parse: x => ""+x, stringify: x => ""+x}),
         mode: {
@@ -340,7 +353,7 @@ export class TimelineReport extends StacheElement {
       if(!this.rawIssues) {
         return []
       }
-      const extraRemovedStatuses = this.showInitiativesInUAT ? [] : inPartnerReviewStatuses;
+      const extraRemovedStatuses = this.hideInitiativesInUAT ? inPartnerReviewStatuses : [];
       return  filterOutStatuses(
         filterInitiatives(this.rawIssues),
           ["Done", "Cancelled", "Duplicate", ...extraRemovedStatuses]
@@ -373,6 +386,11 @@ export class TimelineReport extends StacheElement {
               uat: epicTimingData([...uatEpics])
           });
       });
+    }
+    get initiativesWithAStartAndEndDate(){
+      return this.initiativesWithTimedEpics.filter( (i) => {
+        return i.team.start < i.team.due;
+      })
     }
     get sortedIncompleteReleasesInitiativesAndEpics() {
         if (!this.rawIssues) {
