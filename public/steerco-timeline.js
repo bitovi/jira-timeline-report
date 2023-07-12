@@ -17,7 +17,7 @@ class SteercoTimeline extends StacheElement {
 
 		{{# if(this.showGanttGrid) }}
 			<div style="display: grid; grid-template-columns: auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRows}}, auto)"
-				class='p2 mb-10'>
+				class='p-2 mb-10'>
 				<div></div>
 
 				{{# for(quarter of this.quartersAndMonths.quarters) }}
@@ -38,12 +38,12 @@ class SteercoTimeline extends StacheElement {
 
 				{{# if(this.showGanttReleases) }}
 					{{# for(release of this.releases) }}
-						<div class='p2'>{{release.shortVersion}}</div>
+						<div class='p-2'>{{release.shortVersion}}</div>
 						{{this.getReleaseTimeline(release, scope.index)}}
 					{{/ for }}
 				{{ else }}
 					{{# for(initiative of this.initiatives) }}
-						<div class='p2 color-text-and-bg-{{initiative.status}} border-y-solid-1px-white'>
+						<div class='p-2 color-text-and-bg-{{initiative.status}} border-y-solid-1px-white'>
 							<a href="{{initiative.url}}"
 								class='color-text-and-bg-{{initiative.status}} no-underline'>{{initiative.Summary}}</a>
 						</div>
@@ -100,15 +100,16 @@ class SteercoTimeline extends StacheElement {
 
 						{{/ if }}
 					</div>
-					<ul class="release_box_body">
+					<ul class="release_box_body list-disc">
 						{{# for(initiative of release.initiatives) }}
-						 <li class='font-sans text-sm {{# unless(this.breakOutTimings) }} color-text-{{initiative.status}} {{/ }}'>
+						 <li class='font-sans text-sm '>
 							{{# if(this.breakOutTimings) }}
 							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
 								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
 								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
 							{{/ if }}
-							{{initiative.Summary}}
+							<a href="{{initiative.url}}"
+									class="no-underline{{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.status}} {{/ }}">{{initiative.Summary}}</a>
 						 </li>
 						{{/ for}}
 					</ul>

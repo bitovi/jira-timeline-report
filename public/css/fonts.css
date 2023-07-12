@@ -6,7 +6,9 @@
 	font-family: var(--font-sans);
 }
 
-
+.font-bold {
+	font-weight: 700;
+}
 
 .text-sm {
 	font-size: 0.875rem; /* 14px */

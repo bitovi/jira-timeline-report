@@ -44,76 +44,84 @@ const FIX_VERSIONS_KEY = "Fix versions";
 
 export class TimelineReport extends StacheElement {
     static view = `
-          <details class='border-solid-1px-slate-900 p2'>
+          <details class='border-solid-1px-slate-900 p-2 color-bg-sky-100'>
             <summary>Use</summary>
             <timeline-use></timeline-use>
           </details>
-          <details class='border-solid-1px-slate-900 p2' open:from="not(this.jql)">
+          <details class='border-solid-1px-slate-900 p-2 color-bg-sky-100' open:from="not(this.jql)">
 
             <summary>
               Configure
             </summary>
-            <div>
-              <label class="form-label">Specify a JQL to load your project's initiatives and epics.</label>
-              <input class="w-full-border-box" value:bind='this.jql'/>
-            </div>
-            <div>
-              <label class="form-label">Show only Releases with semver-style naming:</label>
-              <input type='checkbox' checked:bind='this.showOnlySemverReleases'/>.
-            </div>
-            <div>
-              <label class="form-label">Break out Dev, QA, and UAT timings:</label>
-              <input type='checkbox' checked:bind='this.breakOutTimings'/>.
-            </div>
 
-            <div>
-              <label class="form-label">Hide Initiatives in UAT:</label>
-              <input type='checkbox' checked:bind='this.hideInitiativesInUAT'/>.
-            </div>
+						<div class='p-4'>
+							<p><label class="inline font-bold">JQL</label>
+							- Specify a JQL to load your project's initiatives and epics.</p>
+							<input class="w-full-border-box mt-2" value:bind='this.jql'/>
+						</div>
 
-            <div>
-              <label class="form-label">Show releases in timeline:</label>
-              <input type='checkbox' checked:bind='this.showReleasesInTimeline'/>.
-            </div>
+						<div class="grid gap-3 p-4" style="grid-template-columns: max-content max-content 1fr">
 
-            <div>
-              <label class="form-label">Compare to {{this.compareToDaysPrior}} days ago:</label>
-              <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.compareToDaysPrior' min="0" max="90"/>
-            </div>
+							<label class='font-bold'>Show Releases</label>
+							<input type='checkbox' checked:bind='this.showReleasesInTimeline'/>
+							<p>Instead of showing the timing for initiatives, show the timing for releases. Initiatives
+							must have their <code>release</code> (also called <code>Fix version</code>) field set.
+							</p>
+
+							{{# if(this.showReleasesInTimeline) }}
+							<label class='font-bold'>Show Only Semver Releases</label>
+							<input type='checkbox' checked:bind='this.showOnlySemverReleases'/>
+							<p>This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
+							<code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
+							</p>
+							{{/ }}
+
+							<label class='font-bold'>Break out Dev, QA and UAT</label>
+							<input type='checkbox' checked:bind='this.breakOutTimings'/>
+							<p>If initiatives have epics labelled with "QA" and/or "UAT", the report will show individual timelines and
+								statuses for Development, QA, and UAT.
+							</p>
+
+							<label class='font-bold'>Ignore Initiatives in UAT</label>
+							<input type='checkbox' checked:bind='this.hideInitiativesInUAT'/>
+							<p>Initiatives that are in UAT will not be shown. Check this if you do not want to
+							report on work that is in its final stages.
+							</p>
+
+
+
+
+						</div>
+
+
+
+						<div class='p-4'>
+							<p><label class="inline font-bold">Compare to {{this.compareToDaysPrior}} Days Ago</label>
+							- Specify what timepoint to use to determine if an initiative or release has fallen behind.</p>
+							<input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.compareToDaysPrior' min="0" max="90"/>
+						</div>
+
           </details>
 
 
 
 
 					{{# if(this.releases) }}
-					<steerco-timeline
-						class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
-						releases:from="this.releases"
-						initiatives:from="this.initiativesWithAStartAndEndDate"
-						breakOutTimings:from="this.breakOutTimings"
-						showReleasesInTimeline:from="this.showReleasesInTimeline"
-						/>
+						<steerco-timeline
+							class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
+							releases:from="this.releases"
+							initiatives:from="this.initiativesWithAStartAndEndDate"
+							breakOutTimings:from="this.breakOutTimings"
+							showReleasesInTimeline:from="this.showReleasesInTimeline"
+							/>
 
-
-
-						{{# if(this.showReleasesInTimeline) }}
-
-						{{ else }}
-							<steerco-timeline
-								class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
-								initiatives:from="this.initiativesWithAStartAndEndDate" breakOutTimings:from="this.breakOutTimings"/>
-						{{/ if }}
-
-
-
-
-            <div class='border-solid-1px-slate-900 p2'>
-              <span class='color-text-and-bg-notstarted p2 inline-block'>Not Started</span>
-              <span class='color-text-and-bg-ontrack p2 inline-block'>On Track</span>
-              <span class='color-text-and-bg-blocked p2 inline-block'>Blocked</span>
-              <span class='color-text-and-bg-complete p2 inline-block'>Complete</span>
-              <span class='color-text-and-bg-behind p2 inline-block'>Behind</span>
-              <span class='color-text-and-bg-unknown p2 inline-block'>Unknown</span>
+            <div class='border-solid-1px-slate-900 p-2'>
+              <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
+              <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
+              <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
+              <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
+              <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
+              <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
             </div>
 
 
