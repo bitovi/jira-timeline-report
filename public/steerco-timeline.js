@@ -29,6 +29,11 @@ class SteercoTimeline extends StacheElement {
 					<div class='border-b-solid-2px-slate-900 text-center'>{{month.name}}</div>
 				{{/ for }}
 
+				<!-- CURRENT TIME BOX -->
+				<div id="foo" style="grid-column: 2 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRows}};">
+					<div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
+				</div>
+
 
 				<!-- VERTICAL COLUMNS -->
 				{{# for(month of this.quartersAndMonths.months)}}
