@@ -37,7 +37,9 @@
 .color-bg-blocked {
 	background-color: var(--blocked-color);
 }
-
+.color-bg-sky-100 {
+	background-color: var(--sky-100-color)
+}
 
 .color-text-complete {
 	color: var(--complete-color);
@@ -56,6 +58,9 @@
 }
 .color-text-blocked {
 	color: var(--blocked-color);
+}
+.color-text-black {
+	color: var(--black-color);
 }
 
 .color-text-and-bg-complete {

@@ -328,3 +328,9 @@ body {
     padding: 0px 24px;
     height: 40px;
 }
+
+
+timeline-use ul {
+	list-style-type: disc;
+	margin-left: 20px;
+}

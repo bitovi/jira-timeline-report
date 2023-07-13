@@ -102,9 +102,6 @@ function timedStatus(timedRecord) {
 		}
 }
 
-
-
-
 export function getInitiativeDevStatus(initiative) {
 
 		// check if epic statuses are complete
@@ -112,7 +109,10 @@ export function getInitiativeDevStatus(initiative) {
 				return "complete";
 		}
 		if (initiative?.dev?.issues?.length && initiative?.dev?.issues?.every(epic => isStatusDevComplete(epic))) {
-				console.warn("The dev epics for", initiative, "are complete, but the issue is not in QA");
+				// Releases don't have a status so we shouldn't throw this warning.
+				if(initiative.Status) {
+					console.warn("The dev epics for", initiative, "are complete, but the issue is not in QA");
+				}
 				return "complete"
 		}
 		if (initiative?.dev?.issues?.some(epic => epic.Status === "Blocked")) {
@@ -126,8 +126,11 @@ function getInitiativeQaStatus(initiative) {
 				return "complete";
 		}
 		if (initiative.qa.issues.length && initiative.qa.issues.every(epic => isStatusQAComplete(epic))) {
+			// Releases don't have a status so we shouldn't throw this warning.
+			if(initiative.Status) {
 				console.warn("The qa epics for", initiative, "are complete, but the issue is not in UAT");
-				return "complete"
+			}
+			return "complete"
 		}
 		if (initiative?.qa?.issues?.some(epic => epic.Status === "Blocked")) {
 				return "blocked"
@@ -139,14 +142,23 @@ function getInitiativeUatStatus(initiative) {
 		if (isStatusUatComplete(initiative)) {
 				return "complete";
 		}
-		if (initiative.uat.length && initiative.uat.issues.every(epic => isStatusUatComplete(epic))) {
+		if (initiative.uat.issues.length && initiative.uat.issues.every(epic => isStatusUatComplete(epic))) {
+			// Releases don't have a status so we shouldn't throw this warning.
+			if(initiative.Status) {
 				console.warn("The uat epics for", initiative, "are complete, but the issue is not DONE");
-				return "complete"
+			}
+			return "complete"
 		}
 		if (initiative?.uat?.issues?.some(epic => epic.Status === "Blocked")) {
 				return "blocked"
 		}
-		return timedStatus(initiative.uat)
+
+		// should timed status be able to look at the actual statuses?
+		// lets say the UAT is "ontrack" (epicStatus won't report this currently)
+		// should we say there is a missmatch?
+		const statusFromTiming = timedStatus(initiative.uat);
+
+		return statusFromTiming;
 }
 
 

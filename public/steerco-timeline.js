@@ -12,48 +12,55 @@ const inPartnerReviewStatus = { "Partner Review": true };
 const inDoneStatus = { "Done": true };
 
 
-
 class SteercoTimeline extends StacheElement {
 		static view = `
 
-		{{# if(this.showExtraTimings) }}
-			<div style="display: grid; grid-template-columns: auto repeat(6, [col] 1fr); grid-template-rows: repeat({{this.releases.length}}, auto)"
-				class='p2 mb-10'>
+		{{# if(this.showGanttGrid) }}
+			<div style="display: grid; grid-template-columns: auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRows}}, auto)"
+				class='p-2 mb-10'>
 				<div></div>
 
-
-				<div style="grid-column: 2 / span 3" class="text-center">{{this.quartersAndMonths.quarters[0].name}}</div>
-				<div style="grid-column: 5 / span 3" class="text-center">{{this.quartersAndMonths.quarters[1].name}}</div>
+				{{# for(quarter of this.quartersAndMonths.quarters) }}
+					<div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
+				{{ / for }}
 
 				<div></div>
 				{{# for(month of this.quartersAndMonths.months)}}
 					<div class='border-b-solid-2px-slate-900 text-center'>{{month.name}}</div>
 				{{/ for }}
 
+				<!-- CURRENT TIME BOX -->
+				<div id="foo" style="grid-column: 2 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRows}};">
+					<div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
+				</div>
+
 
 				<!-- VERTICAL COLUMNS -->
-				<div style="grid-column: 2; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-900 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 3; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 4; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 5; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 6; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900'></div>
-				<div style="grid-column: 7; grid-row: 3 / span {{this.releases.length}}; z-index: 10"
-					class='border-l-solid-1px-slate-400 border-b-solid-1px-slate-900 border-r-solid-1px-slate-900'></div>
-
-				{{# for(release of this.releases) }}
-					<div class='p2'>{{release.shortVersion}}</div>
-					{{this.getReleaseTimeline(release, scope.index)}}
+				{{# for(month of this.quartersAndMonths.months)}}
+					<div style="grid-column: {{ plus(scope.index, 2) }}; grid-row: 3 / span {{this.gridRows}}; z-index: 10"
+						class='border-l-solid-1px-slate-900 border-b-solid-1px-slate-900 {{this.lastRowBorder(scope.index)}}'></div>
 				{{/ for }}
+
+				{{# if(this.showGanttReleases) }}
+					{{# for(release of this.releases) }}
+						<div class='p-2'>{{release.shortVersion}}</div>
+						{{this.getReleaseTimeline(release, scope.index)}}
+					{{/ for }}
+				{{ else }}
+					{{# for(initiative of this.initiatives) }}
+						<div class='p-2 color-text-and-bg-{{initiative.status}} border-y-solid-1px-white'>
+							<a href="{{initiative.url}}"
+								class='color-text-and-bg-{{initiative.status}} no-underline'>{{initiative.Summary}}</a>
+						</div>
+						{{this.getReleaseTimeline(initiative, scope.index)}}
+					{{/ for }}
+				{{/ if }}
 
 			</div>
 		{{ else }}
 
 			<div class='calendar_wrapper'>{{this.calendarHTML}}</div>
+
 			<div class='gantt simple-timings'>{{# for(chart of this.releaseGantt) }}
 					{{chart}}
 				{{/}}
@@ -61,77 +68,114 @@ class SteercoTimeline extends StacheElement {
 			</div>
 
 		{{/ if }}
-		<div class='release_wrapper {{# if(this.showExtraTimings) }}extra-timings{{else}}simple-timings{{/ if}}'>
-		{{# for(release of this.releases) }}
-			<div class='release_box'>
-				<div class="release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
-				<div class="release_box_subtitle">
-					{{# if(not(eq(release.release, "Next")))}}
-						{{# if(this.showExtraTimings) }}
-						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key color-text-and-bg-{{release.devStatus}}">Dev</span>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.dev.due) }}{{this.wasReleaseDate(release.dev)}}
-								</span>
-						</div>
-						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key color-text-and-bg-{{release.qaStatus}}">QA&nbsp;</span>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.qa.due) }}{{this.wasReleaseDate(release.qa)}}
-								</span>
-						</div>
-						<div class="release_box_subtitle_wrapper">
-								<span class="release_box_subtitle_key color-text-and-bg-{{release.uatStatus}}">UAT</span>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
-								</span>
-						</div>
-						{{ else }}
-						<div class="release_box_subtitle_wrapper">
-								<b>Target Delivery</b>
-								<span class="release_box_subtitle_value">
-									{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
-								</span>
-						</div>
-						{{/ if }}
+		{{# if(showReleasesInTimeline) }}
+		<div class='release_wrapper {{# if(this.breakOutTimings) }}extra-timings{{else}}simple-timings{{/ if}}'>
+			{{# for(release of this.releases) }}
+				<div class='release_box'>
+					<div class="release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
+					<div class="release_box_subtitle">
+						{{# if(not(eq(release.release, "Next")))}}
+							{{# if(this.breakOutTimings) }}
+							<div class="release_box_subtitle_wrapper">
+									<span class="release_box_subtitle_key color-text-and-bg-{{release.devStatus}}">Dev</span>
+									<span class="release_box_subtitle_value">
+										{{ this.prettyDate(release.dev.due) }}{{this.wasReleaseDate(release.dev)}}
+									</span>
+							</div>
+							<div class="release_box_subtitle_wrapper">
+									<span class="release_box_subtitle_key color-text-and-bg-{{release.qaStatus}}">QA&nbsp;</span>
+									<span class="release_box_subtitle_value">
+										{{ this.prettyDate(release.qa.due) }}{{this.wasReleaseDate(release.qa)}}
+									</span>
+							</div>
+							<div class="release_box_subtitle_wrapper">
+									<span class="release_box_subtitle_key color-text-and-bg-{{release.uatStatus}}">UAT</span>
+									<span class="release_box_subtitle_value">
+										{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
+									</span>
+							</div>
+							{{ else }}
+							<div class="release_box_subtitle_wrapper">
+									<b>Target Delivery</b>
+									<span class="release_box_subtitle_value">
+										{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
+									</span>
+							</div>
+							{{/ if }}
 
-					{{/ if }}
-				</div>
-				<ul class="release_box_body">
-					{{# for(initiative of release.initiatives) }}
-					 <li class='font-sans text-sm {{# unless(this.showExtraTimings) }} color-text-{{initiative.status}} {{/ }}'>
-						{{# if(this.showExtraTimings) }}
-						<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
-							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
-							class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
 						{{/ if }}
-						{{initiative.Summary}}
-					 </li>
-					{{/ for}}
-				</ul>
+					</div>
+					<ul class="release_box_body list-disc">
+						{{# for(initiative of release.initiatives) }}
+						 <li class='font-sans text-sm '>
+							{{# if(this.breakOutTimings) }}
+							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
+								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
+								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
+							{{/ if }}
+							<a href="{{initiative.url}}"
+									class="no-underline{{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.status}} {{/ }}">{{initiative.Summary}}</a>
+						 </li>
+						{{/ for}}
+					</ul>
+				</div>
+			{{ else }}
+			<div class='release_box'>
+				<div class="release_box_header_bubble">
+					Unable to find any initiatives with releases.
+				</div>
 			</div>
-		{{/ }}
+			{{/ for }}
 
 		</div>
+		{{/ if }}
 	`
-		get calendarData() {
-				const startDate = new Date(
-						new Date().getFullYear(),
-						Math.floor(new Date().getMonth() / 3) * 3
-				);
-				const hasDate = this.releases.filter(r => r.team.due);
-				const lastRelease = hasDate.length && hasDate[hasDate.length - 1];
-				const endDate = lastRelease ? lastRelease.team.due : new Date();
-				return getCalendarHtml(startDate, endDate);
+		get showGanttGrid(){
+			return this.breakOutTimings || !this.showReleasesInTimeline;
 		}
-		get quartersAndMonths(){
+		get showGanttReleases(){
+			return this.breakOutTimings && this.showReleasesInTimeline;
+		}
+		get gridRows() {
+			return this.initiatives ? this.initiatives.length : this.releases.length;
+		}
+		get hasQAEpic(){
+			if(this.initiatives) {
+				return this.initiatives.some( (initiative)=> initiative.qa.issues.length )
+			} else {
+				return true;
+			}
+		}
+		get hasUATEpic(){
+			if(this.initiatives) {
+				return this.initiatives.some( (initiative)=> initiative.uat.issues.length )
+			} else {
+				return true;
+			}
+		}
+
+		get startAndEndDate(){
 			const startDate = new Date(
 					new Date().getFullYear(),
 					Math.floor(new Date().getMonth() / 3) * 3
 			);
-			const hasDate = this.releases.filter(r => r.team.due);
-			const lastRelease = hasDate.length && hasDate[hasDate.length - 1];
-			const endDate = lastRelease ? lastRelease.team.due : new Date();
+			let hasDate;
+			if(this.releases) {
+				hasDate = this.releases.filter(r => r.team.due);
+			} else if(this.initiatives) {
+				hasDate = this.initiatives.filter(r => r.team.due);
+			} else {
+				debugger;
+			}
+
+			return {endDate: new Date( Math.max(...hasDate.map(r => r.team.due)) ), startDate};
+		}
+		get calendarData() {
+				const {startDate, endDate} = this.startAndEndDate;
+				return getCalendarHtml(startDate, endDate);
+		}
+		get quartersAndMonths(){
+			const {startDate, endDate} = this.startAndEndDate;
 			return getQuartersAndMonths(startDate, endDate);
 		}
 		//const {html, firstDay, lastDay}
@@ -140,7 +184,7 @@ class SteercoTimeline extends StacheElement {
 		}
 		getReleaseTimeline(release, index){
 			const base = {
-				gridColumn: '2 / span 6',
+				gridColumn: '2 / span '+this.quartersAndMonths.months.length,
 				gridRow: `${index+3}`,
 			};
 
@@ -169,6 +213,15 @@ class SteercoTimeline extends StacheElement {
 			if (release.team.start && release.team.due) {
 
 					function getPositions(work) {
+						if(work.start == null && work.end == null) {
+							return {
+								start: 0, end: Infinity, startExtends: false, endExtends: false,
+								style: {
+									marginLeft: "1px",
+									marginRight: "1px"
+								}
+							}
+						}
 
 						const start = Math.max(firstDay, work.start);
 						const end = Math.min(lastDay, work.due);
@@ -179,29 +232,38 @@ class SteercoTimeline extends StacheElement {
 							start, end, startExtends, endExtends,
 							style: {
 								width: Math.max( (((end - start) / totalTime) * 100), 0) + "%",
-								marginLeft: (((start - firstDay) / totalTime) * 100) +"%"
+								marginLeft: "max("+(((start - firstDay) / totalTime) * 100) +"%, 1px)"
 							}
 						}
 					}
+					if(this.breakOutTimings) {
+						const dev = document.createElement("div");
+						dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.devStatus;
+
+						Object.assign(dev.style, getPositions(release.dev).style);
+						root.appendChild(dev);
+
+						if(this.hasQAEpic) {
+							const qa = document.createElement("div");
+							qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.qaStatus;
+							Object.assign(qa.style, getPositions(release.qa).style);
+							root.appendChild(qa);
+						}
+						if(this.hasUATEpic) {
+							const uat = document.createElement("div");
+							uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.uatStatus;
+							Object.assign(uat.style, getPositions(release.uat).style);
+							root.appendChild(uat);
+						}
+					} else {
+						const team = document.createElement("div");
+						team.className = "h-6 border-y-solid-1px-white color-text-and-bg-"+release.status;
+						Object.assign(team.style, getPositions(release.team).style);
+						root.appendChild(team);
+					}
 
 
-					const dev = document.createElement("div");
-					dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.devStatus;
 
-					Object.assign(dev.style, getPositions(release.dev).style);
-					root.appendChild(dev);
-
-					const qa = document.createElement("div");
-					qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.qaStatus;
-
-					Object.assign(qa.style, getPositions(release.qa).style);
-					root.appendChild(qa);
-
-
-					const uat = document.createElement("div");
-					uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.uatStatus;
-					Object.assign(uat.style, getPositions(release.uat).style);
-					root.appendChild(uat);
 			}
 			const frag = document.createDocumentFragment();
 			frag.appendChild(background);
@@ -216,7 +278,6 @@ class SteercoTimeline extends StacheElement {
 		releaseTimeline() {
 				const { firstDay, lastDay } = this.calendarData;
 				const totalTime = (lastDay - firstDay);
-				console.log("f", firstDay, "l", lastDay);
 
 				return this.releases.map((release, index) => {
 
@@ -224,7 +285,7 @@ class SteercoTimeline extends StacheElement {
 						if (release.team.due) {
 								div.className = "release-timeline-item color-text-and-bg-" + release.status;
 								div.style.left = ((release.team.due - firstDay) / totalTime * 100) + "%";
-								div.appendChild(document.createTextNode("M" + release.shortVersion))
+								div.appendChild(document.createTextNode(release.shortVersion))
 						}
 
 
@@ -280,7 +341,7 @@ class SteercoTimeline extends StacheElement {
 				})
 		}
 		get releaseGantt() {
-				if (this.showExtraTimings) {
+				if (this.breakOutTimings) {
 						return this.releaseGanttWithTimeline();
 				} else {
 						return this.releaseTimeline();
@@ -299,6 +360,12 @@ class SteercoTimeline extends StacheElement {
 				} else {
 						return ""
 				}
+		}
+		plus(first, second) {
+			return first + second;
+		}
+		lastRowBorder(index) {
+			return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
 		}
 }
 

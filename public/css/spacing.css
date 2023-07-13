@@ -8,13 +8,32 @@
 	padding-right: var(--space-1px);
 }
 
-.p2 {
+.p-2 {
 	padding: var(--space-2);
 }
+.p-3 {
+	padding: var(--space-3);
+}
+.p-4 {
+	padding: var(--space-4);
+}
+
 
 .py-1 {
 	padding-top: var(--space-1);
 	padding-bottom: var(--space-1);
+}
+
+.py-2 {
+	padding-top: var(--space-2);
+	padding-bottom: var(--space-2);
+}
+.mt-2 {
+	margin-top: var(--space-2);
+}
+
+.gap-3 {
+	gap: var(--space-3);
 }
 
 .mb-10 {
@@ -40,6 +59,12 @@
 .h-2 {
 	height: var(--space-2);
 }
+.h-4 {
+	height: var(--space-4);
+}
+.h-6 {
+	height: var(--space-6);
+}
 .h-10 {
 	height: var(--space-10);
 }
@@ -64,16 +89,28 @@
 .inline-block {
 	display: inline-block;
 }
+.inline {
+	display: inline;
+}
+
 .overflow-hidden {
 	overflow: hidden;
 }
 .border-collapse {
 	border-collapse: collapse;
 }
-
+/** LAYOUYT **/
 .flex {
 	display: flex;
 }
+.flex-grow {
+	flex-grow: 1;
+}
+.grid {
+	display: grid;
+}
+
+
 .text-center {
 	text-align: center;
 }
@@ -100,6 +137,7 @@
 .border-r-solid-1px-slate-900 {
 	border-right: solid var(--space-1px) var(--slate-900-color);
 }
+
 
 .border-l-solid-1px-slate-400 {
 	border-left: solid var(--space-1px) var(--slate-400-color);

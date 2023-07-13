@@ -10,6 +10,7 @@
 	--slate-900-color: rgb(17 24 39);
 	--slate-400-color: #DADADA;
 	--slate-300-color: #E7E7E7;
+	--sky-100-color: rgb(224 242 254);
 
   --space-0px: 0px;
 	--space-1px: 1px;
@@ -18,8 +19,24 @@
 	--space-2: .5rem;
 	--space-3: 0.75rem;
 	--space-4: 1rem; /*16*/
+	--space-6: 1.5rem;
 	--space-10: 2.5rem;
 
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 	--font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+
+menu, ol, ul, p {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.list-disc {
+	list-style-type: disc;
+}
+
+h1 {
+	padding: 0px;
+	margin: 0px;
 }

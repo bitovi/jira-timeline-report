@@ -5,8 +5,9 @@ import { StacheElement, type, ObservableObject } from "//unpkg.com/can@6/core.mj
 import "./css/css.js";
 
 
-import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS, parseDateISOString } from "./date-helpers.js";
-import semver from "./semver.js";
+import { howMuchHasDueDateMovedForwardChangedSince,
+    DAY_IN_MS, parseDateISOString, epicTimingData } from "./date-helpers.js";
+
 import "./timeline-use.js";
 
 import {
@@ -14,13 +15,15 @@ import {
     addStatusToRelease, getBusinessDatesCount, inPartnerReviewStatuses
 } from "./status-helpers.js";
 
+import semverReleases from "./semver-releases.js";
+import sortedByLastEpicReleases from "./sorted-by-last-epic-releases.js";
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: "short" });
 const booleanParsing = {
-	parse: x => {
-		return ({"": true, "true": true, "false": false})[x];
-	},
-	stringify: x => ""+x
+  parse: x => {
+    return ({"": true, "true": true, "false": false})[x];
+  },
+  stringify: x => ""+x
 };
 
 import { estimateExtraPoints } from "./confidence.js";
@@ -41,186 +44,226 @@ const FIX_VERSIONS_KEY = "Fix versions";
 
 export class TimelineReport extends StacheElement {
     static view = `
-					<details class='border-solid-1px-slate-900 p2'>
-						<summary>Use</summary>
-						<timeline-use></timeline-use>
-					</details>
-					<details class='border-solid-1px-slate-900 p2' open:from="not(this.jql)">
+          <details class='border-solid-1px-slate-900 p-2 color-bg-sky-100'>
+            <summary>Use</summary>
+            <timeline-use></timeline-use>
+          </details>
+          <details class='border-solid-1px-slate-900 p-2 color-bg-sky-100' open:from="not(this.jql)">
 
-						<summary>
-							Configure
-						</summary>
-						<div>
-							<label class="form-label">Specify a JQL to load your project's initiatives and epics.</label>
-							<input class="w-full-border-box" value:bind='this.jql'/>
+            <summary>
+              Configure
+            </summary>
+
+						<div class='p-4'>
+							<p><label class="inline font-bold">JQL</label>
+							- Specify a JQL to load your project's initiatives and epics.</p>
+							<input class="w-full-border-box mt-2" value:bind='this.jql'/>
 						</div>
-						<div>
-							<label class="form-label">Compare to {{this.compareToDaysPrior}} days ago:</label>
+
+						<div class="grid gap-3 p-4" style="grid-template-columns: max-content max-content 1fr">
+
+							<label class='font-bold'>Show Releases</label>
+							<input type='checkbox' checked:bind='this.showReleasesInTimeline'/>
+							<p>Instead of showing the timing for initiatives, show the timing for releases. Initiatives
+							must have their <code>release</code> (also called <code>Fix version</code>) field set.
+							</p>
+
+							{{# if(this.showReleasesInTimeline) }}
+							<label class='font-bold'>Show Only Semver Releases</label>
+							<input type='checkbox' checked:bind='this.showOnlySemverReleases'/>
+							<p>This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
+							<code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
+							</p>
+							{{/ }}
+
+							<label class='font-bold'>Break out Dev, QA and UAT</label>
+							<input type='checkbox' checked:bind='this.breakOutTimings'/>
+							<p>If initiatives have epics labelled with "QA" and/or "UAT", the report will show individual timelines and
+								statuses for Development, QA, and UAT.
+							</p>
+
+							<label class='font-bold'>Ignore Initiatives in UAT</label>
+							<input type='checkbox' checked:bind='this.hideInitiativesInUAT'/>
+							<p>Initiatives that are in UAT will not be shown. Check this if you do not want to
+							report on work that is in its final stages.
+							</p>
+
+
+
+
+						</div>
+
+
+
+						<div class='p-4'>
+							<p><label class="inline font-bold">Compare to {{this.compareToDaysPrior}} Days Ago</label>
+							- Specify what timepoint to use to determine if an initiative or release has fallen behind.</p>
 							<input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.compareToDaysPrior' min="0" max="90"/>
 						</div>
-						<div>
-							<label class="form-label">Show Dev and QA timings:</label>
-							<input type='checkbox' checked:bind='this.showExtraTimings'/>.
-							<label class="form-label">Show Work in UAT:</label>
-							<input type='checkbox' checked:bind='this.showInitiativesInUAT'/>.
-						</div>
-					</details>
+
+          </details>
+
+
 
 
 					{{# if(this.releases) }}
-
 						<steerco-timeline
 							class='w-1280 h-780 border-solid-1px-slate-900 border-box block overflow-hidden'
-							releases:from="this.releases" showExtraTimings:from="this.showExtraTimings"/>
-						<div class='border-solid-1px-slate-900 p2'>
-							<span class='color-text-and-bg-notstarted p2 inline-block'>Not Started</span>
-							<span class='color-text-and-bg-ontrack p2 inline-block'>On Track</span>
-							<span class='color-text-and-bg-blocked p2 inline-block'>Blocked</span>
-							<span class='color-text-and-bg-complete p2 inline-block'>Complete</span>
-							<span class='color-text-and-bg-behind p2 inline-block'>Behind</span>
-							<span class='color-text-and-bg-unknown p2 inline-block'>Unknown</span>
-						</div>
+							releases:from="this.releases"
+							initiatives:from="this.initiativesWithAStartAndEndDate"
+							breakOutTimings:from="this.breakOutTimings"
+							showReleasesInTimeline:from="this.showReleasesInTimeline"
+							/>
+
+            <div class='border-solid-1px-slate-900 p-2'>
+              <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
+              <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
+              <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
+              <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
+              <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
+              <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
+            </div>
 
 
-						<h2>Release Breakdown</h2>
-						{{# for(release of this.releasesAndNext) }}
-							<h2>{{release.release}}</h2>
-							<table class='basic-table'>
-								<thead>
-								<tr><th>Sequence</th>
-										<th>Start</th>
-										<th>Due</th>
-										<th>Due last period</th>
-										<th>Working days</th>
-										<th>Story Points</th>
-								</tr>
-								</thead>
-								<tbody  class='release_box'>
-								<tr>
-									<td class='status-{{release.status}}'>E2E</td>
-									<td>{{this.prettyDate(release.team.start)}}</td>
-									<td>{{this.prettyDate(release.team.due)}}</td>
-									<td>{{this.prettyDate(release.team.dueLastPeriod)}}</td>
-									<td>{{release.team.workingBusinessDays}}</td>
-									<td>{{release.team.weightedEstimate}}</td>
-								</tr>
-								<tr>
-									<td>Dev</td>
-									<td>{{this.prettyDate(release.dev.start)}}</td>
-									<td>{{this.prettyDate(release.dev.due)}}</td>
-									<td>{{this.prettyDate(release.dev.dueLastPeriod)}}</td>
-									<td>{{release.dev.workingBusinessDays}}</td>
-									<td>{{release.dev.weightedEstimate}}</td>
-								</tr>
-								<tr>
-									<td>QA</td>
-									<td>{{this.prettyDate(release.qa.start)}}</td>
-									<td>{{this.prettyDate(release.qa.due)}}</td>
-									<td>{{this.prettyDate(release.qa.dueLastPeriod)}}</td>
-									<td>{{release.qa.workingBusinessDays}}</td>
-									<td>{{release.qa.weightedEstimate}}</td>
-								</tr>
-								<tr>
-									<td>UAT</td>
-									<td>{{this.prettyDate(release.uat.start)}}</td>
-									<td>{{this.prettyDate(release.uat.due)}}</td>
-									<td>{{this.prettyDate(release.uat.dueLastPeriod)}}</td>
-									<td>{{release.uat.workingBusinessDays}}</td>
-									<td>{{release.uat.weightedEstimate}}</td>
-								</tr>
-								</tbody>
-							</table>
-							<table class='basic-table'>
-								<thead>
-								<tr><th>Initiative</th>
-										<th>Teams</th>
-										<th>Dev Dates</th>
-										<th>Dev Epics</th>
+            <h2>Release Breakdown</h2>
+            {{# for(release of this.releasesAndNext) }}
+              <h2>{{release.release}}</h2>
+              <table class='basic-table'>
+                <thead>
+                <tr><th>Sequence</th>
+                    <th>Start</th>
+                    <th>Due</th>
+                    <th>Due last period</th>
+                    <th>Working days</th>
+                    <th>Story Points</th>
+                </tr>
+                </thead>
+                <tbody  class='release_box'>
+                <tr>
+                  <td class='status-{{release.status}}'>E2E</td>
+                  <td>{{this.prettyDate(release.team.start)}}</td>
+                  <td>{{this.prettyDate(release.team.due)}}</td>
+                  <td>{{this.prettyDate(release.team.dueLastPeriod)}}</td>
+                  <td>{{release.team.workingBusinessDays}}</td>
+                  <td>{{release.team.weightedEstimate}}</td>
+                </tr>
+                <tr>
+                  <td>Dev</td>
+                  <td>{{this.prettyDate(release.dev.start)}}</td>
+                  <td>{{this.prettyDate(release.dev.due)}}</td>
+                  <td>{{this.prettyDate(release.dev.dueLastPeriod)}}</td>
+                  <td>{{release.dev.workingBusinessDays}}</td>
+                  <td>{{release.dev.weightedEstimate}}</td>
+                </tr>
+                <tr>
+                  <td>QA</td>
+                  <td>{{this.prettyDate(release.qa.start)}}</td>
+                  <td>{{this.prettyDate(release.qa.due)}}</td>
+                  <td>{{this.prettyDate(release.qa.dueLastPeriod)}}</td>
+                  <td>{{release.qa.workingBusinessDays}}</td>
+                  <td>{{release.qa.weightedEstimate}}</td>
+                </tr>
+                <tr>
+                  <td>UAT</td>
+                  <td>{{this.prettyDate(release.uat.start)}}</td>
+                  <td>{{this.prettyDate(release.uat.due)}}</td>
+                  <td>{{this.prettyDate(release.uat.dueLastPeriod)}}</td>
+                  <td>{{release.uat.workingBusinessDays}}</td>
+                  <td>{{release.uat.weightedEstimate}}</td>
+                </tr>
+                </tbody>
+              </table>
+              <table class='basic-table'>
+                <thead>
+                <tr><th>Initiative</th>
+                    <th>Teams</th>
+                    <th>Dev Dates</th>
+                    <th>Dev Epics</th>
 
-										<th>QA Dates</th>
-										<th>QA Epics</th>
+                    <th>QA Dates</th>
+                    <th>QA Epics</th>
 
-										<th>UAT Dates</th>
-										<th>UAT Epics</th>
-								</tr>
-								</thead>
-								<tbody>
-								{{# for(initiative of release.initiatives) }}
-										<tr  class='release_box'>
-											<td><a class="status-{{initiative.status}}" href="{{initiative.url}}">{{initiative.Summary}}</a></td>
+                    <th>UAT Dates</th>
+                    <th>UAT Epics</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{# for(initiative of release.initiatives) }}
+                    <tr  class='release_box'>
+                      <td><a class="status-{{initiative.status}}" href="{{initiative.url}}">{{initiative.Summary}}</a></td>
 
-											<td>
-												{{# for(team of this.initiativeTeams(initiative) ) }}
-													{{team}}
-												{{/ for }}
-											</td>
+                      <td>
+                        {{# for(team of this.initiativeTeams(initiative) ) }}
+                          {{team}}
+                        {{/ for }}
+                      </td>
 
-											<td>
-												Start: {{this.prettyDate(initiative.dev.start)}} <br/>
-												Due: {{this.prettyDate(initiative.dev.due)}} <br/>
-												Last Due: {{this.prettyDate(initiative.dev.dueLastPeriod)}}
+                      <td>
+                        Start: {{this.prettyDate(initiative.dev.start)}} <br/>
+                        Due: {{this.prettyDate(initiative.dev.due)}} <br/>
+                        Last Due: {{this.prettyDate(initiative.dev.dueLastPeriod)}}
 
-											</td>
-											<td>
-												<ul>
-												{{# for( epic of initiative.dev.issues ) }}
-													<li><a class="status-{{epic.status}}" href="{{epic.url}}">
-														{{epic.Summary}}
-													</a> [{{epic.weightedEstimate}}] ({{epic.workingBusinessDays}})</li>
-												{{/ }}
-												</ul>
-											</td>
-
-
-											<td>
-												Start: {{this.prettyDate(initiative.qa.start)}} <br/>
-												Due: {{this.prettyDate(initiative.qa.due)}} <br/>
-												Last Due: {{this.prettyDate(initiative.qa.dueLastPeriod)}}
-
-											</td>
-											<td>
-												<ul class='release_box'>
-												{{# for( epic of initiative.qa.issues ) }}
-													<li><a class="status-{{epic.status}}" href="{{epic.url}}">
-														{{epic.Summary}}
-													</a></li>
-												{{/ }}
-												</ul>
-											</td>
-
-											<td>
-												Start: {{this.prettyDate(initiative.uat.start)}} <br/>
-												Due: {{this.prettyDate(initiative.uat.due)}} <br/>
-												Last Due: {{this.prettyDate(initiative.uat.dueLastPeriod)}}
-
-											</td>
-											<td>
-												<ul class='release_box'>
-												{{# for( epic of initiative.uat.issues ) }}
-													<li><a class="status-{{epic.status}}" href="{{epic.url}}">
-														{{epic.Summary}}
-													</a></li>
-												{{/ }}
-												</ul>
-											</td>
-										</tr>
-									{{/ for}}
-								</tbody>
-							</table>
+                      </td>
+                      <td>
+                        <ul>
+                        {{# for( epic of initiative.dev.issues ) }}
+                          <li><a class="status-{{epic.status}}" href="{{epic.url}}">
+                            {{epic.Summary}}
+                          </a> [{{epic.weightedEstimate}}] ({{epic.workingBusinessDays}})</li>
+                        {{/ }}
+                        </ul>
+                      </td>
 
 
+                      <td>
+                        Start: {{this.prettyDate(initiative.qa.start)}} <br/>
+                        Due: {{this.prettyDate(initiative.qa.due)}} <br/>
+                        Last Due: {{this.prettyDate(initiative.qa.dueLastPeriod)}}
 
-							<ul>
-							</ul>
-						{{/ for }}
+                      </td>
+                      <td>
+                        <ul class='release_box'>
+                        {{# for( epic of initiative.qa.issues ) }}
+                          <li><a class="status-{{epic.status}}" href="{{epic.url}}">
+                            {{epic.Summary}}
+                          </a></li>
+                        {{/ }}
+                        </ul>
+                      </td>
 
-					{{ else }}
-						{{# if(this.jql) }}
-							Loading ...
-						{{/ if }}
-					{{/ if}}
+                      <td>
+                        Start: {{this.prettyDate(initiative.uat.start)}} <br/>
+                        Due: {{this.prettyDate(initiative.uat.due)}} <br/>
+                        Last Due: {{this.prettyDate(initiative.uat.dueLastPeriod)}}
 
-	`;
+                      </td>
+                      <td>
+                        <ul class='release_box'>
+                        {{# for( epic of initiative.uat.issues ) }}
+                          <li><a class="status-{{epic.status}}" href="{{epic.url}}">
+                            {{epic.Summary}}
+                          </a></li>
+                        {{/ }}
+                        </ul>
+                      </td>
+                    </tr>
+                  {{/ for}}
+                </tbody>
+              </table>
+
+
+
+              <ul>
+              </ul>
+            {{/ for }}
+
+          {{ else }}
+            {{# if(this.jql) }}
+              Loading ...
+            {{/ if }}
+          {{/ if}}
+
+  `;
     static props = {
         uploadUrl: {
             get default() {
@@ -235,9 +278,11 @@ export class TimelineReport extends StacheElement {
             type: type.convert(Number),
             default: 15
         },
-        showExtraTimings: saveJSONToUrl("showExtraTimings", false, Boolean, booleanParsing),
-				showInitiativesInUAT: saveJSONToUrl("showInitiativesInUAT", true, Boolean, booleanParsing),
-        jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic)", String, {parse: x => ""+x, stringify: x => ""+x}),
+        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
+        breakOutTimings: saveJSONToUrl("breakOutTimings", false, Boolean, booleanParsing),
+        hideInitiativesInUAT: saveJSONToUrl("hideInitiativesInUAT", false, Boolean, booleanParsing),
+        showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
+        jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic) order by Rank", String, {parse: x => ""+x, stringify: x => ""+x}),
         mode: {
             type: String,
         },
@@ -260,6 +305,7 @@ export class TimelineReport extends StacheElement {
             const issuesPromise = this.jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields({
                 jql: this.jql,
                 fields: ["summary",
+                    "Rank",
                     "Start date",
                     "Due date",
                     "Issue Type",
@@ -280,7 +326,6 @@ export class TimelineReport extends StacheElement {
         }
 
     }
-
     drawSlide(results) {
         this.rawIssues = makeObjectsFromRows(results.data);
     }
@@ -312,60 +357,67 @@ export class TimelineReport extends StacheElement {
         }
         return map;
     }
+    get initiativesToShow(){
+      if(!this.rawIssues) {
+        return []
+      }
+      const extraRemovedStatuses = this.hideInitiativesInUAT ? inPartnerReviewStatuses : [];
+      return  filterOutStatuses(
+        filterInitiatives(this.rawIssues),
+          ["Done", "Cancelled", "Duplicate", ...extraRemovedStatuses]
+        )
+    }
+    get initiativesWithTimedEpics(){
+      const issuesMappedByParentKey = this.issuesMappedByParentKey;
+      return this.initiativesToShow.map((i) => {
+
+          const timedEpics = (issuesMappedByParentKey[i[ISSUE_KEY]] || []).map((e) => {
+              const { dueDateWasPriorToTheFirstChangeAfterTheCheckpoint } = howMuchHasDueDateMovedForwardChangedSince(e,
+                  new Date(new Date().getTime() - this.compareToDaysPrior * DAY_IN_MS)
+              )
+              return addStatusToEpic({
+                  ...e,
+                  dueLastPeriod: dueDateWasPriorToTheFirstChangeAfterTheCheckpoint
+              })
+          });
+
+          // try to figure out what is dev or QA
+          const qaEpics = new Set(filterQAWork(timedEpics));
+          const uatEpics = new Set(filterPartnerReviewWork(timedEpics));
+          const devEpics = timedEpics.filter(epic => !qaEpics.has(epic) && !uatEpics.has(epic))
+
+          return addStatusToInitiative({
+              ...i,
+              team: epicTimingData(timedEpics),
+              dev: epicTimingData([...devEpics]),
+              qa: epicTimingData([...qaEpics]),
+              uat: epicTimingData([...uatEpics])
+          });
+      });
+    }
+    get initiativesWithAStartAndEndDate(){
+      return this.initiativesWithTimedEpics.filter( (i) => {
+        return i.team.start < i.team.due;
+      })
+    }
     get sortedIncompleteReleasesInitiativesAndEpics() {
         if (!this.rawIssues) {
             return [];
         }
-        const issuesMappedByParentKey = this.issuesMappedByParentKey;
-
-				const extraRemovedStatuses = this.showInitiativesInUAT ? [] : inPartnerReviewStatuses;
 
         const releasesToInitiatives = mapReleasesToIssues(
-            filterReleases(
-                filterOutStatuses(
-                    filterInitiatives(this.rawIssues), ["Done", "Cancelled", "Duplicate", ...extraRemovedStatuses]),
-                this.getReleaseValue
-            ),
+            filterReleases( this.initiativesWithTimedEpics, this.getReleaseValue ),
             this.getReleaseValue
         );
-        //console.log(this.compareToDaysPrior * DAY_IN_MS, this.compareToDaysPrior);
-        const semverReleases = semverSort(Object.keys(releasesToInitiatives));
 
-        const shortReleaseNames = uniqueTrailingNames(semverReleases);
+        const unsortedReleases = Object.keys(releasesToInitiatives).map((release, index) => {
 
-        return semverReleases.map((release, index) => {
-            const initiatives = releasesToInitiatives[release].map((i) => {
-                const timedEpics = (issuesMappedByParentKey[i[ISSUE_KEY]] || []).map((e) => {
-                    const { dueDateWasPriorToTheFirstChangeAfterTheCheckpoint } = howMuchHasDueDateMovedForwardChangedSince(e,
-                        new Date(new Date().getTime() - this.compareToDaysPrior * DAY_IN_MS)
-                    )
-                    return addStatusToEpic({
-                        ...e,
-                        dueLastPeriod: dueDateWasPriorToTheFirstChangeAfterTheCheckpoint
-                    })
-                });
-
-                // try to figure out what is dev or QA
-                const qaEpics = new Set(filterQAWork(timedEpics));
-                const uatEpics = new Set(filterPartnerReviewWork(timedEpics));
-                const devEpics = timedEpics.filter(epic => !qaEpics.has(epic) && !uatEpics.has(epic))
-
-                return addStatusToInitiative({
-                    ...i,
-                    team: epicTimingData(timedEpics),
-                    dev: epicTimingData([...devEpics]),
-                    qa: epicTimingData([...qaEpics]),
-                    uat: epicTimingData([...uatEpics])
-                });
-            });
+            const initiatives = releasesToInitiatives[release];
 
             const releaseObject = {
-                release: release,
-                shortName: shortReleaseNames[index],
-                version: cleanedRelease(release),
-                shortVersion: partialReleaseName(release),
-                initiatives
-            }
+              release,
+              initiatives
+            };
 
             for (const key of ["team", "dev", "qa", "uat"]) {
                 releaseObject[key] = epicTimingData(
@@ -374,28 +426,32 @@ export class TimelineReport extends StacheElement {
             }
 
             return addTeamBreakdown(addStatusToRelease(releaseObject));
-        })
+        });
+        if(this.showOnlySemverReleases) {
+          return semverReleases(unsortedReleases);
+        } else {
+          return sortedByLastEpicReleases(unsortedReleases);
+        }
     }
     get releases() {
         if (!this.rawIssues) {
             return undefined;
         }
         const data = this.sortedIncompleteReleasesInitiativesAndEpics;
-        console.log(data);
         return data;
     }
     get releasesAndNext() {
         if (this.releases) {
             let releasesAndNext = [
                 ...this.releases/*,
-				{
-					release: "Next",
-					initiatives: sortReadyFirst(filterPlanningAndReady(
-						filterOutReleases(
-							filterInitiatives(this.rawIssues),
-							this.getReleaseValue
-						)))
-				}*/];
+        {
+          release: "Next",
+          initiatives: sortReadyFirst(filterPlanningAndReady(
+            filterOutReleases(
+              filterInitiatives(this.rawIssues),
+              this.getReleaseValue
+            )))
+        }*/];
             return releasesAndNext;
         }
     }
@@ -469,43 +525,8 @@ function mapReleasesToIssues(issues, getReleaseValue) {
     return map;
 }
 
-function partialReleaseName(release) {
-    let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
-    if (match) {
-        return match[0].replace(".X", ".0");
-    }
-}
 
-function cleanedRelease(release) {
-    let clean = partialReleaseName(release);
-    if (clean) {
-        if (clean.length === 1) {
-            clean = clean + ".0.0";
-        }
-        if (clean.length === 3) {
-            clean = clean + ".0";
-        }
-        if (semver.clean(clean)) {
-            return clean;
-        }
-    }
-}
 
-function semverSort(values) {
-    const cleanMap = {};
-    const cleanValues = [];
-    values.forEach((release) => {
-        const clean = cleanedRelease(release);
-        if (clean && semver.clean(clean)) {
-            cleanMap[clean] = release;
-            cleanValues.push(clean);
-        }
-
-    });
-    const cleanSorted = semver.sort(cleanValues);
-
-    return cleanSorted.map(clean => cleanMap[clean]);
-}
 
 function makeIssueMap(issues) {
     if (typeof issues === "object" && !Array.isArray(issues)) {
@@ -553,76 +574,7 @@ function filterPartnerReviewWork(issues) {
 function isPartnerReviewWork(issue) {
     return filterPartnerReviewWork([issue]).length > 0
 }
-function sortByStartDate(issues) {
-    return issues.sort((issueA, issueB) => {
-        const dateA = parseDateISOString(issueA[START_DATE_KEY]),
-            dateB = parseDateISOString(issueB[START_DATE_KEY]);
-        return dateA - dateB;
-    })
-}
 
-function getLastDateFrom(initiatives, property) {
-    const values = initiatives.filter(
-        init => init[property]
-    ).map(init => parseDateISOString(init[property]))
-        .filter((number) => !isNaN(number));
-    return values.length ? new Date(Math.max(...values)) : undefined;
-}
-function getDateFromLastPeriod(initiatives, lowercasePhase, checkpoint) {
-    const dates = initiatives.map(initiative => {
-        if (initiative[lowercasePhase]) {
-            const { dueDateWasPriorToTheFirstChangeAfterTheCheckpoint }
-                = howMuchHasDueDateMovedForwardChangedSince(initiative[lowercasePhase], checkpoint);
-            return dueDateWasPriorToTheFirstChangeAfterTheCheckpoint;
-        }
-    }).filter(d => d) // remove undefineds
-
-    const date = Math.max(...dates);
-    return new Date(date);
-}
-
-
-function epicTimingData(epics) {
-    const sorted = sortByStartDate(epics);
-    const due = endDateFromList(sorted),
-        dueLastPeriod = endDateFromList(sorted, "dueLastPeriod");
-
-    return {
-        issues: sorted,
-        start: firstDateFromList(sorted),
-        due: endDateFromList(sorted),
-        dueLastPeriod: endDateFromList(sorted, "dueLastPeriod"),
-        workingBusinessDays: epics.reduce((acc, cur) => {
-            return acc + (cur.workingBusinessDays || 0)
-        }, 0),
-        weightedEstimate: epics.reduce((acc, cur) => {
-            return acc + (cur.weightedEstimate || 0)
-        }, 0)
-    }
-}
-
-function endDateFromList(issues, property = DUE_DATE_KEY) {
-    const values = issues.filter(
-        issue => issue[property]
-    ).map(issue => parseDateISOString(issue[property]))
-        .filter((number) => !isNaN(number));
-    return values.length ? new Date(Math.max(...values)) : undefined;
-}
-
-
-function firstDateFromList(issues) {
-    const values = issues.filter(
-        issue => issue[START_DATE_KEY]
-    ).map(issue => parseDateISOString(issue[START_DATE_KEY]));
-    return values.length ? new Date(Math.min(...values)) : undefined;
-}
-
-function getFirstDateFrom(initiatives, property) {
-    const values = initiatives.filter(
-        init => init[property]?.[START_DATE_KEY]
-    ).map(init => parseDateISOString(init[property][START_DATE_KEY]));
-    return values.length ? new Date(Math.min(...values)) : undefined;
-}
 
 function sortReadyFirst(initiatives) {
     return initiatives.sort((a, b) => {
@@ -680,79 +632,7 @@ function addWorkingBusinessDays(issues) {
     })
 }
 
-function addToCharacterMap(fullName, name, map = {}) {
-    if (name === "") {
-        map.last = true;
-    }
-    map.followers.push(fullName);
 
-    if (!map.characterMap[name[0]]) {
-        map.characterMap[name[0]] = {
-            followers: [],
-            characterMap: {}
-        };
-    }
-    if (name !== "") {
-        addToCharacterMap(fullName, name.substr(1), map.characterMap[name[0]])
-    }
-}
-
-function pruneFrom(rootMap, path, namesToCharacter) {
-
-    while (Object.keys(rootMap.characterMap).length) {
-        const character = Object.keys(rootMap.characterMap)[0];
-        const childMap = rootMap.characterMap[character];
-        if (childMap.followers.length === 1) {
-            namesToCharacter[childMap.followers[0]] = character;
-            delete rootMap.characterMap[character];
-        } else if (childMap.last === true) {
-            namesToCharacter[path + character] = character;
-            pruneFrom(childMap, path + character, namesToCharacter);
-            delete rootMap.characterMap[character];
-        } else {
-            pruneFrom(childMap, path + character, namesToCharacter);
-            delete rootMap.characterMap[character];
-        }
-    }
-}
-
-function characterNamer(names) {
-    const root = {
-        characterMap: {},
-        followers: []
-    };
-    for (const name of names) {
-        addToCharacterMap(name, name, root);
-    }
-    const namesToCharacter = {};
-    pruneFrom(root, "", namesToCharacter);
-    return namesToCharacter;
-}
-
-
-function uniqueTrailingNames(names) {
-    const root = {
-        characterMap: {},
-        followers: []
-    };
-    for (const name of names) {
-        addToCharacterMap(name, name, root);
-    }
-    // keep going down the 1 path until you don't have everything
-    let current = root;
-    let startingWith = "";
-    while (Object.keys(current.characterMap).length === 1) {
-        let character = Object.keys(current.characterMap)[0];
-        startingWith = startingWith + character;
-        current = current.characterMap[character];
-    }
-    if (startingWith.length > 3) {
-        return names.map(n => n.replace(startingWith, ""))
-    } else {
-        return names;
-    }
-
-}
 
 function addTeamBreakdown(release) {
 
