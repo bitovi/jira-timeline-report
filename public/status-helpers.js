@@ -7,6 +7,18 @@ const blockedStatus = { "Blocked": true }
 
 const WIGGLE_ROOM = 0;
 
+// clean up warnings
+function warn(...args){
+
+	console.warn(...args.map(arg => {
+		if(arg && typeof arg === "object" && arg.Summary || arg.release) {
+			return '"'+(arg.Summary || arg.release)+'"' +(arg.url ?  " ("+arg.url+")" : "") 
+		} else {
+			return arg;
+		}
+	}))
+}
+
 export function addStatusToRelease(release) {
 
 		return {
@@ -69,7 +81,7 @@ function getInitiativeStatus(initiative) {
 		if(
 			statuses.every(s => s === "complete")
 		) {
-			console.warn("All work for", initiative, "is complete, but the initiaitve is not DONE");
+			warn("All work for ", initiative, " is complete, but the initiaitve is not DONE");
 			return "complete"
 		}
 		if(statuses.some(s => s === "blocked")) {
@@ -117,7 +129,7 @@ export function getInitiativeDevStatus(initiative) {
 		if (initiative?.dev?.issues?.length && initiative?.dev?.issues?.every(epic => isStatusDevComplete(epic))) {
 				// Releases don't have a status so we shouldn't throw this warning.
 				if(initiative.Status) {
-					console.warn("The dev epics for", initiative, "are complete, but the issue is not in QA");
+					warn("The dev epics for", initiative, "are complete, but the issue is not in QA");
 				}
 				return "complete"
 		}
@@ -126,7 +138,7 @@ export function getInitiativeDevStatus(initiative) {
 		}
 		const timedDevStatus = timedStatus(initiative.dev);
 		if(timedDevStatus === "complete" && initiative?.dev?.issues?.length && initiative?.dev?.issues?.every(epic => !isStatusDevComplete(epic))) {
-			console.warn("The dev epics for", initiative, "are not dev complete, but they are in the past");
+			warn("The dev epics for", initiative, "are not dev complete, but they are in the past");
 		}
 
 		return timedDevStatus;
@@ -139,7 +151,7 @@ function getInitiativeQaStatus(initiative) {
 		if (initiative.qa.issues.length && initiative.qa.issues.every(epic => isStatusQAComplete(epic))) {
 			// Releases don't have a status so we shouldn't throw this warning.
 			if(initiative.Status) {
-				console.warn("The qa epics for", initiative, "are complete, but the issue is not in UAT");
+				warn("The qa epics for", initiative, "are complete, but the issue is not in UAT");
 			}
 			return "complete"
 		}
@@ -156,7 +168,7 @@ function getInitiativeUatStatus(initiative) {
 		if (initiative.uat.issues.length && initiative.uat.issues.every(epic => isStatusUatComplete(epic))) {
 			// Releases don't have a status so we shouldn't throw this warning.
 			if(initiative.Status) {
-				console.warn("The uat epics for", initiative, "are complete, but the issue is not DONE");
+				warn("The uat epics for", initiative, "are complete, but the issue is not DONE");
 			}
 			return "complete"
 		}
