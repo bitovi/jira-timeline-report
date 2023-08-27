@@ -92,6 +92,12 @@ function isStatusUatComplete(item) {
 function timedStatus(timedRecord) {
 		if (!timedRecord.due) {
 				return "unknown"
+		}
+		// if now is after the complete date
+		// we force complete ... however, we probably want to warn if this isn't in the
+		// completed state
+		else if( (+timedRecord.due) < new Date()  ) {
+			return "complete";
 		} else if ((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.dueLastPeriod)) {
 				return "behind";
 		} else if (timedRecord.start > new Date()) {
@@ -118,7 +124,12 @@ export function getInitiativeDevStatus(initiative) {
 		if (initiative?.dev?.issues?.some(epic => epic.Status === "Blocked")) {
 				return "blocked"
 		}
-		return timedStatus(initiative.dev)
+		const timedDevStatus = timedStatus(initiative.dev);
+		if(timedDevStatus === "complete" && initiative?.dev?.issues?.length && initiative?.dev?.issues?.every(epic => !isStatusDevComplete(epic))) {
+			console.warn("The dev epics for", initiative, "are not dev complete, but they are in the past");
+		}
+
+		return timedDevStatus;
 }
 
 function getInitiativeQaStatus(initiative) {
