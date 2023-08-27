@@ -30,7 +30,7 @@ class SteercoTimeline extends StacheElement {
 				{{/ for }}
 
 				<!-- CURRENT TIME BOX -->
-				<div id="foo" style="grid-column: 2 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRows}};">
+				<div style="grid-column: 2 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRows}};">
 					<div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
 				</div>
 
@@ -160,7 +160,7 @@ class SteercoTimeline extends StacheElement {
 					Math.floor(new Date().getMonth() / 3) * 3
 			);
 			let hasDate;
-			if(this.releases) {
+			if(this.releases && this.releases.length) {
 				hasDate = this.releases.filter(r => r.team.due);
 			} else if(this.initiatives) {
 				hasDate = this.initiatives.filter(r => r.team.due);
