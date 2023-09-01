@@ -1,6 +1,6 @@
-## Jira OAuth Integration
+# Jira Timeline Report 
 
-This is a simple Jira oAuth template or starter-pack. It helps bootstrap your Jira application with OAuth2.0 already setup.
+This makes a simple Jira timeline for reporting. 
 
 ## How to Use
 
