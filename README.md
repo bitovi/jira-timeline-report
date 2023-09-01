@@ -4,6 +4,8 @@ This makes a simple Jira timeline for reporting.
 
 ## How to Use
 
+Coming soon
+
 ### Installation
 
 Clone the application into your local machine.
