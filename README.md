@@ -1,12 +1,34 @@
 # Jira Timeline Report 
 
-This makes a simple Jira timeline for reporting. 
+The [Jira Timeline Report](https://timeline-report.bitovi-jira.com/) creates easy-to-understand 🧠, power-point-ready 🖥️ timeline reports!
+
+![image](https://github.com/bitovi/jira-timeline-report/assets/78602/107a6202-db5f-43c0-9133-56c6e4f260d4)
+
+It can:
+
+- Show how your timeline has changed 📈
+- Break out work by "dev", "qa" and "uat" timelines 📊
+- Roll up work into releases 📶
+
+![image](https://github.com/bitovi/jira-timeline-report/assets/78602/20628f19-f1ea-4815-a44b-50c0efa13d12)
 
 ## How to Use
 
-Coming soon
+Bitovi's [Agile Project Management with Jira - Reporting](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html) training walks through 
+configuring the tool.
 
-### Installation
+Note, your epics and initiatives will need the following statuses for the tool to work:
+
+- `Idea`, `To Do`, or `Open` representing ideas that you might not want on the report.
+- `QA` or `In QA` - represending work that is in QA.
+- `Partner Review` or `UAT` - representing work that is in user acceptance testing.
+- `Blocked` - represending work that can not move forward.
+- `Done` or `Cancelled` - Work that is complete and will be hidden from the report.
+
+The [Agile Project Management with Jira - Continuous Exploration](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/continuous-exploration-board.html) training has 
+videos on how to create an initiative type with the right statuses. 
+
+## Contributing
 
 Clone the application into your local machine.
 
