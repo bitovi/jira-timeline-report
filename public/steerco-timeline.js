@@ -11,6 +11,7 @@ const inDevStatus = { "In Development": true, "Development": true };
 const inPartnerReviewStatus = { "Partner Review": true };
 const inDoneStatus = { "Done": true };
 
+import "./shared/simple-tooltip.js";
 
 class SteercoTimeline extends StacheElement {
 		static view = `
@@ -98,7 +99,7 @@ class SteercoTimeline extends StacheElement {
 							<div class="release_box_subtitle_wrapper">
 									<b>Target Delivery</b>
 									<span class="release_box_subtitle_value">
-										{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
+										{{ this.prettyDate(release.team.due) }}{{this.wasReleaseDate(release.team)}}
 									</span>
 							</div>
 							{{/ if }}
@@ -107,7 +108,7 @@ class SteercoTimeline extends StacheElement {
 					</div>
 					<ul class="release_box_body list-disc">
 						{{# for(initiative of release.initiatives) }}
-						 <li class='font-sans text-sm '>
+						 <li class='font-sans text-sm ' on:mouseenter='this.showTooltip(scope.event, initiative)' on:mouseleave='this.hideTooltip()'>
 							{{# if(this.breakOutTimings) }}
 							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
 								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
@@ -129,6 +130,7 @@ class SteercoTimeline extends StacheElement {
 
 		</div>
 		{{/ if }}
+		<simple-tooltip id="simpleTooltip"></simple-tooltip>
 	`
 		get showGanttGrid(){
 			return this.breakOutTimings || !this.showReleasesInTimeline;
@@ -353,8 +355,8 @@ class SteercoTimeline extends StacheElement {
 		wasReleaseDate(release) {
 
 				const current = release.due;
-				const was = release.dueLastPeriod;
-
+				const was = release.lastPeriod.due;
+				
 				if (current - DAY_IN_MS > was) {
 						return " (" + this.prettyDate(was) + ")";
 				} else {
@@ -366,6 +368,36 @@ class SteercoTimeline extends StacheElement {
 		}
 		lastRowBorder(index) {
 			return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
+		}
+		showTooltip(event, initiative) {
+			console.log(initiative);
+			window.simpleTooltip.enteredElement(event, `
+			<div class="release_box_subtitle_wrapper">
+					<span class="release_box_subtitle_key color-text-and-bg-${initiative.devStatus}">Dev</span>
+					<span class="release_box_subtitle_value">
+					${this.prettyDate(initiative.dev.due)}
+					${this.wasReleaseDate(initiative.dev)}
+					</span>
+			</div>
+			<div class="release_box_subtitle_wrapper">
+					<span class="release_box_subtitle_key color-text-and-bg-${initiative.qaStatus}">QA&nbsp;</span>
+					<span class="release_box_subtitle_value">
+						${this.prettyDate(initiative.qa.due)}
+						${this.wasReleaseDate(initiative.qa)}
+					</span>
+			</div>
+			<div class="release_box_subtitle_wrapper">
+					<span class="release_box_subtitle_key color-text-and-bg-${initiative.uatStatus}">UAT</span>
+					<span class="release_box_subtitle_value">
+						${this.prettyDate(initiative.uat.due)}
+						${this.wasReleaseDate(initiative.uat)}
+					</span>
+			</div>
+			`);
+
+		}
+		hideTooltip(event) {
+			window.simpleTooltip.leftElement()
 		}
 }
 

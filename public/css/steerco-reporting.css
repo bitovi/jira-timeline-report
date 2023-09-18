@@ -1,12 +1,15 @@
-
-body {
-    margin: 8px;
-    padding: 0;
-    height: 100vh;
-    display: flex;
-    flex-flow: column;
-    gap: 24px;
-    background-color: white;
+simple-tooltip {
+    background-color: #ffffff;
+    border-radius: 3px;
+    box-shadow: rgb(9 30 66 / 31%) 0px 0px 1px, rgb(9 30 66 / 25%) 0px 20px 32px -8px;
+    padding: 12px;
+      z-index: 1000;
+  }
+  
+simple-tooltip span {
+    /* display: block; */
+    font-size: 14px;
+    line-height: 24px;
 }
 
 .form-control {
@@ -333,4 +336,18 @@ body {
 timeline-use ul {
 	list-style-type: disc;
 	margin-left: 20px;
+}
+
+
+details.rounded-lg-gray-100-on-white {
+  border: solid 1px var(--gray-200-color);
+  border-radius: 0.5rem;
+  background-color: white;
+  overflow: hidden;
+}
+details.rounded-lg-gray-100-on-white summary {
+  padding: var(--space-5);
+  cursor: pointer;
+  background-color: var(--gray-100-color);
+  display: list-item;
 }

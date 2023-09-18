@@ -1,8 +1,8 @@
 :root {
-	--complete-color: #0070c6;
-	--ontrack-color: #77ae99;
+	--complete-color: #77ae99;
+	--ontrack-color: #0070c6;
 	--behind-color: #f5de7d;
-	--unknown-color: #ffd9be;
+	--unknown-color: #ffd9be80;
 	--notstarted-color: rgb(134, 134, 134);
 	--blocked-color: rgb(242, 0, 11);
 	--white-color: rgb(255 255 255);
@@ -11,6 +11,8 @@
 	--slate-400-color: #DADADA;
 	--slate-300-color: #E7E7E7;
 	--sky-100-color: rgb(224 242 254);
+	--gray-100-color: #F3F4F6;
+	--gray-200-color: #E5E7EB;
 
   --space-0px: 0px;
 	--space-1px: 1px;
@@ -19,6 +21,7 @@
 	--space-2: .5rem;
 	--space-3: 0.75rem;
 	--space-4: 1rem; /*16*/
+	--space-5: 1.25rem;
 	--space-6: 1.5rem;
 	--space-10: 2.5rem;
 
@@ -27,7 +30,7 @@
 }
 
 
-menu, ol, ul, p {
+menu, ol, ul, p, body {
     list-style: none;
     margin: 0;
     padding: 0;

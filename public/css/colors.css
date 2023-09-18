@@ -78,6 +78,7 @@
 .color-text-and-bg-unknown {
 	background-color: var(--unknown-color);
 	color: var(--black-color);
+	opacity: 0.4;
 }
 .color-text-and-bg-notstarted {
 	background-color: var(--notstarted-color);
@@ -92,6 +93,15 @@
 	border-color: var(--slate-900-color);
 }
 
+.color-gray-900 {
+	color: #111928;
+}
+.color-bg-white {
+	background-color: var(--white-color);
+}
+.color-bg-sky-60 {
+	background-color: rgb(243 247 253);
+}
 
 .color-bg-slate-300 {
 	background-color: var(--slate-300-color)
@@ -99,4 +109,12 @@
 
 .color-bg-even-slate-300 > *:nth-child(even) {
 	background-color: var(--slate-300-color)
+}
+
+.drop-shadow-sm {
+	box-shadow: 1px 1px 2px rgba(0, 0, 0, .3);
+}
+
+.drop-shadow-md {
+	box-shadow: 2px 2px 5px rgba(0, 0, 0, .5);
 }

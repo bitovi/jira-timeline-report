@@ -21,14 +21,16 @@ export default async function main(jiraHelpers) {
 	report.jiraHelpers = jiraHelpers;
 	report.mode = "TEAMS";
 	document.body.append(report);
+	report.className = "place-center w-1280 block py-6"
 
+	/*
 	const nav = document.querySelector("nav");
 
 	nav.innerHTML = NAV_HTML;
-	nav.className = "py-2";
+	nav.className = "py-2";*/
 
 }
-
+/*
 const NAV_HTML = `<div class="flex">
 	<ul class="flex gap-3 flex-grow">
 		<li>
@@ -45,7 +47,7 @@ const NAV_HTML = `<div class="flex">
 		<a href="https://www.bitovi.com/services/agile-project-management-consulting" class="hover:text-sky-700 underline text-blue-500">Bitovi</a>
 	</div>
 </div>`
-
+*/
 
 
 function sleep(time) {
