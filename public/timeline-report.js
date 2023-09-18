@@ -2,7 +2,7 @@
 import { StacheElement, type, ObservableObject } from "//unpkg.com/can@6/core.mjs";
 //import bootstrap from "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" assert {type: 'css'};
 
-import "./css/css.js";
+
 
 
 import { howMuchHasDueDateMovedForwardChangedSince,
@@ -49,11 +49,11 @@ const FIX_VERSIONS_KEY = "Fix versions";
 
 export class TimelineReport extends StacheElement {
     static view = `
-          <details class='rounded-lg-gray-100-on-white my-2 drop-shadow-sm'>
+          <details class='rounded-lg-gray-100-on-white my-2 drop-shadow-md'>
             <summary>Use</summary>
-            <timeline-use class="p-4 block"></timeline-use>
+            <timeline-use class="p-4 block color-bg-white"></timeline-use>
           </details>
-          <details class='rounded-lg-gray-100-on-white my-2 drop-shadow-sm' open:from="not(this.jql)">
+          <details class='rounded-lg-gray-100-on-white my-2 drop-shadow-md color-bg-white' open:from="not(this.jql)">
 
             <summary>
               Configure
@@ -123,14 +123,7 @@ export class TimelineReport extends StacheElement {
 							showReleasesInTimeline:from="this.showReleasesInTimeline"
 							/>
 
-            <div class='border-solid-1px-slate-900 p-2'>
-              <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
-              <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
-              <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
-              <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
-              <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
-              <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
-            </div>
+            
 
           {{ else }}
             {{# if(this.jql) }}
