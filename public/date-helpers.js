@@ -14,6 +14,10 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
         if (dueDateSetItem) {
             const fromDate = dueDateSetItem.from && new Date(dueDateSetItem.from);
             const toDate = dueDateSetItem.to && new Date(dueDateSetItem.to);
+            // if this change was after "checkpoint", take "from"
+            // if this change was before "checkpoint", take "to"
+            
+            
             currentDate = toDate;
             // we just moved the time after checkpointDate
             if ((createdDate > checkpointDate) && !dueDateWasPriorToTheFirstChangeAfterTheCheckpoint && fromDate) {
@@ -57,8 +61,8 @@ export const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 export function sortByStartDate(issues) {
     return issues.sort((issueA, issueB) => {
-        const dateA = parseDateISOString(issueA[START_DATE_KEY]),
-            dateB = parseDateISOString(issueB[START_DATE_KEY]);
+        const dateA = issueA.start,
+            dateB = issueB.start;
         return dateA - dateB;
     })
 }
@@ -86,14 +90,14 @@ export function getDateFromLastPeriod(initiatives, lowercasePhase, checkpoint) {
 
 export function epicTimingData(epics) {
     const sorted = sortByStartDate(epics);
-    const due = endDateFromList(sorted),
-        dueLastPeriod = endDateFromList(sorted, "dueLastPeriod");
+    const due = endDateFromList(sorted)
+    // ,dueLastPeriod = endDateFromList(sorted, "dueLastPeriod");
 
     return {
         issues: sorted,
         start: firstDateFromList(sorted),
         due: endDateFromList(sorted),
-        dueLastPeriod: endDateFromList(sorted, "dueLastPeriod"),
+        //dueLastPeriod: endDateFromList(sorted, "dueLastPeriod"),
         workingBusinessDays: epics.reduce((acc, cur) => {
             return acc + (cur.workingBusinessDays || 0)
         }, 0),
@@ -103,19 +107,21 @@ export function epicTimingData(epics) {
     }
 }
 
-export function endDateFromList(issues, property = DUE_DATE_KEY) {
+export function endDateFromList(issues, property = "due") {
+    
     const values = issues.filter(
         issue => issue[property]
-    ).map(issue => parseDateISOString(issue[property]))
-        .filter((number) => !isNaN(number));
+    ).map(issue => +issue[property])
+    .filter((number) => !isNaN(number));
+
     return values.length ? new Date(Math.max(...values)) : undefined;
 }
 
 
 export function firstDateFromList(issues) {
     const values = issues.filter(
-        issue => issue[START_DATE_KEY]
-    ).map(issue => parseDateISOString(issue[START_DATE_KEY]));
+        issue => issue.start
+    ).map(issue => +issue.start);
     return values.length ? new Date(Math.min(...values)) : undefined;
 }
 

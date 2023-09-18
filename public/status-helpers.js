@@ -1,6 +1,8 @@
 const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
 const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
 export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
+export const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
+export const inIdeaStatuses =  Object.keys(inIdeaStatus);
 const inDoneStatus = { "Done": true, "Cancelled": true };
 const blockedStatus = { "Blocked": true }
 
@@ -35,7 +37,7 @@ function getReleaseStatus(release) {
 		if (release.initiatives.filter(i => i.status !== "complete").length === 0) {
 				return "complete"
 		}
-		const latest = release.initiatives.reduce( (acc, cur)=> {
+		/*const latest = release.initiatives.reduce( (acc, cur)=> {
 			if(!acc) {
 				return cur;
 			}
@@ -47,7 +49,7 @@ function getReleaseStatus(release) {
 		})
 		if(latest.status !== "notstarted" && latest.status !== "unknown") {
 			return latest.status;
-		}
+		}*/
 		return getInitiativeStatus(release);
 }
 function getReleaseDevStatus(release) {
@@ -110,7 +112,8 @@ function timedStatus(timedRecord) {
 		// completed state
 		else if( (+timedRecord.due) < new Date()  ) {
 			return "complete";
-		} else if ((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.dueLastPeriod)) {
+		} else if (timedRecord.lastPeriod && 
+			((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.lastPeriod.due)) ) {
 				return "behind";
 		} else if (timedRecord.start > new Date()) {
 				return "notstarted"
@@ -188,6 +191,7 @@ function getInitiativeUatStatus(initiative) {
 
 
 export function getEpicStatus(epic) {
+	debugger;
 		if (inQAStatus[epic.Status] || inPartnerReviewStatus[epic.Status] || inDoneStatus[epic.Status]) {
 				return "complete";
 		} else if (!epic["Due date"]) {

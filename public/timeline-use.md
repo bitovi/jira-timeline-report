@@ -22,7 +22,7 @@ This project is supported by Bitovi, an Agile Project Management consultancy. Fo
 
 You can get help or ask questions on our:
 
-- [Slack Community](https://www.bitovi.com/community/slack)
+- [Discord](https://discord.gg/J7ejFsZnJ4)
 - [Twitter](https://twitter.com/bitovi)
 
 

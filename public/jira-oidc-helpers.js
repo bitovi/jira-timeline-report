@@ -105,6 +105,18 @@ export default function JiraOIDCHelpers({
 				// location.href = '/error.html';
 			}
 		},
+		fetchJiraSprint: async (sprintId) => {
+			//this fetches all Recent Projects From Jira
+			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
+			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+			const url = `${JIRA_API_URL}/${scopeIdForJira}/rest/agile/1.0/sprint/${sprintId}`;
+			const config = {
+				headers: {
+					'Authorization': `Bearer ${accessToken}`,
+				}
+			}
+			return await axios.get(url, config);
+		},
 		fetchJiraIssue: async (issueId) => {
 			//this fetches all Recent Projects From Jira
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');

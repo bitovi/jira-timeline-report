@@ -1,0 +1,11 @@
+<script type="module">
+    const DAY = 1000 * 60 * 60 * 24;
+    
+    import {issues} from "./rollback.js";
+
+    const issueData = await fetch("./base-issues.json").then((resp)=> resp.json());
+
+    const thirtyDaysAgo = new Date(new Date() - DAY * 300)
+    console.log(issues( issueData, thirtyDaysAgo ) );
+    console.log(window.fieldsSet);
+</script>
