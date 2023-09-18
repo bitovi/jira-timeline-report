@@ -18,6 +18,10 @@
 	padding: var(--space-4);
 }
 
+.py-half {
+	padding-top: var(--space-half);
+	padding-bottom: var(--space-half);
+}
 
 .py-1 {
 	padding-top: var(--space-1);
@@ -36,6 +40,10 @@
 
 .mt-2 {
 	margin-top: var(--space-2);
+}
+
+.my-1 {
+	margin-top: var(--space-1);
 }
 
 .my-2 {
@@ -123,6 +131,11 @@
 
 .text-center {
 	text-align: center;
+}
+
+.border-y-solid-1px {
+	border-top: solid var(--space-1px) rgba(255,255,255,0);
+	border-bottom: solid var(--space-1px) rgba(255,255,255,0);
 }
 
 /* Mixing color and size */

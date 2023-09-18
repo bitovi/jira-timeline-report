@@ -127,9 +127,17 @@ class SteercoTimeline extends StacheElement {
 				</div>
 			</div>
 			{{/ for }}
-
+			
 		</div>
 		{{/ if }}
+		<div class='p-2'>
+              <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
+              <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
+              <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
+              <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
+              <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
+              <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
+            </div>
 		<simple-tooltip id="simpleTooltip"></simple-tooltip>
 	`
 		get showGanttGrid(){
@@ -197,17 +205,29 @@ class SteercoTimeline extends StacheElement {
 				zIndex: 0
 			});
 
-			background.className = (index % 2 ? "color-bg-slate-300" : "")
+			background.className = (index % 2 ? "color-bg-gray-20" : "")
 
 			const root = document.createElement("div");
+			const lastPeriodRoot = document.createElement("div");
+			root.appendChild(lastPeriodRoot);
 
 			Object.assign(root.style, {
 				...base,
 				position: "relative",
 				zIndex: 20
 			});
+			root.className = "py-1";
 
-			root.className = "py-1"
+			Object.assign(lastPeriodRoot.style, {
+				position: "absolute",
+				top: "0",
+				left: "0",
+				right: "0",
+				bottom: "0",
+				zIndex: "1" // this shouldn't be needed
+			});
+			lastPeriodRoot.className = "py-1 lastPeriod"
+
 
 			const { firstDay, lastDay } = this.calendarData;
 			const totalTime = (lastDay - firstDay);
@@ -238,30 +258,74 @@ class SteercoTimeline extends StacheElement {
 							}
 						}
 					}
+
+					function makeLastPeriodElement(status, timing){
+						
+						const behindTime =  document.createElement("div");
+						behindTime.style.backgroundClip = "content-box";
+						behindTime.style.opacity = "0.9";
+						behindTime.className = "border-y-solid-1px"
+
+						if(timing && status === "behind") {
+							Object.assign(behindTime.style, getPositions(timing || {}).style);
+							behindTime.classList.add("color-text-and-bg-behind-last-period");
+						}
+						return behindTime;
+					}
+
 					if(this.breakOutTimings) {
+
+						const lastDev = makeLastPeriodElement(release.devStatus, release.dev.lastPeriod);
+						lastDev.classList.add("h-1","py-half");
+						lastPeriodRoot.appendChild(lastDev);
+
 						const dev = document.createElement("div");
 						dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.devStatus;
-
 						Object.assign(dev.style, getPositions(release.dev).style);
 						root.appendChild(dev);
 
+						
 						if(this.hasQAEpic) {
+							const lastQA = makeLastPeriodElement(release.qaStatus, release.qa.lastPeriod);
+							lastQA.classList.add("h-1","py-half");
+							lastPeriodRoot.appendChild(lastQA);
+
+
 							const qa = document.createElement("div");
 							qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.qaStatus;
 							Object.assign(qa.style, getPositions(release.qa).style);
 							root.appendChild(qa);
+
+							
 						}
 						if(this.hasUATEpic) {
+							const lastUAT = makeLastPeriodElement(release.uatStatus, release.uat.lastPeriod);
+							lastUAT.classList.add("h-1","py-half");
+							lastPeriodRoot.appendChild(lastUAT);
+
+
 							const uat = document.createElement("div");
 							uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.uatStatus;
 							Object.assign(uat.style, getPositions(release.uat).style);
 							root.appendChild(uat);
+
+							
 						}
 					} else {
+
+						const behindTime = makeLastPeriodElement(release.status, release.team.lastPeriod);
+						behindTime.classList.add("h-4","py-1")
+						lastPeriodRoot.appendChild(behindTime);
+
 						const team = document.createElement("div");
 						team.className = "h-6 border-y-solid-1px-white color-text-and-bg-"+release.status;
 						Object.assign(team.style, getPositions(release.team).style);
+						team.style.opacity = "0.9";
+						
 						root.appendChild(team);
+
+						
+						
 					}
 
 

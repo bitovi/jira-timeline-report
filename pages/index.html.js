@@ -9,14 +9,15 @@ module.exports = function (env) {
 			<meta http-equiv="X-UA-Compatible" content="IE=edge">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>Timeline Reporting App</title>
+			<script type="module" src="./css/css.js"></script>
 	</head>
-	<body class='color-bg-sky-60'>
+	<body class='color-bg-slate-400'>
 	<div class="color-bg-white px-2">
 		<nav class="container mx-auto py-2 place-center w-1280">
 			<div class="flex">
 				<ul class="flex gap-3 flex-grow">
 					<li>
-						<a href="https://www.bitovi.com/services/agile-project-management-consulting" class="color-gray-900 text-2xl">Timeline Report</a>
+						<a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 text-2xl underline-on-hover">Timeline Report</a>
 					</li>
 				</ul>
 				<div>
