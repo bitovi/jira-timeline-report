@@ -13,7 +13,7 @@ module.exports = function (env) {
 			<meta property="og:title" content="Jira Timeline Report">
 			<meta property="og:type" content="website" />
 			<meta property="og:description" content="A Jira to PowerPoint slide generator for high-level status reporting.">
-			<meta property="og:image" content="https://repository-images.githubusercontent.com/593300471/1d699c13-5dfc-41ed-b877-4285d550335f">
+			<meta property="og:image" content="https://repository-images.githubusercontent.com/593300471/11f569ce-1e8d-4ad7-ada8-76ab8321ab25">
 			<meta property="og:url" content="https://timeline-report.bitovi-jira.com/">
 			<meta name="twitter:card" content="summary_large_image">
 
