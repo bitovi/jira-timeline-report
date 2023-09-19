@@ -9,6 +9,14 @@ module.exports = function (env) {
 			<meta http-equiv="X-UA-Compatible" content="IE=edge">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>Timeline Reporting App</title>
+
+			<meta property="og:title" content="Jira Timeline Report">
+			<meta property="og:type" content="website" />
+			<meta property="og:description" content="A Jira to PowerPoint slide generator for high-level status reporting.">
+			<meta property="og:image" content="https://repository-images.githubusercontent.com/593300471/1d699c13-5dfc-41ed-b877-4285d550335f">
+			<meta property="og:url" content="https://timeline-report.bitovi-jira.com/">
+			<meta name="twitter:card" content="summary_large_image">
+
 			<script type="module" src="./css/css.js"></script>
 	</head>
 	<body class='color-bg-slate-400'>
@@ -17,7 +25,7 @@ module.exports = function (env) {
 			<div class="flex">
 				<ul class="flex gap-3 flex-grow">
 					<li>
-						<a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 text-2xl underline-on-hover">Timeline Report</a>
+						<a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 text-2xl underline-on-hover">Jira Timeline Report</a>
 					</li>
 				</ul>
 				<div>
