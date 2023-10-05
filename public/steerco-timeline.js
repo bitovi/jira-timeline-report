@@ -419,7 +419,7 @@ class SteercoTimeline extends StacheElement {
 		wasReleaseDate(release) {
 
 				const current = release.due;
-				const was = release.lastPeriod.due;
+				const was = release.lastPeriod && release.lastPeriod.due;
 				
 				if (current - DAY_IN_MS > was) {
 						return " (" + this.prettyDate(was) + ")";
