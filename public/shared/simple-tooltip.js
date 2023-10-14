@@ -9,7 +9,7 @@ class SimpleTooltip extends HTMLElement {
       this.forElement = this.getAttribute("for");
       this.style.display = "none";
   
-      this.style.position = "fixed";
+      this.style.position = "absolute";
     }
     disconnectedCallback(){
       if(this._forElement) {
@@ -35,8 +35,8 @@ class SimpleTooltip extends HTMLElement {
       if(arguments.length > 1) {
         this.innerHTML = html;
         var rect = event.currentTarget.getBoundingClientRect();
-        this.style.top = (rect.bottom)+"px";
-        this.style.left = (rect.left) +"px";
+        this.style.top = (window.scrollY + rect.bottom)+"px";
+        this.style.left = (window.scrollX + rect.left) +"px";
         this.style.display = "";
       }
     }

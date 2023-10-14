@@ -56,6 +56,9 @@ code {
 .underline-on-hover:hover {
 	text-decoration: underline;
 }
+.pointer {
+	cursor: pointer;
+}
 
 h1 {
 	padding: 0px;

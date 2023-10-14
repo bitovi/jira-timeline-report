@@ -108,14 +108,13 @@ class SteercoTimeline extends StacheElement {
 					</div>
 					<ul class="release_box_body list-disc">
 						{{# for(initiative of release.initiatives) }}
-						 <li class='font-sans text-sm ' on:mouseenter='this.showTooltip(scope.event, initiative)' on:mouseleave='this.hideTooltip()'>
+						 <li class='font-sans text-sm ' on:click='this.showTooltip(scope.event, initiative)'>
 							{{# if(this.breakOutTimings) }}
 							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
 								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
 								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
 							{{/ if }}
-							<a href="{{initiative.url}}"
-									class="no-underline{{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.status}} {{/ }}">{{initiative.Summary}}</a>
+							<span class="pointer {{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.status}} {{/ }}">{{initiative.Summary}}</span>
 						 </li>
 						{{/ for}}
 					</ul>
@@ -421,11 +420,22 @@ class SteercoTimeline extends StacheElement {
 				const current = release.due;
 				const was = release.lastPeriod && release.lastPeriod.due;
 				
-				if (current - DAY_IN_MS > was) {
+				if (was && current - DAY_IN_MS > was) {
 						return " (" + this.prettyDate(was) + ")";
 				} else {
 						return ""
 				}
+		}
+		wasStartDate(release) {
+
+			const current = release.start;
+			const was = release.lastPeriod && release.lastPeriod.start;
+			
+			if (was && (current - DAY_IN_MS > was)) {
+					return " (" + this.prettyDate(was) + ")";
+			} else {
+					return ""
+			}
 		}
 		plus(first, second) {
 			return first + second;
@@ -435,33 +445,58 @@ class SteercoTimeline extends StacheElement {
 		}
 		showTooltip(event, initiative) {
 			console.log(initiative);
+
+			const make = (initiative, workPart) =>{
+				return `<div class="p-2">
+					<div class="release_box_subtitle_wrapper">
+							<span class="release_box_subtitle_key color-text-and-bg-${initiative[workPart+"Status"]}">${workPart.toUpperCase()}&nbsp;</span>
+							${
+								initiative[workPart+"Status"] !== "unknown" ?
+								`<span class="release_box_subtitle_value">
+									${this.prettyDate(initiative[workPart].start)}
+									${this.wasStartDate(initiative[workPart])}
+									</span><span>-</span>
+									<span class="release_box_subtitle_value">
+									${this.prettyDate(initiative[workPart].due)}
+									${this.wasReleaseDate(initiative[workPart])}
+								</span>` : ''
+							}
+							
+					</div>
+					${
+						initiative[workPart+"Status"] !== "unknown" ?
+						`<p>Start: <a href="${initiative[workPart]?.startFrom?.reference?.url}">
+							${initiative[workPart]?.startFrom?.reference?.Summary}</a>'s 
+							${initiative[workPart]?.startFrom?.message}
+						</p>
+						<p>End: <a href="${initiative[workPart]?.dueTo?.reference?.url}">
+							${initiative[workPart]?.dueTo?.reference?.Summary}</a>'s
+							${initiative[workPart]?.dueTo?.message}
+						</p>` :
+						''
+					}
+					
+				</div>`;
+			}
+
+
 			window.simpleTooltip.enteredElement(event, `
-			<div class="release_box_subtitle_wrapper">
-					<span class="release_box_subtitle_key color-text-and-bg-${initiative.devStatus}">Dev</span>
-					<span class="release_box_subtitle_value">
-					${this.prettyDate(initiative.dev.due)}
-					${this.wasReleaseDate(initiative.dev)}
-					</span>
+			<div class='flex remove-button pointer' style="justify-content: space-between">
+				<a href="${initiative.url}">${initiative.Summary}</a>
+				<span>❌</span>
 			</div>
-			<div class="release_box_subtitle_wrapper">
-					<span class="release_box_subtitle_key color-text-and-bg-${initiative.qaStatus}">QA&nbsp;</span>
-					<span class="release_box_subtitle_value">
-						${this.prettyDate(initiative.qa.due)}
-						${this.wasReleaseDate(initiative.qa)}
-					</span>
-			</div>
-			<div class="release_box_subtitle_wrapper">
-					<span class="release_box_subtitle_key color-text-and-bg-${initiative.uatStatus}">UAT</span>
-					<span class="release_box_subtitle_value">
-						${this.prettyDate(initiative.uat.due)}
-						${this.wasReleaseDate(initiative.uat)}
-					</span>
-			</div>
+			${make(initiative, "dev")}
+			${make(initiative, "qa")}
+			${make(initiative, "uat")}
 			`);
+
+			window.simpleTooltip.querySelector(".remove-button").onclick = ()=>{
+				window.simpleTooltip.leftElement()
+			}
 
 		}
 		hideTooltip(event) {
-			window.simpleTooltip.leftElement()
+			//window.simpleTooltip.leftElement()
 		}
 }
 
