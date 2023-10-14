@@ -90,13 +90,14 @@ export function getDateFromLastPeriod(initiatives, lowercasePhase, checkpoint) {
 
 export function epicTimingData(epics) {
     const sorted = sortByStartDate(epics);
-    const due = endDateFromList(sorted)
+    // const due = endDateFromList(sorted)
     // ,dueLastPeriod = endDateFromList(sorted, "dueLastPeriod");
-
+    
     return {
         issues: sorted,
-        start: firstDateFromList(sorted),
-        due: endDateFromList(sorted),
+        ... endDateDataFromList(sorted),
+        ... firstDateDataFromList(sorted),
+        ... endDateDataFromList(sorted),
         //dueLastPeriod: endDateFromList(sorted, "dueLastPeriod"),
         workingBusinessDays: epics.reduce((acc, cur) => {
             return acc + (cur.workingBusinessDays || 0)
@@ -107,22 +108,31 @@ export function epicTimingData(epics) {
     }
 }
 
-export function endDateFromList(issues, property = "due") {
-    
-    const values = issues.filter(
-        issue => issue[property]
-    ).map(issue => +issue[property])
-    .filter((number) => !isNaN(number));
 
-    return values.length ? new Date(Math.max(...values)) : undefined;
+
+function endDateDataFromList(issues) {
+    let maxDate = -Infinity, maxIndex;
+    for( let i = 0; i < issues.length; i++) {
+        const dueNumber = +issues[i].due;
+        if(!isNaN(dueNumber) && dueNumber > 0 && dueNumber > maxDate) {
+            maxDate = dueNumber;
+            maxIndex = i;
+        }
+    }
+    return maxIndex >=0 ? {due: new Date(issues[maxIndex].due), dueTo: issues[maxIndex].dueTo} : {};
 }
 
 
-export function firstDateFromList(issues) {
-    const values = issues.filter(
-        issue => issue.start
-    ).map(issue => +issue.start);
-    return values.length ? new Date(Math.min(...values)) : undefined;
+function firstDateDataFromList(issues) {
+    let minDate = Infinity, minIndex;
+    for( let i = 0; i < issues.length; i++) {
+        const startNumber = +issues[i].start;
+        if(!isNaN(startNumber) && startNumber > 0 && startNumber < minDate) {
+            minDate = startNumber;
+            minIndex = i;
+        }
+    }
+    return minIndex >=0 ? {start: new Date(issues[minIndex].start), startFrom: issues[minIndex].startFrom} : {};
 }
 
 export function getFirstDateFrom(initiatives, property) {

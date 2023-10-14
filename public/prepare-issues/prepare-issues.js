@@ -103,18 +103,45 @@ function getStartAndDueDatesFromStoriesAndSprints(stories){
     const startDates = [];
     const dueDates = [];
     for(const story of stories) {
-        if(story["Start date"]) {
-            startDates.push(parseDateISOString(story["Start date"]));
+        const storyStartDate = story["Start date"],
+            storyDueDate = story["Due date"]
+        if(storyStartDate) {
+            startDates.push({
+                start: parseDateISOString(storyStartDate), 
+                startFrom: {
+                    message: `start date`,
+                    reference: story
+                }
+            });
         }
-        if(story["Due date"]) {
-            dueDates.push(parseDateISOString((story["Due date"])));
+        if(storyDueDate) {
+            dueDates.push({
+                due: parseDateISOString(storyDueDate),
+                dueTo: {
+                    message: `due date`,
+                    reference: story
+                }
+            });
         }
         if(story.Sprint) {
             for(const sprint of story.Sprint) {
 
                 if(sprint) {
-                    startDates.push(parseDateISOString(sprint["startDate"]));
-                    dueDates.push(parseDateISOString(sprint["endDate"]));
+                    startDates.push({
+                        start: parseDateISOString(sprint["startDate"]), 
+                        startFrom: {
+                            message: `${sprint.name}`,
+                            reference: story
+                        }
+                    });
+                    
+                    dueDates.push({
+                        due: parseDateISOString(sprint["endDate"]),
+                        dueTo: {
+                            message: `${sprint.name}`,
+                            reference: story
+                        }
+                    });
                 } else {
                     console.warn("missing sprint");
                 }
@@ -126,34 +153,59 @@ function getStartAndDueDatesFromStoriesAndSprints(stories){
     if(!startDates.length && !dueDates.length) {
         return null;
     }
-    
+    // mixes in the first {start, startFrom} and the last {due,dueFrom}
     return {
-        start: startDates.sort( (d1, d2) => d1 - d2 )[0],
-        due: dueDates.sort( (d1, d2) => d2 - d1 )[0],
+        ...startDates.sort( (d1, d2) => d1.start - d2.start )[0],
+        ...dueDates.sort( (d1, d2) => d2.due - d1.due )[0]
     };
 }
 
+/**
+ * @param {*} baseEpic 
+ * @param {*} issuesMappedByParentKey 
+ * @returns An epic with {start, due, children, startFrom, endTo}
+ */
 function getEpicTiming(baseEpic, issuesMappedByParentKey){
-    
-
-    let start, due;
+    const children = issuesMappedByParentKey[baseEpic["Issue key"]];
+    let startData, dueData;
     if(baseEpic["Start date"]) {
-        start = parseDateISOString( baseEpic["Start date"] );
+        startData = {
+            start: parseDateISOString( baseEpic["Start date"] ),
+            startFrom: {
+                message: `start date`,
+                reference: baseEpic
+            }
+        }
     }
     if(baseEpic["Due date"]) {
-        due = parseDateISOString( baseEpic["Due date"] );
+        dueData = {
+            due: parseDateISOString( baseEpic["Due date"] ),
+            dueTo: {
+                message: `due date`,
+                reference: baseEpic
+            }
+        };
     }
-    if(start && due) {
-        return {...baseEpic, start, due}
+    if(startData && dueData) {
+        return {
+            ...baseEpic, 
+            ...startData,
+            ...dueData, 
+            children
+        };
     } else {
         // lets try to get timing from stories and sprints
-        const children = issuesMappedByParentKey[baseEpic["Issue key"]];
+        
         if(children) {
             const datesFromStories = getStartAndDueDatesFromStoriesAndSprints(children);
             if(datesFromStories) {
+                startData = startData || {start: datesFromStories.start, startFrom: datesFromStories.startFrom };
+                dueData = dueData || {due: datesFromStories.due, dueTo: datesFromStories.dueTo};
                 return {
                     ...baseEpic,
-                    ...datesFromStories
+                    ...startData,
+                    ...dueData,
+                    children
                 }
             } 
         }

@@ -29,3 +29,8 @@
 .no-underline {
 	text-decoration-line: none;
 }
+
+
+.nowrap {
+	white-space: nowrap;
+}
