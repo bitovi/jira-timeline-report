@@ -49,9 +49,9 @@ class SteercoTimeline extends StacheElement {
 					{{/ for }}
 				{{ else }}
 					{{# for(initiative of this.initiatives) }}
-						<div class='p-2 color-text-and-bg-{{initiative.status}} border-y-solid-1px-white'>
-							<a href="{{initiative.url}}"
-								class='color-text-and-bg-{{initiative.status}} no-underline'>{{initiative.Summary}}</a>
+						<div on:click='this.showTooltip(scope.event, initiative)' 
+							class='pointer p-2 color-text-and-bg-{{initiative.status}} border-y-solid-1px-white'>
+							{{initiative.Summary}}
 						</div>
 						{{this.getReleaseTimeline(initiative, scope.index)}}
 					{{/ for }}
@@ -73,7 +73,9 @@ class SteercoTimeline extends StacheElement {
 		<div class='release_wrapper {{# if(this.breakOutTimings) }}extra-timings{{else}}simple-timings{{/ if}}'>
 			{{# for(release of this.releases) }}
 				<div class='release_box'>
-					<div class="release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
+					<div 
+						on:click='this.showTooltip(scope.event, release)'
+						class="pointer release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
 					<div class="release_box_subtitle">
 						{{# if(not(eq(release.release, "Next")))}}
 							{{# if(this.breakOutTimings) }}
@@ -99,7 +101,8 @@ class SteercoTimeline extends StacheElement {
 							<div class="release_box_subtitle_wrapper">
 									<b>Target Delivery</b>
 									<span class="release_box_subtitle_value">
-										{{ this.prettyDate(release.team.due) }}{{this.wasReleaseDate(release.team)}}
+										<span class="nowrap">{{ this.prettyDate(release.team.due) }}</span>
+										<span class="nowrap">{{this.wasReleaseDate(release.team)}}</span>
 									</span>
 							</div>
 							{{/ if }}
@@ -108,13 +111,13 @@ class SteercoTimeline extends StacheElement {
 					</div>
 					<ul class="release_box_body list-disc">
 						{{# for(initiative of release.initiatives) }}
-						 <li class='font-sans text-sm ' on:click='this.showTooltip(scope.event, initiative)'>
+						 <li class='font-sans text-sm pointer' on:click='this.showTooltip(scope.event, initiative)'>
 							{{# if(this.breakOutTimings) }}
 							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
 								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
 								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
 							{{/ if }}
-							<span class="pointer {{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.status}} {{/ }}">{{initiative.Summary}}</span>
+							<span class="{{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.status}} {{/ }}">{{initiative.Summary}}</span>
 						 </li>
 						{{/ for}}
 					</ul>
@@ -443,35 +446,36 @@ class SteercoTimeline extends StacheElement {
 		lastRowBorder(index) {
 			return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
 		}
-		showTooltip(event, initiative) {
-			console.log(initiative);
+		showTooltip(event, initiativeOrRelease) {
 
-			const make = (initiative, workPart) =>{
+			console.log(initiativeOrRelease);
+
+			const make = (initiativeOrRelease, workPart) =>{
 				return `<div class="p-2">
 					<div class="release_box_subtitle_wrapper">
-							<span class="release_box_subtitle_key color-text-and-bg-${initiative[workPart+"Status"]}">${workPart.toUpperCase()}&nbsp;</span>
+							<span class="release_box_subtitle_key color-text-and-bg-${initiativeOrRelease[workPart+"Status"]}">${workPart.toUpperCase()}&nbsp;</span>
 							${
-								initiative[workPart+"Status"] !== "unknown" ?
+								initiativeOrRelease[workPart+"Status"] !== "unknown" ?
 								`<span class="release_box_subtitle_value">
-									${this.prettyDate(initiative[workPart].start)}
-									${this.wasStartDate(initiative[workPart])}
+									${this.prettyDate(initiativeOrRelease[workPart].start)}
+									${this.wasStartDate(initiativeOrRelease[workPart])}
 									</span><span>-</span>
 									<span class="release_box_subtitle_value">
-									${this.prettyDate(initiative[workPart].due)}
-									${this.wasReleaseDate(initiative[workPart])}
+									${this.prettyDate(initiativeOrRelease[workPart].due)}
+									${this.wasReleaseDate(initiativeOrRelease[workPart])}
 								</span>` : ''
 							}
 							
 					</div>
 					${
-						initiative[workPart+"Status"] !== "unknown" ?
-						`<p>Start: <a href="${initiative[workPart]?.startFrom?.reference?.url}">
-							${initiative[workPart]?.startFrom?.reference?.Summary}</a>'s 
-							${initiative[workPart]?.startFrom?.message}
+						initiativeOrRelease[workPart+"Status"] !== "unknown" ?
+						`<p>Start: <a href="${initiativeOrRelease[workPart]?.startFrom?.reference?.url}">
+							${initiativeOrRelease[workPart]?.startFrom?.reference?.Summary}</a>'s 
+							${initiativeOrRelease[workPart]?.startFrom?.message}
 						</p>
-						<p>End: <a href="${initiative[workPart]?.dueTo?.reference?.url}">
-							${initiative[workPart]?.dueTo?.reference?.Summary}</a>'s
-							${initiative[workPart]?.dueTo?.message}
+						<p>End: <a href="${initiativeOrRelease[workPart]?.dueTo?.reference?.url}">
+							${initiativeOrRelease[workPart]?.dueTo?.reference?.Summary}</a>'s
+							${initiativeOrRelease[workPart]?.dueTo?.message}
 						</p>` :
 						''
 					}
@@ -482,12 +486,12 @@ class SteercoTimeline extends StacheElement {
 
 			window.simpleTooltip.enteredElement(event, `
 			<div class='flex remove-button pointer' style="justify-content: space-between">
-				<a href="${initiative.url}">${initiative.Summary}</a>
+				<a href="${initiativeOrRelease.url}">${initiativeOrRelease.Summary || initiativeOrRelease.release}</a>
 				<span>❌</span>
 			</div>
-			${make(initiative, "dev")}
-			${make(initiative, "qa")}
-			${make(initiative, "uat")}
+			${make(initiativeOrRelease, "dev")}
+			${make(initiativeOrRelease, "qa")}
+			${make(initiativeOrRelease, "uat")}
 			`);
 
 			window.simpleTooltip.querySelector(".remove-button").onclick = ()=>{

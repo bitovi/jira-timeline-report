@@ -8,6 +8,7 @@
 	padding-right: var(--space-1px);
 }
 
+
 .p-2 {
 	padding: var(--space-2);
 }
@@ -37,6 +38,9 @@
 	padding-bottom: var(--space-6);
 }
 
+.m-0 {
+	margin: 0px;
+}
 
 .mt-2 {
 	margin-top: var(--space-2);
@@ -126,6 +130,9 @@
 }
 .grid {
 	display: grid;
+}
+.self-start {
+	align-self: flex-start;
 }
 
 

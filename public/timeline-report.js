@@ -67,35 +67,47 @@ export class TimelineReport extends StacheElement {
 
 						<div class="grid gap-3 p-4" style="grid-template-columns: max-content max-content 1fr">
 
+              <label class='font-bold'>Sort by Due Date</label>
+              <input type='checkbox' 
+                class='self-start' checked:bind='this.sortByDueDate'/>
+              <p class="m-0">Instead of ordering initiatives based on the order defined in the JQL, 
+              sort initiatives by their last epic's due date.
+              </p>
+
 							<label class='font-bold'>Show Releases</label>
-							<input type='checkbox' checked:bind='this.showReleasesInTimeline'/>
-							<p>Instead of showing the timing for initiatives, show the timing for releases. Initiatives
+							<input type='checkbox' 
+                class='self-start' checked:bind='this.showReleasesInTimeline'/>
+							<p class="m-0">Instead of showing the timing for initiatives, show the timing for releases. Initiatives
 							must have their <code>release</code> (also called <code>Fix version</code>) field set.
 							</p>
 
 							{{# if(this.showReleasesInTimeline) }}
 							<label class='font-bold'>Show Only Semver Releases</label>
-							<input type='checkbox' checked:bind='this.showOnlySemverReleases'/>
-							<p>This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
+							<input type='checkbox' 
+                class='self-start'  checked:bind='this.showOnlySemverReleases'/>
+							<p class="m-0">This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
 							<code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
 							</p>
 							{{/ }}
 
 							<label class='font-bold'>Break out Dev, QA and UAT</label>
-							<input type='checkbox' checked:bind='this.breakOutTimings'/>
-							<p>If initiatives have epics labelled with "QA" and/or "UAT", the report will show individual timelines and
+							<input type='checkbox' 
+                class='self-start'  checked:bind='this.breakOutTimings'/>
+							<p class="m-0">If initiatives have epics labelled with "QA" and/or "UAT", the report will show individual timelines and
 								statuses for Development, QA, and UAT.
 							</p>
 
 							<label class='font-bold'>Ignore Initiatives in UAT</label>
-							<input type='checkbox' checked:bind='this.hideInitiativesInUAT'/>
-							<p>Initiatives that are in UAT will not be shown. Check this if you do not want to
+							<input type='checkbox' 
+                class='self-start'  checked:bind='this.hideInitiativesInUAT'/>
+							<p class="m-0">Initiatives that are in UAT will not be shown. Check this if you do not want to
 							report on work that is in its final stages.
 							</p>
 
               <label class='font-bold'>Ignore Initiatives in Idea</label>
-							<input type='checkbox' checked:bind='this.hideInitiativesInIdea'/>
-							<p>Initiatives that have an Open, To Do, or Idea status will not be shown.
+							<input type='checkbox' 
+                class='self-start'  checked:bind='this.hideInitiativesInIdea'/>
+							<p class="m-0">Initiatives that have an Open, To Do, or Idea status will not be shown.
 							</p>
 
 
@@ -127,7 +139,7 @@ export class TimelineReport extends StacheElement {
 
           {{ else }}
             {{# if(this.jql) }}
-              <div class="my-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Loading ...</div>
+              <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Loading ...</div>
             {{/ if }}
           {{/ if}}
 
@@ -195,6 +207,7 @@ export class TimelineReport extends StacheElement {
         hideInitiativesInUAT: saveJSONToUrl("hideInitiativesInUAT", false, Boolean, booleanParsing),
         hideInitiativesInIdea: saveJSONToUrl("hideInitiativesInIdea", false, Boolean, booleanParsing),
         showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
+        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic) order by Rank", String, {parse: x => ""+x, stringify: x => ""+x}),
         mode: {
             type: String,
@@ -295,7 +308,10 @@ export class TimelineReport extends StacheElement {
     get initiativesWithAStartAndEndDate(){
       var initiatives =  this.initiativesWithTimedEpics.filter( (i) => {
         return i.team.start < i.team.due;
-      }).sort( (i1, i2) => i1.team.due - i2.team.due);
+      })
+      if(this.sortByDueDate) {
+        initiatives = initiatives.sort( (i1, i2) => i1.team.due - i2.team.due);
+      }
 
       if(this.hideInitiativesInIdea) {
         initiatives = initiatives.filter( (initiative) => {
