@@ -40,6 +40,9 @@
 .color-bg-slate-400 {
 	background-color: var(--slate-400-color)
 }
+.color-bg-warning {
+	background-color: var(--warning-color)
+}
 
 .color-text-complete {
 	color: var(--complete-color);
