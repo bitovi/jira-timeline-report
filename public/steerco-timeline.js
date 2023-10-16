@@ -142,6 +142,8 @@ class SteercoTimeline extends StacheElement {
             </div>
 		<simple-tooltip id="simpleTooltip"></simple-tooltip>
 	`
+
+
 		get showGanttGrid(){
 			return this.breakOutTimings || !this.showReleasesInTimeline;
 		}
@@ -447,13 +449,20 @@ class SteercoTimeline extends StacheElement {
 			return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
 		}
 		showTooltip(event, initiativeOrRelease) {
-
+			// Better would be to do the rest with state .... but I'm being lazy
 			console.log(initiativeOrRelease);
-
+			if(this.showTooltipObject === initiativeOrRelease) {
+				this.showTooltipObject = null;
+				window.simpleTooltip.leftElement();
+				return;
+			}
+			this.showTooltipObject = initiativeOrRelease;
 			const make = (initiativeOrRelease, workPart) =>{
 				return `<div class="p-2">
 					<div class="release_box_subtitle_wrapper">
-							<span class="release_box_subtitle_key color-text-and-bg-${initiativeOrRelease[workPart+"Status"]}">${workPart.toUpperCase()}&nbsp;</span>
+							<span class="release_box_subtitle_key color-text-and-bg-${initiativeOrRelease[workPart+"Status"]}">
+								&nbsp;${workPart.toUpperCase()}&nbsp;
+							</span>
 							${
 								initiativeOrRelease[workPart+"Status"] !== "unknown" ?
 								`<span class="release_box_subtitle_value">
@@ -465,8 +474,11 @@ class SteercoTimeline extends StacheElement {
 									${this.wasReleaseDate(initiativeOrRelease[workPart])}
 								</span>` : ''
 							}
-							
 					</div>
+					${ 
+						initiativeOrRelease[workPart+"StatusData"]?.warning === true ?
+						`<div class="color-bg-warning">${initiativeOrRelease[workPart+"StatusData"].message}</div>` : ""
+					}
 					${
 						initiativeOrRelease[workPart+"Status"] !== "unknown" ?
 						`<p>Start: <a href="${initiativeOrRelease[workPart]?.startFrom?.reference?.url}">
@@ -486,21 +498,24 @@ class SteercoTimeline extends StacheElement {
 
 			window.simpleTooltip.enteredElement(event, `
 			<div class='flex remove-button pointer' style="justify-content: space-between">
-				<a href="${initiativeOrRelease.url}">${initiativeOrRelease.Summary || initiativeOrRelease.release}</a>
+				<a class="p-1 color-text-and-bg-${initiativeOrRelease.status}"
+					href="${initiativeOrRelease.url}">${initiativeOrRelease.Summary || initiativeOrRelease.release}</a>
 				<span>❌</span>
 			</div>
+			${ 
+				initiativeOrRelease?.statusData?.warning === true ?
+				`<div class="color-bg-warning">${initiativeOrRelease.statusData.message}</div>` : ""
+			}
 			${make(initiativeOrRelease, "dev")}
 			${make(initiativeOrRelease, "qa")}
 			${make(initiativeOrRelease, "uat")}
 			`);
 
-			window.simpleTooltip.querySelector(".remove-button").onclick = ()=>{
+			window.simpleTooltip.querySelector(".remove-button").onclick = ()=> {
+				this.showTooltipObject = null;
 				window.simpleTooltip.leftElement()
 			}
 
-		}
-		hideTooltip(event) {
-			//window.simpleTooltip.leftElement()
 		}
 }
 

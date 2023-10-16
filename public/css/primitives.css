@@ -3,6 +3,7 @@
 	--ontrack-color: #4C9AFF; /* B100 - Arvo breeze */
 	--behind-color: #FFC400; /* Y200 - Pub mix */
 	--last-period-behind-color: #FFE380; /*Y100 - Cowbell*/
+	--warning-color: #ffaB00; /* Y300 - Golden state */
 	--unknown-color: #ffd9be80;
 	--notstarted-color: #97A0AF; /* N80 - Spooky ghost */
 	--blocked-color: rgb(242, 0, 11);
@@ -45,7 +46,6 @@ menu, body, steerco-timeline ol, steerco-timeline ul, nav ul, steerco-timeline p
 code {
 	font-family: var(--font-mono);
 }
-
 
 .list-disc {
 	list-style-type: disc;

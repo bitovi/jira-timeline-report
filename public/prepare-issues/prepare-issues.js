@@ -1,6 +1,6 @@
 import { estimateExtraPoints } from "../confidence.js";
 import {
-    addStatusToInitiative, addStatusToEpic,
+    addStatusToInitiative,
     addStatusToRelease, getBusinessDatesCount, inPartnerReviewStatuses
 } from "../status-helpers.js";
 

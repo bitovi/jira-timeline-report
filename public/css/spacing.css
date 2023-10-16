@@ -8,7 +8,9 @@
 	padding-right: var(--space-1px);
 }
 
-
+.p-1 {
+	padding: var(--space-1);
+}
 .p-2 {
 	padding: var(--space-2);
 }

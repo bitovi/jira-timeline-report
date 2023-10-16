@@ -11,7 +11,7 @@ import { howMuchHasDueDateMovedForwardChangedSince,
 import "./timeline-use.js";
 
 import {
-    addStatusToInitiative, addStatusToEpic,
+    addStatusToInitiative,
     addStatusToRelease, getBusinessDatesCount, inPartnerReviewStatuses,
     inIdeaStatus,
     inIdeaStatuses

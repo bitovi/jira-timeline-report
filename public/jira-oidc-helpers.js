@@ -1,5 +1,5 @@
 
-const CACHE_FETCH = true;
+const CACHE_FETCH = false;
 
 function responseToJSON(response) {
 	return response.json();
