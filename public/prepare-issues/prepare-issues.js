@@ -167,6 +167,11 @@ function getStartAndDueDatesFromStoriesAndSprints(stories){
  */
 function getEpicTiming(baseEpic, issuesMappedByParentKey){
     const children = issuesMappedByParentKey[baseEpic["Issue key"]];
+
+    if(['CME-136', 'CME-137', 'CME-138', 'CME-141', 'CME-143', 'ECCRM-2134', 'CME-148'].includes(baseEpic)) {
+        debugger;
+    }
+
     let startData, dueData;
     if(baseEpic["Start date"]) {
         startData = {
