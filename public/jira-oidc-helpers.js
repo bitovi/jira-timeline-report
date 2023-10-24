@@ -2,6 +2,14 @@
 const CACHE_FETCH = false;
 
 function responseToJSON(response) {
+	if(!response.ok) {
+		return response.json().then((payload) => {
+			const err = new Error("HTTP status code: " + response.status);
+			Object.assign(err, payload);
+			Object.assign(err, response);
+			throw err;
+		})
+	}
 	return response.json();
 }
 
@@ -223,27 +231,31 @@ export default function JiraOIDCHelpers({
 				return response;
 			})
 		},
-		fetchAllJiraIssuesWithJQLAndFetchAllChangelog: async function (params) {
+		fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params) {
 			function getRemainingChangeLogsForIssues(response) {
 				return jiraHelpers.fetchRemainingChangelogsForIssues(response.issues)
 			}
 
 			const firstRequest = jiraHelpers.fetchJiraIssuesWithJQL({ maxResults: 100, expand: ["changelog"], ...params });
 
-			const { issues, maxResults, total, startAt } = await firstRequest;
-			const requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
+			return firstRequest.then( ({ issues, maxResults, total, startAt }) => {
 
-			for (let i = startAt + maxResults; i < total; i += maxResults) {
-				requests.push(
-					jiraHelpers.fetchJiraIssuesWithJQL({ maxResults: maxResults, startAt: i, ...params })
-						.then(getRemainingChangeLogsForIssues)
-				);
-			}
-			return Promise.all(requests).then(
-				(responses) => {
-					return responses.flat();
+				const requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
+
+				for (let i = startAt + maxResults; i < total; i += maxResults) {
+					requests.push(
+						jiraHelpers.fetchJiraIssuesWithJQL({ maxResults: maxResults, startAt: i, ...params })
+							.then(getRemainingChangeLogsForIssues)
+					);
 				}
-			)
+				return Promise.all(requests).then(
+					(responses) => {
+						return responses.flat();
+					}
+				)
+			});
+
+			
 		},
 		// this could do each response incrementally, but I'm being lazy
 		fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: async function (params) {

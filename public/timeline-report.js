@@ -124,9 +124,11 @@ export class TimelineReport extends StacheElement {
           </details>
 
 
+          {{# if( not(this.jql) ) }}
+            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Enter a JQL above.</div>
+          {{ /if }}
 
-
-					{{# if(this.releases) }}
+					{{# if(this.rawIssuesPromise.value) }}
 						<steerco-timeline
 							class='my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md'
 							releases:from="this.releases"
@@ -134,14 +136,17 @@ export class TimelineReport extends StacheElement {
 							breakOutTimings:from="this.breakOutTimings"
 							showReleasesInTimeline:from="this.showReleasesInTimeline"
 							/>
-
-            
-
-          {{ else }}
-            {{# if(this.jql) }}
-              <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Loading ...</div>
-            {{/ if }}
-          {{/ if}}
+          {{/ if }}
+          {{# if(this.rawIssuesPromise.isPending) }}
+            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Loading ...</div>
+          {{/ if }}
+          {{# if(this.rawIssuesPromise.isRejected) }}
+            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
+              <p>There was an error loading from Jira!</p>
+              <p>Error message: {{this.rawIssuesPromise.reason.errorMessages[0]}}</p>
+              <p>Please check your JQL is correct!</p>
+            </div>
+          {{/ if }}
 
   `;
     static props = {
@@ -217,41 +222,52 @@ export class TimelineReport extends StacheElement {
             default: function (issue) {
                 return issue?.[FIX_VERSIONS_KEY]?.[0]?.name;
             }
+        },
+        rawIssues: {
+          async(resolve) {
+            console.log("checking for promise")
+            if(!this.rawIssuesPromise) {
+              console.log("no promise");
+              resolve(null)
+            } else {
+              console.log("have a promise")
+              this.rawIssuesPromise.then(resolve);
+            }
+          }
         }
     };
     // hooks
     async connected() {
 
-        this.jiraHelpers.getServerInfo().then((serverInfo) => {
-            this.serverInfo = serverInfo;
+    }
+    get serverInfoPromise(){
+      return this.jiraHelpers.getServerInfo();
+    }
+    get rawIssuesPromise(){
+      if (this.jql) {
+        const serverInfoPromise = this.serverInfoPromise;
+
+        const issuesPromise = this.jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields({
+            jql: this.jql,
+            fields: ["summary",
+                "Rank",
+                "Start date",
+                "Due date",
+                "Issue Type",
+                "Fix versions",
+                "Story Points",
+                "Confidence",
+                "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created"],
+            expand: ["changelog"]
         });
 
-        if (this.jql) {
-            const serverInfoPromise = this.jiraHelpers.getServerInfo();
+        return Promise.all([
+            issuesPromise, serverInfoPromise
+        ]).then(([issues, serverInfo]) => {
+            return rawIssuesToBaseIssueFormat(issues, serverInfo);
 
-            const issuesPromise = this.jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields({
-                jql: this.jql,
-                fields: ["summary",
-                    "Rank",
-                    "Start date",
-                    "Due date",
-                    "Issue Type",
-                    "Fix versions",
-                    "Story Points",
-                    "Confidence",
-                    "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created"],
-                expand: ["changelog"]
-            });
-
-            Promise.all([
-                issuesPromise, serverInfoPromise
-            ]).then(([issues, serverInfo]) => {
-                this.rawIssues = rawIssuesToBaseIssueFormat(issues, serverInfo);
-            })
-
-
-        }
-
+        })
+     }
     }
     get teams() {
         if (!this.rawIssues) {
