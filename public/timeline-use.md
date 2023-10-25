@@ -12,7 +12,7 @@ to the browser, no JIRA data even flows through our servers.
 All the code is open source in [Github Issue](https://github.com/bitovi/jira-timeline-report) so you can verify this yourself or host it yourself.
 
 
-## Need help or Have Questions?
+## Need Help or Have Questions?
 
 This project is supported by Bitovi, an [Agile Project Management consultancy](https://www.bitovi.com/services/agile-project-management-consulting). For bugs or feature requests, please submit a [Github Issue](https://github.com/bitovi/jira-timeline-report/issues).
 
@@ -37,3 +37,27 @@ Note, your epics and initiatives will need the following statuses for the tool t
 The [Agile Project Management with Jira - Continuous Exploration](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/continuous-exploration-board.html) training has 
 videos on how to create an initiative type with the right statuses. 
 
+
+
+## How Timing is Calculated
+
+Initiative timing is calculated from __epic__ `Start date` and `Due date` fields. Initiative dates are _ignored_.
+If the __epic__ does not have a `Start date` or `End date`, the stories within the __epic__ can be used to determine 
+the timing of the __epic__. In this case, the latest story's end date will be used as the epic's `End date`
+and the earliest story's start date will be used as the epic's `Start date`.
+
+Story timing itself is determined from:
+
+- The `Start date` and `End date` of the story; or if these don't exist
+- The story's sprints
+
+
+
+
+__NOTE:__ To use story timing, you must use a JQL that includes stories.  
+
+
+
+## Labeling epics as QA or UAT
+
+To label epics as part of an initiative's QA or UAT timing, add a `Label` that includes the characters `QA` or `UAT`.
