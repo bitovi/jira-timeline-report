@@ -53,7 +53,6 @@ module.exports = function (env) {
 		</nav>
 	</div>
 			<div id="mainElement" class='place-center w-1280'>Loading ... </div>
-			<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
 			<script>
 			logout.onclick = function(){
 				localStorage.clear();

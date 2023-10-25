@@ -14,7 +14,6 @@ module.exports = function () {
 <body>
 		<h1>Jira QA Metrics: OAuth Callback</h1>
 		<div id="mainElement">Loading ... </div>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
 		<script type="module">
 			import JiraOIDCHelpers from "./jira-oidc-helpers.js";
 			import oauthCallback from "./oauth-callback.js";

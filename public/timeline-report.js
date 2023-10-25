@@ -144,7 +144,12 @@ export class TimelineReport extends StacheElement {
 							/>
           {{/ and }}
           {{# if(this.rawIssuesPromise.isPending) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Loading ...</div>
+            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
+              <p>Loading ...<p>
+              {{# if(this.progressData.issuesRequested)}}
+                <p>Loaded {{this.progressData.issuesReceived}} of {{this.progressData.issuesRequested}} issues.</p>
+              {{/ }}
+            </div>
           {{/ if }}
           {{# if(this.rawIssuesPromise.isRejected) }}
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
@@ -169,6 +174,7 @@ export class TimelineReport extends StacheElement {
           type: type.convert(Number),
           default: 25
         },
+        progressData: type.Any,
         get compareToTime(){
           const SECOND = 1000;
           const MIN = 60 * SECOND;
@@ -263,6 +269,8 @@ export class TimelineReport extends StacheElement {
                 "Confidence",
                 "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created"],
             expand: ["changelog"]
+        }, (progressData)=> {
+          this.progressData = {...progressData};
         });
 
         return Promise.all([

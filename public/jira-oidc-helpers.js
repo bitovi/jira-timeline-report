@@ -69,7 +69,9 @@ export default function JiraOIDCHelpers({
 		},
 		refreshAccessToken: async (accessCode) => {
 			try {
-				const response = await axios.get(`${window.env.JIRA_API_URL}/?code=${accessCode}`)
+				const response = await fetchJSON(`${window.env.JIRA_API_URL}/?code=${accessCode}`)
+				
+
 				const {
 					accessToken,
 					expiryTimestamp,
@@ -89,13 +91,12 @@ export default function JiraOIDCHelpers({
 		},
 		fetchAccessTokenWithAuthCode: async (authCode) => {
 			try {
-				const response = await axios.get(`./access-token?code=${authCode}`)
 				const {
 					accessToken,
 					expiryTimestamp,
 					refreshToken,
 					scopeId
-				} = response.data;
+				} = await fetchJSON(`./access-token?code=${authCode}`)
 
 				jiraHelpers.saveInformationToLocalStorage({
 					accessToken,
@@ -123,7 +124,7 @@ export default function JiraOIDCHelpers({
 					'Authorization': `Bearer ${accessToken}`,
 				}
 			}
-			return await axios.get(url, config);
+			return await fetchJSON(url, config);
 		},
 		fetchJiraIssue: async (issueId) => {
 			//this fetches all Recent Projects From Jira
@@ -135,7 +136,7 @@ export default function JiraOIDCHelpers({
 					'Authorization': `Bearer ${accessToken}`,
 				}
 			}
-			return await axios.get(url, config);
+			return await fetchJSON(url, config);
 		},
 		fetchJiraIssuesWithJQL: function (params) {
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
@@ -185,7 +186,7 @@ export default function JiraOIDCHelpers({
 		isChangelogComplete(changelog) {
 			return changelog.histories.length === changelog.total
 		},
-		fetchRemainingChangelogsForIssues(issues) {
+		fetchRemainingChangelogsForIssues(issues, progress = function(){}) {
 			// check for remainings
 			return Promise.all(issues.map(issue => {
 				if (jiraHelpers.isChangelogComplete(issue.changelog)) {
@@ -231,14 +232,31 @@ export default function JiraOIDCHelpers({
 				return response;
 			})
 		},
-		fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params) {
+		fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params, progress= function(){}) {
+			// a weak map would be better
+			progress.data = {
+				issuesRequested: 0,
+				issuesReceived: 0,
+				changeLogsRequested: 0,
+				changeLogsReceived: 0
+			};
 			function getRemainingChangeLogsForIssues(response) {
-				return jiraHelpers.fetchRemainingChangelogsForIssues(response.issues)
+				Object.assign(progress.data, {
+					issuesReceived: progress.data.issuesReceived+response.issues.length
+				});
+				progress(progress.data);
+				return jiraHelpers.fetchRemainingChangelogsForIssues(response.issues, progress)
 			}
 
 			const firstRequest = jiraHelpers.fetchJiraIssuesWithJQL({ maxResults: 100, expand: ["changelog"], ...params });
 
 			return firstRequest.then( ({ issues, maxResults, total, startAt }) => {
+				Object.assign(progress.data, {
+					issuesRequested: total,
+					changeLogsRequested: 0,
+					changeLogsReceived: 0
+				});
+				progress(progress.data);
 
 				const requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
 
@@ -258,13 +276,13 @@ export default function JiraOIDCHelpers({
 			
 		},
 		// this could do each response incrementally, but I'm being lazy
-		fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: async function (params) {
+		fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: async function (params, progress) {
 			const fields = await fieldsRequest;
 			const newParams = {
 				...params,
 				fields: params.fields.map(f => fields.nameMap[f] || f)
 			}
-			const response = await jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams);
+			const response = await jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress);
 
 
 			return response.map((issue) => {
