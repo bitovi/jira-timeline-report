@@ -18,6 +18,7 @@ module.exports = function (env) {
 			<meta name="twitter:card" content="summary_large_image">
 
 			<script type="module" src="./css/css.js"></script>
+			
 	</head>
 	<body class='color-bg-slate-400'>
 	<div class="color-bg-white px-2">
@@ -50,6 +51,15 @@ module.exports = function (env) {
 				import main from "./main.js";
 				const jiraHelpers = JiraOIDCHelpers(${JSON.stringify(getSafeEnv())});
 				main(jiraHelpers);
+			</script>
+			<!-- Google tag (gtag.js) -->
+			<script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
+			<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+
+			gtag('config', 'G-XQR3T6BZL3');
 			</script>
 	</body>
 	</html>

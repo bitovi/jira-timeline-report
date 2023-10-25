@@ -232,12 +232,9 @@ export class TimelineReport extends StacheElement {
         },
         rawIssues: {
           async(resolve) {
-            console.log("checking for promise")
             if(!this.rawIssuesPromise) {
-              console.log("no promise");
               resolve(null)
             } else {
-              console.log("have a promise")
               this.rawIssuesPromise.then(resolve);
             }
           }
