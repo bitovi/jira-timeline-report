@@ -22,11 +22,11 @@ module.exports = function (env) {
 			<!-- Google tag (gtag.js) -->
 			<script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
 			<script>
-			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);}
-			gtag('js', new Date());
+				window.dataLayer = window.dataLayer || [];
+				function gtag(){dataLayer.push(arguments);}
+				gtag('js', new Date());
 
-			gtag('config', 'G-XQR3T6BZL3');
+				gtag('config', 'G-XQR3T6BZL3');
 			</script>
 	</head>
 	<body class='color-bg-slate-400'>
