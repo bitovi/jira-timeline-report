@@ -74,6 +74,12 @@ export class TimelineReport extends StacheElement {
               sort initiatives by their last epic's due date.
               </p>
 
+              <label class='font-bold'>Hide Unknown Initiatives</label>
+              <input type='checkbox' 
+                class='self-start' checked:bind='this.hideUnknownInitiatives'/>
+              <p class="m-0">Hide initiatives whose timing can't be determined.
+              </p>
+
 							<label class='font-bold'>Show Releases</label>
 							<input type='checkbox' 
                 class='self-start' checked:bind='this.showReleasesInTimeline'/>
@@ -128,7 +134,7 @@ export class TimelineReport extends StacheElement {
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Enter a JQL above.</div>
           {{ /if }}
 
-					{{# if(this.rawIssuesPromise.value) }}
+					{{# and(this.rawIssuesPromise.value, this.releases) }}
 						<steerco-timeline
 							class='my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md'
 							releases:from="this.releases"
@@ -136,7 +142,7 @@ export class TimelineReport extends StacheElement {
 							breakOutTimings:from="this.breakOutTimings"
 							showReleasesInTimeline:from="this.showReleasesInTimeline"
 							/>
-          {{/ if }}
+          {{/ and }}
           {{# if(this.rawIssuesPromise.isPending) }}
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Loading ...</div>
           {{/ if }}
@@ -213,6 +219,7 @@ export class TimelineReport extends StacheElement {
         hideInitiativesInIdea: saveJSONToUrl("hideInitiativesInIdea", false, Boolean, booleanParsing),
         showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
+        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
         jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic) order by Rank", String, {parse: x => ""+x, stringify: x => ""+x}),
         mode: {
             type: String,
@@ -314,17 +321,34 @@ export class TimelineReport extends StacheElement {
 
       const filteredInitiatives =  filterOutInitiativeStatuses( this.rawIssues, initiativeStatusesToRemove )
 
-      return releasesAndInitiativesWithPriorTiming(filteredInitiatives, 
+      const {releases, initiatives} = releasesAndInitiativesWithPriorTiming(filteredInitiatives, 
         new Date( new Date().getTime() - this.compareToTime.timePrior ), 
-        !this.hideInitiativesInUAT)
+        !this.hideInitiativesInUAT);
+
+      function startBeforeDue(initiative) {
+        return initiative.team.start < initiative.team.due;
+      }
+
+      if(this.hideUnknownInitiatives) {
+        return {
+          initiatives: initiatives.filter( startBeforeDue),
+          releases: releases.map( release => {
+            return {
+              ...release,
+              initiatives: release.initiatives.filter(startBeforeDue)
+            }
+          })
+        };
+      } else {
+        return {releases, initiatives};
+      }
     }
     get initiativesWithTimedEpics(){
       return this.releasesAndInitiativesWithPriorTiming.initiatives;
     }
     get initiativesWithAStartAndEndDate(){
-      var initiatives =  this.initiativesWithTimedEpics.filter( (i) => {
-        return i.team.start < i.team.due;
-      })
+      var initiatives =  this.initiativesWithTimedEpics;
+
       if(this.sortByDueDate) {
         initiatives = initiatives.sort( (i1, i2) => i1.team.due - i2.team.due);
       }

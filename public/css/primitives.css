@@ -64,3 +64,10 @@ h1 {
 	padding: 0px;
 	margin: 0px;
 }
+
+
+timeline-use code {
+	background-color: var(--gray-100-color);
+	padding: var(--space-2px);
+	border-radius: 2px;
+}

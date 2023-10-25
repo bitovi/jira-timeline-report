@@ -10,7 +10,20 @@ import { howMuchHasDueDateMovedForwardChangedSince,
 import {issues as rollbackIssues} from "../rollback/rollback.js";
 //import { ObservableObject, value } from "//unpkg.com/can@6/core.mjs";
 
+export function partition(arr, predicate) {
+    let passed = [];
+    let failed = [];
 
+    for (const item of arr) {
+        if (predicate(item)) {
+            passed.push(item);
+        } else {
+            failed.push(item);
+        }
+    }
+
+    return { passed, failed };
+};
 
 function toCVSFormat(issues, serverInfo) {
     return issues.map(issue => {

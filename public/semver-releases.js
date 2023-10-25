@@ -56,7 +56,7 @@ export default function(unsortedReleases){
 				release: release,
 				shortName: shortReleaseNames[index],
 				version: cleanedRelease(release),
-				shortVersion: "M" + partialReleaseName(release),
+				shortVersion: partialReleaseName(release),
 
 		};
 	})
