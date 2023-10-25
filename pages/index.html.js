@@ -19,7 +19,15 @@ module.exports = function (env) {
 			
 			<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
 			<script type="module" src="./css/css.js"></script>
-			
+			<!-- Google tag (gtag.js) -->
+			<script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
+			<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+
+			gtag('config', 'G-XQR3T6BZL3');
+			</script>
 	</head>
 	<body class='color-bg-slate-400'>
 	<div class="color-bg-white px-2">
@@ -58,15 +66,7 @@ module.exports = function (env) {
 				const jiraHelpers = JiraOIDCHelpers(${JSON.stringify(getSafeEnv())});
 				main(jiraHelpers);
 			</script>
-			<!-- Google tag (gtag.js) -->
-			<script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
-			<script>
-			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);}
-			gtag('js', new Date());
 
-			gtag('config', 'G-XQR3T6BZL3');
-			</script>
 	</body>
 	</html>
 	`
