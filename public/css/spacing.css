@@ -64,6 +64,9 @@
 	margin-bottom: var(--space-10);
 }
 
+.rounded-lg {
+	border-radius: var(--space-2);
+}
 
 .border-1px {
 	border-width: var(--space-1px);
@@ -178,4 +181,8 @@
 .border-y-solid-1px-white {
 	border-bottom: solid var(--space-1px) var(--white-color);
 	border-top: solid var(--space-1px) var(--white-color);
+}
+
+.items-baseline { 
+	align-items: baseline;
 }

@@ -1,11 +1,12 @@
-.by-bitovi {
-  width: 85px;
-  height: 100%;
-  background: url("https://bitovi.github.io/statistical-software-estimator/by-bitovi-logo.svg") no-repeat;
-  background-position: center;
-  background-size: contain;
-  color: transparent;
-  display: inline-block;
+/* Bitov special design system */
+.bitovi-font-poppins {
+    font-family: 'Poppins', sans-serif;
+}
+.color-text-bitovi-red-orange {
+	color: var(--bitovi-red-orange);
+}
+.color-bg-bitovi-red-orange {
+	background-color: var(--bitovi-red-orange);
 }
 
 
