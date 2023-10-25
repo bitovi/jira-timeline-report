@@ -65,6 +65,9 @@
 .color-text-black {
 	color: var(--black-color);
 }
+.color-text-white {
+	color: var(--white-color);
+}
 
 .color-text-and-bg-complete {
 	background-color: var(--complete-color);
