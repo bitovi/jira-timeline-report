@@ -17,30 +17,21 @@ jobs:
     steps:
     - id: deploy
       name: Deploy
-      uses: bitovi/github-actions-deploy-docker-to-ec2@v0.4.6
+      uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.0
       with:
         aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
         aws_default_region: us-east-1
 
-        # Provide a secret called `DOT_ENV` to append environment variables to the .env file
-        dot_env: ${{ secrets.DOT_ENV }}
-
-        sub_domain: timeline-report
-        domain_name: bitovi-jira.com
-        app_port: 3000
-
         tf_state_bucket_destroy: true
-        stack_destroy: true
-        
-    - if: ${{ steps.deploy.outputs.vm_url != '' }}
-      name: Print result created
-      run: |
-        echo "## VM Created! :rocket:" >> $GITHUB_STEP_SUMMARY
-        echo " ${{ steps.deploy.outputs.vm_url }}" >> $GITHUB_STEP_SUMMARY
+        #tf_stack_destroy: true
 
-    - if: ${{ steps.deploy.outputs.vm_url == '' }}
-      name: Print result destroyed
-      run: |
-        echo "## VM Destroyed! :boom:" >> $GITHUB_STEP_SUMMARY
-        echo "Buckets and whole infrastructure should be gone now!" >> $GITHUB_STEP_SUMMARY
+        aws_r53_enable: true
+        aws_r53_sub_domain_name: timeline-report
+        aws_r53_domain_name: bitovi-jira.com
+        aws_elb_app_port: 3000
+        
+        aws_ec2_instance_type: t3.small
+
+        # Provide a secret called `DOT_ENV` to append environment variables to the .env file
+        env_ghs: ${{ secrets.DOT_ENV }}
