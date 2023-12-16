@@ -8,6 +8,7 @@ import { howMuchHasDueDateMovedForwardChangedSince,
     DAY_IN_MS, parseDateISOString, epicTimingData } from "../date-helpers.js";
 
 import {issues as rollbackIssues} from "../rollback/rollback.js";
+import { getIssueWithDateData } from "./date-data.js";
 //import { ObservableObject, value } from "//unpkg.com/can@6/core.mjs";
 
 export function partition(arr, predicate) {
@@ -110,68 +111,9 @@ function getIssueMap(baseIssues) {
     return map;
 }
 
-// this figures out the earliest sprint or the earliest start date on a story
-// and the latest sprint or latest due date on a story
-function getStartAndDueDatesFromStoriesAndSprints(stories){
-    const startDates = [];
-    const dueDates = [];
-    for(const story of stories) {
-        const storyStartDate = story["Start date"],
-            storyDueDate = story["Due date"]
-        if(storyStartDate) {
-            startDates.push({
-                start: parseDateISOString(storyStartDate), 
-                startFrom: {
-                    message: `start date`,
-                    reference: story
-                }
-            });
-        }
-        if(storyDueDate) {
-            dueDates.push({
-                due: parseDateISOString(storyDueDate),
-                dueTo: {
-                    message: `due date`,
-                    reference: story
-                }
-            });
-        }
-        if(story.Sprint) {
-            for(const sprint of story.Sprint) {
 
-                if(sprint) {
-                    startDates.push({
-                        start: parseDateISOString(sprint["startDate"]), 
-                        startFrom: {
-                            message: `${sprint.name}`,
-                            reference: story
-                        }
-                    });
-                    
-                    dueDates.push({
-                        due: parseDateISOString(sprint["endDate"]),
-                        dueTo: {
-                            message: `${sprint.name}`,
-                            reference: story
-                        }
-                    });
-                } else {
-                    console.warn("missing sprint");
-                }
-    
-            }
-        }
-        
-    }
-    if(!startDates.length && !dueDates.length) {
-        return null;
-    }
-    // mixes in the first {start, startFrom} and the last {due,dueFrom}
-    return {
-        ...startDates.sort( (d1, d2) => d1.start - d2.start )[0],
-        ...dueDates.sort( (d1, d2) => d2.due - d1.due )[0]
-    };
-}
+
+
 
 /**
  * @param {*} baseEpic 
@@ -180,25 +122,8 @@ function getStartAndDueDatesFromStoriesAndSprints(stories){
  */
 function getEpicTiming(baseEpic, issuesMappedByParentKey){
     const children = issuesMappedByParentKey[baseEpic["Issue key"]];
-    let startData, dueData;
-    if(baseEpic["Start date"]) {
-        startData = {
-            start: parseDateISOString( baseEpic["Start date"] ),
-            startFrom: {
-                message: `start date`,
-                reference: baseEpic
-            }
-        }
-    }
-    if(baseEpic["Due date"]) {
-        dueData = {
-            due: parseDateISOString( baseEpic["Due date"] ),
-            dueTo: {
-                message: `due date`,
-                reference: baseEpic
-            }
-        };
-    }
+    let {startData, dueData} = getStartDateAndDueDataDirectlyFromIssue(baseEpic);
+ 
     if(startData && dueData) {
         return {
             ...baseEpic, 
@@ -260,7 +185,8 @@ function getWorkTypeBreakdown(timedEpics) {
         uat: epicTimingData([...uatEpics])
     };
 }
-
+// only exported for testing
+/*
 export function initiativesWithTimedEpics(baseIssues){
     const issuesMappedByParentKey = getIssuesMappedByParentKey(baseIssues);
     const initiativesToShow = filterInitiatives(baseIssues);
@@ -269,22 +195,71 @@ export function initiativesWithTimedEpics(baseIssues){
         const baseEpicsOfInitiative = (issuesMappedByParentKey[i["Issue key"]] || []);
 
         // get timing information of each epic
+        // THIS SHOULD BE GET CHILDREN TIMING ...
         const timedEpics = baseEpicsOfInitiative.map((e) => {
             return getEpicTiming(e, issuesMappedByParentKey)
         });
-
+        
         // previously we would add status 
         // but now we are going to add status at the very end, when we can 
         
         // try to figure out what is dev or QA
        
-
+        //const {startData, dueData} = getStartDateAndDueDataDirectlyFromIssue(i);
+        //console.log(i, startData, dueData);
         return {
             ...i,
             ...getWorkTypeBreakdown(timedEpics)
         };
     })
+}*/
+
+function useMyValuesFirstThenUseChildren(reportedIssue, issuesMappedByParentKey, getIssueTimingFromDatesOrSprints){
+
 }
+
+function determineFromChildenIgnoreParentValues(reportedIssues, issuesMappedByParentKey, getIssueTimingFromDatesOrSprints, getChildWorkBreakdown){
+    return reportedIssues.map((i) => {
+        const childrenOfReportedIssues = (issuesMappedByParentKey[i["Issue key"]] || []);
+
+
+    });
+}
+
+export function reportedIssueTypeTimingWithChildrenBreakdown({
+    baseIssues,
+    reportedIssueType = "Initiative",
+    reportedStatuses = function(status){
+        return !["Done"].includes(status)
+    },
+    getChildWorkBreakdown = function(children = []) {
+        const qaWork = new Set(filterQAWork(children));
+        const uatWork = new Set(filterPartnerReviewWork(children));
+        const devWork = children.filter(epic => !qaWork.has(epic) && !uatWork.has(epic));
+        return {qaWork, uatWork, devWork}
+    },
+    timingMethods
+}){
+    const issuesMappedByParentKey = getIssuesMappedByParentKey(baseIssues);
+
+    // get items we are reporting
+    const reportedIssues = baseIssues.filter( issue => issue["Issue Type"].includes(reportedIssueType) && reportedStatuses(issue.Status));
+
+    return reportedIssues.map( (issue)=> {
+        const reportedIssueWithTiming = getIssueWithDateData(issue, issuesMappedByParentKey, timingMethods);
+        const timedChildren = reportedIssueWithTiming.children || [];
+        const workBreakdown = getChildWorkBreakdown(timedChildren);
+        Object.assign(reportedIssueWithTiming, {
+            team: epicTimingData(timedChildren),
+            dev: epicTimingData([...workBreakdown.devWork]),
+            qa: epicTimingData([...workBreakdown.qaWork]),
+            uat: epicTimingData([...workBreakdown.uatWork])
+        });
+        
+        return reportedIssueWithTiming;
+    })
+}
+
 
 
 
@@ -299,12 +274,19 @@ export function initiativesWithTimedEpics(baseIssues){
 // percolate the changes upward 
 // 
 // I might be able to go through "weak" version ... 
-function priorInitiativeTiming(baseIssues, priorTime){
-    const currentInitiatives = initiativesWithTimedEpics(baseIssues);
+function reportedIssueTiming(options){
+    const {
+        baseIssues, 
+        priorTime,
+        reportedIssueType,
+        reportedStatuses,
+        timingMethods
+    } = options;
+    const currentInitiatives = reportedIssueTypeTimingWithChildrenBreakdown(options);
 
     const rolledBackBaseIssues = rollbackIssues(baseIssues, priorTime);
 
-    const priorInitiatives = initiativesWithTimedEpics(rolledBackBaseIssues);
+    const priorInitiatives = reportedIssueTypeTimingWithChildrenBreakdown({baseIssues: rolledBackBaseIssues});
     
     // copy prior initiative timing information over 
     const priorInitiativeMap = getIssueMap(priorInitiatives);
@@ -384,8 +366,8 @@ function addWorkTypeBreakdownForRelease(release) {
     Object.assign(release, getWorkTypeBreakdown(allEpics))
 }
 
-export function releasesAndInitiativesWithPriorTiming(baseIssues, priorTime){
-    const {currentInitiativesWithStatus,priorInitiatives} = priorInitiativeTiming(baseIssues, priorTime);
+export function releasesAndInitiativesWithPriorTiming(options){
+    const {currentInitiativesWithStatus,priorInitiatives} = reportedIssueTiming(options);
 
     const currentInitiativesWithARelease = filterReleases(currentInitiativesWithStatus);
     const priorInitiativesWithARelease = filterReleases(priorInitiatives);

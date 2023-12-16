@@ -88,6 +88,7 @@ export function getDateFromLastPeriod(initiatives, lowercasePhase, checkpoint) {
 }
 
 
+// This is a collection of children's timing ...
 export function epicTimingData(epics) {
     const sorted = sortByStartDate(epics);
     // const due = endDateFromList(sorted)
