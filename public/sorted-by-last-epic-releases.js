@@ -14,7 +14,7 @@ export default function(releases){
 				shortVersion: releaseObject.release
 		};
 	}).sort( (a, b) => {
-		return a.team.due - b.team.due;
+		return a.dateData.rollup.due - b.dateData.rollup.due;
 	});
 
 

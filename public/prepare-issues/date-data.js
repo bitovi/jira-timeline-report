@@ -127,36 +127,60 @@ export function getIssueWithDateData(issue, childMap, methodNames = ["childrenOn
     index++;
 
     const method = methods[methodName];
-    const issueClone = {...issue};
+    const issueClone = {
+        ...issue,
+        dateData: {
+            rollup: {}
+        }
+    };
 
     const dateData = method(function getParentData(){
-        return getStartDateAndDueDataFromFieldsOrSprints(issue)
+        const selfDates = getStartDateAndDueDataFromFieldsOrSprints(issue);
+        issueClone.dateData.self =  addDateDataTo({}, selfDates);
+        return selfDates;
     }, function getChildrenData(){
-        const children = childMap[issue["Issue key"]];
-        if(children) {
-            const datedChildren = children.map( (child)=> {
-                return getIssueWithDateData(child, childMap,methodNames, index);
-            });
-            issueClone.children = datedChildren;
-            return mergeStartAndDueData(datedChildren.map(getDataDataFromDatedIssue));
-        } else {
-            return {};
-        }
+        const children = childMap[issue["Issue key"]] || [];
+   
+        const datedChildren = children.map( (child)=> {
+            return getIssueWithDateData(child, childMap,methodNames, index);
+        });
+        const childrenData = mergeStartAndDueData(datedChildren.map(getDataDataFromDatedIssue))
+        issueClone.dateData.children = addDateDataTo({
+            issues: datedChildren
+        },childrenData );
+        return childrenData;
+        
     });
-    Object.assign(issueClone, dateData.startData);
-    Object.assign(issueClone, dateData.dueData);
+    addDateDataTo(issueClone.dateData.rollup, dateData);
+
     return issueClone;
 }
 
+function addDateDataTo(object = {}, dateData) {
+    Object.assign(object, dateData.startData);
+    Object.assign(object, dateData.dueData);
+    return object;
+}
 
 
 function getDataDataFromDatedIssue(issue){
     let startData, dueData;
-    if(issue.start) {
-        startData = {start: issue.start, startFrom: issue.startFrom}
+    if(issue.dateData.rollup.start) {
+        startData = {start: issue.dateData.rollup.start, startFrom: issue.dateData.rollup.startFrom}
     }
-    if(issue.due) {
-        dueData = {due: issue.due, dueTo: issue.dueTo}
+    if(issue.dateData.rollup.due) {
+        dueData = {due: issue.dateData.rollup.due, dueTo: issue.dateData.rollup.dueTo}
     }
     return {startData, dueData};
+}
+
+// provides an object with rolled updates
+export function rollupDatesFromRollups(issues) {
+    const dateData = mergeStartAndDueData( issues.map(getDataDataFromDatedIssue) );
+
+    return {
+        ...dateData.startData,
+        ...dateData.dueData,
+        issues
+    }
 }

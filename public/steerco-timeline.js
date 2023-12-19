@@ -50,7 +50,7 @@ class SteercoTimeline extends StacheElement {
 				{{ else }}
 					{{# for(initiative of this.initiatives) }}
 						<div on:click='this.showTooltip(scope.event, initiative)' 
-							class='pointer p-2 color-text-and-bg-{{initiative.status}} border-y-solid-1px-white'>
+							class='pointer p-2 color-text-and-bg-{{initiative.dateData.rollup.status}} border-y-solid-1px-white'>
 							{{initiative.Summary}}
 						</div>
 						{{this.getReleaseTimeline(initiative, scope.index)}}
@@ -75,34 +75,34 @@ class SteercoTimeline extends StacheElement {
 				<div class='release_box'>
 					<div 
 						on:click='this.showTooltip(scope.event, release)'
-						class="pointer release_box_header_bubble color-text-and-bg-{{release.status}}">{{release.shortName}}</div>
+						class="pointer release_box_header_bubble color-text-and-bg-{{release.dateData.rollup.status}}">{{release.shortName}}</div>
 					<div class="release_box_subtitle">
 						{{# if(not(eq(release.release, "Next")))}}
 							{{# if(this.breakOutTimings) }}
 							<div class="release_box_subtitle_wrapper">
-									<span class="release_box_subtitle_key color-text-and-bg-{{release.devStatus}}">Dev</span>
+									<span class="release_box_subtitle_key color-text-and-bg-{{release.dateData.dev.status}}">Dev</span>
 									<span class="release_box_subtitle_value">
-										{{ this.prettyDate(release.dev.due) }}{{this.wasReleaseDate(release.dev)}}
+										{{ this.prettyDate(release.dateData.dev.due) }}{{this.wasReleaseDate(release.dateData.dev) }}
 									</span>
 							</div>
 							<div class="release_box_subtitle_wrapper">
-									<span class="release_box_subtitle_key color-text-and-bg-{{release.qaStatus}}">QA&nbsp;</span>
+									<span class="release_box_subtitle_key color-text-and-bg-{{release.dateData.qa.status}}">QA&nbsp;</span>
 									<span class="release_box_subtitle_value">
-										{{ this.prettyDate(release.qa.due) }}{{this.wasReleaseDate(release.qa)}}
+										{{ this.prettyDate(release.dateData.qa.due) }}{{ this.wasReleaseDate(release.dateData.qa) }}
 									</span>
 							</div>
 							<div class="release_box_subtitle_wrapper">
-									<span class="release_box_subtitle_key color-text-and-bg-{{release.uatStatus}}">UAT</span>
+									<span class="release_box_subtitle_key color-text-and-bg-{{release.dateData.uat.status}}">UAT</span>
 									<span class="release_box_subtitle_value">
-										{{ this.prettyDate(release.uat.due) }}{{this.wasReleaseDate(release.uat)}}
+										{{ this.prettyDate(release.dateData.uat.due) }}{{ this.wasReleaseDate(release.dateData.uat) }}
 									</span>
 							</div>
 							{{ else }}
 							<div class="release_box_subtitle_wrapper">
 									<b>Target Delivery</b>
 									<span class="release_box_subtitle_value">
-										<span class="nowrap">{{ this.prettyDate(release.team.due) }}</span>
-										<span class="nowrap">{{this.wasReleaseDate(release.team)}}</span>
+										<span class="nowrap">{{ this.prettyDate(release.dateData.rollup.due) }}</span>
+										<span class="nowrap">{{this.wasReleaseDate(release.dateData.rollup)}}</span>
 									</span>
 							</div>
 							{{/ if }}
@@ -110,14 +110,14 @@ class SteercoTimeline extends StacheElement {
 						{{/ if }}
 					</div>
 					<ul class="release_box_body list-disc">
-						{{# for(initiative of release.initiatives) }}
+						{{# for(initiative of release.dateData.children.issues) }}
 						 <li class='font-sans text-sm pointer' on:click='this.showTooltip(scope.event, initiative)'>
 							{{# if(this.breakOutTimings) }}
-							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.devStatus}}'>D</span><span
-								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.qaStatus}}'>Q</span><span
-								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.uatStatus}}'>U</span>
+							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.dateData.dev.status}}'>D</span><span
+								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.dateData.qa.status}}'>Q</span><span
+								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.dateData.uat.status}}'>U</span>
 							{{/ if }}
-							<span class="{{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.status}} {{/ }}">{{initiative.Summary}}</span>
+							<span class="{{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.dateData.rollup.status}} {{/ }}">{{initiative.Summary}}</span>
 						 </li>
 						{{/ for}}
 					</ul>
@@ -155,14 +155,14 @@ class SteercoTimeline extends StacheElement {
 		}
 		get hasQAEpic(){
 			if(this.initiatives) {
-				return this.initiatives.some( (initiative)=> initiative.qa.issues.length )
+				return this.initiatives.some( (initiative)=> initiative.dateData.qa.issues.length )
 			} else {
 				return true;
 			}
 		}
 		get hasUATEpic(){
 			if(this.initiatives) {
-				return this.initiatives.some( (initiative)=> initiative.uat.issues.length )
+				return this.initiatives.some( (initiative)=> initiative.dateData.uat.issues.length )
 			} else {
 				return true;
 			}
@@ -175,14 +175,14 @@ class SteercoTimeline extends StacheElement {
 			);
 			let hasDate;
 			if(this.releases && this.releases.length) {
-				hasDate = this.releases.filter(r => r.team.due);
+				hasDate = this.releases.filter(r => r.dateData.rollup.due);
 			} else if(this.initiatives) {
-				hasDate = this.initiatives.filter(r => r.team.due);
+				hasDate = this.initiatives.filter(r => r.dateData.rollup.due);
 			} else {
 				debugger;
 			}
 
-			return {endDate: new Date( Math.max(...hasDate.map(r => r.team.due)) ), startDate};
+			return {endDate: new Date( Math.max(...hasDate.map(r => r.dateData.rollup.due)) ), startDate};
 		}
 		get calendarData() {
 				const {startDate, endDate} = this.startAndEndDate;
@@ -236,10 +236,10 @@ class SteercoTimeline extends StacheElement {
 			const { firstDay, lastDay } = this.calendarData;
 			const totalTime = (lastDay - firstDay);
 
-			if (release.team.start && release.team.due) {
+			if (release.dateData.rollup.start && release.dateData.rollup.due) {
 
 					function getPositions(work) {
-						if(work.start == null && work.end == null) {
+						if(work.start == null && work.due == null) {
 							return {
 								start: 0, end: Infinity, startExtends: false, endExtends: false,
 								style: {
@@ -279,51 +279,51 @@ class SteercoTimeline extends StacheElement {
 
 					if(this.breakOutTimings) {
 
-						const lastDev = makeLastPeriodElement(release.devStatus, release.dev.lastPeriod);
+						const lastDev = makeLastPeriodElement(release.dateData.dev.status, release.dateData.dev.lastPeriod);
 						lastDev.classList.add("h-1","py-half");
 						lastPeriodRoot.appendChild(lastDev);
 
 						const dev = document.createElement("div");
-						dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.devStatus;
-						Object.assign(dev.style, getPositions(release.dev).style);
+						dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.dev.status;
+						Object.assign(dev.style, getPositions(release.dateData.dev).style);
 						root.appendChild(dev);
 
 						
 						if(this.hasQAEpic) {
-							const lastQA = makeLastPeriodElement(release.qaStatus, release.qa.lastPeriod);
+							const lastQA = makeLastPeriodElement(release.dateData.qa.status, release.dateData.qa.lastPeriod);
 							lastQA.classList.add("h-1","py-half");
 							lastPeriodRoot.appendChild(lastQA);
 
 
 							const qa = document.createElement("div");
-							qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.qaStatus;
-							Object.assign(qa.style, getPositions(release.qa).style);
+							qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.qa.status;
+							Object.assign(qa.style, getPositions(release.dateData.qa).style);
 							root.appendChild(qa);
 
 							
 						}
 						if(this.hasUATEpic) {
-							const lastUAT = makeLastPeriodElement(release.uatStatus, release.uat.lastPeriod);
+							const lastUAT = makeLastPeriodElement(release.dateData.uat.status, release.dateData.uat.lastPeriod);
 							lastUAT.classList.add("h-1","py-half");
 							lastPeriodRoot.appendChild(lastUAT);
 
 
 							const uat = document.createElement("div");
-							uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.uatStatus;
-							Object.assign(uat.style, getPositions(release.uat).style);
+							uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.uat.status;
+							Object.assign(uat.style, getPositions(release.dateData.uat).style);
 							root.appendChild(uat);
 
 							
 						}
 					} else {
 
-						const behindTime = makeLastPeriodElement(release.status, release.team.lastPeriod);
+						const behindTime = makeLastPeriodElement(release.dateData.rollup.status, release.dateData.rollup.lastPeriod);
 						behindTime.classList.add("h-4","py-1")
 						lastPeriodRoot.appendChild(behindTime);
 
 						const team = document.createElement("div");
-						team.className = "h-6 border-y-solid-1px-white color-text-and-bg-"+release.status;
-						Object.assign(team.style, getPositions(release.team).style);
+						team.className = "h-6 border-y-solid-1px-white color-text-and-bg-"+release.dateData.rollup.status;
+						Object.assign(team.style, getPositions(release.dateData.rollup).style);
 						team.style.opacity = "0.9";
 						
 						root.appendChild(team);
@@ -352,9 +352,9 @@ class SteercoTimeline extends StacheElement {
 				return this.releases.map((release, index) => {
 
 						const div = document.createElement("div");
-						if (release.team.due) {
-								div.className = "release-timeline-item color-text-and-bg-" + release.status;
-								div.style.left = ((release.team.due - firstDay) / totalTime * 100) + "%";
+						if (release.dateData.rollup.due) {
+								div.className = "release-timeline-item color-text-and-bg-" + release.dateData.rollup.status;
+								div.style.left = ((release.dateData.rollup.due - firstDay) / totalTime * 100) + "%";
 								div.appendChild(document.createTextNode(release.shortVersion))
 						}
 
@@ -370,12 +370,12 @@ class SteercoTimeline extends StacheElement {
 
 						const div = document.createElement("div");
 
-						if (release.team.start && release.team.due) {
-								const width = ((release.team.due - release.team.start) / totalTime);
+						if (release.dateData.rollup.start && release.dateData.rollup.due) {
+								const width = ((release.dateData.rollup.due - release.dateData.rollup.start) / totalTime);
 
 								//div.style.top = (index * 20)+"px";
 								div.style.width = (width * 100) + "%";
-								div.style.marginLeft = ((release.team.start - firstDay) / totalTime * 100) + "%";
+								div.style.marginLeft = ((release.dateData.rollup.start - firstDay) / totalTime * 100) + "%";
 
 								div.className = "release_time " //+this.releaseQaStatus(release);
 
@@ -383,21 +383,21 @@ class SteercoTimeline extends StacheElement {
 								const dev = document.createElement("div");
 								dev.className = "dev_time " //+this.releaseDevStatus(release);
 
-								const devWidth = ((release.dev.due - release.dev.start) / totalTime);
+								const devWidth = ((release.dateData.dev.due - release.dateData.dev.start) / totalTime);
 								dev.style.width = (devWidth / width * 100) + "%";
 								div.appendChild(dev);
 
 								const qa = document.createElement("div");
 								qa.className = "qa_time " //+this.releaseDevStatus(release);
 
-								const qaWidth = ((release.qa.due - release.qa.start) / totalTime);
+								const qaWidth = ((release.dateData.qa.due - release.dateData.qa.start) / totalTime);
 								qa.style.width = (qaWidth / width * 100) + "%";
 								div.appendChild(qa);
 
 
 								const uat = document.createElement("div");
 								uat.className = "uat_time "; //+this.releaseUatStatus(release);
-								const uatWidth = ((release.uat.due - release.uat.start) / totalTime);
+								const uatWidth = ((release.dateData.uat.due - release.dateData.uat.start) / totalTime);
 
 								uat.style.width = (uatWidth / width * 100) + "%";
 								div.appendChild(uat);
@@ -458,53 +458,55 @@ class SteercoTimeline extends StacheElement {
 			}
 			this.showTooltipObject = initiativeOrRelease;
 			const make = (initiativeOrRelease, workPart) =>{
+				const breakdownPart = initiativeOrRelease.dateData[workPart];
+
 				return `<div class="p-2">
 					<div class="release_box_subtitle_wrapper">
-							<span class="release_box_subtitle_key color-text-and-bg-${initiativeOrRelease[workPart+"Status"]}">
+							<span class="release_box_subtitle_key color-text-and-bg-${breakdownPart.status}">
 								&nbsp;${workPart.toUpperCase()}&nbsp;
 							</span>
 							${
 								initiativeOrRelease[workPart+"Status"] !== "unknown" ?
 								`<span class="release_box_subtitle_value">
-									${this.prettyDate(initiativeOrRelease[workPart].start)}
-									${this.wasStartDate(initiativeOrRelease[workPart])}
+									${this.prettyDate(breakdownPart.start)}
+									${this.wasStartDate(breakdownPart)}
 									</span><span>-</span>
 									<span class="release_box_subtitle_value">
-									${this.prettyDate(initiativeOrRelease[workPart].due)}
-									${this.wasReleaseDate(initiativeOrRelease[workPart])}
+									${this.prettyDate(breakdownPart.due)}
+									${this.wasReleaseDate(breakdownPart)}
 								</span>` : ''
 							}
 					</div>
 					${ 
-						initiativeOrRelease[workPart+"StatusData"]?.warning === true ?
-						`<div class="color-bg-warning">${initiativeOrRelease[workPart+"StatusData"].message}</div>` : ""
+						breakdownPart.statusData?.warning === true ?
+						`<div class="color-bg-warning">${breakdownPart.statusData.message}</div>` : ""
 					}
 					${
-						initiativeOrRelease[workPart+"Status"] !== "unknown" ?
-						`<p>Start: <a href="${initiativeOrRelease[workPart]?.startFrom?.reference?.url}">
-							${initiativeOrRelease[workPart]?.startFrom?.reference?.Summary}</a>'s 
-							${initiativeOrRelease[workPart]?.startFrom?.message}
+						breakdownPart.status !== "unknown" ?
+						`<p>Start: <a href="${breakdownPart?.startFrom?.reference?.url}">
+							${breakdownPart?.startFrom?.reference?.Summary}</a>'s 
+							${breakdownPart?.startFrom?.message}
 						</p>
-						<p>End: <a href="${initiativeOrRelease[workPart]?.dueTo?.reference?.url}">
-							${initiativeOrRelease[workPart]?.dueTo?.reference?.Summary}</a>'s
-							${initiativeOrRelease[workPart]?.dueTo?.message}
+						<p>End: <a href="${breakdownPart?.dueTo?.reference?.url}">
+							${breakdownPart?.dueTo?.reference?.Summary}</a>'s
+							${breakdownPart?.dueTo?.message}
 						</p>` :
 						''
 					}
 					
 				</div>`;
 			}
-
+			const rollupData = initiativeOrRelease.dateData.rollup;
 
 			window.simpleTooltip.enteredElement(event, `
 			<div class='flex remove-button pointer' style="justify-content: space-between">
-				<a class="p-1 color-text-and-bg-${initiativeOrRelease.status}"
+				<a class="p-1 color-text-and-bg-${rollupData.status}"
 					href="${initiativeOrRelease.url}">${initiativeOrRelease.Summary || initiativeOrRelease.release}</a>
 				<span>❌</span>
 			</div>
 			${ 
-				initiativeOrRelease?.statusData?.warning === true ?
-				`<div class="color-bg-warning">${initiativeOrRelease.statusData.message}</div>` : ""
+				rollupData?.statusData?.warning === true ?
+				`<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
 			}
 			${make(initiativeOrRelease, "dev")}
 			${make(initiativeOrRelease, "qa")}

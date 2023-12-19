@@ -18,7 +18,7 @@ import {
 } from "./status-helpers.js";
 
 import {releasesAndInitiativesWithPriorTiming, 
-  rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses} from "../prepare-issues/prepare-issues.js";
+  rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses, filterQAWork, filterPartnerReviewWork} from "../prepare-issues/prepare-issues.js";
 
 import semverReleases from "./semver-releases.js";
 import sortedByLastEpicReleases from "./sorted-by-last-epic-releases.js";
@@ -473,20 +473,28 @@ export class TimelineReport extends StacheElement {
         initiativeStatusesToRemove = [...initiativeStatusesToRemove, ...inIdeaStatuses];
       }
 
-      ///const filteredInitiatives =  filterOutInitiativeStatuses( this.rawIssues, initiativeStatusesToRemove )
-      debugger;
-      const {releases, initiatives} = releasesAndInitiativesWithPriorTiming({
+      const baseOptions = {
         baseIssues: this.rawIssues,
         priorTime: new Date( new Date().getTime() - this.compareToTime.timePrior),
-        reportedIssueType: "Initiative",
         reportedStatuses: function(status){
           return !initiativeStatusesToRemove.includes(status);
         },
+        getChildWorkBreakdown,
+      }
+      const optionsForType = this.reportEpics ? {
+        ...baseOptions,
+        reportedIssueType: "Epic",
+        timingMethods: ["widestRange"]
+      } : {
+        ...baseOptions,
+        reportedIssueType: "Initiative",
         timingMethods: ["childrenOnly","parentFirstThenChildren"]
-      });
+      }
+      
+      const {releases, initiatives} = releasesAndInitiativesWithPriorTiming(optionsForType);
 
       function startBeforeDue(initiative) {
-        return initiative.team.start < initiative.team.due;
+        return initiative.dateData.rollup.start < initiative.dateData.rollup.due;
       }
 
       if(this.hideUnknownInitiatives) {
@@ -495,7 +503,7 @@ export class TimelineReport extends StacheElement {
           releases: releases.map( release => {
             return {
               ...release,
-              initiatives: release.initiatives.filter(startBeforeDue)
+              initiatives: release.dateData.rollup.issues.filter(startBeforeDue)
             }
           })
         };
@@ -507,7 +515,7 @@ export class TimelineReport extends StacheElement {
       var initiatives =  this.releasesAndInitiativesWithPriorTiming.initiatives;
 
       if(this.sortByDueDate) {
-        initiatives = initiatives.sort( (i1, i2) => i1.team.due - i2.team.due);
+        initiatives = initiatives.sort( (i1, i2) => i1.dateData.rollup.due - i2.dateData.rollup.due);
       }
 
       if(this.hideInitiativesInIdea) {
@@ -645,7 +653,12 @@ function getChildrenOf(issue, issuesOrIssueMap) {
 }
 
 
-
+function getChildWorkBreakdown(children = []) {
+    const qaWork = new Set(filterQAWork(children));
+    const uatWork = new Set(filterPartnerReviewWork(children));
+    const devWork = children.filter(epic => !qaWork.has(epic) && !uatWork.has(epic));
+    return {qaWork, uatWork, devWork}
+}
 
 
 function sortReadyFirst(initiatives) {
