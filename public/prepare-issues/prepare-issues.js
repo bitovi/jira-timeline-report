@@ -335,12 +335,13 @@ function addWorkTypeBreakdownForRelease(release, getChildWorkBreakdown) {
     
     const grandChildren = children.map( child => child.dateData.children.issues ).flat();
 
-    release.dateData.rollup = /*release.dateData.children =*/ rollupDatesFromRollups(grandChildren);
+    release.dateData.rollup = /*release.dateData.children =*/ rollupDatesFromRollups(children);
 
     addWorkBreakdownToDateData(release.dateData, grandChildren, getChildWorkBreakdown)
 }
 
 export function releasesAndInitiativesWithPriorTiming(options){
+    
     const {currentInitiativesWithStatus,priorInitiatives} = reportedIssueTiming(options);
 
     const currentInitiativesWithARelease = filterReleases(currentInitiativesWithStatus);
