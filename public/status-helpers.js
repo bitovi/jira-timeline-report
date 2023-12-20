@@ -22,18 +22,21 @@ function warn(...args){
 }
 
 export function addStatusToRelease(release) {
-	return {
-		...release,
-		...getReleaseQaStatus(release),
-		...getReleaseDevStatus(release),
-		...getReleaseUatStatus(release),
-		...getReleaseStatus(release)
-	}
+	Object.assign( release.dateData.rollup, getReleaseStatus(release) );
+	Object.assign( release.dateData.dev, getReleaseDevStatus(release) )
+	Object.assign( release.dateData.qa, getReleaseQaStatus(release) );
+	Object.assign( release.dateData.uat, getReleaseUatStatus(release) );
+	return release;
+
 }
 
 function getReleaseStatus(release) {
 		// if everything is complete
-		if (release.initiatives.filter(i => i.status !== "complete").length === 0) {
+		const issuesNotComplete = release.dateData.children.issues.filter(function(i){
+			return i.dateData.rollup.status !== "complete";
+		});
+
+		if ( issuesNotComplete.length === 0 ) {
 			return {
 				status: "complete", 
 				statusData: {
@@ -41,19 +44,6 @@ function getReleaseStatus(release) {
 				}
 			};
 		}
-		/*const latest = release.initiatives.reduce( (acc, cur)=> {
-			if(!acc) {
-				return cur;
-			}
-			if(cur.team.due > acc.team.due) {
-				return cur;
-			} else {
-				return acc;
-			}
-		})
-		if(latest.status !== "notstarted" && latest.status !== "unknown") {
-			return latest.status;
-		}*/
 		return getInitiativeStatus(release);
 }
 function getReleaseDevStatus(release) {
@@ -67,13 +57,11 @@ function getReleaseUatStatus(release) {
 }
 
 export function addStatusToInitiative(initiative) {
-		return {
-				...initiative,
-				...getInitiativeDevStatus(initiative),
-				...getInitiativeQaStatus(initiative),
-				...getInitiativeUatStatus(initiative),
-				...getInitiativeStatus(initiative),
-		}
+	Object.assign( initiative.dateData.rollup, getInitiativeStatus(initiative) );
+	Object.assign( initiative.dateData.dev, getInitiativeDevStatus(initiative) )
+	Object.assign( initiative.dateData.qa, getInitiativeQaStatus(initiative) );
+	Object.assign( initiative.dateData.uat, getInitiativeUatStatus(initiative) );
+	return initiative;
 }
 
 function getInitiativeStatus(initiative) {
@@ -85,9 +73,9 @@ function getInitiativeStatus(initiative) {
 					}
 				};
 		}
-		const devStatus = getInitiativeDevStatus(initiative).devStatus,
-			qaStatus = 	getInitiativeQaStatus(initiative).qaStatus,
-			uatStatus = getInitiativeUatStatus(initiative).uatStatus,
+		const devStatus = getInitiativeDevStatus(initiative).status,
+			qaStatus = 	getInitiativeQaStatus(initiative).status,
+			uatStatus = getInitiativeUatStatus(initiative).status,
 			statuses = [devStatus,qaStatus,uatStatus];
 		if(
 			statuses.every(s => s === "complete")
@@ -109,10 +97,10 @@ function getInitiativeStatus(initiative) {
 			};
 		}
 
-		const timedTeamStatus = timedStatus(initiative.team);
+		const timedTeamStatus = timedStatus(initiative.dateData.rollup);
 
 		const warning = timedTeamStatus === "complete" && 
-			initiative?.team?.issues?.length && initiative?.team?.issues?.every(epic => !isStatusUatComplete(epic));
+			initiative.dateData.rollup?.issues?.length && initiative.dateData.rollup?.issues?.every(epic => !isStatusUatComplete(epic));
 		
 		return {
 			status: timedTeamStatus, 
@@ -158,36 +146,38 @@ export function getInitiativeDevStatus(initiative) {
 		// check if epic statuses are complete
 		if (isStatusDevComplete(initiative)) {
 			return {
-				devStatus: "complete", 
-				devStatusData: {message: "initiative status is `DEV` complete"}
+				status: "complete", 
+				statusData: {message: "initiative status is `DEV` complete"}
 			};
 		}
-		if (initiative?.dev?.issues?.length && initiative?.dev?.issues?.every(epic => isStatusDevComplete(epic))) {
+		const devDateData = initiative.dateData.dev;
+
+		if (devDateData?.issues?.length && devDateData?.issues?.every(epic => isStatusDevComplete(epic))) {
 			// Releases don't have a status so we shouldn't throw this warning.
 			return {
-				devStatus: "complete", 
-				devStatusData: {
+				status: "complete", 
+				statusData: {
 					warning: !!initiative.Status,
 					message: "All epics are dev complete. Move the issue to a `QA` status"
 				}
 			};
 				return "complete"
 		}
-		if (initiative?.dev?.issues?.some(epic => epic.Status === "Blocked")) {
+		if (devDateData?.issues?.some(epic => epic.Status === "Blocked")) {
 			return {
-				devStatus: "blocked", 
-				devStatusData: {
+				status: "blocked", 
+				statusData: {
 					message: "An epic is blocked"
 				}
 			};
 		}
-		const timedDevStatus = timedStatus(initiative.dev);
+		const timedDevStatus = timedStatus(devDateData);
 
 		const warning = timedDevStatus === "complete" && 
-			initiative?.dev?.issues?.length && initiative?.dev?.issues?.every(epic => !isStatusDevComplete(epic));
+			devDateData?.issues?.length && devDateData?.issues?.every(epic => !isStatusDevComplete(epic));
 		return {
-			devStatus: timedDevStatus, 
-			devStatusData: {
+			status: timedDevStatus, 
+			statusData: {
 				warning: warning,
 				message: warning ? "Some epics have due dates in the past, but are not `DEV` complete" : null
 			}
@@ -197,14 +187,15 @@ export function getInitiativeDevStatus(initiative) {
 function getInitiativeQaStatus(initiative) {
 		if (isStatusQAComplete(initiative)) {
 			return {
-				qaStatus: "complete", 
-				qaStatusData: {message: "initiative status is `QA` complete"}
+				status: "complete", 
+				statusData: {message: "initiative status is `QA` complete"}
 			};
 		}
-		if (initiative.qa.issues.length && initiative.qa.issues.every(epic => isStatusQAComplete(epic))) {
+		const qaDateData = initiative.dateData.qa;
+		if (qaDateData.issues.length && qaDateData.issues.every(epic => isStatusQAComplete(epic))) {
 			return {
-				qaStatus: "complete", 
-				qaStatusData: {
+				status: "complete", 
+				statusData: {
 					warning: !!initiative.Status,
 					message: "All QA epics are `QA` complete. Move the initiative to a `UAT` status"
 				}
@@ -212,19 +203,19 @@ function getInitiativeQaStatus(initiative) {
 		}
 		if (initiative?.qa?.issues?.some(epic => epic.Status === "Blocked")) {
 			return {
-				qaStatus: "blocked", 
-				qaStatusData: {
+				status: "blocked", 
+				statusData: {
 					message: "An epic is blocked"
 				}
 			};
 		}
-		const timedQAStatus = timedStatus(initiative.qa);
+		const timedQAStatus = timedStatus(qaDateData);
 		const warning = timedQAStatus === "complete" && 
-			initiative?.qa?.issues?.length && initiative?.qa?.issues?.every(epic => !isStatusQAComplete(epic));
+			qaDateData?.issues?.length && qaDateData?.issues?.every(epic => !isStatusQAComplete(epic));
 
 		return {
-			qaStatus: timedQAStatus, 
-			qaStatusData: {
+			status: timedQAStatus, 
+			statusData: {
 				warning: warning,
 				message: warning ? "Some epics have due dates in the past, but are not `QA` complete" : null
 			}
@@ -234,24 +225,25 @@ function getInitiativeQaStatus(initiative) {
 function getInitiativeUatStatus(initiative) {
 	if (isStatusUatComplete(initiative)) {
 		return {
-			uatStatus: "complete", 
-			uatStatusData: {message: "initiative status is `UAT` complete"}
+			status: "complete", 
+			statusData: {message: "initiative status is `UAT` complete"}
 		};
 	}
-	if (initiative.uat.issues.length && initiative.uat.issues.every(epic => isStatusUatComplete(epic))) {
+	const uatDateData = initiative.dateData.uat;
+	if (uatDateData.issues.length && uatDateData.issues.every(epic => isStatusUatComplete(epic))) {
 		// Releases don't have a status so we shouldn't throw this warning.
 		return {
-			uatStatus: "complete", 
-			uatStatusData: {
+			status: "complete", 
+			statusData: {
 				warning: !!initiative.Status,
 				message: "All UAT epics are `UAT` complete. Move the initiative to a `DONE` status"
 			}
 		};
 	}
-	if (initiative?.uat?.issues?.some(epic => epic.Status === "Blocked")) {
+	if (uatDateData?.issues?.some(epic => epic.Status === "Blocked")) {
 		return {
-			uatStatus: "blocked", 
-			uatStatusData: {
+			status: "blocked", 
+			statusData: {
 				message: "An epic is blocked"
 			}
 		};
@@ -260,14 +252,14 @@ function getInitiativeUatStatus(initiative) {
 	// should timed status be able to look at the actual statuses?
 	// lets say the UAT is "ontrack" (epicStatus won't report this currently)
 	// should we say there is a missmatch?
-	const statusFromTiming = timedStatus(initiative.uat);
+	const statusFromTiming = timedStatus(uatDateData);
 
 	const warning = statusFromTiming === "complete" && 
-		initiative?.uat?.issues?.length && initiative?.uat?.issues?.every(epic => !isStatusUatComplete(epic));
+	uatDateData?.issues?.length && uatDateData?.issues?.every(epic => !isStatusUatComplete(epic));
 
 	return {
-		uatStatus: statusFromTiming, 
-		uatStatusData: {
+		status: statusFromTiming, 
+		statusData: {
 			warning: warning,
 			message: warning ? "Some epics have due dates in the past, but are not `UAT` complete" : null
 		}

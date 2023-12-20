@@ -8,6 +8,7 @@ import { howMuchHasDueDateMovedForwardChangedSince,
     DAY_IN_MS, parseDateISOString, epicTimingData } from "../date-helpers.js";
 
 import {issues as rollbackIssues} from "../rollback/rollback.js";
+import { getIssueWithDateData, rollupDatesFromRollups } from "./date-data.js";
 //import { ObservableObject, value } from "//unpkg.com/can@6/core.mjs";
 
 export function partition(arr, predicate) {
@@ -110,68 +111,9 @@ function getIssueMap(baseIssues) {
     return map;
 }
 
-// this figures out the earliest sprint or the earliest start date on a story
-// and the latest sprint or latest due date on a story
-function getStartAndDueDatesFromStoriesAndSprints(stories){
-    const startDates = [];
-    const dueDates = [];
-    for(const story of stories) {
-        const storyStartDate = story["Start date"],
-            storyDueDate = story["Due date"]
-        if(storyStartDate) {
-            startDates.push({
-                start: parseDateISOString(storyStartDate), 
-                startFrom: {
-                    message: `start date`,
-                    reference: story
-                }
-            });
-        }
-        if(storyDueDate) {
-            dueDates.push({
-                due: parseDateISOString(storyDueDate),
-                dueTo: {
-                    message: `due date`,
-                    reference: story
-                }
-            });
-        }
-        if(story.Sprint) {
-            for(const sprint of story.Sprint) {
 
-                if(sprint) {
-                    startDates.push({
-                        start: parseDateISOString(sprint["startDate"]), 
-                        startFrom: {
-                            message: `${sprint.name}`,
-                            reference: story
-                        }
-                    });
-                    
-                    dueDates.push({
-                        due: parseDateISOString(sprint["endDate"]),
-                        dueTo: {
-                            message: `${sprint.name}`,
-                            reference: story
-                        }
-                    });
-                } else {
-                    console.warn("missing sprint");
-                }
-    
-            }
-        }
-        
-    }
-    if(!startDates.length && !dueDates.length) {
-        return null;
-    }
-    // mixes in the first {start, startFrom} and the last {due,dueFrom}
-    return {
-        ...startDates.sort( (d1, d2) => d1.start - d2.start )[0],
-        ...dueDates.sort( (d1, d2) => d2.due - d1.due )[0]
-    };
-}
+
+
 
 /**
  * @param {*} baseEpic 
@@ -180,25 +122,8 @@ function getStartAndDueDatesFromStoriesAndSprints(stories){
  */
 function getEpicTiming(baseEpic, issuesMappedByParentKey){
     const children = issuesMappedByParentKey[baseEpic["Issue key"]];
-    let startData, dueData;
-    if(baseEpic["Start date"]) {
-        startData = {
-            start: parseDateISOString( baseEpic["Start date"] ),
-            startFrom: {
-                message: `start date`,
-                reference: baseEpic
-            }
-        }
-    }
-    if(baseEpic["Due date"]) {
-        dueData = {
-            due: parseDateISOString( baseEpic["Due date"] ),
-            dueTo: {
-                message: `due date`,
-                reference: baseEpic
-            }
-        };
-    }
+    let {startData, dueData} = getStartDateAndDueDataDirectlyFromIssue(baseEpic);
+ 
     if(startData && dueData) {
         return {
             ...baseEpic, 
@@ -227,14 +152,14 @@ function getEpicTiming(baseEpic, issuesMappedByParentKey){
     return {...baseEpic, start: null, due: null};
 }
 
-function filterQAWork(issues) {
+export function filterQAWork(issues) {
     return filterByLabel(issues, "QA")
 }
 export function isQAWork(issue) {
     return filterQAWork([issue]).length > 0
 }
 
-function filterPartnerReviewWork(issues) {
+export function filterPartnerReviewWork(issues) {
     return filterByLabel(issues, "UAT")
 }
 export function isPartnerReviewWork(issue) {
@@ -254,35 +179,45 @@ function getWorkTypeBreakdown(timedEpics) {
     const uatEpics = new Set(filterPartnerReviewWork(timedEpics));
     const devEpics = timedEpics.filter(epic => !qaEpics.has(epic) && !uatEpics.has(epic));
     return {
-        team: epicTimingData(timedEpics),
+        children: epicTimingData(timedEpics),
         dev: epicTimingData([...devEpics]),
         qa: epicTimingData([...qaEpics]),
         uat: epicTimingData([...uatEpics])
     };
 }
 
-export function initiativesWithTimedEpics(baseIssues){
+export function reportedIssueTypeTimingWithChildrenBreakdown({
+    baseIssues,
+    reportedIssueType = "Initiative",
+    reportedStatuses = function(status){
+        return !["Done"].includes(status)
+    },
+    timingMethods,
+    getChildWorkBreakdown
+}){
     const issuesMappedByParentKey = getIssuesMappedByParentKey(baseIssues);
-    const initiativesToShow = filterInitiatives(baseIssues);
 
-    return initiativesToShow.map((i) => {
-        const baseEpicsOfInitiative = (issuesMappedByParentKey[i["Issue key"]] || []);
+    // get items we are reporting
+    const reportedIssues = baseIssues.filter( issue => issue["Issue Type"].includes(reportedIssueType) && reportedStatuses(issue.Status));
 
-        // get timing information of each epic
-        const timedEpics = baseEpicsOfInitiative.map((e) => {
-            return getEpicTiming(e, issuesMappedByParentKey)
-        });
+    return reportedIssues.map( (issue)=> {
+        const reportedIssueWithTiming = getIssueWithDateData(issue, issuesMappedByParentKey, timingMethods);
+    
+        addWorkBreakdownToDateData(reportedIssueWithTiming.dateData, 
+            reportedIssueWithTiming.dateData.children.issues || [], 
+            getChildWorkBreakdown);
 
-        // previously we would add status 
-        // but now we are going to add status at the very end, when we can 
-        
-        // try to figure out what is dev or QA
-       
+        return reportedIssueWithTiming;
+    })
+}
 
-        return {
-            ...i,
-            ...getWorkTypeBreakdown(timedEpics)
-        };
+function addWorkBreakdownToDateData(dateData, issues, getChildWorkBreakdown){
+
+    const workBreakdown = getChildWorkBreakdown(issues);
+    return  Object.assign(dateData,{
+        dev: rollupDatesFromRollups([...workBreakdown.devWork]),
+        qa: rollupDatesFromRollups([...workBreakdown.qaWork]),
+        uat: rollupDatesFromRollups([...workBreakdown.uatWork])
     })
 }
 
@@ -299,35 +234,28 @@ export function initiativesWithTimedEpics(baseIssues){
 // percolate the changes upward 
 // 
 // I might be able to go through "weak" version ... 
-function priorInitiativeTiming(baseIssues, priorTime){
-    const currentInitiatives = initiativesWithTimedEpics(baseIssues);
+function reportedIssueTiming(options){
+    const {
+        baseIssues, 
+        priorTime,
+        reportedIssueType,
+        reportedStatuses,
+        timingMethods
+    } = options;
+    const currentInitiatives = reportedIssueTypeTimingWithChildrenBreakdown(options);
 
     const rolledBackBaseIssues = rollbackIssues(baseIssues, priorTime);
 
-    const priorInitiatives = initiativesWithTimedEpics(rolledBackBaseIssues);
+    const priorInitiatives = reportedIssueTypeTimingWithChildrenBreakdown({
+        ...options,
+        baseIssues: rolledBackBaseIssues
+    });
     
     // copy prior initiative timing information over 
     const priorInitiativeMap = getIssueMap(priorInitiatives);
     for(const currentInitiative of currentInitiatives) {
         const priorInitiative = priorInitiativeMap[currentInitiative["Issue key"]];
-        if(priorInitiative) {
-            // copy timing
-            
-            currentInitiative.lastPeriod = priorInitiative;
-            currentInitiative.team.lastPeriod = priorInitiative.team;
-            currentInitiative.dev.lastPeriod = priorInitiative.dev;
-            currentInitiative.qa.lastPeriod = priorInitiative.qa;
-            currentInitiative.uat.lastPeriod = priorInitiative.uat;
-        } else {
-            // it's missing leave timing alone
-            
-            currentInitiative.lastPeriod = null;
-            currentInitiative.team.lastPeriod = null;
-            currentInitiative.dev.lastPeriod = null;
-            currentInitiative.qa.lastPeriod = null;
-            currentInitiative.uat.lastPeriod = null;
-            
-        }
+        assignPriorIssueBreakdowns(currentInitiative, priorInitiative);
     }
     
     return {
@@ -336,6 +264,22 @@ function priorInitiativeTiming(baseIssues, priorTime){
     } 
 }
 
+function assignPriorIssueBreakdowns(currentIssue, priorIssue){
+    const curDateData = currentIssue.dateData;
+    if(priorIssue) {
+        // copy timing
+        currentIssue.lastPeriod = priorIssue;
+        const priorDateData = priorIssue.dateData;
+        curDateData.rollup.lastPeriod = priorDateData.rollup;
+        curDateData.children.lastPeriod = priorDateData.children;
+        curDateData.dev.lastPeriod = priorDateData.dev;
+        curDateData.qa.lastPeriod = priorDateData.qa;
+        curDateData.uat.lastPeriod = priorDateData.uat;
+    } else {
+        // it's missing leave timing alone
+        currentIssue.lastPeriod = null;
+    }
+}
 
 export function initiativesWithPriorTiming(baseIssues, priorTime){
     return priorInitiativeTiming(baseIssues, priorTime).currentInitiativesWithStatus
@@ -369,26 +313,40 @@ function mapOfReleaseNamesToReleasesWithInitiatives(initiatives) {
         const {releaseName} = getReleaseData(initiative);
         if(releaseName) {
             if(!map.has(releaseName)) {
-                map.set(releaseName,{release: releaseName, initiatives: [], lastPeriod: null})
+                map.set(releaseName,makeRelease(releaseName))
             }
-            map.get(releaseName ).initiatives.push(initiative);
+            map.get(releaseName ).dateData.children.issues.push(initiative);
         }
     }
     return map;
 }
-
-// SIDE EFFECTS
-function addWorkTypeBreakdownForRelease(release) {
-    // get all initiative's team.issues 
-    const allEpics = release.initiatives.map( initiative => initiative.team.issues ).flat();
-    Object.assign(release, getWorkTypeBreakdown(allEpics))
+function makeRelease(releaseName) {
+    const release = {release: releaseName, lastPeriod: null, dateData: {children: {issues: []}}};
+    release.dateData.rollup = release.dateData.children;
+    return release;
 }
 
-export function releasesAndInitiativesWithPriorTiming(baseIssues, priorTime){
-    const {currentInitiativesWithStatus,priorInitiatives} = priorInitiativeTiming(baseIssues, priorTime);
+// SIDE EFFECTS
+function addWorkTypeBreakdownForRelease(release, getChildWorkBreakdown) {
+    
+    // children is a release's direct children, but we really need the children's children as we are ignoring epic
+    // dimensions .... 
+    const children = release.dateData.children.issues;
+    
+    const grandChildren = children.map( child => child.dateData.children.issues ).flat();
+
+    release.dateData.rollup = /*release.dateData.children =*/ rollupDatesFromRollups(children);
+
+    addWorkBreakdownToDateData(release.dateData, grandChildren, getChildWorkBreakdown)
+}
+
+export function releasesAndInitiativesWithPriorTiming(options){
+    
+    const {currentInitiativesWithStatus,priorInitiatives} = reportedIssueTiming(options);
 
     const currentInitiativesWithARelease = filterReleases(currentInitiativesWithStatus);
     const priorInitiativesWithARelease = filterReleases(priorInitiatives);
+    
 
     // Make a map where we can look for prior releases's initiatives
 
@@ -414,20 +372,17 @@ export function releasesAndInitiativesWithPriorTiming(baseIssues, priorTime){
 
             // mark this release as having a lastPeriod if it doesn't already
             if(!release.lastPeriod){
-                release.lastPeriod = {initiatives: []};
+                release.lastPeriod = makeRelease("PRIOR "+release.release);
             }
-            release.lastPeriod.initiatives.push(priorInitiative);
+            release.lastPeriod.dateData.children.issues.push(priorInitiative);
         }
     }
     // now go and add timing data to each release in the release map ...
     for(const [releaseName, release] of releaseMap) {
-        addWorkTypeBreakdownForRelease(release);
+        addWorkTypeBreakdownForRelease(release, options.getChildWorkBreakdown);
         if(release.lastPeriod) {
-            addWorkTypeBreakdownForRelease(release.lastPeriod);
-            release.team.lastPeriod = release.lastPeriod.team;
-            release.dev.lastPeriod = release.lastPeriod.dev;
-            release.qa.lastPeriod = release.lastPeriod.qa;
-            release.uat.lastPeriod = release.lastPeriod.uat;
+            addWorkTypeBreakdownForRelease(release.lastPeriod, options.getChildWorkBreakdown);
+            assignPriorIssueBreakdowns(release, release.lastPeriod);
         }
     }
     
