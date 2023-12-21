@@ -1,4 +1,4 @@
-class SimpleTooltip extends HTMLElement {
+export default class SimpleTooltip extends HTMLElement {
     static get observedAttributes() { return ['for']; }
     attributeChangedCallback(name, oldValue, newValue) {
   

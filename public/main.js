@@ -21,7 +21,7 @@ export default async function main(jiraHelpers) {
 	report.jiraHelpers = jiraHelpers;
 	report.mode = "TEAMS";
 	document.body.append(report);
-	report.className = "place-center w-1280 block py-6"
+	report.className = "block"
 
 	/*
 	const nav = document.querySelector("nav");

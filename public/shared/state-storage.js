@@ -15,10 +15,11 @@ const dateMatch = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 export function saveJSONToUrl(key, defaultValue, Type, converter = JSON){
 	const {stringify, parse} = converter;
-	const defaultJSON = stringify(defaultValue);
+	
 	return {
 			type: Type,
       value({ lastSet, listenTo, resolve }) {
+          const defaultJSON = stringify(typeof defaultValue === "function" ? defaultValue.call(this) : defaultValue);
           if (lastSet.value) {
               resolve(lastSet.value)
           } else {
@@ -31,16 +32,20 @@ export function saveJSONToUrl(key, defaultValue, Type, converter = JSON){
           }
 
           listenTo(lastSet, (value) => {
-              const newUrl = new URL(window.location);
 							const valueJSON = stringify(value);
-							if(valueJSON !== defaultJSON) {
-								newUrl.searchParams.set(key, valueJSON );
-							} else {
-								newUrl.searchParams.delete(key );
-							}
-              history.pushState({}, '', newUrl);
+              updateUrlParam(key, valueJSON, defaultJSON)
               resolve(value);
           })
       }
   }
+}
+
+export function updateUrlParam(key, valueJSON, defaultJSON) {
+  const newUrl = new URL(window.location);
+  if(valueJSON !== defaultJSON) {
+    newUrl.searchParams.set(key, valueJSON );
+  } else {
+    newUrl.searchParams.delete(key );
+  }
+  history.pushState({}, '', newUrl);
 }

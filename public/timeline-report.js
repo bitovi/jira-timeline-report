@@ -1,14 +1,12 @@
-// https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject } from "//unpkg.com/can@6/core.mjs";
-//import bootstrap from "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" assert {type: 'css'};
-
+import { calculationKeysToNames } from "./prepare-issues/date-data.js";
 
 
 
 import { howMuchHasDueDateMovedForwardChangedSince,
     DAY_IN_MS, parseDateISOString, epicTimingData } from "./date-helpers.js";
 
-import "./timeline-use.js";
+
 
 import {
     addStatusToInitiative,
@@ -32,7 +30,7 @@ const booleanParsing = {
 };
 
 import { estimateExtraPoints } from "./confidence.js";
-import {saveJSONToUrl} from "./shared/state-storage.js";
+import {saveJSONToUrl,updateUrlParam} from "./shared/state-storage.js";
 
 import "./steerco-timeline.js";
 
@@ -47,95 +45,177 @@ const STATUS_KEY = "Status";
 const FIX_VERSIONS_KEY = "Fix versions";
 
 
+const configurationView = `
+<div class="border-gray-100 p-4 {{# not(this.showingConfiguration) }}hidden{{/}}" style="border-top-width: 32px">
+  <p>
+    Questions on the options? 
+    <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>, or 
+    <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">connect with us</a>.
+  </p>  
+  <h3 class="h3">Issue Source</h3>
+  <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
+  <p><input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/></p>
+  {{# if(this.rawIssuesPromise.isPending) }}
+    {{# if(this.progressData.issuesRequested)}}
+      <p class="text-sm text-right">Loaded {{this.progressData.issuesReceived}} of {{this.progressData.issuesRequested}} issues</p>
+    {{ else }}
+      <p class="text-sm text-right">Loading issues ...</p>
+    {{/ if}}
+  {{/ if }}
+  {{# if(this.rawIssuesPromise.isRejected) }}
+    <div class="border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked p-1">
+      <p>There was an error loading from Jira!</p>
+      <p>Error message: {{this.rawIssuesPromise.reason.errorMessages[0]}}</p>
+      <p>Please check your JQL is correct!</p>
+    </div>
+  {{/ if }}
+  {{# if(this.rawIssuesPromise.isResolved) }}
+    <p class="text-sm text-right">Loaded {{this.rawIssues.length}} issues</p>
+  {{/ if }}
+  
+
+  <h3 class="h3 mt-4">Reporting</h3>
+  <p class="mt-2">What Jira Artifacts do you want to report on?</p>
+  <div class="flex gap-3 mt-2 ml-2">
+    <div>
+      Primary Timeline:
+    </div>
+    {{# for(issueType of this.primaryReportingIssueHierarchy) }}
+      <label><input 
+        type="radio" 
+        name="primary" 
+        checked:from="eq(this.primaryIssueType, issueType.type)"
+        on:change="this.primaryIssueType = issueType.type"/> {{issueType.plural}} </label>
+    {{/ }}
+  </div>
+
+  <div class="flex gap-3 mt-2 ml-2">
+    <div>
+      Secondary Status Report:
+    </div>
+    <label><input 
+        type="radio" 
+        name="secondary" 
+        checked:from="eq(this.secondaryIssueType, 'none')"
+        on:change="this.secondaryIssueType = 'none'"
+        /> None </label>
+    {{# for(issueType of this.secondaryReportingIssueHierarchy) }}
+      <label><input 
+        type="radio" 
+        name="secondary" 
+        checked:from="eq(this.secondaryIssueType, issueType.type)"
+        on:change="this.secondaryIssueType = issueType.type"
+        /> {{issueType.plural}} </label>
+    {{/ }}
+  </div>
+  
+
+
+  <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
+
+    <label class='font-bold'>Sort by Due Date</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5' checked:bind='this.sortByDueDate'/>
+    <p class="m-0">Instead of ordering initiatives based on the order defined in the JQL, 
+    sort initiatives by their last epic's due date.
+    </p>
+
+    <label class='font-bold'>Report Epics</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5' checked:bind='this.reportEpics'/>
+    <p class="m-0">Report epics instead of Initiatives
+    </p>
+
+    
+
+    <label class='font-bold'>Hide Unknown Initiatives</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/>
+    <p class="m-0">Hide initiatives whose timing can't be determined.
+    </p>
+
+    <label class='font-bold'>Show Releases</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5' checked:bind='this.showReleasesInTimeline'/>
+    <p class="m-0 ">Instead of showing the timing for initiatives, show the timing for releases. Initiatives
+    must have their <code>release</code> (also called <code>Fix version</code>) field set.
+    </p>
+
+    {{# if(this.showReleasesInTimeline) }}
+    <label class='font-bold'>Show Only Semver Releases</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
+    <p class="m-0">This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
+    <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
+    </p>
+    {{/ }}
+
+    <label class='font-bold'>Break out Dev, QA and UAT</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5'  checked:bind='this.breakOutTimings'/>
+    <p class="m-0">If initiatives have epics labelled with "QA" and/or "UAT", the report will show individual timelines and
+      statuses for Development, QA, and UAT.
+    </p>
+
+    <label class='font-bold'>Ignore Initiatives in UAT</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5'  checked:bind='this.hideInitiativesInUAT'/>
+    <p class="m-0">Initiatives that are in UAT will not be shown. Check this if you do not want to
+    report on work that is in its final stages.
+    </p>
+
+    <label class='font-bold'>Ignore Initiatives in Idea</label>
+    <input type='checkbox' 
+      class='self-start mt-1.5'  checked:bind='this.hideInitiativesInIdea'/>
+    <p class="m-0">Initiatives that have an Open, To Do, or Idea status will not be shown.
+    </p>
+
+
+  </div>
+</div>`;
+
+
 export class TimelineReport extends StacheElement {
     static view = `
-          <details class='rounded-lg-gray-100-on-white my-2 drop-shadow-md'>
-            <summary>Use</summary>
-            <timeline-use class="p-4 block color-bg-white"></timeline-use>
-          </details>
-          <details class='rounded-lg-gray-100-on-white my-2 drop-shadow-md color-bg-white' open:from="not(this.jql)">
+      <div 
+          class="drop-shadow-lg
+          fixed left-0 z-50 overflow-auto
+          top-fullish-vh height-fullish-vh 
+          bg-white flex max-w-4xl" id="configuration">
+        
+        ${configurationView}
 
-            <summary>
-              Configure
-            </summary>
+        <div on:click="this.toggleConfiguration()"
+          class="w-8 hover:bg-gray-200 cursor-pointer bg-gray-100 ">
+        
+          {{#not(this.showingConfiguration)}}
+            <p class="-rotate-90 w-40 absolute" style="top: 40%; left: -65px">Configure</p>
 
-						<div class='p-4'>
-							<p><label class="inline font-bold">JQL</label>
-							- Specify a JQL to load your project's initiatives and epics.</p>
-							<input class="w-full-border-box mt-2" value:bind='this.jql'/>
-						</div>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" data-slot="icon" class="w-8 h-8 mt-px">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
 
-						<div class="grid gap-3 p-4" style="grid-template-columns: max-content max-content 1fr">
+          {{ else }}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" data-slot="icon" class="w-8 h-8 mt-px">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+        
+          {{/}}
 
-              <label class='font-bold'>Sort by Due Date</label>
-              <input type='checkbox' 
-                class='self-start' checked:bind='this.sortByDueDate'/>
-              <p class="m-0">Instead of ordering initiatives based on the order defined in the JQL, 
-              sort initiatives by their last epic's due date.
-              </p>
+        </div>
 
-              <label class='font-bold'>Report Epics</label>
-              <input type='checkbox' 
-                class='self-start' checked:bind='this.reportEpics'/>
-              <p class="m-0">Report epics instead of Initiatives
-              </p>
-
-              
-
-              <label class='font-bold'>Hide Unknown Initiatives</label>
-              <input type='checkbox' 
-                class='self-start' checked:bind='this.hideUnknownInitiatives'/>
-              <p class="m-0">Hide initiatives whose timing can't be determined.
-              </p>
-
-							<label class='font-bold'>Show Releases</label>
-							<input type='checkbox' 
-                class='self-start' checked:bind='this.showReleasesInTimeline'/>
-							<p class="m-0">Instead of showing the timing for initiatives, show the timing for releases. Initiatives
-							must have their <code>release</code> (also called <code>Fix version</code>) field set.
-							</p>
-
-							{{# if(this.showReleasesInTimeline) }}
-							<label class='font-bold'>Show Only Semver Releases</label>
-							<input type='checkbox' 
-                class='self-start'  checked:bind='this.showOnlySemverReleases'/>
-							<p class="m-0">This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
-							<code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
-							</p>
-							{{/ }}
-
-							<label class='font-bold'>Break out Dev, QA and UAT</label>
-							<input type='checkbox' 
-                class='self-start'  checked:bind='this.breakOutTimings'/>
-							<p class="m-0">If initiatives have epics labelled with "QA" and/or "UAT", the report will show individual timelines and
-								statuses for Development, QA, and UAT.
-							</p>
-
-							<label class='font-bold'>Ignore Initiatives in UAT</label>
-							<input type='checkbox' 
-                class='self-start'  checked:bind='this.hideInitiativesInUAT'/>
-							<p class="m-0">Initiatives that are in UAT will not be shown. Check this if you do not want to
-							report on work that is in its final stages.
-							</p>
-
-              <label class='font-bold'>Ignore Initiatives in Idea</label>
-							<input type='checkbox' 
-                class='self-start'  checked:bind='this.hideInitiativesInIdea'/>
-							<p class="m-0">Initiatives that have an Open, To Do, or Idea status will not be shown.
-							</p>
-
-
-						</div>
+      </div>
+        <div class="w-1280 fullish-vh pt-4 left-config-width {{#this.showingConfiguration}}relative {{else}}place-center{{/}}">
 
 
 
-						<div class='p-4'>
-							<p><label class="inline font-bold">Compare to {{this.compareToTime.text}}</label>
-							- Specify what timepoint to use to determine if an initiative or release has fallen behind.</p>
-							<input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
-						</div>
+          <div class='p-4 rounded-lg-gray-100-on-white mb-4 drop-shadow-md color-bg-white'>
+            <p><label class="inline font-bold">Compare to {{this.compareToTime.text}}</label>
+            - Specify what timepoint to use to determine if an initiative or release has fallen behind.</p>
+            <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
+          </div>
 
-          </details>
+          
 
 
           {{# if( not(this.jql) ) }}
@@ -306,6 +386,7 @@ export class TimelineReport extends StacheElement {
             {{/ if }}
             </div>
           </details>
+        </div>
   `;
     static props = {
         showingDebugPanel: {type: Boolean, default: false},
@@ -376,6 +457,34 @@ export class TimelineReport extends StacheElement {
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
         jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic) order by Rank", String, {parse: x => ""+x, stringify: x => ""+x}),
+        primaryIssueType: saveJSONToUrl("jql", "Epic", String, {parse: x => ""+x, stringify: x => ""+x}),
+        secondaryIssueType: {
+          value({resolve, lastSet, listenTo}){
+            let currentValue;
+            updateValue(new URL(window.location).searchParams.get("secondaryIssueType") || "none");
+
+            listenTo(lastSet, (value)=>{
+              updateValue(value);
+            });
+
+            listenTo("secondaryReportingIssueHierarchy", ({value})=>{
+              if(currentValue === "none") {
+                return;
+              } else {
+                const currentValueSupported = value.map( issueType => issueType.type).some( type => type === currentValue);
+                if(!currentValueSupported) {
+                  updateValue("none")
+                }
+              }
+            });
+            function updateValue(value) {
+              updateUrlParam("secondaryIssueType", value, "none");
+              currentValue = value;
+              resolve(value);
+            }
+
+          }
+        },
         mode: {
             type: String,
         },
@@ -393,11 +502,30 @@ export class TimelineReport extends StacheElement {
               this.rawIssuesPromise.then(resolve);
             }
           }
-        }
+        },
+        get issueHierarchy(){
+          return denormalizedIssueHierarchy();
+        },
+        get primaryReportingIssueHierarchy(){
+          // we need to remove stories
+          return this.issueHierarchy.slice(0, -1);
+
+        },
+        get secondaryReportingIssueHierarchy(){
+          const issueTypeMap = this.issueHierarchy.typeToIssueType;
+          const primaryType = issueTypeMap[this.primaryIssueType];
+          if(!primaryType) {
+            console.warn("no primary issuetype?!?!");
+            return [];
+          }
+          return [ ...primaryType.denormalizedChildren];
+        },
+
+        showingConfiguration: true
     };
     // hooks
     async connected() {
-
+      updateFullishHeightSection();
     }
     get serverInfoPromise(){
       return this.jiraHelpers.getServerInfo();
@@ -580,6 +708,11 @@ export class TimelineReport extends StacheElement {
         const teams = [...new Set( work.issues.map( issue => issue["Project key"]) ) ];
 
     }*/
+    toggleConfiguration() {
+      this.showingConfiguration = ! this.showingConfiguration;
+      const width = document.getElementById("configuration").clientWidth;
+      document.querySelector(".left-config-width").style.left = (width+16)+"px";
+    }
 }
 
 
@@ -693,3 +826,42 @@ function addTeamBreakdown(release) {
 // ontrack
 // behind
 // complete
+
+
+function getElementPosition(el) {
+  var rect = el.getBoundingClientRect();
+  var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+  var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  return { x: rect.left + scrollLeft, y: rect.top + scrollTop };
+}
+
+function updateFullishHeightSection() {
+  const position = getElementPosition( document.querySelector('.fullish-vh') )
+  document.documentElement.style.setProperty('--fullish-document-top', `${position.y}px`);
+}
+
+window.addEventListener('load', updateFullishHeightSection);
+window.addEventListener('resize', updateFullishHeightSection);
+
+
+
+
+function denormalizedIssueHierarchy(){
+  const base = [
+    { type: "Release",    plural: "Releases", children: ["Initiative","Epic","Story"],  },
+    { type: "Initiative", plural: "Initiatives", children: ["Epic","Story"] },
+    { type: "Epic", plural: "Epics", children: ["Story"]},
+    { type: "Story", plural: "Stories", children: [] }
+  ];
+  const typeToIssueType = {};
+  for(const issueType of base) {
+    typeToIssueType[issueType.type] = issueType;
+  }
+
+
+  for(const issueType of base) {
+    issueType.denormalizedChildren = issueType.children.map( typeName => typeToIssueType[typeName]);
+  }
+  base.typeToIssueType = typeToIssueType
+  return base;
+}

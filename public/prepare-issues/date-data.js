@@ -121,6 +121,24 @@ const methods = {
     parentOnly
 }
 
+export const calculationKeysToNames = {
+    parentFirstThenChildren: function(parent, child){
+        return `From ${parent.type}, then ${child.plural}`
+    },
+    childrenOnly: function(parent, child){
+        return `From ${child.plural}`
+    },
+    childrenFirstThenParent: function(parent, child){
+        return `From ${child.plural}, then ${parent.type}`
+    },
+    widestRange: function(parent, child){
+        return `From ${parent.type} or ${child.plural} (earliest to latest)`
+    },
+    parentOnly: function(parent, child){
+        return `From ${parent.type}`
+    }
+}
+
 export function getIssueWithDateData(issue, childMap, methodNames = ["childrenOnly","parentFirstThenChildren"], index=0) {
     // by default we stop recursion
     let methodName = methodNames[index] ? methodNames[index]: "parentOnly";

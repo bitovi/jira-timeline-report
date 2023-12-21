@@ -11,7 +11,10 @@ const inDevStatus = { "In Development": true, "Development": true };
 const inPartnerReviewStatus = { "Partner Review": true };
 const inDoneStatus = { "Done": true };
 
-import "./shared/simple-tooltip.js";
+import SimpleTooltip from "./shared/simple-tooltip.js";
+
+const TOOLTIP = new SimpleTooltip();
+document.body.append(TOOLTIP);
 
 class SteercoTimeline extends StacheElement {
 		static view = `
@@ -113,9 +116,9 @@ class SteercoTimeline extends StacheElement {
 						{{# for(initiative of release.dateData.children.issues) }}
 						 <li class='font-sans text-sm pointer' on:click='this.showTooltip(scope.event, initiative)'>
 							{{# if(this.breakOutTimings) }}
-							<span class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.dateData.dev.status}}'>D</span><span
-								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.dateData.qa.status}}'>Q</span><span
-								class='text-xs font-mono px-1px py-0px color-text-and-bg-{{initiative.dateData.uat.status}}'>U</span>
+							<span class='text-xs font-mono px-px py-0 color-text-and-bg-{{initiative.dateData.dev.status}}'>D</span><span
+								class='text-xs font-mono px-px py-0 color-text-and-bg-{{initiative.dateData.qa.status}}'>Q</span><span
+								class='text-xs font-mono px-px py-0 color-text-and-bg-{{initiative.dateData.uat.status}}'>U</span>
 							{{/ if }}
 							<span class="{{# if(this.breakOutTimings) }} color-text-black{{else}} color-text-{{initiative.dateData.rollup.status}} {{/ }}">{{initiative.Summary}}</span>
 						 </li>
@@ -140,7 +143,6 @@ class SteercoTimeline extends StacheElement {
               <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
               <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
             </div>
-		<simple-tooltip id="simpleTooltip"></simple-tooltip>
 	`
 
 
@@ -280,7 +282,7 @@ class SteercoTimeline extends StacheElement {
 					if(this.breakOutTimings) {
 
 						const lastDev = makeLastPeriodElement(release.dateData.dev.status, release.dateData.dev.lastPeriod);
-						lastDev.classList.add("h-1","py-half");
+						lastDev.classList.add("h-1","py-0.5");
 						lastPeriodRoot.appendChild(lastDev);
 
 						const dev = document.createElement("div");
@@ -291,7 +293,7 @@ class SteercoTimeline extends StacheElement {
 						
 						if(this.hasQAEpic) {
 							const lastQA = makeLastPeriodElement(release.dateData.qa.status, release.dateData.qa.lastPeriod);
-							lastQA.classList.add("h-1","py-half");
+							lastQA.classList.add("h-1","py-0.5");
 							lastPeriodRoot.appendChild(lastQA);
 
 
@@ -304,7 +306,7 @@ class SteercoTimeline extends StacheElement {
 						}
 						if(this.hasUATEpic) {
 							const lastUAT = makeLastPeriodElement(release.dateData.uat.status, release.dateData.uat.lastPeriod);
-							lastUAT.classList.add("h-1","py-half");
+							lastUAT.classList.add("h-1","py-0.5");
 							lastPeriodRoot.appendChild(lastUAT);
 
 
@@ -453,7 +455,7 @@ class SteercoTimeline extends StacheElement {
 			console.log(initiativeOrRelease);
 			if(this.showTooltipObject === initiativeOrRelease) {
 				this.showTooltipObject = null;
-				window.simpleTooltip.leftElement();
+				TOOLTIP.leftElement();
 				return;
 			}
 			this.showTooltipObject = initiativeOrRelease;
@@ -498,7 +500,7 @@ class SteercoTimeline extends StacheElement {
 			}
 			const rollupData = initiativeOrRelease.dateData.rollup;
 
-			window.simpleTooltip.enteredElement(event, `
+			TOOLTIP.enteredElement(event, `
 			<div class='flex remove-button pointer' style="justify-content: space-between">
 				<a class="p-1 color-text-and-bg-${rollupData.status}"
 					href="${initiativeOrRelease.url}">${initiativeOrRelease.Summary || initiativeOrRelease.release}</a>
@@ -513,9 +515,9 @@ class SteercoTimeline extends StacheElement {
 			${make(initiativeOrRelease, "uat")}
 			`);
 
-			window.simpleTooltip.querySelector(".remove-button").onclick = ()=> {
+			TOOLTIP.querySelector(".remove-button").onclick = ()=> {
 				this.showTooltipObject = null;
-				window.simpleTooltip.leftElement()
+				TOOLTIP.leftElement()
 			}
 
 		}
