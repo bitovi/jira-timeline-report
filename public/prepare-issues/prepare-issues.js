@@ -224,16 +224,6 @@ function addWorkBreakdownToDateData(dateData, issues, getChildWorkBreakdown){
 
 
 
-// the problem here ... is that we need to roll back at every point
-// we'd have to rollback each value and track what the new due date is 
-//
-// why would we need to rollback each value and see the change over time?
-// why can't we just "rollback" to the prior state and compare?
-// 
-// we could see each mutation and 
-// percolate the changes upward 
-// 
-// I might be able to go through "weak" version ... 
 function reportedIssueTiming(options){
     const {
         baseIssues, 
@@ -321,7 +311,7 @@ function mapOfReleaseNamesToReleasesWithInitiatives(initiatives) {
     return map;
 }
 function makeRelease(releaseName) {
-    const release = {release: releaseName, lastPeriod: null, dateData: {children: {issues: []}}};
+    const release = {Summary: releaseName, release: releaseName, lastPeriod: null, dateData: {children: {issues: []}}};
     release.dateData.rollup = release.dateData.children;
     return release;
 }

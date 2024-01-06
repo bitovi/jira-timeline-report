@@ -56,7 +56,7 @@ export function getStartDateAndDueDataFromSprints(story){
     return mergeStartAndDueData(records);
     
 }
-function mergeStartAndDueData(records){
+export function mergeStartAndDueData(records){
     const startData = records.filter( record => record?.startData ).map( record => record.startData );
     const dueData = records.filter( record => record?.dueData ).map( record => record.dueData );
 
@@ -75,10 +75,11 @@ export function getStartDateAndDueDataFromFieldsOrSprints(issue ){
 
 export function parentFirstThenChildren(getIssueDateData, getChildDateData){
     const issueDateData = getIssueDateData();
+    const childrenDateData = getChildDateData();
     if(issueDateData.startData && issueDateData.dueData) {
         return issueDateData;
     }
-    const childrenDateData = getChildDateData();
+    
 
     return {
         startData: issueDateData.startData || childrenDateData.startData,
