@@ -56,7 +56,7 @@ export function getStartDateAndDueDataFromSprints(story){
     return mergeStartAndDueData(records);
     
 }
-function mergeStartAndDueData(records){
+export function mergeStartAndDueData(records){
     const startData = records.filter( record => record?.startData ).map( record => record.startData );
     const dueData = records.filter( record => record?.dueData ).map( record => record.dueData );
 
@@ -75,10 +75,11 @@ export function getStartDateAndDueDataFromFieldsOrSprints(issue ){
 
 export function parentFirstThenChildren(getIssueDateData, getChildDateData){
     const issueDateData = getIssueDateData();
+    const childrenDateData = getChildDateData();
     if(issueDateData.startData && issueDateData.dueData) {
         return issueDateData;
     }
-    const childrenDateData = getChildDateData();
+    
 
     return {
         startData: issueDateData.startData || childrenDateData.startData,
@@ -91,13 +92,15 @@ export function childrenOnly(getIssueDateData, getChildDateData){
 }
 
 export function parentOnly(getIssueDateData, getChildDateData){
+    // eventually we can look to remove these. Some code still depends on having children everywhere
+    getChildDateData();
     return getIssueDateData();
 }
 
 export function childrenFirstThenParent(getIssueDateData, getChildDateData){
     const childrenDateData = getChildDateData();
     if(childrenDateData.startData && childrenDateData.dueData) {
-        return issueDateData;
+        return childrenDateData;
     }
     const issueDateData = getIssueDateData();
     return {
@@ -119,6 +122,24 @@ const methods = {
     childrenFirstThenParent,
     widestRange,
     parentOnly
+}
+
+export const calculationKeysToNames = {
+    parentFirstThenChildren: function(parent, child){
+        return `From ${parent.type}, then ${child.plural}`
+    },
+    childrenOnly: function(parent, child){
+        return `From ${child.plural}`
+    },
+    childrenFirstThenParent: function(parent, child){
+        return `From ${child.plural}, then ${parent.type}`
+    },
+    widestRange: function(parent, child){
+        return `From ${parent.type} or ${child.plural} (earliest to latest)`
+    },
+    parentOnly: function(parent, child){
+        return `From ${parent.type}`
+    }
 }
 
 export function getIssueWithDateData(issue, childMap, methodNames = ["childrenOnly","parentFirstThenChildren"], index=0) {

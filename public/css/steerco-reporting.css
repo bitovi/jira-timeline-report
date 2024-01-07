@@ -1,3 +1,32 @@
+@import "./primitives.css";
+@import "./colors.css";
+@import "./fonts.css";
+@import "./spacing.css";
+@import "./steerco-reporting.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+    /* this should be set to what it typically is */
+--fullish-document-top: calc(40px + 20px); 
+}
+
+
+@layer components {
+    .form-border {
+      @apply border-neutral-200 border;
+    }
+    .link {
+        @apply text-blue-600 dark:text-blue-500 hover:underline;
+    }
+    .h3 {
+        @apply text-2xl  dark:text-white mt-8 mb-2;
+    }
+  }
+
 /* Bitov special design system */
 .bitovi-font-poppins {
     font-family: 'Poppins', sans-serif;
@@ -322,9 +351,9 @@ simple-tooltip span {
     position: absolute;
     transform: translate(-50%, 0);
     border: solid 1px gray;
-    padding: 10px;
+    padding: 4px;
     z-index: 100;
-    top: 1px;
+    top: 5px;
 }
 
 .gantt.simple-timings .release-timeline-item {

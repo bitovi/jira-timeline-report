@@ -18,7 +18,7 @@ module.exports = function (env) {
 			<meta name="twitter:card" content="summary_large_image">
 			
 			<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
-			<script type="module" src="./css/css.js"></script>
+			<link rel="stylesheet" href="dist/production.css">
 			<!-- Google tag (gtag.js) -->
 			<script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
 			<script>
@@ -29,11 +29,11 @@ module.exports = function (env) {
 				gtag('config', 'G-XQR3T6BZL3');
 			</script>
 	</head>
-	<body class='color-bg-slate-400'>
-	<div class="color-bg-white px-2">
-		<nav class="container mx-auto py-2 place-center w-1280">
+	<body class='color-bg-slate-400 overflow-x-hidden'>
+	<div class="color-bg-white px-2 sticky top-0 z-50">
+		<nav class="mx-auto py-2 place-center w-1280">
 			<div class="flex" style="align-items: center">
-				<ul class="flex gap-3 flex-grow items-baseline">
+				<ul class="flex gap-3 grow items-baseline">
 					<li>
 						<a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold">Jira Timeline Report</a>
 					</li>
@@ -41,12 +41,12 @@ module.exports = function (env) {
 						<a href="https://www.bitovi.com/services/agile-project-management-consulting" 
 							class="bitovi-poppins color-text-bitovi-red-orange"
 							style="line-height: 37px; font-size: 14px; text-decoration: none"
-							>by <img src="./images/bitovi-logo.png"/></a>
+							>by <img src="./images/bitovi-logo.png" class="inline align-baseline"/></a>
 					</li>
 				</ul>
 				<div>
 					<button id="logout" 
-						class="p-1 block pointer color-bg-bitovi-red-orange color-text-white rounded-lg bitovi-font-poppins font-lg font-bold"
+						class="p-1 block pointer color-bg-bitovi-red-orange color-text-white rounded-lg bitovi-font-poppins text-lg font-bold"
 						style="border: none">Log out</button>
 				</div>
 			</div>

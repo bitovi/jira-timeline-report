@@ -14,26 +14,14 @@
     font-size: 1.125rem; /* 18px */
 	line-height: 1.75rem; /* 28px */
 }
-.font-2xl {
-	font-size: 1.5rem;
-}
+
 .font-3xl {
 	font-size: 2rem;
 }
-.text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-}
 
-.text-sm {
-	font-size: 0.875rem; /* 14px */
-	line-height: 1.25rem; /* 20px */
-}
 
-.text-xs {
-	font-size: var(--space-3); /* 12px */
-	line-height: var(--space-4); /* 16px */
-}
+
+
 
 
 .no-underline {
