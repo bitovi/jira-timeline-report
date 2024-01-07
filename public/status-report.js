@@ -1,9 +1,11 @@
 
 import { StacheElement, type, ObservableObject, stache } from "//unpkg.com/can@6/core.mjs";
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" });
+import { dateFormatter } from "./issue-tooltip.js";
 
 import { DAY_IN_MS } from "./date-helpers.js";
+
+import { showTooltip } from "./issue-tooltip.js";
 
 export class StatusReport extends StacheElement {
     static view = `
@@ -92,6 +94,9 @@ export class StatusReport extends StacheElement {
         } else {
                 return ""
         }
+    }
+    showTooltip(event, isssue) {
+        showTooltip(event.currentTarget, isssue);
     }
 }
 

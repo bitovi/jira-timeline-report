@@ -53,7 +53,6 @@ class SimpleTooltip extends HTMLElement {
           var rect = element.getBoundingClientRect();
           const top = (window.scrollY + rect.bottom);
           const bottom = top + height;
-          console.log(height, bottom, window.innerHeight,rect.top - height);
           if(bottom >= window.innerHeight) {
             this.style.top = (rect.top - height)+"px";
           } else {

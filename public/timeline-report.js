@@ -121,9 +121,9 @@ const configurationView = `
 
   <h3 class="h3">Timing Calculation</h3>
   <div class="grid gap-2 my-2" style="grid-template-columns: auto auto auto;">
-    <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">Level Type</div>
+    <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">Parent Type</div>
     <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Child Type</div>
-    <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 3 / span 1; grid-row: 1 / span 1;">How is {{this.primaryIssueType}} timing calculated?</div>
+    <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 3 / span 1; grid-row: 1 / span 1;">How is timing calculated between parent and child?</div>
     <div class="border-b-2 border-neutral-40" style="grid-column: 1 / span 3; grid-row: 1 / span 1;"></div>
 
     {{# for(timingLevel of this.timingLevels) }}
@@ -139,9 +139,9 @@ const configurationView = `
           </select>
         {{/ eq}}
 
-        <select class="${selectStyle}">
+        <select class="${selectStyle}" on:change="this.updateCalculation(scope.index, scope.element.value)">
           {{# for(calculation of timingLevel.calculations) }}
-            <option {{# if(calculation.selected) }}selected{{/ if }}>{{calculation.name}}</option>
+            <option {{# if(calculation.selected) }}selected{{/ if }} value="{{calculation.calculation}}">{{calculation.name}}</option>
           {{/ for }}
         </select>
 
@@ -569,14 +569,43 @@ export class TimelineReport extends StacheElement {
         // [{type: "Epic", calculation: "calculationName"},{type, calculation}]
         timingCalculations: {
           value({resolve, lastSet, listenTo}) {
-            let currentValue = [];
-            resolve(currentValue);
-            listenTo("primaryIssueType",()=>{
-              resolve(currentValue = []);
-            });
+            let currentValue;
+            updateValue(new URL(window.location).searchParams.get("timingCalculations"));
+
             listenTo(lastSet, (value)=>{
-              resolve(currentValue = value);
+                updateValue(value);
             });
+            listenTo("primaryIssueType",()=>{
+              updateValue([]);
+            });
+
+            function updateValue(value) {
+              if(typeof value === "string"){
+                try {
+                  value = parse(value);
+                } catch(e) {
+                  value = [];
+                }
+              } else if(!value){
+                value = [];
+              }
+                
+              updateUrlParam("timingCalculations", stringify(value), stringify([]));
+
+              currentValue = value;
+              resolve(currentValue);
+            }
+
+            function parse(value){
+              return value.split(",").map( piece => {
+                const parts = piece.split(":");
+                return {type: parts[0], calculation: parts[1]};
+              }).flat()
+            }
+            function stringify(array){
+              return array.map( (obj) => obj.type+":"+obj.calculation).join(",")
+            }
+
           }
         },
         get firstIssueTypeWithStatuses(){
@@ -641,6 +670,16 @@ export class TimelineReport extends StacheElement {
       ].slice(0,index+1);
 
       copyCalculations[index].type = value;
+      this.timingCalculations = copyCalculations;
+    }
+
+    updateCalculation(index, value){
+    
+      const copyCalculations = [
+        ...getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations) 
+      ].slice(0,index+1);
+
+      copyCalculations[index].calculation = value;
       this.timingCalculations = copyCalculations;
     }
 

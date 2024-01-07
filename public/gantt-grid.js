@@ -1,6 +1,6 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject, stache } from "//unpkg.com/can@6/core.mjs";
-
+import { showTooltip } from "./issue-tooltip.js";
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
@@ -60,7 +60,9 @@ export class GanttGrid extends StacheElement {
     static props = {
         breakdown: Boolean
     };
-    
+    showTooltip(event, isssue) {
+        showTooltip(event.currentTarget, isssue);
+    }
     plus(first, second) {
         return first + second;
     }
@@ -68,7 +70,14 @@ export class GanttGrid extends StacheElement {
         return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
     }
     get quartersAndMonths(){
-        const {start, due} = rollupDatesFromRollups(this.issues);
+        let {start, due} = rollupDatesFromRollups(this.issues);
+        // nothing has timing
+        if(!start) {
+            start = new Date();
+        }
+        if(!due) {
+            due = new Date( start.getTime() + 1000 * 60 * 60 * 24 * 90 );
+        }
         return getQuartersAndMonths(start, due);
     }
     get todayMarginLeft() {

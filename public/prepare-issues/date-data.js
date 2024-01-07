@@ -92,13 +92,15 @@ export function childrenOnly(getIssueDateData, getChildDateData){
 }
 
 export function parentOnly(getIssueDateData, getChildDateData){
+    // eventually we can look to remove these. Some code still depends on having children everywhere
+    getChildDateData();
     return getIssueDateData();
 }
 
 export function childrenFirstThenParent(getIssueDateData, getChildDateData){
     const childrenDateData = getChildDateData();
     if(childrenDateData.startData && childrenDateData.dueData) {
-        return issueDateData;
+        return childrenDateData;
     }
     const issueDateData = getIssueDateData();
     return {
