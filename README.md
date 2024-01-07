@@ -8,7 +8,7 @@ It can:
 
 - Show how your timeline has changed 📈
 - Break out work by "dev", "qa" and "uat" timelines 📊
-- Roll up work into releases 📶
+- Roll up timing data from stories, sprints, epics, initiatives and releases 📶
 
 ![image](https://github.com/bitovi/jira-timeline-report/assets/78602/20628f19-f1ea-4815-a44b-50c0efa13d12)
 
@@ -33,6 +33,65 @@ You can get help or ask questions on our:
 
 Bitovi's [Agile Project Management with Jira - Reporting](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html) training walks through 
 configuring the tool.
+
+## Configuration
+
+The following documents how to configure the tool.
+
+### Issue Source
+
+> <img width="855" alt="image" src="https://github.com/bitovi/jira-timeline-report/assets/78602/cf039a24-5bfd-4ba4-9baf-59bb5f49f294">
+
+Specify a `JQL` that loads all issues you want to report on and help determine the timeline of your report. The report will load faster the fewer issues you load.
+
+Examples:
+
+- The following loads all Epics and Stories in your jira instance:
+
+  ```
+  issueType in (Epic, Story) order by Rank
+  ```
+
+  > NOTE: Specifying `order by Rank` will list items in Rank order. This can be useful if you are using `Rank` to prioritize your issues.
+
+
+- The following loads all children of the issue `PROJ-1`.
+
+  ```
+  issuekey in portfolioChildIssuesOf("PROJ-1") order by Rank
+  ```
+
+  > NOTE: `portfolioChildIssuesOf` is only available with advanced roadmaps.
+
+
+### Primary Timeline
+
+> <img width="794" alt="image" src="https://github.com/bitovi/jira-timeline-report/assets/78602/f4cc9ae5-3d51-4e0e-beac-76744eec39f4">
+
+The primary timeline settings configure the main chart.  It has two parts.
+
+#### What Jira artifact do you want to report on?
+
+This configures the __primary__ Jira artifact that be reported in the main chart.  
+
+#### What timing data do you want to report?
+
+This configures the type of report.  The options:
+
+- _Start and due dates_ - Create a chart that shows the start and due date for each of the __primary__ Jira artifacts.
+- _Due dates only_ - Create a chart that shows only the due dates of the __primary__ Jira artifacts.
+- _Work breakdown_ - Create a _start and due date_ chart, but show the start and due dates for work identified as "dev", "qa" or "uat".  See [Understanding Work Breakdown](#understanding-work-breakdown) for more info.
+
+### Timing Calculation
+
+> <img width="852" alt="image" src="https://github.com/bitovi/jira-timeline-report/assets/78602/41d41fb4-435a-4856-952c-97e2e3922f58">
+
+The timing calculation section allows you to specify:
+
+- How timing is "rolled up" across issue hierarchy.
+- What issue type releases should report on
+
+## Old Stuff
 
 Note, your epics and initiatives will need the following statuses for the tool to work:
 
