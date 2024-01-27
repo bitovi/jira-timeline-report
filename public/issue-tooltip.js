@@ -97,12 +97,13 @@ export function showTooltip(element, issue){
         rollupData?.statusData?.warning === true ?
         `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
     }
-    ${make(issue, "dev")}
-    ${make(issue, "qa")}
-    ${make(issue, "uat")}
+    ${ issue.dateData.rollup ? make(issue, "rollup") :""}
+    ${ issue.dateData.dev ? make(issue, "dev") :""}
+    ${issue.dateData.qa ? make(issue, "qa") : ""}
+    ${issue.dateData.uat ?  make(issue, "uat") : ""}
     `
 
-    TOOLTIP.belowElement(element, DOM);
+    TOOLTIP.belowElementInScrollingContainer(element, DOM);
 
     TOOLTIP.querySelector(".remove-button").onclick = ()=> {
         showingObject = null;

@@ -78,7 +78,7 @@ export class GanttGrid extends StacheElement {
         if(!due) {
             due = new Date( start.getTime() + 1000 * 60 * 60 * 24 * 90 );
         }
-        return getQuartersAndMonths(start, due);
+        return getQuartersAndMonths(new Date(), due);
     }
     get todayMarginLeft() {
         const { firstDay, lastDay } = this.quartersAndMonths;

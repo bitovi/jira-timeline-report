@@ -82,7 +82,6 @@ class SimpleTooltip extends HTMLElement {
     const topFromContainer = elementRect.bottom - containerRect.top;
     const leftFromContainer = elementRect.left - containerRect.left;
     const bottomInWindow = elementRect.bottom + tooltipRect.height;
-
     if(bottomInWindow > window.innerHeight) {
       this.style.top = (( elementRect.top - tooltipRect.height ) - containerRect.top )+"px";
     } else {

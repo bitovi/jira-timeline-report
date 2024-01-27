@@ -202,16 +202,8 @@ simple-tooltip span {
     display: flex;
     flex-flow: row;
     gap: 16px;
-    padding: 0px 32px;
 }
 
-.release_wrapper .release_box {
-    border-radius: 12px;
-    /*background-color: #e7e6e6;*/
-    padding: 30px 5px 5px 5px;
-    position: relative;
-    flex: 1;
-}
 
 .release_wrapper .release_box .release_box_header_bubble {
     min-width: 80px;
@@ -220,13 +212,10 @@ simple-tooltip span {
     font-weight: 500;
     padding: 8px 16px;
     /*border-radius: 30px 30px 30px 0px;*/
-    position: absolute;
     width: 100%;
     box-sizing: border-box;
     z-index: 1;
     text-align: center;
-    top: -25px;
-    left: 0px;
 }
 
 
@@ -243,11 +232,6 @@ simple-tooltip span {
     font-weight: 600;
 }
 
-.release_wrapper .release_box .release_box_subtitle {
-    display: flex;
-    flex-flow: column;
-    gap: 4px;
-}
 
 .release_box_subtitle_wrapper {
     display: flex;
@@ -261,12 +245,6 @@ simple-tooltip span {
     font-family: monospace;
 }
 
-
-.release_wrapper .release_box .release_box_subtitle .release_box_subtitle_wrapper .release_box_subtitle_key {}
-
-.release_box .release_box_body {
-    padding: 0px 0px 0px 17px;
-}
 
 .release_box .release_box_body.extra-timings {
     padding: 0px;

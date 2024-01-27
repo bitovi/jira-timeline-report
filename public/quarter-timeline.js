@@ -62,7 +62,7 @@ export function getQuartersAndMonths(startDate, endDate){
 		})
 	}
 
-	const lastDay = new Date(startDate);
+	const lastDay = new Date(quarterStartDate);
 	lastDay.setMonth(lastDay.getMonth() + monthDiffResult);
 
 	return {
