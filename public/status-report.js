@@ -9,13 +9,13 @@ import { showTooltip } from "./issue-tooltip.js";
 
 export class StatusReport extends StacheElement {
     static view = `
-    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}}'>
+    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2'>
         {{# for(primaryIssue of this.primaryIssues) }}
             <div class='release_box'>
                 <div 
                     on:click='this.showTooltip(scope.event, primaryIssue)'
                     class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}}">{{primaryIssue.Summary}}</div>
-                <div class="release_box_subtitle">
+                <div class="flex gap-4 p-1">
                     {{# if(this.breakdown) }}
                         <div class="release_box_subtitle_wrapper">
                                 <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.dev.status}}">Dev</span>
@@ -46,7 +46,7 @@ export class StatusReport extends StacheElement {
                     {{/ if }}
 
                 </div>
-                <ul class="release_box_body list-disc">
+                <ul class="p-1 list-disc list-inside">
                     {{# for(secondaryIssue of primaryIssue.dateData.children.issues) }}
                     <li class='font-sans text-sm pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
                         {{# if(this.breakdown) }}

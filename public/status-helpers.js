@@ -63,6 +63,15 @@ export function addStatusToInitiative(initiative) {
 	Object.assign( initiative.dateData.uat, getInitiativeUatStatus(initiative) );
 	return initiative;
 }
+export function addStatusToIssueAndChildren(issue) {
+	addStatusToInitiative(issue);
+	if(issue.dateData?.children?.issues?.length) {
+		issue.dateData.children.issues.forEach(function(child){
+			Object.assign( child.dateData.rollup, getInitiativeStatus(child) );
+		});
+	}
+	return issue;
+}
 
 function getInitiativeStatus(initiative) {
 		if (inDoneStatus[initiative.Status]) {
@@ -171,6 +180,15 @@ export function getInitiativeDevStatus(initiative) {
 				}
 			};
 		}
+		if(!devDateData) {
+			return {
+				status: "unknown",
+				statusData: {
+					warning: false,
+					message: "Did not break down dev work on this level"
+				}
+			}
+		}
 		const timedDevStatus = timedStatus(devDateData);
 
 		const warning = timedDevStatus === "complete" && 
@@ -192,6 +210,16 @@ function getInitiativeQaStatus(initiative) {
 			};
 		}
 		const qaDateData = initiative.dateData.qa;
+		if(!qaDateData) {
+			return {
+				status: "unknown",
+				statusData: {
+					warning: false,
+					message: "Did not break down qa work within this issue"
+				}
+			}
+		}
+
 		if (qaDateData.issues.length && qaDateData.issues.every(epic => isStatusQAComplete(epic))) {
 			return {
 				status: "complete", 
@@ -230,6 +258,16 @@ function getInitiativeUatStatus(initiative) {
 		};
 	}
 	const uatDateData = initiative.dateData.uat;
+	if(!uatDateData) {
+		return {
+			status: "unknown",
+			statusData: {
+				warning: false,
+				message: "Did not break down uat work within this issue"
+			}
+		}
+	}
+
 	if (uatDateData.issues.length && uatDateData.issues.every(epic => isStatusUatComplete(epic))) {
 		// Releases don't have a status so we shouldn't throw this warning.
 		return {

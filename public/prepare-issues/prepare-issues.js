@@ -1,7 +1,8 @@
 import { estimateExtraPoints } from "../confidence.js";
 import {
     addStatusToInitiative,
-    addStatusToRelease, getBusinessDatesCount, inPartnerReviewStatuses
+    addStatusToRelease, getBusinessDatesCount, inPartnerReviewStatuses,
+    addStatusToIssueAndChildren
 } from "../status-helpers.js";
 
 import { howMuchHasDueDateMovedForwardChangedSince,
@@ -221,7 +222,17 @@ function addWorkBreakdownToDateData(dateData, issues, getChildWorkBreakdown){
     })
 }
 
-
+function getAllChildren(issues){
+    const allChildren = [...issues];
+    
+    for(const issue of issues) {
+        const children = issue.dateData?.children?.issues;
+        if(children) {
+            allChildren.push.apply(allChildren, getAllChildren(children))
+        }
+    }
+    return allChildren;
+}
 
 
 function reportedIssueTiming(options){
@@ -242,14 +253,21 @@ function reportedIssueTiming(options){
     });
     
     // copy prior initiative timing information over 
-    const priorInitiativeMap = getIssueMap(priorInitiatives);
-    for(const currentInitiative of currentInitiatives) {
-        const priorInitiative = priorInitiativeMap[currentInitiative["Issue key"]];
-        assignPriorIssueBreakdowns(currentInitiative, priorInitiative);
+    const allCurrentIssues = getAllChildren(currentInitiatives);
+    const allPastIssues = getAllChildren(priorInitiatives);
+
+
+
+    const pastIssueMap = getIssueMap(allPastIssues);
+    for(const currentIssue of allCurrentIssues) {
+        const pastIssue = pastIssueMap[currentIssue["Issue key"]];
+        assignPriorIssueBreakdowns(currentIssue, pastIssue);
     }
+
+
     
     return {
-        currentInitiativesWithStatus: currentInitiatives.map(addStatusToInitiative),
+        currentInitiativesWithStatus: currentInitiatives.map(addStatusToIssueAndChildren),
         priorInitiatives
     } 
 }
@@ -262,9 +280,17 @@ function assignPriorIssueBreakdowns(currentIssue, priorIssue){
         const priorDateData = priorIssue.dateData;
         curDateData.rollup.lastPeriod = priorDateData.rollup;
         curDateData.children.lastPeriod = priorDateData.children;
-        curDateData.dev.lastPeriod = priorDateData.dev;
-        curDateData.qa.lastPeriod = priorDateData.qa;
-        curDateData.uat.lastPeriod = priorDateData.uat;
+        if(curDateData.dev) {
+            curDateData.dev.lastPeriod = priorDateData.dev;
+        }
+        if(curDateData.qa) {
+            curDateData.qa.lastPeriod = priorDateData.qa;
+        }
+        if(curDateData.uat) {
+            curDateData.uat.lastPeriod = priorDateData.uat;
+        }
+        
+        
     } else {
         // it's missing leave timing alone
         currentIssue.lastPeriod = null;
