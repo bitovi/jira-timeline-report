@@ -27,7 +27,10 @@ export function getQuartersAndMonths(startDate, endDate){
 
 	// keep track of release indexes
 	const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
-	const quarters = Math.max( monthDiffResult / 3, 2);
+	const quarters = monthDiffResult / 3;
+	if(!Number.isInteger(quarters)) {
+		console.warn("Not an even number of quarters", monthDiffResult,"/ 3");
+	}
 
 	function month(d) {
 			return d.toLocaleString('default', { month: 'short' });
@@ -96,7 +99,10 @@ export function getCalendarHtml(startDate, endDate) {
 
     // keep track of release indexes
     const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
-    const quarters = Math.max( monthDiffResult / 3, 2);
+    const quarters = monthDiffResult / 3;
+	if(!Number.isInteger(quarters)) {
+		console.warn("Not an even number of quarters", monthDiffResult,"/ 3");
+	}
 
     function month(d) {
         return d.toLocaleString('default', { month: 'short' });

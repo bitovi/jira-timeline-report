@@ -811,7 +811,10 @@ export class TimelineReport extends StacheElement {
       var initiatives =  this.releasesAndInitiativesWithPriorTiming.initiatives;
 
       if(this.sortByDueDate) {
-        initiatives = initiatives.sort( (i1, i2) => i1.dateData.rollup.due - i2.dateData.rollup.due);
+        console.log("sorting by due")
+        initiatives = initiatives.toSorted( (i1, i2) => i1.dateData.rollup.due - i2.dateData.rollup.due);
+      } else {
+        console.log("not sorting")
       }
 
       if(this.hideInitiativesInIdea) {

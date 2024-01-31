@@ -19,19 +19,19 @@ export class StatusReport extends StacheElement {
                     class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}}">{{primaryIssue.Summary}}</div>
                 <div class="flex gap-4 p-1">
                     {{# if(this.breakdown) }}
-                        <div class="release_box_subtitle_wrapper">
+                        <div class="${release_box_subtitle_wrapper}">
                                 <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.dev.status}}">Dev</span>
                                 <span class="release_box_subtitle_value">
                                     {{ this.prettyDate(primaryIssue.dateData.dev.due) }}{{this.wasReleaseDate(primaryIssue.dateData.dev) }}
                                 </span>
                         </div>
-                        <div class="release_box_subtitle_wrapper">
+                        <div class="${release_box_subtitle_wrapper}">
                                 <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.qa.status}}">QA&nbsp;</span>
                                 <span class="release_box_subtitle_value">
                                     {{ this.prettyDate(primaryIssue.dateData.qa.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.qa) }}
                                 </span>
                         </div>
-                        <div class="release_box_subtitle_wrapper">
+                        <div class="${release_box_subtitle_wrapper}">
                                 <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.uat.status}}">UAT</span>
                                 <span class="release_box_subtitle_value">
                                     {{ this.prettyDate(primaryIssue.dateData.uat.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.uat) }}
