@@ -370,3 +370,8 @@ details.rounded-lg-gray-100-on-white summary {
   background-color: var(--gray-100-color);
   display: list-item;
 }
+
+
+.report-elements {
+    container-type: size;
+}
