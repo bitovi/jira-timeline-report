@@ -17,7 +17,7 @@ export class GanttTimeline extends StacheElement {
 
     get quartersAndMonths(){
         const {start, due} = rollupDatesFromRollups(this.issues);
-        return getQuartersAndMonths(start, due);
+        return getQuartersAndMonths(new Date(), due);
     }
     get todayMarginLeft() {
         const { firstDay, lastDay } = this.quartersAndMonths;
@@ -26,7 +26,7 @@ export class GanttTimeline extends StacheElement {
     }
     get calendarData() {
         const {start, due} = rollupDatesFromRollups(this.issues);
-        return getCalendarHtml(start, due);
+        return getCalendarHtml(new Date(), due);
     }
     get calendarHTML() {
         return stache.safeString(this.calendarData.html);

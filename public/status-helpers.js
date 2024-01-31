@@ -4,7 +4,7 @@ export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
 export const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
 export const inIdeaStatuses =  Object.keys(inIdeaStatus);
 const inDoneStatus = { "Done": true, "Cancelled": true };
-const blockedStatus = { "Blocked": true }
+const blockedStatus = { "Blocked": true, "blocked": true }
 
 
 const WIGGLE_ROOM = 0;
@@ -97,7 +97,7 @@ function getInitiativeStatus(initiative) {
 				}
 			};
 		}
-		if(statuses.some(s => s === "blocked")) {
+		if(statuses.some(s => s.toLowerCase() === "blocked") || initiative.Status.toLowerCase() === "blocked") {
 			return {
 				status: "blocked", 
 				statusData: {
@@ -172,7 +172,7 @@ export function getInitiativeDevStatus(initiative) {
 			};
 				return "complete"
 		}
-		if (devDateData?.issues?.some(epic => epic.Status === "Blocked")) {
+		if (devDateData?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
 			return {
 				status: "blocked", 
 				statusData: {
@@ -229,7 +229,7 @@ function getInitiativeQaStatus(initiative) {
 				}
 			};
 		}
-		if (initiative?.qa?.issues?.some(epic => epic.Status === "Blocked")) {
+		if (initiative?.qa?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
 			return {
 				status: "blocked", 
 				statusData: {
@@ -278,7 +278,7 @@ function getInitiativeUatStatus(initiative) {
 			}
 		};
 	}
-	if (uatDateData?.issues?.some(epic => epic.Status === "Blocked")) {
+	if (uatDateData?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
 		return {
 			status: "blocked", 
 			statusData: {
