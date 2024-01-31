@@ -1,11 +1,13 @@
 
-import { StacheElement, type, ObservableObject, stache } from "//unpkg.com/can@6/core.mjs";
+import { StacheElement, type, ObservableObject, stache } from "./can.js";
 
 import { dateFormatter } from "./issue-tooltip.js";
 
 import { DAY_IN_MS } from "./date-helpers.js";
 
 import { showTooltip } from "./issue-tooltip.js";
+
+const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`
 
 export class StatusReport extends StacheElement {
     static view = `
@@ -36,7 +38,7 @@ export class StatusReport extends StacheElement {
                                 </span>
                         </div>
                     {{ else }}
-                        <div class="release_box_subtitle_wrapper">
+                        <div class="${release_box_subtitle_wrapper}">
                                 <b>Target Delivery</b>
                                 <span class="release_box_subtitle_value">
                                     <span class="nowrap">{{ this.prettyDate(primaryIssue.dateData.rollup.due) }}</span>
@@ -48,7 +50,7 @@ export class StatusReport extends StacheElement {
                 </div>
                 <ul class="p-1 list-disc list-inside">
                     {{# for(secondaryIssue of primaryIssue.dateData.children.issues) }}
-                    <li class='font-sans text-sm pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
+                    <li class='font-sans {{this.fontSize(primaryIssue.dateData.children.issues.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
                         {{# if(this.breakdown) }}
                         <span class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.dev.status}}'>D</span><span
                             class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.qa.status}}'>Q</span><span
@@ -97,6 +99,14 @@ export class StatusReport extends StacheElement {
     }
     showTooltip(event, isssue) {
         showTooltip(event.currentTarget, isssue);
+    }
+    fontSize(count){
+        if(count >= 6) {
+            return "text-xs";
+        } else {
+            return "text-sm";
+        }
+        
     }
 }
 

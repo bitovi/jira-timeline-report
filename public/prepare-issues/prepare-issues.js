@@ -10,7 +10,6 @@ import { howMuchHasDueDateMovedForwardChangedSince,
 
 import {issues as rollbackIssues} from "../rollback/rollback.js";
 import { getIssueWithDateData, rollupDatesFromRollups } from "./date-data.js";
-//import { ObservableObject, value } from "//unpkg.com/can@6/core.mjs";
 
 export function partition(arr, predicate) {
     let passed = [];

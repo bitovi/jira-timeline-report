@@ -60,10 +60,8 @@ module.exports = function (env) {
 			}
 			</script>
 			<script type="module">
-				import JiraOIDCHelpers from "./jira-oidc-helpers.js";
-				import main from "./main.js";
-				const jiraHelpers = JiraOIDCHelpers(${JSON.stringify(getSafeEnv())});
-				main(jiraHelpers);
+				import main from "./dist/main.js";
+				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 
 	</body>

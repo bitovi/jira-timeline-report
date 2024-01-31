@@ -1,4 +1,4 @@
-import { StacheElement, type, ObservableObject, ObservableArray } from "//unpkg.com/can@6/core.mjs";
+import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
 import { calculationKeysToNames } from "./prepare-issues/date-data.js";
 
 
@@ -16,7 +16,7 @@ import {
 } from "./status-helpers.js";
 
 import {releasesAndInitiativesWithPriorTiming, 
-  rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses, filterQAWork, filterPartnerReviewWork} from "../prepare-issues/prepare-issues.js";
+  rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses, filterQAWork, filterPartnerReviewWork} from "./prepare-issues/prepare-issues.js";
 
 import semverReleases from "./semver-releases.js";
 import sortedByLastEpicReleases from "./sorted-by-last-epic-releases.js";

@@ -1,5 +1,5 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
-import { StacheElement, type, ObservableObject, stache } from "//unpkg.com/can@6/core.mjs";
+import { StacheElement, type, ObservableObject, stache } from "./can.js";
 import { showTooltip } from "./issue-tooltip.js";
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
@@ -50,7 +50,7 @@ export class GanttGrid extends StacheElement {
             <!-- Each of the issues -->
             {{# for(issue of this.issues) }}
                 <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer p-2 color-text-and-bg-{{issue.dateData.rollup.status}} border-y-solid-1px-white'>
+                    class='pointer p-1 color-text-and-bg-{{issue.dateData.rollup.status}} border-y-solid-1px-white'>
                     {{issue.Summary}}
                 </div>
                 {{ this.getReleaseTimeline(issue, scope.index) }}
@@ -207,7 +207,7 @@ export class GanttGrid extends StacheElement {
                 } else {
 
                     const behindTime = makeLastPeriodElement(release.dateData.rollup.status, release.dateData.rollup.lastPeriod);
-                    behindTime.classList.add("h-4","py-1")
+                    behindTime.classList.add("h-6","py-1")
                     lastPeriodRoot.appendChild(behindTime);
 
                     const team = document.createElement("div");

@@ -1,4 +1,4 @@
-import { StacheElement, type, ObservableObject, ObservableArray } from "//unpkg.com/can@6/core.mjs";
+import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
 import {updateUrlParam} from "./shared/state-storage.js";
 import "./shared/autocomplete/autocomplete.js";
 

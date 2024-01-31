@@ -1,5 +1,5 @@
 
-import { StacheElement, type, ObservableObject, stache } from "//unpkg.com/can@6/core.mjs";
+import { StacheElement, type, ObservableObject, stache } from "./can.js";
 
 import { rollupDatesFromRollups } from "./prepare-issues/date-data.js";
 import { getQuartersAndMonths } from "./quarter-timeline.js";

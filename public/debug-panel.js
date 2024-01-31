@@ -1,4 +1,4 @@
-import { StacheElement, type, ObservableObject, stache } from "//unpkg.com/can@6/core.mjs";
+import { StacheElement, type, ObservableObject, stache } from "./can.js";
 
 
 class DebugPanel extends StacheElement {

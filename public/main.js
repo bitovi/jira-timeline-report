@@ -1,7 +1,10 @@
 
 import { TimelineReport } from "./timeline-report.js";
+import JiraOIDCHelpers from "./jira-oidc-helpers.js";
 
-export default async function main(jiraHelpers) {
+export default async function main(config) {
+
+	const jiraHelpers = JiraOIDCHelpers(config);
 	mainElement.textContent = "Checking for Jira Access Token";
 
 	if (!jiraHelpers.hasValidAccessToken()) {
@@ -23,11 +26,6 @@ export default async function main(jiraHelpers) {
 	document.body.append(report);
 	report.className = "block"
 
-	/*
-	const nav = document.querySelector("nav");
-
-	nav.innerHTML = NAV_HTML;
-	nav.className = "py-2";*/
 
 }
 /*
