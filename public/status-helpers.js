@@ -97,7 +97,7 @@ function getInitiativeStatus(initiative) {
 				}
 			};
 		}
-		if(statuses.some(s => s.toLowerCase() === "blocked") || initiative.Status.toLowerCase() === "blocked") {
+		if(statuses.some(s => s.toLowerCase() === "blocked") || ( initiative.Status && initiative.Status.toLowerCase() === "blocked" )) {
 			return {
 				status: "blocked", 
 				statusData: {
