@@ -13,32 +13,33 @@ export class StatusReport extends StacheElement {
     static view = `
     <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2'>
         {{# for(primaryIssue of this.primaryIssues) }}
-            <div class='release_box'>
+            <div class='release_box grow'>
                 <div 
                     on:click='this.showTooltip(scope.event, primaryIssue)'
-                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}}">{{primaryIssue.Summary}}</div>
-                <div class="flex gap-4 p-1">
+                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}} rounded-t">{{primaryIssue.Summary}}</div>
+                
                     {{# if(this.breakdown) }}
-                        <div class="${release_box_subtitle_wrapper}">
-                                <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.dev.status}}">Dev</span>
-                                <span class="release_box_subtitle_value">
-                                    {{ this.prettyDate(primaryIssue.dateData.dev.due) }}{{this.wasReleaseDate(primaryIssue.dateData.dev) }}
-                                </span>
-                        </div>
-                        <div class="${release_box_subtitle_wrapper}">
-                                <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.qa.status}}">QA&nbsp;</span>
-                                <span class="release_box_subtitle_value">
-                                    {{ this.prettyDate(primaryIssue.dateData.qa.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.qa) }}
-                                </span>
-                        </div>
-                        <div class="${release_box_subtitle_wrapper}">
-                                <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.uat.status}}">UAT</span>
-                                <span class="release_box_subtitle_value">
-                                    {{ this.prettyDate(primaryIssue.dateData.uat.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.uat) }}
-                                </span>
-                        </div>
+
+                            <div class="${release_box_subtitle_wrapper} pt-1">
+                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.dev.status}} font-mono px-px">Dev</span>
+                                    <span class="release_box_subtitle_value">
+                                        {{ this.prettyDate(primaryIssue.dateData.dev.due) }}{{this.wasReleaseDate(primaryIssue.dateData.dev) }}
+                                    </span>
+                            </div>
+                            <div class="${release_box_subtitle_wrapper}">
+                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.qa.status}} font-mono px-px">QA&nbsp;</span>
+                                    <span class="release_box_subtitle_value">
+                                        {{ this.prettyDate(primaryIssue.dateData.qa.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.qa) }}
+                                    </span>
+                            </div>
+                            <div class="${release_box_subtitle_wrapper}">
+                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.uat.status}} font-mono px-px">UAT</span>
+                                    <span class="release_box_subtitle_value">
+                                        {{ this.prettyDate(primaryIssue.dateData.uat.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.uat) }}
+                                    </span>
+                            </div>
                     {{ else }}
-                        <div class="${release_box_subtitle_wrapper}">
+                        <div class="${release_box_subtitle_wrapper} p-1">
                                 <b>Target Delivery</b>
                                 <span class="release_box_subtitle_value">
                                     <span class="nowrap">{{ this.prettyDate(primaryIssue.dateData.rollup.due) }}</span>
@@ -47,8 +48,7 @@ export class StatusReport extends StacheElement {
                         </div>
                     {{/ if }}
 
-                </div>
-                <ul class="p-1 list-disc list-inside">
+                <ul class=" {{# if(this.breakdown) }}list-none{{else}}list-disc list-inside p-1{{/if}}">
                     {{# for(secondaryIssue of primaryIssue.dateData.children.issues) }}
                     <li class='font-sans {{this.fontSize(primaryIssue.dateData.children.issues.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
                         {{# if(this.breakdown) }}
@@ -101,9 +101,14 @@ export class StatusReport extends StacheElement {
         showTooltip(event.currentTarget, isssue);
     }
     fontSize(count){
-        if(count >= 6) {
+        const lotsOfColumns = this.primaryIssues > 4;
+
+        if(count >= 7 && lotsOfColumns) {
             return "text-xs";
-        } else {
+        } else if(count <= 4 && !lotsOfColumns) {
+            return "text-base";
+        } 
+        else {
             return "text-sm";
         }
         

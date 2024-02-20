@@ -32,15 +32,15 @@ export class GanttTimeline extends StacheElement {
         return stache.safeString(this.calendarData.html);
     }
     get releaseTimeline() {
-        const { firstDay, lastDay } = this.calendarData;
+        const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
 
         return this.issues.map((release, index) => {
             const div = document.createElement("div");
             if (release.dateData.rollup.due) {
-                    div.className = "release-timeline-item color-text-and-bg-" + release.dateData.rollup.status;
+                    div.className = "rounded-sm release-timeline-item color-text-and-bg-" + release.dateData.rollup.status;
                     div.style.left = ((release.dateData.rollup.due - firstDay) / totalTime * 100) + "%";
-                    div.appendChild(document.createTextNode(release.Summary))
+                    div.appendChild(document.createTextNode(release.shortVersion))
             }
             return div;
         });
