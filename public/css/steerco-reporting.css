@@ -163,9 +163,9 @@ simple-tooltip span {
 .gantt .today {
     width: 2px;
     background-color: orange;
-    height: 150%;
+    height: 100%;
     position: absolute;
-    top: -50%;
+    top: 2px;
     z-index: -100;
 }
 
@@ -328,14 +328,9 @@ simple-tooltip span {
 .release-timeline-item {
     position: absolute;
     transform: translate(-50%, 0);
-    border: solid 1px gray;
     padding: 4px;
     z-index: 100;
     top: 5px;
-}
-
-.gantt.simple-timings .release-timeline-item {
-    color: white;
 }
 
 .gantt.extra-timings {
