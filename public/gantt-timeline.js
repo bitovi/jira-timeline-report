@@ -40,7 +40,7 @@ export class GanttTimeline extends StacheElement {
             if (release.dateData.rollup.due) {
                     div.className = "rounded-sm release-timeline-item color-text-and-bg-" + release.dateData.rollup.status;
                     div.style.left = ((release.dateData.rollup.due - firstDay) / totalTime * 100) + "%";
-                    div.appendChild(document.createTextNode(release.shortVersion))
+                    div.appendChild(document.createTextNode(release.shortVersion || release.Summary))
             }
             return div;
         });

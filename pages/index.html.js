@@ -44,21 +44,14 @@ module.exports = function (env) {
 							>by <img src="./images/bitovi-logo.png" class="inline align-baseline"/></a>
 					</li>
 				</ul>
-				<div>
-					<button id="logout" 
-						class="p-1 block pointer color-bg-bitovi-red-orange color-text-white rounded-lg bitovi-font-poppins text-lg font-bold"
-						style="border: none">Log out</button>
+				<div id="login">
+					
 				</div>
 			</div>
 		</nav>
 	</div>
 			<div id="mainElement" class='place-center w-1280'>Loading ... </div>
-			<script>
-			logout.onclick = function(){
-				localStorage.clear();
-				window.location.reload();
-			}
-			</script>
+
 			<script type="module">
 				import main from "./dist/main.js";
 				main( ${JSON.stringify(getSafeEnv())} );
