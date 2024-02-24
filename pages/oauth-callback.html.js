@@ -12,7 +12,8 @@ module.exports = function () {
 
 </head>
 <body>
-		<h1>Jira QA Metrics: OAuth Callback</h1>
+		<h1>Jira Timeline Report - OAuth Callback</h1>
+		<p>You will be redirected in one moment.</p>
 		<div id="mainElement">Loading ... </div>
 		<script type="module">
 			import JiraOIDCHelpers from "./jira-oidc-helpers.js";

@@ -29,11 +29,14 @@ const booleanParsing = {
   stringify: x => ""+x
 };
 
+import bitoviTrainingData from "./examples/bitovi-training.js";
+
 import { estimateExtraPoints } from "./confidence.js";
 import {saveJSONToUrl,updateUrlParam} from "./shared/state-storage.js";
 
 //import "./steerco-timeline.js";
 import "./status-filter.js";
+import "./status-filter-only.js";
 import "./gantt-grid.js";
 import "./gantt-timeline.js";
 import "./status-report.js";
@@ -51,7 +54,7 @@ const FIX_VERSIONS_KEY = "Fix versions";
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 
 const configurationView = `
-<div class="border-gray-100 p-4 {{# not(this.showingConfiguration) }}hidden{{/}}" style="border-top-width: 32px;overflow-y: auto">
+<div class="border-gray-100 p-4 relative {{# not(this.showingConfiguration) }}hidden{{/}}" style="border-top-width: 32px;overflow-y: auto">
   <p>
     Questions on the options? 
     <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>, or 
@@ -60,7 +63,13 @@ const configurationView = `
   
   <h3 class="h3">Issue Source</h3>
   <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
-  <p><input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/></p>
+  <p>
+    {{# if(this.loginComponent.isLoggedIn) }}
+      <input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/>
+    {{ else }}
+      <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
+    {{/ if}}
+  </p>
   {{# if(this.rawIssuesPromise.isPending) }}
     {{# if(this.progressData.issuesRequested)}}
       <p class="text-sm text-right">Loaded {{this.progressData.issuesReceived}} of {{this.progressData.issuesRequested}} issues</p>
@@ -190,7 +199,14 @@ const configurationView = `
     <p class="m-0">Hide {{this.primaryIssueType}}s whose timing can't be determined.
     </p>
 
-    <label>Ignore {{this.firstIssueTypeWithStatuses}} Statuses</label>
+    <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
+    <status-filter-only 
+      statuses:from="this.statuses" 
+      statusesToShow:to="this.statusesToShow"
+      style="max-width: 400px;"></status-filter-only>
+    <p>Only include these statuses in the report</p>
+
+    <label>{{this.firstIssueTypeWithStatuses}} Statuses to Ignore</label>
     <status-filter 
       statuses:from="this.statuses" 
       statusesToRemove:to="this.statusesToRemove"
@@ -253,7 +269,21 @@ export class TimelineReport extends StacheElement {
       </div>
         <div class="w-1280 fullish-vh pt-4 left-config-width {{#this.showingConfiguration}}relative {{else}}place-center{{/}}">
 
+        {{# not(this.loginComponent.isLoggedIn) }}
 
+          <div class="p-4 mb-4 drop-shadow-md hide-on-fullscreen bg-yellow-300">
+            <p>The following is a sample report. Learn more about it in the 
+              "<a class="text-blue-400" href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html">Agile Program Management with Jira</a>" 
+              training. Click "Connect to Jira" to load your own data.</p>
+            <p class="mt-2">Checkout the following sample reports:</p>
+            <ul class="list-disc list-inside ml-2">
+              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
+              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with iniative work breakdown</a></li>
+              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&statusesToShow=Development%2CReady&primaryReportType=breakdown">Ready and in-development initiative work breakdown</a></li>
+            </ul>
+
+          </div>
+      {{/ not }}
 
           <div class='p-4 rounded-lg-gray-100-on-white mb-4 drop-shadow-md color-bg-white'>
             <p><label class="inline font-bold">Compare to {{this.compareToTime.text}}</label>
@@ -527,6 +557,11 @@ export class TimelineReport extends StacheElement {
             return [];
           }
         },
+        statusesToShow: {
+          get default(){
+            return [];
+          }
+        },
         get secondaryIssueType(){
           return getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations)[0].type
         },
@@ -691,6 +726,10 @@ export class TimelineReport extends StacheElement {
       return this.jiraHelpers.getServerInfo();
     }
     get rawIssuesPromise(){
+      if(this.loginComponent.isLoggedIn === false) {
+        return bitoviTrainingData(new Date());
+      }
+      
       if (this.jql) {
         const serverInfoPromise = this.serverInfoPromise;
 
@@ -713,8 +752,9 @@ export class TimelineReport extends StacheElement {
         return Promise.all([
             issuesPromise, serverInfoPromise
         ]).then(([issues, serverInfo]) => {
-            return rawIssuesToBaseIssueFormat(issues, serverInfo);
-
+            const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
+            console.log(formatted);
+            return formatted;
         })
      }
     }
@@ -766,6 +806,7 @@ export class TimelineReport extends StacheElement {
 
       // Remove initiatives with certain statuses
       let initiativeStatusesToRemove = this.statusesToRemove;
+      let initiativeStatusesToShow =  this.statusesToShow;
 
       const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
       const timingMethods = getImpliedTimingCalculations(
@@ -780,6 +821,11 @@ export class TimelineReport extends StacheElement {
         baseIssues: this.rawIssues,
         priorTime: new Date( new Date().getTime() - this.compareToTime.timePrior),
         reportedStatuses: function(status){
+          if(initiativeStatusesToShow && initiativeStatusesToShow.length) {
+            if(!initiativeStatusesToShow.includes(status)) {
+              return false;
+            }
+          }
           return !initiativeStatusesToRemove.includes(status);
         },
         getChildWorkBreakdown,
