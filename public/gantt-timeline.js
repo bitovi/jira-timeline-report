@@ -4,6 +4,7 @@ import { StacheElement, type, ObservableObject, stache } from "./can.js";
 import { rollupDatesFromRollups } from "./prepare-issues/date-data.js";
 import { getQuartersAndMonths } from "./quarter-timeline.js";
 import { getCalendarHtml } from "./quarter-timeline.js";
+const DAY = 1000*60*60*24;
 export class GanttTimeline extends StacheElement {
     static view = `
         <div style="display: grid; grid-template-columns: repeat({{this.quartersAndMonths.months.length}}, auto); grid-template-rows: auto auto repeat({{this.rows.length}}, auto)"
@@ -44,8 +45,9 @@ export class GanttTimeline extends StacheElement {
     `;
 
     get quartersAndMonths(){
+        // handle if there are no issues
         const {start, due} = rollupDatesFromRollups(this.issues);
-        return getQuartersAndMonths(new Date(), due);
+        return getQuartersAndMonths(new Date(), due || new Date( new Date().getTime() + DAY*30));
     }
     get todayMarginLeft() {
         const { firstDay, lastDay } = this.quartersAndMonths;
