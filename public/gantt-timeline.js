@@ -17,18 +17,18 @@ export class GanttTimeline extends StacheElement {
             {{# for(month of this.quartersAndMonths.months)}}
                 <div 
                     style="grid-column: {{ plus(scope.index, 1) }} / span 1; grid-row: 2 / span 1;"
-                    class='border-b-solid-2px-slate-900 text-center'>{{month.name}}</div>
+                    class='border-b border-neutral-80 text-center'>{{month.name}}</div>
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
             <div style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: 2 / span {{plus(this.rows.length, 1)}};">
-                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
+                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 0; position: relative; height: 100%;"></div>
             </div>
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
                 <div style="grid-column: {{ plus(scope.index, 1) }} / span 1; grid-row: 3 / span {{this.rows.length}}; z-index: 10"
-                    class='border-l-solid-1px-slate-900 border-b-solid-1px-slate-900 {{this.lastRowBorder(scope.index)}}'></div>
+                    class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             

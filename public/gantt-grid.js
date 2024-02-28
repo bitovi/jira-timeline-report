@@ -32,7 +32,7 @@ export class GanttGrid extends StacheElement {
 
             <div></div>
             {{# for(month of this.quartersAndMonths.months)}}
-                <div class='border-b-solid-2px-slate-900 text-center'>{{month.name}}</div>
+                <div class='border-b border-neutral-80 text-center'>{{month.name}}</div>
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
@@ -44,7 +44,7 @@ export class GanttGrid extends StacheElement {
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
                 <div style="grid-column: {{ plus(scope.index, 2) }}; grid-row: 3 / span {{this.issues.length}}; z-index: 10"
-                    class='border-l-solid-1px-slate-900 border-b-solid-1px-slate-900 {{this.lastRowBorder(scope.index)}}'></div>
+                    class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
@@ -169,7 +169,7 @@ export class GanttGrid extends StacheElement {
                 if(this.breakdown) {
 
                     const lastDev = makeLastPeriodElement(release.dateData.dev.status, release.dateData.dev.lastPeriod);
-                    lastDev.classList.add("h-1","py-0.5");
+                    lastDev.classList.add("h-2","py-[2px]");
                     lastPeriodRoot.appendChild(lastDev);
 
                     const dev = document.createElement("div");
@@ -180,7 +180,7 @@ export class GanttGrid extends StacheElement {
                     
                     if(this.hasQAEpic) {
                         const lastQA = makeLastPeriodElement(release.dateData.qa.status, release.dateData.qa.lastPeriod);
-                        lastQA.classList.add("h-1","py-0.5");
+                        lastQA.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastQA);
 
 
@@ -193,7 +193,7 @@ export class GanttGrid extends StacheElement {
                     }
                     if(this.hasUATEpic) {
                         const lastUAT = makeLastPeriodElement(release.dateData.uat.status, release.dateData.uat.lastPeriod);
-                        lastUAT.classList.add("h-1","py-0.5");
+                        lastUAT.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastUAT);
 
 
