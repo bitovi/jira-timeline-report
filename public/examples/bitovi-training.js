@@ -8,7 +8,7 @@ export default function bitoviTrainingData(dateToShift){
 
     return nativeFetchJSON("./examples/bitovi-training.json")
         .then(function(data){
-            const daysShift = Math.round( (dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY )
+            const daysShift = Math.round( (dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY )-0
             return adjustDateStrings(data, daysShift);
         })
 }
