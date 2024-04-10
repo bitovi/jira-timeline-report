@@ -17,6 +17,13 @@ export function nativeFetchJSON(url, options) {
 	return fetch(url, options).then(responseToJSON)
 }
 
+function chunkArray(array, size) {
+	const chunkedArr = [];
+	for (let i = 0; i < array.length; i += size) {
+	  chunkedArr.push(array.slice(i, i + size));
+	}
+	return chunkedArr;
+  }
 
 export default function JiraOIDCHelpers({
 	JIRA_CLIENT_ID,
@@ -64,7 +71,7 @@ export default function JiraOIDCHelpers({
 			return window.localStorage.getItem(key);
 		},
 		fetchAuthorizationCode: () => {
-			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(window.location.search)}`;
+			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
 			window.location.href = url;
 		},
 		refreshAccessToken: async (accessCode) => {
@@ -105,8 +112,8 @@ export default function JiraOIDCHelpers({
 					scopeId,
 				});
 				//redirect to data page
-
 				const addOnQuery = new URL(window.location).searchParams.get("state");
+				const decoded = decodeURIComponent(addOnQuery);
 				location.href = '/' + (addOnQuery || "");
 			} catch (error) {
 				//handle error properly.
@@ -234,7 +241,7 @@ export default function JiraOIDCHelpers({
 		},
 		fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params, progress= function(){}) {
 			// a weak map would be better
-			progress.data = {
+			progress.data = progress.data || {
 				issuesRequested: 0,
 				issuesReceived: 0,
 				changeLogsRequested: 0,
@@ -252,7 +259,7 @@ export default function JiraOIDCHelpers({
 
 			return firstRequest.then( ({ issues, maxResults, total, startAt }) => {
 				Object.assign(progress.data, {
-					issuesRequested: total,
+					issuesRequested: progress.data.issuesRequested+total,
 					changeLogsRequested: 0,
 					changeLogsReceived: 0
 				});
@@ -292,6 +299,69 @@ export default function JiraOIDCHelpers({
 				}
 			});
 			// change the parms
+		},
+		fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: async function (params, progress = function(){}) {
+			const fields = await fieldsRequest;
+			const newParams = {
+				...params,
+				fields: params.fields.map(f => fields.nameMap[f] || f)
+			}
+
+			progress.data = progress.data || {
+				issuesRequested: 0,
+				issuesReceived: 0,
+				changeLogsRequested: 0,
+				changeLogsReceived: 0
+			};
+			const parentIssues = await jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress);
+
+			// go get the children
+			const allChildrenIssues = await this.fetchDeepChildren(newParams, parentIssues, progress);
+			const combined = parentIssues.concat(allChildrenIssues);
+			return combined.map((issue) => {
+				return {
+					...issue,
+					fields: mapIdsToNames(issue.fields, fields)
+				}
+			});
+			// change the parms
+		},
+		fetchChildrenResponses(params, parentIssues, progress) {
+			const issuesToQuery = chunkArray(parentIssues, 40);
+
+			const batchedResponses = issuesToQuery.map( issues => {
+				const keys = issues.map( issue => issue.key);
+				const jql = `parent in (${keys.join(", ")})`;
+				return this.fetchAllJiraIssuesWithJQLAndFetchAllChangelog({
+					...params,
+					jql
+				}, progress)
+			});
+			// this needs to be flattened
+			return batchedResponses;
+		},
+		// Makes child requests in batches of 40
+		// 
+		// params - base params
+		// sourceParentIssues - the source of parent issues
+		fetchDeepChildren(params, sourceParentIssues, progress) {
+			const batchedFirstResponses = this.fetchChildrenResponses(params, sourceParentIssues, progress);
+
+			const getChildren = (parentIssues) => {
+				if(parentIssues.length) {
+					return this.fetchDeepChildren(params, parentIssues, progress).then(deepChildrenIssues => {
+						return parentIssues.concat(deepChildrenIssues);
+					})
+				} else {
+					return parentIssues
+				}
+			}
+			const batchedIssueRequests = batchedFirstResponses.map( firstBatchPromise => {
+				return firstBatchPromise.then( getChildren )
+			})
+			return Promise.all( batchedIssueRequests).then( (allChildren)=> {
+				return allChildren.flat()
+			});
 		},
 		fetchJiraFields() {
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');

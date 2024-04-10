@@ -53,7 +53,7 @@ module.exports = function (env) {
 			<div id="mainElement" class='place-center w-1280'>Loading ... </div>
 
 			<script type="module">
-				import main from "./dist/main.js";
+				import main from "./main.js";
 				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 

@@ -45,6 +45,43 @@ export function showTooltip(element, issue){
         return;
     }
     showingObject = issue;
+
+    const makePartDetails = (dateData, partName) => {
+        return `<details class="border border-slate-200">
+            <summary>
+                <span class="release_box_subtitle_key color-text-and-bg-${dateData.status}">
+                &nbsp;${partName}
+                </span>
+                ${
+                    dateData.status !== "unknown" ?
+                    `&nbsp;<span class="release_box_subtitle_value">
+                        ${prettyDate(dateData.start)}
+                        ${wasStartDate(dateData)}
+                        </span><span>-</span>
+                        <span class="release_box_subtitle_value">
+                        ${prettyDate(dateData.due)}
+                        ${wasReleaseDate(dateData)}
+                    </span>` : ''
+                }
+            </summary>
+            <div class="flex gap-2 ">
+                <div class="bg-neutral-20">
+                    <div>${prettyDate(dateData.start)}</div>
+                    <div>
+                        <a href="${dateData?.startFrom?.reference?.url}" target="_blank" class="link">
+                            ${dateData?.startFrom?.reference?.Summary}</a> </div>
+                    <div class="font-mono text-sm">${dateData?.startFrom?.message}</div>
+                </div>
+                <div class="bg-neutral-20">
+                    <div>${prettyDate(dateData.due)}</div>
+                    <a href="${dateData?.dueTo?.reference?.url}" target="_blank" class="link">
+                        ${dateData?.dueTo?.reference?.Summary}</a>
+                    <div class="font-mono text-sm">${dateData?.dueTo?.message}</div>
+                </div>
+            </div>
+        </details>`
+    }
+
     const make = (issue, workPart) =>{
         const breakdownPart = issue.dateData[workPart];
 
@@ -89,10 +126,11 @@ export function showTooltip(element, issue){
     const DOM = document.createElement("div");
     DOM.innerHTML = `
     <div class='flex remove-button pointer' style="justify-content: space-between">
-        <a class="p-1 color-text-and-bg-${rollupData.status} rounded"
-            href="${issue.url}" target="_blank">${issue.Summary || issue.release}</a>
+        <a class="${issue.url ? "link" : ""} text-lg font-bold"
+            href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
         <span>❌</span>
     </div>
+    ${/*issue.dateData.rollup*/ false ? makePartDetails(issue.dateData.rollup, "rollup") :""}
     ${ 
         rollupData?.statusData?.warning === true ?
         `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
