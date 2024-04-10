@@ -72,9 +72,9 @@ const configurationView = `
   </p>
   {{# if(this.rawIssuesPromise.isPending) }}
     {{# if(this.progressData.issuesRequested)}}
-      <p class="text-sm text-right">Loaded {{this.progressData.issuesReceived}} of {{this.progressData.issuesRequested}} issues</p>
+      <p class="text-xs text-right">Loaded {{this.progressData.issuesReceived}} of {{this.progressData.issuesRequested}} issues</p>
     {{ else }}
-      <p class="text-sm text-right">Loading issues ...</p>
+      <p class="text-xs text-right">Loading issues ...</p>
     {{/ if}}
   {{/ if }}
   {{# if(this.rawIssuesPromise.isRejected) }}
@@ -84,9 +84,16 @@ const configurationView = `
       <p>Please check your JQL is correct!</p>
     </div>
   {{/ if }}
-  {{# if(this.rawIssuesPromise.isResolved) }}
-    <p class="text-sm text-right">Loaded {{this.rawIssues.length}} issues</p>
-  {{/ if }}
+  <div class="flex justify-between mt-1">
+
+    <p class="text-xs"><input type='checkbox' 
+      class='self-start align-middle' checked:bind='this.loadChildren'/> <span class="align-middle">Load all children of JQL specified issues</span>
+    </p>
+    
+    {{# if(this.rawIssuesPromise.isResolved) }}
+      <p class="text-xs">Loaded {{this.rawIssues.length}} issues</p>
+    {{/ if }}
+  </div>
   
 
   <h3 class="h3 mt-4">Primary Timeline</h3>
@@ -546,6 +553,8 @@ export class TimelineReport extends StacheElement {
         breakOutTimings: saveJSONToUrl("breakOutTimings", false, Boolean, booleanParsing),
         // remove
         showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
+
+        loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
         jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic) order by Rank", String, {parse: x => ""+x, stringify: x => ""+x}),
@@ -731,9 +740,15 @@ export class TimelineReport extends StacheElement {
       }
       
       if (this.jql) {
+        this.progressData = null;
+
         const serverInfoPromise = this.serverInfoPromise;
 
-        const issuesPromise = this.jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields({
+        const loadIssues = this.loadChildren ? 
+          this.jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(this.jiraHelpers) :
+          this.jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(this.jiraHelpers);
+        
+        const issuesPromise = loadIssues({
             jql: this.jql,
             fields: ["summary",
                 "Rank",
