@@ -40,6 +40,7 @@ import "./status-filter-only.js";
 import "./gantt-grid.js";
 import "./gantt-timeline.js";
 import "./status-report.js";
+import "./shared/url-history.js"
 
 const ISSUE_KEY = "Issue key";
 const PRODUCT_TARGET_RELEASE_KEY = "Product Target Release";
@@ -61,6 +62,8 @@ const configurationView = `
     <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">connect with us</a>.
   </p>  
   
+  <url-history defaultSearch:to="this.defaultSearch"/>
+
   <h3 class="h3">Issue Source</h3>
   <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
   <p>
@@ -488,20 +491,13 @@ export class TimelineReport extends StacheElement {
   `;
     static props = {
         showingDebugPanel: {type: Boolean, default: false},
-        uploadUrl: {
-            get default() {
-                return localStorage.getItem("csv-url") || "";
-            },
-            set(newVal) {
-                localStorage.setItem("csv-url", newVal);
-                return newVal;
-            }
-        },
         timeSliderValue: {
           type: type.convert(Number),
           default: 25
         },
         progressData: type.Any,
+        // default params
+        defaultSearch: type.Any,
         get compareToTime(){
           const SECOND = 1000;
           const MIN = 60 * SECOND;

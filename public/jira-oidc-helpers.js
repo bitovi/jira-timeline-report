@@ -67,6 +67,11 @@ export default function JiraOIDCHelpers({
 				window.localStorage.setItem(key, parameters[key]);
 			}
 		},
+		clearAuthFromLocalStorage: function(){
+			window.localStorage.removeItem("accessToken");
+			window.localStorage.removeItem("refreshToken");
+			window.localStorage.removeItem("expiryTimestamp");
+		},
 		fetchFromLocalStorage: (key) => {
 			return window.localStorage.getItem(key);
 		},
@@ -92,7 +97,7 @@ export default function JiraOIDCHelpers({
 				return accessToken;
 			} catch (error) {
 				console.error(error.message)
-				window.localStorage.clear()
+				jiraHelpers.clearAuthFromLocalStorage();
 				jiraHelpers.fetchAuthorizationCode();
 			}
 		},

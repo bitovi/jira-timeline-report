@@ -8,7 +8,7 @@ module.exports = function (env) {
 			<meta charset="UTF-8">
 			<meta http-equiv="X-UA-Compatible" content="IE=edge">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Timeline Reporting App</title>
+			<title>Jira Timeline Report</title>
 
 			<meta property="og:title" content="Jira Timeline Report">
 			<meta property="og:type" content="website" />
@@ -50,10 +50,12 @@ module.exports = function (env) {
 			</div>
 		</nav>
 	</div>
-			<div id="mainElement" class='place-center w-1280'>Loading ... </div>
+			<div id="mainElement" class='place-center w-1280'>
+				<p class="my-2">Loading the Jira Timeline Report ...</p>
+			</div>
 
 			<script type="module">
-				import main from "./main.js";
+				import main from "./dist/main.js";
 				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 

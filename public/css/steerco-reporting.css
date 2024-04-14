@@ -25,6 +25,15 @@
     .h3 {
         @apply text-2xl  dark:text-white mt-8 mb-2;
     }
+    .btn {
+        @apply py-2 px-4 rounded;
+    }
+    .btn-blue {
+        @apply bg-blue-500 text-white;
+    }
+    .btn-blue:hover {
+        @apply bg-blue-700;
+    }
   }
 
 /* Bitov special design system */
