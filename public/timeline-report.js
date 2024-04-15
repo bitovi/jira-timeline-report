@@ -62,7 +62,7 @@ const configurationView = `
     <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">connect with us</a>.
   </p>  
   
-  <url-history defaultSearch:to="this.defaultSearch"/>
+  <url-history defaultSearch:to="this.defaultSearch" jiraHelpers:from="this.jiraHelpers"/>
 
   <h3 class="h3">Issue Source</h3>
   <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>

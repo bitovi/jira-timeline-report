@@ -83,6 +83,14 @@ function getDefaultConfigurationName() {
     }
 }
 
+function setDefaultConfiguration(){
+    const defaultConfiguration = getSavedSettings().find( configuration => configuration.isDefault );
+    if( defaultConfiguration && new URLSearchParams( window.location.search ).size === 0 ) {
+        window.history.replaceState(null, "", "?"+defaultConfiguration.search.toString() );
+    }
+}
+
+setDefaultConfiguration();
 
 function onPushstate(callback){
     (function(history){
@@ -103,7 +111,7 @@ export default class UrlHistory extends StacheElement {
         <div class="flex align-baseline justify-between">
             <h3 class="h3">Saved Configurations</h3>
             <div class="mt-8">
-                <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded inline-flex items-center" on:click="this.saveCurrentConfiguration()">
+                <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-1 px-2 rounded inline-flex items-center" on:click="this.saveCurrentConfiguration()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline-block">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                     </svg> Save current configuration
@@ -113,22 +121,22 @@ export default class UrlHistory extends StacheElement {
        {{# eq(this.availableConfigurations.length , 0) }}
         <p>There are no saved configurations.</p>
        {{ else }}
-        <div class="grid gap-2 my-2" style="grid-template-columns: auto auto;">
+        <div class="grid gap-2 my-2" style="grid-template-columns: auto auto auto;">
             <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">Name</div>   
-            <!--<div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Default Configuration</div>-->
-            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Delete</div>
-            <div class="border-b-2 border-neutral-40" style="grid-column: 1 / span 2; grid-row: 1 / span 1;"></div>
+            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Default Configuration</div>
+            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 3 / span 1; grid-row: 1 / span 1;">Delete</div>
+            <div class="border-b-2 border-neutral-40" style="grid-column: 1 / span 3; grid-row: 1 / span 1;"></div>
             {{# for(configuration of this.availableConfigurations) }}
 
                 <div>
-                    <a href="?{{configuration.search.toString()}}" class="link">{{ configuration.name }}</a>
+                    <a href="?{{configuration.search.toString()}}" class="link {{this.currentUrlClass(configuration)}}">{{ configuration.name }}</a>
                 </div>
-                <!--<div>
+                <div>
                     <input type="radio" checked:from="configuration.isDefault" on:click="this.makeDefault(scope.index)">
-                </div> -->
+                </div>
                 <div>
                     <button on:click="this.deleteConfiguration(scope.index)">❌</button>
-                </div>
+                <div>
 
             {{/ for }}
         </div>
@@ -189,6 +197,13 @@ export default class UrlHistory extends StacheElement {
     makeDefault(index) {
         makeDefaultSavedSetting(index);
         this.dispatch("updated");
+    }
+    currentUrlClass(configuration){
+        if( areSearchParamsEqual(new URLSearchParams(window.location.search), configuration.search) ) {
+            return "font-bold"
+        } else {
+            return "";
+        }
     }
 }
 
