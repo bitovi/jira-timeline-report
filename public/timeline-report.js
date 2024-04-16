@@ -301,9 +301,9 @@ export class TimelineReport extends StacheElement {
           
 
 
-          {{# if( not(this.jql) ) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Enter a JQL above.</div>
-          {{ /if }}
+          {{# and( not(this.jql), this.loginComponent.isLoggedIn  }}
+            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Configure a JQL in the sidebar on the left to get started.</div>
+          {{ /and }}
 
 					{{# and(this.rawIssuesPromise.value, this.releases) }}
             <div class="my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
@@ -550,7 +550,7 @@ export class TimelineReport extends StacheElement {
         loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-        jql: saveJSONToUrl("jql", "issueType in (Initiative, Epic) order by Rank", String, {parse: x => ""+x, stringify: x => ""+x}),
+        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
         primaryIssueType: saveJSONToUrl("primaryIssueType", "Epic", String, {parse: x => ""+x, stringify: x => ""+x}),
         secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
         primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
