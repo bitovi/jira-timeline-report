@@ -136,12 +136,22 @@ export default class UrlHistory extends StacheElement {
                 </div>
                 <div>
                     <button on:click="this.deleteConfiguration(scope.index)">❌</button>
-                <div>
+                </div>
 
             {{/ for }}
         </div>
         {{/ eq }}
-   
+        <div>
+            Global Config
+        </div>
+        <div>
+            Got it: {{this.globalConfigurationsPromise.value.length}}
+        </div>
+        {{# for(link of this.globalConfigurationsPromise.value) }}
+        <div>
+            <a href="{{link.href}}" class="link">{{link.text}}</a>
+        </div>
+        {{/ }}
     `;
     static props = {
         availableConfigurations: {
@@ -151,6 +161,22 @@ export default class UrlHistory extends StacheElement {
                     resolve( getSavedSettings() );
                 })
             }
+        },
+        get globalConfigurationsPromise() {
+            return this.jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields({
+                jql: `summary ~ "Jira Timeline Report Configuration"`,
+                fields: ["summary","Description"]
+            }).then( (issues)=> {
+                const first = issues.find( issue => issue.fields.Summary === "Jira Timeline Report Configuration");
+
+                if(first) {
+                    const description = first.fields.Description.content;
+                    return findLinks(description)
+                } else {
+                    return [];
+                }
+
+            });
         },
         get defaultSearch(){
             const defaultConfig = this.availableConfigurations.find( config => config.isDefault );
@@ -205,6 +231,70 @@ export default class UrlHistory extends StacheElement {
             return "";
         }
     }
+}
+
+/*
+{
+                                    "type": "text",
+                                    "text": "Release End Dates and Initiative Status",
+                                    "marks": [
+                                        {
+                                            "type": "link",
+                                            "attrs": {
+                                                "href": "http://localhost:3000/?primaryIssueType=Release&hideUnknownInitiatives=true&jql=issueType+in+(Initiative)+order+by+Rank&timingCalculations=Initiative%3AchildrenOnly%2CEpic%3AchildrenOnly%2CStory%3AwidestRange&loadChildren=true&primaryReportType=due&secondaryReportType=status"
+                                            }
+                                        },
+                                        {
+                                            "type": "strong"
+                                        }
+                                    ]
+                                }
+*/
+function matchLink(fragment) {
+    const isText = fragment.type === "text";
+    if(!isText) {
+        return false;
+    }
+    const marks = ( fragment?.marks || [] )
+    const link = marks.find(mark => mark.type === "link")
+    const strong = marks.find(mark => mark.type === "strong");
+    if(link) {
+        return {
+            text: fragment.text,
+            href: link.attrs.href,
+            default: !!strong
+        }
+    }
+}
+function findLinks(document) {
+    return searchDocument(document, matchLink)
+}
+
+
+function searchDocument(document, matcher) {
+    let matches = [];
+
+    // Helper function to recursively search for matches
+    function recurse(doc) {
+        if (Array.isArray(doc)) {
+            for (const item of doc) {
+                recurse(item);
+            }
+        } else if (typeof doc === 'object' && doc !== null) {
+            const result = matcher(doc);
+            if (result) {
+                matches.push(result); // Collect matching substructure
+            } else {
+                for (const key of Object.keys(doc)) {
+                    recurse(doc[key]);
+                }
+            }
+            
+        }
+    }
+
+    recurse(document); // Start the recursive search
+    return matches; // Return all matching substructures
 }
 
 customElements.define("url-history", UrlHistory);

@@ -1,6 +1,8 @@
 
 import { TimelineReport } from "./timeline-report.js";
 
+import "./shared/saved-urls.js"
+
 import JiraLogin from "./shared/jira-login.js";
 import JiraOIDCHelpers from "./jira-oidc-helpers.js";
 
@@ -9,6 +11,11 @@ export default async function main(config) {
 	const jiraHelpers = JiraOIDCHelpers(config);
 
 	const loginComponent = new JiraLogin().initialize({jiraHelpers});
+
+	const savedUrls = document.querySelector("saved-urls")
+	savedUrls.loginComponent = loginComponent;
+	savedUrls.jiraHelpers = jiraHelpers;
+	
 	const listener = ({value})=>{
 		if(value) {
 			loginComponent.off("isResolved", listener);

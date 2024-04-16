@@ -44,6 +44,7 @@ module.exports = function (env) {
 							>by <img src="./images/bitovi-logo.png" class="inline align-baseline"/></a>
 					</li>
 				</ul>
+				<saved-urls></saved-urls>
 				<div id="login">
 					
 				</div>

@@ -117,6 +117,7 @@ class SimpleTooltip extends HTMLElement {
       this.style.left = (window.scrollX + rect.left + (rect.width / 2) - (tooltipRect.width / 2)) +"px";
     }
   }
+  
   topRightOnElementBottomRight(element, html) {
     if(arguments.length > 1) {
       this.style.top = "-1000px";

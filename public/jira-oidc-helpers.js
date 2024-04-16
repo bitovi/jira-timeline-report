@@ -165,6 +165,22 @@ export default function JiraOIDCHelpers({
 
 			)
 		},
+		fetchJiraIssuesWithJQLWithNamedFields: async function (params) {
+			const fields = await fieldsRequest;
+			const newParams = {
+				...params,
+				fields: params.fields.map(f => fields.nameMap[f] || f)
+			}
+			const response = await jiraHelpers.fetchJiraIssuesWithJQL(newParams);
+
+
+			return response.issues.map((issue) => {
+				return {
+					...issue,
+					fields: mapIdsToNames(issue.fields, fields)
+				}
+			});
+		},
 		fetchAllJiraIssuesWithJQL: async function (params) {
 			const firstRequest = jiraHelpers.fetchJiraIssuesWithJQL({ maxResults: 100, ...params });
 			const { issues, maxResults, total, startAt } = await firstRequest;
@@ -406,11 +422,14 @@ export default function JiraOIDCHelpers({
 			return !((currentTimestamp > expiryTimestamp) || (!accessToken))
 		},
 		getServerInfo() {
+			if(this._cachedServerInfoPromise) {
+				return this._cachedServerInfoPromise;
+			}
 			// https://your-domain.atlassian.net/rest/api/3/serverInfo
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
 			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
 
-			return fetchJSON(
+			return this._cachedServerInfoPromise = fetchJSON(
 				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/serverInfo`,
 				{
 					headers: {
