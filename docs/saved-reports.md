@@ -32,4 +32,5 @@ Next, paste the link:
 
 And remember to save the issue's description:
 
-![image](https://github.com/bitovi/jira-timeline-report/assets/78602/7263665f-71f4-4682-a8f9-19db28095e51)
+
+![_IMP-115__Jira_Timeline_Report_Configuration_-_Jira](https://github.com/bitovi/jira-timeline-report/assets/78602/fe4d445f-f188-4b46-be87-d45a5dfb930a)
