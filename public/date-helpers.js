@@ -41,6 +41,10 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
     }
 }
 
+// Formats this takes on:
+// 2023-02-17T16:58:00.000Z
+// 2024-04-19T16:43:17.181-0400
+// 2024-05-27
 export function parseDateISOString(s) {
     if (!s) return s;
 
@@ -50,9 +54,8 @@ export function parseDateISOString(s) {
         return new Date(s.getTime() + s.getTimezoneOffset() * 60 * 1000);
     }
 
-    let ds = s.split(/\D/).map(s => parseInt(s));
-    ds[1] = ds[1] - 1; // adjust month
-    return new Date(...ds);
+    return new Date(s);
+
 }
 
 export const DAY_IN_MS = 1000 * 60 * 60 * 24;
