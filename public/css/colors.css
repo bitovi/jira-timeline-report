@@ -43,6 +43,12 @@
 .color-bg-warning {
 	background-color: var(--warning-color)
 }
+.color-bg-ahead {
+	background-color: var(--ahead-color);
+}
+.color-bg-new {
+	background-color: var(--new-color);
+}
 
 .color-text-complete {
 	color: var(--complete-color);
@@ -61,6 +67,12 @@
 }
 .color-text-blocked {
 	color: var(--blocked-color);
+}
+.color-text-ahead {
+	color: var(--ahead-dark-color);
+}
+.color-text-new {
+	color: var(--new-color);
 }
 .color-text-black {
 	color: var(--black-color);
@@ -87,6 +99,11 @@
 	color: var(--black-color);
 }
 
+.color-text-and-bg-ahead-last-period {
+	background-color: var(--ahead-dark-color);
+	color: var(--black-color);
+}
+
 .color-text-and-bg-unknown {
 	background-color: var(--unknown-color);
 	color: var(--black-color);
@@ -100,7 +117,14 @@
 	background-color: var(--blocked-color);
 	color: var(--white-color);
 }
-
+.color-text-and-bg-ahead {
+	background-color: var(--ahead-color);
+	color: var(--black-color);
+}
+.color-text-and-bg-new {
+	background-color: var(--new-color);
+	color: var(--white-color);
+}
 
 
 .color-border-slate-900 {

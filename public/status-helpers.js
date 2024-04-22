@@ -142,7 +142,14 @@ function timedStatus(timedRecord) {
 		} else if (timedRecord.lastPeriod && 
 			((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.lastPeriod.due)) ) {
 				return "behind";
-		} else if (timedRecord.start > new Date()) {
+		} else if(timedRecord.lastPeriod && 
+			((+timedRecord.due) + WIGGLE_ROOM <  (+timedRecord.lastPeriod.due)) ) {
+				return "ahead";
+		} else if(!timedRecord.lastPeriod) {
+			return "new";
+		}
+		
+		if (timedRecord.start > new Date()) {
 				return "notstarted"
 		}
 		else {

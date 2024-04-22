@@ -117,7 +117,6 @@ export class GanttGrid extends StacheElement {
             left: "0",
             right: "0",
             bottom: "0",
-            zIndex: "1" // this shouldn't be needed
         });
         lastPeriodRoot.className = "py-1 lastPeriod"
 
@@ -157,11 +156,18 @@ export class GanttGrid extends StacheElement {
                     const behindTime =  document.createElement("div");
                     behindTime.style.backgroundClip = "content-box";
                     behindTime.style.opacity = "0.9";
+                    behindTime.style.position = "relative";
                     behindTime.className = "border-y-solid-1px"
 
                     if(timing && status === "behind") {
                         Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.style.zIndex = 1;
                         behindTime.classList.add("color-text-and-bg-behind-last-period");
+                    }
+                    if(timing && status === "ahead") {
+                        Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.classList.add("color-text-and-bg-ahead-last-period");
+                        behindTime.style.zIndex = -1;
                     }
                     return behindTime;
                 }

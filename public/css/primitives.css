@@ -7,6 +7,9 @@
 	--unknown-color: #dab09280;
 	--notstarted-color: #97A0AF; /* N80 - Spooky ghost */
 	--blocked-color: rgb(242, 0, 11);
+	--ahead-color: #79E2F2; /* T100 - Hairy fairy */
+	--ahead-dark-color: #00A3BF;
+	--new-color: #6554C0;
 	--white-color: rgb(255 255 255);
 	--black-color: rgb(0 0 0);
 	--slate-900-color: rgb(17 24 39);
