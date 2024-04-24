@@ -76,6 +76,7 @@ export default function JiraOIDCHelpers({
 			return window.localStorage.getItem(key);
 		},
 		fetchAuthorizationCode: () => {
+			debugger;
 			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
 			window.location.href = url;
 		},
