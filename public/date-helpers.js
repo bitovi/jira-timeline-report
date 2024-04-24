@@ -44,7 +44,7 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
 // Formats this takes on:
 // 2023-02-17T16:58:00.000Z
 // 2024-04-19T16:43:17.181-0400
-// 2024-05-27
+// new Date("2024-05-27") -> date in GMT 0, not in the local timezone. This can mean reporting the wrong date.
 export function parseDateISOString(s) {
     if (!s) return s;
 
@@ -53,9 +53,18 @@ export function parseDateISOString(s) {
         // fix timezone to UTC
         return new Date(s.getTime() + s.getTimezoneOffset() * 60 * 1000);
     }
+    if(s.split(/\D/).length === 3) {
+        throw new Error("Unable to parse "+s);
+    }
 
     return new Date(s);
 
+}
+
+export function parseDateIntoLocalTimezone(s){
+    let ds = s.split(/\D/).map(s => parseInt(s));
+    ds[1] = ds[1] - 1; // adjust month
+    return new Date(...ds);
 }
 
 export const DAY_IN_MS = 1000 * 60 * 60 * 24;

@@ -1,11 +1,11 @@
-import { parseDateISOString } from "../date-helpers.js";
+import { parseDateISOString, parseDateIntoLocalTimezone } from "../date-helpers.js";
 
 // GET DATA FROM PLACES DIRECTLY RELATED TO ISSUE
 export function getStartDateAndDueDataFromFields(issue){
     let startData, dueData;
     if(issue["Start date"]) {
         startData = {
-            start: parseDateISOString( issue["Start date"] ),
+            start: parseDateIntoLocalTimezone( issue["Start date"] ),
             startFrom: {
                 message: `start date`,
                 reference: issue
@@ -14,7 +14,7 @@ export function getStartDateAndDueDataFromFields(issue){
     }
     if(issue["Due date"]) {
         dueData = {
-            due: parseDateISOString( issue["Due date"] ),
+            due: parseDateIntoLocalTimezone( issue["Due date"] ),
             dueTo: {
                 message: `due date`,
                 reference: issue
