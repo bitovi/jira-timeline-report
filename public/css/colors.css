@@ -107,7 +107,7 @@
 .color-text-and-bg-unknown {
 	background-color: var(--unknown-color);
 	color: var(--black-color);
-	opacity: 0.4;
+	opacity: 0.8;
 }
 .color-text-and-bg-notstarted {
 	background-color: var(--notstarted-color);
