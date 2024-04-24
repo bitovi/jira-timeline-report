@@ -192,8 +192,14 @@ const configurationView = `
         /> {{this.secondaryIssueType}} work breakdown </label>
       {{/ not }}
     </div>
-
-
+  </div>
+  <div class="flex gap-2 mt-1">
+    <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
+    <status-filter 
+      statuses:from="this.statuses" 
+      param:raw="planningStatuses"
+      selectedStatuses:to="this.planningStatuses"
+      style="max-width: 400px;"></status-filter>
   </div>
 
   <h3 class="h3">Filters</h3>
@@ -207,16 +213,18 @@ const configurationView = `
     </p>
 
     <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
-    <status-filter-only 
-      statuses:from="this.statuses" 
-      statusesToShow:to="this.statusesToShow"
-      style="max-width: 400px;"></status-filter-only>
+    <status-filter 
+      statuses:from="this.statuses"
+      param:raw="statusesToShow"
+      selectedStatuses:to="this.statusesToShow"
+      style="max-width: 400px;"></status-filter>
     <p>Only include these statuses in the report</p>
 
     <label>{{this.firstIssueTypeWithStatuses}} Statuses to Ignore</label>
     <status-filter 
       statuses:from="this.statuses" 
-      statusesToRemove:to="this.statusesToRemove"
+      param:raw="statusesToRemove"
+      selectedStatuses:to="this.statusesToRemove"
       style="max-width: 400px;"></status-filter>
     <p>Search for statuses to remove from the report</p>
 
@@ -316,7 +324,8 @@ export class TimelineReport extends StacheElement {
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
                 <status-report primaryIssues:from="this.primaryIssues"
-                  breakdown:from="eq(this.secondaryReportType, 'breakdown')"></status-report>
+                  breakdown:from="eq(this.secondaryReportType, 'breakdown')"
+                  planningIssues:from="this.planningIssues"></status-report>
               {{/ }}
 
               <div class='p-2'>
@@ -562,6 +571,11 @@ export class TimelineReport extends StacheElement {
           }
         },
         statusesToShow: {
+          get default(){
+            return [];
+          }
+        },
+        planningStatuses: {
           get default(){
             return [];
           }
@@ -870,12 +884,6 @@ export class TimelineReport extends StacheElement {
         initiatives = initiatives.toSorted( (i1, i2) => i1.dateData.rollup.due - i2.dateData.rollup.due);
       }
 
-      if(this.hideInitiativesInIdea) {
-        initiatives = initiatives.filter( (initiative) => {
-          return !inIdeaStatus[initiative.Status]
-        });
-      }
-
       return initiatives;
     }
     get sortedIncompleteReleasesInitiativesAndEpics() {
@@ -899,6 +907,13 @@ export class TimelineReport extends StacheElement {
       } else {
         return this.initiativesWithAStartAndEndDate;
       }
+    }
+    get planningIssues(){
+      if(!this.rawIssues) {
+        return []
+      }
+      const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
+      return getIssuesOfTypeAndStatus(this.rawIssues, reportedIssueType, this.planningStatuses || []);
     }
     prettyDate(date) {
         return date ? dateFormatter.format(date) : "";
@@ -944,7 +959,11 @@ function filterByIssueType(issues, issueType) {
     return issues.filter(issue => issue[ISSUE_TYPE_KEY] === issueType)
 }
 
-
+function getIssuesOfTypeAndStatus(issues, type, statuses){
+  return issues.filter( (issue)=>{
+    return issue["Issue Type"] === type && statuses.includes(issue.Status)
+  })
+}
 
 function goodStuffFromIssue(issue) {
     return {

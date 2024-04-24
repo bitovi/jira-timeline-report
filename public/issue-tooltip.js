@@ -121,25 +121,38 @@ export function showTooltip(element, issue){
             
         </div>`;
     }
-    const rollupData = issue.dateData.rollup;
-
     const DOM = document.createElement("div");
-    DOM.innerHTML = `
-    <div class='flex remove-button pointer' style="justify-content: space-between">
-        <a class="${issue.url ? "link" : ""} text-lg font-bold"
-            href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
-        <span>❌</span>
-    </div>
-    ${/*issue.dateData.rollup*/ false ? makePartDetails(issue.dateData.rollup, "rollup") :""}
-    ${ 
-        rollupData?.statusData?.warning === true ?
-        `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
+    if(issue.dateData) {
+        const rollupData = issue.dateData.rollup;
+        DOM.innerHTML = `
+        <div class='flex remove-button pointer' style="justify-content: space-between">
+            <a class="${issue.url ? "link" : ""} text-lg font-bold"
+                href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
+            <span>❌</span>
+        </div>
+        ${/*issue.dateData.rollup*/ false ? makePartDetails(issue.dateData.rollup, "rollup") :""}
+        ${ 
+            rollupData?.statusData?.warning === true ?
+            `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
+        }
+        ${ issue.dateData.rollup ? make(issue, "rollup") :""}
+        ${ issue.dateData.dev ? make(issue, "dev") :""}
+        ${issue.dateData.qa ? make(issue, "qa") : ""}
+        ${issue.dateData.uat ?  make(issue, "uat") : ""}
+        `
+    } else {
+        // "Planning" epics might not have this data
+        DOM.innerHTML = `
+        <div class='flex remove-button pointer gap-2' style="justify-content: space-between">
+            <a class="${issue.url ? "link" : ""} text-lg font-bold"
+                href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
+            <span>❌</span>
+        </div>`
     }
-    ${ issue.dateData.rollup ? make(issue, "rollup") :""}
-    ${ issue.dateData.dev ? make(issue, "dev") :""}
-    ${issue.dateData.qa ? make(issue, "qa") : ""}
-    ${issue.dateData.uat ?  make(issue, "uat") : ""}
-    `
+   
+
+    
+   
 
     TOOLTIP.belowElementInScrollingContainer(element, DOM);
 

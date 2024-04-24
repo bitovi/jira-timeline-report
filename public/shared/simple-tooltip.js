@@ -72,7 +72,11 @@ class SimpleTooltip extends HTMLElement {
     // find the relative position 
     this.style.top = "-1000px";
     this.style.left = "-1000px";
-    this.appendChild(DOM);
+    if(typeof DOM === "string") {
+      this.innerHTML = DOM;
+    } else {
+      this.appendChild(DOM);
+    }
     this.style.display = "";
     
     // where is the container on the page
@@ -94,8 +98,9 @@ class SimpleTooltip extends HTMLElement {
       const posInContainerAccountingForScrolling = posInContainer + container.scrollTop;
       this.style.top = ( posInContainerAccountingForScrolling )+"px";
     } else {
-      const topFromContainer = elementRect.bottom - containerRect.top;
-      this.style.top = topFromContainer +"px";
+      const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
+
+      this.style.top = (topFromContainer + container.scrollTop) +"px";
     }
 
     const leftFromContainer = elementRect.left - containerRect.left;
@@ -110,6 +115,7 @@ class SimpleTooltip extends HTMLElement {
       this.innerHTML = html;
       
       this.style.display = "";
+      debugger;
       const tooltipRect = this.getBoundingClientRect();
 
       var rect = element.getBoundingClientRect();
