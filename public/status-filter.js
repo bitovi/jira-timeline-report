@@ -6,7 +6,7 @@ export class StatusFilter extends StacheElement {
     static view = `
     <auto-complete 
         data:from="this.statuses" 
-        selected:bind="this.statusesToRemove"
+        selected:bind="this.selectedStatuses"
         inputPlaceholder:raw="Search for statuses"></auto-complete>
     
     `;
@@ -16,27 +16,28 @@ export class StatusFilter extends StacheElement {
                 return [];
             }
         },
-        statusesToRemove: {
+        param: String,
+        selectedStatuses: {
             value({resolve, lastSet, listenTo}){
-
-                let currentValue;
-                updateValue(new URL(window.location).searchParams.get("statusesToRemove"));
-
-                listenTo(lastSet, (value)=>{
-                    updateValue(value);
-                });
-
-                function updateValue(value) {
+                const updateValue = (value) => {
                     if(!value) {
                         value = "";
                     } else if( Array.isArray(value) ){
                         value = value.join(",")
                     }
-                    updateUrlParam("statusesToRemove", value, "");
+                    updateUrlParam(this.param, value, "");
 
                     currentValue = value === "" ? [] : value.split(",");
                     resolve(currentValue);
                 }
+                let currentValue;
+                updateValue(new URL(window.location).searchParams.get(this.param));
+
+                listenTo(lastSet, (value)=>{
+                    updateValue(value);
+                });
+
+                
             }
         }
     };

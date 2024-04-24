@@ -80,7 +80,7 @@ export default class SavedUrls extends StacheElement {
             }
             
             
-            this.simpleTooltip.centeredBelowElement(this, html );
+            this.simpleTooltip.belowElementInScrollingContainer(this, html );
             // wait for this click event to clear the event queue
             
             setTimeout(()=>{

@@ -68,6 +68,19 @@ export class StatusReport extends StacheElement {
             </div>
         </div>
         {{/ for }}
+        {{# if(this.planningIssues.length) }}
+            <div class='release_box grow'>
+                <div class="release_box_header_bubble color-text-and-bg-unknown rounded-t">Planning</div>
+                <ul class="list-disc list-inside p-1">
+                {{# for(planningIssue of this.planningIssues)}}
+                    <li class='font-sans {{this.fontSize(this.planningIssues.length)}} color-text-unknown pointer'
+                         on:click='this.showTooltip(scope.event, planningIssue)'>
+                        {{planningIssue.Summary}}
+                    </li>
+
+                {{/}}
+            </div>
+        {{/ }}
         
     </div>
     `;
