@@ -76,7 +76,6 @@ export default function JiraOIDCHelpers({
 			return window.localStorage.getItem(key);
 		},
 		fetchAuthorizationCode: () => {
-			debugger;
 			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
 			window.location.href = url;
 		},
@@ -126,6 +125,14 @@ export default function JiraOIDCHelpers({
 				console.error(error);
 				// location.href = '/error.html';
 			}
+		},
+		fetchAccessibleResources: () => {
+			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+			return fetchJSON(`https://api.atlassian.com/oauth/token/accessible-resources`, {
+				headers: {
+					'Authorization': `Bearer ${accessToken}`,
+				}
+			});
 		},
 		fetchJiraSprint: async (sprintId) => {
 			//this fetches all Recent Projects From Jira
@@ -477,6 +484,6 @@ export default function JiraOIDCHelpers({
 		}
 		return mapped;
 	}
-
+	window.jiraHelpers = jiraHelpers;
 	return jiraHelpers;
 }

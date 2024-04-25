@@ -1,7 +1,8 @@
 
 import { TimelineReport } from "./timeline-report.js";
 
-import "./shared/saved-urls.js"
+import "./shared/saved-urls.js";
+import "./shared/select-cloud.js";
 
 import JiraLogin from "./shared/jira-login.js";
 import JiraOIDCHelpers from "./jira-oidc-helpers.js";
@@ -15,6 +16,10 @@ export default async function main(config) {
 	const savedUrls = document.querySelector("saved-urls")
 	savedUrls.loginComponent = loginComponent;
 	savedUrls.jiraHelpers = jiraHelpers;
+
+	const selectCloud = document.querySelector("select-cloud")
+	selectCloud.loginComponent = loginComponent;
+	selectCloud.jiraHelpers = jiraHelpers;
 	
 	const listener = ({value})=>{
 		if(value) {

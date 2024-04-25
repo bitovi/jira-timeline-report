@@ -81,7 +81,7 @@ export class GanttTimeline extends StacheElement {
                 item.element.style.left = ((item.issue.dateData.rollup.due - firstDay) / totalTime * 100) + "%";
             }
         }
-        console.log(rows);
+        
         return rows;
     }
     get releaseTimeline() {

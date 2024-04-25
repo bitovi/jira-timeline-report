@@ -44,6 +44,7 @@ module.exports = function (env) {
 							>by <img src="./images/bitovi-logo.png" class="inline align-baseline"/></a>
 					</li>
 				</ul>
+				<select-cloud></select-cloud>
 				<saved-urls></saved-urls>
 				<div id="login">
 					
@@ -56,7 +57,7 @@ module.exports = function (env) {
 			</div>
 
 			<script type="module">
-				import main from "./main.js";
+				import main from "./dist/main.js";
 				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 

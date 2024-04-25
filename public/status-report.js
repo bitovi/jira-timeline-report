@@ -79,6 +79,7 @@ export class StatusReport extends StacheElement {
                     </li>
 
                 {{/}}
+                </ul>
             </div>
         {{/ }}
         

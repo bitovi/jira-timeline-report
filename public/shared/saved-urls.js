@@ -3,15 +3,10 @@ import SimpleTooltip from "./simple-tooltip.js";
 
 
 
-class SavedReports extends StacheElement {
-
-}
-
-
 export default class SavedUrls extends StacheElement {
     static view = `
         {{# if(this.canQuery) }}
-            <button class="text-center inline-flex items-center mr-8 hover:bg-gray-200 bg-gray-100 rounded-lg p-1 font-bitovipoppins font-lg"
+            <button class="text-center inline-flex items-center mr-8 hover:bg-gray-200 bg-gray-100 rounded-lg pt-1 pr-1 pl-2 font-bitovipoppins font-lg"
                 on:click="this.showSavedReports()">
                 Saved Reports <svg class="w-2.5 h-2.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
