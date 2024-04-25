@@ -19,7 +19,6 @@ module.exports = function () {
 			import JiraOIDCHelpers from "./jira-oidc-helpers.js";
 			import oauthCallback from "./oauth-callback.js";
 			const jiraHelpers = JiraOIDCHelpers(${JSON.stringify(getSafeEnv())});
-			debugger;
 			oauthCallback(jiraHelpers);
 		</script>
 </body>
