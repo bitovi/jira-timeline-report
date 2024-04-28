@@ -165,43 +165,6 @@ const configurationView = `
     
   </div>
 
-  <h3 class="h3">Secondary Status Report</h3>
-  <div class="flex mt-2 gap-2 flex-wrap">
-    <p>Secondary Report Type</p>
-    <div class="shrink-0">
-      <label class="px-2"><input 
-        type="radio" 
-        name="secondary" 
-        checked:from="eq(this.secondaryReportType, 'none')"
-        on:change="this.secondaryReportType = 'none'"
-        /> None </label>
-        
-      <label class="px-2"><input 
-        type="radio" 
-        name="secondary" 
-        checked:from="eq(this.secondaryReportType, 'status')"
-        on:change="this.secondaryReportType = 'status'"
-        /> {{this.secondaryIssueType}} status </label>
-    
-      {{# not(eq(this.secondaryIssueType, "Story") ) }}
-      <label class="px-2"><input 
-        type="radio" 
-        name="secondary" 
-        checked:from="eq(this.secondaryReportType, 'breakdown')"
-        on:change="this.secondaryReportType = 'breakdown'"
-        /> {{this.secondaryIssueType}} work breakdown </label>
-      {{/ not }}
-    </div>
-  </div>
-  <div class="flex gap-2 mt-1">
-    <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
-    <status-filter 
-      statuses:from="this.statuses" 
-      param:raw="planningStatuses"
-      selectedStatuses:to="this.planningStatuses"
-      style="max-width: 400px;"></status-filter>
-  </div>
-
   <h3 class="h3">Filters</h3>
 
   <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
@@ -249,6 +212,45 @@ const configurationView = `
       sort initiatives by their last epic's due date.
       </p>
   </div>
+
+  <h3 class="h3">Secondary Status Report</h3>
+  <div class="flex mt-2 gap-2 flex-wrap">
+    <p>Secondary Report Type</p>
+    <div class="shrink-0">
+      <label class="px-2"><input 
+        type="radio" 
+        name="secondary" 
+        checked:from="eq(this.secondaryReportType, 'none')"
+        on:change="this.secondaryReportType = 'none'"
+        /> None </label>
+        
+      <label class="px-2"><input 
+        type="radio" 
+        name="secondary" 
+        checked:from="eq(this.secondaryReportType, 'status')"
+        on:change="this.secondaryReportType = 'status'"
+        /> {{this.secondaryIssueType}} status </label>
+    
+      {{# not(eq(this.secondaryIssueType, "Story") ) }}
+      <label class="px-2"><input 
+        type="radio" 
+        name="secondary" 
+        checked:from="eq(this.secondaryReportType, 'breakdown')"
+        on:change="this.secondaryReportType = 'breakdown'"
+        /> {{this.secondaryIssueType}} work breakdown </label>
+      {{/ not }}
+    </div>
+  </div>
+  <div class="flex gap-2 mt-1">
+    <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
+    <status-filter 
+      statuses:from="this.statuses" 
+      param:raw="planningStatuses"
+      selectedStatuses:to="this.planningStatuses"
+      style="max-width: 400px;"></status-filter>
+  </div>
+
+  
 </div>`;
 
 
