@@ -126,8 +126,8 @@ export default function JiraOIDCHelpers({
 				// location.href = '/error.html';
 			}
 		},
-		fetchAccessibleResources: () => {
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+		fetchAccessibleResources: (passedAccessToken) => {
+			const accessToken = passedAccessToken || jiraHelpers.fetchFromLocalStorage('accessToken');
 			return fetchJSON(`https://api.atlassian.com/oauth/token/accessible-resources`, {
 				headers: {
 					'Authorization': `Bearer ${accessToken}`,

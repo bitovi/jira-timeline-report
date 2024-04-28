@@ -4,7 +4,7 @@ export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
 export const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
 export const inIdeaStatuses =  Object.keys(inIdeaStatus);
 const inDoneStatus = { "Done": true, "Cancelled": true };
-const blockedStatus = { "Blocked": true, "blocked": true }
+const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true }
 
 
 const WIGGLE_ROOM = 0;
