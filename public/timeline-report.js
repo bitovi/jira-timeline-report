@@ -1,5 +1,19 @@
 import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
 import { calculationKeysToNames } from "./prepare-issues/date-data.js";
+import { percentComplete } from "./percent-complete/percent-complete.js"
+import {
+  getConfidence,
+  getDaysPerSprint,
+  getDueDate,
+  getEstimate,
+  getIssueKey,
+  getParentKey,
+  getStartDate,
+  getTeamKeyDefault,
+  getType,
+  getVelocity
+ } from "./shared/issue-data/issue-data.js"
+
 
 
 
@@ -252,6 +266,8 @@ const configurationView = `
 
   
 </div>`;
+
+const UNCERTAINTY_WEIGHT_DEFAULT = 80;
 
 
 export class TimelineReport extends StacheElement {
@@ -779,7 +795,21 @@ export class TimelineReport extends StacheElement {
             issuesPromise, serverInfoPromise
         ]).then(([issues, serverInfo]) => {
             const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
-            console.log(formatted);
+            percentComplete(issues, {
+              getType,
+              getTeamKey: getTeamKeyDefault,
+              getDaysPerSprint,
+              getIssueKey,
+              getParentKey,
+              getVelocity,
+              getEstimate,
+              getConfidence,
+              getStartDate,
+              getDueDate,
+              //getParallelWorkLimit: (TEAM_KEY) => 1
+              includeTypes: ["Epic"],
+              uncertaintyWeight: UNCERTAINTY_WEIGHT_DEFAULT,
+            });
             return formatted;
         })
      }
