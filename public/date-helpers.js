@@ -67,9 +67,28 @@ export function parseDateIntoLocalTimezone(s){
     return new Date(...ds);
 }
 
+/**
+ * Parse an 8601 date string `YYYY-MM-DD` into a date.
+ * @export
+ * @param {string} str
+ * @returns {Date}
+ */
+export function parseDate8601String(str){
+    // This should just work, we can get fancy later and use date-fns or something.
+    return new Date(str);
+}
+
 export const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
-
+/**
+ * @export
+ * @param {number} durationMS Duration in milliseconds.
+ * @param {(number) => number} [toInteger] A Math function to round to an integer. Defaults to `round`.
+ * @returns {number} milliseconds converted to full days.
+ */
+export function millisecondsToDay(durationMS, toInteger = Math.round){
+    return toInteger(durationMS / DAY_IN_MS);
+}
 
 export function sortByStartDate(issues) {
     return issues.sort((issueA, issueB) => {

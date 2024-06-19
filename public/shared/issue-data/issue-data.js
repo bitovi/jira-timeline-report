@@ -26,8 +26,8 @@ export function getDueDate({ fields }) {
  * @param {JiraIssue} issue
  * @returns {number}
  */
-export function getEstimate({ fields }) {
-  return fields["Story points median"];
+export function getHierarchyLevel({ fields }) {
+  return fields["Issue Type"].hierarchyLevel;
 }
 
 /**
@@ -52,6 +52,22 @@ export function getParentKey({ fields }) {
  */
 export function getStartDate({ fields }) {
   return fields["Start date"];
+}
+
+/**
+ * @param {JiraIssue} issue
+ * @returns {string | void}
+ */
+export function getStoryPoints({ fields }) {
+  return fields["Story points"];
+}
+
+/**
+ * @param {JiraIssue} issue
+ * @returns {string | void}
+ */
+export function getStoryPointsMedian({ fields }) {
+  return fields["Story points median"];
 }
 
 /**
@@ -93,7 +109,8 @@ export function getVelocity(teamKey) {
  *   'Project Key': string,
  *   'Start date': string | null,
  *   Status: { name: string }
- *   'Story points median'?: number,
+ *   'Story points': number | null | undefined,
+ *   'Story points median': number | null | undefined,
  *   Summary: string
  * },
  * id: string,

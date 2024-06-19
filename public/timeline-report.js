@@ -5,10 +5,12 @@ import {
   getConfidence,
   getDaysPerSprint,
   getDueDate,
-  getEstimate,
+  getHierarchyLevel,
   getIssueKey,
   getParentKey,
   getStartDate,
+  getStoryPoints,
+  getStoryPointsMedian,
   getTeamKeyDefault,
   getType,
   getVelocity
@@ -268,7 +270,7 @@ const configurationView = `
 </div>`;
 
 const UNCERTAINTY_WEIGHT_DEFAULT = 80;
-
+const PARENT_ISSUE_DURATION_DAYS_DEFAULT = 6 * 7;
 
 export class TimelineReport extends StacheElement {
     static view = `
@@ -783,7 +785,9 @@ export class TimelineReport extends StacheElement {
                 "Due date",
                 "Issue Type",
                 "Fix versions",
-                "Story Points",
+                "Story points",
+                "Story Points", // This does not match a field returned by Jira but afraid to change at the moment.
+                "Story points median",
                 "Confidence",
                 "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created"],
             expand: ["changelog"]
@@ -797,17 +801,21 @@ export class TimelineReport extends StacheElement {
             const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
             percentComplete(issues, {
               getType,
-              getTeamKey: getTeamKeyDefault,
+              // getTeamKey: getTeamKeyDefault,
               getDaysPerSprint,
+              getHierarchyLevel,
               getIssueKey,
               getParentKey,
               getVelocity,
-              getEstimate,
               getConfidence,
               getStartDate,
+              getStoryPoints,
+              getStoryPointsMedian,
               getDueDate,
               //getParallelWorkLimit: (TEAM_KEY) => 1
+              defaultParentDurationDays: PARENT_ISSUE_DURATION_DAYS_DEFAULT,
               includeTypes: ["Epic"],
+              parentType: "Initiative",
               uncertaintyWeight: UNCERTAINTY_WEIGHT_DEFAULT,
             });
             return formatted;
