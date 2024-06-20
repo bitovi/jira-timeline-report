@@ -446,6 +446,20 @@ export default function JiraOIDCHelpers({
 				}
 
 			)
+		},
+		fetchJiraIssueTypes(){
+			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
+			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+
+			return this._cachedServerInfoPromise = fetchJSON(
+				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issuetype`,
+				{
+					headers: {
+						'Authorization': `Bearer ${accessToken}`,
+					}
+				}
+
+			)
 		}
 	}
 
