@@ -799,27 +799,34 @@ export class TimelineReport extends StacheElement {
         return Promise.all([
             issuesPromise, serverInfoPromise
         ]).then(([issues, serverInfo]) => {
-            const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
-            percentComplete(issues, {
-              getType,
-              getTeamKey: getTeamKey,
-              getDaysPerSprint,
-              getHierarchyLevel,
-              getIssueKey,
-              getParentKey,
-              getVelocity,
-              getConfidence,
-              getStartDate,
-              getStoryPoints,
-              getStoryPointsMedian,
-              getDueDate,
-              //getParallelWorkLimit: (TEAM_KEY) => 1
-              defaultParentDurationDays: PARENT_ISSUE_DURATION_DAYS_DEFAULT,
-              includeTypes: ["Epic"],
-              parentType: "Initiative",
-              uncertaintyWeight: UNCERTAINTY_WEIGHT_DEFAULT,
-            });
-            return formatted;
+            if( localStorage.getItem("percentComplete") ) {
+              setTimeout(()=>{
+                percentComplete(issues, {
+                  getType,
+                  getTeamKey: getTeamKey,
+                  getDaysPerSprint,
+                  getHierarchyLevel,
+                  getIssueKey,
+                  getParentKey,
+                  getVelocity,
+                  getConfidence,
+                  getStartDate,
+                  getStoryPoints,
+                  getStoryPointsMedian,
+                  getDueDate,
+                  //getParallelWorkLimit: (TEAM_KEY) => 1
+                  defaultParentDurationDays: PARENT_ISSUE_DURATION_DAYS_DEFAULT,
+                  includeTypes: ["Epic"],
+                  parentType: "Initiative",
+                  uncertaintyWeight: UNCERTAINTY_WEIGHT_DEFAULT,
+                });
+              },13);
+            }
+          
+            
+
+          const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
+          return formatted;
         })
      }
     }

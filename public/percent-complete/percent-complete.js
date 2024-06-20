@@ -372,27 +372,48 @@ const BASE_HIERARCHY_LEVEL = 1;
 
 function rollupWorkingDays(groupedIssueData, options){
   
-  const issueTypeDatas = [];
   const allIssueData = groupedIssueData.flat();
   const issueKeyToChildren = Object.groupBy(allIssueData, issue => issue.parentKey);
+
+  // Store information for each level of of the hierarchy 
+  const issueTypeDatas = [];
   
+  // for each level of the hierarchy, starting with the bottom
   for( let hierarchyLevel = BASE_HIERARCHY_LEVEL; hierarchyLevel < groupedIssueData.length; hierarchyLevel++) {
     let issues = groupedIssueData[hierarchyLevel];
+    
     if(issues) {
 
+      // Track rollup data
       let issueTypeData = issueTypeDatas[hierarchyLevel] = {
+        // how many children on average
         childCounts: [],
+        
+        // an array of the total of the number of days of work. Used to calculate the average
         totalDaysOfWorkForAverage: [],
-        needsAverageSet: []
+        // which items need their average set after the average is calculated
+        needsAverageSet: [],
+        // this will be set later
+        averageTotalDays: null,
+        averageChildCount: null,
+
+        normalizedIssues: issues
       }
 
+      // for issues on that level
       for(let issueData of issues) {
         // epics
         if(hierarchyLevel === BASE_HIERARCHY_LEVEL) {
+
+          // if it has self-calculated total days ..
           if( issueData.totalDays ) {
+            // add those days to the average
             issueTypeData.totalDaysOfWorkForAverage.push( issueData.totalDays );
+            // set the rollup value
             issueData.rollups.totalDays = issueData.totalDays;
-          } else {
+          } 
+          else {
+            // add this issue to what needs its average
             issueTypeData.needsAverageSet.push(issueData);
           }
           // we roll this up no matter what ... it's ok to roll up 0
@@ -400,20 +421,28 @@ function rollupWorkingDays(groupedIssueData, options){
         }
         // initiatives and above
         if( hierarchyLevel > BASE_HIERARCHY_LEVEL ) {
+          // handle "parent-like" issue
           handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options)
         }
       }
 
       // calculate the average 
       let ave = average( issueTypeData.totalDaysOfWorkForAverage ) || 30;
-      // set on all children
+      issueTypeData.averageTotalDays = ave;
+
+      issueTypeData.averageChildCount = average( issueTypeData.childCounts )
+
+      // set average on children that need it
       issueTypeData.needsAverageSet.forEach( issueData => {
         issueData.rollups.totalDays = ave;
       })
     }
   }
 
-  return allIssueData;
+  return {
+    normalizedIssues: allIssueData,
+    hierarchyRollups: issueTypeDatas
+  };
 }
 function sum(arr) {
   return arr.reduce((partialSum, a) => partialSum + a, 0)
@@ -423,25 +452,45 @@ function average(arr){
 }
 
 function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options) {
+  if(issueData.key === "IMP-143") {
+    debugger;
+  }
+
   // Empty
   if(! issueKeyToChildren[issueData.key] ) {
     issueTypeData.needsAverageSet.push(issueData);
     return;
   }
+
   const children = issueKeyToChildren[issueData.key];
   const totalDays = children.map(child => child.rollups.totalDays);
   const completedDays = children.map(child => child.rollups.completedDays);
 
-  issueData.rollups.totalDays = sum(totalDays);
-  issueData.rollups.completedDays = sum(completedDays);
-
   // Fully Estimated
   if(children.every( child => child.totalDays )) {
-    issueTypeData.totalDaysOfWorkForAverage.push(issueData.rollups.totalDays)
+    // we probably want a better signal ... but this will do for now
+    issueData.totalDays = sum(totalDays);
+
+    // Add so average can be calculated
+    issueTypeData.totalDaysOfWorkForAverage.push(issueData.totalDays);
+    issueTypeData.childCounts.push(children.length);
+
+    
   } 
   // Partially estimated
   else {
-
+    // Do nothing
   }
+
+
+  // Roll up the days from the children
+  // This works b/c children that originally had no estimate will already have their rollup total days 
+  // set to the average.  
+  
+
+  issueData.rollups.totalDays = sum(totalDays);
+  issueData.rollups.completedDays = sum(completedDays);
+
+  
 }
 
