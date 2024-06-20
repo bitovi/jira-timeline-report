@@ -1,5 +1,21 @@
 import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
 import { calculationKeysToNames } from "./prepare-issues/date-data.js";
+import { percentComplete } from "./percent-complete/percent-complete.js"
+import {
+  getConfidence,
+  getDaysPerSprint,
+  getDueDate,
+  getHierarchyLevel,
+  getIssueKey,
+  getParentKey,
+  getStartDate,
+  getStoryPoints,
+  getStoryPointsMedian,
+  getTeamKey,
+  getType,
+  getVelocity
+ } from "./shared/issue-data/issue-data.js"
+
 
 
 
@@ -253,6 +269,8 @@ const configurationView = `
   
 </div>`;
 
+const UNCERTAINTY_WEIGHT_DEFAULT = 80;
+const PARENT_ISSUE_DURATION_DAYS_DEFAULT = 6 * 7;
 
 export class TimelineReport extends StacheElement {
     static view = `
@@ -767,8 +785,11 @@ export class TimelineReport extends StacheElement {
                 "Due date",
                 "Issue Type",
                 "Fix versions",
-                "Story Points",
+                "Story points",
+                //"Story Points", // This does not match a field returned by Jira but afraid to change at the moment.
+                "Story points median",
                 "Confidence",
+                "Story points confidence",
                 "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created"],
             expand: ["changelog"]
         }, (progressData)=> {
@@ -778,9 +799,34 @@ export class TimelineReport extends StacheElement {
         return Promise.all([
             issuesPromise, serverInfoPromise
         ]).then(([issues, serverInfo]) => {
-            const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
-            console.log(formatted);
-            return formatted;
+            if( localStorage.getItem("percentComplete") ) {
+              setTimeout(()=>{
+                percentComplete(issues, {
+                  getType,
+                  getTeamKey: getTeamKey,
+                  getDaysPerSprint,
+                  getHierarchyLevel,
+                  getIssueKey,
+                  getParentKey,
+                  getVelocity,
+                  getConfidence,
+                  getStartDate,
+                  getStoryPoints,
+                  getStoryPointsMedian,
+                  getDueDate,
+                  //getParallelWorkLimit: (TEAM_KEY) => 1
+                  defaultParentDurationDays: PARENT_ISSUE_DURATION_DAYS_DEFAULT,
+                  includeTypes: ["Epic"],
+                  parentType: "Initiative",
+                  uncertaintyWeight: UNCERTAINTY_WEIGHT_DEFAULT,
+                });
+              },13);
+            }
+          
+            
+
+          const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
+          return formatted;
         })
      }
     }
