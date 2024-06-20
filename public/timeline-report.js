@@ -11,7 +11,7 @@ import {
   getStartDate,
   getStoryPoints,
   getStoryPointsMedian,
-  getTeamKeyDefault,
+  getTeamKey,
   getType,
   getVelocity
  } from "./shared/issue-data/issue-data.js"
@@ -786,9 +786,10 @@ export class TimelineReport extends StacheElement {
                 "Issue Type",
                 "Fix versions",
                 "Story points",
-                "Story Points", // This does not match a field returned by Jira but afraid to change at the moment.
+                //"Story Points", // This does not match a field returned by Jira but afraid to change at the moment.
                 "Story points median",
                 "Confidence",
+                "Story points confidence",
                 "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created"],
             expand: ["changelog"]
         }, (progressData)=> {
@@ -801,7 +802,7 @@ export class TimelineReport extends StacheElement {
             const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
             percentComplete(issues, {
               getType,
-              // getTeamKey: getTeamKeyDefault,
+              getTeamKey: getTeamKey,
               getDaysPerSprint,
               getHierarchyLevel,
               getIssueKey,

@@ -3,7 +3,7 @@
  * @returns {number}
  */
 export function getConfidence({ fields }) {
-  return fields.Confidence;
+  return fields["Story points confidence"] || fields.Confidence;
 }
 
 /**
@@ -74,7 +74,7 @@ export function getStoryPointsMedian({ fields }) {
  * @param {JiraIssue} issue
  * @returns {string}
  */
-export function getTeamKeyDefault({ fields }) {
+export function getTeamKey({ fields }) {
   var matches = fields.Summary.match(/M\d: ([^:]+): /);
   if (matches) {
     return fields["Project key"] + ":" + matches[1];

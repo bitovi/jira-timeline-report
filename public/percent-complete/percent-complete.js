@@ -1,4 +1,4 @@
-import { JiraIssue } from "../shared/issue-data/issue-data.js";
+//import { JiraIssue } from "../shared/issue-data/issue-data.js";
 import { estimateExtraPoints } from "../confidence.js";
 import { millisecondsToDay, parseDate8601String } from "../date-helpers.js";
 
@@ -7,6 +7,13 @@ import { millisecondsToDay, parseDate8601String } from "../date-helpers.js";
  * @param { PercentCompleteOptions } options
  */
 export function percentComplete(issues, options) {
+
+  console.log(altPercentComplete(issues, {
+    ...options,
+    toWholeDay: options.toWholeDay ?? Math.round,
+  }));
+
+  return;
   /** @type {PercentCompleteOptions} */
   const completeOptions = {
     ...options,
@@ -263,3 +270,178 @@ function getChildDurationDay(issue, options) {
  * @property {(number) => number} [toWholeDay] A Math function to convert time units (like seconds) into a whole day. Defaults to round.
  * @property {number} uncertaintyWeight
  */
+
+
+
+function altPercentComplete(issues, options) {
+  const cleanedIssues = prepareIssues(issues, options);
+
+  return rollupWorkingDays(groupIssuesByHierarchyLevel(cleanedIssues, options), options);
+}
+
+function sortByIssueHierarchy(issueA, issueB){
+  return issueB.hierarchyLevel - issueA.hierarchyLevel;
+}
+
+function prepareIssues(issues, options) {
+  return issues.map( (issue) => {
+    const data = {
+      key: options.getIssueKey(issue),
+      parentKey: options.getParentKey(issue),
+      confidence: options.getConfidence(issue),
+      dueDate: options.getDueDate(issue),
+      hierarchyLevel: options.getHierarchyLevel(issue),
+      startDate: options.getStartDate(issue),
+      storyPoints: options.getStoryPoints(issue),
+      storyPointsMedian: options.getStoryPointsMedian(issue),
+      type: options.getType(issue),
+      team: options.getTeamKey(issue),
+      issue,
+      rollups: {totalDays: 0, completedDays: 0},
+    };
+    data.totalDays = getSelfTotalDays(data, options);
+    data.completedDays = getSelfCompletedDays(data, options);
+    if(data.completedDays < 0 ) {
+      debugger;
+      getSelfCompletedDays(data, options)
+    }
+    return data;
+  });
+}
+
+function getSelfTotalDays(issue, options) {
+  // These are cases where the child issue (Epic) has a valid estimation
+  let durationDays,
+    durationPoints;
+  if (issue.startDate && issue.dueDate) {
+    durationDays = millisecondsToDay(
+      parseDate8601String(issue.dueDate) - parseDate8601String(issue.startDate),
+      options.toWholeDay
+    );
+  } else if (issue.confidence && issue.storyPointsMedian) {
+    durationPoints = issue.storyPointsMedian + estimateExtraPoints(
+        issue.storyPointsMedian,
+        issue.confidence,
+        options.uncertaintyWeight
+      )
+    ;
+  } else if (issue.storyPoints) {
+    durationPoints = issue.storyPoints;
+  }
+  if(durationPoints) {
+    durationDays = options.toWholeDay( durationPoints / options.getVelocity(issue.team) * options.getDaysPerSprint(issue.team) ) ;
+  }
+
+  return durationDays;
+}
+
+function getSelfCompletedDays(issue, options) {
+  // These are cases where the child issue (Epic) has a valid estimation
+
+  if(issue.startDate && parseDate8601String(issue.startDate) < new Date() ) {
+    if(!issue.dueDate || parseDate8601String(issue.dueDate) > new Date() ) {
+      return millisecondsToDay(
+        new Date() - parseDate8601String(issue.startDate),
+        options.toWholeDay
+      )
+    } else {
+      return millisecondsToDay(
+        parseDate8601String(issue.dueDate) - parseDate8601String(issue.startDate),
+        options.toWholeDay
+      );
+    }
+  } else {
+    return 0;
+  }
+}
+
+function groupIssuesByHierarchyLevel(issues, options) {
+  const sorted = issues //.sort(sortByIssueHierarchy);
+  const group = [];
+  for(let issue of sorted) {
+    if(!group[issue.hierarchyLevel]) {
+      group[issue.hierarchyLevel] = [];
+    }
+    group[issue.hierarchyLevel].push(issue)
+  }
+  return group;
+}
+
+const BASE_HIERARCHY_LEVEL = 1;
+
+
+function rollupWorkingDays(groupedIssueData, options){
+  
+  const issueTypeDatas = [];
+  const allIssueData = groupedIssueData.flat();
+  const issueKeyToChildren = Object.groupBy(allIssueData, issue => issue.parentKey);
+  
+  for( let hierarchyLevel = BASE_HIERARCHY_LEVEL; hierarchyLevel < groupedIssueData.length; hierarchyLevel++) {
+    let issues = groupedIssueData[hierarchyLevel];
+    if(issues) {
+
+      let issueTypeData = issueTypeDatas[hierarchyLevel] = {
+        childCounts: [],
+        totalDaysOfWorkForAverage: [],
+        needsAverageSet: []
+      }
+
+      for(let issueData of issues) {
+        // epics
+        if(hierarchyLevel === BASE_HIERARCHY_LEVEL) {
+          if( issueData.totalDays ) {
+            issueTypeData.totalDaysOfWorkForAverage.push( issueData.totalDays );
+            issueData.rollups.totalDays = issueData.totalDays;
+          } else {
+            issueTypeData.needsAverageSet.push(issueData);
+          }
+          // we roll this up no matter what ... it's ok to roll up 0
+          issueData.rollups.completedDays = issueData.completedDays;
+        }
+        // initiatives and above
+        if( hierarchyLevel > BASE_HIERARCHY_LEVEL ) {
+          handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options)
+        }
+      }
+
+      // calculate the average 
+      let ave = average( issueTypeData.totalDaysOfWorkForAverage ) || 30;
+      // set on all children
+      issueTypeData.needsAverageSet.forEach( issueData => {
+        issueData.rollups.totalDays = ave;
+      })
+    }
+  }
+
+  return allIssueData;
+}
+function sum(arr) {
+  return arr.reduce((partialSum, a) => partialSum + a, 0)
+}
+function average(arr){
+  return sum(arr) / arr.length;
+}
+
+function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options) {
+  // Empty
+  if(! issueKeyToChildren[issueData.key] ) {
+    issueTypeData.needsAverageSet.push(issueData);
+    return;
+  }
+  const children = issueKeyToChildren[issueData.key];
+  const totalDays = children.map(child => child.rollups.totalDays);
+  const completedDays = children.map(child => child.rollups.completedDays);
+
+  issueData.rollups.totalDays = sum(totalDays);
+  issueData.rollups.completedDays = sum(completedDays);
+
+  // Fully Estimated
+  if(children.every( child => child.totalDays )) {
+    issueTypeData.totalDaysOfWorkForAverage.push(issueData.rollups.totalDays)
+  } 
+  // Partially estimated
+  else {
+
+  }
+}
+

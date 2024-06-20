@@ -57,7 +57,7 @@ module.exports = function (env) {
 			</div>
 
 			<script type="module">
-				import main from "./dist/main.js";
+				import main from "./main.js";
 				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 

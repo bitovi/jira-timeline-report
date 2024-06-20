@@ -9,7 +9,7 @@ import {
   getStartDate,
   getStoryPoints,
   getStoryPointsMedian,
-  getTeamKeyDefault,
+  getTeamKey,
   getType,
   getVelocity,
 } from "../shared/issue-data/issue-data.js";
@@ -31,7 +31,7 @@ const options = {
   getStartDate,
   getStoryPoints,
   getStoryPointsMedian,
-  getTeamKeyDefault,
+  getTeamKey,
   getType,
   getVelocity,
   includeTypes: ["Epic"],
