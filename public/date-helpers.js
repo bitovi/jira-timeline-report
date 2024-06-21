@@ -75,7 +75,7 @@ export function parseDateIntoLocalTimezone(s){
  */
 export function parseDate8601String(str){
     // This should just work, we can get fancy later and use date-fns or something.
-    return new Date(str);
+    return str ? new Date(str) : str;
 }
 
 export const DAY_IN_MS = 1000 * 60 * 60 * 24;
