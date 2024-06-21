@@ -298,13 +298,10 @@ function prepareIssues(issues, options) {
       team: options.getTeamKey(issue),
       issue,
       rollups: {totalDays: 0, completedDays: 0},
+      summary: issue.fields.Summary
     };
     data.totalDays = getSelfTotalDays(data, options);
     data.completedDays = getSelfCompletedDays(data, options);
-    if(data.completedDays < 0 ) {
-      debugger;
-      getSelfCompletedDays(data, options)
-    }
     return data;
   });
 }
@@ -435,6 +432,7 @@ function rollupWorkingDays(groupedIssueData, options){
       // set average on children that need it
       issueTypeData.needsAverageSet.forEach( issueData => {
         issueData.rollups.totalDays = ave;
+        issueData.rollups.remainingDays = issueData.rollups.totalDays - issueData.rollups.completedDays;
       })
     }
   }
@@ -490,6 +488,7 @@ function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options
 
   issueData.rollups.totalDays = sum(totalDays);
   issueData.rollups.completedDays = sum(completedDays);
+  issueData.rollups.remainingDays = issueData.rollups.totalDays - issueData.rollups.completedDays;
 
   
 }
