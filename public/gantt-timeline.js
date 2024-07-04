@@ -71,7 +71,26 @@ export class GanttTimeline extends StacheElement {
             makeElementForIssue: function(release){
                 const div = document.createElement("div");
                 div.className = "rounded-sm release-timeline-item color-text-and-bg-" + release.dateData.rollup.status;
-                div.appendChild(document.createTextNode(release.shortVersion || release.Summary))
+
+                const tick = document.createElement("div");
+                tick.className = "color-text-and-bg-" + release.dateData.rollup.status
+                Object.assign( tick.style, {
+                    position: "absolute",
+                    top: "-2px",
+                    bottom: "-2px",
+                    width: "2px",
+                    left: "50%",
+                    transform: "translateX(-1px)"
+                })
+                div.appendChild(tick);
+                const text = document.createElement("div");
+                Object.assign( text.style, {
+                    position: "relative",
+                    zIndex: "10"
+                })
+                text.appendChild(document.createTextNode(release.shortVersion || release.Summary))
+                div.appendChild(text);
+                
                 return div;
             }
         });

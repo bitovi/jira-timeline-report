@@ -282,6 +282,14 @@ export function normalizeIssue( issue, {
 */
 
 /**
+ * 
+ * @param {Array<JiraIssue>} issues 
+ * @returns {Array<DerivedWorkIssue>}
+ */
+export function normalizeAndDeriveIssues(issues) {
+  return issues.map( issue => derivedWorkIssue( normalizeIssue(issue) ) )
+}
+/**
  * Adds derived data
  * @param {NormalizedIssue} normalizedIssue 
  * @return {DerivedWorkIssue} 
