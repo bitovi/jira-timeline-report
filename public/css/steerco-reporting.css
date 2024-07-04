@@ -339,7 +339,7 @@ simple-tooltip span {
     transform: translate(-50%, 0);
     padding: 4px;
     z-index: 100;
-    top: 5px;
+    top: 4px;
 }
 
 .gantt.extra-timings {

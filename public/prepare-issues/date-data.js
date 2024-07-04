@@ -1,5 +1,5 @@
 import { parseDateISOString, parseDateIntoLocalTimezone } from "../date-helpers.js";
-
+import { mostCommonElement } from "../shared/array-helpers.js";
 // GET DATA FROM PLACES DIRECTLY RELATED TO ISSUE
 export function getStartDateAndDueDataFromFields(issue){
     let startData, dueData;
@@ -205,3 +205,104 @@ export function rollupDatesFromRollups(issues) {
         issues
     }
 }
+
+/**
+ * 
+ * @param {Array<import("../shared/issue-data/issue-data.js").NormalizedIssue>} normalizedIssues 
+ * @returns {Array<{type: string, hierarchyLevel: number}>}
+ */
+function issueHierarchy(normalizedIssues){
+    const levelsToNames = []
+    for( let issue of normalizedIssues) {
+        if(!levelsToNames[issue.hierarchyLevel]) {
+            levelsToNames[issue.hierarchyLevel] = [];
+        }
+        levelsToNames[issue.hierarchyLevel].push(issue.type)
+    }
+    return levelsToNames.map( (names, i) => {
+        return {type: mostCommonElement(names), hierarchyLevel: i}
+    }).filter( i => i )
+}
+
+/**
+ * 
+ * @param {import("../shared/issue-data/issue-data.js").NormalizedIssue} normalizedIssues 
+ * @returns 
+ */
+export function denormalizedIssueHierarchy(normalizedIssues){
+    const hierarchy = issueHierarchy(normalizedIssues).reverse();
+
+    const issueOnlyHierarchy = hierarchy.map( ({type, hierarchyLevel}, index) => {
+        // if the last thing
+        if(!hierarchy[index+1]) {
+            return {type, hierarchyLevel, plural: type+"s", children: [], availableTimingCalculations: ["parentOnly"]}
+        } else {
+            return {type, hierarchyLevel, plural: type+"s", children: [hierarchy[index+1].type], availableTimingCalculations: "*"}
+        }
+    })
+
+    const base = [
+        { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
+        ...issueOnlyHierarchy
+    ]
+    /*
+    const base = [
+      { type: "Release",    plural: "Releases", children: ["Initiative","Epic","Story"], availableTimingCalculations: ["childrenOnly"]},
+      { type: "Initiative", plural: "Initiatives", children: ["Epic"], availableTimingCalculations: "*" },
+      { type: "Epic", plural: "Epics", children: ["Story"], availableTimingCalculations: "*" },
+      { type: "Story", plural: "Stories", children: [], availableTimingCalculations: ["parentOnly"] }
+    ];*/
+    const typeToIssueType = {};
+    for(const issueType of base) {
+      typeToIssueType[issueType.type] = issueType;
+    }
+  
+    const allCalculations = Object.keys( calculationKeysToNames );
+    for(const issueType of base) {
+      issueType.denormalizedChildren = issueType.children.map( typeName => typeToIssueType[typeName]);
+      const calcNames = issueType.availableTimingCalculations === "*" ? allCalculations : issueType.availableTimingCalculations;
+      
+      const childToTimingMap = {};
+      issueType.timingCalculations = [];
+      for(let issueTypeName of issueType.children){
+        childToTimingMap[issueTypeName] = calcNames.map((calculationName)=> {
+          return {
+              child: issueTypeName, parent: issueType.type, 
+              calculation: calculationName, name: calculationKeysToNames[calculationName](issueType, typeToIssueType[issueTypeName]) }
+        });
+        issueType.timingCalculations.push({child: issueTypeName,calculations: childToTimingMap[issueTypeName]});
+      }
+      issueType.timingCalculationsMap = childToTimingMap;
+    }
+    base.typeToIssueType = typeToIssueType;
+    console.log(typeToIssueType);
+    return base;
+  }
+  
+  
+  export function getImpliedTimingCalculations(primaryIssueType, issueTypeMap, currentTimingCalculations){
+      const primaryType = issueTypeMap[primaryIssueType];
+      // can happen while data is loading
+      if(!primaryType) {
+        return [];
+      }
+      let currentType = primaryIssueType;
+      
+      let childrenCalculations = primaryType.timingCalculations;
+      const timingLevels = [];
+      const setCalculations = [...currentTimingCalculations];
+      
+      const impliedTimingCalculations = [];
+      while(childrenCalculations.length) {
+        // this is the calculation that should be selected for that level
+        let setLevelCalculation = setCalculations.shift() || 
+          {
+            type: childrenCalculations[0].child, 
+            calculation: childrenCalculations[0].calculations[0].calculation
+          };
+        impliedTimingCalculations.push(setLevelCalculation);
+        currentType = setLevelCalculation.type;
+        childrenCalculations = issueTypeMap[currentType].timingCalculations;
+      }
+      return impliedTimingCalculations;
+  }
