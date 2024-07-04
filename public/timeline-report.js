@@ -1,20 +1,7 @@
 import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
 import { calculationKeysToNames } from "./prepare-issues/date-data.js";
 import { percentComplete } from "./percent-complete/percent-complete.js"
-import {
-  getConfidence,
-  getDaysPerSprint,
-  getDueDate,
-  getHierarchyLevel,
-  getIssueKey,
-  getParentKey,
-  getStartDate,
-  getStoryPoints,
-  getStoryPointsMedian,
-  getTeamKey,
-  getType,
-  getVelocity
- } from "./shared/issue-data/issue-data.js"
+import { issues as rollbackIssues } from "./rollback/rollback-jira-issues.js";
 
 
 
@@ -650,7 +637,7 @@ export class TimelineReport extends StacheElement {
                 "Story points median",
                 "Confidence",
                 "Story points confidence",
-                "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created"],
+                "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created","Parent"],
             expand: ["changelog"]
         }, (progressData)=> {
           this.progressData = {...progressData};
@@ -659,27 +646,9 @@ export class TimelineReport extends StacheElement {
         return Promise.all([
             issuesPromise, serverInfoPromise
         ]).then(([issues, serverInfo]) => {
-            if( localStorage.getItem("percentComplete") ) {
+            if( /*localStorage.getItem("percentComplete")*/ true  ) {
               setTimeout(()=>{
-                percentComplete(issues, {
-                  getType,
-                  getTeamKey: getTeamKey,
-                  getDaysPerSprint,
-                  getHierarchyLevel,
-                  getIssueKey,
-                  getParentKey,
-                  getVelocity,
-                  getConfidence,
-                  getStartDate,
-                  getStoryPoints,
-                  getStoryPointsMedian,
-                  getDueDate,
-                  //getParallelWorkLimit: (TEAM_KEY) => 1
-                  defaultParentDurationDays: PARENT_ISSUE_DURATION_DAYS_DEFAULT,
-                  includeTypes: ["Epic"],
-                  parentType: "Initiative",
-                  uncertaintyWeight: UNCERTAINTY_WEIGHT_DEFAULT,
-                });
+                percentComplete(issues);
               },13);
             }
           
