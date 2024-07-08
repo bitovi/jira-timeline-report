@@ -1,5 +1,7 @@
 node_modules/
 .vscode/
-.env
+.env*
+.env.local
+.env.mis
 .DS_Store
 public/rollback/base-issues.json

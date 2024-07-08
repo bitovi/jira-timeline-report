@@ -3,15 +3,21 @@ import {nativeFetchJSON} from "../jira-oidc-helpers.js";
 const REFERENCE_DATE = new Date(2024,1,20);
 const DAY = 1000 * 60 * 60 * 24;
 
+
+let PROMISE = null;
+
 export default function bitoviTrainingData(dateToShift){
-
-
-    return nativeFetchJSON("./examples/bitovi-training.json")
+    if(PROMISE === null) {
+        PROMISE = nativeFetchJSON("./examples/bitovi-training.json")
         .then(function(data){
             const daysShift = Math.round( (dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY )-0
             return adjustDateStrings(data, daysShift);
-        })
+        });
+    }
+
+    return PROMISE;
 }
+
 
 
 function adjustDateStrings(obj, days) {
