@@ -45,9 +45,22 @@ export class GanttTimeline extends StacheElement {
     `;
 
     get quartersAndMonths(){
+        
         // handle if there are no issues
-        const {start, due} = rollupDatesFromRollups(this.issues);
-        return getQuartersAndMonths(new Date(), due || new Date( new Date().getTime() + DAY*30));
+        const endDates = this.issues.map((issue)=> {
+            return {dateData: {rollup: {
+                start: issue.dateData.rollup.due,
+                startFrom: issue.dateData.rollup.dueTo,
+                due: issue.dateData.rollup.due,
+                dueTo: issue.dateData.rollup.dueTo
+            }}}
+        })
+        const {start, due} = rollupDatesFromRollups(endDates);
+        let firstEndDate = new Date( (start || new Date()).getTime() - DAY * 30 ) ;
+        
+        
+        
+        return getQuartersAndMonths(firstEndDate, due || new Date( new Date().getTime() + DAY*30));
     }
     get todayMarginLeft() {
         const { firstDay, lastDay } = this.quartersAndMonths;
@@ -70,26 +83,35 @@ export class GanttTimeline extends StacheElement {
             totalTime,
             makeElementForIssue: function(release){
                 const div = document.createElement("div");
-                div.className = "rounded-sm release-timeline-item color-text-and-bg-" + release.dateData.rollup.status;
+                div.className = " release-timeline-item flex items-center gap-1";
+                Object.assign(div.style, {
+                    position: "absolute",
+                    //transform: "translate(-100%, 0)",
+                    padding: "2px 4px 2px 4px",
+                    zIndex: "100",
+                    top: "4px",
+                    background: "rgba(255,255,255, 0.6)"
+                })
+
+                
+                const text = document.createElement("div");
+                text.className = "truncate";
+                Object.assign( text.style, {
+                    position: "relative",
+                    zIndex: "10",
+                    maxWidth: "300px"
+                })
+                text.appendChild(document.createTextNode(release.shortVersion || release.Summary))
+                div.appendChild(text);
 
                 const tick = document.createElement("div");
                 tick.className = "color-text-and-bg-" + release.dateData.rollup.status
                 Object.assign( tick.style, {
-                    position: "absolute",
-                    top: "-2px",
-                    bottom: "-2px",
-                    width: "2px",
-                    left: "50%",
-                    transform: "translateX(-1px)"
+                    height: "10px",
+                    width: "10px",
+                    transform: "rotate(45deg)",
                 })
                 div.appendChild(tick);
-                const text = document.createElement("div");
-                Object.assign( text.style, {
-                    position: "relative",
-                    zIndex: "10"
-                })
-                text.appendChild(document.createTextNode(release.shortVersion || release.Summary))
-                div.appendChild(text);
                 
                 return div;
             }
@@ -97,24 +119,11 @@ export class GanttTimeline extends StacheElement {
 
         for(let row of rows) {
             for(let item of row.items) {
-                item.element.style.left = ((item.issue.dateData.rollup.due - firstDay) / totalTime * 100) + "%";
+                item.element.style.right = ( (totalTime - (item.issue.dateData.rollup.due - firstDay)) / totalTime * 100) + "%";
             }
         }
         
         return rows;
-    }
-    get releaseTimeline() {
-        
-        
-        return this.issues.map((release, index) => {
-            const div = document.createElement("div");
-            if (release.dateData.rollup.due) {
-                    div.className = "rounded-sm release-timeline-item color-text-and-bg-" + release.dateData.rollup.status;
-                    div.style.left = ((release.dateData.rollup.due - firstDay) / totalTime * 100) + "%";
-                    div.appendChild(document.createTextNode(release.shortVersion || release.Summary))
-            }
-            return div;
-        });
     }
 
     plus(first, second) {
@@ -149,17 +158,22 @@ function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, t
     const rows = [];
     
     const issueUIData = issues.map( issue => {
-        
+
         const element = makeElementForIssue(issue),
-        widthInPercent =  getWidth(element) * 100 / widthOfArea,
-        centerInPercent = ((issue.dateData.rollup.due - firstDay) / totalTime * 100);
+            width = getWidth(element),
+            widthInPercent = width  * 100 / widthOfArea,
+            rightPercentEnd = Math.ceil( (issue.dateData.rollup.due - firstDay) / totalTime * 100),
+            leftPercentStart = rightPercentEnd - widthInPercent;
+
+        element.setAttribute("measured-width", width);
+        element.setAttribute("left-p", leftPercentStart);
+        element.setAttribute("right-p", leftPercentStart);
         return {
             issue,
             element,
             widthInPercent,
-            centerInPercent,
-            leftPercentStart: Math.floor(centerInPercent - widthInPercent / 2),
-            rightPercentEnd: Math.ceil(centerInPercent + widthInPercent / 2)
+            leftPercentStart,
+            rightPercentEnd
         }
     });
 
