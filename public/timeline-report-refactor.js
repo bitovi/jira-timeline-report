@@ -38,7 +38,7 @@ import "./status-filter-only.js";
 import "./gantt-grid.js";
 import "./gantt-timeline.js";
 import "./status-report.js";
-import "./timeline-configuration.js"
+import "./timeline-configuration/timeline-configuration.js"
 
 
 const ISSUE_KEY = "Issue key";
@@ -237,23 +237,14 @@ export class TimelineReport extends StacheElement {
 
         
         
-        
+        /*
         getReleaseValue: {
             type: Function,
             default: function (issue) {
                 return issue?.[FIX_VERSIONS_KEY]?.[0]?.name;
             }
         },
-        rawIssues: {
-          async(resolve) {
-            if(!this.cvsIssuesPromise) {
-              resolve(null)
-            } else {
-              this.cvsIssuesPromise.then(resolve);
-            }
-          }
-        },
-
+        */
 
         showingConfiguration: false,
 
@@ -266,32 +257,11 @@ export class TimelineReport extends StacheElement {
         
     };
 
-    updateCalculationType(index, value){
     
-      const copyCalculations = [
-        ...getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations) 
-      ].slice(0,index+1);
-
-      copyCalculations[index].type = value;
-      this.timingCalculations = copyCalculations;
-    }
-
-    updateCalculation(index, value){
-    
-      const copyCalculations = [
-        ...getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations) 
-      ].slice(0,index+1);
-
-      copyCalculations[index].calculation = value;
-      this.timingCalculations = copyCalculations;
-    }
 
     // hooks
     async connected() {
       updateFullishHeightSection();
-    }
-    get serverInfoPromise(){
-      return this.jiraHelpers.getServerInfo();
     }
 
     get cvsIssuesPromise(){
@@ -315,47 +285,6 @@ export class TimelineReport extends StacheElement {
           return formatted;
         })
      }
-    }
-    get teams() {
-        if (!this.rawIssues) {
-            return new Set();
-        }
-        return new Set(this.rawIssues.map(issue => issue["Project key"]));
-    }
-    get statuses(){
-      if(!this.rawIssues) {
-        return []
-      }
-      const statuses = new Set();
-      for( let issue of this.rawIssues) {
-        statuses.add(issue.Status);
-      }
-      return [...statuses].sort( (s1, s2)=> {
-        return s1 > s2 ? 1 : -1;
-      });
-    }
-    get teamKeyToCharacters() {
-        if (!this.teams) {
-            return [];
-        }
-        const names = this.teams;
-        return characterNamer(names);
-    }
-    get issuesMappedByParentKey() {
-        if (!this.rawIssues) {
-            return {};
-        }
-        const map = {};
-        for (const issue of this.rawIssues) {
-            const parentKeyValue = issue[PARENT_LINK_KEY] || issue["Epic Link"];
-            if ( parentKeyValue ) {
-              if (!map[parentKeyValue]) {
-                  map[parentKeyValue] = []
-              }
-              map[parentKeyValue].push(issue);
-            }
-        }
-        return map;
     }
     get releasesAndInitiativesWithPriorTiming(){
       if(!this.rawIssues) {
@@ -448,32 +377,11 @@ export class TimelineReport extends StacheElement {
       const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
       return getIssuesOfTypeAndStatus(this.rawIssues, reportedIssueType, this.planningStatuses || []);
     }
-    prettyDate(date) {
-        return date ? dateFormatter.format(date) : "";
-    }
-    paddingClass(depth) {
-      return "pl-"+(depth * 2);
-    }
 
-    initiativeTeams(initiative) {
-        return [...new Set(initiative.team.issues.map(issue => issue["Project key"]))];
-    }
     showDebug(open) {
       this.showingDebugPanel = open;
     }
 
-    /*teamWork(work) {
-        const teamToWork = {};
-        issues.forEach( issue => {
-            let teamKey = issue["Project key"]
-            if(!teamToWork[teamKey]) {
-                teamToWork[teamKey] = 0
-            }
-            //teamToWork[teamKey] +=
-        }) )
-        const teams = [...new Set( work.issues.map( issue => issue["Project key"]) ) ];
-
-    }*/
     toggleConfiguration() {
       this.showingConfiguration = ! this.showingConfiguration;
       const width = document.getElementById("configuration").clientWidth;
@@ -498,6 +406,7 @@ function getIssuesOfTypeAndStatus(issues, type, statuses){
   })
 }
 
+/*
 function goodStuffFromIssue(issue) {
     return {
         Summary: issue.Summary,
@@ -527,7 +436,7 @@ function mapReleasesToIssues(issues, getReleaseValue) {
         map[release].push(issue);
     })
     return map;
-}
+}*/
 
 
 

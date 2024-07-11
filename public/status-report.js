@@ -11,12 +11,14 @@ const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`
 
 export class StatusReport extends StacheElement {
     static view = `
-    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2'>
+    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex gap-2'>
         {{# for(primaryIssue of this.primaryIssues) }}
-            <div class='release_box grow'>
+            <div class='release_box shrink'>
                 <div 
                     on:click='this.showTooltip(scope.event, primaryIssue)'
-                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}} rounded-t">{{primaryIssue.Summary}}</div>
+                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}} rounded-t {{this.fontSize(0)}}">
+                        {{primaryIssue.Summary}}
+                    </div>
                 
                     {{# if(this.breakdown) }}
 
@@ -85,7 +87,17 @@ export class StatusReport extends StacheElement {
         
     </div>
     `;
-
+    get columnDensity(){
+        if(this.primaryIssues.length > 20) {
+            return "absurd"
+        } else if(this.primaryIssues.length > 10) {
+            return "high"
+        } else if(this.primaryIssues.length > 4) {
+            return "medium"
+        } else {
+            return "light"
+        }
+    }
     prettyDate(date) {
         return date ? dateFormatter.format(date) : "";
     }
@@ -115,15 +127,13 @@ export class StatusReport extends StacheElement {
         showTooltip(event.currentTarget, isssue);
     }
     fontSize(count){
-        const lotsOfColumns = this.primaryIssues > 4;
-
-        if(count >= 7 && lotsOfColumns) {
-            return "text-xs";
-        } else if(count <= 4 && !lotsOfColumns) {
-            return "text-base";
-        } 
-        else {
+        if(["high","absurd"].includes(this.columnDensity)) {
+            return "text-xs"
+        }
+        if(count >= 7 && this.columnDensity === "medium") {
             return "text-sm";
+        } else if(count <= 4) {
+            return "text-base";
         }
         
     }

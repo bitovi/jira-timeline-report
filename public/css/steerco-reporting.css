@@ -207,11 +207,7 @@ simple-tooltip span {
     border: 1px solid black;
 }
 
-.release_wrapper {
-    display: flex;
-    flex-flow: row;
-    gap: 16px;
-}
+
 
 
 .release_wrapper .release_box .release_box_header_bubble {

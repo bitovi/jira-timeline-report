@@ -3,6 +3,7 @@ import { TimelineReport } from "./timeline-report.js";
 
 import "./shared/saved-urls.js";
 import "./shared/select-cloud.js";
+import "./shared/velocities-from-issue.js"
 
 import JiraLogin from "./shared/jira-login.js";
 import JiraOIDCHelpers from "./jira-oidc-helpers.js";
@@ -20,12 +21,19 @@ export default async function main(config) {
 	const selectCloud = document.querySelector("select-cloud")
 	selectCloud.loginComponent = loginComponent;
 	selectCloud.jiraHelpers = jiraHelpers;
+
+	const velocitiesConfiguration = document.querySelector("velocities-from-issue")
+	velocitiesConfiguration.jiraHelpers = jiraHelpers;
+	velocitiesConfiguration.isLoggedIn = loginComponent.isLoggedIn;
+	loginComponent.listenTo("isLoggedIn", ({value})=>{
+		velocitiesConfiguration.isLoggedIn = value;
+	})
 	
 	const listener = ({value})=>{
 		if(value) {
 			loginComponent.off("isResolved", listener);
 			mainElement.style.display = "none";
-			const report = new TimelineReport().initialize({jiraHelpers, loginComponent, mode: "TEAMS"});
+			const report = new TimelineReport().initialize({jiraHelpers, loginComponent, mode: "TEAMS", velocitiesConfiguration});
 			report.className = "block"
 			document.body.append(report);
 		}
@@ -34,27 +42,7 @@ export default async function main(config) {
 	login.appendChild(loginComponent);
 
 
-	/*
-	mainElement.textContent = "Checking for Jira Access Token";
 
-	if (!jiraHelpers.hasValidAccessToken()) {
-		mainElement.textContent = "Getting access token";
-		const accessToken = await jiraHelpers.getAccessToken();
-		return;
-	}
-
-	const accessToken = await jiraHelpers.getAccessToken();
-
-	mainElement.textContent = "Got Access Token";
-	mainElement.style.display = "none";
-
-
-	// SteerCo for KFC
-	const report = new TimelineReport();
-	report.jiraHelpers = jiraHelpers;
-	report.mode = "TEAMS";
-	document.body.append(report);
-	report.className = "block"*/
 
 
 }

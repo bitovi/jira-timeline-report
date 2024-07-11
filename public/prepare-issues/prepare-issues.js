@@ -242,10 +242,12 @@ function reportedIssueTiming(options){
         reportedStatuses,
         timingMethods
     } = options;
+
     const currentInitiatives = reportedIssueTypeTimingWithChildrenBreakdown(options);
 
     const rolledBackBaseIssues = rollbackIssues(baseIssues, priorTime);
-
+    // OFTEN, a prior initiative is rolled back b/c of status
+    // we don't explain this well why it would now be new
     const priorInitiatives = reportedIssueTypeTimingWithChildrenBreakdown({
         ...options,
         baseIssues: rolledBackBaseIssues
@@ -253,8 +255,10 @@ function reportedIssueTiming(options){
     
     // copy prior initiative timing information over 
     const allCurrentIssues = getAllChildren(currentInitiatives);
+    // FURTHERMORE, epics could have existed for a while, but 
+    // that we only get children of "priorInitiatives" means we
+    // probably show as new a lot more initiatives than we should 
     const allPastIssues = getAllChildren(priorInitiatives);
-
 
 
     const pastIssueMap = getIssueMap(allPastIssues);
