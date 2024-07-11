@@ -6,6 +6,23 @@ export const inIdeaStatuses =  Object.keys(inIdeaStatus);
 const inDoneStatus = { "Done": true, "Cancelled": true };
 const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true }
 
+const statusCategoryMap = (function(){
+
+	const items = [
+		["qa",inQAStatus],
+		["uat", inPartnerReviewStatus],
+		["todo", inIdeaStatus],
+		["done", inDoneStatus],
+		["blocked", blockedStatus]
+	];
+	const statusCategoryMap = {};
+	for( let [category, statusMap] of items) {
+		for(let prop in statusMap) {
+			statusCategoryMap[prop] = category
+		}
+	}
+	return statusCategoryMap;
+})();
 
 const WIGGLE_ROOM = 0;
 
@@ -20,6 +37,26 @@ function warn(...args){
 		}
 	}))
 }
+/**
+ * 
+ * @param {import("./shared/issue-data/issue-data").DerivedWorkIssue} issue 
+ */
+export function getStatusCategoryDefault(issue){
+	if(statusCategoryMap[issue.status]) {
+		return statusCategoryMap[issue.status];
+	} else {
+		return "dev";
+	}
+	
+}
+/**
+ * 
+ * @param {import("./shared/issue-data/issue-data").NormalizedIssue} issue
+ */
+export function addStatusCategory(issue){
+
+}
+
 
 export function addStatusToRelease(release) {
 	Object.assign( release.dateData.rollup, getReleaseStatus(release) );
@@ -57,6 +94,7 @@ function getReleaseUatStatus(release) {
 }
 
 export function addStatusToInitiative(initiative) {
+	
 	Object.assign( initiative.dateData.rollup, getInitiativeStatus(initiative) );
 	Object.assign( initiative.dateData.dev, getInitiativeDevStatus(initiative) )
 	Object.assign( initiative.dateData.qa, getInitiativeQaStatus(initiative) );
@@ -74,6 +112,10 @@ export function addStatusToIssueAndChildren(issue) {
 }
 
 function getInitiativeStatus(initiative) {
+
+	if(initiative["Issue key"] === "DRD-8370") {
+		debugger;
+	}
 		if (inDoneStatus[initiative.Status]) {
 				return {
 					status: "complete", 

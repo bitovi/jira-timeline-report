@@ -10,17 +10,9 @@ import { normalizeIssue, derivedWorkIssue, rollupHierarchy } from "../shared/iss
  * @param { JiraIssue[] } issues
  * @param { PercentCompleteOptions } options
  */
-export function percentComplete(issues, options) {
+export function percentComplete(derivedWorkIssues) {
 
-  const derivedWorkIssues = issues.map( (issue)=>{
-    const normalized = normalizeIssue(issue);
-    const derived = derivedWorkIssue(normalized);
-    return derived;
-  });
-
-  console.log(completionRollup(derivedWorkIssues, {
-    ...options
-  }));
+  return completionRollup(derivedWorkIssues);
 }
 
 function groupIssuesByHierarchyLevel(issues, options) {
@@ -72,7 +64,7 @@ function toCompletionRollups(issues){
  * @param {*} options 
  * @returns {{issues: Array<RolledupCompletionIssue>, hierarchyData: Array<IssueTypeData>}}
  */
-function completionRollup(allIssueData, options){
+function completionRollup(allIssueData){
   const completionRollups = toCompletionRollups(allIssueData);
 
   const groupedIssueData = groupIssuesByHierarchyLevel(completionRollups);
@@ -130,7 +122,7 @@ function completionRollup(allIssueData, options){
         // initiatives and above
         if( hierarchyLevel > BASE_HIERARCHY_LEVEL ) {
           // handle "parent-like" issue
-          handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options)
+          handleInitiative(issueData,{issueTypeData, issueKeyToChildren})
         }
       }
 
@@ -168,7 +160,7 @@ function average(arr){
  * @param {*} options 
  * @returns 
  */
-function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options) {
+function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}) {
   
 
   // Empty
@@ -263,7 +255,7 @@ function altRollupWorkingDays(issues) {
       // initiatives and above
       if( hierarchyLevel > BASE_HIERARCHY_LEVEL ) {
         // handle "parent-like" issue
-        handleInitiative(issueData,{issueTypeData, issueKeyToChildren}, options)
+        handleInitiative(issueData,{issueTypeData, issueKeyToChildren})
       }
     }
   })

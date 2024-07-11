@@ -1,22 +1,6 @@
 import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
-import { calculationKeysToNames, denormalizedIssueHierarchy, getImpliedTimingCalculations } from "./prepare-issues/date-data.js";
-import { percentComplete } from "./percent-complete/percent-complete.js"
-import { issues as rollbackIssues } from "./rollback/rollback-jira-issues.js";
-import { normalizeAndDeriveIssues } from "./shared/issue-data/issue-data.js";
 
-
-
-import { howMuchHasDueDateMovedForwardChangedSince,
-    DAY_IN_MS, parseDateISOString, epicTimingData } from "./date-helpers.js";
-
-
-
-import {
-    addStatusToInitiative,
-    addStatusToRelease, getBusinessDatesCount, inPartnerReviewStatuses,
-    inIdeaStatus,
-    inIdeaStatuses
-} from "./status-helpers.js";
+import { derivedToCSVFormat } from "./shared/issue-data/issue-data.js";
 
 import {releasesAndInitiativesWithPriorTiming, 
   rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses, filterQAWork, filterPartnerReviewWork} from "./prepare-issues/prepare-issues.js";
@@ -24,18 +8,8 @@ import {releasesAndInitiativesWithPriorTiming,
 import semverReleases from "./semver-releases.js";
 import sortedByLastEpicReleases from "./sorted-by-last-epic-releases.js";
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: "short" });
-const booleanParsing = {
-  parse: x => {
-    return ({"": true, "true": true, "false": false})[x];
-  },
-  stringify: x => ""+x
-};
-
 import bitoviTrainingData from "./examples/bitovi-training.js";
 
-import { estimateExtraPoints } from "./confidence.js";
-import {saveJSONToUrl,updateUrlParam} from "./shared/state-storage.js";
 
 //import "./steerco-timeline.js";
 import "./status-filter.js";
@@ -43,221 +17,8 @@ import "./status-filter-only.js";
 import "./gantt-grid.js";
 import "./gantt-timeline.js";
 import "./status-report.js";
+import "./timeline-configuration/timeline-configuration.js"
 
-
-const ISSUE_KEY = "Issue key";
-const PRODUCT_TARGET_RELEASE_KEY = "Product Target Release";
-const ISSUE_TYPE_KEY = "Issue Type";
-const PARENT_LINK_KEY = "Parent Link";
-const START_DATE_KEY = "Start date";
-const DUE_DATE_KEY = "Due date";
-const LABELS_KEY = "Labels";
-const STATUS_KEY = "Status";
-const FIX_VERSIONS_KEY = "Fix versions";
-
-const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-
-const configurationView = `
-<div class="border-gray-100 p-4 relative {{# not(this.showingConfiguration) }}hidden{{/}}" style="border-top-width: 32px;overflow-y: auto">
-  <p>
-    Questions on the options? 
-    <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>, or 
-    <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">connect with us</a>.
-  </p>  
-  <h3 class="h3">Issue Source</h3>
-  <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
-  <p>
-    {{# if(this.loginComponent.isLoggedIn) }}
-      <input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/>
-    {{ else }}
-      <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
-    {{/ if}}
-  </p>
-  {{# if(this.cvsIssuesPromise.isPending) }}
-    {{# if(this.progressData.issuesRequested)}}
-      <p class="text-xs text-right">Loaded {{this.progressData.issuesReceived}} of {{this.progressData.issuesRequested}} issues</p>
-    {{ else }}
-      <p class="text-xs text-right">Loading issues ...</p>
-    {{/ if}}
-  {{/ if }}
-  {{# if(this.cvsIssuesPromise.isRejected) }}
-    <div class="border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked p-1">
-      <p>There was an error loading from Jira!</p>
-      <p>Error message: {{this.cvsIssuesPromise.reason.errorMessages[0]}}</p>
-      <p>Please check your JQL is correct!</p>
-    </div>
-  {{/ if }}
-  <div class="flex justify-between mt-1">
-
-    <p class="text-xs"><input type='checkbox' 
-      class='self-start align-middle' checked:bind='this.loadChildren'/> <span class="align-middle">Load all children of JQL specified issues</span>
-    </p>
-    
-    {{# if(this.cvsIssuesPromise.isResolved) }}
-      <p class="text-xs">Loaded {{this.rawIssues.length}} issues</p>
-    {{/ if }}
-  </div>
-  
-
-  <h3 class="h3 mt-4">Primary Timeline</h3>
-  <div class="flex mt-2 gap-2 flex-wrap">
-    <p>What Jira artifact do you want to report on?</p>
-    <div class="shrink-0">
-    {{# for(issueType of this.primaryReportingIssueHierarchy) }}
-      <label class="px-2"><input 
-        type="radio" 
-        name="primaryIssueType" 
-        checked:from="eq(this.primaryIssueType, issueType.type)"
-        on:change="this.primaryIssueType = issueType.type"/> {{issueType.plural}} </label>
-    {{/ }}
-    </div>
-  </div>
-
-  <div class="flex mt-2 gap-2 flex-wrap">
-    <p>What timing data do you want to report?</p>
-    <div class="shrink-0">
-      <label class="px-2"><input 
-        type="radio" 
-        name="primaryReportType"
-        checked:from="eq(this.primaryReportType, 'start-due')"
-        on:change="this.primaryReportType = 'start-due'"
-        /> Start and due dates </label>
-      <label class="px-2"><input 
-        type="radio" 
-        name="primaryReportType"
-        checked:from="eq(this.primaryReportType, 'due')"
-        on:change="this.primaryReportType = 'due'"
-        /> Due dates only</label>
-      <label class="px-2"><input 
-        type="radio" 
-        name="primaryReportType"
-        checked:from="eq(this.primaryReportType, 'breakdown')"
-        on:change="this.primaryReportType = 'breakdown'"
-        /> Work breakdown</label>
-    </div>
-  </div>
-
-
-  <h3 class="h3">Timing Calculation</h3>
-  <div class="grid gap-2 my-2" style="grid-template-columns: auto auto auto;">
-    <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">Parent Type</div>
-    <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Child Type</div>
-    <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 3 / span 1; grid-row: 1 / span 1;">How is timing calculated between parent and child?</div>
-    <div class="border-b-2 border-neutral-40" style="grid-column: 1 / span 3; grid-row: 1 / span 1;"></div>
-
-    {{# for(timingLevel of this.timingLevels) }}
-
-        <label class="pr-2 py-2 {{ this.paddingClass(scope.index) }}">{{timingLevel.type}}</label>
-        {{# eq(timingLevel.types.length, 1) }}
-          <span class="p-2">{{timingLevel.types[0].type}}</span>
-        {{ else }}
-          <select class="${selectStyle}" on:change="this.updateCalculationType(scope.index, scope.element.value)">
-            {{# for(type of timingLevel.types) }}
-              <option {{# if(type.selected) }}selected{{/ if }}>{{type.type}}</option>
-            {{/ for }}
-          </select>
-        {{/ eq}}
-
-        <select class="${selectStyle}" on:change="this.updateCalculation(scope.index, scope.element.value)">
-          {{# for(calculation of timingLevel.calculations) }}
-            <option {{# if(calculation.selected) }}selected{{/ if }} value="{{calculation.calculation}}">{{calculation.name}}</option>
-          {{/ for }}
-        </select>
-
-    {{/ for }}
-    
-  </div>
-
-  <h3 class="h3">Filters</h3>
-
-  <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
-
-    <label class=''>Hide Unknown {{this.primaryIssueType}}s</label>
-    <input type='checkbox' 
-      class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/>
-    <p class="m-0">Hide {{this.primaryIssueType}}s whose timing can't be determined.
-    </p>
-
-    <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
-    <status-filter 
-      statuses:from="this.statuses"
-      param:raw="statusesToShow"
-      selectedStatuses:to="this.statusesToShow"
-      style="max-width: 400px;"></status-filter>
-    <p>Only include these statuses in the report</p>
-
-    <label>{{this.firstIssueTypeWithStatuses}} Statuses to Ignore</label>
-    <status-filter 
-      statuses:from="this.statuses" 
-      param:raw="statusesToRemove"
-      selectedStatuses:to="this.statusesToRemove"
-      style="max-width: 400px;"></status-filter>
-    <p>Search for statuses to remove from the report</p>
-
-    {{# eq(this.primaryIssueType, "Release") }}
-      <label class=''>Show Only Semver Releases</label>
-      <input type='checkbox' 
-        class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
-      <p class="m-0">This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
-      <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
-      </p>
-    {{/ }}
-
-
-  </div>
-
-  <h3 class="h3">Sorting</h3>
-  <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
-    <label class=''>Sort by Due Date</label>
-      <input type='checkbox' 
-        class='self-start mt-1.5' checked:bind='this.sortByDueDate'/>
-      <p class="m-0">Instead of ordering initiatives based on the order defined in the JQL, 
-      sort initiatives by their last epic's due date.
-      </p>
-  </div>
-
-  <h3 class="h3">Secondary Status Report</h3>
-  <div class="flex mt-2 gap-2 flex-wrap">
-    <p>Secondary Report Type</p>
-    <div class="shrink-0">
-      <label class="px-2"><input 
-        type="radio" 
-        name="secondary" 
-        checked:from="eq(this.secondaryReportType, 'none')"
-        on:change="this.secondaryReportType = 'none'"
-        /> None </label>
-        
-      <label class="px-2"><input 
-        type="radio" 
-        name="secondary" 
-        checked:from="eq(this.secondaryReportType, 'status')"
-        on:change="this.secondaryReportType = 'status'"
-        /> {{this.secondaryIssueType}} status </label>
-    
-      {{# not(eq(this.secondaryIssueType, "Story") ) }}
-      <label class="px-2"><input 
-        type="radio" 
-        name="secondary" 
-        checked:from="eq(this.secondaryReportType, 'breakdown')"
-        on:change="this.secondaryReportType = 'breakdown'"
-        /> {{this.secondaryIssueType}} work breakdown </label>
-      {{/ not }}
-    </div>
-  </div>
-  <div class="flex gap-2 mt-1">
-    <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
-    <status-filter 
-      statuses:from="this.statuses" 
-      param:raw="planningStatuses"
-      selectedStatuses:to="this.planningStatuses"
-      style="max-width: 400px;"></status-filter>
-  </div>
-
-  
-</div>`;
-
-const UNCERTAINTY_WEIGHT_DEFAULT = 80;
-const PARENT_ISSUE_DURATION_DAYS_DEFAULT = 6 * 7;
 
 export class TimelineReport extends StacheElement {
     static view = `
@@ -267,7 +28,31 @@ export class TimelineReport extends StacheElement {
           top-fullish-vh height-fullish-vh 
           bg-white flex max-w-4xl" id="configuration">
         
-        ${configurationView}
+        <timeline-configuration
+          class="border-gray-100 p-4 relative {{# not(this.showingConfiguration) }}hidden{{/}} block" 
+          style="border-top-width: 32px;overflow-y: auto"
+          isLoggedIn:from="this.loginComponent.isLoggedIn"
+          jiraHelpers:from="this.jiraHelpers"
+          teamConfigurationPromise:from="this.velocitiesConfiguration.teamConfigurationPromise"
+
+          jql:to="this.jql"
+          derivedIssuesRequestData:to="this.derivedIssuesRequestData"
+
+          showOnlySemverReleases:to="this.showOnlySemverReleases"
+          statusesToRemove:to="this.statusesToRemove"
+          statusesToShow:to="this.statusesToShow"
+
+          secondaryReportType:to="this.secondaryReportType"
+          timingCalculationMethods:to="this.timingCalculationMethods"
+          primaryReportType:to="this.primaryReportType"
+          secondaryReportType:to="this.secondaryReportType"
+
+          primaryIssueType:to="this.primaryIssueType"
+          secondaryIssueType:to="this.secondaryIssueType"
+          hideUnknownInitiatives:to="this.hideUnknownInitiatives"
+          sortByDueDate:to="this.sortByDueDate"
+          showPercentComplete:to="this.showPercentComplete"
+          ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
           class="w-8 hover:bg-gray-200 cursor-pointer bg-gray-100 ">
@@ -320,11 +105,15 @@ export class TimelineReport extends StacheElement {
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Configure a JQL in the sidebar on the left to get started.</div>
           {{ /and }}
 
-					{{# and(this.cvsIssuesPromise.value, this.releases) }}
+          {{# and(this.cvsIssuesPromise.value, this.releases) }}
             <div class="my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
             
               {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
-                <gantt-grid issues:from="this.primaryIssues" breakdown:from="eq(this.primaryReportType, 'breakdown')"></gantt-grid>
+                <gantt-grid 
+                    issues:from="this.primaryIssues" 
+                    derivedIssues:from="this.derivedIssues"
+                    breakdown:from="eq(this.primaryReportType, 'breakdown')"
+                    showPercentComplete:from="this.showPercentComplete"></gantt-grid>
               {{ else }}
                 <gantt-timeline issues:from="this.primaryIssues"></gantt-timeline>
               {{/ or }}
@@ -350,8 +139,8 @@ export class TimelineReport extends StacheElement {
           {{# if(this.cvsIssuesPromise.isPending) }}
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
               <p>Loading ...<p>
-              {{# if(this.progressData.issuesRequested)}}
-                <p>Loaded {{this.progressData.issuesReceived}} of {{this.progressData.issuesRequested}} issues.</p>
+              {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
+                <p>Loaded {{this.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
               {{/ }}
             </div>
           {{/ if }}
@@ -365,12 +154,14 @@ export class TimelineReport extends StacheElement {
         </div>
   `;
     static props = {
+        // passed values
+        timingCalculationMethods: type.Any,
+
         showingDebugPanel: {type: Boolean, default: false},
         timeSliderValue: {
           type: type.convert(Number),
           default: 25
         },
-        progressData: type.Any,
         // default params
         defaultSearch: type.Any,
         get compareToTime(){
@@ -417,356 +208,82 @@ export class TimelineReport extends StacheElement {
           const days = this.timeSliderValue;
           return {timePrior: (MIN / 2) *this.timeSliderValue, text: this.timeSliderValue+" days ago"}
         },
+        
         // REMOVE
-        reportEpics: saveJSONToUrl("reportEpics", false, Boolean, booleanParsing),
-        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-        // REMOVE
-        breakOutTimings: saveJSONToUrl("breakOutTimings", false, Boolean, booleanParsing),
+        // breakOutTimings: saveJSONToUrl("breakOutTimings", false, Boolean, booleanParsing),
         // remove
-        showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
+        // showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
 
-        loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
-        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
-        primaryIssueType: saveJSONToUrl("primaryIssueType", "Epic", String, {parse: x => ""+x, stringify: x => ""+x}),
-        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
-        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
-        statusesToRemove: {
-          get default(){
-            return [];
-          }
-        },
-        statusesToShow: {
-          get default(){
-            return [];
-          }
-        },
-        planningStatuses: {
-          get default(){
-            return [];
-          }
-        },
-        get secondaryIssueType(){
-          if(!this.issueHierarchy) {
-            return undefined;
-          }
-          const calculations = getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations);
-          if(calculations.length) {
-            return calculations[0].type
-          }
-        },
+        
+        
+        /*
         getReleaseValue: {
             type: Function,
             default: function (issue) {
                 return issue?.[FIX_VERSIONS_KEY]?.[0]?.name;
             }
         },
-        rawIssues: {
-          async(resolve) {
-            if(!this.cvsIssuesPromise) {
-              resolve(null)
-            } else {
-              this.cvsIssuesPromise.then(resolve);
-            }
-          }
-        },
-        issueHierarchy: {
-          value({resolve, listenTo}) {
-            const handleRawIssuePromise = () => {
-              //console.log()
-              if(this.loginComponent.isLoggedIn === false) {
-                bitoviTrainingData().then( csvIssues => {
-                  resolve(denormalizedIssueHierarchy(normalizeCSVIssues(csvIssues)) )
-                });
-              } else if(this.rawIssuesPromise) {
-                this.rawIssuesPromise.then( issues => resolve( denormalizedIssueHierarchy(normalizeAndDeriveIssues(issues)) ) );
-              }
-            }
-            listenTo("rawIssuesPromise", handleRawIssuePromise);
-            listenTo(this.loginComponent, "isLoggedIn", handleRawIssuePromise);
-            handleRawIssuePromise(this.rawIssuesPromise);
-          }
-        },
-        get primaryReportingIssueHierarchy(){
-          // we need to remove stories
-          if(this.issueHierarchy) {
-            return this.issueHierarchy.slice(0, -1);
-          }
-        },
-        get secondaryReportingIssueHierarchy(){
-          // hierarchy isn't known at first
-          if(!this.issueHierarchy.length) {
-            return [];
-          }
-          const issueTypeMap = this.issueHierarchy.typeToIssueType;
-          const primaryType = issueTypeMap[this.primaryIssueType];
-          if(!primaryType) {
-            console.warn("no primary issuetype?!?!");
-            return [];
-          }
-          return [ ...primaryType.denormalizedChildren];
-        },
+        */
 
         showingConfiguration: false,
 
 
         // [{type: "Epic", calculation: "calculationName"},{type, calculation}]
-        timingCalculations: {
-          value({resolve, lastSet, listenTo}) {
-            let currentValue;
-            updateValue(new URL(window.location).searchParams.get("timingCalculations"));
-
-            listenTo(lastSet, (value)=>{
-                updateValue(value);
-            });
-            listenTo("primaryIssueType",()=>{
-              updateValue([]);
-            });
-
-            function updateValue(value) {
-              if(typeof value === "string"){
-                try {
-                  value = parse(value);
-                } catch(e) {
-                  value = [];
-                }
-              } else if(!value){
-                value = [];
-              }
-                
-              updateUrlParam("timingCalculations", stringify(value), stringify([]));
-
-              currentValue = value;
-              resolve(currentValue);
-            }
-
-            function parse(value){
-              return value.split(",").map( piece => {
-                const parts = piece.split(":");
-                return {type: parts[0], calculation: parts[1]};
-              }).flat()
-            }
-            function stringify(array){
-              return array.map( (obj) => obj.type+":"+obj.calculation).join(",")
-            }
-
-          }
-        },
-        get firstIssueTypeWithStatuses(){
-          if(this.primaryIssueType !== "Release") {
-            return this.primaryIssueType;
-          }
-          if(!this.issueHierarchy) {
-            return undefined;
-          }
-          const calculations= getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations);
-          if(!calculations.length) {
-            return undefined;
-          }
-          if(calculations[0].type !== "Release") {
-            return calculations[0].type;
-          } else {
-            return calculations[1].type;
-          }
-        },
+        
+        
 
         // [ {type: "Initiative", types: [{type: "Epic", selected}, ...], calculations: [{calculation: "parentOnly", name, selected}]} ]
-        get timingLevels(){
-          if(!this.issueHierarchy) {
-            return [];
-          }
-          const issueTypeMap = this.issueHierarchy.typeToIssueType;
-          const primaryType = issueTypeMap[this.primaryIssueType];
-          if(!primaryType) {
-            return [];
-          }
-          let currentType = this.primaryIssueType;
-          
-          let childrenCalculations = primaryType.timingCalculations;
-          const timingLevels = [];
-          const setCalculations = [...this.timingCalculations];
-          
-          
-          while(childrenCalculations.length) {
-            // this is the calculation that should be selected for that level
-            let setLevelCalculation = setCalculations.shift() || 
-              {
-                type: childrenCalculations[0].child, 
-                calculation: childrenCalculations[0].calculations[0].calculation
-              };
-            let selected = childrenCalculations.find( calculation => setLevelCalculation.type === calculation.child);
-
-            let timingLevel = {
-              type: currentType,
-              types: childrenCalculations.map( calculationsForType => {
-                return {
-                  type: calculationsForType.child,
-                  selected: setLevelCalculation?.type === calculationsForType.child
-                }
-              } ),
-              calculations: selected.calculations.map( (calculation)=> {
-                return {
-                  ...calculation,
-                  selected: calculation.calculation === setLevelCalculation.calculation
-                }
-              })
+        get cvsIssuesPromise(){
+            if(this.loginComponent.isLoggedIn === false) {
+              return bitoviTrainingData(new Date());
+            } else {
+              if( this.derivedIssuesRequestData?.issuesPromise ) {
+                  return this.derivedIssuesRequestData.issuesPromise.then((issues)=>{
+                      return issues.map(derivedToCSVFormat);
+                  })
+              }
             }
-            timingLevels.push(timingLevel);
-            currentType = setLevelCalculation.type;
-            childrenCalculations = issueTypeMap[setLevelCalculation.type].timingCalculations;
-          }
-          return timingLevels;
+        },
+        csvIssues: {
+            async() {
+                return this.cvsIssuesPromise;
+            }
+        },
+        derivedIssues: {
+            async(resolve){
+                this.derivedIssuesRequestData?.issuesPromise.then(resolve)
+            }
         }
     };
 
-    updateCalculationType(index, value){
     
-      const copyCalculations = [
-        ...getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations) 
-      ].slice(0,index+1);
-
-      copyCalculations[index].type = value;
-      this.timingCalculations = copyCalculations;
-    }
-
-    updateCalculation(index, value){
-    
-      const copyCalculations = [
-        ...getImpliedTimingCalculations(this.primaryIssueType, this.issueHierarchy.typeToIssueType, this.timingCalculations) 
-      ].slice(0,index+1);
-
-      copyCalculations[index].calculation = value;
-      this.timingCalculations = copyCalculations;
-    }
 
     // hooks
     async connected() {
       updateFullishHeightSection();
     }
-    get serverInfoPromise(){
-      return this.jiraHelpers.getServerInfo();
-    }
-    get rawIssuesPromise(){
 
-      if(this.loginComponent.isLoggedIn === false || !this.jql) {
-        return;
-      }
-      this.progressData = null;
-
-      const loadIssues = this.loadChildren ? 
-        this.jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(this.jiraHelpers) :
-        this.jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(this.jiraHelpers);
-      
-      return loadIssues({
-          jql: this.jql,
-          fields: ["summary",
-              "Rank",
-              "Start date",
-              "Due date",
-              "Issue Type",
-              "Fix versions",
-              "Story points",
-              //"Story Points", // This does not match a field returned by Jira but afraid to change at the moment.
-              "Story points median",
-              "Confidence",
-              "Story points confidence",
-              "Product Target Release", PARENT_LINK_KEY, LABELS_KEY, STATUS_KEY, "Sprint", "Epic Link", "Created","Parent"],
-          expand: ["changelog"]
-      }, (progressData)=> {
-        this.progressData = {...progressData};
-      }).then((rawIssues)=>{
-        if( /*localStorage.getItem("percentComplete")*/ true  ) {
-          setTimeout(()=>{
-            console.log("percentComplete", percentComplete(rawIssues) );
-          },13);
-        }
-        return rawIssues;
-      });
-    }
-    get cvsIssuesPromise(){
-      if(this.loginComponent.isLoggedIn === false) {
-        return bitoviTrainingData(new Date());
-      }
-      
-      if (this.jql) {
-        
-        
-        const serverInfoPromise = this.serverInfoPromise;
-        const issuesPromise = this.rawIssuesPromise;
-
-        return Promise.all([
-            issuesPromise, serverInfoPromise
-        ]).then(([issues, serverInfo]) => {
-            
-          
-            
-
-          const formatted = rawIssuesToBaseIssueFormat(issues, serverInfo);
-          return formatted;
-        })
-     }
-    }
-    get teams() {
-        if (!this.rawIssues) {
-            return new Set();
-        }
-        return new Set(this.rawIssues.map(issue => issue["Project key"]));
-    }
-    get statuses(){
-      if(!this.rawIssues) {
-        return []
-      }
-      const statuses = new Set();
-      for( let issue of this.rawIssues) {
-        statuses.add(issue.Status);
-      }
-      return [...statuses].sort( (s1, s2)=> {
-        return s1 > s2 ? 1 : -1;
-      });
-    }
-    get teamKeyToCharacters() {
-        if (!this.teams) {
-            return [];
-        }
-        const names = this.teams;
-        return characterNamer(names);
-    }
-    get issuesMappedByParentKey() {
-        if (!this.rawIssues) {
-            return {};
-        }
-        const map = {};
-        for (const issue of this.rawIssues) {
-            const parentKeyValue = issue[PARENT_LINK_KEY] || issue["Epic Link"];
-            if ( parentKeyValue ) {
-              if (!map[parentKeyValue]) {
-                  map[parentKeyValue] = []
-              }
-              map[parentKeyValue].push(issue);
-            }
-        }
-        return map;
-    }
+    
+    
     get releasesAndInitiativesWithPriorTiming(){
-      if(!this.rawIssues || !this.issueHierarchy) {
+      if(!this.csvIssues || ! this.timingCalculationMethods) {
         return {releases: [], initiatives: []}
       }
+
       // Remove initiatives with certain statuses
       let initiativeStatusesToRemove = this.statusesToRemove;
       let initiativeStatusesToShow =  this.statusesToShow;
 
       const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
-      const timingMethods = getImpliedTimingCalculations(
-        this.primaryIssueType, 
-        this.issueHierarchy.typeToIssueType, 
-        this.timingCalculations).map( (calc) => calc.calculation)
+      const timingMethods = this.timingCalculationMethods;
+
+
       if(this.primaryIssueType === "Release") {
         timingMethods.shift();
       }
 
       const optionsForType = {
-        baseIssues: this.rawIssues,
+        baseIssues: this.csvIssues,
         priorTime: new Date( new Date().getTime() - this.compareToTime.timePrior),
         reportedStatuses: function(status){
           if(initiativeStatusesToShow && initiativeStatusesToShow.length) {
@@ -780,7 +297,7 @@ export class TimelineReport extends StacheElement {
         reportedIssueType,
         timingMethods
       }
-
+      
       const {releases, initiatives} = releasesAndInitiativesWithPriorTiming(optionsForType);
 
       function startBeforeDue(initiative) {
@@ -819,7 +336,7 @@ export class TimelineReport extends StacheElement {
         }
     }
     get releases() {
-        if (!this.rawIssues) {
+        if (!this.csvIssues) {
             return undefined;
         }
         const data = this.sortedIncompleteReleasesInitiativesAndEpics;
@@ -833,38 +350,17 @@ export class TimelineReport extends StacheElement {
       }
     }
     get planningIssues(){
-      if(!this.rawIssues) {
+      if(!this.csvIssues) {
         return []
       }
       const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
-      return getIssuesOfTypeAndStatus(this.rawIssues, reportedIssueType, this.planningStatuses || []);
-    }
-    prettyDate(date) {
-        return date ? dateFormatter.format(date) : "";
-    }
-    paddingClass(depth) {
-      return "pl-"+(depth * 2);
+      return getIssuesOfTypeAndStatus(this.csvIssues, reportedIssueType, this.planningStatuses || []);
     }
 
-    initiativeTeams(initiative) {
-        return [...new Set(initiative.team.issues.map(issue => issue["Project key"]))];
-    }
     showDebug(open) {
       this.showingDebugPanel = open;
     }
 
-    /*teamWork(work) {
-        const teamToWork = {};
-        issues.forEach( issue => {
-            let teamKey = issue["Project key"]
-            if(!teamToWork[teamKey]) {
-                teamToWork[teamKey] = 0
-            }
-            //teamToWork[teamKey] +=
-        }) )
-        const teams = [...new Set( work.issues.map( issue => issue["Project key"]) ) ];
-
-    }*/
     toggleConfiguration() {
       this.showingConfiguration = ! this.showingConfiguration;
       const width = document.getElementById("configuration").clientWidth;
@@ -878,17 +374,13 @@ export class TimelineReport extends StacheElement {
 customElements.define("timeline-report", TimelineReport);
 
 
-
-function filterByIssueType(issues, issueType) {
-    return issues.filter(issue => issue[ISSUE_TYPE_KEY] === issueType)
-}
-
 function getIssuesOfTypeAndStatus(issues, type, statuses){
   return issues.filter( (issue)=>{
     return issue["Issue Type"] === type && statuses.includes(issue.Status)
   })
 }
 
+/*
 function goodStuffFromIssue(issue) {
     return {
         Summary: issue.Summary,
@@ -918,34 +410,10 @@ function mapReleasesToIssues(issues, getReleaseValue) {
         map[release].push(issue);
     })
     return map;
-}
+}*/
 
 
 
-
-function makeIssueMap(issues) {
-    if (typeof issues === "object" && !Array.isArray(issues)) {
-        return issues;
-    }
-    const map = {};
-    issues.forEach(i => {
-        map[i[ISSUE_KEY]] = i;
-    })
-    return map;
-}
-
-function getChildrenOf(issue, issuesOrIssueMap) {
-    const children = [];
-    const issueMap = makeIssueMap(issuesOrIssueMap);
-
-    for (let issueKey in issueMap) {
-        let possibleChild = issueMap[issueKey];
-        if (possibleChild[PARENT_LINK_KEY] === issue[ISSUE_KEY]) {
-            children.push(possibleChild);
-        }
-    }
-    return children;
-}
 
 
 function getChildWorkBreakdown(children = []) {
@@ -1005,19 +473,6 @@ function updateFullishHeightSection() {
 window.addEventListener('load', updateFullishHeightSection);
 window.addEventListener('resize', updateFullishHeightSection);
 
-const typesToHierarchyLevel = {Epic: 1, Story: 0, Initiative: 2}
-function normalizeCSVIssues(cvsIssues) {
-  const res = cvsIssues.map( (issue)=> {
-    return {
-      ...issue,
-      fields: {
-        ...issue,
-        "Parent Link": {data: issue["Parent Link"]},
-        "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]}
-      },
-      key: issue["Issue key"]
-    }
-  });
-  return normalizeAndDeriveIssues(res)
-}
+
+
 

@@ -1,6 +1,7 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject, stache } from "./can.js";
-import { showTooltip } from "./issue-tooltip.js";
+import { showTooltip, showTooltipContent } from "./issue-tooltip.js";
+import { percentComplete } from "./percent-complete/percent-complete.js";
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
@@ -17,51 +18,148 @@ import SimpleTooltip from "./shared/simple-tooltip.js";
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);*/
 
+
+const percentCompleteTooltip = stache(`
+    <button class="remove-button">❌</button>
+    <div class="grid gap-2" style="grid-template-columns: auto repeat(4, auto);">
+
+            <div class="font-bold">Summary</div>
+            <div class="font-bold">Percent Complete</div>
+            <div class="font-bold">Completed Working Days</div>
+            <div class="font-bold">Remaining Working Days</div>
+            <div class="font-bold">Total Working Days</div>
+        
+            <div class="truncate max-w-96">{{this.issue.Summary}}</div>
+            <div class="text-right">{{this.getPercentComplete(this.issue)}}</div>
+            <div class="text-right">{{this.round( this.issue.completionRollup.completedWorkingDays) }}</div>
+            <div class="text-right">{{this.round(this.issue.completionRollup.remainingWorkingDays)}}</div>
+            <div class="text-right">{{this.round(this.issue.completionRollup.totalWorkingDays)}}</div>
+        
+        {{# for(child of this.children) }}
+       
+            <div class="pl-4 truncate max-w-96"><a href="{{child.url}}" class="link">{{child.summary}}</a></div>
+            <div class="text-right">{{this.getPercentComplete(child)}}</div>
+            <div class="text-right">{{this.round(child.completionRollup.completedWorkingDays)}}</div>
+            <div class="text-right">{{this.round(child.completionRollup.remainingWorkingDays)}}</div>
+            <div class="text-right">{{this.round(child.completionRollup.totalWorkingDays)}}</div>
+       
+        {{/ for }}
+   </div>
+`)
+
 import { rollupDatesFromRollups } from "./prepare-issues/date-data.js";
 import { getQuartersAndMonths } from "./quarter-timeline.js";
 // loops through and creates 
 export class GanttGrid extends StacheElement {
     static view = `
-        <div style="display: grid; grid-template-columns: auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.issues.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.issues.length}}, auto)"
             class='p-2 mb-10'>
-            <div></div>
+            <div></div><div></div>
 
             {{# for(quarter of this.quartersAndMonths.quarters) }}
                 <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
             {{ / for }}
 
-            <div></div>
+            <div></div><div></div>
             {{# for(month of this.quartersAndMonths.months)}}
                 <div class='border-b border-neutral-80 text-center'>{{month.name}}</div>
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 2 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.issues.length}};">
+            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.issues.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 2) }}; grid-row: 3 / span {{this.issues.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.issues.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
-            {{# for(issue of this.issues) }}
+            {{# for(issue of this.issuesWithPercentComplete) }}
                 <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer p-1 color-text-and-bg-{{issue.dateData.rollup.status}} border-y-solid-1px-white'>
+                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.dateData.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                     {{issue.Summary}}
+                </div>
+                <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
+                    on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
                 </div>
                 {{ this.getReleaseTimeline(issue, scope.index) }}
             {{/ for }}
         </div>
     `;
     static props = {
-        breakdown: Boolean
+        breakdown: Boolean,
+        showPercentComplete: {
+            get default(){
+                return !!localStorage.getItem("showPercentComplete")
+            }
+        }
     };
-    showTooltip(event, isssue) {
-        showTooltip(event.currentTarget, isssue);
+    get percentComplete(){
+        if(this.derivedIssues) {
+            return percentComplete(this.derivedIssues);
+        }
+    }
+    get issuesWithPercentComplete(){
+        if(this.showPercentComplete && this.percentComplete) {
+            const percentComplete = this.percentComplete;
+            const idToIssue = {};
+            for(const issue of percentComplete.issues) {
+                issue.completionRollup.totalWorkingDays
+                idToIssue[issue.key] = issue;
+            }
+            return this.issues.map( issue => {
+                return {
+                    ...issue,
+                    completionRollup: idToIssue[issue["Issue key"]].completionRollup
+                }
+            })
+        } else {
+            return this.issues;
+        }
+    }
+    get lotsOfIssues(){
+        return this.issues.length > 20 && ! this.breakdown;
+    }
+    get textSize(){
+        return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1"
+    }
+    get bigBarSize(){
+        return this.lotsOfIssues ? "h-4" : "h-6"
+    }
+    getPercentComplete(issue) {
+        if(this.showPercentComplete && this.percentComplete) {
+            return Math.round( issue.completionRollup.completedWorkingDays * 100 / issue.completionRollup.totalWorkingDays )+"%"
+        } else {
+            return "";
+        }
+    }
+    showTooltip(event, issue) {
+        showTooltip(event.currentTarget, issue);
+    }
+    showPercentCompleteTooltip(event, issue) {
+        // we should get all the children ...
+        const keyToChildren = Object.groupBy(this.percentComplete.issues, i => i.parentKey) 
+        const children = keyToChildren[issue["Issue key"]];
+
+        showTooltipContent(event.currentTarget, percentCompleteTooltip(
+            {   issue, 
+                children,
+                getPercentComplete: this.getPercentComplete.bind(this),
+                round: Math.round
+            }));
+    }
+    classForSpecialStatus(status){
+        if( status === "complete") {
+            return "color-text-"+status;
+        } else if(status === "blocked" ) {
+            return "color-text-"+status;
+        } else {
+            return "";
+        }
     }
     plus(first, second) {
         return first + second;
@@ -87,7 +185,7 @@ export class GanttGrid extends StacheElement {
     }
     getReleaseTimeline(release, index){
         const base = {
-            gridColumn: '2 / span '+this.quartersAndMonths.months.length,
+            gridColumn: '3 / span '+this.quartersAndMonths.months.length,
             gridRow: `${index+3}`,
         };
 
@@ -213,11 +311,11 @@ export class GanttGrid extends StacheElement {
                 } else {
 
                     const behindTime = makeLastPeriodElement(release.dateData.rollup.status, release.dateData.rollup.lastPeriod);
-                    behindTime.classList.add("h-6","py-1")
+                    behindTime.classList.add(this.bigBarSize,"py-1")
                     lastPeriodRoot.appendChild(behindTime);
 
                     const team = document.createElement("div");
-                    team.className = "h-6 border-y-solid-1px-white color-text-and-bg-"+release.dateData.rollup.status;
+                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.dateData.rollup.status;
                     Object.assign(team.style, getPositions(release.dateData.rollup).style);
                     team.style.opacity = "0.9";
                     

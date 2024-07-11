@@ -1,5 +1,5 @@
 import { parseDate8601String } from "../../date-helpers.js";
-import { getBusinessDatesCount } from "../../status-helpers.js";
+import { getBusinessDatesCount, getStatusCategoryDefault } from "../../status-helpers.js";
 import { estimateExtraPoints, sampleExtraPoints } from "../confidence.js";
 import { DAY_IN_MS } from "../../date-helpers.js";
 import { parseDateISOString } from "../../date-helpers.js";
@@ -40,7 +40,7 @@ export function getDueDateDefault({ fields }) {
  * @returns {number}
  */
 export function getHierarchyLevelDefault({ fields }) {
-  return fields["Issue Type"].hierarchyLevel;
+  return fields["Issue Type"]?.hierarchyLevel;
 }
 
 /**
@@ -56,7 +56,7 @@ export function getIssueKeyDefault({ key }) {
  * @returns {string | void}
  */
 export function getParentKeyDefault({ fields }) {
-  return fields["Parent"]?.key || fields["Parent Link"].data?.key;
+  return fields["Parent"]?.key || fields["Parent Link"]?.data?.key;
 }
 
 /**
@@ -112,7 +112,7 @@ export function getTeamKeyDefault({key}) {
  * @returns {string}
  */
 export function getTypeDefault({ fields }) {
-  return fields["Issue Type"].name;
+  return fields["Issue Type"]?.name;
 }
 
 /**
@@ -138,6 +138,12 @@ export function getSprintsDefault({fields}){
   } else {
     return  null;
   }
+}
+export function getStatusDefault({fields}) {
+  return fields?.Status?.name;
+}
+export function getLabelsDefault({fields}) {
+  return fields?.labels || []
 }
 
 /**
@@ -187,7 +193,9 @@ export function normalizeIssue( issue, {
   getVelocity = getVelocityDefault,
   getDaysPerSprint = getDaysPerSprintDefault,
   getParallelWorkLimit = getParallelWorkLimitDefault,
-  getSprints = getSprintsDefault
+  getSprints = getSprintsDefault,
+  getStatus = getStatusDefault,
+  getLabels = getLabelsDefault
 } = {}){
     const teamName = getTeamKey(issue),
       velocity = getVelocity(teamName),
@@ -216,6 +224,8 @@ export function normalizeIssue( issue, {
         pointsPerDayPerTrack
       },
       url: getUrl(issue),
+      status: getStatus(issue),
+      labels: getLabels(issue),
       issue
     };
     return data;
@@ -223,6 +233,7 @@ export function normalizeIssue( issue, {
 /**
  * @typedef {{
 *  key: string,
+*  summary: string,
 *  parentKey: string | null,
 *  confidence: number | null,
 *  dueDate: Date,
@@ -233,7 +244,10 @@ export function normalizeIssue( issue, {
 *  type: string,
 *  team: NormalizedTeam,
 *  url: string,
-*  sprints: null | Array<NormalizedSprint>
+*  sprints: null | Array<NormalizedSprint>,
+*  status: null | string,
+*  issue: JiraIssue,
+*  labels: Array<string>
 * }} NormalizedIssue
 */
 
@@ -255,6 +269,7 @@ export function normalizeIssue( issue, {
 * isStoryPointsValid: boolean,
 * defaultOrStoryPoints: number,
 * storyPointsDaysOfWork: number,
+* deterministicTotalPoints: number,
 * isStoryPointsMedianValid: boolean,
 * defaultOrStoryPointsMedian: number,
 * storyPointsMedianDaysOfWork: number,
@@ -270,10 +285,21 @@ export function normalizeIssue( issue, {
 * defaultOrTotalDaysOfWork: number | null,
 * completedDaysOfWork: number,
 * startData: import("./date-data.js").StartData,
-* dueData: import("./date-data.js").DueData
+* dueData: import("./date-data.js").DueData,
+* statusType: string,
+* workType: string
 * }} DerivedWork
  */
 
+
+/**
+ * Returns all status names
+ * @param {Array<DerivedWorkIssue>} issues 
+ */
+export function allStatusesSorted(issues) {
+  const statuses = issues.map( issue => issue.status);
+  return [...new Set( statuses ) ].sort();
+}
 
 /**
  * @typedef {NormalizedIssue & {
@@ -297,6 +323,9 @@ export function normalizeAndDeriveIssues(issues) {
 export function derivedWorkIssue(normalizedIssue, {
   getDefaultConfidence = getDefaultConfidenceDefault, 
   getDefaultStoryPoints = getDefaultStoryPointsDefault, 
+  getStatusType = getStatusCategoryDefault,
+  getWorkType = getWorkTypeDefault,
+  
   uncertaintyWeight = 80
 } = {}){
 
@@ -342,7 +371,7 @@ export function derivedWorkIssue(normalizedIssue, {
 
   const defaultOrTotalDaysOfWork = totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
 
-  const completedDaysOfWork = getSelfCompletedDays(startData, dueData);
+  const completedDaysOfWork = getSelfCompletedDays(startData, dueData, totalDaysOfWork);
 
   return {
     ...normalizedIssue,
@@ -381,8 +410,44 @@ export function derivedWorkIssue(normalizedIssue, {
 
       totalDaysOfWork,
       defaultOrTotalDaysOfWork,
-      completedDaysOfWork
+      completedDaysOfWork,
+      ...getWorkStatus(normalizedIssue, {getStatusType,getWorkTypeDefault})
     }
+  }
+}
+
+const workType = ["dev","qa","uat","design"];
+const workPrefix = workType.map( wt => wt+":")
+/**
+ * @param {NormalizedIssue} normalizedIssue 
+ * @returns {String} dev, qa, uat, design
+ */
+function getWorkTypeDefault(normalizedIssue){
+  
+  let wp = workPrefix.find( wp => normalizedIssue.summary.indexOf(wp) === 0);
+  if(wp) {
+    return wp.slice(0, -1)
+  }
+  wp = workType.find( wt => normalizedIssue.labels.includes(wt));
+  if(wp) {
+    return wp;
+  }
+  return "dev";
+}
+
+/**
+ * 
+ * @param {NormalizedIssue} normalizedIssue 
+ */
+export function getWorkStatus(
+  normalizedIssue, 
+  {
+    getStatusType = getStatusCategoryDefault,
+    getWorkType = getWorkTypeDefault
+  }){
+  return {
+    statusType: getStatusType(normalizedIssue),
+    workType: getWorkType(normalizedIssue)
   }
 }
 
@@ -401,7 +466,7 @@ export function isStoryPointsValueValid(value){
  * @param {import("./date-data.js").DueData} dueData
  * @returns number
  */
-function getSelfCompletedDays(startData, dueData) {
+function getSelfCompletedDays(startData, dueData, daysOfWork) {
   // These are cases where the child issue (Epic) has a valid estimation
 
   if(startData && startData.start < new Date() ) {
@@ -410,10 +475,35 @@ function getSelfCompletedDays(startData, dueData) {
     } else {
       return getBusinessDatesCount( startData.start, dueData.due )
     }
+  } 
+  // if there's an end date in the past ... 
+  else if(dueData && dueData.due < new Date()) {
+    return daysOfWork || 0;
   } else {
     return 0;
   }
 }
+
+/**
+ * 
+ * @param {DerivedWorkIssue} derivedIssue
+ */
+export function derivedToCSVFormat(derivedIssue) {
+  return  {
+    ...derivedIssue.issue.fields,
+    changelog: derivedIssue.issue.changelog,
+    "Project key": derivedIssue.team.name,
+    "Issue key": derivedIssue.key,
+    url: derivedIssue.url,
+    "Issue Type": derivedIssue.type,
+    "Parent Link": derivedIssue.parentKey,
+    "Status": derivedIssue.status,
+    workType: derivedIssue.derivedWork.workType,
+    workingBusinessDays: derivedIssue.derivedWork.totalDaysOfWork,
+    weightedEstimate: derivedIssue.derivedWork.deterministicTotalPoints
+  }
+}
+
 
 
 export function rollupHierarchy(derivedWorkIssues, {

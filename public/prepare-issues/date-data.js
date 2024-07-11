@@ -255,6 +255,57 @@ function issueHierarchy(normalizedIssues){
  * @param {import("../shared/issue-data/issue-data.js").NormalizedIssue} normalizedIssues 
  * @returns {Array<IssueDateRollupObject> & {typeToIssueType: IssueDateRollupObject}}
  */
+
+export function allTimingCalculationOptions(normalizedIssues){
+    const hierarchy = issueHierarchy(normalizedIssues).reverse();
+
+    const issueOnlyHierarchy = hierarchy.map( ({type, hierarchyLevel}, index) => {
+        // if the last thing
+        if(!hierarchy[index+1]) {
+            return {type, hierarchyLevel, plural: type+"s", children: [], availableTimingCalculations: ["parentOnly"]}
+        } else {
+            return {type, hierarchyLevel, plural: type+"s", children: [hierarchy[index+1].type], availableTimingCalculations: "*"}
+        }
+    })
+
+    const base = [
+        { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
+        ...issueOnlyHierarchy
+    ]
+
+    // the base object
+    const typeToIssueType = {};
+    for(const issueType of base) {
+      typeToIssueType[issueType.type] = issueType;
+    }
+  
+    const allCalculations = Object.keys( calculationKeysToNames );
+    for(const issueType of base) {
+        // add the denormalized children, so they can be references back to the original object
+      issueType.denormalizedChildren = issueType.children.map( typeName => typeToIssueType[typeName]);
+      const calcNames = issueType.availableTimingCalculations === "*" ? allCalculations : issueType.availableTimingCalculations;
+      
+      const childToTimingMap = {};
+      issueType.timingCalculations = [];
+
+      for(let issueTypeName of issueType.children){
+        // for each child issue, create a map of each type
+        childToTimingMap[issueTypeName] = calcNames.map((calculationName)=> {
+          return {
+              child: issueTypeName, parent: issueType.type, 
+              calculation: calculationName, name: calculationKeysToNames[calculationName](issueType, typeToIssueType[issueTypeName]) }
+        });
+        // an array of what's above
+        issueType.timingCalculations.push({child: issueTypeName, calculations: childToTimingMap[issueTypeName]});
+      }
+      issueType.timingCalculationsMap = childToTimingMap;
+    }
+    return {
+        list: base,
+        map: typeToIssueType
+    };
+}
+
 export function denormalizedIssueHierarchy(normalizedIssues){
     const hierarchy = issueHierarchy(normalizedIssues).reverse();
 

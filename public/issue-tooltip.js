@@ -37,6 +37,17 @@ export function wasStartDate(release) {
     }
 }
 
+
+export function showTooltipContent(element, content) {
+
+    TOOLTIP.belowElementInScrollingContainer(element, content);
+
+    TOOLTIP.querySelector(".remove-button").onclick = ()=> {
+        showingObject = null;
+        TOOLTIP.leftElement()
+    }
+}
+
 export function showTooltip(element, issue){
     console.log(issue);
     if(showingObject === issue) {
@@ -150,16 +161,7 @@ export function showTooltip(element, issue){
         </div>`
     }
    
-
-    
-   
-
-    TOOLTIP.belowElementInScrollingContainer(element, DOM);
-
-    TOOLTIP.querySelector(".remove-button").onclick = ()=> {
-        showingObject = null;
-        TOOLTIP.leftElement()
-    }
+    showTooltipContent(element, DOM);
 
 }
 
