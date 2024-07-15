@@ -134,32 +134,7 @@ To label epics as part of an initiative's QA or UAT timing, add a `Label` that i
 
 ## Contributing
 
-Clone the application into your local machine.
-
-```sh
-git clone https://github.com/bitovi/jira-integrations.git
-cd jira-integrations
-```
-
-### Getting Environment Variables
-
-The next step is to fill in your environment variables. You can use the .env.example to create your .env in your root folder
-
-```sh
-cp .env.example .env
-```
-
-Your environment variables can be gotten from Jira following the steps below
-
-- Open Jira developer console. https://developer.atlassian.com
-- Navigate to the developer console, it can be found on the top right corner of the screen.
-- Create your app and choose OAuth2.0, put in the app name and accept the terms.
-- Click Permissions, add the Jira API scope then configure it. Ensure to include the scopes you want and save.
-- Click Authorization, input the callback url, as default for this application locally, use `http://localhost:3000` (be sure to match the PORT in the server if you changed it) and save.
-- Find Settings and scroll down to copy your CLIENT_ID and CLIENT_SECRET.
-- The CLIENT_JIRA_API_URL is `https://api.atlassian.com`.
-
-Note: All environment variables that start with `CLIENT` will be sent to the client side and exposed.
+See [a relative link](CONTRIBUTING.md)
 
 ### Navigating the Files
 
