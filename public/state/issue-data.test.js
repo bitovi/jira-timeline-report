@@ -95,7 +95,7 @@ test("derivedIssuesRequestData", async function(assert){
     })
     
 
-    expect(derivedIssuesData.value.issuesPromise.__isAlwaysPending).toBe(true);
+    expect(derivedIssuesData.value.issuesPromise.__isAlwaysPending).toBe(false);
     
     configurationPromise.value = {
         getConfidence({fields}){
