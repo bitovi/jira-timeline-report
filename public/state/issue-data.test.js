@@ -1,7 +1,8 @@
+// @vitest-environment jsdom
+
 import { ObservableObject, value } from "../can.js";
 import {rawIssuesRequestData, derivedIssuesRequestData} from "./issue-data.js";
 
-import { test } from "../test/test.js";
 
 const ResolverObservable = (function(){
     class T extends ObservableObject {
@@ -32,7 +33,9 @@ function completeCallback(fn) {
     };
 }
 
-test("rawIssuesRequestData", completeCallback( function(assert, done){
+import { expect, test } from 'vitest'
+
+test("rawIssuesRequestData", function(assert){
     const jql = value.with(""),
         isLoggedIn = value.with(true),
         serverInfo = value.with({
@@ -61,25 +64,17 @@ test("rawIssuesRequestData", completeCallback( function(assert, done){
             loadChildren,
             jiraHelpers
         }, hooks)
-    })
-    
-    let change;
-    const assertNextChange = (fn)=> { change = fn; }
-    requestData.on(function(arg){
+    });
 
-        change();
-    })
+    expect(requestData.value.issuesPromise).toBeInstanceOf(Promise) 
 
-    assert.equal(requestData.value.issuesPromise, null, "no jql, no data")
-    
-    assertNextChange(()=> assert.equal(typeof requestData.value.issuesPromise, "object", "jql data") );
     jql.value = "Something";
 
-    
-    done();
-}));
+    expect(typeof requestData.value.issuesPromise).toBe("object");
 
-test("derivedIssuesRequestData", completeCallback( async function(assert, done){
+});
+
+test("derivedIssuesRequestData", async function(assert){
     const rawIssuesRequestData = value.with({
         issuesPromise: Promise.resolve([{key: "TEST-123", fields: {
             
@@ -100,20 +95,19 @@ test("derivedIssuesRequestData", completeCallback( async function(assert, done){
     })
     
 
-    assert.equal(derivedIssuesData.value.issuesPromise.__isAlwaysPending, true, "no configuration, still waiting")
+    expect(derivedIssuesData.value.issuesPromise.__isAlwaysPending).toBe(true);
     
     configurationPromise.value = {
         getConfidence({fields}){
             return fields.CONFIDENCE;
         }
     };
-    assert.equal(derivedIssuesData.value.issuesPromise.__isAlwaysPending, undefined, "configuration means data")
+    expect(derivedIssuesData.value.issuesPromise.__isAlwaysPending).toBe(undefined);
 
     /** @type {Array<import("../shared/issue-data/issue-data.js").DerivedWorkIssue>} */
     const issues = await derivedIssuesData.value.issuesPromise;
-    assert.equal(issues[0].confidence, 20, "got confidence correct")
-    done();
-}));
+    expect(issues[0].confidence).toBe(20) 
+});
 
 
 

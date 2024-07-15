@@ -424,7 +424,7 @@ const workPrefix = workType.map( wt => wt+":")
  */
 function getWorkTypeDefault(normalizedIssue){
   
-  let wp = workPrefix.find( wp => normalizedIssue.summary.indexOf(wp) === 0);
+  let wp = workPrefix.find( wp => normalizedIssue?.summary?.indexOf(wp) === 0);
   if(wp) {
     return wp.slice(0, -1)
   }
