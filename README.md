@@ -134,7 +134,7 @@ To label epics as part of an initiative's QA or UAT timing, add a `Label` that i
 
 ## Contributing
 
-See [a relative link](CONTRIBUTING.md)
+See [Contributing](CONTRIBUTING.md)
 
 ### Navigating the Files
 
