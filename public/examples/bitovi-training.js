@@ -6,10 +6,18 @@ const DAY = 1000 * 60 * 60 * 24;
 
 let PROMISE = null;
 
+const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
+
+
 export default function bitoviTrainingData(dateToShift){
     if(PROMISE === null) {
-        PROMISE = nativeFetchJSON("./examples/bitovi-training.json")
-        .then(function(data){
+        if(isNode) {
+            PROMISE = Promise.resolve([{}])
+        } else {
+            PROMISE = nativeFetchJSON("./examples/bitovi-training.json")
+        }
+
+        PROMISE.then(function(data){
             const daysShift = Math.round( (dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY )-0
             return adjustDateStrings(data, daysShift);
         });

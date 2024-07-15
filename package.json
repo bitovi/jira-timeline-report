@@ -6,8 +6,9 @@
   "scripts": {
     "start-local": "node server/server.js",
     "fe:css:build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --watch --minify",
+    "fe:js:build:dev": "BUILD_MINIFY=NO rollup -c -w --sourcemap",
     "fe:js:build": "rollup -c -w --sourcemap",
-    "test": "./node_modules/.bin/vitest --environment=jsdom"
+    "test": "./node_modules/.bin/vitest"
   },
   "keywords": [],
   "author": "",
@@ -21,8 +22,11 @@
     "oauth": "^0.10.0"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "jsdom": "^24.1.0",
+    "jstat": "^1.9.6",
     "live-server": "^1.2.2",
     "rollup": "^4.5.1",
     "rollup-plugin-delete": "^2.0.0",

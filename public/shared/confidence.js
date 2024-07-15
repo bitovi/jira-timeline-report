@@ -1,4 +1,4 @@
-import jStat from "./jstat.js";
+import { jStat } from 'jstat';
 
 function toStandardDeviations({
 	confidence,
