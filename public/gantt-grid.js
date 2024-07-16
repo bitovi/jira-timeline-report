@@ -112,9 +112,10 @@ export class GanttGrid extends StacheElement {
                 idToIssue[issue.key] = issue;
             }
             return this.issues.map( issue => {
+                const issueData = idToIssue[issue["Issue key"]];
                 return {
                     ...issue,
-                    completionRollup: idToIssue[issue["Issue key"]].completionRollup
+                    completionRollup: issueData ? issueData.completionRollup  : {}
                 }
             })
         } else {

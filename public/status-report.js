@@ -13,7 +13,7 @@ export class StatusReport extends StacheElement {
     static view = `
     <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex gap-2'>
         {{# for(primaryIssue of this.primaryIssues) }}
-            <div class='release_box shrink'>
+            <div class='release_box grow'>
                 <div 
                     on:click='this.showTooltip(scope.event, primaryIssue)'
                     class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}} rounded-t {{this.fontSize(0)}}">
