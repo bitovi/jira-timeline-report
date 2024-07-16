@@ -146,6 +146,13 @@ export function getLabelsDefault({fields}) {
   return fields?.labels || []
 }
 
+export function getReleasesDefault ({fields}) {
+  return (fields["Fix versions"] || []).map( ({name, id})=> {
+    return {name, id}
+  });
+}
+
+
 /**
  * @typedef {{
  * fields: {
@@ -195,7 +202,8 @@ export function normalizeIssue( issue, {
   getParallelWorkLimit = getParallelWorkLimitDefault,
   getSprints = getSprintsDefault,
   getStatus = getStatusDefault,
-  getLabels = getLabelsDefault
+  getLabels = getLabelsDefault,
+  getReleases = getReleasesDefault
 } = {}){
     const teamName = getTeamKey(issue),
       velocity = getVelocity(teamName),
@@ -226,6 +234,7 @@ export function normalizeIssue( issue, {
       url: getUrl(issue),
       status: getStatus(issue),
       labels: getLabels(issue),
+      releases: getReleases(issue),
       issue
     };
     return data;
