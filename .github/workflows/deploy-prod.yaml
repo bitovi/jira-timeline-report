@@ -1,0 +1,63 @@
+name: Deploy Prod
+
+on:
+  release:
+    types: [published, created, edited]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  EC2-Deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name }}
+      url: ${{ steps.deploy.outputs.vm_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check if release is latest
+        id: check_latest
+        run: |
+          latest_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
+          current_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.release.tag_name }})
+
+          if [ "$(echo $current_release | jq -r '.id')" == "$(echo $latest_release | jq -r '.id')" ]; then
+            echo "This release is the latest."
+            echo "::set-output name=is_latest::true"
+          else
+            echo "This release is not the latest."
+            echo "::set-output name=is_latest::false"
+          fi
+
+      - name: Notify if not latest
+        if: steps.check_latest.outputs.is_latest == 'false'
+        run: |
+          echo "This release is not marked as the latest. No pipeline run."
+
+      - id: deploy
+        if: steps.check_latest.outputs.is_latest == 'true'
+        name: Deploy
+        uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.1
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
+          aws_default_region: us-east-1
+  
+          tf_state_bucket_destroy: true
+          #tf_stack_destroy: true
+  
+          aws_r53_enable: true
+          aws_r53_sub_domain_name: timeline-report
+          aws_r53_domain_name: bitovi-jira.com
+          aws_elb_app_port: 3000
+          
+          aws_ec2_instance_type: t3.small
+          aws_ec2_instance_root_vol_size: 16
+  
+          # Provide a secret called `DOT_ENV` to append environment variables to the .env file
+  
+          env_ghs: ${{ secrets.DOT_ENV }}
+

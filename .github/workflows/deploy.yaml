@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Staging
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
         #tf_stack_destroy: true
 
         aws_r53_enable: true
-        aws_r53_sub_domain_name: timeline-report
+        aws_r53_sub_domain_name: timeline-report-staging
         aws_r53_domain_name: bitovi-jira.com
         aws_elb_app_port: 3000
         
