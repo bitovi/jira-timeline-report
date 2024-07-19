@@ -6,8 +6,7 @@
   "scripts": {
     "start-local": "node server/server.js",
     "fe:css:build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --watch --minify",
-    "fe:js:build:dev": "BUILD_MINIFY=NO rollup -c -w --sourcemap",
-    "fe:js:build": "rollup -c -w --sourcemap",
+    "fe:js:build": "vite build",
     "test": "./node_modules/.bin/vitest"
   },
   "keywords": [],
@@ -22,15 +21,21 @@
     "oauth": "^0.10.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.24.9",
+    "@babel/plugin-syntax-top-level-await": "^7.14.5",
+    "@babel/preset-env": "^7.24.8",
+    "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
+    "@vitejs/plugin-react": "^4.3.1",
     "jsdom": "^24.1.0",
     "jstat": "^1.9.6",
     "live-server": "^1.2.2",
     "rollup": "^4.5.1",
     "rollup-plugin-delete": "^2.0.0",
     "tailwindcss": "^3.3.3",
+    "vite": "^5.3.4",
     "vitest": "^1.6.0"
   }
 }
