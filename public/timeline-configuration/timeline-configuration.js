@@ -3,10 +3,9 @@ import { StacheElement, type, ObservableObject, ObservableArray, value } from ".
 import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
 import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCalculations } from "../prepare-issues/date-data.js";
 
-import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData} from "../state/issue-data.js";
-import { percentComplete } from "../percent-complete/percent-complete.js";
+import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData} from "./state-helpers.js";
 
-import { allStatusesSorted } from "../shared/issue-data/issue-data.js";
+import { allStatusesSorted } from "../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 
@@ -280,7 +279,6 @@ export class TimelineConfiguration extends StacheElement {
         // PROPERTIES DERIVING FROM `derivedIssues`
         get statuses(){
             if(this.derivedIssues) {
-                console.log("here")
                 return allStatusesSorted(this.derivedIssues)
             } else {
                 return [];
@@ -466,7 +464,6 @@ export class TimelineConfiguration extends StacheElement {
     // HOOKS
     connected(){
 
-        this.listenTo("percentComplete",()=>{})
     }
     // METHODS
     updateCalculationType(index, value){

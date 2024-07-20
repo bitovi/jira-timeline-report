@@ -1,7 +1,7 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject, stache } from "./can.js";
 import { showTooltip, showTooltipContent } from "./issue-tooltip.js";
-import { percentComplete } from "./percent-complete/percent-complete.js";
+import { percentComplete } from "./jira/rollup/percent-complete/percent-complete.js";
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";

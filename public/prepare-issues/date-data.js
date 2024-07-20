@@ -208,7 +208,7 @@ export function rollupDatesFromRollups(issues) {
 
 /**
  * 
- * @param {Array<import("../shared/issue-data/issue-data.js").NormalizedIssue>} normalizedIssues 
+ * @param {Array<import("../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
  * @returns {Array<{type: string, hierarchyLevel: number}>}
  */
 function issueHierarchy(normalizedIssues){
@@ -252,7 +252,7 @@ function issueHierarchy(normalizedIssues){
 
 /**
  * 
- * @param {import("../shared/issue-data/issue-data.js").NormalizedIssue} normalizedIssues 
+ * @param {import("../jira/normalized/normalize.js").NormalizedIssue} normalizedIssues 
  * @returns {Array<IssueDateRollupObject> & {typeToIssueType: IssueDateRollupObject}}
  */
 

@@ -1,6 +1,6 @@
 import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
 
-import { derivedToCSVFormat } from "./shared/issue-data/issue-data.js";
+import { derivedToCSVFormat } from "./jira/derived/work-timing/work-timing.js";
 
 import {releasesAndInitiativesWithPriorTiming, 
   rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses, filterQAWork, filterPartnerReviewWork} from "./prepare-issues/prepare-issues.js";

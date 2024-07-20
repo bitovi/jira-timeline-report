@@ -1,9 +1,8 @@
-
-
 import { ObservableObject, value, Reflect } from "../can.js";
 
-import { normalizeIssue, derivedWorkIssue } from "../shared/issue-data/issue-data.js";
+import { derivedWorkIssue } from "../jira/derived/work-timing/work-timing.js";
 import bitoviTrainingData from "../examples/bitovi-training.js";
+import { normalizeIssue } from "../jira/normalized/normalize.js";
 
 /*
 class IssueData extends ObservableObject {

@@ -1,17 +1,12 @@
-//import { JiraIssue } from "../shared/issue-data/issue-data.js";
-import { estimateExtraPoints } from "../confidence.js";
-import { millisecondsToDay, parseDate8601String } from "../date-helpers.js";
-import { normalizeIssue, derivedWorkIssue, rollupHierarchy } from "../shared/issue-data/issue-data.js";
 
+import { rollupHierarchy } from "../rollup.js";
 
-/** @import { DerivedWorkIssue } from '../shared/issue-data/issue-data.js' */
 
 /**
  * @param { JiraIssue[] } issues
  * @param { PercentCompleteOptions } options
  */
 export function percentComplete(derivedWorkIssues) {
-
   return completionRollup(derivedWorkIssues);
 }
 
@@ -31,7 +26,7 @@ const BASE_HIERARCHY_LEVEL = 1;
 
 
 /**
- * @typedef {import("../shared/issue-data/issue-data.js").DerivedWorkIssue & {
+ * @typedef {import("../../derived/work-timing/work-timing.js").DerivedWorkIssue & {
  *   completionRollup: {
  *    totalWorkingDays: number, 
  *    completedWorkingDays: number,
@@ -42,7 +37,7 @@ const BASE_HIERARCHY_LEVEL = 1;
 
 /**
  * 
- * @param {import("../shared/issue-data/issue-data.js").DerivedWorkIssue} issues 
+ * @param {import("../../derived/work-timing/work-timing.js").DerivedWorkIssue} issues 
  * @returns {Array<RolledupCompletionIssue>}
  */
 function toCompletionRollups(issues){
@@ -60,7 +55,7 @@ function toCompletionRollups(issues){
 
 /**
  * 
- * @param {import("../shared/issue-data/issue-data.js").DerivedWorkIssue} allIssueData 
+ * @param {import("../../derived/work-timing/work-timing.js").DerivedWorkIssue} allIssueData 
  * @param {*} options 
  * @returns {{issues: Array<RolledupCompletionIssue>, hierarchyData: Array<IssueTypeData>}}
  */

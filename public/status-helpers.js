@@ -39,7 +39,7 @@ function warn(...args){
 }
 /**
  * 
- * @param {import("./shared/issue-data/issue-data").DerivedWorkIssue} issue 
+ * @param {import("./jira/derived/issue-data").DerivedWorkIssue} issue 
  */
 export function getStatusCategoryDefault(issue){
 	if(statusCategoryMap[issue.status]) {
@@ -51,7 +51,7 @@ export function getStatusCategoryDefault(issue){
 }
 /**
  * 
- * @param {import("./shared/issue-data/issue-data").NormalizedIssue} issue
+ * @param {import("./jira/derived/issue-data").NormalizedIssue} issue
  */
 export function addStatusCategory(issue){
 

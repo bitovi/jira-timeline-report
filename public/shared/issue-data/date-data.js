@@ -14,7 +14,7 @@ import { parseDateISOString, parseDateIntoLocalTimezone } from "../../date-helpe
 
 /**
  * 
- * @param {import("./issue-data.js").NormalizedIssue} issue 
+ * @param {import("../../jira/normalized/normalize.js").NormalizedIssue} issue 
  * @returns {{startData: StartData, dueData: DueData}}
  */
 export function getStartDateAndDueDataFromFields(issue){
@@ -42,7 +42,7 @@ export function getStartDateAndDueDataFromFields(issue){
 
 /**
  * 
- * @param {import("./issue-data.js").NormalizedIssue} story 
+ * @param {import("../../jira/normalized/normalize.js").NormalizedIssue} story 
  * @returns {{startData: StartData, dueData: DueData}}
  */
 export function getStartDateAndDueDataFromSprints(story){
