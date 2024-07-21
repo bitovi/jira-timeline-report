@@ -1,8 +1,15 @@
 import { getStatusCategoryDefault } from "../../../status-helpers";
 
 /**
- * 
+ * @typedef {{
+ *   statusType: string,
+ *   workType: string 
+ * }} DerivedWorkStatus
+ */
+
+/**
  * @param {NormalizedIssue} normalizedIssue 
+ * @return {DerivedWorkStatus}
  */
 export function getWorkStatus(
     normalizedIssue, 

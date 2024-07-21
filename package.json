@@ -8,7 +8,7 @@
     "fe:css:build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --watch --minify",
     "fe:js:build:dev": "BUILD_MINIFY=NO rollup -c -w --sourcemap",
     "fe:js:build": "rollup -c -w --sourcemap",
-    "test": "./node_modules/.bin/vitest"
+    "test": "node node_modules/vitest/vitest.mjs"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +30,7 @@
     "live-server": "^1.2.2",
     "rollup": "^4.5.1",
     "rollup-plugin-delete": "^2.0.0",
+    "semver": "^7.6.3",
     "tailwindcss": "^3.3.3",
     "vitest": "^1.6.0"
   }

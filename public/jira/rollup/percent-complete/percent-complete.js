@@ -99,20 +99,22 @@ function completionRollup(allIssueData){
       // for issues on that level
       for(let issueData of issues) {
         if(hierarchyLevel === BASE_HIERARCHY_LEVEL) {
+          // we roll this up no matter what ... it's ok to roll up 0
+          issueData.completionRollup.completedWorkingDays = issueData.derivedTiming.completedDaysOfWork;
 
           // if it has self-calculated total days ..
-          if( issueData.derivedWork.totalDaysOfWork ) {
+          if( issueData.derivedTiming.totalDaysOfWork ) {
             // add those days to the average
-            issueTypeData.totalDaysOfWorkForAverage.push( issueData.derivedWork.totalDaysOfWork );
+            issueTypeData.totalDaysOfWorkForAverage.push( issueData.derivedTiming.totalDaysOfWork );
             // set the rollup value
-            issueData.completionRollup.totalWorkingDays = issueData.derivedWork.totalDaysOfWork;
+            issueData.completionRollup.totalWorkingDays = issueData.derivedTiming.totalDaysOfWork;
+            issueData.completionRollup.remainingWorkingDays = issueData.completionRollup.totalWorkingDays - issueData.completionRollup.completedWorkingDays;
           } 
           else {
             // add this issue to what needs its average
             issueTypeData.needsAverageSet.push(issueData);
           }
-          // we roll this up no matter what ... it's ok to roll up 0
-          issueData.completionRollup.completedWorkingDays = issueData.derivedWork.completedDaysOfWork;
+          
         }
         // initiatives and above
         if( hierarchyLevel > BASE_HIERARCHY_LEVEL ) {
@@ -130,12 +132,11 @@ function completionRollup(allIssueData){
       // set average on children that need it
       issueTypeData.needsAverageSet.forEach( issueData => {
         issueData.completionRollup.totalWorkingDays = ave;
-        issueData.completionRollup.remainingWorkingDays = issueData.completionRollup.totalWorkingDays- 
-          issueData.completionRollup.completedWorkingDays;
+        issueData.completionRollup.remainingWorkingDays = issueData.completionRollup.totalWorkingDays - issueData.completionRollup.completedWorkingDays;
       })
     }
   }
-
+  console.log(issueTypeDatas);
   return {
     issues: completionRollups,
     hierarchyData: issueTypeDatas
@@ -193,7 +194,8 @@ function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}) {
   // set to the average.  
   issueData.completionRollup.completedWorkingDays = sum(completedDays);
   issueData.completionRollup.totalWorkingDays = sum(totalDays);  
-  issueData.completionRollup.remainingWorkingDays = issueData.completionRollup.totalWorkingDays - issueData.completionRollup.completedWorkingDays
+  issueData.completionRollup.remainingWorkingDays = issueData.completionRollup.totalWorkingDays - issueData.completionRollup.completedWorkingDays;
+  
 }
 
 

@@ -5,7 +5,7 @@ import { derivedToCSVFormat } from "./jira/derived/work-timing/work-timing.js";
 import {releasesAndInitiativesWithPriorTiming, 
   rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses, filterQAWork, filterPartnerReviewWork} from "./prepare-issues/prepare-issues.js";
 
-import semverReleases from "./semver-releases.js";
+import semverReleases from "./jira/releases/semver-releases.js";
 import sortedByLastEpicReleases from "./sorted-by-last-epic-releases.js";
 
 import bitoviTrainingData from "./examples/bitovi-training.js";

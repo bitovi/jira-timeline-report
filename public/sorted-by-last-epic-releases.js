@@ -1,5 +1,5 @@
-import semver from "./semver.js";
-import uniqueTrailingNames from "./shared/unique-trailing-names.js";
+import semver from "semver";
+import uniqueTrailingNames from "./jira/releases/unique-trailing-names.js";
 import { epicTimingData } from "./date-helpers.js";
 
 

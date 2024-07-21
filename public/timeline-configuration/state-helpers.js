@@ -1,6 +1,5 @@
 import { ObservableObject, value, Reflect } from "../can.js";
-
-import { derivedWorkIssue } from "../jira/derived/work-timing/work-timing.js";
+import { deriveIssue } from "../jira/derived/derive.js";
 import bitoviTrainingData from "../examples/bitovi-training.js";
 import { normalizeIssue } from "../jira/normalized/normalize.js";
 
@@ -140,7 +139,7 @@ export function derivedIssuesRequestData({
                 console.log({rawIssues});
                 return rawIssues.map( issue => {
                     const normalized = normalizeIssue(issue,configuration);
-                    const derived = derivedWorkIssue(normalized, configuration);
+                    const derived = deriveIssue(normalized, configuration);
                     return derived;
                 });
                 

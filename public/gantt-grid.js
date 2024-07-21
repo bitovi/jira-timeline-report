@@ -142,10 +142,11 @@ export class GanttGrid extends StacheElement {
         showTooltip(event.currentTarget, issue);
     }
     showPercentCompleteTooltip(event, issue) {
+        
         // we should get all the children ...
         const keyToChildren = Object.groupBy(this.percentComplete.issues, i => i.parentKey) 
         const children = keyToChildren[issue["Issue key"]];
-
+        console.log(issue, children);
         showTooltipContent(event.currentTarget, percentCompleteTooltip(
             {   issue, 
                 children,

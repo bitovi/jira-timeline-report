@@ -13,25 +13,7 @@ import { getWorkStatus } from "../work-status/work-status.js";
     return 50
   }
 
-/**
- * @typedef {NormalizedIssue & {
- *   derivedWork: DerivedWork
- * }} DerivedWorkIssue
-*/
 
-/**
- * 
- * @param {Array<JiraIssue>} issues 
- * @returns {Array<DerivedWorkIssue>}
- */
-export function normalizeAndDeriveIssues(issues) {
-  return issues.map( issue => derivedWorkIssue( normalizeIssue(issue) ) )
-}
-/**
- * Adds derived data
- * @param {NormalizedIssue} normalizedIssue 
- * @return {DerivedWorkIssue} 
- */
 
 /**
  * 
@@ -42,12 +24,17 @@ export function getDefaultStoryPointsDefault(team) {
   return team.velocity / team.parallelWorkLimit;
 }
 
-export function derivedWorkIssue(normalizedIssue, {
+
+/**
+ * 
+ * @param {import("../../normalized/normalize.js").NormalizedIssue} normalizedIssue 
+ * @param {*} param1 
+ * @returns {DerivedTiming}
+ */
+export function deriveWorkTiming(normalizedIssue, {
   getDefaultConfidence = getDefaultConfidenceDefault, 
   getDefaultStoryPoints = getDefaultStoryPointsDefault, 
-  uncertaintyWeight = 80,
-  getStatusType,
-  getWorkTypeDefault
+  uncertaintyWeight = 80
 } = {}){
 
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence),
@@ -95,54 +82,73 @@ export function derivedWorkIssue(normalizedIssue, {
   const completedDaysOfWork = getSelfCompletedDays(startData, dueData, totalDaysOfWork);
 
   return {
-    ...normalizedIssue,
-    derivedWork: {
-      isConfidenceValid,
-      usedConfidence,
+    isConfidenceValid,
+    usedConfidence,
 
-      isStoryPointsValid,
-      defaultOrStoryPoints,
-      storyPointsDaysOfWork,
+    isStoryPointsValid,
+    defaultOrStoryPoints,
+    storyPointsDaysOfWork,
 
-      isStoryPointsMedianValid,
-      defaultOrStoryPointsMedian,
-      storyPointsMedianDaysOfWork,
+    isStoryPointsMedianValid,
+    defaultOrStoryPointsMedian,
+    storyPointsMedianDaysOfWork,
 
-      deterministicExtraPoints,
-      deterministicExtraDaysOfWork,
-      deterministicTotalPoints,
-      deterministicTotalDaysOfWork,
+    deterministicExtraPoints,
+    deterministicExtraDaysOfWork,
+    deterministicTotalPoints,
+    deterministicTotalDaysOfWork,
 
-      probablisticExtraPoints,
-      probablisticExtraDaysOfWork,
-      probablisticTotalPoints,
-      probablisticTotalDaysOfWork,
+    probablisticExtraPoints,
+    probablisticExtraDaysOfWork,
+    probablisticTotalPoints,
+    probablisticTotalDaysOfWork,
 
-      hasStartAndDueDate,
-      startAndDueDateDaysOfWork,
+    hasStartAndDueDate,
+    startAndDueDateDaysOfWork,
 
-      hasSprintStartAndEndDate,
-      sprintDaysOfWork,
+    hasSprintStartAndEndDate,
+    sprintDaysOfWork,
 
-      sprintStartData,
-      endSprintData,
-      startData,
-      dueData,
+    sprintStartData,
+    endSprintData,
 
-      totalDaysOfWork,
-      defaultOrTotalDaysOfWork,
-      completedDaysOfWork,
-      // TODO: This should not be calling getWorkStatus here ... something else should be doing that 
-      // probably derived/derive.js
-      // This function should probably just be returning the derivedWork object itself and
-      // let derived/derive.js add all the sub-function's details
-      ...getWorkStatus(normalizedIssue, {getStatusType,getWorkTypeDefault})
-    }
+    ...startData,
+    ...dueData,
+
+    totalDaysOfWork,
+    defaultOrTotalDaysOfWork,
+    completedDaysOfWork
   }
 }
 
 
-
+/**
+ * @typedef {{
+* isConfidenceValid: boolean,
+* usedConfidence: number,
+* isStoryPointsValid: boolean,
+* defaultOrStoryPoints: number,
+* storyPointsDaysOfWork: number,
+* deterministicTotalPoints: number,
+* isStoryPointsMedianValid: boolean,
+* defaultOrStoryPointsMedian: number,
+* storyPointsMedianDaysOfWork: number,
+* deterministicExtraDaysOfWork: number,
+* deterministicTotalDaysOfWork: number,
+* probablisticExtraDaysOfWork: number,
+* probablisticTotalDaysOfWork: number,
+* hasStartAndDueDate: boolean,
+* hasSprintStartAndEndDate: boolean,
+* sprintDaysOfWork: number | null,
+* startAndDueDateDaysOfWork: number | null,
+* totalDaysOfWork: number | null,
+* defaultOrTotalDaysOfWork: number | null,
+* completedDaysOfWork: number,
+* startData: ,
+* dueData: ,
+* } & import("../../../shared/issue-data/date-data.js").StartData & import("../../../shared/issue-data/date-data.js").DueData
+* } DerivedTiming
+*/
 
 
 export function isConfidenceValueValid(value){
@@ -191,9 +197,9 @@ export function derivedToCSVFormat(derivedIssue) {
     "Issue Type": derivedIssue.type,
     "Parent Link": derivedIssue.parentKey,
     "Status": derivedIssue.status,
-    workType: derivedIssue.derivedWork.workType,
-    workingBusinessDays: derivedIssue.derivedWork.totalDaysOfWork,
-    weightedEstimate: derivedIssue.derivedWork.deterministicTotalPoints
+    workType: derivedIssue.derivedStatus.workType,
+    workingBusinessDays: derivedIssue.derivedTiming.totalDaysOfWork,
+    weightedEstimate: derivedIssue.derivedTiming.deterministicTotalPoints
   }
 }
 

@@ -129,10 +129,19 @@ export function getConfidenceDefault({ fields }) {
   export function getLabelsDefault({fields}) {
     return fields?.labels || []
   }
-  
+  /**
+   * @typedef {{
+   *   name: String,
+   *   id: String,
+   *   type: "releases",
+   *   key: "string"
+   * }} NormalizedRelease
+   */
+
+
   export function getReleasesDefault ({fields}) {
     return (fields["Fix versions"] || []).map( ({name, id})=> {
-      return {name, id}
+      return {name, id, type: "release", key: "SPECIAL:release-"+id}
     });
   }
   
@@ -223,34 +232,7 @@ export function getConfidenceDefault({ fields }) {
       };
       return data;
   }
-/**
- * @typedef {{
- * isConfidenceValid: boolean,
-* usedConfidence: number,
-* isStoryPointsValid: boolean,
-* defaultOrStoryPoints: number,
-* storyPointsDaysOfWork: number,
-* deterministicTotalPoints: number,
-* isStoryPointsMedianValid: boolean,
-* defaultOrStoryPointsMedian: number,
-* storyPointsMedianDaysOfWork: number,
-* deterministicExtraDaysOfWork: number,
-* deterministicTotalDaysOfWork: number,
-* probablisticExtraDaysOfWork: number,
-* probablisticTotalDaysOfWork: number,
-* hasStartAndDueDate: boolean,
-* hasSprintStartAndEndDate: boolean,
-* sprintDaysOfWork: number | null,
-* startAndDueDateDaysOfWork: number | null,
-* totalDaysOfWork: number | null,
-* defaultOrTotalDaysOfWork: number | null,
-* completedDaysOfWork: number,
-* startData: import("../../../shared/issue-data/date-data.js").StartData,
-* dueData: import("../../../shared/issue-data/date-data.js").DueData,
-* statusType: string,
-* workType: string
-* }} DerivedWork
- */
+
 
   /**
    * @typedef {{
@@ -269,7 +251,8 @@ export function getConfidenceDefault({ fields }) {
   *  sprints: null | Array<NormalizedSprint>,
   *  status: null | string,
   *  issue: JiraIssue,
-  *  labels: Array<string>
+  *  labels: Array<string>,
+  *  releases: Array<NormalizedRelease>
   * }} NormalizedIssue
   */
   
