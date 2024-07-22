@@ -52,29 +52,42 @@ export function mergeStartAndDueData(records){
     }
 }
 
-
-export function parentFirstThenChildren(getIssueDateData, getChildDateData){
-    const issueDateData = getIssueDateData();
-    const childrenDateData = getChildDateData();
-    if(issueDateData.startData && issueDateData.dueData) {
-        return issueDateData;
-    }
+/**
+ * 
+ * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
+ * @param {*} childrenRollups 
+ * @returns 
+ */
+export function parentFirstThenChildren(parentIssueOrRelease, childrenRollups){
     
+    const childData = mergeStartAndDueData(childrenRollups);
+    const parentData = parentIssueOrRelease?.derivedTiming;
+
+    const parentHasStart = parentData?.start;
+    const parentHasDue = parentData?.due;
+
+    const combinedData = {
+        start: parentHasStart ? parentData?.start : childData?.start,
+        startFrom: parentHasStart ? parentData?.startFrom : childData?.startFrom,
+        due: parentHasDue ? parentData?.due : childData?.due,
+        dueTo: parentHasDue ? parentData?.dueTo : childData?.dueTo
+    }
 
     return {
-        startData: issueDateData.startData || childrenDateData.startData,
-        dueData: issueDateData.dueData || childrenDateData.dueData,
-    }
+        ...getStartData(combinedData),
+        ...getDueData(combinedData)
+    };
 }
 
-export function childrenOnly(getIssueDateData, getChildDateData){
-    return getChildDateData();
+export function childrenOnly(parentIssueOrRelease, childrenRollups){
+    return mergeStartAndDueData(childrenRollups);
 }
 
-export function parentOnly(getIssueDateData, getChildDateData){
-    // eventually we can look to remove these. Some code still depends on having children everywhere
-    getChildDateData();
-    return getIssueDateData();
+export function parentOnly(parentIssueOrRelease, childrenRollups){
+    return {
+        ...getStartData(parentIssueOrRelease.derivedTiming),
+        ...getDueData(parentIssueOrRelease.derivedTiming)
+    };
 }
 
 export function childrenFirstThenParent(parentIssueOrRelease, childrenRollups){

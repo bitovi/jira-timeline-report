@@ -1,6 +1,6 @@
 // sum.test.js
 import { expect, test, describe, it } from 'vitest'
-import { rollupDates } from './dates.js';
+import { rollupDates, parentFirstThenChildren, parentOnly } from './dates.js';
 
 describe('rollupDates', () => {
     // due, dueTo {message, reference} .... {start,startFrom}
@@ -101,7 +101,43 @@ describe('rollupDates', () => {
             },
         ]);
 
-    })
+    });
+
+    it("parentFirstThenChildren works as expected", ()=>{
+        let results = parentFirstThenChildren({derivedTiming: {start: _2003, due: _2004}}, [
+            {start: _2001, due: _2005}
+        ]);
+
+        expect(results).toStrictEqual({
+            start: _2003, due: _2004
+        });
+
+        results = parentFirstThenChildren({derivedTiming: {start: _2003}}, [
+            {start: _2001, due: _2005}
+        ]);
+
+        expect(results).toStrictEqual({
+            start: _2003, due: _2005
+        });
+    });
+
+    it("parentOnly works as expected", ()=>{
+        let results = parentOnly({derivedTiming: {start: _2003, due: _2004}}, [
+            {start: _2001, due: _2005}
+        ]);
+
+        expect(results).toStrictEqual({
+            start: _2003, due: _2004
+        });
+
+        results = parentOnly({derivedTiming: {}}, [
+            {start: _2001, due: _2005}
+        ]);
+
+        expect(results).toStrictEqual({
+            
+        });
+    });
 
     
 });
