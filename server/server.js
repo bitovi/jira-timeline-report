@@ -25,6 +25,10 @@ app.get('/', (req, res) => {
 	res.send(makeIndex(req));
 });
 
+app.get('/dev', (req, res) => {
+	res.send(makeIndex(req, "./dist/main.js"));
+});
+
 app.get('/oauth-callback', (req, res) => {
 	res.send(makeOAuthCallback(req));
 });
