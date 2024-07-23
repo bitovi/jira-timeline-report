@@ -49,4 +49,6 @@ Open a third terminal and run
 npm run start-local
 ```
 
-Open your browser and navigate to http://localhost:3000/
+Open your browser and navigate to http://localhost:3000/ to view the minified version of the app.
+
+Navigate to http://localhost:3000/dev to view the unminified version of the app.
