@@ -392,6 +392,13 @@ export class TimelineConfiguration extends StacheElement {
   
             }
         },
+        get impliedTimingCalculations(){
+            if(this.primaryIssueType) {
+                return getImpliedTimingCalculations(this.primaryIssueType, 
+                    this.allTimingCalculationOptions.map, 
+                    this.timingCalculations);
+            }
+        },
 
         // PROPERTIES from having a primaryIssueType and timingCalculations
         get firstIssueTypeWithStatuses(){
@@ -400,9 +407,7 @@ export class TimelineConfiguration extends StacheElement {
                     return this.primaryIssueType;
                 } else {
                     // timing calculations lets folks "skip" from release to some other child
-                    const calculations= getImpliedTimingCalculations(this.primaryIssueType, 
-                        this.allTimingCalculationOptions.map, 
-                        this.timingCalculations);
+                    const calculations= this.impliedTimingCalculations;
                     if(calculations[0].type !== "Release") {
                         return calculations[0].type;
                     } else {
@@ -414,9 +419,9 @@ export class TimelineConfiguration extends StacheElement {
         // used to get the name of the secondary issue type
         get secondaryIssueType(){
             if(this.primaryIssueType) {
-                const calculations = getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations);
+                const calculations = this.impliedTimingCalculations;
                 if(calculations.length) {
-                return calculations[0].type
+                    return calculations[0].type
                 }
             }
             
@@ -424,7 +429,7 @@ export class TimelineConfiguration extends StacheElement {
 
         get timingCalculationMethods() {
             if(this.primaryIssueType) {
-                return getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations)
+                return this.impliedTimingCalculations
                     .map( (calc) => calc.calculation)
             }
         },
@@ -434,9 +439,22 @@ export class TimelineConfiguration extends StacheElement {
                 return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
             }            
         },
-
-        
-
+        get rollupTimingLevelsAndCalculations(){
+            if(this.impliedTimingCalculations) {
+                const impliedCalculations = this.impliedTimingCalculations;
+                const primaryIssueType = this.primaryIssueType;
+                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
+                const rollupCalculations = [];
+                for( let i = 0; i < impliedCalculations.length + 1; i++) {
+                    rollupCalculations.push({
+                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
+                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
+                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i]
+                    })
+                }
+                return rollupCalculations;
+            }
+        },
         // dependent on primary issue type
         showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
 
@@ -463,7 +481,7 @@ export class TimelineConfiguration extends StacheElement {
     };
     // HOOKS
     connected(){
-
+        
     }
     // METHODS
     updateCalculationType(index, value){

@@ -50866,9 +50866,62 @@ function allTimingCalculationOptions(normalizedIssues){
     });
 
     const base = [
-        { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
+        { type: "Release", hierarchyLevel: Infinity, plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
         ...issueOnlyHierarchy
     ];
+
+    // the base object
+    const typeToIssueType = {};
+    for(const issueType of base) {
+      typeToIssueType[issueType.type] = issueType;
+    }
+  
+    const allCalculations = Object.keys( calculationKeysToNames );
+    for(const issueType of base) {
+        // add the denormalized children, so they can be references back to the original object
+      issueType.denormalizedChildren = issueType.children.map( typeName => typeToIssueType[typeName]);
+      const calcNames = issueType.availableTimingCalculations === "*" ? allCalculations : issueType.availableTimingCalculations;
+      
+      const childToTimingMap = {};
+      issueType.timingCalculations = [];
+      
+      for(let issueTypeName of issueType.children){
+        // for each child issue, create a map of each type
+        childToTimingMap[issueTypeName] = calcNames.map((calculationName)=> {
+          return {
+              child: issueTypeName, 
+              parent: issueType.type, 
+              calculation: calculationName, name: calculationKeysToNames[calculationName](issueType, typeToIssueType[issueTypeName]) }
+        });
+        let childType = typeToIssueType[issueTypeName];
+        // an array of what's above
+        issueType.timingCalculations.push({child: issueTypeName, hierarchyLevel: childType.hierarchyLevel, calculations: childToTimingMap[issueTypeName]});
+      }
+      issueType.timingCalculationsMap = childToTimingMap;
+    }
+    return {
+        list: base,
+        map: typeToIssueType
+    };
+}
+/*
+export function denormalizedIssueHierarchy(normalizedIssues){
+    const hierarchy = issueHierarchy(normalizedIssues).reverse();
+
+    const issueOnlyHierarchy = hierarchy.map( ({type, hierarchyLevel}, index) => {
+        // if the last thing
+        if(!hierarchy[index+1]) {
+            return {type, hierarchyLevel, plural: type+"s", children: [], availableTimingCalculations: ["parentOnly"]}
+        } else {
+            return {type, hierarchyLevel, plural: type+"s", children: [hierarchy[index+1].type], availableTimingCalculations: "*"}
+        }
+    })
+
+    const base = [
+        { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
+        ...issueOnlyHierarchy
+    ]
+
 
     // the base object
     const typeToIssueType = {};
@@ -50897,11 +50950,9 @@ function allTimingCalculationOptions(normalizedIssues){
       }
       issueType.timingCalculationsMap = childToTimingMap;
     }
-    return {
-        list: base,
-        map: typeToIssueType
-    };
-}
+    base.typeToIssueType = typeToIssueType;
+    return base;
+  }*/
   
   
   function getImpliedTimingCalculations(primaryIssueType, issueTypeMap, currentTimingCalculations){
@@ -50916,11 +50967,13 @@ function allTimingCalculationOptions(normalizedIssues){
       const setCalculations = [...currentTimingCalculations];
       
       const impliedTimingCalculations = [];
+      
       while(childrenCalculations.length) {
         // this is the calculation that should be selected for that level
         let setLevelCalculation = setCalculations.shift() || 
           {
             type: childrenCalculations[0].child, 
+            hierarchyLevel: childrenCalculations[0].hierarchyLevel,
             calculation: childrenCalculations[0].calculations[0].calculation
           };
         impliedTimingCalculations.push(setLevelCalculation);
@@ -56258,6 +56311,13 @@ class TimelineConfiguration extends canStacheElement {
   
             }
         },
+        get impliedTimingCalculations(){
+            if(this.primaryIssueType) {
+                return getImpliedTimingCalculations(this.primaryIssueType, 
+                    this.allTimingCalculationOptions.map, 
+                    this.timingCalculations);
+            }
+        },
 
         // PROPERTIES from having a primaryIssueType and timingCalculations
         get firstIssueTypeWithStatuses(){
@@ -56266,9 +56326,7 @@ class TimelineConfiguration extends canStacheElement {
                     return this.primaryIssueType;
                 } else {
                     // timing calculations lets folks "skip" from release to some other child
-                    const calculations= getImpliedTimingCalculations(this.primaryIssueType, 
-                        this.allTimingCalculationOptions.map, 
-                        this.timingCalculations);
+                    const calculations= this.impliedTimingCalculations;
                     if(calculations[0].type !== "Release") {
                         return calculations[0].type;
                     } else {
@@ -56280,9 +56338,9 @@ class TimelineConfiguration extends canStacheElement {
         // used to get the name of the secondary issue type
         get secondaryIssueType(){
             if(this.primaryIssueType) {
-                const calculations = getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations);
+                const calculations = this.impliedTimingCalculations;
                 if(calculations.length) {
-                return calculations[0].type
+                    return calculations[0].type
                 }
             }
             
@@ -56290,7 +56348,7 @@ class TimelineConfiguration extends canStacheElement {
 
         get timingCalculationMethods() {
             if(this.primaryIssueType) {
-                return getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations)
+                return this.impliedTimingCalculations
                     .map( (calc) => calc.calculation)
             }
         },
@@ -56300,9 +56358,22 @@ class TimelineConfiguration extends canStacheElement {
                 return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
             }            
         },
-
-        
-
+        get rollupTimingLevelsAndCalculations(){
+            if(this.impliedTimingCalculations) {
+                const impliedCalculations = this.impliedTimingCalculations;
+                const primaryIssueType = this.primaryIssueType;
+                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
+                const rollupCalculations = [];
+                for( let i = 0; i < impliedCalculations.length + 1; i++) {
+                    rollupCalculations.push({
+                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
+                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
+                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i]
+                    });
+                }
+                return rollupCalculations;
+            }
+        },
         // dependent on primary issue type
         showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
 
@@ -56329,7 +56400,7 @@ class TimelineConfiguration extends canStacheElement {
     };
     // HOOKS
     connected(){
-
+        
     }
     // METHODS
     updateCalculationType(index, value){
@@ -56474,6 +56545,7 @@ class TimelineReport extends canStacheElement {
           hideUnknownInitiatives:to="this.hideUnknownInitiatives"
           sortByDueDate:to="this.sortByDueDate"
           showPercentComplete:to="this.showPercentComplete"
+          rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -56681,8 +56753,16 @@ class TimelineReport extends canStacheElement {
     // hooks
     async connected() {
       updateFullishHeightSection();
+      this.listenTo("dateRollup",({value})=>{console.log("dateRollup", value);});
     }
 
+    get dateRollup(){
+      if(!this.derivedIssues && !this.timingCalculationMethods) {
+        return [];
+      }
+      console.log("rollupTimingLevelsAndCalculations",this.rollupTimingLevelsAndCalculations);
+      //rollupDates()
+    }
     
     
     get releasesAndInitiativesWithPriorTiming(){

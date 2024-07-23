@@ -19,6 +19,7 @@ import "./gantt-timeline.js";
 import "./status-report.js";
 import "./timeline-configuration/timeline-configuration.js"
 
+import { rollupDates } from "./jira/rollup/dates/dates.js";
 
 export class TimelineReport extends StacheElement {
     static view = `
@@ -52,6 +53,7 @@ export class TimelineReport extends StacheElement {
           hideUnknownInitiatives:to="this.hideUnknownInitiatives"
           sortByDueDate:to="this.sortByDueDate"
           showPercentComplete:to="this.showPercentComplete"
+          rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -261,8 +263,16 @@ export class TimelineReport extends StacheElement {
     // hooks
     async connected() {
       updateFullishHeightSection();
+      this.listenTo("dateRollup",({value})=>{console.log("dateRollup", value)})
     }
 
+    get dateRollup(){
+      if(!this.derivedIssues && !this.timingCalculationMethods) {
+        return [];
+      }
+      console.log("rollupTimingLevelsAndCalculations",this.rollupTimingLevelsAndCalculations)
+      //rollupDates()
+    }
     
     
     get releasesAndInitiativesWithPriorTiming(){
