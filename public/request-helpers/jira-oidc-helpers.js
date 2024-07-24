@@ -1,4 +1,6 @@
 
+import makeHostedRequestHelper from "./hosted-request-helper.js";
+
 const CACHE_FETCH = false;
 
 function responseToJSON(response) {
@@ -30,9 +32,7 @@ export default function JiraOIDCHelpers({
 	JIRA_SCOPE,
 	JIRA_CALLBACK_URL,
 	JIRA_API_URL
-} = window.env) {
-
-
+} = window.env, app = 'hosted') {
 	let fetchJSON = nativeFetchJSON;
 	if (CACHE_FETCH) {
 		fetchJSON = async function (url, options) {
@@ -56,11 +56,7 @@ export default function JiraOIDCHelpers({
 
 	let fieldsRequest;
 
-
-
-
-
-	const jiraHelpers = {
+	const storageHelpers = {
 		saveInformationToLocalStorage: (parameters) => {
 			const objectKeys = Object.keys(parameters)
 			for (let key of objectKeys) {
@@ -74,7 +70,17 @@ export default function JiraOIDCHelpers({
 		},
 		fetchFromLocalStorage: (key) => {
 			return window.localStorage.getItem(key);
-		},
+		}
+	}
+
+	let requestHelper;
+	if(app === 'connect') {
+		// TODO requestHelper condition for connect app
+	} else {
+		requestHelper = makeHostedRequestHelper
+	}
+
+	const jiraHelpers = {
 		fetchAuthorizationCode: () => {
 			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
 			window.location.href = url;
@@ -89,7 +95,7 @@ export default function JiraOIDCHelpers({
 					expiryTimestamp,
 					refreshToken,
 				} = response.data;
-				jiraHelpers.saveInformationToLocalStorage({
+				storageHelpers.saveInformationToLocalStorage({
 					accessToken,
 					refreshToken,
 					expiryTimestamp,
@@ -97,7 +103,7 @@ export default function JiraOIDCHelpers({
 				return accessToken;
 			} catch (error) {
 				console.error(error.message)
-				jiraHelpers.clearAuthFromLocalStorage();
+				storageHelpers.clearAuthFromLocalStorage();
 				jiraHelpers.fetchAuthorizationCode();
 			}
 		},
@@ -110,7 +116,7 @@ export default function JiraOIDCHelpers({
 					scopeId
 				} = await fetchJSON(`./access-token?code=${authCode}`)
 
-				jiraHelpers.saveInformationToLocalStorage({
+				storageHelpers.saveInformationToLocalStorage({
 					accessToken,
 					refreshToken,
 					expiryTimestamp,
@@ -127,7 +133,7 @@ export default function JiraOIDCHelpers({
 			}
 		},
 		fetchAccessibleResources: (passedAccessToken) => {
-			const accessToken = passedAccessToken || jiraHelpers.fetchFromLocalStorage('accessToken');
+			const accessToken = passedAccessToken || storageHelpers.fetchFromLocalStorage('accessToken');
 			return fetchJSON(`https://api.atlassian.com/oauth/token/accessible-resources`, {
 				headers: {
 					'Authorization': `Bearer ${accessToken}`,
@@ -136,8 +142,8 @@ export default function JiraOIDCHelpers({
 		},
 		fetchJiraSprint: async (sprintId) => {
 			//this fetches all Recent Projects From Jira
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+			const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
+			const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
 			const url = `${JIRA_API_URL}/${scopeIdForJira}/rest/agile/1.0/sprint/${sprintId}`;
 			const config = {
 				headers: {
@@ -145,11 +151,16 @@ export default function JiraOIDCHelpers({
 				}
 			}
 			return await fetchJSON(url, config);
+			// console.log('AAA');
+			// return requestHelper(`agile/1.0/sprint/${sprintId}`).then(data => {
+			// 	console.log(data);
+			// 	return data;
+			// });
 		},
 		fetchJiraIssue: async (issueId) => {
-			//this fetches all Recent Projects From Jira
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+			// this fetches all Recent Projects From Jira
+			const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
+			const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
 			const url = `${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issue/${issueId}`;
 			const config = {
 				headers: {
@@ -157,21 +168,25 @@ export default function JiraOIDCHelpers({
 				}
 			}
 			return await fetchJSON(url, config);
+			// return await requestHelper(`/api/3/issue/${issueId}`);
 		},
-		fetchJiraIssuesWithJQL: function (params) {
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+		fetchJiraIssuesWithJQL: async function (params) {
+			// const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
+			// const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
 
-			return fetchJSON(
-				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/search?` +
-				new URLSearchParams(params),
-				{
-					headers: {
-						'Authorization': `Bearer ${accessToken}`,
-					}
-				}
+			// return fetchJSON(
+			// 	`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/search?` +
+			// 	new URLSearchParams(params),
+			// 	{
+			// 		headers: {
+			// 			'Authorization': `Bearer ${accessToken}`,
+			// 		}
+			// 	}
 
-			)
+			// )
+			console.log('bbb');
+			const searchString = `/api/3/search?` + new URLSearchParams(params);
+			return requestHelper({ JIRA_API_URL }, storageHelpers, {requestUrl: searchString.toString()});
 		},
 		fetchJiraIssuesWithJQLWithNamedFields: async function (params) {
 			const fields = await fieldsRequest;
@@ -205,8 +220,8 @@ export default function JiraOIDCHelpers({
 			)
 		},
 		fetchJiraChangelog(issueIdOrKey, params) {
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+			const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
+			const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
 
 			return fetchJSON(
 				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issue/${issueIdOrKey}/changelog?` +
@@ -393,8 +408,8 @@ export default function JiraOIDCHelpers({
 			});
 		},
 		fetchJiraFields() {
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+			const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
+			const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
 
 			return fetchJSON(
 				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/field`,
@@ -407,22 +422,22 @@ export default function JiraOIDCHelpers({
 		},
 		getAccessToken: async function () {
 			if (!jiraHelpers.hasValidAccessToken()) {
-				const refreshToken = jiraHelpers.fetchFromLocalStorage("refreshToken");
+				const refreshToken = storageHelpers.fetchFromLocalStorage("refreshToken");
 				if (!refreshToken) {
 					jiraHelpers.fetchAuthorizationCode();
 				} else {
 					return jiraHelpers.refreshAccessToken();
 				}
 			} else {
-				return jiraHelpers.fetchFromLocalStorage("accessToken");
+				return storageHelpers.fetchFromLocalStorage("accessToken");
 			}
 		},
 		hasAccessToken: function(){
-			return !! jiraHelpers.fetchFromLocalStorage("accessToken");
+			return !! storageHelpers.fetchFromLocalStorage("accessToken");
 		},
 		hasValidAccessToken: function () {
-			const accessToken = jiraHelpers.fetchFromLocalStorage("accessToken");
-			let expiryTimestamp = Number(jiraHelpers.fetchFromLocalStorage("expiryTimestamp"));
+			const accessToken = storageHelpers.fetchFromLocalStorage("accessToken");
+			let expiryTimestamp = Number(storageHelpers.fetchFromLocalStorage("expiryTimestamp"));
 			if (isNaN(expiryTimestamp)) {
 				expiryTimestamp = 0;
 			}
@@ -434,8 +449,8 @@ export default function JiraOIDCHelpers({
 				return this._cachedServerInfoPromise;
 			}
 			// https://your-domain.atlassian.net/rest/api/3/serverInfo
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+			const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
+			const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
 
 			return this._cachedServerInfoPromise = fetchJSON(
 				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/serverInfo`,

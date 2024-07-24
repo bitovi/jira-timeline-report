@@ -6,11 +6,10 @@ import "./shared/select-cloud.js";
 import "./shared/velocities-from-issue.js"
 
 import JiraLogin from "./shared/jira-login.js";
-import JiraOIDCHelpers from "./jira-oidc-helpers.js";
+import JiraOIDCHelpers from "./request-helpers/jira-oidc-helpers.js";
 
 export default async function main(config) {
-
-	const jiraHelpers = JiraOIDCHelpers(config);
+	const jiraHelpers = JiraOIDCHelpers(config, 'hosted');
 
 	const loginComponent = new JiraLogin().initialize({jiraHelpers});
 

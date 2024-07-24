@@ -1,4 +1,4 @@
-import {nativeFetchJSON} from "../jira-oidc-helpers.js";
+import {nativeFetchJSON} from "../request-helpers/jira-oidc-helpers.js";
 
 const REFERENCE_DATE = new Date(2024,1,20);
 const DAY = 1000 * 60 * 60 * 24;

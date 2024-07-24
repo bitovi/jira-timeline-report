@@ -16,7 +16,7 @@ module.exports = function () {
 		<p>You will be redirected in one moment.</p>
 		<div id="mainElement">Loading ... </div>
 		<script type="module">
-			import JiraOIDCHelpers from "./jira-oidc-helpers.js";
+			import JiraOIDCHelpers from "./request-helpers/jira-oidc-helpers.js";
 			import oauthCallback from "./oauth-callback.js";
 			const jiraHelpers = JiraOIDCHelpers(${JSON.stringify(getSafeEnv())});
 			oauthCallback(jiraHelpers);
