@@ -49847,10 +49847,10 @@ function getStartDateAndDueDataFromSprints$1(story){
             } 
         }
     }
-    return mergeStartAndDueData$1(records);
+    return mergeStartAndDueData$2(records);
     
 }
-function mergeStartAndDueData$1(records){
+function mergeStartAndDueData$2(records){
     const startData = records.filter( record => record?.startData ).map( record => record.startData );
     const dueData = records.filter( record => record?.dueData ).map( record => record.dueData );
 
@@ -49866,7 +49866,7 @@ function mergeStartAndDueData$1(records){
  * @returns {{startData: StartData, dueData: DueData}}
  */
 function getStartDateAndDueDataFromFieldsOrSprints$1(issue ){
-    return mergeStartAndDueData$1( [
+    return mergeStartAndDueData$2( [
         getStartDateAndDueDataFromFields$1(issue),
         getStartDateAndDueDataFromSprints$1(issue)
     ] );
@@ -50650,10 +50650,10 @@ function getStartDateAndDueDataFromSprints(story){
 
         }
     }
-    return mergeStartAndDueData(records);
+    return mergeStartAndDueData$1(records);
     
 }
-function mergeStartAndDueData(records){
+function mergeStartAndDueData$1(records){
     const startData = records.filter( record => record?.startData ).map( record => record.startData );
     const dueData = records.filter( record => record?.dueData ).map( record => record.dueData );
 
@@ -50664,13 +50664,13 @@ function mergeStartAndDueData(records){
 }
 
 function getStartDateAndDueDataFromFieldsOrSprints(issue ){
-    return mergeStartAndDueData( [
+    return mergeStartAndDueData$1( [
         getStartDateAndDueDataFromFields(issue),
         getStartDateAndDueDataFromSprints(issue)
     ] );
 }
 
-function parentFirstThenChildren(getIssueDateData, getChildDateData){
+function parentFirstThenChildren$1(getIssueDateData, getChildDateData){
     const issueDateData = getIssueDateData();
     const childrenDateData = getChildDateData();
     if(issueDateData.startData && issueDateData.dueData) {
@@ -50684,17 +50684,17 @@ function parentFirstThenChildren(getIssueDateData, getChildDateData){
     }
 }
 
-function childrenOnly(getIssueDateData, getChildDateData){
+function childrenOnly$1(getIssueDateData, getChildDateData){
     return getChildDateData();
 }
 
-function parentOnly(getIssueDateData, getChildDateData){
+function parentOnly$1(getIssueDateData, getChildDateData){
     // eventually we can look to remove these. Some code still depends on having children everywhere
     getChildDateData();
     return getIssueDateData();
 }
 
-function childrenFirstThenParent(getIssueDateData, getChildDateData){
+function childrenFirstThenParent$1(getIssueDateData, getChildDateData){
     const childrenDateData = getChildDateData();
     if(childrenDateData.startData && childrenDateData.dueData) {
         return childrenDateData;
@@ -50706,19 +50706,19 @@ function childrenFirstThenParent(getIssueDateData, getChildDateData){
     }
 }
 
-function widestRange(getIssueDateData, getChildDateData){
+function widestRange$1(getIssueDateData, getChildDateData){
     const childrenDateData = getChildDateData();
     const issueDateData = getIssueDateData();
     // eventually might want the reason to be more the parent ... but this is fine for now
-    return mergeStartAndDueData([childrenDateData, issueDateData]);
+    return mergeStartAndDueData$1([childrenDateData, issueDateData]);
 }
 
-const methods = {
-    parentFirstThenChildren,
-    childrenOnly,
-    childrenFirstThenParent,
-    widestRange,
-    parentOnly
+const methods$1 = {
+    parentFirstThenChildren: parentFirstThenChildren$1,
+    childrenOnly: childrenOnly$1,
+    childrenFirstThenParent: childrenFirstThenParent$1,
+    widestRange: widestRange$1,
+    parentOnly: parentOnly$1
 };
 
 const calculationKeysToNames = {
@@ -50744,7 +50744,7 @@ function getIssueWithDateData(issue, childMap, methodNames = ["childrenOnly","pa
     let methodName = methodNames[index] ? methodNames[index]: "parentOnly";
     index++;
 
-    const method = methods[methodName];
+    const method = methods$1[methodName];
     const issueClone = {
         ...issue,
         dateData: {
@@ -50762,7 +50762,7 @@ function getIssueWithDateData(issue, childMap, methodNames = ["childrenOnly","pa
         const datedChildren = children.map( (child)=> {
             return getIssueWithDateData(child, childMap,methodNames, index);
         });
-        const childrenData = mergeStartAndDueData(datedChildren.map(getDataDataFromDatedIssue));
+        const childrenData = mergeStartAndDueData$1(datedChildren.map(getDataDataFromDatedIssue));
         issueClone.dateData.children = addDateDataTo({
             issues: datedChildren
         },childrenData );
@@ -50794,7 +50794,7 @@ function getDataDataFromDatedIssue(issue){
 
 // provides an object with rolled updates
 function rollupDatesFromRollups(issues) {
-    const dateData = mergeStartAndDueData( issues.map(getDataDataFromDatedIssue) );
+    const dateData = mergeStartAndDueData$1( issues.map(getDataDataFromDatedIssue) );
 
     return {
         ...dateData.startData,
@@ -56368,7 +56368,7 @@ class TimelineConfiguration extends canStacheElement {
                     rollupCalculations.push({
                         type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
                         hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
-                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i]
+                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
                     });
                 }
                 return rollupCalculations;
@@ -56511,6 +56511,271 @@ function getTimingLevels(issueTypeMap, primaryIssueType, timingCalculations){
         childrenCalculations = issueTypeMap[setLevelCalculation.type].timingCalculations;
     }
     return timingLevels;
+}
+
+// Helpers that could be used to help rollup issue data
+// This isn't used currently
+
+/**
+ * @typedef {import("../derived/derive").DerivedWorkIssue | import("../releases/derive").DerivedRelease} IssueOrRelease
+ */
+/**
+ * @typedef {Array<IssueOrRelease>} IssuesOrReleases
+ */
+
+/**
+ * @callback CreateRollupDataFromParentAndChild
+ * @param {IssueOrRelease} issueOrRelease 
+ * @param {Array<Object>} children Child rollup data
+ * @param {Number} hierarchyLevel The level in the hierarchy being processed
+ * @param {Object} metadata
+ */
+
+/**
+ * @typedef {Array<{metaData: Object, rollupData: Array}>} RollupResponse
+ */
+
+
+/**
+ * This "MUST" have the deepest children in the bottom
+ * @param {Array<IssuesOrReleases>} groupedHierarchy 
+ * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild}} options 
+ */
+function rollupGroupedHierarchy(groupedHierarchy, {
+  createMetadataForHierarchyLevel = function(){ return {} },
+  createSingleNodeRollupData,
+  createRollupDataFromParentAndChild,
+  finalizeRollupData,
+  getChildren
+}) {
+
+  // we can build this ourselves if needed ... but costs memory.  Nice if we don't have to do this.
+  if(!getChildren) {
+    getChildren = makeGetChildren(groupedHierarchy.flat(1));
+  }
+  const rollupDataByKey = {};
+  function getChildrenRollupData(issue){
+    return getChildren(issue).map( childIssue => {
+      
+      const result = rollupDataByKey[childIssue.key];
+      if(!result) {
+        throw new Error("unable to find previously calculated child data ("+childIssue.key+"). Is your hierarchy in the right order?")
+      }
+      return result;
+    })
+  }
+
+  const rollupResponseData = [];
+  
+
+  for( let hierarchyLevel = 0; hierarchyLevel < groupedHierarchy.length; hierarchyLevel++) {
+    let issues = groupedHierarchy[hierarchyLevel];
+    
+    if(!issues) {
+      continue;
+    }
+
+    let hierarchyData = rollupResponseData[hierarchyLevel] = {
+      rollupData: [],
+      metadata: createMetadataForHierarchyLevel(hierarchyLevel, issues, hierarchyLevel)
+    };
+
+    for(let issue of issues) { 
+      // get children rollup data for issue
+      let children = getChildrenRollupData(issue);
+      let rollupData = createRollupDataFromParentAndChild(issue, children, hierarchyLevel, hierarchyData.metadata);
+      hierarchyData.rollupData.push(rollupData);
+      rollupDataByKey[issue.key] = rollupData;
+      // associate it with the issue 
+    }
+    
+    //onEndOfHierarchy(issueTypeData);
+    
+  }
+  return rollupResponseData;
+}
+  
+
+
+  /**
+ * 
+ * @param {IssuesOrReleases} issuesOrReleases 
+ */
+function makeGetChildren(issuesOrReleases) {
+  const keyToChildren = {};
+  // make a map of all children for the keys ...
+  for(let item of issuesOrReleases) {
+      const parents = getParentKeys(item);
+      for(let parentKey of parents) {
+          if(!keyToChildren[parentKey]) {
+              keyToChildren[parentKey] = [];
+          }
+          keyToChildren[parentKey].push(item);
+      }
+  }
+  /**
+   * @param {IssueOrRelease | String}
+   * @return {Array<IssuesOrReleases>}
+   */
+  return function getChildren(keyOrIssueOrRelease){
+      const key = typeof keyOrIssueOrRelease === "string" ? keyOrIssueOrRelease : keyOrIssueOrRelease.key;
+      return keyToChildren[key] || [];
+  }
+}
+
+/**
+ * Gets the parent's from some issue type.  We probably need some way types can provide this.
+ * @param {IssueOrRelease} issueOrRelease 
+ */
+function getParentKeys(issueOrRelease){
+  const parents = [];
+  if( issueOrRelease.parentKey ){
+      parents.push(issueOrRelease.parentKey);
+  }
+  if(issueOrRelease.releases) {
+      parents.push(...issueOrRelease.releases.map( release => release.key));
+  }
+  return parents;
+}
+
+/**
+ * 
+ * @param {IssuesOrReleases} issuesOrReleases 
+ * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
+ */
+function groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies) {
+
+  return rollupTypesAndHierarchies.map( ({type, hierarchyLevel}) => {
+    if(hierarchyLevel == null || hierarchyLevel === Infinity) {
+      return issuesOrReleases.filter( (issue)=> { return issue.type === type })
+    } else {
+      return issuesOrReleases.filter( (issue)=> { return issue.hierarchyLevel === hierarchyLevel })
+    }
+  }).reverse();
+
+}
+/**
+ * 
+ * @param {Array<IssuesOrReleases>} groupedHierarchy 
+ * @param {RollupResponse} rollupDatas 
+ * @param {String} key 
+ */
+function zipRollupDataOntoGroupedData(groupedHierarchy, rollupDatas, key) {
+  const newGroups = [];
+  for(let g = 0; g < groupedHierarchy.length; g++) {
+    let group = groupedHierarchy[g];
+    let newIssues = [];
+    newGroups.push(newIssues);
+    for(let i = 0; i < group.length; i++) {
+      let issue = group[i];
+      newIssues.push({
+        ...issue,
+        [key]: rollupDatas[g].rollupData[i]
+      });
+    }
+  }
+  return newGroups;
+}
+
+const methods = {
+    parentFirstThenChildren,
+    childrenOnly,
+    childrenFirstThenParent,
+    widestRange,
+    parentOnly
+};
+
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ */
+function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
+            const method = methods[methodName];
+            return method(issueOrRelease, children);
+        }
+    });
+}
+
+function makeQuickCopyDefinedProperties(keys) {
+    return function copy(source) {
+        const obj = {};
+        for(let key of keys) {
+            if(source[key] !== undefined) {
+                obj[key] = source[key];
+            }
+        }
+        return obj;
+    }
+}
+// makes testing easier if we don't create a bunch of "undefined" properties
+const getStartData = makeQuickCopyDefinedProperties(["start","startFrom"]);
+const getDueData = makeQuickCopyDefinedProperties(["due","dueTo"]);
+
+function mergeStartAndDueData(records){
+    
+    const startData = records.filter( record => record?.start ).map(getStartData);
+    const dueData = records.filter( record => record?.due ).map( getDueData );
+
+    return {
+        ... (startData.length ? startData.sort( (d1, d2) => d1.start - d2.start )[0] : {}),
+        ... (dueData.length ? dueData.sort( (d1, d2) => d2.due - d1.due )[0] : {})
+    }
+}
+
+/**
+ * 
+ * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
+ * @param {*} childrenRollups 
+ * @returns 
+ */
+function parentFirstThenChildren(parentIssueOrRelease, childrenRollups){
+    if(parentIssueOrRelease.type === "Milestone") {
+        debugger;
+    }
+    const childData = mergeStartAndDueData(childrenRollups);
+    const parentData = parentIssueOrRelease?.derivedTiming;
+
+    const parentHasStart = parentData?.start;
+    const parentHasDue = parentData?.due;
+
+    const combinedData = {
+        start: parentHasStart ? parentData?.start : childData?.start,
+        startFrom: parentHasStart ? parentData?.startFrom : childData?.startFrom,
+        due: parentHasDue ? parentData?.due : childData?.due,
+        dueTo: parentHasDue ? parentData?.dueTo : childData?.dueTo
+    };
+
+    return {
+        ...getStartData(combinedData),
+        ...getDueData(combinedData)
+    };
+}
+
+function childrenOnly(parentIssueOrRelease, childrenRollups){
+    return mergeStartAndDueData(childrenRollups);
+}
+
+function parentOnly(parentIssueOrRelease, childrenRollups){
+    return {
+        ...getStartData(parentIssueOrRelease.derivedTiming),
+        ...getDueData(parentIssueOrRelease.derivedTiming)
+    };
+}
+
+function childrenFirstThenParent(parentIssueOrRelease, childrenRollups){
+    if(childrenRollups.length) {
+        return mergeStartAndDueData(childrenRollups);
+    } 
+    return mergeStartAndDueData([parentIssueOrRelease.derivedTiming])
+}
+
+function widestRange(parentIssueOrRelease, childrenRollups){
+    return mergeStartAndDueData([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
 }
 
 class TimelineReport extends canStacheElement {
@@ -56757,10 +57022,19 @@ class TimelineReport extends canStacheElement {
     }
 
     get dateRollup(){
-      if(!this.derivedIssues && !this.timingCalculationMethods) {
+      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations) {
         return [];
       }
-      console.log("rollupTimingLevelsAndCalculations",this.rollupTimingLevelsAndCalculations);
+      const groupedIssues = groupIssuesByHierarchyLevelOrType(this.derivedIssues, this.rollupTimingLevelsAndCalculations);
+      const rollupMethods = this.rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+      const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
+      const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupAllChildDates");
+      console.log({
+        rolledUpDates, zipped
+      });
+
+
+      
       //rollupDates()
     }
     

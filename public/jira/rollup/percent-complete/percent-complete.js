@@ -1,7 +1,4 @@
 
-import { rollupHierarchy } from "../rollup.js";
-
-
 /**
  * @param { JiraIssue[] } issues
  * @param { PercentCompleteOptions } options
@@ -201,59 +198,3 @@ function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}) {
 
 
 
-
-// to look at later ....
-function altRollupWorkingDays(issues) {
-  return rollupHierarchy(issues, {
-    createRollupDataForHierarchyLevel: (level, issues)=> {
-      return {
-        // how many children on average
-        childCounts: [],
-        
-        // an array of the total of the number of days of work. Used to calculate the average
-        totalDaysOfWorkForAverage: [],
-        // which items need their average set after the average is calculated
-        needsAverageSet: [],
-        // this will be set later
-        averageTotalDays: null,
-        averageChildCount: null,
-
-        normalizedIssues: issues
-      }
-    },
-    createRollupDataForIssue: () => {
-      return {totalDays: 0, completedDays: 0};
-    },
-    
-    /**
-     * 
-     * @param {DerivedWorkIssue} issueData 
-     * @param {*} children 
-     * @param {*} issueTypeData 
-     */
-    onIssue: (issueData, children, issueTypeData) => {
-      
-      if(hierarchyLevel === BASE_HIERARCHY_LEVEL) {
-
-        // if it has self-calculated total days ..
-        if( issueData.totalDays ) {
-          // add those days to the average
-          issueTypeData.totalDaysOfWorkForAverage.push( issueData.totalDays );
-          // set the rollup value
-          issueData.rollups.totalDays = issueData.totalDays;
-        } 
-        else {
-          // add this issue to what needs its average
-          issueTypeData.needsAverageSet.push(issueData);
-        }
-        // we roll this up no matter what ... it's ok to roll up 0
-        issueData.rollups.completedDays = issueData.completedDays;
-      }
-      // initiatives and above
-      if( hierarchyLevel > BASE_HIERARCHY_LEVEL ) {
-        // handle "parent-like" issue
-        handleInitiative(issueData,{issueTypeData, issueKeyToChildren})
-      }
-    }
-  })
-}

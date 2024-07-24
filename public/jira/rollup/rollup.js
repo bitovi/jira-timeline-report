@@ -16,6 +16,10 @@
  * @param {Object} metadata
  */
 
+/**
+ * @typedef {Array<{metaData: Object, rollupData: Array}>} RollupResponse
+ */
+
 
 /**
  * This "MUST" have the deepest children in the bottom
@@ -90,60 +94,18 @@ export function sum(arr) {
 export function average(arr){
   return arr.length > 0 ? sum(arr) / arr.length : undefined;
 }
-
-
-export function rollupHierarchy(derivedWorkIssues, {
-    createRollupDataForHierarchyLevel,
-    createRollupDataForIssue,
-    onIssue,
-    onEndOfHierarchy,
-    rollupKey
-  }) {
-    const allIssueData = derivedWorkIssues.map( (issue)=> {
-      return {...issue, [rollupKey]: createRollupDataForIssue(issue) }
-    });
-    
-    const group = groupIssuesByHierarchyLevel(allIssueData);
-    const issueKeyToChildren = Object.groupBy(allIssueData, issue => issue.parentKey);
   
-    for( let hierarchyLevel = 0; hierarchyLevel < groupedIssueData.length; hierarchyLevel++) {
-      let issues = groupedIssueData[hierarchyLevel];
-      
-      if(!issues) {
-        continue;
-      }
-  
-      // Track rollup data
-      let issueTypeData = issueTypeDatas[hierarchyLevel] = createRollupDataForHierarchyLevel(hierarchyLevel, issues);
-  
-      // some data must be created, otherwise, skip
-      if(!issueTypeData) {
-        continue;
-      }
-      for(let issueData of allIssueData) { 
-        onIssue(issueData, issueKeyToChildren[issueData.key], issueTypeData)
-      }
-      
-      onEndOfHierarchy(issueTypeData);
+function groupIssuesByHierarchyLevel(issues, options) {
+  const sorted = issues //.sort(sortByIssueHierarchy);
+  const group = [];
+  for(let issue of sorted) {
+    if(!group[issue.hierarchyLevel]) {
+      group[issue.hierarchyLevel] = [];
     }
+    group[issue.hierarchyLevel].push(issue)
   }
-  
-  
-  
-  
-  
-  
-  function groupIssuesByHierarchyLevel(issues, options) {
-    const sorted = issues //.sort(sortByIssueHierarchy);
-    const group = [];
-    for(let issue of sorted) {
-      if(!group[issue.hierarchyLevel]) {
-        group[issue.hierarchyLevel] = [];
-      }
-      group[issue.hierarchyLevel].push(issue)
-    }
-    return group;
-  }
+  return group;
+}
   
 
 
@@ -188,33 +150,41 @@ function getParentKeys(issueOrRelease){
   return parents;
 }
 
+/**
+ * 
+ * @param {IssuesOrReleases} issuesOrReleases 
+ * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
+ */
+export function groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies) {
 
-export function groupNodesByLevels(nodes) {
-  // Create a map to store nodes by their parentKey
-  const map = new Map();
-  
-  // Populate the map
-  nodes.forEach(node => {
-    if (!map.has(node.parentKey)) {
-      map.set(node.parentKey, []);
+  return rollupTypesAndHierarchies.map( ({type, hierarchyLevel}) => {
+    if(hierarchyLevel == null || hierarchyLevel === Infinity) {
+      return issuesOrReleases.filter( (issue)=> { return issue.type === type })
+    } else {
+      return issuesOrReleases.filter( (issue)=> { return issue.hierarchyLevel === hierarchyLevel })
     }
-    map.get(node.parentKey).push(node);
-  });
+  }).reverse();
 
-  const levels = [];
-  let currentLevel = map.get(null) || []; // Start with top-level nodes (parentKey is null)
-
-  while (currentLevel.length > 0) {
-    levels.push(currentLevel);
-    const nextLevel = [];
-    
-    currentLevel.forEach(node => {
-      const children = map.get(node.key) || [];
-      nextLevel.push(...children);
-    });
-
-    currentLevel = nextLevel;
-  }
-
-  return levels;
 }
+/**
+ * 
+ * @param {Array<IssuesOrReleases>} groupedHierarchy 
+ * @param {RollupResponse} rollupDatas 
+ * @param {String} key 
+ */
+export function zipRollupDataOntoGroupedData(groupedHierarchy, rollupDatas, key) {
+  const newGroups = [];
+  for(let g = 0; g < groupedHierarchy.length; g++) {
+    let group = groupedHierarchy[g];
+    let newIssues = [];
+    newGroups.push(newIssues);
+    for(let i = 0; i < group.length; i++) {
+      let issue = group[i];
+      newIssues.push({
+        ...issue,
+        [key]: rollupDatas[g].rollupData[i]
+      });
+    }
+  }
+  return newGroups;
+} 

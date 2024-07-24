@@ -12,11 +12,10 @@ const methods = {
 
 /**
  * 
- * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases 
- * @param {Array<String>} methodNames 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
  */
 export function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
-
     return rollupGroupedHierarchy(groupedHierarchy, {
         createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
             const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
@@ -59,7 +58,9 @@ export function mergeStartAndDueData(records){
  * @returns 
  */
 export function parentFirstThenChildren(parentIssueOrRelease, childrenRollups){
-    
+    if(parentIssueOrRelease.type === "Milestone") {
+        debugger;
+    }
     const childData = mergeStartAndDueData(childrenRollups);
     const parentData = parentIssueOrRelease?.derivedTiming;
 

@@ -449,7 +449,7 @@ export class TimelineConfiguration extends StacheElement {
                     rollupCalculations.push({
                         type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
                         hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
-                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i]
+                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
                     })
                 }
                 return rollupCalculations;

@@ -20,6 +20,7 @@ import "./status-report.js";
 import "./timeline-configuration/timeline-configuration.js"
 
 import { rollupDates } from "./jira/rollup/dates/dates.js";
+import { groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "./jira/rollup/rollup.js";
 
 export class TimelineReport extends StacheElement {
     static view = `
@@ -267,10 +268,19 @@ export class TimelineReport extends StacheElement {
     }
 
     get dateRollup(){
-      if(!this.derivedIssues && !this.timingCalculationMethods) {
+      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations) {
         return [];
       }
-      console.log("rollupTimingLevelsAndCalculations",this.rollupTimingLevelsAndCalculations)
+      const groupedIssues = groupIssuesByHierarchyLevelOrType(this.derivedIssues, this.rollupTimingLevelsAndCalculations);
+      const rollupMethods = this.rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+      const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
+      const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupAllChildDates")
+      console.log({
+        rolledUpDates, zipped
+      })
+
+
+      
       //rollupDates()
     }
     
