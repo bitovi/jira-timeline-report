@@ -417,8 +417,9 @@ export default function JiraOIDCHelpers({
 				progress(progress.data);
 
 				const requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
+				const limitOrTotal = Math.min(total, limit || Infinity);
 
-				for (let i = startAt + maxResults; i < requests; i += maxResults) {
+				for (let i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
 					requests.push(
 						jiraHelpers.fetchJiraIssuesWithJQL({ maxResults: maxResults, startAt: i, ...apiParams })
 							.then(getRemainingChangeLogsForIssues)
