@@ -51320,37 +51320,41 @@ function responseToJSON$1(response) {
 	return response.json();
 }
 
-function requestHelper(
+async function requestHelper(
   {
     JIRA_API_URL
   },
   storageHelpers,
   {
-    requestUrl,
+    urlFragment,
     requestData = null
   }
 ) {
-  return function() {
-    return new Promise((resolve, reject) => {
-      const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
-      const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
+  return new Promise((resolve, reject) => {
+    const scopeIdForJira = storageHelpers.fetchFromLocalStorage('scopeId');
+    const accessToken = storageHelpers.fetchFromLocalStorage('accessToken');
 
-      const requestUrl = `${JIRA_API_URL}/${scopeIdForJira}`+urlFragment;
+    const requestUrl = `${JIRA_API_URL}/${scopeIdForJira}`+urlFragment;
 
-      const requestObj = {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        }
-      };
-      if(data !== null) {
-        requestObj.data = data;
+    const requestObj = {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
       }
-
-      console.log('Request URL: ', requestUrl);
-      console.log('Request Obj: ', requestObj);
-      return fetchJSON(requestUrl, requestObj)
-    })
-  }
+    };
+    if(requestData !== null) {
+      requestObj.data = requestData;
+    }
+    console.log('JIRA_API_URL: ', JIRA_API_URL);
+    console.log('scopeIdForJira ', scopeIdForJira);
+    console.log('Request URL: ', requestUrl);
+    console.log('Request Obj: ', requestObj);
+    try {
+      resolve(fetchJSON(requestUrl, requestObj));
+    }
+    catch(ex) {
+      reject(ex);
+    }
+  })
 }
 
 function responseToJSON(response) {
@@ -51514,9 +51518,11 @@ function JiraOIDCHelpers({
 			// 	}
 
 			// )
-			console.log('bbb');
 			const searchString = `/api/3/search?` + new URLSearchParams(params);
-			return requestHelper$1({ JIRA_API_URL }, storageHelpers, {requestUrl: searchString.toString()});
+			await requestHelper$1({ JIRA_API_URL }, storageHelpers, {urlFragment: searchString.toString()}).then((res) => {
+				console.log(res);
+				return res;
+			});
 		},
 		fetchJiraIssuesWithJQLWithNamedFields: async function (params) {
 			const fields = await fieldsRequest;

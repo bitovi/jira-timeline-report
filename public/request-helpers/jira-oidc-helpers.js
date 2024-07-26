@@ -184,9 +184,11 @@ export default function JiraOIDCHelpers({
 			// 	}
 
 			// )
-			console.log('bbb');
 			const searchString = `/api/3/search?` + new URLSearchParams(params);
-			return requestHelper({ JIRA_API_URL }, storageHelpers, {requestUrl: searchString.toString()});
+			await requestHelper({ JIRA_API_URL }, storageHelpers, {urlFragment: searchString.toString()}).then((res) => {
+				console.log(res);
+				return res;
+			})
 		},
 		fetchJiraIssuesWithJQLWithNamedFields: async function (params) {
 			const fields = await fieldsRequest;
