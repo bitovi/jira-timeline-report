@@ -1,5 +1,6 @@
 
-import { rollupGroupedHierarchy } from "../rollup";
+import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "../rollup";
+
 
 const methods = {
     parentFirstThenChildren,
@@ -10,10 +11,13 @@ const methods = {
 }
 
 
+
+
 /**
  * 
  * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
  * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
  */
 export function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
     return rollupGroupedHierarchy(groupedHierarchy, {
@@ -23,6 +27,34 @@ export function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) 
             return method(issueOrRelease, children);
         }
     });
+}
+
+/**
+ * @typedef {{
+ *   due: Date,
+ *   dueTo: {message: String, reference: Object},
+ *   start: Date,
+ *   startFrom: {message: String, reference: Object}
+ * } | {}} RollupDateData
+ */
+
+/**
+ * @typedef {import("../rollup").IssueOrRelease & {rollupDates: RollupDateData}} RolledupDatesReleaseOrIssue
+ */
+
+
+/**
+ * 
+ * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {{type: String, hierarchyLevel: Number, calculation: String}} rollupTimingLevelsAndCalculations 
+ * @return {Array<RolledupDatesReleaseOrIssue>}
+ */
+export function addRollupDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rollupMethods = rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+    const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupDates");
+    return zipped.flat();
 }
 
 function makeQuickCopyDefinedProperties(keys) {
@@ -58,9 +90,7 @@ export function mergeStartAndDueData(records){
  * @returns 
  */
 export function parentFirstThenChildren(parentIssueOrRelease, childrenRollups){
-    if(parentIssueOrRelease.type === "Milestone") {
-        debugger;
-    }
+
     const childData = mergeStartAndDueData(childrenRollups);
     const parentData = parentIssueOrRelease?.derivedTiming;
 

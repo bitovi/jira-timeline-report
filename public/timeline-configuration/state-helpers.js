@@ -18,7 +18,8 @@ export function csvToRawIssues(csvIssues){
           fields: {
             ...issue,
             "Parent Link": {data: issue["Parent Link"]},
-            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]}
+            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]},
+            "Status": {name: issue.Status}
           },
           key: issue["Issue key"]
         }
@@ -31,8 +32,12 @@ export function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers
     const progressData = value.with(null);
     
     const promise = value.returnedBy(function rawIssuesPromise(){
-        if( isLoggedIn.value === false || ! jql.value) {
+        if( isLoggedIn.value === false) {
             return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
+        }
+
+        if(!jql.value) {
+            return undefined;
         }
 
         progressData.value = null;

@@ -1,4 +1,52 @@
-import { getStatusCategoryDefault } from "../../../status-helpers";
+// this is the types work can be categorized as
+export const workType = ["design","dev","qa","uat"];
+
+// this is the workflow items this tool supports 
+
+export const workflowHappyPath = ["todo","design","dev","qa","uat","done"];
+export const workflowUnhappyStatuses = ["blocked"];
+
+
+const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
+const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
+export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
+export const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
+export const inIdeaStatuses =  Object.keys(inIdeaStatus);
+const inDoneStatus = { "Done": true, "Cancelled": true };
+const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true }
+
+
+const statusCategoryMap = (function(){
+
+	const items = [
+		["qa",inQAStatus],
+		["uat", inPartnerReviewStatus],
+		["todo", inIdeaStatus],
+		["done", inDoneStatus],
+		["blocked", blockedStatus]
+	];
+	const statusCategoryMap = {};
+	for( let [category, statusMap] of items) {
+		for(let prop in statusMap) {
+			statusCategoryMap[prop] = category
+		}
+	}
+	return statusCategoryMap;
+})();
+
+/**
+ * 
+ * @param {import("../derive").DerivedWorkIssue} issue 
+ */
+export function getStatusCategoryDefault(issue){
+	if(statusCategoryMap[issue.status]) {
+		return statusCategoryMap[issue.status];
+	} else {
+		return "dev";
+	}
+	
+}
+
 
 /**
  * @typedef {{
@@ -25,7 +73,7 @@ export function getWorkStatus(
 
 
 
-const workType = ["dev","qa","uat","design"];
+
 const workPrefix = workType.map( wt => wt+":")
 /**
  * @param {NormalizedIssue} normalizedIssue 
@@ -33,7 +81,7 @@ const workPrefix = workType.map( wt => wt+":")
  */
 function getWorkTypeDefault(normalizedIssue){
   
-  let wp = workPrefix.find( wp => normalizedIssue?.summary?.indexOf(wp) === 0);
+  let wp = workPrefix.find( wp => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0);
   if(wp) {
     return wp.slice(0, -1)
   }

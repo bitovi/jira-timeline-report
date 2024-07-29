@@ -19,8 +19,11 @@ import "./gantt-timeline.js";
 import "./status-report.js";
 import "./timeline-configuration/timeline-configuration.js"
 
-import { rollupDates } from "./jira/rollup/dates/dates.js";
-import { groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "./jira/rollup/rollup.js";
+import { addRollupDates } from "./jira/rollup/dates/dates.js";
+import { rollupDatesByWorkStatus } from "./jira/rolledup/work-type/work-type.js";
+import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback.js";
+import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
+import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 
 export class TimelineReport extends StacheElement {
     static view = `
@@ -55,6 +58,7 @@ export class TimelineReport extends StacheElement {
           sortByDueDate:to="this.sortByDueDate"
           showPercentComplete:to="this.showPercentComplete"
           rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
+          configuration:to="this.configuration"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -115,8 +119,10 @@ export class TimelineReport extends StacheElement {
                 <gantt-grid 
                     issues:from="this.primaryIssues" 
                     derivedIssues:from="this.derivedIssues"
+                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     breakdown:from="eq(this.primaryReportType, 'breakdown')"
-                    showPercentComplete:from="this.showPercentComplete"></gantt-grid>
+                    showPercentComplete:from="this.showPercentComplete"
+                    ></gantt-grid>
               {{ else }}
                 <gantt-timeline issues:from="this.primaryIssues"></gantt-timeline>
               {{/ or }}
@@ -264,24 +270,21 @@ export class TimelineReport extends StacheElement {
     // hooks
     async connected() {
       updateFullishHeightSection();
-      this.listenTo("dateRollup",({value})=>{console.log("dateRollup", value)})
     }
 
-    get dateRollup(){
-      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations) {
+    // this all the data pre-compiled
+    get rolledupAndRolledBackIssuesAndReleases(){
+      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
         return [];
       }
-      const groupedIssues = groupIssuesByHierarchyLevelOrType(this.derivedIssues, this.rollupTimingLevelsAndCalculations);
-      const rollupMethods = this.rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
-      const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
-      const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupAllChildDates")
-      console.log({
-        rolledUpDates, zipped
-      })
-
+      
+      const rolledUp = rollupAndRollback(this.derivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
+        new Date( new Date().getTime() - this.compareToTime.timePrior) );
 
       
-      //rollupDates()
+
+      const statuses = calculateReportStatuses(rolledUp);
+      return statuses;
     }
     
     
@@ -368,6 +371,10 @@ export class TimelineReport extends StacheElement {
       } else {
         return this.initiativesWithAStartAndEndDate;
       }
+    }
+    get primaryIssuesOrReleases(){
+      console.log(this.rolledupAndRolledBackIssuesAndReleases)
+      return groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations).reverse()[0];
     }
     get planningIssues(){
       if(!this.csvIssues) {

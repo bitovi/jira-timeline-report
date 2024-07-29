@@ -80,8 +80,8 @@ export class GanttGrid extends StacheElement {
             <!-- Each of the issues -->
             {{# for(issue of this.issuesWithPercentComplete) }}
                 <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.dateData.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
-                    {{issue.Summary}}
+                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                    {{issue.summary}}
                 </div>
                 <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
                     on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
@@ -111,7 +111,8 @@ export class GanttGrid extends StacheElement {
                 issue.completionRollup.totalWorkingDays
                 idToIssue[issue.key] = issue;
             }
-            return this.issues.map( issue => {
+           
+            return this.primaryIssuesOrReleases.map( issue => {
                 const issueData = idToIssue[issue["Issue key"]];
                 return {
                     ...issue,
@@ -119,7 +120,8 @@ export class GanttGrid extends StacheElement {
                 }
             })
         } else {
-            return this.issues;
+            console.log("what we workin wid", this.primaryIssuesOrReleases);
+            return this.primaryIssuesOrReleases;
         }
     }
     get lotsOfIssues(){
@@ -154,7 +156,7 @@ export class GanttGrid extends StacheElement {
                 round: Math.round
             }));
     }
-    classForSpecialStatus(status){
+    classForSpecialStatus(status, issue){
         if( status === "complete") {
             return "color-text-"+status;
         } else if(status === "blocked" ) {
@@ -185,6 +187,12 @@ export class GanttGrid extends StacheElement {
         const totalTime = (lastDay - firstDay);
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
+    /**
+     * 
+     * @param {} release 
+     * @param {*} index 
+     * @returns 
+     */
     getReleaseTimeline(release, index){
         const base = {
             gridColumn: '3 / span '+this.quartersAndMonths.months.length,
@@ -224,7 +232,7 @@ export class GanttGrid extends StacheElement {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
 
-        if (release.dateData.rollup.start && release.dateData.rollup.due) {
+        if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
 
                 function getPositions(work) {
                     if(work.start == null && work.due == null) {
@@ -312,13 +320,13 @@ export class GanttGrid extends StacheElement {
                     }
                 } else {
 
-                    const behindTime = makeLastPeriodElement(release.dateData.rollup.status, release.dateData.rollup.lastPeriod);
+                    const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
                     behindTime.classList.add(this.bigBarSize,"py-1")
                     lastPeriodRoot.appendChild(behindTime);
 
                     const team = document.createElement("div");
-                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.dateData.rollup.status;
-                    Object.assign(team.style, getPositions(release.dateData.rollup).style);
+                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.rollup.status;
+                    Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
                     team.style.opacity = "0.9";
                     
                     root.appendChild(team);

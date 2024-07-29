@@ -260,6 +260,11 @@ export class TimelineConfiguration extends StacheElement {
         get configurationPromise(){
             return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
         },
+        configuration: {
+            async() {
+                return this.configurationPromise
+            }
+        },
         derivedIssuesRequestData: {
             value({listenTo, resolve}) {
                 return derivedIssuesRequestData({

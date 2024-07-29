@@ -44322,20 +44322,20 @@ if (process.env.NODE_ENV !== 'production') {
 	canDebug_2_0_7_canDebug();
 }
 
-const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
-const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
-const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
-const inDoneStatus = { "Done": true, "Cancelled": true };
-const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
+const inQAStatus$1 = { "QA": true, "In QA": true, "QA Complete": true };
+const inPartnerReviewStatus$1 = { "Partner Review": true, "UAT": true };
+const inIdeaStatus$1 = {"Idea": true, "To Do": true, "Open": true};
+const inDoneStatus$1 = { "Done": true, "Cancelled": true };
+const blockedStatus$1 = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
 
-const statusCategoryMap = (function(){
+((function(){
 
 	const items = [
-		["qa",inQAStatus],
-		["uat", inPartnerReviewStatus],
-		["todo", inIdeaStatus],
-		["done", inDoneStatus],
-		["blocked", blockedStatus]
+		["qa",inQAStatus$1],
+		["uat", inPartnerReviewStatus$1],
+		["todo", inIdeaStatus$1],
+		["done", inDoneStatus$1],
+		["blocked", blockedStatus$1]
 	];
 	const statusCategoryMap = {};
 	for( let [category, statusMap] of items) {
@@ -44344,21 +44344,9 @@ const statusCategoryMap = (function(){
 		}
 	}
 	return statusCategoryMap;
-})();
+}))();
 
-const WIGGLE_ROOM = 0;
-/**
- * 
- * @param {import("./jira/derived/issue-data").DerivedWorkIssue} issue 
- */
-function getStatusCategoryDefault(issue){
-	if(statusCategoryMap[issue.status]) {
-		return statusCategoryMap[issue.status];
-	} else {
-		return "dev";
-	}
-	
-}
+const WIGGLE_ROOM$1 = 0;
 
 
 function addStatusToRelease(release) {
@@ -44416,10 +44404,7 @@ function addStatusToIssueAndChildren(issue) {
 
 function getInitiativeStatus(initiative) {
 
-	if(initiative["Issue key"] === "DRD-8370") {
-		debugger;
-	}
-		if (inDoneStatus[initiative.Status]) {
+		if (inDoneStatus$1[initiative.Status]) {
 				return {
 					status: "complete", 
 					statusData: {
@@ -44451,7 +44436,7 @@ function getInitiativeStatus(initiative) {
 			};
 		}
 
-		const timedTeamStatus = timedStatus(initiative.dateData.rollup);
+		const timedTeamStatus = timedStatus$1(initiative.dateData.rollup);
 
 		const warning = timedTeamStatus === "complete" && 
 			initiative.dateData.rollup?.issues?.length && initiative.dateData.rollup?.issues?.every(epic => !isStatusUatComplete(epic));
@@ -44466,16 +44451,16 @@ function getInitiativeStatus(initiative) {
 }
 
 function isStatusDevComplete(item) {
-		return inQAStatus[item.Status] || isStatusQAComplete(item);
+		return inQAStatus$1[item.Status] || isStatusQAComplete(item);
 }
 function isStatusQAComplete(item) {
-		return inPartnerReviewStatus[item.Status] || isStatusUatComplete(item);
+		return inPartnerReviewStatus$1[item.Status] || isStatusUatComplete(item);
 }
 function isStatusUatComplete(item) {
-		return inDoneStatus[item.Status]
+		return inDoneStatus$1[item.Status]
 }
 
-function timedStatus(timedRecord) {
+function timedStatus$1(timedRecord) {
 		if (!timedRecord.due) {
 				return "unknown"
 		}
@@ -44485,10 +44470,10 @@ function timedStatus(timedRecord) {
 		else if( (+timedRecord.due) < new Date()  ) {
 			return "complete";
 		} else if (timedRecord.lastPeriod && 
-			((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.lastPeriod.due)) ) {
+			((+timedRecord.due) > WIGGLE_ROOM$1 + (+timedRecord.lastPeriod.due)) ) {
 				return "behind";
 		} else if(timedRecord.lastPeriod && 
-			((+timedRecord.due) + WIGGLE_ROOM <  (+timedRecord.lastPeriod.due)) ) {
+			((+timedRecord.due) + WIGGLE_ROOM$1 <  (+timedRecord.lastPeriod.due)) ) {
 				return "ahead";
 		} else if(!timedRecord.lastPeriod) {
 			return "new";
@@ -44523,7 +44508,11 @@ function getInitiativeDevStatus(initiative) {
 				}
 			};
 		}
-		if (devDateData?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
+		function epicIsBlocked(epic){
+			return epic.Status.toLowerCase() === "blocked";
+		}
+
+		if (devDateData?.issues?.some( epicIsBlocked) ) {
 			return {
 				status: "blocked", 
 				statusData: {
@@ -44540,7 +44529,7 @@ function getInitiativeDevStatus(initiative) {
 				}
 			}
 		}
-		const timedDevStatus = timedStatus(devDateData);
+		const timedDevStatus = timedStatus$1(devDateData);
 
 		const warning = timedDevStatus === "complete" && 
 			devDateData?.issues?.length && devDateData?.issues?.every(epic => !isStatusDevComplete(epic));
@@ -44588,7 +44577,7 @@ function getInitiativeQaStatus(initiative) {
 				}
 			};
 		}
-		const timedQAStatus = timedStatus(qaDateData);
+		const timedQAStatus = timedStatus$1(qaDateData);
 		const warning = timedQAStatus === "complete" && 
 			qaDateData?.issues?.length && qaDateData?.issues?.every(epic => !isStatusQAComplete(epic));
 
@@ -44641,7 +44630,7 @@ function getInitiativeUatStatus(initiative) {
 	// should timed status be able to look at the actual statuses?
 	// lets say the UAT is "ontrack" (epicStatus won't report this currently)
 	// should we say there is a missmatch?
-	const statusFromTiming = timedStatus(uatDateData);
+	const statusFromTiming = timedStatus$1(uatDateData);
 
 	const warning = statusFromTiming === "complete" && 
 	uatDateData?.issues?.length && uatDateData?.issues?.every(epic => !isStatusUatComplete(epic));
@@ -49917,7 +49906,10 @@ function getConfidenceDefault({ fields }) {
    * @returns {string | void}
    */
   function getParentKeyDefault({ fields }) {
-    return fields["Parent"]?.key || fields["Parent Link"]?.data?.key;
+    return fields["Parent"]?.key || ( 
+        typeof fields["Parent Link"]?.data === "string" ?
+        fields["Parent Link"]?.data : 
+        fields["Parent Link"]?.data?.key); //this last part is probably a mistake ...
   }
   
   /**
@@ -49999,6 +49991,9 @@ function getConfidenceDefault({ fields }) {
   function getLabelsDefault({fields}) {
     return fields?.labels || []
   }
+  function getStatusCategoryDefault$1({fields}){
+    return fields?.Status?.statusCategory?.name
+  }
   /**
    * @typedef {{
    *   name: String,
@@ -50025,7 +50020,7 @@ function getConfidenceDefault({ fields }) {
    *   'Parent Link': { data: { key: string } },
    *   'Project Key': string,
    *   'Start date': string | null,
-   *   Status: { name: string }
+   *   Status: { name: string, statusCategory: {name: string} }
    *   'Story points': number | null | undefined,
    *   'Story points median': number | null | undefined,
    *   Summary: string
@@ -50065,6 +50060,7 @@ function getConfidenceDefault({ fields }) {
     getParallelWorkLimit = getParallelWorkLimitDefault,
     getSprints = getSprintsDefault,
     getStatus = getStatusDefault,
+    getStatusCategory = getStatusCategoryDefault$1,
     getLabels = getLabelsDefault,
     getReleases = getReleasesDefault
   } = {}){
@@ -50074,6 +50070,7 @@ function getConfidenceDefault({ fields }) {
         parallelWorkLimit = getParallelWorkLimit(teamName),
         totalPointsPerDay = velocity / daysPerSprint,
         pointsPerDayPerTrack = totalPointsPerDay  / parallelWorkLimit;
+
       const data = {
         summary: issue.fields.Summary,
         key: getIssueKey(issue),
@@ -50096,6 +50093,7 @@ function getConfidenceDefault({ fields }) {
         },
         url: getUrl(issue),
         status: getStatus(issue),
+        statusCategory: getStatusCategory(issue),
         labels: getLabels(issue),
         releases: getReleases(issue),
         issue
@@ -50120,6 +50118,7 @@ function getConfidenceDefault({ fields }) {
   *  url: string,
   *  sprints: null | Array<NormalizedSprint>,
   *  status: null | string,
+  *  statusCategory: null | string,
   *  issue: JiraIssue,
   *  labels: Array<string>,
   *  releases: Array<NormalizedRelease>
@@ -50148,6 +50147,49 @@ function allStatusesSorted(issues) {
   return [...new Set(statuses)].sort();
 }
 
+// this is the types work can be categorized as
+const workType = ["design","dev","qa","uat"];
+
+
+const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
+const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
+const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
+const inDoneStatus = { "Done": true, "Cancelled": true };
+const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
+
+
+const statusCategoryMap = (function(){
+
+	const items = [
+		["qa",inQAStatus],
+		["uat", inPartnerReviewStatus],
+		["todo", inIdeaStatus],
+		["done", inDoneStatus],
+		["blocked", blockedStatus]
+	];
+	const statusCategoryMap = {};
+	for( let [category, statusMap] of items) {
+		for(let prop in statusMap) {
+			statusCategoryMap[prop] = category;
+		}
+	}
+	return statusCategoryMap;
+})();
+
+/**
+ * 
+ * @param {import("../derive").DerivedWorkIssue} issue 
+ */
+function getStatusCategoryDefault(issue){
+	if(statusCategoryMap[issue.status]) {
+		return statusCategoryMap[issue.status];
+	} else {
+		return "dev";
+	}
+	
+}
+
+
 /**
  * @typedef {{
  *   statusType: string,
@@ -50173,7 +50215,7 @@ function getWorkStatus(
 
 
 
-const workType = ["dev","qa","uat","design"];
+
 const workPrefix = workType.map( wt => wt+":");
 /**
  * @param {NormalizedIssue} normalizedIssue 
@@ -50181,7 +50223,7 @@ const workPrefix = workType.map( wt => wt+":");
  */
 function getWorkTypeDefault(normalizedIssue){
   
-  let wp = workPrefix.find( wp => normalizedIssue?.summary?.indexOf(wp) === 0);
+  let wp = workPrefix.find( wp => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0);
   if(wp) {
     return wp.slice(0, -1)
   }
@@ -50393,14 +50435,14 @@ function derivedToCSVFormat(derivedIssue) {
 window.fieldsSet = new Set();
 
 
-function getSprintNumbers(value) {
+function getSprintNumbers$1(value) {
     if(value === "") {
         return null;
     } else {
         return value.split(",").map( num => +num);
     }
 }
-function getSprintNames(value) {
+function getSprintNames$1(value) {
     if(value === "") {
         return null;
     } else {
@@ -50409,14 +50451,14 @@ function getSprintNames(value) {
 }
 
 
-const fields = {
+const fields$1 = {
 
     // from will look like "1619, 1647"
     // we need to update `lastReturnValue` to have 
     // only the right sprints
     Sprint: function(lastReturnValue, change, {sprints}) {
-        const sprintNumbers = getSprintNumbers( change.from );
-        const sprintNames = getSprintNames(change.fromString);
+        const sprintNumbers = getSprintNumbers$1( change.from );
+        const sprintNames = getSprintNames$1(change.fromString);
         
         if( sprintNumbers === null ) {
             return null;
@@ -50452,7 +50494,7 @@ const fields = {
         }
     }
 };
-const fieldAlias = {
+const fieldAlias$1 = {
     "duedate": "Due date",
     "status": "Status",
     "labels": "Labels",
@@ -50461,7 +50503,7 @@ const fieldAlias = {
     "Fix Version": "Fix versions"
 };
 
-function getSprintsMapsFromIssues(issues){
+function getSprintsMapsFromIssues$1(issues){
     const ids = new Map();
     const names = new Map();
     for(const issue of issues) {
@@ -50473,7 +50515,7 @@ function getSprintsMapsFromIssues(issues){
     return {ids, names};
 }
 
-function getVersionsFromIssues(issues){
+function getVersionsFromIssues$1(issues){
     const ids = new Map();
     const names = new Map();
     for(const issue of issues) {
@@ -50489,8 +50531,8 @@ function getVersionsFromIssues(issues){
 
 
 function issues(issues, rollbackTime) {
-    const sprints = getSprintsMapsFromIssues(issues);
-    const versions = getVersionsFromIssues(issues);
+    const sprints = getSprintsMapsFromIssues$1(issues);
+    const versions = getVersionsFromIssues$1(issues);
     return issues.map(i => issue(i, rollbackTime , {sprints, versions})).filter( i => i );
 }
 
@@ -50506,10 +50548,10 @@ function issue(issue, rollbackTime, data) {
         }
         items.forEach( (change) => {
             const {field, from, to} = change;
-            const fieldName = fieldAlias[field] || field;
+            const fieldName = fieldAlias$1[field] || field;
 
-            if(fields[fieldName]) {
-                copy[fieldName] = fields[fieldName](copy[fieldName], change, data);
+            if(fields$1[fieldName]) {
+                copy[fieldName] = fields$1[fieldName](copy[fieldName], change, data);
             } else {
                 copy[fieldName] = from;
             }
@@ -55129,8 +55171,8 @@ class GanttGrid extends canStacheElement {
             <!-- Each of the issues -->
             {{# for(issue of this.issuesWithPercentComplete) }}
                 <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.dateData.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
-                    {{issue.Summary}}
+                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                    {{issue.summary}}
                 </div>
                 <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
                     on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
@@ -55160,7 +55202,8 @@ class GanttGrid extends canStacheElement {
                 issue.completionRollup.totalWorkingDays;
                 idToIssue[issue.key] = issue;
             }
-            return this.issues.map( issue => {
+           
+            return this.primaryIssuesOrReleases.map( issue => {
                 const issueData = idToIssue[issue["Issue key"]];
                 return {
                     ...issue,
@@ -55168,7 +55211,8 @@ class GanttGrid extends canStacheElement {
                 }
             })
         } else {
-            return this.issues;
+            console.log("what we workin wid", this.primaryIssuesOrReleases);
+            return this.primaryIssuesOrReleases;
         }
     }
     get lotsOfIssues(){
@@ -55203,7 +55247,7 @@ class GanttGrid extends canStacheElement {
                 round: Math.round
             }));
     }
-    classForSpecialStatus(status){
+    classForSpecialStatus(status, issue){
         if( status === "complete") {
             return "color-text-"+status;
         } else if(status === "blocked" ) {
@@ -55234,6 +55278,12 @@ class GanttGrid extends canStacheElement {
         const totalTime = (lastDay - firstDay);
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
+    /**
+     * 
+     * @param {} release 
+     * @param {*} index 
+     * @returns 
+     */
     getReleaseTimeline(release, index){
         const base = {
             gridColumn: '3 / span '+this.quartersAndMonths.months.length,
@@ -55273,7 +55323,7 @@ class GanttGrid extends canStacheElement {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
 
-        if (release.dateData.rollup.start && release.dateData.rollup.due) {
+        if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
 
                 function getPositions(work) {
                     if(work.start == null && work.due == null) {
@@ -55361,13 +55411,13 @@ class GanttGrid extends canStacheElement {
                     }
                 } else {
 
-                    const behindTime = makeLastPeriodElement(release.dateData.rollup.status, release.dateData.rollup.lastPeriod);
+                    const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
                     behindTime.classList.add(this.bigBarSize,"py-1");
                     lastPeriodRoot.appendChild(behindTime);
 
                     const team = document.createElement("div");
-                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.dateData.rollup.status;
-                    Object.assign(team.style, getPositions(release.dateData.rollup).style);
+                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.rollup.status;
+                    Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
                     team.style.opacity = "0.9";
                     
                     root.appendChild(team);
@@ -55782,7 +55832,8 @@ function csvToRawIssues(csvIssues){
           fields: {
             ...issue,
             "Parent Link": {data: issue["Parent Link"]},
-            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]}
+            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]},
+            "Status": {name: issue.Status}
           },
           key: issue["Issue key"]
         }
@@ -55795,8 +55846,12 @@ function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers},{list
     const progressData = canValue_1_1_2_canValue.with(null);
     
     const promise = canValue_1_1_2_canValue.returnedBy(function rawIssuesPromise(){
-        if( isLoggedIn.value === false || ! jql.value) {
+        if( isLoggedIn.value === false) {
             return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
+        }
+
+        if(!jql.value) {
+            return undefined;
         }
 
         progressData.value = null;
@@ -56178,6 +56233,11 @@ class TimelineConfiguration extends canStacheElement {
         },
         get configurationPromise(){
             return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
+        },
+        configuration: {
+            async() {
+                return this.configurationPromise
+            }
         },
         derivedIssuesRequestData: {
             value({listenTo, resolve}) {
@@ -56668,10 +56728,9 @@ function zipRollupDataOntoGroupedData(groupedHierarchy, rollupDatas, key) {
     newGroups.push(newIssues);
     for(let i = 0; i < group.length; i++) {
       let issue = group[i];
-      newIssues.push({
-        ...issue,
-        [key]: rollupDatas[g].rollupData[i]
-      });
+      let clone = {...issue};//Object.create(issue);
+      clone[key] = rollupDatas[g].rollupData[i];
+      newIssues.push(clone);
     }
   }
   return newGroups;
@@ -56686,10 +56745,13 @@ const methods = {
 };
 
 
+
+
 /**
  * 
  * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
  * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
  */
 function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
     return rollupGroupedHierarchy(groupedHierarchy, {
@@ -56699,6 +56761,34 @@ function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
             return method(issueOrRelease, children);
         }
     });
+}
+
+/**
+ * @typedef {{
+ *   due: Date,
+ *   dueTo: {message: String, reference: Object},
+ *   start: Date,
+ *   startFrom: {message: String, reference: Object}
+ * } | {}} RollupDateData
+ */
+
+/**
+ * @typedef {import("../rollup").IssueOrRelease & {rollupDates: RollupDateData}} RolledupDatesReleaseOrIssue
+ */
+
+
+/**
+ * 
+ * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {{type: String, hierarchyLevel: Number, calculation: String}} rollupTimingLevelsAndCalculations 
+ * @return {Array<RolledupDatesReleaseOrIssue>}
+ */
+function addRollupDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rollupMethods = rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+    const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupDates");
+    return zipped.flat();
 }
 
 function makeQuickCopyDefinedProperties(keys) {
@@ -56734,9 +56824,7 @@ function mergeStartAndDueData(records){
  * @returns 
  */
 function parentFirstThenChildren(parentIssueOrRelease, childrenRollups){
-    if(parentIssueOrRelease.type === "Milestone") {
-        debugger;
-    }
+
     const childData = mergeStartAndDueData(childrenRollups);
     const parentData = parentIssueOrRelease?.derivedTiming;
 
@@ -56778,6 +56866,497 @@ function widestRange(parentIssueOrRelease, childrenRollups){
     return mergeStartAndDueData([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
 }
 
+// this is more like "derived" from "rollup"
+
+// given some "rolled up" dates ....
+
+// Go to each item ... get it's children ... filter by work status type ...
+// add those as children ...
+
+
+/**
+ * @typedef {import("../../rollup/dates/dates").RollupDateData & {issues: Array<WorkStatusTimingReleaseOrIssue>}} DateAndIssues
+ */
+
+/**
+ * @typedef {{
+ *   children: DateAndIssues,
+ *   dev: DateAndIssues,
+ *   qa: DateAndIssues,
+ *   design: DateAndIssues,
+ *   uat: DateAndIssues
+ * }} WorkTypeRollups
+ */
+
+
+
+/**
+ * @typedef {import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue & {workTypeRollups: WorkTypeRollups}} WorkTypeTimingReleaseOrIssue
+ */
+
+/**
+ * Children are now recursive
+ * @param {Array<import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue>} issuesAndReleases 
+ * @return {Array<WorkTypeTimingReleaseOrIssue>}
+ */
+
+function rollupDatesByWorkStatus(issuesAndReleases){
+    // lets make the copies b/c we are going to mutate ...
+    const copies = issuesAndReleases.map( issue => {
+        return {...issue}//Object.create(issue);
+    });
+
+    const getChildren = makeGetChildren(copies);
+
+    for(let issue of copies) {
+        const children = getChildren(issue);
+        const workTypeRollups = {
+            children: {issues: children}
+        };
+        
+        issue.workTypeRollups = workTypeRollups;
+        for(let child of children) {
+            if(!workTypeRollups[child.derivedStatus.workType]) {
+                workTypeRollups[child.derivedStatus.workType] = {issues: []};
+            }
+            workTypeRollups[child.derivedStatus.workType].issues.push(child);
+        }
+        for(let prop in issue.workTypeRollups) {
+            const rollupDates = issue.workTypeRollups[prop].issues.map( issue => issue.rollupDates );
+            Object.assign(issue.workTypeRollups[prop], mergeStartAndDueData(rollupDates));
+        }
+    }
+    return copies;
+}
+
+function getSprintNumbers(value) {
+    if(value === "") {
+        return null;
+    } else {
+        return value.split(",").map( num => +num);
+    }
+}
+function getSprintNames(value) {
+    if(value === "") {
+        return null;
+    } else {
+        return value.split(",").map( name => name.trim() );
+    }
+}
+
+
+const fields = {
+
+    // from will look like "1619, 1647"
+    // we need to update `lastReturnValue` to have 
+    // only the right sprints
+    Sprint: function(lastReturnValue, change, fieldName, {sprints}) {
+        const sprintNumbers = getSprintNumbers( change.from );
+        const sprintNames = getSprintNames(change.fromString);
+        
+        if( sprintNumbers === null ) {
+            return {[fieldName]: null};
+        } else {
+
+            return {[fieldName]: sprintNumbers.map( (number, i)=>{
+                // REMOVE IN PROD
+                if(sprints.ids.has(number) ) {
+                    return sprints.ids.get(number);
+                } else if(sprints.names.has(sprintNames[i])) {
+                    return sprints.names.get(sprintNames[i]);
+                } else {
+                    console.warn("Can't find sprint ", number, sprintNames[i]);
+                }
+                
+            }) }
+        }
+        
+    },
+    "Fix versions": function(lastReturnValue, change, fieldName, {versions}) {
+
+        if(change.from) {
+            if(versions.ids.has(change.from)) {
+                return {[fieldName]: versions.ids.get(change.from)};
+            } else if( versions.names.has(change.fromString) ) {
+                return {[fieldName]: versions.names.get(change.fromString)};
+            } else {
+                console.warn("Can't find release version ", change.from, change.fromString);
+                return {[fieldName]: lastReturnValue};
+            }
+        } else {
+            return {[fieldName]: []};
+        }
+    },
+    // Parent Link, Epic Link, 
+    "IssueParentAssociation": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString, id: change.to}}
+    },
+    "Parent Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
+    },
+    "Epic Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
+    }
+};
+const fieldAlias = {
+    "duedate": "Due date",
+    "status": "Status",
+    "labels": "Labels",
+    "issuetype": "Issue Type",
+    // "summary": "Summary" // we don't want to change summary
+    "Fix Version": "Fix versions"
+};
+
+function getSprintsMapsFromIssues(issues){
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        for(const sprint of (issue.fields.Sprint || [])) {
+            ids.set(sprint.id, sprint);
+            names.set(sprint.name, sprint);
+        }
+    }
+    return {ids, names};
+}
+
+function getVersionsFromIssues(issues){
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        for(const version of (issue.fields["Fix versions"] || [])) {
+            ids.set(version.id, version);
+            names.set(version.name, version);
+        }
+    }
+    return {ids, names};
+}
+
+
+
+function rollbackIssues(issues, rollbackTime) {
+    const sprints = getSprintsMapsFromIssues(issues);
+    const versions = getVersionsFromIssues(issues);
+    return issues.map(i => rollbackIssue(i, {sprints, versions}, rollbackTime)).filter( i => i );
+}
+
+const oneHourAgo = new Date(new Date() - 1000*60*60);
+
+/**
+ * @typedef {{
+ *   rolledBackTo: Date,
+ *   didNotExist: Boolen
+ * }} RolledBackMetadata
+ */
+
+/**
+ * @typedef {import("../../normalized/normalize").JiraIssue & {rollbackMetadata: RolledBackMetadata}} RolledBackJiraIssue
+ */
+
+/**
+ * @param {import("../../normalized/normalize").JiraIssue} issue 
+ * @param {*} data 
+ * @param {Date} rollbackTime 
+ * @returns {RolledBackJiraIssue}
+ */
+function rollbackIssue(issue, data, rollbackTime = oneHourAgo) {
+
+    const {changelog, ...copy} = issue;
+    copy.rollbackMetadata = {rolledbackTo: rollbackTime};
+    // ignore old issues
+    if( parseDateISOString(issue.fields.Created) > rollbackTime) {
+        return;
+        /*
+        copy.rollbackMetadata.didNotExist = true;
+        delete copy.fields;
+        // should convert to date ...
+        copy.rollbackMetadata.didNotExistBefore = issue.fields.Created;
+        return copy;*/
+    }
+    // 
+    
+    copy.fields = {...issue.fields};
+
+    for(const {items, created} of changelog) {
+        // we need to go back before ... 
+        if( parseDateISOString(created) < rollbackTime) {
+            break;
+        }
+        items.forEach( (change) => {
+            const {field, from, to} = change;
+            const fieldName = fieldAlias[field] || field;
+
+            if(fields[fieldName]) {
+
+                Object.assign(copy.fields, fields[fieldName](copy[fieldName], change, fieldName, data) );
+            } else {
+                copy.fields[fieldName] = from;
+            }
+
+        });
+    }
+    return copy;
+}
+
+/*
+export function collectChangelog(observableBaseIssues, priorTime) {
+    const changes = observableBaseIssues.map( baseIssue => {
+        return baseIssue.changelog.map( change => {
+            return {...change, issue: baseIssue, createdDate: parseDateISOString(change.created) };
+        })
+    } ).flat().sort( (cl1, cl2) => cl1.createdDate - cl2.createdDate);
+
+    return changes.filter( change => change.createdDate >= priorTime );
+}
+
+
+export function applyChangelog(changes, data) {
+    for(const {items, created, issue} of changes) {
+
+        items.forEach( (change) => {
+            const {field, from, to} = change;
+
+            if(field in issue) {
+                if(fields[field]) {
+                    issue[field] = fields[field](issue[field], change, data);
+                } else {
+                    issue[field] = from;
+                }
+                
+            }
+        })
+    }
+}
+
+
+
+function sleep(time) {
+    return new Promise(function(resolve){
+        if(!time) {
+            resolve();
+        }
+    })
+}
+
+const CHANGE_APPLY_AMOUNT = 2000;
+export async function applyChangelogs(observableBaseIssues, priorTime) {
+    const changes = collectChangelog(observableBaseIssues, priorTime);
+    console.log("processing",changes.length, "changes");
+    const sprints = getSprintsMapsFromIssues(observableBaseIssues);
+    const batches = [];
+    
+    while(changes.length) {
+        await sleep();
+        const batch = changes.splice(0, CHANGE_APPLY_AMOUNT);
+        applyChangelog(batch, {sprints});
+    }
+}*/
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupBlockedIssuesForGroupedHierarchy(groupedHierarchy) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            const blockedIssues = children.flat(1);
+            if(issueOrRelease.derivedStatus.statusType === "blocked") {
+                blockedIssues.push(issueOrRelease);
+            }
+            return blockedIssues;
+        }
+    });
+}
+
+// these functions shouldn't be used eventually for performance ...
+function rollupBlockedStatusIssues(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rolledUpBlockers = rollupBlockedIssuesForGroupedHierarchy(groupedIssues);
+
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, "blockedStatusIssues");
+    return zipped.flat();
+}
+
+/**
+ * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
+ */
+
+/**
+ * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issueLastPeriod: RolledBackWorkTypeTimingReleaseOrIssue}} IssueOrReleaseWithPreviousTiming
+ */
+
+/**
+ * @param {derivedIssues} derivedIssues 
+ * @param {*} configuration 
+ * @param {*} when 
+ * @return {IssueOrReleaseWithPreviousTiming}
+ */
+function rollupAndRollback(derivedIssues, configuration, rollupTimingLevelsAndCalculations, when){
+    
+    // get old issues and prepare them
+    const oldRawIssues = derivedIssuesToRawIssues(derivedIssues);
+    const pastStatusRolledUp = rollbackNormalizeAndDeriveEverything(oldRawIssues, configuration, rollupTimingLevelsAndCalculations, when);
+
+    // prepare current issues
+    const currentStatusRolledUp = addRollups(derivedIssues, rollupTimingLevelsAndCalculations);
+
+    const oldMap = {};
+    for(let oldIssue of pastStatusRolledUp) {
+        oldMap[oldIssue.id] = oldIssue;
+    }
+    // associate
+    for(let newIssue of currentStatusRolledUp) {
+        // as this function creates new stuff anyway ... maybe it's ok to mutate?
+        newIssue.issueLastPeriod = oldMap[newIssue.id];
+    }
+    return currentStatusRolledUp;
+}
+
+function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
+    const rolledUpDates = addRollupDates(derivedIssues, rollupTimingLevelsAndCalculations);
+    const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
+    return rollupDatesByWorkStatus(rolledUpBlockers);
+    
+}
+
+function rollbackNormalizeAndDeriveEverything(rawIssues, configuration, rollupTimingLevelsAndCalculations, when){
+    const pastRawIssues = rollbackIssues(rawIssues, when);
+    //const dne = pastRawIssues.filter(ri => ri.rollbackMetadata.didNotExistBefore);
+    
+    const pastDerived = pastRawIssues.map( (issue)=>{
+        const normalized = normalizeIssue(issue,configuration);
+        return deriveIssue(normalized, configuration);
+    });
+    return addRollups(pastDerived, rollupTimingLevelsAndCalculations)
+
+}
+
+
+
+function derivedIssuesToRawIssues(derivedIssues){
+    return derivedIssues.map(dI => dI.issue)
+}
+
+const workTypeRollups = ["children", ...workType];
+const WIGGLE_ROOM = 0;
+/**
+ * 
+ * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
+ */
+function prepareTimingData(issueWithPriorTiming) {
+    //if(issueWithPriorTiming.key === "IMP-94") {
+    //    debugger;
+    //}
+    const timingData = {
+        rollup: {
+            ...issueWithPriorTiming.rollupDates,
+            lastPeriod: issueWithPriorTiming.issueLastPeriod.issue.rollbackMetadata.didNotExist ? null : 
+                issueWithPriorTiming.issueLastPeriod.rollupDates
+        }
+    };
+    for(let workType of workTypeRollups) {
+        const workRollup = issueWithPriorTiming.workTypeRollups[workType];
+        if(workRollup) {
+            timingData[workType] = {
+                ...workRollup,
+                lastPeriod: issueWithPriorTiming.workTypeRollups[workType]
+            };
+        }
+    }
+    return timingData;
+}
+
+function setWorkTypeStatus(workType, timingData){
+    // compare the parent status ... could be before design, after UAT and we should warn
+    // what about blocked on any child?
+
+    // if everything is complete, complete
+
+    if(timingData.issues.length && timingData.issues.every(issue => issue.statusCategory === "done")) {
+        timingData.status = "complete";
+        timingData.statusFrom = {message: "Everything is done"};
+    } else if(timingData.issues.some(issue => issue.blockedStatusIssues.length)) {
+        timingData.status = "blocked"; 
+        timingData.statusFrom = {message: "This or a child is in a blocked status"};
+    }
+    else {
+        Object.assign(timingData, timedStatus(timingData));
+    }
+}
+
+
+
+/**
+ * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
+ */
+function calculateStatuses(issueWithPriorTiming){
+    const timingData = prepareTimingData(issueWithPriorTiming);
+
+    // do the rollup
+    if(issueWithPriorTiming.statusCategory === "done") {
+        timingData.rollup.status = "complete";
+        // we should check all the children ...
+        timingData.rollup.statusFrom = {message: "Own status"};
+    } else if(issueWithPriorTiming.workTypeRollups.children.issues.length && issueWithPriorTiming.workTypeRollups.children.issues.every(issue => issue.statusCategory === "done")) {
+        timingData.rollup.status = "complete";
+        timingData.rollup.statusFrom = {message: "Children are all done, but the parent is not", warning: true};
+    } else if(issueWithPriorTiming.blockedStatusIssues.length) {
+        debugger;
+        timingData.rollup.status = "blocked"; 
+        timingData.rollup.statusFrom = {message: "This or a child is in a blocked status"};
+    }
+    else {
+        Object.assign(timingData.rollup, timedStatus(timingData.rollup));
+    }
+    // do all the others 
+    for(let workCategory of workType) {
+        if(timingData[workCategory]) {
+            setWorkTypeStatus(workCategory, timingData[workCategory]);
+        }
+    }
+
+    return timingData;
+}
+
+
+function calculateReportStatuses(issues) {
+    return issues.map((issue)=> {
+        return {
+            ...issue,
+            rollupStatuses: calculateStatuses(issue)
+        }
+    })
+}
+
+
+function timedStatus(timedRecord) {
+    if (!timedRecord.due) {
+            return {status: "unknown", statusFrom: {message: "there is no timing data"}}
+    }
+    // if now is after the complete date
+    // we force complete ... however, we probably want to warn if this isn't in the
+    // completed state
+    else if( (+timedRecord.due) < new Date()  ) {
+        return {status: "complete", statusFrom: {message: "Issue is in the past, but not marked as done", warning: true}};
+    } else if (timedRecord.lastPeriod && 
+        ((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.lastPeriod.due)) ) {
+            return {status: "behind", statusFrom: {message: "This was due earlier last period", warning: true}};
+    } else if(timedRecord.lastPeriod && 
+        ((+timedRecord.due) + WIGGLE_ROOM <  (+timedRecord.lastPeriod.due)) ) {
+            return {status: "ahead", statusFrom: {message: "Ahead of schedule compared to last time"}};
+    } else if(!timedRecord.lastPeriod) {
+        return {status: "new", statusFrom: {message: "Unable to find this last period"}};
+    }
+    
+    if (timedRecord.start > new Date()) {
+            return {status: "notstarted", statusFrom: {message: "This has not started yet"}};
+    }
+    else {
+            return {status: "ontrack", statusFrom: {message: "This hasn't changed time yet"}};
+    }
+}
+
 class TimelineReport extends canStacheElement {
     static view = `
       <div 
@@ -56811,6 +57390,7 @@ class TimelineReport extends canStacheElement {
           sortByDueDate:to="this.sortByDueDate"
           showPercentComplete:to="this.showPercentComplete"
           rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
+          configuration:to="this.configuration"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -56871,8 +57451,10 @@ class TimelineReport extends canStacheElement {
                 <gantt-grid 
                     issues:from="this.primaryIssues" 
                     derivedIssues:from="this.derivedIssues"
+                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     breakdown:from="eq(this.primaryReportType, 'breakdown')"
-                    showPercentComplete:from="this.showPercentComplete"></gantt-grid>
+                    showPercentComplete:from="this.showPercentComplete"
+                    ></gantt-grid>
               {{ else }}
                 <gantt-timeline issues:from="this.primaryIssues"></gantt-timeline>
               {{/ or }}
@@ -57018,24 +57600,21 @@ class TimelineReport extends canStacheElement {
     // hooks
     async connected() {
       updateFullishHeightSection();
-      this.listenTo("dateRollup",({value})=>{console.log("dateRollup", value);});
     }
 
-    get dateRollup(){
-      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations) {
+    // this all the data pre-compiled
+    get rolledupAndRolledBackIssuesAndReleases(){
+      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
         return [];
       }
-      const groupedIssues = groupIssuesByHierarchyLevelOrType(this.derivedIssues, this.rollupTimingLevelsAndCalculations);
-      const rollupMethods = this.rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
-      const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
-      const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupAllChildDates");
-      console.log({
-        rolledUpDates, zipped
-      });
-
+      
+      const rolledUp = rollupAndRollback(this.derivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
+        new Date( new Date().getTime() - this.compareToTime.timePrior) );
 
       
-      //rollupDates()
+
+      const statuses = calculateReportStatuses(rolledUp);
+      return statuses;
     }
     
     
@@ -57122,6 +57701,10 @@ class TimelineReport extends canStacheElement {
       } else {
         return this.initiativesWithAStartAndEndDate;
       }
+    }
+    get primaryIssuesOrReleases(){
+      console.log(this.rolledupAndRolledBackIssuesAndReleases);
+      return groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations).reverse()[0];
     }
     get planningIssues(){
       if(!this.csvIssues) {

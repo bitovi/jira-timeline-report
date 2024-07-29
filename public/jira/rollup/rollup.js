@@ -113,7 +113,7 @@ function groupIssuesByHierarchyLevel(issues, options) {
  * 
  * @param {IssuesOrReleases} issuesOrReleases 
  */
-function makeGetChildren(issuesOrReleases) {
+export function makeGetChildren(issuesOrReleases) {
   const keyToChildren = {};
   // make a map of all children for the keys ...
   for(let item of issuesOrReleases) {
@@ -180,10 +180,9 @@ export function zipRollupDataOntoGroupedData(groupedHierarchy, rollupDatas, key)
     newGroups.push(newIssues);
     for(let i = 0; i < group.length; i++) {
       let issue = group[i];
-      newIssues.push({
-        ...issue,
-        [key]: rollupDatas[g].rollupData[i]
-      });
+      let clone = {...issue};//Object.create(issue);
+      clone[key] = rollupDatas[g].rollupData[i];
+      newIssues.push(clone);
     }
   }
   return newGroups;

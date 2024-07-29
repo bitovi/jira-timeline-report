@@ -66,7 +66,7 @@ test("rawIssuesRequestData", function(assert){
         }, hooks)
     });
 
-    expect(requestData.value.issuesPromise).toBeInstanceOf(Promise) 
+    expect(requestData.value.issuesPromise).toBe(undefined) 
 
     jql.value = "Something";
 

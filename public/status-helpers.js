@@ -37,18 +37,7 @@ function warn(...args){
 		}
 	}))
 }
-/**
- * 
- * @param {import("./jira/derived/issue-data").DerivedWorkIssue} issue 
- */
-export function getStatusCategoryDefault(issue){
-	if(statusCategoryMap[issue.status]) {
-		return statusCategoryMap[issue.status];
-	} else {
-		return "dev";
-	}
-	
-}
+
 /**
  * 
  * @param {import("./jira/derived/issue-data").NormalizedIssue} issue
@@ -113,9 +102,6 @@ export function addStatusToIssueAndChildren(issue) {
 
 function getInitiativeStatus(initiative) {
 
-	if(initiative["Issue key"] === "DRD-8370") {
-		debugger;
-	}
 		if (inDoneStatus[initiative.Status]) {
 				return {
 					status: "complete", 
@@ -219,9 +205,12 @@ export function getInitiativeDevStatus(initiative) {
 					message: "All epics are dev complete. Move the issue to a `QA` status"
 				}
 			};
-				return "complete"
 		}
-		if (devDateData?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
+		function epicIsBlocked(epic){
+			return epic.Status.toLowerCase() === "blocked";
+		}
+
+		if (devDateData?.issues?.some( epicIsBlocked) ) {
 			return {
 				status: "blocked", 
 				statusData: {

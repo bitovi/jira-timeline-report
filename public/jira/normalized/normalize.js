@@ -47,7 +47,10 @@ export function getConfidenceDefault({ fields }) {
    * @returns {string | void}
    */
   export function getParentKeyDefault({ fields }) {
-    return fields["Parent"]?.key || fields["Parent Link"]?.data?.key;
+    return fields["Parent"]?.key || ( 
+        typeof fields["Parent Link"]?.data === "string" ?
+        fields["Parent Link"]?.data : 
+        fields["Parent Link"]?.data?.key); //this last part is probably a mistake ...
   }
   
   /**
@@ -129,6 +132,9 @@ export function getConfidenceDefault({ fields }) {
   export function getLabelsDefault({fields}) {
     return fields?.labels || []
   }
+  export function getStatusCategoryDefault({fields}){
+    return fields?.Status?.statusCategory?.name
+  }
   /**
    * @typedef {{
    *   name: String,
@@ -155,7 +161,7 @@ export function getConfidenceDefault({ fields }) {
    *   'Parent Link': { data: { key: string } },
    *   'Project Key': string,
    *   'Start date': string | null,
-   *   Status: { name: string }
+   *   Status: { name: string, statusCategory: {name: string} }
    *   'Story points': number | null | undefined,
    *   'Story points median': number | null | undefined,
    *   Summary: string
@@ -195,6 +201,7 @@ export function getConfidenceDefault({ fields }) {
     getParallelWorkLimit = getParallelWorkLimitDefault,
     getSprints = getSprintsDefault,
     getStatus = getStatusDefault,
+    getStatusCategory = getStatusCategoryDefault,
     getLabels = getLabelsDefault,
     getReleases = getReleasesDefault
   } = {}){
@@ -204,6 +211,7 @@ export function getConfidenceDefault({ fields }) {
         parallelWorkLimit = getParallelWorkLimit(teamName),
         totalPointsPerDay = velocity / daysPerSprint,
         pointsPerDayPerTrack = totalPointsPerDay  / parallelWorkLimit;
+
       const data = {
         summary: issue.fields.Summary,
         key: getIssueKey(issue),
@@ -226,6 +234,7 @@ export function getConfidenceDefault({ fields }) {
         },
         url: getUrl(issue),
         status: getStatus(issue),
+        statusCategory: getStatusCategory(issue),
         labels: getLabels(issue),
         releases: getReleases(issue),
         issue
@@ -250,6 +259,7 @@ export function getConfidenceDefault({ fields }) {
   *  url: string,
   *  sprints: null | Array<NormalizedSprint>,
   *  status: null | string,
+  *  statusCategory: null | string,
   *  issue: JiraIssue,
   *  labels: Array<string>,
   *  releases: Array<NormalizedRelease>

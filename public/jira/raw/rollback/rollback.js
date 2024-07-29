@@ -1,6 +1,6 @@
-import { parseDateISOString } from "../date-helpers.js";
+import { parseDateISOString } from "../../../date-helpers";
 
-window.fieldsSet = new Set();
+const fieldsSet = new Set();
 
 
 function getSprintNumbers(value) {
@@ -24,15 +24,15 @@ export const fields = {
     // from will look like "1619, 1647"
     // we need to update `lastReturnValue` to have 
     // only the right sprints
-    Sprint: function(lastReturnValue, change, {sprints}) {
+    Sprint: function(lastReturnValue, change, fieldName, {sprints}) {
         const sprintNumbers = getSprintNumbers( change.from );
         const sprintNames = getSprintNames(change.fromString);
         
         if( sprintNumbers === null ) {
-            return null;
+            return {[fieldName]: null};
         } else {
 
-            return sprintNumbers.map( (number, i)=>{
+            return {[fieldName]: sprintNumbers.map( (number, i)=>{
                 // REMOVE IN PROD
                 if(sprints.ids.has(number) ) {
                     return sprints.ids.get(number);
@@ -42,25 +42,34 @@ export const fields = {
                     console.warn("Can't find sprint ", number, sprintNames[i]);
                 }
                 
-            })
-            return copy.filter( sprint => sprintNumbers.has(sprint.id));
+            }) }
         }
         
     },
-    "Fix versions": function(lastReturnValue, change, {versions}) {
+    "Fix versions": function(lastReturnValue, change, fieldName, {versions}) {
 
         if(change.from) {
             if(versions.ids.has(change.from)) {
-                return versions.ids.get(change.from)
+                return {[fieldName]: versions.ids.get(change.from)};
             } else if( versions.names.has(change.fromString) ) {
-                return versions.names.get(change.fromString)
+                return {[fieldName]: versions.names.get(change.fromString)};
             } else {
                 console.warn("Can't find release version ", change.from, change.fromString);
-                return lastReturnValue;
+                return {[fieldName]: lastReturnValue};
             }
         } else {
-            return [];
+            return {[fieldName]: []};
         }
+    },
+    // Parent Link, Epic Link, 
+    "IssueParentAssociation": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString, id: change.to}}
+    },
+    "Parent Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
+    },
+    "Epic Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
     }
 }
 const fieldAlias = {
@@ -98,24 +107,48 @@ function getVersionsFromIssues(issues){
 
 
 
-
-export function issues(issues, rollbackTime) {
+export function rollbackIssues(issues, rollbackTime) {
     const sprints = getSprintsMapsFromIssues(issues);
     const versions = getVersionsFromIssues(issues);
-    return issues.map(i => issue(i, rollbackTime , {sprints, versions})).filter( i => i );
+    return issues.map(i => rollbackIssue(i, {sprints, versions}, rollbackTime)).filter( i => i );
 }
 
 const oneHourAgo = new Date(new Date() - 1000*60*60)
 
-export function issue(issue, rollbackTime = oneHourAgo, data) {
+/**
+ * @typedef {{
+ *   rolledBackTo: Date,
+ *   didNotExist: Boolen
+ * }} RolledBackMetadata
+ */
+
+/**
+ * @typedef {import("../../normalized/normalize").JiraIssue & {rollbackMetadata: RolledBackMetadata}} RolledBackJiraIssue
+ */
+
+/**
+ * @param {import("../../normalized/normalize").JiraIssue} issue 
+ * @param {*} data 
+ * @param {Date} rollbackTime 
+ * @returns {RolledBackJiraIssue}
+ */
+export function rollbackIssue(issue, data, rollbackTime = oneHourAgo) {
+
+    const {changelog, ...copy} = issue;
+    copy.rollbackMetadata = {rolledbackTo: rollbackTime};
     // ignore old issues
     if( parseDateISOString(issue.fields.Created) > rollbackTime) {
         return;
+        /*
+        copy.rollbackMetadata.didNotExist = true;
+        delete copy.fields;
+        // should convert to date ...
+        copy.rollbackMetadata.didNotExistBefore = issue.fields.Created;
+        return copy;*/
     }
     // 
-    const {changelog, ...copy} = issue;
+    
     copy.fields = {...issue.fields};
-    copy.rolledbackTo = rollbackTime;
 
     for(const {items, created} of changelog) {
         // we need to go back before ... 
@@ -127,7 +160,8 @@ export function issue(issue, rollbackTime = oneHourAgo, data) {
             const fieldName = fieldAlias[field] || field;
 
             if(fields[fieldName]) {
-                copy.fields[fieldName] = fields[fieldName](copy[fieldName], change, data);
+
+                Object.assign(copy.fields, fields[fieldName](copy[fieldName], change, fieldName, data) );
             } else {
                 copy.fields[fieldName] = from;
             }
