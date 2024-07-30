@@ -10,8 +10,6 @@ import JiraOIDCHelpers from "./jira-oidc-helpers.js";
 import { getHostedRequestHelper } from "./request-helpers/hosted-request-helpers.js";
 
 export default async function main(config) {
-	// TODO: TR-11 send config to request helper
-	// do the fetch in the request helper
 	const requestHelper = getHostedRequestHelper(config);
 
 	const jiraHelpers = JiraOIDCHelpers(config, requestHelper);

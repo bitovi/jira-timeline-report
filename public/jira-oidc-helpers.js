@@ -347,7 +347,6 @@ export default function JiraOIDCHelpers({
 			})
 		},
 		fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params, progress= function(){}) {
-			//TODO: TR-11 third
 			const { limit: limit, ...apiParams } = params;
 
 
