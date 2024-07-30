@@ -2,7 +2,7 @@
   "name": "Timeline Report",
   "description": "Create reports to illustrate the timeline.",
   "key": "bitovi.timeline-report",
-  "baseUrl": "https://e590-68-187-209-164.ngrok-free.app/",
+  "baseUrl": "https://ae5f-72-199-32-178.ngrok-free.app",
   "vendor": {
     "name": "Bitovi LLC",
     "url": "http://bitovi.com"
@@ -14,7 +14,7 @@
   "modules": {
     "generalPages": [
       {
-        "url": "/",
+        "url": "/connect",
         "key": "main",
         "location": "system.top.navigation.bar",
         "name": {

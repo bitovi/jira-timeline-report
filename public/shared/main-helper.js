@@ -1,16 +1,26 @@
 
-import { TimelineReport } from "./timeline-report.js";
+import { TimelineReport } from "../timeline-report.js";
 
-import "./shared/saved-urls.js";
-import "./shared/select-cloud.js";
-import "./shared/velocities-from-issue.js"
+import "../shared/saved-urls.js";
+import "../shared/select-cloud.js";
+import "../shared/velocities-from-issue.js"
 
-import JiraLogin from "./shared/jira-login.js";
-import JiraOIDCHelpers from "./jira-oidc-helpers.js";
-import { getHostedRequestHelper } from "./request-helpers/hosted-request-helpers.js";
+import JiraLogin from "../shared/jira-login.js";
+import JiraOIDCHelpers from "../jira-oidc-helpers.js";
+import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
+import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
-export default async function main(config) {
-	const requestHelper = getHostedRequestHelper(config);
+export default async function mainHelper(config, host) {
+  console.log(host);
+  console.log(host === 'jira');
+  let requestHelper;
+  if(host === 'jira') {
+    console.log('AAA');
+    requestHelper = getConnectRequestHelper();
+  } else {
+    console.log('BBB');
+    requestHelper = getHostedRequestHelper(config);
+  }
 
 	const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
 

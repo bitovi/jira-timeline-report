@@ -55294,8 +55294,14 @@ function getHostedRequestHelper({ JIRA_API_URL }) {
 
 }
 
-async function main(config) {
-	const requestHelper = getHostedRequestHelper(config);
+async function mainHelper(config, host) {
+  console.log(host);
+  console.log(host === 'jira');
+  let requestHelper;
+  {
+    console.log('BBB');
+    requestHelper = getHostedRequestHelper(config);
+  }
 
 	const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
 
@@ -55334,5 +55340,9 @@ async function main(config) {
 
 }
 
+async function main(config) {
+	return mainHelper(config, 'hosted');
+}
+
 export { main as default };
-//# sourceMappingURL=main.js.map
+//# sourceMappingURL=hosted-main.js.map
