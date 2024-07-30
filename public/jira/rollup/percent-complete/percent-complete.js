@@ -1,3 +1,190 @@
+import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "../rollup";
+
+
+export function addPercentComplete(issuesOrReleases, rollupTimingLevelsAndCalculations) {
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+  const rollupMethods = rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+  const rolledUpDates = rollupPercentComplete(groupedIssues, rollupMethods);
+  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "completionRollup");
+  return zipped.flat();
+}
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<Object>}
+ */
+export function rollupPercentComplete(groupedHierarchy, methodNames, {getChildren}  = {}) {
+  return rollupGroupedHierarchy(groupedHierarchy, {
+      createMetadataForHierarchyLevel(hierarchyLevel){
+        return {
+          // how many children on average
+          childCounts: [],
+          
+          // an array of the total of the number of days of work. Used to calculate the average
+          totalDaysOfWorkForAverage: [],
+          // which items need their average set after the average is calculated
+          needsAverageSet: [],
+          // this will be set later
+          averageTotalDays: null,
+          averageChildCount: null,
+        }
+      },
+      finalizeMetadataForHierarchyLevel(metadata, rollupData) {
+        let ave = average( metadata.totalDaysOfWorkForAverage ) || 30;
+        metadata.averageTotalDays = ave;
+
+        //metadata.averageChildCount = average( metadata.childCounts )
+        // set average on children that need it
+        metadata.needsAverageSet.forEach( data => {
+          data.totalWorkingDays = ave;
+        })
+      },
+      createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+        const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
+        const method = methods[methodName];
+        return method(issueOrRelease, children, hierarchyLevel, metadata);
+      }
+  });
+}
+
+function emptyRollup(){
+  return {
+    completedWorkingDays: 0,
+    totalWorkingDays: 0,
+    userSpecifiedValues: false,
+    get remainingWorkingDays(){
+      return this.totalWorkingDays - this.completedWorkingDays
+    }
+  }
+}
+
+function sumChildRollups(children){
+  const userSpecifiedValues = children.every( d => d.userSpecifiedValues );
+  const totalDays = children.map(child => child.totalWorkingDays);
+  const completedDays = children.map(child => child.completedWorkingDays);
+  return {
+    completedWorkingDays: sum(completedDays),
+    totalWorkingDays: sum(totalDays),
+    userSpecifiedValues: userSpecifiedValues,
+    get remainingWorkingDays(){
+      return this.totalWorkingDays - this.completedWorkingDays
+    }
+  }
+}
+
+const methods = {
+  parentFirstThenChildren,
+  childrenOnly,
+  childrenFirstThenParent,
+  widestRange,
+  parentOnly
+};
+
+
+/**
+ * 
+ * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
+ * @param {*} childrenRollups 
+ * @returns 
+ */
+export function parentFirstThenChildren(parentIssueOrRelease, childrenRollups,hierarchyLevel, metadata){
+  debugger;
+  // if there is hard parent data, use it
+  var data;
+  if(parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+    data = {
+      completedWorkingDays: parentIssueOrRelease.derivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentIssueOrRelease.derivedTiming.totalDaysOfWork,
+      userSpecifiedValues: true,
+      get remainingWorkingDays(){
+        return this.totalWorkingDays - this.completedWorkingDays
+      }
+    }
+    // make sure we can build an average from it 
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  } 
+  // if there is hard child data, use it
+  else if(childrenRollups.length && childrenRollups.every( d => d.userSpecifiedValues )) {
+    data = sumChildRollups(childrenRollups);
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  }
+  // if there is weak children data, use it, but don't use it for other averages
+  else if(childrenRollups.length) {
+    data = sumChildRollups(childrenRollups);
+    return data;
+  }
+  // if there are no children, add to get the uncertainty
+  else {
+    data = emptyRollup();
+    metadata.needsAverageSet.push(data);
+    return data;
+  }
+}
+
+export function childrenOnly(parentIssueOrRelease, childrenRollups){
+  return mergeStartAndDueData(childrenRollups);
+}
+
+export function parentOnly(parentIssueOrRelease, childrenRollups){
+  return {
+      ...getStartData(parentIssueOrRelease.derivedTiming),
+      ...getDueData(parentIssueOrRelease.derivedTiming)
+  };
+}
+
+export function childrenFirstThenParent(parentIssueOrRelease, childrenRollups,hierarchyLevel, metadata){
+  var data;
+  // if there is hard child data, use it
+  if(childrenRollups.length && childrenRollups.every( d => d.userSpecifiedValues )) {
+    data = sumChildRollups(childrenRollups);
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  }
+  // if there is hard parent data, use it
+  else if(parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+    data = {
+      completedWorkingDays: parentIssueOrRelease.derivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentIssueOrRelease.derivedTiming.totalDaysOfWork,
+      userSpecifiedValues: true,
+      get remainingWorkingDays(){
+        return this.totalWorkingDays - this.completedWorkingDays
+      }
+    }
+    // make sure we can build an average from it 
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  } 
+  
+  // if there is weak children data, use it, but don't use it for other averages
+  else if(childrenRollups.length) {
+    data = sumChildRollups(childrenRollups);
+    return data;
+  }
+  // if there are no children, add to get the uncertainty
+  else {
+    data = emptyRollup();
+    metadata.needsAverageSet.push(data);
+    return data;
+  }
+}
+
+export function widestRange(parentIssueOrRelease, childrenRollups){
+  return mergeStartAndDueData([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
+  
+  const childrenDateData = getChildDateData();
+  const issueDateData = getIssueDateData();
+  // eventually might want the reason to be more the parent ... but this is fine for now
+  return mergeStartAndDueData([childrenDateData, issueDateData]);
+}
+
+
+
+
+
 
 /**
  * @param { JiraIssue[] } issues

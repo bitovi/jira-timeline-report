@@ -21,7 +21,6 @@ export default function(releases){
 	/*const semverReleases = Object.keys(releasesToInitiatives).sort( (a, b)=> {
 		const initiatives = releasesToInitiatives[a];
 
-		debugger;
 		epicTimingData();
 		return 1;
 	});

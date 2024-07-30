@@ -373,8 +373,43 @@ export class TimelineReport extends StacheElement {
       }
     }
     get primaryIssuesOrReleases(){
-      console.log(this.rolledupAndRolledBackIssuesAndReleases)
-      return groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations).reverse()[0];
+      if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
+        return [];
+      }
+      const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations)
+      const unfilteredPrimaryIssuesOrReleases = groupedHierarchy.reverse()[0];
+      
+      const hideUnknownInitiatives = this.hideUnknownInitiatives;
+      let statusesToRemove = this.statusesToRemove;
+      let statusesToShow =  this.statusesToShow;
+      function startBeforeDue(initiative) {
+        return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
+      }
+      // lets remove stuff!
+      const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
+        if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
+          return false;
+        }
+        if(statusesToShow && statusesToShow.length) {
+          if(!statusesToShow.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
+        if(statusesToRemove && statusesToRemove.length) {
+          if(statusesToRemove.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
+        return true;
+      });
+      if(this.sortByDueDate) {
+        return filtered.toSorted( (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
+      } else {
+        return filtered;
+      }
+
+      
+
     }
     get planningIssues(){
       if(!this.csvIssues) {

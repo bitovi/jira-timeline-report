@@ -140,14 +140,22 @@ export function getConfidenceDefault({ fields }) {
    *   name: String,
    *   id: String,
    *   type: "releases",
-   *   key: "string"
+   *   key: "string",
+   *   summary: String,
    * }} NormalizedRelease
    */
 
 
   export function getReleasesDefault ({fields}) {
-    return (fields["Fix versions"] || []).map( ({name, id})=> {
-      return {name, id, type: "release", key: "SPECIAL:release-"+id}
+    let fixVersions = fields["Fix versions"];
+    if(!fixVersions) {
+      fixVersions = [];
+    }
+    if(!Array.isArray(fixVersions)) {
+      fixVersions = [fixVersions]
+    }
+    return fixVersions.map( ({name, id})=> {
+      return {name, id, type: "Release", key: "SPECIAL:release-"+id, summary: name}
     });
   }
   

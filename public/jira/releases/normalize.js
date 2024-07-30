@@ -6,17 +6,17 @@
  * @param {Array<import("../normalized/normalize").NormalizedIssue>} normalizedIssues 
  * @return {Array<import("../normalized/normalize").NormalizedRelease>}
  */
-function normalizedReleases(normalizedIssues){
-    const idToRelease = {};
+export function normalizeReleases(normalizedIssues){
+    const nameToRelease = {};
     for(let normalizedIssue of normalizedIssues) {
         const releases = normalizedIssue.releases;
         for(let release of releases) {
-            if(!idToRelease[release.id]) {
-                idToRelease[release.id] = release;
+            if(!nameToRelease[release.name]) {
+                nameToRelease[release.name] = release;
             }
         }
     }
-    return Object.values(idToRelease);
+    return Object.values(nameToRelease);
 }
 
 

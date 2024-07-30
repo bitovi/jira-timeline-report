@@ -4,6 +4,9 @@ import { normalizeIssue } from "../normalized/normalize";
 import { addRollupDates } from "../rollup/dates/dates";
 import { rollupDatesByWorkStatus } from "../rolledup/work-type/work-type";
 import { rollupBlockedStatusIssues } from "../rollup/blocked-status-issues/blocked-status-issues";
+import { deriveReleases } from "../releases/derive";
+import { normalizeReleases } from "../releases/normalize";
+import { percentComplete as rollupPercentComplete, addPercentComplete } from "../rollup/percent-complete/percent-complete";
 
 /**
  * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
@@ -30,20 +33,24 @@ export function rollupAndRollback(derivedIssues, configuration, rollupTimingLeve
 
     const oldMap = {};
     for(let oldIssue of pastStatusRolledUp) {
-        oldMap[oldIssue.id] = oldIssue;
+        // TODO: use id in the future to handle issue keys being changed
+        oldMap[oldIssue.key] = oldIssue;
     }
     // associate
     for(let newIssue of currentStatusRolledUp) {
         // as this function creates new stuff anyway ... maybe it's ok to mutate?
-        newIssue.issueLastPeriod = oldMap[newIssue.id];
+        newIssue.issueLastPeriod = oldMap[newIssue.key];
     }
     return currentStatusRolledUp;
 }
 
 function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
-    const rolledUpDates = addRollupDates(derivedIssues, rollupTimingLevelsAndCalculations);
+    const normalizedReleases = normalizeReleases(derivedIssues)
+    const releases = deriveReleases(normalizedReleases);
+    const rolledUpDates = addRollupDates([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
     const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
-    return rollupDatesByWorkStatus(rolledUpBlockers);
+    const percentComplete = addPercentComplete(rolledUpBlockers, rollupTimingLevelsAndCalculations)
+    return rollupDatesByWorkStatus(percentComplete);
     
 }
 

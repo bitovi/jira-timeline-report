@@ -8,14 +8,12 @@ const WIGGLE_ROOM = 0;
  * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
  */
 function prepareTimingData(issueWithPriorTiming) {
-    //if(issueWithPriorTiming.key === "IMP-94") {
-    //    debugger;
-    //}
+
     const timingData = {
         rollup: {
             ...issueWithPriorTiming.rollupDates,
-            lastPeriod: issueWithPriorTiming.issueLastPeriod.issue.rollbackMetadata.didNotExist ? null : 
-                issueWithPriorTiming.issueLastPeriod.rollupDates
+            lastPeriod: issueWithPriorTiming.issueLastPeriod ? issueWithPriorTiming.issueLastPeriod.rollupDates : null
+                
         }
     }
     for(let workType of workTypeRollups) {
@@ -24,6 +22,10 @@ function prepareTimingData(issueWithPriorTiming) {
             timingData[workType] = {
                 ...workRollup,
                 lastPeriod: issueWithPriorTiming.workTypeRollups[workType]
+            }
+        } else {
+            timingData[workType] = {
+                issues: []
             }
         }
     }
@@ -65,7 +67,6 @@ function calculateStatuses(issueWithPriorTiming){
         timingData.rollup.status = "complete";
         timingData.rollup.statusFrom = {message: "Children are all done, but the parent is not", warning: true};
     } else if(issueWithPriorTiming.blockedStatusIssues.length) {
-        debugger;
         timingData.rollup.status = "blocked"; 
         timingData.rollup.statusFrom = {message: "This or a child is in a blocked status"}
     }

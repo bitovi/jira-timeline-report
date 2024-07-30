@@ -9,7 +9,8 @@ export function rollupBlockedIssuesForGroupedHierarchy(groupedHierarchy) {
     return rollupGroupedHierarchy(groupedHierarchy, {
         createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
             const blockedIssues = children.flat(1);
-            if(issueOrRelease.derivedStatus.statusType === "blocked") {
+            // releases don't have a status
+            if(issueOrRelease?.derivedStatus?.statusType === "blocked") {
                 blockedIssues.push(issueOrRelease)
             }
             return blockedIssues;

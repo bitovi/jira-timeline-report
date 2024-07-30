@@ -17,6 +17,13 @@
  */
 
 /**
+ * @callback CreateMetadataForHierarchyLevel
+ * @param {Number} hierarchyLevel The level in the hierarchy being processed
+ * @param {Array<IssueOrRelease>} issueOrReleases 
+ * @return {Object} Metadata object
+ */
+
+/**
  * @typedef {Array<{metaData: Object, rollupData: Array}>} RollupResponse
  */
 
@@ -24,13 +31,13 @@
 /**
  * This "MUST" have the deepest children in the bottom
  * @param {Array<IssuesOrReleases>} groupedHierarchy 
- * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild}} options 
+ * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild, createMetadataForHierarchyLevel: CreateMetadataForHierarchyLevel}} options 
  */
 export function rollupGroupedHierarchy(groupedHierarchy, {
   createMetadataForHierarchyLevel = function(){ return {} },
   createSingleNodeRollupData,
   createRollupDataFromParentAndChild,
-  finalizeRollupData,
+  finalizeMetadataForHierarchyLevel = function(){},
   getChildren
 }) {
 
@@ -62,7 +69,7 @@ export function rollupGroupedHierarchy(groupedHierarchy, {
 
     let hierarchyData = rollupResponseData[hierarchyLevel] = {
       rollupData: [],
-      metadata: createMetadataForHierarchyLevel(hierarchyLevel, issues, hierarchyLevel)
+      metadata: createMetadataForHierarchyLevel(hierarchyLevel, issues)
     }
 
     for(let issue of issues) { 
@@ -75,7 +82,7 @@ export function rollupGroupedHierarchy(groupedHierarchy, {
     }
     
     //onEndOfHierarchy(issueTypeData);
-    
+    finalizeMetadataForHierarchyLevel(hierarchyData.metadata, hierarchyData.rollupData)
   }
   return rollupResponseData;
 }
@@ -164,7 +171,6 @@ export function groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesA
       return issuesOrReleases.filter( (issue)=> { return issue.hierarchyLevel === hierarchyLevel })
     }
   }).reverse();
-
 }
 /**
  * 
