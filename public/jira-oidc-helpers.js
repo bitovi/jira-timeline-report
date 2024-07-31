@@ -1,5 +1,5 @@
 
-import responseToJSON from "../shared/response-to-json";
+import responseToJSON from "./shared/response-to-json";
 
 const CACHE_FETCH = false;
 
