@@ -50,6 +50,9 @@ export default async function mainHelper(config, host) {
 	}
 	loginComponent.on("isResolved",listener);
 	login.appendChild(loginComponent);
+	if (host === 'jira') {
+		login.style.display = "none";
+	}
 
 
 	return loginComponent;
