@@ -29,9 +29,20 @@ app.get('/dev', (req, res) => {
 	res.send(makeIndex(req, "./dist/hosted-main.js"));
 });
 
+// Atlassian Connect specific endpoints
 app.get('/connect', (req, res) => {
 	res.send(makeIndex(req, "./dist/connect-main.min.js"));
 });
+/*app.post('/installed', (req, res) => {
+    console.log('install hook fired!');
+    console.log(req.body);
+    res.send('');
+});
+app.post('/uninstalled', (req, res) => {
+    console.log('uninstall hook fired!');
+    res.send('');
+});
+*/
 
 app.get('/oauth-callback', (req, res) => {
 	res.send(makeOAuthCallback(req));

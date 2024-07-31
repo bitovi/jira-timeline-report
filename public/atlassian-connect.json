@@ -2,7 +2,7 @@
   "name": "Timeline Report",
   "description": "Create reports to illustrate the timeline.",
   "key": "bitovi.timeline-report",
-  "baseUrl": "https://ae5f-72-199-32-178.ngrok-free.app",
+  "baseUrl": "https://5580-68-187-209-164.ngrok-free.app",
   "vendor": {
     "name": "Bitovi LLC",
     "url": "http://bitovi.com"
@@ -21,7 +21,17 @@
           "value": "Timeline Report"
         }
       }
+    ],
+    "jiraProjectPages": [
+      {
+        "key": "project",
+        "name": {
+            "value": "Timeline Report"
+        },
+        "url": "/connectl?projectKey=${project.key}",
+        "weight": 1
+      }
     ]
   },
-  "scopes": ["read", "write"]
+  "scopes": ["read"]
 }
