@@ -51304,7 +51304,7 @@ function sortedByLastEpicReleases(releases){
 	})*/
 }
 
-function responseToJSON$1(response) {
+function responseToJSON(response) {
 	if(!response.ok) {
 		return response.json().then((payload) => {
 			const err = new Error("HTTP status code: " + response.status);
@@ -51315,6 +51315,7 @@ function responseToJSON$1(response) {
 	}
 	return response.json();
 }
+
 function responseToText(response) {
 	if(!response.ok) {
 		return response.json().then((payload) => {
@@ -51328,7 +51329,7 @@ function responseToText(response) {
 }
 
 function nativeFetchJSON(url, options) {
-	return fetch(url, options).then(responseToJSON$1)
+	return fetch(url, options).then(responseToJSON)
 }
 
 function chunkArray(array, size) {
@@ -51344,7 +51345,7 @@ function JiraOIDCHelpers({
 	JIRA_SCOPE,
 	JIRA_CALLBACK_URL,
 	JIRA_API_URL
-} = window.env, requestHelper) {
+} = window.env, requestHelper, host) {
 
 
 	let fetchJSON = nativeFetchJSON;
@@ -54076,6 +54077,11 @@ class TimelineConfiguration extends canStacheElement {
     connected(){
 
         this.listenTo("percentComplete",()=>{});
+
+        const params = new URLSearchParams(location.search);
+        if (params.get('projectKey')) {
+            this.jql = `project='${params.get('projectKey')}'`;
+        }
     }
     // METHODS
     updateCalculationType(index, value){
@@ -55240,18 +55246,6 @@ customElements.define("jira-login", JiraLogin);
 function fetchFromLocalStorage(key) {
   return window.localStorage.getItem(key);
 }
-function responseToJSON(response) {
-	if(!response.ok) {
-		return response.json().then((payload) => {
-			const err = new Error("HTTP status code: " + response.status);
-			Object.assign(err, payload);
-			Object.assign(err, response);
-			throw err;
-		})
-	}
-	return response.json();
-}
-
 async function fetchJSON(url, options) {
 	return fetch(url, options).then(responseToJSON)
 }
@@ -55288,11 +55282,8 @@ function getHostedRequestHelper({ JIRA_API_URL }) {
 }
 
 async function mainHelper(config, host) {
-  console.log(host);
-  console.log(host === 'jira');
   let requestHelper;
   {
-    console.log('BBB');
     requestHelper = getHostedRequestHelper(config);
   }
 
@@ -55305,8 +55296,10 @@ async function mainHelper(config, host) {
 	savedUrls.jiraHelpers = jiraHelpers;
 
 	const selectCloud = document.querySelector("select-cloud");
-	selectCloud.loginComponent = loginComponent;
-	selectCloud.jiraHelpers = jiraHelpers;
+	if (selectCloud) {
+		selectCloud.loginComponent = loginComponent;
+		selectCloud.jiraHelpers = jiraHelpers;		
+	}
 
 	const velocitiesConfiguration = document.querySelector("velocities-from-issue");
 	velocitiesConfiguration.jiraHelpers = jiraHelpers;
@@ -55328,13 +55321,13 @@ async function mainHelper(config, host) {
 	login.appendChild(loginComponent);
 
 
-
+	return loginComponent;
 
 
 }
 
 async function main(config) {
-	return mainHelper(config, 'hosted');
+	return mainHelper(config);
 }
 
 export { main as default };

@@ -11,18 +11,14 @@ import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
 export default async function mainHelper(config, host) {
-  console.log(host);
-  console.log(host === 'jira');
   let requestHelper;
   if(host === 'jira') {
-    console.log('AAA');
     requestHelper = getConnectRequestHelper();
   } else {
-    console.log('BBB');
     requestHelper = getHostedRequestHelper(config);
   }
 
-	const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
+	const jiraHelpers = JiraOIDCHelpers(config, requestHelper, host);
 
 	const loginComponent = new JiraLogin().initialize({jiraHelpers});
 
@@ -31,8 +27,10 @@ export default async function mainHelper(config, host) {
 	savedUrls.jiraHelpers = jiraHelpers;
 
 	const selectCloud = document.querySelector("select-cloud")
-	selectCloud.loginComponent = loginComponent;
-	selectCloud.jiraHelpers = jiraHelpers;
+	if (selectCloud) {
+		selectCloud.loginComponent = loginComponent;
+		selectCloud.jiraHelpers = jiraHelpers;		
+	}
 
 	const velocitiesConfiguration = document.querySelector("velocities-from-issue")
 	velocitiesConfiguration.jiraHelpers = jiraHelpers;
@@ -54,7 +52,7 @@ export default async function mainHelper(config, host) {
 	login.appendChild(loginComponent);
 
 
-
+	return loginComponent;
 
 
 }

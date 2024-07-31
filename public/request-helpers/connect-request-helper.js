@@ -13,25 +13,19 @@ lic=none
 export function getConnectRequestHelper() {
   return function(requestUrl) {
     return new Promise(async(resolve, reject) => {
-/*      const { search } = location;
-      const params = new URLSearchParams(search);
-      const jwt = params.get("jwt");
-      const host = params.get("xdm_e");
-      const scopeId = params.get("xdm_c");
-*/
       try {
         let result;
         if(requestUrl.startsWith('https://')) {
           result = await fetchJSON(
             requestUrl,
             {
-              headers: {
-                'Authorization': `Bearer ${jwt}`,
+/*              headers: {
+                'Authorization': `Bearer ${requestJWT}`,
               }
-            }
+*/            }
           );
         } else {
-          result = AP.request(`/rest/${requestUrl}`);
+          result = JSON.parse((await AP.request(`/rest/${requestUrl}`)).body)
         }
         resolve(result);
       }

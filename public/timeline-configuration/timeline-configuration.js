@@ -467,6 +467,11 @@ export class TimelineConfiguration extends StacheElement {
     connected(){
 
         this.listenTo("percentComplete",()=>{})
+
+        const params = new URLSearchParams(location.search);
+        if (params.get('projectKey')) {
+            this.jql = `project='${params.get('projectKey')}'`;
+        }
     }
     // METHODS
     updateCalculationType(index, value){

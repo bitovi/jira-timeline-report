@@ -1,5 +1,5 @@
 
-import responseToJSON from "./shared/response-to-json";
+import responseToJSON from "./shared/response-to-json.js";
 
 const CACHE_FETCH = false;
 
@@ -33,7 +33,7 @@ export default function JiraOIDCHelpers({
 	JIRA_SCOPE,
 	JIRA_CALLBACK_URL,
 	JIRA_API_URL
-} = window.env, requestHelper) {
+} = window.env, requestHelper, host) {
 
 
 	let fetchJSON = nativeFetchJSON;
@@ -512,7 +512,7 @@ export default function JiraOIDCHelpers({
 		return map;
 	}
 
-	if (jiraHelpers.hasValidAccessToken()) {
+	if (host === "jira" || jiraHelpers.hasValidAccessToken()) {
 		fieldsRequest = jiraHelpers.fetchJiraFields().then((fields) => {
 			const nameMap = {};
 			const idMap = {};

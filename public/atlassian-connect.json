@@ -28,7 +28,7 @@
         "name": {
             "value": "Timeline Report"
         },
-        "url": "/connectl?projectKey=${project.key}",
+        "url": "/connect?projectKey=${project.key}",
         "weight": 1
       }
     ]
