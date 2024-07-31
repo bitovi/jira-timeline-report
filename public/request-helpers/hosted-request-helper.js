@@ -1,18 +1,8 @@
+import responseToJSON from "../shared/response-to-json";
+
 function fetchFromLocalStorage(key) {
   return window.localStorage.getItem(key);
 };
-
-function responseToJSON(response) {
-	if(!response.ok) {
-		return response.json().then((payload) => {
-			const err = new Error("HTTP status code: " + response.status);
-			Object.assign(err, payload);
-			Object.assign(err, response);
-			throw err;
-		})
-	}
-	return response.json();
-}
 
 async function fetchJSON(url, options) {
 	return fetch(url, options).then(responseToJSON)
@@ -42,7 +32,6 @@ export function getHostedRequestHelper({ JIRA_API_URL }) {
         resolve(result);
       }
       catch(ex) {
-        console.error(ex);
         reject(ex);
       }
     })

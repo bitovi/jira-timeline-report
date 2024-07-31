@@ -1,17 +1,9 @@
 
+import responseToJSON from "../shared/response-to-json";
+
 const CACHE_FETCH = false;
 
-function responseToJSON(response) {
-	if(!response.ok) {
-		return response.json().then((payload) => {
-			const err = new Error("HTTP status code: " + response.status);
-			Object.assign(err, payload);
-			Object.assign(err, response);
-			throw err;
-		})
-	}
-	return response.json();
-}
+
 function responseToText(response) {
 	if(!response.ok) {
 		return response.json().then((payload) => {
@@ -206,15 +198,9 @@ export default function JiraOIDCHelpers({
 			return requestHelper(`https://api.atlassian.com/oauth/token/accessible-resources`);
 		},
 		fetchJiraSprint: async (sprintId) => {
-			//this fetches all Recent Projects From Jira
-			// TODO TR-11 test
-			console.log('fetchJiraSprint');
 			return requestHelper(`/agile/1.0/sprint/${sprintId}`);
 		},
 		fetchJiraIssue: async (issueId) => {
-			//this fetches all Recent Projects From Jira
-			// TODO TR-11 test
-			console.log('fetchJiraIssue');
 			return requestHelper(`/api/3/issue/${issueId}`);
 		},
 		editJiraIssueWithNamedFields: async (issueId, fields) => {
