@@ -1,7 +1,25 @@
 import { StacheElement, type } from "../can.js";
 import SimpleTooltip from "./simple-tooltip.js";
 
+function makeConnectLink(originalLink) {
+    const linkUrl = new URL(originalLink);
+    const appParams = new URLSearchParams(location.search);
+    const linkParams = linkUrl.searchParams;
+    
+    return `${appParams.get('xdm_e')}/plugins/servlet/ac/bitovi.timeline-report/deeplink?${
+        Array.from(linkParams)
+            .map(([name, value]) => `ac.${name}=${encodeURIComponent(value)}`)
+            .join('&')
+    }`;
+}
+function makeLocalLink(originalLink) {
+    const linkUrl = new URL(originalLink);
+    linkUrl.host = location.host;
+    linkUrl.port = location.port;
+    linkUrl.protocol = location.protocol;
 
+    return linkUrl.toString();
+}
 
 export default class SavedUrls extends StacheElement {
     static view = `
@@ -60,10 +78,14 @@ export default class SavedUrls extends StacheElement {
                     <div class="py-2">
                         ${
                             links.map(link => {
+                                const isConnect = window.location.pathname.startsWith('/connect')
+                                const localHref = isConnect
+                                    ? makeConnectLink(link.href)
+                                    : makeLocalLink(link.href);
                                 return `
-                                    <a href="${link.href}" class="${
-                                        unescape(link.href) === unescape(window.location) ? "" : "link"
-                                    } block py-1">${link.text}</a>
+                                    <a href="${localHref}" class="${
+                                        unescape(makeLocalLink(link.href)) === unescape(window.location) ? "" : "link"
+                                    } block py-1" ${isConnect ? 'target="_top"' : ""}>${link.text}</a>
                                 `
                             }).join("")
                         }

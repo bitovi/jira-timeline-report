@@ -20,6 +20,14 @@
         "name": {
           "value": "Timeline Report"
         }
+      },
+      {
+        "url": "/connect?primaryIssueType={ac.primaryIssueType}&hideUnknownInitiatives={ac.hideUnknownInitiatives}&jql={ac.jql}&loadChildren={ac.loadChildren}&primaryReportType={ac.primaryReportType}&secondaryReportType={ac.secondaryReportType}&showPercentComplete={ac.showPercentComplete}&showOnlySemverReleases={ac.showOnlySemverReleases}",
+        "key": "deeplink",
+        "location": "none",
+        "name": {
+          "value": "Timeline Report (Deep Link)"
+        }
       }
     ],
     "jiraProjectPages": [
@@ -28,7 +36,7 @@
         "name": {
             "value": "Timeline Report"
         },
-        "url": "/connect?projectKey=${project.key}",
+        "url": "/connect?jql=project%3D'${project.key}'&primaryIssueType%3DInitiative",
         "weight": 1
       }
     ]
