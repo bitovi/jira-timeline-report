@@ -19,8 +19,6 @@ import "./gantt-timeline.js";
 import "./status-report.js";
 import "./timeline-configuration/timeline-configuration.js"
 
-import { addRollupDates } from "./jira/rollup/dates/dates.js";
-import { rollupDatesByWorkStatus } from "./jira/rolledup/work-type/work-type.js";
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback.js";
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
@@ -117,20 +115,22 @@ export class TimelineReport extends StacheElement {
             
               {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
                 <gantt-grid 
-                    issues:from="this.primaryIssues" 
-                    derivedIssues:from="this.derivedIssues"
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
                     breakdown:from="eq(this.primaryReportType, 'breakdown')"
                     showPercentComplete:from="this.showPercentComplete"
                     ></gantt-grid>
               {{ else }}
-                <gantt-timeline issues:from="this.primaryIssues"></gantt-timeline>
+                <gantt-timeline issues:from="this.primaryIssues"
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"></gantt-timeline>
               {{/ or }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
                 <status-report primaryIssues:from="this.primaryIssues"
                   breakdown:from="eq(this.secondaryReportType, 'breakdown')"
-                  planningIssues:from="this.planningIssues"></status-report>
+                  planningIssues:from="this.planningIssues"
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
               {{/ }}
 
               <div class='p-2'>

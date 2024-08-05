@@ -90,7 +90,7 @@ const methods = {
  * @returns 
  */
 export function parentFirstThenChildren(parentIssueOrRelease, childrenRollups,hierarchyLevel, metadata){
-  debugger;
+
   // if there is hard parent data, use it
   var data;
   if(parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {

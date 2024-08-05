@@ -155,7 +155,7 @@ export function getConfidenceDefault({ fields }) {
       fixVersions = [fixVersions]
     }
     return fixVersions.map( ({name, id})=> {
-      return {name, id, type: "Release", key: "SPECIAL:release-"+id, summary: name}
+      return {name, id, type: "Release", key: "SPECIAL:release-"+name, summary: name}
     });
   }
   

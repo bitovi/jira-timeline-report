@@ -1,4 +1,3 @@
-// sum.test.js
 import { expect, test, describe, it } from 'vitest'
 import { rollupDates, parentFirstThenChildren, parentOnly } from './dates.js';
 

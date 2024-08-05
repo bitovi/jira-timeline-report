@@ -25,23 +25,23 @@ function prepareTimingData(issueWithPriorTiming) {
             }
         } else {
             timingData[workType] = {
-                issues: []
+                issueKeys: []
             }
         }
     }
     return timingData;
 }
 
-function setWorkTypeStatus(workType, timingData){
+function setWorkTypeStatus(workType, timingData, getIssuesByKeys){
     // compare the parent status ... could be before design, after UAT and we should warn
     // what about blocked on any child?
 
     // if everything is complete, complete
 
-    if(timingData.issues.length && timingData.issues.every(issue => issue.statusCategory === "done")) {
+    if(timingData.issueKeys.length && getIssuesByKeys(timingData.issueKeys).every(issue => issue.statusCategory === "done")) {
         timingData.status = "complete";
         timingData.statusFrom = {message: "Everything is done"};
-    } else if(timingData.issues.some(issue => issue.blockedStatusIssues.length)) {
+    } else if( getIssuesByKeys(timingData.issueKeys).some(issue => issue.blockedStatusIssues.length)) {
         timingData.status = "blocked"; 
         timingData.statusFrom = {message: "This or a child is in a blocked status"}
     }
@@ -55,7 +55,7 @@ function setWorkTypeStatus(workType, timingData){
 /**
  * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
  */
-function calculateStatuses(issueWithPriorTiming){
+function calculateStatuses(issueWithPriorTiming, getIssuesByKeys){
     const timingData = prepareTimingData(issueWithPriorTiming);
 
     // do the rollup
@@ -63,7 +63,7 @@ function calculateStatuses(issueWithPriorTiming){
         timingData.rollup.status = "complete";
         // we should check all the children ...
         timingData.rollup.statusFrom = {message: "Own status"}
-    } else if(issueWithPriorTiming.workTypeRollups.children.issues.length && issueWithPriorTiming.workTypeRollups.children.issues.every(issue => issue.statusCategory === "done")) {
+    } else if(issueWithPriorTiming.workTypeRollups.children.issueKeys.length && getIssuesByKeys( issueWithPriorTiming.workTypeRollups.children.issueKeys).every(issue => issue.statusCategory === "done")) {
         timingData.rollup.status = "complete";
         timingData.rollup.statusFrom = {message: "Children are all done, but the parent is not", warning: true};
     } else if(issueWithPriorTiming.blockedStatusIssues.length) {
@@ -76,19 +76,34 @@ function calculateStatuses(issueWithPriorTiming){
     // do all the others 
     for(let workCategory of workType) {
         if(timingData[workCategory]) {
-            setWorkTypeStatus(workCategory, timingData[workCategory]);
+            setWorkTypeStatus(workCategory, timingData[workCategory], getIssuesByKeys);
         }
     }
 
     return timingData;
 }
 
+function makeGetIssuesByKeys(issues){
+    const map = new Map();
+    for(const issue of issues) {
+        map.set(issue.key, issue)
+    }
+    const getIssue = map.get.bind(map);
+    return function getIssuesByKeys(issueKeys){
+        return issueKeys.map( getIssue )
+    }
+}
 
+// The children "workTypeRollups" won't be right ... 
+// this is really a "rollup" type thing ... 
+// I think "workTypeRollups" probably shouldn't have children if we are only using it here ...
 export function calculateReportStatuses(issues) {
+    const getIssuesByKeys = makeGetIssuesByKeys(issues);
+    
     return issues.map((issue)=> {
         return {
             ...issue,
-            rollupStatuses: calculateStatuses(issue)
+            rollupStatuses: calculateStatuses(issue, getIssuesByKeys )
         }
     })
 }

@@ -2,11 +2,12 @@ import { rollbackIssues } from "../raw/rollback/rollback";
 import { deriveIssue } from "../derived/derive";
 import { normalizeIssue } from "../normalized/normalize";
 import { addRollupDates } from "../rollup/dates/dates";
-import { rollupDatesByWorkStatus } from "../rolledup/work-type/work-type";
+import { rollupDatesByWorkType } from "../rolledup/work-type/work-type";
 import { rollupBlockedStatusIssues } from "../rollup/blocked-status-issues/blocked-status-issues";
 import { deriveReleases } from "../releases/derive";
 import { normalizeReleases } from "../releases/normalize";
 import { percentComplete as rollupPercentComplete, addPercentComplete } from "../rollup/percent-complete/percent-complete";
+import { addReportingHierarchy } from "../rollup/rollup";
 
 /**
  * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
@@ -47,10 +48,11 @@ export function rollupAndRollback(derivedIssues, configuration, rollupTimingLeve
 function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
     const normalizedReleases = normalizeReleases(derivedIssues)
     const releases = deriveReleases(normalizedReleases);
-    const rolledUpDates = addRollupDates([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
+    const reporting = addReportingHierarchy([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
+    const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
     const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
     const percentComplete = addPercentComplete(rolledUpBlockers, rollupTimingLevelsAndCalculations)
-    return rollupDatesByWorkStatus(percentComplete);
+    return rollupDatesByWorkType(percentComplete);
     
 }
 

@@ -1,8 +1,10 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject, stache } from "./can.js";
 import { showTooltip, showTooltipContent } from "./issue-tooltip.js";
-import { percentComplete } from "./jira/rollup/percent-complete/percent-complete.js";
 import { mergeStartAndDueData } from "./jira/rollup/dates/dates.js";
+
+import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
+
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
@@ -46,14 +48,14 @@ const percentCompleteTooltip = stache(`
        
         {{/ for }}
    </div>
-`)
+`);
 
-import { rollupDatesFromRollups } from "./prepare-issues/date-data.js";
 import { getQuartersAndMonths } from "./quarter-timeline.js";
+
 // loops through and creates 
 export class GanttGrid extends StacheElement {
     static view = `
-        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.issues.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.primaryIssuesOrReleases.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
 
@@ -67,19 +69,19 @@ export class GanttGrid extends StacheElement {
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.issues.length}};">
+            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.issues.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
-            {{# for(issue of this.issuesWithPercentComplete) }}
+            {{# for(issue of this.primaryIssuesOrReleases) }}
                 <div on:click='this.showTooltip(scope.event, issue)' 
                     class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                     {{issue.summary}}
@@ -99,16 +101,8 @@ export class GanttGrid extends StacheElement {
             }
         }
     };
-    get percentComplete(){
-        if(this.derivedIssues) {
-            return percentComplete(this.derivedIssues);
-        }
-    }
-    get issuesWithPercentComplete(){
-        return this.primaryIssuesOrReleases;
-    }
     get lotsOfIssues(){
-        return this.issues.length > 20 && ! this.breakdown;
+        return this.primaryIssuesOrReleases.length > 20 && ! this.breakdown;
     }
     get textSize(){
         return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1"
@@ -117,21 +111,22 @@ export class GanttGrid extends StacheElement {
         return this.lotsOfIssues ? "h-4" : "h-6"
     }
     getPercentComplete(issue) {
-        if(this.showPercentComplete && this.percentComplete) {
+        if(this.showPercentComplete) {
             return Math.round( issue.completionRollup.completedWorkingDays * 100 / issue.completionRollup.totalWorkingDays )+"%"
         } else {
             return "";
         }
     }
     showTooltip(event, issue) {
-        showTooltip(event.currentTarget, issue);
+        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+        showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
     }
     showPercentCompleteTooltip(event, issue) {
+        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
         
         // we should get all the children ...
-        const keyToChildren = Object.groupBy(this.percentComplete.issues, i => i.parentKey) 
-        const children = keyToChildren[issue["Issue key"]];
-        console.log(issue, children);
+        const children = getChildren( issue );
+        
         showTooltipContent(event.currentTarget, percentCompleteTooltip(
             {   issue, 
                 children,
@@ -157,7 +152,6 @@ export class GanttGrid extends StacheElement {
     get quartersAndMonths(){
         const rollupDates = this.primaryIssuesOrReleases.map(issue => issue.rollupStatuses.rollup );
         let {start, due} = mergeStartAndDueData(rollupDates);
-        //let {start, due} = rollupDatesFromRollups(this.issues);
         // nothing has timing
         if(!start) {
             start = new Date();
@@ -329,15 +323,15 @@ export class GanttGrid extends StacheElement {
         return stache.safeString(frag);
     }
     get hasQAEpic(){
-        if(this.issues) {
-            return this.issues.some( (initiative)=> initiative.dateData.qa.issues.length )
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
         } else {
             return true;
         }
     }
     get hasUATEpic(){
-        if(this.issues) {
-            return this.issues.some( (initiative)=> initiative.dateData.uat.issues.length )
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
         } else {
             return true;
         }
