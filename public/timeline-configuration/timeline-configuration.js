@@ -467,6 +467,7 @@ export class TimelineConfiguration extends StacheElement {
     connected(){
 
         this.listenTo("percentComplete",()=>{})
+
     }
     // METHODS
     updateCalculationType(index, value){
