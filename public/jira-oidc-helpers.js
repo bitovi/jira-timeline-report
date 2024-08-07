@@ -1,17 +1,9 @@
 
+import responseToJSON from "./shared/response-to-json.js";
+
 const CACHE_FETCH = false;
 
-function responseToJSON(response) {
-	if(!response.ok) {
-		return response.json().then((payload) => {
-			const err = new Error("HTTP status code: " + response.status);
-			Object.assign(err, payload);
-			Object.assign(err, response);
-			throw err;
-		})
-	}
-	return response.json();
-}
+
 function responseToText(response) {
 	if(!response.ok) {
 		return response.json().then((payload) => {
@@ -41,7 +33,7 @@ export default function JiraOIDCHelpers({
 	JIRA_SCOPE,
 	JIRA_CALLBACK_URL,
 	JIRA_API_URL
-} = window.env) {
+} = window.env, requestHelper, host) {
 
 
 	let fetchJSON = nativeFetchJSON;
@@ -202,37 +194,14 @@ export default function JiraOIDCHelpers({
 				// location.href = '/error.html';
 			}
 		},
-		fetchAccessibleResources: (passedAccessToken) => {
-			const accessToken = passedAccessToken || jiraHelpers.fetchFromLocalStorage('accessToken');
-			return fetchJSON(`https://api.atlassian.com/oauth/token/accessible-resources`, {
-				headers: {
-					'Authorization': `Bearer ${accessToken}`,
-				}
-			});
+		fetchAccessibleResources: () => {
+			return requestHelper(`https://api.atlassian.com/oauth/token/accessible-resources`);
 		},
 		fetchJiraSprint: async (sprintId) => {
-			//this fetches all Recent Projects From Jira
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
-			const url = `${JIRA_API_URL}/${scopeIdForJira}/rest/agile/1.0/sprint/${sprintId}`;
-			const config = {
-				headers: {
-					'Authorization': `Bearer ${accessToken}`,
-				}
-			}
-			return await fetchJSON(url, config);
+			return requestHelper(`/agile/1.0/sprint/${sprintId}`);
 		},
 		fetchJiraIssue: async (issueId) => {
-			//this fetches all Recent Projects From Jira
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
-			const url = `${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issue/${issueId}`;
-			const config = {
-				headers: {
-					'Authorization': `Bearer ${accessToken}`,
-				}
-			}
-			return await fetchJSON(url, config);
+			return requestHelper(`/api/3/issue/${issueId}`);
 		},
 		editJiraIssueWithNamedFields: async (issueId, fields) => {
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
@@ -259,19 +228,7 @@ export default function JiraOIDCHelpers({
 			).then(responseToText);
 		},
 		fetchJiraIssuesWithJQL: function (params) {
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
-
-			return fetchJSON(
-				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/search?` +
-				new URLSearchParams(params),
-				{
-					headers: {
-						'Authorization': `Bearer ${accessToken}`,
-					}
-				}
-
-			)
+			return requestHelper(`/api/3/search?` + new URLSearchParams(params));
 		},
 		fetchJiraIssuesWithJQLWithNamedFields: async function (params) {
 			const fields = await fieldsRequest;
@@ -324,19 +281,7 @@ export default function JiraOIDCHelpers({
 			});
 		},
 		fetchJiraChangelog(issueIdOrKey, params) {
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
-
-			return fetchJSON(
-				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issue/${issueIdOrKey}/changelog?` +
-				new URLSearchParams(params),
-				{
-					headers: {
-						'Authorization': `Bearer ${accessToken}`,
-					}
-				}
-
-			)
+			return requestHelper(`/api/3/issue/${issueIdOrKey}/changelog?` + new URLSearchParams(params));
 		},
 		isChangelogComplete(changelog) {
 			return changelog.histories.length === changelog.total
@@ -516,17 +461,7 @@ export default function JiraOIDCHelpers({
 			});
 		},
 		fetchJiraFields() {
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
-
-			return fetchJSON(
-				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/field`,
-				{
-					headers: {
-						'Authorization': `Bearer ${accessToken}`,
-					}
-				}
-			)
+			return requestHelper(`/api/3/field`);
 		},
 		getAccessToken: async function () {
 			if (!jiraHelpers.hasValidAccessToken()) {
@@ -557,18 +492,8 @@ export default function JiraOIDCHelpers({
 				return this._cachedServerInfoPromise;
 			}
 			// https://your-domain.atlassian.net/rest/api/3/serverInfo
-			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
 
-			return this._cachedServerInfoPromise = fetchJSON(
-				`${JIRA_API_URL}/${scopeIdForJira}/rest/api/3/serverInfo`,
-				{
-					headers: {
-						'Authorization': `Bearer ${accessToken}`,
-					}
-				}
-
-			)
+			return this._cachedServerInfoPromise = requestHelper('/api/3/serverInfo');
 		}
 	}
 
@@ -587,7 +512,7 @@ export default function JiraOIDCHelpers({
 		return map;
 	}
 
-	if (jiraHelpers.hasValidAccessToken()) {
+	if (host === "jira" || jiraHelpers.hasValidAccessToken()) {
 		fieldsRequest = jiraHelpers.fetchJiraFields().then((fields) => {
 			const nameMap = {};
 			const idMap = {};

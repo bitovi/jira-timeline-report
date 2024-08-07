@@ -2,7 +2,7 @@
   "name": "Timeline Report",
   "description": "Create reports to illustrate the timeline.",
   "key": "bitovi.timeline-report",
-  "baseUrl": "https://e590-68-187-209-164.ngrok-free.app/",
+  "baseUrl": "https://5580-68-187-209-164.ngrok-free.app",
   "vendor": {
     "name": "Bitovi LLC",
     "url": "http://bitovi.com"
@@ -14,14 +14,32 @@
   "modules": {
     "generalPages": [
       {
-        "url": "/",
+        "url": "/connect",
         "key": "main",
         "location": "system.top.navigation.bar",
         "name": {
           "value": "Timeline Report"
         }
+      },
+      {
+        "url": "/connect?primaryIssueType={ac.primaryIssueType}&hideUnknownInitiatives={ac.hideUnknownInitiatives}&jql={ac.jql}&loadChildren={ac.loadChildren}&primaryReportType={ac.primaryReportType}&secondaryReportType={ac.secondaryReportType}&showPercentComplete={ac.showPercentComplete}&showOnlySemverReleases={ac.showOnlySemverReleases}",
+        "key": "deeplink",
+        "location": "none",
+        "name": {
+          "value": "Timeline Report (Deep Link)"
+        }
+      }
+    ],
+    "jiraProjectPages": [
+      {
+        "key": "project",
+        "name": {
+            "value": "Timeline Report"
+        },
+        "url": "/connect?jql=project%3D'${project.key}'&primaryIssueType%3DInitiative",
+        "weight": 1
       }
     ]
   },
-  "scopes": ["read", "write"]
+  "scopes": ["read"]
 }

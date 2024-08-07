@@ -1,6 +1,6 @@
 const getSafeEnv = require("../server/client-env");
 
-module.exports = function (env) {
+module.exports = function (env, mainFileRoute) {
 	return `
 	<!DOCTYPE html>
 	<html lang="en">
@@ -46,7 +46,7 @@ module.exports = function (env) {
 					</li>
 				</ul>
 				<velocities-from-issue></velocities-from-issue>
-				<select-cloud></select-cloud>
+				${mainFileRoute.includes("connect") ? "" : "<select-cloud></select-cloud>"}
 				<saved-urls></saved-urls>
 				<div id="login">
 					
@@ -59,7 +59,7 @@ module.exports = function (env) {
 			</div>
 
 			<script type="module">
-				import main from "./dist/main.js";
+				import main from "${ mainFileRoute }";
 				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 
