@@ -4,10 +4,10 @@ import {
 	RequestHelperResponse
 } from './shared/types.js';
 
-import { responseToJSON } from './shared/response-to-json';
+import { responseToJSON } from './shared/response-to-json.js';
 
-import mapIdsToNames from './shared/map-ids-to-names';
-import chunkArray from './shared/chunk-array';
+import mapIdsToNames from './shared/map-ids-to-names.js';
+import chunkArray from './shared/chunk-array.js';
 
 import { JiraHelpers } from './JiraHelpers.js';
 
@@ -44,6 +44,7 @@ export default function JiraOIDCHelpers(
 	requestHelper: (urlFragment: string) => Promise<RequestHelperResponse>,
 	host: 'hosted' | 'jira'
 ) {
+	console.log('here');
 
 	let fetchJSON = nativeFetchJSON;
 	if (CACHE_FETCH) {

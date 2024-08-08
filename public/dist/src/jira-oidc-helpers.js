@@ -46,8 +46,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { responseToJSON } from './shared/response-to-json.js';
-var mapIdsToNames = require('./shared/map-ids-to-names').mapIdsToNames;
-var chunkArray = require('./shared/chunk-array').chunkArray;
+import mapIdsToNames from './shared/map-ids-to-names.js';
+import chunkArray from './shared/chunk-array.js';
 import { JiraHelpers } from './JiraHelpers.js';
 var CACHE_FETCH = false;
 export function nativeFetchJSON(url, options) {
@@ -59,6 +59,7 @@ export function nativeFetchJSON(url, options) {
 }
 export default function JiraOIDCHelpers(_a, requestHelper, host) {
     var _b = _a === void 0 ? window.env : _a, JIRA_CLIENT_ID = _b.JIRA_CLIENT_ID, JIRA_SCOPE = _b.JIRA_SCOPE, JIRA_CALLBACK_URL = _b.JIRA_CALLBACK_URL, JIRA_API_URL = _b.JIRA_API_URL;
+    console.log('here');
     var fetchJSON = nativeFetchJSON;
     if (CACHE_FETCH) {
         fetchJSON = function (url, options) {
@@ -169,7 +170,7 @@ export default function JiraOIDCHelpers(_a, requestHelper, host) {
         JIRA_SCOPE: JIRA_SCOPE,
         JIRA_CALLBACK_URL: JIRA_CALLBACK_URL,
         JIRA_API_URL: JIRA_API_URL
-    }, requestHelper, host);
+    }, requestHelper, host, fetchJSON);
     jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
         makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
     jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =

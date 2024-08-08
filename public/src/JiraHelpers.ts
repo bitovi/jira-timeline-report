@@ -1,5 +1,5 @@
-import mapIdsToNames from './shared/map-ids-to-names';
-import chunkArray from './shared/chunk-array';
+import mapIdsToNames from './shared/map-ids-to-names.js';
+import chunkArray from './shared/chunk-array.js';
 
 import {
   JtrEnv,
