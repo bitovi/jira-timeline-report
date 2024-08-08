@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "outDir": "./public/dist/src",
+    "rootDir": "./public/src",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "module": "ESNext",
+    "paths": {
+      "undici-types": ["./node_modules/undici/types"]
+    }
+  },
+  "include": ["public/src/**/*"],
+  "exclude": [
+    "node_modules",
+    "src/**/*.js"
+  ]
+}

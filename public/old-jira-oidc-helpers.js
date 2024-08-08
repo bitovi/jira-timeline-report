@@ -1,5 +1,5 @@
 
-import responseToJSON from "./shared/response-to-json.js";
+import responseToJSON from "./shared/response-to-json.ts";
 
 const CACHE_FETCH = false;
 
@@ -28,7 +28,7 @@ function chunkArray(array, size) {
 	return chunkedArr;
   }
 
-export default function JiraOIDCHelpers({
+export default function ({
 	JIRA_CLIENT_ID,
 	JIRA_SCOPE,
 	JIRA_CALLBACK_URL,
