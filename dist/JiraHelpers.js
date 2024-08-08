@@ -56,8 +56,8 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
-var mapIdsToNames = require('./shared/map-ids-to-names').mapIdsToNames;
-var chunkArray = require('./shared/chunk-array').chunkArray;
+import mapIdsToNames from './shared/map-ids-to-names';
+import chunkArray from './shared/chunk-array';
 function responseToText(response) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {

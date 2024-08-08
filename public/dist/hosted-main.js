@@ -24760,7 +24760,7 @@ var node$1 = function(moduleName) {
 var global$4 = global_1();
 
 // AMD loader
-var require$1 = function(moduleName){
+var require = function(moduleName){
 	if(global$4.define && global$4.define.amd){
 		return new Promise(function(resolve, reject) {
 			global$4.require([moduleName], function(value){
@@ -24839,7 +24839,7 @@ function preset(preset){
 			addLoader(stealOptimized);
 			addLoader(es6);
 			addLoader(node$1);
-			addLoader(require$1);
+			addLoader(require);
 			addLoader(system);
 			break;
 	}
@@ -51399,8 +51399,22 @@ function responseToJSON(response) {
     return response.json();
 }
 
-var mapIdsToNames$1 = require('./shared/map-ids-to-names').mapIdsToNames;
-var chunkArray$1 = require('./shared/chunk-array').chunkArray;
+function mapIdsToNames(obj, fields) {
+  const mapped = {};
+  for (let prop in obj) {
+    mapped[fields.idMap[prop] || prop] = obj[prop];
+  }
+  return mapped;
+}
+
+function chunkArray(array, size) {
+	const chunkedArr = [];
+	for (let i = 0; i < array.length; i += size) {
+	  chunkedArr.push(array.slice(i, i + size));
+	}
+	return chunkedArr;
+}
+
 function responseToText(response) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -51586,7 +51600,7 @@ var JiraHelpers = /** @class */ (function () {
                     case 2:
                         response = _a.sent();
                         return [2 /*return*/, response.issues.map(function (issue) {
-                                return __assign(__assign({}, issue), { fields: mapIdsToNames$1(issue.fields, fields) });
+                                return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
                             })];
                 }
             });
@@ -51624,7 +51638,7 @@ var JiraHelpers = /** @class */ (function () {
                     case 2:
                         response = _a.sent();
                         return [2 /*return*/, response.map(function (issue) {
-                                return __assign(__assign({}, issue), { fields: mapIdsToNames$1(issue.fields, fields) });
+                                return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
                             })];
                 }
             });
@@ -51719,7 +51733,7 @@ var JiraHelpers = /** @class */ (function () {
                     case 2:
                         response = _a.sent();
                         return [2 /*return*/, response.map(function (issue) {
-                                return __assign(__assign({}, issue), { fields: mapIdsToNames$1(issue.fields, fields) });
+                                return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
                             })];
                 }
             });
@@ -51746,13 +51760,13 @@ var JiraHelpers = /** @class */ (function () {
                         allChildrenIssues = _a.sent();
                         combined = parentIssues.concat(allChildrenIssues);
                         return [2 /*return*/, combined.map(function (issue) {
-                                return __assign(__assign({}, issue), { fields: mapIdsToNames$1(issue.fields, fields) });
+                                return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
                             })];
                 }
             });
         }); };
         this.fetchChildrenResponses = function (params, parentIssues, progress) {
-            var issuesToQuery = chunkArray$1(parentIssues, 40);
+            var issuesToQuery = chunkArray(parentIssues, 40);
             var batchedResponses = issuesToQuery.map(function (issues) {
                 var keys = issues.map(function (issue) { return issue.key; });
                 var jql = "parent in (".concat(keys.join(", "), ")");
@@ -51828,8 +51842,6 @@ var JiraHelpers = /** @class */ (function () {
     return JiraHelpers;
 }());
 
-var mapIdsToNames = require('./shared/map-ids-to-names').mapIdsToNames;
-var chunkArray = require('./shared/chunk-array').chunkArray;
 function nativeFetchJSON(url, options) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {

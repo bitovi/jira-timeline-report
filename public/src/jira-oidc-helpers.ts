@@ -6,8 +6,8 @@ import {
 
 import { responseToJSON } from './shared/response-to-json';
 
-const mapIdsToNames: any = require('./shared/map-ids-to-names').mapIdsToNames;
-const chunkArray: any = require('./shared/chunk-array').chunkArray;
+import mapIdsToNames from './shared/map-ids-to-names';
+import chunkArray from './shared/chunk-array';
 
 import { JiraHelpers } from './JiraHelpers.js';
 
