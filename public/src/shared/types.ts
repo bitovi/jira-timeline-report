@@ -13,7 +13,16 @@ type JtrEnv = {
   JIRA_API_URL: string
 }
 
+interface RequestHelperResponse extends JsonResponse {
+	issues: any,
+	maxResults: any,
+	total: any,
+	startAt: any,
+	values: any
+}
+
 export {
   JsonResponse,
-  JtrEnv
+  JtrEnv,
+  RequestHelperResponse
 };
