@@ -522,7 +522,6 @@ export default function (
 				fields: params.fields.map(f => fields.nameMap[f] || f)
 			}
 
-			progress = progress || {};
 			progress.data = progress.data || {
 				issuesRequested: 0,
 				issuesReceived: 0,
