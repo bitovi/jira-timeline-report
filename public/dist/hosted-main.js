@@ -51851,7 +51851,6 @@ function nativeFetchJSON(url, options) {
 }
 function JiraOIDCHelpers(_a, requestHelper, host) {
     var _b = _a === void 0 ? window.env : _a, JIRA_CLIENT_ID = _b.JIRA_CLIENT_ID, JIRA_SCOPE = _b.JIRA_SCOPE, JIRA_CALLBACK_URL = _b.JIRA_CALLBACK_URL, JIRA_API_URL = _b.JIRA_API_URL;
-    console.log('here');
     var fetchJSON = nativeFetchJSON;
     var fieldsRequest;
     function makeDeepChildrenLoaderUsingNamedFields(rootMethod) {
