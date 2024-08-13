@@ -114,7 +114,6 @@ export default function (_a, requestHelper, host) {
         };
     }
     var fieldsRequest;
-    ;
     function makeDeepChildrenLoaderUsingNamedFields(rootMethod) {
         // Makes child requests in batches of 40
         // 
@@ -490,7 +489,6 @@ export default function (_a, requestHelper, host) {
                         case 1:
                             fields = _a.sent();
                             newParams = __assign(__assign({}, params), { fields: params.fields.map(function (f) { return fields.nameMap[f] || f; }) });
-                            progress = progress || {};
                             progress.data = progress.data || {
                                 issuesRequested: 0,
                                 issuesReceived: 0,
@@ -583,31 +581,45 @@ export default function (_a, requestHelper, host) {
             var currentTimestamp = Math.floor(new Date().getTime() / 1000.0);
             return !((currentTimestamp > expiryTimestamp) || (!accessToken));
         },
+        _cachedServerInfoPromise: function () {
+            return requestHelper('/api/3/serverInfo');
+        },
         getServerInfo: function () {
-            if (this._cachedServerInfoPromise) {
-                return this._cachedServerInfoPromise;
-            }
-            // https://your-domain.atlassian.net/rest/api/3/serverInfo
-            return this._cachedServerInfoPromise = requestHelper('/api/3/serverInfo');
-        }
+            // if(this._cachedServerInfoPromise) {
+            // 	return this._cachedServerInfoPromise;
+            // }
+            // // https://your-domain.atlassian.net/rest/api/3/serverInfo
+            // return this._cachedServerInfoPromise( = requestHelper('/api/3/serverInfo'));
+            return this._cachedServerInfoPromise();
+        },
     };
     jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
         makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
     jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
         makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
-    function makeFieldNameToIdMap(fields) {
-        var map = {};
-        fields.forEach(function (f) {
-            map[f.name] = f.id;
-        });
-        return map;
-    }
+    // commented out because it's not used
+    // function makeFieldNameToIdMap(
+    // 	fields: {
+    // 		name: string;
+    // 		id: string | number;
+    // 	}[]
+    // ) {
+    // 	const map = {};
+    // 	fields.forEach((f) => {
+    // 		map[f.name] = f.id;
+    // 	});
+    // 	return map;
+    // }
     if (host === "jira" || jiraHelpers.hasValidAccessToken()) {
+        // @ts-ignore
         fieldsRequest = jiraHelpers.fetchJiraFields().then(function (fields) {
             var nameMap = {};
             var idMap = {};
+            // @ts-ignore
             fields.forEach(function (f) {
+                // @ts-ignore
                 idMap[f.id] = f.name;
+                // @ts-ignore
                 nameMap[f.name] = f.id;
             });
             console.log(nameMap);
@@ -617,6 +629,7 @@ export default function (_a, requestHelper, host) {
                 idMap: idMap
             };
         });
+        // @ts-ignore
         jiraHelpers.fieldsRequest = fieldsRequest;
     }
     function mapIdsToNames(obj, fields) {
@@ -646,6 +659,7 @@ export default function (_a, requestHelper, host) {
         }
         return editBody;
     }
+    // commented out because it's not used
     // function mapNamesToIds(obj, fields) {
     // 	const mapped = {};
     // 	for (let prop in obj) {

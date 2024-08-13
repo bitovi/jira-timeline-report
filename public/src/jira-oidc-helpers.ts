@@ -1,10 +1,10 @@
 import {
   JsonResponse,
   JtrEnv,
-	RequestHelperResponse
+  RequestHelperResponse
 } from './shared/types.js';
 
-interface ResponseForFieldRequest extends JsonResponse {
+interface ResponseForFieldRequest extends RequestHelperResponse {
   idMap: { [key: string]: string },
   nameMap: { [key: string]: string }
 }
@@ -24,12 +24,28 @@ type JiraIssue = {
 	changelog?: any;
 };
 
+type Issue = {
+	key: string;
+	fields: Record<string, any>; // Adjust based on the actual structure of fields
+};
+
+type Params = {
+	[key: string]: any; // Adjust based on the actual structure of params
+	fields?: string[];
+};
+
 type ProgressData = {
 	issuesRequested: number;
 	issuesReceived: number;
 	changeLogsRequested: number;
 	changeLogsReceived: number;
 }
+
+type Progress = {
+    data?: ProgressData;
+    (data: ProgressData): void;
+};
+
 
 import { responseToJSON } from "./shared/response-to-json";
 
@@ -79,8 +95,6 @@ export default function (
 	requestHelper: (urlFragment: string) => Promise<RequestHelperResponse>,
 	host: 'jira' | 'hosted'
 ) {
-
-
 	let fetchJSON = nativeFetchJSON;
 	if (CACHE_FETCH) {
 		fetchJSON = async function <T = any>(url: string, options?: RequestInit): Promise<T | JsonResponse> {
@@ -103,29 +117,8 @@ export default function (
 		};
 	}
 
+	let fieldsRequest: Promise<ResponseForFieldRequest>;
 
-	let fieldsRequest: Promise<ResponseForFieldRequest>;;
-
-
-	type Issue = {
-		key: string;
-		fields: Record<string, any>; // Adjust based on the actual structure of fields
-	};
-	
-	type Params = {
-		[key: string]: any; // Adjust based on the actual structure of params
-		fields?: string[];
-	};
-	
-	type Progress = {
-		data?: {
-			issuesRequested: number;
-			issuesReceived: number;
-			changeLogsRequested: number;
-			changeLogsReceived: number;
-		};
-	};
-	
 	type RootMethod = (params: Params, progress: Progress) => Promise<Issue[]>;
 
 	function makeDeepChildrenLoaderUsingNamedFields(rootMethod: RootMethod){
@@ -168,7 +161,7 @@ export default function (
 			return allChildren.flat();
 		}
 	
-		return async function fetchAllDeepChildren(params: Params, progress: Progress = {}){
+		return async function fetchAllDeepChildren(params: Params, progress: Progress = {} as any){
 			const fields = await fieldsRequest;
 			const newParams = {
 				...params,
@@ -195,8 +188,77 @@ export default function (
 		}
 	}
 
-
-	const jiraHelpers = {
+	const jiraHelpers: {
+		saveInformationToLocalStorage(parameters: Record<string, string>): void;
+		clearAuthFromLocalStorage(): void;
+		fetchFromLocalStorage(key: string): string | null;
+		fetchAuthorizationCode(): void;
+		refreshAccessToken(accessCode?: string): Promise<string | void>;
+		fetchAccessTokenWithAuthCode(authCode: string): Promise<void>;
+		fetchAccessibleResources(): ReturnType<typeof requestHelper>;
+		fetchJiraSprint(sprintId: string): ReturnType<typeof requestHelper>;
+		fetchJiraIssue(issueId: string): ReturnType<typeof requestHelper>;
+		editJiraIssueWithNamedFields(issueId: string, fields: Record<string, any>): Promise<string>;
+		fetchJiraIssuesWithJQL(params: FetchJiraIssuesParams): ReturnType<typeof requestHelper>;
+		fetchJiraIssuesWithJQLWithNamedFields(params: FetchJiraIssuesParams): Promise<any[]>;
+		fetchAllJiraIssuesWithJQL(params: FetchJiraIssuesParams): Promise<JiraIssue[]>;
+		fetchAllJiraIssuesWithJQLUsingNamedFields(params: FetchJiraIssuesParams): Promise<any[]>;
+		fetchJiraChangelog(issueIdOrKey: string, params: FetchJiraIssuesParams): ReturnType<typeof requestHelper>;
+		isChangelogComplete(changelog: { histories: any[]; total: number; }): boolean;
+		fetchRemainingChangelogsForIssues(
+			issues: JiraIssue[],
+			progress?: {
+				data?: ProgressData;
+				(data: ProgressData): void;
+			}
+		): Promise<JiraIssue[]>;
+		fetchRemainingChangelogsForIssue(
+			issueIdOrKey: string,
+			mostRecentChangeLog: {
+				histories: { id: string; change: string; }[];
+				maxResults: number;
+				total: number;
+				startAt: number;
+			}
+		): Promise<{ id: string; change: string; }[]>;
+		fetchAllJiraIssuesWithJQLAndFetchAllChangelog(
+			params: {
+				limit?: number;
+				maxResults?: number;
+				startAt?: number;
+				expand?: string[];
+				[key: string]: any;
+			},
+			progress?: {
+				data?: ProgressData;
+				(data: ProgressData): void;
+			}
+		): Promise<Issue[]>;
+		fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(
+			params: { fields: string[]; [key: string]: any },
+			progress?: (data: ProgressData) => void
+		): Promise<any[]>;
+		fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields(
+			params: { fields: string[]; [key: string]: any },
+			progress?: {
+				data?: ProgressData;
+				(data: ProgressData): void;
+			}
+		): Promise<any[]>;
+		fetchChildrenResponses: (params: { [key: string]: any; fields: string[]; }, parentIssues: Issue[], progress?: ((data: ProgressData) => void) | undefined) => Promise<Issue[]>[];
+		fetchDeepChildren(
+			params: { fields: string[]; [key: string]: any },
+			sourceParentIssues: Issue[],
+			progress?: (data: ProgressData) => void
+		): Promise<Issue[]>;
+		fetchJiraFields(): Promise<RequestHelperResponse>;
+		getAccessToken(): Promise<string | void | null>;
+		hasAccessToken(): boolean;
+		hasValidAccessToken(): boolean;
+		_cachedServerInfoPromise(): Promise<RequestHelperResponse>;
+		getServerInfo(): Promise<RequestHelperResponse>;
+		fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields?: (params: Params, progress?: Progress) => Promise<{ fields: { [key: string]: any; }; key: string; }[]>;
+	} = {
 		saveInformationToLocalStorage: (parameters: Record<string, string>) => {
 			const objectKeys = Object.keys(parameters)
 			for (let key of objectKeys) {
@@ -215,7 +277,7 @@ export default function (
 			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
 			window.location.href = url;
 		},
-		refreshAccessToken: async (accessCode: string): Promise<string | void> => {
+		refreshAccessToken: async (accessCode?: string): Promise<string | void> => {
 			try {
 				const response = await fetchJSON(`${window.env.JIRA_API_URL}/?code=${accessCode}`)
 
@@ -362,18 +424,8 @@ export default function (
 		fetchRemainingChangelogsForIssues(
 			issues: JiraIssue[],
 			progress: {
-				data?: {
-					issuesRequested: number;
-					issuesReceived: number;
-					changeLogsRequested: number;
-					changeLogsReceived: number;
-				};
-				(data: {
-					issuesRequested: number;
-					issuesReceived: number;
-					changeLogsRequested: number;
-					changeLogsReceived: number;
-				}): void;
+				data?: ProgressData;
+				(data: ProgressData): void;
 			} = () => {}
 		) {
 			// check for remainings
@@ -441,7 +493,7 @@ export default function (
 				data?: ProgressData;
 				(data: ProgressData): void;
 			} = () => {}
-		){
+		): Promise<Issue[]> {
 			const { limit: limit, ...apiParams } = params;
 
 			// a weak map would be better
@@ -514,7 +566,10 @@ export default function (
 		},
 		fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: async function (
 			params: { fields: string[]; [key: string]: any },
-			progress: (data: ProgressData) => void = () => {}
+			progress: {
+				data?: ProgressData;
+				(data: ProgressData): void;
+			} = () => {}
 		) {
 			const fields = await fieldsRequest;
 			const newParams = {
@@ -567,10 +622,10 @@ export default function (
 			params: { fields: string[]; [key: string]: any },
 			sourceParentIssues: Issue[],
 			progress: (data: ProgressData) => void = () => {}
-		) {
+		): Promise<Issue[]> {
 			const batchedFirstResponses = this.fetchChildrenResponses(params, sourceParentIssues, progress);
 
-			const getChildren = (parentIssues) => {
+			const getChildren = (parentIssues: Issue[]) => {
 				if(parentIssues.length) {
 					return this.fetchDeepChildren(params, parentIssues, progress).then(deepChildrenIssues => {
 						return parentIssues.concat(deepChildrenIssues);
@@ -613,14 +668,18 @@ export default function (
 			const currentTimestamp = Math.floor(new Date().getTime() / 1000.0);
 			return !((currentTimestamp > expiryTimestamp) || (!accessToken))
 		},
-		getServerInfo() {
-			if(this._cachedServerInfoPromise) {
-				return this._cachedServerInfoPromise;
-			}
-			// https://your-domain.atlassian.net/rest/api/3/serverInfo
+		_cachedServerInfoPromise: function() {
+			return requestHelper('/api/3/serverInfo')
+		},
+		getServerInfo(): Promise<RequestHelperResponse> {
+			// if(this._cachedServerInfoPromise) {
+			// 	return this._cachedServerInfoPromise;
+			// }
+			// // https://your-domain.atlassian.net/rest/api/3/serverInfo
 
-			return this._cachedServerInfoPromise = requestHelper('/api/3/serverInfo');
-		}
+			// return this._cachedServerInfoPromise( = requestHelper('/api/3/serverInfo'));
+			return this._cachedServerInfoPromise();
+		},
 	}
 
 	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields = 
@@ -630,25 +689,31 @@ export default function (
 		makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
 
 
-	function makeFieldNameToIdMap(
-		fields: {
-			name: string;
-			id: string | number;
-		}[]
-	) {
-		const map = {};
-		fields.forEach((f) => {
-			map[f.name] = f.id;
-		});
-		return map;
-	}
+	// commented out because it's not used
+
+	// function makeFieldNameToIdMap(
+	// 	fields: {
+	// 		name: string;
+	// 		id: string | number;
+	// 	}[]
+	// ) {
+	// 	const map = {};
+	// 	fields.forEach((f) => {
+	// 		map[f.name] = f.id;
+	// 	});
+	// 	return map;
+	// }
 
 	if (host === "jira" || jiraHelpers.hasValidAccessToken()) {
+		// @ts-ignore
 		fieldsRequest = jiraHelpers.fetchJiraFields().then((fields) => {
 			const nameMap = {};
 			const idMap = {};
+			// @ts-ignore
 			fields.forEach((f) => {
+				// @ts-ignore
 				idMap[f.id] = f.name;
+				// @ts-ignore
 				nameMap[f.name] = f.id;
 			});
 			console.log(nameMap);
@@ -659,6 +724,7 @@ export default function (
 				idMap: idMap
 			}
 		});
+		// @ts-ignore
 		jiraHelpers.fieldsRequest = fieldsRequest;
 	}
 
@@ -701,6 +767,8 @@ export default function (
 		}
 		return editBody;
 	}
+
+	// commented out because it's not used
 
 	// function mapNamesToIds(obj, fields) {
 	// 	const mapped = {};
