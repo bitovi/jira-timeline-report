@@ -54031,7 +54031,6 @@ class TimelineConfiguration extends canStacheElement {
         // PROPERTIES DERIVING FROM `derivedIssues`
         get statuses(){
             if(this.derivedIssues) {
-                console.log("here");
                 return allStatusesSorted(this.derivedIssues)
             } else {
                 return [];

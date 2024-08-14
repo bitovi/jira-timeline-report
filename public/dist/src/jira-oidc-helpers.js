@@ -56,7 +56,7 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
-import { responseToJSON } from "./shared/response-to-json";
+import { responseToJSON } from "./shared/response-to-json.js";
 var CACHE_FETCH = false;
 function responseToText(response) {
     if (!response.ok) {
