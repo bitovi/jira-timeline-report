@@ -486,7 +486,7 @@ export class TimelineConfiguration extends StacheElement {
     };
     // HOOKS
     connected(){
-        
+
     }
     // METHODS
     updateCalculationType(index, value){

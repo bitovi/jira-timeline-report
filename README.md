@@ -143,7 +143,7 @@ See [Contributing](CONTRIBUTING.md)
 - The `pages` folder contains the html files that are rendered.
 - The `public` folder contains the javascript files that are included in the html files.
 - The `jira-oidc-helpers` is a javascript file with all the helpers required to interact with Jira and save your access and refresh tokens to `localStorage`.
-- You will make changes to the `main.js` files based on your use case. Everything you need to make your request has been layered in `jira-oidc-helpers`.
+- You will make changes to the `main-helper.js` files based on your use case. Everything you need to make your request has been layered in `jira-oidc-helpers`.
 - Call the `jiraFetch` helper with the url path you want from your main and handle the data how you see fit. e.g
 
 ```js

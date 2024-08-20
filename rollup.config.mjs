@@ -1,22 +1,45 @@
 import terser from '@rollup/plugin-terser';
-import del from 'rollup-plugin-delete';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import typescript from 'rollup-plugin-typescript2';
 
-
-const minify = process.env.BUILD_MINIFY !== "NO" ? [terser()] : [];
-
-// rollup.config.mjs
-export default {
-	input: './public/main.js',
-	output: {
-		dir: './public/dist',
-		format: 'es',
-        plugins: minify
-	},
-    plugins: [
+export default [
+    {
+      input: './public/hosted-main.js',
+      output: {
+        file: './public/dist/hosted-main.js',
+		    format: 'esm'
+      },
+      plugins: [
         nodeResolve(),
         commonjs(),
-        del({ targets: './public/dist/*'})
-    ]
-};
+        typescript()
+      ]
+    },
+    {
+      input: './public/hosted-main.js',
+      output: {
+        file: './public/dist/hosted-main.min.js',
+		    format: 'esm'
+      },
+      plugins: [
+        nodeResolve(),
+        commonjs(),
+        terser(),
+        typescript()
+      ]
+    },
+    {
+      input: './public/connect-main.js',
+      output: {
+        file: './public/dist/connect-main.min.js',
+		    format: 'esm'
+      },
+      plugins: [
+        nodeResolve(),
+        commonjs(),
+        terser(),
+        typescript()
+      ]
+    }
+  ];
