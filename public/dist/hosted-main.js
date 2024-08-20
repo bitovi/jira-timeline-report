@@ -3171,11 +3171,11 @@ var getSchemaSymbol = canSymbol_1_7_0_canSymbol.for("can.getSchema"),
     isMemberSymbol = canSymbol_1_7_0_canSymbol.for("can.isMember"),
     newSymbol = canSymbol_1_7_0_canSymbol.for("can.new");
 
-function comparator(a, b) {
+function comparator$1(a, b) {
     return a.localeCompare(b);
 }
 
-function sort(obj) {
+function sort$2(obj) {
     if(type.isPrimitive(obj) || obj instanceof Date) {
         return obj;
     }
@@ -3183,7 +3183,7 @@ function sort(obj) {
     if (type.isListLike(obj)) {
         out = [];
         shape.eachKey(obj, function(item){
-            out.push(sort(item));
+            out.push(sort$2(item));
         });
         return out;
     }
@@ -3191,8 +3191,8 @@ function sort(obj) {
 
         out = {};
 
-        shape.getOwnKeys(obj).sort(comparator).forEach(function (key) {
-            out[key] = sort( getSet.getKeyValue(obj, key) );
+        shape.getOwnKeys(obj).sort(comparator$1).forEach(function (key) {
+            out[key] = sort$2( getSet.getKeyValue(obj, key) );
         });
 
         return out;
@@ -3355,7 +3355,7 @@ var schemaReflections =  {
 	 * @return {Object} A copy of the object with its keys sorted.
 	 */
     cloneKeySort: function(obj) {
-        return sort(obj);
+        return sort$2(obj);
     },
     /**
 	 * @function can-reflect.convert convert
@@ -24585,7 +24585,7 @@ var canStacheAst_1_1_0_controls = {
 	cleanWhitespaceControl: cleanWhitespaceControl_1
 };
 
-var parse = function(filename, source){
+var parse$7 = function(filename, source){
 	if (arguments.length === 1) {
 		source = arguments[0];
 		filename = undefined;
@@ -24707,7 +24707,7 @@ var parse = function(filename, source){
 };
 
 var canStacheAst_1_1_0_canStacheAst = {
-	parse: parse
+	parse: parse$7
 };
 
 var global$2 = global_1();
@@ -38022,7 +38022,7 @@ var each$1 = canReflect_1_19_2_canReflect.each;
 
 
 
-var parse$1 = canConnect_4_0_6_behavior("data/parse",function(baseConnection){
+var parse$1$1 = canConnect_4_0_6_behavior("data/parse",function(baseConnection){
 
 	var behavior = {
     /**
@@ -39740,7 +39740,7 @@ function realtimeRestModel(optionsOrUrl) {
 		map$3,
 		store,
 		callbacks,
-		parse$1,
+		parse$1$1,
 		url,
 		realTime,
 		callbacksOnce
@@ -39768,7 +39768,7 @@ function restModel(optionsOrUrl) {
 		};
 	}
 
-	var connection = [base,url, parse$1, constructor_1, map$3].reduce(function(prev, behavior){
+	var connection = [base,url, parse$1$1, constructor_1, map$3].reduce(function(prev, behavior){
 		return behavior(prev);
 	}, options);
 	connection.init();
@@ -43048,7 +43048,7 @@ canConnect_4_0_6_canConnect.superMap = function(options){
 		store,
 		callbacks,
 		combineRequests$1,
-		parse$1,
+		parse$1$1,
 		url,
 		realTime,
 		callbacksOnce];
@@ -43082,7 +43082,7 @@ canConnect_4_0_6_canConnect.baseMap = function(options){
 		ref,
 		store,
 		callbacks,
-		parse$1,
+		parse$1$1,
 		url,
 		realTime,
 		callbacksOnce
@@ -43108,7 +43108,7 @@ canConnect_4_0_6_canConnect.dataCallbacksCache = callbacksCache;
 canConnect_4_0_6_canConnect.dataCombineRequests = combineRequests$1;
 canConnect_4_0_6_canConnect.dataLocalStorageCache = localstorageCache;
 canConnect_4_0_6_canConnect.dataMemoryCache = memoryCache;
-canConnect_4_0_6_canConnect.dataParse = parse$1;
+canConnect_4_0_6_canConnect.dataParse = parse$1$1;
 canConnect_4_0_6_canConnect.dataUrl = url;
 canConnect_4_0_6_canConnect.fallThroughCache = fallThroughCache_1;
 canConnect_4_0_6_canConnect.realTime = realTime;
@@ -43538,7 +43538,7 @@ function diffDeep(dest, source, parentKey){
 
 var deep = diffDeep;
 
-var diff = {
+var diff$2 = {
     deep: deep,
     list: list,
     map: map$2,
@@ -43546,7 +43546,7 @@ var diff = {
     Patcher: patcher
 };
 
-canNamespace_1_0_0_canNamespace.diff = diff;
+canNamespace_1_0_0_canNamespace.diff = diff$2;
 
 /**
  * @function can-dom-events/helpers/add-jquery-events ./helpers/add-jquery-events
@@ -44322,59 +44322,20 @@ if (process.env.NODE_ENV !== 'production') {
 	canDebug_2_0_7_canDebug();
 }
 
-// Formats this takes on:
-// 2023-02-17T16:58:00.000Z
-// 2024-04-19T16:43:17.181-0400
-// new Date("2024-05-27") -> date in GMT 0, not in the local timezone. This can mean reporting the wrong date.
-function parseDateISOString(s) {
-    if (!s) return s;
+const inQAStatus$1 = { "QA": true, "In QA": true, "QA Complete": true };
+const inPartnerReviewStatus$1 = { "Partner Review": true, "UAT": true };
+const inIdeaStatus$1 = {"Idea": true, "To Do": true, "Open": true};
+const inDoneStatus$1 = { "Done": true, "Cancelled": true };
+const blockedStatus$1 = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
 
-    // if this is a date already, assume we need to correct timezone
-    if (s instanceof Date) {
-        // fix timezone to UTC
-        return new Date(s.getTime() + s.getTimezoneOffset() * 60 * 1000);
-    }
-    if(s.split(/\D/).length === 3) {
-        throw new Error("Unable to parse "+s);
-    }
-
-    return new Date(s);
-
-}
-
-function parseDateIntoLocalTimezone(s){
-    let ds = s.split(/\D/).map(s => parseInt(s));
-    ds[1] = ds[1] - 1; // adjust month
-    return new Date(...ds);
-}
-
-/**
- * Parse an 8601 date string `YYYY-MM-DD` into a date.
- * @export
- * @param {string} str
- * @returns {Date}
- */
-function parseDate8601String(str){
-    // This should just work, we can get fancy later and use date-fns or something.
-    return str ? new Date(str) : str;
-}
-
-const DAY_IN_MS$1 = 1000 * 60 * 60 * 24;
-
-const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
-const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
-const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
-const inDoneStatus = { "Done": true, "Cancelled": true };
-const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
-
-const statusCategoryMap = (function(){
+((function(){
 
 	const items = [
-		["qa",inQAStatus],
-		["uat", inPartnerReviewStatus],
-		["todo", inIdeaStatus],
-		["done", inDoneStatus],
-		["blocked", blockedStatus]
+		["qa",inQAStatus$1],
+		["uat", inPartnerReviewStatus$1],
+		["todo", inIdeaStatus$1],
+		["done", inDoneStatus$1],
+		["blocked", blockedStatus$1]
 	];
 	const statusCategoryMap = {};
 	for( let [category, statusMap] of items) {
@@ -44383,21 +44344,9 @@ const statusCategoryMap = (function(){
 		}
 	}
 	return statusCategoryMap;
-})();
+}))();
 
-const WIGGLE_ROOM = 0;
-/**
- * 
- * @param {import("./shared/issue-data/issue-data").DerivedWorkIssue} issue 
- */
-function getStatusCategoryDefault(issue){
-	if(statusCategoryMap[issue.status]) {
-		return statusCategoryMap[issue.status];
-	} else {
-		return "dev";
-	}
-	
-}
+const WIGGLE_ROOM$1 = 0;
 
 
 function addStatusToRelease(release) {
@@ -44455,10 +44404,7 @@ function addStatusToIssueAndChildren(issue) {
 
 function getInitiativeStatus(initiative) {
 
-	if(initiative["Issue key"] === "DRD-8370") {
-		debugger;
-	}
-		if (inDoneStatus[initiative.Status]) {
+		if (inDoneStatus$1[initiative.Status]) {
 				return {
 					status: "complete", 
 					statusData: {
@@ -44490,7 +44436,7 @@ function getInitiativeStatus(initiative) {
 			};
 		}
 
-		const timedTeamStatus = timedStatus(initiative.dateData.rollup);
+		const timedTeamStatus = timedStatus$1(initiative.dateData.rollup);
 
 		const warning = timedTeamStatus === "complete" && 
 			initiative.dateData.rollup?.issues?.length && initiative.dateData.rollup?.issues?.every(epic => !isStatusUatComplete(epic));
@@ -44505,16 +44451,16 @@ function getInitiativeStatus(initiative) {
 }
 
 function isStatusDevComplete(item) {
-		return inQAStatus[item.Status] || isStatusQAComplete(item);
+		return inQAStatus$1[item.Status] || isStatusQAComplete(item);
 }
 function isStatusQAComplete(item) {
-		return inPartnerReviewStatus[item.Status] || isStatusUatComplete(item);
+		return inPartnerReviewStatus$1[item.Status] || isStatusUatComplete(item);
 }
 function isStatusUatComplete(item) {
-		return inDoneStatus[item.Status]
+		return inDoneStatus$1[item.Status]
 }
 
-function timedStatus(timedRecord) {
+function timedStatus$1(timedRecord) {
 		if (!timedRecord.due) {
 				return "unknown"
 		}
@@ -44524,10 +44470,10 @@ function timedStatus(timedRecord) {
 		else if( (+timedRecord.due) < new Date()  ) {
 			return "complete";
 		} else if (timedRecord.lastPeriod && 
-			((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.lastPeriod.due)) ) {
+			((+timedRecord.due) > WIGGLE_ROOM$1 + (+timedRecord.lastPeriod.due)) ) {
 				return "behind";
 		} else if(timedRecord.lastPeriod && 
-			((+timedRecord.due) + WIGGLE_ROOM <  (+timedRecord.lastPeriod.due)) ) {
+			((+timedRecord.due) + WIGGLE_ROOM$1 <  (+timedRecord.lastPeriod.due)) ) {
 				return "ahead";
 		} else if(!timedRecord.lastPeriod) {
 			return "new";
@@ -44562,7 +44508,11 @@ function getInitiativeDevStatus(initiative) {
 				}
 			};
 		}
-		if (devDateData?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
+		function epicIsBlocked(epic){
+			return epic.Status.toLowerCase() === "blocked";
+		}
+
+		if (devDateData?.issues?.some( epicIsBlocked) ) {
 			return {
 				status: "blocked", 
 				statusData: {
@@ -44579,7 +44529,7 @@ function getInitiativeDevStatus(initiative) {
 				}
 			}
 		}
-		const timedDevStatus = timedStatus(devDateData);
+		const timedDevStatus = timedStatus$1(devDateData);
 
 		const warning = timedDevStatus === "complete" && 
 			devDateData?.issues?.length && devDateData?.issues?.every(epic => !isStatusDevComplete(epic));
@@ -44627,7 +44577,7 @@ function getInitiativeQaStatus(initiative) {
 				}
 			};
 		}
-		const timedQAStatus = timedStatus(qaDateData);
+		const timedQAStatus = timedStatus$1(qaDateData);
 		const warning = timedQAStatus === "complete" && 
 			qaDateData?.issues?.length && qaDateData?.issues?.every(epic => !isStatusQAComplete(epic));
 
@@ -44680,7 +44630,7 @@ function getInitiativeUatStatus(initiative) {
 	// should timed status be able to look at the actual statuses?
 	// lets say the UAT is "ontrack" (epicStatus won't report this currently)
 	// should we say there is a missmatch?
-	const statusFromTiming = timedStatus(uatDateData);
+	const statusFromTiming = timedStatus$1(uatDateData);
 
 	const warning = statusFromTiming === "complete" && 
 	uatDateData?.issues?.length && uatDateData?.issues?.every(epic => !isStatusUatComplete(epic));
@@ -44729,6 +44679,10 @@ function getBusinessDatesCount(startDate, endDate) {
 }
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+function getDefaultExportFromCjs (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
 
 var jstat = {exports: {}};
 
@@ -49772,6 +49726,37 @@ function sampleExtraPoints(estimate, confidence) {
 	return estimate * scale - estimate;
 }
 
+// Formats this takes on:
+// 2023-02-17T16:58:00.000Z
+// 2024-04-19T16:43:17.181-0400
+// new Date("2024-05-27") -> date in GMT 0, not in the local timezone. This can mean reporting the wrong date.
+function parseDateISOString(s) {
+    if (!s) return s;
+
+    // if this is a date already, assume we need to correct timezone
+    if (s instanceof Date) {
+        // fix timezone to UTC
+        return new Date(s.getTime() + s.getTimezoneOffset() * 60 * 1000);
+    }
+    if(s.split(/\D/).length === 3) {
+        throw new Error("Unable to parse "+s);
+    }
+
+    return new Date(s);
+
+}
+
+function parseDateIntoLocalTimezone(s){
+    if(!s) {
+        return s;
+    }
+    let ds = s.split(/\D/).map(s => parseInt(s));
+    ds[1] = ds[1] - 1; // adjust month
+    return new Date(...ds);
+}
+
+const DAY_IN_MS$1 = 1000 * 60 * 60 * 24;
+
 // GET DATA FROM PLACES DIRECTLY RELATED TO ISSUE
 
 /** @typedef {null| {
@@ -49786,7 +49771,7 @@ function sampleExtraPoints(estimate, confidence) {
 
 /**
  * 
- * @param {import("./issue-data.js").NormalizedIssue} issue 
+ * @param {import("../../jira/normalized/normalize.js").NormalizedIssue} issue 
  * @returns {{startData: StartData, dueData: DueData}}
  */
 function getStartDateAndDueDataFromFields$1(issue){
@@ -49814,7 +49799,7 @@ function getStartDateAndDueDataFromFields$1(issue){
 
 /**
  * 
- * @param {import("./issue-data.js").NormalizedIssue} story 
+ * @param {import("../../jira/normalized/normalize.js").NormalizedIssue} story 
  * @returns {{startData: StartData, dueData: DueData}}
  */
 function getStartDateAndDueDataFromSprints$1(story){
@@ -49843,10 +49828,10 @@ function getStartDateAndDueDataFromSprints$1(story){
             } 
         }
     }
-    return mergeStartAndDueData$1(records);
+    return mergeStartAndDueData$3(records);
     
 }
-function mergeStartAndDueData$1(records){
+function mergeStartAndDueData$3(records){
     const startData = records.filter( record => record?.startData ).map( record => record.startData );
     const dueData = records.filter( record => record?.dueData ).map( record => record.dueData );
 
@@ -49862,7 +49847,7 @@ function mergeStartAndDueData$1(records){
  * @returns {{startData: StartData, dueData: DueData}}
  */
 function getStartDateAndDueDataFromFieldsOrSprints$1(issue ){
-    return mergeStartAndDueData$1( [
+    return mergeStartAndDueData$3( [
         getStartDateAndDueDataFromFields$1(issue),
         getStartDateAndDueDataFromSprints$1(issue)
     ] );
@@ -49873,70 +49858,397 @@ function getStartDateAndDueDataFromFieldsOrSprints$1(issue ){
  * @returns {number}
  */
 function getConfidenceDefault({ fields }) {
-  return fields["Story points confidence"] || fields.Confidence;
-}
-/**
- * @param {NormalizedTeam} team
- * @returns {number}
+    return fields["Story points confidence"] || fields.Confidence;
+  }
+
+  /**
+   * @param {string} teamKey
+   * @returns {number}
+   */
+  function getDaysPerSprintDefault(teamKey) {
+    return 10;
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string | null}
+   */
+  function getDueDateDefault({ fields }) {
+    return fields["Due date"];
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {number}
+   */
+  function getHierarchyLevelDefault({ fields }) {
+    return fields["Issue Type"]?.hierarchyLevel;
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string}
+   */
+  function getIssueKeyDefault({ key }) {
+    return key;
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string | void}
+   */
+  function getParentKeyDefault({ fields }) {
+    return fields["Parent"]?.key || ( 
+        typeof fields["Parent Link"]?.data === "string" ?
+        fields["Parent Link"]?.data : 
+        fields["Parent Link"]?.data?.key); //this last part is probably a mistake ...
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string | null}
+   */
+  function getStartDateDefault({ fields }) {
+    return fields["Start date"];
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string | void}
+   */
+  function getStoryPointsDefault({ fields }) {
+    return fields["Story points"];
+  }
+
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string | void}
+   */
+  function getStoryPointsMedianDefault({ fields }) {
+    return fields["Story points median"];
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string | void}
+   */
+  function getUrlDefault({ key }) {
+    return "javascript://"
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string}
+   */
+  function getTeamKeyDefault({key}) {
+    return key.replace(/-.*/, "")
+  }
+  
+  /**
+   * @param {JiraIssue} issue
+   * @returns {string}
+   */
+  function getTypeDefault({ fields }) {
+    return fields["Issue Type"]?.name;
+  }
+  
+  /**
+   * @param {string} teamKey
+   * @returns {number}
+   */
+  function getVelocityDefault(teamKey) {
+    return 21;
+  }
+  
+  function getParallelWorkLimitDefault(teamKey) {
+    return 1;
+  }
+  function getSprintsDefault({fields}){
+    if(fields.Sprint) {
+      return fields.Sprint.map((sprint)=>{
+        return {
+          name: sprint.name,
+          startDate: parseDateISOString(sprint["startDate"]),
+          endDate: parseDateISOString(sprint["endDate"])
+        }
+      })
+    } else {
+      return  null;
+    }
+  }
+  function getStatusDefault({fields}) {
+    return fields?.Status?.name;
+  }
+  function getLabelsDefault({fields}) {
+    return fields?.Labels || []
+  }
+  function getStatusCategoryDefault$1({fields}){
+    return fields?.Status?.statusCategory?.name
+  }
+  /**
+   * @typedef {{
+   *   name: String,
+   *   id: String,
+   *   type: "releases",
+   *   key: "string",
+   *   summary: String,
+   * }} NormalizedRelease
+   */
+
+
+  function getReleasesDefault ({fields}) {
+    let fixVersions = fields["Fix versions"];
+    if(!fixVersions) {
+      fixVersions = [];
+    }
+    if(!Array.isArray(fixVersions)) {
+      fixVersions = [fixVersions];
+    }
+    return fixVersions.map( ({name, id})=> {
+      return {name, id, type: "Release", key: "SPECIAL:release-"+name, summary: name}
+    });
+  }
+  
+  
+  /**
+   * @typedef {{
+   * fields: {
+   *   Confidence: number,
+   *   'Due date': string | null,
+   *   'Issue Type': { hierarchyLevel: number, name: string },
+   *   'Parent Link': { data: { key: string } },
+   *   'Project Key': string,
+   *   'Start date': string | null,
+   *   Status: { name: string, statusCategory: {name: string} }
+   *   'Story points': number | null | undefined,
+   *   'Story points median': number | null | undefined,
+   *   Summary: string
+   * },
+   * id: string,
+   * key: string
+   * }} JiraIssue
+   */
+  
+  /**
+   * @typedef {{
+  *  name: string,
+  *  startDate: Date,
+  *  endDate: Date
+  * }} NormalizedSprint
+  */
+  
+  /**
+   * Returns most common data used by most downstream tools
+   * @param {JiraIssue}
+   * @return {NormalizedIssue}
+   */
+  function normalizeIssue( issue, {
+    getIssueKey = getIssueKeyDefault,
+    getParentKey = getParentKeyDefault,
+    getConfidence = getConfidenceDefault,
+    getDueDate = getDueDateDefault,
+    getHierarchyLevel = getHierarchyLevelDefault,
+    getStartDate = getStartDateDefault,
+    getStoryPoints = getStoryPointsDefault,
+    getStoryPointsMedian = getStoryPointsMedianDefault,
+    getType = getTypeDefault,
+    getTeamKey = getTeamKeyDefault,
+    getUrl = getUrlDefault,
+    getVelocity = getVelocityDefault,
+    getDaysPerSprint = getDaysPerSprintDefault,
+    getParallelWorkLimit = getParallelWorkLimitDefault,
+    getSprints = getSprintsDefault,
+    getStatus = getStatusDefault,
+    getStatusCategory = getStatusCategoryDefault$1,
+    getLabels = getLabelsDefault,
+    getReleases = getReleasesDefault
+  } = {}){
+      const teamName = getTeamKey(issue),
+        velocity = getVelocity(teamName),
+        daysPerSprint = getDaysPerSprint(teamName),
+        parallelWorkLimit = getParallelWorkLimit(teamName),
+        totalPointsPerDay = velocity / daysPerSprint,
+        pointsPerDayPerTrack = totalPointsPerDay  / parallelWorkLimit;
+
+      const data = {
+        summary: issue.fields.Summary,
+        key: getIssueKey(issue),
+        parentKey: getParentKey(issue),
+        confidence: getConfidence(issue),
+        dueDate: parseDateIntoLocalTimezone( getDueDate(issue) ),
+        hierarchyLevel: getHierarchyLevel(issue),
+        startDate: parseDateIntoLocalTimezone( getStartDate(issue) ),
+        storyPoints: getStoryPoints(issue),
+        storyPointsMedian: getStoryPointsMedian(issue),
+        type: getType(issue),
+        sprints: getSprints(issue),
+        team: {
+          name: teamName,
+          velocity,
+          daysPerSprint,
+          parallelWorkLimit,
+          totalPointsPerDay,
+          pointsPerDayPerTrack
+        },
+        url: getUrl(issue),
+        status: getStatus(issue),
+        statusCategory: getStatusCategory(issue),
+        labels: getLabels(issue),
+        releases: getReleases(issue),
+        issue
+      };
+      return data;
+  }
+
+
+  /**
+   * @typedef {{
+  *  key: string,
+  *  summary: string,
+  *  parentKey: string | null,
+  *  confidence: number | null,
+  *  dueDate: Date,
+  *  hierarchyLevel: number,
+  *  startDate: Date, 
+  *  storyPoints: number | null,
+  *  storyPointsMedian: number | null,
+  *  type: string,
+  *  team: NormalizedTeam,
+  *  url: string,
+  *  sprints: null | Array<NormalizedSprint>,
+  *  status: null | string,
+  *  statusCategory: null | string,
+  *  issue: JiraIssue,
+  *  labels: Array<string>,
+  *  releases: Array<NormalizedRelease>
+  * }} NormalizedIssue
+  */
+  
+  /**
+   * @typedef {{
+   *   name: string,
+   *    velocity: number,
+   *    daysPerSprint: number,
+   *    parallelWorkLimit: number,
+   *    totalPointsPerDay: number,
+   *    pointsPerDayPerTrack: number
+   * }} NormalizedTeam
+   */
+
+
+  /**
+ * Returns all status names
+ * @param {Array<DerivedWorkIssue>} issues
  */
-function getDefaultConfidenceDefault(team) {
-  return 50
+
+function allStatusesSorted(issues) {
+  const statuses = issues.map(issue => issue.status);
+  return [...new Set(statuses)].sort();
 }
+
+// this is the types work can be categorized as
+const workType = ["design","dev","qa","uat"];
+const workTypes = workType;
+
+
+const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
+const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
+const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
+const inDoneStatus = { "Done": true, "Cancelled": true };
+const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
+
+
+const statusCategoryMap = (function(){
+
+	const items = [
+		["qa",inQAStatus],
+		["uat", inPartnerReviewStatus],
+		["todo", inIdeaStatus],
+		["done", inDoneStatus],
+		["blocked", blockedStatus]
+	];
+	const statusCategoryMap = {};
+	for( let [category, statusMap] of items) {
+		for(let prop in statusMap) {
+			statusCategoryMap[prop] = category;
+		}
+	}
+	return statusCategoryMap;
+})();
+
 /**
- * @param {string} teamKey
- * @returns {number}
+ * 
+ * @param {import("../derive").DerivedWorkIssue} issue 
  */
-function getDaysPerSprintDefault(teamKey) {
-  return 10;
+function getStatusCategoryDefault(issue){
+	const statusCategory = statusCategoryMap[ (issue.status || "").toLowerCase()];
+	if(statusCategory) {
+		return statusCategory;
+	} else {
+		return "dev";
+	}
+	
+}
+
+
+/**
+ * @typedef {{
+ *   statusType: string,
+ *   workType: string 
+ * }} DerivedWorkStatus
+ */
+
+/**
+ * @param {NormalizedIssue} normalizedIssue 
+ * @return {DerivedWorkStatus}
+ */
+function getWorkStatus(
+    normalizedIssue, 
+    {
+        getStatusType = getStatusCategoryDefault,
+        getWorkType = getWorkTypeDefault
+    }){
+    return {
+        statusType: getStatusType(normalizedIssue),
+        workType: getWorkType(normalizedIssue)
+    }
+}
+
+
+function toLowerCase(str) {
+	return str.toLowerCase();
+}
+
+const workPrefix = workType.map( wt => wt+":");
+/**
+ * @param {NormalizedIssue} normalizedIssue 
+ * @returns {String} dev, qa, uat, design
+ */
+function getWorkTypeDefault(normalizedIssue){
+  
+  let wp = workPrefix.find( wp => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0);
+  if(wp) {
+    return wp.slice(0, -1)
+  }
+  
+  wp = workType.find( wt => normalizedIssue.labels.map(toLowerCase).includes(wt));
+  if(wp) {
+    return wp;
+  }
+  return "dev";
 }
 
 /**
- * @param {JiraIssue} issue
- * @returns {string | null}
- */
-function getDueDateDefault({ fields }) {
-  return fields["Due date"];
-}
+   * @param {NormalizedTeam} team
+   * @returns {number}
+   */
+  function getDefaultConfidenceDefault(team) {
+    return 50
+  }
 
-/**
- * @param {JiraIssue} issue
- * @returns {number}
- */
-function getHierarchyLevelDefault({ fields }) {
-  return fields["Issue Type"]?.hierarchyLevel;
-}
 
-/**
- * @param {JiraIssue} issue
- * @returns {string}
- */
-function getIssueKeyDefault({ key }) {
-  return key;
-}
 
-/**
- * @param {JiraIssue} issue
- * @returns {string | void}
- */
-function getParentKeyDefault({ fields }) {
-  return fields["Parent"]?.key || fields["Parent Link"]?.data?.key;
-}
-
-/**
- * @param {JiraIssue} issue
- * @returns {string | null}
- */
-function getStartDateDefault({ fields }) {
-  return fields["Start date"];
-}
-
-/**
- * @param {JiraIssue} issue
- * @returns {string | void}
- */
-function getStoryPointsDefault({ fields }) {
-  return fields["Story points"];
-}
 /**
  * 
  * @param {NormalizedTeam} team 
@@ -49946,243 +50258,16 @@ function getDefaultStoryPointsDefault(team) {
   return team.velocity / team.parallelWorkLimit;
 }
 
+
 /**
- * @param {JiraIssue} issue
- * @returns {string | void}
+ * 
+ * @param {import("../../normalized/normalize.js").NormalizedIssue} normalizedIssue 
+ * @param {*} param1 
+ * @returns {DerivedTiming}
  */
-function getStoryPointsMedianDefault({ fields }) {
-  return fields["Story points median"];
-}
-
-/**
- * @param {JiraIssue} issue
- * @returns {string | void}
- */
-function getUrlDefault({ key }) {
-  return "javascript://"
-}
-
-/**
- * @param {JiraIssue} issue
- * @returns {string}
- */
-function getTeamKeyDefault({key}) {
-  return key.replace(/-.*/, "")
-}
-
-/**
- * @param {JiraIssue} issue
- * @returns {string}
- */
-function getTypeDefault({ fields }) {
-  return fields["Issue Type"]?.name;
-}
-
-/**
- * @param {string} teamKey
- * @returns {number}
- */
-function getVelocityDefault(teamKey) {
-  return 21;
-}
-
-function getParallelWorkLimitDefault(teamKey) {
-  return 1;
-}
-function getSprintsDefault({fields}){
-  if(fields.Sprint) {
-    return fields.Sprint.map((sprint)=>{
-      return {
-        name: sprint.name,
-        startDate: parseDateISOString(sprint["startDate"]),
-        endDate: parseDateISOString(sprint["endDate"])
-      }
-    })
-  } else {
-    return  null;
-  }
-}
-function getStatusDefault({fields}) {
-  return fields?.Status?.name;
-}
-function getLabelsDefault({fields}) {
-  return fields?.labels || []
-}
-
-function getReleasesDefault ({fields}) {
-  return (fields["Fix versions"] || []).map( ({name, id})=> {
-    return {name, id}
-  });
-}
-
-
-/**
- * @typedef {{
- * fields: {
- *   Confidence: number,
- *   'Due date': string | null,
- *   'Issue Type': { hierarchyLevel: number, name: string },
- *   'Parent Link': { data: { key: string } },
- *   'Project Key': string,
- *   'Start date': string | null,
- *   Status: { name: string }
- *   'Story points': number | null | undefined,
- *   'Story points median': number | null | undefined,
- *   Summary: string
- * },
- * id: string,
- * key: string
- * }} JiraIssue
- */
-
-/**
- * @typedef {{
-*  name: string,
-*  startDate: Date,
-*  endDate: Date
-* }} NormalizedSprint
-*/
-
-/**
- * Returns most common data used by most downstream tools
- * @param {JiraIssue}
- * @return {NormalizedIssue}
- */
-function normalizeIssue( issue, {
-  getIssueKey = getIssueKeyDefault,
-  getParentKey = getParentKeyDefault,
-  getConfidence = getConfidenceDefault,
-  getDueDate = getDueDateDefault,
-  getHierarchyLevel = getHierarchyLevelDefault,
-  getStartDate = getStartDateDefault,
-  getStoryPoints = getStoryPointsDefault,
-  getStoryPointsMedian = getStoryPointsMedianDefault,
-  getType = getTypeDefault,
-  getTeamKey = getTeamKeyDefault,
-  getUrl = getUrlDefault,
-  getVelocity = getVelocityDefault,
-  getDaysPerSprint = getDaysPerSprintDefault,
-  getParallelWorkLimit = getParallelWorkLimitDefault,
-  getSprints = getSprintsDefault,
-  getStatus = getStatusDefault,
-  getLabels = getLabelsDefault,
-  getReleases = getReleasesDefault
-} = {}){
-    const teamName = getTeamKey(issue),
-      velocity = getVelocity(teamName),
-      daysPerSprint = getDaysPerSprint(teamName),
-      parallelWorkLimit = getParallelWorkLimit(teamName),
-      totalPointsPerDay = velocity / daysPerSprint,
-      pointsPerDayPerTrack = totalPointsPerDay  / parallelWorkLimit;
-    const data = {
-      summary: issue.fields.Summary,
-      key: getIssueKey(issue),
-      parentKey: getParentKey(issue),
-      confidence: getConfidence(issue),
-      dueDate: parseDate8601String( getDueDate(issue) ),
-      hierarchyLevel: getHierarchyLevel(issue),
-      startDate: parseDate8601String( getStartDate(issue) ),
-      storyPoints: getStoryPoints(issue),
-      storyPointsMedian: getStoryPointsMedian(issue),
-      type: getType(issue),
-      sprints: getSprints(issue),
-      team: {
-        name: teamName,
-        velocity,
-        daysPerSprint,
-        parallelWorkLimit,
-        totalPointsPerDay,
-        pointsPerDayPerTrack
-      },
-      url: getUrl(issue),
-      status: getStatus(issue),
-      labels: getLabels(issue),
-      releases: getReleases(issue),
-      issue
-    };
-    return data;
-}
-/**
- * @typedef {{
-*  key: string,
-*  summary: string,
-*  parentKey: string | null,
-*  confidence: number | null,
-*  dueDate: Date,
-*  hierarchyLevel: number,
-*  startDate: Date, 
-*  storyPoints: number | null,
-*  storyPointsMedian: number | null,
-*  type: string,
-*  team: NormalizedTeam,
-*  url: string,
-*  sprints: null | Array<NormalizedSprint>,
-*  status: null | string,
-*  issue: JiraIssue,
-*  labels: Array<string>
-* }} NormalizedIssue
-*/
-
-/**
- * @typedef {{
- *   name: string,
- *    velocity: number,
- *    daysPerSprint: number,
- *    parallelWorkLimit: number,
- *    totalPointsPerDay: number,
- *    pointsPerDayPerTrack: number
- * }} NormalizedTeam
- */
-
-/**
- * @typedef {{
- * isConfidenceValid: boolean,
-* usedConfidence: number,
-* isStoryPointsValid: boolean,
-* defaultOrStoryPoints: number,
-* storyPointsDaysOfWork: number,
-* deterministicTotalPoints: number,
-* isStoryPointsMedianValid: boolean,
-* defaultOrStoryPointsMedian: number,
-* storyPointsMedianDaysOfWork: number,
-* deterministicExtraDaysOfWork: number,
-* deterministicTotalDaysOfWork: number,
-* probablisticExtraDaysOfWork: number,
-* probablisticTotalDaysOfWork: number,
-* hasStartAndDueDate: boolean,
-* hasSprintStartAndEndDate: boolean,
-* sprintDaysOfWork: number | null,
-* startAndDueDateDaysOfWork: number | null,
-* totalDaysOfWork: number | null,
-* defaultOrTotalDaysOfWork: number | null,
-* completedDaysOfWork: number,
-* startData: import("./date-data.js").StartData,
-* dueData: import("./date-data.js").DueData,
-* statusType: string,
-* workType: string
-* }} DerivedWork
- */
-
-
-/**
- * Returns all status names
- * @param {Array<DerivedWorkIssue>} issues 
- */
-function allStatusesSorted(issues) {
-  const statuses = issues.map( issue => issue.status);
-  return [...new Set( statuses ) ].sort();
-}
-/**
- * Adds derived data
- * @param {NormalizedIssue} normalizedIssue 
- * @return {DerivedWorkIssue} 
- */
-function derivedWorkIssue(normalizedIssue, {
+function deriveWorkTiming(normalizedIssue, {
   getDefaultConfidence = getDefaultConfidenceDefault, 
   getDefaultStoryPoints = getDefaultStoryPointsDefault, 
-  getStatusType = getStatusCategoryDefault,
-  getWorkType = getWorkTypeDefault,
-  
   uncertaintyWeight = 80
 } = {}){
 
@@ -50231,82 +50316,73 @@ function derivedWorkIssue(normalizedIssue, {
   const completedDaysOfWork = getSelfCompletedDays(startData, dueData, totalDaysOfWork);
 
   return {
-    ...normalizedIssue,
-    derivedWork: {
-      isConfidenceValid,
-      usedConfidence,
+    isConfidenceValid,
+    usedConfidence,
 
-      isStoryPointsValid,
-      defaultOrStoryPoints,
-      storyPointsDaysOfWork,
+    isStoryPointsValid,
+    defaultOrStoryPoints,
+    storyPointsDaysOfWork,
 
-      isStoryPointsMedianValid,
-      defaultOrStoryPointsMedian,
-      storyPointsMedianDaysOfWork,
+    isStoryPointsMedianValid,
+    defaultOrStoryPointsMedian,
+    storyPointsMedianDaysOfWork,
 
-      deterministicExtraPoints,
-      deterministicExtraDaysOfWork,
-      deterministicTotalPoints,
-      deterministicTotalDaysOfWork,
+    deterministicExtraPoints,
+    deterministicExtraDaysOfWork,
+    deterministicTotalPoints,
+    deterministicTotalDaysOfWork,
 
-      probablisticExtraPoints,
-      probablisticExtraDaysOfWork,
-      probablisticTotalPoints,
-      probablisticTotalDaysOfWork,
+    probablisticExtraPoints,
+    probablisticExtraDaysOfWork,
+    probablisticTotalPoints,
+    probablisticTotalDaysOfWork,
 
-      hasStartAndDueDate,
-      startAndDueDateDaysOfWork,
+    hasStartAndDueDate,
+    startAndDueDateDaysOfWork,
 
-      hasSprintStartAndEndDate,
-      sprintDaysOfWork,
+    hasSprintStartAndEndDate,
+    sprintDaysOfWork,
 
-      sprintStartData,
-      endSprintData,
-      startData,
-      dueData,
+    sprintStartData,
+    endSprintData,
 
-      totalDaysOfWork,
-      defaultOrTotalDaysOfWork,
-      completedDaysOfWork,
-      ...getWorkStatus(normalizedIssue, {getStatusType,getWorkTypeDefault})
-    }
+    ...startData,
+    ...dueData,
+
+    totalDaysOfWork,
+    defaultOrTotalDaysOfWork,
+    completedDaysOfWork
   }
 }
 
-const workType = ["dev","qa","uat","design"];
-const workPrefix = workType.map( wt => wt+":");
-/**
- * @param {NormalizedIssue} normalizedIssue 
- * @returns {String} dev, qa, uat, design
- */
-function getWorkTypeDefault(normalizedIssue){
-  
-  let wp = workPrefix.find( wp => normalizedIssue?.summary?.indexOf(wp) === 0);
-  if(wp) {
-    return wp.slice(0, -1)
-  }
-  wp = workType.find( wt => normalizedIssue.labels.includes(wt));
-  if(wp) {
-    return wp;
-  }
-  return "dev";
-}
 
 /**
- * 
- * @param {NormalizedIssue} normalizedIssue 
- */
-function getWorkStatus(
-  normalizedIssue, 
-  {
-    getStatusType = getStatusCategoryDefault,
-    getWorkType = getWorkTypeDefault
-  }){
-  return {
-    statusType: getStatusType(normalizedIssue),
-    workType: getWorkType(normalizedIssue)
-  }
-}
+ * @typedef {{
+* isConfidenceValid: boolean,
+* usedConfidence: number,
+* isStoryPointsValid: boolean,
+* defaultOrStoryPoints: number,
+* storyPointsDaysOfWork: number,
+* deterministicTotalPoints: number,
+* isStoryPointsMedianValid: boolean,
+* defaultOrStoryPointsMedian: number,
+* storyPointsMedianDaysOfWork: number,
+* deterministicExtraDaysOfWork: number,
+* deterministicTotalDaysOfWork: number,
+* probablisticExtraDaysOfWork: number,
+* probablisticTotalDaysOfWork: number,
+* hasStartAndDueDate: boolean,
+* hasSprintStartAndEndDate: boolean,
+* sprintDaysOfWork: number | null,
+* startAndDueDateDaysOfWork: number | null,
+* totalDaysOfWork: number | null,
+* defaultOrTotalDaysOfWork: number | null,
+* completedDaysOfWork: number,
+* startData: ,
+* dueData: ,
+* } & import("../../../shared/issue-data/date-data.js").StartData & import("../../../shared/issue-data/date-data.js").DueData
+* } DerivedTiming
+*/
 
 
 function isConfidenceValueValid(value){
@@ -50319,8 +50395,8 @@ function isStoryPointsValueValid(value){
 
 /**
  * 
- * @param {import("./date-data.js").StartData} startData 
- * @param {import("./date-data.js").DueData} dueData
+ * @param {import("../../../shared/issue-data/date-data.js").StartData} startData 
+ * @param {import("../../../shared/issue-data/date-data.js").DueData} dueData
  * @returns number
  */
 function getSelfCompletedDays(startData, dueData, daysOfWork) {
@@ -50355,23 +50431,23 @@ function derivedToCSVFormat(derivedIssue) {
     "Issue Type": derivedIssue.type,
     "Parent Link": derivedIssue.parentKey,
     "Status": derivedIssue.status,
-    workType: derivedIssue.derivedWork.workType,
-    workingBusinessDays: derivedIssue.derivedWork.totalDaysOfWork,
-    weightedEstimate: derivedIssue.derivedWork.deterministicTotalPoints
+    workType: derivedIssue.derivedStatus.workType,
+    workingBusinessDays: derivedIssue.derivedTiming.totalDaysOfWork,
+    weightedEstimate: derivedIssue.derivedTiming.deterministicTotalPoints
   }
 }
 
 window.fieldsSet = new Set();
 
 
-function getSprintNumbers(value) {
+function getSprintNumbers$1(value) {
     if(value === "") {
         return null;
     } else {
         return value.split(",").map( num => +num);
     }
 }
-function getSprintNames(value) {
+function getSprintNames$1(value) {
     if(value === "") {
         return null;
     } else {
@@ -50380,14 +50456,14 @@ function getSprintNames(value) {
 }
 
 
-const fields = {
+const fields$1 = {
 
     // from will look like "1619, 1647"
     // we need to update `lastReturnValue` to have 
     // only the right sprints
     Sprint: function(lastReturnValue, change, {sprints}) {
-        const sprintNumbers = getSprintNumbers( change.from );
-        const sprintNames = getSprintNames(change.fromString);
+        const sprintNumbers = getSprintNumbers$1( change.from );
+        const sprintNames = getSprintNames$1(change.fromString);
         
         if( sprintNumbers === null ) {
             return null;
@@ -50423,7 +50499,7 @@ const fields = {
         }
     }
 };
-const fieldAlias = {
+const fieldAlias$1 = {
     "duedate": "Due date",
     "status": "Status",
     "labels": "Labels",
@@ -50432,7 +50508,7 @@ const fieldAlias = {
     "Fix Version": "Fix versions"
 };
 
-function getSprintsMapsFromIssues(issues){
+function getSprintsMapsFromIssues$1(issues){
     const ids = new Map();
     const names = new Map();
     for(const issue of issues) {
@@ -50444,7 +50520,7 @@ function getSprintsMapsFromIssues(issues){
     return {ids, names};
 }
 
-function getVersionsFromIssues(issues){
+function getVersionsFromIssues$1(issues){
     const ids = new Map();
     const names = new Map();
     for(const issue of issues) {
@@ -50460,8 +50536,8 @@ function getVersionsFromIssues(issues){
 
 
 function issues(issues, rollbackTime) {
-    const sprints = getSprintsMapsFromIssues(issues);
-    const versions = getVersionsFromIssues(issues);
+    const sprints = getSprintsMapsFromIssues$1(issues);
+    const versions = getVersionsFromIssues$1(issues);
     return issues.map(i => issue(i, rollbackTime , {sprints, versions})).filter( i => i );
 }
 
@@ -50477,10 +50553,10 @@ function issue(issue, rollbackTime, data) {
         }
         items.forEach( (change) => {
             const {field, from, to} = change;
-            const fieldName = fieldAlias[field] || field;
+            const fieldName = fieldAlias$1[field] || field;
 
-            if(fields[fieldName]) {
-                copy[fieldName] = fields[fieldName](copy[fieldName], change, data);
+            if(fields$1[fieldName]) {
+                copy[fieldName] = fields$1[fieldName](copy[fieldName], change, data);
             } else {
                 copy[fieldName] = from;
             }
@@ -50621,10 +50697,10 @@ function getStartDateAndDueDataFromSprints(story){
 
         }
     }
-    return mergeStartAndDueData(records);
+    return mergeStartAndDueData$2(records);
     
 }
-function mergeStartAndDueData(records){
+function mergeStartAndDueData$2(records){
     const startData = records.filter( record => record?.startData ).map( record => record.startData );
     const dueData = records.filter( record => record?.dueData ).map( record => record.dueData );
 
@@ -50635,13 +50711,13 @@ function mergeStartAndDueData(records){
 }
 
 function getStartDateAndDueDataFromFieldsOrSprints(issue ){
-    return mergeStartAndDueData( [
+    return mergeStartAndDueData$2( [
         getStartDateAndDueDataFromFields(issue),
         getStartDateAndDueDataFromSprints(issue)
     ] );
 }
 
-function parentFirstThenChildren(getIssueDateData, getChildDateData){
+function parentFirstThenChildren$2(getIssueDateData, getChildDateData){
     const issueDateData = getIssueDateData();
     const childrenDateData = getChildDateData();
     if(issueDateData.startData && issueDateData.dueData) {
@@ -50655,17 +50731,17 @@ function parentFirstThenChildren(getIssueDateData, getChildDateData){
     }
 }
 
-function childrenOnly(getIssueDateData, getChildDateData){
+function childrenOnly$2(getIssueDateData, getChildDateData){
     return getChildDateData();
 }
 
-function parentOnly(getIssueDateData, getChildDateData){
+function parentOnly$2(getIssueDateData, getChildDateData){
     // eventually we can look to remove these. Some code still depends on having children everywhere
     getChildDateData();
     return getIssueDateData();
 }
 
-function childrenFirstThenParent(getIssueDateData, getChildDateData){
+function childrenFirstThenParent$2(getIssueDateData, getChildDateData){
     const childrenDateData = getChildDateData();
     if(childrenDateData.startData && childrenDateData.dueData) {
         return childrenDateData;
@@ -50677,19 +50753,19 @@ function childrenFirstThenParent(getIssueDateData, getChildDateData){
     }
 }
 
-function widestRange(getIssueDateData, getChildDateData){
+function widestRange$2(getIssueDateData, getChildDateData){
     const childrenDateData = getChildDateData();
     const issueDateData = getIssueDateData();
     // eventually might want the reason to be more the parent ... but this is fine for now
-    return mergeStartAndDueData([childrenDateData, issueDateData]);
+    return mergeStartAndDueData$2([childrenDateData, issueDateData]);
 }
 
-const methods = {
-    parentFirstThenChildren,
-    childrenOnly,
-    childrenFirstThenParent,
-    widestRange,
-    parentOnly
+const methods$2 = {
+    parentFirstThenChildren: parentFirstThenChildren$2,
+    childrenOnly: childrenOnly$2,
+    childrenFirstThenParent: childrenFirstThenParent$2,
+    widestRange: widestRange$2,
+    parentOnly: parentOnly$2
 };
 
 const calculationKeysToNames = {
@@ -50715,7 +50791,7 @@ function getIssueWithDateData(issue, childMap, methodNames = ["childrenOnly","pa
     let methodName = methodNames[index] ? methodNames[index]: "parentOnly";
     index++;
 
-    const method = methods[methodName];
+    const method = methods$2[methodName];
     const issueClone = {
         ...issue,
         dateData: {
@@ -50733,7 +50809,7 @@ function getIssueWithDateData(issue, childMap, methodNames = ["childrenOnly","pa
         const datedChildren = children.map( (child)=> {
             return getIssueWithDateData(child, childMap,methodNames, index);
         });
-        const childrenData = mergeStartAndDueData(datedChildren.map(getDataDataFromDatedIssue));
+        const childrenData = mergeStartAndDueData$2(datedChildren.map(getDataDataFromDatedIssue));
         issueClone.dateData.children = addDateDataTo({
             issues: datedChildren
         },childrenData );
@@ -50765,7 +50841,7 @@ function getDataDataFromDatedIssue(issue){
 
 // provides an object with rolled updates
 function rollupDatesFromRollups(issues) {
-    const dateData = mergeStartAndDueData( issues.map(getDataDataFromDatedIssue) );
+    const dateData = mergeStartAndDueData$2( issues.map(getDataDataFromDatedIssue) );
 
     return {
         ...dateData.startData,
@@ -50776,7 +50852,7 @@ function rollupDatesFromRollups(issues) {
 
 /**
  * 
- * @param {Array<import("../shared/issue-data/issue-data.js").NormalizedIssue>} normalizedIssues 
+ * @param {Array<import("../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
  * @returns {Array<{type: string, hierarchyLevel: number}>}
  */
 function issueHierarchy(normalizedIssues){
@@ -50820,7 +50896,7 @@ function issueHierarchy(normalizedIssues){
 
 /**
  * 
- * @param {import("../shared/issue-data/issue-data.js").NormalizedIssue} normalizedIssues 
+ * @param {import("../jira/normalized/normalize.js").NormalizedIssue} normalizedIssues 
  * @returns {Array<IssueDateRollupObject> & {typeToIssueType: IssueDateRollupObject}}
  */
 
@@ -50837,9 +50913,62 @@ function allTimingCalculationOptions(normalizedIssues){
     });
 
     const base = [
-        { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
+        { type: "Release", hierarchyLevel: Infinity, plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
         ...issueOnlyHierarchy
     ];
+
+    // the base object
+    const typeToIssueType = {};
+    for(const issueType of base) {
+      typeToIssueType[issueType.type] = issueType;
+    }
+  
+    const allCalculations = Object.keys( calculationKeysToNames );
+    for(const issueType of base) {
+        // add the denormalized children, so they can be references back to the original object
+      issueType.denormalizedChildren = issueType.children.map( typeName => typeToIssueType[typeName]);
+      const calcNames = issueType.availableTimingCalculations === "*" ? allCalculations : issueType.availableTimingCalculations;
+      
+      const childToTimingMap = {};
+      issueType.timingCalculations = [];
+      
+      for(let issueTypeName of issueType.children){
+        // for each child issue, create a map of each type
+        childToTimingMap[issueTypeName] = calcNames.map((calculationName)=> {
+          return {
+              child: issueTypeName, 
+              parent: issueType.type, 
+              calculation: calculationName, name: calculationKeysToNames[calculationName](issueType, typeToIssueType[issueTypeName]) }
+        });
+        let childType = typeToIssueType[issueTypeName];
+        // an array of what's above
+        issueType.timingCalculations.push({child: issueTypeName, hierarchyLevel: childType.hierarchyLevel, calculations: childToTimingMap[issueTypeName]});
+      }
+      issueType.timingCalculationsMap = childToTimingMap;
+    }
+    return {
+        list: base,
+        map: typeToIssueType
+    };
+}
+/*
+export function denormalizedIssueHierarchy(normalizedIssues){
+    const hierarchy = issueHierarchy(normalizedIssues).reverse();
+
+    const issueOnlyHierarchy = hierarchy.map( ({type, hierarchyLevel}, index) => {
+        // if the last thing
+        if(!hierarchy[index+1]) {
+            return {type, hierarchyLevel, plural: type+"s", children: [], availableTimingCalculations: ["parentOnly"]}
+        } else {
+            return {type, hierarchyLevel, plural: type+"s", children: [hierarchy[index+1].type], availableTimingCalculations: "*"}
+        }
+    })
+
+    const base = [
+        { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
+        ...issueOnlyHierarchy
+    ]
+
 
     // the base object
     const typeToIssueType = {};
@@ -50868,11 +50997,9 @@ function allTimingCalculationOptions(normalizedIssues){
       }
       issueType.timingCalculationsMap = childToTimingMap;
     }
-    return {
-        list: base,
-        map: typeToIssueType
-    };
-}
+    base.typeToIssueType = typeToIssueType;
+    return base;
+  }*/
   
   
   function getImpliedTimingCalculations(primaryIssueType, issueTypeMap, currentTimingCalculations){
@@ -50887,11 +51014,13 @@ function allTimingCalculationOptions(normalizedIssues){
       const setCalculations = [...currentTimingCalculations];
       
       const impliedTimingCalculations = [];
+      
       while(childrenCalculations.length) {
         // this is the calculation that should be selected for that level
         let setLevelCalculation = setCalculations.shift() || 
           {
             type: childrenCalculations[0].child, 
+            hierarchyLevel: childrenCalculations[0].hierarchyLevel,
             calculation: childrenCalculations[0].calculations[0].calculation
           };
         impliedTimingCalculations.push(setLevelCalculation);
@@ -51162,15 +51291,2308 @@ function releasesAndInitiativesWithPriorTiming(options){
 
 }
 
-var semver$1 = await new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = 'https://unpkg.com/semver@4.3.6/semver.browser.js';
-    document.head.appendChild(script);
-    script.onload = function () {
-        resolve(semver);
-    };
-    script.onerror = reject;
-});
+var re$2 = {exports: {}};
+
+// Note: this is the semver.org version of the spec that it implements
+// Not necessarily the package version of this code.
+const SEMVER_SPEC_VERSION = '2.0.0';
+
+const MAX_LENGTH$1 = 256;
+const MAX_SAFE_INTEGER$1 = Number.MAX_SAFE_INTEGER ||
+/* istanbul ignore next */ 9007199254740991;
+
+// Max safe segment length for coercion.
+const MAX_SAFE_COMPONENT_LENGTH = 16;
+
+// Max safe length for a build identifier. The max length minus 6 characters for
+// the shortest version with a build 0.0.0+BUILD.
+const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH$1 - 6;
+
+const RELEASE_TYPES = [
+  'major',
+  'premajor',
+  'minor',
+  'preminor',
+  'patch',
+  'prepatch',
+  'prerelease',
+];
+
+var constants$1 = {
+  MAX_LENGTH: MAX_LENGTH$1,
+  MAX_SAFE_COMPONENT_LENGTH,
+  MAX_SAFE_BUILD_LENGTH,
+  MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$1,
+  RELEASE_TYPES,
+  SEMVER_SPEC_VERSION,
+  FLAG_INCLUDE_PRERELEASE: 0b001,
+  FLAG_LOOSE: 0b010,
+};
+
+const debug$1 = (
+  typeof process === 'object' &&
+  process.env &&
+  process.env.NODE_DEBUG &&
+  /\bsemver\b/i.test(process.env.NODE_DEBUG)
+) ? (...args) => console.error('SEMVER', ...args)
+  : () => {};
+
+var debug_1 = debug$1;
+
+(function (module, exports) {
+	const {
+	  MAX_SAFE_COMPONENT_LENGTH,
+	  MAX_SAFE_BUILD_LENGTH,
+	  MAX_LENGTH,
+	} = constants$1;
+	const debug = debug_1;
+	exports = module.exports = {};
+
+	// The actual regexps go on exports.re
+	const re = exports.re = [];
+	const safeRe = exports.safeRe = [];
+	const src = exports.src = [];
+	const t = exports.t = {};
+	let R = 0;
+
+	const LETTERDASHNUMBER = '[a-zA-Z0-9-]';
+
+	// Replace some greedy regex tokens to prevent regex dos issues. These regex are
+	// used internally via the safeRe object since all inputs in this library get
+	// normalized first to trim and collapse all extra whitespace. The original
+	// regexes are exported for userland consumption and lower level usage. A
+	// future breaking change could export the safer regex only with a note that
+	// all input should have extra whitespace removed.
+	const safeRegexReplacements = [
+	  ['\\s', 1],
+	  ['\\d', MAX_LENGTH],
+	  [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH],
+	];
+
+	const makeSafeRegex = (value) => {
+	  for (const [token, max] of safeRegexReplacements) {
+	    value = value
+	      .split(`${token}*`).join(`${token}{0,${max}}`)
+	      .split(`${token}+`).join(`${token}{1,${max}}`);
+	  }
+	  return value
+	};
+
+	const createToken = (name, value, isGlobal) => {
+	  const safe = makeSafeRegex(value);
+	  const index = R++;
+	  debug(name, index, value);
+	  t[name] = index;
+	  src[index] = value;
+	  re[index] = new RegExp(value, isGlobal ? 'g' : undefined);
+	  safeRe[index] = new RegExp(safe, isGlobal ? 'g' : undefined);
+	};
+
+	// The following Regular Expressions can be used for tokenizing,
+	// validating, and parsing SemVer version strings.
+
+	// ## Numeric Identifier
+	// A single `0`, or a non-zero digit followed by zero or more digits.
+
+	createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*');
+	createToken('NUMERICIDENTIFIERLOOSE', '\\d+');
+
+	// ## Non-numeric Identifier
+	// Zero or more digits, followed by a letter or hyphen, and then zero or
+	// more letters, digits, or hyphens.
+
+	createToken('NONNUMERICIDENTIFIER', `\\d*[a-zA-Z-]${LETTERDASHNUMBER}*`);
+
+	// ## Main Version
+	// Three dot-separated numeric identifiers.
+
+	createToken('MAINVERSION', `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})`);
+
+	createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})`);
+
+	// ## Pre-release Version Identifier
+	// A numeric identifier, or a non-numeric identifier.
+
+	createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+	}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+	}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	// ## Pre-release Version
+	// Hyphen, followed by one or more dot-separated pre-release version
+	// identifiers.
+
+	createToken('PRERELEASE', `(?:-(${src[t.PRERELEASEIDENTIFIER]
+	}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`);
+
+	createToken('PRERELEASELOOSE', `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]
+	}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`);
+
+	// ## Build Metadata Identifier
+	// Any combination of digits, letters, or hyphens.
+
+	createToken('BUILDIDENTIFIER', `${LETTERDASHNUMBER}+`);
+
+	// ## Build Metadata
+	// Plus sign, followed by one or more period-separated build metadata
+	// identifiers.
+
+	createToken('BUILD', `(?:\\+(${src[t.BUILDIDENTIFIER]
+	}(?:\\.${src[t.BUILDIDENTIFIER]})*))`);
+
+	// ## Full Version String
+	// A main version, followed optionally by a pre-release version and
+	// build metadata.
+
+	// Note that the only major, minor, patch, and pre-release sections of
+	// the version string are capturing groups.  The build metadata is not a
+	// capturing group, because it should not ever be used in version
+	// comparison.
+
+	createToken('FULLPLAIN', `v?${src[t.MAINVERSION]
+	}${src[t.PRERELEASE]}?${
+	  src[t.BUILD]}?`);
+
+	createToken('FULL', `^${src[t.FULLPLAIN]}$`);
+
+	// like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
+	// also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
+	// common in the npm registry.
+	createToken('LOOSEPLAIN', `[v=\\s]*${src[t.MAINVERSIONLOOSE]
+	}${src[t.PRERELEASELOOSE]}?${
+	  src[t.BUILD]}?`);
+
+	createToken('LOOSE', `^${src[t.LOOSEPLAIN]}$`);
+
+	createToken('GTLT', '((?:<|>)?=?)');
+
+	// Something like "2.*" or "1.2.x".
+	// Note that "x.x" is a valid xRange identifer, meaning "any version"
+	// Only the first item is strictly required.
+	createToken('XRANGEIDENTIFIERLOOSE', `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`);
+	createToken('XRANGEIDENTIFIER', `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`);
+
+	createToken('XRANGEPLAIN', `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:${src[t.PRERELEASE]})?${
+	                     src[t.BUILD]}?` +
+	                   `)?)?`);
+
+	createToken('XRANGEPLAINLOOSE', `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:${src[t.PRERELEASELOOSE]})?${
+	                          src[t.BUILD]}?` +
+	                        `)?)?`);
+
+	createToken('XRANGE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`);
+	createToken('XRANGELOOSE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Coercion.
+	// Extract anything that could conceivably be a part of a valid semver
+	createToken('COERCEPLAIN', `${'(^|[^\\d])' +
+	              '(\\d{1,'}${MAX_SAFE_COMPONENT_LENGTH}})` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`);
+	createToken('COERCE', `${src[t.COERCEPLAIN]}(?:$|[^\\d])`);
+	createToken('COERCEFULL', src[t.COERCEPLAIN] +
+	              `(?:${src[t.PRERELEASE]})?` +
+	              `(?:${src[t.BUILD]})?` +
+	              `(?:$|[^\\d])`);
+	createToken('COERCERTL', src[t.COERCE], true);
+	createToken('COERCERTLFULL', src[t.COERCEFULL], true);
+
+	// Tilde ranges.
+	// Meaning is "reasonably at or greater than"
+	createToken('LONETILDE', '(?:~>?)');
+
+	createToken('TILDETRIM', `(\\s*)${src[t.LONETILDE]}\\s+`, true);
+	exports.tildeTrimReplace = '$1~';
+
+	createToken('TILDE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`);
+	createToken('TILDELOOSE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Caret ranges.
+	// Meaning is "at least and backwards compatible with"
+	createToken('LONECARET', '(?:\\^)');
+
+	createToken('CARETTRIM', `(\\s*)${src[t.LONECARET]}\\s+`, true);
+	exports.caretTrimReplace = '$1^';
+
+	createToken('CARET', `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`);
+	createToken('CARETLOOSE', `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// A simple gt/lt/eq thing, or just "" to indicate "any version"
+	createToken('COMPARATORLOOSE', `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`);
+	createToken('COMPARATOR', `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`);
+
+	// An expression to strip any whitespace between the gtlt and the thing
+	// it modifies, so that `> 1.2.3` ==> `>1.2.3`
+	createToken('COMPARATORTRIM', `(\\s*)${src[t.GTLT]
+	}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true);
+	exports.comparatorTrimReplace = '$1$2$3';
+
+	// Something like `1.2.3 - 1.2.4`
+	// Note that these all use the loose form, because they'll be
+	// checked against either the strict or loose comparator form
+	// later.
+	createToken('HYPHENRANGE', `^\\s*(${src[t.XRANGEPLAIN]})` +
+	                   `\\s+-\\s+` +
+	                   `(${src[t.XRANGEPLAIN]})` +
+	                   `\\s*$`);
+
+	createToken('HYPHENRANGELOOSE', `^\\s*(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s+-\\s+` +
+	                        `(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s*$`);
+
+	// Star ranges basically just allow anything at all.
+	createToken('STAR', '(<|>)?=?\\s*\\*');
+	// >=0.0.0 is like a star
+	createToken('GTE0', '^\\s*>=\\s*0\\.0\\.0\\s*$');
+	createToken('GTE0PRE', '^\\s*>=\\s*0\\.0\\.0-0\\s*$'); 
+} (re$2, re$2.exports));
+
+var reExports = re$2.exports;
+
+// parse out just the options we care about
+const looseOption = Object.freeze({ loose: true });
+const emptyOpts = Object.freeze({ });
+const parseOptions$1 = options => {
+  if (!options) {
+    return emptyOpts
+  }
+
+  if (typeof options !== 'object') {
+    return looseOption
+  }
+
+  return options
+};
+var parseOptions_1 = parseOptions$1;
+
+const numeric = /^[0-9]+$/;
+const compareIdentifiers$1 = (a, b) => {
+  const anum = numeric.test(a);
+  const bnum = numeric.test(b);
+
+  if (anum && bnum) {
+    a = +a;
+    b = +b;
+  }
+
+  return a === b ? 0
+    : (anum && !bnum) ? -1
+    : (bnum && !anum) ? 1
+    : a < b ? -1
+    : 1
+};
+
+const rcompareIdentifiers = (a, b) => compareIdentifiers$1(b, a);
+
+var identifiers$1 = {
+  compareIdentifiers: compareIdentifiers$1,
+  rcompareIdentifiers,
+};
+
+const debug = debug_1;
+const { MAX_LENGTH, MAX_SAFE_INTEGER } = constants$1;
+const { safeRe: re$1, t: t$1 } = reExports;
+
+const parseOptions = parseOptions_1;
+const { compareIdentifiers } = identifiers$1;
+let SemVer$d = class SemVer {
+  constructor (version, options) {
+    options = parseOptions(options);
+
+    if (version instanceof SemVer) {
+      if (version.loose === !!options.loose &&
+          version.includePrerelease === !!options.includePrerelease) {
+        return version
+      } else {
+        version = version.version;
+      }
+    } else if (typeof version !== 'string') {
+      throw new TypeError(`Invalid version. Must be a string. Got type "${typeof version}".`)
+    }
+
+    if (version.length > MAX_LENGTH) {
+      throw new TypeError(
+        `version is longer than ${MAX_LENGTH} characters`
+      )
+    }
+
+    debug('SemVer', version, options);
+    this.options = options;
+    this.loose = !!options.loose;
+    // this isn't actually relevant for versions, but keep it so that we
+    // don't run into trouble passing this.options around.
+    this.includePrerelease = !!options.includePrerelease;
+
+    const m = version.trim().match(options.loose ? re$1[t$1.LOOSE] : re$1[t$1.FULL]);
+
+    if (!m) {
+      throw new TypeError(`Invalid Version: ${version}`)
+    }
+
+    this.raw = version;
+
+    // these are actually numbers
+    this.major = +m[1];
+    this.minor = +m[2];
+    this.patch = +m[3];
+
+    if (this.major > MAX_SAFE_INTEGER || this.major < 0) {
+      throw new TypeError('Invalid major version')
+    }
+
+    if (this.minor > MAX_SAFE_INTEGER || this.minor < 0) {
+      throw new TypeError('Invalid minor version')
+    }
+
+    if (this.patch > MAX_SAFE_INTEGER || this.patch < 0) {
+      throw new TypeError('Invalid patch version')
+    }
+
+    // numberify any prerelease numeric ids
+    if (!m[4]) {
+      this.prerelease = [];
+    } else {
+      this.prerelease = m[4].split('.').map((id) => {
+        if (/^[0-9]+$/.test(id)) {
+          const num = +id;
+          if (num >= 0 && num < MAX_SAFE_INTEGER) {
+            return num
+          }
+        }
+        return id
+      });
+    }
+
+    this.build = m[5] ? m[5].split('.') : [];
+    this.format();
+  }
+
+  format () {
+    this.version = `${this.major}.${this.minor}.${this.patch}`;
+    if (this.prerelease.length) {
+      this.version += `-${this.prerelease.join('.')}`;
+    }
+    return this.version
+  }
+
+  toString () {
+    return this.version
+  }
+
+  compare (other) {
+    debug('SemVer.compare', this.version, this.options, other);
+    if (!(other instanceof SemVer)) {
+      if (typeof other === 'string' && other === this.version) {
+        return 0
+      }
+      other = new SemVer(other, this.options);
+    }
+
+    if (other.version === this.version) {
+      return 0
+    }
+
+    return this.compareMain(other) || this.comparePre(other)
+  }
+
+  compareMain (other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options);
+    }
+
+    return (
+      compareIdentifiers(this.major, other.major) ||
+      compareIdentifiers(this.minor, other.minor) ||
+      compareIdentifiers(this.patch, other.patch)
+    )
+  }
+
+  comparePre (other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options);
+    }
+
+    // NOT having a prerelease is > having one
+    if (this.prerelease.length && !other.prerelease.length) {
+      return -1
+    } else if (!this.prerelease.length && other.prerelease.length) {
+      return 1
+    } else if (!this.prerelease.length && !other.prerelease.length) {
+      return 0
+    }
+
+    let i = 0;
+    do {
+      const a = this.prerelease[i];
+      const b = other.prerelease[i];
+      debug('prerelease compare', i, a, b);
+      if (a === undefined && b === undefined) {
+        return 0
+      } else if (b === undefined) {
+        return 1
+      } else if (a === undefined) {
+        return -1
+      } else if (a === b) {
+        continue
+      } else {
+        return compareIdentifiers(a, b)
+      }
+    } while (++i)
+  }
+
+  compareBuild (other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options);
+    }
+
+    let i = 0;
+    do {
+      const a = this.build[i];
+      const b = other.build[i];
+      debug('build compare', i, a, b);
+      if (a === undefined && b === undefined) {
+        return 0
+      } else if (b === undefined) {
+        return 1
+      } else if (a === undefined) {
+        return -1
+      } else if (a === b) {
+        continue
+      } else {
+        return compareIdentifiers(a, b)
+      }
+    } while (++i)
+  }
+
+  // preminor will bump the version up to the next minor release, and immediately
+  // down to pre-release. premajor and prepatch work the same way.
+  inc (release, identifier, identifierBase) {
+    switch (release) {
+      case 'premajor':
+        this.prerelease.length = 0;
+        this.patch = 0;
+        this.minor = 0;
+        this.major++;
+        this.inc('pre', identifier, identifierBase);
+        break
+      case 'preminor':
+        this.prerelease.length = 0;
+        this.patch = 0;
+        this.minor++;
+        this.inc('pre', identifier, identifierBase);
+        break
+      case 'prepatch':
+        // If this is already a prerelease, it will bump to the next version
+        // drop any prereleases that might already exist, since they are not
+        // relevant at this point.
+        this.prerelease.length = 0;
+        this.inc('patch', identifier, identifierBase);
+        this.inc('pre', identifier, identifierBase);
+        break
+      // If the input is a non-prerelease version, this acts the same as
+      // prepatch.
+      case 'prerelease':
+        if (this.prerelease.length === 0) {
+          this.inc('patch', identifier, identifierBase);
+        }
+        this.inc('pre', identifier, identifierBase);
+        break
+
+      case 'major':
+        // If this is a pre-major version, bump up to the same major version.
+        // Otherwise increment major.
+        // 1.0.0-5 bumps to 1.0.0
+        // 1.1.0 bumps to 2.0.0
+        if (
+          this.minor !== 0 ||
+          this.patch !== 0 ||
+          this.prerelease.length === 0
+        ) {
+          this.major++;
+        }
+        this.minor = 0;
+        this.patch = 0;
+        this.prerelease = [];
+        break
+      case 'minor':
+        // If this is a pre-minor version, bump up to the same minor version.
+        // Otherwise increment minor.
+        // 1.2.0-5 bumps to 1.2.0
+        // 1.2.1 bumps to 1.3.0
+        if (this.patch !== 0 || this.prerelease.length === 0) {
+          this.minor++;
+        }
+        this.patch = 0;
+        this.prerelease = [];
+        break
+      case 'patch':
+        // If this is not a pre-release version, it will increment the patch.
+        // If it is a pre-release it will bump up to the same patch version.
+        // 1.2.0-5 patches to 1.2.0
+        // 1.2.0 patches to 1.2.1
+        if (this.prerelease.length === 0) {
+          this.patch++;
+        }
+        this.prerelease = [];
+        break
+      // This probably shouldn't be used publicly.
+      // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
+      case 'pre': {
+        const base = Number(identifierBase) ? 1 : 0;
+
+        if (!identifier && identifierBase === false) {
+          throw new Error('invalid increment argument: identifier is empty')
+        }
+
+        if (this.prerelease.length === 0) {
+          this.prerelease = [base];
+        } else {
+          let i = this.prerelease.length;
+          while (--i >= 0) {
+            if (typeof this.prerelease[i] === 'number') {
+              this.prerelease[i]++;
+              i = -2;
+            }
+          }
+          if (i === -1) {
+            // didn't increment anything
+            if (identifier === this.prerelease.join('.') && identifierBase === false) {
+              throw new Error('invalid increment argument: identifier already exists')
+            }
+            this.prerelease.push(base);
+          }
+        }
+        if (identifier) {
+          // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+          let prerelease = [identifier, base];
+          if (identifierBase === false) {
+            prerelease = [identifier];
+          }
+          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+            if (isNaN(this.prerelease[1])) {
+              this.prerelease = prerelease;
+            }
+          } else {
+            this.prerelease = prerelease;
+          }
+        }
+        break
+      }
+      default:
+        throw new Error(`invalid increment argument: ${release}`)
+    }
+    this.raw = this.format();
+    if (this.build.length) {
+      this.raw += `+${this.build.join('.')}`;
+    }
+    return this
+  }
+};
+
+var semver$2 = SemVer$d;
+
+const SemVer$c = semver$2;
+const parse$6 = (version, options, throwErrors = false) => {
+  if (version instanceof SemVer$c) {
+    return version
+  }
+  try {
+    return new SemVer$c(version, options)
+  } catch (er) {
+    if (!throwErrors) {
+      return null
+    }
+    throw er
+  }
+};
+
+var parse_1 = parse$6;
+
+const parse$5 = parse_1;
+const valid$2 = (version, options) => {
+  const v = parse$5(version, options);
+  return v ? v.version : null
+};
+var valid_1 = valid$2;
+
+const parse$4 = parse_1;
+const clean$1 = (version, options) => {
+  const s = parse$4(version.trim().replace(/^[=v]+/, ''), options);
+  return s ? s.version : null
+};
+var clean_1 = clean$1;
+
+const SemVer$b = semver$2;
+
+const inc$1 = (version, release, options, identifier, identifierBase) => {
+  if (typeof (options) === 'string') {
+    identifierBase = identifier;
+    identifier = options;
+    options = undefined;
+  }
+
+  try {
+    return new SemVer$b(
+      version instanceof SemVer$b ? version.version : version,
+      options
+    ).inc(release, identifier, identifierBase).version
+  } catch (er) {
+    return null
+  }
+};
+var inc_1 = inc$1;
+
+const parse$3 = parse_1;
+
+const diff$1 = (version1, version2) => {
+  const v1 = parse$3(version1, null, true);
+  const v2 = parse$3(version2, null, true);
+  const comparison = v1.compare(v2);
+
+  if (comparison === 0) {
+    return null
+  }
+
+  const v1Higher = comparison > 0;
+  const highVersion = v1Higher ? v1 : v2;
+  const lowVersion = v1Higher ? v2 : v1;
+  const highHasPre = !!highVersion.prerelease.length;
+  const lowHasPre = !!lowVersion.prerelease.length;
+
+  if (lowHasPre && !highHasPre) {
+    // Going from prerelease -> no prerelease requires some special casing
+
+    // If the low version has only a major, then it will always be a major
+    // Some examples:
+    // 1.0.0-1 -> 1.0.0
+    // 1.0.0-1 -> 1.1.1
+    // 1.0.0-1 -> 2.0.0
+    if (!lowVersion.patch && !lowVersion.minor) {
+      return 'major'
+    }
+
+    // Otherwise it can be determined by checking the high version
+
+    if (highVersion.patch) {
+      // anything higher than a patch bump would result in the wrong version
+      return 'patch'
+    }
+
+    if (highVersion.minor) {
+      // anything higher than a minor bump would result in the wrong version
+      return 'minor'
+    }
+
+    // bumping major/minor/patch all have same result
+    return 'major'
+  }
+
+  // add the `pre` prefix if we are going to a prerelease version
+  const prefix = highHasPre ? 'pre' : '';
+
+  if (v1.major !== v2.major) {
+    return prefix + 'major'
+  }
+
+  if (v1.minor !== v2.minor) {
+    return prefix + 'minor'
+  }
+
+  if (v1.patch !== v2.patch) {
+    return prefix + 'patch'
+  }
+
+  // high and low are preleases
+  return 'prerelease'
+};
+
+var diff_1 = diff$1;
+
+const SemVer$a = semver$2;
+const major$1 = (a, loose) => new SemVer$a(a, loose).major;
+var major_1 = major$1;
+
+const SemVer$9 = semver$2;
+const minor$1 = (a, loose) => new SemVer$9(a, loose).minor;
+var minor_1 = minor$1;
+
+const SemVer$8 = semver$2;
+const patch$1 = (a, loose) => new SemVer$8(a, loose).patch;
+var patch_1 = patch$1;
+
+const parse$2 = parse_1;
+const prerelease$1 = (version, options) => {
+  const parsed = parse$2(version, options);
+  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
+};
+var prerelease_1 = prerelease$1;
+
+const SemVer$7 = semver$2;
+const compare$b = (a, b, loose) =>
+  new SemVer$7(a, loose).compare(new SemVer$7(b, loose));
+
+var compare_1 = compare$b;
+
+const compare$a = compare_1;
+const rcompare$1 = (a, b, loose) => compare$a(b, a, loose);
+var rcompare_1 = rcompare$1;
+
+const compare$9 = compare_1;
+const compareLoose$1 = (a, b) => compare$9(a, b, true);
+var compareLoose_1 = compareLoose$1;
+
+const SemVer$6 = semver$2;
+const compareBuild$3 = (a, b, loose) => {
+  const versionA = new SemVer$6(a, loose);
+  const versionB = new SemVer$6(b, loose);
+  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+};
+var compareBuild_1 = compareBuild$3;
+
+const compareBuild$2 = compareBuild_1;
+const sort$1 = (list, loose) => list.sort((a, b) => compareBuild$2(a, b, loose));
+var sort_1 = sort$1;
+
+const compareBuild$1 = compareBuild_1;
+const rsort$1 = (list, loose) => list.sort((a, b) => compareBuild$1(b, a, loose));
+var rsort_1 = rsort$1;
+
+const compare$8 = compare_1;
+const gt$4 = (a, b, loose) => compare$8(a, b, loose) > 0;
+var gt_1 = gt$4;
+
+const compare$7 = compare_1;
+const lt$3 = (a, b, loose) => compare$7(a, b, loose) < 0;
+var lt_1 = lt$3;
+
+const compare$6 = compare_1;
+const eq$2 = (a, b, loose) => compare$6(a, b, loose) === 0;
+var eq_1 = eq$2;
+
+const compare$5 = compare_1;
+const neq$2 = (a, b, loose) => compare$5(a, b, loose) !== 0;
+var neq_1 = neq$2;
+
+const compare$4 = compare_1;
+const gte$3 = (a, b, loose) => compare$4(a, b, loose) >= 0;
+var gte_1 = gte$3;
+
+const compare$3 = compare_1;
+const lte$3 = (a, b, loose) => compare$3(a, b, loose) <= 0;
+var lte_1 = lte$3;
+
+const eq$1 = eq_1;
+const neq$1 = neq_1;
+const gt$3 = gt_1;
+const gte$2 = gte_1;
+const lt$2 = lt_1;
+const lte$2 = lte_1;
+
+const cmp$1 = (a, op, b, loose) => {
+  switch (op) {
+    case '===':
+      if (typeof a === 'object') {
+        a = a.version;
+      }
+      if (typeof b === 'object') {
+        b = b.version;
+      }
+      return a === b
+
+    case '!==':
+      if (typeof a === 'object') {
+        a = a.version;
+      }
+      if (typeof b === 'object') {
+        b = b.version;
+      }
+      return a !== b
+
+    case '':
+    case '=':
+    case '==':
+      return eq$1(a, b, loose)
+
+    case '!=':
+      return neq$1(a, b, loose)
+
+    case '>':
+      return gt$3(a, b, loose)
+
+    case '>=':
+      return gte$2(a, b, loose)
+
+    case '<':
+      return lt$2(a, b, loose)
+
+    case '<=':
+      return lte$2(a, b, loose)
+
+    default:
+      throw new TypeError(`Invalid operator: ${op}`)
+  }
+};
+var cmp_1 = cmp$1;
+
+const SemVer$5 = semver$2;
+const parse$1 = parse_1;
+const { safeRe: re, t } = reExports;
+
+const coerce$1 = (version, options) => {
+  if (version instanceof SemVer$5) {
+    return version
+  }
+
+  if (typeof version === 'number') {
+    version = String(version);
+  }
+
+  if (typeof version !== 'string') {
+    return null
+  }
+
+  options = options || {};
+
+  let match = null;
+  if (!options.rtl) {
+    match = version.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE]);
+  } else {
+    // Find the right-most coercible string that does not share
+    // a terminus with a more left-ward coercible string.
+    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+    // With includePrerelease option set, '1.2.3.4-rc' wants to coerce '2.3.4-rc', not '2.3.4'
+    //
+    // Walk through the string checking with a /g regexp
+    // Manually set the index so as to pick up overlapping matches.
+    // Stop when we get a match that ends at the string end, since no
+    // coercible string can be more right-ward without the same terminus.
+    const coerceRtlRegex = options.includePrerelease ? re[t.COERCERTLFULL] : re[t.COERCERTL];
+    let next;
+    while ((next = coerceRtlRegex.exec(version)) &&
+        (!match || match.index + match[0].length !== version.length)
+    ) {
+      if (!match ||
+            next.index + next[0].length !== match.index + match[0].length) {
+        match = next;
+      }
+      coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length;
+    }
+    // leave it in a clean state
+    coerceRtlRegex.lastIndex = -1;
+  }
+
+  if (match === null) {
+    return null
+  }
+
+  const major = match[2];
+  const minor = match[3] || '0';
+  const patch = match[4] || '0';
+  const prerelease = options.includePrerelease && match[5] ? `-${match[5]}` : '';
+  const build = options.includePrerelease && match[6] ? `+${match[6]}` : '';
+
+  return parse$1(`${major}.${minor}.${patch}${prerelease}${build}`, options)
+};
+var coerce_1 = coerce$1;
+
+class LRUCache {
+  constructor () {
+    this.max = 1000;
+    this.map = new Map();
+  }
+
+  get (key) {
+    const value = this.map.get(key);
+    if (value === undefined) {
+      return undefined
+    } else {
+      // Remove the key from the map and add it to the end
+      this.map.delete(key);
+      this.map.set(key, value);
+      return value
+    }
+  }
+
+  delete (key) {
+    return this.map.delete(key)
+  }
+
+  set (key, value) {
+    const deleted = this.delete(key);
+
+    if (!deleted && value !== undefined) {
+      // If cache is full, delete the least recently used item
+      if (this.map.size >= this.max) {
+        const firstKey = this.map.keys().next().value;
+        this.delete(firstKey);
+      }
+
+      this.map.set(key, value);
+    }
+
+    return this
+  }
+}
+
+var lrucache = LRUCache;
+
+var range;
+var hasRequiredRange;
+
+function requireRange () {
+	if (hasRequiredRange) return range;
+	hasRequiredRange = 1;
+	const SPACE_CHARACTERS = /\s+/g;
+
+	// hoisted class for cyclic dependency
+	class Range {
+	  constructor (range, options) {
+	    options = parseOptions(options);
+
+	    if (range instanceof Range) {
+	      if (
+	        range.loose === !!options.loose &&
+	        range.includePrerelease === !!options.includePrerelease
+	      ) {
+	        return range
+	      } else {
+	        return new Range(range.raw, options)
+	      }
+	    }
+
+	    if (range instanceof Comparator) {
+	      // just put it in the set and return
+	      this.raw = range.value;
+	      this.set = [[range]];
+	      this.formatted = undefined;
+	      return this
+	    }
+
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.includePrerelease = !!options.includePrerelease;
+
+	    // First reduce all whitespace as much as possible so we do not have to rely
+	    // on potentially slow regexes like \s*. This is then stored and used for
+	    // future error messages as well.
+	    this.raw = range.trim().replace(SPACE_CHARACTERS, ' ');
+
+	    // First, split on ||
+	    this.set = this.raw
+	      .split('||')
+	      // map the range to a 2d array of comparators
+	      .map(r => this.parseRange(r.trim()))
+	      // throw out any comparator lists that are empty
+	      // this generally means that it was not a valid range, which is allowed
+	      // in loose mode, but will still throw if the WHOLE range is invalid.
+	      .filter(c => c.length);
+
+	    if (!this.set.length) {
+	      throw new TypeError(`Invalid SemVer Range: ${this.raw}`)
+	    }
+
+	    // if we have any that are not the null set, throw out null sets.
+	    if (this.set.length > 1) {
+	      // keep the first one, in case they're all null sets
+	      const first = this.set[0];
+	      this.set = this.set.filter(c => !isNullSet(c[0]));
+	      if (this.set.length === 0) {
+	        this.set = [first];
+	      } else if (this.set.length > 1) {
+	        // if we have any that are *, then the range is just *
+	        for (const c of this.set) {
+	          if (c.length === 1 && isAny(c[0])) {
+	            this.set = [c];
+	            break
+	          }
+	        }
+	      }
+	    }
+
+	    this.formatted = undefined;
+	  }
+
+	  get range () {
+	    if (this.formatted === undefined) {
+	      this.formatted = '';
+	      for (let i = 0; i < this.set.length; i++) {
+	        if (i > 0) {
+	          this.formatted += '||';
+	        }
+	        const comps = this.set[i];
+	        for (let k = 0; k < comps.length; k++) {
+	          if (k > 0) {
+	            this.formatted += ' ';
+	          }
+	          this.formatted += comps[k].toString().trim();
+	        }
+	      }
+	    }
+	    return this.formatted
+	  }
+
+	  format () {
+	    return this.range
+	  }
+
+	  toString () {
+	    return this.range
+	  }
+
+	  parseRange (range) {
+	    // memoize range parsing for performance.
+	    // this is a very hot path, and fully deterministic.
+	    const memoOpts =
+	      (this.options.includePrerelease && FLAG_INCLUDE_PRERELEASE) |
+	      (this.options.loose && FLAG_LOOSE);
+	    const memoKey = memoOpts + ':' + range;
+	    const cached = cache.get(memoKey);
+	    if (cached) {
+	      return cached
+	    }
+
+	    const loose = this.options.loose;
+	    // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
+	    const hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE];
+	    range = range.replace(hr, hyphenReplace(this.options.includePrerelease));
+	    debug('hyphen replace', range);
+
+	    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
+	    range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace);
+	    debug('comparator trim', range);
+
+	    // `~ 1.2.3` => `~1.2.3`
+	    range = range.replace(re[t.TILDETRIM], tildeTrimReplace);
+	    debug('tilde trim', range);
+
+	    // `^ 1.2.3` => `^1.2.3`
+	    range = range.replace(re[t.CARETTRIM], caretTrimReplace);
+	    debug('caret trim', range);
+
+	    // At this point, the range is completely trimmed and
+	    // ready to be split into comparators.
+
+	    let rangeList = range
+	      .split(' ')
+	      .map(comp => parseComparator(comp, this.options))
+	      .join(' ')
+	      .split(/\s+/)
+	      // >=0.0.0 is equivalent to *
+	      .map(comp => replaceGTE0(comp, this.options));
+
+	    if (loose) {
+	      // in loose mode, throw out any that are not valid comparators
+	      rangeList = rangeList.filter(comp => {
+	        debug('loose invalid filter', comp, this.options);
+	        return !!comp.match(re[t.COMPARATORLOOSE])
+	      });
+	    }
+	    debug('range list', rangeList);
+
+	    // if any comparators are the null set, then replace with JUST null set
+	    // if more than one comparator, remove any * comparators
+	    // also, don't include the same comparator more than once
+	    const rangeMap = new Map();
+	    const comparators = rangeList.map(comp => new Comparator(comp, this.options));
+	    for (const comp of comparators) {
+	      if (isNullSet(comp)) {
+	        return [comp]
+	      }
+	      rangeMap.set(comp.value, comp);
+	    }
+	    if (rangeMap.size > 1 && rangeMap.has('')) {
+	      rangeMap.delete('');
+	    }
+
+	    const result = [...rangeMap.values()];
+	    cache.set(memoKey, result);
+	    return result
+	  }
+
+	  intersects (range, options) {
+	    if (!(range instanceof Range)) {
+	      throw new TypeError('a Range is required')
+	    }
+
+	    return this.set.some((thisComparators) => {
+	      return (
+	        isSatisfiable(thisComparators, options) &&
+	        range.set.some((rangeComparators) => {
+	          return (
+	            isSatisfiable(rangeComparators, options) &&
+	            thisComparators.every((thisComparator) => {
+	              return rangeComparators.every((rangeComparator) => {
+	                return thisComparator.intersects(rangeComparator, options)
+	              })
+	            })
+	          )
+	        })
+	      )
+	    })
+	  }
+
+	  // if ANY of the sets match ALL of its comparators, then pass
+	  test (version) {
+	    if (!version) {
+	      return false
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new SemVer(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    for (let i = 0; i < this.set.length; i++) {
+	      if (testSet(this.set[i], version, this.options)) {
+	        return true
+	      }
+	    }
+	    return false
+	  }
+	}
+
+	range = Range;
+
+	const LRU = lrucache;
+	const cache = new LRU();
+
+	const parseOptions = parseOptions_1;
+	const Comparator = requireComparator();
+	const debug = debug_1;
+	const SemVer = semver$2;
+	const {
+	  safeRe: re,
+	  t,
+	  comparatorTrimReplace,
+	  tildeTrimReplace,
+	  caretTrimReplace,
+	} = reExports;
+	const { FLAG_INCLUDE_PRERELEASE, FLAG_LOOSE } = constants$1;
+
+	const isNullSet = c => c.value === '<0.0.0-0';
+	const isAny = c => c.value === '';
+
+	// take a set of comparators and determine whether there
+	// exists a version which can satisfy it
+	const isSatisfiable = (comparators, options) => {
+	  let result = true;
+	  const remainingComparators = comparators.slice();
+	  let testComparator = remainingComparators.pop();
+
+	  while (result && remainingComparators.length) {
+	    result = remainingComparators.every((otherComparator) => {
+	      return testComparator.intersects(otherComparator, options)
+	    });
+
+	    testComparator = remainingComparators.pop();
+	  }
+
+	  return result
+	};
+
+	// comprised of xranges, tildes, stars, and gtlt's at this point.
+	// already replaced the hyphen ranges
+	// turn into a set of JUST comparators.
+	const parseComparator = (comp, options) => {
+	  debug('comp', comp, options);
+	  comp = replaceCarets(comp, options);
+	  debug('caret', comp);
+	  comp = replaceTildes(comp, options);
+	  debug('tildes', comp);
+	  comp = replaceXRanges(comp, options);
+	  debug('xrange', comp);
+	  comp = replaceStars(comp, options);
+	  debug('stars', comp);
+	  return comp
+	};
+
+	const isX = id => !id || id.toLowerCase() === 'x' || id === '*';
+
+	// ~, ~> --> * (any, kinda silly)
+	// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0-0
+	// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0-0
+	// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
+	// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
+	// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
+	// ~0.0.1 --> >=0.0.1 <0.1.0-0
+	const replaceTildes = (comp, options) => {
+	  return comp
+	    .trim()
+	    .split(/\s+/)
+	    .map((c) => replaceTilde(c, options))
+	    .join(' ')
+	};
+
+	const replaceTilde = (comp, options) => {
+	  const r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE];
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug('tilde', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX(M)) {
+	      ret = '';
+	    } else if (isX(m)) {
+	      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`;
+	    } else if (isX(p)) {
+	      // ~1.2 == >=1.2.0 <1.3.0-0
+	      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`;
+	    } else if (pr) {
+	      debug('replaceTilde pr', pr);
+	      ret = `>=${M}.${m}.${p}-${pr
+	      } <${M}.${+m + 1}.0-0`;
+	    } else {
+	      // ~1.2.3 == >=1.2.3 <1.3.0-0
+	      ret = `>=${M}.${m}.${p
+	      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug('tilde return', ret);
+	    return ret
+	  })
+	};
+
+	// ^ --> * (any, kinda silly)
+	// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0-0
+	// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0-0
+	// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
+	// ^1.2.3 --> >=1.2.3 <2.0.0-0
+	// ^1.2.0 --> >=1.2.0 <2.0.0-0
+	// ^0.0.1 --> >=0.0.1 <0.0.2-0
+	// ^0.1.0 --> >=0.1.0 <0.2.0-0
+	const replaceCarets = (comp, options) => {
+	  return comp
+	    .trim()
+	    .split(/\s+/)
+	    .map((c) => replaceCaret(c, options))
+	    .join(' ')
+	};
+
+	const replaceCaret = (comp, options) => {
+	  debug('caret', comp, options);
+	  const r = options.loose ? re[t.CARETLOOSE] : re[t.CARET];
+	  const z = options.includePrerelease ? '-0' : '';
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug('caret', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX(M)) {
+	      ret = '';
+	    } else if (isX(m)) {
+	      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+	    } else if (isX(p)) {
+	      if (M === '0') {
+	        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+	      } else {
+	        ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
+	      }
+	    } else if (pr) {
+	      debug('replaceCaret pr', pr);
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p}-${pr
+	          } <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p}-${pr
+	          } <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p}-${pr
+	        } <${+M + 1}.0.0-0`;
+	      }
+	    } else {
+	      debug('no pr');
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p
+	          }${z} <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p
+	          }${z} <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p
+	        } <${+M + 1}.0.0-0`;
+	      }
+	    }
+
+	    debug('caret return', ret);
+	    return ret
+	  })
+	};
+
+	const replaceXRanges = (comp, options) => {
+	  debug('replaceXRanges', comp, options);
+	  return comp
+	    .split(/\s+/)
+	    .map((c) => replaceXRange(c, options))
+	    .join(' ')
+	};
+
+	const replaceXRange = (comp, options) => {
+	  comp = comp.trim();
+	  const r = options.loose ? re[t.XRANGELOOSE] : re[t.XRANGE];
+	  return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+	    debug('xRange', comp, ret, gtlt, M, m, p, pr);
+	    const xM = isX(M);
+	    const xm = xM || isX(m);
+	    const xp = xm || isX(p);
+	    const anyX = xp;
+
+	    if (gtlt === '=' && anyX) {
+	      gtlt = '';
+	    }
+
+	    // if we're including prereleases in the match, then we need
+	    // to fix this to -0, the lowest possible prerelease value
+	    pr = options.includePrerelease ? '-0' : '';
+
+	    if (xM) {
+	      if (gtlt === '>' || gtlt === '<') {
+	        // nothing is allowed
+	        ret = '<0.0.0-0';
+	      } else {
+	        // nothing is forbidden
+	        ret = '*';
+	      }
+	    } else if (gtlt && anyX) {
+	      // we know patch is an x, because we have any x at all.
+	      // replace X with 0
+	      if (xm) {
+	        m = 0;
+	      }
+	      p = 0;
+
+	      if (gtlt === '>') {
+	        // >1 => >=2.0.0
+	        // >1.2 => >=1.3.0
+	        gtlt = '>=';
+	        if (xm) {
+	          M = +M + 1;
+	          m = 0;
+	          p = 0;
+	        } else {
+	          m = +m + 1;
+	          p = 0;
+	        }
+	      } else if (gtlt === '<=') {
+	        // <=0.7.x is actually <0.8.0, since any 0.7.x should
+	        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
+	        gtlt = '<';
+	        if (xm) {
+	          M = +M + 1;
+	        } else {
+	          m = +m + 1;
+	        }
+	      }
+
+	      if (gtlt === '<') {
+	        pr = '-0';
+	      }
+
+	      ret = `${gtlt + M}.${m}.${p}${pr}`;
+	    } else if (xm) {
+	      ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
+	    } else if (xp) {
+	      ret = `>=${M}.${m}.0${pr
+	      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug('xRange return', ret);
+
+	    return ret
+	  })
+	};
+
+	// Because * is AND-ed with everything else in the comparator,
+	// and '' means "any version", just remove the *s entirely.
+	const replaceStars = (comp, options) => {
+	  debug('replaceStars', comp, options);
+	  // Looseness is ignored here.  star is always as loose as it gets!
+	  return comp
+	    .trim()
+	    .replace(re[t.STAR], '')
+	};
+
+	const replaceGTE0 = (comp, options) => {
+	  debug('replaceGTE0', comp, options);
+	  return comp
+	    .trim()
+	    .replace(re[options.includePrerelease ? t.GTE0PRE : t.GTE0], '')
+	};
+
+	// This function is passed to string.replace(re[t.HYPHENRANGE])
+	// M, m, patch, prerelease, build
+	// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
+	// 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
+	// 1.2 - 3.4 => >=1.2.0 <3.5.0-0
+	// TODO build?
+	const hyphenReplace = incPr => ($0,
+	  from, fM, fm, fp, fpr, fb,
+	  to, tM, tm, tp, tpr) => {
+	  if (isX(fM)) {
+	    from = '';
+	  } else if (isX(fm)) {
+	    from = `>=${fM}.0.0${incPr ? '-0' : ''}`;
+	  } else if (isX(fp)) {
+	    from = `>=${fM}.${fm}.0${incPr ? '-0' : ''}`;
+	  } else if (fpr) {
+	    from = `>=${from}`;
+	  } else {
+	    from = `>=${from}${incPr ? '-0' : ''}`;
+	  }
+
+	  if (isX(tM)) {
+	    to = '';
+	  } else if (isX(tm)) {
+	    to = `<${+tM + 1}.0.0-0`;
+	  } else if (isX(tp)) {
+	    to = `<${tM}.${+tm + 1}.0-0`;
+	  } else if (tpr) {
+	    to = `<=${tM}.${tm}.${tp}-${tpr}`;
+	  } else if (incPr) {
+	    to = `<${tM}.${tm}.${+tp + 1}-0`;
+	  } else {
+	    to = `<=${to}`;
+	  }
+
+	  return `${from} ${to}`.trim()
+	};
+
+	const testSet = (set, version, options) => {
+	  for (let i = 0; i < set.length; i++) {
+	    if (!set[i].test(version)) {
+	      return false
+	    }
+	  }
+
+	  if (version.prerelease.length && !options.includePrerelease) {
+	    // Find the set of versions that are allowed to have prereleases
+	    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
+	    // That should allow `1.2.3-pr.2` to pass.
+	    // However, `1.2.4-alpha.notready` should NOT be allowed,
+	    // even though it's within the range set by the comparators.
+	    for (let i = 0; i < set.length; i++) {
+	      debug(set[i].semver);
+	      if (set[i].semver === Comparator.ANY) {
+	        continue
+	      }
+
+	      if (set[i].semver.prerelease.length > 0) {
+	        const allowed = set[i].semver;
+	        if (allowed.major === version.major &&
+	            allowed.minor === version.minor &&
+	            allowed.patch === version.patch) {
+	          return true
+	        }
+	      }
+	    }
+
+	    // Version has a -pre, but it's not one of the ones we like.
+	    return false
+	  }
+
+	  return true
+	};
+	return range;
+}
+
+var comparator;
+var hasRequiredComparator;
+
+function requireComparator () {
+	if (hasRequiredComparator) return comparator;
+	hasRequiredComparator = 1;
+	const ANY = Symbol('SemVer ANY');
+	// hoisted class for cyclic dependency
+	class Comparator {
+	  static get ANY () {
+	    return ANY
+	  }
+
+	  constructor (comp, options) {
+	    options = parseOptions(options);
+
+	    if (comp instanceof Comparator) {
+	      if (comp.loose === !!options.loose) {
+	        return comp
+	      } else {
+	        comp = comp.value;
+	      }
+	    }
+
+	    comp = comp.trim().split(/\s+/).join(' ');
+	    debug('comparator', comp, options);
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.parse(comp);
+
+	    if (this.semver === ANY) {
+	      this.value = '';
+	    } else {
+	      this.value = this.operator + this.semver.version;
+	    }
+
+	    debug('comp', this);
+	  }
+
+	  parse (comp) {
+	    const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR];
+	    const m = comp.match(r);
+
+	    if (!m) {
+	      throw new TypeError(`Invalid comparator: ${comp}`)
+	    }
+
+	    this.operator = m[1] !== undefined ? m[1] : '';
+	    if (this.operator === '=') {
+	      this.operator = '';
+	    }
+
+	    // if it literally is just '>' or '' then allow anything.
+	    if (!m[2]) {
+	      this.semver = ANY;
+	    } else {
+	      this.semver = new SemVer(m[2], this.options.loose);
+	    }
+	  }
+
+	  toString () {
+	    return this.value
+	  }
+
+	  test (version) {
+	    debug('Comparator.test', version, this.options.loose);
+
+	    if (this.semver === ANY || version === ANY) {
+	      return true
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new SemVer(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    return cmp(version, this.operator, this.semver, this.options)
+	  }
+
+	  intersects (comp, options) {
+	    if (!(comp instanceof Comparator)) {
+	      throw new TypeError('a Comparator is required')
+	    }
+
+	    if (this.operator === '') {
+	      if (this.value === '') {
+	        return true
+	      }
+	      return new Range(comp.value, options).test(this.value)
+	    } else if (comp.operator === '') {
+	      if (comp.value === '') {
+	        return true
+	      }
+	      return new Range(this.value, options).test(comp.semver)
+	    }
+
+	    options = parseOptions(options);
+
+	    // Special cases where nothing can possibly be lower
+	    if (options.includePrerelease &&
+	      (this.value === '<0.0.0-0' || comp.value === '<0.0.0-0')) {
+	      return false
+	    }
+	    if (!options.includePrerelease &&
+	      (this.value.startsWith('<0.0.0') || comp.value.startsWith('<0.0.0'))) {
+	      return false
+	    }
+
+	    // Same direction increasing (> or >=)
+	    if (this.operator.startsWith('>') && comp.operator.startsWith('>')) {
+	      return true
+	    }
+	    // Same direction decreasing (< or <=)
+	    if (this.operator.startsWith('<') && comp.operator.startsWith('<')) {
+	      return true
+	    }
+	    // same SemVer and both sides are inclusive (<= or >=)
+	    if (
+	      (this.semver.version === comp.semver.version) &&
+	      this.operator.includes('=') && comp.operator.includes('=')) {
+	      return true
+	    }
+	    // opposite directions less than
+	    if (cmp(this.semver, '<', comp.semver, options) &&
+	      this.operator.startsWith('>') && comp.operator.startsWith('<')) {
+	      return true
+	    }
+	    // opposite directions greater than
+	    if (cmp(this.semver, '>', comp.semver, options) &&
+	      this.operator.startsWith('<') && comp.operator.startsWith('>')) {
+	      return true
+	    }
+	    return false
+	  }
+	}
+
+	comparator = Comparator;
+
+	const parseOptions = parseOptions_1;
+	const { safeRe: re, t } = reExports;
+	const cmp = cmp_1;
+	const debug = debug_1;
+	const SemVer = semver$2;
+	const Range = requireRange();
+	return comparator;
+}
+
+const Range$9 = requireRange();
+const satisfies$4 = (version, range, options) => {
+  try {
+    range = new Range$9(range, options);
+  } catch (er) {
+    return false
+  }
+  return range.test(version)
+};
+var satisfies_1 = satisfies$4;
+
+const Range$8 = requireRange();
+
+// Mostly just for testing and legacy API reasons
+const toComparators$1 = (range, options) =>
+  new Range$8(range, options).set
+    .map(comp => comp.map(c => c.value).join(' ').trim().split(' '));
+
+var toComparators_1 = toComparators$1;
+
+const SemVer$4 = semver$2;
+const Range$7 = requireRange();
+
+const maxSatisfying$1 = (versions, range, options) => {
+  let max = null;
+  let maxSV = null;
+  let rangeObj = null;
+  try {
+    rangeObj = new Range$7(range, options);
+  } catch (er) {
+    return null
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!max || maxSV.compare(v) === -1) {
+        // compare(max, v, true)
+        max = v;
+        maxSV = new SemVer$4(max, options);
+      }
+    }
+  });
+  return max
+};
+var maxSatisfying_1 = maxSatisfying$1;
+
+const SemVer$3 = semver$2;
+const Range$6 = requireRange();
+const minSatisfying$1 = (versions, range, options) => {
+  let min = null;
+  let minSV = null;
+  let rangeObj = null;
+  try {
+    rangeObj = new Range$6(range, options);
+  } catch (er) {
+    return null
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!min || minSV.compare(v) === 1) {
+        // compare(min, v, true)
+        min = v;
+        minSV = new SemVer$3(min, options);
+      }
+    }
+  });
+  return min
+};
+var minSatisfying_1 = minSatisfying$1;
+
+const SemVer$2 = semver$2;
+const Range$5 = requireRange();
+const gt$2 = gt_1;
+
+const minVersion$1 = (range, loose) => {
+  range = new Range$5(range, loose);
+
+  let minver = new SemVer$2('0.0.0');
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = new SemVer$2('0.0.0-0');
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = null;
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i];
+
+    let setMin = null;
+    comparators.forEach((comparator) => {
+      // Clone to avoid manipulating the comparator's semver object.
+      const compver = new SemVer$2(comparator.semver.version);
+      switch (comparator.operator) {
+        case '>':
+          if (compver.prerelease.length === 0) {
+            compver.patch++;
+          } else {
+            compver.prerelease.push(0);
+          }
+          compver.raw = compver.format();
+          /* fallthrough */
+        case '':
+        case '>=':
+          if (!setMin || gt$2(compver, setMin)) {
+            setMin = compver;
+          }
+          break
+        case '<':
+        case '<=':
+          /* Ignore maximum versions */
+          break
+        /* istanbul ignore next */
+        default:
+          throw new Error(`Unexpected operation: ${comparator.operator}`)
+      }
+    });
+    if (setMin && (!minver || gt$2(minver, setMin))) {
+      minver = setMin;
+    }
+  }
+
+  if (minver && range.test(minver)) {
+    return minver
+  }
+
+  return null
+};
+var minVersion_1 = minVersion$1;
+
+const Range$4 = requireRange();
+const validRange$1 = (range, options) => {
+  try {
+    // Return '*' instead of '' so that truthiness works.
+    // This will throw if it's invalid anyway
+    return new Range$4(range, options).range || '*'
+  } catch (er) {
+    return null
+  }
+};
+var valid$1 = validRange$1;
+
+const SemVer$1 = semver$2;
+const Comparator$2 = requireComparator();
+const { ANY: ANY$1 } = Comparator$2;
+const Range$3 = requireRange();
+const satisfies$3 = satisfies_1;
+const gt$1 = gt_1;
+const lt$1 = lt_1;
+const lte$1 = lte_1;
+const gte$1 = gte_1;
+
+const outside$3 = (version, range, hilo, options) => {
+  version = new SemVer$1(version, options);
+  range = new Range$3(range, options);
+
+  let gtfn, ltefn, ltfn, comp, ecomp;
+  switch (hilo) {
+    case '>':
+      gtfn = gt$1;
+      ltefn = lte$1;
+      ltfn = lt$1;
+      comp = '>';
+      ecomp = '>=';
+      break
+    case '<':
+      gtfn = lt$1;
+      ltefn = gte$1;
+      ltfn = gt$1;
+      comp = '<';
+      ecomp = '<=';
+      break
+    default:
+      throw new TypeError('Must provide a hilo val of "<" or ">"')
+  }
+
+  // If it satisfies the range it is not outside
+  if (satisfies$3(version, range, options)) {
+    return false
+  }
+
+  // From now on, variable terms are as if we're in "gtr" mode.
+  // but note that everything is flipped for the "ltr" function.
+
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i];
+
+    let high = null;
+    let low = null;
+
+    comparators.forEach((comparator) => {
+      if (comparator.semver === ANY$1) {
+        comparator = new Comparator$2('>=0.0.0');
+      }
+      high = high || comparator;
+      low = low || comparator;
+      if (gtfn(comparator.semver, high.semver, options)) {
+        high = comparator;
+      } else if (ltfn(comparator.semver, low.semver, options)) {
+        low = comparator;
+      }
+    });
+
+    // If the edge version comparator has a operator then our version
+    // isn't outside it
+    if (high.operator === comp || high.operator === ecomp) {
+      return false
+    }
+
+    // If the lowest version comparator has an operator and our version
+    // is less than it then it isn't higher than the range
+    if ((!low.operator || low.operator === comp) &&
+        ltefn(version, low.semver)) {
+      return false
+    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+      return false
+    }
+  }
+  return true
+};
+
+var outside_1 = outside$3;
+
+// Determine if version is greater than all the versions possible in the range.
+const outside$2 = outside_1;
+const gtr$1 = (version, range, options) => outside$2(version, range, '>', options);
+var gtr_1 = gtr$1;
+
+const outside$1 = outside_1;
+// Determine if version is less than all the versions possible in the range
+const ltr$1 = (version, range, options) => outside$1(version, range, '<', options);
+var ltr_1 = ltr$1;
+
+const Range$2 = requireRange();
+const intersects$1 = (r1, r2, options) => {
+  r1 = new Range$2(r1, options);
+  r2 = new Range$2(r2, options);
+  return r1.intersects(r2, options)
+};
+var intersects_1 = intersects$1;
+
+// given a set of versions and a range, create a "simplified" range
+// that includes the same versions that the original range does
+// If the original range is shorter than the simplified one, return that.
+const satisfies$2 = satisfies_1;
+const compare$2 = compare_1;
+var simplify = (versions, range, options) => {
+  const set = [];
+  let first = null;
+  let prev = null;
+  const v = versions.sort((a, b) => compare$2(a, b, options));
+  for (const version of v) {
+    const included = satisfies$2(version, range, options);
+    if (included) {
+      prev = version;
+      if (!first) {
+        first = version;
+      }
+    } else {
+      if (prev) {
+        set.push([first, prev]);
+      }
+      prev = null;
+      first = null;
+    }
+  }
+  if (first) {
+    set.push([first, null]);
+  }
+
+  const ranges = [];
+  for (const [min, max] of set) {
+    if (min === max) {
+      ranges.push(min);
+    } else if (!max && min === v[0]) {
+      ranges.push('*');
+    } else if (!max) {
+      ranges.push(`>=${min}`);
+    } else if (min === v[0]) {
+      ranges.push(`<=${max}`);
+    } else {
+      ranges.push(`${min} - ${max}`);
+    }
+  }
+  const simplified = ranges.join(' || ');
+  const original = typeof range.raw === 'string' ? range.raw : String(range);
+  return simplified.length < original.length ? simplified : range
+};
+
+const Range$1 = requireRange();
+const Comparator$1 = requireComparator();
+const { ANY } = Comparator$1;
+const satisfies$1 = satisfies_1;
+const compare$1 = compare_1;
+
+// Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+// - Every simple range `r1, r2, ...` is a null set, OR
+// - Every simple range `r1, r2, ...` which is not a null set is a subset of
+//   some `R1, R2, ...`
+//
+// Simple range `c1 c2 ...` is a subset of simple range `C1 C2 ...` iff:
+// - If c is only the ANY comparator
+//   - If C is only the ANY comparator, return true
+//   - Else if in prerelease mode, return false
+//   - else replace c with `[>=0.0.0]`
+// - If C is only the ANY comparator
+//   - if in prerelease mode, return true
+//   - else replace C with `[>=0.0.0]`
+// - Let EQ be the set of = comparators in c
+// - If EQ is more than one, return true (null set)
+// - Let GT be the highest > or >= comparator in c
+// - Let LT be the lowest < or <= comparator in c
+// - If GT and LT, and GT.semver > LT.semver, return true (null set)
+// - If any C is a = range, and GT or LT are set, return false
+// - If EQ
+//   - If GT, and EQ does not satisfy GT, return true (null set)
+//   - If LT, and EQ does not satisfy LT, return true (null set)
+//   - If EQ satisfies every C, return true
+//   - Else return false
+// - If GT
+//   - If GT.semver is lower than any > or >= comp in C, return false
+//   - If GT is >=, and GT.semver does not satisfy every C, return false
+//   - If GT.semver has a prerelease, and not in prerelease mode
+//     - If no C has a prerelease and the GT.semver tuple, return false
+// - If LT
+//   - If LT.semver is greater than any < or <= comp in C, return false
+//   - If LT is <=, and LT.semver does not satisfy every C, return false
+//   - If GT.semver has a prerelease, and not in prerelease mode
+//     - If no C has a prerelease and the LT.semver tuple, return false
+// - Else return true
+
+const subset$1 = (sub, dom, options = {}) => {
+  if (sub === dom) {
+    return true
+  }
+
+  sub = new Range$1(sub, options);
+  dom = new Range$1(dom, options);
+  let sawNonNull = false;
+
+  OUTER: for (const simpleSub of sub.set) {
+    for (const simpleDom of dom.set) {
+      const isSub = simpleSubset(simpleSub, simpleDom, options);
+      sawNonNull = sawNonNull || isSub !== null;
+      if (isSub) {
+        continue OUTER
+      }
+    }
+    // the null set is a subset of everything, but null simple ranges in
+    // a complex range should be ignored.  so if we saw a non-null range,
+    // then we know this isn't a subset, but if EVERY simple range was null,
+    // then it is a subset.
+    if (sawNonNull) {
+      return false
+    }
+  }
+  return true
+};
+
+const minimumVersionWithPreRelease = [new Comparator$1('>=0.0.0-0')];
+const minimumVersion = [new Comparator$1('>=0.0.0')];
+
+const simpleSubset = (sub, dom, options) => {
+  if (sub === dom) {
+    return true
+  }
+
+  if (sub.length === 1 && sub[0].semver === ANY) {
+    if (dom.length === 1 && dom[0].semver === ANY) {
+      return true
+    } else if (options.includePrerelease) {
+      sub = minimumVersionWithPreRelease;
+    } else {
+      sub = minimumVersion;
+    }
+  }
+
+  if (dom.length === 1 && dom[0].semver === ANY) {
+    if (options.includePrerelease) {
+      return true
+    } else {
+      dom = minimumVersion;
+    }
+  }
+
+  const eqSet = new Set();
+  let gt, lt;
+  for (const c of sub) {
+    if (c.operator === '>' || c.operator === '>=') {
+      gt = higherGT(gt, c, options);
+    } else if (c.operator === '<' || c.operator === '<=') {
+      lt = lowerLT(lt, c, options);
+    } else {
+      eqSet.add(c.semver);
+    }
+  }
+
+  if (eqSet.size > 1) {
+    return null
+  }
+
+  let gtltComp;
+  if (gt && lt) {
+    gtltComp = compare$1(gt.semver, lt.semver, options);
+    if (gtltComp > 0) {
+      return null
+    } else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<=')) {
+      return null
+    }
+  }
+
+  // will iterate one or zero times
+  for (const eq of eqSet) {
+    if (gt && !satisfies$1(eq, String(gt), options)) {
+      return null
+    }
+
+    if (lt && !satisfies$1(eq, String(lt), options)) {
+      return null
+    }
+
+    for (const c of dom) {
+      if (!satisfies$1(eq, String(c), options)) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  let higher, lower;
+  let hasDomLT, hasDomGT;
+  // if the subset has a prerelease, we need a comparator in the superset
+  // with the same tuple and a prerelease, or it's not a subset
+  let needDomLTPre = lt &&
+    !options.includePrerelease &&
+    lt.semver.prerelease.length ? lt.semver : false;
+  let needDomGTPre = gt &&
+    !options.includePrerelease &&
+    gt.semver.prerelease.length ? gt.semver : false;
+  // exception: <1.2.3-0 is the same as <1.2.3
+  if (needDomLTPre && needDomLTPre.prerelease.length === 1 &&
+      lt.operator === '<' && needDomLTPre.prerelease[0] === 0) {
+    needDomLTPre = false;
+  }
+
+  for (const c of dom) {
+    hasDomGT = hasDomGT || c.operator === '>' || c.operator === '>=';
+    hasDomLT = hasDomLT || c.operator === '<' || c.operator === '<=';
+    if (gt) {
+      if (needDomGTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length &&
+            c.semver.major === needDomGTPre.major &&
+            c.semver.minor === needDomGTPre.minor &&
+            c.semver.patch === needDomGTPre.patch) {
+          needDomGTPre = false;
+        }
+      }
+      if (c.operator === '>' || c.operator === '>=') {
+        higher = higherGT(gt, c, options);
+        if (higher === c && higher !== gt) {
+          return false
+        }
+      } else if (gt.operator === '>=' && !satisfies$1(gt.semver, String(c), options)) {
+        return false
+      }
+    }
+    if (lt) {
+      if (needDomLTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length &&
+            c.semver.major === needDomLTPre.major &&
+            c.semver.minor === needDomLTPre.minor &&
+            c.semver.patch === needDomLTPre.patch) {
+          needDomLTPre = false;
+        }
+      }
+      if (c.operator === '<' || c.operator === '<=') {
+        lower = lowerLT(lt, c, options);
+        if (lower === c && lower !== lt) {
+          return false
+        }
+      } else if (lt.operator === '<=' && !satisfies$1(lt.semver, String(c), options)) {
+        return false
+      }
+    }
+    if (!c.operator && (lt || gt) && gtltComp !== 0) {
+      return false
+    }
+  }
+
+  // if there was a < or >, and nothing in the dom, then must be false
+  // UNLESS it was limited by another range in the other direction.
+  // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
+  if (gt && hasDomLT && !lt && gtltComp !== 0) {
+    return false
+  }
+
+  if (lt && hasDomGT && !gt && gtltComp !== 0) {
+    return false
+  }
+
+  // we needed a prerelease range in a specific tuple, but didn't get one
+  // then this isn't a subset.  eg >=1.2.3-pre is not a subset of >=1.0.0,
+  // because it includes prereleases in the 1.2.3 tuple
+  if (needDomGTPre || needDomLTPre) {
+    return false
+  }
+
+  return true
+};
+
+// >=1.2.3 is lower than >1.2.3
+const higherGT = (a, b, options) => {
+  if (!a) {
+    return b
+  }
+  const comp = compare$1(a.semver, b.semver, options);
+  return comp > 0 ? a
+    : comp < 0 ? b
+    : b.operator === '>' && a.operator === '>=' ? b
+    : a
+};
+
+// <=1.2.3 is higher than <1.2.3
+const lowerLT = (a, b, options) => {
+  if (!a) {
+    return b
+  }
+  const comp = compare$1(a.semver, b.semver, options);
+  return comp < 0 ? a
+    : comp > 0 ? b
+    : b.operator === '<' && a.operator === '<=' ? b
+    : a
+};
+
+var subset_1 = subset$1;
+
+// just pre-load all the stuff that index.js lazily exports
+const internalRe = reExports;
+const constants = constants$1;
+const SemVer = semver$2;
+const identifiers = identifiers$1;
+const parse = parse_1;
+const valid = valid_1;
+const clean = clean_1;
+const inc = inc_1;
+const diff = diff_1;
+const major = major_1;
+const minor = minor_1;
+const patch = patch_1;
+const prerelease = prerelease_1;
+const compare = compare_1;
+const rcompare = rcompare_1;
+const compareLoose = compareLoose_1;
+const compareBuild = compareBuild_1;
+const sort = sort_1;
+const rsort = rsort_1;
+const gt = gt_1;
+const lt = lt_1;
+const eq = eq_1;
+const neq = neq_1;
+const gte = gte_1;
+const lte = lte_1;
+const cmp = cmp_1;
+const coerce = coerce_1;
+const Comparator = requireComparator();
+const Range = requireRange();
+const satisfies = satisfies_1;
+const toComparators = toComparators_1;
+const maxSatisfying = maxSatisfying_1;
+const minSatisfying = minSatisfying_1;
+const minVersion = minVersion_1;
+const validRange = valid$1;
+const outside = outside_1;
+const gtr = gtr_1;
+const ltr = ltr_1;
+const intersects = intersects_1;
+const simplifyRange = simplify;
+const subset = subset_1;
+var semver = {
+  parse,
+  valid,
+  clean,
+  inc,
+  diff,
+  major,
+  minor,
+  patch,
+  prerelease,
+  compare,
+  rcompare,
+  compareLoose,
+  compareBuild,
+  sort,
+  rsort,
+  gt,
+  lt,
+  eq,
+  neq,
+  gte,
+  lte,
+  cmp,
+  coerce,
+  Comparator,
+  Range,
+  satisfies,
+  toComparators,
+  maxSatisfying,
+  minSatisfying,
+  minVersion,
+  validRange,
+  outside,
+  gtr,
+  ltr,
+  intersects,
+  simplifyRange,
+  subset,
+  SemVer,
+  re: internalRe.re,
+  src: internalRe.src,
+  tokens: internalRe.t,
+  SEMVER_SPEC_VERSION: constants.SEMVER_SPEC_VERSION,
+  RELEASE_TYPES: constants.RELEASE_TYPES,
+  compareIdentifiers: identifiers.compareIdentifiers,
+  rcompareIdentifiers: identifiers.rcompareIdentifiers,
+};
+
+var semver$1 = /*@__PURE__*/getDefaultExportFromCjs(semver);
 
 function addToCharacterMap(fullName, name, map = {}) {
     if (name === "") {
@@ -51214,15 +53636,15 @@ function uniqueTrailingNames(names) {
 
 }
 
-function partialReleaseName(release) {
+function partialReleaseName$1(release) {
     let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
     if (match) {
         return match[0].replace(".X", ".0");
     }
 }
 
-function cleanedRelease(release) {
-    let clean = partialReleaseName(release);
+function cleanedRelease$1(release) {
+    let clean = partialReleaseName$1(release);
     if (clean) {
         if (clean.length === 1) {
             clean = clean + ".0.0";
@@ -51240,7 +53662,7 @@ function semverSort(values) {
     const cleanMap = {};
     const cleanValues = [];
     values.forEach((release) => {
-        const clean = cleanedRelease(release);
+        const clean = cleanedRelease$1(release);
         if (clean && semver$1.clean(clean)) {
             cleanMap[clean] = release;
             cleanValues.push(clean);
@@ -51268,8 +53690,8 @@ function semverReleases(unsortedReleases){
 				...releaseToReleaseObject[release],
 				release: release,
 				shortName: shortReleaseNames[index],
-				version: cleanedRelease(release),
-				shortVersion: partialReleaseName(release),
+				version: cleanedRelease$1(release),
+				shortVersion: partialReleaseName$1(release),
 
 		};
 	})
@@ -51292,7 +53714,6 @@ function sortedByLastEpicReleases(releases){
 	/*const semverReleases = Object.keys(releasesToInitiatives).sort( (a, b)=> {
 		const initiatives = releasesToInitiatives[a];
 
-		debugger;
 		epicTimingData();
 		return 1;
 	});
@@ -52167,7 +54588,6 @@ class SimpleTooltip extends HTMLElement {
       }
   }
   belowElementInScrollingContainer(element, DOM){
-    
     // find if there's a scrolling container and move ourselves to that 
     const container = findScrollingContainer(element);
     this.innerHTML = "";
@@ -52194,16 +54614,18 @@ class SimpleTooltip extends HTMLElement {
     
     // where would the tooltip's bottom reach in the viewport 
     const bottomInWindow = elementRect.bottom + tooltipRect.height;
-    // if the tooltip wouldn't be visible "down"
+
+    const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
+
+    // if the tooltip wouldn't be visible "down" 
     if(bottomInWindow > window.innerHeight) {
       const viewPortPosition = ( elementRect.top - tooltipRect.height );
       const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-      const posInContainerAccountingForScrolling = posInContainer + container.scrollTop;
+      const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
       this.style.top = ( posInContainerAccountingForScrolling )+"px";
     } else {
       const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-
-      this.style.top = (topFromContainer + container.scrollTop) +"px";
+      this.style.top = (topFromContainer + scrollingAdjustment) +"px";
     }
 
     const leftFromContainer = elementRect.left - containerRect.left;
@@ -52218,7 +54640,6 @@ class SimpleTooltip extends HTMLElement {
       this.innerHTML = html;
       
       this.style.display = "";
-      debugger;
       const tooltipRect = this.getBoundingClientRect();
 
       var rect = element.getBoundingClientRect();
@@ -52506,7 +54927,7 @@ function showTooltip(element, issue){
     showingObject = issue;
 
     const make = (issue, workPart) =>{
-        const breakdownPart = issue.dateData[workPart];
+        const breakdownPart = issue.rollupStatuses[workPart];
 
         return `<div class="p-2">
             <div class="release_box_subtitle_wrapper">
@@ -52532,11 +54953,11 @@ function showTooltip(element, issue){
             ${
                 breakdownPart.status !== "unknown" ?
                 `<p>Start: <a href="${breakdownPart?.startFrom?.reference?.url}" target="_blank" class="link">
-                    ${breakdownPart?.startFrom?.reference?.Summary}</a>'s 
+                    ${breakdownPart?.startFrom?.reference?.summary}</a>'s 
                     ${breakdownPart?.startFrom?.message}
                 </p>
                 <p>End: <a href="${breakdownPart?.dueTo?.reference?.url}" target="_blank" class="link">
-                    ${breakdownPart?.dueTo?.reference?.Summary}</a>'s
+                    ${breakdownPart?.dueTo?.reference?.summary}</a>'s
                     ${breakdownPart?.dueTo?.message}
                 </p>` :
                 ''
@@ -52545,12 +54966,12 @@ function showTooltip(element, issue){
         </div>`;
     };
     const DOM = document.createElement("div");
-    if(issue.dateData) {
-        const rollupData = issue.dateData.rollup;
+    if(issue.rollupStatuses) {
+        const rollupData = issue.rollupStatuses.rollup;
         DOM.innerHTML = `
         <div class='flex remove-button pointer' style="justify-content: space-between">
             <a class="${issue.url ? "link" : ""} text-lg font-bold"
-                href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
+                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
             <span>❌</span>
         </div>
         ${/*issue.dateData.rollup*/ ""}
@@ -52558,17 +54979,17 @@ function showTooltip(element, issue){
             rollupData?.statusData?.warning === true ?
             `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
         }
-        ${ issue.dateData.rollup ? make(issue, "rollup") :""}
-        ${ issue.dateData.dev ? make(issue, "dev") :""}
-        ${issue.dateData.qa ? make(issue, "qa") : ""}
-        ${issue.dateData.uat ?  make(issue, "uat") : ""}
+        ${ issue.rollupStatuses.rollup ? make(issue, "rollup") :""}
+        ${ issue.rollupStatuses.dev ? make(issue, "dev") :""}
+        ${issue.rollupStatuses.qa ? make(issue, "qa") : ""}
+        ${issue.rollupStatuses.uat ?  make(issue, "uat") : ""}
         `;
     } else {
         // "Planning" epics might not have this data
         DOM.innerHTML = `
         <div class='flex remove-button pointer gap-2' style="justify-content: space-between">
             <a class="${issue.url ? "link" : ""} text-lg font-bold"
-                href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
+                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
             <span>❌</span>
         </div>`;
     }
@@ -52577,200 +54998,415 @@ function showTooltip(element, issue){
 
 }
 
-//import { JiraIssue } from "../shared/issue-data/issue-data.js";
-
-
-/** @import { DerivedWorkIssue } from '../shared/issue-data/issue-data.js' */
+// FIRST, lets make a type to combine Derived issues and releases
 
 /**
- * @param { JiraIssue[] } issues
- * @param { PercentCompleteOptions } options
+ * @typedef {import("../derived/derive").DerivedWorkIssue | import("../releases/derive").DerivedRelease} IssueOrRelease
  */
-function percentComplete(derivedWorkIssues) {
+/**
+ * @typedef {Array<IssueOrRelease>} IssuesOrReleases
+ */
 
-  return completionRollup(derivedWorkIssues);
-}
 
-function groupIssuesByHierarchyLevel(issues, options) {
-  const sorted = issues; 
-  const group = [];
-  for(let issue of sorted) {
-    if(!group[issue.hierarchyLevel]) {
-      group[issue.hierarchyLevel] = [];
-    }
-    group[issue.hierarchyLevel].push(issue);
+// =======================
+// Now define how one would get the parents from these items
+/**
+ * Gets the parent's from some issue type.  We probably need some way types can provide this.
+ * @param {IssueOrRelease} issueOrRelease 
+ */
+function getParentKeys(issueOrRelease){
+  const parents = [];
+  if( issueOrRelease.parentKey ){
+      parents.push(issueOrRelease.parentKey);
   }
-  return group;
+  if(issueOrRelease.releases) {
+      parents.push(...issueOrRelease.releases.map( release => release.key));
+  }
+  return parents;
 }
 
-const BASE_HIERARCHY_LEVEL = 1;
 
+// =======================
+// Now need some way of building the hierarchy from the reporting topology
 
-/**
- * @typedef {import("../shared/issue-data/issue-data.js").DerivedWorkIssue & {
- *   completionRollup: {
- *    totalWorkingDays: number, 
- *    completedWorkingDays: number,
- *    remainingWorkingDays: number
- *   }
- * }} RolledupCompletionIssue
- */
-
+function getHierarchyTest({type, hierarchyLevel}) {
+  if(hierarchyLevel == null || hierarchyLevel === Infinity) {
+    return (issue)=> { return issue.type === type; }
+  } else {
+    return (issue)=> { return issue.hierarchyLevel === hierarchyLevel; }
+  }
+}
 /**
  * 
- * @param {import("../shared/issue-data/issue-data.js").DerivedWorkIssue} issues 
- * @returns {Array<RolledupCompletionIssue>}
+ * @param {IssuesOrReleases} issuesOrReleases 
+ * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
  */
-function toCompletionRollups(issues){
-  return issues.map( issue => {
-    return {...issue, completionRollup: {totalWorkingDays: 0, completedWorkingDays: 0}}
-  })
+function groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies) {
+  return rollupTypesAndHierarchies.map( (hierarchy) => {
+    return issuesOrReleases.filter( getHierarchyTest(hierarchy) );
+  }).reverse();
 }
+
+
+
+
+// ====================
+// With that Reporting topology, we are able to build a new mapping of parent / child relationships
+// These objects are what the functions should be using to rollup and such
 /**
  * @typedef {{
- *  needsAverageSet: Array<RolledupCompletionIssue>,
- *  issues: Array<RolledupCompletionIssue>,
- *  averageChildCount: number | undefined
- * }} IssueTypeData
+*  depth: Number,
+*  childKeys: Array<String>,
+*  parentKeys: Array<String>
+* }} ReportingHierarchy
+*/
+/**
+* @typedef {IssueOrRelease & {reportingHierarchy: ReportingHierarchy}} ReportingHierarchyIssueOrRelease
+*/
+/**
+ * @typedef {Array<ReportingHierarchyIssueOrRelease>} ReportingHierarchyIssuesOrReleases
  */
+/**
+* Takes a bottom-up grouped hierarchy and adds
+* reportingHierarchy = {childKeys: [keys], parentKeys: [keys], depth: Number}}
+* to each issue.
+*
+* Returns a new bottom-up grouped hierarchy of issues or releases
+* @param {Array<import("../rollup/rollup").IssuesOrReleases>} issuesOrReleases
+* @return {ReportingHierarchyIssuesOrReleases}
+*/
+function addChildrenFromGroupedHierarchy(groupedHierarchy) {
+ // we should label each issue with its virtual hierarchy ... then we can make sure 
+ // children add themselves to the right parents ... we can probably do this in one pass as things are ordered 
+ // {PARENT_KEY: {allChildren: [issues..], index}}
+ const parentKeyToChildren = {};
+ const topDownGroups = [...groupedHierarchy].reverse();
+ const newGroups = [];
+ for (let g = 0; g < topDownGroups.length; g++) {
+   let group = topDownGroups[g];
+   let newGroup = [];
+   newGroups.push(newGroup);
+
+   for (let issue of group) {
+     let copy = {
+       ...issue,
+       reportingHierarchy: { depth: g, childKeys: [], parentKeys: [] }
+     };
+     newGroup.push(copy);
+     parentKeyToChildren[issue.key] = copy.reportingHierarchy;
+     if (g > 0) {
+       const parents = getParentKeys(issue);
+       for (let parentKey of parents) {
+         const parentData = parentKeyToChildren[parentKey];
+         // make sure your parent is up one level in the issue hierarchy
+         if (parentData && parentData.depth === g - 1) {
+           parentData.childKeys.push(issue.key);
+           copy.reportingHierarchy.parentKeys.push(parentKey);
+         }
+       }
+     }
+   }
+ }
+ return newGroups.reverse();
+}
 
 /**
  * 
- * @param {import("../shared/issue-data/issue-data.js").DerivedWorkIssue} allIssueData 
- * @param {*} options 
- * @returns {{issues: Array<RolledupCompletionIssue>, hierarchyData: Array<IssueTypeData>}}
+ * @param {IssuesOrReleases} issuesOrReleases 
+ * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
  */
-function completionRollup(allIssueData){
-  const completionRollups = toCompletionRollups(allIssueData);
+function addReportingHierarchy(issuesOrReleases, rollupTypesAndHierarchies){
+  const groups = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies);
+  return addChildrenFromGroupedHierarchy(groups).flat(1);
+}
 
-  const groupedIssueData = groupIssuesByHierarchyLevel(completionRollups);
-  const issueKeyToChildren = Object.groupBy(completionRollups, issue => issue.parentKey);
 
-  // Store information for each level of of the hierarchy 
-  const issueTypeDatas = [];
-  
-  // for each level of the hierarchy, starting with the bottom
-  for( let hierarchyLevel = BASE_HIERARCHY_LEVEL; hierarchyLevel < groupedIssueData.length; hierarchyLevel++) {
-    /**
-     * @type {Array<RolledupCompletionIssue>}
-     */
-    let issues = groupedIssueData[hierarchyLevel];
-    
-    if(issues) {
 
-      // Track rollup data
-      /**
-       * @type {IssueTypeData}
-       */
-      let issueTypeData = issueTypeDatas[hierarchyLevel] = {
-        // how many children on average
-        childCounts: [],
-        
-        // an array of the total of the number of days of work. Used to calculate the average
-        totalDaysOfWorkForAverage: [],
-        // which items need their average set after the average is calculated
-        needsAverageSet: [],
-        // this will be set later
-        averageTotalDays: null,
-        averageChildCount: null,
 
-        issues: issues
-      };
 
-      // for issues on that level
-      for(let issueData of issues) {
-        if(hierarchyLevel === BASE_HIERARCHY_LEVEL) {
 
-          // if it has self-calculated total days ..
-          if( issueData.derivedWork.totalDaysOfWork ) {
-            // add those days to the average
-            issueTypeData.totalDaysOfWorkForAverage.push( issueData.derivedWork.totalDaysOfWork );
-            // set the rollup value
-            issueData.completionRollup.totalWorkingDays = issueData.derivedWork.totalDaysOfWork;
-          } 
-          else {
-            // add this issue to what needs its average
-            issueTypeData.needsAverageSet.push(issueData);
-          }
-          // we roll this up no matter what ... it's ok to roll up 0
-          issueData.completionRollup.completedWorkingDays = issueData.derivedWork.completedDaysOfWork;
-        }
-        // initiatives and above
-        if( hierarchyLevel > BASE_HIERARCHY_LEVEL ) {
-          // handle "parent-like" issue
-          handleInitiative(issueData,{issueTypeData, issueKeyToChildren});
-        }
-      }
 
-      // calculate the average 
-      let ave = average( issueTypeData.totalDaysOfWorkForAverage ) || 30;
-      issueTypeData.averageTotalDays = ave;
-
-      issueTypeData.averageChildCount = average( issueTypeData.childCounts );
-
-      // set average on children that need it
-      issueTypeData.needsAverageSet.forEach( issueData => {
-        issueData.completionRollup.totalWorkingDays = ave;
-        issueData.completionRollup.remainingWorkingDays = issueData.completionRollup.totalWorkingDays- 
-          issueData.completionRollup.completedWorkingDays;
-      });
+/**
+ * @param {Array<ReportingHierarchyIssuesOrReleases>} groupedHierarchy 
+ */
+function makeGetChildrenFromGrouped(groupedHierarchy) {
+  const keyToIssue = new Map();  for(let group of groupedHierarchy){
+    for(let issue of group) {
+      keyToIssue.set( issue.key, issue);
     }
   }
+  const getIssue = keyToIssue.get.bind(keyToIssue);
+  /**
+   * @param {ReportingHierarchyIssueOrRelease} keyOrIssueOrRelease
+   * @return {Array<IssuesOrReleases>}
+   */
+  return function getChildren(keyOrIssueOrRelease){
+    return keyOrIssueOrRelease.reportingHierarchy.childKeys.map(getIssue)
+  }
+}
 
-  return {
-    issues: completionRollups,
-    hierarchyData: issueTypeDatas
-  };
+
+
+
+/**
+ * @callback CreateRollupDataFromParentAndChild
+ * @param {ReportingHierarchyIssueOrRelease} issueOrRelease 
+ * @param {Array<Object>} children Child rollup data
+ * @param {Number} hierarchyLevel The level in the hierarchy being processed
+ * @param {Object} metadata
+ */
+
+/**
+ * @callback CreateMetadataForHierarchyLevel
+ * @param {Number} hierarchyLevel The level in the hierarchy being processed
+ * @param {Array<ReportingHierarchyIssueOrRelease>} issueOrReleases 
+ * @return {Object} Metadata object
+ */
+
+/**
+ * @typedef {Array<{metaData: Object, rollupData: Array}>} RollupResponse
+ */
+
+
+
+function rollupGroupedReportingHierarchy(groupedHierarchy, {
+  createMetadataForHierarchyLevel = function(){ return {} },
+  createSingleNodeRollupData,
+  createRollupDataFromParentAndChild,
+  finalizeMetadataForHierarchyLevel = function(){},
+  getChildren
+}) {
+
+  // we can build this ourselves if needed ... but costs memory.  Nice if we don't have to do this.
+  if(!getChildren) {
+    getChildren = makeGetChildrenFromGrouped(groupedHierarchy);
+  }
+  const rollupDataByKey = {};
+  function getChildrenRollupData(issue){
+    return getChildren(issue).map( childIssue => {
+      
+      const result = rollupDataByKey[childIssue.key];
+      if(!result) {
+        throw new Error("unable to find previously calculated child data ("+childIssue.key+"). Is your hierarchy in the right order?")
+      }
+      return result;
+    })
+  }
+
+  const rollupResponseData = [];
+  
+
+  for( let hierarchyLevel = 0; hierarchyLevel < groupedHierarchy.length; hierarchyLevel++) {
+    let issues = groupedHierarchy[hierarchyLevel];
+    
+    if(!issues) {
+      continue;
+    }
+
+    let hierarchyData = rollupResponseData[hierarchyLevel] = {
+      rollupData: [],
+      metadata: createMetadataForHierarchyLevel(hierarchyLevel, issues)
+    };
+
+    for(let issue of issues) { 
+      // get children rollup data for issue
+      let children = getChildrenRollupData(issue);
+      let rollupData = createRollupDataFromParentAndChild(issue, children, hierarchyLevel, hierarchyData.metadata);
+      hierarchyData.rollupData.push(rollupData);
+      rollupDataByKey[issue.key] = rollupData;
+      // associate it with the issue 
+    }
+    
+    //onEndOfHierarchy(issueTypeData);
+    finalizeMetadataForHierarchyLevel(hierarchyData.metadata, hierarchyData.rollupData);
+  }
+  return rollupResponseData;
 }
-function sum(arr) {
-  return arr.reduce((partialSum, a) => partialSum + a, 0)
+/**
+ * This "MUST" have the deepest children in the bottom
+ * @param {Array<IssuesOrReleases>} groupedHierarchy 
+ * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild, createMetadataForHierarchyLevel: CreateMetadataForHierarchyLevel}} options 
+ */
+function rollupGroupedHierarchy(groupedHierarchy, options){
+  const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy);
+  return rollupGroupedReportingHierarchy(reportingHierarchy, options)
 }
-function average(arr){
-  return arr.length > 0 ? sum(arr) / arr.length : undefined;
+  
+
+
+/**
+ * 
+ * @param {ReportingHierarchyIssuesOrReleases} issuesOrReleases 
+ */
+function makeGetChildrenFromReportingIssues(issuesOrReleases) {
+  const keyToIssue = new Map();  for(let issue of issuesOrReleases) {
+    keyToIssue.set( issue.key, issue);
+  }
+  
+  const getIssue = keyToIssue.get.bind(keyToIssue);
+  /**
+   * @param {ReportingHierarchyIssueOrRelease} keyOrIssueOrRelease
+   * @return {Array<ReportingHierarchyIssuesOrReleases>}
+   */
+  return function getChildren(keyOrIssueOrRelease){
+    return keyOrIssueOrRelease.reportingHierarchy.childKeys.map(getIssue)
+  }
+}
+
+
+
+
+
+/**
+ * 
+ * @param {Array<IssuesOrReleases>} groupedHierarchy 
+ * @param {RollupResponse} rollupDatas 
+ * @param {String} key 
+ */
+function zipRollupDataOntoGroupedData(groupedHierarchy, rollupDatas, key) {
+  const newGroups = [];
+  for(let g = 0; g < groupedHierarchy.length; g++) {
+    let group = groupedHierarchy[g];
+    let newIssues = [];
+    newGroups.push(newIssues);
+    for(let i = 0; i < group.length; i++) {
+      let issue = group[i];
+      let clone = {...issue};//Object.create(issue);
+      clone[key] = rollupDatas[g].rollupData[i];
+      newIssues.push(clone);
+    }
+  }
+  return newGroups;
+}
+
+const methods$1 = {
+    parentFirstThenChildren: parentFirstThenChildren$1,
+    childrenOnly: childrenOnly$1,
+    childrenFirstThenParent: childrenFirstThenParent$1,
+    widestRange: widestRange$1,
+    parentOnly: parentOnly$1
+};
+
+
+
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
+            const method = methods$1[methodName];
+            return method(issueOrRelease, children);
+        }
+    });
+}
+
+/**
+ * @typedef {{
+ *   due: Date,
+ *   dueTo: {message: String, reference: Object},
+ *   start: Date,
+ *   startFrom: {message: String, reference: Object}
+ * } | {}} RollupDateData
+ */
+
+/**
+ * @typedef {import("../rollup").IssueOrRelease & {rollupDates: RollupDateData}} RolledupDatesReleaseOrIssue
+ */
+
+
+/**
+ * 
+ * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {{type: String, hierarchyLevel: Number, calculation: String}} rollupTimingLevelsAndCalculations 
+ * @return {Array<RolledupDatesReleaseOrIssue>}
+ */
+function addRollupDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rollupMethods = rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+    const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupDates");
+    return zipped.flat();
+}
+
+function makeQuickCopyDefinedProperties(keys) {
+    return function copy(source) {
+        const obj = {};
+        for(let key of keys) {
+            if(source[key] !== undefined) {
+                obj[key] = source[key];
+            }
+        }
+        return obj;
+    }
+}
+// makes testing easier if we don't create a bunch of "undefined" properties
+const getStartData$1 = makeQuickCopyDefinedProperties(["start","startFrom"]);
+const getDueData$1 = makeQuickCopyDefinedProperties(["due","dueTo"]);
+
+function mergeStartAndDueData$1(records){
+    
+    const startData = records.filter( record => record?.start ).map(getStartData$1);
+    const dueData = records.filter( record => record?.due ).map( getDueData$1 );
+
+    return {
+        ... (startData.length ? startData.sort( (d1, d2) => d1.start - d2.start )[0] : {}),
+        ... (dueData.length ? dueData.sort( (d1, d2) => d2.due - d1.due )[0] : {})
+    }
 }
 
 /**
  * 
- * @param {RolledupCompletionIssue} issueData 
- * @param {*} param1 
- * @param {*} options 
+ * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
+ * @param {*} childrenRollups 
  * @returns 
  */
-function handleInitiative(issueData,{issueTypeData, issueKeyToChildren}) {
-  
+function parentFirstThenChildren$1(parentIssueOrRelease, childrenRollups){
 
-  // Empty
-  if(! issueKeyToChildren[issueData.key] ) {
-    issueTypeData.needsAverageSet.push(issueData);
-    return;
-  }
+    const childData = mergeStartAndDueData$1(childrenRollups);
+    const parentData = parentIssueOrRelease?.derivedTiming;
 
-  /**
-   * @type {Array<RolledupCompletionIssue>}
-   */
-  const children = issueKeyToChildren[issueData.key];
-  const totalDays = children.map(child => child.completionRollup.totalWorkingDays);
-  const completedDays = children.map(child => child.completionRollup.completedWorkingDays);
-  issueTypeData.childCounts.push(children.length);
+    const parentHasStart = parentData?.start;
+    const parentHasDue = parentData?.due;
 
-  // Fully Estimated
-  if(children.every( child => child.totalDays )) {
-    // we probably want a better signal ... but this will do for now
-    issueData.completionRollup.totalWorkingDays = sum(totalDays);
+    const combinedData = {
+        start: parentHasStart ? parentData?.start : childData?.start,
+        startFrom: parentHasStart ? parentData?.startFrom : childData?.startFrom,
+        due: parentHasDue ? parentData?.due : childData?.due,
+        dueTo: parentHasDue ? parentData?.dueTo : childData?.dueTo
+    };
 
-    // Add so average can be calculated
-    issueTypeData.totalDaysOfWorkForAverage.push(issueData.completionRollup.totalWorkingDays);
-    
+    return {
+        ...getStartData$1(combinedData),
+        ...getDueData$1(combinedData)
+    };
+}
 
-    
-  }
+function childrenOnly$1(parentIssueOrRelease, childrenRollups){
+    return mergeStartAndDueData$1(childrenRollups);
+}
 
-  // Roll up the days from the children
-  // This works b/c children that originally had no estimate will already have their rollup total days 
-  // set to the average.  
-  issueData.completionRollup.completedWorkingDays = sum(completedDays);
-  issueData.completionRollup.totalWorkingDays = sum(totalDays);  
-  issueData.completionRollup.remainingWorkingDays = issueData.completionRollup.totalWorkingDays - issueData.completionRollup.completedWorkingDays;
+function parentOnly$1(parentIssueOrRelease, childrenRollups){
+    return {
+        ...getStartData$1(parentIssueOrRelease.derivedTiming),
+        ...getDueData$1(parentIssueOrRelease.derivedTiming)
+    };
+}
+
+function childrenFirstThenParent$1(parentIssueOrRelease, childrenRollups){
+    if(childrenRollups.length) {
+        return mergeStartAndDueData$1(childrenRollups);
+    } 
+    return mergeStartAndDueData$1([parentIssueOrRelease.derivedTiming])
+}
+
+function widestRange$1(parentIssueOrRelease, childrenRollups){
+    return mergeStartAndDueData$1([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
 }
 
 function monthDiff(dateFromSring, dateToString) {
@@ -52910,6 +55546,7 @@ function getCalendarHtml(startDate, endDate) {
 }
 
 // https://yumbrands.atlassian.net/issues/?filter=10897
+
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
@@ -52937,7 +55574,7 @@ const percentCompleteTooltip = canStache_5_1_1_canStache(`
             <div class="font-bold">Remaining Working Days</div>
             <div class="font-bold">Total Working Days</div>
         
-            <div class="truncate max-w-96">{{this.issue.Summary}}</div>
+            <div class="truncate max-w-96">{{this.issue.summary}}</div>
             <div class="text-right">{{this.getPercentComplete(this.issue)}}</div>
             <div class="text-right">{{this.round( this.issue.completionRollup.completedWorkingDays) }}</div>
             <div class="text-right">{{this.round(this.issue.completionRollup.remainingWorkingDays)}}</div>
@@ -52954,10 +55591,11 @@ const percentCompleteTooltip = canStache_5_1_1_canStache(`
         {{/ for }}
    </div>
 `);
+
 // loops through and creates 
 class GanttGrid extends canStacheElement {
     static view = `
-        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.issues.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.primaryIssuesOrReleases.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
 
@@ -52971,22 +55609,22 @@ class GanttGrid extends canStacheElement {
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.issues.length}};">
+            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.issues.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
-            {{# for(issue of this.issuesWithPercentComplete) }}
+            {{# for(issue of this.primaryIssuesOrReleases) }}
                 <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.dateData.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
-                    {{issue.Summary}}
+                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                    {{issue.summary}}
                 </div>
                 <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
                     on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
@@ -53003,32 +55641,8 @@ class GanttGrid extends canStacheElement {
             }
         }
     };
-    get percentComplete(){
-        if(this.derivedIssues) {
-            return percentComplete(this.derivedIssues);
-        }
-    }
-    get issuesWithPercentComplete(){
-        if(this.showPercentComplete && this.percentComplete) {
-            const percentComplete = this.percentComplete;
-            const idToIssue = {};
-            for(const issue of percentComplete.issues) {
-                issue.completionRollup.totalWorkingDays;
-                idToIssue[issue.key] = issue;
-            }
-            return this.issues.map( issue => {
-                const issueData = idToIssue[issue["Issue key"]];
-                return {
-                    ...issue,
-                    completionRollup: issueData ? issueData.completionRollup  : {}
-                }
-            })
-        } else {
-            return this.issues;
-        }
-    }
     get lotsOfIssues(){
-        return this.issues.length > 20 && ! this.breakdown;
+        return this.primaryIssuesOrReleases.length > 20 && ! this.breakdown;
     }
     get textSize(){
         return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1"
@@ -53037,20 +55651,22 @@ class GanttGrid extends canStacheElement {
         return this.lotsOfIssues ? "h-4" : "h-6"
     }
     getPercentComplete(issue) {
-        if(this.showPercentComplete && this.percentComplete) {
+        if(this.showPercentComplete) {
             return Math.round( issue.completionRollup.completedWorkingDays * 100 / issue.completionRollup.totalWorkingDays )+"%"
         } else {
             return "";
         }
     }
     showTooltip(event, issue) {
-        showTooltip(event.currentTarget, issue);
+        makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+        showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
     }
     showPercentCompleteTooltip(event, issue) {
+        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+        
         // we should get all the children ...
-        const keyToChildren = Object.groupBy(this.percentComplete.issues, i => i.parentKey); 
-        const children = keyToChildren[issue["Issue key"]];
-
+        const children = getChildren( issue );
+        
         showTooltipContent(event.currentTarget, percentCompleteTooltip(
             {   issue, 
                 children,
@@ -53058,7 +55674,7 @@ class GanttGrid extends canStacheElement {
                 round: Math.round
             }));
     }
-    classForSpecialStatus(status){
+    classForSpecialStatus(status, issue){
         if( status === "complete") {
             return "color-text-"+status;
         } else if(status === "blocked" ) {
@@ -53074,7 +55690,8 @@ class GanttGrid extends canStacheElement {
         return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
     }
     get quartersAndMonths(){
-        let {start, due} = rollupDatesFromRollups(this.issues);
+        const rollupDates = this.primaryIssuesOrReleases.map(issue => issue.rollupStatuses.rollup );
+        let {start, due} = mergeStartAndDueData$1(rollupDates);
         // nothing has timing
         if(!start) {
             start = new Date();
@@ -53089,6 +55706,12 @@ class GanttGrid extends canStacheElement {
         const totalTime = (lastDay - firstDay);
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
+    /**
+     * 
+     * @param {} release 
+     * @param {*} index 
+     * @returns 
+     */
     getReleaseTimeline(release, index){
         const base = {
             gridColumn: '3 / span '+this.quartersAndMonths.months.length,
@@ -53128,7 +55751,7 @@ class GanttGrid extends canStacheElement {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
 
-        if (release.dateData.rollup.start && release.dateData.rollup.due) {
+        if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
 
                 function getPositions(work) {
                     if(work.start == null && work.due == null) {
@@ -53178,51 +55801,63 @@ class GanttGrid extends canStacheElement {
     
                 if(this.breakdown) {
 
-                    const lastDev = makeLastPeriodElement(release.dateData.dev.status, release.dateData.dev.lastPeriod);
+                    /*
+                    const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
                     lastDev.classList.add("h-2","py-[2px]");
                     lastPeriodRoot.appendChild(lastDev);
 
                     const dev = document.createElement("div");
-                    dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.dev.status;
-                    Object.assign(dev.style, getPositions(release.dateData.dev).style);
-                    root.appendChild(dev);
+                    dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.dev.status;
+                    Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
+                    root.appendChild(dev);*/
 
-                    
-                    if(this.hasQAEpic) {
-                        const lastQA = makeLastPeriodElement(release.dateData.qa.status, release.dateData.qa.lastPeriod);
+                    const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+                    for(const {type} of workTypes) {
+                        const lastPeriod = makeLastPeriodElement(release.rollupStatuses[type].status, release.rollupStatuses[type].lastPeriod);
+                        lastPeriod.classList.add("h-2","py-[2px]");
+                        lastPeriodRoot.appendChild(lastPeriod);
+
+                        const thisPeriod = document.createElement("div");
+                        thisPeriod.className = type+"_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses[type].status;
+                        Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
+                        root.appendChild(thisPeriod);
+                    }
+                    /*
+                    if(this.hasQAWork) {
+                        const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
                         lastQA.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastQA);
 
 
                         const qa = document.createElement("div");
-                        qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.qa.status;
-                        Object.assign(qa.style, getPositions(release.dateData.qa).style);
+                        qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.qa.status;
+                        Object.assign(qa.style, getPositions(release.rollupStatuses.qa).style);
                         root.appendChild(qa);
 
                         
                     }
-                    if(this.hasUATEpic) {
-                        const lastUAT = makeLastPeriodElement(release.dateData.uat.status, release.dateData.uat.lastPeriod);
+                    if(this.hasUATWork) {
+                        const lastUAT = makeLastPeriodElement(release.rollupStatuses.uat.status, release.rollupStatuses.uat.lastPeriod);
                         lastUAT.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastUAT);
 
 
                         const uat = document.createElement("div");
-                        uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.uat.status;
-                        Object.assign(uat.style, getPositions(release.dateData.uat).style);
+                        uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.uat.status;
+                        Object.assign(uat.style, getPositions(release.rollupStatuses.uat).style);
                         root.appendChild(uat);
 
                         
-                    }
+                    }*/
                 } else {
 
-                    const behindTime = makeLastPeriodElement(release.dateData.rollup.status, release.dateData.rollup.lastPeriod);
+                    const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
                     behindTime.classList.add(this.bigBarSize,"py-1");
                     lastPeriodRoot.appendChild(behindTime);
 
                     const team = document.createElement("div");
-                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.dateData.rollup.status;
-                    Object.assign(team.style, getPositions(release.dateData.rollup).style);
+                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.rollup.status;
+                    Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
                     team.style.opacity = "0.9";
                     
                     root.appendChild(team);
@@ -53239,16 +55874,25 @@ class GanttGrid extends canStacheElement {
         frag.appendChild(root);
         return canStache_5_1_1_canStache.safeString(frag);
     }
-    get hasQAEpic(){
-        if(this.issues) {
-            return this.issues.some( (initiative)=> initiative.dateData.qa.issues.length )
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        });
+        return {map, list};
+    }
+    get hasQAWork(){
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
         } else {
             return true;
         }
     }
-    get hasUATEpic(){
-        if(this.issues) {
-            return this.issues.some( (initiative)=> initiative.dateData.uat.issues.length )
+    get hasUATWork(){
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
         } else {
             return true;
         }
@@ -53465,58 +56109,59 @@ function intersect(range1, range2) {
 
 customElements.define("gantt-timeline",GanttTimeline);
 
+const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
+
+function workTypeToSymbol(type){
+    if(workTypesToSymbols[type]) {
+        return workTypesToSymbols[type];
+    } else {
+       return  type.substring(0,1).toUpperCase()
+    }
+}
+
 const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`;
 
 class StatusReport extends canStacheElement {
     static view = `
     <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex gap-2'>
-        {{# for(primaryIssue of this.primaryIssues) }}
+        {{# for(primaryIssue of this.primaryIssuesOrReleases) }}
             <div class='release_box grow'>
                 <div 
                     on:click='this.showTooltip(scope.event, primaryIssue)'
-                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}} rounded-t {{this.fontSize(0)}}">
-                        {{primaryIssue.Summary}}
+                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.rollupStatuses.rollup.status}} rounded-t {{this.fontSize(0)}}">
+                        {{primaryIssue.summary}}
                     </div>
                 
                     {{# if(this.breakdown) }}
+                            {{# for(workType of this.hasWorkTypes.hasWorkList) }}
+                    
+                                <div class="${release_box_subtitle_wrapper} pt-1">
+                                        <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses[workType.type].status}} font-mono px-px">
+                                            {{workType.type}}
+                                        </span>
+                                        <span class="release_box_subtitle_value">
+                                            {{ this.prettyDate(primaryIssue.rollupStatuses[workType.type].due) }}{{this.wasReleaseDate(primaryIssue.rollupStatuses[workType.type]) }}
+                                        </span>
+                                </div>
 
-                            <div class="${release_box_subtitle_wrapper} pt-1">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.dev.status}} font-mono px-px">Dev</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.dateData.dev.due) }}{{this.wasReleaseDate(primaryIssue.dateData.dev) }}
-                                    </span>
-                            </div>
-                            <div class="${release_box_subtitle_wrapper}">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.qa.status}} font-mono px-px">QA&nbsp;</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.dateData.qa.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.qa) }}
-                                    </span>
-                            </div>
-                            <div class="${release_box_subtitle_wrapper}">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.uat.status}} font-mono px-px">UAT</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.dateData.uat.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.uat) }}
-                                    </span>
-                            </div>
+                            {{/ for }}
                     {{ else }}
                         <div class="${release_box_subtitle_wrapper} p-1">
                                 <b>Target Delivery</b>
                                 <span class="release_box_subtitle_value">
-                                    <span class="nowrap">{{ this.prettyDate(primaryIssue.dateData.rollup.due) }}</span>
-                                    <span class="nowrap">{{ this.wasReleaseDate(primaryIssue.dateData.rollup) }}</span>
+                                    <span class="nowrap">{{ this.prettyDate(primaryIssue.rollupStatuses.rollup.due) }}</span>
+                                    <span class="nowrap">{{ this.wasReleaseDate(primaryIssue.rollupStatuses.rollup) }}</span>
                                 </span>
                         </div>
                     {{/ if }}
 
                 <ul class=" {{# if(this.breakdown) }}list-none{{else}}list-disc list-inside p-1{{/if}}">
-                    {{# for(secondaryIssue of primaryIssue.dateData.children.issues) }}
-                    <li class='font-sans {{this.fontSize(primaryIssue.dateData.children.issues.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
+                    {{# for(secondaryIssue of this.getIssues(primaryIssue.reportingHierarchy.childKeys)) }}
+                    <li class='font-sans {{this.fontSize(primaryIssue.reportingHierarchy.childKeys.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
                         {{# if(this.breakdown) }}
-                        <span class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.dev.status}}'>D</span><span
-                            class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.qa.status}}'>Q</span><span
-                            class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.uat.status}}'>U</span>
+                            {{this.breakdownIcons(secondaryIssue)}}
                         {{/ if }}
-                        <span class="{{# if(this.breakdown) }} color-text-black{{else}} color-text-{{secondaryIssue.dateData.rollup.status}} {{/ }}">{{secondaryIssue.Summary}}</span>
+                        <span class="{{# if(this.breakdown) }} color-text-black{{else}} color-text-{{secondaryIssue.rollupStatuses.rollup.status}} {{/ }}">{{secondaryIssue.summary}}</span>
                     </li>
                     {{/ for}}
                 </ul>
@@ -53546,11 +56191,12 @@ class StatusReport extends canStacheElement {
     </div>
     `;
     get columnDensity(){
-        if(this.primaryIssues.length > 20) {
+        
+        if(this.primaryIssuesOrReleases.length > 20) {
             return "absurd"
-        } else if(this.primaryIssues.length > 10) {
+        } else if(this.primaryIssuesOrReleases.length > 10) {
             return "high"
-        } else if(this.primaryIssues.length > 4) {
+        } else if(this.primaryIssuesOrReleases.length > 4) {
             return "medium"
         } else {
             return "light"
@@ -53558,6 +56204,17 @@ class StatusReport extends canStacheElement {
     }
     prettyDate(date) {
         return date ? dateFormatter.format(date) : "";
+    }
+    get getIssues() {
+        const map = new Map();
+        for(let issue of this.allIssuesOrReleases || []) {
+            map.set(issue.key, issue);
+        }
+        const getIssue = map.get.bind(map);
+
+        return window.getIssuesByKey = function(issueKeys){
+            return issueKeys.map(getIssue)
+        }
     }
     wasReleaseDate(release) {
 
@@ -53595,10 +56252,55 @@ class StatusReport extends canStacheElement {
         }
         
     }
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        });
+        return {map, list, hasWorkList: list.filter( wt => wt.hasWork)};
+    }
+    breakdownIcons(secondaryIssue) {
+        const frag = document.createDocumentFragment();
+        
+        const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+        for(const {type} of workTypes) {
+            const span = document.createElement("span");
+            span.className = 'text-xs font-mono px-px py-0 color-text-and-bg-'+secondaryIssue.rollupStatuses[type].status;
+            span.innerText = workTypeToSymbol(type);
+            
+            frag.appendChild(span);
+        }
+
+        return canStache_5_1_1_canStache.safeString(frag);
+    }
 }
 
 
 customElements.define("status-report",StatusReport);
+
+/**
+ * @typedef {import("../normalized/normalize.js").NormalizedIssue & {
+*   derivedTiming: import("./work-timing/work-timing.js").DerivedTiming
+* } & {derivedStatus: import("./work-status/work-status.js").DerivedWorkStatus}} DerivedWorkIssue
+*/
+
+
+/**
+* Adds derived data
+* @param {NormalizedIssue} normalizedIssue 
+* @return {DerivedWorkIssue} 
+*/
+function deriveIssue(issue, options){
+    const timing = deriveWorkTiming(issue, options);
+    return {
+
+        derivedTiming: timing,
+        derivedStatus: getWorkStatus(issue, options),
+        ...issue
+    }
+}
 
 /*
 class IssueData extends ObservableObject {
@@ -53615,7 +56317,8 @@ function csvToRawIssues(csvIssues){
           fields: {
             ...issue,
             "Parent Link": {data: issue["Parent Link"]},
-            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]}
+            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]},
+            "Status": {name: issue.Status}
           },
           key: issue["Issue key"]
         }
@@ -53628,8 +56331,12 @@ function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers},{list
     const progressData = canValue_1_1_2_canValue.with(null);
     
     const promise = canValue_1_1_2_canValue.returnedBy(function rawIssuesPromise(){
-        if( isLoggedIn.value === false || ! jql.value) {
+        if( isLoggedIn.value === false) {
             return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
+        }
+
+        if(!jql.value) {
+            return undefined;
         }
 
         progressData.value = null;
@@ -53736,7 +56443,7 @@ function derivedIssuesRequestData({
                 console.log({rawIssues});
                 return rawIssues.map( issue => {
                     const normalized = normalizeIssue(issue,configuration);
-                    const derived = derivedWorkIssue(normalized, configuration);
+                    const derived = deriveIssue(normalized, configuration);
                     return derived;
                 });
                 
@@ -54012,6 +56719,11 @@ class TimelineConfiguration extends canStacheElement {
         get configurationPromise(){
             return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
         },
+        configuration: {
+            async() {
+                return this.configurationPromise
+            }
+        },
         derivedIssuesRequestData: {
             value({listenTo, resolve}) {
                 return derivedIssuesRequestData({
@@ -54144,6 +56856,13 @@ class TimelineConfiguration extends canStacheElement {
   
             }
         },
+        get impliedTimingCalculations(){
+            if(this.primaryIssueType) {
+                return getImpliedTimingCalculations(this.primaryIssueType, 
+                    this.allTimingCalculationOptions.map, 
+                    this.timingCalculations);
+            }
+        },
 
         // PROPERTIES from having a primaryIssueType and timingCalculations
         get firstIssueTypeWithStatuses(){
@@ -54152,9 +56871,7 @@ class TimelineConfiguration extends canStacheElement {
                     return this.primaryIssueType;
                 } else {
                     // timing calculations lets folks "skip" from release to some other child
-                    const calculations= getImpliedTimingCalculations(this.primaryIssueType, 
-                        this.allTimingCalculationOptions.map, 
-                        this.timingCalculations);
+                    const calculations= this.impliedTimingCalculations;
                     if(calculations[0].type !== "Release") {
                         return calculations[0].type;
                     } else {
@@ -54166,9 +56883,9 @@ class TimelineConfiguration extends canStacheElement {
         // used to get the name of the secondary issue type
         get secondaryIssueType(){
             if(this.primaryIssueType) {
-                const calculations = getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations);
+                const calculations = this.impliedTimingCalculations;
                 if(calculations.length) {
-                return calculations[0].type
+                    return calculations[0].type
                 }
             }
             
@@ -54176,7 +56893,7 @@ class TimelineConfiguration extends canStacheElement {
 
         get timingCalculationMethods() {
             if(this.primaryIssueType) {
-                return getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations)
+                return this.impliedTimingCalculations
                     .map( (calc) => calc.calculation)
             }
         },
@@ -54186,9 +56903,22 @@ class TimelineConfiguration extends canStacheElement {
                 return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
             }            
         },
-
-        
-
+        get rollupTimingLevelsAndCalculations(){
+            if(this.impliedTimingCalculations) {
+                const impliedCalculations = this.impliedTimingCalculations;
+                const primaryIssueType = this.primaryIssueType;
+                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
+                const rollupCalculations = [];
+                for( let i = 0; i < impliedCalculations.length + 1; i++) {
+                    rollupCalculations.push({
+                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
+                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
+                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
+                    });
+                }
+                return rollupCalculations;
+            }
+        },
         // dependent on primary issue type
         showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
 
@@ -54215,8 +56945,6 @@ class TimelineConfiguration extends canStacheElement {
     };
     // HOOKS
     connected(){
-
-        this.listenTo("percentComplete",()=>{});
 
     }
     // METHODS
@@ -54330,6 +57058,837 @@ function getTimingLevels(issueTypeMap, primaryIssueType, timingCalculations){
     return timingLevels;
 }
 
+function getSprintNumbers(value) {
+    if(value === "") {
+        return null;
+    } else {
+        return value.split(",").map( num => +num);
+    }
+}
+function getSprintNames(value) {
+    if(value === "") {
+        return null;
+    } else {
+        return value.split(",").map( name => name.trim() );
+    }
+}
+
+
+const fields = {
+
+    // from will look like "1619, 1647"
+    // we need to update `lastReturnValue` to have 
+    // only the right sprints
+    Sprint: function(lastReturnValue, change, fieldName, {sprints}) {
+        const sprintNumbers = getSprintNumbers( change.from );
+        const sprintNames = getSprintNames(change.fromString);
+        
+        if( sprintNumbers === null ) {
+            return {[fieldName]: null};
+        } else {
+
+            return {[fieldName]: sprintNumbers.map( (number, i)=>{
+                // REMOVE IN PROD
+                if(sprints.ids.has(number) ) {
+                    return sprints.ids.get(number);
+                } else if(sprints.names.has(sprintNames[i])) {
+                    return sprints.names.get(sprintNames[i]);
+                } else {
+                    console.warn("Can't find sprint ", number, sprintNames[i]);
+                }
+                
+            }) }
+        }
+        
+    },
+    "Fix versions": function(lastReturnValue, change, fieldName, {versions}) {
+
+        if(change.from) {
+            if(versions.ids.has(change.from)) {
+                return {[fieldName]: versions.ids.get(change.from)};
+            } else if( versions.names.has(change.fromString) ) {
+                return {[fieldName]: versions.names.get(change.fromString)};
+            } else {
+                console.warn("Can't find release version ", change.from, change.fromString);
+                return {[fieldName]: lastReturnValue};
+            }
+        } else {
+            return {[fieldName]: []};
+        }
+    },
+    // Parent Link, Epic Link, 
+    "IssueParentAssociation": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString, id: change.to}}
+    },
+    "Parent Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
+    },
+    "Epic Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
+    },
+    "Status": function(lastReturnValue, change, fieldName, {statuses}) {
+        if(statuses.ids.has(change.from)) {
+            return {[fieldName]: statuses.ids.get(change.from)};
+        } else if( statuses.names.has(change.fromString) ) {
+            return {[fieldName]: statuses.names.get(change.fromString)};
+        } else {
+            console.warn("Can't find status", change.from, change.fromString);
+            return {[fieldName]: {name: change.fromString}};
+        }
+    }
+};
+const fieldAlias = {
+    "duedate": "Due date",
+    "status": "Status",
+    "labels": "Labels",
+    "issuetype": "Issue Type",
+    // "summary": "Summary" // we don't want to change summary
+    "Fix Version": "Fix versions"
+};
+
+function getSprintsMapsFromIssues(issues){
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        for(const sprint of (issue.fields.Sprint || [])) {
+            ids.set(sprint.id, sprint);
+            names.set(sprint.name, sprint);
+        }
+    }
+    return {ids, names};
+}
+
+function getVersionsFromIssues(issues){
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        for(const version of (issue.fields["Fix versions"] || [])) {
+            ids.set(version.id, version);
+            names.set(version.name, version);
+        }
+    }
+    return {ids, names};
+}
+
+
+function getStatusesFromIssues(issues) {
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        
+        ids.set(issue.fields.Status.id, issue.fields.Status);
+        names.set(issue.fields.Status.name, issue.fields.Status);
+        
+    }
+    return {ids, names};
+}
+
+function rollbackIssues(issues, rollbackTime) {
+    const sprints = getSprintsMapsFromIssues(issues);
+    const versions = getVersionsFromIssues(issues);
+    const statuses = getStatusesFromIssues(issues);
+    return issues.map(i => rollbackIssue(i, {sprints, versions, statuses}, rollbackTime)).filter( i => i );
+}
+
+const oneHourAgo = new Date(new Date() - 1000*60*60);
+
+/**
+ * @typedef {{
+ *   rolledBackTo: Date,
+ *   didNotExist: Boolen
+ * }} RolledBackMetadata
+ */
+
+/**
+ * @typedef {import("../../normalized/normalize").JiraIssue & {rollbackMetadata: RolledBackMetadata}} RolledBackJiraIssue
+ */
+
+/**
+ * @param {import("../../normalized/normalize").JiraIssue} issue 
+ * @param {*} data 
+ * @param {Date} rollbackTime 
+ * @returns {RolledBackJiraIssue}
+ */
+function rollbackIssue(issue, data, rollbackTime = oneHourAgo) {
+
+    const {changelog, ...copy} = issue;
+    copy.rollbackMetadata = {rolledbackTo: rollbackTime};
+    // ignore old issues
+    if( parseDateISOString(issue.fields.Created) > rollbackTime) {
+        return;
+        /*
+        copy.rollbackMetadata.didNotExist = true;
+        delete copy.fields;
+        // should convert to date ...
+        copy.rollbackMetadata.didNotExistBefore = issue.fields.Created;
+        return copy;*/
+    }
+    // 
+    
+    copy.fields = {...issue.fields};
+
+    for(const {items, created} of changelog) {
+        // we need to go back before ... 
+        if( parseDateISOString(created) < rollbackTime) {
+            break;
+        }
+        items.forEach( (change) => {
+            const {field, from, to} = change;
+            const fieldName = fieldAlias[field] || field;
+            if(fields[fieldName]) {
+
+                Object.assign(copy.fields, fields[fieldName](copy[fieldName], change, fieldName, data) );
+            } else {
+                copy.fields[fieldName] = from;
+            }
+
+        });
+    }
+    return copy;
+}
+
+/*
+export function collectChangelog(observableBaseIssues, priorTime) {
+    const changes = observableBaseIssues.map( baseIssue => {
+        return baseIssue.changelog.map( change => {
+            return {...change, issue: baseIssue, createdDate: parseDateISOString(change.created) };
+        })
+    } ).flat().sort( (cl1, cl2) => cl1.createdDate - cl2.createdDate);
+
+    return changes.filter( change => change.createdDate >= priorTime );
+}
+
+
+export function applyChangelog(changes, data) {
+    for(const {items, created, issue} of changes) {
+
+        items.forEach( (change) => {
+            const {field, from, to} = change;
+
+            if(field in issue) {
+                if(fields[field]) {
+                    issue[field] = fields[field](issue[field], change, data);
+                } else {
+                    issue[field] = from;
+                }
+                
+            }
+        })
+    }
+}
+
+
+
+function sleep(time) {
+    return new Promise(function(resolve){
+        if(!time) {
+            resolve();
+        }
+    })
+}
+
+const CHANGE_APPLY_AMOUNT = 2000;
+export async function applyChangelogs(observableBaseIssues, priorTime) {
+    const changes = collectChangelog(observableBaseIssues, priorTime);
+    console.log("processing",changes.length, "changes");
+    const sprints = getSprintsMapsFromIssues(observableBaseIssues);
+    const batches = [];
+    
+    while(changes.length) {
+        await sleep();
+        const batch = changes.splice(0, CHANGE_APPLY_AMOUNT);
+        applyChangelog(batch, {sprints});
+    }
+}*/
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupWorkTypeDates(groupedHierarchy, {getChildren}  = {}) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            //const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
+            const method = mergeParentAndChildIfTheyHaveDates; //methods[methodName];
+            return method(issueOrRelease, children);
+        }
+    });
+}
+/**
+ * 
+ * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {*} rollupTimingLevelsAndCalculations 
+ * @return {Array<WorkTypeTimingReleaseOrIssue>}
+ */
+function addWorkTypeDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+    const rolledUpDates = rollupWorkTypeDates(groupedIssues);
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "workTypeRollups");
+    return zipped.flat();
+}
+
+function copyDateProperties(obj) {
+    const copy = {};
+    for(let key of ["due","dueTo","start","startFrom"]){
+        if(obj[key] !== undefined) {
+            copy[key] = obj[key];
+        }
+    }
+    return copy;
+}
+
+
+function mergeParentAndChildIfTheyHaveDates(parentIssueOrRelease, childRollups){
+    if(parentIssueOrRelease.type === "milestone") {
+        debugger;
+    }
+    const rollup = {self: {}, children: {}, combined: {}};
+    const parentData = parentIssueOrRelease?.derivedTiming;
+
+    const parentHasStart = parentData?.start;
+    const parentHasDue = parentData?.due;
+    const hasStartAndDue = parentHasStart && parentHasDue;
+
+    if(hasStartAndDue) {
+        // can use the parent;
+        rollup.self[parentIssueOrRelease.derivedStatus.workType] = copyDateProperties(parentData);
+        rollup.self[parentIssueOrRelease.derivedStatus.workType].issueKeys = [parentIssueOrRelease.key];
+    }
+    if(!childRollups.length) {
+        rollup.combined = rollup.self;
+        return rollup;
+    }
+    const children = rollup.children;
+    const combined = rollup.combined;
+    for(let workType$1 of workType) {
+        // combine for children
+        const rollupForWorkType = childRollups.map( childRollup => childRollup.combined?.[workType$1] ).filter(x => x);
+        // if the children have something for this type
+        if(rollupForWorkType.length) {
+            const issues = new Set( rollupForWorkType.map( r => r.issueKeys ).flat(1) );
+            const dates  = mergeStartAndDueData$1(rollupForWorkType);
+            dates.issueKeys = [...issues];
+            children[workType$1] = dates;
+            // what if the parent has it also
+            if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
+                const combinedIssues = new Set( [...issues, parentIssueOrRelease.key] );
+                const combinedDates = mergeStartAndDueData$1([dates, parentData]);
+                combinedDates.issueKeys = [...combinedIssues];
+                combined[workType$1] = combinedDates;
+            } else {
+                combined[workType$1] = dates;
+            }
+        } 
+        // what if the parent has it
+        else if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
+            combined[workType$1] = rollup.self[workType$1];
+        }
+    }
+    return rollup;
+}
+
+
+
+// {children: DATES FROM CHILDREN, QA, UAT, DESIGN, etc}
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupBlockedIssuesForGroupedHierarchy(groupedHierarchy) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            const blockedIssues = children.flat(1);
+            // releases don't have a status
+            if(issueOrRelease?.derivedStatus?.statusType === "blocked") {
+                blockedIssues.push(issueOrRelease);
+            }
+            return blockedIssues;
+        }
+    });
+}
+
+// these functions shouldn't be used eventually for performance ...
+function rollupBlockedStatusIssues(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rolledUpBlockers = rollupBlockedIssuesForGroupedHierarchy(groupedIssues);
+
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, "blockedStatusIssues");
+    return zipped.flat();
+}
+
+function partialReleaseName(release) {
+    let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
+    if (match) {
+        return match[0].replace(".X", ".0");
+    }
+}
+
+function cleanedRelease(release) {
+    let clean = partialReleaseName(release);
+    if (clean) {
+        if (clean.length === 1) {
+            clean = clean + ".0.0";
+        }
+        if (clean.length === 3) {
+            clean = clean + ".0";
+        }
+        if (semver$1.clean(clean)) {
+            return clean;
+        }
+    }
+}
+/**
+ * @typedef {{
+ *   semver: Boolean,
+ *   version: String | null,
+ *   shortVersion: String | null,
+ *   shortName: String 
+ * }} DerivedReleaseNames
+ */
+/**
+ * @typedef {import("../normalized/normalize.js").NormalizedRelease & {names: DerivedReleaseNames}} DerivedRelease
+ */
+
+/**
+ * 
+ * @param {Array<import("../normalized/normalize.js").NormalizedRelease>} normalizedReleases 
+ * @returns {DerivedRelease}
+ */
+function deriveReleases(normalizedReleases){
+	
+    const semverNames = normalizedReleases.map(normalizedRelease => {
+        const semverReleaseName = cleanedRelease(normalizedRelease.name) || null;
+        const version = semverReleaseName ? semver$1.clean(semverReleaseName) : null;
+        const shortVersion = semverReleaseName ? partialReleaseName(normalizedRelease.name) : null;
+
+        return {
+            semver: !!semverReleaseName,
+            version,
+            shortVersion
+        }
+    });
+
+    const namesToShorten = semverNames.map( ({shortVersion}, i) => {
+        return shortVersion || normalizedReleases[i].name;
+    });
+    const shortNames = uniqueTrailingNames(namesToShorten);
+    return normalizedReleases.map( (normalizedRelease, index)=> {
+        return {
+            ...normalizedRelease,
+            names: {
+                ...semverNames[index],
+                shortName: shortNames[index]
+            }
+        }
+    });
+}
+
+/**
+ * Returns all releases from all issues
+ * @param {Array<import("../normalized/normalize").NormalizedIssue>} normalizedIssues 
+ * @return {Array<import("../normalized/normalize").NormalizedRelease>}
+ */
+function normalizeReleases(normalizedIssues){
+    const nameToRelease = {};
+    for(let normalizedIssue of normalizedIssues) {
+        const releases = normalizedIssue.releases;
+        for(let release of releases) {
+            if(!nameToRelease[release.name]) {
+                nameToRelease[release.name] = release;
+            }
+        }
+    }
+    return Object.values(nameToRelease);
+}
+
+function addPercentComplete(issuesOrReleases, rollupTimingLevelsAndCalculations) {
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+  rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+  const rolledUpDates = rollupPercentComplete(groupedIssues);
+  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "completionRollup");
+  return zipped.flat();
+}
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<Object>}
+ */
+function rollupPercentComplete(groupedHierarchy, methodNames, {getChildren}  = {}) {
+  return rollupGroupedHierarchy(groupedHierarchy, {
+      createMetadataForHierarchyLevel(hierarchyLevel){
+        return {
+          // how many children on average
+          childCounts: [],
+          
+          // an array of the total of the number of days of work. Used to calculate the average
+          totalDaysOfWorkForAverage: [],
+          // which items need their average set after the average is calculated
+          needsAverageSet: [],
+          // this will be set later
+          averageTotalDays: null,
+          averageChildCount: null,
+        }
+      },
+      finalizeMetadataForHierarchyLevel(metadata, rollupData) {
+        let ave = average( metadata.totalDaysOfWorkForAverage ) || 30;
+        metadata.averageTotalDays = ave;
+
+        //metadata.averageChildCount = average( metadata.childCounts )
+        // set average on children that need it
+        metadata.needsAverageSet.forEach( data => {
+          data.totalWorkingDays = ave;
+        });
+      },
+      createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+        const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
+        const method = methods[methodName];
+        return method(issueOrRelease, children, hierarchyLevel, metadata);
+      }
+  });
+}
+
+function emptyRollup(){
+  return {
+    completedWorkingDays: 0,
+    totalWorkingDays: 0,
+    userSpecifiedValues: false,
+    get remainingWorkingDays(){
+      return this.totalWorkingDays - this.completedWorkingDays
+    }
+  }
+}
+
+function sumChildRollups(children){
+  const userSpecifiedValues = children.every( d => d.userSpecifiedValues );
+  const totalDays = children.map(child => child.totalWorkingDays);
+  const completedDays = children.map(child => child.completedWorkingDays);
+  return {
+    completedWorkingDays: sum(completedDays),
+    totalWorkingDays: sum(totalDays),
+    userSpecifiedValues: userSpecifiedValues,
+    get remainingWorkingDays(){
+      return this.totalWorkingDays - this.completedWorkingDays
+    }
+  }
+}
+
+const methods = {
+  parentFirstThenChildren,
+  childrenOnly,
+  childrenFirstThenParent,
+  widestRange,
+  parentOnly
+};
+
+
+/**
+ * 
+ * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
+ * @param {*} childrenRollups 
+ * @returns 
+ */
+function parentFirstThenChildren(parentIssueOrRelease, childrenRollups,hierarchyLevel, metadata){
+
+  // if there is hard parent data, use it
+  var data;
+  if(parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+    data = {
+      completedWorkingDays: parentIssueOrRelease.derivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentIssueOrRelease.derivedTiming.totalDaysOfWork,
+      userSpecifiedValues: true,
+      get remainingWorkingDays(){
+        return this.totalWorkingDays - this.completedWorkingDays
+      }
+    };
+    // make sure we can build an average from it 
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  } 
+  // if there is hard child data, use it
+  else if(childrenRollups.length && childrenRollups.every( d => d.userSpecifiedValues )) {
+    data = sumChildRollups(childrenRollups);
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  }
+  // if there is weak children data, use it, but don't use it for other averages
+  else if(childrenRollups.length) {
+    data = sumChildRollups(childrenRollups);
+    return data;
+  }
+  // if there are no children, add to get the uncertainty
+  else {
+    data = emptyRollup();
+    metadata.needsAverageSet.push(data);
+    return data;
+  }
+}
+
+function childrenOnly(parentIssueOrRelease, childrenRollups){
+  return mergeStartAndDueData(childrenRollups);
+}
+
+function parentOnly(parentIssueOrRelease, childrenRollups){
+  return {
+      ...getStartData(parentIssueOrRelease.derivedTiming),
+      ...getDueData(parentIssueOrRelease.derivedTiming)
+  };
+}
+
+function childrenFirstThenParent(parentIssueOrRelease, childrenRollups,hierarchyLevel, metadata){
+  var data;
+  // if there is hard child data, use it
+  if(childrenRollups.length && childrenRollups.every( d => d.userSpecifiedValues )) {
+    data = sumChildRollups(childrenRollups);
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  }
+  // if there is hard parent data, use it
+  else if(parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+    data = {
+      completedWorkingDays: parentIssueOrRelease.derivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentIssueOrRelease.derivedTiming.totalDaysOfWork,
+      userSpecifiedValues: true,
+      get remainingWorkingDays(){
+        return this.totalWorkingDays - this.completedWorkingDays
+      }
+    };
+    // make sure we can build an average from it 
+    metadata.totalDaysOfWorkForAverage.push( data.totalWorkingDays );
+    return data;
+  } 
+  
+  // if there is weak children data, use it, but don't use it for other averages
+  else if(childrenRollups.length) {
+    data = sumChildRollups(childrenRollups);
+    return data;
+  }
+  // if there are no children, add to get the uncertainty
+  else {
+    data = emptyRollup();
+    metadata.needsAverageSet.push(data);
+    return data;
+  }
+}
+
+function widestRange(parentIssueOrRelease, childrenRollups){
+  return mergeStartAndDueData([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
+}
+function sum(arr) {
+  return arr.reduce((partialSum, a) => partialSum + a, 0)
+}
+function average(arr){
+  return arr.length > 0 ? sum(arr) / arr.length : undefined;
+}
+
+/**
+ * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
+ */
+
+/**
+ * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issueLastPeriod: RolledBackWorkTypeTimingReleaseOrIssue}} IssueOrReleaseWithPreviousTiming
+ */
+
+/**
+ * @param {derivedIssues} derivedIssues 
+ * @param {*} configuration 
+ * @param {*} when 
+ * @return {IssueOrReleaseWithPreviousTiming}
+ */
+function rollupAndRollback(derivedIssues, configuration, rollupTimingLevelsAndCalculations, when){
+    
+    // get old issues and prepare them
+    const oldRawIssues = derivedIssuesToRawIssues(derivedIssues);
+    const pastStatusRolledUp = rollbackNormalizeAndDeriveEverything(oldRawIssues, configuration, rollupTimingLevelsAndCalculations, when);
+
+    // prepare current issues
+    const currentStatusRolledUp = addRollups(derivedIssues, rollupTimingLevelsAndCalculations);
+
+    const oldMap = {};
+    for(let oldIssue of pastStatusRolledUp) {
+        // TODO: use id in the future to handle issue keys being changed
+        oldMap[oldIssue.key] = oldIssue;
+    }
+    // associate
+    for(let newIssue of currentStatusRolledUp) {
+        // as this function creates new stuff anyway ... maybe it's ok to mutate?
+        newIssue.issueLastPeriod = oldMap[newIssue.key];
+    }
+    return currentStatusRolledUp;
+}
+
+function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
+    const normalizedReleases = normalizeReleases(derivedIssues);
+    const releases = deriveReleases(normalizedReleases);
+    const reporting = addReportingHierarchy([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
+    const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
+    const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
+    const percentComplete = addPercentComplete(rolledUpBlockers, rollupTimingLevelsAndCalculations);
+    return addWorkTypeDates(percentComplete, rollupTimingLevelsAndCalculations);
+    
+}
+
+function rollbackNormalizeAndDeriveEverything(rawIssues, configuration, rollupTimingLevelsAndCalculations, when){
+    const pastRawIssues = rollbackIssues(rawIssues, when);
+    //const dne = pastRawIssues.filter(ri => ri.rollbackMetadata.didNotExistBefore);
+    
+    const pastDerived = pastRawIssues.map( (issue)=>{
+        const normalized = normalizeIssue(issue,configuration);
+        return deriveIssue(normalized, configuration);
+    });
+    return addRollups(pastDerived, rollupTimingLevelsAndCalculations)
+
+}
+
+
+
+function derivedIssuesToRawIssues(derivedIssues){
+    return derivedIssues.map(dI => dI.issue)
+}
+
+const workTypeRollups = ["children", ...workType];
+const WIGGLE_ROOM = 0;
+/**
+ * 
+ * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
+ */
+function prepareTimingData(issueWithPriorTiming) {
+
+    const issueLastPeriod = issueWithPriorTiming.issueLastPeriod;
+    const timingData = {
+        rollup: {
+            ...issueWithPriorTiming.rollupDates,
+            lastPeriod: issueLastPeriod ? issueLastPeriod.rollupDates : null
+        }
+    };
+    for(let workType of workTypeRollups) {
+        const workRollup = issueWithPriorTiming.workTypeRollups.children[workType];
+        if(workRollup) {
+            timingData[workType] = {
+                ...workRollup,
+                lastPeriod: issueLastPeriod ? issueLastPeriod.workTypeRollups.children[workType] : null
+            };
+        } else {
+            timingData[workType] = {
+                issueKeys: []
+            };
+        }
+    }
+    return timingData;
+}
+
+function setWorkTypeStatus(workType, timingData, getIssuesByKeys){
+    // compare the parent status ... could be before design, after UAT and we should warn
+    // what about blocked on any child?
+
+    // if everything is complete, complete
+
+    if(timingData.issueKeys.length && getIssuesByKeys(timingData.issueKeys).every(issue => issue.statusCategory === "done")) {
+        timingData.status = "complete";
+        timingData.statusFrom = {message: "Everything is done"};
+    } else if( getIssuesByKeys(timingData.issueKeys).some(issue => issue.blockedStatusIssues.length)) {
+        timingData.status = "blocked"; 
+        timingData.statusFrom = {message: "This or a child is in a blocked status"};
+    }
+    else {
+        Object.assign(timingData, timedStatus(timingData));
+    }
+}
+
+
+
+/**
+ * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
+ */
+function calculateStatuses(issueWithPriorTiming, getIssuesByKeys){
+    getIssuesByKeys(issueWithPriorTiming.reportingHierarchy.childKeys);
+    const timingData = prepareTimingData(issueWithPriorTiming);
+
+    // do the rollup
+    if(issueWithPriorTiming.statusCategory === "done") {
+        timingData.rollup.status = "complete";
+        // we should check all the children ...
+        timingData.rollup.statusFrom = {message: "Own status"};
+    } else if(issueWithPriorTiming.workTypeRollups?.children?.issueKeys?.length && getIssuesByKeys( issueWithPriorTiming.workTypeRollups.children.issueKeys).every(issue => issue.statusCategory === "done")) {
+        timingData.rollup.status = "complete";
+        timingData.rollup.statusFrom = {message: "Children are all done, but the parent is not", warning: true};
+    } else if(issueWithPriorTiming.blockedStatusIssues.length) {
+        timingData.rollup.status = "blocked"; 
+        timingData.rollup.statusFrom = {message: "This or a child is in a blocked status"};
+    }
+    else {
+        Object.assign(timingData.rollup, timedStatus(timingData.rollup));
+    }
+    // do all the others 
+    for(let workCategory of workType) {
+        if(timingData[workCategory]) {
+            setWorkTypeStatus(workCategory, timingData[workCategory], getIssuesByKeys);
+        }
+    }
+
+    return timingData;
+}
+
+function makeGetIssuesByKeys(issues){
+    const map = new Map();
+    for(const issue of issues) {
+        map.set(issue.key, issue);
+    }
+    const getIssue = map.get.bind(map);
+    return function getIssuesByKeys(issueKeys){
+        return issueKeys.map( getIssue )
+    }
+}
+
+// The children "workTypeRollups" won't be right ... 
+// this is really a "rollup" type thing ... 
+// I think "workTypeRollups" probably shouldn't have children if we are only using it here ...
+function calculateReportStatuses(issues) {
+    const getIssuesByKeys = makeGetIssuesByKeys(issues);
+    
+    return issues.map((issue)=> {
+        return {
+            ...issue,
+            rollupStatuses: calculateStatuses(issue, getIssuesByKeys )
+        }
+    })
+}
+
+
+function timedStatus(timedRecord) {
+    if (!timedRecord.due) {
+            return {status: "unknown", statusFrom: {message: "there is no timing data"}}
+    }
+    // if now is after the complete date
+    // we force complete ... however, we probably want to warn if this isn't in the
+    // completed state
+    else if( (+timedRecord.due) < new Date()  ) {
+        return {status: "complete", statusFrom: {message: "Issue is in the past, but not marked as done", warning: true}};
+    } else if (timedRecord.lastPeriod && 
+        ((+timedRecord.due) > WIGGLE_ROOM + (+timedRecord.lastPeriod.due)) ) {
+            return {status: "behind", statusFrom: {message: "This was due earlier last period", warning: true}};
+    } else if(timedRecord.lastPeriod && 
+        ((+timedRecord.due) + WIGGLE_ROOM <  (+timedRecord.lastPeriod.due)) ) {
+            return {status: "ahead", statusFrom: {message: "Ahead of schedule compared to last time"}};
+    } else if(!timedRecord.lastPeriod) {
+        return {status: "new", statusFrom: {message: "Unable to find this last period"}};
+    }
+    
+    if (timedRecord.start > new Date()) {
+            return {status: "notstarted", statusFrom: {message: "This has not started yet"}};
+    }
+    else {
+            return {status: "ontrack", statusFrom: {message: "This hasn't changed time yet"}};
+    }
+}
+
 class TimelineReport extends canStacheElement {
     static view = `
       <div 
@@ -54362,6 +57921,8 @@ class TimelineReport extends canStacheElement {
           hideUnknownInitiatives:to="this.hideUnknownInitiatives"
           sortByDueDate:to="this.sortByDueDate"
           showPercentComplete:to="this.showPercentComplete"
+          rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
+          configuration:to="this.configuration"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -54420,18 +57981,22 @@ class TimelineReport extends canStacheElement {
             
               {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
                 <gantt-grid 
-                    issues:from="this.primaryIssues" 
-                    derivedIssues:from="this.derivedIssues"
+                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
                     breakdown:from="eq(this.primaryReportType, 'breakdown')"
-                    showPercentComplete:from="this.showPercentComplete"></gantt-grid>
+                    showPercentComplete:from="this.showPercentComplete"
+                    ></gantt-grid>
               {{ else }}
-                <gantt-timeline issues:from="this.primaryIssues"></gantt-timeline>
+                <gantt-timeline issues:from="this.primaryIssues"
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"></gantt-timeline>
               {{/ or }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
                 <status-report primaryIssues:from="this.primaryIssues"
                   breakdown:from="eq(this.secondaryReportType, 'breakdown')"
-                  planningIssues:from="this.planningIssues"></status-report>
+                  planningIssues:from="this.planningIssues"
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
               {{/ }}
 
               <div class='p-2'>
@@ -54571,6 +58136,20 @@ class TimelineReport extends canStacheElement {
       updateFullishHeightSection();
     }
 
+    // this all the data pre-compiled
+    get rolledupAndRolledBackIssuesAndReleases(){
+      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
+        return [];
+      }
+      
+      const rolledUp = rollupAndRollback(this.derivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
+        new Date( new Date().getTime() - this.compareToTime.timePrior) );
+
+      
+
+      const statuses = calculateReportStatuses(rolledUp);
+      return statuses;
+    }
     
     
     get releasesAndInitiativesWithPriorTiming(){
@@ -54656,6 +58235,45 @@ class TimelineReport extends canStacheElement {
       } else {
         return this.initiativesWithAStartAndEndDate;
       }
+    }
+    get primaryIssuesOrReleases(){
+      if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
+        return [];
+      }
+      const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations);
+      const unfilteredPrimaryIssuesOrReleases = groupedHierarchy.reverse()[0];
+      
+      const hideUnknownInitiatives = this.hideUnknownInitiatives;
+      let statusesToRemove = this.statusesToRemove;
+      let statusesToShow =  this.statusesToShow;
+      function startBeforeDue(initiative) {
+        return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
+      }
+      // lets remove stuff!
+      const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
+        if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
+          return false;
+        }
+        if(statusesToShow && statusesToShow.length) {
+          if(!statusesToShow.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
+        if(statusesToRemove && statusesToRemove.length) {
+          if(statusesToRemove.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
+        return true;
+      });
+      if(this.sortByDueDate) {
+        return filtered.toSorted( (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
+      } else {
+        return filtered;
+      }
+
+      
+
     }
     get planningIssues(){
       if(!this.csvIssues) {

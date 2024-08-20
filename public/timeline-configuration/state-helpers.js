@@ -1,9 +1,7 @@
-
-
 import { ObservableObject, value, Reflect } from "../can.js";
-
-import { normalizeIssue, derivedWorkIssue } from "../shared/issue-data/issue-data.js";
+import { deriveIssue } from "../jira/derived/derive.js";
 import bitoviTrainingData from "../examples/bitovi-training.js";
+import { normalizeIssue } from "../jira/normalized/normalize.js";
 
 /*
 class IssueData extends ObservableObject {
@@ -20,7 +18,8 @@ export function csvToRawIssues(csvIssues){
           fields: {
             ...issue,
             "Parent Link": {data: issue["Parent Link"]},
-            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]}
+            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]},
+            "Status": {name: issue.Status}
           },
           key: issue["Issue key"]
         }
@@ -33,8 +32,12 @@ export function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers
     const progressData = value.with(null);
     
     const promise = value.returnedBy(function rawIssuesPromise(){
-        if( isLoggedIn.value === false || ! jql.value) {
+        if( isLoggedIn.value === false) {
             return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
+        }
+
+        if(!jql.value) {
+            return undefined;
         }
 
         progressData.value = null;
@@ -141,7 +144,7 @@ export function derivedIssuesRequestData({
                 console.log({rawIssues});
                 return rawIssues.map( issue => {
                     const normalized = normalizeIssue(issue,configuration);
-                    const derived = derivedWorkIssue(normalized, configuration);
+                    const derived = deriveIssue(normalized, configuration);
                     return derived;
                 });
                 

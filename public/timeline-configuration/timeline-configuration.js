@@ -3,10 +3,9 @@ import { StacheElement, type, ObservableObject, ObservableArray, value } from ".
 import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
 import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCalculations } from "../prepare-issues/date-data.js";
 
-import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData} from "../state/issue-data.js";
-import { percentComplete } from "../percent-complete/percent-complete.js";
+import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData} from "./state-helpers.js";
 
-import { allStatusesSorted } from "../shared/issue-data/issue-data.js";
+import { allStatusesSorted } from "../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 
@@ -261,6 +260,11 @@ export class TimelineConfiguration extends StacheElement {
         get configurationPromise(){
             return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
         },
+        configuration: {
+            async() {
+                return this.configurationPromise
+            }
+        },
         derivedIssuesRequestData: {
             value({listenTo, resolve}) {
                 return derivedIssuesRequestData({
@@ -393,6 +397,13 @@ export class TimelineConfiguration extends StacheElement {
   
             }
         },
+        get impliedTimingCalculations(){
+            if(this.primaryIssueType) {
+                return getImpliedTimingCalculations(this.primaryIssueType, 
+                    this.allTimingCalculationOptions.map, 
+                    this.timingCalculations);
+            }
+        },
 
         // PROPERTIES from having a primaryIssueType and timingCalculations
         get firstIssueTypeWithStatuses(){
@@ -401,9 +412,7 @@ export class TimelineConfiguration extends StacheElement {
                     return this.primaryIssueType;
                 } else {
                     // timing calculations lets folks "skip" from release to some other child
-                    const calculations= getImpliedTimingCalculations(this.primaryIssueType, 
-                        this.allTimingCalculationOptions.map, 
-                        this.timingCalculations);
+                    const calculations= this.impliedTimingCalculations;
                     if(calculations[0].type !== "Release") {
                         return calculations[0].type;
                     } else {
@@ -415,9 +424,9 @@ export class TimelineConfiguration extends StacheElement {
         // used to get the name of the secondary issue type
         get secondaryIssueType(){
             if(this.primaryIssueType) {
-                const calculations = getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations);
+                const calculations = this.impliedTimingCalculations;
                 if(calculations.length) {
-                return calculations[0].type
+                    return calculations[0].type
                 }
             }
             
@@ -425,7 +434,7 @@ export class TimelineConfiguration extends StacheElement {
 
         get timingCalculationMethods() {
             if(this.primaryIssueType) {
-                return getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations)
+                return this.impliedTimingCalculations
                     .map( (calc) => calc.calculation)
             }
         },
@@ -435,9 +444,22 @@ export class TimelineConfiguration extends StacheElement {
                 return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
             }            
         },
-
-        
-
+        get rollupTimingLevelsAndCalculations(){
+            if(this.impliedTimingCalculations) {
+                const impliedCalculations = this.impliedTimingCalculations;
+                const primaryIssueType = this.primaryIssueType;
+                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
+                const rollupCalculations = [];
+                for( let i = 0; i < impliedCalculations.length + 1; i++) {
+                    rollupCalculations.push({
+                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
+                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
+                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
+                    })
+                }
+                return rollupCalculations;
+            }
+        },
         // dependent on primary issue type
         showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
 
@@ -464,8 +486,6 @@ export class TimelineConfiguration extends StacheElement {
     };
     // HOOKS
     connected(){
-
-        this.listenTo("percentComplete",()=>{})
 
     }
     // METHODS

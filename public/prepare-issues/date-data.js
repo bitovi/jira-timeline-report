@@ -208,7 +208,7 @@ export function rollupDatesFromRollups(issues) {
 
 /**
  * 
- * @param {Array<import("../shared/issue-data/issue-data.js").NormalizedIssue>} normalizedIssues 
+ * @param {Array<import("../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
  * @returns {Array<{type: string, hierarchyLevel: number}>}
  */
 function issueHierarchy(normalizedIssues){
@@ -252,7 +252,7 @@ function issueHierarchy(normalizedIssues){
 
 /**
  * 
- * @param {import("../shared/issue-data/issue-data.js").NormalizedIssue} normalizedIssues 
+ * @param {import("../jira/normalized/normalize.js").NormalizedIssue} normalizedIssues 
  * @returns {Array<IssueDateRollupObject> & {typeToIssueType: IssueDateRollupObject}}
  */
 
@@ -269,7 +269,7 @@ export function allTimingCalculationOptions(normalizedIssues){
     })
 
     const base = [
-        { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
+        { type: "Release", hierarchyLevel: Infinity, plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
         ...issueOnlyHierarchy
     ]
 
@@ -287,16 +287,18 @@ export function allTimingCalculationOptions(normalizedIssues){
       
       const childToTimingMap = {};
       issueType.timingCalculations = [];
-
+      
       for(let issueTypeName of issueType.children){
         // for each child issue, create a map of each type
         childToTimingMap[issueTypeName] = calcNames.map((calculationName)=> {
           return {
-              child: issueTypeName, parent: issueType.type, 
+              child: issueTypeName, 
+              parent: issueType.type, 
               calculation: calculationName, name: calculationKeysToNames[calculationName](issueType, typeToIssueType[issueTypeName]) }
         });
+        let childType = typeToIssueType[issueTypeName];
         // an array of what's above
-        issueType.timingCalculations.push({child: issueTypeName, calculations: childToTimingMap[issueTypeName]});
+        issueType.timingCalculations.push({child: issueTypeName, hierarchyLevel: childType.hierarchyLevel, calculations: childToTimingMap[issueTypeName]});
       }
       issueType.timingCalculationsMap = childToTimingMap;
     }
@@ -305,7 +307,7 @@ export function allTimingCalculationOptions(normalizedIssues){
         map: typeToIssueType
     };
 }
-
+/*
 export function denormalizedIssueHierarchy(normalizedIssues){
     const hierarchy = issueHierarchy(normalizedIssues).reverse();
 
@@ -322,13 +324,7 @@ export function denormalizedIssueHierarchy(normalizedIssues){
         { type: "Release",  plural: "Releases", children: hierarchy.map( h => h.type), availableTimingCalculations: ["childrenOnly"]},
         ...issueOnlyHierarchy
     ]
-    /*
-    const base = [
-      { type: "Release",    plural: "Releases", children: ["Initiative","Epic","Story"], availableTimingCalculations: ["childrenOnly"]},
-      { type: "Initiative", plural: "Initiatives", children: ["Epic"], availableTimingCalculations: "*" },
-      { type: "Epic", plural: "Epics", children: ["Story"], availableTimingCalculations: "*" },
-      { type: "Story", plural: "Stories", children: [], availableTimingCalculations: ["parentOnly"] }
-    ];*/
+
 
     // the base object
     const typeToIssueType = {};
@@ -359,7 +355,7 @@ export function denormalizedIssueHierarchy(normalizedIssues){
     }
     base.typeToIssueType = typeToIssueType;
     return base;
-  }
+  }*/
   
   
   export function getImpliedTimingCalculations(primaryIssueType, issueTypeMap, currentTimingCalculations){
@@ -375,11 +371,13 @@ export function denormalizedIssueHierarchy(normalizedIssues){
       const setCalculations = [...currentTimingCalculations];
       
       const impliedTimingCalculations = [];
+      
       while(childrenCalculations.length) {
         // this is the calculation that should be selected for that level
         let setLevelCalculation = setCalculations.shift() || 
           {
             type: childrenCalculations[0].child, 
+            hierarchyLevel: childrenCalculations[0].hierarchyLevel,
             calculation: childrenCalculations[0].calculations[0].calculation
           };
         impliedTimingCalculations.push(setLevelCalculation);

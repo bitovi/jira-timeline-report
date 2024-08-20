@@ -1,5 +1,5 @@
-import semver from "./semver.js";
-import uniqueTrailingNames from "./shared/unique-trailing-names.js";
+import semver from "semver";
+import uniqueTrailingNames from "./unique-trailing-names.js";
 
 function partialReleaseName(release) {
     let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);

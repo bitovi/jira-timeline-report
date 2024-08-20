@@ -1,7 +1,11 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
 import { StacheElement, type, ObservableObject, stache } from "./can.js";
 import { showTooltip, showTooltipContent } from "./issue-tooltip.js";
-import { percentComplete } from "./percent-complete/percent-complete.js";
+import { mergeStartAndDueData } from "./jira/rollup/dates/dates.js";
+
+import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
+import { workTypes } from "./jira/derived/work-status/work-status.js";
+
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
 import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
@@ -29,7 +33,7 @@ const percentCompleteTooltip = stache(`
             <div class="font-bold">Remaining Working Days</div>
             <div class="font-bold">Total Working Days</div>
         
-            <div class="truncate max-w-96">{{this.issue.Summary}}</div>
+            <div class="truncate max-w-96">{{this.issue.summary}}</div>
             <div class="text-right">{{this.getPercentComplete(this.issue)}}</div>
             <div class="text-right">{{this.round( this.issue.completionRollup.completedWorkingDays) }}</div>
             <div class="text-right">{{this.round(this.issue.completionRollup.remainingWorkingDays)}}</div>
@@ -45,14 +49,14 @@ const percentCompleteTooltip = stache(`
        
         {{/ for }}
    </div>
-`)
+`);
 
-import { rollupDatesFromRollups } from "./prepare-issues/date-data.js";
 import { getQuartersAndMonths } from "./quarter-timeline.js";
+
 // loops through and creates 
 export class GanttGrid extends StacheElement {
     static view = `
-        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.issues.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.primaryIssuesOrReleases.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
 
@@ -66,22 +70,22 @@ export class GanttGrid extends StacheElement {
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.issues.length}};">
+            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.issues.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
-            {{# for(issue of this.issuesWithPercentComplete) }}
+            {{# for(issue of this.primaryIssuesOrReleases) }}
                 <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.dateData.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
-                    {{issue.Summary}}
+                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                    {{issue.summary}}
                 </div>
                 <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
                     on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
@@ -98,32 +102,8 @@ export class GanttGrid extends StacheElement {
             }
         }
     };
-    get percentComplete(){
-        if(this.derivedIssues) {
-            return percentComplete(this.derivedIssues);
-        }
-    }
-    get issuesWithPercentComplete(){
-        if(this.showPercentComplete && this.percentComplete) {
-            const percentComplete = this.percentComplete;
-            const idToIssue = {};
-            for(const issue of percentComplete.issues) {
-                issue.completionRollup.totalWorkingDays
-                idToIssue[issue.key] = issue;
-            }
-            return this.issues.map( issue => {
-                const issueData = idToIssue[issue["Issue key"]];
-                return {
-                    ...issue,
-                    completionRollup: issueData ? issueData.completionRollup  : {}
-                }
-            })
-        } else {
-            return this.issues;
-        }
-    }
     get lotsOfIssues(){
-        return this.issues.length > 20 && ! this.breakdown;
+        return this.primaryIssuesOrReleases.length > 20 && ! this.breakdown;
     }
     get textSize(){
         return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1"
@@ -132,20 +112,22 @@ export class GanttGrid extends StacheElement {
         return this.lotsOfIssues ? "h-4" : "h-6"
     }
     getPercentComplete(issue) {
-        if(this.showPercentComplete && this.percentComplete) {
+        if(this.showPercentComplete) {
             return Math.round( issue.completionRollup.completedWorkingDays * 100 / issue.completionRollup.totalWorkingDays )+"%"
         } else {
             return "";
         }
     }
     showTooltip(event, issue) {
-        showTooltip(event.currentTarget, issue);
+        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+        showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
     }
     showPercentCompleteTooltip(event, issue) {
+        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+        
         // we should get all the children ...
-        const keyToChildren = Object.groupBy(this.percentComplete.issues, i => i.parentKey) 
-        const children = keyToChildren[issue["Issue key"]];
-
+        const children = getChildren( issue );
+        
         showTooltipContent(event.currentTarget, percentCompleteTooltip(
             {   issue, 
                 children,
@@ -153,7 +135,7 @@ export class GanttGrid extends StacheElement {
                 round: Math.round
             }));
     }
-    classForSpecialStatus(status){
+    classForSpecialStatus(status, issue){
         if( status === "complete") {
             return "color-text-"+status;
         } else if(status === "blocked" ) {
@@ -169,7 +151,8 @@ export class GanttGrid extends StacheElement {
         return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
     }
     get quartersAndMonths(){
-        let {start, due} = rollupDatesFromRollups(this.issues);
+        const rollupDates = this.primaryIssuesOrReleases.map(issue => issue.rollupStatuses.rollup );
+        let {start, due} = mergeStartAndDueData(rollupDates);
         // nothing has timing
         if(!start) {
             start = new Date();
@@ -184,6 +167,12 @@ export class GanttGrid extends StacheElement {
         const totalTime = (lastDay - firstDay);
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
+    /**
+     * 
+     * @param {} release 
+     * @param {*} index 
+     * @returns 
+     */
     getReleaseTimeline(release, index){
         const base = {
             gridColumn: '3 / span '+this.quartersAndMonths.months.length,
@@ -223,7 +212,7 @@ export class GanttGrid extends StacheElement {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
 
-        if (release.dateData.rollup.start && release.dateData.rollup.due) {
+        if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
 
                 function getPositions(work) {
                     if(work.start == null && work.due == null) {
@@ -273,51 +262,63 @@ export class GanttGrid extends StacheElement {
     
                 if(this.breakdown) {
 
-                    const lastDev = makeLastPeriodElement(release.dateData.dev.status, release.dateData.dev.lastPeriod);
+                    /*
+                    const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
                     lastDev.classList.add("h-2","py-[2px]");
                     lastPeriodRoot.appendChild(lastDev);
 
                     const dev = document.createElement("div");
-                    dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.dev.status;
-                    Object.assign(dev.style, getPositions(release.dateData.dev).style);
-                    root.appendChild(dev);
+                    dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.dev.status;
+                    Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
+                    root.appendChild(dev);*/
 
-                    
-                    if(this.hasQAEpic) {
-                        const lastQA = makeLastPeriodElement(release.dateData.qa.status, release.dateData.qa.lastPeriod);
+                    const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+                    for(const {type} of workTypes) {
+                        const lastPeriod = makeLastPeriodElement(release.rollupStatuses[type].status, release.rollupStatuses[type].lastPeriod);
+                        lastPeriod.classList.add("h-2","py-[2px]");
+                        lastPeriodRoot.appendChild(lastPeriod);
+
+                        const thisPeriod = document.createElement("div");
+                        thisPeriod.className = type+"_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses[type].status;
+                        Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
+                        root.appendChild(thisPeriod);
+                    }
+                    /*
+                    if(this.hasQAWork) {
+                        const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
                         lastQA.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastQA);
 
 
                         const qa = document.createElement("div");
-                        qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.qa.status;
-                        Object.assign(qa.style, getPositions(release.dateData.qa).style);
+                        qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.qa.status;
+                        Object.assign(qa.style, getPositions(release.rollupStatuses.qa).style);
                         root.appendChild(qa);
 
                         
                     }
-                    if(this.hasUATEpic) {
-                        const lastUAT = makeLastPeriodElement(release.dateData.uat.status, release.dateData.uat.lastPeriod);
+                    if(this.hasUATWork) {
+                        const lastUAT = makeLastPeriodElement(release.rollupStatuses.uat.status, release.rollupStatuses.uat.lastPeriod);
                         lastUAT.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastUAT);
 
 
                         const uat = document.createElement("div");
-                        uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.dateData.uat.status;
-                        Object.assign(uat.style, getPositions(release.dateData.uat).style);
+                        uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.uat.status;
+                        Object.assign(uat.style, getPositions(release.rollupStatuses.uat).style);
                         root.appendChild(uat);
 
                         
-                    }
+                    }*/
                 } else {
 
-                    const behindTime = makeLastPeriodElement(release.dateData.rollup.status, release.dateData.rollup.lastPeriod);
+                    const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
                     behindTime.classList.add(this.bigBarSize,"py-1")
                     lastPeriodRoot.appendChild(behindTime);
 
                     const team = document.createElement("div");
-                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.dateData.rollup.status;
-                    Object.assign(team.style, getPositions(release.dateData.rollup).style);
+                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.rollup.status;
+                    Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
                     team.style.opacity = "0.9";
                     
                     root.appendChild(team);
@@ -334,16 +335,25 @@ export class GanttGrid extends StacheElement {
         frag.appendChild(root);
         return stache.safeString(frag);
     }
-    get hasQAEpic(){
-        if(this.issues) {
-            return this.issues.some( (initiative)=> initiative.dateData.qa.issues.length )
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        })
+        return {map, list};
+    }
+    get hasQAWork(){
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
         } else {
             return true;
         }
     }
-    get hasUATEpic(){
-        if(this.issues) {
-            return this.issues.some( (initiative)=> initiative.dateData.uat.issues.length )
+    get hasUATWork(){
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
         } else {
             return true;
         }

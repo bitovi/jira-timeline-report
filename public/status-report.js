@@ -1,4 +1,3 @@
-
 import { StacheElement, type, ObservableObject, stache } from "./can.js";
 
 import { dateFormatter } from "./issue-tooltip.js";
@@ -6,59 +5,61 @@ import { dateFormatter } from "./issue-tooltip.js";
 import { DAY_IN_MS } from "./date-helpers.js";
 
 import { showTooltip } from "./issue-tooltip.js";
+import { workTypes } from "./jira/derived/work-status/work-status.js";
+
+const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
+
+function workTypeToSymbol(type){
+    if(workTypesToSymbols[type]) {
+        return workTypesToSymbols[type];
+    } else {
+       return  type.substring(0,1).toUpperCase()
+    }
+}
 
 const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`
 
 export class StatusReport extends StacheElement {
     static view = `
     <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex gap-2'>
-        {{# for(primaryIssue of this.primaryIssues) }}
+        {{# for(primaryIssue of this.primaryIssuesOrReleases) }}
             <div class='release_box grow'>
                 <div 
                     on:click='this.showTooltip(scope.event, primaryIssue)'
-                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.dateData.rollup.status}} rounded-t {{this.fontSize(0)}}">
-                        {{primaryIssue.Summary}}
+                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.rollupStatuses.rollup.status}} rounded-t {{this.fontSize(0)}}">
+                        {{primaryIssue.summary}}
                     </div>
                 
                     {{# if(this.breakdown) }}
+                            {{# for(workType of this.hasWorkTypes.hasWorkList) }}
+                    
+                                <div class="${release_box_subtitle_wrapper} pt-1">
+                                        <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses[workType.type].status}} font-mono px-px">
+                                            {{workType.type}}
+                                        </span>
+                                        <span class="release_box_subtitle_value">
+                                            {{ this.prettyDate(primaryIssue.rollupStatuses[workType.type].due) }}{{this.wasReleaseDate(primaryIssue.rollupStatuses[workType.type]) }}
+                                        </span>
+                                </div>
 
-                            <div class="${release_box_subtitle_wrapper} pt-1">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.dev.status}} font-mono px-px">Dev</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.dateData.dev.due) }}{{this.wasReleaseDate(primaryIssue.dateData.dev) }}
-                                    </span>
-                            </div>
-                            <div class="${release_box_subtitle_wrapper}">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.qa.status}} font-mono px-px">QA&nbsp;</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.dateData.qa.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.qa) }}
-                                    </span>
-                            </div>
-                            <div class="${release_box_subtitle_wrapper}">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.dateData.uat.status}} font-mono px-px">UAT</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.dateData.uat.due) }}{{ this.wasReleaseDate(primaryIssue.dateData.uat) }}
-                                    </span>
-                            </div>
+                            {{/ for }}
                     {{ else }}
                         <div class="${release_box_subtitle_wrapper} p-1">
                                 <b>Target Delivery</b>
                                 <span class="release_box_subtitle_value">
-                                    <span class="nowrap">{{ this.prettyDate(primaryIssue.dateData.rollup.due) }}</span>
-                                    <span class="nowrap">{{ this.wasReleaseDate(primaryIssue.dateData.rollup) }}</span>
+                                    <span class="nowrap">{{ this.prettyDate(primaryIssue.rollupStatuses.rollup.due) }}</span>
+                                    <span class="nowrap">{{ this.wasReleaseDate(primaryIssue.rollupStatuses.rollup) }}</span>
                                 </span>
                         </div>
                     {{/ if }}
 
                 <ul class=" {{# if(this.breakdown) }}list-none{{else}}list-disc list-inside p-1{{/if}}">
-                    {{# for(secondaryIssue of primaryIssue.dateData.children.issues) }}
-                    <li class='font-sans {{this.fontSize(primaryIssue.dateData.children.issues.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
+                    {{# for(secondaryIssue of this.getIssues(primaryIssue.reportingHierarchy.childKeys)) }}
+                    <li class='font-sans {{this.fontSize(primaryIssue.reportingHierarchy.childKeys.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
                         {{# if(this.breakdown) }}
-                        <span class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.dev.status}}'>D</span><span
-                            class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.qa.status}}'>Q</span><span
-                            class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.dateData.uat.status}}'>U</span>
+                            {{this.breakdownIcons(secondaryIssue)}}
                         {{/ if }}
-                        <span class="{{# if(this.breakdown) }} color-text-black{{else}} color-text-{{secondaryIssue.dateData.rollup.status}} {{/ }}">{{secondaryIssue.Summary}}</span>
+                        <span class="{{# if(this.breakdown) }} color-text-black{{else}} color-text-{{secondaryIssue.rollupStatuses.rollup.status}} {{/ }}">{{secondaryIssue.summary}}</span>
                     </li>
                     {{/ for}}
                 </ul>
@@ -88,11 +89,12 @@ export class StatusReport extends StacheElement {
     </div>
     `;
     get columnDensity(){
-        if(this.primaryIssues.length > 20) {
+        
+        if(this.primaryIssuesOrReleases.length > 20) {
             return "absurd"
-        } else if(this.primaryIssues.length > 10) {
+        } else if(this.primaryIssuesOrReleases.length > 10) {
             return "high"
-        } else if(this.primaryIssues.length > 4) {
+        } else if(this.primaryIssuesOrReleases.length > 4) {
             return "medium"
         } else {
             return "light"
@@ -100,6 +102,17 @@ export class StatusReport extends StacheElement {
     }
     prettyDate(date) {
         return date ? dateFormatter.format(date) : "";
+    }
+    get getIssues() {
+        const map = new Map();
+        for(let issue of this.allIssuesOrReleases || []) {
+            map.set(issue.key, issue);
+        }
+        const getIssue = map.get.bind(map);
+
+        return window.getIssuesByKey = function(issueKeys){
+            return issueKeys.map(getIssue)
+        }
     }
     wasReleaseDate(release) {
 
@@ -136,6 +149,29 @@ export class StatusReport extends StacheElement {
             return "text-base";
         }
         
+    }
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        })
+        return {map, list, hasWorkList: list.filter( wt => wt.hasWork)};
+    }
+    breakdownIcons(secondaryIssue) {
+        const frag = document.createDocumentFragment();
+        
+        const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+        for(const {type} of workTypes) {
+            const span = document.createElement("span");
+            span.className = 'text-xs font-mono px-px py-0 color-text-and-bg-'+secondaryIssue.rollupStatuses[type].status;
+            span.innerText = workTypeToSymbol(type);
+            
+            frag.appendChild(span);
+        }
+
+        return stache.safeString(frag);
     }
 }
 

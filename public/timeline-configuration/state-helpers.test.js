@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { ObservableObject, value } from "../can.js";
-import {rawIssuesRequestData, derivedIssuesRequestData} from "./issue-data.js";
+import {rawIssuesRequestData, derivedIssuesRequestData} from "./state-helpers.js";
 
 
 const ResolverObservable = (function(){
@@ -66,7 +66,7 @@ test("rawIssuesRequestData", function(assert){
         }, hooks)
     });
 
-    expect(requestData.value.issuesPromise).toBeInstanceOf(Promise) 
+    expect(requestData.value.issuesPromise).toBe(undefined) 
 
     jql.value = "Something";
 
@@ -104,7 +104,7 @@ test("derivedIssuesRequestData", async function(assert){
     };
     expect(derivedIssuesData.value.issuesPromise.__isAlwaysPending).toBe(undefined);
 
-    /** @type {Array<import("../shared/issue-data/issue-data.js").DerivedWorkIssue>} */
+    /** @type {Array<import("../jira/derived/work-timing/work-timing.js").DerivedWorkIssue>} */
     const issues = await derivedIssuesData.value.issuesPromise;
     expect(issues[0].confidence).toBe(20) 
 });

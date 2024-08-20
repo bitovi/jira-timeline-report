@@ -80,13 +80,13 @@ export function showTooltip(element, issue){
                     <div>${prettyDate(dateData.start)}</div>
                     <div>
                         <a href="${dateData?.startFrom?.reference?.url}" target="_blank" class="link">
-                            ${dateData?.startFrom?.reference?.Summary}</a> </div>
+                            ${dateData?.startFrom?.reference?.summary}</a> </div>
                     <div class="font-mono text-sm">${dateData?.startFrom?.message}</div>
                 </div>
                 <div class="bg-neutral-20">
                     <div>${prettyDate(dateData.due)}</div>
                     <a href="${dateData?.dueTo?.reference?.url}" target="_blank" class="link">
-                        ${dateData?.dueTo?.reference?.Summary}</a>
+                        ${dateData?.dueTo?.reference?.summary}</a>
                     <div class="font-mono text-sm">${dateData?.dueTo?.message}</div>
                 </div>
             </div>
@@ -94,7 +94,7 @@ export function showTooltip(element, issue){
     }
 
     const make = (issue, workPart) =>{
-        const breakdownPart = issue.dateData[workPart];
+        const breakdownPart = issue.rollupStatuses[workPart];
 
         return `<div class="p-2">
             <div class="release_box_subtitle_wrapper">
@@ -120,11 +120,11 @@ export function showTooltip(element, issue){
             ${
                 breakdownPart.status !== "unknown" ?
                 `<p>Start: <a href="${breakdownPart?.startFrom?.reference?.url}" target="_blank" class="link">
-                    ${breakdownPart?.startFrom?.reference?.Summary}</a>'s 
+                    ${breakdownPart?.startFrom?.reference?.summary}</a>'s 
                     ${breakdownPart?.startFrom?.message}
                 </p>
                 <p>End: <a href="${breakdownPart?.dueTo?.reference?.url}" target="_blank" class="link">
-                    ${breakdownPart?.dueTo?.reference?.Summary}</a>'s
+                    ${breakdownPart?.dueTo?.reference?.summary}</a>'s
                     ${breakdownPart?.dueTo?.message}
                 </p>` :
                 ''
@@ -133,12 +133,12 @@ export function showTooltip(element, issue){
         </div>`;
     }
     const DOM = document.createElement("div");
-    if(issue.dateData) {
-        const rollupData = issue.dateData.rollup;
+    if(issue.rollupStatuses) {
+        const rollupData = issue.rollupStatuses.rollup;
         DOM.innerHTML = `
         <div class='flex remove-button pointer' style="justify-content: space-between">
             <a class="${issue.url ? "link" : ""} text-lg font-bold"
-                href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
+                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
             <span>❌</span>
         </div>
         ${/*issue.dateData.rollup*/ false ? makePartDetails(issue.dateData.rollup, "rollup") :""}
@@ -146,17 +146,17 @@ export function showTooltip(element, issue){
             rollupData?.statusData?.warning === true ?
             `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
         }
-        ${ issue.dateData.rollup ? make(issue, "rollup") :""}
-        ${ issue.dateData.dev ? make(issue, "dev") :""}
-        ${issue.dateData.qa ? make(issue, "qa") : ""}
-        ${issue.dateData.uat ?  make(issue, "uat") : ""}
+        ${ issue.rollupStatuses.rollup ? make(issue, "rollup") :""}
+        ${ issue.rollupStatuses.dev ? make(issue, "dev") :""}
+        ${issue.rollupStatuses.qa ? make(issue, "qa") : ""}
+        ${issue.rollupStatuses.uat ?  make(issue, "uat") : ""}
         `
     } else {
         // "Planning" epics might not have this data
         DOM.innerHTML = `
         <div class='flex remove-button pointer gap-2' style="justify-content: space-between">
             <a class="${issue.url ? "link" : ""} text-lg font-bold"
-                href="${issue.url || '' }" target="_blank">${issue.Summary || issue.release}</a>
+                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
             <span>❌</span>
         </div>`
     }

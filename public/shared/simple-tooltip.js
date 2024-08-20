@@ -64,7 +64,6 @@ class SimpleTooltip extends HTMLElement {
       }
   }
   belowElementInScrollingContainer(element, DOM){
-    
     // find if there's a scrolling container and move ourselves to that 
     const container = findScrollingContainer(element);
     this.innerHTML = "";
@@ -91,16 +90,18 @@ class SimpleTooltip extends HTMLElement {
     
     // where would the tooltip's bottom reach in the viewport 
     const bottomInWindow = elementRect.bottom + tooltipRect.height;
-    // if the tooltip wouldn't be visible "down"
+
+    const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
+
+    // if the tooltip wouldn't be visible "down" 
     if(bottomInWindow > window.innerHeight) {
       const viewPortPosition = ( elementRect.top - tooltipRect.height );
       const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-      const posInContainerAccountingForScrolling = posInContainer + container.scrollTop;
+      const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
       this.style.top = ( posInContainerAccountingForScrolling )+"px";
     } else {
       const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-
-      this.style.top = (topFromContainer + container.scrollTop) +"px";
+      this.style.top = (topFromContainer + scrollingAdjustment) +"px";
     }
 
     const leftFromContainer = elementRect.left - containerRect.left;
@@ -115,7 +116,6 @@ class SimpleTooltip extends HTMLElement {
       this.innerHTML = html;
       
       this.style.display = "";
-      debugger;
       const tooltipRect = this.getBoundingClientRect();
 
       var rect = element.getBoundingClientRect();
