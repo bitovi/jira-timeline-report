@@ -1,5 +1,6 @@
 // this is the types work can be categorized as
 export const workType = ["design","dev","qa","uat"];
+export const workTypes = workType;
 
 // this is the workflow items this tool supports 
 
@@ -39,8 +40,9 @@ const statusCategoryMap = (function(){
  * @param {import("../derive").DerivedWorkIssue} issue 
  */
 export function getStatusCategoryDefault(issue){
-	if(statusCategoryMap[issue.status]) {
-		return statusCategoryMap[issue.status];
+	const statusCategory = statusCategoryMap[ (issue.status || "").toLowerCase()]
+	if(statusCategory) {
+		return statusCategory;
 	} else {
 		return "dev";
 	}
@@ -72,7 +74,9 @@ export function getWorkStatus(
 }
 
 
-
+function toLowerCase(str) {
+	return str.toLowerCase();
+}
 
 const workPrefix = workType.map( wt => wt+":")
 /**
@@ -85,7 +89,8 @@ function getWorkTypeDefault(normalizedIssue){
   if(wp) {
     return wp.slice(0, -1)
   }
-  wp = workType.find( wt => normalizedIssue.labels.includes(wt));
+  
+  wp = workType.find( wt => normalizedIssue.labels.map(toLowerCase).includes(wt));
   if(wp) {
     return wp;
   }

@@ -49747,20 +49747,12 @@ function parseDateISOString(s) {
 }
 
 function parseDateIntoLocalTimezone(s){
+    if(!s) {
+        return s;
+    }
     let ds = s.split(/\D/).map(s => parseInt(s));
     ds[1] = ds[1] - 1; // adjust month
     return new Date(...ds);
-}
-
-/**
- * Parse an 8601 date string `YYYY-MM-DD` into a date.
- * @export
- * @param {string} str
- * @returns {Date}
- */
-function parseDate8601String(str){
-    // This should just work, we can get fancy later and use date-fns or something.
-    return str ? new Date(str) : str;
 }
 
 const DAY_IN_MS$1 = 1000 * 60 * 60 * 24;
@@ -49989,7 +49981,7 @@ function getConfidenceDefault({ fields }) {
     return fields?.Status?.name;
   }
   function getLabelsDefault({fields}) {
-    return fields?.labels || []
+    return fields?.Labels || []
   }
   function getStatusCategoryDefault$1({fields}){
     return fields?.Status?.statusCategory?.name
@@ -50084,9 +50076,9 @@ function getConfidenceDefault({ fields }) {
         key: getIssueKey(issue),
         parentKey: getParentKey(issue),
         confidence: getConfidence(issue),
-        dueDate: parseDate8601String( getDueDate(issue) ),
+        dueDate: parseDateIntoLocalTimezone( getDueDate(issue) ),
         hierarchyLevel: getHierarchyLevel(issue),
-        startDate: parseDate8601String( getStartDate(issue) ),
+        startDate: parseDateIntoLocalTimezone( getStartDate(issue) ),
         storyPoints: getStoryPoints(issue),
         storyPointsMedian: getStoryPointsMedian(issue),
         type: getType(issue),
@@ -50157,6 +50149,7 @@ function allStatusesSorted(issues) {
 
 // this is the types work can be categorized as
 const workType = ["design","dev","qa","uat"];
+const workTypes = workType;
 
 
 const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
@@ -50189,8 +50182,9 @@ const statusCategoryMap = (function(){
  * @param {import("../derive").DerivedWorkIssue} issue 
  */
 function getStatusCategoryDefault(issue){
-	if(statusCategoryMap[issue.status]) {
-		return statusCategoryMap[issue.status];
+	const statusCategory = statusCategoryMap[ (issue.status || "").toLowerCase()];
+	if(statusCategory) {
+		return statusCategory;
 	} else {
 		return "dev";
 	}
@@ -50222,7 +50216,9 @@ function getWorkStatus(
 }
 
 
-
+function toLowerCase(str) {
+	return str.toLowerCase();
+}
 
 const workPrefix = workType.map( wt => wt+":");
 /**
@@ -50235,7 +50231,8 @@ function getWorkTypeDefault(normalizedIssue){
   if(wp) {
     return wp.slice(0, -1)
   }
-  wp = workType.find( wt => normalizedIssue.labels.includes(wt));
+  
+  wp = workType.find( wt => normalizedIssue.labels.map(toLowerCase).includes(wt));
   if(wp) {
     return wp;
   }
@@ -54364,7 +54361,6 @@ class SimpleTooltip extends HTMLElement {
       }
   }
   belowElementInScrollingContainer(element, DOM){
-    
     // find if there's a scrolling container and move ourselves to that 
     const container = findScrollingContainer(element);
     this.innerHTML = "";
@@ -54391,17 +54387,17 @@ class SimpleTooltip extends HTMLElement {
     
     // where would the tooltip's bottom reach in the viewport 
     const bottomInWindow = elementRect.bottom + tooltipRect.height;
-    // if the tooltip wouldn't be visible "down"
-    
+
+    const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
+
+    // if the tooltip wouldn't be visible "down" 
     if(bottomInWindow > window.innerHeight) {
       const viewPortPosition = ( elementRect.top - tooltipRect.height );
       const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-      const posInContainerAccountingForScrolling = posInContainer + container.scrollTop;
+      const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
       this.style.top = ( posInContainerAccountingForScrolling )+"px";
     } else {
       const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-      
-      const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
       this.style.top = (topFromContainer + scrollingAdjustment) +"px";
     }
 
@@ -55578,6 +55574,7 @@ class GanttGrid extends canStacheElement {
     
                 if(this.breakdown) {
 
+                    /*
                     const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
                     lastDev.classList.add("h-2","py-[2px]");
                     lastPeriodRoot.appendChild(lastDev);
@@ -55585,10 +55582,21 @@ class GanttGrid extends canStacheElement {
                     const dev = document.createElement("div");
                     dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.dev.status;
                     Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
-                    root.appendChild(dev);
+                    root.appendChild(dev);*/
 
-                    
-                    if(this.hasQAEpic) {
+                    const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+                    for(const {type} of workTypes) {
+                        const lastPeriod = makeLastPeriodElement(release.rollupStatuses[type].status, release.rollupStatuses[type].lastPeriod);
+                        lastPeriod.classList.add("h-2","py-[2px]");
+                        lastPeriodRoot.appendChild(lastPeriod);
+
+                        const thisPeriod = document.createElement("div");
+                        thisPeriod.className = type+"_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses[type].status;
+                        Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
+                        root.appendChild(thisPeriod);
+                    }
+                    /*
+                    if(this.hasQAWork) {
                         const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
                         lastQA.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastQA);
@@ -55601,7 +55609,7 @@ class GanttGrid extends canStacheElement {
 
                         
                     }
-                    if(this.hasUATEpic) {
+                    if(this.hasUATWork) {
                         const lastUAT = makeLastPeriodElement(release.rollupStatuses.uat.status, release.rollupStatuses.uat.lastPeriod);
                         lastUAT.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastUAT);
@@ -55613,7 +55621,7 @@ class GanttGrid extends canStacheElement {
                         root.appendChild(uat);
 
                         
-                    }
+                    }*/
                 } else {
 
                     const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
@@ -55639,14 +55647,23 @@ class GanttGrid extends canStacheElement {
         frag.appendChild(root);
         return canStache_5_1_1_canStache.safeString(frag);
     }
-    get hasQAEpic(){
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        });
+        return {map, list};
+    }
+    get hasQAWork(){
         if(this.primaryIssuesOrReleases) {
             return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
         } else {
             return true;
         }
     }
-    get hasUATEpic(){
+    get hasUATWork(){
         if(this.primaryIssuesOrReleases) {
             return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
         } else {
@@ -55865,6 +55882,16 @@ function intersect(range1, range2) {
 
 customElements.define("gantt-timeline",GanttTimeline);
 
+const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
+
+function workTypeToSymbol(type){
+    if(workTypesToSymbols[type]) {
+        return workTypesToSymbols[type];
+    } else {
+       return  type.substring(0,1).toUpperCase()
+    }
+}
+
 const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`;
 
 class StatusReport extends canStacheElement {
@@ -55879,25 +55906,18 @@ class StatusReport extends canStacheElement {
                     </div>
                 
                     {{# if(this.breakdown) }}
+                            {{# for(workType of this.hasWorkTypes.hasWorkList) }}
+                    
+                                <div class="${release_box_subtitle_wrapper} pt-1">
+                                        <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses[workType.type].status}} font-mono px-px">
+                                            {{workType.type}}
+                                        </span>
+                                        <span class="release_box_subtitle_value">
+                                            {{ this.prettyDate(primaryIssue.rollupStatuses[workType.type].due) }}{{this.wasReleaseDate(primaryIssue.rollupStatuses[workType.type]) }}
+                                        </span>
+                                </div>
 
-                            <div class="${release_box_subtitle_wrapper} pt-1">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses.dev.status}} font-mono px-px">Dev</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.rollupStatuses.dev.due) }}{{this.wasReleaseDate(primaryIssue.rollupStatuses.dev) }}
-                                    </span>
-                            </div>
-                            <div class="${release_box_subtitle_wrapper}">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses.qa.status}} font-mono px-px">QA&nbsp;</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.rollupStatuses.qa.due) }}{{ this.wasReleaseDate(primaryIssue.rollupStatuses.qa) }}
-                                    </span>
-                            </div>
-                            <div class="${release_box_subtitle_wrapper}">
-                                    <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses.uat.status}} font-mono px-px">UAT</span>
-                                    <span class="release_box_subtitle_value">
-                                        {{ this.prettyDate(primaryIssue.rollupStatuses.uat.due) }}{{ this.wasReleaseDate(primaryIssue.rollupStatuses.uat) }}
-                                    </span>
-                            </div>
+                            {{/ for }}
                     {{ else }}
                         <div class="${release_box_subtitle_wrapper} p-1">
                                 <b>Target Delivery</b>
@@ -55909,12 +55929,10 @@ class StatusReport extends canStacheElement {
                     {{/ if }}
 
                 <ul class=" {{# if(this.breakdown) }}list-none{{else}}list-disc list-inside p-1{{/if}}">
-                    {{# for(secondaryIssue of this.getIssues(primaryIssue.rollupStatuses.children.issueKeys)) }}
-                    <li class='font-sans {{this.fontSize(primaryIssue.rollupStatuses.children.issueKeys.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
+                    {{# for(secondaryIssue of this.getIssues(primaryIssue.reportingHierarchy.childKeys)) }}
+                    <li class='font-sans {{this.fontSize(primaryIssue.reportingHierarchy.childKeys.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
                         {{# if(this.breakdown) }}
-                        <span class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.rollupStatuses.dev.status}}'>D</span><span
-                            class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.rollupStatuses.qa.status}}'>Q</span><span
-                            class='text-xs font-mono px-px py-0 color-text-and-bg-{{secondaryIssue.rollupStatuses.uat.status}}'>U</span>
+                            {{this.breakdownIcons(secondaryIssue)}}
                         {{/ if }}
                         <span class="{{# if(this.breakdown) }} color-text-black{{else}} color-text-{{secondaryIssue.rollupStatuses.rollup.status}} {{/ }}">{{secondaryIssue.summary}}</span>
                     </li>
@@ -55946,6 +55964,7 @@ class StatusReport extends canStacheElement {
     </div>
     `;
     get columnDensity(){
+        
         if(this.primaryIssuesOrReleases.length > 20) {
             return "absurd"
         } else if(this.primaryIssuesOrReleases.length > 10) {
@@ -55966,7 +55985,7 @@ class StatusReport extends canStacheElement {
         }
         const getIssue = map.get.bind(map);
 
-        return function(issueKeys){
+        return window.getIssuesByKey = function(issueKeys){
             return issueKeys.map(getIssue)
         }
     }
@@ -56005,6 +56024,29 @@ class StatusReport extends canStacheElement {
             return "text-base";
         }
         
+    }
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        });
+        return {map, list, hasWorkList: list.filter( wt => wt.hasWork)};
+    }
+    breakdownIcons(secondaryIssue) {
+        const frag = document.createDocumentFragment();
+        
+        const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+        for(const {type} of workTypes) {
+            const span = document.createElement("span");
+            span.className = 'text-xs font-mono px-px py-0 color-text-and-bg-'+secondaryIssue.rollupStatuses[type].status;
+            span.innerText = workTypeToSymbol(type);
+            
+            frag.appendChild(span);
+        }
+
+        return canStache_5_1_1_canStache.safeString(frag);
     }
 }
 
@@ -56856,6 +56898,16 @@ const fields = {
     },
     "Epic Link": function(lastReturnValue, change) {
         return {Parent: {key: change.toString}};
+    },
+    "Status": function(lastReturnValue, change, fieldName, {statuses}) {
+        if(statuses.ids.has(change.from)) {
+            return {[fieldName]: statuses.ids.get(change.from)};
+        } else if( statuses.names.has(change.fromString) ) {
+            return {[fieldName]: statuses.names.get(change.fromString)};
+        } else {
+            console.warn("Can't find status", change.from, change.fromString);
+            return {[fieldName]: {name: change.fromString}};
+        }
     }
 };
 const fieldAlias = {
@@ -56892,11 +56944,23 @@ function getVersionsFromIssues(issues){
 }
 
 
+function getStatusesFromIssues(issues) {
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        
+        ids.set(issue.fields.Status.id, issue.fields.Status);
+        names.set(issue.fields.Status.name, issue.fields.Status);
+        
+    }
+    return {ids, names};
+}
 
 function rollbackIssues(issues, rollbackTime) {
     const sprints = getSprintsMapsFromIssues(issues);
     const versions = getVersionsFromIssues(issues);
-    return issues.map(i => rollbackIssue(i, {sprints, versions}, rollbackTime)).filter( i => i );
+    const statuses = getStatusesFromIssues(issues);
+    return issues.map(i => rollbackIssue(i, {sprints, versions, statuses}, rollbackTime)).filter( i => i );
 }
 
 const oneHourAgo = new Date(new Date() - 1000*60*60);
@@ -56944,7 +57008,6 @@ function rollbackIssue(issue, data, rollbackTime = oneHourAgo) {
         items.forEach( (change) => {
             const {field, from, to} = change;
             const fieldName = fieldAlias[field] || field;
-
             if(fields[fieldName]) {
 
                 Object.assign(copy.fields, fields[fieldName](copy[fieldName], change, fieldName, data) );
@@ -57011,83 +57074,98 @@ export async function applyChangelogs(observableBaseIssues, priorTime) {
     }
 }*/
 
-// this is more like "derived" from "rollup"
-
-// given some "rolled up" dates ....
-
-// Go to each item ... get it's children ... filter by work status type ...
-// add those as children ...
-
-
-/**
- * @typedef {import("../../rollup/dates/dates").RollupDateData & {issueKeys: Array<String>}} DateAndIssueKeys
- */
-
-/**
- * @typedef {{
- *   children: DateAndIssueKeys,
- *   dev: DateAndIssueKeys,
- *   qa: DateAndIssueKeys,
- *   design: DateAndIssueKeys,
- *   uat: DateAndIssueKeys
- * }} WorkTypeRollups
- */
-
-
-
-/**
- * @typedef {import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue & {workTypeRollups: WorkTypeRollups}} WorkTypeTimingReleaseOrIssue
- */
-
-/**
- * Children are now recursive
- * @param {Array<import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue>} issuesAndReleases 
- * @return {Array<WorkTypeTimingReleaseOrIssue>}
- */
-
-function rollupDatesByWorkType(issuesAndReleases){
-    // lets make the copies b/c we are going to mutate ...
-    const copies = issuesAndReleases.map( issue => {
-        return {...issue}//Object.create(issue);
-    });
-
-    // we probably don't want to assign "issues" if we want to keep things functional ...
-    const getChildren = makeGetChildrenFromReportingIssues(copies);
-
-    for(let issue of copies) {
-        issue.workTypeRollups = getWorkTypeTimings(issue, getChildren);
-    }
-    return copies;
-}
-
 /**
  * 
- * @param {import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue} issue 
- * @param {function(import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue): Array<import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue>} getChildren 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
  */
-function getWorkTypeTimings(issue, getChildren) {
-    const children = getChildren(issue);
-    const workTypeRollupsStaging = {
-        children: {issues: children}
-    };
-    const workTypeRollups = {};
-        
-    //issue.workTypeRollups = workTypeRollups;
-    // put each child in an array determined by it's workType
-    for(let child of children) {
-        if(!workTypeRollupsStaging[child.derivedStatus.workType]) {
-            workTypeRollupsStaging[child.derivedStatus.workType] = {issues: []};
+function rollupWorkTypeDates(groupedHierarchy, {getChildren}  = {}) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            //const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
+            const method = mergeParentAndChildIfTheyHaveDates; //methods[methodName];
+            return method(issueOrRelease, children);
         }
-        workTypeRollupsStaging[child.derivedStatus.workType].issues.push(child);
-    }
-    // for the workTypes, determine the timing 
-    for(let prop in workTypeRollupsStaging) {
-        const rollupDates = workTypeRollupsStaging[prop].issues.map( issue => issue.rollupDates );
-        workTypeRollups[prop] = mergeStartAndDueData$1(rollupDates);
-        workTypeRollups[prop].issueKeys = workTypeRollupsStaging[prop].issues.map( issue => issue.key);
-    }
-    return workTypeRollups;
+    });
 }
+/**
+ * 
+ * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {*} rollupTimingLevelsAndCalculations 
+ * @return {Array<WorkTypeTimingReleaseOrIssue>}
+ */
+function addWorkTypeDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+    const rolledUpDates = rollupWorkTypeDates(groupedIssues);
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "workTypeRollups");
+    return zipped.flat();
+}
+
+function copyDateProperties(obj) {
+    const copy = {};
+    for(let key of ["due","dueTo","start","startFrom"]){
+        if(obj[key] !== undefined) {
+            copy[key] = obj[key];
+        }
+    }
+    return copy;
+}
+
+
+function mergeParentAndChildIfTheyHaveDates(parentIssueOrRelease, childRollups){
+    if(parentIssueOrRelease.type === "milestone") {
+        debugger;
+    }
+    const rollup = {self: {}, children: {}, combined: {}};
+    const parentData = parentIssueOrRelease?.derivedTiming;
+
+    const parentHasStart = parentData?.start;
+    const parentHasDue = parentData?.due;
+    const hasStartAndDue = parentHasStart && parentHasDue;
+
+    if(hasStartAndDue) {
+        // can use the parent;
+        rollup.self[parentIssueOrRelease.derivedStatus.workType] = copyDateProperties(parentData);
+        rollup.self[parentIssueOrRelease.derivedStatus.workType].issueKeys = [parentIssueOrRelease.key];
+    }
+    if(!childRollups.length) {
+        rollup.combined = rollup.self;
+        return rollup;
+    }
+    const children = rollup.children;
+    const combined = rollup.combined;
+    for(let workType$1 of workType) {
+        // combine for children
+        const rollupForWorkType = childRollups.map( childRollup => childRollup.combined?.[workType$1] ).filter(x => x);
+        // if the children have something for this type
+        if(rollupForWorkType.length) {
+            const issues = new Set( rollupForWorkType.map( r => r.issueKeys ).flat(1) );
+            const dates  = mergeStartAndDueData$1(rollupForWorkType);
+            dates.issueKeys = [...issues];
+            children[workType$1] = dates;
+            // what if the parent has it also
+            if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
+                const combinedIssues = new Set( [...issues, parentIssueOrRelease.key] );
+                const combinedDates = mergeStartAndDueData$1([dates, parentData]);
+                combinedDates.issueKeys = [...combinedIssues];
+                combined[workType$1] = combinedDates;
+            } else {
+                combined[workType$1] = dates;
+            }
+        } 
+        // what if the parent has it
+        else if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
+            combined[workType$1] = rollup.self[workType$1];
+        }
+    }
+    return rollup;
+}
+
+
+
+// {children: DATES FROM CHILDREN, QA, UAT, DESIGN, etc}
 
 /**
  * 
@@ -57426,7 +57504,7 @@ function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
     const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
     const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
     const percentComplete = addPercentComplete(rolledUpBlockers, rollupTimingLevelsAndCalculations);
-    return rollupDatesByWorkType(percentComplete);
+    return addWorkTypeDates(percentComplete, rollupTimingLevelsAndCalculations);
     
 }
 
@@ -57456,19 +57534,19 @@ const WIGGLE_ROOM = 0;
  */
 function prepareTimingData(issueWithPriorTiming) {
 
+    const issueLastPeriod = issueWithPriorTiming.issueLastPeriod;
     const timingData = {
         rollup: {
             ...issueWithPriorTiming.rollupDates,
-            lastPeriod: issueWithPriorTiming.issueLastPeriod ? issueWithPriorTiming.issueLastPeriod.rollupDates : null
-                
+            lastPeriod: issueLastPeriod ? issueLastPeriod.rollupDates : null
         }
     };
     for(let workType of workTypeRollups) {
-        const workRollup = issueWithPriorTiming.workTypeRollups[workType];
+        const workRollup = issueWithPriorTiming.workTypeRollups.children[workType];
         if(workRollup) {
             timingData[workType] = {
                 ...workRollup,
-                lastPeriod: issueWithPriorTiming.workTypeRollups[workType]
+                lastPeriod: issueLastPeriod ? issueLastPeriod.workTypeRollups.children[workType] : null
             };
         } else {
             timingData[workType] = {
@@ -57503,6 +57581,7 @@ function setWorkTypeStatus(workType, timingData, getIssuesByKeys){
  * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
  */
 function calculateStatuses(issueWithPriorTiming, getIssuesByKeys){
+    getIssuesByKeys(issueWithPriorTiming.reportingHierarchy.childKeys);
     const timingData = prepareTimingData(issueWithPriorTiming);
 
     // do the rollup
@@ -57510,7 +57589,7 @@ function calculateStatuses(issueWithPriorTiming, getIssuesByKeys){
         timingData.rollup.status = "complete";
         // we should check all the children ...
         timingData.rollup.statusFrom = {message: "Own status"};
-    } else if(issueWithPriorTiming.workTypeRollups.children.issueKeys.length && getIssuesByKeys( issueWithPriorTiming.workTypeRollups.children.issueKeys).every(issue => issue.statusCategory === "done")) {
+    } else if(issueWithPriorTiming.workTypeRollups?.children?.issueKeys?.length && getIssuesByKeys( issueWithPriorTiming.workTypeRollups.children.issueKeys).every(issue => issue.statusCategory === "done")) {
         timingData.rollup.status = "complete";
         timingData.rollup.statusFrom = {message: "Children are all done, but the parent is not", warning: true};
     } else if(issueWithPriorTiming.blockedStatusIssues.length) {

@@ -9,19 +9,19 @@ const WIGGLE_ROOM = 0;
  */
 function prepareTimingData(issueWithPriorTiming) {
 
+    const issueLastPeriod = issueWithPriorTiming.issueLastPeriod;
     const timingData = {
         rollup: {
             ...issueWithPriorTiming.rollupDates,
-            lastPeriod: issueWithPriorTiming.issueLastPeriod ? issueWithPriorTiming.issueLastPeriod.rollupDates : null
-                
+            lastPeriod: issueLastPeriod ? issueLastPeriod.rollupDates : null
         }
     }
     for(let workType of workTypeRollups) {
-        const workRollup = issueWithPriorTiming.workTypeRollups[workType];
+        const workRollup = issueWithPriorTiming.workTypeRollups.children[workType];
         if(workRollup) {
             timingData[workType] = {
                 ...workRollup,
-                lastPeriod: issueWithPriorTiming.workTypeRollups[workType]
+                lastPeriod: issueLastPeriod ? issueLastPeriod.workTypeRollups.children[workType] : null
             }
         } else {
             timingData[workType] = {
@@ -56,14 +56,15 @@ function setWorkTypeStatus(workType, timingData, getIssuesByKeys){
  * @param {import("../../rolledup-and-rolledback/rollup-and-rollback").IssueOrReleaseWithPreviousTiming} issueWithPriorTiming 
  */
 function calculateStatuses(issueWithPriorTiming, getIssuesByKeys){
-    const timingData = prepareTimingData(issueWithPriorTiming);
+    const allDirectChildren = getIssuesByKeys(issueWithPriorTiming.reportingHierarchy.childKeys);
+    const timingData = prepareTimingData(issueWithPriorTiming, allDirectChildren);
 
     // do the rollup
     if(issueWithPriorTiming.statusCategory === "done") {
         timingData.rollup.status = "complete";
         // we should check all the children ...
         timingData.rollup.statusFrom = {message: "Own status"}
-    } else if(issueWithPriorTiming.workTypeRollups.children.issueKeys.length && getIssuesByKeys( issueWithPriorTiming.workTypeRollups.children.issueKeys).every(issue => issue.statusCategory === "done")) {
+    } else if(issueWithPriorTiming.workTypeRollups?.children?.issueKeys?.length && getIssuesByKeys( issueWithPriorTiming.workTypeRollups.children.issueKeys).every(issue => issue.statusCategory === "done")) {
         timingData.rollup.status = "complete";
         timingData.rollup.statusFrom = {message: "Children are all done, but the parent is not", warning: true};
     } else if(issueWithPriorTiming.blockedStatusIssues.length) {

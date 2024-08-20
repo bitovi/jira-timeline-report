@@ -62,6 +62,9 @@ export function parseDateISOString(s) {
 }
 
 export function parseDateIntoLocalTimezone(s){
+    if(!s) {
+        return s;
+    }
     let ds = s.split(/\D/).map(s => parseInt(s));
     ds[1] = ds[1] - 1; // adjust month
     return new Date(...ds);
@@ -74,6 +77,7 @@ export function parseDateIntoLocalTimezone(s){
  * @returns {Date}
  */
 export function parseDate8601String(str){
+    if(str) {debugger;}
     // This should just work, we can get fancy later and use date-fns or something.
     return str ? new Date(str) : str;
 }

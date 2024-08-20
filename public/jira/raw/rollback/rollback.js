@@ -70,6 +70,16 @@ export const fields = {
     },
     "Epic Link": function(lastReturnValue, change) {
         return {Parent: {key: change.toString}};
+    },
+    "Status": function(lastReturnValue, change, fieldName, {statuses}) {
+        if(statuses.ids.has(change.from)) {
+            return {[fieldName]: statuses.ids.get(change.from)};
+        } else if( statuses.names.has(change.fromString) ) {
+            return {[fieldName]: statuses.names.get(change.fromString)};
+        } else {
+            console.warn("Can't find status", change.from, change.fromString);
+            return {[fieldName]: {name: change.fromString}};
+        }
     }
 }
 const fieldAlias = {
@@ -106,11 +116,23 @@ function getVersionsFromIssues(issues){
 }
 
 
+function getStatusesFromIssues(issues) {
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        
+        ids.set(issue.fields.Status.id, issue.fields.Status);
+        names.set(issue.fields.Status.name, issue.fields.Status);
+        
+    }
+    return {ids, names};
+}
 
 export function rollbackIssues(issues, rollbackTime) {
     const sprints = getSprintsMapsFromIssues(issues);
     const versions = getVersionsFromIssues(issues);
-    return issues.map(i => rollbackIssue(i, {sprints, versions}, rollbackTime)).filter( i => i );
+    const statuses = getStatusesFromIssues(issues);
+    return issues.map(i => rollbackIssue(i, {sprints, versions, statuses}, rollbackTime)).filter( i => i );
 }
 
 const oneHourAgo = new Date(new Date() - 1000*60*60)
@@ -158,7 +180,6 @@ export function rollbackIssue(issue, data, rollbackTime = oneHourAgo) {
         items.forEach( (change) => {
             const {field, from, to} = change;
             const fieldName = fieldAlias[field] || field;
-
             if(fields[fieldName]) {
 
                 Object.assign(copy.fields, fields[fieldName](copy[fieldName], change, fieldName, data) );

@@ -4,6 +4,7 @@ import { showTooltip, showTooltipContent } from "./issue-tooltip.js";
 import { mergeStartAndDueData } from "./jira/rollup/dates/dates.js";
 
 import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
+import { workTypes } from "./jira/derived/work-status/work-status.js";
 
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
@@ -261,6 +262,7 @@ export class GanttGrid extends StacheElement {
     
                 if(this.breakdown) {
 
+                    /*
                     const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
                     lastDev.classList.add("h-2","py-[2px]");
                     lastPeriodRoot.appendChild(lastDev);
@@ -268,10 +270,21 @@ export class GanttGrid extends StacheElement {
                     const dev = document.createElement("div");
                     dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.dev.status;
                     Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
-                    root.appendChild(dev);
+                    root.appendChild(dev);*/
 
-                    
-                    if(this.hasQAEpic) {
+                    const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+                    for(const {type} of workTypes) {
+                        const lastPeriod = makeLastPeriodElement(release.rollupStatuses[type].status, release.rollupStatuses[type].lastPeriod);
+                        lastPeriod.classList.add("h-2","py-[2px]");
+                        lastPeriodRoot.appendChild(lastPeriod);
+
+                        const thisPeriod = document.createElement("div");
+                        thisPeriod.className = type+"_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses[type].status;
+                        Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
+                        root.appendChild(thisPeriod);
+                    }
+                    /*
+                    if(this.hasQAWork) {
                         const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
                         lastQA.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastQA);
@@ -284,7 +297,7 @@ export class GanttGrid extends StacheElement {
 
                         
                     }
-                    if(this.hasUATEpic) {
+                    if(this.hasUATWork) {
                         const lastUAT = makeLastPeriodElement(release.rollupStatuses.uat.status, release.rollupStatuses.uat.lastPeriod);
                         lastUAT.classList.add("h-2","py-[2px]");
                         lastPeriodRoot.appendChild(lastUAT);
@@ -296,7 +309,7 @@ export class GanttGrid extends StacheElement {
                         root.appendChild(uat);
 
                         
-                    }
+                    }*/
                 } else {
 
                     const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
@@ -322,14 +335,23 @@ export class GanttGrid extends StacheElement {
         frag.appendChild(root);
         return stache.safeString(frag);
     }
-    get hasQAEpic(){
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        })
+        return {map, list};
+    }
+    get hasQAWork(){
         if(this.primaryIssuesOrReleases) {
             return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
         } else {
             return true;
         }
     }
-    get hasUATEpic(){
+    get hasUATWork(){
         if(this.primaryIssuesOrReleases) {
             return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
         } else {

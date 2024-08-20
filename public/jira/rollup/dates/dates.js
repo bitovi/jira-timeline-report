@@ -2,7 +2,7 @@
 import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "../rollup";
 
 
-const methods = {
+export const methods = {
     parentFirstThenChildren,
     childrenOnly,
     childrenFirstThenParent,
@@ -130,11 +130,6 @@ export function childrenFirstThenParent(parentIssueOrRelease, childrenRollups){
 
 export function widestRange(parentIssueOrRelease, childrenRollups){
     return mergeStartAndDueData([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
-    
-    const childrenDateData = getChildDateData();
-    const issueDateData = getIssueDateData();
-    // eventually might want the reason to be more the parent ... but this is fine for now
-    return mergeStartAndDueData([childrenDateData, issueDateData]);
 }
 
 

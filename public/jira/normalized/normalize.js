@@ -1,4 +1,4 @@
-import { parseDate8601String } from "../../date-helpers.js";
+import { parseDateIntoLocalTimezone } from "../../date-helpers.js";
 import { parseDateISOString } from "../../date-helpers.js";
 
 
@@ -130,7 +130,7 @@ export function getConfidenceDefault({ fields }) {
     return fields?.Status?.name;
   }
   export function getLabelsDefault({fields}) {
-    return fields?.labels || []
+    return fields?.Labels || []
   }
   export function getStatusCategoryDefault({fields}){
     return fields?.Status?.statusCategory?.name
@@ -225,9 +225,9 @@ export function getConfidenceDefault({ fields }) {
         key: getIssueKey(issue),
         parentKey: getParentKey(issue),
         confidence: getConfidence(issue),
-        dueDate: parseDate8601String( getDueDate(issue) ),
+        dueDate: parseDateIntoLocalTimezone( getDueDate(issue) ),
         hierarchyLevel: getHierarchyLevel(issue),
-        startDate: parseDate8601String( getStartDate(issue) ),
+        startDate: parseDateIntoLocalTimezone( getStartDate(issue) ),
         storyPoints: getStoryPoints(issue),
         storyPointsMedian: getStoryPointsMedian(issue),
         type: getType(issue),
