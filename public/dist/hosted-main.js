@@ -58253,6 +58253,15 @@ class TimelineReport extends canStacheElement {
       const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations);
       return groupedHierarchy.reverse();
     }
+    get planningIssues(){
+      if(!this.groupedParentDownHierarchy.length || ! this?.planningStatuses?.length) {
+        return []
+      }
+      const planningSourceIssues = this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
+      return planningSourceIssues.filter( (normalizedIssue)=> {
+        return this.planningStatuses.includes(normalizedIssue.status);
+      })
+    }
     get primaryIssuesOrReleases(){
       if(!this.groupedParentDownHierarchy.length) {
         return [];
@@ -58269,7 +58278,12 @@ class TimelineReport extends canStacheElement {
       // lets remove stuff!
       const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
         // check if it's a planning issues
-        
+        if(this?.planningStatuses?.length && 
+            this.primaryIssueType !== "Release" &&
+            this.planningStatuses.includes(issueOrRelease.status) ) {
+          return false;
+        }
+
         if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
           return false;
         }
@@ -58290,20 +58304,8 @@ class TimelineReport extends canStacheElement {
       } else {
         return filtered;
       }
-
-  
-      
     }
-    get planningIssues(){
-      if(!this.groupedParentDownHierarchy.length || ! this?.planningStatuses?.length) {
-        return []
-      }
-      const planningSourceIssues = this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
-      return planningSourceIssues.filter( (normalizedIssue)=> {
-        debugger;
-        return this.planningStatuses.includes(normalizedIssue.status);
-      })
-    }
+    
 
     showDebug(open) {
       this.showingDebugPanel = open;
