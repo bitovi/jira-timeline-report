@@ -57,6 +57,7 @@ export class TimelineReport extends StacheElement {
           showPercentComplete:to="this.showPercentComplete"
           rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
           configuration:to="this.configuration"
+          planningStatuses:to="this.planningStatuses"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -372,12 +373,27 @@ export class TimelineReport extends StacheElement {
         return this.initiativesWithAStartAndEndDate;
       }
     }
-    get primaryIssuesOrReleases(){
+    get groupedParentDownHierarchy(){
       if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
         return [];
       }
       const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations)
-      const unfilteredPrimaryIssuesOrReleases = groupedHierarchy.reverse()[0];
+      return groupedHierarchy.reverse();
+    }
+    get planningIssues(){
+      if(!this.groupedParentDownHierarchy.length || ! this?.planningStatuses?.length) {
+        return []
+      }
+      const planningSourceIssues = this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
+      return planningSourceIssues.filter( (normalizedIssue)=> {
+        return this.planningStatuses.includes(normalizedIssue.status);
+      })
+    }
+    get primaryIssuesOrReleases(){
+      if(!this.groupedParentDownHierarchy.length) {
+        return [];
+      }
+      const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
       
       const hideUnknownInitiatives = this.hideUnknownInitiatives;
       let statusesToRemove = this.statusesToRemove;
@@ -385,8 +401,16 @@ export class TimelineReport extends StacheElement {
       function startBeforeDue(initiative) {
         return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
       }
+
       // lets remove stuff!
       const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
+        // check if it's a planning issues
+        if(this?.planningStatuses?.length && 
+            this.primaryIssueType !== "Release" &&
+            this.planningStatuses.includes(issueOrRelease.status) ) {
+          return false;
+        }
+
         if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
           return false;
         }
@@ -402,22 +426,14 @@ export class TimelineReport extends StacheElement {
         }
         return true;
       });
+      let sorted;
       if(this.sortByDueDate) {
         return filtered.toSorted( (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
       } else {
         return filtered;
       }
-
-      
-
     }
-    get planningIssues(){
-      if(!this.csvIssues) {
-        return []
-      }
-      const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
-      return getIssuesOfTypeAndStatus(this.csvIssues, reportedIssueType, this.planningStatuses || []);
-    }
+    
 
     showDebug(open) {
       this.showingDebugPanel = open;

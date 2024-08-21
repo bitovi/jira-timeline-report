@@ -78,7 +78,7 @@ export class StatusReport extends StacheElement {
                 {{# for(planningIssue of this.planningIssues)}}
                     <li class='font-sans {{this.fontSize(this.planningIssues.length)}} color-text-unknown pointer'
                          on:click='this.showTooltip(scope.event, planningIssue)'>
-                        {{planningIssue.Summary}}
+                        {{planningIssue.summary}}
                     </li>
 
                 {{/}}

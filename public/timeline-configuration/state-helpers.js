@@ -2,6 +2,7 @@ import { ObservableObject, value, Reflect } from "../can.js";
 import { deriveIssue } from "../jira/derived/derive.js";
 import bitoviTrainingData from "../examples/bitovi-training.js";
 import { normalizeIssue } from "../jira/normalized/normalize.js";
+import {nativeFetchJSON} from "../src/jira-oidc-helpers";
 
 /*
 class IssueData extends ObservableObject {
@@ -87,6 +88,14 @@ function resolve(value){
         return value;
     } else {
         return Reflect.getValue(value)
+    }
+}
+
+export function serverInfoPromise({jiraHelpers, isLoggedIn}) {
+    if(resolve(isLoggedIn)) {
+        return jiraHelpers.getServerInfo();
+    } else {
+        return nativeFetchJSON("./examples/bitovi-training-server-info.json");
     }
 }
 

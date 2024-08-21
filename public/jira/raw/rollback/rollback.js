@@ -39,10 +39,11 @@ export const fields = {
                 } else if(sprints.names.has(sprintNames[i])) {
                     return sprints.names.get(sprintNames[i]);
                 } else {
+                    // TODO: change to async so we can go request all of these
                     console.warn("Can't find sprint ", number, sprintNames[i]);
                 }
                 
-            }) }
+            }).filter(x => x) }
         }
         
     },
