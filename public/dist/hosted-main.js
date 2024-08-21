@@ -56180,7 +56180,7 @@ class StatusReport extends canStacheElement {
                 {{# for(planningIssue of this.planningIssues)}}
                     <li class='font-sans {{this.fontSize(this.planningIssues.length)}} color-text-unknown pointer'
                          on:click='this.showTooltip(scope.event, planningIssue)'>
-                        {{planningIssue.Summary}}
+                        {{planningIssue.summary}}
                     </li>
 
                 {{/}}
@@ -57102,10 +57102,11 @@ const fields = {
                 } else if(sprints.names.has(sprintNames[i])) {
                     return sprints.names.get(sprintNames[i]);
                 } else {
+                    // TODO: change to async so we can go request all of these
                     console.warn("Can't find sprint ", number, sprintNames[i]);
                 }
                 
-            }) }
+            }).filter(x => x) }
         }
         
     },
@@ -57931,6 +57932,7 @@ class TimelineReport extends canStacheElement {
           showPercentComplete:to="this.showPercentComplete"
           rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
           configuration:to="this.configuration"
+          planningStatuses:to="this.planningStatuses"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -58244,12 +58246,18 @@ class TimelineReport extends canStacheElement {
         return this.initiativesWithAStartAndEndDate;
       }
     }
-    get primaryIssuesOrReleases(){
+    get groupedParentDownHierarchy(){
       if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
         return [];
       }
       const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations);
-      const unfilteredPrimaryIssuesOrReleases = groupedHierarchy.reverse()[0];
+      return groupedHierarchy.reverse();
+    }
+    get primaryIssuesOrReleases(){
+      if(!this.groupedParentDownHierarchy.length) {
+        return [];
+      }
+      const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
       
       const hideUnknownInitiatives = this.hideUnknownInitiatives;
       let statusesToRemove = this.statusesToRemove;
@@ -58257,8 +58265,11 @@ class TimelineReport extends canStacheElement {
       function startBeforeDue(initiative) {
         return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
       }
+
       // lets remove stuff!
       const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
+        // check if it's a planning issues
+        
         if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
           return false;
         }
@@ -58280,15 +58291,18 @@ class TimelineReport extends canStacheElement {
         return filtered;
       }
 
+  
       
-
     }
     get planningIssues(){
-      if(!this.csvIssues) {
+      if(!this.groupedParentDownHierarchy.length || ! this?.planningStatuses?.length) {
         return []
       }
-      const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
-      return getIssuesOfTypeAndStatus(this.csvIssues, reportedIssueType, this.planningStatuses || []);
+      const planningSourceIssues = this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
+      return planningSourceIssues.filter( (normalizedIssue)=> {
+        debugger;
+        return this.planningStatuses.includes(normalizedIssue.status);
+      })
     }
 
     showDebug(open) {
@@ -58306,13 +58320,6 @@ class TimelineReport extends canStacheElement {
 
 
 customElements.define("timeline-report", TimelineReport);
-
-
-function getIssuesOfTypeAndStatus(issues, type, statuses){
-  return issues.filter( (issue)=>{
-    return issue["Issue Type"] === type && statuses.includes(issue.Status)
-  })
-}
 
 /*
 function goodStuffFromIssue(issue) {
