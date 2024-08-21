@@ -3,7 +3,7 @@ import { StacheElement, type, ObservableObject, ObservableArray, value } from ".
 import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
 import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCalculations } from "../prepare-issues/date-data.js";
 
-import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData} from "./state-helpers.js";
+import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData, serverInfoPromise} from "./state-helpers.js";
 
 import { allStatusesSorted } from "../jira/normalized/normalize.js";
 
@@ -255,7 +255,7 @@ export class TimelineConfiguration extends StacheElement {
             }
         },
         get serverInfoPromise(){
-            return this.jiraHelpers.getServerInfo();
+            return serverInfoPromise({jiraHelpers: this.jiraHelpers, isLoggedIn: value.from(this, "isLoggedIn")});
         },
         get configurationPromise(){
             return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})

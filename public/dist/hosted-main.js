@@ -56389,6 +56389,14 @@ function resolve(value){
     }
 }
 
+function serverInfoPromise({jiraHelpers, isLoggedIn}) {
+    if(resolve(isLoggedIn)) {
+        return jiraHelpers.getServerInfo();
+    } else {
+        return nativeFetchJSON("./examples/bitovi-training-server-info.json");
+    }
+}
+
 function configurationPromise({
     serverInfoPromise, 
     teamConfigurationPromise
@@ -56714,7 +56722,7 @@ class TimelineConfiguration extends canStacheElement {
             }
         },
         get serverInfoPromise(){
-            return this.jiraHelpers.getServerInfo();
+            return serverInfoPromise({jiraHelpers: this.jiraHelpers, isLoggedIn: canValue_1_1_2_canValue.from(this, "isLoggedIn")});
         },
         get configurationPromise(){
             return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
