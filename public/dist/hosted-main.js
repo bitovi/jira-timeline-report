@@ -57351,9 +57351,6 @@ function copyDateProperties(obj) {
 
 
 function mergeParentAndChildIfTheyHaveDates(parentIssueOrRelease, childRollups){
-    if(parentIssueOrRelease.type === "milestone") {
-        debugger;
-    }
     const rollup = {self: {}, children: {}, combined: {}};
     const parentData = parentIssueOrRelease?.derivedTiming;
 
@@ -57698,6 +57695,32 @@ function average(arr){
 }
 
 /**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupChildStatusesForGroupedHierarchy(groupedHierarchy) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild({key, status}, children){
+            return {
+                self: {key, status},
+                children: children.map( child => child.self )
+            };
+        }
+    });
+}
+
+// these functions shouldn't be used eventually for performance ...
+function rollupChildStatuses(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rolledUpBlockers = rollupChildStatusesForGroupedHierarchy(groupedIssues);
+
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, "childStatuses");
+    return zipped.flat();
+}
+
+/**
  * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
  */
 
@@ -57740,7 +57763,8 @@ function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
     const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
     const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
     const percentComplete = addPercentComplete(rolledUpBlockers, rollupTimingLevelsAndCalculations);
-    return addWorkTypeDates(percentComplete, rollupTimingLevelsAndCalculations);
+    const childStatuses = rollupChildStatuses(percentComplete, rollupTimingLevelsAndCalculations);
+    return addWorkTypeDates(childStatuses, rollupTimingLevelsAndCalculations);
     
 }
 
@@ -58271,6 +58295,7 @@ class TimelineReport extends canStacheElement {
       const hideUnknownInitiatives = this.hideUnknownInitiatives;
       let statusesToRemove = this.statusesToRemove;
       let statusesToShow =  this.statusesToShow;
+
       function startBeforeDue(initiative) {
         return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
       }
@@ -58283,22 +58308,45 @@ class TimelineReport extends canStacheElement {
             this.planningStatuses.includes(issueOrRelease.status) ) {
           return false;
         }
+        if(this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
+          return false;
+        }
 
         if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
           return false;
         }
-        if(statusesToShow && statusesToShow.length) {
-          if(!statusesToShow.includes(issueOrRelease.status)) {
-            return false;
+        if(this.primaryIssueType === "Release") {
+          // releases don't have statuses, so we look at their children
+          if(statusesToRemove && statusesToRemove.length) {
+            if( issueOrRelease.childStatuses.children.every( ({status}) => statusesToRemove.includes(status) ) ) {
+              return false;
+            }
+          }
+
+          if(statusesToShow && statusesToShow.length) {
+            // Keep if any valeue has a status to show
+            if( !issueOrRelease.childStatuses.children.some( ({status}) => statusesToShow.includes(status) ) ) {
+              return false;
+            }
+          }
+
+        } else {
+          if(statusesToShow && statusesToShow.length) {
+            if(!statusesToShow.includes(issueOrRelease.status)) {
+              return false;
+            }
+          }
+          if(statusesToRemove && statusesToRemove.length) {
+            if(statusesToRemove.includes(issueOrRelease.status)) {
+              return false;
+            }
           }
         }
-        if(statusesToRemove && statusesToRemove.length) {
-          if(statusesToRemove.includes(issueOrRelease.status)) {
-            return false;
-          }
-        }
+
+        
         return true;
       });
+
       if(this.sortByDueDate) {
         return filtered.toSorted( (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
       } else {
