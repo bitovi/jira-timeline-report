@@ -5,8 +5,14 @@ on:
     inputs:
       aws_resource_identifier:
         description: Resource Identifier for deployed resources
-  pull_request:
-    types: [ closed ]
+      tf_state_bucket:
+        description: Bucket containing tf-state 
+      tf_state_bucket_destroy:
+        default: true
+        type: boolean
+      environment:
+        descritpion: Environment name
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -14,12 +20,9 @@ concurrency:
 
 jobs:
   destroy:
-    # if the branch name of the PR does not contain 'skip-deploy'
-    if: "!contains(github.head_ref, 'skip-deploy')"
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.ref_name }}
-      url: ${{ steps.deploy.outputs.vm_url }}
+      name: ${{ github.event.inputs.environment }}
     steps:
     - id: destroy
       name: Destroy
@@ -31,6 +34,8 @@ jobs:
 
         stack_destroy: "true"
         aws_resource_identifier: ${{ github.event.inputs.aws_resource_identifier }}
+        tf_state_bucket: ${{ github.event.inputs.tf_state_bucket }}
+        tf_state_bucket_destroy: ${{ github.event.inputs.tf_state_bucket_destroy }}
 
         # Provide a secret called `DOT_ENV` to append environment variables to the .env file
         dot_env: ${{ secrets.DOT_ENV }}
