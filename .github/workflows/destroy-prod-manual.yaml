@@ -1,33 +1,19 @@
-name: Deploy Latest tag
+name: Destroy prod (Manual)
 
 on:
-  release:
-    types: [published, created, edited]
-
+  workflow_dispatch:
+  
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  EC2-deploy:
+  EC2-Deploy:
     runs-on: ubuntu-latest
     environment:
       name: prod
-      url: ${{ steps.deploy.outputs.vm_url }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Get Latest Release Tag
-        id: latest_tag
-        run: |
-          LATEST_TAG=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-
-      - id: deploy
-        name: Deploy instance
-        if: ${{ github.ref_name == steps.latest_tag.outputs.latest_tag }}
-        name: Deploy
+      - id: destroy
+        name: Destroy instance
         uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.1
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
@@ -36,7 +22,7 @@ jobs:
   
           tf_state_bucket_destroy: true
           tf_state_bucket: bitovi-jira-timeline-report-prod-tf-state
-          #tf_stack_destroy: true
+          tf_stack_destroy: true
   
           aws_r53_enable: true
           aws_r53_sub_domain_name: timeline-report
@@ -49,7 +35,3 @@ jobs:
           # Provide a secret called `DOT_ENV` to append environment variables to the .env file
   
           env_ghs: ${{ secrets.DOT_ENV }}
-
-      - name: Skip deployment
-        if: ${{ github.ref_name != steps.latest_tag.outputs.latest_tag }}
-        run: echo "This is not the latest tag. Deployment skipped."
