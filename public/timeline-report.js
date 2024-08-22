@@ -398,6 +398,7 @@ export class TimelineReport extends StacheElement {
       const hideUnknownInitiatives = this.hideUnknownInitiatives;
       let statusesToRemove = this.statusesToRemove;
       let statusesToShow =  this.statusesToShow;
+
       function startBeforeDue(initiative) {
         return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
       }
@@ -410,23 +411,45 @@ export class TimelineReport extends StacheElement {
             this.planningStatuses.includes(issueOrRelease.status) ) {
           return false;
         }
+        if(this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
+          return false;
+        }
 
         if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
           return false;
         }
-        if(statusesToShow && statusesToShow.length) {
-          if(!statusesToShow.includes(issueOrRelease.status)) {
-            return false;
+        if(this.primaryIssueType === "Release") {
+          // releases don't have statuses, so we look at their children
+          if(statusesToRemove && statusesToRemove.length) {
+            if( issueOrRelease.childStatuses.children.every( ({status}) => statusesToRemove.includes(status) ) ) {
+              return false;
+            }
+          }
+
+          if(statusesToShow && statusesToShow.length) {
+            // Keep if any valeue has a status to show
+            if( !issueOrRelease.childStatuses.children.some( ({status}) => statusesToShow.includes(status) ) ) {
+              return false;
+            }
+          }
+
+        } else {
+          if(statusesToShow && statusesToShow.length) {
+            if(!statusesToShow.includes(issueOrRelease.status)) {
+              return false;
+            }
+          }
+          if(statusesToRemove && statusesToRemove.length) {
+            if(statusesToRemove.includes(issueOrRelease.status)) {
+              return false;
+            }
           }
         }
-        if(statusesToRemove && statusesToRemove.length) {
-          if(statusesToRemove.includes(issueOrRelease.status)) {
-            return false;
-          }
-        }
+
+        
         return true;
       });
-      let sorted;
+
       if(this.sortByDueDate) {
         return filtered.toSorted( (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
       } else {

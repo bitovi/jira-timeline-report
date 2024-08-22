@@ -156,9 +156,6 @@ function copyDateProperties(obj) {
 
 
 export function mergeParentAndChildIfTheyHaveDates(parentIssueOrRelease, childRollups){
-    if(parentIssueOrRelease.type === "milestone") {
-        debugger;
-    }
     const rollup = {self: {}, children: {}, combined: {}};
     const parentData = parentIssueOrRelease?.derivedTiming;
 
