@@ -77,8 +77,9 @@ export class GanttTimeline extends StacheElement {
     get rows() {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
+        const issuesWithDates = this.issues.filter( issue => issue.dateData.rollup.due )
         const rows = calculate({
-            issues: this.issues,
+            issues: issuesWithDates,
             firstDay,
             totalTime,
             makeElementForIssue: function(release){
