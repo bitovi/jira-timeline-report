@@ -47,7 +47,8 @@ export function rollupAndRollback(derivedIssues, configuration, rollupTimingLeve
 }
 
 function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
-    const normalizedReleases = normalizeReleases(derivedIssues)
+
+    const normalizedReleases = normalizeReleases(derivedIssues, rollupTimingLevelsAndCalculations)
     const releases = deriveReleases(normalizedReleases);
     const reporting = addReportingHierarchy([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
     const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);

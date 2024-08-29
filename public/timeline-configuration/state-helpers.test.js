@@ -37,6 +37,7 @@ import { expect, test } from 'vitest'
 
 test("rawIssuesRequestData", function(assert){
     const jql = value.with(""),
+        childJQL = value.with(""),
         isLoggedIn = value.with(true),
         serverInfo = value.with({
             "baseUrl": "https://mistech.atlassian.net"
@@ -58,6 +59,7 @@ test("rawIssuesRequestData", function(assert){
     const requestData = new ResolverObservable(function(hooks){
         return rawIssuesRequestData({
             jql,
+            childJQL,
             isLoggedIn,
             serverInfo,
             teamData,

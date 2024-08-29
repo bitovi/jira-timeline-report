@@ -47,12 +47,13 @@ export class GanttTimeline extends StacheElement {
     get quartersAndMonths(){
         
         // handle if there are no issues
-        const endDates = this.issues.map((issue)=> {
+        const endDates = this.primaryIssuesOrReleases.map((issue)=> {
+            debugger;
             return {dateData: {rollup: {
-                start: issue.dateData.rollup.due,
-                startFrom: issue.dateData.rollup.dueTo,
-                due: issue.dateData.rollup.due,
-                dueTo: issue.dateData.rollup.dueTo
+                start: issue.rollupDates.due,
+                startFrom: issue.rollupDates.dueTo,
+                due: issue.rollupDates.due,
+                dueTo: issue.rollupDates.dueTo
             }}}
         })
         const {start, due} = rollupDatesFromRollups(endDates);
@@ -68,7 +69,8 @@ export class GanttTimeline extends StacheElement {
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
     get calendarData() {
-        const {start, due} = rollupDatesFromRollups(this.issues);
+        debugger;
+        const {start, due} = rollupDatesFromRollups(this.primaryIssuesOrReleases);
         return getCalendarHtml(new Date(), due);
     }
     get calendarHTML() {
@@ -77,7 +79,7 @@ export class GanttTimeline extends StacheElement {
     get rows() {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
-        const issuesWithDates = this.issues.filter( issue => issue.dateData.rollup.due )
+        const issuesWithDates = this.primaryIssuesOrReleases.filter( issue => issue.rollupDates.due )
         const rows = calculate({
             issues: issuesWithDates,
             firstDay,
@@ -102,11 +104,11 @@ export class GanttTimeline extends StacheElement {
                     zIndex: "10",
                     maxWidth: "300px"
                 })
-                text.appendChild(document.createTextNode(release.shortVersion || release.Summary))
+                text.appendChild(document.createTextNode(release?.names?.shortVersion || release.summary))
                 div.appendChild(text);
 
                 const tick = document.createElement("div");
-                tick.className = "color-text-and-bg-" + release.dateData.rollup.status
+                tick.className = "color-text-and-bg-" + release.rollupStatuses.rollup.status
                 Object.assign( tick.style, {
                     height: "10px",
                     width: "10px",
@@ -120,7 +122,7 @@ export class GanttTimeline extends StacheElement {
 
         for(let row of rows) {
             for(let item of row.items) {
-                item.element.style.right = ( (totalTime - (item.issue.dateData.rollup.due - firstDay)) / totalTime * 100) + "%";
+                item.element.style.right = ( (totalTime - (item.issue.rollupStatuses.rollup.due - firstDay)) / totalTime * 100) + "%";
             }
         }
         
@@ -163,7 +165,7 @@ function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, t
         const element = makeElementForIssue(issue),
             width = getWidth(element),
             widthInPercent = width  * 100 / widthOfArea,
-            rightPercentEnd = Math.ceil( (issue.dateData.rollup.due - firstDay) / totalTime * 100),
+            rightPercentEnd = Math.ceil( (issue.rollupStatuses.rollup.due - firstDay) / totalTime * 100),
             leftPercentStart = rightPercentEnd - widthInPercent;
 
         element.setAttribute("measured-width", width);

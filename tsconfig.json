@@ -14,7 +14,8 @@
     "skipLibCheck": true,
     "paths": {
       "undici-types": ["./node_modules/undici/types"]
-    }
+    },
+    "sourceMap": true
   },
   "include": ["public/src/**/*"],
   "exclude": [

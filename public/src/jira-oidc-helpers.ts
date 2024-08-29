@@ -122,7 +122,7 @@ export default function (
 	type RootMethod = (params: Params, progress: Progress) => Promise<Issue[]>;
 
 	function makeDeepChildrenLoaderUsingNamedFields(rootMethod: RootMethod){
-
+		
 		// Makes child requests in batches of 40
 		// 
 		// params - base params
@@ -132,7 +132,7 @@ export default function (
 	
 			const batchedResponses = issuesToQuery.map( issues => {
 				const keys = issues.map( issue => issue.key);
-				const jql = `parent in (${keys.join(", ")})`;
+				const jql = `parent in (${keys.join(", ")}) ${params.childJQL || ""}`;
 				return rootMethod({
 					...params,
 					jql
@@ -162,6 +162,9 @@ export default function (
 		}
 	
 		return async function fetchAllDeepChildren(params: Params, progress: Progress = {} as any){
+			console.log("generated from root method", params);
+			debugger;
+
 			const fields = await fieldsRequest;
 			const newParams = {
 				...params,
@@ -571,30 +574,8 @@ export default function (
 				(data: ProgressData): void;
 			} = () => {}
 		) {
-			const fields = await fieldsRequest;
-			const newParams = {
-				...params,
-				fields: params.fields.map(f => fields.nameMap[f] || f)
-			}
-
-			progress.data = progress.data || {
-				issuesRequested: 0,
-				issuesReceived: 0,
-				changeLogsRequested: 0,
-				changeLogsReceived: 0
-			};
-			const parentIssues = await jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress);
-
-			// go get the children
-			const allChildrenIssues = await this.fetchDeepChildren(newParams, parentIssues, progress);
-			const combined = parentIssues.concat(allChildrenIssues);
-			return combined.map((issue) => {
-				return {
-					...issue,
-					fields: mapIdsToNames(issue.fields, fields)
-				}
-			});
-			// change the parms
+			console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
+			return Promise.resolve(null as any);
 		},
 		fetchChildrenResponses(
 			params: { fields: string[]; [key: string]: any },
@@ -602,7 +583,6 @@ export default function (
 			progress: (data: ProgressData) => void = () => {}
 		) {
 			const issuesToQuery = chunkArray(parentIssues, 40);
-
 			const batchedResponses = issuesToQuery.map( issues => {
 				const keys = issues.map( issue => issue.key);
 				const jql = `parent in (${keys.join(", ")})`;
