@@ -44346,304 +44346,6 @@ const blockedStatus$1 = { "Blocked": true, "blocked": true, "delayed": true, "De
 	return statusCategoryMap;
 }))();
 
-const WIGGLE_ROOM$1 = 0;
-
-
-function addStatusToRelease(release) {
-	Object.assign( release.dateData.rollup, getReleaseStatus(release) );
-	Object.assign( release.dateData.dev, getReleaseDevStatus(release) );
-	Object.assign( release.dateData.qa, getReleaseQaStatus(release) );
-	Object.assign( release.dateData.uat, getReleaseUatStatus(release) );
-	return release;
-
-}
-
-function getReleaseStatus(release) {
-		// if everything is complete
-		const issuesNotComplete = release.dateData.children.issues.filter(function(i){
-			return i.dateData.rollup.status !== "complete";
-		});
-
-		if ( issuesNotComplete.length === 0 ) {
-			return {
-				status: "complete", 
-				statusData: {
-					message: "All initiatives are complete"
-				}
-			};
-		}
-		return getInitiativeStatus(release);
-}
-function getReleaseDevStatus(release) {
-	return getInitiativeDevStatus(release);
-}
-function getReleaseQaStatus(release) {
-		return getInitiativeQaStatus(release);
-}
-function getReleaseUatStatus(release) {
-		return getInitiativeUatStatus(release);
-}
-
-function addStatusToInitiative(initiative) {
-	
-	Object.assign( initiative.dateData.rollup, getInitiativeStatus(initiative) );
-	Object.assign( initiative.dateData.dev, getInitiativeDevStatus(initiative) );
-	Object.assign( initiative.dateData.qa, getInitiativeQaStatus(initiative) );
-	Object.assign( initiative.dateData.uat, getInitiativeUatStatus(initiative) );
-	return initiative;
-}
-function addStatusToIssueAndChildren(issue) {
-	addStatusToInitiative(issue);
-	if(issue.dateData?.children?.issues?.length) {
-		issue.dateData.children.issues.forEach(function(child){
-			Object.assign( child.dateData.rollup, getInitiativeStatus(child) );
-		});
-	}
-	return issue;
-}
-
-function getInitiativeStatus(initiative) {
-
-		if (inDoneStatus$1[initiative.Status]) {
-				return {
-					status: "complete", 
-					statusData: {
-						message: "Status is `DONE`"
-					}
-				};
-		}
-		const devStatus = getInitiativeDevStatus(initiative).status,
-			qaStatus = 	getInitiativeQaStatus(initiative).status,
-			uatStatus = getInitiativeUatStatus(initiative).status,
-			statuses = [devStatus,qaStatus,uatStatus];
-		if(
-			statuses.every(s => s === "complete")
-		) {
-			return {
-				status: "complete", 
-				statusData: {
-					warning: true,
-					message: "Some epics have due dates in the past, but are not `DONE`"
-				}
-			};
-		}
-		if(statuses.some(s => s.toLowerCase() === "blocked") || ( initiative.Status && initiative.Status.toLowerCase() === "blocked" )) {
-			return {
-				status: "blocked", 
-				statusData: {
-					message: "Some epics are blocked"
-				}
-			};
-		}
-
-		const timedTeamStatus = timedStatus$1(initiative.dateData.rollup);
-
-		const warning = timedTeamStatus === "complete" && 
-			initiative.dateData.rollup?.issues?.length && initiative.dateData.rollup?.issues?.every(epic => !isStatusUatComplete(epic));
-		
-		return {
-			status: timedTeamStatus, 
-			statusData: {
-				warning: warning,
-				message: warning ? "Some epics have due dates in the past, but are not `DONE`" : null
-			}
-		};
-}
-
-function isStatusDevComplete(item) {
-		return inQAStatus$1[item.Status] || isStatusQAComplete(item);
-}
-function isStatusQAComplete(item) {
-		return inPartnerReviewStatus$1[item.Status] || isStatusUatComplete(item);
-}
-function isStatusUatComplete(item) {
-		return inDoneStatus$1[item.Status]
-}
-
-function timedStatus$1(timedRecord) {
-		if (!timedRecord.due) {
-				return "unknown"
-		}
-		// if now is after the complete date
-		// we force complete ... however, we probably want to warn if this isn't in the
-		// completed state
-		else if( (+timedRecord.due) < new Date()  ) {
-			return "complete";
-		} else if (timedRecord.lastPeriod && 
-			((+timedRecord.due) > WIGGLE_ROOM$1 + (+timedRecord.lastPeriod.due)) ) {
-				return "behind";
-		} else if(timedRecord.lastPeriod && 
-			((+timedRecord.due) + WIGGLE_ROOM$1 <  (+timedRecord.lastPeriod.due)) ) {
-				return "ahead";
-		} else if(!timedRecord.lastPeriod) {
-			return "new";
-		}
-		
-		if (timedRecord.start > new Date()) {
-				return "notstarted"
-		}
-		else {
-				return "ontrack"
-		}
-}
-
-function getInitiativeDevStatus(initiative) {
-
-		// check if epic statuses are complete
-		if (isStatusDevComplete(initiative)) {
-			return {
-				status: "complete", 
-				statusData: {message: "initiative status is `DEV` complete"}
-			};
-		}
-		const devDateData = initiative.dateData.dev;
-
-		if (devDateData?.issues?.length && devDateData?.issues?.every(epic => isStatusDevComplete(epic))) {
-			// Releases don't have a status so we shouldn't throw this warning.
-			return {
-				status: "complete", 
-				statusData: {
-					warning: !!initiative.Status,
-					message: "All epics are dev complete. Move the issue to a `QA` status"
-				}
-			};
-		}
-		function epicIsBlocked(epic){
-			return epic.Status.toLowerCase() === "blocked";
-		}
-
-		if (devDateData?.issues?.some( epicIsBlocked) ) {
-			return {
-				status: "blocked", 
-				statusData: {
-					message: "An epic is blocked"
-				}
-			};
-		}
-		if(!devDateData) {
-			return {
-				status: "unknown",
-				statusData: {
-					warning: false,
-					message: "Did not break down dev work on this level"
-				}
-			}
-		}
-		const timedDevStatus = timedStatus$1(devDateData);
-
-		const warning = timedDevStatus === "complete" && 
-			devDateData?.issues?.length && devDateData?.issues?.every(epic => !isStatusDevComplete(epic));
-		return {
-			status: timedDevStatus, 
-			statusData: {
-				warning: warning,
-				message: warning ? "Some epics have due dates in the past, but are not `DEV` complete" : null
-			}
-		};
-}
-
-function getInitiativeQaStatus(initiative) {
-		if (isStatusQAComplete(initiative)) {
-			return {
-				status: "complete", 
-				statusData: {message: "initiative status is `QA` complete"}
-			};
-		}
-		const qaDateData = initiative.dateData.qa;
-		if(!qaDateData) {
-			return {
-				status: "unknown",
-				statusData: {
-					warning: false,
-					message: "Did not break down qa work within this issue"
-				}
-			}
-		}
-
-		if (qaDateData.issues.length && qaDateData.issues.every(epic => isStatusQAComplete(epic))) {
-			return {
-				status: "complete", 
-				statusData: {
-					warning: !!initiative.Status,
-					message: "All QA epics are `QA` complete. Move the initiative to a `UAT` status"
-				}
-			};
-		}
-		if (initiative?.qa?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
-			return {
-				status: "blocked", 
-				statusData: {
-					message: "An epic is blocked"
-				}
-			};
-		}
-		const timedQAStatus = timedStatus$1(qaDateData);
-		const warning = timedQAStatus === "complete" && 
-			qaDateData?.issues?.length && qaDateData?.issues?.every(epic => !isStatusQAComplete(epic));
-
-		return {
-			status: timedQAStatus, 
-			statusData: {
-				warning: warning,
-				message: warning ? "Some epics have due dates in the past, but are not `QA` complete" : null
-			}
-		};
-}
-
-function getInitiativeUatStatus(initiative) {
-	if (isStatusUatComplete(initiative)) {
-		return {
-			status: "complete", 
-			statusData: {message: "initiative status is `UAT` complete"}
-		};
-	}
-	const uatDateData = initiative.dateData.uat;
-	if(!uatDateData) {
-		return {
-			status: "unknown",
-			statusData: {
-				warning: false,
-				message: "Did not break down uat work within this issue"
-			}
-		}
-	}
-
-	if (uatDateData.issues.length && uatDateData.issues.every(epic => isStatusUatComplete(epic))) {
-		// Releases don't have a status so we shouldn't throw this warning.
-		return {
-			status: "complete", 
-			statusData: {
-				warning: !!initiative.Status,
-				message: "All UAT epics are `UAT` complete. Move the initiative to a `DONE` status"
-			}
-		};
-	}
-	if (uatDateData?.issues?.some(epic => epic.Status.toLowerCase() === "blocked")) {
-		return {
-			status: "blocked", 
-			statusData: {
-				message: "An epic is blocked"
-			}
-		};
-	}
-
-	// should timed status be able to look at the actual statuses?
-	// lets say the UAT is "ontrack" (epicStatus won't report this currently)
-	// should we say there is a missmatch?
-	const statusFromTiming = timedStatus$1(uatDateData);
-
-	const warning = statusFromTiming === "complete" && 
-	uatDateData?.issues?.length && uatDateData?.issues?.every(epic => !isStatusUatComplete(epic));
-
-	return {
-		status: statusFromTiming, 
-		statusData: {
-			warning: warning,
-			message: warning ? "Some epics have due dates in the past, but are not `UAT` complete" : null
-		}
-	};
-}
-
 
 
 /*
@@ -49774,7 +49476,7 @@ const DAY_IN_MS$1 = 1000 * 60 * 60 * 24;
  * @param {import("../../jira/normalized/normalize.js").NormalizedIssue} issue 
  * @returns {{startData: StartData, dueData: DueData}}
  */
-function getStartDateAndDueDataFromFields$1(issue){
+function getStartDateAndDueDataFromFields(issue){
     let startData, dueData;
     if(issue.startDate) {
         startData = {
@@ -49802,7 +49504,7 @@ function getStartDateAndDueDataFromFields$1(issue){
  * @param {import("../../jira/normalized/normalize.js").NormalizedIssue} story 
  * @returns {{startData: StartData, dueData: DueData}}
  */
-function getStartDateAndDueDataFromSprints$1(story){
+function getStartDateAndDueDataFromSprints(story){
     const records = [];
 
     if(story.sprints) {
@@ -49846,10 +49548,10 @@ function mergeStartAndDueData$3(records){
  * @param {*} issue 
  * @returns {{startData: StartData, dueData: DueData}}
  */
-function getStartDateAndDueDataFromFieldsOrSprints$1(issue ){
+function getStartDateAndDueDataFromFieldsOrSprints(issue ){
     return mergeStartAndDueData$3( [
-        getStartDateAndDueDataFromFields$1(issue),
-        getStartDateAndDueDataFromSprints$1(issue)
+        getStartDateAndDueDataFromFields(issue),
+        getStartDateAndDueDataFromSprints(issue)
     ] );
 }
 
@@ -50295,11 +49997,11 @@ function deriveWorkTiming(normalizedIssue, {
     hasStartAndDueDate = normalizedIssue.dueDate &&  normalizedIssue.startDate,
     startAndDueDateDaysOfWork = hasStartAndDueDate ? getBusinessDatesCount(normalizedIssue.startDate, normalizedIssue.dueDate) : null;
 
-  const {startData: sprintStartData, dueData: endSprintData} = getStartDateAndDueDataFromSprints$1(normalizedIssue);
+  const {startData: sprintStartData, dueData: endSprintData} = getStartDateAndDueDataFromSprints(normalizedIssue);
   const hasSprintStartAndEndDate = !!(sprintStartData && endSprintData),
     sprintDaysOfWork = hasSprintStartAndEndDate ? getBusinessDatesCount(sprintStartData.start, endSprintData.due) : null;
 
-  const {startData, dueData} = getStartDateAndDueDataFromFieldsOrSprints$1(normalizedIssue);
+  const {startData, dueData} = getStartDateAndDueDataFromFieldsOrSprints(normalizedIssue);
 
 
   let totalDaysOfWork = null;
@@ -50437,188 +50139,2162 @@ function derivedToCSVFormat(derivedIssue) {
   }
 }
 
-window.fieldsSet = new Set();
+/******************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol */
 
 
-function getSprintNumbers$1(value) {
-    if(value === "") {
-        return null;
-    } else {
-        return value.split(",").map( num => +num);
-    }
-}
-function getSprintNames$1(value) {
-    if(value === "") {
-        return null;
-    } else {
-        return value.split(",").map( name => name.trim() );
-    }
-}
-
-
-const fields$1 = {
-
-    // from will look like "1619, 1647"
-    // we need to update `lastReturnValue` to have 
-    // only the right sprints
-    Sprint: function(lastReturnValue, change, {sprints}) {
-        const sprintNumbers = getSprintNumbers$1( change.from );
-        const sprintNames = getSprintNames$1(change.fromString);
-        
-        if( sprintNumbers === null ) {
-            return null;
-        } else {
-
-            return sprintNumbers.map( (number, i)=>{
-                // REMOVE IN PROD
-                if(sprints.ids.has(number) ) {
-                    return sprints.ids.get(number);
-                } else if(sprints.names.has(sprintNames[i])) {
-                    return sprints.names.get(sprintNames[i]);
-                } else {
-                    console.warn("Can't find sprint ", number, sprintNames[i]);
-                }
-                
-            })
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
         }
-        
-    },
-    "Fix versions": function(lastReturnValue, change, {versions}) {
-
-        if(change.from) {
-            if(versions.ids.has(change.from)) {
-                return versions.ids.get(change.from)
-            } else if( versions.names.has(change.fromString) ) {
-                return versions.names.get(change.fromString)
-            } else {
-                console.warn("Can't find release version ", change.from, change.fromString);
-                return lastReturnValue;
-            }
-        } else {
-            return [];
-        }
-    }
-};
-const fieldAlias$1 = {
-    "duedate": "Due date",
-    "status": "Status",
-    "labels": "Labels",
-    "issuetype": "Issue Type",
-    // "summary": "Summary" // we don't want to change summary
-    "Fix Version": "Fix versions"
+        return t;
+    };
+    return __assign.apply(this, arguments);
 };
 
-function getSprintsMapsFromIssues$1(issues){
-    const ids = new Map();
-    const names = new Map();
-    for(const issue of issues) {
-        for(const sprint of (issue.Sprint || [])) {
-            ids.set(sprint.id, sprint);
-            names.set(sprint.name, sprint);
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
         }
-    }
-    return {ids, names};
+    return t;
 }
 
-function getVersionsFromIssues$1(issues){
-    const ids = new Map();
-    const names = new Map();
-    for(const issue of issues) {
-        for(const version of (issue["Fix versions"] || [])) {
-            ids.set(version.id, version);
-            names.set(version.name, version);
-        }
-    }
-    return {ids, names};
+function __awaiter(thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 }
 
-
-
-
-function issues(issues, rollbackTime) {
-    const sprints = getSprintsMapsFromIssues$1(issues);
-    const versions = getVersionsFromIssues$1(issues);
-    return issues.map(i => issue(i, rollbackTime , {sprints, versions})).filter( i => i );
-}
-
-function issue(issue, rollbackTime, data) {
-    if( parseDateISOString(issue.Created) > rollbackTime) {
-        return;
-    }
-    const copy = {...issue};
-    for(const {items, created} of issue.changelog) {
-        // we need to go back before ... 
-        if( parseDateISOString(created) < rollbackTime) {
-            break;
-        }
-        items.forEach( (change) => {
-            const {field, from, to} = change;
-            const fieldName = fieldAlias$1[field] || field;
-
-            if(fields$1[fieldName]) {
-                copy[fieldName] = fields$1[fieldName](copy[fieldName], change, data);
-            } else {
-                copy[fieldName] = from;
+function __generator(thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
             }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+}
 
+typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
+
+function responseToJSON(response) {
+    if (!response.ok) {
+        return response.json().then(function (payload) {
+            var err = new Error("HTTP status code: " + response.status);
+            Object.assign(err, payload);
+            Object.assign(err, response);
+            throw err;
         });
     }
-    return copy;
+    return response.json();
 }
 
-/*
-export function collectChangelog(observableBaseIssues, priorTime) {
-    const changes = observableBaseIssues.map( baseIssue => {
-        return baseIssue.changelog.map( change => {
-            return {...change, issue: baseIssue, createdDate: parseDateISOString(change.created) };
-        })
-    } ).flat().sort( (cl1, cl2) => cl1.createdDate - cl2.createdDate);
-
-    return changes.filter( change => change.createdDate >= priorTime );
+function responseToText(response) {
+    if (!response.ok) {
+        return response.json().then(function (payload) {
+            var err = new Error("HTTP status code: " + response.status);
+            Object.assign(err, payload);
+            Object.assign(err, response);
+            throw err;
+        });
+    }
+    return response.text();
 }
-
-
-export function applyChangelog(changes, data) {
-    for(const {items, created, issue} of changes) {
-
-        items.forEach( (change) => {
-            const {field, from, to} = change;
-
-            if(field in issue) {
-                if(fields[field]) {
-                    issue[field] = fields[field](issue[field], change, data);
-                } else {
-                    issue[field] = from;
+function nativeFetchJSON(url, options) {
+    return fetch(url, options).then(responseToJSON);
+}
+function chunkArray(array, size) {
+    var chunkedArr = [];
+    for (var i = 0; i < array.length; i += size) {
+        chunkedArr.push(array.slice(i, i + size));
+    }
+    return chunkedArr;
+}
+function JiraOIDCHelpers (_a, requestHelper, host) {
+    var _this = this;
+    var _b = _a === void 0 ? window.env : _a, JIRA_CLIENT_ID = _b.JIRA_CLIENT_ID, JIRA_SCOPE = _b.JIRA_SCOPE, JIRA_CALLBACK_URL = _b.JIRA_CALLBACK_URL, JIRA_API_URL = _b.JIRA_API_URL;
+    var fetchJSON = nativeFetchJSON;
+    var fieldsRequest;
+    function makeDeepChildrenLoaderUsingNamedFields(rootMethod) {
+        // Makes child requests in batches of 40
+        // 
+        // params - base params
+        // sourceParentIssues - the source of parent issues
+        function fetchChildrenResponses(params, parentIssues, progress) {
+            var issuesToQuery = chunkArray(parentIssues, 40);
+            var batchedResponses = issuesToQuery.map(function (issues) {
+                var keys = issues.map(function (issue) { return issue.key; });
+                var jql = "parent in (".concat(keys.join(", "), ") ").concat(params.childJQL || "");
+                return rootMethod(__assign(__assign({}, params), { jql: jql }), progress);
+            });
+            // this needs to be flattened
+            return batchedResponses;
+        }
+        function fetchDeepChildren(params, sourceParentIssues, progress) {
+            return __awaiter(this, void 0, void 0, function () {
+                var batchedFirstResponses, getChildren, batchedIssueRequests, allChildren;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            batchedFirstResponses = fetchChildrenResponses(params, sourceParentIssues, progress);
+                            getChildren = function (parentIssues) {
+                                if (parentIssues.length) {
+                                    return fetchDeepChildren(params, parentIssues, progress).then(function (deepChildrenIssues) {
+                                        return parentIssues.concat(deepChildrenIssues);
+                                    });
+                                }
+                                else {
+                                    return parentIssues;
+                                }
+                            };
+                            batchedIssueRequests = batchedFirstResponses.map(function (firstBatchPromise) {
+                                return firstBatchPromise.then(getChildren);
+                            });
+                            return [4 /*yield*/, Promise.all(batchedIssueRequests)];
+                        case 1:
+                            allChildren = _a.sent();
+                            return [2 /*return*/, allChildren.flat()];
+                    }
+                });
+            });
+        }
+        return function fetchAllDeepChildren(params_1) {
+            return __awaiter(this, arguments, void 0, function (params, progress) {
+                var fields, newParams, parentIssues, allChildrenIssues, combined;
+                var _a;
+                if (progress === void 0) { progress = {}; }
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            console.log("generated from root method", params);
+                            debugger;
+                            return [4 /*yield*/, fieldsRequest];
+                        case 1:
+                            fields = _b.sent();
+                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
+                            progress.data = progress.data || {
+                                issuesRequested: 0,
+                                issuesReceived: 0,
+                                changeLogsRequested: 0,
+                                changeLogsReceived: 0
+                            };
+                            return [4 /*yield*/, rootMethod(newParams, progress)];
+                        case 2:
+                            parentIssues = _b.sent();
+                            return [4 /*yield*/, fetchDeepChildren(newParams, parentIssues, progress)];
+                        case 3:
+                            allChildrenIssues = _b.sent();
+                            combined = parentIssues.concat(allChildrenIssues);
+                            return [2 /*return*/, combined.map(function (issue) {
+                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
+                                })];
+                    }
+                });
+            });
+        };
+    }
+    var jiraHelpers = {
+        saveInformationToLocalStorage: function (parameters) {
+            var objectKeys = Object.keys(parameters);
+            for (var _i = 0, objectKeys_1 = objectKeys; _i < objectKeys_1.length; _i++) {
+                var key = objectKeys_1[_i];
+                window.localStorage.setItem(key, parameters[key]);
+            }
+        },
+        clearAuthFromLocalStorage: function () {
+            window.localStorage.removeItem("accessToken");
+            window.localStorage.removeItem("refreshToken");
+            window.localStorage.removeItem("expiryTimestamp");
+        },
+        fetchFromLocalStorage: function (key) {
+            return window.localStorage.getItem(key);
+        },
+        fetchAuthorizationCode: function () {
+            var url = "https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=".concat(JIRA_CLIENT_ID, "&scope=").concat(JIRA_SCOPE, "&redirect_uri=").concat(JIRA_CALLBACK_URL, "&response_type=code&prompt=consent&state=").concat(encodeURIComponent(encodeURIComponent(window.location.search)));
+            window.location.href = url;
+        },
+        refreshAccessToken: function (accessCode) { return __awaiter(_this, void 0, void 0, function () {
+            var response, _a, accessToken, expiryTimestamp, refreshToken, error_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, fetchJSON("".concat(window.env.JIRA_API_URL, "/?code=").concat(accessCode))];
+                    case 1:
+                        response = _b.sent();
+                        _a = response.data, accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken;
+                        jiraHelpers.saveInformationToLocalStorage({
+                            accessToken: accessToken,
+                            refreshToken: refreshToken,
+                            expiryTimestamp: expiryTimestamp,
+                        });
+                        return [2 /*return*/, accessToken];
+                    case 2:
+                        error_1 = _b.sent();
+                        if (error_1 instanceof Error) {
+                            console.error(error_1.message);
+                        }
+                        else {
+                            console.error('An unknown error occurred');
+                        }
+                        jiraHelpers.clearAuthFromLocalStorage();
+                        jiraHelpers.fetchAuthorizationCode();
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
                 }
+            });
+        }); },
+        fetchAccessTokenWithAuthCode: function (authCode) { return __awaiter(_this, void 0, void 0, function () {
+            var _a, accessToken, expiryTimestamp, refreshToken, scopeId, addOnQuery, error_2;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, fetchJSON("./access-token?code=".concat(authCode))];
+                    case 1:
+                        _a = _b.sent(), accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken, scopeId = _a.scopeId;
+                        jiraHelpers.saveInformationToLocalStorage({
+                            accessToken: accessToken,
+                            refreshToken: refreshToken,
+                            expiryTimestamp: expiryTimestamp,
+                            scopeId: scopeId,
+                        });
+                        addOnQuery = new URL(window.location).searchParams.get("state");
+                        location.href = '/' + (addOnQuery || "");
+                        return [3 /*break*/, 3];
+                    case 2:
+                        error_2 = _b.sent();
+                        //handle error properly.
+                        console.error(error_2);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); },
+        fetchAccessibleResources: function () {
+            return requestHelper("https://api.atlassian.com/oauth/token/accessible-resources");
+        },
+        fetchJiraSprint: function (sprintId) { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, requestHelper("/agile/1.0/sprint/".concat(sprintId))];
+            });
+        }); },
+        fetchJiraIssue: function (issueId) { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, requestHelper("/api/3/issue/".concat(issueId))];
+            });
+        }); },
+        editJiraIssueWithNamedFields: function (issueId, fields) { return __awaiter(_this, void 0, void 0, function () {
+            var scopeIdForJira, accessToken, fieldMapping, editBody;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
+                        accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
+                        return [4 /*yield*/, fieldsRequest];
+                    case 1:
+                        fieldMapping = _a.sent();
+                        editBody = fieldsToEditBody(fields, fieldMapping);
+                        //const fieldsWithIds = mapNamesToIds(fields || {}, fieldMapping),
+                        //	updateWithIds = mapNamesToIds(update || {}, fieldMapping);
+                        return [2 /*return*/, fetch("".concat(JIRA_API_URL, "/").concat(scopeIdForJira, "/rest/api/3/issue/").concat(issueId, "?") +
+                                "" /*new URLSearchParams(params)*/, {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': "Bearer ".concat(accessToken),
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(editBody)
+                            }).then(responseToText)];
+                }
+            });
+        }); },
+        fetchJiraIssuesWithJQL: function (params) {
+            // TODO - investigate this and convert params to proper type
+            return requestHelper("/api/3/search?" + new URLSearchParams(params));
+        },
+        fetchJiraIssuesWithJQLWithNamedFields: function (params) {
+            return __awaiter(this, void 0, void 0, function () {
+                var fields, newParams, response;
+                var _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0: return [4 /*yield*/, fieldsRequest];
+                        case 1:
+                            fields = _b.sent();
+                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
+                            return [4 /*yield*/, jiraHelpers.fetchJiraIssuesWithJQL(newParams)];
+                        case 2:
+                            response = _b.sent();
+                            return [2 /*return*/, response.issues.map(function (issue) {
+                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
+                                })];
+                    }
+                });
+            });
+        },
+        fetchAllJiraIssuesWithJQL: function (params) {
+            return __awaiter(this, void 0, void 0, function () {
+                var limit, apiParams, firstRequest, _a, maxResults, total, startAt, requests, limitOrTotal, i;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            limit = params.limit, apiParams = __rest(params, ["limit"]);
+                            firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100 }, apiParams));
+                            return [4 /*yield*/, firstRequest];
+                        case 1:
+                            _a = _b.sent(), _a.issues, maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
+                            requests = [firstRequest];
+                            limitOrTotal = Math.min(total, limit || Infinity);
+                            for (i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
+                                requests.push(jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: maxResults, startAt: i }, apiParams)));
+                            }
+                            return [2 /*return*/, Promise.all(requests).then(function (responses) {
+                                    return responses.map(function (response) { return response.issues; }).flat();
+                                })];
+                    }
+                });
+            });
+        },
+        fetchAllJiraIssuesWithJQLUsingNamedFields: function (params) {
+            return __awaiter(this, void 0, void 0, function () {
+                var fields, newParams, response;
+                var _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0: return [4 /*yield*/, fieldsRequest];
+                        case 1:
+                            fields = _b.sent();
+                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
+                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQL(newParams)];
+                        case 2:
+                            response = _b.sent();
+                            return [2 /*return*/, response.map(function (issue) {
+                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
+                                })];
+                    }
+                });
+            });
+        },
+        fetchJiraChangelog: function (issueIdOrKey, params) {
+            // TODO investigate this - convert params to proper type
+            return requestHelper("/api/3/issue/".concat(issueIdOrKey, "/changelog?") + new URLSearchParams(params));
+        },
+        isChangelogComplete: function (changelog) {
+            return changelog.histories.length === changelog.total;
+        },
+        fetchRemainingChangelogsForIssues: function (issues, progress) {
+            // check for remainings
+            return Promise.all(issues.map(function (issue) {
+                if (jiraHelpers.isChangelogComplete(issue.changelog)) {
+                    return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
+                }
+                else {
+                    return jiraHelpers.fetchRemainingChangelogsForIssue(issue.key, issue.changelog).then(function (histories) {
+                        return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
+                    });
+                }
+            }));
+        },
+        // weirdly, this starts with the oldest, but we got the most recent
+        // returns an array of histories objects
+        fetchRemainingChangelogsForIssue: function (issueIdOrKey, mostRecentChangeLog) {
+            mostRecentChangeLog.histories; var maxResults = mostRecentChangeLog.maxResults, total = mostRecentChangeLog.total; mostRecentChangeLog.startAt;
+            var requests = [];
+            requests.push({ values: mostRecentChangeLog.histories });
+            for (var i = 0; i < total - maxResults; i += maxResults) {
+                requests.push(jiraHelpers.fetchJiraChangelog(issueIdOrKey, {
+                    maxResults: Math.min(maxResults, total - maxResults - i),
+                    startAt: i,
+                }).then(function (response) {
+                    // the query above reverses the sort order, we fix that here
+                    return __assign(__assign({}, response), { values: response.values.reverse() });
+                }));
+            }
+            // server sends back as "values", we match that
+            return Promise.all(requests).then(function (responses) {
+                return responses.map(function (response) { return response.values; }).flat();
+            }).then(function (response) {
+                return response;
+            });
+        },
+        fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params, progress) {
+            if (progress === void 0) { progress = function () { }; }
+            var limit = params.limit, apiParams = __rest(params, ["limit"]);
+            // a weak map would be better
+            progress.data = progress.data || {
+                issuesRequested: 0,
+                issuesReceived: 0,
+                changeLogsRequested: 0,
+                changeLogsReceived: 0
+            };
+            function getRemainingChangeLogsForIssues(response) {
+                if (progress.data) {
+                    Object.assign(progress.data, {
+                        issuesReceived: progress.data.issuesReceived + response.issues.length
+                    });
+                    progress(progress.data);
+                }
+                return jiraHelpers.fetchRemainingChangelogsForIssues(response.issues, progress);
+            }
+            var firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100, expand: ["changelog"] }, apiParams));
+            return firstRequest.then(function (_a) {
+                _a.issues; var maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
+                if (progress.data) {
+                    Object.assign(progress.data, {
+                        issuesRequested: progress.data.issuesRequested + total,
+                        changeLogsRequested: 0,
+                        changeLogsReceived: 0
+                    });
+                    progress(progress.data);
+                }
+                var requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
+                var limitOrTotal = Math.min(total, limit || Infinity);
+                for (var i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
+                    requests.push(jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: maxResults, startAt: i }, apiParams))
+                        .then(getRemainingChangeLogsForIssues));
+                }
+                return Promise.all(requests).then(function (responses) {
+                    return responses.flat();
+                });
+            });
+        },
+        // this could do each response incrementally, but I'm being lazy
+        fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
+            return __awaiter(this, arguments, void 0, function (params, progress) {
+                var fields, newParams, response;
+                if (progress === void 0) { progress = function () { }; }
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, fieldsRequest];
+                        case 1:
+                            fields = _a.sent();
+                            newParams = __assign(__assign({}, params), { fields: params.fields.map(function (f) { return fields.nameMap[f] || f; }) });
+                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress)];
+                        case 2:
+                            response = _a.sent();
+                            return [2 /*return*/, response.map(function (issue) {
+                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
+                                })];
+                    }
+                });
+            });
+        },
+        fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
+            return __awaiter(this, arguments, void 0, function (params, progress) {
+                return __generator(this, function (_a) {
+                    console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
+                    return [2 /*return*/, Promise.resolve(null)];
+                });
+            });
+        },
+        fetchChildrenResponses: function (params, parentIssues, progress) {
+            var _this = this;
+            if (progress === void 0) { progress = function () { }; }
+            var issuesToQuery = chunkArray(parentIssues, 40);
+            var batchedResponses = issuesToQuery.map(function (issues) {
+                var keys = issues.map(function (issue) { return issue.key; });
+                var jql = "parent in (".concat(keys.join(", "), ")");
+                return _this.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(__assign(__assign({}, params), { jql: jql }), progress);
+            });
+            // this needs to be flattened
+            return batchedResponses;
+        },
+        // Makes child requests in batches of 40
+        // 
+        // params - base params
+        // sourceParentIssues - the source of parent issues
+        fetchDeepChildren: function (params, sourceParentIssues, progress) {
+            var _this = this;
+            if (progress === void 0) { progress = function () { }; }
+            var batchedFirstResponses = this.fetchChildrenResponses(params, sourceParentIssues, progress);
+            var getChildren = function (parentIssues) {
+                if (parentIssues.length) {
+                    return _this.fetchDeepChildren(params, parentIssues, progress).then(function (deepChildrenIssues) {
+                        return parentIssues.concat(deepChildrenIssues);
+                    });
+                }
+                else {
+                    return parentIssues;
+                }
+            };
+            var batchedIssueRequests = batchedFirstResponses.map(function (firstBatchPromise) {
+                return firstBatchPromise.then(getChildren);
+            });
+            return Promise.all(batchedIssueRequests).then(function (allChildren) {
+                return allChildren.flat();
+            });
+        },
+        fetchJiraFields: function () {
+            return requestHelper("/api/3/field");
+        },
+        getAccessToken: function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var refreshToken;
+                return __generator(this, function (_a) {
+                    if (!jiraHelpers.hasValidAccessToken()) {
+                        refreshToken = jiraHelpers.fetchFromLocalStorage("refreshToken");
+                        if (!refreshToken) {
+                            jiraHelpers.fetchAuthorizationCode();
+                        }
+                        else {
+                            return [2 /*return*/, jiraHelpers.refreshAccessToken()];
+                        }
+                    }
+                    else {
+                        return [2 /*return*/, jiraHelpers.fetchFromLocalStorage("accessToken")];
+                    }
+                    return [2 /*return*/];
+                });
+            });
+        },
+        hasAccessToken: function () {
+            return !!jiraHelpers.fetchFromLocalStorage("accessToken");
+        },
+        hasValidAccessToken: function () {
+            var accessToken = jiraHelpers.fetchFromLocalStorage("accessToken");
+            var expiryTimestamp = Number(jiraHelpers.fetchFromLocalStorage("expiryTimestamp"));
+            if (isNaN(expiryTimestamp)) {
+                expiryTimestamp = 0;
+            }
+            var currentTimestamp = Math.floor(new Date().getTime() / 1000.0);
+            return !((currentTimestamp > expiryTimestamp) || (!accessToken));
+        },
+        _cachedServerInfoPromise: function () {
+            return requestHelper('/api/3/serverInfo');
+        },
+        getServerInfo: function () {
+            // if(this._cachedServerInfoPromise) {
+            // 	return this._cachedServerInfoPromise;
+            // }
+            // // https://your-domain.atlassian.net/rest/api/3/serverInfo
+            // return this._cachedServerInfoPromise( = requestHelper('/api/3/serverInfo'));
+            return this._cachedServerInfoPromise();
+        },
+    };
+    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
+        makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
+    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
+        makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
+    // commented out because it's not used
+    // function makeFieldNameToIdMap(
+    // 	fields: {
+    // 		name: string;
+    // 		id: string | number;
+    // 	}[]
+    // ) {
+    // 	const map = {};
+    // 	fields.forEach((f) => {
+    // 		map[f.name] = f.id;
+    // 	});
+    // 	return map;
+    // }
+    if (jiraHelpers.hasValidAccessToken()) {
+        // @ts-ignore
+        fieldsRequest = jiraHelpers.fetchJiraFields().then(function (fields) {
+            var nameMap = {};
+            var idMap = {};
+            // @ts-ignore
+            fields.forEach(function (f) {
+                // @ts-ignore
+                idMap[f.id] = f.name;
+                // @ts-ignore
+                nameMap[f.name] = f.id;
+            });
+            console.log(nameMap);
+            return {
+                list: fields,
+                nameMap: nameMap,
+                idMap: idMap
+            };
+        });
+        // @ts-ignore
+        jiraHelpers.fieldsRequest = fieldsRequest;
+    }
+    function mapIdsToNames(obj, fields) {
+        var mapped = {};
+        for (var prop in obj) {
+            mapped[fields.idMap[prop] || prop] = obj[prop];
+        }
+        return mapped;
+    }
+    function fieldsToEditBody(obj, fieldMapping) {
+        var editBody = { fields: {}, update: {} };
+        for (var prop in obj) {
+            //if(prop === "Story points") {
+            // 10016 -> story point estimate
+            // 10034 -> story points
+            //obj[prop] = ""+obj[prop];
+            //mapped["customfield_10016"] = obj[prop];
+            //mapped["customfield_10034"] = obj[prop];
+            //mapped["Story points"] = obj[prop];
+            //mapped["storypoints"] = obj[prop];
+            //mapped["Story Points"] = obj[prop];
+            // 10016 -> story point estimate
+            //} else {
+            //mapped[fields.nameMap[prop] || prop] = obj[prop];
+            //}
+            editBody.update[fieldMapping.nameMap[prop] || prop] = [{ set: obj[prop] }];
+        }
+        return editBody;
+    }
+    // commented out because it's not used
+    // function mapNamesToIds(obj, fields) {
+    // 	const mapped = {};
+    // 	for (let prop in obj) {
+    // 		//if(prop === "Story points") {
+    // 			// 10016 -> story point estimate
+    // 			// 10034 -> story points
+    // 			//obj[prop] = ""+obj[prop];
+    // 			//mapped["customfield_10016"] = obj[prop];
+    // 			//mapped["customfield_10034"] = obj[prop];
+    // 			//mapped["Story points"] = obj[prop];
+    // 			//mapped["storypoints"] = obj[prop];
+    // 			//mapped["Story Points"] = obj[prop];
+    // 			// 10016 -> story point estimate
+    // 		//} else {
+    // 			mapped[fields.nameMap[prop] || prop] = obj[prop];
+    // 		//}
+    // 	}
+    // }
+    window.jiraHelpers = jiraHelpers;
+    return jiraHelpers;
+}
+
+const REFERENCE_DATE = new Date(2024,1,20);
+const DAY$1 = 1000 * 60 * 60 * 24;
+
+
+let PROMISE = null;
+
+const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
+
+
+function bitoviTrainingData(dateToShift){
+    if(PROMISE === null) {
+        if(isNode) {
+            PROMISE = Promise.resolve([{}]);
+        } else {
+            PROMISE = nativeFetchJSON("./examples/bitovi-training.json");
+        }
+
+        PROMISE.then(function(data){
+            const daysShift = Math.round( (dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY$1 )-0;
+            return adjustDateStrings(data, daysShift);
+        });
+    }
+
+    return PROMISE;
+}
+
+
+
+function adjustDateStrings(obj, days) {
+    const dateRegex = /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?([-+]\d{2}:\d{2})?)?/;
+
+    function addDaysToDate(dateStr, daysToAdd) {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + daysToAdd);
+        return date.toISOString();
+    }
+
+    function formatDate(date, originalFormat) {
+        if (originalFormat.includes('T') && originalFormat.includes('-0600')) {
+            return date.replace('Z', '').replace(/\.\d{3}/, '') + '-0600';
+        } else if (originalFormat.includes('T')) {
+            return date.replace('Z', '');
+        } else if (originalFormat.includes('-')) {
+            return date.split('T')[0];
+        } else {
+            // Assumes format "yyyy-MM-dd HH:mm:ss.0"
+            return date.replace('T', ' ').replace('Z', '').replace(/\.\d{3}/, '.0');
+        }
+    }
+
+    for (let key in obj) {
+        if (typeof obj[key] === 'string' && dateRegex.test(obj[key])) {
+            const newDate = addDaysToDate(obj[key], days);
+            obj[key] = formatDate(newDate, obj[key]);
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+            adjustDateStrings(obj[key], days);
+        } else if (Array.isArray(obj[key])) {
+            obj[key] = obj[key].map(item => {
+                if (typeof item === 'string' && dateRegex.test(item)) {
+                    const newDate = addDaysToDate(item, days);
+                    return formatDate(newDate, item);
+                } else if (typeof item === 'object' && item !== null) {
+                    adjustDateStrings(item, days);
+                }
+                return item;
+            });
+        }
+    }
+    return obj;
+}
+
+const dateMatch = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+function saveJSONToUrl(key, defaultValue, Type, converter = JSON){
+	const {stringify, parse} = converter;
+	
+	return {
+			type: Type,
+      value({ lastSet, listenTo, resolve }) {
+          const defaultJSON = stringify(typeof defaultValue === "function" ? defaultValue.call(this) : defaultValue);
+          if (lastSet.value) {
+              resolve(lastSet.value);
+          } else {
+							const parsed = parse( new URL(window.location).searchParams.get(key) || defaultJSON );
+							if(parsed && dateMatch.test(parsed)) {
+								resolve( new Date(parsed) );
+							} else {
+								resolve( parsed );
+							}
+          }
+
+          listenTo(lastSet, (value) => {
+							const valueJSON = stringify(value);
+              updateUrlParam(key, valueJSON, defaultJSON);
+              resolve(value);
+          });
+      }
+  }
+}
+
+function updateUrlParam(key, valueJSON, defaultJSON) {
+  const newUrl = new URL(window.location);
+  if(valueJSON !== defaultJSON) {
+    newUrl.searchParams.set(key, valueJSON );
+  } else {
+    newUrl.searchParams.delete(key );
+  }
+  history.pushState({}, '', newUrl);
+}
+
+class SimpleTooltip extends HTMLElement {
+  static get observedAttributes() { return ['for']; }
+  attributeChangedCallback(name, oldValue, newValue) {
+
+  }
+  connectedCallback(){
+    this.enteredElement = this.enteredElement.bind(this);
+    this.leftElement = this.leftElement.bind(this);
+    this.forElement = this.getAttribute("for");
+    this.style.display = "none";
+
+    this.style.position = "absolute";
+  }
+  disconnectedCallback(){
+    if(this._forElement) {
+      this._forElement.removeEventListener("mouseenter", this.enteredElement);
+      this._forElement.removeEventListener("mouseenter", this.leftElement);
+    }
+  }
+  set forElement(element){
+    if(typeof element === "string") {
+      element = document.querySelectorAll(element);
+    }
+    if(this._forElement) {
+      this._forElement.removeEventListener("mouseenter", this.enteredElement);
+      this._forElement.removeEventListener("mouseenter", this.leftElement);
+    }
+    if(element) {
+      element.addEventListener("mouseenter", this.enteredElement);
+      element.addEventListener("mouseenter", this.leftElement);
+    }
+    this._forElement = element;
+  }
+  enteredElement(event, html){
+    if(arguments.length > 1) {
+      this.innerHTML = html;
+      var rect = event.currentTarget.getBoundingClientRect();
+      this.style.top = (window.scrollY + rect.bottom)+"px";
+      this.style.left = (window.scrollX + rect.left) +"px";
+      this.style.display = "";
+    }
+  }
+  belowElement(element, DOM) {
+      if(arguments.length > 1) {
+          this.innerHTML = "";
+          this.appendChild(DOM);
+
+          this.style.top = "-1000px";
+          this.style.left = "-1000px";
+          this.style.display = "";
+
+          const height = this.clientHeight;
+          var rect = element.getBoundingClientRect();
+          const top = (window.scrollY + rect.bottom);
+          const bottom = top + height;
+          if(bottom >= window.innerHeight) {
+            this.style.top = (rect.top - height)+"px";
+          } else {
+            this.style.top = top+"px";
+            
+          }
+          this.style.left = (window.scrollX + rect.left) +"px";
+          
+      }
+  }
+  belowElementInScrollingContainer(element, DOM){
+    // find if there's a scrolling container and move ourselves to that 
+    const container = findScrollingContainer(element);
+    this.innerHTML = "";
+    container.appendChild(this);
+    // find the relative position 
+    this.style.top = "-1000px";
+    this.style.left = "-1000px";
+    if(typeof DOM === "string") {
+      this.innerHTML = DOM;
+    } else {
+      this.appendChild(DOM);
+    }
+    this.style.display = "";
+    
+    // where is the container on the page
+    const containerRect = container.getBoundingClientRect(),
+      // where is the element we are positioning next to on the page
+      elementRect = element.getBoundingClientRect(),
+      // how big is the tooltip
+      tooltipRect = this.getBoundingClientRect();
+    
+    const containerStyles = window.getComputedStyle(container);
+    // how much room is there 
+    
+    // where would the tooltip's bottom reach in the viewport 
+    const bottomInWindow = elementRect.bottom + tooltipRect.height;
+
+    const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
+
+    // if the tooltip wouldn't be visible "down" 
+    if(bottomInWindow > window.innerHeight) {
+      const viewPortPosition = ( elementRect.top - tooltipRect.height );
+      const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
+      const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
+      this.style.top = ( posInContainerAccountingForScrolling )+"px";
+    } else {
+      const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
+      this.style.top = (topFromContainer + scrollingAdjustment) +"px";
+    }
+
+    const leftFromContainer = elementRect.left - containerRect.left;
+    this.style.left = leftFromContainer +"px";
+    
+  }
+  centeredBelowElement(element, html) {
+    if(arguments.length > 1) {
+      this.style.top = "-1000px";
+      this.style.left = "-1000px";
+      
+      this.innerHTML = html;
+      
+      this.style.display = "";
+      const tooltipRect = this.getBoundingClientRect();
+
+      var rect = element.getBoundingClientRect();
+      this.style.top = (window.scrollY + rect.bottom)+"px";
+      this.style.left = (window.scrollX + rect.left + (rect.width / 2) - (tooltipRect.width / 2)) +"px";
+    }
+  }
+  
+  topRightOnElementBottomRight(element, html) {
+    if(arguments.length > 1) {
+      this.style.top = "-1000px";
+      this.style.left = "-1000px";
+
+      if(typeof html === "string") {
+        this.innerHTML = html;
+      } else {
+        this.innerHTML = "";
+        this.appendChild(html);
+      }
+      
+      
+      this.style.display = "";
+
+      const tooltipRect = this.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
+
+      this.style.top = (window.scrollY + rect.bottom)+"px";
+      this.style.left = (window.scrollX + rect.left + (rect.width) - (tooltipRect.width)) +"px";
+    }
+  }
+  leftElement(event) {
+    this.style.display = "none";
+  }
+}
+customElements.define("simple-tooltip", SimpleTooltip);
+
+
+
+function findScrollingContainer(element){
+  let cur = element.parentElement;
+  while(cur && cur.scrollHeight === cur.clientHeight) {
+    cur = cur.parentElement;
+  }
+  if(!cur) {
+    return document.body
+  } else {
+    return cur;
+  }
+}
+
+// create global tooltip reference
+
+const TOOLTIP$1 = new SimpleTooltip();
+
+document.body.append(TOOLTIP$1);
+
+class AutoCompleteSuggestions extends canStacheElement {
+    static view = `
+        
+        <ul class="max-h-80 overflow-y-auto">
+            {{# if(this.data.length) }}
+                {{# for(item of this.data) }}
+                    <li class="px-2 hover:bg-blue-75 cursor-pointer" on:click="this.add(item)">{{item}}</li>
+                {{/ for }}
+            {{ else }}
+                <li>No matches</li>
+            {{/ if }}
+        </ul>
+    `;
+}
+customElements.define("auto-complete-suggestions", AutoCompleteSuggestions);
+
+class AutoComplete extends canStacheElement {
+    static view = `
+        <div class="flex gap-2 align-middle flex-wrap">
+            {{# for(item of this.selected) }}
+                <div class="border-neutral-800 border-solid border rounded-md whitespace-nowrap">
+                    <label class="inline p-1">{{item}}</label>
+                    <button class="text-red-500 text-sm py-1 px-2 bg-neutral-30 font-semibold rounded-r shadow-sm hover:bg-neutral-40" on:click="this.remove(item, scope.event)">x</button>
+                </div>
+            {{/ for }}
+            <input class="form-border rounded-md px-1 placeholder:italic placeholder:text-slate-400" 
+                placeholder="{{this.inputPlaceholder}}"
+                on:focus="this.suggestItems(scope.element.value)"
+                on:input="this.suggestItems(scope.element.value)">
+        </div>
+    `;
+    static props = {
+        data:  {type: canType_1_1_6_canType.Any},
+        selected: {type: canType_1_1_6_canType.Any},
+        showingSuggestions: {type: Boolean, default: false}
+    };
+    remove(item, event) {
+        event.preventDefault();
+        this.selected = this.selected.filter( (selectedItem)=> {
+            return selectedItem != item;
+        });
+    }
+    add(item) {
+        this.selected = [...this.selected, item ];
+        this.querySelector("input").value = "";
+        this.stopShowingSuggestions();
+    }
+    suggestItems(searchTerm){
+        const matches = this.data.filter( item => {
+            return item.toLowerCase().includes(searchTerm) && !this.selected.includes(item)
+        });
+        this.showingSuggestions = true;
+        // this could be made more efficient, but is probably ok
+        TOOLTIP$1.belowElementInScrollingContainer(this, 
+            new AutoCompleteSuggestions().initialize({
+                searchTerm,
+                data: matches,
+                add: this.add.bind(this)
+            })
+        );
+    }
+    connected() {
+        // handle when someone clicks off the element
+        this.listenTo(window, "click", (event)=>{
+            // if we aren't showing, don't worry about it
+            if(!this.showingSuggestions) {
+                return;
+            }
+            // do nothing if the input was clicked on
+            if(this.querySelector("input") === event.target) {
+                return
+            }
+            // do nothing if the TOOLTIP was clicked
+            if(TOOLTIP$1.contains(event.target)) {
+                return;
+            }
+            this.stopShowingSuggestions();
+        });
+    }
+    stopShowingSuggestions(){
+        TOOLTIP$1.leftElement();
+        this.showingSuggestions = false;
+    }
+}
+
+
+customElements.define("auto-complete", AutoComplete);
+
+let StatusFilter$1 = class StatusFilter extends canStacheElement {
+    static view = `
+    <auto-complete 
+        data:from="this.statuses" 
+        selected:bind="this.selectedStatuses"
+        inputPlaceholder:raw="Search for statuses"></auto-complete>
+    
+    `;
+    static props = {
+        statuses: {
+            get default(){
+                return [];
+            }
+        },
+        param: String,
+        selectedStatuses: {
+            value({resolve, lastSet, listenTo}){
+                const updateValue = (value) => {
+                    if(!value) {
+                        value = "";
+                    } else if( Array.isArray(value) ){
+                        value = value.join(",");
+                    }
+                    updateUrlParam(this.param, value, "");
+
+                    currentValue = value === "" ? [] : value.split(",");
+                    resolve(currentValue);
+                };
+                let currentValue;
+                updateValue(new URL(window.location).searchParams.get(this.param));
+
+                listenTo(lastSet, (value)=>{
+                    updateValue(value);
+                });
+
                 
             }
-        })
-    }
-}
-
-
-
-function sleep(time) {
-    return new Promise(function(resolve){
-        if(!time) {
-            resolve();
         }
-    })
+    };
+};
+
+customElements.define("status-filter",StatusFilter$1);
+
+class StatusFilter extends canStacheElement {
+    static view = `
+    <auto-complete 
+        data:from="this.statuses" 
+        selected:bind="this.statusesToShow"
+        inputPlaceholder:raw="Search for statuses"></auto-complete>
+    
+    `;
+    static props = {
+        statuses: {
+            get default(){
+                return [];
+            }
+        },
+        statusesToShow: {
+            value({resolve, lastSet, listenTo}){
+
+                let currentValue;
+                updateValue(new URL(window.location).searchParams.get("statusesToShow"));
+
+                listenTo(lastSet, (value)=>{
+                    updateValue(value);
+                });
+
+                function updateValue(value) {
+                    if(!value) {
+                        value = "";
+                    } else if( Array.isArray(value) ){
+                        value = value.join(",");
+                    }
+                    updateUrlParam("statusesToShow", value, "");
+
+                    currentValue = value === "" ? [] : value.split(",");
+                    resolve(currentValue);
+                }
+            }
+        }
+    };
 }
 
-const CHANGE_APPLY_AMOUNT = 2000;
-export async function applyChangelogs(observableBaseIssues, priorTime) {
-    const changes = collectChangelog(observableBaseIssues, priorTime);
-    console.log("processing",changes.length, "changes");
-    const sprints = getSprintsMapsFromIssues(observableBaseIssues);
-    const batches = [];
+customElements.define("status-filter-only",StatusFilter);
+
+const DAY_IN_MS = 1000 * 60 * 60 * 24;
+
+const TOOLTIP = new SimpleTooltip();
+document.body.append(TOOLTIP);
+
+let showingObject = null;
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" });
+
+function prettyDate(date) {
+    return date ? dateFormatter.format(date) : "";
+}
+
+function wasReleaseDate(release) {
+
+    const current = release.due;
+    const was = release.lastPeriod && release.lastPeriod.due;
     
-    while(changes.length) {
-        await sleep();
-        const batch = changes.splice(0, CHANGE_APPLY_AMOUNT);
-        applyChangelog(batch, {sprints});
+    if (was && current - DAY_IN_MS > was) {
+            return " (" + prettyDate(was) + ")";
+    } else {
+            return ""
     }
-}*/
+}
+
+function wasStartDate(release) {
+
+    const current = release.start;
+    const was = release.lastPeriod && release.lastPeriod.start;
+    
+    if (was && (current - DAY_IN_MS > was)) {
+            return " (" + prettyDate(was) + ")";
+    } else {
+            return ""
+    }
+}
+
+
+function showTooltipContent(element, content) {
+
+    TOOLTIP.belowElementInScrollingContainer(element, content);
+
+    TOOLTIP.querySelector(".remove-button").onclick = ()=> {
+        showingObject = null;
+        TOOLTIP.leftElement();
+    };
+}
+
+function showTooltip(element, issue){
+    console.log(issue);
+    if(showingObject === issue) {
+        showingObject = null;
+        TOOLTIP.leftElement();
+        return;
+    }
+    showingObject = issue;
+
+    const make = (issue, workPart) =>{
+        const breakdownPart = issue.rollupStatuses[workPart];
+
+        return `<div class="p-2">
+            <div class="release_box_subtitle_wrapper">
+                    <span class="release_box_subtitle_key color-text-and-bg-${breakdownPart.status}">
+                        &nbsp;${workPart.toUpperCase()}&nbsp;
+                    </span>
+                    ${
+                        issue[workPart+"Status"] !== "unknown" ?
+                        `<span class="release_box_subtitle_value">
+                            ${prettyDate(breakdownPart.start)}
+                            ${wasStartDate(breakdownPart)}
+                            </span><span>-</span>
+                            <span class="release_box_subtitle_value">
+                            ${prettyDate(breakdownPart.due)}
+                            ${wasReleaseDate(breakdownPart)}
+                        </span>` : ''
+                    }
+            </div>
+            ${ 
+                breakdownPart.statusData?.warning === true ?
+                `<div class="color-bg-warning">${breakdownPart.statusData.message}</div>` : ""
+            }
+            ${
+                breakdownPart.status !== "unknown" ?
+                `<p>Start: <a href="${breakdownPart?.startFrom?.reference?.url}" target="_blank" class="link">
+                    ${breakdownPart?.startFrom?.reference?.summary}</a>'s 
+                    ${breakdownPart?.startFrom?.message}
+                </p>
+                <p>End: <a href="${breakdownPart?.dueTo?.reference?.url}" target="_blank" class="link">
+                    ${breakdownPart?.dueTo?.reference?.summary}</a>'s
+                    ${breakdownPart?.dueTo?.message}
+                </p>` :
+                ''
+            }
+            
+        </div>`;
+    };
+    const DOM = document.createElement("div");
+    if(issue.rollupStatuses) {
+        const rollupData = issue.rollupStatuses.rollup;
+        DOM.innerHTML = `
+        <div class='flex remove-button pointer' style="justify-content: space-between">
+            <a class="${issue.url ? "link" : ""} text-lg font-bold"
+                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
+            <span>❌</span>
+        </div>
+        ${/*issue.dateData.rollup*/ ""}
+        ${ 
+            rollupData?.statusData?.warning === true ?
+            `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
+        }
+        ${ issue.rollupStatuses.rollup ? make(issue, "rollup") :""}
+        ${ issue.rollupStatuses.dev ? make(issue, "dev") :""}
+        ${issue.rollupStatuses.qa ? make(issue, "qa") : ""}
+        ${issue.rollupStatuses.uat ?  make(issue, "uat") : ""}
+        `;
+    } else {
+        // "Planning" epics might not have this data
+        DOM.innerHTML = `
+        <div class='flex remove-button pointer gap-2' style="justify-content: space-between">
+            <a class="${issue.url ? "link" : ""} text-lg font-bold"
+                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
+            <span>❌</span>
+        </div>`;
+    }
+   
+    showTooltipContent(element, DOM);
+
+}
+
+// FIRST, lets make a type to combine Derived issues and releases
+
+/**
+ * @typedef {import("../derived/derive").DerivedWorkIssue | import("../releases/derive").DerivedRelease} IssueOrRelease
+ */
+/**
+ * @typedef {Array<IssueOrRelease>} IssuesOrReleases
+ */
+
+
+// =======================
+// Now define how one would get the parents from these items
+/**
+ * Gets the parent's from some issue type.  We probably need some way types can provide this.
+ * @param {IssueOrRelease} issueOrRelease 
+ */
+function getParentKeys(issueOrRelease){
+  const parents = [];
+  if( issueOrRelease.parentKey ){
+      parents.push(issueOrRelease.parentKey);
+  }
+  if(issueOrRelease.releases) {
+      parents.push(...issueOrRelease.releases.map( release => release.key));
+  }
+  return parents;
+}
+
+
+// =======================
+// Now need some way of building the hierarchy from the reporting topology
+
+function getHierarchyTest({type, hierarchyLevel}) {
+  if(hierarchyLevel == null || hierarchyLevel === Infinity) {
+    return (issue)=> { return issue.type === type; }
+  } else {
+    return (issue)=> { return issue.hierarchyLevel === hierarchyLevel; }
+  }
+}
+/**
+ * 
+ * @param {IssuesOrReleases} issuesOrReleases 
+ * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
+ */
+function groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies) {
+  return rollupTypesAndHierarchies.map( (hierarchy) => {
+    return issuesOrReleases.filter( getHierarchyTest(hierarchy) );
+  }).reverse();
+}
+
+
+
+
+// ====================
+// With that Reporting topology, we are able to build a new mapping of parent / child relationships
+// These objects are what the functions should be using to rollup and such
+/**
+ * @typedef {{
+*  depth: Number,
+*  childKeys: Array<String>,
+*  parentKeys: Array<String>
+* }} ReportingHierarchy
+*/
+/**
+* @typedef {IssueOrRelease & {reportingHierarchy: ReportingHierarchy}} ReportingHierarchyIssueOrRelease
+*/
+/**
+ * @typedef {Array<ReportingHierarchyIssueOrRelease>} ReportingHierarchyIssuesOrReleases
+ */
+/**
+* Takes a bottom-up grouped hierarchy and adds
+* reportingHierarchy = {childKeys: [keys], parentKeys: [keys], depth: Number}}
+* to each issue.
+*
+* Returns a new bottom-up grouped hierarchy of issues or releases
+* @param {Array<import("../rollup/rollup").IssuesOrReleases>} issuesOrReleases
+* @return {ReportingHierarchyIssuesOrReleases}
+*/
+function addChildrenFromGroupedHierarchy(groupedHierarchy) {
+ // we should label each issue with its virtual hierarchy ... then we can make sure 
+ // children add themselves to the right parents ... we can probably do this in one pass as things are ordered 
+ // {PARENT_KEY: {allChildren: [issues..], index}}
+ const parentKeyToChildren = {};
+ const topDownGroups = [...groupedHierarchy].reverse();
+ const newGroups = [];
+ for (let g = 0; g < topDownGroups.length; g++) {
+   let group = topDownGroups[g];
+   let newGroup = [];
+   newGroups.push(newGroup);
+
+   for (let issue of group) {
+     let copy = {
+       ...issue,
+       reportingHierarchy: { depth: g, childKeys: [], parentKeys: [] }
+     };
+     newGroup.push(copy);
+     parentKeyToChildren[issue.key] = copy.reportingHierarchy;
+     if (g > 0) {
+       const parents = getParentKeys(issue);
+       for (let parentKey of parents) {
+         const parentData = parentKeyToChildren[parentKey];
+         // make sure your parent is up one level in the issue hierarchy
+         if (parentData && parentData.depth === g - 1) {
+           parentData.childKeys.push(issue.key);
+           copy.reportingHierarchy.parentKeys.push(parentKey);
+         }
+       }
+     }
+   }
+ }
+ return newGroups.reverse();
+}
+
+/**
+ * 
+ * @param {IssuesOrReleases} issuesOrReleases 
+ * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
+ */
+function addReportingHierarchy(issuesOrReleases, rollupTypesAndHierarchies){
+  const groups = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies);
+  return addChildrenFromGroupedHierarchy(groups).flat(1);
+}
+
+
+
+
+
+
+
+/**
+ * @param {Array<ReportingHierarchyIssuesOrReleases>} groupedHierarchy 
+ */
+function makeGetChildrenFromGrouped(groupedHierarchy) {
+  const keyToIssue = new Map();  for(let group of groupedHierarchy){
+    for(let issue of group) {
+      keyToIssue.set( issue.key, issue);
+    }
+  }
+  const getIssue = keyToIssue.get.bind(keyToIssue);
+  /**
+   * @param {ReportingHierarchyIssueOrRelease} keyOrIssueOrRelease
+   * @return {Array<IssuesOrReleases>}
+   */
+  return function getChildren(keyOrIssueOrRelease){
+    return keyOrIssueOrRelease.reportingHierarchy.childKeys.map(getIssue)
+  }
+}
+
+
+
+
+/**
+ * @callback CreateRollupDataFromParentAndChild
+ * @param {ReportingHierarchyIssueOrRelease} issueOrRelease 
+ * @param {Array<Object>} children Child rollup data
+ * @param {Number} hierarchyLevel The level in the hierarchy being processed
+ * @param {Object} metadata
+ */
+
+/**
+ * @callback CreateMetadataForHierarchyLevel
+ * @param {Number} hierarchyLevel The level in the hierarchy being processed
+ * @param {Array<ReportingHierarchyIssueOrRelease>} issueOrReleases 
+ * @return {Object} Metadata object
+ */
+
+/**
+ * @typedef {Array<{metaData: Object, rollupData: Array}>} RollupResponse
+ */
+
+
+
+function rollupGroupedReportingHierarchy(groupedHierarchy, {
+  createMetadataForHierarchyLevel = function(){ return {} },
+  createSingleNodeRollupData,
+  createRollupDataFromParentAndChild,
+  finalizeMetadataForHierarchyLevel = function(){},
+  getChildren
+}) {
+
+  // we can build this ourselves if needed ... but costs memory.  Nice if we don't have to do this.
+  if(!getChildren) {
+    getChildren = makeGetChildrenFromGrouped(groupedHierarchy);
+  }
+  const rollupDataByKey = {};
+  function getChildrenRollupData(issue){
+    return getChildren(issue).map( childIssue => {
+      
+      const result = rollupDataByKey[childIssue.key];
+      if(!result) {
+        throw new Error("unable to find previously calculated child data ("+childIssue.key+"). Is your hierarchy in the right order?")
+      }
+      return result;
+    })
+  }
+
+  const rollupResponseData = [];
+  
+
+  for( let hierarchyLevel = 0; hierarchyLevel < groupedHierarchy.length; hierarchyLevel++) {
+    let issues = groupedHierarchy[hierarchyLevel];
+    
+    if(!issues) {
+      continue;
+    }
+
+    let hierarchyData = rollupResponseData[hierarchyLevel] = {
+      rollupData: [],
+      metadata: createMetadataForHierarchyLevel(hierarchyLevel, issues)
+    };
+
+    for(let issue of issues) { 
+      // get children rollup data for issue
+      let children = getChildrenRollupData(issue);
+      let rollupData = createRollupDataFromParentAndChild(issue, children, hierarchyLevel, hierarchyData.metadata);
+      hierarchyData.rollupData.push(rollupData);
+      rollupDataByKey[issue.key] = rollupData;
+      // associate it with the issue 
+    }
+    
+    //onEndOfHierarchy(issueTypeData);
+    finalizeMetadataForHierarchyLevel(hierarchyData.metadata, hierarchyData.rollupData);
+  }
+  return rollupResponseData;
+}
+/**
+ * This "MUST" have the deepest children in the bottom
+ * @param {Array<IssuesOrReleases>} groupedHierarchy 
+ * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild, createMetadataForHierarchyLevel: CreateMetadataForHierarchyLevel}} options 
+ */
+function rollupGroupedHierarchy(groupedHierarchy, options){
+  const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy);
+  return rollupGroupedReportingHierarchy(reportingHierarchy, options)
+}
+  
+
+
+/**
+ * 
+ * @param {ReportingHierarchyIssuesOrReleases} issuesOrReleases 
+ */
+function makeGetChildrenFromReportingIssues(issuesOrReleases) {
+  const keyToIssue = new Map();  for(let issue of issuesOrReleases) {
+    keyToIssue.set( issue.key, issue);
+  }
+  
+  const getIssue = keyToIssue.get.bind(keyToIssue);
+  /**
+   * @param {ReportingHierarchyIssueOrRelease} keyOrIssueOrRelease
+   * @return {Array<ReportingHierarchyIssuesOrReleases>}
+   */
+  return function getChildren(keyOrIssueOrRelease){
+    return keyOrIssueOrRelease.reportingHierarchy.childKeys.map(getIssue)
+  }
+}
+
+
+
+
+
+/**
+ * 
+ * @param {Array<IssuesOrReleases>} groupedHierarchy 
+ * @param {RollupResponse} rollupDatas 
+ * @param {String} key 
+ */
+function zipRollupDataOntoGroupedData(groupedHierarchy, rollupDatas, key) {
+  const newGroups = [];
+  for(let g = 0; g < groupedHierarchy.length; g++) {
+    let group = groupedHierarchy[g];
+    let newIssues = [];
+    newGroups.push(newIssues);
+    for(let i = 0; i < group.length; i++) {
+      let issue = group[i];
+      let clone = {...issue};//Object.create(issue);
+      clone[key] = rollupDatas[g].rollupData[i];
+      newIssues.push(clone);
+    }
+  }
+  return newGroups;
+}
+
+const methods$1 = {
+    parentFirstThenChildren: parentFirstThenChildren$1,
+    childrenOnly: childrenOnly$1,
+    childrenFirstThenParent: childrenFirstThenParent$1,
+    widestRange: widestRange$1,
+    parentOnly: parentOnly$1
+};
+
+
+
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
+            const method = methods$1[methodName];
+            return method(issueOrRelease, children);
+        }
+    });
+}
+
+/**
+ * @typedef {{
+ *   due: Date,
+ *   dueTo: {message: String, reference: Object},
+ *   start: Date,
+ *   startFrom: {message: String, reference: Object}
+ * } | {}} RollupDateData
+ */
+
+/**
+ * @typedef {import("../rollup").IssueOrRelease & {rollupDates: RollupDateData}} RolledupDatesReleaseOrIssue
+ */
+
+
+/**
+ * 
+ * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {{type: String, hierarchyLevel: Number, calculation: String}} rollupTimingLevelsAndCalculations 
+ * @return {Array<RolledupDatesReleaseOrIssue>}
+ */
+function addRollupDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rollupMethods = rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+    const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupDates");
+    return zipped.flat();
+}
+
+function makeQuickCopyDefinedProperties(keys) {
+    return function copy(source) {
+        const obj = {};
+        for(let key of keys) {
+            if(source[key] !== undefined) {
+                obj[key] = source[key];
+            }
+        }
+        return obj;
+    }
+}
+// makes testing easier if we don't create a bunch of "undefined" properties
+const getStartData$1 = makeQuickCopyDefinedProperties(["start","startFrom"]);
+const getDueData$1 = makeQuickCopyDefinedProperties(["due","dueTo"]);
+
+function mergeStartAndDueData$2(records){
+    
+    const startData = records.filter( record => record?.start ).map(getStartData$1);
+    const dueData = records.filter( record => record?.due ).map( getDueData$1 );
+
+    return {
+        ... (startData.length ? startData.sort( (d1, d2) => d1.start - d2.start )[0] : {}),
+        ... (dueData.length ? dueData.sort( (d1, d2) => d2.due - d1.due )[0] : {})
+    }
+}
+
+/**
+ * 
+ * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
+ * @param {*} childrenRollups 
+ * @returns 
+ */
+function parentFirstThenChildren$1(parentIssueOrRelease, childrenRollups){
+
+    const childData = mergeStartAndDueData$2(childrenRollups);
+    const parentData = parentIssueOrRelease?.derivedTiming;
+
+    const parentHasStart = parentData?.start;
+    const parentHasDue = parentData?.due;
+
+    const combinedData = {
+        start: parentHasStart ? parentData?.start : childData?.start,
+        startFrom: parentHasStart ? parentData?.startFrom : childData?.startFrom,
+        due: parentHasDue ? parentData?.due : childData?.due,
+        dueTo: parentHasDue ? parentData?.dueTo : childData?.dueTo
+    };
+
+    return {
+        ...getStartData$1(combinedData),
+        ...getDueData$1(combinedData)
+    };
+}
+
+function childrenOnly$1(parentIssueOrRelease, childrenRollups){
+    return mergeStartAndDueData$2(childrenRollups);
+}
+
+function parentOnly$1(parentIssueOrRelease, childrenRollups){
+    return {
+        ...getStartData$1(parentIssueOrRelease.derivedTiming),
+        ...getDueData$1(parentIssueOrRelease.derivedTiming)
+    };
+}
+
+function childrenFirstThenParent$1(parentIssueOrRelease, childrenRollups){
+    if(childrenRollups.length) {
+        return mergeStartAndDueData$2(childrenRollups);
+    } 
+    return mergeStartAndDueData$2([parentIssueOrRelease.derivedTiming])
+}
+
+function widestRange$1(parentIssueOrRelease, childrenRollups){
+    return mergeStartAndDueData$2([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
+}
+
+function monthDiff(dateFromSring, dateToString) {
+    const dateFrom = new Date(dateFromSring);
+    const dateTo = new Date(dateToString);
+    return dateTo.getMonth() - dateFrom.getMonth() + 12 * (dateTo.getFullYear() - dateFrom.getFullYear());
+}
+
+function getQuartersAndMonths(startDate, endDate){
+	// figure out which quarters startDate and endDate are within
+	const quarterStartDate = new Date(
+			startDate.getFullYear(),
+			Math.floor(startDate.getMonth() / 3) * 3
+	);
+
+	const lastQuarterEndDate = new Date(
+			endDate.getFullYear(),
+			Math.floor(endDate.getMonth() / 3) * 3 + 3
+	);
+
+	// keep track of release indexes
+	const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
+	const quarters = monthDiffResult / 3;
+	if(!Number.isInteger(quarters)) {
+		console.warn("Not an even number of quarters", monthDiffResult,"/ 3");
+	}
+
+	function month(d) {
+			return d.toLocaleString('default', { month: 'short' });
+	}
+
+	const quartersList = [];
+	const months = [];
+
+	for (let i = 0; i < quarters; i++) {
+		const firstMonth = new Date(quarterStartDate);
+		firstMonth.setMonth(firstMonth.getMonth() + i * 3);
+		const secondMonth = new Date(quarterStartDate);
+		secondMonth.setMonth(secondMonth.getMonth() + i * 3 + 1);
+		const thirdMonth = new Date(quarterStartDate);
+		thirdMonth.setMonth(thirdMonth.getMonth() + + i * 3 + 2);
+
+		quartersList.push({
+			number: Math.floor(firstMonth.getMonth() / 3) + 1,
+			name: "Q"+ (Math.floor(firstMonth.getMonth() / 3) + 1)
+		});
+
+		months.push({
+			first: true,
+			name: month(firstMonth)
+		});
+		months.push({
+			name: month(secondMonth)
+		});
+		months.push({
+			last: true,
+			name: month(thirdMonth)
+		});
+	}
+
+	const lastDay = new Date(quarterStartDate);
+	lastDay.setMonth(lastDay.getMonth() + monthDiffResult);
+
+	return {
+		quarters: quartersList,
+		months,
+		firstDay: quarterStartDate,
+		lastDay
+	};
+}
+
+function getCalendarHtml(startDate, endDate) {
+    // figure out which quarters startDate and endDate are within
+    const quarterStartDate = new Date(
+        startDate.getFullYear(),
+        Math.floor(startDate.getMonth() / 3) * 3
+    );
+
+    const lastQuarterEndDate = new Date(
+        endDate.getFullYear(),
+        Math.floor(endDate.getMonth() / 3) * 3 + 3
+    );
+
+
+    let result = '';
+
+    // keep track of release indexes
+    const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
+    const quarters = monthDiffResult / 3;
+	if(!Number.isInteger(quarters)) {
+		console.warn("Not an even number of quarters", monthDiffResult,"/ 3");
+	}
+
+    function month(d) {
+        return d.toLocaleString('default', { month: 'short' });
+    }
+
+    for (let i = 0; i < quarters; i++) {
+        const firstMonth = new Date(quarterStartDate);
+        firstMonth.setMonth(firstMonth.getMonth() + i * 3);
+        const secondMonth = new Date(quarterStartDate);
+        secondMonth.setMonth(secondMonth.getMonth() + i * 3 + 1);
+        const thirdMonth = new Date(quarterStartDate);
+        thirdMonth.setMonth(thirdMonth.getMonth() + + i * 3 + 2);
+
+
+        result += `
+			<div class="calendar">
+				<div class="calendar_title">Q${Math.floor(firstMonth.getMonth() / 3) + 1}</div>
+				<div class="calendar_month_wrapper">
+					<div class="calendar_month ">
+						<span class="calendar_month_name">${month(firstMonth)}</span>
+						<span class="calendar_month_line"></span>
+					</div>
+					<div class="calendar_month dotted-left">
+						<span class="calendar_month_name">${month(secondMonth)}</span>
+						<span class="calendar_month_line"></span>
+					</div>
+					<div class="calendar_month dotted-left">
+						<span class="calendar_month_name">${month(thirdMonth)}</span>
+						<span class="calendar_month_line"></span>
+					</div>
+				</div>
+			</div>
+		`;
+
+    }
+
+    const lastDay = new Date(startDate);
+    lastDay.setMonth(lastDay.getMonth() + monthDiffResult);
+
+    return {
+        html: result,
+        firstDay: quarterStartDate,
+        lastDay
+    };
+}
+
+// https://yumbrands.atlassian.net/issues/?filter=10897
+
+/*
+import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
+import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" })
+
+const inQAStatus = { "QA": true, "In QA": true };
+const inDevStatus = { "In Development": true, "Development": true };
+const inPartnerReviewStatus = { "Partner Review": true };
+const inDoneStatus = { "Done": true };
+
+import SimpleTooltip from "./shared/simple-tooltip.js";
+
+const TOOLTIP = new SimpleTooltip();
+document.body.append(TOOLTIP);*/
+
+
+const percentCompleteTooltip = canStache_5_1_1_canStache(`
+    <button class="remove-button">❌</button>
+    <div class="grid gap-2" style="grid-template-columns: auto repeat(4, auto);">
+
+            <div class="font-bold">Summary</div>
+            <div class="font-bold">Percent Complete</div>
+            <div class="font-bold">Completed Working Days</div>
+            <div class="font-bold">Remaining Working Days</div>
+            <div class="font-bold">Total Working Days</div>
+        
+            <div class="truncate max-w-96">{{this.issue.summary}}</div>
+            <div class="text-right">{{this.getPercentComplete(this.issue)}}</div>
+            <div class="text-right">{{this.round( this.issue.completionRollup.completedWorkingDays) }}</div>
+            <div class="text-right">{{this.round(this.issue.completionRollup.remainingWorkingDays)}}</div>
+            <div class="text-right">{{this.round(this.issue.completionRollup.totalWorkingDays)}}</div>
+        
+        {{# for(child of this.children) }}
+       
+            <div class="pl-4 truncate max-w-96"><a href="{{child.url}}" class="link">{{child.summary}}</a></div>
+            <div class="text-right">{{this.getPercentComplete(child)}}</div>
+            <div class="text-right">{{this.round(child.completionRollup.completedWorkingDays)}}</div>
+            <div class="text-right">{{this.round(child.completionRollup.remainingWorkingDays)}}</div>
+            <div class="text-right">{{this.round(child.completionRollup.totalWorkingDays)}}</div>
+       
+        {{/ for }}
+   </div>
+`);
+
+// loops through and creates 
+class GanttGrid extends canStacheElement {
+    static view = `
+        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.primaryIssuesOrReleases.length}}, auto)"
+            class='p-2 mb-10'>
+            <div></div><div></div>
+
+            {{# for(quarter of this.quartersAndMonths.quarters) }}
+                <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
+            {{ / for }}
+
+            <div></div><div></div>
+            {{# for(month of this.quartersAndMonths.months)}}
+                <div class='border-b border-neutral-80 text-center'>{{month.name}}</div>
+            {{/ for }}
+
+            <!-- CURRENT TIME BOX -->
+            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}};">
+                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
+            </div>
+
+
+            <!-- VERTICAL COLUMNS -->
+            {{# for(month of this.quartersAndMonths.months)}}
+                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}}; z-index: 10"
+                    class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
+            {{/ for }}
+
+            <!-- Each of the issues -->
+            {{# for(issue of this.primaryIssuesOrReleases) }}
+                <div on:click='this.showTooltip(scope.event, issue)' 
+                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                    {{issue.summary}}
+                </div>
+                <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
+                    on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
+                </div>
+                {{ this.getReleaseTimeline(issue, scope.index) }}
+            {{/ for }}
+        </div>
+    `;
+    static props = {
+        breakdown: Boolean,
+        showPercentComplete: {
+            get default(){
+                return !!localStorage.getItem("showPercentComplete")
+            }
+        }
+    };
+    get lotsOfIssues(){
+        return this.primaryIssuesOrReleases.length > 20 && ! this.breakdown;
+    }
+    get textSize(){
+        return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1"
+    }
+    get bigBarSize(){
+        return this.lotsOfIssues ? "h-4" : "h-6"
+    }
+    getPercentComplete(issue) {
+        if(this.showPercentComplete) {
+            return Math.round( issue.completionRollup.completedWorkingDays * 100 / issue.completionRollup.totalWorkingDays )+"%"
+        } else {
+            return "";
+        }
+    }
+    showTooltip(event, issue) {
+        makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+        showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
+    }
+    showPercentCompleteTooltip(event, issue) {
+        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+        
+        // we should get all the children ...
+        const children = getChildren( issue );
+        
+        showTooltipContent(event.currentTarget, percentCompleteTooltip(
+            {   issue, 
+                children,
+                getPercentComplete: this.getPercentComplete.bind(this),
+                round: Math.round
+            }));
+    }
+    classForSpecialStatus(status, issue){
+        if( status === "complete") {
+            return "color-text-"+status;
+        } else if(status === "blocked" ) {
+            return "color-text-"+status;
+        } else {
+            return "";
+        }
+    }
+    plus(first, second) {
+        return first + second;
+    }
+    lastRowBorder(index) {
+        return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
+    }
+    get quartersAndMonths(){
+        const rollupDates = this.primaryIssuesOrReleases.map(issue => issue.rollupStatuses.rollup );
+        let {start, due} = mergeStartAndDueData$2(rollupDates);
+        // nothing has timing
+        if(!start) {
+            start = new Date();
+        }
+        if(!due) {
+            due = new Date( start.getTime() + 1000 * 60 * 60 * 24 * 90 );
+        }
+        return getQuartersAndMonths(new Date(), due);
+    }
+    get todayMarginLeft() {
+        const { firstDay, lastDay } = this.quartersAndMonths;
+        const totalTime = (lastDay - firstDay);
+        return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
+    }
+    /**
+     * 
+     * @param {} release 
+     * @param {*} index 
+     * @returns 
+     */
+    getReleaseTimeline(release, index){
+        const base = {
+            gridColumn: '3 / span '+this.quartersAndMonths.months.length,
+            gridRow: `${index+3}`,
+        };
+
+        const background = document.createElement("div");
+
+        Object.assign(background.style, {
+            ...base,
+            zIndex: 0
+        });
+
+        background.className = (index % 2 ? "color-bg-gray-20" : "");
+
+        const root = document.createElement("div");
+        const lastPeriodRoot = document.createElement("div");
+        root.appendChild(lastPeriodRoot);
+
+        Object.assign(root.style, {
+            ...base,
+            position: "relative",
+            zIndex: 20
+        });
+        root.className = "py-1";
+
+        Object.assign(lastPeriodRoot.style, {
+            position: "absolute",
+            top: "0",
+            left: "0",
+            right: "0",
+            bottom: "0",
+        });
+        lastPeriodRoot.className = "py-1 lastPeriod";
+
+
+        const { firstDay, lastDay } = this.quartersAndMonths;
+        const totalTime = (lastDay - firstDay);
+
+        if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
+
+                function getPositions(work) {
+                    if(work.start == null && work.due == null) {
+                        return {
+                            start: 0, end: Infinity, startExtends: false, endExtends: false,
+                            style: {
+                                marginLeft: "1px",
+                                marginRight: "1px"
+                            }
+                        }
+                    }
+
+                    const start = Math.max(firstDay, work.start);
+                    const end = Math.min(lastDay, work.due);
+                    const startExtends = work.start < firstDay;
+                    const endExtends = work.due > lastDay;
+
+                    return {
+                        start, end, startExtends, endExtends,
+                        style: {
+                            width: Math.max( (((end - start) / totalTime) * 100), 0) + "%",
+                            marginLeft: "max("+(((start - firstDay) / totalTime) * 100) +"%, 1px)"
+                        }
+                    }
+                }
+
+                function makeLastPeriodElement(status, timing){
+                    
+                    const behindTime =  document.createElement("div");
+                    behindTime.style.backgroundClip = "content-box";
+                    behindTime.style.opacity = "0.9";
+                    behindTime.style.position = "relative";
+                    behindTime.className = "border-y-solid-1px";
+
+                    if(timing && status === "behind") {
+                        Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.style.zIndex = 1;
+                        behindTime.classList.add("color-text-and-bg-behind-last-period");
+                    }
+                    if(timing && status === "ahead") {
+                        Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.classList.add("color-text-and-bg-ahead-last-period");
+                        behindTime.style.zIndex = -1;
+                    }
+                    return behindTime;
+                }
+    
+                if(this.breakdown) {
+
+                    /*
+                    const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
+                    lastDev.classList.add("h-2","py-[2px]");
+                    lastPeriodRoot.appendChild(lastDev);
+
+                    const dev = document.createElement("div");
+                    dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.dev.status;
+                    Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
+                    root.appendChild(dev);*/
+
+                    const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+                    for(const {type} of workTypes) {
+                        const lastPeriod = makeLastPeriodElement(release.rollupStatuses[type].status, release.rollupStatuses[type].lastPeriod);
+                        lastPeriod.classList.add("h-2","py-[2px]");
+                        lastPeriodRoot.appendChild(lastPeriod);
+
+                        const thisPeriod = document.createElement("div");
+                        thisPeriod.className = type+"_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses[type].status;
+                        Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
+                        root.appendChild(thisPeriod);
+                    }
+                    /*
+                    if(this.hasQAWork) {
+                        const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
+                        lastQA.classList.add("h-2","py-[2px]");
+                        lastPeriodRoot.appendChild(lastQA);
+
+
+                        const qa = document.createElement("div");
+                        qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.qa.status;
+                        Object.assign(qa.style, getPositions(release.rollupStatuses.qa).style);
+                        root.appendChild(qa);
+
+                        
+                    }
+                    if(this.hasUATWork) {
+                        const lastUAT = makeLastPeriodElement(release.rollupStatuses.uat.status, release.rollupStatuses.uat.lastPeriod);
+                        lastUAT.classList.add("h-2","py-[2px]");
+                        lastPeriodRoot.appendChild(lastUAT);
+
+
+                        const uat = document.createElement("div");
+                        uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.uat.status;
+                        Object.assign(uat.style, getPositions(release.rollupStatuses.uat).style);
+                        root.appendChild(uat);
+
+                        
+                    }*/
+                } else {
+
+                    const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
+                    behindTime.classList.add(this.bigBarSize,"py-1");
+                    lastPeriodRoot.appendChild(behindTime);
+
+                    const team = document.createElement("div");
+                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.rollup.status;
+                    Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
+                    team.style.opacity = "0.9";
+                    
+                    root.appendChild(team);
+
+                    
+                    
+                }
+
+
+
+        }
+        const frag = document.createDocumentFragment();
+        frag.appendChild(background);
+        frag.appendChild(root);
+        return canStache_5_1_1_canStache.safeString(frag);
+    }
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        });
+        return {map, list};
+    }
+    get hasQAWork(){
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
+        } else {
+            return true;
+        }
+    }
+    get hasUATWork(){
+        if(this.primaryIssuesOrReleases) {
+            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
+        } else {
+            return true;
+        }
+    }
+}
+
+customElements.define("gantt-grid", GanttGrid);
 
 function mostCommonElement(arr) {
     const elementCounts = {};
@@ -50646,61 +52322,7 @@ function mostCommonElement(arr) {
     return mostCommon;
   }
 
-// GET DATA FROM PLACES DIRECTLY RELATED TO ISSUE
-function getStartDateAndDueDataFromFields(issue){
-    let startData, dueData;
-    if(issue["Start date"]) {
-        startData = {
-            start: parseDateIntoLocalTimezone( issue["Start date"] ),
-            startFrom: {
-                message: `start date`,
-                reference: issue
-            }
-        };
-    }
-    if(issue["Due date"]) {
-        dueData = {
-            due: parseDateIntoLocalTimezone( issue["Due date"] ),
-            dueTo: {
-                message: `due date`,
-                reference: issue
-            }
-        };
-    }
-    return {startData, dueData};
-}
-
-function getStartDateAndDueDataFromSprints(story){
-    const records = [];
-
-    if(story.Sprint) {
-        for(const sprint of story.Sprint) {
-
-            if(sprint) {
-                records.push({
-                    startData: {
-                        start: parseDateISOString(sprint["startDate"]), 
-                        startFrom: {
-                            message: `${sprint.name}`,
-                            reference: story
-                        }
-                    },
-                    dueData: {
-                        due: parseDateISOString(sprint["endDate"]),
-                        dueTo: {
-                            message: `${sprint.name}`,
-                            reference: story
-                        }
-                    }
-                });
-            }
-
-        }
-    }
-    return mergeStartAndDueData$2(records);
-    
-}
-function mergeStartAndDueData$2(records){
+function mergeStartAndDueData$1(records){
     const startData = records.filter( record => record?.startData ).map( record => record.startData );
     const dueData = records.filter( record => record?.dueData ).map( record => record.dueData );
 
@@ -50709,64 +52331,6 @@ function mergeStartAndDueData$2(records){
         dueData: dueData.sort( (d1, d2) => d2.due - d1.due )[0]
     }
 }
-
-function getStartDateAndDueDataFromFieldsOrSprints(issue ){
-    return mergeStartAndDueData$2( [
-        getStartDateAndDueDataFromFields(issue),
-        getStartDateAndDueDataFromSprints(issue)
-    ] );
-}
-
-function parentFirstThenChildren$2(getIssueDateData, getChildDateData){
-    const issueDateData = getIssueDateData();
-    const childrenDateData = getChildDateData();
-    if(issueDateData.startData && issueDateData.dueData) {
-        return issueDateData;
-    }
-    
-
-    return {
-        startData: issueDateData.startData || childrenDateData.startData,
-        dueData: issueDateData.dueData || childrenDateData.dueData,
-    }
-}
-
-function childrenOnly$2(getIssueDateData, getChildDateData){
-    return getChildDateData();
-}
-
-function parentOnly$2(getIssueDateData, getChildDateData){
-    // eventually we can look to remove these. Some code still depends on having children everywhere
-    getChildDateData();
-    return getIssueDateData();
-}
-
-function childrenFirstThenParent$2(getIssueDateData, getChildDateData){
-    const childrenDateData = getChildDateData();
-    if(childrenDateData.startData && childrenDateData.dueData) {
-        return childrenDateData;
-    }
-    const issueDateData = getIssueDateData();
-    return {
-        startData: childrenDateData.startData || issueDateData.startData,
-        dueData: childrenDateData.dueData || issueDateData.dueData,
-    }
-}
-
-function widestRange$2(getIssueDateData, getChildDateData){
-    const childrenDateData = getChildDateData();
-    const issueDateData = getIssueDateData();
-    // eventually might want the reason to be more the parent ... but this is fine for now
-    return mergeStartAndDueData$2([childrenDateData, issueDateData]);
-}
-
-const methods$2 = {
-    parentFirstThenChildren: parentFirstThenChildren$2,
-    childrenOnly: childrenOnly$2,
-    childrenFirstThenParent: childrenFirstThenParent$2,
-    widestRange: widestRange$2,
-    parentOnly: parentOnly$2
-};
 
 const calculationKeysToNames = {
     parentFirstThenChildren: function(parent, child){
@@ -50786,47 +52350,6 @@ const calculationKeysToNames = {
     }
 };
 
-function getIssueWithDateData(issue, childMap, methodNames = ["childrenOnly","parentFirstThenChildren"], index=0) {
-    // by default we stop recursion
-    let methodName = methodNames[index] ? methodNames[index]: "parentOnly";
-    index++;
-
-    const method = methods$2[methodName];
-    const issueClone = {
-        ...issue,
-        dateData: {
-            rollup: {}
-        }
-    };
-
-    const dateData = method(function getParentData(){
-        const selfDates = getStartDateAndDueDataFromFieldsOrSprints(issue);
-        issueClone.dateData.self =  addDateDataTo({}, selfDates);
-        return selfDates;
-    }, function getChildrenData(){
-        const children = childMap[issue["Issue key"]] || [];
-   
-        const datedChildren = children.map( (child)=> {
-            return getIssueWithDateData(child, childMap,methodNames, index);
-        });
-        const childrenData = mergeStartAndDueData$2(datedChildren.map(getDataDataFromDatedIssue));
-        issueClone.dateData.children = addDateDataTo({
-            issues: datedChildren
-        },childrenData );
-        return childrenData;
-        
-    });
-    addDateDataTo(issueClone.dateData.rollup, dateData);
-
-    return issueClone;
-}
-
-function addDateDataTo(object = {}, dateData) {
-    Object.assign(object, dateData.startData);
-    Object.assign(object, dateData.dueData);
-    return object;
-}
-
 
 function getDataDataFromDatedIssue(issue){
     let startData, dueData;
@@ -50841,7 +52364,7 @@ function getDataDataFromDatedIssue(issue){
 
 // provides an object with rolled updates
 function rollupDatesFromRollups(issues) {
-    const dateData = mergeStartAndDueData$2( issues.map(getDataDataFromDatedIssue) );
+    const dateData = mergeStartAndDueData$1( issues.map(getDataDataFromDatedIssue) );
 
     return {
         ...dateData.startData,
@@ -51030,264 +52553,1587 @@ export function denormalizedIssueHierarchy(normalizedIssues){
       return impliedTimingCalculations;
   }
 
-function getIssuesMappedByParentKey(baseIssues){
-    const map = {};
-    for (const issue of baseIssues) {
-        const parentKeyValue = issue["Parent Link"] || issue["Epic Link"];
-        if ( parentKeyValue ) {
-            if (!map[parentKeyValue]) {
-                map[parentKeyValue] = [];
+const DAY = 1000*60*60*24;
+class GanttTimeline extends canStacheElement {
+    static view = `
+        <div style="display: grid; grid-template-columns: repeat({{this.quartersAndMonths.months.length}}, auto); grid-template-rows: auto auto repeat({{this.rows.length}}, auto)"
+        class='p-2 mb-10'>
+
+            {{# for(quarter of this.quartersAndMonths.quarters) }}
+                <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
+            {{ / for }}
+
+            {{# for(month of this.quartersAndMonths.months)}}
+                <div 
+                    style="grid-column: {{ plus(scope.index, 1) }} / span 1; grid-row: 2 / span 1;"
+                    class='border-b border-neutral-80 text-center'>{{month.name}}</div>
+            {{/ for }}
+
+            <!-- CURRENT TIME BOX -->
+            <div style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: 2 / span {{plus(this.rows.length, 1)}};">
+                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 0; position: relative; height: 100%;"></div>
+            </div>
+
+            <!-- VERTICAL COLUMNS -->
+            {{# for(month of this.quartersAndMonths.months)}}
+                <div style="grid-column: {{ plus(scope.index, 1) }} / span 1; grid-row: 3 / span {{this.rows.length}}; z-index: 10"
+                    class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
+            {{/ for }}
+
+            
+            {{# for(row of this.rows) }}
+            <div class="h-10 relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
+                {{# for(item of row.items) }}
+                    {{{item.element}}}
+                {{/ for }}
+            </div>
+            {{/ for }}
+
+            
+        </div>
+    `;
+
+    get quartersAndMonths(){
+        
+        // handle if there are no issues
+        const endDates = this.primaryIssuesOrReleases.map((issue)=> {
+            debugger;
+            return {dateData: {rollup: {
+                start: issue.rollupDates.due,
+                startFrom: issue.rollupDates.dueTo,
+                due: issue.rollupDates.due,
+                dueTo: issue.rollupDates.dueTo
+            }}}
+        });
+        const {start, due} = rollupDatesFromRollups(endDates);
+        let firstEndDate = new Date( (start || new Date()).getTime() - DAY * 30 ) ;
+        
+        
+        
+        return getQuartersAndMonths(firstEndDate, due || new Date( new Date().getTime() + DAY*30));
+    }
+    get todayMarginLeft() {
+        const { firstDay, lastDay } = this.quartersAndMonths;
+        const totalTime = (lastDay - firstDay);
+        return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
+    }
+    get calendarData() {
+        debugger;
+        const {start, due} = rollupDatesFromRollups(this.primaryIssuesOrReleases);
+        return getCalendarHtml(new Date(), due);
+    }
+    get calendarHTML() {
+        return canStache_5_1_1_canStache.safeString(this.calendarData.html);
+    }
+    get rows() {
+        const { firstDay, lastDay } = this.quartersAndMonths;
+        const totalTime = (lastDay - firstDay);
+        const issuesWithDates = this.primaryIssuesOrReleases.filter( issue => issue.rollupDates.due );
+        const rows = calculate({
+            issues: issuesWithDates,
+            firstDay,
+            totalTime,
+            makeElementForIssue: function(release){
+                const div = document.createElement("div");
+                div.className = " release-timeline-item flex items-center gap-1";
+                Object.assign(div.style, {
+                    position: "absolute",
+                    //transform: "translate(-100%, 0)",
+                    padding: "2px 4px 2px 4px",
+                    zIndex: "100",
+                    top: "4px",
+                    background: "rgba(255,255,255, 0.6)"
+                });
+
+                
+                const text = document.createElement("div");
+                text.className = "truncate";
+                Object.assign( text.style, {
+                    position: "relative",
+                    zIndex: "10",
+                    maxWidth: "300px"
+                });
+                text.appendChild(document.createTextNode(release?.names?.shortVersion || release.summary));
+                div.appendChild(text);
+
+                const tick = document.createElement("div");
+                tick.className = "color-text-and-bg-" + release.rollupStatuses.rollup.status;
+                Object.assign( tick.style, {
+                    height: "10px",
+                    width: "10px",
+                    transform: "rotate(45deg)",
+                });
+                div.appendChild(tick);
+                
+                return div;
             }
-            map[parentKeyValue].push(issue);
+        });
+
+        for(let row of rows) {
+            for(let item of row.items) {
+                item.element.style.right = ( (totalTime - (item.issue.rollupStatuses.rollup.due - firstDay)) / totalTime * 100) + "%";
+            }
         }
+        
+        return rows;
     }
-    return map;
-}
 
-function getIssueMap(baseIssues) {
-    const map = {};
-    for (const issue of baseIssues) {
-        const keyValue = issue["Issue key"];
-        map[keyValue] = issue;
+    plus(first, second) {
+        return first + second;
     }
-    return map;
-}
-
-function filterQAWork(issues) {
-    return filterByLabel(issues, "QA")
-}
-
-function filterPartnerReviewWork(issues) {
-    return filterByLabel(issues, "UAT")
-}
-
-function filterByLabel(issues, label) {
-    return issues.filter(
-        issue => (issue.Labels || []).filter(
-            l => l.includes(label)
-        ).length
-    );
-}
-
-function reportedIssueTypeTimingWithChildrenBreakdown({
-    baseIssues,
-    reportedIssueType = "Initiative",
-    reportedStatuses = function(status){
-        return !["Done"].includes(status)
-    },
-    timingMethods,
-    getChildWorkBreakdown
-}){
-    const issuesMappedByParentKey = getIssuesMappedByParentKey(baseIssues);
-
-    // get items we are reporting
-    const reportedIssues = baseIssues.filter( issue => issue["Issue Type"].includes(reportedIssueType) && reportedStatuses(issue.Status));
-
-    return reportedIssues.map( (issue)=> {
-        const reportedIssueWithTiming = getIssueWithDateData(issue, issuesMappedByParentKey, timingMethods);
-    
-        addWorkBreakdownToDateData(reportedIssueWithTiming.dateData, 
-            reportedIssueWithTiming.dateData.children.issues || [], 
-            getChildWorkBreakdown);
-
-        return reportedIssueWithTiming;
-    })
-}
-
-function addWorkBreakdownToDateData(dateData, issues, getChildWorkBreakdown){
-
-    const workBreakdown = getChildWorkBreakdown(issues);
-    return  Object.assign(dateData,{
-        dev: rollupDatesFromRollups([...workBreakdown.devWork]),
-        qa: rollupDatesFromRollups([...workBreakdown.qaWork]),
-        uat: rollupDatesFromRollups([...workBreakdown.uatWork])
-    })
-}
-
-function getAllChildren(issues){
-    const allChildren = [...issues];
-    
-    for(const issue of issues) {
-        const children = issue.dateData?.children?.issues;
-        if(children) {
-            allChildren.push.apply(allChildren, getAllChildren(children));
-        }
+    lastRowBorder(index) {
+        return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
     }
-    return allChildren;
 }
 
-
-function reportedIssueTiming(options){
-    const {
-        baseIssues, 
-        priorTime,
-        reportedIssueType,
-        reportedStatuses,
-        timingMethods
-    } = options;
-
-    const currentInitiatives = reportedIssueTypeTimingWithChildrenBreakdown(options);
-
-    const rolledBackBaseIssues = issues(baseIssues, priorTime);
-    // OFTEN, a prior initiative is rolled back b/c of status
-    // we don't explain this well why it would now be new
-    const priorInitiatives = reportedIssueTypeTimingWithChildrenBreakdown({
-        ...options,
-        baseIssues: rolledBackBaseIssues
+function defaultGetWidth(element){
+    const clone = element.cloneNode(true);
+    const outer = document.createElement("div");
+    outer.appendChild(clone);
+    Object.assign(outer.style,{
+        position: "absolute",
+        top: "-1000px",
+        left: "-1000px",
+        width: "700px",
+        visibility: 'hidden' 
     });
-    
-    // copy prior initiative timing information over 
-    const allCurrentIssues = getAllChildren(currentInitiatives);
-    // FURTHERMORE, epics could have existed for a while, but 
-    // that we only get children of "priorInitiatives" means we
-    // probably show as new a lot more initiatives than we should 
-    const allPastIssues = getAllChildren(priorInitiatives);
-
-
-    const pastIssueMap = getIssueMap(allPastIssues);
-    for(const currentIssue of allCurrentIssues) {
-        const pastIssue = pastIssueMap[currentIssue["Issue key"]];
-        assignPriorIssueBreakdowns(currentIssue, pastIssue);
-    }
-
-
-    
-    return {
-        currentInitiativesWithStatus: currentInitiatives.map(addStatusToIssueAndChildren),
-        priorInitiatives
-    } 
+    document.body.appendChild(outer);
+    const width = clone.getBoundingClientRect().width;
+    document.body.removeChild(outer);
+    return width;
 }
 
-function assignPriorIssueBreakdowns(currentIssue, priorIssue){
-    const curDateData = currentIssue.dateData;
-    if(priorIssue) {
-        // copy timing
-        currentIssue.lastPeriod = priorIssue;
-        const priorDateData = priorIssue.dateData;
-        curDateData.rollup.lastPeriod = priorDateData.rollup;
-        curDateData.children.lastPeriod = priorDateData.children;
-        if(curDateData.dev) {
-            curDateData.dev.lastPeriod = priorDateData.dev;
+
+function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, totalTime, getWidth = defaultGetWidth}){
+    
+    
+    const rows = [];
+    
+    const issueUIData = issues.map( issue => {
+
+        const element = makeElementForIssue(issue),
+            width = getWidth(element),
+            widthInPercent = width  * 100 / widthOfArea,
+            rightPercentEnd = Math.ceil( (issue.rollupStatuses.rollup.due - firstDay) / totalTime * 100),
+            leftPercentStart = rightPercentEnd - widthInPercent;
+
+        element.setAttribute("measured-width", width);
+        element.setAttribute("left-p", leftPercentStart);
+        element.setAttribute("right-p", leftPercentStart);
+        return {
+            issue,
+            element,
+            widthInPercent,
+            leftPercentStart,
+            rightPercentEnd
         }
-        if(curDateData.qa) {
-            curDateData.qa.lastPeriod = priorDateData.qa;
+    });
+
+    // earliest first
+    issueUIData.sort( (a, b)=> {
+        return a.leftPercentStart - b.leftPercentStart;
+    });
+
+    function addToRow(issueUIDatum){
+
+        for(let row of rows) {
+            // if we have no intersections, we can insert
+            const intersected = row.items.some((item)=>{
+                return intersect(
+                    {start: item.leftPercentStart, end: item.rightPercentEnd}, 
+                    {start: issueUIDatum.leftPercentStart, end: issueUIDatum.rightPercentEnd})
+            });
+            if(!intersected) {
+                row.items.push(issueUIDatum);
+                return;
+            }
         }
-        if(curDateData.uat) {
-            curDateData.uat.lastPeriod = priorDateData.uat;
-        }
-        
-        
+        // we didn't find space, add a raw
+        rows.push({
+            items: [issueUIDatum]
+        });
+    }
+
+    issueUIData.forEach(addToRow);
+    return rows;
+}
+
+function intersect(range1, range2) {
+    return range1.start < range2.end && range2.start < range1.end;
+}
+
+customElements.define("gantt-timeline",GanttTimeline);
+
+const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
+
+function workTypeToSymbol(type){
+    if(workTypesToSymbols[type]) {
+        return workTypesToSymbols[type];
     } else {
-        // it's missing leave timing alone
-        currentIssue.lastPeriod = null;
+       return  type.substring(0,1).toUpperCase()
     }
 }
 
+const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`;
 
-function getReleaseData (issue) {
-    return {releaseName: issue?.["Fix versions"]?.[0]?.name, releaseId: issue?.["Fix versions"]?.[0]?.id};
-}
+class StatusReport extends canStacheElement {
+    static view = `
+    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex gap-2'>
+        {{# for(primaryIssue of this.primaryIssuesOrReleases) }}
+            <div class='release_box grow'>
+                <div 
+                    on:click='this.showTooltip(scope.event, primaryIssue)'
+                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.rollupStatuses.rollup.status}} rounded-t {{this.fontSize(0)}}">
+                        {{primaryIssue.summary}}
+                    </div>
+                
+                    {{# if(this.breakdown) }}
+                            {{# for(workType of this.hasWorkTypes.hasWorkList) }}
+                    
+                                <div class="${release_box_subtitle_wrapper} pt-1">
+                                        <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses[workType.type].status}} font-mono px-px">
+                                            {{workType.type}}
+                                        </span>
+                                        <span class="release_box_subtitle_value">
+                                            {{ this.prettyDate(primaryIssue.rollupStatuses[workType.type].due) }}{{this.wasReleaseDate(primaryIssue.rollupStatuses[workType.type]) }}
+                                        </span>
+                                </div>
 
+                            {{/ for }}
+                    {{ else }}
+                        <div class="${release_box_subtitle_wrapper} p-1">
+                                <b>Target Delivery</b>
+                                <span class="release_box_subtitle_value">
+                                    <span class="nowrap">{{ this.prettyDate(primaryIssue.rollupStatuses.rollup.due) }}</span>
+                                    <span class="nowrap">{{ this.wasReleaseDate(primaryIssue.rollupStatuses.rollup) }}</span>
+                                </span>
+                        </div>
+                    {{/ if }}
 
-function filterReleases(issues) {
-    return issues.filter(issue => getReleaseData(issue).releaseName)
-}
+                <ul class=" {{# if(this.breakdown) }}list-none{{else}}list-disc list-inside p-1{{/if}}">
+                    {{# for(secondaryIssue of this.getIssues(primaryIssue.reportingHierarchy.childKeys)) }}
+                    <li class='font-sans {{this.fontSize(primaryIssue.reportingHierarchy.childKeys.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
+                        {{# if(this.breakdown) }}
+                            {{this.breakdownIcons(secondaryIssue)}}
+                        {{/ if }}
+                        <span class="{{# if(this.breakdown) }} color-text-black{{else}} color-text-{{secondaryIssue.rollupStatuses.rollup.status}} {{/ }}">{{secondaryIssue.summary}}</span>
+                    </li>
+                    {{/ for}}
+                </ul>
+            </div>
+        {{ else }}
+        <div class='release_box'>
+            <div class="release_box_header_bubble">
+                Unable to find any issues.
+            </div>
+        </div>
+        {{/ for }}
+        {{# if(this.planningIssues.length) }}
+            <div class='release_box grow'>
+                <div class="release_box_header_bubble color-text-and-bg-unknown rounded-t">Planning</div>
+                <ul class="list-disc list-inside p-1">
+                {{# for(planningIssue of this.planningIssues)}}
+                    <li class='font-sans {{this.fontSize(this.planningIssues.length)}} color-text-unknown pointer'
+                         on:click='this.showTooltip(scope.event, planningIssue)'>
+                        {{planningIssue.summary}}
+                    </li>
 
-
-
-function mapOfReleaseIdsToNames(initiatives) {
-    const map = new Map();
-    for(const initiative of initiatives) {
-        const {releaseId, releaseName} = getReleaseData(initiative);
-        if(releaseId) {
-            map.set(releaseId,releaseName );
+                {{/}}
+                </ul>
+            </div>
+        {{/ }}
+        
+    </div>
+    `;
+    get columnDensity(){
+        
+        if(this.primaryIssuesOrReleases.length > 20) {
+            return "absurd"
+        } else if(this.primaryIssuesOrReleases.length > 10) {
+            return "high"
+        } else if(this.primaryIssuesOrReleases.length > 4) {
+            return "medium"
+        } else {
+            return "light"
         }
     }
-    return map;
-}
-function mapOfReleaseNamesToReleasesWithInitiatives(initiatives) {
-    const map = new Map();
-    for(const initiative of initiatives) {
-        const {releaseName} = getReleaseData(initiative);
-        if(releaseName) {
-            if(!map.has(releaseName)) {
-                map.set(releaseName,makeRelease(releaseName));
+    prettyDate(date) {
+        return date ? dateFormatter.format(date) : "";
+    }
+    get getIssues() {
+        const map = new Map();
+        for(let issue of this.allIssuesOrReleases || []) {
+            map.set(issue.key, issue);
+        }
+        const getIssue = map.get.bind(map);
+
+        return window.getIssuesByKey = function(issueKeys){
+            return issueKeys.map(getIssue)
+        }
+    }
+    wasReleaseDate(release) {
+
+            const current = release.due;
+            const was = release.lastPeriod && release.lastPeriod.due;
+            
+            if (was && current - DAY_IN_MS$1 > was) {
+                    return " (" + this.prettyDate(was) + ")";
+            } else {
+                    return ""
             }
-            map.get(releaseName ).dateData.children.issues.push(initiative);
+    }
+    wasStartDate(release) {
+
+        const current = release.start;
+        const was = release.lastPeriod && release.lastPeriod.start;
+        
+        if (was && (current - DAY_IN_MS$1 > was)) {
+                return " (" + this.prettyDate(was) + ")";
+        } else {
+                return ""
         }
     }
-    return map;
+    showTooltip(event, isssue) {
+        showTooltip(event.currentTarget, isssue);
+    }
+    fontSize(count){
+        if(["high","absurd"].includes(this.columnDensity)) {
+            return "text-xs"
+        }
+        if(count >= 7 && this.columnDensity === "medium") {
+            return "text-sm";
+        } else if(count <= 4) {
+            return "text-base";
+        }
+        
+    }
+    get hasWorkTypes(){
+        const map = {};
+        const list = workTypes.map((type)=>{
+            let hasWork = this.primaryIssuesOrReleases ? 
+                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
+            return map[type] = {type, hasWork}
+        });
+        return {map, list, hasWorkList: list.filter( wt => wt.hasWork)};
+    }
+    breakdownIcons(secondaryIssue) {
+        const frag = document.createDocumentFragment();
+        
+        const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
+        for(const {type} of workTypes) {
+            const span = document.createElement("span");
+            span.className = 'text-xs font-mono px-px py-0 color-text-and-bg-'+secondaryIssue.rollupStatuses[type].status;
+            span.innerText = workTypeToSymbol(type);
+            
+            frag.appendChild(span);
+        }
+
+        return canStache_5_1_1_canStache.safeString(frag);
+    }
 }
-function makeRelease(releaseName) {
-    const release = {Summary: releaseName, release: releaseName, lastPeriod: null, dateData: {children: {issues: []}}};
-    release.dateData.rollup = release.dateData.children;
-    return release;
+
+
+customElements.define("status-report",StatusReport);
+
+/**
+ * @typedef {import("../normalized/normalize.js").NormalizedIssue & {
+*   derivedTiming: import("./work-timing/work-timing.js").DerivedTiming
+* } & {derivedStatus: import("./work-status/work-status.js").DerivedWorkStatus}} DerivedWorkIssue
+*/
+
+
+/**
+* Adds derived data
+* @param {NormalizedIssue} normalizedIssue 
+* @return {DerivedWorkIssue} 
+*/
+function deriveIssue(issue, options){
+    const timing = deriveWorkTiming(issue, options);
+    return {
+
+        derivedTiming: timing,
+        derivedStatus: getWorkStatus(issue, options),
+        ...issue
+    }
 }
 
-// SIDE EFFECTS
-function addWorkTypeBreakdownForRelease(release, getChildWorkBreakdown) {
-    
-    // children is a release's direct children, but we really need the children's children as we are ignoring epic
-    // dimensions .... 
-    const children = release.dateData.children.issues;
-    
-    const grandChildren = children.map( child => child.dateData.children.issues ).flat();
-
-    release.dateData.rollup = /*release.dateData.children =*/ rollupDatesFromRollups(children);
-
-    addWorkBreakdownToDateData(release.dateData, grandChildren, getChildWorkBreakdown);
+/*
+class IssueData extends ObservableObject {
+    static props = {
+        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
+        isLoggedIn: Boolean,
+    }
+}*/
+const typesToHierarchyLevel = {Epic: 1, Story: 0, Initiative: 2};
+function csvToRawIssues(csvIssues){
+    const res = csvIssues.map( (issue)=> {
+        return {
+          ...issue,
+          fields: {
+            ...issue,
+            "Parent Link": {data: issue["Parent Link"]},
+            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]},
+            "Status": {name: issue.Status}
+          },
+          key: issue["Issue key"]
+        }
+    });
+    return res;
 }
 
-function releasesAndInitiativesWithPriorTiming(options){
+function rawIssuesRequestData({jql, childJQL, isLoggedIn, loadChildren, jiraHelpers},{listenTo, resolve}) {
     
-    const {currentInitiativesWithStatus,priorInitiatives} = reportedIssueTiming(options);
-
-    const currentInitiativesWithARelease = filterReleases(currentInitiativesWithStatus);
-    const priorInitiativesWithARelease = filterReleases(priorInitiatives);
+    const progressData = canValue_1_1_2_canValue.with(null);
     
+    const promise = canValue_1_1_2_canValue.returnedBy(function rawIssuesPromise(){
+        if( isLoggedIn.value === false) {
+            return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
+        }
 
-    // Make a map where we can look for prior releases's initiatives
+        if(!jql.value) {
+            return undefined;
+        }
 
-    // {1234: "ALPHA", 4321: "ALPHA"}
-    const currentReleaseIdsToNames = mapOfReleaseIdsToNames(currentInitiativesWithARelease);
-    // {"ALPHA": {release: "ALPHA", initiatives: []}}
-    const releaseMap = mapOfReleaseNamesToReleasesWithInitiatives(currentInitiativesWithARelease);
+        progressData.value = null;
+    
+        const loadIssues = loadChildren.value ? 
+            jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers) :
+            jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
+          
+        return loadIssues({
+              jql: jql.value,
+              childJQL: childJQL.value ? " and "+childJQL.value : "",
+              fields: ["summary",
+                  "Rank",
+                  "Start date",
+                  "Due date",
+                  "Issue Type",
+                  "Fix versions",
+                  "Story points",
+                  "Story points median",
+                  "Confidence",
+                  "Story points confidence",
+                  "Labels", "Status", "Sprint", "Created","Parent"],
+              expand: ["changelog"]
+          }, (receivedProgressData)=> {            
+            progressData.value = {...receivedProgressData};
+          });
+    });
 
-    // Add prior initiatives to each release
-    for(const priorInitiative of priorInitiativesWithARelease) {
-        const {releaseId, releaseName} = getReleaseData(priorInitiative);
-        let release = releaseMap.get(releaseName);
-        if(!release) {
-            const releaseNameForId = currentReleaseIdsToNames.get(releaseId);
-            if(releaseNameForId) {
-                release = releaseMap.get(releaseNameForId);
+    listenTo(promise, (value)=> {
+        resolve({
+            progressData,
+            issuesPromise: value
+        });
+    });
+
+
+    resolve({
+        progressData,
+        issuesPromise: promise.value
+    });
+
+
+}
+
+function resolve(value){
+    if(value instanceof Promise) {
+        return value;
+    } else {
+        return canReflect_1_19_2_canReflect.getValue(value)
+    }
+}
+
+function serverInfoPromise({jiraHelpers, isLoggedIn}) {
+    if(resolve(isLoggedIn)) {
+        return jiraHelpers.getServerInfo();
+    } else {
+        return nativeFetchJSON("./examples/bitovi-training-server-info.json");
+    }
+}
+
+function configurationPromise({
+    serverInfoPromise, 
+    teamConfigurationPromise
+}){
+    // we will give pending until we have both promises 
+    const info = resolve( serverInfoPromise ),
+        team = resolve(teamConfigurationPromise);
+    if(!info || !team) {
+        return new Promise(()=>{})
+    }
+    return Promise.all([info, team]).then(
+        /**
+         * 
+         * @param {[Object, TeamConfiguration]} param0 
+         * @returns 
+         */
+        ([serverInfo, teamData])=> {
+        return {
+            getConfidence({fields}){
+                return fields.Confidence;
+            },
+            getStoryPointsMedian({fields}) {
+                return fields["Story points median"]
+            },
+            getUrl({key}){
+                return serverInfo.baseUrl+"/browse/"+key
+            },
+            getVelocity(team) {
+                return teamData.getVelocityForTeam(team)
+            },
+            getDaysPerSprint(team) {
+                return teamData.getDaysPerSprintForTeam(team)
+            },
+            getParallelWorkLimit(team) {
+                return teamData.getTracksForTeam(team)
+            },
+        }
+    })
+}
+
+
+function derivedIssuesRequestData({
+    rawIssuesRequestData, 
+    configurationPromise
+},{listenTo, resolve}) {
+    const promise = canValue_1_1_2_canValue.returnedBy(function derivedIssuesPromise(){
+        if(rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
+            return Promise.all([
+                rawIssuesRequestData.value.issuesPromise,
+                configurationPromise.value
+            ]).then( ([rawIssues, configuration])=> {
+                console.log({rawIssues});
+                return rawIssues.map( issue => {
+                    const normalized = normalizeIssue(issue,configuration);
+                    const derived = deriveIssue(normalized, configuration);
+                    return derived;
+                });
+                
+
+            })
+        } else {
+            // make a pending promise ...
+            const promise = new Promise(()=>{});
+            promise.__isAlwaysPending = true;
+            return promise;
+        }
+    });
+    listenTo(promise, (derivedIssues)=> {
+        resolve({
+            issuesPromise: derivedIssues,
+            progressData: rawIssuesRequestData.value.progressData
+        });
+    });
+    resolve({
+        issuesPromise: promise.value,
+        progressData: rawIssuesRequestData.value.progressData
+    });
+}
+
+const booleanParsing = {
+    parse: x => {
+      return ({"": true, "true": true, "false": false})[x];
+    },
+    stringify: x => ""+x
+  };
+
+
+const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
+
+class TimelineConfiguration extends canStacheElement {
+    static view = `
+        <p>
+            Questions on the options? 
+            <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>, or 
+            <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">connect with us</a>.
+        </p>  
+        <h3 class="h3">Issue Source</h3>
+        <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
+        <p>
+            {{# if(this.isLoggedIn) }}
+            <input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/>
+            {{ else }}
+            <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
+            {{/ if}}
+        </p>
+        
+        {{# if(this.rawIssuesRequestData.issuesPromise.isRejected) }}
+            <div class="border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked p-1">
+            <p>There was an error loading from Jira!</p>
+            <p>Error message: {{this.rawIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
+            <p>Please check your JQL is correct!</p>
+            </div>
+        {{/ if }}
+        <div class="flex justify-between mt-1">
+
+            <p class="text-xs flex">
+                <input type='checkbox' 
+                    class='self-start align-middle h-6 mr-0.5' checked:bind='this.loadChildren'/>
+                    <div class="align-middle h-6" style="line-height: 26px">
+                        Load children. 
+                        {{# if(this.loadChildren) }}
+                            Optional children JQL filters: <input type='text' class="form-border p-1 h-5" value:bind="this.childJQL"/>
+                        {{/ if }}
+                    </div>
+            </p>
+            <p class="text-xs" style="line-height: 26px;">
+                {{# if(this.rawIssuesRequestData.issuesPromise.isPending) }}
+                    {{# if(this.rawIssuesRequestData.progressData.issuesRequested)}}
+                        Loaded {{this.rawIssuesRequestData.progressData.issuesReceived}} of {{this.rawIssuesRequestData.progressData.issuesRequested}} issues
+                    {{ else }}
+                        Loading issues ...
+                    {{/ if}}
+                {{/ if }}
+                {{# if(this.rawIssuesRequestData.issuesPromise.isResolved) }}
+                    Loaded {{this.rawIssuesRequestData.issuesPromise.value.length}} issues
+                {{/ if }}
+            </p>
+            
+        </div>
+        
+
+        <h3 class="h3 mt-4">Primary Timeline</h3>
+        <div class="flex mt-2 gap-2 flex-wrap">
+            {{# if(this.allTimingCalculationOptions) }}
+            <p>What Jira artifact do you want to report on?</p>
+            <div class="shrink-0">
+            {{# for(issueType of this.allTimingCalculationOptions.list) }}
+            <label class="px-2"><input 
+                type="radio" 
+                name="primaryIssueType" 
+                checked:from="eq(this.primaryIssueType, issueType.type)"
+                on:change="this.primaryIssueType = issueType.type"/> {{issueType.plural}} </label>
+            {{/ }}
+            </div>
+            {{/ if }}
+            
+            
+        </div>
+
+        <div class="flex mt-2 gap-2 flex-wrap">
+            <p>What timing data do you want to report?</p>
+            <div class="shrink-0">
+            <label class="px-2"><input 
+                type="radio" 
+                name="primaryReportType"
+                checked:from="eq(this.primaryReportType, 'start-due')"
+                on:change="this.primaryReportType = 'start-due'"
+                /> Start and due dates </label>
+            <label class="px-2"><input 
+                type="radio" 
+                name="primaryReportType"
+                checked:from="eq(this.primaryReportType, 'due')"
+                on:change="this.primaryReportType = 'due'"
+                /> Due dates only</label>
+            <label class="px-2"><input 
+                type="radio" 
+                name="primaryReportType"
+                checked:from="eq(this.primaryReportType, 'breakdown')"
+                on:change="this.primaryReportType = 'breakdown'"
+                /> Work breakdown</label>
+            </div>
+        </div>
+
+        <div class="flex mt-2 gap-2 flex-wrap">
+            <p>Do you want to report on completion percentage?</p>
+            <input type='checkbox' 
+                class='self-start mt-1.5'  checked:bind='this.showPercentComplete'/>
+        </div>
+
+
+        <h3 class="h3">Timing Calculation</h3>
+        <div class="grid gap-2 my-2" style="grid-template-columns: auto auto auto;">
+            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">Parent Type</div>
+            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Child Type</div>
+            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 3 / span 1; grid-row: 1 / span 1;">How is timing calculated between parent and child?</div>
+            <div class="border-b-2 border-neutral-40" style="grid-column: 1 / span 3; grid-row: 1 / span 1;"></div>
+
+            {{# for(timingLevel of this.timingLevels) }}
+
+                <label class="pr-2 py-2 {{ this.paddingClass(scope.index) }}">{{timingLevel.type}}</label>
+                {{# eq(timingLevel.types.length, 1) }}
+                <span class="p-2">{{timingLevel.types[0].type}}</span>
+                {{ else }}
+                <select class="${selectStyle}" on:change="this.updateCalculationType(scope.index, scope.element.value)">
+                    {{# for(type of timingLevel.types) }}
+                    <option {{# if(type.selected) }}selected{{/ if }}>{{type.type}}</option>
+                    {{/ for }}
+                </select>
+                {{/ eq}}
+
+                <select class="${selectStyle}" on:change="this.updateCalculation(scope.index, scope.element.value)">
+                {{# for(calculation of timingLevel.calculations) }}
+                    <option {{# if(calculation.selected) }}selected{{/ if }} value="{{calculation.calculation}}">{{calculation.name}}</option>
+                {{/ for }}
+                </select>
+
+            {{/ for }}
+            
+        </div>
+        {{# if(this.primaryIssueType) }}
+        <h3 class="h3">Filters</h3>
+
+        <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
+
+            <label class=''>Hide Unknown {{this.primaryIssueType}}s</label>
+            <input type='checkbox' 
+            class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/>
+            <p class="m-0">Hide {{this.primaryIssueType}}s whose timing can't be determined.
+            </p>
+
+            <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
+            <status-filter 
+                statuses:from="this.statuses"
+                param:raw="statusesToShow"
+                selectedStatuses:to="this.statusesToShow"
+                style="max-width: 400px;">
+            </status-filter>
+            <p>Only include these statuses in the report</p>
+
+            <label>{{this.firstIssueTypeWithStatuses}} Statuses to Ignore</label>
+            <status-filter 
+                statuses:from="this.statuses" 
+                param:raw="statusesToRemove"
+                selectedStatuses:to="this.statusesToRemove"
+                style="max-width: 400px;">
+                </status-filter>
+            <p>Search for statuses to remove from the report</p>
+
+            {{# eq(this.primaryIssueType, "Release") }}
+            <label class=''>Show Only Semver Releases</label>
+            <input type='checkbox' 
+                class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
+            <p class="m-0">This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
+            <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
+            </p>
+            {{/ }}
+
+
+        </div>
+        {{/ if }}
+
+        <h3 class="h3">Sorting</h3>
+        <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
+            <label class=''>Sort by Due Date</label>
+            <input type='checkbox' 
+                class='self-start mt-1.5' checked:bind='this.sortByDueDate'/>
+            <p class="m-0">Instead of ordering initiatives based on the order defined in the JQL, 
+            sort initiatives by their last epic's due date.
+            </p>
+        </div>
+
+        <h3 class="h3">Secondary Status Report</h3>
+        <div class="flex mt-2 gap-2 flex-wrap">
+            <p>Secondary Report Type</p>
+            <div class="shrink-0">
+            <label class="px-2"><input 
+                type="radio" 
+                name="secondary" 
+                checked:from="eq(this.secondaryReportType, 'none')"
+                on:change="this.secondaryReportType = 'none'"
+                /> None </label>
+                
+            <label class="px-2"><input 
+                type="radio" 
+                name="secondary" 
+                checked:from="eq(this.secondaryReportType, 'status')"
+                on:change="this.secondaryReportType = 'status'"
+                /> {{this.secondaryIssueType}} status </label>
+            
+            {{# not(eq(this.secondaryIssueType, "Story") ) }}
+            <label class="px-2"><input 
+                type="radio" 
+                name="secondary" 
+                checked:from="eq(this.secondaryReportType, 'breakdown')"
+                on:change="this.secondaryReportType = 'breakdown'"
+                /> {{this.secondaryIssueType}} work breakdown </label>
+            {{/ not }}
+            </div>
+        </div>
+        {{# if(this.firstIssueTypeWithStatuses) }}
+        <div class="flex gap-2 mt-1">
+            <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
+            <status-filter 
+            statuses:from="this.statuses" 
+            param:raw="planningStatuses"
+            selectedStatuses:to="this.planningStatuses"
+            style="max-width: 400px;"></status-filter>
+        </div>
+        {{/ if}}`;
+
+    static props = {
+        // passed
+
+        // "base" values that do not change when other value change
+        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
+        loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
+        childJQL: saveJSONToUrl("childJQL", "", String, {parse: x => ""+x, stringify: x => ""+x}),
+        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
+        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
+        showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
+
+        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
+        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
+        
+        // VALUES DERIVING FROM THE `jql`
+        rawIssuesRequestData: {
+            value({listenTo, resolve}) {
+                return rawIssuesRequestData({
+                    jql: canValue_1_1_2_canValue.from(this, "jql"),
+                    childJQL: canValue_1_1_2_canValue.from(this,"childJQL"),
+                    loadChildren: canValue_1_1_2_canValue.from(this, "loadChildren"),
+                    isLoggedIn: canValue_1_1_2_canValue.from(this, "isLoggedIn"),
+                    jiraHelpers: this.jiraHelpers
+                },{listenTo, resolve});
+            }
+        },
+        get serverInfoPromise(){
+            return serverInfoPromise({jiraHelpers: this.jiraHelpers, isLoggedIn: canValue_1_1_2_canValue.from(this, "isLoggedIn")});
+        },
+        get configurationPromise(){
+            return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
+        },
+        configuration: {
+            async() {
+                return this.configurationPromise
+            }
+        },
+        derivedIssuesRequestData: {
+            value({listenTo, resolve}) {
+                return derivedIssuesRequestData({
+                    rawIssuesRequestData: canValue_1_1_2_canValue.from(this, "rawIssuesRequestData"),
+                    configurationPromise: canValue_1_1_2_canValue.from(this, "configurationPromise")
+                },{listenTo, resolve});
+            }
+        },
+        get derivedIssuesPromise(){
+            return this.derivedIssuesRequestData.issuesPromise
+        },
+        derivedIssues: {
+            async() {
+                return this.derivedIssuesRequestData.issuesPromise
+            }
+        },
+        // PROPERTIES DERIVING FROM `derivedIssues`
+        get statuses(){
+            if(this.derivedIssues) {
+                return allStatusesSorted(this.derivedIssues)
+            } else {
+                return [];
+            }
+        },
+
+
+        allTimingCalculationOptions: {
+            async(resolve) {
+                if(this.derivedIssuesRequestData.issuesPromise) {
+                    return this.derivedIssuesRequestData.issuesPromise.then( issues => {
+                        return allTimingCalculationOptions(issues);
+                    })
+                }
+            }
+        },
+
+        // primary issue type depends on allTimingCalculationOptions
+        // but it can also be set itself
+        primaryIssueType: {
+            value({resolve, lastSet, listenTo}) {
+                
+                let currentPrimaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
+
+                listenTo("allTimingCalculationOptions",({value})=> {
+                    reconcileCurrentValue(value, currentPrimaryIssueType);
+                });
+
+                listenTo(lastSet, (value)=>{
+                    setCurrentValue(value);
+                });
+
+                //setCurrentValue(new URL(window.location).searchParams.get("primaryIssueType") )
+
+                
+                reconcileCurrentValue(this.allTimingCalculationOptions, currentPrimaryIssueType);
+
+                function reconcileCurrentValue(calculationOptions, primaryIssueType){
+                    // if we've actually loaded some stuff, but it doesn't match the current primary issue type
+                    if(calculationOptions && calculationOptions.list.length > 1) {
+                        if( calculationOptions.map[primaryIssueType] ) {
+                            // do nothing
+                            resolve(primaryIssueType);
+                        } else {
+                            updateUrlParam("primaryIssueType", "", "");
+                            resolve(currentPrimaryIssueType = calculationOptions.list[1].type);
+                        }
+                        // default to the thing after release
+                    } else {
+                        // folks can wait on the value until we know we have a valid one
+                        resolve(undefined);
+                    }
+                }
+
+                function setCurrentValue(value) {
+                    currentPrimaryIssueType = value;
+                    updateUrlParam("primaryIssueType", value, "");
+                    // calculationOptions ... need to pick the right one if empty
+                    resolve(value);
+                }
+                
+                
+  
+            }
+        },
+
+        // PROPERTIES only needing primaryIssue type and what it depends on
+
+        // looks like [{type: "initiative", calculation: "children-only"}, ...]
+        // in the URL like ?timingCalculations=initiative:children-only,epic:self
+        timingCalculations: {
+            value({resolve, lastSet, listenTo}) {
+              let currentValue;
+              updateValue(new URL(window.location).searchParams.get("timingCalculations"));
+  
+              listenTo(lastSet, (value)=>{
+                  updateValue(value);
+              });
+
+              // reset when primary issue type changes
+              listenTo("primaryIssueType",()=>{
+                updateValue([]);
+              });
+  
+              function updateValue(value) {
+                if(typeof value === "string"){
+                  try {
+                    value = parse(value);
+                  } catch(e) {
+                    value = [];
+                  }
+                } else if(!value){
+                  value = [];
+                }
+                  
+                updateUrlParam("timingCalculations", stringify(value), stringify([]));
+  
+                currentValue = value;
+                resolve(currentValue);
+              }
+  
+              function parse(value){
+                return value.split(",").map( piece => {
+                  const parts = piece.split(":");
+                  return {type: parts[0], calculation: parts[1]};
+                }).flat()
+              }
+              function stringify(array){
+                return array.map( (obj) => obj.type+":"+obj.calculation).join(",")
+              }
+  
+            }
+        },
+        get impliedTimingCalculations(){
+            if(this.primaryIssueType) {
+                return getImpliedTimingCalculations(this.primaryIssueType, 
+                    this.allTimingCalculationOptions.map, 
+                    this.timingCalculations);
+            }
+        },
+
+        // PROPERTIES from having a primaryIssueType and timingCalculations
+        get firstIssueTypeWithStatuses(){
+            if(this.primaryIssueType) {
+                if(this.primaryIssueType !== "Release") {
+                    return this.primaryIssueType;
+                } else {
+                    // timing calculations lets folks "skip" from release to some other child
+                    const calculations= this.impliedTimingCalculations;
+                    if(calculations[0].type !== "Release") {
+                        return calculations[0].type;
+                    } else {
+                        return calculations[1].type;
+                    }
+                }
+            }
+        },
+        // used to get the name of the secondary issue type
+        get secondaryIssueType(){
+            if(this.primaryIssueType) {
+                const calculations = this.impliedTimingCalculations;
+                if(calculations.length) {
+                    return calculations[0].type
+                }
+            }
+            
+        },
+
+        get timingCalculationMethods() {
+            if(this.primaryIssueType) {
+                return this.impliedTimingCalculations
+                    .map( (calc) => calc.calculation)
+            }
+        },
+
+        get timingLevels(){
+            if(this.primaryIssueType) {
+                return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
+            }            
+        },
+        get rollupTimingLevelsAndCalculations(){
+            if(this.impliedTimingCalculations) {
+                const impliedCalculations = this.impliedTimingCalculations;
+                const primaryIssueType = this.primaryIssueType;
+                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
+                const rollupCalculations = [];
+                for( let i = 0; i < impliedCalculations.length + 1; i++) {
+                    rollupCalculations.push({
+                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
+                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
+                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
+                    });
+                }
+                return rollupCalculations;
+            }
+        },
+        // dependent on primary issue type
+        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
+
+        
+        // STATUS FILTERING STUFF
+        
+        planningStatuses: {
+          get default(){
+            return [];
+          }
+        },
+        // used for later filtering
+        // but the options come from the issues
+        statusesToRemove: {
+            get default(){
+                return [];
+            }
+        },
+        statusesToShow: {
+            get default(){
+                return [];
             }
         }
-        if(!release) {
-            console.warn("Unable to find current release matching old release", releaseName+".", 
-            "The initiative",'"'+priorInitiative.Summary+'"',"timing will be ignored");
+    };
+    // HOOKS
+    connected(){
+
+    }
+    // METHODS
+    updateCalculationType(index, value){
+    
+        const copyCalculations = [
+          ...getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations) 
+        ].slice(0,index+1);
+  
+        copyCalculations[index].type = value;
+        this.timingCalculations = copyCalculations;
+    }
+  
+    updateCalculation(index, value){
+    
+        const copyCalculations = [
+            ...getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations) 
+        ].slice(0,index+1);
+
+        copyCalculations[index].calculation = value;
+        this.timingCalculations = copyCalculations;
+    }
+
+
+    // UI Helpers
+    paddingClass(depth) {
+        return "pl-"+(depth * 2);
+    }
+
+
+
+
+   
+    
+    
+    
+
+}
+
+// jql => 
+//    
+//    rawIssues => 
+//        typeToIssueType
+
+// timingCalculations 
+
+// firstIssueTypeWithStatuses(primaryIssueType, typeToIssueType, timingCalculations)
+
+// primaryIssueType
+
+
+
+
+
+customElements.define("timeline-configuration", TimelineConfiguration);
+
+/**
+ * @type {{
+ *   type: string, 
+ *   calculation: string
+ * }} TimingCalculation
+ */
+
+/**
+ * 
+ * @param {TimingCalculationsMap} issueTypeMap 
+ * @param {string} primaryIssueType 
+ * @param {Array<TimingCalculation>} timingCalculations 
+ * @returns 
+ */
+function getTimingLevels(issueTypeMap, primaryIssueType, timingCalculations){
+
+    const primaryType = issueTypeMap[primaryIssueType];
+
+    let currentType = primaryIssueType;
+    
+    let childrenCalculations = primaryType.timingCalculations;
+
+    const timingLevels = [];
+    const setCalculations = [...timingCalculations];
+    
+    
+    while(childrenCalculations.length) {
+        // this is the calculation that should be selected for that level
+        let setLevelCalculation = setCalculations.shift() || 
+        {
+            type: childrenCalculations[0].child, 
+            calculation: childrenCalculations[0].calculations[0].calculation
+        };
+        let selected = childrenCalculations.find( calculation => setLevelCalculation.type === calculation.child);
+
+        let timingLevel = {
+        type: currentType,
+        types: childrenCalculations.map( calculationsForType => {
+            return {
+            type: calculationsForType.child,
+            selected: setLevelCalculation?.type === calculationsForType.child
+            }
+        } ),
+        calculations: selected.calculations.map( (calculation)=> {
+            return {
+            ...calculation,
+            selected: calculation.calculation === setLevelCalculation.calculation
+            }
+        })
+        };
+        timingLevels.push(timingLevel);
+        currentType = setLevelCalculation.type;
+        childrenCalculations = issueTypeMap[setLevelCalculation.type].timingCalculations;
+    }
+    return timingLevels;
+}
+
+function getSprintNumbers(value) {
+    if(value === "") {
+        return null;
+    } else {
+        return value.split(",").map( num => +num);
+    }
+}
+function getSprintNames(value) {
+    if(value === "") {
+        return null;
+    } else {
+        return value.split(",").map( name => name.trim() );
+    }
+}
+
+
+const fields = {
+
+    // from will look like "1619, 1647"
+    // we need to update `lastReturnValue` to have 
+    // only the right sprints
+    Sprint: function(lastReturnValue, change, fieldName, {sprints}) {
+        const sprintNumbers = getSprintNumbers( change.from );
+        const sprintNames = getSprintNames(change.fromString);
+        
+        if( sprintNumbers === null ) {
+            return {[fieldName]: null};
         } else {
 
-            // mark this release as having a lastPeriod if it doesn't already
-            if(!release.lastPeriod){
-                release.lastPeriod = makeRelease("PRIOR "+release.release);
+            return {[fieldName]: sprintNumbers.map( (number, i)=>{
+                // REMOVE IN PROD
+                if(sprints.ids.has(number) ) {
+                    return sprints.ids.get(number);
+                } else if(sprints.names.has(sprintNames[i])) {
+                    return sprints.names.get(sprintNames[i]);
+                } else {
+                    // TODO: change to async so we can go request all of these
+                    console.warn("Can't find sprint ", number, sprintNames[i]);
+                }
+                
+            }).filter(x => x) }
+        }
+        
+    },
+    "Fix versions": function(lastReturnValue, change, fieldName, {versions}) {
+
+        if(change.from) {
+            if(versions.ids.has(change.from)) {
+                return {[fieldName]: versions.ids.get(change.from)};
+            } else if( versions.names.has(change.fromString) ) {
+                return {[fieldName]: versions.names.get(change.fromString)};
+            } else {
+                console.warn("Can't find release version ", change.from, change.fromString);
+                return {[fieldName]: lastReturnValue};
             }
-            release.lastPeriod.dateData.children.issues.push(priorInitiative);
+        } else {
+            return {[fieldName]: []};
+        }
+    },
+    // Parent Link, Epic Link, 
+    "IssueParentAssociation": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString, id: change.to}}
+    },
+    "Parent Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
+    },
+    "Epic Link": function(lastReturnValue, change) {
+        return {Parent: {key: change.toString}};
+    },
+    "Status": function(lastReturnValue, change, fieldName, {statuses}) {
+        if(statuses.ids.has(change.from)) {
+            return {[fieldName]: statuses.ids.get(change.from)};
+        } else if( statuses.names.has(change.fromString) ) {
+            return {[fieldName]: statuses.names.get(change.fromString)};
+        } else {
+            console.warn("Can't find status", change.from, change.fromString);
+            return {[fieldName]: {name: change.fromString}};
         }
     }
-    // now go and add timing data to each release in the release map ...
-    for(const [releaseName, release] of releaseMap) {
-        addWorkTypeBreakdownForRelease(release, options.getChildWorkBreakdown);
-        if(release.lastPeriod) {
-            addWorkTypeBreakdownForRelease(release.lastPeriod, options.getChildWorkBreakdown);
-            assignPriorIssueBreakdowns(release, release.lastPeriod);
+};
+const fieldAlias = {
+    "duedate": "Due date",
+    "status": "Status",
+    "labels": "Labels",
+    "issuetype": "Issue Type",
+    // "summary": "Summary" // we don't want to change summary
+    "Fix Version": "Fix versions"
+};
+
+function getSprintsMapsFromIssues(issues){
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        for(const sprint of (issue.fields.Sprint || [])) {
+            ids.set(sprint.id, sprint);
+            names.set(sprint.name, sprint);
         }
     }
+    return {ids, names};
+}
+
+function getVersionsFromIssues(issues){
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        for(const version of (issue.fields["Fix versions"] || [])) {
+            ids.set(version.id, version);
+            names.set(version.name, version);
+        }
+    }
+    return {ids, names};
+}
+
+
+function getStatusesFromIssues(issues) {
+    const ids = new Map();
+    const names = new Map();
+    for(const issue of issues) {
+        
+        ids.set(issue.fields.Status.id, issue.fields.Status);
+        names.set(issue.fields.Status.name, issue.fields.Status);
+        
+    }
+    return {ids, names};
+}
+
+function rollbackIssues(issues, rollbackTime) {
+    const sprints = getSprintsMapsFromIssues(issues);
+    const versions = getVersionsFromIssues(issues);
+    const statuses = getStatusesFromIssues(issues);
+    return issues.map(i => rollbackIssue(i, {sprints, versions, statuses}, rollbackTime)).filter( i => i );
+}
+
+const oneHourAgo = new Date(new Date() - 1000*60*60);
+
+/**
+ * @typedef {{
+ *   rolledBackTo: Date,
+ *   didNotExist: Boolen
+ * }} RolledBackMetadata
+ */
+
+/**
+ * @typedef {import("../../normalized/normalize").JiraIssue & {rollbackMetadata: RolledBackMetadata}} RolledBackJiraIssue
+ */
+
+/**
+ * @param {import("../../normalized/normalize").JiraIssue} issue 
+ * @param {*} data 
+ * @param {Date} rollbackTime 
+ * @returns {RolledBackJiraIssue}
+ */
+function rollbackIssue(issue, data, rollbackTime = oneHourAgo) {
+
+    const {changelog, ...copy} = issue;
+    copy.rollbackMetadata = {rolledbackTo: rollbackTime};
+    // ignore old issues
+    if( parseDateISOString(issue.fields.Created) > rollbackTime) {
+        return;
+        /*
+        copy.rollbackMetadata.didNotExist = true;
+        delete copy.fields;
+        // should convert to date ...
+        copy.rollbackMetadata.didNotExistBefore = issue.fields.Created;
+        return copy;*/
+    }
+    // 
     
-    return {
-        releases: [...releaseMap.values()].map(addStatusToRelease),
-        initiatives: currentInitiativesWithStatus
+    copy.fields = {...issue.fields};
+
+    for(const {items, created} of changelog) {
+        // we need to go back before ... 
+        if( parseDateISOString(created) < rollbackTime) {
+            break;
+        }
+        items.forEach( (change) => {
+            const {field, from, to} = change;
+            const fieldName = fieldAlias[field] || field;
+            if(fields[fieldName]) {
+
+                Object.assign(copy.fields, fields[fieldName](copy[fieldName], change, fieldName, data) );
+            } else {
+                copy.fields[fieldName] = from;
+            }
+
+        });
+    }
+    return copy;
+}
+
+/*
+export function collectChangelog(observableBaseIssues, priorTime) {
+    const changes = observableBaseIssues.map( baseIssue => {
+        return baseIssue.changelog.map( change => {
+            return {...change, issue: baseIssue, createdDate: parseDateISOString(change.created) };
+        })
+    } ).flat().sort( (cl1, cl2) => cl1.createdDate - cl2.createdDate);
+
+    return changes.filter( change => change.createdDate >= priorTime );
+}
+
+
+export function applyChangelog(changes, data) {
+    for(const {items, created, issue} of changes) {
+
+        items.forEach( (change) => {
+            const {field, from, to} = change;
+
+            if(field in issue) {
+                if(fields[field]) {
+                    issue[field] = fields[field](issue[field], change, data);
+                } else {
+                    issue[field] = from;
+                }
+                
+            }
+        })
+    }
+}
+
+
+
+function sleep(time) {
+    return new Promise(function(resolve){
+        if(!time) {
+            resolve();
+        }
+    })
+}
+
+const CHANGE_APPLY_AMOUNT = 2000;
+export async function applyChangelogs(observableBaseIssues, priorTime) {
+    const changes = collectChangelog(observableBaseIssues, priorTime);
+    console.log("processing",changes.length, "changes");
+    const sprints = getSprintsMapsFromIssues(observableBaseIssues);
+    const batches = [];
+    
+    while(changes.length) {
+        await sleep();
+        const batch = changes.splice(0, CHANGE_APPLY_AMOUNT);
+        applyChangelog(batch, {sprints});
+    }
+}*/
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupWorkTypeDates(groupedHierarchy, {getChildren}  = {}) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            //const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
+            const method = mergeParentAndChildIfTheyHaveDates; //methods[methodName];
+            return method(issueOrRelease, children);
+        }
+    });
+}
+/**
+ * 
+ * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {*} rollupTimingLevelsAndCalculations 
+ * @return {Array<WorkTypeTimingReleaseOrIssue>}
+ */
+function addWorkTypeDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
+    const rolledUpDates = rollupWorkTypeDates(groupedIssues);
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "workTypeRollups");
+    return zipped.flat();
+}
+
+function copyDateProperties(obj) {
+    const copy = {};
+    for(let key of ["due","dueTo","start","startFrom"]){
+        if(obj[key] !== undefined) {
+            copy[key] = obj[key];
+        }
+    }
+    return copy;
+}
+
+
+function mergeParentAndChildIfTheyHaveDates(parentIssueOrRelease, childRollups){
+    const rollup = {self: {}, children: {}, combined: {}};
+    const parentData = parentIssueOrRelease?.derivedTiming;
+
+    const parentHasStart = parentData?.start;
+    const parentHasDue = parentData?.due;
+    const hasStartAndDue = parentHasStart && parentHasDue;
+
+    if(hasStartAndDue) {
+        // can use the parent;
+        rollup.self[parentIssueOrRelease.derivedStatus.workType] = copyDateProperties(parentData);
+        rollup.self[parentIssueOrRelease.derivedStatus.workType].issueKeys = [parentIssueOrRelease.key];
+    }
+    if(!childRollups.length) {
+        rollup.combined = rollup.self;
+        return rollup;
+    }
+    const children = rollup.children;
+    const combined = rollup.combined;
+    for(let workType$1 of workType) {
+        // combine for children
+        const rollupForWorkType = childRollups.map( childRollup => childRollup.combined?.[workType$1] ).filter(x => x);
+        // if the children have something for this type
+        if(rollupForWorkType.length) {
+            const issues = new Set( rollupForWorkType.map( r => r.issueKeys ).flat(1) );
+            const dates  = mergeStartAndDueData$2(rollupForWorkType);
+            dates.issueKeys = [...issues];
+            children[workType$1] = dates;
+            // what if the parent has it also
+            if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
+                const combinedIssues = new Set( [...issues, parentIssueOrRelease.key] );
+                const combinedDates = mergeStartAndDueData$2([dates, parentData]);
+                combinedDates.issueKeys = [...combinedIssues];
+                combined[workType$1] = combinedDates;
+            } else {
+                combined[workType$1] = dates;
+            }
+        } 
+        // what if the parent has it
+        else if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
+            combined[workType$1] = rollup.self[workType$1];
+        }
+    }
+    return rollup;
+}
+
+
+
+// {children: DATES FROM CHILDREN, QA, UAT, DESIGN, etc}
+
+/**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupBlockedIssuesForGroupedHierarchy(groupedHierarchy) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            const blockedIssues = children.flat(1);
+            // releases don't have a status
+            if(issueOrRelease?.derivedStatus?.statusType === "blocked") {
+                blockedIssues.push(issueOrRelease);
+            }
+            return blockedIssues;
+        }
+    });
+}
+
+// these functions shouldn't be used eventually for performance ...
+function rollupBlockedStatusIssues(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rolledUpBlockers = rollupBlockedIssuesForGroupedHierarchy(groupedIssues);
+
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, "blockedStatusIssues");
+    return zipped.flat();
+}
+
+function addToCharacterMap(fullName, name, map = {}) {
+    if (name === "") {
+        map.last = true;
+    }
+    map.followers.push(fullName);
+
+    if (!map.characterMap[name[0]]) {
+        map.characterMap[name[0]] = {
+            followers: [],
+            characterMap: {}
+        };
+    }
+    if (name !== "") {
+        addToCharacterMap(fullName, name.substr(1), map.characterMap[name[0]]);
+    }
+}
+
+
+function uniqueTrailingNames(names) {
+    const root = {
+        characterMap: {},
+        followers: []
     };
+    for (const name of names) {
+        addToCharacterMap(name, name, root);
+    }
+    // keep going down the 1 path until you don't have everything
+    let current = root;
+    let startingWith = "";
+    while (Object.keys(current.characterMap).length === 1) {
+        let character = Object.keys(current.characterMap)[0];
+        startingWith = startingWith + character;
+        current = current.characterMap[character];
+    }
+    if (startingWith.length > 3) {
+        return names.map(n => n.replace(startingWith, ""))
+    } else {
+        return names;
+    }
 
 }
 
@@ -53594,3841 +56440,6 @@ var semver = {
 
 var semver$1 = /*@__PURE__*/getDefaultExportFromCjs(semver);
 
-function addToCharacterMap(fullName, name, map = {}) {
-    if (name === "") {
-        map.last = true;
-    }
-    map.followers.push(fullName);
-
-    if (!map.characterMap[name[0]]) {
-        map.characterMap[name[0]] = {
-            followers: [],
-            characterMap: {}
-        };
-    }
-    if (name !== "") {
-        addToCharacterMap(fullName, name.substr(1), map.characterMap[name[0]]);
-    }
-}
-
-
-function uniqueTrailingNames(names) {
-    const root = {
-        characterMap: {},
-        followers: []
-    };
-    for (const name of names) {
-        addToCharacterMap(name, name, root);
-    }
-    // keep going down the 1 path until you don't have everything
-    let current = root;
-    let startingWith = "";
-    while (Object.keys(current.characterMap).length === 1) {
-        let character = Object.keys(current.characterMap)[0];
-        startingWith = startingWith + character;
-        current = current.characterMap[character];
-    }
-    if (startingWith.length > 3) {
-        return names.map(n => n.replace(startingWith, ""))
-    } else {
-        return names;
-    }
-
-}
-
-function partialReleaseName$1(release) {
-    let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
-    if (match) {
-        return match[0].replace(".X", ".0");
-    }
-}
-
-function cleanedRelease$1(release) {
-    let clean = partialReleaseName$1(release);
-    if (clean) {
-        if (clean.length === 1) {
-            clean = clean + ".0.0";
-        }
-        if (clean.length === 3) {
-            clean = clean + ".0";
-        }
-        if (semver$1.clean(clean)) {
-            return clean;
-        }
-    }
-}
-
-function semverSort(values) {
-    const cleanMap = {};
-    const cleanValues = [];
-    values.forEach((release) => {
-        const clean = cleanedRelease$1(release);
-        if (clean && semver$1.clean(clean)) {
-            cleanMap[clean] = release;
-            cleanValues.push(clean);
-        }
-
-    });
-    const cleanSorted = semver$1.sort(cleanValues);
-
-    return cleanSorted.map(clean => cleanMap[clean]);
-}
-
-
-function semverReleases(unsortedReleases){
-	const releaseToReleaseObject = {};
-	for(let releaseObject of unsortedReleases) {
-		releaseToReleaseObject[releaseObject.release] = releaseObject;
-	}
-
-	const semverReleases = semverSort(Object.keys(releaseToReleaseObject));
-
-	const shortReleaseNames = uniqueTrailingNames(semverReleases);
-
-	return semverReleases.map( (release, index)=>{
-		return {
-				...releaseToReleaseObject[release],
-				release: release,
-				shortName: shortReleaseNames[index],
-				version: cleanedRelease$1(release),
-				shortVersion: partialReleaseName$1(release),
-
-		};
-	})
-}
-
-function sortedByLastEpicReleases(releases){
-
-	return releases.map( (releaseObject) => {
-		return {
-				...releaseObject,
-				shortName: releaseObject.release, //shortReleaseNames[index],
-				version: releaseObject.release,
-				shortVersion: releaseObject.release
-		};
-	}).sort( (a, b) => {
-		return a.dateData.rollup.due - b.dateData.rollup.due;
-	});
-
-
-	/*const semverReleases = Object.keys(releasesToInitiatives).sort( (a, b)=> {
-		const initiatives = releasesToInitiatives[a];
-
-		epicTimingData();
-		return 1;
-	});
-
-	const shortReleaseNames = uniqueTrailingNames(semverReleases);
-
-	return semverReleases.map( (release, index)=>{
-
-	})*/
-}
-
-/******************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
-
-
-var __assign = function() {
-    __assign = Object.assign || function __assign(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
-
-function __rest(s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-}
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
-function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-}
-
-typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-    var e = new Error(message);
-    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-};
-
-function responseToJSON(response) {
-    if (!response.ok) {
-        return response.json().then(function (payload) {
-            var err = new Error("HTTP status code: " + response.status);
-            Object.assign(err, payload);
-            Object.assign(err, response);
-            throw err;
-        });
-    }
-    return response.json();
-}
-
-function responseToText(response) {
-    if (!response.ok) {
-        return response.json().then(function (payload) {
-            var err = new Error("HTTP status code: " + response.status);
-            Object.assign(err, payload);
-            Object.assign(err, response);
-            throw err;
-        });
-    }
-    return response.text();
-}
-function nativeFetchJSON(url, options) {
-    return fetch(url, options).then(responseToJSON);
-}
-function chunkArray(array, size) {
-    var chunkedArr = [];
-    for (var i = 0; i < array.length; i += size) {
-        chunkedArr.push(array.slice(i, i + size));
-    }
-    return chunkedArr;
-}
-function JiraOIDCHelpers (_a, requestHelper, host) {
-    var _this = this;
-    var _b = _a === void 0 ? window.env : _a, JIRA_CLIENT_ID = _b.JIRA_CLIENT_ID, JIRA_SCOPE = _b.JIRA_SCOPE, JIRA_CALLBACK_URL = _b.JIRA_CALLBACK_URL, JIRA_API_URL = _b.JIRA_API_URL;
-    var fetchJSON = nativeFetchJSON;
-    var fieldsRequest;
-    function makeDeepChildrenLoaderUsingNamedFields(rootMethod) {
-        // Makes child requests in batches of 40
-        // 
-        // params - base params
-        // sourceParentIssues - the source of parent issues
-        function fetchChildrenResponses(params, parentIssues, progress) {
-            var issuesToQuery = chunkArray(parentIssues, 40);
-            var batchedResponses = issuesToQuery.map(function (issues) {
-                var keys = issues.map(function (issue) { return issue.key; });
-                var jql = "parent in (".concat(keys.join(", "), ")");
-                return rootMethod(__assign(__assign({}, params), { jql: jql }), progress);
-            });
-            // this needs to be flattened
-            return batchedResponses;
-        }
-        function fetchDeepChildren(params, sourceParentIssues, progress) {
-            return __awaiter(this, void 0, void 0, function () {
-                var batchedFirstResponses, getChildren, batchedIssueRequests, allChildren;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            batchedFirstResponses = fetchChildrenResponses(params, sourceParentIssues, progress);
-                            getChildren = function (parentIssues) {
-                                if (parentIssues.length) {
-                                    return fetchDeepChildren(params, parentIssues, progress).then(function (deepChildrenIssues) {
-                                        return parentIssues.concat(deepChildrenIssues);
-                                    });
-                                }
-                                else {
-                                    return parentIssues;
-                                }
-                            };
-                            batchedIssueRequests = batchedFirstResponses.map(function (firstBatchPromise) {
-                                return firstBatchPromise.then(getChildren);
-                            });
-                            return [4 /*yield*/, Promise.all(batchedIssueRequests)];
-                        case 1:
-                            allChildren = _a.sent();
-                            return [2 /*return*/, allChildren.flat()];
-                    }
-                });
-            });
-        }
-        return function fetchAllDeepChildren(params_1) {
-            return __awaiter(this, arguments, void 0, function (params, progress) {
-                var fields, newParams, parentIssues, allChildrenIssues, combined;
-                var _a;
-                if (progress === void 0) { progress = {}; }
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _b.sent();
-                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
-                            progress.data = progress.data || {
-                                issuesRequested: 0,
-                                issuesReceived: 0,
-                                changeLogsRequested: 0,
-                                changeLogsReceived: 0
-                            };
-                            return [4 /*yield*/, rootMethod(newParams, progress)];
-                        case 2:
-                            parentIssues = _b.sent();
-                            return [4 /*yield*/, fetchDeepChildren(newParams, parentIssues, progress)];
-                        case 3:
-                            allChildrenIssues = _b.sent();
-                            combined = parentIssues.concat(allChildrenIssues);
-                            return [2 /*return*/, combined.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        };
-    }
-    var jiraHelpers = {
-        saveInformationToLocalStorage: function (parameters) {
-            var objectKeys = Object.keys(parameters);
-            for (var _i = 0, objectKeys_1 = objectKeys; _i < objectKeys_1.length; _i++) {
-                var key = objectKeys_1[_i];
-                window.localStorage.setItem(key, parameters[key]);
-            }
-        },
-        clearAuthFromLocalStorage: function () {
-            window.localStorage.removeItem("accessToken");
-            window.localStorage.removeItem("refreshToken");
-            window.localStorage.removeItem("expiryTimestamp");
-        },
-        fetchFromLocalStorage: function (key) {
-            return window.localStorage.getItem(key);
-        },
-        fetchAuthorizationCode: function () {
-            var url = "https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=".concat(JIRA_CLIENT_ID, "&scope=").concat(JIRA_SCOPE, "&redirect_uri=").concat(JIRA_CALLBACK_URL, "&response_type=code&prompt=consent&state=").concat(encodeURIComponent(encodeURIComponent(window.location.search)));
-            window.location.href = url;
-        },
-        refreshAccessToken: function (accessCode) { return __awaiter(_this, void 0, void 0, function () {
-            var response, _a, accessToken, expiryTimestamp, refreshToken, error_1;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _b.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, fetchJSON("".concat(window.env.JIRA_API_URL, "/?code=").concat(accessCode))];
-                    case 1:
-                        response = _b.sent();
-                        _a = response.data, accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken;
-                        jiraHelpers.saveInformationToLocalStorage({
-                            accessToken: accessToken,
-                            refreshToken: refreshToken,
-                            expiryTimestamp: expiryTimestamp,
-                        });
-                        return [2 /*return*/, accessToken];
-                    case 2:
-                        error_1 = _b.sent();
-                        if (error_1 instanceof Error) {
-                            console.error(error_1.message);
-                        }
-                        else {
-                            console.error('An unknown error occurred');
-                        }
-                        jiraHelpers.clearAuthFromLocalStorage();
-                        jiraHelpers.fetchAuthorizationCode();
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); },
-        fetchAccessTokenWithAuthCode: function (authCode) { return __awaiter(_this, void 0, void 0, function () {
-            var _a, accessToken, expiryTimestamp, refreshToken, scopeId, addOnQuery, error_2;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _b.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, fetchJSON("./access-token?code=".concat(authCode))];
-                    case 1:
-                        _a = _b.sent(), accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken, scopeId = _a.scopeId;
-                        jiraHelpers.saveInformationToLocalStorage({
-                            accessToken: accessToken,
-                            refreshToken: refreshToken,
-                            expiryTimestamp: expiryTimestamp,
-                            scopeId: scopeId,
-                        });
-                        addOnQuery = new URL(window.location).searchParams.get("state");
-                        location.href = '/' + (addOnQuery || "");
-                        return [3 /*break*/, 3];
-                    case 2:
-                        error_2 = _b.sent();
-                        //handle error properly.
-                        console.error(error_2);
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); },
-        fetchAccessibleResources: function () {
-            return requestHelper("https://api.atlassian.com/oauth/token/accessible-resources");
-        },
-        fetchJiraSprint: function (sprintId) { return __awaiter(_this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, requestHelper("/agile/1.0/sprint/".concat(sprintId))];
-            });
-        }); },
-        fetchJiraIssue: function (issueId) { return __awaiter(_this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, requestHelper("/api/3/issue/".concat(issueId))];
-            });
-        }); },
-        editJiraIssueWithNamedFields: function (issueId, fields) { return __awaiter(_this, void 0, void 0, function () {
-            var scopeIdForJira, accessToken, fieldMapping, editBody;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-                        accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
-                        return [4 /*yield*/, fieldsRequest];
-                    case 1:
-                        fieldMapping = _a.sent();
-                        editBody = fieldsToEditBody(fields, fieldMapping);
-                        //const fieldsWithIds = mapNamesToIds(fields || {}, fieldMapping),
-                        //	updateWithIds = mapNamesToIds(update || {}, fieldMapping);
-                        return [2 /*return*/, fetch("".concat(JIRA_API_URL, "/").concat(scopeIdForJira, "/rest/api/3/issue/").concat(issueId, "?") +
-                                "" /*new URLSearchParams(params)*/, {
-                                method: 'PUT',
-                                headers: {
-                                    'Authorization': "Bearer ".concat(accessToken),
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(editBody)
-                            }).then(responseToText)];
-                }
-            });
-        }); },
-        fetchJiraIssuesWithJQL: function (params) {
-            // TODO - investigate this and convert params to proper type
-            return requestHelper("/api/3/search?" + new URLSearchParams(params));
-        },
-        fetchJiraIssuesWithJQLWithNamedFields: function (params) {
-            return __awaiter(this, void 0, void 0, function () {
-                var fields, newParams, response;
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _b.sent();
-                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
-                            return [4 /*yield*/, jiraHelpers.fetchJiraIssuesWithJQL(newParams)];
-                        case 2:
-                            response = _b.sent();
-                            return [2 /*return*/, response.issues.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        },
-        fetchAllJiraIssuesWithJQL: function (params) {
-            return __awaiter(this, void 0, void 0, function () {
-                var limit, apiParams, firstRequest, _a, maxResults, total, startAt, requests, limitOrTotal, i;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            limit = params.limit, apiParams = __rest(params, ["limit"]);
-                            firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100 }, apiParams));
-                            return [4 /*yield*/, firstRequest];
-                        case 1:
-                            _a = _b.sent(), _a.issues, maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
-                            requests = [firstRequest];
-                            limitOrTotal = Math.min(total, limit || Infinity);
-                            for (i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
-                                requests.push(jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: maxResults, startAt: i }, apiParams)));
-                            }
-                            return [2 /*return*/, Promise.all(requests).then(function (responses) {
-                                    return responses.map(function (response) { return response.issues; }).flat();
-                                })];
-                    }
-                });
-            });
-        },
-        fetchAllJiraIssuesWithJQLUsingNamedFields: function (params) {
-            return __awaiter(this, void 0, void 0, function () {
-                var fields, newParams, response;
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _b.sent();
-                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
-                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQL(newParams)];
-                        case 2:
-                            response = _b.sent();
-                            return [2 /*return*/, response.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        },
-        fetchJiraChangelog: function (issueIdOrKey, params) {
-            // TODO investigate this - convert params to proper type
-            return requestHelper("/api/3/issue/".concat(issueIdOrKey, "/changelog?") + new URLSearchParams(params));
-        },
-        isChangelogComplete: function (changelog) {
-            return changelog.histories.length === changelog.total;
-        },
-        fetchRemainingChangelogsForIssues: function (issues, progress) {
-            // check for remainings
-            return Promise.all(issues.map(function (issue) {
-                if (jiraHelpers.isChangelogComplete(issue.changelog)) {
-                    return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
-                }
-                else {
-                    return jiraHelpers.fetchRemainingChangelogsForIssue(issue.key, issue.changelog).then(function (histories) {
-                        return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
-                    });
-                }
-            }));
-        },
-        // weirdly, this starts with the oldest, but we got the most recent
-        // returns an array of histories objects
-        fetchRemainingChangelogsForIssue: function (issueIdOrKey, mostRecentChangeLog) {
-            mostRecentChangeLog.histories; var maxResults = mostRecentChangeLog.maxResults, total = mostRecentChangeLog.total; mostRecentChangeLog.startAt;
-            var requests = [];
-            requests.push({ values: mostRecentChangeLog.histories });
-            for (var i = 0; i < total - maxResults; i += maxResults) {
-                requests.push(jiraHelpers.fetchJiraChangelog(issueIdOrKey, {
-                    maxResults: Math.min(maxResults, total - maxResults - i),
-                    startAt: i,
-                }).then(function (response) {
-                    // the query above reverses the sort order, we fix that here
-                    return __assign(__assign({}, response), { values: response.values.reverse() });
-                }));
-            }
-            // server sends back as "values", we match that
-            return Promise.all(requests).then(function (responses) {
-                return responses.map(function (response) { return response.values; }).flat();
-            }).then(function (response) {
-                return response;
-            });
-        },
-        fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params, progress) {
-            if (progress === void 0) { progress = function () { }; }
-            var limit = params.limit, apiParams = __rest(params, ["limit"]);
-            // a weak map would be better
-            progress.data = progress.data || {
-                issuesRequested: 0,
-                issuesReceived: 0,
-                changeLogsRequested: 0,
-                changeLogsReceived: 0
-            };
-            function getRemainingChangeLogsForIssues(response) {
-                if (progress.data) {
-                    Object.assign(progress.data, {
-                        issuesReceived: progress.data.issuesReceived + response.issues.length
-                    });
-                    progress(progress.data);
-                }
-                return jiraHelpers.fetchRemainingChangelogsForIssues(response.issues, progress);
-            }
-            var firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100, expand: ["changelog"] }, apiParams));
-            return firstRequest.then(function (_a) {
-                _a.issues; var maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
-                if (progress.data) {
-                    Object.assign(progress.data, {
-                        issuesRequested: progress.data.issuesRequested + total,
-                        changeLogsRequested: 0,
-                        changeLogsReceived: 0
-                    });
-                    progress(progress.data);
-                }
-                var requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
-                var limitOrTotal = Math.min(total, limit || Infinity);
-                for (var i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
-                    requests.push(jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: maxResults, startAt: i }, apiParams))
-                        .then(getRemainingChangeLogsForIssues));
-                }
-                return Promise.all(requests).then(function (responses) {
-                    return responses.flat();
-                });
-            });
-        },
-        // this could do each response incrementally, but I'm being lazy
-        fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
-            return __awaiter(this, arguments, void 0, function (params, progress) {
-                var fields, newParams, response;
-                if (progress === void 0) { progress = function () { }; }
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _a.sent();
-                            newParams = __assign(__assign({}, params), { fields: params.fields.map(function (f) { return fields.nameMap[f] || f; }) });
-                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress)];
-                        case 2:
-                            response = _a.sent();
-                            return [2 /*return*/, response.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        },
-        fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
-            return __awaiter(this, arguments, void 0, function (params, progress) {
-                var fields, newParams, parentIssues, allChildrenIssues, combined;
-                if (progress === void 0) { progress = function () { }; }
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _a.sent();
-                            newParams = __assign(__assign({}, params), { fields: params.fields.map(function (f) { return fields.nameMap[f] || f; }) });
-                            progress.data = progress.data || {
-                                issuesRequested: 0,
-                                issuesReceived: 0,
-                                changeLogsRequested: 0,
-                                changeLogsReceived: 0
-                            };
-                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress)];
-                        case 2:
-                            parentIssues = _a.sent();
-                            return [4 /*yield*/, this.fetchDeepChildren(newParams, parentIssues, progress)];
-                        case 3:
-                            allChildrenIssues = _a.sent();
-                            combined = parentIssues.concat(allChildrenIssues);
-                            return [2 /*return*/, combined.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        },
-        fetchChildrenResponses: function (params, parentIssues, progress) {
-            var _this = this;
-            if (progress === void 0) { progress = function () { }; }
-            var issuesToQuery = chunkArray(parentIssues, 40);
-            var batchedResponses = issuesToQuery.map(function (issues) {
-                var keys = issues.map(function (issue) { return issue.key; });
-                var jql = "parent in (".concat(keys.join(", "), ")");
-                return _this.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(__assign(__assign({}, params), { jql: jql }), progress);
-            });
-            // this needs to be flattened
-            return batchedResponses;
-        },
-        // Makes child requests in batches of 40
-        // 
-        // params - base params
-        // sourceParentIssues - the source of parent issues
-        fetchDeepChildren: function (params, sourceParentIssues, progress) {
-            var _this = this;
-            if (progress === void 0) { progress = function () { }; }
-            var batchedFirstResponses = this.fetchChildrenResponses(params, sourceParentIssues, progress);
-            var getChildren = function (parentIssues) {
-                if (parentIssues.length) {
-                    return _this.fetchDeepChildren(params, parentIssues, progress).then(function (deepChildrenIssues) {
-                        return parentIssues.concat(deepChildrenIssues);
-                    });
-                }
-                else {
-                    return parentIssues;
-                }
-            };
-            var batchedIssueRequests = batchedFirstResponses.map(function (firstBatchPromise) {
-                return firstBatchPromise.then(getChildren);
-            });
-            return Promise.all(batchedIssueRequests).then(function (allChildren) {
-                return allChildren.flat();
-            });
-        },
-        fetchJiraFields: function () {
-            return requestHelper("/api/3/field");
-        },
-        getAccessToken: function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var refreshToken;
-                return __generator(this, function (_a) {
-                    if (!jiraHelpers.hasValidAccessToken()) {
-                        refreshToken = jiraHelpers.fetchFromLocalStorage("refreshToken");
-                        if (!refreshToken) {
-                            jiraHelpers.fetchAuthorizationCode();
-                        }
-                        else {
-                            return [2 /*return*/, jiraHelpers.refreshAccessToken()];
-                        }
-                    }
-                    else {
-                        return [2 /*return*/, jiraHelpers.fetchFromLocalStorage("accessToken")];
-                    }
-                    return [2 /*return*/];
-                });
-            });
-        },
-        hasAccessToken: function () {
-            return !!jiraHelpers.fetchFromLocalStorage("accessToken");
-        },
-        hasValidAccessToken: function () {
-            var accessToken = jiraHelpers.fetchFromLocalStorage("accessToken");
-            var expiryTimestamp = Number(jiraHelpers.fetchFromLocalStorage("expiryTimestamp"));
-            if (isNaN(expiryTimestamp)) {
-                expiryTimestamp = 0;
-            }
-            var currentTimestamp = Math.floor(new Date().getTime() / 1000.0);
-            return !((currentTimestamp > expiryTimestamp) || (!accessToken));
-        },
-        _cachedServerInfoPromise: function () {
-            return requestHelper('/api/3/serverInfo');
-        },
-        getServerInfo: function () {
-            // if(this._cachedServerInfoPromise) {
-            // 	return this._cachedServerInfoPromise;
-            // }
-            // // https://your-domain.atlassian.net/rest/api/3/serverInfo
-            // return this._cachedServerInfoPromise( = requestHelper('/api/3/serverInfo'));
-            return this._cachedServerInfoPromise();
-        },
-    };
-    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
-        makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
-    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
-        makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
-    // commented out because it's not used
-    // function makeFieldNameToIdMap(
-    // 	fields: {
-    // 		name: string;
-    // 		id: string | number;
-    // 	}[]
-    // ) {
-    // 	const map = {};
-    // 	fields.forEach((f) => {
-    // 		map[f.name] = f.id;
-    // 	});
-    // 	return map;
-    // }
-    if (jiraHelpers.hasValidAccessToken()) {
-        // @ts-ignore
-        fieldsRequest = jiraHelpers.fetchJiraFields().then(function (fields) {
-            var nameMap = {};
-            var idMap = {};
-            // @ts-ignore
-            fields.forEach(function (f) {
-                // @ts-ignore
-                idMap[f.id] = f.name;
-                // @ts-ignore
-                nameMap[f.name] = f.id;
-            });
-            console.log(nameMap);
-            return {
-                list: fields,
-                nameMap: nameMap,
-                idMap: idMap
-            };
-        });
-        // @ts-ignore
-        jiraHelpers.fieldsRequest = fieldsRequest;
-    }
-    function mapIdsToNames(obj, fields) {
-        var mapped = {};
-        for (var prop in obj) {
-            mapped[fields.idMap[prop] || prop] = obj[prop];
-        }
-        return mapped;
-    }
-    function fieldsToEditBody(obj, fieldMapping) {
-        var editBody = { fields: {}, update: {} };
-        for (var prop in obj) {
-            //if(prop === "Story points") {
-            // 10016 -> story point estimate
-            // 10034 -> story points
-            //obj[prop] = ""+obj[prop];
-            //mapped["customfield_10016"] = obj[prop];
-            //mapped["customfield_10034"] = obj[prop];
-            //mapped["Story points"] = obj[prop];
-            //mapped["storypoints"] = obj[prop];
-            //mapped["Story Points"] = obj[prop];
-            // 10016 -> story point estimate
-            //} else {
-            //mapped[fields.nameMap[prop] || prop] = obj[prop];
-            //}
-            editBody.update[fieldMapping.nameMap[prop] || prop] = [{ set: obj[prop] }];
-        }
-        return editBody;
-    }
-    // commented out because it's not used
-    // function mapNamesToIds(obj, fields) {
-    // 	const mapped = {};
-    // 	for (let prop in obj) {
-    // 		//if(prop === "Story points") {
-    // 			// 10016 -> story point estimate
-    // 			// 10034 -> story points
-    // 			//obj[prop] = ""+obj[prop];
-    // 			//mapped["customfield_10016"] = obj[prop];
-    // 			//mapped["customfield_10034"] = obj[prop];
-    // 			//mapped["Story points"] = obj[prop];
-    // 			//mapped["storypoints"] = obj[prop];
-    // 			//mapped["Story Points"] = obj[prop];
-    // 			// 10016 -> story point estimate
-    // 		//} else {
-    // 			mapped[fields.nameMap[prop] || prop] = obj[prop];
-    // 		//}
-    // 	}
-    // }
-    window.jiraHelpers = jiraHelpers;
-    return jiraHelpers;
-}
-
-const REFERENCE_DATE = new Date(2024,1,20);
-const DAY$1 = 1000 * 60 * 60 * 24;
-
-
-let PROMISE = null;
-
-const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
-
-
-function bitoviTrainingData(dateToShift){
-    if(PROMISE === null) {
-        if(isNode) {
-            PROMISE = Promise.resolve([{}]);
-        } else {
-            PROMISE = nativeFetchJSON("./examples/bitovi-training.json");
-        }
-
-        PROMISE.then(function(data){
-            const daysShift = Math.round( (dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY$1 )-0;
-            return adjustDateStrings(data, daysShift);
-        });
-    }
-
-    return PROMISE;
-}
-
-
-
-function adjustDateStrings(obj, days) {
-    const dateRegex = /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?([-+]\d{2}:\d{2})?)?/;
-
-    function addDaysToDate(dateStr, daysToAdd) {
-        const date = new Date(dateStr);
-        date.setDate(date.getDate() + daysToAdd);
-        return date.toISOString();
-    }
-
-    function formatDate(date, originalFormat) {
-        if (originalFormat.includes('T') && originalFormat.includes('-0600')) {
-            return date.replace('Z', '').replace(/\.\d{3}/, '') + '-0600';
-        } else if (originalFormat.includes('T')) {
-            return date.replace('Z', '');
-        } else if (originalFormat.includes('-')) {
-            return date.split('T')[0];
-        } else {
-            // Assumes format "yyyy-MM-dd HH:mm:ss.0"
-            return date.replace('T', ' ').replace('Z', '').replace(/\.\d{3}/, '.0');
-        }
-    }
-
-    for (let key in obj) {
-        if (typeof obj[key] === 'string' && dateRegex.test(obj[key])) {
-            const newDate = addDaysToDate(obj[key], days);
-            obj[key] = formatDate(newDate, obj[key]);
-        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-            adjustDateStrings(obj[key], days);
-        } else if (Array.isArray(obj[key])) {
-            obj[key] = obj[key].map(item => {
-                if (typeof item === 'string' && dateRegex.test(item)) {
-                    const newDate = addDaysToDate(item, days);
-                    return formatDate(newDate, item);
-                } else if (typeof item === 'object' && item !== null) {
-                    adjustDateStrings(item, days);
-                }
-                return item;
-            });
-        }
-    }
-    return obj;
-}
-
-const dateMatch = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-
-function saveJSONToUrl(key, defaultValue, Type, converter = JSON){
-	const {stringify, parse} = converter;
-	
-	return {
-			type: Type,
-      value({ lastSet, listenTo, resolve }) {
-          const defaultJSON = stringify(typeof defaultValue === "function" ? defaultValue.call(this) : defaultValue);
-          if (lastSet.value) {
-              resolve(lastSet.value);
-          } else {
-							const parsed = parse( new URL(window.location).searchParams.get(key) || defaultJSON );
-							if(parsed && dateMatch.test(parsed)) {
-								resolve( new Date(parsed) );
-							} else {
-								resolve( parsed );
-							}
-          }
-
-          listenTo(lastSet, (value) => {
-							const valueJSON = stringify(value);
-              updateUrlParam(key, valueJSON, defaultJSON);
-              resolve(value);
-          });
-      }
-  }
-}
-
-function updateUrlParam(key, valueJSON, defaultJSON) {
-  const newUrl = new URL(window.location);
-  if(valueJSON !== defaultJSON) {
-    newUrl.searchParams.set(key, valueJSON );
-  } else {
-    newUrl.searchParams.delete(key );
-  }
-  history.pushState({}, '', newUrl);
-}
-
-class SimpleTooltip extends HTMLElement {
-  static get observedAttributes() { return ['for']; }
-  attributeChangedCallback(name, oldValue, newValue) {
-
-  }
-  connectedCallback(){
-    this.enteredElement = this.enteredElement.bind(this);
-    this.leftElement = this.leftElement.bind(this);
-    this.forElement = this.getAttribute("for");
-    this.style.display = "none";
-
-    this.style.position = "absolute";
-  }
-  disconnectedCallback(){
-    if(this._forElement) {
-      this._forElement.removeEventListener("mouseenter", this.enteredElement);
-      this._forElement.removeEventListener("mouseenter", this.leftElement);
-    }
-  }
-  set forElement(element){
-    if(typeof element === "string") {
-      element = document.querySelectorAll(element);
-    }
-    if(this._forElement) {
-      this._forElement.removeEventListener("mouseenter", this.enteredElement);
-      this._forElement.removeEventListener("mouseenter", this.leftElement);
-    }
-    if(element) {
-      element.addEventListener("mouseenter", this.enteredElement);
-      element.addEventListener("mouseenter", this.leftElement);
-    }
-    this._forElement = element;
-  }
-  enteredElement(event, html){
-    if(arguments.length > 1) {
-      this.innerHTML = html;
-      var rect = event.currentTarget.getBoundingClientRect();
-      this.style.top = (window.scrollY + rect.bottom)+"px";
-      this.style.left = (window.scrollX + rect.left) +"px";
-      this.style.display = "";
-    }
-  }
-  belowElement(element, DOM) {
-      if(arguments.length > 1) {
-          this.innerHTML = "";
-          this.appendChild(DOM);
-
-          this.style.top = "-1000px";
-          this.style.left = "-1000px";
-          this.style.display = "";
-
-          const height = this.clientHeight;
-          var rect = element.getBoundingClientRect();
-          const top = (window.scrollY + rect.bottom);
-          const bottom = top + height;
-          if(bottom >= window.innerHeight) {
-            this.style.top = (rect.top - height)+"px";
-          } else {
-            this.style.top = top+"px";
-            
-          }
-          this.style.left = (window.scrollX + rect.left) +"px";
-          
-      }
-  }
-  belowElementInScrollingContainer(element, DOM){
-    // find if there's a scrolling container and move ourselves to that 
-    const container = findScrollingContainer(element);
-    this.innerHTML = "";
-    container.appendChild(this);
-    // find the relative position 
-    this.style.top = "-1000px";
-    this.style.left = "-1000px";
-    if(typeof DOM === "string") {
-      this.innerHTML = DOM;
-    } else {
-      this.appendChild(DOM);
-    }
-    this.style.display = "";
-    
-    // where is the container on the page
-    const containerRect = container.getBoundingClientRect(),
-      // where is the element we are positioning next to on the page
-      elementRect = element.getBoundingClientRect(),
-      // how big is the tooltip
-      tooltipRect = this.getBoundingClientRect();
-    
-    const containerStyles = window.getComputedStyle(container);
-    // how much room is there 
-    
-    // where would the tooltip's bottom reach in the viewport 
-    const bottomInWindow = elementRect.bottom + tooltipRect.height;
-
-    const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
-
-    // if the tooltip wouldn't be visible "down" 
-    if(bottomInWindow > window.innerHeight) {
-      const viewPortPosition = ( elementRect.top - tooltipRect.height );
-      const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-      const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
-      this.style.top = ( posInContainerAccountingForScrolling )+"px";
-    } else {
-      const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-      this.style.top = (topFromContainer + scrollingAdjustment) +"px";
-    }
-
-    const leftFromContainer = elementRect.left - containerRect.left;
-    this.style.left = leftFromContainer +"px";
-    
-  }
-  centeredBelowElement(element, html) {
-    if(arguments.length > 1) {
-      this.style.top = "-1000px";
-      this.style.left = "-1000px";
-      
-      this.innerHTML = html;
-      
-      this.style.display = "";
-      const tooltipRect = this.getBoundingClientRect();
-
-      var rect = element.getBoundingClientRect();
-      this.style.top = (window.scrollY + rect.bottom)+"px";
-      this.style.left = (window.scrollX + rect.left + (rect.width / 2) - (tooltipRect.width / 2)) +"px";
-    }
-  }
-  
-  topRightOnElementBottomRight(element, html) {
-    if(arguments.length > 1) {
-      this.style.top = "-1000px";
-      this.style.left = "-1000px";
-
-      if(typeof html === "string") {
-        this.innerHTML = html;
-      } else {
-        this.innerHTML = "";
-        this.appendChild(html);
-      }
-      
-      
-      this.style.display = "";
-
-      const tooltipRect = this.getBoundingClientRect();
-      const rect = element.getBoundingClientRect();
-
-      this.style.top = (window.scrollY + rect.bottom)+"px";
-      this.style.left = (window.scrollX + rect.left + (rect.width) - (tooltipRect.width)) +"px";
-    }
-  }
-  leftElement(event) {
-    this.style.display = "none";
-  }
-}
-customElements.define("simple-tooltip", SimpleTooltip);
-
-
-
-function findScrollingContainer(element){
-  let cur = element.parentElement;
-  while(cur && cur.scrollHeight === cur.clientHeight) {
-    cur = cur.parentElement;
-  }
-  if(!cur) {
-    return document.body
-  } else {
-    return cur;
-  }
-}
-
-// create global tooltip reference
-
-const TOOLTIP$1 = new SimpleTooltip();
-
-document.body.append(TOOLTIP$1);
-
-class AutoCompleteSuggestions extends canStacheElement {
-    static view = `
-        
-        <ul class="max-h-80 overflow-y-auto">
-            {{# if(this.data.length) }}
-                {{# for(item of this.data) }}
-                    <li class="px-2 hover:bg-blue-75 cursor-pointer" on:click="this.add(item)">{{item}}</li>
-                {{/ for }}
-            {{ else }}
-                <li>No matches</li>
-            {{/ if }}
-        </ul>
-    `;
-}
-customElements.define("auto-complete-suggestions", AutoCompleteSuggestions);
-
-class AutoComplete extends canStacheElement {
-    static view = `
-        <div class="flex gap-2 align-middle flex-wrap">
-            {{# for(item of this.selected) }}
-                <div class="border-neutral-800 border-solid border rounded-md whitespace-nowrap">
-                    <label class="inline p-1">{{item}}</label>
-                    <button class="text-red-500 text-sm py-1 px-2 bg-neutral-30 font-semibold rounded-r shadow-sm hover:bg-neutral-40" on:click="this.remove(item, scope.event)">x</button>
-                </div>
-            {{/ for }}
-            <input class="form-border rounded-md px-1 placeholder:italic placeholder:text-slate-400" 
-                placeholder="{{this.inputPlaceholder}}"
-                on:focus="this.suggestItems(scope.element.value)"
-                on:input="this.suggestItems(scope.element.value)">
-        </div>
-    `;
-    static props = {
-        data:  {type: canType_1_1_6_canType.Any},
-        selected: {type: canType_1_1_6_canType.Any},
-        showingSuggestions: {type: Boolean, default: false}
-    };
-    remove(item, event) {
-        event.preventDefault();
-        this.selected = this.selected.filter( (selectedItem)=> {
-            return selectedItem != item;
-        });
-    }
-    add(item) {
-        this.selected = [...this.selected, item ];
-        this.querySelector("input").value = "";
-        this.stopShowingSuggestions();
-    }
-    suggestItems(searchTerm){
-        const matches = this.data.filter( item => {
-            return item.toLowerCase().includes(searchTerm) && !this.selected.includes(item)
-        });
-        this.showingSuggestions = true;
-        // this could be made more efficient, but is probably ok
-        TOOLTIP$1.belowElementInScrollingContainer(this, 
-            new AutoCompleteSuggestions().initialize({
-                searchTerm,
-                data: matches,
-                add: this.add.bind(this)
-            })
-        );
-    }
-    connected() {
-        // handle when someone clicks off the element
-        this.listenTo(window, "click", (event)=>{
-            // if we aren't showing, don't worry about it
-            if(!this.showingSuggestions) {
-                return;
-            }
-            // do nothing if the input was clicked on
-            if(this.querySelector("input") === event.target) {
-                return
-            }
-            // do nothing if the TOOLTIP was clicked
-            if(TOOLTIP$1.contains(event.target)) {
-                return;
-            }
-            this.stopShowingSuggestions();
-        });
-    }
-    stopShowingSuggestions(){
-        TOOLTIP$1.leftElement();
-        this.showingSuggestions = false;
-    }
-}
-
-
-customElements.define("auto-complete", AutoComplete);
-
-let StatusFilter$1 = class StatusFilter extends canStacheElement {
-    static view = `
-    <auto-complete 
-        data:from="this.statuses" 
-        selected:bind="this.selectedStatuses"
-        inputPlaceholder:raw="Search for statuses"></auto-complete>
-    
-    `;
-    static props = {
-        statuses: {
-            get default(){
-                return [];
-            }
-        },
-        param: String,
-        selectedStatuses: {
-            value({resolve, lastSet, listenTo}){
-                const updateValue = (value) => {
-                    if(!value) {
-                        value = "";
-                    } else if( Array.isArray(value) ){
-                        value = value.join(",");
-                    }
-                    updateUrlParam(this.param, value, "");
-
-                    currentValue = value === "" ? [] : value.split(",");
-                    resolve(currentValue);
-                };
-                let currentValue;
-                updateValue(new URL(window.location).searchParams.get(this.param));
-
-                listenTo(lastSet, (value)=>{
-                    updateValue(value);
-                });
-
-                
-            }
-        }
-    };
-};
-
-customElements.define("status-filter",StatusFilter$1);
-
-class StatusFilter extends canStacheElement {
-    static view = `
-    <auto-complete 
-        data:from="this.statuses" 
-        selected:bind="this.statusesToShow"
-        inputPlaceholder:raw="Search for statuses"></auto-complete>
-    
-    `;
-    static props = {
-        statuses: {
-            get default(){
-                return [];
-            }
-        },
-        statusesToShow: {
-            value({resolve, lastSet, listenTo}){
-
-                let currentValue;
-                updateValue(new URL(window.location).searchParams.get("statusesToShow"));
-
-                listenTo(lastSet, (value)=>{
-                    updateValue(value);
-                });
-
-                function updateValue(value) {
-                    if(!value) {
-                        value = "";
-                    } else if( Array.isArray(value) ){
-                        value = value.join(",");
-                    }
-                    updateUrlParam("statusesToShow", value, "");
-
-                    currentValue = value === "" ? [] : value.split(",");
-                    resolve(currentValue);
-                }
-            }
-        }
-    };
-}
-
-customElements.define("status-filter-only",StatusFilter);
-
-const DAY_IN_MS = 1000 * 60 * 60 * 24;
-
-const TOOLTIP = new SimpleTooltip();
-document.body.append(TOOLTIP);
-
-let showingObject = null;
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" });
-
-function prettyDate(date) {
-    return date ? dateFormatter.format(date) : "";
-}
-
-function wasReleaseDate(release) {
-
-    const current = release.due;
-    const was = release.lastPeriod && release.lastPeriod.due;
-    
-    if (was && current - DAY_IN_MS > was) {
-            return " (" + prettyDate(was) + ")";
-    } else {
-            return ""
-    }
-}
-
-function wasStartDate(release) {
-
-    const current = release.start;
-    const was = release.lastPeriod && release.lastPeriod.start;
-    
-    if (was && (current - DAY_IN_MS > was)) {
-            return " (" + prettyDate(was) + ")";
-    } else {
-            return ""
-    }
-}
-
-
-function showTooltipContent(element, content) {
-
-    TOOLTIP.belowElementInScrollingContainer(element, content);
-
-    TOOLTIP.querySelector(".remove-button").onclick = ()=> {
-        showingObject = null;
-        TOOLTIP.leftElement();
-    };
-}
-
-function showTooltip(element, issue){
-    console.log(issue);
-    if(showingObject === issue) {
-        showingObject = null;
-        TOOLTIP.leftElement();
-        return;
-    }
-    showingObject = issue;
-
-    const make = (issue, workPart) =>{
-        const breakdownPart = issue.rollupStatuses[workPart];
-
-        return `<div class="p-2">
-            <div class="release_box_subtitle_wrapper">
-                    <span class="release_box_subtitle_key color-text-and-bg-${breakdownPart.status}">
-                        &nbsp;${workPart.toUpperCase()}&nbsp;
-                    </span>
-                    ${
-                        issue[workPart+"Status"] !== "unknown" ?
-                        `<span class="release_box_subtitle_value">
-                            ${prettyDate(breakdownPart.start)}
-                            ${wasStartDate(breakdownPart)}
-                            </span><span>-</span>
-                            <span class="release_box_subtitle_value">
-                            ${prettyDate(breakdownPart.due)}
-                            ${wasReleaseDate(breakdownPart)}
-                        </span>` : ''
-                    }
-            </div>
-            ${ 
-                breakdownPart.statusData?.warning === true ?
-                `<div class="color-bg-warning">${breakdownPart.statusData.message}</div>` : ""
-            }
-            ${
-                breakdownPart.status !== "unknown" ?
-                `<p>Start: <a href="${breakdownPart?.startFrom?.reference?.url}" target="_blank" class="link">
-                    ${breakdownPart?.startFrom?.reference?.summary}</a>'s 
-                    ${breakdownPart?.startFrom?.message}
-                </p>
-                <p>End: <a href="${breakdownPart?.dueTo?.reference?.url}" target="_blank" class="link">
-                    ${breakdownPart?.dueTo?.reference?.summary}</a>'s
-                    ${breakdownPart?.dueTo?.message}
-                </p>` :
-                ''
-            }
-            
-        </div>`;
-    };
-    const DOM = document.createElement("div");
-    if(issue.rollupStatuses) {
-        const rollupData = issue.rollupStatuses.rollup;
-        DOM.innerHTML = `
-        <div class='flex remove-button pointer' style="justify-content: space-between">
-            <a class="${issue.url ? "link" : ""} text-lg font-bold"
-                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
-            <span>❌</span>
-        </div>
-        ${/*issue.dateData.rollup*/ ""}
-        ${ 
-            rollupData?.statusData?.warning === true ?
-            `<div class="color-bg-warning">${rollupData.statusData.message}</div>` : ""
-        }
-        ${ issue.rollupStatuses.rollup ? make(issue, "rollup") :""}
-        ${ issue.rollupStatuses.dev ? make(issue, "dev") :""}
-        ${issue.rollupStatuses.qa ? make(issue, "qa") : ""}
-        ${issue.rollupStatuses.uat ?  make(issue, "uat") : ""}
-        `;
-    } else {
-        // "Planning" epics might not have this data
-        DOM.innerHTML = `
-        <div class='flex remove-button pointer gap-2' style="justify-content: space-between">
-            <a class="${issue.url ? "link" : ""} text-lg font-bold"
-                href="${issue.url || '' }" target="_blank">${issue.summary}</a>
-            <span>❌</span>
-        </div>`;
-    }
-   
-    showTooltipContent(element, DOM);
-
-}
-
-// FIRST, lets make a type to combine Derived issues and releases
-
-/**
- * @typedef {import("../derived/derive").DerivedWorkIssue | import("../releases/derive").DerivedRelease} IssueOrRelease
- */
-/**
- * @typedef {Array<IssueOrRelease>} IssuesOrReleases
- */
-
-
-// =======================
-// Now define how one would get the parents from these items
-/**
- * Gets the parent's from some issue type.  We probably need some way types can provide this.
- * @param {IssueOrRelease} issueOrRelease 
- */
-function getParentKeys(issueOrRelease){
-  const parents = [];
-  if( issueOrRelease.parentKey ){
-      parents.push(issueOrRelease.parentKey);
-  }
-  if(issueOrRelease.releases) {
-      parents.push(...issueOrRelease.releases.map( release => release.key));
-  }
-  return parents;
-}
-
-
-// =======================
-// Now need some way of building the hierarchy from the reporting topology
-
-function getHierarchyTest({type, hierarchyLevel}) {
-  if(hierarchyLevel == null || hierarchyLevel === Infinity) {
-    return (issue)=> { return issue.type === type; }
-  } else {
-    return (issue)=> { return issue.hierarchyLevel === hierarchyLevel; }
-  }
-}
-/**
- * 
- * @param {IssuesOrReleases} issuesOrReleases 
- * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
- */
-function groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies) {
-  return rollupTypesAndHierarchies.map( (hierarchy) => {
-    return issuesOrReleases.filter( getHierarchyTest(hierarchy) );
-  }).reverse();
-}
-
-
-
-
-// ====================
-// With that Reporting topology, we are able to build a new mapping of parent / child relationships
-// These objects are what the functions should be using to rollup and such
-/**
- * @typedef {{
-*  depth: Number,
-*  childKeys: Array<String>,
-*  parentKeys: Array<String>
-* }} ReportingHierarchy
-*/
-/**
-* @typedef {IssueOrRelease & {reportingHierarchy: ReportingHierarchy}} ReportingHierarchyIssueOrRelease
-*/
-/**
- * @typedef {Array<ReportingHierarchyIssueOrRelease>} ReportingHierarchyIssuesOrReleases
- */
-/**
-* Takes a bottom-up grouped hierarchy and adds
-* reportingHierarchy = {childKeys: [keys], parentKeys: [keys], depth: Number}}
-* to each issue.
-*
-* Returns a new bottom-up grouped hierarchy of issues or releases
-* @param {Array<import("../rollup/rollup").IssuesOrReleases>} issuesOrReleases
-* @return {ReportingHierarchyIssuesOrReleases}
-*/
-function addChildrenFromGroupedHierarchy(groupedHierarchy) {
- // we should label each issue with its virtual hierarchy ... then we can make sure 
- // children add themselves to the right parents ... we can probably do this in one pass as things are ordered 
- // {PARENT_KEY: {allChildren: [issues..], index}}
- const parentKeyToChildren = {};
- const topDownGroups = [...groupedHierarchy].reverse();
- const newGroups = [];
- for (let g = 0; g < topDownGroups.length; g++) {
-   let group = topDownGroups[g];
-   let newGroup = [];
-   newGroups.push(newGroup);
-
-   for (let issue of group) {
-     let copy = {
-       ...issue,
-       reportingHierarchy: { depth: g, childKeys: [], parentKeys: [] }
-     };
-     newGroup.push(copy);
-     parentKeyToChildren[issue.key] = copy.reportingHierarchy;
-     if (g > 0) {
-       const parents = getParentKeys(issue);
-       for (let parentKey of parents) {
-         const parentData = parentKeyToChildren[parentKey];
-         // make sure your parent is up one level in the issue hierarchy
-         if (parentData && parentData.depth === g - 1) {
-           parentData.childKeys.push(issue.key);
-           copy.reportingHierarchy.parentKeys.push(parentKey);
-         }
-       }
-     }
-   }
- }
- return newGroups.reverse();
-}
-
-/**
- * 
- * @param {IssuesOrReleases} issuesOrReleases 
- * @param {Array<{type: String, hierarchyLevel: Number}>} rollupTypesAndHierarchies 
- */
-function addReportingHierarchy(issuesOrReleases, rollupTypesAndHierarchies){
-  const groups = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies);
-  return addChildrenFromGroupedHierarchy(groups).flat(1);
-}
-
-
-
-
-
-
-
-/**
- * @param {Array<ReportingHierarchyIssuesOrReleases>} groupedHierarchy 
- */
-function makeGetChildrenFromGrouped(groupedHierarchy) {
-  const keyToIssue = new Map();  for(let group of groupedHierarchy){
-    for(let issue of group) {
-      keyToIssue.set( issue.key, issue);
-    }
-  }
-  const getIssue = keyToIssue.get.bind(keyToIssue);
-  /**
-   * @param {ReportingHierarchyIssueOrRelease} keyOrIssueOrRelease
-   * @return {Array<IssuesOrReleases>}
-   */
-  return function getChildren(keyOrIssueOrRelease){
-    return keyOrIssueOrRelease.reportingHierarchy.childKeys.map(getIssue)
-  }
-}
-
-
-
-
-/**
- * @callback CreateRollupDataFromParentAndChild
- * @param {ReportingHierarchyIssueOrRelease} issueOrRelease 
- * @param {Array<Object>} children Child rollup data
- * @param {Number} hierarchyLevel The level in the hierarchy being processed
- * @param {Object} metadata
- */
-
-/**
- * @callback CreateMetadataForHierarchyLevel
- * @param {Number} hierarchyLevel The level in the hierarchy being processed
- * @param {Array<ReportingHierarchyIssueOrRelease>} issueOrReleases 
- * @return {Object} Metadata object
- */
-
-/**
- * @typedef {Array<{metaData: Object, rollupData: Array}>} RollupResponse
- */
-
-
-
-function rollupGroupedReportingHierarchy(groupedHierarchy, {
-  createMetadataForHierarchyLevel = function(){ return {} },
-  createSingleNodeRollupData,
-  createRollupDataFromParentAndChild,
-  finalizeMetadataForHierarchyLevel = function(){},
-  getChildren
-}) {
-
-  // we can build this ourselves if needed ... but costs memory.  Nice if we don't have to do this.
-  if(!getChildren) {
-    getChildren = makeGetChildrenFromGrouped(groupedHierarchy);
-  }
-  const rollupDataByKey = {};
-  function getChildrenRollupData(issue){
-    return getChildren(issue).map( childIssue => {
-      
-      const result = rollupDataByKey[childIssue.key];
-      if(!result) {
-        throw new Error("unable to find previously calculated child data ("+childIssue.key+"). Is your hierarchy in the right order?")
-      }
-      return result;
-    })
-  }
-
-  const rollupResponseData = [];
-  
-
-  for( let hierarchyLevel = 0; hierarchyLevel < groupedHierarchy.length; hierarchyLevel++) {
-    let issues = groupedHierarchy[hierarchyLevel];
-    
-    if(!issues) {
-      continue;
-    }
-
-    let hierarchyData = rollupResponseData[hierarchyLevel] = {
-      rollupData: [],
-      metadata: createMetadataForHierarchyLevel(hierarchyLevel, issues)
-    };
-
-    for(let issue of issues) { 
-      // get children rollup data for issue
-      let children = getChildrenRollupData(issue);
-      let rollupData = createRollupDataFromParentAndChild(issue, children, hierarchyLevel, hierarchyData.metadata);
-      hierarchyData.rollupData.push(rollupData);
-      rollupDataByKey[issue.key] = rollupData;
-      // associate it with the issue 
-    }
-    
-    //onEndOfHierarchy(issueTypeData);
-    finalizeMetadataForHierarchyLevel(hierarchyData.metadata, hierarchyData.rollupData);
-  }
-  return rollupResponseData;
-}
-/**
- * This "MUST" have the deepest children in the bottom
- * @param {Array<IssuesOrReleases>} groupedHierarchy 
- * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild, createMetadataForHierarchyLevel: CreateMetadataForHierarchyLevel}} options 
- */
-function rollupGroupedHierarchy(groupedHierarchy, options){
-  const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy);
-  return rollupGroupedReportingHierarchy(reportingHierarchy, options)
-}
-  
-
-
-/**
- * 
- * @param {ReportingHierarchyIssuesOrReleases} issuesOrReleases 
- */
-function makeGetChildrenFromReportingIssues(issuesOrReleases) {
-  const keyToIssue = new Map();  for(let issue of issuesOrReleases) {
-    keyToIssue.set( issue.key, issue);
-  }
-  
-  const getIssue = keyToIssue.get.bind(keyToIssue);
-  /**
-   * @param {ReportingHierarchyIssueOrRelease} keyOrIssueOrRelease
-   * @return {Array<ReportingHierarchyIssuesOrReleases>}
-   */
-  return function getChildren(keyOrIssueOrRelease){
-    return keyOrIssueOrRelease.reportingHierarchy.childKeys.map(getIssue)
-  }
-}
-
-
-
-
-
-/**
- * 
- * @param {Array<IssuesOrReleases>} groupedHierarchy 
- * @param {RollupResponse} rollupDatas 
- * @param {String} key 
- */
-function zipRollupDataOntoGroupedData(groupedHierarchy, rollupDatas, key) {
-  const newGroups = [];
-  for(let g = 0; g < groupedHierarchy.length; g++) {
-    let group = groupedHierarchy[g];
-    let newIssues = [];
-    newGroups.push(newIssues);
-    for(let i = 0; i < group.length; i++) {
-      let issue = group[i];
-      let clone = {...issue};//Object.create(issue);
-      clone[key] = rollupDatas[g].rollupData[i];
-      newIssues.push(clone);
-    }
-  }
-  return newGroups;
-}
-
-const methods$1 = {
-    parentFirstThenChildren: parentFirstThenChildren$1,
-    childrenOnly: childrenOnly$1,
-    childrenFirstThenParent: childrenFirstThenParent$1,
-    widestRange: widestRange$1,
-    parentOnly: parentOnly$1
-};
-
-
-
-
-/**
- * 
- * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
- * @param {Array<String>} methodNames Starting from low to high
- * @return {Array<RollupDateData>}
- */
-function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) {
-    return rollupGroupedHierarchy(groupedHierarchy, {
-        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
-            const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
-            const method = methods$1[methodName];
-            return method(issueOrRelease, children);
-        }
-    });
-}
-
-/**
- * @typedef {{
- *   due: Date,
- *   dueTo: {message: String, reference: Object},
- *   start: Date,
- *   startFrom: {message: String, reference: Object}
- * } | {}} RollupDateData
- */
-
-/**
- * @typedef {import("../rollup").IssueOrRelease & {rollupDates: RollupDateData}} RolledupDatesReleaseOrIssue
- */
-
-
-/**
- * 
- * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
- * @param {{type: String, hierarchyLevel: Number, calculation: String}} rollupTimingLevelsAndCalculations 
- * @return {Array<RolledupDatesReleaseOrIssue>}
- */
-function addRollupDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
-    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
-    const rollupMethods = rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
-    const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
-    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "rollupDates");
-    return zipped.flat();
-}
-
-function makeQuickCopyDefinedProperties(keys) {
-    return function copy(source) {
-        const obj = {};
-        for(let key of keys) {
-            if(source[key] !== undefined) {
-                obj[key] = source[key];
-            }
-        }
-        return obj;
-    }
-}
-// makes testing easier if we don't create a bunch of "undefined" properties
-const getStartData$1 = makeQuickCopyDefinedProperties(["start","startFrom"]);
-const getDueData$1 = makeQuickCopyDefinedProperties(["due","dueTo"]);
-
-function mergeStartAndDueData$1(records){
-    
-    const startData = records.filter( record => record?.start ).map(getStartData$1);
-    const dueData = records.filter( record => record?.due ).map( getDueData$1 );
-
-    return {
-        ... (startData.length ? startData.sort( (d1, d2) => d1.start - d2.start )[0] : {}),
-        ... (dueData.length ? dueData.sort( (d1, d2) => d2.due - d1.due )[0] : {})
-    }
-}
-
-/**
- * 
- * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
- * @param {*} childrenRollups 
- * @returns 
- */
-function parentFirstThenChildren$1(parentIssueOrRelease, childrenRollups){
-
-    const childData = mergeStartAndDueData$1(childrenRollups);
-    const parentData = parentIssueOrRelease?.derivedTiming;
-
-    const parentHasStart = parentData?.start;
-    const parentHasDue = parentData?.due;
-
-    const combinedData = {
-        start: parentHasStart ? parentData?.start : childData?.start,
-        startFrom: parentHasStart ? parentData?.startFrom : childData?.startFrom,
-        due: parentHasDue ? parentData?.due : childData?.due,
-        dueTo: parentHasDue ? parentData?.dueTo : childData?.dueTo
-    };
-
-    return {
-        ...getStartData$1(combinedData),
-        ...getDueData$1(combinedData)
-    };
-}
-
-function childrenOnly$1(parentIssueOrRelease, childrenRollups){
-    return mergeStartAndDueData$1(childrenRollups);
-}
-
-function parentOnly$1(parentIssueOrRelease, childrenRollups){
-    return {
-        ...getStartData$1(parentIssueOrRelease.derivedTiming),
-        ...getDueData$1(parentIssueOrRelease.derivedTiming)
-    };
-}
-
-function childrenFirstThenParent$1(parentIssueOrRelease, childrenRollups){
-    if(childrenRollups.length) {
-        return mergeStartAndDueData$1(childrenRollups);
-    } 
-    return mergeStartAndDueData$1([parentIssueOrRelease.derivedTiming])
-}
-
-function widestRange$1(parentIssueOrRelease, childrenRollups){
-    return mergeStartAndDueData$1([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
-}
-
-function monthDiff(dateFromSring, dateToString) {
-    const dateFrom = new Date(dateFromSring);
-    const dateTo = new Date(dateToString);
-    return dateTo.getMonth() - dateFrom.getMonth() + 12 * (dateTo.getFullYear() - dateFrom.getFullYear());
-}
-
-function getQuartersAndMonths(startDate, endDate){
-	// figure out which quarters startDate and endDate are within
-	const quarterStartDate = new Date(
-			startDate.getFullYear(),
-			Math.floor(startDate.getMonth() / 3) * 3
-	);
-
-	const lastQuarterEndDate = new Date(
-			endDate.getFullYear(),
-			Math.floor(endDate.getMonth() / 3) * 3 + 3
-	);
-
-	// keep track of release indexes
-	const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
-	const quarters = monthDiffResult / 3;
-	if(!Number.isInteger(quarters)) {
-		console.warn("Not an even number of quarters", monthDiffResult,"/ 3");
-	}
-
-	function month(d) {
-			return d.toLocaleString('default', { month: 'short' });
-	}
-
-	const quartersList = [];
-	const months = [];
-
-	for (let i = 0; i < quarters; i++) {
-		const firstMonth = new Date(quarterStartDate);
-		firstMonth.setMonth(firstMonth.getMonth() + i * 3);
-		const secondMonth = new Date(quarterStartDate);
-		secondMonth.setMonth(secondMonth.getMonth() + i * 3 + 1);
-		const thirdMonth = new Date(quarterStartDate);
-		thirdMonth.setMonth(thirdMonth.getMonth() + + i * 3 + 2);
-
-		quartersList.push({
-			number: Math.floor(firstMonth.getMonth() / 3) + 1,
-			name: "Q"+ (Math.floor(firstMonth.getMonth() / 3) + 1)
-		});
-
-		months.push({
-			first: true,
-			name: month(firstMonth)
-		});
-		months.push({
-			name: month(secondMonth)
-		});
-		months.push({
-			last: true,
-			name: month(thirdMonth)
-		});
-	}
-
-	const lastDay = new Date(quarterStartDate);
-	lastDay.setMonth(lastDay.getMonth() + monthDiffResult);
-
-	return {
-		quarters: quartersList,
-		months,
-		firstDay: quarterStartDate,
-		lastDay
-	};
-}
-
-function getCalendarHtml(startDate, endDate) {
-    // figure out which quarters startDate and endDate are within
-    const quarterStartDate = new Date(
-        startDate.getFullYear(),
-        Math.floor(startDate.getMonth() / 3) * 3
-    );
-
-    const lastQuarterEndDate = new Date(
-        endDate.getFullYear(),
-        Math.floor(endDate.getMonth() / 3) * 3 + 3
-    );
-
-
-    let result = '';
-
-    // keep track of release indexes
-    const monthDiffResult = monthDiff(quarterStartDate, lastQuarterEndDate);
-    const quarters = monthDiffResult / 3;
-	if(!Number.isInteger(quarters)) {
-		console.warn("Not an even number of quarters", monthDiffResult,"/ 3");
-	}
-
-    function month(d) {
-        return d.toLocaleString('default', { month: 'short' });
-    }
-
-    for (let i = 0; i < quarters; i++) {
-        const firstMonth = new Date(quarterStartDate);
-        firstMonth.setMonth(firstMonth.getMonth() + i * 3);
-        const secondMonth = new Date(quarterStartDate);
-        secondMonth.setMonth(secondMonth.getMonth() + i * 3 + 1);
-        const thirdMonth = new Date(quarterStartDate);
-        thirdMonth.setMonth(thirdMonth.getMonth() + + i * 3 + 2);
-
-
-        result += `
-			<div class="calendar">
-				<div class="calendar_title">Q${Math.floor(firstMonth.getMonth() / 3) + 1}</div>
-				<div class="calendar_month_wrapper">
-					<div class="calendar_month ">
-						<span class="calendar_month_name">${month(firstMonth)}</span>
-						<span class="calendar_month_line"></span>
-					</div>
-					<div class="calendar_month dotted-left">
-						<span class="calendar_month_name">${month(secondMonth)}</span>
-						<span class="calendar_month_line"></span>
-					</div>
-					<div class="calendar_month dotted-left">
-						<span class="calendar_month_name">${month(thirdMonth)}</span>
-						<span class="calendar_month_line"></span>
-					</div>
-				</div>
-			</div>
-		`;
-
-    }
-
-    const lastDay = new Date(startDate);
-    lastDay.setMonth(lastDay.getMonth() + monthDiffResult);
-
-    return {
-        html: result,
-        firstDay: quarterStartDate,
-        lastDay
-    };
-}
-
-// https://yumbrands.atlassian.net/issues/?filter=10897
-
-/*
-import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
-import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" })
-
-const inQAStatus = { "QA": true, "In QA": true };
-const inDevStatus = { "In Development": true, "Development": true };
-const inPartnerReviewStatus = { "Partner Review": true };
-const inDoneStatus = { "Done": true };
-
-import SimpleTooltip from "./shared/simple-tooltip.js";
-
-const TOOLTIP = new SimpleTooltip();
-document.body.append(TOOLTIP);*/
-
-
-const percentCompleteTooltip = canStache_5_1_1_canStache(`
-    <button class="remove-button">❌</button>
-    <div class="grid gap-2" style="grid-template-columns: auto repeat(4, auto);">
-
-            <div class="font-bold">Summary</div>
-            <div class="font-bold">Percent Complete</div>
-            <div class="font-bold">Completed Working Days</div>
-            <div class="font-bold">Remaining Working Days</div>
-            <div class="font-bold">Total Working Days</div>
-        
-            <div class="truncate max-w-96">{{this.issue.summary}}</div>
-            <div class="text-right">{{this.getPercentComplete(this.issue)}}</div>
-            <div class="text-right">{{this.round( this.issue.completionRollup.completedWorkingDays) }}</div>
-            <div class="text-right">{{this.round(this.issue.completionRollup.remainingWorkingDays)}}</div>
-            <div class="text-right">{{this.round(this.issue.completionRollup.totalWorkingDays)}}</div>
-        
-        {{# for(child of this.children) }}
-       
-            <div class="pl-4 truncate max-w-96"><a href="{{child.url}}" class="link">{{child.summary}}</a></div>
-            <div class="text-right">{{this.getPercentComplete(child)}}</div>
-            <div class="text-right">{{this.round(child.completionRollup.completedWorkingDays)}}</div>
-            <div class="text-right">{{this.round(child.completionRollup.remainingWorkingDays)}}</div>
-            <div class="text-right">{{this.round(child.completionRollup.totalWorkingDays)}}</div>
-       
-        {{/ for }}
-   </div>
-`);
-
-// loops through and creates 
-class GanttGrid extends canStacheElement {
-    static view = `
-        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.primaryIssuesOrReleases.length}}, auto)"
-            class='p-2 mb-10'>
-            <div></div><div></div>
-
-            {{# for(quarter of this.quartersAndMonths.quarters) }}
-                <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
-            {{ / for }}
-
-            <div></div><div></div>
-            {{# for(month of this.quartersAndMonths.months)}}
-                <div class='border-b border-neutral-80 text-center'>{{month.name}}</div>
-            {{/ for }}
-
-            <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}};">
-                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
-            </div>
-
-
-            <!-- VERTICAL COLUMNS -->
-            {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}}; z-index: 10"
-                    class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
-            {{/ for }}
-
-            <!-- Each of the issues -->
-            {{# for(issue of this.primaryIssuesOrReleases) }}
-                <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
-                    {{issue.summary}}
-                </div>
-                <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
-                    on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
-                </div>
-                {{ this.getReleaseTimeline(issue, scope.index) }}
-            {{/ for }}
-        </div>
-    `;
-    static props = {
-        breakdown: Boolean,
-        showPercentComplete: {
-            get default(){
-                return !!localStorage.getItem("showPercentComplete")
-            }
-        }
-    };
-    get lotsOfIssues(){
-        return this.primaryIssuesOrReleases.length > 20 && ! this.breakdown;
-    }
-    get textSize(){
-        return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1"
-    }
-    get bigBarSize(){
-        return this.lotsOfIssues ? "h-4" : "h-6"
-    }
-    getPercentComplete(issue) {
-        if(this.showPercentComplete) {
-            return Math.round( issue.completionRollup.completedWorkingDays * 100 / issue.completionRollup.totalWorkingDays )+"%"
-        } else {
-            return "";
-        }
-    }
-    showTooltip(event, issue) {
-        makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-        showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
-    }
-    showPercentCompleteTooltip(event, issue) {
-        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-        
-        // we should get all the children ...
-        const children = getChildren( issue );
-        
-        showTooltipContent(event.currentTarget, percentCompleteTooltip(
-            {   issue, 
-                children,
-                getPercentComplete: this.getPercentComplete.bind(this),
-                round: Math.round
-            }));
-    }
-    classForSpecialStatus(status, issue){
-        if( status === "complete") {
-            return "color-text-"+status;
-        } else if(status === "blocked" ) {
-            return "color-text-"+status;
-        } else {
-            return "";
-        }
-    }
-    plus(first, second) {
-        return first + second;
-    }
-    lastRowBorder(index) {
-        return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
-    }
-    get quartersAndMonths(){
-        const rollupDates = this.primaryIssuesOrReleases.map(issue => issue.rollupStatuses.rollup );
-        let {start, due} = mergeStartAndDueData$1(rollupDates);
-        // nothing has timing
-        if(!start) {
-            start = new Date();
-        }
-        if(!due) {
-            due = new Date( start.getTime() + 1000 * 60 * 60 * 24 * 90 );
-        }
-        return getQuartersAndMonths(new Date(), due);
-    }
-    get todayMarginLeft() {
-        const { firstDay, lastDay } = this.quartersAndMonths;
-        const totalTime = (lastDay - firstDay);
-        return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
-    }
-    /**
-     * 
-     * @param {} release 
-     * @param {*} index 
-     * @returns 
-     */
-    getReleaseTimeline(release, index){
-        const base = {
-            gridColumn: '3 / span '+this.quartersAndMonths.months.length,
-            gridRow: `${index+3}`,
-        };
-
-        const background = document.createElement("div");
-
-        Object.assign(background.style, {
-            ...base,
-            zIndex: 0
-        });
-
-        background.className = (index % 2 ? "color-bg-gray-20" : "");
-
-        const root = document.createElement("div");
-        const lastPeriodRoot = document.createElement("div");
-        root.appendChild(lastPeriodRoot);
-
-        Object.assign(root.style, {
-            ...base,
-            position: "relative",
-            zIndex: 20
-        });
-        root.className = "py-1";
-
-        Object.assign(lastPeriodRoot.style, {
-            position: "absolute",
-            top: "0",
-            left: "0",
-            right: "0",
-            bottom: "0",
-        });
-        lastPeriodRoot.className = "py-1 lastPeriod";
-
-
-        const { firstDay, lastDay } = this.quartersAndMonths;
-        const totalTime = (lastDay - firstDay);
-
-        if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
-
-                function getPositions(work) {
-                    if(work.start == null && work.due == null) {
-                        return {
-                            start: 0, end: Infinity, startExtends: false, endExtends: false,
-                            style: {
-                                marginLeft: "1px",
-                                marginRight: "1px"
-                            }
-                        }
-                    }
-
-                    const start = Math.max(firstDay, work.start);
-                    const end = Math.min(lastDay, work.due);
-                    const startExtends = work.start < firstDay;
-                    const endExtends = work.due > lastDay;
-
-                    return {
-                        start, end, startExtends, endExtends,
-                        style: {
-                            width: Math.max( (((end - start) / totalTime) * 100), 0) + "%",
-                            marginLeft: "max("+(((start - firstDay) / totalTime) * 100) +"%, 1px)"
-                        }
-                    }
-                }
-
-                function makeLastPeriodElement(status, timing){
-                    
-                    const behindTime =  document.createElement("div");
-                    behindTime.style.backgroundClip = "content-box";
-                    behindTime.style.opacity = "0.9";
-                    behindTime.style.position = "relative";
-                    behindTime.className = "border-y-solid-1px";
-
-                    if(timing && status === "behind") {
-                        Object.assign(behindTime.style, getPositions(timing || {}).style);
-                        behindTime.style.zIndex = 1;
-                        behindTime.classList.add("color-text-and-bg-behind-last-period");
-                    }
-                    if(timing && status === "ahead") {
-                        Object.assign(behindTime.style, getPositions(timing || {}).style);
-                        behindTime.classList.add("color-text-and-bg-ahead-last-period");
-                        behindTime.style.zIndex = -1;
-                    }
-                    return behindTime;
-                }
-    
-                if(this.breakdown) {
-
-                    /*
-                    const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
-                    lastDev.classList.add("h-2","py-[2px]");
-                    lastPeriodRoot.appendChild(lastDev);
-
-                    const dev = document.createElement("div");
-                    dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.dev.status;
-                    Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
-                    root.appendChild(dev);*/
-
-                    const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
-                    for(const {type} of workTypes) {
-                        const lastPeriod = makeLastPeriodElement(release.rollupStatuses[type].status, release.rollupStatuses[type].lastPeriod);
-                        lastPeriod.classList.add("h-2","py-[2px]");
-                        lastPeriodRoot.appendChild(lastPeriod);
-
-                        const thisPeriod = document.createElement("div");
-                        thisPeriod.className = type+"_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses[type].status;
-                        Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
-                        root.appendChild(thisPeriod);
-                    }
-                    /*
-                    if(this.hasQAWork) {
-                        const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
-                        lastQA.classList.add("h-2","py-[2px]");
-                        lastPeriodRoot.appendChild(lastQA);
-
-
-                        const qa = document.createElement("div");
-                        qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.qa.status;
-                        Object.assign(qa.style, getPositions(release.rollupStatuses.qa).style);
-                        root.appendChild(qa);
-
-                        
-                    }
-                    if(this.hasUATWork) {
-                        const lastUAT = makeLastPeriodElement(release.rollupStatuses.uat.status, release.rollupStatuses.uat.lastPeriod);
-                        lastUAT.classList.add("h-2","py-[2px]");
-                        lastPeriodRoot.appendChild(lastUAT);
-
-
-                        const uat = document.createElement("div");
-                        uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.uat.status;
-                        Object.assign(uat.style, getPositions(release.rollupStatuses.uat).style);
-                        root.appendChild(uat);
-
-                        
-                    }*/
-                } else {
-
-                    const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
-                    behindTime.classList.add(this.bigBarSize,"py-1");
-                    lastPeriodRoot.appendChild(behindTime);
-
-                    const team = document.createElement("div");
-                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.rollup.status;
-                    Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
-                    team.style.opacity = "0.9";
-                    
-                    root.appendChild(team);
-
-                    
-                    
-                }
-
-
-
-        }
-        const frag = document.createDocumentFragment();
-        frag.appendChild(background);
-        frag.appendChild(root);
-        return canStache_5_1_1_canStache.safeString(frag);
-    }
-    get hasWorkTypes(){
-        const map = {};
-        const list = workTypes.map((type)=>{
-            let hasWork = this.primaryIssuesOrReleases ? 
-                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
-            return map[type] = {type, hasWork}
-        });
-        return {map, list};
-    }
-    get hasQAWork(){
-        if(this.primaryIssuesOrReleases) {
-            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
-        } else {
-            return true;
-        }
-    }
-    get hasUATWork(){
-        if(this.primaryIssuesOrReleases) {
-            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
-        } else {
-            return true;
-        }
-    }
-}
-
-customElements.define("gantt-grid", GanttGrid);
-
-const DAY = 1000*60*60*24;
-class GanttTimeline extends canStacheElement {
-    static view = `
-        <div style="display: grid; grid-template-columns: repeat({{this.quartersAndMonths.months.length}}, auto); grid-template-rows: auto auto repeat({{this.rows.length}}, auto)"
-        class='p-2 mb-10'>
-
-            {{# for(quarter of this.quartersAndMonths.quarters) }}
-                <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
-            {{ / for }}
-
-            {{# for(month of this.quartersAndMonths.months)}}
-                <div 
-                    style="grid-column: {{ plus(scope.index, 1) }} / span 1; grid-row: 2 / span 1;"
-                    class='border-b border-neutral-80 text-center'>{{month.name}}</div>
-            {{/ for }}
-
-            <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: 2 / span {{plus(this.rows.length, 1)}};">
-                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 0; position: relative; height: 100%;"></div>
-            </div>
-
-            <!-- VERTICAL COLUMNS -->
-            {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 1) }} / span 1; grid-row: 3 / span {{this.rows.length}}; z-index: 10"
-                    class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
-            {{/ for }}
-
-            
-            {{# for(row of this.rows) }}
-            <div class="h-10 relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
-                {{# for(item of row.items) }}
-                    {{{item.element}}}
-                {{/ for }}
-            </div>
-            {{/ for }}
-
-            
-        </div>
-    `;
-
-    get quartersAndMonths(){
-        
-        // handle if there are no issues
-        const endDates = this.issues.map((issue)=> {
-            return {dateData: {rollup: {
-                start: issue.dateData.rollup.due,
-                startFrom: issue.dateData.rollup.dueTo,
-                due: issue.dateData.rollup.due,
-                dueTo: issue.dateData.rollup.dueTo
-            }}}
-        });
-        const {start, due} = rollupDatesFromRollups(endDates);
-        let firstEndDate = new Date( (start || new Date()).getTime() - DAY * 30 ) ;
-        
-        
-        
-        return getQuartersAndMonths(firstEndDate, due || new Date( new Date().getTime() + DAY*30));
-    }
-    get todayMarginLeft() {
-        const { firstDay, lastDay } = this.quartersAndMonths;
-        const totalTime = (lastDay - firstDay);
-        return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
-    }
-    get calendarData() {
-        const {start, due} = rollupDatesFromRollups(this.issues);
-        return getCalendarHtml(new Date(), due);
-    }
-    get calendarHTML() {
-        return canStache_5_1_1_canStache.safeString(this.calendarData.html);
-    }
-    get rows() {
-        const { firstDay, lastDay } = this.quartersAndMonths;
-        const totalTime = (lastDay - firstDay);
-        const issuesWithDates = this.issues.filter( issue => issue.dateData.rollup.due );
-        const rows = calculate({
-            issues: issuesWithDates,
-            firstDay,
-            totalTime,
-            makeElementForIssue: function(release){
-                const div = document.createElement("div");
-                div.className = " release-timeline-item flex items-center gap-1";
-                Object.assign(div.style, {
-                    position: "absolute",
-                    //transform: "translate(-100%, 0)",
-                    padding: "2px 4px 2px 4px",
-                    zIndex: "100",
-                    top: "4px",
-                    background: "rgba(255,255,255, 0.6)"
-                });
-
-                
-                const text = document.createElement("div");
-                text.className = "truncate";
-                Object.assign( text.style, {
-                    position: "relative",
-                    zIndex: "10",
-                    maxWidth: "300px"
-                });
-                text.appendChild(document.createTextNode(release.shortVersion || release.Summary));
-                div.appendChild(text);
-
-                const tick = document.createElement("div");
-                tick.className = "color-text-and-bg-" + release.dateData.rollup.status;
-                Object.assign( tick.style, {
-                    height: "10px",
-                    width: "10px",
-                    transform: "rotate(45deg)",
-                });
-                div.appendChild(tick);
-                
-                return div;
-            }
-        });
-
-        for(let row of rows) {
-            for(let item of row.items) {
-                item.element.style.right = ( (totalTime - (item.issue.dateData.rollup.due - firstDay)) / totalTime * 100) + "%";
-            }
-        }
-        
-        return rows;
-    }
-
-    plus(first, second) {
-        return first + second;
-    }
-    lastRowBorder(index) {
-        return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
-    }
-}
-
-function defaultGetWidth(element){
-    const clone = element.cloneNode(true);
-    const outer = document.createElement("div");
-    outer.appendChild(clone);
-    Object.assign(outer.style,{
-        position: "absolute",
-        top: "-1000px",
-        left: "-1000px",
-        width: "700px",
-        visibility: 'hidden' 
-    });
-    document.body.appendChild(outer);
-    const width = clone.getBoundingClientRect().width;
-    document.body.removeChild(outer);
-    return width;
-}
-
-
-function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, totalTime, getWidth = defaultGetWidth}){
-    
-    
-    const rows = [];
-    
-    const issueUIData = issues.map( issue => {
-
-        const element = makeElementForIssue(issue),
-            width = getWidth(element),
-            widthInPercent = width  * 100 / widthOfArea,
-            rightPercentEnd = Math.ceil( (issue.dateData.rollup.due - firstDay) / totalTime * 100),
-            leftPercentStart = rightPercentEnd - widthInPercent;
-
-        element.setAttribute("measured-width", width);
-        element.setAttribute("left-p", leftPercentStart);
-        element.setAttribute("right-p", leftPercentStart);
-        return {
-            issue,
-            element,
-            widthInPercent,
-            leftPercentStart,
-            rightPercentEnd
-        }
-    });
-
-    // earliest first
-    issueUIData.sort( (a, b)=> {
-        return a.leftPercentStart - b.leftPercentStart;
-    });
-
-    function addToRow(issueUIDatum){
-
-        for(let row of rows) {
-            // if we have no intersections, we can insert
-            const intersected = row.items.some((item)=>{
-                return intersect(
-                    {start: item.leftPercentStart, end: item.rightPercentEnd}, 
-                    {start: issueUIDatum.leftPercentStart, end: issueUIDatum.rightPercentEnd})
-            });
-            if(!intersected) {
-                row.items.push(issueUIDatum);
-                return;
-            }
-        }
-        // we didn't find space, add a raw
-        rows.push({
-            items: [issueUIDatum]
-        });
-    }
-
-    issueUIData.forEach(addToRow);
-    return rows;
-}
-
-function intersect(range1, range2) {
-    return range1.start < range2.end && range2.start < range1.end;
-}
-
-customElements.define("gantt-timeline",GanttTimeline);
-
-const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
-
-function workTypeToSymbol(type){
-    if(workTypesToSymbols[type]) {
-        return workTypesToSymbols[type];
-    } else {
-       return  type.substring(0,1).toUpperCase()
-    }
-}
-
-const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`;
-
-class StatusReport extends canStacheElement {
-    static view = `
-    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex gap-2'>
-        {{# for(primaryIssue of this.primaryIssuesOrReleases) }}
-            <div class='release_box grow'>
-                <div 
-                    on:click='this.showTooltip(scope.event, primaryIssue)'
-                    class="pointer release_box_header_bubble color-text-and-bg-{{primaryIssue.rollupStatuses.rollup.status}} rounded-t {{this.fontSize(0)}}">
-                        {{primaryIssue.summary}}
-                    </div>
-                
-                    {{# if(this.breakdown) }}
-                            {{# for(workType of this.hasWorkTypes.hasWorkList) }}
-                    
-                                <div class="${release_box_subtitle_wrapper} pt-1">
-                                        <span class="release_box_subtitle_key color-text-and-bg-{{primaryIssue.rollupStatuses[workType.type].status}} font-mono px-px">
-                                            {{workType.type}}
-                                        </span>
-                                        <span class="release_box_subtitle_value">
-                                            {{ this.prettyDate(primaryIssue.rollupStatuses[workType.type].due) }}{{this.wasReleaseDate(primaryIssue.rollupStatuses[workType.type]) }}
-                                        </span>
-                                </div>
-
-                            {{/ for }}
-                    {{ else }}
-                        <div class="${release_box_subtitle_wrapper} p-1">
-                                <b>Target Delivery</b>
-                                <span class="release_box_subtitle_value">
-                                    <span class="nowrap">{{ this.prettyDate(primaryIssue.rollupStatuses.rollup.due) }}</span>
-                                    <span class="nowrap">{{ this.wasReleaseDate(primaryIssue.rollupStatuses.rollup) }}</span>
-                                </span>
-                        </div>
-                    {{/ if }}
-
-                <ul class=" {{# if(this.breakdown) }}list-none{{else}}list-disc list-inside p-1{{/if}}">
-                    {{# for(secondaryIssue of this.getIssues(primaryIssue.reportingHierarchy.childKeys)) }}
-                    <li class='font-sans {{this.fontSize(primaryIssue.reportingHierarchy.childKeys.length)}} pointer' on:click='this.showTooltip(scope.event, secondaryIssue)'>
-                        {{# if(this.breakdown) }}
-                            {{this.breakdownIcons(secondaryIssue)}}
-                        {{/ if }}
-                        <span class="{{# if(this.breakdown) }} color-text-black{{else}} color-text-{{secondaryIssue.rollupStatuses.rollup.status}} {{/ }}">{{secondaryIssue.summary}}</span>
-                    </li>
-                    {{/ for}}
-                </ul>
-            </div>
-        {{ else }}
-        <div class='release_box'>
-            <div class="release_box_header_bubble">
-                Unable to find any issues.
-            </div>
-        </div>
-        {{/ for }}
-        {{# if(this.planningIssues.length) }}
-            <div class='release_box grow'>
-                <div class="release_box_header_bubble color-text-and-bg-unknown rounded-t">Planning</div>
-                <ul class="list-disc list-inside p-1">
-                {{# for(planningIssue of this.planningIssues)}}
-                    <li class='font-sans {{this.fontSize(this.planningIssues.length)}} color-text-unknown pointer'
-                         on:click='this.showTooltip(scope.event, planningIssue)'>
-                        {{planningIssue.summary}}
-                    </li>
-
-                {{/}}
-                </ul>
-            </div>
-        {{/ }}
-        
-    </div>
-    `;
-    get columnDensity(){
-        
-        if(this.primaryIssuesOrReleases.length > 20) {
-            return "absurd"
-        } else if(this.primaryIssuesOrReleases.length > 10) {
-            return "high"
-        } else if(this.primaryIssuesOrReleases.length > 4) {
-            return "medium"
-        } else {
-            return "light"
-        }
-    }
-    prettyDate(date) {
-        return date ? dateFormatter.format(date) : "";
-    }
-    get getIssues() {
-        const map = new Map();
-        for(let issue of this.allIssuesOrReleases || []) {
-            map.set(issue.key, issue);
-        }
-        const getIssue = map.get.bind(map);
-
-        return window.getIssuesByKey = function(issueKeys){
-            return issueKeys.map(getIssue)
-        }
-    }
-    wasReleaseDate(release) {
-
-            const current = release.due;
-            const was = release.lastPeriod && release.lastPeriod.due;
-            
-            if (was && current - DAY_IN_MS$1 > was) {
-                    return " (" + this.prettyDate(was) + ")";
-            } else {
-                    return ""
-            }
-    }
-    wasStartDate(release) {
-
-        const current = release.start;
-        const was = release.lastPeriod && release.lastPeriod.start;
-        
-        if (was && (current - DAY_IN_MS$1 > was)) {
-                return " (" + this.prettyDate(was) + ")";
-        } else {
-                return ""
-        }
-    }
-    showTooltip(event, isssue) {
-        showTooltip(event.currentTarget, isssue);
-    }
-    fontSize(count){
-        if(["high","absurd"].includes(this.columnDensity)) {
-            return "text-xs"
-        }
-        if(count >= 7 && this.columnDensity === "medium") {
-            return "text-sm";
-        } else if(count <= 4) {
-            return "text-base";
-        }
-        
-    }
-    get hasWorkTypes(){
-        const map = {};
-        const list = workTypes.map((type)=>{
-            let hasWork = this.primaryIssuesOrReleases ? 
-                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
-            return map[type] = {type, hasWork}
-        });
-        return {map, list, hasWorkList: list.filter( wt => wt.hasWork)};
-    }
-    breakdownIcons(secondaryIssue) {
-        const frag = document.createDocumentFragment();
-        
-        const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
-        for(const {type} of workTypes) {
-            const span = document.createElement("span");
-            span.className = 'text-xs font-mono px-px py-0 color-text-and-bg-'+secondaryIssue.rollupStatuses[type].status;
-            span.innerText = workTypeToSymbol(type);
-            
-            frag.appendChild(span);
-        }
-
-        return canStache_5_1_1_canStache.safeString(frag);
-    }
-}
-
-
-customElements.define("status-report",StatusReport);
-
-/**
- * @typedef {import("../normalized/normalize.js").NormalizedIssue & {
-*   derivedTiming: import("./work-timing/work-timing.js").DerivedTiming
-* } & {derivedStatus: import("./work-status/work-status.js").DerivedWorkStatus}} DerivedWorkIssue
-*/
-
-
-/**
-* Adds derived data
-* @param {NormalizedIssue} normalizedIssue 
-* @return {DerivedWorkIssue} 
-*/
-function deriveIssue(issue, options){
-    const timing = deriveWorkTiming(issue, options);
-    return {
-
-        derivedTiming: timing,
-        derivedStatus: getWorkStatus(issue, options),
-        ...issue
-    }
-}
-
-/*
-class IssueData extends ObservableObject {
-    static props = {
-        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
-        isLoggedIn: Boolean,
-    }
-}*/
-const typesToHierarchyLevel = {Epic: 1, Story: 0, Initiative: 2};
-function csvToRawIssues(csvIssues){
-    const res = csvIssues.map( (issue)=> {
-        return {
-          ...issue,
-          fields: {
-            ...issue,
-            "Parent Link": {data: issue["Parent Link"]},
-            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]},
-            "Status": {name: issue.Status}
-          },
-          key: issue["Issue key"]
-        }
-    });
-    return res;
-}
-
-function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers},{listenTo, resolve}) {
-    
-    const progressData = canValue_1_1_2_canValue.with(null);
-    
-    const promise = canValue_1_1_2_canValue.returnedBy(function rawIssuesPromise(){
-        if( isLoggedIn.value === false) {
-            return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
-        }
-
-        if(!jql.value) {
-            return undefined;
-        }
-
-        progressData.value = null;
-    
-        const loadIssues = loadChildren.value ? 
-            jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers) :
-            jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
-          
-        return loadIssues({
-              jql: jql.value,
-              fields: ["summary",
-                  "Rank",
-                  "Start date",
-                  "Due date",
-                  "Issue Type",
-                  "Fix versions",
-                  "Story points",
-                  "Story points median",
-                  "Confidence",
-                  "Story points confidence",
-                  "Product Target Release",  // TODO comment this out ...
-                  "Labels", "Status", "Sprint", "Epic Link", "Created","Parent"],
-              expand: ["changelog"]
-          }, (receivedProgressData)=> {            
-            progressData.value = {...receivedProgressData};
-          });
-    });
-
-    listenTo(promise, (value)=> {
-        resolve({
-            progressData,
-            issuesPromise: value
-        });
-    });
-
-
-    resolve({
-        progressData,
-        issuesPromise: promise.value
-    });
-
-
-}
-
-function resolve(value){
-    if(value instanceof Promise) {
-        return value;
-    } else {
-        return canReflect_1_19_2_canReflect.getValue(value)
-    }
-}
-
-function serverInfoPromise({jiraHelpers, isLoggedIn}) {
-    if(resolve(isLoggedIn)) {
-        return jiraHelpers.getServerInfo();
-    } else {
-        return nativeFetchJSON("./examples/bitovi-training-server-info.json");
-    }
-}
-
-function configurationPromise({
-    serverInfoPromise, 
-    teamConfigurationPromise
-}){
-    // we will give pending until we have both promises 
-    const info = resolve( serverInfoPromise ),
-        team = resolve(teamConfigurationPromise);
-    if(!info || !team) {
-        return new Promise(()=>{})
-    }
-    return Promise.all([info, team]).then(
-        /**
-         * 
-         * @param {[Object, TeamConfiguration]} param0 
-         * @returns 
-         */
-        ([serverInfo, teamData])=> {
-        return {
-            getConfidence({fields}){
-                return fields.Confidence;
-            },
-            getStoryPointsMedian({fields}) {
-                return fields["Story points median"]
-            },
-            getUrl({key}){
-                return serverInfo.baseUrl+"/browse/"+key
-            },
-            getVelocity(team) {
-                return teamData.getVelocityForTeam(team)
-            },
-            getDaysPerSprint(team) {
-                return teamData.getDaysPerSprintForTeam(team)
-            },
-            getParallelWorkLimit(team) {
-                return teamData.getTracksForTeam(team)
-            },
-        }
-    })
-}
-
-
-function derivedIssuesRequestData({
-    rawIssuesRequestData, 
-    configurationPromise
-},{listenTo, resolve}) {
-    const promise = canValue_1_1_2_canValue.returnedBy(function derivedIssuesPromise(){
-        if(rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
-            return Promise.all([
-                rawIssuesRequestData.value.issuesPromise,
-                configurationPromise.value
-            ]).then( ([rawIssues, configuration])=> {
-                console.log({rawIssues});
-                return rawIssues.map( issue => {
-                    const normalized = normalizeIssue(issue,configuration);
-                    const derived = deriveIssue(normalized, configuration);
-                    return derived;
-                });
-                
-
-            })
-        } else {
-            // make a pending promise ...
-            const promise = new Promise(()=>{});
-            promise.__isAlwaysPending = true;
-            return promise;
-        }
-    });
-    listenTo(promise, (derivedIssues)=> {
-        resolve({
-            issuesPromise: derivedIssues,
-            progressData: rawIssuesRequestData.value.progressData
-        });
-    });
-    resolve({
-        issuesPromise: promise.value,
-        progressData: rawIssuesRequestData.value.progressData
-    });
-}
-
-const booleanParsing = {
-    parse: x => {
-      return ({"": true, "true": true, "false": false})[x];
-    },
-    stringify: x => ""+x
-  };
-
-
-const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
-
-class TimelineConfiguration extends canStacheElement {
-    static view = `
-        <p>
-            Questions on the options? 
-            <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>, or 
-            <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">connect with us</a>.
-        </p>  
-        <h3 class="h3">Issue Source</h3>
-        <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
-        <p>
-            {{# if(this.isLoggedIn) }}
-            <input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/>
-            {{ else }}
-            <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
-            {{/ if}}
-        </p>
-        {{# if(this.rawIssuesRequestData.issuesPromise.isPending) }}
-            {{# if(this.rawIssuesRequestData.progressData.issuesRequested)}}
-            <p class="text-xs text-right">Loaded {{this.rawIssuesRequestData.progressData.issuesReceived}} of {{this.rawIssuesRequestData.progressData.issuesRequested}} issues</p>
-            {{ else }}
-            <p class="text-xs text-right">Loading issues ...</p>
-            {{/ if}}
-        {{/ if }}
-        {{# if(this.rawIssuesRequestData.issuesPromise.isRejected) }}
-            <div class="border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked p-1">
-            <p>There was an error loading from Jira!</p>
-            <p>Error message: {{this.rawIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
-            <p>Please check your JQL is correct!</p>
-            </div>
-        {{/ if }}
-        <div class="flex justify-between mt-1">
-
-            <p class="text-xs"><input type='checkbox' 
-            class='self-start align-middle' checked:bind='this.loadChildren'/> <span class="align-middle">Load all children of JQL specified issues</span>
-            </p>
-            
-            {{# if(this.rawIssuesRequestData.issuesPromise.isResolved) }}
-            <p class="text-xs">Loaded {{this.rawIssuesRequestData.issuesPromise.value.length}} issues</p>
-            {{/ if }}
-        </div>
-        
-
-        <h3 class="h3 mt-4">Primary Timeline</h3>
-        <div class="flex mt-2 gap-2 flex-wrap">
-            {{# if(this.allTimingCalculationOptions) }}
-            <p>What Jira artifact do you want to report on?</p>
-            <div class="shrink-0">
-            {{# for(issueType of this.allTimingCalculationOptions.list) }}
-            <label class="px-2"><input 
-                type="radio" 
-                name="primaryIssueType" 
-                checked:from="eq(this.primaryIssueType, issueType.type)"
-                on:change="this.primaryIssueType = issueType.type"/> {{issueType.plural}} </label>
-            {{/ }}
-            </div>
-            {{/ if }}
-            
-            
-        </div>
-
-        <div class="flex mt-2 gap-2 flex-wrap">
-            <p>What timing data do you want to report?</p>
-            <div class="shrink-0">
-            <label class="px-2"><input 
-                type="radio" 
-                name="primaryReportType"
-                checked:from="eq(this.primaryReportType, 'start-due')"
-                on:change="this.primaryReportType = 'start-due'"
-                /> Start and due dates </label>
-            <label class="px-2"><input 
-                type="radio" 
-                name="primaryReportType"
-                checked:from="eq(this.primaryReportType, 'due')"
-                on:change="this.primaryReportType = 'due'"
-                /> Due dates only</label>
-            <label class="px-2"><input 
-                type="radio" 
-                name="primaryReportType"
-                checked:from="eq(this.primaryReportType, 'breakdown')"
-                on:change="this.primaryReportType = 'breakdown'"
-                /> Work breakdown</label>
-            </div>
-        </div>
-
-        <div class="flex mt-2 gap-2 flex-wrap">
-            <p>Do you want to report on completion percentage?</p>
-            <input type='checkbox' 
-                class='self-start mt-1.5'  checked:bind='this.showPercentComplete'/>
-        </div>
-
-
-        <h3 class="h3">Timing Calculation</h3>
-        <div class="grid gap-2 my-2" style="grid-template-columns: auto auto auto;">
-            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">Parent Type</div>
-            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Child Type</div>
-            <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 3 / span 1; grid-row: 1 / span 1;">How is timing calculated between parent and child?</div>
-            <div class="border-b-2 border-neutral-40" style="grid-column: 1 / span 3; grid-row: 1 / span 1;"></div>
-
-            {{# for(timingLevel of this.timingLevels) }}
-
-                <label class="pr-2 py-2 {{ this.paddingClass(scope.index) }}">{{timingLevel.type}}</label>
-                {{# eq(timingLevel.types.length, 1) }}
-                <span class="p-2">{{timingLevel.types[0].type}}</span>
-                {{ else }}
-                <select class="${selectStyle}" on:change="this.updateCalculationType(scope.index, scope.element.value)">
-                    {{# for(type of timingLevel.types) }}
-                    <option {{# if(type.selected) }}selected{{/ if }}>{{type.type}}</option>
-                    {{/ for }}
-                </select>
-                {{/ eq}}
-
-                <select class="${selectStyle}" on:change="this.updateCalculation(scope.index, scope.element.value)">
-                {{# for(calculation of timingLevel.calculations) }}
-                    <option {{# if(calculation.selected) }}selected{{/ if }} value="{{calculation.calculation}}">{{calculation.name}}</option>
-                {{/ for }}
-                </select>
-
-            {{/ for }}
-            
-        </div>
-        {{# if(this.primaryIssueType) }}
-        <h3 class="h3">Filters</h3>
-
-        <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
-
-            <label class=''>Hide Unknown {{this.primaryIssueType}}s</label>
-            <input type='checkbox' 
-            class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/>
-            <p class="m-0">Hide {{this.primaryIssueType}}s whose timing can't be determined.
-            </p>
-
-            <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
-            <status-filter 
-                statuses:from="this.statuses"
-                param:raw="statusesToShow"
-                selectedStatuses:to="this.statusesToShow"
-                style="max-width: 400px;">
-            </status-filter>
-            <p>Only include these statuses in the report</p>
-
-            <label>{{this.firstIssueTypeWithStatuses}} Statuses to Ignore</label>
-            <status-filter 
-                statuses:from="this.statuses" 
-                param:raw="statusesToRemove"
-                selectedStatuses:to="this.statusesToRemove"
-                style="max-width: 400px;">
-                </status-filter>
-            <p>Search for statuses to remove from the report</p>
-
-            {{# eq(this.primaryIssueType, "Release") }}
-            <label class=''>Show Only Semver Releases</label>
-            <input type='checkbox' 
-                class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
-            <p class="m-0">This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
-            <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
-            </p>
-            {{/ }}
-
-
-        </div>
-        {{/ if }}
-
-        <h3 class="h3">Sorting</h3>
-        <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
-            <label class=''>Sort by Due Date</label>
-            <input type='checkbox' 
-                class='self-start mt-1.5' checked:bind='this.sortByDueDate'/>
-            <p class="m-0">Instead of ordering initiatives based on the order defined in the JQL, 
-            sort initiatives by their last epic's due date.
-            </p>
-        </div>
-
-        <h3 class="h3">Secondary Status Report</h3>
-        <div class="flex mt-2 gap-2 flex-wrap">
-            <p>Secondary Report Type</p>
-            <div class="shrink-0">
-            <label class="px-2"><input 
-                type="radio" 
-                name="secondary" 
-                checked:from="eq(this.secondaryReportType, 'none')"
-                on:change="this.secondaryReportType = 'none'"
-                /> None </label>
-                
-            <label class="px-2"><input 
-                type="radio" 
-                name="secondary" 
-                checked:from="eq(this.secondaryReportType, 'status')"
-                on:change="this.secondaryReportType = 'status'"
-                /> {{this.secondaryIssueType}} status </label>
-            
-            {{# not(eq(this.secondaryIssueType, "Story") ) }}
-            <label class="px-2"><input 
-                type="radio" 
-                name="secondary" 
-                checked:from="eq(this.secondaryReportType, 'breakdown')"
-                on:change="this.secondaryReportType = 'breakdown'"
-                /> {{this.secondaryIssueType}} work breakdown </label>
-            {{/ not }}
-            </div>
-        </div>
-        {{# if(this.firstIssueTypeWithStatuses) }}
-        <div class="flex gap-2 mt-1">
-            <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
-            <status-filter 
-            statuses:from="this.statuses" 
-            param:raw="planningStatuses"
-            selectedStatuses:to="this.planningStatuses"
-            style="max-width: 400px;"></status-filter>
-        </div>
-        {{/ if}}`;
-
-    static props = {
-        // passed
-
-        // "base" values that do not change when other value change
-        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
-        loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
-        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
-        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
-        showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
-
-        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-        
-        // VALUES DERIVING FROM THE `jql`
-        rawIssuesRequestData: {
-            value({listenTo, resolve}) {
-                return rawIssuesRequestData({
-                    jql: canValue_1_1_2_canValue.from(this, "jql"),
-                    loadChildren: canValue_1_1_2_canValue.from(this, "loadChildren"),
-                    isLoggedIn: canValue_1_1_2_canValue.from(this, "isLoggedIn"),
-                    jiraHelpers: this.jiraHelpers
-                },{listenTo, resolve});
-            }
-        },
-        get serverInfoPromise(){
-            return serverInfoPromise({jiraHelpers: this.jiraHelpers, isLoggedIn: canValue_1_1_2_canValue.from(this, "isLoggedIn")});
-        },
-        get configurationPromise(){
-            return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
-        },
-        configuration: {
-            async() {
-                return this.configurationPromise
-            }
-        },
-        derivedIssuesRequestData: {
-            value({listenTo, resolve}) {
-                return derivedIssuesRequestData({
-                    rawIssuesRequestData: canValue_1_1_2_canValue.from(this, "rawIssuesRequestData"),
-                    configurationPromise: canValue_1_1_2_canValue.from(this, "configurationPromise")
-                },{listenTo, resolve});
-            }
-        },
-        get derivedIssuesPromise(){
-            return this.derivedIssuesRequestData.issuesPromise
-        },
-        derivedIssues: {
-            async() {
-                return this.derivedIssuesRequestData.issuesPromise
-            }
-        },
-        // PROPERTIES DERIVING FROM `derivedIssues`
-        get statuses(){
-            if(this.derivedIssues) {
-                return allStatusesSorted(this.derivedIssues)
-            } else {
-                return [];
-            }
-        },
-
-
-        allTimingCalculationOptions: {
-            async(resolve) {
-                if(this.derivedIssuesRequestData.issuesPromise) {
-                    return this.derivedIssuesRequestData.issuesPromise.then( issues => {
-                        return allTimingCalculationOptions(issues);
-                    })
-                }
-            }
-        },
-
-        // primary issue type depends on allTimingCalculationOptions
-        // but it can also be set itself
-        primaryIssueType: {
-            value({resolve, lastSet, listenTo}) {
-                
-                let currentPrimaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
-
-                listenTo("allTimingCalculationOptions",({value})=> {
-                    reconcileCurrentValue(value, currentPrimaryIssueType);
-                });
-
-                listenTo(lastSet, (value)=>{
-                    setCurrentValue(value);
-                });
-
-                //setCurrentValue(new URL(window.location).searchParams.get("primaryIssueType") )
-
-                
-                reconcileCurrentValue(this.allTimingCalculationOptions, currentPrimaryIssueType);
-
-                function reconcileCurrentValue(calculationOptions, primaryIssueType){
-                    // if we've actually loaded some stuff, but it doesn't match the current primary issue type
-                    if(calculationOptions && calculationOptions.list.length > 1) {
-                        if( calculationOptions.map[primaryIssueType] ) {
-                            // do nothing
-                            resolve(primaryIssueType);
-                        } else {
-                            updateUrlParam("primaryIssueType", "", "");
-                            resolve(currentPrimaryIssueType = calculationOptions.list[1].type);
-                        }
-                        // default to the thing after release
-                    } else {
-                        // folks can wait on the value until we know we have a valid one
-                        resolve(undefined);
-                    }
-                }
-
-                function setCurrentValue(value) {
-                    currentPrimaryIssueType = value;
-                    updateUrlParam("primaryIssueType", value, "");
-                    // calculationOptions ... need to pick the right one if empty
-                    resolve(value);
-                }
-                
-                
-  
-            }
-        },
-
-        // PROPERTIES only needing primaryIssue type and what it depends on
-
-        // looks like [{type: "initiative", calculation: "children-only"}, ...]
-        // in the URL like ?timingCalculations=initiative:children-only,epic:self
-        timingCalculations: {
-            value({resolve, lastSet, listenTo}) {
-              let currentValue;
-              updateValue(new URL(window.location).searchParams.get("timingCalculations"));
-  
-              listenTo(lastSet, (value)=>{
-                  updateValue(value);
-              });
-
-              // reset when primary issue type changes
-              listenTo("primaryIssueType",()=>{
-                updateValue([]);
-              });
-  
-              function updateValue(value) {
-                if(typeof value === "string"){
-                  try {
-                    value = parse(value);
-                  } catch(e) {
-                    value = [];
-                  }
-                } else if(!value){
-                  value = [];
-                }
-                  
-                updateUrlParam("timingCalculations", stringify(value), stringify([]));
-  
-                currentValue = value;
-                resolve(currentValue);
-              }
-  
-              function parse(value){
-                return value.split(",").map( piece => {
-                  const parts = piece.split(":");
-                  return {type: parts[0], calculation: parts[1]};
-                }).flat()
-              }
-              function stringify(array){
-                return array.map( (obj) => obj.type+":"+obj.calculation).join(",")
-              }
-  
-            }
-        },
-        get impliedTimingCalculations(){
-            if(this.primaryIssueType) {
-                return getImpliedTimingCalculations(this.primaryIssueType, 
-                    this.allTimingCalculationOptions.map, 
-                    this.timingCalculations);
-            }
-        },
-
-        // PROPERTIES from having a primaryIssueType and timingCalculations
-        get firstIssueTypeWithStatuses(){
-            if(this.primaryIssueType) {
-                if(this.primaryIssueType !== "Release") {
-                    return this.primaryIssueType;
-                } else {
-                    // timing calculations lets folks "skip" from release to some other child
-                    const calculations= this.impliedTimingCalculations;
-                    if(calculations[0].type !== "Release") {
-                        return calculations[0].type;
-                    } else {
-                        return calculations[1].type;
-                    }
-                }
-            }
-        },
-        // used to get the name of the secondary issue type
-        get secondaryIssueType(){
-            if(this.primaryIssueType) {
-                const calculations = this.impliedTimingCalculations;
-                if(calculations.length) {
-                    return calculations[0].type
-                }
-            }
-            
-        },
-
-        get timingCalculationMethods() {
-            if(this.primaryIssueType) {
-                return this.impliedTimingCalculations
-                    .map( (calc) => calc.calculation)
-            }
-        },
-
-        get timingLevels(){
-            if(this.primaryIssueType) {
-                return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
-            }            
-        },
-        get rollupTimingLevelsAndCalculations(){
-            if(this.impliedTimingCalculations) {
-                const impliedCalculations = this.impliedTimingCalculations;
-                const primaryIssueType = this.primaryIssueType;
-                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
-                const rollupCalculations = [];
-                for( let i = 0; i < impliedCalculations.length + 1; i++) {
-                    rollupCalculations.push({
-                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
-                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
-                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
-                    });
-                }
-                return rollupCalculations;
-            }
-        },
-        // dependent on primary issue type
-        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-
-        
-        // STATUS FILTERING STUFF
-        
-        planningStatuses: {
-          get default(){
-            return [];
-          }
-        },
-        // used for later filtering
-        // but the options come from the issues
-        statusesToRemove: {
-            get default(){
-                return [];
-            }
-        },
-        statusesToShow: {
-            get default(){
-                return [];
-            }
-        }
-    };
-    // HOOKS
-    connected(){
-
-    }
-    // METHODS
-    updateCalculationType(index, value){
-    
-        const copyCalculations = [
-          ...getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations) 
-        ].slice(0,index+1);
-  
-        copyCalculations[index].type = value;
-        this.timingCalculations = copyCalculations;
-    }
-  
-    updateCalculation(index, value){
-    
-        const copyCalculations = [
-            ...getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations) 
-        ].slice(0,index+1);
-
-        copyCalculations[index].calculation = value;
-        this.timingCalculations = copyCalculations;
-    }
-
-
-    // UI Helpers
-    paddingClass(depth) {
-        return "pl-"+(depth * 2);
-    }
-
-
-
-
-   
-    
-    
-    
-
-}
-
-// jql => 
-//    
-//    rawIssues => 
-//        typeToIssueType
-
-// timingCalculations 
-
-// firstIssueTypeWithStatuses(primaryIssueType, typeToIssueType, timingCalculations)
-
-// primaryIssueType
-
-
-
-
-
-customElements.define("timeline-configuration", TimelineConfiguration);
-
-/**
- * @type {{
- *   type: string, 
- *   calculation: string
- * }} TimingCalculation
- */
-
-/**
- * 
- * @param {TimingCalculationsMap} issueTypeMap 
- * @param {string} primaryIssueType 
- * @param {Array<TimingCalculation>} timingCalculations 
- * @returns 
- */
-function getTimingLevels(issueTypeMap, primaryIssueType, timingCalculations){
-
-    const primaryType = issueTypeMap[primaryIssueType];
-
-    let currentType = primaryIssueType;
-    
-    let childrenCalculations = primaryType.timingCalculations;
-
-    const timingLevels = [];
-    const setCalculations = [...timingCalculations];
-    
-    
-    while(childrenCalculations.length) {
-        // this is the calculation that should be selected for that level
-        let setLevelCalculation = setCalculations.shift() || 
-        {
-            type: childrenCalculations[0].child, 
-            calculation: childrenCalculations[0].calculations[0].calculation
-        };
-        let selected = childrenCalculations.find( calculation => setLevelCalculation.type === calculation.child);
-
-        let timingLevel = {
-        type: currentType,
-        types: childrenCalculations.map( calculationsForType => {
-            return {
-            type: calculationsForType.child,
-            selected: setLevelCalculation?.type === calculationsForType.child
-            }
-        } ),
-        calculations: selected.calculations.map( (calculation)=> {
-            return {
-            ...calculation,
-            selected: calculation.calculation === setLevelCalculation.calculation
-            }
-        })
-        };
-        timingLevels.push(timingLevel);
-        currentType = setLevelCalculation.type;
-        childrenCalculations = issueTypeMap[setLevelCalculation.type].timingCalculations;
-    }
-    return timingLevels;
-}
-
-function getSprintNumbers(value) {
-    if(value === "") {
-        return null;
-    } else {
-        return value.split(",").map( num => +num);
-    }
-}
-function getSprintNames(value) {
-    if(value === "") {
-        return null;
-    } else {
-        return value.split(",").map( name => name.trim() );
-    }
-}
-
-
-const fields = {
-
-    // from will look like "1619, 1647"
-    // we need to update `lastReturnValue` to have 
-    // only the right sprints
-    Sprint: function(lastReturnValue, change, fieldName, {sprints}) {
-        const sprintNumbers = getSprintNumbers( change.from );
-        const sprintNames = getSprintNames(change.fromString);
-        
-        if( sprintNumbers === null ) {
-            return {[fieldName]: null};
-        } else {
-
-            return {[fieldName]: sprintNumbers.map( (number, i)=>{
-                // REMOVE IN PROD
-                if(sprints.ids.has(number) ) {
-                    return sprints.ids.get(number);
-                } else if(sprints.names.has(sprintNames[i])) {
-                    return sprints.names.get(sprintNames[i]);
-                } else {
-                    // TODO: change to async so we can go request all of these
-                    console.warn("Can't find sprint ", number, sprintNames[i]);
-                }
-                
-            }).filter(x => x) }
-        }
-        
-    },
-    "Fix versions": function(lastReturnValue, change, fieldName, {versions}) {
-
-        if(change.from) {
-            if(versions.ids.has(change.from)) {
-                return {[fieldName]: versions.ids.get(change.from)};
-            } else if( versions.names.has(change.fromString) ) {
-                return {[fieldName]: versions.names.get(change.fromString)};
-            } else {
-                console.warn("Can't find release version ", change.from, change.fromString);
-                return {[fieldName]: lastReturnValue};
-            }
-        } else {
-            return {[fieldName]: []};
-        }
-    },
-    // Parent Link, Epic Link, 
-    "IssueParentAssociation": function(lastReturnValue, change) {
-        return {Parent: {key: change.toString, id: change.to}}
-    },
-    "Parent Link": function(lastReturnValue, change) {
-        return {Parent: {key: change.toString}};
-    },
-    "Epic Link": function(lastReturnValue, change) {
-        return {Parent: {key: change.toString}};
-    },
-    "Status": function(lastReturnValue, change, fieldName, {statuses}) {
-        if(statuses.ids.has(change.from)) {
-            return {[fieldName]: statuses.ids.get(change.from)};
-        } else if( statuses.names.has(change.fromString) ) {
-            return {[fieldName]: statuses.names.get(change.fromString)};
-        } else {
-            console.warn("Can't find status", change.from, change.fromString);
-            return {[fieldName]: {name: change.fromString}};
-        }
-    }
-};
-const fieldAlias = {
-    "duedate": "Due date",
-    "status": "Status",
-    "labels": "Labels",
-    "issuetype": "Issue Type",
-    // "summary": "Summary" // we don't want to change summary
-    "Fix Version": "Fix versions"
-};
-
-function getSprintsMapsFromIssues(issues){
-    const ids = new Map();
-    const names = new Map();
-    for(const issue of issues) {
-        for(const sprint of (issue.fields.Sprint || [])) {
-            ids.set(sprint.id, sprint);
-            names.set(sprint.name, sprint);
-        }
-    }
-    return {ids, names};
-}
-
-function getVersionsFromIssues(issues){
-    const ids = new Map();
-    const names = new Map();
-    for(const issue of issues) {
-        for(const version of (issue.fields["Fix versions"] || [])) {
-            ids.set(version.id, version);
-            names.set(version.name, version);
-        }
-    }
-    return {ids, names};
-}
-
-
-function getStatusesFromIssues(issues) {
-    const ids = new Map();
-    const names = new Map();
-    for(const issue of issues) {
-        
-        ids.set(issue.fields.Status.id, issue.fields.Status);
-        names.set(issue.fields.Status.name, issue.fields.Status);
-        
-    }
-    return {ids, names};
-}
-
-function rollbackIssues(issues, rollbackTime) {
-    const sprints = getSprintsMapsFromIssues(issues);
-    const versions = getVersionsFromIssues(issues);
-    const statuses = getStatusesFromIssues(issues);
-    return issues.map(i => rollbackIssue(i, {sprints, versions, statuses}, rollbackTime)).filter( i => i );
-}
-
-const oneHourAgo = new Date(new Date() - 1000*60*60);
-
-/**
- * @typedef {{
- *   rolledBackTo: Date,
- *   didNotExist: Boolen
- * }} RolledBackMetadata
- */
-
-/**
- * @typedef {import("../../normalized/normalize").JiraIssue & {rollbackMetadata: RolledBackMetadata}} RolledBackJiraIssue
- */
-
-/**
- * @param {import("../../normalized/normalize").JiraIssue} issue 
- * @param {*} data 
- * @param {Date} rollbackTime 
- * @returns {RolledBackJiraIssue}
- */
-function rollbackIssue(issue, data, rollbackTime = oneHourAgo) {
-
-    const {changelog, ...copy} = issue;
-    copy.rollbackMetadata = {rolledbackTo: rollbackTime};
-    // ignore old issues
-    if( parseDateISOString(issue.fields.Created) > rollbackTime) {
-        return;
-        /*
-        copy.rollbackMetadata.didNotExist = true;
-        delete copy.fields;
-        // should convert to date ...
-        copy.rollbackMetadata.didNotExistBefore = issue.fields.Created;
-        return copy;*/
-    }
-    // 
-    
-    copy.fields = {...issue.fields};
-
-    for(const {items, created} of changelog) {
-        // we need to go back before ... 
-        if( parseDateISOString(created) < rollbackTime) {
-            break;
-        }
-        items.forEach( (change) => {
-            const {field, from, to} = change;
-            const fieldName = fieldAlias[field] || field;
-            if(fields[fieldName]) {
-
-                Object.assign(copy.fields, fields[fieldName](copy[fieldName], change, fieldName, data) );
-            } else {
-                copy.fields[fieldName] = from;
-            }
-
-        });
-    }
-    return copy;
-}
-
-/*
-export function collectChangelog(observableBaseIssues, priorTime) {
-    const changes = observableBaseIssues.map( baseIssue => {
-        return baseIssue.changelog.map( change => {
-            return {...change, issue: baseIssue, createdDate: parseDateISOString(change.created) };
-        })
-    } ).flat().sort( (cl1, cl2) => cl1.createdDate - cl2.createdDate);
-
-    return changes.filter( change => change.createdDate >= priorTime );
-}
-
-
-export function applyChangelog(changes, data) {
-    for(const {items, created, issue} of changes) {
-
-        items.forEach( (change) => {
-            const {field, from, to} = change;
-
-            if(field in issue) {
-                if(fields[field]) {
-                    issue[field] = fields[field](issue[field], change, data);
-                } else {
-                    issue[field] = from;
-                }
-                
-            }
-        })
-    }
-}
-
-
-
-function sleep(time) {
-    return new Promise(function(resolve){
-        if(!time) {
-            resolve();
-        }
-    })
-}
-
-const CHANGE_APPLY_AMOUNT = 2000;
-export async function applyChangelogs(observableBaseIssues, priorTime) {
-    const changes = collectChangelog(observableBaseIssues, priorTime);
-    console.log("processing",changes.length, "changes");
-    const sprints = getSprintsMapsFromIssues(observableBaseIssues);
-    const batches = [];
-    
-    while(changes.length) {
-        await sleep();
-        const batch = changes.splice(0, CHANGE_APPLY_AMOUNT);
-        applyChangelog(batch, {sprints});
-    }
-}*/
-
-/**
- * 
- * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
- * @param {Array<String>} methodNames Starting from low to high
- * @return {Array<RollupDateData>}
- */
-function rollupWorkTypeDates(groupedHierarchy, {getChildren}  = {}) {
-    return rollupGroupedHierarchy(groupedHierarchy, {
-        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
-            //const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
-            const method = mergeParentAndChildIfTheyHaveDates; //methods[methodName];
-            return method(issueOrRelease, children);
-        }
-    });
-}
-/**
- * 
- * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
- * @param {*} rollupTimingLevelsAndCalculations 
- * @return {Array<WorkTypeTimingReleaseOrIssue>}
- */
-function addWorkTypeDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
-    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
-    rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
-    const rolledUpDates = rollupWorkTypeDates(groupedIssues);
-    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "workTypeRollups");
-    return zipped.flat();
-}
-
-function copyDateProperties(obj) {
-    const copy = {};
-    for(let key of ["due","dueTo","start","startFrom"]){
-        if(obj[key] !== undefined) {
-            copy[key] = obj[key];
-        }
-    }
-    return copy;
-}
-
-
-function mergeParentAndChildIfTheyHaveDates(parentIssueOrRelease, childRollups){
-    const rollup = {self: {}, children: {}, combined: {}};
-    const parentData = parentIssueOrRelease?.derivedTiming;
-
-    const parentHasStart = parentData?.start;
-    const parentHasDue = parentData?.due;
-    const hasStartAndDue = parentHasStart && parentHasDue;
-
-    if(hasStartAndDue) {
-        // can use the parent;
-        rollup.self[parentIssueOrRelease.derivedStatus.workType] = copyDateProperties(parentData);
-        rollup.self[parentIssueOrRelease.derivedStatus.workType].issueKeys = [parentIssueOrRelease.key];
-    }
-    if(!childRollups.length) {
-        rollup.combined = rollup.self;
-        return rollup;
-    }
-    const children = rollup.children;
-    const combined = rollup.combined;
-    for(let workType$1 of workType) {
-        // combine for children
-        const rollupForWorkType = childRollups.map( childRollup => childRollup.combined?.[workType$1] ).filter(x => x);
-        // if the children have something for this type
-        if(rollupForWorkType.length) {
-            const issues = new Set( rollupForWorkType.map( r => r.issueKeys ).flat(1) );
-            const dates  = mergeStartAndDueData$1(rollupForWorkType);
-            dates.issueKeys = [...issues];
-            children[workType$1] = dates;
-            // what if the parent has it also
-            if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
-                const combinedIssues = new Set( [...issues, parentIssueOrRelease.key] );
-                const combinedDates = mergeStartAndDueData$1([dates, parentData]);
-                combinedDates.issueKeys = [...combinedIssues];
-                combined[workType$1] = combinedDates;
-            } else {
-                combined[workType$1] = dates;
-            }
-        } 
-        // what if the parent has it
-        else if(hasStartAndDue && parentIssueOrRelease.derivedStatus.workType === workType$1) {
-            combined[workType$1] = rollup.self[workType$1];
-        }
-    }
-    return rollup;
-}
-
-
-
-// {children: DATES FROM CHILDREN, QA, UAT, DESIGN, etc}
-
-/**
- * 
- * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
- * @param {Array<String>} methodNames Starting from low to high
- * @return {Array<RollupDateData>}
- */
-function rollupBlockedIssuesForGroupedHierarchy(groupedHierarchy) {
-    return rollupGroupedHierarchy(groupedHierarchy, {
-        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
-            const blockedIssues = children.flat(1);
-            // releases don't have a status
-            if(issueOrRelease?.derivedStatus?.statusType === "blocked") {
-                blockedIssues.push(issueOrRelease);
-            }
-            return blockedIssues;
-        }
-    });
-}
-
-// these functions shouldn't be used eventually for performance ...
-function rollupBlockedStatusIssues(issuesOrReleases, rollupTimingLevelsAndCalculations){
-    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
-    const rolledUpBlockers = rollupBlockedIssuesForGroupedHierarchy(groupedIssues);
-
-    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, "blockedStatusIssues");
-    return zipped.flat();
-}
-
 function partialReleaseName(release) {
     let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
     if (match) {
@@ -57501,13 +56512,25 @@ function deriveReleases(normalizedReleases){
  * @param {Array<import("../normalized/normalize").NormalizedIssue>} normalizedIssues 
  * @return {Array<import("../normalized/normalize").NormalizedRelease>}
  */
-function normalizeReleases(normalizedIssues){
+function normalizeReleases(normalizedIssues, rollupTimingLevelsAndCalculations){
+    const releaseIndex = rollupTimingLevelsAndCalculations.findIndex( calc => calc.type === "Release");
+    if(releaseIndex === -1) {
+        return [];
+    }
+    const followingCalc = rollupTimingLevelsAndCalculations[releaseIndex+1];
+    if(!followingCalc) {
+        return [];
+    }
+    const followingType = followingCalc.type;
+
     const nameToRelease = {};
     for(let normalizedIssue of normalizedIssues) {
-        const releases = normalizedIssue.releases;
-        for(let release of releases) {
-            if(!nameToRelease[release.name]) {
-                nameToRelease[release.name] = release;
+        if(normalizedIssue.type === followingType) {
+            const releases = normalizedIssue.releases;
+            for(let release of releases) {
+                if(!nameToRelease[release.name]) {
+                    nameToRelease[release.name] = release;
+                }
             }
         }
     }
@@ -57758,7 +56781,8 @@ function rollupAndRollback(derivedIssues, configuration, rollupTimingLevelsAndCa
 }
 
 function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
-    const normalizedReleases = normalizeReleases(derivedIssues);
+
+    const normalizedReleases = normalizeReleases(derivedIssues, rollupTimingLevelsAndCalculations);
     const releases = deriveReleases(normalizedReleases);
     const reporting = addReportingHierarchy([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
     const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
@@ -58011,7 +57035,7 @@ class TimelineReport extends canStacheElement {
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Configure a JQL in the sidebar on the left to get started.</div>
           {{ /and }}
 
-          {{# and(this.cvsIssuesPromise.value, this.releases) }}
+          {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
             <div class="my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
             
               {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
@@ -58022,12 +57046,12 @@ class TimelineReport extends canStacheElement {
                     showPercentComplete:from="this.showPercentComplete"
                     ></gantt-grid>
               {{ else }}
-                <gantt-timeline issues:from="this.primaryIssues"
+                <gantt-timeline 
                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"></gantt-timeline>
               {{/ or }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
-                <status-report primaryIssues:from="this.primaryIssues"
+                <status-report 
                   breakdown:from="eq(this.secondaryReportType, 'breakdown')"
                   planningIssues:from="this.planningIssues"
                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
@@ -58046,6 +57070,12 @@ class TimelineReport extends canStacheElement {
               </div>
             </div>
           {{/ and }}
+          {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
+            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
+              <p>No issues of type {{this.primaryIssueType}}</p>
+              <p>Please check your JQL is correct!</p>
+            </div>
+          {{/}}
           {{# if(this.cvsIssuesPromise.isPending) }}
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
               <p>Loading ...<p>
@@ -58157,6 +57187,9 @@ class TimelineReport extends canStacheElement {
                 return this.cvsIssuesPromise;
             }
         },
+        get issuesPromise(){
+          return this.derivedIssuesRequestData?.issuesPromise;
+        },
         derivedIssues: {
             async(resolve){
                 this.derivedIssuesRequestData?.issuesPromise.then(resolve);
@@ -58186,8 +57219,9 @@ class TimelineReport extends canStacheElement {
       return statuses;
     }
     
-    
+    /*
     get releasesAndInitiativesWithPriorTiming(){
+      console.log("YES I AM CALLED")
       if(!this.csvIssues || ! this.timingCalculationMethods) {
         return {releases: [], initiatives: []}
       }
@@ -58218,7 +57252,7 @@ class TimelineReport extends canStacheElement {
         getChildWorkBreakdown,
         reportedIssueType,
         timingMethods
-      };
+      }
       
       const {releases, initiatives} = releasesAndInitiativesWithPriorTiming(optionsForType);
 
@@ -58240,6 +57274,7 @@ class TimelineReport extends canStacheElement {
         return {releases, initiatives};
       }
     }
+    
     get initiativesWithAStartAndEndDate(){
       var initiatives =  this.releasesAndInitiativesWithPriorTiming.initiatives;
 
@@ -58263,14 +57298,7 @@ class TimelineReport extends canStacheElement {
         }
         const data = this.sortedIncompleteReleasesInitiativesAndEpics;
         return data;
-    }
-    get primaryIssues(){
-      if(this.primaryIssueType === "Release") {
-        return this.releases;
-      } else {
-        return this.initiativesWithAStartAndEndDate;
-      }
-    }
+    }*/
     get groupedParentDownHierarchy(){
       if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
         return [];
@@ -58371,49 +57399,6 @@ class TimelineReport extends canStacheElement {
 
 
 customElements.define("timeline-report", TimelineReport);
-
-/*
-function goodStuffFromIssue(issue) {
-    return {
-        Summary: issue.Summary,
-        [ISSUE_KEY]: issue[ISSUE_KEY],
-    }
-}
-
-function filterReleases(issues, getReleaseValue) {
-    return issues.filter(issue => getReleaseValue(issue))
-}
-
-function filterOutReleases(issues, getReleaseValue) {
-    return issues.filter(issue => !getReleaseValue(issue));
-}
-function filterPlanningAndReady(issues) {
-    return issues.filter(issue => ["Ready", "Planning"].includes(issue.Status))
-}
-
-
-function mapReleasesToIssues(issues, getReleaseValue) {
-    const map = {};
-    issues.forEach((issue) => {
-        const release = getReleaseValue(issue)
-        if (!map[release]) {
-            map[release] = [];
-        }
-        map[release].push(issue);
-    })
-    return map;
-}*/
-
-
-
-
-
-function getChildWorkBreakdown(children = []) {
-    const qaWork = new Set(filterQAWork(children));
-    const uatWork = new Set(filterPartnerReviewWork(children));
-    const devWork = children.filter(epic => !qaWork.has(epic) && !uatWork.has(epic));
-    return {qaWork, uatWork, devWork}
-}
 
 
 

@@ -1,12 +1,6 @@
-import { StacheElement, type, ObservableObject, ObservableArray } from "./can.js";
+import { StacheElement, type } from "./can.js";
 
 import { derivedToCSVFormat } from "./jira/derived/work-timing/work-timing.js";
-
-import {releasesAndInitiativesWithPriorTiming, 
-  rawIssuesToBaseIssueFormat, filterOutInitiativeStatuses, filterQAWork, filterPartnerReviewWork} from "./prepare-issues/prepare-issues.js";
-
-import semverReleases from "./jira/releases/semver-releases.js";
-import sortedByLastEpicReleases from "./sorted-by-last-epic-releases.js";
 
 import bitoviTrainingData from "./examples/bitovi-training.js";
 
@@ -111,7 +105,7 @@ export class TimelineReport extends StacheElement {
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Configure a JQL in the sidebar on the left to get started.</div>
           {{ /and }}
 
-          {{# and(this.cvsIssuesPromise.value, this.releases) }}
+          {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
             <div class="my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
             
               {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
@@ -122,12 +116,12 @@ export class TimelineReport extends StacheElement {
                     showPercentComplete:from="this.showPercentComplete"
                     ></gantt-grid>
               {{ else }}
-                <gantt-timeline issues:from="this.primaryIssues"
+                <gantt-timeline 
                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"></gantt-timeline>
               {{/ or }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
-                <status-report primaryIssues:from="this.primaryIssues"
+                <status-report 
                   breakdown:from="eq(this.secondaryReportType, 'breakdown')"
                   planningIssues:from="this.planningIssues"
                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
@@ -146,6 +140,12 @@ export class TimelineReport extends StacheElement {
               </div>
             </div>
           {{/ and }}
+          {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
+            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
+              <p>No issues of type {{this.primaryIssueType}}</p>
+              <p>Please check your JQL is correct!</p>
+            </div>
+          {{/}}
           {{# if(this.cvsIssuesPromise.isPending) }}
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
               <p>Loading ...<p>
@@ -259,6 +259,9 @@ export class TimelineReport extends StacheElement {
                 return this.cvsIssuesPromise;
             }
         },
+        get issuesPromise(){
+          return this.derivedIssuesRequestData?.issuesPromise;
+        },
         derivedIssues: {
             async(resolve){
                 this.derivedIssuesRequestData?.issuesPromise.then(resolve)
@@ -288,8 +291,9 @@ export class TimelineReport extends StacheElement {
       return statuses;
     }
     
-    
+    /*
     get releasesAndInitiativesWithPriorTiming(){
+      console.log("YES I AM CALLED")
       if(!this.csvIssues || ! this.timingCalculationMethods) {
         return {releases: [], initiatives: []}
       }
@@ -342,6 +346,7 @@ export class TimelineReport extends StacheElement {
         return {releases, initiatives};
       }
     }
+    
     get initiativesWithAStartAndEndDate(){
       var initiatives =  this.releasesAndInitiativesWithPriorTiming.initiatives;
 
@@ -365,14 +370,7 @@ export class TimelineReport extends StacheElement {
         }
         const data = this.sortedIncompleteReleasesInitiativesAndEpics;
         return data;
-    }
-    get primaryIssues(){
-      if(this.primaryIssueType === "Release") {
-        return this.releases;
-      } else {
-        return this.initiativesWithAStartAndEndDate;
-      }
-    }
+    }*/
     get groupedParentDownHierarchy(){
       if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
         return [];
@@ -516,13 +514,6 @@ function mapReleasesToIssues(issues, getReleaseValue) {
 
 
 
-
-function getChildWorkBreakdown(children = []) {
-    const qaWork = new Set(filterQAWork(children));
-    const uatWork = new Set(filterPartnerReviewWork(children));
-    const devWork = children.filter(epic => !qaWork.has(epic) && !uatWork.has(epic));
-    return {qaWork, uatWork, devWork}
-}
 
 
 function sortReadyFirst(initiatives) {

@@ -35,13 +35,7 @@ export class TimelineConfiguration extends StacheElement {
             <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
             {{/ if}}
         </p>
-        {{# if(this.rawIssuesRequestData.issuesPromise.isPending) }}
-            {{# if(this.rawIssuesRequestData.progressData.issuesRequested)}}
-            <p class="text-xs text-right">Loaded {{this.rawIssuesRequestData.progressData.issuesReceived}} of {{this.rawIssuesRequestData.progressData.issuesRequested}} issues</p>
-            {{ else }}
-            <p class="text-xs text-right">Loading issues ...</p>
-            {{/ if}}
-        {{/ if }}
+        
         {{# if(this.rawIssuesRequestData.issuesPromise.isRejected) }}
             <div class="border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked p-1">
             <p>There was an error loading from Jira!</p>
@@ -51,13 +45,29 @@ export class TimelineConfiguration extends StacheElement {
         {{/ if }}
         <div class="flex justify-between mt-1">
 
-            <p class="text-xs"><input type='checkbox' 
-            class='self-start align-middle' checked:bind='this.loadChildren'/> <span class="align-middle">Load all children of JQL specified issues</span>
+            <p class="text-xs flex">
+                <input type='checkbox' 
+                    class='self-start align-middle h-6 mr-0.5' checked:bind='this.loadChildren'/>
+                    <div class="align-middle h-6" style="line-height: 26px">
+                        Load children. 
+                        {{# if(this.loadChildren) }}
+                            Optional children JQL filters: <input type='text' class="form-border p-1 h-5" value:bind="this.childJQL"/>
+                        {{/ if }}
+                    </div>
+            </p>
+            <p class="text-xs" style="line-height: 26px;">
+                {{# if(this.rawIssuesRequestData.issuesPromise.isPending) }}
+                    {{# if(this.rawIssuesRequestData.progressData.issuesRequested)}}
+                        Loaded {{this.rawIssuesRequestData.progressData.issuesReceived}} of {{this.rawIssuesRequestData.progressData.issuesRequested}} issues
+                    {{ else }}
+                        Loading issues ...
+                    {{/ if}}
+                {{/ if }}
+                {{# if(this.rawIssuesRequestData.issuesPromise.isResolved) }}
+                    Loaded {{this.rawIssuesRequestData.issuesPromise.value.length}} issues
+                {{/ if }}
             </p>
             
-            {{# if(this.rawIssuesRequestData.issuesPromise.isResolved) }}
-            <p class="text-xs">Loaded {{this.rawIssuesRequestData.issuesPromise.value.length}} issues</p>
-            {{/ if }}
         </div>
         
 
@@ -236,6 +246,7 @@ export class TimelineConfiguration extends StacheElement {
         // "base" values that do not change when other value change
         jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
         loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
+        childJQL: saveJSONToUrl("childJQL", "", String, {parse: x => ""+x, stringify: x => ""+x}),
         secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
         primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
         showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
@@ -248,6 +259,7 @@ export class TimelineConfiguration extends StacheElement {
             value({listenTo, resolve}) {
                 return rawIssuesRequestData({
                     jql: value.from(this, "jql"),
+                    childJQL: value.from(this,"childJQL"),
                     loadChildren: value.from(this, "loadChildren"),
                     isLoggedIn: value.from(this, "isLoggedIn"),
                     jiraHelpers: this.jiraHelpers

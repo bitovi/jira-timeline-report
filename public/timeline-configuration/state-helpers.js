@@ -28,7 +28,7 @@ export function csvToRawIssues(csvIssues){
     return res;
 }
 
-export function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers},{listenTo, resolve}) {
+export function rawIssuesRequestData({jql, childJQL, isLoggedIn, loadChildren, jiraHelpers},{listenTo, resolve}) {
     
     const progressData = value.with(null);
     
@@ -49,6 +49,7 @@ export function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers
           
         return loadIssues({
               jql: jql.value,
+              childJQL: childJQL.value ? " and "+childJQL.value : "",
               fields: ["summary",
                   "Rank",
                   "Start date",
@@ -59,8 +60,7 @@ export function rawIssuesRequestData({jql, isLoggedIn, loadChildren, jiraHelpers
                   "Story points median",
                   "Confidence",
                   "Story points confidence",
-                  "Product Target Release",  // TODO comment this out ...
-                  "Labels", "Status", "Sprint", "Epic Link", "Created","Parent"],
+                  "Labels", "Status", "Sprint", "Created","Parent"],
               expand: ["changelog"]
           }, (receivedProgressData)=> {            
             progressData.value = {...receivedProgressData};
