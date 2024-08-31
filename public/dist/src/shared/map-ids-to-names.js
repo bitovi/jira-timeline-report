@@ -5,3 +5,4 @@ export default function mapIdsToNames(obj, fields) {
     }
     return mapped;
 }
+//# sourceMappingURL=map-ids-to-names.js.map

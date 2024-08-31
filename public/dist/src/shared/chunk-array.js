@@ -5,3 +5,4 @@ export default function chunkArray(array, size) {
     }
     return chunkedArr;
 }
+//# sourceMappingURL=chunk-array.js.map

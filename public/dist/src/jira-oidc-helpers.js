@@ -123,7 +123,7 @@ export default function (_a, requestHelper, host) {
             var issuesToQuery = chunkArray(parentIssues, 40);
             var batchedResponses = issuesToQuery.map(function (issues) {
                 var keys = issues.map(function (issue) { return issue.key; });
-                var jql = "parent in (".concat(keys.join(", "), ")");
+                var jql = "parent in (".concat(keys.join(", "), ") ").concat(params.childJQL || "");
                 return rootMethod(__assign(__assign({}, params), { jql: jql }), progress);
             });
             // this needs to be flattened
@@ -164,7 +164,10 @@ export default function (_a, requestHelper, host) {
                 if (progress === void 0) { progress = {}; }
                 return __generator(this, function (_b) {
                     switch (_b.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
+                        case 0:
+                            console.log("generated from root method", params);
+                            debugger;
+                            return [4 /*yield*/, fieldsRequest];
                         case 1:
                             fields = _b.sent();
                             newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
@@ -481,31 +484,10 @@ export default function (_a, requestHelper, host) {
         },
         fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
             return __awaiter(this, arguments, void 0, function (params, progress) {
-                var fields, newParams, parentIssues, allChildrenIssues, combined;
                 if (progress === void 0) { progress = function () { }; }
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _a.sent();
-                            newParams = __assign(__assign({}, params), { fields: params.fields.map(function (f) { return fields.nameMap[f] || f; }) });
-                            progress.data = progress.data || {
-                                issuesRequested: 0,
-                                issuesReceived: 0,
-                                changeLogsRequested: 0,
-                                changeLogsReceived: 0
-                            };
-                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress)];
-                        case 2:
-                            parentIssues = _a.sent();
-                            return [4 /*yield*/, this.fetchDeepChildren(newParams, parentIssues, progress)];
-                        case 3:
-                            allChildrenIssues = _a.sent();
-                            combined = parentIssues.concat(allChildrenIssues);
-                            return [2 /*return*/, combined.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
+                    console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
+                    return [2 /*return*/, Promise.resolve(null)];
                 });
             });
         },
@@ -681,3 +663,4 @@ export default function (_a, requestHelper, host) {
     window.jiraHelpers = jiraHelpers;
     return jiraHelpers;
 }
+//# sourceMappingURL=jira-oidc-helpers.js.map

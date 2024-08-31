@@ -146,7 +146,7 @@ export class TimelineReport extends StacheElement {
               <p>Please check your JQL is correct!</p>
             </div>
           {{/}}
-          {{# if(this.cvsIssuesPromise.isPending) }}
+          {{# if(this.derivedIssuesRequestData.issuesPromise.isPending) }}
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
               <p>Loading ...<p>
               {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
@@ -154,10 +154,10 @@ export class TimelineReport extends StacheElement {
               {{/ }}
             </div>
           {{/ if }}
-          {{# if(this.cvsIssuesPromise.isRejected) }}
+          {{# if(this.derivedIssuesRequestData.issuesPromise.isRejected) }}
             <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
               <p>There was an error loading from Jira!</p>
-              <p>Error message: {{this.cvsIssuesPromise.reason.errorMessages[0]}}</p>
+              <p>Error message: {{this.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
               <p>Please check your JQL is correct!</p>
             </div>
           {{/ if }}
@@ -219,46 +219,9 @@ export class TimelineReport extends StacheElement {
           return {timePrior: (MIN / 2) *this.timeSliderValue, text: this.timeSliderValue+" days ago"}
         },
         
-        // REMOVE
-        // breakOutTimings: saveJSONToUrl("breakOutTimings", false, Boolean, booleanParsing),
-        // remove
-        // showReleasesInTimeline: saveJSONToUrl("showReleasesInTimeline", false, Boolean, booleanParsing),
-
-        
-        
-        /*
-        getReleaseValue: {
-            type: Function,
-            default: function (issue) {
-                return issue?.[FIX_VERSIONS_KEY]?.[0]?.name;
-            }
-        },
-        */
 
         showingConfiguration: false,
 
-
-        // [{type: "Epic", calculation: "calculationName"},{type, calculation}]
-        
-        
-
-        // [ {type: "Initiative", types: [{type: "Epic", selected}, ...], calculations: [{calculation: "parentOnly", name, selected}]} ]
-        get cvsIssuesPromise(){
-            if(this.loginComponent.isLoggedIn === false) {
-              return bitoviTrainingData(new Date());
-            } else {
-              if( this.derivedIssuesRequestData?.issuesPromise ) {
-                  return this.derivedIssuesRequestData.issuesPromise.then((issues)=>{
-                      return issues.map(derivedToCSVFormat);
-                  })
-              }
-            }
-        },
-        csvIssues: {
-            async() {
-                return this.cvsIssuesPromise;
-            }
-        },
         get issuesPromise(){
           return this.derivedIssuesRequestData?.issuesPromise;
         },
@@ -291,86 +254,6 @@ export class TimelineReport extends StacheElement {
       return statuses;
     }
     
-    /*
-    get releasesAndInitiativesWithPriorTiming(){
-      console.log("YES I AM CALLED")
-      if(!this.csvIssues || ! this.timingCalculationMethods) {
-        return {releases: [], initiatives: []}
-      }
-
-      // Remove initiatives with certain statuses
-      let initiativeStatusesToRemove = this.statusesToRemove;
-      let initiativeStatusesToShow =  this.statusesToShow;
-
-      const reportedIssueType = this.primaryIssueType === "Release" ? this.secondaryIssueType : this.primaryIssueType;
-      const timingMethods = this.timingCalculationMethods;
-
-
-      if(this.primaryIssueType === "Release") {
-        timingMethods.shift();
-      }
-
-      const optionsForType = {
-        baseIssues: this.csvIssues,
-        priorTime: new Date( new Date().getTime() - this.compareToTime.timePrior),
-        reportedStatuses: function(status){
-          if(initiativeStatusesToShow && initiativeStatusesToShow.length) {
-            if(!initiativeStatusesToShow.includes(status)) {
-              return false;
-            }
-          }
-          return !initiativeStatusesToRemove.includes(status);
-        },
-        getChildWorkBreakdown,
-        reportedIssueType,
-        timingMethods
-      }
-      
-      const {releases, initiatives} = releasesAndInitiativesWithPriorTiming(optionsForType);
-
-      function startBeforeDue(initiative) {
-        return initiative.dateData.rollup.start < initiative.dateData.rollup.due;
-      }
-
-      if(this.hideUnknownInitiatives) {
-        return {
-          initiatives: initiatives.filter( startBeforeDue),
-          releases: releases.map( release => {
-            return {
-              ...release,
-              initiatives: release.dateData.rollup.issues.filter(startBeforeDue)
-            }
-          })
-        };
-      } else {
-        return {releases, initiatives};
-      }
-    }
-    
-    get initiativesWithAStartAndEndDate(){
-      var initiatives =  this.releasesAndInitiativesWithPriorTiming.initiatives;
-
-      if(this.sortByDueDate) {
-        initiatives = initiatives.toSorted( (i1, i2) => i1.dateData.rollup.due - i2.dateData.rollup.due);
-      }
-
-      return initiatives;
-    }
-    get sortedIncompleteReleasesInitiativesAndEpics() {
-        const unsortedReleases = this.releasesAndInitiativesWithPriorTiming.releases;
-        if(this.showOnlySemverReleases) {
-          return semverReleases(unsortedReleases);
-        } else {
-          return sortedByLastEpicReleases(unsortedReleases);
-        }
-    }
-    get releases() {
-        if (!this.csvIssues) {
-            return undefined;
-        }
-        const data = this.sortedIncompleteReleasesInitiativesAndEpics;
-        return data;
-    }*/
     get groupedParentDownHierarchy(){
       if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
         return [];
