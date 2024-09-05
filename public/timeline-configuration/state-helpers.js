@@ -2,7 +2,7 @@ import { ObservableObject, value, Reflect } from "../can.js";
 import { deriveIssue } from "../jira/derived/derive.js";
 import bitoviTrainingData from "../examples/bitovi-training.js";
 import { normalizeIssue } from "../jira/normalized/normalize.js";
-import {nativeFetchJSON} from "../src/jira-oidc-helpers";
+import {nativeFetchJSON} from "../jira-oidc-helpers";
 
 /*
 class IssueData extends ObservableObject {

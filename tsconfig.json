@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "outDir": "./public/dist/src",
-    "rootDir": "./public/src",
+    "outDir": "./public/dist",
+    "rootDir": "./public",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -13,13 +13,19 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "paths": {
-      "undici-types": ["./node_modules/undici/types"]
+      "undici-types": [
+        "./node_modules/undici/types"
+      ]
     },
     "sourceMap": true
   },
-  "include": ["public/src/**/*"],
+  "include": [
+    "public/**/*.ts",
+    "public/jira-oidc-helpers.ts"
+  ],
   "exclude": [
     "node_modules",
-    "src/**/*.js"
+    "public/dist",
+    "**/*.js"
   ]
 }
