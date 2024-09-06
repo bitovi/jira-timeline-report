@@ -1,8 +1,4 @@
-import { JsonResponse } from "./types.js";
-
-export default function responseToJSON(
-  response: Response,
-): Promise<JsonResponse> {
+function responseToText(response: Response): Promise<string> {
   if (!response.ok) {
     return response.json().then((payload) => {
       const err = new Error("HTTP status code: " + response.status);
@@ -11,5 +7,7 @@ export default function responseToJSON(
       throw err;
     });
   }
-  return response.json();
+  return response.text();
 }
+
+export default responseToText;
