@@ -18,6 +18,9 @@
 .color-bg-blocked {
 	background-color: var(--blocked-color);
 }
+.color-bg-warning {
+	background-color: var(--warning-color);
+}
 
 .color-bg-complete {
 	background-color: var(--complete-color);
@@ -68,6 +71,9 @@
 .color-text-blocked {
 	color: var(--blocked-color);
 }
+.color-text-warning {
+	color: var(--warning-color);
+}
 .color-text-ahead {
 	color: var(--ahead-dark-color);
 }
@@ -103,6 +109,14 @@
 	background-color: var(--ahead-dark-color);
 	color: var(--black-color);
 }
+.color-text-and-bg-warning-last-period {
+	background-color: var(--last-period-warning-color);
+	color: var(--black-color);
+}
+.color-text-and-bg-blocked-last-period {
+	background-color: var(--last-period-blocked-color);
+	color: var(--white-color);
+}
 
 .color-text-and-bg-unknown {
 	background-color: var(--unknown-color);
@@ -116,6 +130,10 @@
 .color-text-and-bg-blocked {
 	background-color: var(--blocked-color);
 	color: var(--white-color);
+}
+.color-text-and-bg-warning {
+	background-color: var(--warning-color);
+	color: var(--black-color);
 }
 .color-text-and-bg-ahead {
 	background-color: var(--ahead-color);

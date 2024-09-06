@@ -70,6 +70,9 @@ function calculateStatuses(issueWithPriorTiming, getIssuesByKeys){
     } else if(issueWithPriorTiming.blockedStatusIssues.length) {
         timingData.rollup.status = "blocked"; 
         timingData.rollup.statusFrom = {message: "This or a child is in a blocked status"}
+    } else if(issueWithPriorTiming.warningIssues.length) {
+        timingData.rollup.status = "warning"; 
+        timingData.rollup.statusFrom = {message: "This or a child is in a warning status"}
     }
     else {
         Object.assign(timingData.rollup, timedStatus(timingData.rollup))

@@ -51603,6 +51603,10 @@ function rollupGroupedReportingHierarchy(groupedHierarchy, {
  * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild, createMetadataForHierarchyLevel: CreateMetadataForHierarchyLevel}} options 
  */
 function rollupGroupedHierarchy(groupedHierarchy, options){
+  // we add this children thing (which is dumb) to handle knowing what 
+  // a release's children are ...
+  // there are probably better ways of doing this without having to 
+  // calculate it every time
   const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy);
   return rollupGroupedReportingHierarchy(reportingHierarchy, options)
 }
@@ -52050,9 +52054,7 @@ class GanttGrid extends canStacheElement {
             }));
     }
     classForSpecialStatus(status, issue){
-        if( status === "complete") {
-            return "color-text-"+status;
-        } else if(status === "blocked" ) {
+        if( status === "complete" || status === "blocked" || status === "warning") {
             return "color-text-"+status;
         } else {
             return "";
@@ -52170,6 +52172,16 @@ class GanttGrid extends canStacheElement {
                         Object.assign(behindTime.style, getPositions(timing || {}).style);
                         behindTime.classList.add("color-text-and-bg-ahead-last-period");
                         behindTime.style.zIndex = -1;
+                    }
+                    if(timing && status === "blocked") {
+                        Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.classList.add("color-text-and-bg-blocked-last-period");
+                        behindTime.style.zIndex = 1;
+                    }
+                    if(timing && status === "warning") {
+                        Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.classList.add("color-text-and-bg-warning-last-period");
+                        behindTime.style.zIndex = 1;
                     }
                     return behindTime;
                 }
@@ -56725,6 +56737,35 @@ function rollupChildStatuses(issuesOrReleases, rollupTimingLevelsAndCalculations
 }
 
 /**
+ * 
+ * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+function rollupWarningIssuesForGroupedHierarchy(groupedHierarchy) {
+    return rollupGroupedHierarchy(groupedHierarchy, {
+        createRollupDataFromParentAndChild(issueOrRelease, children, hierarchyLevel, metadata){
+            const warningIssues = children.flat(1);
+            // releases don't have a status
+            const lowerCaseLabels = (issueOrRelease.labels || []).map( label => label.toLowerCase() );
+            if(lowerCaseLabels.some( label => label === "warning")) {
+                warningIssues.push(issueOrRelease);
+            }
+            return warningIssues;
+        }
+    });
+}
+
+// these functions shouldn't be used eventually for performance ...
+function rollupWarningIssues(issuesOrReleases, rollupTimingLevelsAndCalculations){
+    const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+    const rolledUpBlockers = rollupWarningIssuesForGroupedHierarchy(groupedIssues);
+
+    const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, "warningIssues");
+    return zipped.flat();
+}
+
+/**
  * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
  */
 
@@ -56767,7 +56808,8 @@ function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
     const reporting = addReportingHierarchy([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
     const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
     const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
-    const percentComplete = addPercentComplete(rolledUpBlockers, rollupTimingLevelsAndCalculations);
+    const rolledUpWarnings = rollupWarningIssues(rolledUpBlockers, rollupTimingLevelsAndCalculations);
+    const percentComplete = addPercentComplete(rolledUpWarnings, rollupTimingLevelsAndCalculations);
     const childStatuses = rollupChildStatuses(percentComplete, rollupTimingLevelsAndCalculations);
     return addWorkTypeDates(childStatuses, rollupTimingLevelsAndCalculations);
     
@@ -56860,6 +56902,9 @@ function calculateStatuses(issueWithPriorTiming, getIssuesByKeys){
     } else if(issueWithPriorTiming.blockedStatusIssues.length) {
         timingData.rollup.status = "blocked"; 
         timingData.rollup.statusFrom = {message: "This or a child is in a blocked status"};
+    } else if(issueWithPriorTiming.warningIssues.length) {
+        timingData.rollup.status = "warning"; 
+        timingData.rollup.statusFrom = {message: "This or a child is in a warning status"};
     }
     else {
         Object.assign(timingData.rollup, timedStatus(timingData.rollup));
@@ -57045,6 +57090,7 @@ class TimelineReport extends canStacheElement {
                 <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
                 <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
                 <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
+                <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
                 <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
                 <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
               </div>

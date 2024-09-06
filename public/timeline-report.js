@@ -135,6 +135,7 @@ export class TimelineReport extends StacheElement {
                 <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
                 <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
                 <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
+                <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
                 <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
                 <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
               </div>
