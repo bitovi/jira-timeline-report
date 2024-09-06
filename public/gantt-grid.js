@@ -136,9 +136,7 @@ export class GanttGrid extends StacheElement {
             }));
     }
     classForSpecialStatus(status, issue){
-        if( status === "complete") {
-            return "color-text-"+status;
-        } else if(status === "blocked" ) {
+        if( status === "complete" || status === "blocked" || status === "warning") {
             return "color-text-"+status;
         } else {
             return "";
@@ -256,6 +254,16 @@ export class GanttGrid extends StacheElement {
                         Object.assign(behindTime.style, getPositions(timing || {}).style);
                         behindTime.classList.add("color-text-and-bg-ahead-last-period");
                         behindTime.style.zIndex = -1;
+                    }
+                    if(timing && status === "blocked") {
+                        Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.classList.add("color-text-and-bg-blocked-last-period");
+                        behindTime.style.zIndex = 1;
+                    }
+                    if(timing && status === "warning") {
+                        Object.assign(behindTime.style, getPositions(timing || {}).style);
+                        behindTime.classList.add("color-text-and-bg-warning-last-period");
+                        behindTime.style.zIndex = 1;
                     }
                     return behindTime;
                 }

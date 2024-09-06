@@ -9,6 +9,7 @@ import { normalizeReleases } from "../releases/normalize";
 import { percentComplete as rollupPercentComplete, addPercentComplete } from "../rollup/percent-complete/percent-complete";
 import { addReportingHierarchy } from "../rollup/rollup";
 import { rollupChildStatuses } from "../rollup/child-statuses/child-statuses";
+import { rollupWarningIssues } from "../rollup/warning-issues/warning-issues";
 
 /**
  * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
@@ -53,7 +54,8 @@ function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
     const reporting = addReportingHierarchy([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
     const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
     const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
-    const percentComplete = addPercentComplete(rolledUpBlockers, rollupTimingLevelsAndCalculations);
+    const rolledUpWarnings = rollupWarningIssues(rolledUpBlockers, rollupTimingLevelsAndCalculations);
+    const percentComplete = addPercentComplete(rolledUpWarnings, rollupTimingLevelsAndCalculations);
     const childStatuses = rollupChildStatuses(percentComplete, rollupTimingLevelsAndCalculations);
     return addWorkTypeDates(childStatuses, rollupTimingLevelsAndCalculations);
     

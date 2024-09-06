@@ -231,6 +231,10 @@ export function rollupGroupedReportingHierarchy(groupedHierarchy, {
  * @param {{createRollupDataFromParentAndChild: CreateRollupDataFromParentAndChild, createMetadataForHierarchyLevel: CreateMetadataForHierarchyLevel}} options 
  */
 export function rollupGroupedHierarchy(groupedHierarchy, options){
+  // we add this children thing (which is dumb) to handle knowing what 
+  // a release's children are ...
+  // there are probably better ways of doing this without having to 
+  // calculate it every time
   const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy)
   return rollupGroupedReportingHierarchy(reportingHierarchy, options)
 }
