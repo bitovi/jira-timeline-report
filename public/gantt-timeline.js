@@ -4,6 +4,7 @@ import { StacheElement, type, ObservableObject, stache } from "./can.js";
 import { rollupDatesFromRollups } from "./prepare-issues/date-data.js";
 import { getQuartersAndMonths } from "./quarter-timeline.js";
 import { getCalendarHtml } from "./quarter-timeline.js";
+import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
 const DAY = 1000*60*60*24;
 export class GanttTimeline extends StacheElement {
     static view = `
@@ -33,11 +34,11 @@ export class GanttTimeline extends StacheElement {
 
             
             {{# for(row of this.rows) }}
-            <div class="h-10 relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
-                {{# for(item of row.items) }}
-                    {{{item.element}}}
-                {{/ for }}
-            </div>
+                <div class="h-10 relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
+                    {{# for(item of row.items) }}
+                        {{{item.element}}}
+                    {{/ for }}
+                </div>
             {{/ for }}
 
             
@@ -48,7 +49,6 @@ export class GanttTimeline extends StacheElement {
         
         // handle if there are no issues
         const endDates = this.primaryIssuesOrReleases.map((issue)=> {
-            debugger;
             return {dateData: {rollup: {
                 start: issue.rollupDates.due,
                 startFrom: issue.rollupDates.dueTo,
@@ -59,8 +59,6 @@ export class GanttTimeline extends StacheElement {
         const {start, due} = rollupDatesFromRollups(endDates);
         let firstEndDate = new Date( (start || new Date()).getTime() - DAY * 30 ) ;
         
-        
-        
         return getQuartersAndMonths(firstEndDate, due || new Date( new Date().getTime() + DAY*30));
     }
     get todayMarginLeft() {
@@ -69,7 +67,6 @@ export class GanttTimeline extends StacheElement {
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
     get calendarData() {
-        debugger;
         const {start, due} = rollupDatesFromRollups(this.primaryIssuesOrReleases);
         return getCalendarHtml(new Date(), due);
     }
@@ -135,6 +132,38 @@ export class GanttTimeline extends StacheElement {
     lastRowBorder(index) {
         return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
     }
+    miroData(){
+        miroData(this.primaryIssuesOrReleases, this.allIssuesOrReleases);
+    }
+}
+
+function toMiroData({summary, rollupDates, status, team, url, type, key, parent, issue, releases}){
+    return {
+        summary,
+        due: rollupDates.due,
+        status,
+        team: team.name,
+        url,
+        type,
+        key,
+        releases: releases.map( r => r.name)
+    }
+}
+
+function miroData(primaryIssuesOrReleases, allIssuesOrReleases){
+    const getChildren = makeGetChildrenFromReportingIssues(allIssuesOrReleases);
+
+
+
+    const data = primaryIssuesOrReleases.map( (issue)=> {
+        const children = getChildren(issue);
+        return {
+            ...toMiroData(issue),
+            parent: {key: issue.parentKey, summary: issue.issue.fields.Parent.fields.summary},
+            children: children.map(toMiroData)
+        }
+    });
+    console.log(data)
 }
 
 function defaultGetWidth(element){

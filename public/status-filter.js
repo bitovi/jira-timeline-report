@@ -7,7 +7,7 @@ export class StatusFilter extends StacheElement {
     <auto-complete 
         data:from="this.statuses" 
         selected:bind="this.selectedStatuses"
-        inputPlaceholder:raw="Search for statuses"></auto-complete>
+        inputPlaceholder:from="this.inputPlaceholder"></auto-complete>
     
     `;
     static props = {
@@ -16,6 +16,7 @@ export class StatusFilter extends StacheElement {
                 return [];
             }
         },
+        inputPlaceholder: String,
         param: String,
         selectedStatuses: {
             value({resolve, lastSet, listenTo}){
