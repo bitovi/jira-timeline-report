@@ -52,6 +52,9 @@ export class TimelineReport extends StacheElement {
           rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
           configuration:to="this.configuration"
           planningStatuses:to="this.planningStatuses"
+          groupBy:to="this.groupBy"
+          releasesToShow:to="this.releasesToShow"
+          statusesToExclude:to="this.statusesToExclude"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -114,10 +117,13 @@ export class TimelineReport extends StacheElement {
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
                     breakdown:from="eq(this.primaryReportType, 'breakdown')"
                     showPercentComplete:from="this.showPercentComplete"
+                    groupBy:from="this.groupBy"
+                    allDerivedIssues:from="this.derivedIssues"
                     ></gantt-grid>
               {{ else }}
                 <gantt-timeline 
-                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"></gantt-timeline>
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></gantt-timeline>
               {{/ or }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
@@ -230,6 +236,15 @@ export class TimelineReport extends StacheElement {
             async(resolve){
                 this.derivedIssuesRequestData?.issuesPromise.then(resolve)
             }
+        },
+        get filteredDerivedIssues(){
+          if(this.derivedIssues) {
+            if(this.statusesToExclude?.length) {
+              return this.derivedIssues.filter( ({status}) => !this.statusesToExclude.includes(status))
+            } else {
+              return this.derivedIssues 
+            }
+          }
         }
     };
 
@@ -242,11 +257,11 @@ export class TimelineReport extends StacheElement {
 
     // this all the data pre-compiled
     get rolledupAndRolledBackIssuesAndReleases(){
-      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
+      if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
         return [];
       }
       
-      const rolledUp = rollupAndRollback(this.derivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
+      const rolledUp = rollupAndRollback(this.filteredDerivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
         new Date( new Date().getTime() - this.compareToTime.timePrior) );
 
       
@@ -285,14 +300,25 @@ export class TimelineReport extends StacheElement {
         return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
       }
 
+
       // lets remove stuff!
       const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
+        
         // check if it's a planning issues
         if(this?.planningStatuses?.length && 
             this.primaryIssueType !== "Release" &&
             this.planningStatuses.includes(issueOrRelease.status) ) {
           return false;
         }
+
+        if(this.releasesToShow.length) {
+          // O(n^2)
+          const releases = issueOrRelease.releases.map( r => r.name);
+          if(releases.filter( release => this.releasesToShow.includes(release)).length === 0) {
+            return false;
+          }
+        }
+
         if(this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
           return false;
         }

@@ -5,7 +5,7 @@ import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCa
 
 import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData, serverInfoPromise} from "./state-helpers.js";
 
-import { allStatusesSorted } from "../jira/normalized/normalize.js";
+import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 
@@ -160,11 +160,22 @@ export class TimelineConfiguration extends StacheElement {
             <p class="m-0">Hide {{this.primaryIssueType}}s whose timing can't be determined.
             </p>
 
+            <label>Statuses to Exclude</label>
+            <status-filter 
+                statuses:from="this.statuses"
+                param:raw="statusesToExclude"
+                selectedStatuses:to="this.statusesToExclude"
+                inputPlaceholder:raw="Search for statuses"
+                style="max-width: 400px;">
+            </status-filter>
+            <p>Statuses to exclude from all issue types</p>
+
             <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
             <status-filter 
                 statuses:from="this.statuses"
                 param:raw="statusesToShow"
                 selectedStatuses:to="this.statusesToShow"
+                inputPlaceholder:raw="Search for statuses"
                 style="max-width: 400px;">
             </status-filter>
             <p>Only include these statuses in the report</p>
@@ -174,9 +185,20 @@ export class TimelineConfiguration extends StacheElement {
                 statuses:from="this.statuses" 
                 param:raw="statusesToRemove"
                 selectedStatuses:to="this.statusesToRemove"
+                inputPlaceholder:raw="Search for statuses"
                 style="max-width: 400px;">
                 </status-filter>
             <p>Search for statuses to remove from the report</p>
+
+            <label>{{this.firstIssueTypeWithStatuses}} Release to Report</label>
+            <status-filter 
+                statuses:from="this.releases"
+                param:raw="releasesToShow"
+                selectedStatuses:to="this.releasesToShow"
+                inputPlaceholder:raw="Search for releases"
+                style="max-width: 400px;"></status-filter>
+            <p>Search for releases to include in the report</p>
+
 
             {{# eq(this.primaryIssueType, "Release") }}
             <label class=''>Show Only Semver Releases</label>
@@ -190,6 +212,31 @@ export class TimelineConfiguration extends StacheElement {
 
         </div>
         {{/ if }}
+
+        {{# eq(this.primaryReportType, 'start-due') }}
+        <h3 class="h3">Grouping</h3>
+        <div>
+            Group by: 
+            <label class="px-2"><input 
+                type="radio" 
+                name="groupBy"
+                checked:from="eq(this.groupBy, '')"
+                on:change="this.groupBy = ''"
+                /> None</label>
+            <label class="px-2"><input 
+                type="radio" 
+                name="groupBy"
+                checked:from="eq(this.groupBy, 'parent')"
+                on:change="this.groupBy = 'parent'"
+                /> Parent</label>
+            <label class="px-2"><input 
+                type="radio" 
+                name="groupBy"
+                checked:from="eq(this.groupBy, 'team')"
+                on:change="this.groupBy = 'team'"
+                /> Team (or Project)</label>
+        </div>
+        {{/ eq }}
 
         <h3 class="h3">Sorting</h3>
         <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
@@ -251,6 +298,7 @@ export class TimelineConfiguration extends StacheElement {
         primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
         showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
 
+        groupBy: saveJSONToUrl("groupBy", "", String, {parse: x => ""+x, stringify: x => ""+x}),
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
         
@@ -297,6 +345,13 @@ export class TimelineConfiguration extends StacheElement {
         get statuses(){
             if(this.derivedIssues) {
                 return allStatusesSorted(this.derivedIssues)
+            } else {
+                return [];
+            }
+        },
+        get releases(){
+            if(this.derivedIssues) {
+                return allReleasesSorted(this.derivedIssues)
             } else {
                 return [];
             }

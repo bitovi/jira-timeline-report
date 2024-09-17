@@ -49688,6 +49688,9 @@ function getConfidenceDefault({ fields }) {
   function getStatusCategoryDefault$1({fields}){
     return fields?.Status?.statusCategory?.name
   }
+  function getRankDefault({fields}) {
+    return fields.Rank
+  }
   /**
    * @typedef {{
    *   name: String,
@@ -49764,7 +49767,8 @@ function getConfidenceDefault({ fields }) {
     getStatus = getStatusDefault,
     getStatusCategory = getStatusCategoryDefault$1,
     getLabels = getLabelsDefault,
-    getReleases = getReleasesDefault
+    getReleases = getReleasesDefault,
+    getRank = getRankDefault
   } = {}){
       const teamName = getTeamKey(issue),
         velocity = getVelocity(teamName),
@@ -49774,7 +49778,8 @@ function getConfidenceDefault({ fields }) {
         pointsPerDayPerTrack = totalPointsPerDay  / parallelWorkLimit;
 
       const data = {
-        summary: issue.fields.Summary,
+        // .summary can come from a "parent"'s fields
+        summary: issue.fields.Summary || issue.fields.summary,
         key: getIssueKey(issue),
         parentKey: getParentKey(issue),
         confidence: getConfidence(issue),
@@ -49798,6 +49803,7 @@ function getConfidenceDefault({ fields }) {
         statusCategory: getStatusCategory(issue),
         labels: getLabels(issue),
         releases: getReleases(issue),
+        rank: getRank(issue),
         issue
       };
       return data;
@@ -49823,7 +49829,8 @@ function getConfidenceDefault({ fields }) {
   *  statusCategory: null | string,
   *  issue: JiraIssue,
   *  labels: Array<string>,
-  *  releases: Array<NormalizedRelease>
+  *  releases: Array<NormalizedRelease>,
+  *  rank: string | null
   * }} NormalizedIssue
   */
   
@@ -49847,6 +49854,15 @@ function getConfidenceDefault({ fields }) {
 function allStatusesSorted(issues) {
   const statuses = issues.map(issue => issue.status);
   return [...new Set(statuses)].sort();
+}
+  /**
+   * Returns all release names
+   * @param {Array<NormalizedIssue>} issues
+   */
+function allReleasesSorted(issues) {
+
+  const releases = issues.map(issue => issue.releases.map(r => r.name)).flat(1);
+  return [...new Set(releases)].sort();
 }
 
 // this is the types work can be categorized as
@@ -50290,10 +50306,7 @@ function JiraOIDCHelpers (_a, requestHelper, host) {
                 if (progress === void 0) { progress = {}; }
                 return __generator(this, function (_b) {
                     switch (_b.label) {
-                        case 0:
-                            console.log("generated from root method", params);
-                            debugger;
-                            return [4 /*yield*/, fieldsRequest];
+                        case 0: return [4 /*yield*/, fieldsRequest];
                         case 1:
                             fields = _b.sent();
                             newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
@@ -51120,7 +51133,7 @@ class AutoComplete extends canStacheElement {
     }
     suggestItems(searchTerm){
         const matches = this.data.filter( item => {
-            return item.toLowerCase().includes(searchTerm) && !this.selected.includes(item)
+            return item.toLowerCase().includes(searchTerm.toLowerCase()) && !this.selected.includes(item)
         });
         this.showingSuggestions = true;
         // this could be made more efficient, but is probably ok
@@ -51164,7 +51177,7 @@ let StatusFilter$1 = class StatusFilter extends canStacheElement {
     <auto-complete 
         data:from="this.statuses" 
         selected:bind="this.selectedStatuses"
-        inputPlaceholder:raw="Search for statuses"></auto-complete>
+        inputPlaceholder:from="this.inputPlaceholder"></auto-complete>
     
     `;
     static props = {
@@ -51173,6 +51186,7 @@ let StatusFilter$1 = class StatusFilter extends canStacheElement {
                 return [];
             }
         },
+        inputPlaceholder: String,
         param: String,
         selectedStatuses: {
             value({resolve, lastSet, listenTo}){
@@ -51202,6 +51216,7 @@ let StatusFilter$1 = class StatusFilter extends canStacheElement {
 
 customElements.define("status-filter",StatusFilter$1);
 
+// TODO: I think this file is no longer used
 class StatusFilter extends canStacheElement {
     static view = `
     <auto-complete 
@@ -51349,6 +51364,7 @@ function showTooltip(element, issue){
                 href="${issue.url || '' }" target="_blank">${issue.summary}</a>
             <span>❌</span>
         </div>
+        <a class="explore link">Show Children</a>
         ${/*issue.dateData.rollup*/ ""}
         ${ 
             rollupData?.statusData?.warning === true ?
@@ -51359,6 +51375,20 @@ function showTooltip(element, issue){
         ${issue.rollupStatuses.qa ? make(issue, "qa") : ""}
         ${issue.rollupStatuses.uat ?  make(issue, "uat") : ""}
         `;
+
+        //this connects a lot to routing logic ...
+        let exploreUrl = new URL(window.location.href);
+        exploreUrl.searchParams.set('jql', 'issue = '+issue.key);
+        exploreUrl.searchParams.set('loadChildren','true');
+        exploreUrl.searchParams.set('childJQL','');
+        exploreUrl.searchParams.delete('statusesToShow');
+        exploreUrl.searchParams.delete('statusesToRemove');
+        exploreUrl.searchParams.delete('releasesToShow');
+        exploreUrl.searchParams.delete('groupBy');
+        
+        const explore = DOM.querySelector(".explore");
+
+        explore.href = exploreUrl.href;
     } else {
         // "Planning" epics might not have this data
         DOM.innerHTML = `
@@ -51974,7 +52004,7 @@ const percentCompleteTooltip = canStache_5_1_1_canStache(`
 // loops through and creates 
 class GanttGrid extends canStacheElement {
     static view = `
-        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.primaryIssuesOrReleases.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
 
@@ -51988,27 +52018,41 @@ class GanttGrid extends canStacheElement {
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}};">
+            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.gridRowData.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
-            {{# for(issue of this.primaryIssuesOrReleases) }}
-                <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
-                    {{issue.summary}}
-                </div>
-                <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
-                    on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
-                </div>
-                {{ this.getReleaseTimeline(issue, scope.index) }}
+            {{# for(data of this.gridRowData) }}
+                {{# eq(data.type, "issue") }}
+                
+                    <div on:click='this.showTooltip(scope.event,data.issue)' 
+                        class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                        {{data.issue.summary}}
+                    </div>
+                    <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
+                        on:click="this.showPercentCompleteTooltip(scope.event, data.issue)">{{this.getPercentComplete(data.issue)}}
+                    </div>
+                    {{ this.getReleaseTimeline(data.issue, scope.index) }}
+                {{/ eq }}
+
+                {{# eq(data.type, "parent") }}
+                    <div on:click='this.showTooltip(scope.event,data.issue)' 
+                        class='pointer border-y-solid-1px-white text-left font-bold {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                        {{data.issue.summary}}
+                    </div>
+                    <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
+                        on:click="this.showPercentCompleteTooltip(scope.event, data.issue)">
+                    </div>
+                    {{ this.groupElement(data.issue, scope.index) }}
+                {{/ }}
             {{/ for }}
         </div>
     `;
@@ -52082,6 +52126,82 @@ class GanttGrid extends canStacheElement {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
+    }
+    get gridRowData(){
+        if(this.groupBy === "parent") {
+            // get all the parents ...
+            
+            let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.parentKey );
+            let keyToAllIssues = Object.groupBy( this.allDerivedIssues, issue => issue.key );
+
+
+            let parentKeys = Object.keys(obj);
+            let parents = parentKeys.map((parentKey)=> {
+                if(keyToAllIssues[parentKey]) {
+                    return keyToAllIssues[parentKey][0]
+                } else {
+                    return normalizeIssue(obj[parentKey][0].issue.fields.Parent)
+                }
+            });
+            
+            if(parents.length && parents[0].rank) {
+                parents.sort( (p1, p2)=> {
+                    return p1.rank > p2.rank ? 1 : -1;
+                });
+            }
+
+            let parentsAndChildren = parents.map( parent => {
+                return [
+                    {type: "parent", issue: parent}, 
+                    ...obj[parent.key].map( (issue) => {
+                        return {type: "issue", issue}
+                    })
+                ]
+            }).flat(1);
+            return parentsAndChildren;
+        } else if(this.groupBy === "team"){
+            let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.team.name );
+
+            const teams = Object.keys(issuesByTeam).map( teamName => {
+                return {
+                    ...issuesByTeam[teamName][0].team,
+                    summary: teamName
+                };
+            });
+
+            teams.sort( (t1, t2) => {
+                return t1.name > t2.name ? 1 : -1;
+            });
+            return teams.map( team => {
+                return [
+                    {type: "parent", issue: team},
+                    ...issuesByTeam[team.name].map( (issue) => {
+                        return {type: "issue", issue}
+                    })
+                ]
+            }).flat(1);
+
+
+        } else {
+            return this.primaryIssuesOrReleases.map( (issue)=> {
+                return {type: "issue", issue}
+            })
+        }
+    }
+    groupElement(issue, index){
+        const base = {
+            gridColumn: '3 / span '+this.quartersAndMonths.months.length,
+            gridRow: `${index+3}`,
+        };
+
+        const background = document.createElement("div");
+
+        Object.assign(background.style, {
+            ...base,
+            zIndex: 0
+        });
+        background.className = (index % 2 ? "color-bg-gray-20" : "");
+        return canStache_5_1_1_canStache.safeString(background)
     }
     /**
      * 
@@ -52574,11 +52694,11 @@ class GanttTimeline extends canStacheElement {
 
             
             {{# for(row of this.rows) }}
-            <div class="h-10 relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
-                {{# for(item of row.items) }}
-                    {{{item.element}}}
-                {{/ for }}
-            </div>
+                <div class="h-10 relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
+                    {{# for(item of row.items) }}
+                        {{{item.element}}}
+                    {{/ for }}
+                </div>
             {{/ for }}
 
             
@@ -52589,7 +52709,6 @@ class GanttTimeline extends canStacheElement {
         
         // handle if there are no issues
         const endDates = this.primaryIssuesOrReleases.map((issue)=> {
-            debugger;
             return {dateData: {rollup: {
                 start: issue.rollupDates.due,
                 startFrom: issue.rollupDates.dueTo,
@@ -52600,8 +52719,6 @@ class GanttTimeline extends canStacheElement {
         const {start, due} = rollupDatesFromRollups(endDates);
         let firstEndDate = new Date( (start || new Date()).getTime() - DAY * 30 ) ;
         
-        
-        
         return getQuartersAndMonths(firstEndDate, due || new Date( new Date().getTime() + DAY*30));
     }
     get todayMarginLeft() {
@@ -52610,7 +52727,6 @@ class GanttTimeline extends canStacheElement {
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
     get calendarData() {
-        debugger;
         const {start, due} = rollupDatesFromRollups(this.primaryIssuesOrReleases);
         return getCalendarHtml(new Date(), due);
     }
@@ -52676,6 +52792,38 @@ class GanttTimeline extends canStacheElement {
     lastRowBorder(index) {
         return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
     }
+    miroData(){
+        miroData(this.primaryIssuesOrReleases, this.allIssuesOrReleases);
+    }
+}
+
+function toMiroData({summary, rollupDates, status, team, url, type, key, parent, issue, releases}){
+    return {
+        summary,
+        due: rollupDates.due,
+        status,
+        team: team.name,
+        url,
+        type,
+        key,
+        releases: releases.map( r => r.name)
+    }
+}
+
+function miroData(primaryIssuesOrReleases, allIssuesOrReleases){
+    const getChildren = makeGetChildrenFromReportingIssues(allIssuesOrReleases);
+
+
+
+    const data = primaryIssuesOrReleases.map( (issue)=> {
+        const children = getChildren(issue);
+        return {
+            ...toMiroData(issue),
+            parent: {key: issue.parentKey, summary: issue.issue.fields.Parent.fields.summary},
+            children: children.map(toMiroData)
+        }
+    });
+    console.log(data);
 }
 
 function defaultGetWidth(element){
@@ -52942,7 +53090,6 @@ customElements.define("status-report",StatusReport);
 function deriveIssue(issue, options){
     const timing = deriveWorkTiming(issue, options);
     return {
-
         derivedTiming: timing,
         derivedStatus: getWorkStatus(issue, options),
         ...issue
@@ -53274,11 +53421,22 @@ class TimelineConfiguration extends canStacheElement {
             <p class="m-0">Hide {{this.primaryIssueType}}s whose timing can't be determined.
             </p>
 
+            <label>Statuses to Exclude</label>
+            <status-filter 
+                statuses:from="this.statuses"
+                param:raw="statusesToExclude"
+                selectedStatuses:to="this.statusesToExclude"
+                inputPlaceholder:raw="Search for statuses"
+                style="max-width: 400px;">
+            </status-filter>
+            <p>Statuses to exclude from all issue types</p>
+
             <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
             <status-filter 
                 statuses:from="this.statuses"
                 param:raw="statusesToShow"
                 selectedStatuses:to="this.statusesToShow"
+                inputPlaceholder:raw="Search for statuses"
                 style="max-width: 400px;">
             </status-filter>
             <p>Only include these statuses in the report</p>
@@ -53288,9 +53446,20 @@ class TimelineConfiguration extends canStacheElement {
                 statuses:from="this.statuses" 
                 param:raw="statusesToRemove"
                 selectedStatuses:to="this.statusesToRemove"
+                inputPlaceholder:raw="Search for statuses"
                 style="max-width: 400px;">
                 </status-filter>
             <p>Search for statuses to remove from the report</p>
+
+            <label>{{this.firstIssueTypeWithStatuses}} Release to Report</label>
+            <status-filter 
+                statuses:from="this.releases"
+                param:raw="releasesToShow"
+                selectedStatuses:to="this.releasesToShow"
+                inputPlaceholder:raw="Search for releases"
+                style="max-width: 400px;"></status-filter>
+            <p>Search for releases to include in the report</p>
+
 
             {{# eq(this.primaryIssueType, "Release") }}
             <label class=''>Show Only Semver Releases</label>
@@ -53304,6 +53473,31 @@ class TimelineConfiguration extends canStacheElement {
 
         </div>
         {{/ if }}
+
+        {{# eq(this.primaryReportType, 'start-due') }}
+        <h3 class="h3">Grouping</h3>
+        <div>
+            Group by: 
+            <label class="px-2"><input 
+                type="radio" 
+                name="groupBy"
+                checked:from="eq(this.groupBy, '')"
+                on:change="this.groupBy = ''"
+                /> None</label>
+            <label class="px-2"><input 
+                type="radio" 
+                name="groupBy"
+                checked:from="eq(this.groupBy, 'parent')"
+                on:change="this.groupBy = 'parent'"
+                /> Parent</label>
+            <label class="px-2"><input 
+                type="radio" 
+                name="groupBy"
+                checked:from="eq(this.groupBy, 'team')"
+                on:change="this.groupBy = 'team'"
+                /> Team (or Project)</label>
+        </div>
+        {{/ eq }}
 
         <h3 class="h3">Sorting</h3>
         <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
@@ -53365,6 +53559,7 @@ class TimelineConfiguration extends canStacheElement {
         primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
         showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
 
+        groupBy: saveJSONToUrl("groupBy", "", String, {parse: x => ""+x, stringify: x => ""+x}),
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
         
@@ -53411,6 +53606,13 @@ class TimelineConfiguration extends canStacheElement {
         get statuses(){
             if(this.derivedIssues) {
                 return allStatusesSorted(this.derivedIssues)
+            } else {
+                return [];
+            }
+        },
+        get releases(){
+            if(this.derivedIssues) {
+                return allReleasesSorted(this.derivedIssues)
             } else {
                 return [];
             }
@@ -57007,6 +57209,9 @@ class TimelineReport extends canStacheElement {
           rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
           configuration:to="this.configuration"
           planningStatuses:to="this.planningStatuses"
+          groupBy:to="this.groupBy"
+          releasesToShow:to="this.releasesToShow"
+          statusesToExclude:to="this.statusesToExclude"
           ></timeline-configuration>
 
         <div on:click="this.toggleConfiguration()"
@@ -57069,10 +57274,13 @@ class TimelineReport extends canStacheElement {
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
                     breakdown:from="eq(this.primaryReportType, 'breakdown')"
                     showPercentComplete:from="this.showPercentComplete"
+                    groupBy:from="this.groupBy"
+                    allDerivedIssues:from="this.derivedIssues"
                     ></gantt-grid>
               {{ else }}
                 <gantt-timeline 
-                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"></gantt-timeline>
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></gantt-timeline>
               {{/ or }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
@@ -57183,6 +57391,15 @@ class TimelineReport extends canStacheElement {
             async(resolve){
                 this.derivedIssuesRequestData?.issuesPromise.then(resolve);
             }
+        },
+        get filteredDerivedIssues(){
+          if(this.derivedIssues) {
+            if(this.statusesToExclude?.length) {
+              return this.derivedIssues.filter( ({status}) => !this.statusesToExclude.includes(status))
+            } else {
+              return this.derivedIssues 
+            }
+          }
         }
     };
 
@@ -57195,11 +57412,11 @@ class TimelineReport extends canStacheElement {
 
     // this all the data pre-compiled
     get rolledupAndRolledBackIssuesAndReleases(){
-      if(!this.derivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
+      if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
         return [];
       }
       
-      const rolledUp = rollupAndRollback(this.derivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
+      const rolledUp = rollupAndRollback(this.filteredDerivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
         new Date( new Date().getTime() - this.compareToTime.timePrior) );
 
       
@@ -57238,14 +57455,25 @@ class TimelineReport extends canStacheElement {
         return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
       }
 
+
       // lets remove stuff!
       const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
+        
         // check if it's a planning issues
         if(this?.planningStatuses?.length && 
             this.primaryIssueType !== "Release" &&
             this.planningStatuses.includes(issueOrRelease.status) ) {
           return false;
         }
+
+        if(this.releasesToShow.length) {
+          // O(n^2)
+          const releases = issueOrRelease.releases.map( r => r.name);
+          if(releases.filter( release => this.releasesToShow.includes(release)).length === 0) {
+            return false;
+          }
+        }
+
         if(this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
           return false;
         }

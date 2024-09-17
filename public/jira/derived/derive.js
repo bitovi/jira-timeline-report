@@ -17,7 +17,6 @@ import { normalizeIssue } from "../normalized/normalize.js";
 export function deriveIssue(issue, options){
     const timing = deriveWorkTiming(issue, options);
     return {
-
         derivedTiming: timing,
         derivedStatus: getWorkStatus(issue, options),
         ...issue

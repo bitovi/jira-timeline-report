@@ -141,6 +141,7 @@ export function showTooltip(element, issue){
                 href="${issue.url || '' }" target="_blank">${issue.summary}</a>
             <span>❌</span>
         </div>
+        <a class="explore link">Show Children</a>
         ${/*issue.dateData.rollup*/ false ? makePartDetails(issue.dateData.rollup, "rollup") :""}
         ${ 
             rollupData?.statusData?.warning === true ?
@@ -150,7 +151,21 @@ export function showTooltip(element, issue){
         ${ issue.rollupStatuses.dev ? make(issue, "dev") :""}
         ${issue.rollupStatuses.qa ? make(issue, "qa") : ""}
         ${issue.rollupStatuses.uat ?  make(issue, "uat") : ""}
-        `
+        `;
+
+        //this connects a lot to routing logic ...
+        let exploreUrl = new URL(window.location.href);
+        exploreUrl.searchParams.set('jql', 'issue = '+issue.key);
+        exploreUrl.searchParams.set('loadChildren','true');
+        exploreUrl.searchParams.set('childJQL','');
+        exploreUrl.searchParams.delete('statusesToShow');
+        exploreUrl.searchParams.delete('statusesToRemove');
+        exploreUrl.searchParams.delete('releasesToShow');
+        exploreUrl.searchParams.delete('groupBy');
+        
+        const explore = DOM.querySelector(".explore");
+
+        explore.href = exploreUrl.href;
     } else {
         // "Planning" epics might not have this data
         DOM.innerHTML = `
