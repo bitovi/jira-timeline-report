@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: prod
+    steps:
       - id: destroy
         name: Destroy instance
         uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.1
