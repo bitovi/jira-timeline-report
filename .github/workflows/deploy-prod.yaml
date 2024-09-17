@@ -25,9 +25,8 @@ jobs:
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - id: deploy
-        name: Deploy instance
+        name: Deploy Prod
         if: ${{ github.ref_name == steps.latest_tag.outputs.latest_tag }}
-        name: Deploy
         uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.1
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
