@@ -1,8 +1,7 @@
-name: Deploy Staging
+name: Destroy main (Manual)
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -35,4 +34,4 @@ jobs:
         aws_ec2_instance_root_vol_size: 16
 
         # Provide a secret called `DOT_ENV` to append environment variables to the .env file
-        env_ghs: ${{ secrets.DOT_ENV_MAIN }}
+        env_ghs: ${{ secrets.DOT_ENV }}
