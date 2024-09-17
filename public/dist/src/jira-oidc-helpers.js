@@ -164,10 +164,7 @@ export default function (_a, requestHelper, host) {
                 if (progress === void 0) { progress = {}; }
                 return __generator(this, function (_b) {
                     switch (_b.label) {
-                        case 0:
-                            console.log("generated from root method", params);
-                            debugger;
-                            return [4 /*yield*/, fieldsRequest];
+                        case 0: return [4 /*yield*/, fieldsRequest];
                         case 1:
                             fields = _b.sent();
                             newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
