@@ -135,6 +135,9 @@ export function getConfidenceDefault({ fields }) {
   export function getStatusCategoryDefault({fields}){
     return fields?.Status?.statusCategory?.name
   }
+  export function getRankDefault({fields}) {
+    return fields.Rank
+  }
   /**
    * @typedef {{
    *   name: String,
@@ -211,7 +214,8 @@ export function getConfidenceDefault({ fields }) {
     getStatus = getStatusDefault,
     getStatusCategory = getStatusCategoryDefault,
     getLabels = getLabelsDefault,
-    getReleases = getReleasesDefault
+    getReleases = getReleasesDefault,
+    getRank = getRankDefault
   } = {}){
       const teamName = getTeamKey(issue),
         velocity = getVelocity(teamName),
@@ -221,7 +225,8 @@ export function getConfidenceDefault({ fields }) {
         pointsPerDayPerTrack = totalPointsPerDay  / parallelWorkLimit;
 
       const data = {
-        summary: issue.fields.Summary,
+        // .summary can come from a "parent"'s fields
+        summary: issue.fields.Summary || issue.fields.summary,
         key: getIssueKey(issue),
         parentKey: getParentKey(issue),
         confidence: getConfidence(issue),
@@ -245,6 +250,7 @@ export function getConfidenceDefault({ fields }) {
         statusCategory: getStatusCategory(issue),
         labels: getLabels(issue),
         releases: getReleases(issue),
+        rank: getRank(issue),
         issue
       };
       return data;
@@ -270,7 +276,8 @@ export function getConfidenceDefault({ fields }) {
   *  statusCategory: null | string,
   *  issue: JiraIssue,
   *  labels: Array<string>,
-  *  releases: Array<NormalizedRelease>
+  *  releases: Array<NormalizedRelease>,
+  *  rank: string | null
   * }} NormalizedIssue
   */
   
@@ -294,4 +301,13 @@ export function getConfidenceDefault({ fields }) {
 export function allStatusesSorted(issues) {
   const statuses = issues.map(issue => issue.status);
   return [...new Set(statuses)].sort();
+}
+  /**
+   * Returns all release names
+   * @param {Array<NormalizedIssue>} issues
+   */
+export function allReleasesSorted(issues) {
+
+  const releases = issues.map(issue => issue.releases.map(r => r.name)).flat(1);
+  return [...new Set(releases)].sort();
 }

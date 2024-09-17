@@ -5,6 +5,7 @@ import { mergeStartAndDueData } from "./jira/rollup/dates/dates.js";
 
 import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
 import { workTypes } from "./jira/derived/work-status/work-status.js";
+import { normalizeIssue } from "./jira/normalized/normalize.js";
 
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
@@ -56,7 +57,7 @@ import { getQuartersAndMonths } from "./quarter-timeline.js";
 // loops through and creates 
 export class GanttGrid extends StacheElement {
     static view = `
-        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.primaryIssuesOrReleases.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
 
@@ -70,27 +71,41 @@ export class GanttGrid extends StacheElement {
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}};">
+            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.primaryIssuesOrReleases.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.gridRowData.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
-            {{# for(issue of this.primaryIssuesOrReleases) }}
-                <div on:click='this.showTooltip(scope.event, issue)' 
-                    class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
-                    {{issue.summary}}
-                </div>
-                <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
-                    on:click="this.showPercentCompleteTooltip(scope.event, issue)">{{this.getPercentComplete(issue)}}
-                </div>
-                {{ this.getReleaseTimeline(issue, scope.index) }}
+            {{# for(data of this.gridRowData) }}
+                {{# eq(data.type, "issue") }}
+                
+                    <div on:click='this.showTooltip(scope.event,data.issue)' 
+                        class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                        {{data.issue.summary}}
+                    </div>
+                    <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
+                        on:click="this.showPercentCompleteTooltip(scope.event, data.issue)">{{this.getPercentComplete(data.issue)}}
+                    </div>
+                    {{ this.getReleaseTimeline(data.issue, scope.index) }}
+                {{/ eq }}
+
+                {{# eq(data.type, "parent") }}
+                    <div on:click='this.showTooltip(scope.event,data.issue)' 
+                        class='pointer border-y-solid-1px-white text-left font-bold {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                        {{data.issue.summary}}
+                    </div>
+                    <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
+                        on:click="this.showPercentCompleteTooltip(scope.event, data.issue)">
+                    </div>
+                    {{ this.groupElement(data.issue, scope.index) }}
+                {{/ }}
             {{/ for }}
         </div>
     `;
@@ -164,6 +179,82 @@ export class GanttGrid extends StacheElement {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
+    }
+    get gridRowData(){
+        if(this.groupBy === "parent") {
+            // get all the parents ...
+            
+            let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.parentKey );
+            let keyToAllIssues = Object.groupBy( this.allDerivedIssues, issue => issue.key );
+
+
+            let parentKeys = Object.keys(obj);
+            let parents = parentKeys.map((parentKey)=> {
+                if(keyToAllIssues[parentKey]) {
+                    return keyToAllIssues[parentKey][0]
+                } else {
+                    return normalizeIssue(obj[parentKey][0].issue.fields.Parent)
+                }
+            });
+            
+            if(parents.length && parents[0].rank) {
+                parents.sort( (p1, p2)=> {
+                    return p1.rank > p2.rank ? 1 : -1;
+                });
+            }
+
+            let parentsAndChildren = parents.map( parent => {
+                return [
+                    {type: "parent", issue: parent}, 
+                    ...obj[parent.key].map( (issue) => {
+                        return {type: "issue", issue}
+                    })
+                ]
+            }).flat(1);
+            return parentsAndChildren;
+        } else if(this.groupBy === "team"){
+            let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.team.name );
+
+            const teams = Object.keys(issuesByTeam).map( teamName => {
+                return {
+                    ...issuesByTeam[teamName][0].team,
+                    summary: teamName
+                };
+            })
+
+            teams.sort( (t1, t2) => {
+                return t1.name > t2.name ? 1 : -1;
+            });
+            return teams.map( team => {
+                return [
+                    {type: "parent", issue: team},
+                    ...issuesByTeam[team.name].map( (issue) => {
+                        return {type: "issue", issue}
+                    })
+                ]
+            }).flat(1);
+
+
+        } else {
+            return this.primaryIssuesOrReleases.map( (issue)=> {
+                return {type: "issue", issue}
+            })
+        }
+    }
+    groupElement(issue, index){
+        const base = {
+            gridColumn: '3 / span '+this.quartersAndMonths.months.length,
+            gridRow: `${index+3}`,
+        };
+
+        const background = document.createElement("div");
+
+        Object.assign(background.style, {
+            ...base,
+            zIndex: 0
+        });
+        background.className = (index % 2 ? "color-bg-gray-20" : "")
+        return stache.safeString(background)
     }
     /**
      * 

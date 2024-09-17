@@ -162,9 +162,6 @@ export default function (
 		}
 	
 		return async function fetchAllDeepChildren(params: Params, progress: Progress = {} as any){
-			console.log("generated from root method", params);
-			debugger;
-
 			const fields = await fieldsRequest;
 			const newParams = {
 				...params,
