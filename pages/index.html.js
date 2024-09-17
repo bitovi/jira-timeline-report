@@ -10,6 +10,8 @@ module.exports = function (env, mainFileRoute) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>Jira Timeline Report</title>
 
+			<meta property="testing" content="Releases">
+
 			<meta property="og:title" content="Jira Timeline Report">
 			<meta property="og:type" content="website" />
 			<meta property="og:description" content="A Jira to PowerPoint slide generator for high-level status reporting.">
