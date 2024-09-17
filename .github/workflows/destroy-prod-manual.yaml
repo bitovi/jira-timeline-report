@@ -1,4 +1,4 @@
-name: Destroy prod (Manual)
+name: Destroy production (Manual)
 
 on:
   workflow_dispatch:
