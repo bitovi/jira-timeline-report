@@ -50,22 +50,24 @@ interface IssueFields {
   Parent: JiraIssue;
   Confidence: number;
   "Due date": string;
-  "Issue Type": { hierarchyLevel: number; name: string };
+  // TODO
+  "Issue Type": string | { hierarchyLevel: number; name: string };
   // TODO: ask @Justin about parent link in getParentKey
-  "Parent Link": { data: { key: string } | string };
+  "Parent Link": string | { data: { key: string } };
   "Project Key": string;
   "Start date": string;
-  Status: { name: string; statusCategory: { name: string } };
+  // TODO
+  Status: string | { name: string; statusCategory: { name: string } };
   "Story points": number;
   "Story points median": number;
   "Story points confidence": number;
   Summary: string;
   // todo
-  Sprint: Array<{ startDate: string; endDate: string; name: string }>;
+  Sprint: null | Array<{ startDate: string; endDate: string; name: string }>;
   // todo
   Labels: Array<string>;
   // todo
-  Rank: unknown;
+  Rank: string;
   // todo
   "Fix versions": FixVersion | FixVersion[];
 }
@@ -102,9 +104,11 @@ function getDaysPerSprintDefault(teamKey: string) {
 
 export const getDueDateDefault = createIssueFieldGetter("Due date");
 
-export function getHierarchyLevelDefault({
-  fields,
-}: Pick<JiraIssue, "fields">): IssueFields["Issue Type"]["hierarchyLevel"] | null {
+export function getHierarchyLevelDefault({ fields }: Pick<JiraIssue, "fields">): number | null {
+  if (typeof fields["Issue Type"] === "string") {
+    return null;
+  }
+
   return fields["Issue Type"]?.hierarchyLevel || null;
 }
 
@@ -117,8 +121,8 @@ export function getParentKeyDefault({ fields }: Pick<JiraIssue, "fields">): stri
     return fields.Parent.key;
   }
 
-  if (typeof fields["Parent Link"]?.data === "string") {
-    return fields["Parent Link"].data;
+  if (typeof fields["Parent Link"] === "string") {
+    return fields["Parent Link"];
   }
 
   // this last part is probably a mistake ...
@@ -140,6 +144,10 @@ export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): string {
 }
 
 export function getTypeDefault({ fields }: Pick<JiraIssue, "fields">): string | null {
+  if (typeof fields["Issue Type"] === "string") {
+    return fields["Issue Type"];
+  }
+
   return fields["Issue Type"]?.name || null;
 }
 
@@ -167,6 +175,10 @@ export function getSprintsDefault({ fields }: Pick<JiraIssue, "fields">): Normal
 }
 
 export function getStatusDefault({ fields }: Pick<JiraIssue, "fields">): string | null {
+  if (typeof fields?.Status === "string") {
+    return fields.Status;
+  }
+
   return fields?.Status?.name || null;
 }
 
@@ -175,6 +187,10 @@ export function getLabelsDefault({ fields }: Pick<JiraIssue, "fields">) {
 }
 
 export function getStatusCategoryDefault({ fields }: Pick<JiraIssue, "fields">): string | null {
+  if (typeof fields?.Status === "string") {
+    return null;
+  }
+
   return fields?.Status?.statusCategory?.name || null;
 }
 
@@ -288,7 +304,6 @@ export function normalizeIssue(
     statusCategory: getStatusCategory(issue),
     labels: getLabels(issue),
     releases: getReleases(issue),
-    // @ts-expect-error
     rank: getRank(issue),
     issue,
   };

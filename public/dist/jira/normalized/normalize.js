@@ -1,3 +1,28 @@
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 import { parseDateIntoLocalTimezone } from "../../date-helpers.js";
 import { parseDateISOString } from "../../date-helpers.js";
 function createIssueFieldGetter(field, defaultValue) {
@@ -163,5 +188,13 @@ export function normalizeIssue(issue, _a) {
         rank: getRank(issue),
         issue: issue,
     };
+}
+export function allStatusesSorted(issues) {
+    var statuses = issues.map(function (issue) { return issue.status; });
+    return __spreadArray([], __read(new Set(statuses)), false).sort();
+}
+export function allReleasesSorted(issues) {
+    var releases = issues.map(function (issue) { return issue.releases.map(function (r) { return r.name; }); }).flat(1);
+    return __spreadArray([], __read(new Set(releases)), false).sort();
 }
 //# sourceMappingURL=normalize.js.map
