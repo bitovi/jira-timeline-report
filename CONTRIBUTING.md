@@ -33,20 +33,7 @@ Note: All environment variables that start with `CLIENT` will be sent to the cli
 Open the terminal and run
 
 ```sh
-npm run fe:js:build
-```
-
-Open a second terminal and run
-
-```sh
-npm run fe:css:build
-```
-
-
-Open a third terminal and run
-
-```sh
-npm run start-local
+npm run dev
 ```
 
 Open your browser and navigate to http://localhost:3000/ to view the minified version of the app.
