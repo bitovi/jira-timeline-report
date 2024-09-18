@@ -42,6 +42,9 @@ export var getDueDateDefault = createIssueFieldGetter("Due date");
 export function getHierarchyLevelDefault(_a) {
     var _b;
     var fields = _a.fields;
+    if (typeof fields["Issue Type"] === "string") {
+        return null;
+    }
     return ((_b = fields["Issue Type"]) === null || _b === void 0 ? void 0 : _b.hierarchyLevel) || null;
 }
 export function getIssueKeyDefault(_a) {
@@ -49,16 +52,16 @@ export function getIssueKeyDefault(_a) {
     return key;
 }
 export function getParentKeyDefault(_a) {
-    var _b, _c, _d, _e;
+    var _b, _c, _d;
     var fields = _a.fields;
     if ((_b = fields === null || fields === void 0 ? void 0 : fields.Parent) === null || _b === void 0 ? void 0 : _b.key) {
         return fields.Parent.key;
     }
-    if (typeof ((_c = fields["Parent Link"]) === null || _c === void 0 ? void 0 : _c.data) === "string") {
-        return fields["Parent Link"].data;
+    if (typeof fields["Parent Link"] === "string") {
+        return fields["Parent Link"];
     }
     // this last part is probably a mistake ...
-    return ((_e = (_d = fields["Parent Link"]) === null || _d === void 0 ? void 0 : _d.data) === null || _e === void 0 ? void 0 : _e.key) || null;
+    return ((_d = (_c = fields["Parent Link"]) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.key) || null;
 }
 export var getStartDateDefault = createIssueFieldGetter("Start date");
 export var getStoryPointsDefault = createIssueFieldGetter("Story points");
@@ -74,6 +77,9 @@ export function getTeamKeyDefault(_a) {
 export function getTypeDefault(_a) {
     var _b;
     var fields = _a.fields;
+    if (typeof fields["Issue Type"] === "string") {
+        return fields["Issue Type"];
+    }
     return ((_b = fields["Issue Type"]) === null || _b === void 0 ? void 0 : _b.name) || null;
 }
 export function getVelocityDefault(teamKey) {
@@ -99,6 +105,9 @@ export function getSprintsDefault(_a) {
 export function getStatusDefault(_a) {
     var _b;
     var fields = _a.fields;
+    if (typeof (fields === null || fields === void 0 ? void 0 : fields.Status) === "string") {
+        return fields.Status;
+    }
     return ((_b = fields === null || fields === void 0 ? void 0 : fields.Status) === null || _b === void 0 ? void 0 : _b.name) || null;
 }
 export function getLabelsDefault(_a) {
@@ -108,6 +117,9 @@ export function getLabelsDefault(_a) {
 export function getStatusCategoryDefault(_a) {
     var _b, _c;
     var fields = _a.fields;
+    if (typeof (fields === null || fields === void 0 ? void 0 : fields.Status) === "string") {
+        return null;
+    }
     return ((_c = (_b = fields === null || fields === void 0 ? void 0 : fields.Status) === null || _b === void 0 ? void 0 : _b.statusCategory) === null || _c === void 0 ? void 0 : _c.name) || null;
 }
 export var getRankDefault = createIssueFieldGetter("Rank");
@@ -184,7 +196,6 @@ export function normalizeIssue(issue, _a) {
         statusCategory: getStatusCategory(issue),
         labels: getLabels(issue),
         releases: getReleases(issue),
-        // @ts-expect-error
         rank: getRank(issue),
         issue: issue,
     };
