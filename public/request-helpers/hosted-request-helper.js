@@ -1,4 +1,4 @@
-import {responseToJSON} from "../src/shared/response-to-json";
+import {responseToJSON} from "../shared/response-to-json";
 
 function fetchFromLocalStorage(key) {
   return window.localStorage.getItem(key);
