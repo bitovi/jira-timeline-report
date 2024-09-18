@@ -126,6 +126,7 @@ export function getConfidenceDefault({ fields }) {
       return  null;
     }
   }
+  
   export function getStatusDefault({fields}) {
     return fields?.Status?.name;
   }
