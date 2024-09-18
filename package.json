@@ -4,12 +4,12 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "dev":"concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:fe:css:build:watch\" \"npm:fe:js:build:watch\" \"npm:start-local\"",
+    "dev":"concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:fe:css:build\" \"npm:fe:js:build\" \"npm:start-local\"",
     "start-local": "node server/server.js",
-    "fe:css:build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify",
-    "fe:css:build:watch": "npm run fe:css:build -- --watch",
-    "fe:js:build": "rollup -c --sourcemap",
-    "fe:js:build:watch": "npm run fe:js:build -- -w",
+    "fe:css:build:only": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify",
+    "fe:css:build": "npm run fe:css:build:only -- --watch",
+    "fe:js:build:only": "rollup -c --sourcemap",
+    "fe:js:build": "npm run fe:js:build:only -- -w",
     "test": "./node_modules/.bin/vitest",
     "prepare": "husky"
   },
