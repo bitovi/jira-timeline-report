@@ -1,10 +1,62 @@
-import type { JiraIssue } from "./defaults";
-
 import { parseDateIntoLocalTimezone } from "../../date-helpers.js";
 
 import * as defaults from "./defaults";
 
-interface NormalizedIssue {
+export interface BaseFields {
+  Parent: JiraIssue;
+  Confidence?: number;
+  "Due date"?: string | null;
+  "Project Key"?: string;
+  "Start date"?: string | null;
+  "Story points"?: number | null;
+  "Story points median"?: number;
+  "Story points confidence"?: number | null;
+  Summary: string;
+  Sprint: null | Array<{ startDate: string; endDate: string; name: string }>;
+  Labels: Array<string>;
+  Rank?: string;
+  [Key: string]: unknown;
+}
+
+interface LegacyFields extends BaseFields {
+  "Issue Type": string;
+  "Parent Link"?: string;
+  Status: string;
+  "Fix versions": string;
+}
+
+export interface IssueFields extends BaseFields {
+  "Issue Type": { hierarchyLevel: number; name: string };
+  "Parent Link"?: { data: { key: string } };
+  Status: { name: string; statusCategory: { name: string } };
+  "Fix versions": Array<{
+    name: string;
+    id: string;
+  }>;
+}
+
+export interface JiraIssue {
+  fields: IssueFields | LegacyFields;
+  id: string;
+  key: string;
+}
+
+interface NormalizedRelease {
+  name: string;
+  id: string;
+  // todo
+  type: "Release";
+  key: string;
+  summary: string;
+}
+
+interface NormalizedSprint {
+  name: string;
+  startDate: Date;
+  endDate: Date;
+}
+
+export interface NormalizedIssue {
   key: string;
   summary: string;
   parentKey: string | null;
@@ -98,12 +150,10 @@ export function normalizeIssue(
     parentKey: getParentKey(issue),
     confidence: getConfidence(issue),
     dueDate: parseDateIntoLocalTimezone(getDueDate(issue)),
-    // @ts-expect-error
     hierarchyLevel: getHierarchyLevel(issue),
     startDate: parseDateIntoLocalTimezone(getStartDate(issue)),
     storyPoints: getStoryPoints(issue),
     storyPointsMedian: getStoryPointsMedian(issue),
-    // @ts-expect-error
     type: getType(issue),
     sprints: getSprints(issue),
     team: {

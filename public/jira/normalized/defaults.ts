@@ -1,91 +1,46 @@
+import type { NormalizedIssue, JiraIssue } from "./normalize";
 import { parseDateISOString } from "../../date-helpers.js";
 
-interface NormalizedRelease {
-  name: string;
-  id: string;
-  // todo
-  type: "Release";
-  key: string;
-  summary: string;
-}
-
-interface NormalizedSprint {
-  name: string;
-  startDate: Date;
-  endDate: Date;
-}
-
-interface FixVersion {
-  name: string;
-  id: string;
-}
-
-export interface IssueFields {
-  Parent: JiraIssue;
-  Confidence: number;
-  "Due date": string;
-  // TODO
-  "Issue Type": string | { hierarchyLevel: number; name: string };
-  // TODO: ask @Justin about parent link in getParentKey
-  "Parent Link": string | { data: { key: string } };
-  "Project Key": string;
-  "Start date": string;
-  // TODO
-  Status: string | { name: string; statusCategory: { name: string } };
-  "Story points": number;
-  "Story points median": number;
-  "Story points confidence": number;
-  Summary: string;
-  // todo
-  Sprint: null | Array<{ startDate: string; endDate: string; name: string }>;
-  // todo
-  Labels: Array<string>;
-  // todo
-  Rank: string;
-  // todo
-  "Fix versions": FixVersion | FixVersion[];
-}
-
-export interface JiraIssue {
-  fields: Partial<IssueFields>;
-  id: string;
-  key: string;
-}
-
 type Fields = Pick<JiraIssue, "fields">;
+type Key = Pick<JiraIssue, "key">;
 
-function createIssueFieldGetter<TField extends keyof IssueFields>(
-  field: TField,
-  defaultValue?: IssueFields[TField]
-): (issue: Fields) => IssueFields[TField] | null {
-  return function ({ fields }) {
-    return fields[field] || defaultValue || null;
-  };
+export function getDueDateDefault({ fields }: Fields): string | null {
+  return fields["Due date"] || null;
 }
 
-export const getDueDateDefault = createIssueFieldGetter("Due date");
-export const getStartDateDefault = createIssueFieldGetter("Start date");
-export const getStoryPointsDefault = createIssueFieldGetter("Story points");
-export const getStoryPointsMedianDefault = createIssueFieldGetter("Story points median");
-export const getRankDefault = createIssueFieldGetter("Rank");
+export function getStartDateDefault({ fields }: Fields): string | null {
+  return fields["Start date"] || null;
+}
 
-export function getConfidenceDefault({ fields }: Fields): IssueFields["Story points confidence" | "Confidence"] | null {
+export function getStoryPointsDefault({ fields }: Fields): NormalizedIssue["storyPoints"] {
+  return fields["Story points"] || null;
+}
+
+export function getStoryPointsMedianDefault({ fields }: Fields): NormalizedIssue["storyPointsMedian"] {
+  return fields["Story points median"] || null;
+}
+
+export function getRankDefault({ fields }: Fields): NormalizedIssue["rank"] {
+  return fields?.Rank || null;
+}
+
+export function getConfidenceDefault({ fields }: Fields): NormalizedIssue["confidence"] {
   return fields["Story points confidence"] || fields?.Confidence || null;
 }
 
-export function getHierarchyLevelDefault({ fields }: Fields): number | null {
+export function getHierarchyLevelDefault({ fields }: Fields): NormalizedIssue["hierarchyLevel"] {
   if (typeof fields["Issue Type"] === "string") {
-    return null;
+    return parseInt(fields["Issue Type"], 10);
   }
 
-  return fields["Issue Type"]?.hierarchyLevel || null;
+  return fields["Issue Type"].hierarchyLevel;
 }
 
-export function getIssueKeyDefault({ key }: Pick<JiraIssue, "key">): JiraIssue["key"] {
+export function getIssueKeyDefault({ key }: Key): NormalizedIssue["key"] {
   return key;
 }
 
-export function getParentKeyDefault({ fields }: Fields): string | null {
+export function getParentKeyDefault({ fields }: Fields): NormalizedIssue["parentKey"] {
   if (fields?.Parent?.key) {
     return fields.Parent.key;
   }
@@ -98,23 +53,23 @@ export function getParentKeyDefault({ fields }: Fields): string | null {
   return fields["Parent Link"]?.data?.key || null;
 }
 
-export function getUrlDefault({ key }: Pick<JiraIssue, "key">): string {
+export function getUrlDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue["url"] {
   return "javascript://";
 }
 
-export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): string {
+export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue["team"]["name"] {
   return key.replace(/-.*/, "");
 }
 
-export function getTypeDefault({ fields }: Fields): string | null {
+export function getTypeDefault({ fields }: Fields): NormalizedIssue["type"] {
   if (typeof fields["Issue Type"] === "string") {
     return fields["Issue Type"];
   }
 
-  return fields["Issue Type"]?.name || null;
+  return fields["Issue Type"].name;
 }
 
-export function getSprintsDefault({ fields }: Fields): NormalizedSprint[] | null {
+export function getSprintsDefault({ fields }: Fields): NormalizedIssue["sprints"] {
   if (!fields.Sprint) {
     return null;
   }
@@ -122,14 +77,13 @@ export function getSprintsDefault({ fields }: Fields): NormalizedSprint[] | null
   return fields.Sprint.map((sprint) => {
     return {
       name: sprint.name,
-      // TODO Remove cast after updating `parseDateISOString`
-      startDate: parseDateISOString(sprint["startDate"]) as Date,
-      endDate: parseDateISOString(sprint["endDate"]) as Date,
+      startDate: parseDateISOString(sprint["startDate"]),
+      endDate: parseDateISOString(sprint["endDate"]),
     };
   });
 }
 
-export function getStatusDefault({ fields }: Fields): string | null {
+export function getStatusDefault({ fields }: Fields): NormalizedIssue["status"] {
   if (typeof fields?.Status === "string") {
     return fields.Status;
   }
@@ -137,11 +91,11 @@ export function getStatusDefault({ fields }: Fields): string | null {
   return fields?.Status?.name || null;
 }
 
-export function getLabelsDefault({ fields }: Fields) {
+export function getLabelsDefault({ fields }: Fields): NormalizedIssue["labels"] {
   return fields?.Labels || [];
 }
 
-export function getStatusCategoryDefault({ fields }: Fields): string | null {
+export function getStatusCategoryDefault({ fields }: Fields): NormalizedIssue["statusCategory"] {
   if (typeof fields?.Status === "string") {
     return null;
   }
@@ -149,15 +103,15 @@ export function getStatusCategoryDefault({ fields }: Fields): string | null {
   return fields?.Status?.statusCategory?.name || null;
 }
 
-export function getReleasesDefault({ fields }: Fields): NormalizedRelease[] {
+export function getReleasesDefault({ fields }: Fields): NormalizedIssue["releases"] {
   let fixVersions = fields["Fix versions"];
+
+  if (typeof fixVersions === "string") {
+    return [];
+  }
 
   if (!fixVersions) {
     fixVersions = [];
-  }
-
-  if (!Array.isArray(fixVersions)) {
-    fixVersions = [fixVersions];
   }
 
   return fixVersions.map(({ name, id }) => {
@@ -165,14 +119,14 @@ export function getReleasesDefault({ fields }: Fields): NormalizedRelease[] {
   });
 }
 
-export function getVelocityDefault(teamKey: string): number {
+export function getVelocityDefault(teamKey: string): NormalizedIssue["team"]["velocity"] {
   return 21;
 }
 
-export function getParallelWorkLimitDefault(teamKey: string): number {
+export function getParallelWorkLimitDefault(teamKey: string): NormalizedIssue["team"]["parallelWorkLimit"] {
   return 1;
 }
 
-export function getDaysPerSprintDefault(teamKey: string) {
+export function getDaysPerSprintDefault(teamKey: string): NormalizedIssue["team"]["daysPerSprint"] {
   return 10;
 }

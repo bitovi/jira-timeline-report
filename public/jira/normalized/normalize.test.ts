@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { normalizeIssue } from "./normalize";
+import { IssueFields, JiraIssue, normalizeIssue } from "./normalize";
 
 test("normalizeIssue", () => {
   const startDate = new Date("20220715");
@@ -10,27 +10,24 @@ test("normalizeIssue", () => {
     id: "1",
     key: "test-key",
     fields: {
+      Parent: {} as JiraIssue,
       Summary: "language packs",
-      "Issue Type": "Epic",
+      "Issue Type": { hierarchyLevel: 1, name: "Epic" },
       Created: "2023-02-03T10:58:38.994-0600",
       Sprint: null,
       "Fix versions": [
         {
-          self: "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/version/10006",
           id: "10006",
-          description: "",
           name: "SHARE_R1",
-          archived: false,
-          released: false,
         },
       ],
       "Epic Link": null,
       Labels: ["JTR-Testing"],
       "Start date": "20220715",
-      "Parent Link": "IMP-5",
+      "Parent Link": { data: { key: "IMP-5" } },
       Rank: "0|hzzzzn:",
       "Due date": "20220716",
-      Status: "Done",
+      Status: { name: "Done", statusCategory: { name: "Done" } },
       "Project key": "ORDER",
       "Issue key": "ORDER-15",
       url: "https://bitovi-training.atlassian.net/browse/ORDER-15",
@@ -40,13 +37,15 @@ test("normalizeIssue", () => {
     },
   };
 
+  console.log(normalizeIssue(issue));
+
   expect(normalizeIssue(issue)).toEqual({
     summary: "language packs",
     key: "test-key",
     parentKey: "IMP-5",
     confidence: null,
     dueDate,
-    hierarchyLevel: null,
+    hierarchyLevel: 1,
     startDate,
     storyPoints: null,
     storyPointsMedian: null,
@@ -62,7 +61,7 @@ test("normalizeIssue", () => {
     },
     url: "javascript://",
     status: "Done",
-    statusCategory: null,
+    statusCategory: "Done",
     labels: ["JTR-Testing"],
     releases: [
       {
