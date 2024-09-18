@@ -9,6 +9,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
     "allowJs": true,
     "module": "ESNext",
     "skipLibCheck": true,

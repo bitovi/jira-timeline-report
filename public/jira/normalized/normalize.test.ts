@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, test } from "vitest";
 
 import {
   getConfidenceDefault,
@@ -19,7 +19,7 @@ import {
   getVelocityDefault,
 } from "./normalize";
 
-it("getConfidenceDefault", () => {
+test("getConfidenceDefault", () => {
   expect(getConfidenceDefault({ fields: { Confidence: 20 } })).toBe(20);
   expect(getConfidenceDefault({ fields: { "Story points confidence": 10 } })).toBe(10);
   expect(getConfidenceDefault({ fields: {} })).toBeNull();
@@ -27,59 +27,59 @@ it("getConfidenceDefault", () => {
   expect(getConfidenceDefault({ fields: { "Story points confidence": 10, Confidence: 20 } })).toBe(10);
 });
 
-it("getDueDataDefault", () => {
+test("getDueDataDefault", () => {
   const date = new Date().toString();
 
   expect(getDueDateDefault({ fields: { "Due date": date } })).toBe(date);
   expect(getDueDateDefault({ fields: {} })).toBeNull();
 });
 
-it("getHierarchyLevelDefault", () => {
+test("getHierarchyLevelDefault", () => {
   expect(getHierarchyLevelDefault({ fields: { "Issue Type": { name: "", hierarchyLevel: 7 } } })).toBe(7);
   expect(getHierarchyLevelDefault({ fields: {} })).toBeNull();
 });
 
-it.todo("getParentKeyDefault");
+test.todo("getParentKeyDefault");
 
-it("getStartDateDefault", () => {
+test("getStartDateDefault", () => {
   const date = new Date().toString();
 
   expect(getStartDateDefault({ fields: { "Start date": date } })).toBe(date);
   expect(getStartDateDefault({ fields: {} })).toBeNull();
 });
 
-it("getStoryPointsDefault", () => {
+test("getStoryPointsDefault", () => {
   expect(getStoryPointsDefault({ fields: { "Story points": 3 } })).toBe(3);
   expect(getStoryPointsDefault({ fields: {} })).toBeNull();
 });
 
-it("getStoryPointsMedianDefault", () => {
+test("getStoryPointsMedianDefault", () => {
   expect(getStoryPointsMedianDefault({ fields: { "Story points median": 3 } })).toBe(3);
   expect(getStoryPointsMedianDefault({ fields: {} })).toBeNull();
 });
 
-it("getUrlDefault", () => {
+test("getUrlDefault", () => {
   expect(getUrlDefault({ key: "" })).toBe("javascript://");
 });
 
-it("getTeamKeyDefault", () => {
+test("getTeamKeyDefault", () => {
   expect(getTeamKeyDefault({ key: "a-b-c" })).toBe("a");
 });
 
-it("getTypeDefault", () => {
+test("getTypeDefault", () => {
   expect(getTypeDefault({ fields: { "Issue Type": { hierarchyLevel: 7, name: "issue type" } } })).toBe("issue type");
   expect(getTypeDefault({ fields: {} })).toBeNull();
 });
 
-it("getVelocityDefault", () => {
+test("getVelocityDefault", () => {
   expect(getVelocityDefault("")).toBe(21);
 });
 
-it("getParallelWorkLimitDefault", () => {
+test("getParallelWorkLimitDefault", () => {
   expect(getParallelWorkLimitDefault("")).toBe(1);
 });
 
-it("getSprintsDefault", () => {
+test("getSprintsDefault", () => {
   const sprints = [{ name: "hello", startDate: "20220715", endDate: "20220716" }];
 
   const startDate = new Date("20220715");
@@ -89,7 +89,7 @@ it("getSprintsDefault", () => {
   expect(getSprintsDefault({ fields: {} })).toBeNull();
 });
 
-it("getStatusDefault", () => {
+test("getStatusDefault", () => {
   expect(getStatusDefault({ fields: { Status: { name: "issue type", statusCategory: { name: "" } } } })).toBe(
     "issue type"
   );
@@ -97,12 +97,12 @@ it("getStatusDefault", () => {
   expect(getStatusDefault({ fields: {} })).toBeNull();
 });
 
-it("getLabelsDefault", () => {
+test("getLabelsDefault", () => {
   expect(getLabelsDefault({ fields: { Labels: ["label"] } })).toEqual(["label"]);
   expect(getLabelsDefault({ fields: {} })).toEqual([]);
 });
 
-it("getStatusCategoryDefault", () => {
+test("getStatusCategoryDefault", () => {
   expect(
     getStatusCategoryDefault({ fields: { Status: { name: "issue type", statusCategory: { name: "category" } } } })
   ).toBe("category");
@@ -110,7 +110,11 @@ it("getStatusCategoryDefault", () => {
   expect(getStatusCategoryDefault({ fields: {} })).toBeNull();
 });
 
-it("getRankDefault", () => {
+test("getRankDefault", () => {
   expect(getRankDefault({ fields: { Rank: 1 } })).toBe(1);
   expect(getRankDefault({ fields: {} })).toBeNull();
 });
+
+test.todo("getReleaseDefault");
+
+test.todo("normalizeIssue");

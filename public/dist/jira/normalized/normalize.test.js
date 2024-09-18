@@ -3,31 +3,31 @@ import { getConfidenceDefault, getDueDateDefault, getHierarchyLevelDefault, getL
 it("getConfidenceDefault", function () {
     expect(getConfidenceDefault({ fields: { Confidence: 20 } })).toBe(20);
     expect(getConfidenceDefault({ fields: { "Story points confidence": 10 } })).toBe(10);
-    expect(getConfidenceDefault({ fields: {} })).toBeUndefined();
+    expect(getConfidenceDefault({ fields: {} })).toBeNull();
     expect(getConfidenceDefault({ fields: { "Story points confidence": 10, Confidence: 20 } })).toBe(10);
 });
 it("getDueDataDefault", function () {
     var date = new Date().toString();
     expect(getDueDateDefault({ fields: { "Due date": date } })).toBe(date);
-    expect(getDueDateDefault({ fields: {} })).toBeUndefined();
+    expect(getDueDateDefault({ fields: {} })).toBeNull();
 });
 it("getHierarchyLevelDefault", function () {
     expect(getHierarchyLevelDefault({ fields: { "Issue Type": { name: "", hierarchyLevel: 7 } } })).toBe(7);
-    expect(getHierarchyLevelDefault({ fields: {} })).toBeUndefined();
+    expect(getHierarchyLevelDefault({ fields: {} })).toBeNull();
 });
 it.todo("getParentKeyDefault");
 it("getStartDateDefault", function () {
     var date = new Date().toString();
     expect(getStartDateDefault({ fields: { "Start date": date } })).toBe(date);
-    expect(getStartDateDefault({ fields: {} })).toBeUndefined();
+    expect(getStartDateDefault({ fields: {} })).toBeNull();
 });
 it("getStoryPointsDefault", function () {
     expect(getStoryPointsDefault({ fields: { "Story points": 3 } })).toBe(3);
-    expect(getStoryPointsDefault({ fields: {} })).toBeUndefined();
+    expect(getStoryPointsDefault({ fields: {} })).toBeNull();
 });
 it("getStoryPointsMedianDefault", function () {
     expect(getStoryPointsMedianDefault({ fields: { "Story points median": 3 } })).toBe(3);
-    expect(getStoryPointsMedianDefault({ fields: {} })).toBeUndefined();
+    expect(getStoryPointsMedianDefault({ fields: {} })).toBeNull();
 });
 it("getUrlDefault", function () {
     expect(getUrlDefault({ key: "" })).toBe("javascript://");
@@ -37,7 +37,7 @@ it("getTeamKeyDefault", function () {
 });
 it("getTypeDefault", function () {
     expect(getTypeDefault({ fields: { "Issue Type": { hierarchyLevel: 7, name: "issue type" } } })).toBe("issue type");
-    expect(getTypeDefault({ fields: {} })).toBeUndefined();
+    expect(getTypeDefault({ fields: {} })).toBeNull();
 });
 it("getVelocityDefault", function () {
     expect(getVelocityDefault("")).toBe(21);
@@ -54,7 +54,7 @@ it("getSprintsDefault", function () {
 });
 it("getStatusDefault", function () {
     expect(getStatusDefault({ fields: { Status: { name: "issue type", statusCategory: { name: "" } } } })).toBe("issue type");
-    expect(getStatusDefault({ fields: {} })).toBeUndefined();
+    expect(getStatusDefault({ fields: {} })).toBeNull();
 });
 it("getLabelsDefault", function () {
     expect(getLabelsDefault({ fields: { Labels: ["label"] } })).toEqual(["label"]);
@@ -62,10 +62,10 @@ it("getLabelsDefault", function () {
 });
 it("getStatusCategoryDefault", function () {
     expect(getStatusCategoryDefault({ fields: { Status: { name: "issue type", statusCategory: { name: "category" } } } })).toBe("category");
-    expect(getStatusCategoryDefault({ fields: {} })).toBeUndefined();
+    expect(getStatusCategoryDefault({ fields: {} })).toBeNull();
 });
 it("getRankDefault", function () {
     expect(getRankDefault({ fields: { Rank: 1 } })).toBe(1);
-    expect(getRankDefault({ fields: {} })).toBeUndefined();
+    expect(getRankDefault({ fields: {} })).toBeNull();
 });
 //# sourceMappingURL=normalize.test.js.map

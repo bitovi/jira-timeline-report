@@ -293,3 +293,15 @@ export function normalizeIssue(
     issue,
   };
 }
+
+export function allStatusesSorted(issues: { status: string }[]): string[] {
+  const statuses = issues.map((issue) => issue.status);
+
+  return [...new Set(statuses)].sort();
+}
+
+export function allReleasesSorted(issues: NormalizedIssue[]): string[] {
+  const releases = issues.map((issue) => issue.releases.map((r) => r.name)).flat(1);
+
+  return [...new Set(releases)].sort();
+}
