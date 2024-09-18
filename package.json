@@ -9,6 +9,7 @@
     "fe:js:build": "rollup -c -w --sourcemap",
     "test": "vitest --watch=false",
     "test:watch": "vitest",
+    "typecheck": "tsc",
     "prepare": "husky"
   },
   "keywords": [],
