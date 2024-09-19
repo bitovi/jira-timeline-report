@@ -202,4 +202,3 @@ export function getFirstDateFrom(initiatives, property) {
     var values = initiatives.filter(function (init) { var _a; return (_a = init[property]) === null || _a === void 0 ? void 0 : _a[START_DATE_KEY]; }).map(function (init) { return parseDateISOString(init[property][START_DATE_KEY]); });
     return values.length ? new Date(Math.min.apply(Math, __spreadArray([], __read(values), false))) : undefined;
 }
-//# sourceMappingURL=date-helpers.js.map

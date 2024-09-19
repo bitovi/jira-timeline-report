@@ -227,4 +227,3 @@ test("normalizeIssue with custom getters", function () {
 });
 test.todo("allStatusSorted");
 test.todo("allReleasesSorted");
-//# sourceMappingURL=normalize.test.js.map

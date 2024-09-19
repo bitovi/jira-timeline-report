@@ -681,4 +681,3 @@ export default function (_a, requestHelper, host) {
     window.jiraHelpers = jiraHelpers;
     return jiraHelpers;
 }
-//# sourceMappingURL=jira-oidc-helpers.js.map

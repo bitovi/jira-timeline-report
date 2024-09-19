@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { JiraIssue, NormalizeConfig, normalizeIssue } from "./normalize";
 import { parseDateIntoLocalTimezone } from "../../date-helpers";
 
-const issue = {
+const issue: JiraIssue = {
   id: "1",
   key: "test-key",
   fields: {
@@ -16,6 +16,10 @@ const issue = {
       {
         id: "10006",
         name: "SHARE_R1",
+        archived: false,
+        description: "description",
+        released: false,
+        self: "self-string",
       },
     ],
     "Epic Link": null,

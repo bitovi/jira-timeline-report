@@ -49556,408 +49556,6 @@ function getStartDateAndDueDataFromFieldsOrSprints(issue ){
 }
 
 /**
- * @param {JiraIssue} issue
- * @returns {number}
- */
-function getConfidenceDefault({ fields }) {
-    return fields["Story points confidence"] || fields.Confidence;
-  }
-
-  /**
-   * @param {string} teamKey
-   * @returns {number}
-   */
-  function getDaysPerSprintDefault(teamKey) {
-    return 10;
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string | null}
-   */
-  function getDueDateDefault({ fields }) {
-    return fields["Due date"];
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {number}
-   */
-  function getHierarchyLevelDefault({ fields }) {
-    return fields["Issue Type"]?.hierarchyLevel;
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string}
-   */
-  function getIssueKeyDefault({ key }) {
-    return key;
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string | void}
-   */
-  function getParentKeyDefault({ fields }) {
-    return fields["Parent"]?.key || ( 
-        typeof fields["Parent Link"]?.data === "string" ?
-        fields["Parent Link"]?.data : 
-        fields["Parent Link"]?.data?.key); //this last part is probably a mistake ...
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string | null}
-   */
-  function getStartDateDefault({ fields }) {
-    return fields["Start date"];
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string | void}
-   */
-  function getStoryPointsDefault({ fields }) {
-    return fields["Story points"];
-  }
-
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string | void}
-   */
-  function getStoryPointsMedianDefault({ fields }) {
-    return fields["Story points median"];
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string | void}
-   */
-  function getUrlDefault({ key }) {
-    return "javascript://"
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string}
-   */
-  function getTeamKeyDefault({key}) {
-    return key.replace(/-.*/, "")
-  }
-  
-  /**
-   * @param {JiraIssue} issue
-   * @returns {string}
-   */
-  function getTypeDefault({ fields }) {
-    return fields["Issue Type"]?.name;
-  }
-  
-  /**
-   * @param {string} teamKey
-   * @returns {number}
-   */
-  function getVelocityDefault(teamKey) {
-    return 21;
-  }
-  
-  function getParallelWorkLimitDefault(teamKey) {
-    return 1;
-  }
-  function getSprintsDefault({fields}){
-    if(fields.Sprint) {
-      return fields.Sprint.map((sprint)=>{
-        return {
-          name: sprint.name,
-          startDate: parseDateISOString(sprint["startDate"]),
-          endDate: parseDateISOString(sprint["endDate"])
-        }
-      })
-    } else {
-      return  null;
-    }
-  }
-  function getStatusDefault({fields}) {
-    return fields?.Status?.name;
-  }
-  function getLabelsDefault({fields}) {
-    return fields?.Labels || []
-  }
-  function getStatusCategoryDefault$1({fields}){
-    return fields?.Status?.statusCategory?.name
-  }
-  function getRankDefault({fields}) {
-    return fields.Rank
-  }
-  /**
-   * @typedef {{
-   *   name: String,
-   *   id: String,
-   *   type: "releases",
-   *   key: "string",
-   *   summary: String,
-   * }} NormalizedRelease
-   */
-
-
-  function getReleasesDefault ({fields}) {
-    let fixVersions = fields["Fix versions"];
-    if(!fixVersions) {
-      fixVersions = [];
-    }
-    if(!Array.isArray(fixVersions)) {
-      fixVersions = [fixVersions];
-    }
-    return fixVersions.map( ({name, id})=> {
-      return {name, id, type: "Release", key: "SPECIAL:release-"+name, summary: name}
-    });
-  }
-  
-  
-  /**
-   * @typedef {{
-   * fields: {
-   *   Confidence: number,
-   *   'Due date': string | null,
-   *   'Issue Type': { hierarchyLevel: number, name: string },
-   *   'Parent Link': { data: { key: string } },
-   *   'Project Key': string,
-   *   'Start date': string | null,
-   *   Status: { name: string, statusCategory: {name: string} }
-   *   'Story points': number | null | undefined,
-   *   'Story points median': number | null | undefined,
-   *   Summary: string
-   * },
-   * id: string,
-   * key: string
-   * }} JiraIssue
-   */
-  
-  /**
-   * @typedef {{
-  *  name: string,
-  *  startDate: Date,
-  *  endDate: Date
-  * }} NormalizedSprint
-  */
-  
-  /**
-   * Returns most common data used by most downstream tools
-   * @param {JiraIssue}
-   * @return {NormalizedIssue}
-   */
-  function normalizeIssue( issue, {
-    getIssueKey = getIssueKeyDefault,
-    getParentKey = getParentKeyDefault,
-    getConfidence = getConfidenceDefault,
-    getDueDate = getDueDateDefault,
-    getHierarchyLevel = getHierarchyLevelDefault,
-    getStartDate = getStartDateDefault,
-    getStoryPoints = getStoryPointsDefault,
-    getStoryPointsMedian = getStoryPointsMedianDefault,
-    getType = getTypeDefault,
-    getTeamKey = getTeamKeyDefault,
-    getUrl = getUrlDefault,
-    getVelocity = getVelocityDefault,
-    getDaysPerSprint = getDaysPerSprintDefault,
-    getParallelWorkLimit = getParallelWorkLimitDefault,
-    getSprints = getSprintsDefault,
-    getStatus = getStatusDefault,
-    getStatusCategory = getStatusCategoryDefault$1,
-    getLabels = getLabelsDefault,
-    getReleases = getReleasesDefault,
-    getRank = getRankDefault
-  } = {}){
-      const teamName = getTeamKey(issue),
-        velocity = getVelocity(teamName),
-        daysPerSprint = getDaysPerSprint(teamName),
-        parallelWorkLimit = getParallelWorkLimit(teamName),
-        totalPointsPerDay = velocity / daysPerSprint,
-        pointsPerDayPerTrack = totalPointsPerDay  / parallelWorkLimit;
-
-      const data = {
-        // .summary can come from a "parent"'s fields
-        summary: issue.fields.Summary || issue.fields.summary,
-        key: getIssueKey(issue),
-        parentKey: getParentKey(issue),
-        confidence: getConfidence(issue),
-        dueDate: parseDateIntoLocalTimezone( getDueDate(issue) ),
-        hierarchyLevel: getHierarchyLevel(issue),
-        startDate: parseDateIntoLocalTimezone( getStartDate(issue) ),
-        storyPoints: getStoryPoints(issue),
-        storyPointsMedian: getStoryPointsMedian(issue),
-        type: getType(issue),
-        sprints: getSprints(issue),
-        team: {
-          name: teamName,
-          velocity,
-          daysPerSprint,
-          parallelWorkLimit,
-          totalPointsPerDay,
-          pointsPerDayPerTrack
-        },
-        url: getUrl(issue),
-        status: getStatus(issue),
-        statusCategory: getStatusCategory(issue),
-        labels: getLabels(issue),
-        releases: getReleases(issue),
-        rank: getRank(issue),
-        issue
-      };
-      return data;
-  }
-
-
-  /**
-   * @typedef {{
-  *  key: string,
-  *  summary: string,
-  *  parentKey: string | null,
-  *  confidence: number | null,
-  *  dueDate: Date,
-  *  hierarchyLevel: number,
-  *  startDate: Date, 
-  *  storyPoints: number | null,
-  *  storyPointsMedian: number | null,
-  *  type: string,
-  *  team: NormalizedTeam,
-  *  url: string,
-  *  sprints: null | Array<NormalizedSprint>,
-  *  status: null | string,
-  *  statusCategory: null | string,
-  *  issue: JiraIssue,
-  *  labels: Array<string>,
-  *  releases: Array<NormalizedRelease>,
-  *  rank: string | null
-  * }} NormalizedIssue
-  */
-  
-  /**
-   * @typedef {{
-   *   name: string,
-   *    velocity: number,
-   *    daysPerSprint: number,
-   *    parallelWorkLimit: number,
-   *    totalPointsPerDay: number,
-   *    pointsPerDayPerTrack: number
-   * }} NormalizedTeam
-   */
-
-
-  /**
- * Returns all status names
- * @param {Array<DerivedWorkIssue>} issues
- */
-
-function allStatusesSorted(issues) {
-  const statuses = issues.map(issue => issue.status);
-  return [...new Set(statuses)].sort();
-}
-  /**
-   * Returns all release names
-   * @param {Array<NormalizedIssue>} issues
-   */
-function allReleasesSorted(issues) {
-
-  const releases = issues.map(issue => issue.releases.map(r => r.name)).flat(1);
-  return [...new Set(releases)].sort();
-}
-
-// this is the types work can be categorized as
-const workType = ["design","dev","qa","uat"];
-const workTypes = workType;
-
-
-const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
-const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
-const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
-const inDoneStatus = { "Done": true, "Cancelled": true };
-const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
-
-
-const statusCategoryMap = (function(){
-
-	const items = [
-		["qa",inQAStatus],
-		["uat", inPartnerReviewStatus],
-		["todo", inIdeaStatus],
-		["done", inDoneStatus],
-		["blocked", blockedStatus]
-	];
-	const statusCategoryMap = {};
-	for( let [category, statusMap] of items) {
-		for(let prop in statusMap) {
-			statusCategoryMap[prop] = category;
-		}
-	}
-	return statusCategoryMap;
-})();
-
-/**
- * 
- * @param {import("../derive").DerivedWorkIssue} issue 
- */
-function getStatusCategoryDefault(issue){
-	const statusCategory = statusCategoryMap[ (issue.status || "").toLowerCase()];
-	if(statusCategory) {
-		return statusCategory;
-	} else {
-		return "dev";
-	}
-	
-}
-
-
-/**
- * @typedef {{
- *   statusType: string,
- *   workType: string 
- * }} DerivedWorkStatus
- */
-
-/**
- * @param {NormalizedIssue} normalizedIssue 
- * @return {DerivedWorkStatus}
- */
-function getWorkStatus(
-    normalizedIssue, 
-    {
-        getStatusType = getStatusCategoryDefault,
-        getWorkType = getWorkTypeDefault
-    }){
-    return {
-        statusType: getStatusType(normalizedIssue),
-        workType: getWorkType(normalizedIssue)
-    }
-}
-
-
-function toLowerCase(str) {
-	return str.toLowerCase();
-}
-
-const workPrefix = workType.map( wt => wt+":");
-/**
- * @param {NormalizedIssue} normalizedIssue 
- * @returns {String} dev, qa, uat, design
- */
-function getWorkTypeDefault(normalizedIssue){
-  
-  let wp = workPrefix.find( wp => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0);
-  if(wp) {
-    return wp.slice(0, -1)
-  }
-  
-  wp = workType.find( wt => normalizedIssue.labels.map(toLowerCase).includes(wt));
-  if(wp) {
-    return wp;
-  }
-  return "dev";
-}
-
-/**
    * @param {NormalizedTeam} team
    * @returns {number}
    */
@@ -50213,6 +49811,45 @@ function __generator(thisArg, body) {
     }
 }
 
+function __values(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+}
+
+function __read(o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+}
+
+function __spreadArray(to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+}
+
 typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
     var e = new Error(message);
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
@@ -50333,10 +49970,20 @@ function JiraOIDCHelpers (_a, requestHelper, host) {
     }
     var jiraHelpers = {
         saveInformationToLocalStorage: function (parameters) {
+            var e_1, _a;
             var objectKeys = Object.keys(parameters);
-            for (var _i = 0, objectKeys_1 = objectKeys; _i < objectKeys_1.length; _i++) {
-                var key = objectKeys_1[_i];
-                window.localStorage.setItem(key, parameters[key]);
+            try {
+                for (var objectKeys_1 = __values(objectKeys), objectKeys_1_1 = objectKeys_1.next(); !objectKeys_1_1.done; objectKeys_1_1 = objectKeys_1.next()) {
+                    var key = objectKeys_1_1.value;
+                    window.localStorage.setItem(key, parameters[key]);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (objectKeys_1_1 && !objectKeys_1_1.done && (_a = objectKeys_1.return)) _a.call(objectKeys_1);
+                }
+                finally { if (e_1) throw e_1.error; }
             }
         },
         clearAuthFromLocalStorage: function () {
@@ -51818,6 +51465,269 @@ function widestRange$1(parentIssueOrRelease, childrenRollups){
     return mergeStartAndDueData$2([parentIssueOrRelease.derivedTiming, ...childrenRollups]);
 }
 
+// this is the types work can be categorized as
+const workType = ["design","dev","qa","uat"];
+const workTypes = workType;
+
+
+const inQAStatus = { "QA": true, "In QA": true, "QA Complete": true };
+const inPartnerReviewStatus = { "Partner Review": true, "UAT": true };
+const inIdeaStatus = {"Idea": true, "To Do": true, "Open": true};
+const inDoneStatus = { "Done": true, "Cancelled": true };
+const blockedStatus = { "Blocked": true, "blocked": true, "delayed": true, "Delayed": true };
+
+
+const statusCategoryMap = (function(){
+
+	const items = [
+		["qa",inQAStatus],
+		["uat", inPartnerReviewStatus],
+		["todo", inIdeaStatus],
+		["done", inDoneStatus],
+		["blocked", blockedStatus]
+	];
+	const statusCategoryMap = {};
+	for( let [category, statusMap] of items) {
+		for(let prop in statusMap) {
+			statusCategoryMap[prop] = category;
+		}
+	}
+	return statusCategoryMap;
+})();
+
+/**
+ * 
+ * @param {import("../derive").DerivedWorkIssue} issue 
+ */
+function getStatusCategoryDefault$1(issue){
+	const statusCategory = statusCategoryMap[ (issue.status || "").toLowerCase()];
+	if(statusCategory) {
+		return statusCategory;
+	} else {
+		return "dev";
+	}
+	
+}
+
+
+/**
+ * @typedef {{
+ *   statusType: string,
+ *   workType: string 
+ * }} DerivedWorkStatus
+ */
+
+/**
+ * @param {NormalizedIssue} normalizedIssue 
+ * @return {DerivedWorkStatus}
+ */
+function getWorkStatus(
+    normalizedIssue, 
+    {
+        getStatusType = getStatusCategoryDefault$1,
+        getWorkType = getWorkTypeDefault
+    }){
+    return {
+        statusType: getStatusType(normalizedIssue),
+        workType: getWorkType(normalizedIssue)
+    }
+}
+
+
+function toLowerCase(str) {
+	return str.toLowerCase();
+}
+
+const workPrefix = workType.map( wt => wt+":");
+/**
+ * @param {NormalizedIssue} normalizedIssue 
+ * @returns {String} dev, qa, uat, design
+ */
+function getWorkTypeDefault(normalizedIssue){
+  
+  let wp = workPrefix.find( wp => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0);
+  if(wp) {
+    return wp.slice(0, -1)
+  }
+  
+  wp = workType.find( wt => normalizedIssue.labels.map(toLowerCase).includes(wt));
+  if(wp) {
+    return wp;
+  }
+  return "dev";
+}
+
+function getDueDateDefault(_a) {
+    var fields = _a.fields;
+    return fields["Due date"] || null;
+}
+function getStartDateDefault(_a) {
+    var fields = _a.fields;
+    return fields["Start date"] || null;
+}
+function getStoryPointsDefault(_a) {
+    var fields = _a.fields;
+    return fields["Story points"] || null;
+}
+function getStoryPointsMedianDefault(_a) {
+    var fields = _a.fields;
+    return fields["Story points median"] || null;
+}
+function getRankDefault(_a) {
+    var fields = _a.fields;
+    return (fields === null || fields === void 0 ? void 0 : fields.Rank) || null;
+}
+function getConfidenceDefault(_a) {
+    var fields = _a.fields;
+    return fields["Story points confidence"] || (fields === null || fields === void 0 ? void 0 : fields.Confidence) || null;
+}
+function getHierarchyLevelDefault(_a) {
+    var fields = _a.fields;
+    if (typeof fields["Issue Type"] === "string") {
+        return parseInt(fields["Issue Type"], 10);
+    }
+    return fields["Issue Type"].hierarchyLevel;
+}
+function getIssueKeyDefault(_a) {
+    var key = _a.key;
+    return key;
+}
+function getParentKeyDefault(_a) {
+    var _b, _c, _d;
+    var fields = _a.fields;
+    if ((_b = fields === null || fields === void 0 ? void 0 : fields.Parent) === null || _b === void 0 ? void 0 : _b.key) {
+        return fields.Parent.key;
+    }
+    if (typeof fields["Parent Link"] === "string") {
+        return fields["Parent Link"];
+    }
+    // this last part is probably a mistake ...
+    return ((_d = (_c = fields["Parent Link"]) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.key) || null;
+}
+function getUrlDefault(_a) {
+    _a.key;
+    return "javascript://";
+}
+function getTeamKeyDefault(_a) {
+    var key = _a.key;
+    return key.replace(/-.*/, "");
+}
+function getTypeDefault(_a) {
+    var fields = _a.fields;
+    if (typeof fields["Issue Type"] === "string") {
+        return fields["Issue Type"];
+    }
+    return fields["Issue Type"].name;
+}
+function getSprintsDefault(_a) {
+    var fields = _a.fields;
+    if (!fields.Sprint) {
+        return null;
+    }
+    return fields.Sprint.map(function (sprint) {
+        return {
+            name: sprint.name,
+            startDate: parseDateISOString(sprint["startDate"]),
+            endDate: parseDateISOString(sprint["endDate"]),
+        };
+    });
+}
+function getStatusDefault(_a) {
+    var _b;
+    var fields = _a.fields;
+    if (typeof (fields === null || fields === void 0 ? void 0 : fields.Status) === "string") {
+        return fields.Status;
+    }
+    return ((_b = fields === null || fields === void 0 ? void 0 : fields.Status) === null || _b === void 0 ? void 0 : _b.name) || null;
+}
+function getLabelsDefault(_a) {
+    var fields = _a.fields;
+    return (fields === null || fields === void 0 ? void 0 : fields.Labels) || [];
+}
+function getStatusCategoryDefault(_a) {
+    var _b, _c;
+    var fields = _a.fields;
+    if (typeof (fields === null || fields === void 0 ? void 0 : fields.Status) === "string") {
+        return null;
+    }
+    return ((_c = (_b = fields === null || fields === void 0 ? void 0 : fields.Status) === null || _b === void 0 ? void 0 : _b.statusCategory) === null || _c === void 0 ? void 0 : _c.name) || null;
+}
+function getReleasesDefault(_a) {
+    var fields = _a.fields;
+    var fixVersions = fields["Fix versions"];
+    if (!fixVersions) {
+        return [];
+    }
+    if (!Array.isArray(fixVersions)) {
+        fixVersions = [fixVersions];
+    }
+    console.log(arguments);
+    return fixVersions.map(function (_a) {
+        var name = _a.name, id = _a.id;
+        return { name: name, id: id, type: "Release", key: "SPECIAL:release-" + name, summary: name };
+    });
+}
+function getVelocityDefault(teamKey) {
+    return 21;
+}
+function getParallelWorkLimitDefault(teamKey) {
+    return 1;
+}
+function getDaysPerSprintDefault(teamKey) {
+    return 10;
+}
+
+function normalizeIssue(issue, _a) {
+    var _b = _a === void 0 ? {} : _a, _c = _b.getIssueKey, getIssueKey = _c === void 0 ? getIssueKeyDefault : _c, _d = _b.getParentKey, getParentKey = _d === void 0 ? getParentKeyDefault : _d, _e = _b.getConfidence, getConfidence = _e === void 0 ? getConfidenceDefault : _e, _f = _b.getDueDate, getDueDate = _f === void 0 ? getDueDateDefault : _f, _g = _b.getHierarchyLevel, getHierarchyLevel = _g === void 0 ? getHierarchyLevelDefault : _g, _h = _b.getStartDate, getStartDate = _h === void 0 ? getStartDateDefault : _h, _j = _b.getStoryPoints, getStoryPoints = _j === void 0 ? getStoryPointsDefault : _j, _k = _b.getStoryPointsMedian, getStoryPointsMedian = _k === void 0 ? getStoryPointsMedianDefault : _k, _l = _b.getType, getType = _l === void 0 ? getTypeDefault : _l, _m = _b.getTeamKey, getTeamKey = _m === void 0 ? getTeamKeyDefault : _m, _o = _b.getUrl, getUrl = _o === void 0 ? getUrlDefault : _o, _p = _b.getVelocity, getVelocity = _p === void 0 ? getVelocityDefault : _p, _q = _b.getDaysPerSprint, getDaysPerSprint = _q === void 0 ? getDaysPerSprintDefault : _q, _r = _b.getParallelWorkLimit, getParallelWorkLimit = _r === void 0 ? getParallelWorkLimitDefault : _r, _s = _b.getSprints, getSprints = _s === void 0 ? getSprintsDefault : _s, _t = _b.getStatus, getStatus = _t === void 0 ? getStatusDefault : _t, _u = _b.getStatusCategory, getStatusCategory = _u === void 0 ? getStatusCategoryDefault : _u, _v = _b.getLabels, getLabels = _v === void 0 ? getLabelsDefault : _v, _w = _b.getReleases, getReleases = _w === void 0 ? getReleasesDefault : _w, _x = _b.getRank, getRank = _x === void 0 ? getRankDefault : _x;
+    if (!issue) {
+        console.log({ issue: issue });
+    }
+    var teamName = getTeamKey(issue);
+    var velocity = getVelocity(teamName);
+    var daysPerSprint = getDaysPerSprint(teamName);
+    var parallelWorkLimit = getParallelWorkLimit(teamName);
+    var totalPointsPerDay = velocity / daysPerSprint;
+    var pointsPerDayPerTrack = totalPointsPerDay / parallelWorkLimit;
+    return {
+        // .summary can come from a "parent"'s fields
+        // TODO check what this was supposed to be flag^v
+        summary: issue.fields.Summary || "",
+        key: getIssueKey(issue),
+        parentKey: getParentKey(issue),
+        confidence: getConfidence(issue),
+        dueDate: parseDateIntoLocalTimezone(getDueDate(issue)),
+        hierarchyLevel: getHierarchyLevel(issue),
+        startDate: parseDateIntoLocalTimezone(getStartDate(issue)),
+        storyPoints: getStoryPoints(issue),
+        storyPointsMedian: getStoryPointsMedian(issue),
+        type: getType(issue),
+        sprints: getSprints(issue),
+        team: {
+            name: teamName,
+            velocity: velocity,
+            daysPerSprint: daysPerSprint,
+            parallelWorkLimit: parallelWorkLimit,
+            totalPointsPerDay: totalPointsPerDay,
+            pointsPerDayPerTrack: pointsPerDayPerTrack,
+        },
+        url: getUrl(issue),
+        status: getStatus(issue),
+        statusCategory: getStatusCategory(issue),
+        labels: getLabels(issue),
+        releases: getReleases(issue),
+        rank: getRank(issue),
+        issue: issue,
+    };
+}
+function allStatusesSorted(issues) {
+    var statuses = issues.map(function (issue) { return issue.status; });
+    return __spreadArray([], __read(new Set(statuses)), false).sort();
+}
+function allReleasesSorted(issues) {
+    var releases = issues.map(function (issue) { return issue.releases.map(function (r) { return r.name; }); }).flat(1);
+    return __spreadArray([], __read(new Set(releases)), false).sort();
+}
+
 function monthDiff(dateFromSring, dateToString) {
     const dateFrom = new Date(dateFromSring);
     const dateTo = new Date(dateToString);
@@ -52139,10 +52049,10 @@ class GanttGrid extends canStacheElement {
             let parents = parentKeys.map((parentKey)=> {
                 if(keyToAllIssues[parentKey]) {
                     return keyToAllIssues[parentKey][0]
-                } else {
+                } else if(obj[parentKey][0].issue.fields.Parent) {
                     return normalizeIssue(obj[parentKey][0].issue.fields.Parent)
                 }
-            });
+            }).filter(Boolean);
             
             if(parents.length && parents[0].rank) {
                 parents.sort( (p1, p2)=> {
@@ -52158,7 +52068,8 @@ class GanttGrid extends canStacheElement {
                     })
                 ]
             }).flat(1);
-            return parentsAndChildren;
+            
+            return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
         } else if(this.groupBy === "team"){
             let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.team.name );
 

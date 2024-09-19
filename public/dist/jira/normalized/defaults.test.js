@@ -94,4 +94,3 @@ test("getReleaseDefault", function () {
         { name: "release", id: "1", type: "Release", key: "SPECIAL:release-release", summary: "release" },
     ]);
 });
-//# sourceMappingURL=defaults.test.js.map

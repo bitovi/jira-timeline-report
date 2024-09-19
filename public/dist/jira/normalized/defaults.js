@@ -100,8 +100,8 @@ export function getReleasesDefault(_a) {
     if (typeof fixVersions === "string") {
         return [];
     }
-    if (!fixVersions) {
-        fixVersions = [];
+    if (!Array.isArray(fixVersions)) {
+        fixVersions = [fixVersions];
     }
     return fixVersions.map(function (_a) {
         var name = _a.name, id = _a.id;
@@ -117,4 +117,3 @@ export function getParallelWorkLimitDefault(teamKey) {
 export function getDaysPerSprintDefault(teamKey) {
     return 10;
 }
-//# sourceMappingURL=defaults.js.map

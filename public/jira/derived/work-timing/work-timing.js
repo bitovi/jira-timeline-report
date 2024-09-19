@@ -2,8 +2,6 @@
 import { getBusinessDatesCount } from "../../../status-helpers.js";
 import { estimateExtraPoints, sampleExtraPoints } from "../../../shared/confidence.js";
 import { getStartDateAndDueDataFromFieldsOrSprints, getStartDateAndDueDataFromSprints } from "../../../shared/issue-data/date-data.js";
-import { normalizeIssue } from "../../normalized/-normalize.js";
-import { getWorkStatus } from "../work-status/work-status.js";
 
   /**
    * @param {NormalizedTeam} team

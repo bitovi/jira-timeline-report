@@ -22,17 +22,23 @@ interface LegacyFields extends BaseFields {
   "Issue Type": string;
   "Parent Link"?: string;
   Status: string;
-  "Fix versions": string;
+  "Fix versions": FixVersion;
+}
+
+interface FixVersion {
+  self: string;
+  id: string;
+  description: string;
+  name: string;
+  archived: boolean;
+  released: boolean;
 }
 
 export interface IssueFields extends BaseFields {
   "Issue Type": { hierarchyLevel: number; name: string };
   "Parent Link"?: { data: { key: string } };
   Status: { name: string; statusCategory: { name: string } };
-  "Fix versions": Array<{
-    name: string;
-    id: string;
-  }>;
+  "Fix versions": Array<FixVersion>;
 }
 
 export interface JiraIssue {
@@ -131,6 +137,10 @@ export function normalizeIssue(
     getRank = defaults.getRankDefault,
   }: Partial<NormalizeConfig> = {}
 ): NormalizedIssue {
+  if (!issue) {
+    console.log({ issue });
+  }
+
   const teamName = getTeamKey(issue);
 
   const velocity = getVelocity(teamName);
