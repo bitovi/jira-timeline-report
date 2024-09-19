@@ -89,7 +89,6 @@ interface NormalizedTeam {
 interface NormalizedRelease {
   name: string;
   id: string;
-  // todo
   type: "Release";
   key: string;
   summary: string;
@@ -184,10 +183,3 @@ export function allReleasesSorted(issues: NormalizedIssue[]): string[] {
 
   return [...new Set(releases)].sort();
 }
-
-/**
- * For Justin
- * - todo types
- * - mapped types
- * - Ryans PR
- */
