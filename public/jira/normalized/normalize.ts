@@ -105,7 +105,7 @@ type DefaultsToConfig<T> = {
   [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
 };
 
-type NormalizeConfig = DefaultsToConfig<typeof defaults>;
+export type NormalizeConfig = DefaultsToConfig<typeof defaults>;
 
 export function normalizeIssue(
   issue: JiraIssue,

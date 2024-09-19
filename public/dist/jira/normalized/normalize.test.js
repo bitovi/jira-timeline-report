@@ -33,7 +33,6 @@ test("normalizeIssue", function () {
             weightedEstimate: null,
         },
     };
-    console.log(normalizeIssue(issue));
     expect(normalizeIssue(issue)).toEqual({
         summary: "language packs",
         key: "test-key",

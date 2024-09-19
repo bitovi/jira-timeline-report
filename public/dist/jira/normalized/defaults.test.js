@@ -10,7 +10,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 import { expect, test } from "vitest";
-import { getConfidenceDefault, getDueDateDefault, getHierarchyLevelDefault, getLabelsDefault, getParallelWorkLimitDefault, getRankDefault, getSprintsDefault, getStartDateDefault, getStatusCategoryDefault, getStatusDefault, getStoryPointsDefault, getStoryPointsMedianDefault, getTeamKeyDefault, getTypeDefault, getUrlDefault, getVelocityDefault, } from "./defaults";
+import { getConfidenceDefault, getDaysPerSprintDefault, getDueDateDefault, getHierarchyLevelDefault, getLabelsDefault, getParallelWorkLimitDefault, getParentKeyDefault, getRankDefault, getReleasesDefault, getSprintsDefault, getStartDateDefault, getStatusCategoryDefault, getStatusDefault, getStoryPointsDefault, getStoryPointsMedianDefault, getTeamKeyDefault, getTypeDefault, getUrlDefault, getVelocityDefault, } from "./defaults";
 var createFields = function (overrides) {
     if (overrides === void 0) { overrides = {}; }
     return {
@@ -31,8 +31,13 @@ test("getDueDataDefault", function () {
 test("getHierarchyLevelDefault", function () {
     expect(getHierarchyLevelDefault(__assign({}, createFields({ "Issue Type": { name: "", hierarchyLevel: 7 } })))).toBe(7);
 });
-test.todo("getParentKeyDefault");
-test.todo("getDaysPerSprintDefault");
+test("getParentKeyDefault", function () {
+    expect(getParentKeyDefault(__assign({}, createFields({ Parent: { key: "parent" } })))).toBe("parent");
+    expect(getParentKeyDefault(__assign({}, createFields({ "Parent Link": { data: { key: "link" } } })))).toBe("link");
+});
+test("getDaysPerSprintDefault", function () {
+    expect(getDaysPerSprintDefault("")).toBe(10);
+});
 test("getStartDateDefault", function () {
     var date = new Date().toString();
     expect(getStartDateDefault(__assign({}, createFields({ "Start date": date })))).toBe(date);
@@ -82,5 +87,11 @@ test("getRankDefault", function () {
     expect(getRankDefault(__assign({}, createFields({ Rank: "1" })))).toBe("1");
     expect(getRankDefault(__assign({}, createFields()))).toBeNull();
 });
-test.todo("getReleaseDefault");
+test("getReleaseDefault", function () {
+    expect(getReleasesDefault(__assign({}, createFields({ "Fix versions": undefined })))).toEqual([]);
+    expect(getReleasesDefault(__assign({}, createFields({ "Fix versions": [] })))).toEqual([]);
+    expect(getReleasesDefault(__assign({}, createFields({ "Fix versions": [{ name: "release", id: "1" }] })))).toEqual([
+        { name: "release", id: "1", type: "Release", key: "SPECIAL:release-release", summary: "release" },
+    ]);
+});
 //# sourceMappingURL=defaults.test.js.map
