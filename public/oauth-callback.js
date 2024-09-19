@@ -1,4 +1,7 @@
-export default function oauthCallback(jiraHelpers) {
+import jiraOIDCHelpers from "./jira-oidc-helpers.ts";
+
+export default function oauthCallback(environment) {
+	const jiraHelpers = jiraOIDCHelpers(environment);
 
 	const queryParams = new URLSearchParams(window.location.search)
 	const queryCode = queryParams.get('code')
