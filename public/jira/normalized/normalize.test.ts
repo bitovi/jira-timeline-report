@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { IssueFields, JiraIssue, normalizeIssue } from "./normalize";
+import { JiraIssue, normalizeIssue } from "./normalize";
 
 test("normalizeIssue", () => {
   const startDate = new Date("20220715");
@@ -36,8 +36,6 @@ test("normalizeIssue", () => {
       weightedEstimate: null,
     },
   };
-
-  console.log(normalizeIssue(issue));
 
   expect(normalizeIssue(issue)).toEqual({
     summary: "language packs",

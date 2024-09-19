@@ -1,26 +1,34 @@
 import { parseDateISOString } from "../../date-helpers.js";
-function createIssueFieldGetter(field, defaultValue) {
-    return function (_a) {
-        var fields = _a.fields;
-        return fields[field] || defaultValue || null;
-    };
+export function getDueDateDefault(_a) {
+    var fields = _a.fields;
+    return fields["Due date"] || null;
 }
-export var getDueDateDefault = createIssueFieldGetter("Due date");
-export var getStartDateDefault = createIssueFieldGetter("Start date");
-export var getStoryPointsDefault = createIssueFieldGetter("Story points");
-export var getStoryPointsMedianDefault = createIssueFieldGetter("Story points median");
-export var getRankDefault = createIssueFieldGetter("Rank");
+export function getStartDateDefault(_a) {
+    var fields = _a.fields;
+    return fields["Start date"] || null;
+}
+export function getStoryPointsDefault(_a) {
+    var fields = _a.fields;
+    return fields["Story points"] || null;
+}
+export function getStoryPointsMedianDefault(_a) {
+    var fields = _a.fields;
+    return fields["Story points median"] || null;
+}
+export function getRankDefault(_a) {
+    var fields = _a.fields;
+    return (fields === null || fields === void 0 ? void 0 : fields.Rank) || null;
+}
 export function getConfidenceDefault(_a) {
     var fields = _a.fields;
     return fields["Story points confidence"] || (fields === null || fields === void 0 ? void 0 : fields.Confidence) || null;
 }
 export function getHierarchyLevelDefault(_a) {
-    var _b;
     var fields = _a.fields;
     if (typeof fields["Issue Type"] === "string") {
-        return null;
+        return parseInt(fields["Issue Type"], 10);
     }
-    return ((_b = fields["Issue Type"]) === null || _b === void 0 ? void 0 : _b.hierarchyLevel) || null;
+    return fields["Issue Type"].hierarchyLevel;
 }
 export function getIssueKeyDefault(_a) {
     var key = _a.key;
@@ -47,12 +55,11 @@ export function getTeamKeyDefault(_a) {
     return key.replace(/-.*/, "");
 }
 export function getTypeDefault(_a) {
-    var _b;
     var fields = _a.fields;
     if (typeof fields["Issue Type"] === "string") {
         return fields["Issue Type"];
     }
-    return ((_b = fields["Issue Type"]) === null || _b === void 0 ? void 0 : _b.name) || null;
+    return fields["Issue Type"].name;
 }
 export function getSprintsDefault(_a) {
     var fields = _a.fields;
@@ -62,7 +69,6 @@ export function getSprintsDefault(_a) {
     return fields.Sprint.map(function (sprint) {
         return {
             name: sprint.name,
-            // TODO Remove cast after updating `parseDateISOString`
             startDate: parseDateISOString(sprint["startDate"]),
             endDate: parseDateISOString(sprint["endDate"]),
         };
@@ -91,11 +97,11 @@ export function getStatusCategoryDefault(_a) {
 export function getReleasesDefault(_a) {
     var fields = _a.fields;
     var fixVersions = fields["Fix versions"];
+    if (typeof fixVersions === "string") {
+        return [];
+    }
     if (!fixVersions) {
         fixVersions = [];
-    }
-    if (!Array.isArray(fixVersions)) {
-        fixVersions = [fixVersions];
     }
     return fixVersions.map(function (_a) {
         var name = _a.name, id = _a.id;

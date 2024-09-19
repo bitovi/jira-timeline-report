@@ -2,11 +2,14 @@ import { expect, test } from "vitest";
 
 import {
   getConfidenceDefault,
+  getDaysPerSprintDefault,
   getDueDateDefault,
   getHierarchyLevelDefault,
   getLabelsDefault,
   getParallelWorkLimitDefault,
+  getParentKeyDefault,
   getRankDefault,
+  getReleasesDefault,
   getSprintsDefault,
   getStartDateDefault,
   getStatusCategoryDefault,
@@ -54,9 +57,14 @@ test("getHierarchyLevelDefault", () => {
   expect(getHierarchyLevelDefault({ ...createFields({ "Issue Type": { name: "", hierarchyLevel: 7 } }) })).toBe(7);
 });
 
-test.todo("getParentKeyDefault");
+test("getParentKeyDefault", () => {
+  expect(getParentKeyDefault({ ...createFields({ Parent: { key: "parent" } as JiraIssue }) })).toBe("parent");
+  expect(getParentKeyDefault({ ...createFields({ "Parent Link": { data: { key: "link" } } }) })).toBe("link");
+});
 
-test.todo("getDaysPerSprintDefault");
+test("getDaysPerSprintDefault", () => {
+  expect(getDaysPerSprintDefault("")).toBe(10);
+});
 
 test("getStartDateDefault", () => {
   const date = new Date().toString();
@@ -131,4 +139,10 @@ test("getRankDefault", () => {
   expect(getRankDefault({ ...createFields() })).toBeNull();
 });
 
-test.todo("getReleaseDefault");
+test("getReleaseDefault", () => {
+  expect(getReleasesDefault({ ...createFields({ "Fix versions": undefined }) })).toEqual([]);
+  expect(getReleasesDefault({ ...createFields({ "Fix versions": [] }) })).toEqual([]);
+  expect(getReleasesDefault({ ...createFields({ "Fix versions": [{ name: "release", id: "1" }] }) })).toEqual([
+    { name: "release", id: "1", type: "Release", key: "SPECIAL:release-release", summary: "release" },
+  ]);
+});

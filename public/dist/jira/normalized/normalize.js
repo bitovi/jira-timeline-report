@@ -41,12 +41,10 @@ export function normalizeIssue(issue, _a) {
         parentKey: getParentKey(issue),
         confidence: getConfidence(issue),
         dueDate: parseDateIntoLocalTimezone(getDueDate(issue)),
-        // @ts-expect-error
         hierarchyLevel: getHierarchyLevel(issue),
         startDate: parseDateIntoLocalTimezone(getStartDate(issue)),
         storyPoints: getStoryPoints(issue),
         storyPointsMedian: getStoryPointsMedian(issue),
-        // @ts-expect-error
         type: getType(issue),
         sprints: getSprints(issue),
         team: {
