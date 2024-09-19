@@ -97,12 +97,13 @@ export function getStatusCategoryDefault(_a) {
 export function getReleasesDefault(_a) {
     var fields = _a.fields;
     var fixVersions = fields["Fix versions"];
-    if (typeof fixVersions === "string") {
+    if (!fixVersions) {
         return [];
     }
     if (!Array.isArray(fixVersions)) {
         fixVersions = [fixVersions];
     }
+    console.log(arguments);
     return fixVersions.map(function (_a) {
         var name = _a.name, id = _a.id;
         return { name: name, id: id, type: "Release", key: "SPECIAL:release-" + name, summary: name };

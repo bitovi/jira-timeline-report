@@ -25,6 +25,10 @@ var issue = {
             {
                 id: "10006",
                 name: "SHARE_R1",
+                archived: false,
+                description: "description",
+                released: false,
+                self: "self-string",
             },
         ],
         "Epic Link": null,

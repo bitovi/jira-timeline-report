@@ -90,7 +90,16 @@ test("getRankDefault", function () {
 test("getReleaseDefault", function () {
     expect(getReleasesDefault(__assign({}, createFields({ "Fix versions": undefined })))).toEqual([]);
     expect(getReleasesDefault(__assign({}, createFields({ "Fix versions": [] })))).toEqual([]);
-    expect(getReleasesDefault(__assign({}, createFields({ "Fix versions": [{ name: "release", id: "1" }] })))).toEqual([
-        { name: "release", id: "1", type: "Release", key: "SPECIAL:release-release", summary: "release" },
-    ]);
+    expect(getReleasesDefault(__assign({}, createFields({
+        "Fix versions": [
+            {
+                id: "1",
+                name: "release",
+                archived: false,
+                description: "description",
+                released: false,
+                self: "self-string",
+            },
+        ],
+    })))).toEqual([{ name: "release", id: "1", type: "Release", key: "SPECIAL:release-release", summary: "release" }]);
 });

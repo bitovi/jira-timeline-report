@@ -51679,9 +51679,6 @@ function getDaysPerSprintDefault(teamKey) {
 
 function normalizeIssue(issue, _a) {
     var _b = _a === void 0 ? {} : _a, _c = _b.getIssueKey, getIssueKey = _c === void 0 ? getIssueKeyDefault : _c, _d = _b.getParentKey, getParentKey = _d === void 0 ? getParentKeyDefault : _d, _e = _b.getConfidence, getConfidence = _e === void 0 ? getConfidenceDefault : _e, _f = _b.getDueDate, getDueDate = _f === void 0 ? getDueDateDefault : _f, _g = _b.getHierarchyLevel, getHierarchyLevel = _g === void 0 ? getHierarchyLevelDefault : _g, _h = _b.getStartDate, getStartDate = _h === void 0 ? getStartDateDefault : _h, _j = _b.getStoryPoints, getStoryPoints = _j === void 0 ? getStoryPointsDefault : _j, _k = _b.getStoryPointsMedian, getStoryPointsMedian = _k === void 0 ? getStoryPointsMedianDefault : _k, _l = _b.getType, getType = _l === void 0 ? getTypeDefault : _l, _m = _b.getTeamKey, getTeamKey = _m === void 0 ? getTeamKeyDefault : _m, _o = _b.getUrl, getUrl = _o === void 0 ? getUrlDefault : _o, _p = _b.getVelocity, getVelocity = _p === void 0 ? getVelocityDefault : _p, _q = _b.getDaysPerSprint, getDaysPerSprint = _q === void 0 ? getDaysPerSprintDefault : _q, _r = _b.getParallelWorkLimit, getParallelWorkLimit = _r === void 0 ? getParallelWorkLimitDefault : _r, _s = _b.getSprints, getSprints = _s === void 0 ? getSprintsDefault : _s, _t = _b.getStatus, getStatus = _t === void 0 ? getStatusDefault : _t, _u = _b.getStatusCategory, getStatusCategory = _u === void 0 ? getStatusCategoryDefault : _u, _v = _b.getLabels, getLabels = _v === void 0 ? getLabelsDefault : _v, _w = _b.getReleases, getReleases = _w === void 0 ? getReleasesDefault : _w, _x = _b.getRank, getRank = _x === void 0 ? getRankDefault : _x;
-    if (!issue) {
-        console.log({ issue: issue });
-    }
     var teamName = getTeamKey(issue);
     var velocity = getVelocity(teamName);
     var daysPerSprint = getDaysPerSprint(teamName);

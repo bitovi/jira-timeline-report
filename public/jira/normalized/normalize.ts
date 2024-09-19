@@ -137,10 +137,6 @@ export function normalizeIssue(
     getRank = defaults.getRankDefault,
   }: Partial<NormalizeConfig> = {}
 ): NormalizedIssue {
-  if (!issue) {
-    console.log({ issue });
-  }
-
   const teamName = getTeamKey(issue);
 
   const velocity = getVelocity(teamName);
