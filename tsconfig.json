@@ -26,6 +26,7 @@
   "exclude": [
     "node_modules",
     "public/dist",
-    "**/*.js"
+    "**/*.js",
+    "**/*.test.ts", "**/*.spec.ts"
   ]
 }
