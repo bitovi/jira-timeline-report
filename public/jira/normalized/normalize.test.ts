@@ -42,7 +42,7 @@ const startDate = new Date("20220715");
 const dueDate = new Date("20220716");
 
 test("normalizeIssue", () => {
-  expect(normalizeIssue(issue)).toEqual({
+  expect(normalizeIssue(issue, {})).toEqual({
     summary: "language packs",
     key: "test-key",
     parentKey: "IMP-5",

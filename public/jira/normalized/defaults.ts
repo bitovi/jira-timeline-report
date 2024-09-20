@@ -114,8 +114,6 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
     fixVersions = [fixVersions];
   }
 
-  console.log(arguments);
-
   return fixVersions.map(({ name, id }) => {
     return { name, id, type: "Release", key: "SPECIAL:release-" + name, summary: name };
   });
