@@ -1,44 +1,15 @@
-/******************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
-
-
-var __assign = function() {
-    __assign = Object.assign || function __assign(t) {
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
         }
         return t;
     };
     return __assign.apply(this, arguments);
 };
-
-function __rest(s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-}
-
-function __awaiter(thisArg, _arguments, P, generator) {
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -46,9 +17,8 @@ function __awaiter(thisArg, _arguments, P, generator) {
         function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
-}
-
-function __generator(thisArg, body) {
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
     return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
@@ -74,9 +44,19 @@ function __generator(thisArg, body) {
         } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
-}
-
-function __values(o) {
+};
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var __values = (this && this.__values) || function(o) {
     var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
     if (m) return m.call(o);
     if (o && typeof o.length === "number") return {
@@ -86,25 +66,9 @@ function __values(o) {
         }
     };
     throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-}
-
-typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-    var e = new Error(message);
-    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
-
-function responseToJSON(response) {
-    if (!response.ok) {
-        return response.json().then(function (payload) {
-            var err = new Error("HTTP status code: " + response.status);
-            Object.assign(err, payload);
-            Object.assign(err, response);
-            throw err;
-        });
-    }
-    return response.json();
-}
-
+import { responseToJSON } from "./shared/response-to-json.js";
+var CACHE_FETCH = false;
 function responseToText(response) {
     if (!response.ok) {
         return response.json().then(function (payload) {
@@ -116,7 +80,7 @@ function responseToText(response) {
     }
     return response.text();
 }
-function nativeFetchJSON(url, options) {
+export function nativeFetchJSON(url, options) {
     return fetch(url, options).then(responseToJSON);
 }
 function chunkArray(array, size) {
@@ -126,10 +90,40 @@ function chunkArray(array, size) {
     }
     return chunkedArr;
 }
-function jiraOIDCHelpers (_a, requestHelper, host) {
+export default function (_a, requestHelper, host) {
     var _this = this;
     var _b = _a === void 0 ? window.env : _a, JIRA_CLIENT_ID = _b.JIRA_CLIENT_ID, JIRA_SCOPE = _b.JIRA_SCOPE, JIRA_CALLBACK_URL = _b.JIRA_CALLBACK_URL, JIRA_API_URL = _b.JIRA_API_URL;
     var fetchJSON = nativeFetchJSON;
+    if (CACHE_FETCH) {
+        fetchJSON = function (url, options) {
+            return __awaiter(this, void 0, void 0, function () {
+                var cachedData, result;
+                var _this = this;
+                return __generator(this, function (_a) {
+                    cachedData = window.localStorage.getItem(url);
+                    if (cachedData !== null) {
+                        return [2 /*return*/, JSON.parse(cachedData)];
+                    }
+                    else {
+                        result = nativeFetchJSON(url, options);
+                        result.then(function (data) { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                try {
+                                    window.localStorage.setItem(url, JSON.stringify(data));
+                                }
+                                catch (e) {
+                                    console.log("can't save");
+                                }
+                                return [2 /*return*/];
+                            });
+                        }); });
+                        return [2 /*return*/, result];
+                    }
+                    return [2 /*return*/];
+                });
+            });
+        };
+    }
     var fieldsRequest;
     function makeDeepChildrenLoaderUsingNamedFields(rootMethod) {
         // Makes child requests in batches of 40
@@ -268,7 +262,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
             });
         }); },
         fetchAccessTokenWithAuthCode: function (authCode) { return __awaiter(_this, void 0, void 0, function () {
-            var _a, accessToken, expiryTimestamp, refreshToken, scopeId, addOnQuery, error_2;
+            var _a, accessToken, expiryTimestamp, refreshToken, scopeId, addOnQuery, decoded, error_2;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -283,6 +277,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
                             scopeId: scopeId,
                         });
                         addOnQuery = new URL(window.location).searchParams.get("state");
+                        decoded = decodeURIComponent(addOnQuery);
                         location.href = '/' + (addOnQuery || "");
                         return [3 /*break*/, 3];
                     case 2:
@@ -359,7 +354,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
         },
         fetchAllJiraIssuesWithJQL: function (params) {
             return __awaiter(this, void 0, void 0, function () {
-                var limit, apiParams, firstRequest, _a, maxResults, total, startAt, requests, limitOrTotal, i;
+                var limit, apiParams, firstRequest, _a, issues, maxResults, total, startAt, requests, limitOrTotal, i;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
@@ -367,7 +362,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
                             firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100 }, apiParams));
                             return [4 /*yield*/, firstRequest];
                         case 1:
-                            _a = _b.sent(), _a.issues, maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
+                            _a = _b.sent(), issues = _a.issues, maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
                             requests = [firstRequest];
                             limitOrTotal = Math.min(total, limit || Infinity);
                             for (i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
@@ -408,6 +403,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
             return changelog.histories.length === changelog.total;
         },
         fetchRemainingChangelogsForIssues: function (issues, progress) {
+            if (progress === void 0) { progress = function () { }; }
             // check for remainings
             return Promise.all(issues.map(function (issue) {
                 if (jiraHelpers.isChangelogComplete(issue.changelog)) {
@@ -423,7 +419,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
         // weirdly, this starts with the oldest, but we got the most recent
         // returns an array of histories objects
         fetchRemainingChangelogsForIssue: function (issueIdOrKey, mostRecentChangeLog) {
-            mostRecentChangeLog.histories; var maxResults = mostRecentChangeLog.maxResults, total = mostRecentChangeLog.total; mostRecentChangeLog.startAt;
+            var histories = mostRecentChangeLog.histories, maxResults = mostRecentChangeLog.maxResults, total = mostRecentChangeLog.total, startAt = mostRecentChangeLog.startAt;
             var requests = [];
             requests.push({ values: mostRecentChangeLog.histories });
             for (var i = 0; i < total - maxResults; i += maxResults) {
@@ -463,7 +459,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
             }
             var firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100, expand: ["changelog"] }, apiParams));
             return firstRequest.then(function (_a) {
-                _a.issues; var maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
+                var issues = _a.issues, maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
                 if (progress.data) {
                     Object.assign(progress.data, {
                         issuesRequested: progress.data.issuesRequested + total,
@@ -506,6 +502,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
         },
         fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
             return __awaiter(this, arguments, void 0, function (params, progress) {
+                if (progress === void 0) { progress = function () { }; }
                 return __generator(this, function (_a) {
                     console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
                     return [2 /*return*/, Promise.resolve(null)];
@@ -613,7 +610,7 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
     // 	});
     // 	return map;
     // }
-    if (jiraHelpers.hasValidAccessToken()) {
+    if (host === "jira" || jiraHelpers.hasValidAccessToken()) {
         // @ts-ignore
         fieldsRequest = jiraHelpers.fetchJiraFields().then(function (fields) {
             var nameMap = {};
@@ -684,21 +681,3 @@ function jiraOIDCHelpers (_a, requestHelper, host) {
     window.jiraHelpers = jiraHelpers;
     return jiraHelpers;
 }
-
-function oauthCallback(environment) {
-	const jiraHelpers = jiraOIDCHelpers(environment);
-
-	const queryParams = new URLSearchParams(window.location.search);
-	const queryCode = queryParams.get('code');
-	if (!queryCode) {
-		//handle error properly to ensure good feedback
-		mainElement.textContent = "Invalid code provided";
-		// Todo
-	} else {
-		jiraHelpers.fetchAccessTokenWithAuthCode(queryCode);
-	}
-
-}
-
-export { oauthCallback as default };
-//# sourceMappingURL=oauth-callback.js.map

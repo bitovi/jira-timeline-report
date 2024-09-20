@@ -79,7 +79,7 @@ test("rawIssuesRequestData", function(assert){
 test("derivedIssuesRequestData", async function(assert){
     const rawIssuesRequestData = value.with({
         issuesPromise: Promise.resolve([{key: "TEST-123", fields: {
-            
+            "Issue Type": {hierarchyLevel: 7},
             CONFIDENCE: 20
         }}]),
         progressData: {}

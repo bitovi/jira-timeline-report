@@ -7,7 +7,9 @@
     "start-local": "node server/server.js",
     "fe:css:build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --watch --minify",
     "fe:js:build": "rollup -c -w --sourcemap",
-    "test": "./node_modules/.bin/vitest",
+    "test": "vitest --watch=false",
+    "test:watch": "vitest",
+    "typecheck": "tsc",
     "prepare": "husky"
   },
   "keywords": [],

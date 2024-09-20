@@ -192,10 +192,10 @@ export class GanttGrid extends StacheElement {
             let parents = parentKeys.map((parentKey)=> {
                 if(keyToAllIssues[parentKey]) {
                     return keyToAllIssues[parentKey][0]
-                } else {
+                } else if(obj[parentKey][0].issue.fields.Parent) {
                     return normalizeIssue(obj[parentKey][0].issue.fields.Parent)
                 }
-            });
+            }).filter(Boolean);
             
             if(parents.length && parents[0].rank) {
                 parents.sort( (p1, p2)=> {
@@ -211,7 +211,8 @@ export class GanttGrid extends StacheElement {
                     })
                 ]
             }).flat(1);
-            return parentsAndChildren;
+            
+            return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
         } else if(this.groupBy === "team"){
             let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.team.name );
 
