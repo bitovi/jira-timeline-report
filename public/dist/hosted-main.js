@@ -51677,7 +51677,7 @@ function getDaysPerSprintDefault(teamKey) {
 }
 
 function normalizeIssue(issue, _a) {
-    var _b = _a.getIssueKey, getIssueKey = _b === void 0 ? getIssueKeyDefault : _b, _c = _a.getParentKey, getParentKey = _c === void 0 ? getParentKeyDefault : _c, _d = _a.getConfidence, getConfidence = _d === void 0 ? getConfidenceDefault : _d, _e = _a.getDueDate, getDueDate = _e === void 0 ? getDueDateDefault : _e, _f = _a.getHierarchyLevel, getHierarchyLevel = _f === void 0 ? getHierarchyLevelDefault : _f, _g = _a.getStartDate, getStartDate = _g === void 0 ? getStartDateDefault : _g, _h = _a.getStoryPoints, getStoryPoints = _h === void 0 ? getStoryPointsDefault : _h, _j = _a.getStoryPointsMedian, getStoryPointsMedian = _j === void 0 ? getStoryPointsMedianDefault : _j, _k = _a.getType, getType = _k === void 0 ? getTypeDefault : _k, _l = _a.getTeamKey, getTeamKey = _l === void 0 ? getTeamKeyDefault : _l, _m = _a.getUrl, getUrl = _m === void 0 ? getUrlDefault : _m, _o = _a.getVelocity, getVelocity = _o === void 0 ? getVelocityDefault : _o, _p = _a.getDaysPerSprint, getDaysPerSprint = _p === void 0 ? getDaysPerSprintDefault : _p, _q = _a.getParallelWorkLimit, getParallelWorkLimit = _q === void 0 ? getParallelWorkLimitDefault : _q, _r = _a.getSprints, getSprints = _r === void 0 ? getSprintsDefault : _r, _s = _a.getStatus, getStatus = _s === void 0 ? getStatusDefault : _s, _t = _a.getStatusCategory, getStatusCategory = _t === void 0 ? getStatusCategoryDefault : _t, _u = _a.getLabels, getLabels = _u === void 0 ? getLabelsDefault : _u, _v = _a.getReleases, getReleases = _v === void 0 ? getReleasesDefault : _v, _w = _a.getRank, getRank = _w === void 0 ? getRankDefault : _w;
+    var _b = _a === void 0 ? {} : _a, _c = _b.getIssueKey, getIssueKey = _c === void 0 ? getIssueKeyDefault : _c, _d = _b.getParentKey, getParentKey = _d === void 0 ? getParentKeyDefault : _d, _e = _b.getConfidence, getConfidence = _e === void 0 ? getConfidenceDefault : _e, _f = _b.getDueDate, getDueDate = _f === void 0 ? getDueDateDefault : _f, _g = _b.getHierarchyLevel, getHierarchyLevel = _g === void 0 ? getHierarchyLevelDefault : _g, _h = _b.getStartDate, getStartDate = _h === void 0 ? getStartDateDefault : _h, _j = _b.getStoryPoints, getStoryPoints = _j === void 0 ? getStoryPointsDefault : _j, _k = _b.getStoryPointsMedian, getStoryPointsMedian = _k === void 0 ? getStoryPointsMedianDefault : _k, _l = _b.getType, getType = _l === void 0 ? getTypeDefault : _l, _m = _b.getTeamKey, getTeamKey = _m === void 0 ? getTeamKeyDefault : _m, _o = _b.getUrl, getUrl = _o === void 0 ? getUrlDefault : _o, _p = _b.getVelocity, getVelocity = _p === void 0 ? getVelocityDefault : _p, _q = _b.getDaysPerSprint, getDaysPerSprint = _q === void 0 ? getDaysPerSprintDefault : _q, _r = _b.getParallelWorkLimit, getParallelWorkLimit = _r === void 0 ? getParallelWorkLimitDefault : _r, _s = _b.getSprints, getSprints = _s === void 0 ? getSprintsDefault : _s, _t = _b.getStatus, getStatus = _t === void 0 ? getStatusDefault : _t, _u = _b.getStatusCategory, getStatusCategory = _u === void 0 ? getStatusCategoryDefault : _u, _v = _b.getLabels, getLabels = _v === void 0 ? getLabelsDefault : _v, _w = _b.getReleases, getReleases = _w === void 0 ? getReleasesDefault : _w, _x = _b.getRank, getRank = _x === void 0 ? getRankDefault : _x;
     var teamName = getTeamKey(issue);
     var velocity = getVelocity(teamName);
     var daysPerSprint = getDaysPerSprint(teamName);
@@ -55155,46 +55155,54 @@ const coerce$1 = (version, options) => {
 };
 var coerce_1 = coerce$1;
 
-class LRUCache {
-  constructor () {
-    this.max = 1000;
-    this.map = new Map();
-  }
+var lrucache;
+var hasRequiredLrucache;
 
-  get (key) {
-    const value = this.map.get(key);
-    if (value === undefined) {
-      return undefined
-    } else {
-      // Remove the key from the map and add it to the end
-      this.map.delete(key);
-      this.map.set(key, value);
-      return value
-    }
-  }
+function requireLrucache () {
+	if (hasRequiredLrucache) return lrucache;
+	hasRequiredLrucache = 1;
+	class LRUCache {
+	  constructor () {
+	    this.max = 1000;
+	    this.map = new Map();
+	  }
 
-  delete (key) {
-    return this.map.delete(key)
-  }
+	  get (key) {
+	    const value = this.map.get(key);
+	    if (value === undefined) {
+	      return undefined
+	    } else {
+	      // Remove the key from the map and add it to the end
+	      this.map.delete(key);
+	      this.map.set(key, value);
+	      return value
+	    }
+	  }
 
-  set (key, value) {
-    const deleted = this.delete(key);
+	  delete (key) {
+	    return this.map.delete(key)
+	  }
 
-    if (!deleted && value !== undefined) {
-      // If cache is full, delete the least recently used item
-      if (this.map.size >= this.max) {
-        const firstKey = this.map.keys().next().value;
-        this.delete(firstKey);
-      }
+	  set (key, value) {
+	    const deleted = this.delete(key);
 
-      this.map.set(key, value);
-    }
+	    if (!deleted && value !== undefined) {
+	      // If cache is full, delete the least recently used item
+	      if (this.map.size >= this.max) {
+	        const firstKey = this.map.keys().next().value;
+	        this.delete(firstKey);
+	      }
 
-    return this
-  }
+	      this.map.set(key, value);
+	    }
+
+	    return this
+	  }
+	}
+
+	lrucache = LRUCache;
+	return lrucache;
 }
-
-var lrucache = LRUCache;
 
 var range;
 var hasRequiredRange;
@@ -55416,7 +55424,7 @@ function requireRange () {
 
 	range = Range;
 
-	const LRU = lrucache;
+	const LRU = requireLrucache();
 	const cache = new LRU();
 
 	const parseOptions = parseOptions_1;
