@@ -1,6 +1,6 @@
 import {deriveWorkTiming} from "./work-timing/work-timing.js";
 import {getWorkStatus} from "./work-status/work-status.js";
-import { normalizeIssue } from "../normalized/normalize.js";
+import { normalizeIssue } from "../normalized/normalize.ts";
 
 /**
  * @typedef {import("../normalized/normalize.js").NormalizedIssue & {

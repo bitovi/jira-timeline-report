@@ -9,6 +9,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
     "allowJs": true,
     "module": "ESNext",
     "skipLibCheck": true,
@@ -17,7 +18,7 @@
         "./node_modules/undici/types"
       ]
     },
-    "sourceMap": true
+    "sourceMap": false
   },
   "include": [
     "public/**/*.ts"
@@ -25,6 +26,7 @@
   "exclude": [
     "node_modules",
     "public/dist",
-    "**/*.js"
+    "**/*.js",
+    "**/*.test.ts", "**/*.spec.ts"
   ]
 }
