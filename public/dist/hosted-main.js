@@ -53008,7 +53008,10 @@ class StatusReport extends canStacheElement {
         const getIssue = map.get.bind(map);
 
         return window.getIssuesByKey = function(issueKeys){
-            return issueKeys.map(getIssue)
+            // O(n^2)
+            return issueKeys.map(getIssue).filter( issue => {
+                return !this.planningIssues.some( planningIssue => issue === planningIssue)
+            });
         }
     }
     wasReleaseDate(release) {
