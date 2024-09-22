@@ -1,9 +1,5 @@
 import { StacheElement, type } from "./can.js";
 
-import { derivedToCSVFormat } from "./jira/derived/work-timing/work-timing.js";
-
-import bitoviTrainingData from "./examples/bitovi-training.js";
-
 
 //import "./steerco-timeline.js";
 import "./status-filter.js";
@@ -89,7 +85,7 @@ export class TimelineReport extends StacheElement {
             <ul class="list-disc list-inside ml-2">
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with iniative work breakdown</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&statusesToShow=Development%2CReady&primaryReportType=breakdown">Ready and in-development initiative work breakdown</a></li>
+              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=breakdown">Ready and in-development initiative work breakdown</a></li>
             </ul>
 
           </div>
