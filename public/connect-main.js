@@ -1,10 +1,16 @@
+import { getConnectRequestHelper } from "./request-helpers/connect-request-helper.js";
+import mainHelper from "./shared/main-helper.js";
 
-import mainHelper from './shared/main-helper.js';
+export default async function main(environment) {
+  const loginComponent = await mainHelper({
+    environment,
+    config: {
+      getRequestHelper: getConnectRequestHelper,
+      loginDisplayStyle: "none",
+    },
+  });
 
-export default async function main(config) {
-	const loginComponent = await mainHelper(config, 'jira');
+  loginComponent.isLoggedIn = true;
 
-	loginComponent.isLoggedIn = true;
-
-	return loginComponent;
+  return loginComponent;
 }
