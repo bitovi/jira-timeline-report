@@ -58139,48 +58139,52 @@ function getHostedRequestHelper({ JIRA_API_URL }) {
 }
 
 async function mainHelper(config, host) {
+  console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
+
   let requestHelper;
   {
     requestHelper = getHostedRequestHelper(config);
   }
 
-	const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
+  const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
 
-	const loginComponent = new JiraLogin().initialize({jiraHelpers});
+  const loginComponent = new JiraLogin().initialize({ jiraHelpers });
 
-	const savedUrls = document.querySelector("saved-urls");
-	savedUrls.loginComponent = loginComponent;
-	savedUrls.jiraHelpers = jiraHelpers;
+  const savedUrls = document.querySelector("saved-urls");
+  savedUrls.loginComponent = loginComponent;
+  savedUrls.jiraHelpers = jiraHelpers;
 
-	const selectCloud = document.querySelector("select-cloud");
-	if (selectCloud) {
-		selectCloud.loginComponent = loginComponent;
-		selectCloud.jiraHelpers = jiraHelpers;		
-	}
+  const selectCloud = document.querySelector("select-cloud");
+  if (selectCloud) {
+    selectCloud.loginComponent = loginComponent;
+    selectCloud.jiraHelpers = jiraHelpers;
+  }
 
-	const velocitiesConfiguration = document.querySelector("velocities-from-issue");
-	velocitiesConfiguration.jiraHelpers = jiraHelpers;
-	velocitiesConfiguration.isLoggedIn = loginComponent.isLoggedIn;
-	loginComponent.listenTo("isLoggedIn", ({value})=>{
-		velocitiesConfiguration.isLoggedIn = value;
-	});
-	
-	const listener = ({value})=>{
-		if(value) {
-			loginComponent.off("isResolved", listener);
-			mainElement.style.display = "none";
-			const report = new TimelineReport().initialize({jiraHelpers, loginComponent, mode: "TEAMS", velocitiesConfiguration});
-			report.className = "block";
-			document.body.append(report);
-		}
-	};
-	loginComponent.on("isResolved",listener);
-	login.appendChild(loginComponent);
+  const velocitiesConfiguration = document.querySelector("velocities-from-issue");
+  velocitiesConfiguration.jiraHelpers = jiraHelpers;
+  velocitiesConfiguration.isLoggedIn = loginComponent.isLoggedIn;
+  loginComponent.listenTo("isLoggedIn", ({ value }) => {
+    velocitiesConfiguration.isLoggedIn = value;
+  });
 
+  const listener = ({ value }) => {
+    if (value) {
+      loginComponent.off("isResolved", listener);
+      mainElement.style.display = "none";
+      const report = new TimelineReport().initialize({
+        jiraHelpers,
+        loginComponent,
+        mode: "TEAMS",
+        velocitiesConfiguration,
+      });
+      report.className = "block";
+      document.body.append(report);
+    }
+  };
+  loginComponent.on("isResolved", listener);
+  login.appendChild(loginComponent);
 
-	return loginComponent;
-
-
+  return loginComponent;
 }
 
 async function main(config) {

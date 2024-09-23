@@ -10,7 +10,7 @@ import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
 export default async function mainHelper(config, host) {
-  console.log(config?.COMMIT_SHA);
+  console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 
   let requestHelper;
   if (host === "jira") {
