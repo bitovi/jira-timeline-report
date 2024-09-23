@@ -50197,10 +50197,28 @@ function __generator(thisArg, body) {
     }
 }
 
+function __spreadArray(to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+}
+
 typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
     var e = new Error(message);
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
+
+function chunkArray(array, size) {
+    var chunkedArr = [];
+    for (var i = 0; i < array.length; i += size) {
+        chunkedArr.push(array.slice(i, i + size));
+    }
+    return chunkedArr;
+}
 
 function responseToJSON(response) {
     if (!response.ok) {
@@ -50214,6 +50232,48 @@ function responseToJSON(response) {
     return response.json();
 }
 
+function fetchJSON$1(url, options) {
+    return __awaiter(this, void 0, void 0, function () {
+        var response, payload, err, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    return [4 /*yield*/, fetch(url, options)];
+                case 1:
+                    response = _a.sent();
+                    if (!!response.ok) return [3 /*break*/, 3];
+                    return [4 /*yield*/, response.json()];
+                case 2:
+                    payload = _a.sent();
+                    err = new Error("HTTP status code: " + response.status);
+                    Object.assign(err, payload);
+                    Object.assign(err, response);
+                    throw err;
+                case 3:
+                    return [3 /*break*/, 5];
+                case 4:
+                    result = _a.sent();
+                    try {
+                        window.localStorage.setItem(url, JSON.stringify(result.data));
+                    }
+                    catch (e) {
+                        console.log("can't save");
+                    }
+                    return [2 /*return*/, result];
+                case 5: return [2 /*return*/, responseToJSON(response)];
+            }
+        });
+    });
+}
+
+function mapIdsToNames(obj, fields) {
+    var mapped = {};
+    for (var prop in obj) {
+        mapped[fields.idMap[prop] || prop] = obj[prop];
+    }
+    return mapped;
+}
+
 function responseToText(response) {
     if (!response.ok) {
         return response.json().then(function (payload) {
@@ -50225,499 +50285,159 @@ function responseToText(response) {
     }
     return response.text();
 }
-function nativeFetchJSON(url, options) {
-    return fetch(url, options).then(responseToJSON);
-}
-function chunkArray(array, size) {
-    var chunkedArr = [];
-    for (var i = 0; i < array.length; i += size) {
-        chunkedArr.push(array.slice(i, i + size));
-    }
-    return chunkedArr;
-}
-function JiraOIDCHelpers (_a, requestHelper, host) {
-    var _this = this;
-    var _b = _a === void 0 ? window.env : _a, JIRA_CLIENT_ID = _b.JIRA_CLIENT_ID, JIRA_SCOPE = _b.JIRA_SCOPE, JIRA_CALLBACK_URL = _b.JIRA_CALLBACK_URL, JIRA_API_URL = _b.JIRA_API_URL;
-    var fetchJSON = nativeFetchJSON;
-    var fieldsRequest;
-    function makeDeepChildrenLoaderUsingNamedFields(rootMethod) {
-        // Makes child requests in batches of 40
-        // 
-        // params - base params
-        // sourceParentIssues - the source of parent issues
-        function fetchChildrenResponses(params, parentIssues, progress) {
-            var issuesToQuery = chunkArray(parentIssues, 40);
-            var batchedResponses = issuesToQuery.map(function (issues) {
-                var keys = issues.map(function (issue) { return issue.key; });
-                var jql = "parent in (".concat(keys.join(", "), ") ").concat(params.childJQL || "");
-                return rootMethod(__assign(__assign({}, params), { jql: jql }), progress);
-            });
-            // this needs to be flattened
-            return batchedResponses;
+
+function saveInformationToLocalStorage(parameters) {
+    var objectKeys = Object.keys(parameters);
+    for (var _i = 0, objectKeys_1 = objectKeys; _i < objectKeys_1.length; _i++) {
+        var key = objectKeys_1[_i];
+        var value = parameters[key];
+        if (value) {
+            // TODO: This is a hack to get around the fact that we can't store arrays in local storage, should everything JSON.stringify? Are arrays real?
+            window.localStorage.setItem(key, Array.isArray(value) ? "" : value.toString());
         }
-        function fetchDeepChildren(params, sourceParentIssues, progress) {
-            return __awaiter(this, void 0, void 0, function () {
-                var batchedFirstResponses, getChildren, batchedIssueRequests, allChildren;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            batchedFirstResponses = fetchChildrenResponses(params, sourceParentIssues, progress);
-                            getChildren = function (parentIssues) {
-                                if (parentIssues.length) {
-                                    return fetchDeepChildren(params, parentIssues, progress).then(function (deepChildrenIssues) {
-                                        return parentIssues.concat(deepChildrenIssues);
-                                    });
-                                }
-                                else {
-                                    return parentIssues;
-                                }
-                            };
-                            batchedIssueRequests = batchedFirstResponses.map(function (firstBatchPromise) {
-                                return firstBatchPromise.then(getChildren);
-                            });
-                            return [4 /*yield*/, Promise.all(batchedIssueRequests)];
-                        case 1:
-                            allChildren = _a.sent();
-                            return [2 /*return*/, allChildren.flat()];
-                    }
-                });
-            });
+        else {
+            window.localStorage.removeItem(key);
         }
-        return function fetchAllDeepChildren(params_1) {
-            return __awaiter(this, arguments, void 0, function (params, progress) {
-                var fields, newParams, parentIssues, allChildrenIssues, combined;
-                var _a;
-                if (progress === void 0) { progress = {}; }
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            console.log("generated from root method", params);
-                            debugger;
-                            return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _b.sent();
-                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
-                            progress.data = progress.data || {
-                                issuesRequested: 0,
-                                issuesReceived: 0,
-                                changeLogsRequested: 0,
-                                changeLogsReceived: 0
-                            };
-                            return [4 /*yield*/, rootMethod(newParams, progress)];
-                        case 2:
-                            parentIssues = _b.sent();
-                            return [4 /*yield*/, fetchDeepChildren(newParams, parentIssues, progress)];
-                        case 3:
-                            allChildrenIssues = _b.sent();
-                            combined = parentIssues.concat(allChildrenIssues);
-                            return [2 /*return*/, combined.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        };
     }
-    var jiraHelpers = {
-        saveInformationToLocalStorage: function (parameters) {
-            var objectKeys = Object.keys(parameters);
-            for (var _i = 0, objectKeys_1 = objectKeys; _i < objectKeys_1.length; _i++) {
-                var key = objectKeys_1[_i];
-                window.localStorage.setItem(key, parameters[key]);
-            }
-        },
-        clearAuthFromLocalStorage: function () {
-            window.localStorage.removeItem("accessToken");
-            window.localStorage.removeItem("refreshToken");
-            window.localStorage.removeItem("expiryTimestamp");
-        },
-        fetchFromLocalStorage: function (key) {
-            return window.localStorage.getItem(key);
-        },
-        fetchAuthorizationCode: function () {
-            var url = "https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=".concat(JIRA_CLIENT_ID, "&scope=").concat(JIRA_SCOPE, "&redirect_uri=").concat(JIRA_CALLBACK_URL, "&response_type=code&prompt=consent&state=").concat(encodeURIComponent(encodeURIComponent(window.location.search)));
-            window.location.href = url;
-        },
-        refreshAccessToken: function (accessCode) { return __awaiter(_this, void 0, void 0, function () {
-            var response, _a, accessToken, expiryTimestamp, refreshToken, error_1;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _b.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, fetchJSON("".concat(window.env.JIRA_API_URL, "/?code=").concat(accessCode))];
-                    case 1:
-                        response = _b.sent();
-                        _a = response.data, accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken;
-                        jiraHelpers.saveInformationToLocalStorage({
-                            accessToken: accessToken,
-                            refreshToken: refreshToken,
-                            expiryTimestamp: expiryTimestamp,
-                        });
-                        return [2 /*return*/, accessToken];
-                    case 2:
-                        error_1 = _b.sent();
-                        if (error_1 instanceof Error) {
-                            console.error(error_1.message);
-                        }
-                        else {
-                            console.error('An unknown error occurred');
-                        }
-                        jiraHelpers.clearAuthFromLocalStorage();
-                        jiraHelpers.fetchAuthorizationCode();
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); },
-        fetchAccessTokenWithAuthCode: function (authCode) { return __awaiter(_this, void 0, void 0, function () {
-            var _a, accessToken, expiryTimestamp, refreshToken, scopeId, addOnQuery, error_2;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _b.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, fetchJSON("./access-token?code=".concat(authCode))];
-                    case 1:
-                        _a = _b.sent(), accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken, scopeId = _a.scopeId;
-                        jiraHelpers.saveInformationToLocalStorage({
-                            accessToken: accessToken,
-                            refreshToken: refreshToken,
-                            expiryTimestamp: expiryTimestamp,
-                            scopeId: scopeId,
-                        });
-                        addOnQuery = new URL(window.location).searchParams.get("state");
-                        location.href = '/' + (addOnQuery || "");
-                        return [3 /*break*/, 3];
-                    case 2:
-                        error_2 = _b.sent();
-                        //handle error properly.
-                        console.error(error_2);
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); },
-        fetchAccessibleResources: function () {
-            return requestHelper("https://api.atlassian.com/oauth/token/accessible-resources");
-        },
-        fetchJiraSprint: function (sprintId) { return __awaiter(_this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, requestHelper("/agile/1.0/sprint/".concat(sprintId))];
-            });
-        }); },
-        fetchJiraIssue: function (issueId) { return __awaiter(_this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, requestHelper("/api/3/issue/".concat(issueId))];
-            });
-        }); },
-        editJiraIssueWithNamedFields: function (issueId, fields) { return __awaiter(_this, void 0, void 0, function () {
-            var scopeIdForJira, accessToken, fieldMapping, editBody;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
-                        accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
-                        return [4 /*yield*/, fieldsRequest];
-                    case 1:
-                        fieldMapping = _a.sent();
-                        editBody = fieldsToEditBody(fields, fieldMapping);
-                        //const fieldsWithIds = mapNamesToIds(fields || {}, fieldMapping),
-                        //	updateWithIds = mapNamesToIds(update || {}, fieldMapping);
-                        return [2 /*return*/, fetch("".concat(JIRA_API_URL, "/").concat(scopeIdForJira, "/rest/api/3/issue/").concat(issueId, "?") +
-                                "" /*new URLSearchParams(params)*/, {
-                                method: 'PUT',
-                                headers: {
-                                    'Authorization': "Bearer ".concat(accessToken),
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(editBody)
-                            }).then(responseToText)];
-                }
-            });
-        }); },
-        fetchJiraIssuesWithJQL: function (params) {
-            // TODO - investigate this and convert params to proper type
-            return requestHelper("/api/3/search?" + new URLSearchParams(params));
-        },
-        fetchJiraIssuesWithJQLWithNamedFields: function (params) {
-            return __awaiter(this, void 0, void 0, function () {
-                var fields, newParams, response;
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _b.sent();
-                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
-                            return [4 /*yield*/, jiraHelpers.fetchJiraIssuesWithJQL(newParams)];
-                        case 2:
-                            response = _b.sent();
-                            return [2 /*return*/, response.issues.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        },
-        fetchAllJiraIssuesWithJQL: function (params) {
-            return __awaiter(this, void 0, void 0, function () {
-                var limit, apiParams, firstRequest, _a, maxResults, total, startAt, requests, limitOrTotal, i;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            limit = params.limit, apiParams = __rest(params, ["limit"]);
-                            firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100 }, apiParams));
-                            return [4 /*yield*/, firstRequest];
-                        case 1:
-                            _a = _b.sent(), _a.issues, maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
-                            requests = [firstRequest];
-                            limitOrTotal = Math.min(total, limit || Infinity);
-                            for (i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
-                                requests.push(jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: maxResults, startAt: i }, apiParams)));
-                            }
-                            return [2 /*return*/, Promise.all(requests).then(function (responses) {
-                                    return responses.map(function (response) { return response.issues; }).flat();
-                                })];
-                    }
-                });
-            });
-        },
-        fetchAllJiraIssuesWithJQLUsingNamedFields: function (params) {
-            return __awaiter(this, void 0, void 0, function () {
-                var fields, newParams, response;
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _b.sent();
-                            newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
-                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQL(newParams)];
-                        case 2:
-                            response = _b.sent();
-                            return [2 /*return*/, response.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        },
-        fetchJiraChangelog: function (issueIdOrKey, params) {
-            // TODO investigate this - convert params to proper type
-            return requestHelper("/api/3/issue/".concat(issueIdOrKey, "/changelog?") + new URLSearchParams(params));
-        },
-        isChangelogComplete: function (changelog) {
-            return changelog.histories.length === changelog.total;
-        },
-        fetchRemainingChangelogsForIssues: function (issues, progress) {
-            // check for remainings
-            return Promise.all(issues.map(function (issue) {
-                if (jiraHelpers.isChangelogComplete(issue.changelog)) {
-                    return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
-                }
-                else {
-                    return jiraHelpers.fetchRemainingChangelogsForIssue(issue.key, issue.changelog).then(function (histories) {
-                        return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
+}
+function clearAuthFromLocalStorage() {
+    window.localStorage.removeItem("accessToken");
+    window.localStorage.removeItem("refreshToken");
+    window.localStorage.removeItem("expiryTimestamp");
+}
+function fetchFromLocalStorage$1(key) {
+    return window.localStorage.getItem(key);
+}
+var fetchAuthorizationCode = function (config) { return function () {
+    var url = "https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=".concat(config.env.JIRA_CLIENT_ID, "&scope=").concat(config.env.JIRA_SCOPE, "&redirect_uri=").concat(config.env.JIRA_CALLBACK_URL, "&response_type=code&prompt=consent&state=").concat(encodeURIComponent(encodeURIComponent(window.location.search)));
+    window.location.href = url;
+}; };
+var refreshAccessToken = function (config) {
+    return function (accessCode) { return __awaiter(void 0, void 0, void 0, function () {
+        var response, _a, accessToken, expiryTimestamp, refreshToken, error_1;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _b.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, fetchJSON$1("".concat(config.env.JIRA_API_URL, "/?code=").concat(accessCode))];
+                case 1:
+                    response = _b.sent();
+                    _a = response.data, accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken;
+                    saveInformationToLocalStorage({
+                        accessToken: accessToken,
+                        refreshToken: refreshToken,
+                        expiryTimestamp: expiryTimestamp,
                     });
-                }
-            }));
-        },
-        // weirdly, this starts with the oldest, but we got the most recent
-        // returns an array of histories objects
-        fetchRemainingChangelogsForIssue: function (issueIdOrKey, mostRecentChangeLog) {
-            mostRecentChangeLog.histories; var maxResults = mostRecentChangeLog.maxResults, total = mostRecentChangeLog.total; mostRecentChangeLog.startAt;
-            var requests = [];
-            requests.push({ values: mostRecentChangeLog.histories });
-            for (var i = 0; i < total - maxResults; i += maxResults) {
-                requests.push(jiraHelpers.fetchJiraChangelog(issueIdOrKey, {
-                    maxResults: Math.min(maxResults, total - maxResults - i),
-                    startAt: i,
-                }).then(function (response) {
-                    // the query above reverses the sort order, we fix that here
-                    return __assign(__assign({}, response), { values: response.values.reverse() });
-                }));
-            }
-            // server sends back as "values", we match that
-            return Promise.all(requests).then(function (responses) {
-                return responses.map(function (response) { return response.values; }).flat();
-            }).then(function (response) {
-                return response;
-            });
-        },
-        fetchAllJiraIssuesWithJQLAndFetchAllChangelog: function (params, progress) {
-            if (progress === void 0) { progress = function () { }; }
-            var limit = params.limit, apiParams = __rest(params, ["limit"]);
-            // a weak map would be better
-            progress.data = progress.data || {
-                issuesRequested: 0,
-                issuesReceived: 0,
-                changeLogsRequested: 0,
-                changeLogsReceived: 0
-            };
-            function getRemainingChangeLogsForIssues(response) {
-                if (progress.data) {
-                    Object.assign(progress.data, {
-                        issuesReceived: progress.data.issuesReceived + response.issues.length
-                    });
-                    progress(progress.data);
-                }
-                return jiraHelpers.fetchRemainingChangelogsForIssues(response.issues, progress);
-            }
-            var firstRequest = jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: 100, expand: ["changelog"] }, apiParams));
-            return firstRequest.then(function (_a) {
-                _a.issues; var maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
-                if (progress.data) {
-                    Object.assign(progress.data, {
-                        issuesRequested: progress.data.issuesRequested + total,
-                        changeLogsRequested: 0,
-                        changeLogsReceived: 0
-                    });
-                    progress(progress.data);
-                }
-                var requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
-                var limitOrTotal = Math.min(total, limit || Infinity);
-                for (var i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
-                    requests.push(jiraHelpers.fetchJiraIssuesWithJQL(__assign({ maxResults: maxResults, startAt: i }, apiParams))
-                        .then(getRemainingChangeLogsForIssues));
-                }
-                return Promise.all(requests).then(function (responses) {
-                    return responses.flat();
-                });
-            });
-        },
-        // this could do each response incrementally, but I'm being lazy
-        fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
-            return __awaiter(this, arguments, void 0, function (params, progress) {
-                var fields, newParams, response;
-                if (progress === void 0) { progress = function () { }; }
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, fieldsRequest];
-                        case 1:
-                            fields = _a.sent();
-                            newParams = __assign(__assign({}, params), { fields: params.fields.map(function (f) { return fields.nameMap[f] || f; }) });
-                            return [4 /*yield*/, jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(newParams, progress)];
-                        case 2:
-                            response = _a.sent();
-                            return [2 /*return*/, response.map(function (issue) {
-                                    return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
-                                })];
-                    }
-                });
-            });
-        },
-        fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: function (params_1) {
-            return __awaiter(this, arguments, void 0, function (params, progress) {
-                return __generator(this, function (_a) {
-                    console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
-                    return [2 /*return*/, Promise.resolve(null)];
-                });
-            });
-        },
-        fetchChildrenResponses: function (params, parentIssues, progress) {
-            var _this = this;
-            if (progress === void 0) { progress = function () { }; }
-            var issuesToQuery = chunkArray(parentIssues, 40);
-            var batchedResponses = issuesToQuery.map(function (issues) {
-                var keys = issues.map(function (issue) { return issue.key; });
-                var jql = "parent in (".concat(keys.join(", "), ")");
-                return _this.fetchAllJiraIssuesWithJQLAndFetchAllChangelog(__assign(__assign({}, params), { jql: jql }), progress);
-            });
-            // this needs to be flattened
-            return batchedResponses;
-        },
-        // Makes child requests in batches of 40
-        // 
-        // params - base params
-        // sourceParentIssues - the source of parent issues
-        fetchDeepChildren: function (params, sourceParentIssues, progress) {
-            var _this = this;
-            if (progress === void 0) { progress = function () { }; }
-            var batchedFirstResponses = this.fetchChildrenResponses(params, sourceParentIssues, progress);
-            var getChildren = function (parentIssues) {
-                if (parentIssues.length) {
-                    return _this.fetchDeepChildren(params, parentIssues, progress).then(function (deepChildrenIssues) {
-                        return parentIssues.concat(deepChildrenIssues);
-                    });
-                }
-                else {
-                    return parentIssues;
-                }
-            };
-            var batchedIssueRequests = batchedFirstResponses.map(function (firstBatchPromise) {
-                return firstBatchPromise.then(getChildren);
-            });
-            return Promise.all(batchedIssueRequests).then(function (allChildren) {
-                return allChildren.flat();
-            });
-        },
-        fetchJiraFields: function () {
-            return requestHelper("/api/3/field");
-        },
-        getAccessToken: function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var refreshToken;
-                return __generator(this, function (_a) {
-                    if (!jiraHelpers.hasValidAccessToken()) {
-                        refreshToken = jiraHelpers.fetchFromLocalStorage("refreshToken");
-                        if (!refreshToken) {
-                            jiraHelpers.fetchAuthorizationCode();
-                        }
-                        else {
-                            return [2 /*return*/, jiraHelpers.refreshAccessToken()];
-                        }
+                    return [2 /*return*/, accessToken];
+                case 2:
+                    error_1 = _b.sent();
+                    if (error_1 instanceof Error) {
+                        console.error(error_1.message);
                     }
                     else {
-                        return [2 /*return*/, jiraHelpers.fetchFromLocalStorage("accessToken")];
+                        console.error("An unknown error occurred");
                     }
-                    return [2 /*return*/];
-                });
-            });
-        },
-        hasAccessToken: function () {
-            return !!jiraHelpers.fetchFromLocalStorage("accessToken");
-        },
-        hasValidAccessToken: function () {
-            var accessToken = jiraHelpers.fetchFromLocalStorage("accessToken");
-            var expiryTimestamp = Number(jiraHelpers.fetchFromLocalStorage("expiryTimestamp"));
-            if (isNaN(expiryTimestamp)) {
-                expiryTimestamp = 0;
+                    clearAuthFromLocalStorage();
+                    fetchAuthorizationCode(config)();
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
             }
-            var currentTimestamp = Math.floor(new Date().getTime() / 1000.0);
-            return !((currentTimestamp > expiryTimestamp) || (!accessToken));
-        },
-        _cachedServerInfoPromise: function () {
-            return requestHelper('/api/3/serverInfo');
-        },
-        getServerInfo: function () {
-            // if(this._cachedServerInfoPromise) {
-            // 	return this._cachedServerInfoPromise;
-            // }
-            // // https://your-domain.atlassian.net/rest/api/3/serverInfo
-            // return this._cachedServerInfoPromise( = requestHelper('/api/3/serverInfo'));
-            return this._cachedServerInfoPromise();
-        },
-    };
-    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
-        makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
-    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
-        makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
-    // commented out because it's not used
-    // function makeFieldNameToIdMap(
-    // 	fields: {
-    // 		name: string;
-    // 		id: string | number;
-    // 	}[]
-    // ) {
-    // 	const map = {};
-    // 	fields.forEach((f) => {
-    // 		map[f.name] = f.id;
-    // 	});
-    // 	return map;
-    // }
-    if (jiraHelpers.hasValidAccessToken()) {
-        // @ts-ignore
-        fieldsRequest = jiraHelpers.fetchJiraFields().then(function (fields) {
+        });
+    }); };
+};
+function fetchAccessTokenWithAuthCode(authCode) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _a, accessToken, expiryTimestamp, refreshToken, scopeId, addOnQuery, error_2;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _b.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, fetchJSON$1("./access-token?code=".concat(authCode))];
+                case 1:
+                    _a = _b.sent(), accessToken = _a.accessToken, expiryTimestamp = _a.expiryTimestamp, refreshToken = _a.refreshToken, scopeId = _a.scopeId;
+                    saveInformationToLocalStorage({
+                        accessToken: accessToken,
+                        refreshToken: refreshToken,
+                        expiryTimestamp: expiryTimestamp,
+                        scopeId: scopeId,
+                    });
+                    addOnQuery = new URL(window.location).searchParams.get("state");
+                    location.href = "/" + (addOnQuery || "");
+                    return [3 /*break*/, 3];
+                case 2:
+                    error_2 = _b.sent();
+                    //handle error properly.
+                    console.error(error_2);
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
+var fetchAccessibleResources = function (config) { return function () {
+    return config.requestHelper("https://api.atlassian.com/oauth/token/accessible-resources");
+}; };
+var fetchJiraSprint = function (config) { return function (sprintId) {
+    return config.requestHelper("/agile/1.0/sprint/".concat(sprintId));
+}; };
+var fetchJiraIssue = function (config) { return function (issueId) {
+    return config.requestHelper("/api/3/issue/".concat(issueId));
+}; };
+var fieldsToEditBody = function (obj, fieldMapping) {
+    var editBody = { fields: {}, update: {} };
+    for (var prop in obj) {
+        //if(prop === "Story points") {
+        // 10016 -> story point estimate
+        // 10034 -> story points
+        //obj[prop] = ""+obj[prop];
+        //mapped["customfield_10016"] = obj[prop];
+        //mapped["customfield_10034"] = obj[prop];
+        //mapped["Story points"] = obj[prop];
+        //mapped["storypoints"] = obj[prop];
+        //mapped["Story Points"] = obj[prop];
+        // 10016 -> story point estimate
+        //} else {
+        //mapped[fields.nameMap[prop] || prop] = obj[prop];
+        //}
+        editBody.update[fieldMapping.nameMap[prop] || prop] = [{ set: obj[prop] }];
+    }
+    return editBody;
+};
+var editJiraIssueWithNamedFields = function (config) { return function (issueId, fields) { return __awaiter(void 0, void 0, void 0, function () {
+    var scopeIdForJira, accessToken, fieldMapping, editBody;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                scopeIdForJira = fetchFromLocalStorage$1("scopeId");
+                accessToken = fetchFromLocalStorage$1("accessToken");
+                return [4 /*yield*/, fieldsRequest(config)()];
+            case 1:
+                fieldMapping = _a.sent();
+                if (!fieldMapping)
+                    return [2 /*return*/];
+                editBody = fieldsToEditBody(fields, fieldMapping);
+                //const fieldsWithIds = mapNamesToIds(fields || {}, fieldMapping),
+                //	updateWithIds = mapNamesToIds(update || {}, fieldMapping);
+                return [2 /*return*/, fetch("".concat(config.env.JIRA_API_URL, "/").concat(scopeIdForJira, "/rest/api/3/issue/").concat(issueId, "?") +
+                        "" /*new URLSearchParams(params)*/, {
+                        method: "PUT",
+                        headers: {
+                            Authorization: "Bearer ".concat(accessToken),
+                            Accept: "application/json",
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(editBody),
+                    }).then(responseToText)];
+        }
+    });
+}); }; };
+var fetchJiraIssuesWithJQL = function (config) { return function (params) {
+    // TODO - investigate this and convert params to proper type
+    return config.requestHelper("/api/3/search?" + new URLSearchParams(JiraIssueParamsToParams(params)));
+}; };
+var fieldsRequest = function (config) { return function () {
+    if (config.host === "jira" || hasValidAccessToken()) {
+        return fetchJiraFields(config)().then(function (fields) {
             var nameMap = {};
             var idMap = {};
             // @ts-ignore
@@ -50731,131 +50451,395 @@ function JiraOIDCHelpers (_a, requestHelper, host) {
             return {
                 list: fields,
                 nameMap: nameMap,
-                idMap: idMap
+                idMap: idMap,
             };
         });
-        // @ts-ignore
-        jiraHelpers.fieldsRequest = fieldsRequest;
     }
-    function mapIdsToNames(obj, fields) {
-        var mapped = {};
-        for (var prop in obj) {
-            mapped[fields.idMap[prop] || prop] = obj[prop];
+}; };
+var fetchAllJiraIssuesWithJQL = function (config) { return function (params) { return __awaiter(void 0, void 0, void 0, function () {
+    var limit, apiParams, firstRequest, _a, maxResults, total, startAt, requests, limitOrTotal, i;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                limit = params.limit, apiParams = __rest(params, ["limit"]);
+                firstRequest = fetchJiraIssuesWithJQL(config)(__assign({ maxResults: 100 }, apiParams));
+                return [4 /*yield*/, firstRequest];
+            case 1:
+                _a = _b.sent(), _a.issues, maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
+                requests = [firstRequest];
+                limitOrTotal = Math.min(total, limit || Infinity);
+                for (i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
+                    requests.push(fetchJiraIssuesWithJQL(config)(__assign({ maxResults: maxResults, startAt: i }, apiParams)));
+                }
+                return [2 /*return*/, Promise.all(requests).then(function (responses) {
+                        return responses.map(function (response) { return response.issues; }).flat();
+                    })];
         }
-        return mapped;
-    }
-    function fieldsToEditBody(obj, fieldMapping) {
-        var editBody = { fields: {}, update: {} };
-        for (var prop in obj) {
-            //if(prop === "Story points") {
-            // 10016 -> story point estimate
-            // 10034 -> story points
-            //obj[prop] = ""+obj[prop];
-            //mapped["customfield_10016"] = obj[prop];
-            //mapped["customfield_10034"] = obj[prop];
-            //mapped["Story points"] = obj[prop];
-            //mapped["storypoints"] = obj[prop];
-            //mapped["Story Points"] = obj[prop];
-            // 10016 -> story point estimate
-            //} else {
-            //mapped[fields.nameMap[prop] || prop] = obj[prop];
-            //}
-            editBody.update[fieldMapping.nameMap[prop] || prop] = [{ set: obj[prop] }];
+    });
+}); }; };
+var fetchAllJiraIssuesWithJQLUsingNamedFields = function (config) { return function (params) { return __awaiter(void 0, void 0, void 0, function () {
+    var fields, newParams, response;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0: return [4 /*yield*/, fieldsRequest(config)()];
+            case 1:
+                fields = _b.sent();
+                if (!fields)
+                    return [2 /*return*/];
+                newParams = __assign(__assign({}, params), { fields: (_a = params.fields) === null || _a === void 0 ? void 0 : _a.map(function (f) { return fields.nameMap[f] || f; }) });
+                return [4 /*yield*/, fetchAllJiraIssuesWithJQL(config)(newParams)];
+            case 2:
+                response = _b.sent();
+                return [2 /*return*/, response.map(function (issue) {
+                        return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
+                    })];
         }
-        return editBody;
+    });
+}); }; };
+var JiraIssueParamsToParams = function (params) {
+    var formattedParams = {};
+    if (params.jql)
+        formattedParams.jql = params.jql;
+    if (params.startAt)
+        formattedParams.startAt = params.startAt.toString();
+    if (params.maxResults)
+        formattedParams.maxResults = params.maxResults.toString();
+    if (params.fields)
+        formattedParams.fields = params.fields.join(",");
+    return formattedParams;
+};
+var fetchJiraChangelog = function (config) { return function (issueIdOrKey, params) {
+    // TODO investigate this - convert params to proper type
+    return config.requestHelper("/api/3/issue/".concat(issueIdOrKey, "/changelog?") +
+        new URLSearchParams(JiraIssueParamsToParams(params)));
+}; };
+var isChangelogComplete = function (changelog) {
+    return changelog.histories.length === changelog.total;
+};
+var fetchRemainingChangelogsForIssues = function (config) {
+    return function (issues, progress) {
+        // check for remainings
+        return Promise.all(issues.map(function (issue) {
+            if (isChangelogComplete(issue.changelog)) {
+                return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
+            }
+            else {
+                return fetchRemainingChangelogsForIssue(config)(issue.key, issue.changelog).then(function (histories) {
+                    return __assign(__assign({}, issue), { changelog: issue.changelog.histories });
+                });
+            }
+        }));
+    };
+};
+// weirdly, this starts with the oldest, but we got the most recent
+// returns an array of histories objects
+var fetchRemainingChangelogsForIssue = function (config) {
+    return function (issueIdOrKey, mostRecentChangeLog) { return __awaiter(void 0, void 0, void 0, function () {
+        var maxResults, total, requests, i, responses, response_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    mostRecentChangeLog.histories, maxResults = mostRecentChangeLog.maxResults, total = mostRecentChangeLog.total, mostRecentChangeLog.startAt;
+                    requests = [];
+                    requests.push({ values: mostRecentChangeLog.histories });
+                    for (i = 0; i < total - maxResults; i += maxResults) {
+                        requests.push(fetchJiraChangelog(config)(issueIdOrKey, {
+                            maxResults: Math.min(maxResults, total - maxResults - i),
+                            startAt: i,
+                        }).then(function (response) {
+                            // the query above reverses the sort order, we fix that here
+                            return __assign(__assign({}, response), { values: response.values.reverse() });
+                        }));
+                    }
+                    return [4 /*yield*/, Promise.all(requests)];
+                case 1:
+                    responses = _a.sent();
+                    response_2 = responses.map(function (response_1) { return response_1.values; }).flat();
+                    return [2 /*return*/, response_2];
+            }
+        });
+    }); };
+};
+var fetchAllJiraIssuesWithJQLAndFetchAllChangelog = function (config) {
+    return function (params, progress) {
+        if (progress === void 0) { progress = function () { }; }
+        var limit = params.limit, apiParams = __rest(params, ["limit"]);
+        // a weak map would be better
+        progress.data =
+            progress.data ||
+                {
+                    issuesRequested: 0,
+                    issuesReceived: 0,
+                    changeLogsRequested: 0,
+                    changeLogsReceived: 0,
+                };
+        function getRemainingChangeLogsForIssues(response) {
+            if (progress.data) {
+                Object.assign(progress.data, {
+                    issuesReceived: progress.data.issuesReceived + response.issues.length,
+                });
+                progress(progress.data);
+            }
+            return fetchRemainingChangelogsForIssues(config)(response.issues, progress);
+        }
+        var firstRequest = fetchJiraIssuesWithJQL(config)(__assign({ maxResults: 100, expand: ["changelog"] }, apiParams));
+        return firstRequest.then(function (_a) {
+            _a.issues; var maxResults = _a.maxResults, total = _a.total, startAt = _a.startAt;
+            if (progress.data) {
+                Object.assign(progress.data, {
+                    issuesRequested: progress.data.issuesRequested + total,
+                    changeLogsRequested: 0,
+                    changeLogsReceived: 0,
+                });
+                progress(progress.data);
+            }
+            var requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
+            var limitOrTotal = Math.min(total, limit || Infinity);
+            for (var i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
+                requests.push(fetchJiraIssuesWithJQL(config)(__assign({ maxResults: maxResults, startAt: i }, apiParams)).then(getRemainingChangeLogsForIssues));
+            }
+            return Promise.all(requests).then(function (responses) {
+                return responses.flat();
+            });
+        });
+    };
+};
+// this could do each response incrementally, but I'm being lazy
+var fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields = function (config) {
+    return function (params_1) {
+        var args_1 = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args_1[_i - 1] = arguments[_i];
+        }
+        return __awaiter(void 0, __spreadArray([params_1], args_1, true), void 0, function (params, progress) {
+            var fields, newParams, response;
+            if (progress === void 0) { progress = function () { }; }
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, fieldsRequest(config)()];
+                    case 1:
+                        fields = _a.sent();
+                        if (!fields) {
+                            return [2 /*return*/, Promise.resolve(null)];
+                        }
+                        newParams = __assign(__assign({}, params), { fields: params.fields.map(function (f) { return (fields === null || fields === void 0 ? void 0 : fields.nameMap[f]) || f; }) });
+                        return [4 /*yield*/, fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(newParams, progress)];
+                    case 2:
+                        response = _a.sent();
+                        return [2 /*return*/, response.map(function (issue) {
+                                return __assign(__assign({}, issue), { fields: mapIdsToNames(issue.fields, fields) });
+                            })];
+                }
+            });
+        });
+    };
+};
+var fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields = function (params_1) {
+    var args_1 = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        args_1[_i - 1] = arguments[_i];
     }
-    // commented out because it's not used
-    // function mapNamesToIds(obj, fields) {
-    // 	const mapped = {};
-    // 	for (let prop in obj) {
-    // 		//if(prop === "Story points") {
-    // 			// 10016 -> story point estimate
-    // 			// 10034 -> story points
-    // 			//obj[prop] = ""+obj[prop];
-    // 			//mapped["customfield_10016"] = obj[prop];
-    // 			//mapped["customfield_10034"] = obj[prop];
-    // 			//mapped["Story points"] = obj[prop];
-    // 			//mapped["storypoints"] = obj[prop];
-    // 			//mapped["Story Points"] = obj[prop];
-    // 			// 10016 -> story point estimate
-    // 		//} else {
-    // 			mapped[fields.nameMap[prop] || prop] = obj[prop];
-    // 		//}
-    // 	}
+    return __awaiter(void 0, __spreadArray([params_1], args_1, true), void 0, function (params, progress) {
+        return __generator(this, function (_a) {
+            console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
+            return [2 /*return*/, Promise.resolve(null)];
+        });
+    });
+};
+var fetchChildrenResponses = function (config) {
+    return function (params, parentIssues, progress) {
+        if (progress === void 0) { progress = function () { }; }
+        var issuesToQuery = chunkArray(parentIssues, 40);
+        var batchedResponses = issuesToQuery.map(function (issues) {
+            var keys = issues.map(function (issue) { return issue.key; });
+            var jql = "parent in (".concat(keys.join(", "), ")");
+            return fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(__assign(__assign({}, params), { jql: jql }), progress);
+        });
+        // this needs to be flattened
+        return batchedResponses;
+    };
+};
+// Makes child requests in batches of 40
+//
+// params - base params
+// sourceParentIssues - the source of parent issues
+var fetchDeepChildren = function (config) {
+    return function (params, sourceParentIssues, progress) {
+        if (progress === void 0) { progress = function () { }; }
+        var batchedFirstResponses = fetchChildrenResponses(config)(params, sourceParentIssues, progress);
+        var getChildren = function (parentIssues) {
+            if (parentIssues.length) {
+                return fetchDeepChildren(config)(params, parentIssues, progress).then(function (deepChildrenIssues) {
+                    return parentIssues.concat(deepChildrenIssues);
+                });
+            }
+            else {
+                return parentIssues;
+            }
+        };
+        var batchedIssueRequests = batchedFirstResponses.map(function (firstBatchPromise) {
+            return firstBatchPromise.then(getChildren);
+        });
+        return Promise.all(batchedIssueRequests).then(function (allChildren) {
+            return allChildren.flat();
+        });
+    };
+};
+var fetchJiraFields = function (config) { return function () {
+    return config.requestHelper("/api/3/field");
+}; };
+var getAccessToken = function (config) { return function () { return __awaiter(void 0, void 0, void 0, function () {
+    var refreshToken;
+    return __generator(this, function (_a) {
+        if (!hasValidAccessToken()) {
+            refreshToken = fetchFromLocalStorage$1("refreshToken");
+            if (!refreshToken) {
+                fetchAuthorizationCode(config)();
+            }
+            else {
+                return [2 /*return*/, refreshAccessToken(config)()];
+            }
+        }
+        else {
+            return [2 /*return*/, fetchFromLocalStorage$1("accessToken")];
+        }
+        return [2 /*return*/];
+    });
+}); }; };
+var hasAccessToken = function () {
+    return !!fetchFromLocalStorage$1("accessToken");
+};
+var hasValidAccessToken = function () {
+    var accessToken = fetchFromLocalStorage$1("accessToken");
+    var expiryTimestamp = Number(fetchFromLocalStorage$1("expiryTimestamp"));
+    if (isNaN(expiryTimestamp)) {
+        expiryTimestamp = 0;
+    }
+    var currentTimestamp = Math.floor(new Date().getTime() / 1000.0);
+    return !(currentTimestamp > expiryTimestamp || !accessToken);
+};
+var _cachedServerInfoPromise = function (config) { return function () {
+    return config.requestHelper("/api/3/serverInfo");
+}; };
+var getServerInfo = function (config) { return function () {
+    // if(this._cachedServerInfoPromise) {
+    // 	return this._cachedServerInfoPromise;
     // }
-    window.jiraHelpers = jiraHelpers;
-    return jiraHelpers;
-}
+    // // https://your-domain.atlassian.net/rest/api/3/serverInfo
+    // return this._cachedServerInfoPromise( = config.requestHelper('/api/3/serverInfo'));
+    return _cachedServerInfoPromise(config)();
+}; };
+var createJiraHelpers = function (_a, requestHelper, host) {
+    var _b = _a === void 0 ? window.env : _a, JIRA_CLIENT_ID = _b.JIRA_CLIENT_ID, JIRA_SCOPE = _b.JIRA_SCOPE, JIRA_CALLBACK_URL = _b.JIRA_CALLBACK_URL, JIRA_API_URL = _b.JIRA_API_URL;
+    var config = {
+        env: { JIRA_CLIENT_ID: JIRA_CLIENT_ID, JIRA_SCOPE: JIRA_SCOPE, JIRA_CALLBACK_URL: JIRA_CALLBACK_URL, JIRA_API_URL: JIRA_API_URL },
+        requestHelper: requestHelper,
+        host: host,
+    };
+    return {
+        saveInformationToLocalStorage: saveInformationToLocalStorage,
+        clearAuthFromLocalStorage: clearAuthFromLocalStorage,
+        fetchFromLocalStorage: fetchFromLocalStorage$1,
+        fetchAuthorizationCode: fetchAuthorizationCode(config),
+        refreshAccessToken: refreshAccessToken(config),
+        fetchAccessTokenWithAuthCode: fetchAccessTokenWithAuthCode,
+        fetchAccessibleResources: fetchAccessibleResources(config),
+        fetchJiraSprint: fetchJiraSprint(config),
+        fetchJiraIssue: fetchJiraIssue(config),
+        fieldsToEditBody: fieldsToEditBody,
+        editJiraIssueWithNamedFields: editJiraIssueWithNamedFields(config),
+        fetchJiraIssuesWithJQL: fetchJiraIssuesWithJQL(config),
+        fieldsRequest: fieldsRequest(config),
+        fetchJiraIssuesWithJQLWithNamedFields: fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config),
+        fetchAllJiraIssuesWithJQL: fetchAllJiraIssuesWithJQL(config),
+        fetchAllJiraIssuesWithJQLUsingNamedFields: fetchAllJiraIssuesWithJQLUsingNamedFields(config),
+        JiraIssueParamsToParams: JiraIssueParamsToParams,
+        fetchJiraChangelog: fetchJiraChangelog(config),
+        isChangelogComplete: isChangelogComplete,
+        fetchRemainingChangelogsForIssues: fetchRemainingChangelogsForIssues(config),
+        fetchRemainingChangelogsForIssue: fetchRemainingChangelogsForIssue,
+        fetchAllJiraIssuesWithJQLAndFetchAllChangelog: fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config),
+        fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config),
+        fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields,
+        fetchChildrenResponses: fetchChildrenResponses(config),
+        fetchDeepChildren: fetchDeepChildren(config),
+        fetchJiraFields: fetchJiraFields(config),
+        getAccessToken: getAccessToken(config),
+        hasAccessToken: hasAccessToken,
+        hasValidAccessToken: hasValidAccessToken,
+        getServerInfo: getServerInfo(config),
+    };
+};
 
-const REFERENCE_DATE = new Date(2024,1,20);
+const REFERENCE_DATE = new Date(2024, 1, 20);
 const DAY$1 = 1000 * 60 * 60 * 24;
-
 
 let PROMISE = null;
 
-const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
+const isNode = typeof process !== "undefined" && process.versions != null && process.versions.node != null;
 
-
-function bitoviTrainingData(dateToShift){
-    if(PROMISE === null) {
-        if(isNode) {
-            PROMISE = Promise.resolve([{}]);
-        } else {
-            PROMISE = nativeFetchJSON("./examples/bitovi-training.json");
-        }
-
-        PROMISE.then(function(data){
-            const daysShift = Math.round( (dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY$1 )-0;
-            return adjustDateStrings(data, daysShift);
-        });
+function bitoviTrainingData(dateToShift) {
+  if (PROMISE === null) {
+    if (isNode) {
+      PROMISE = Promise.resolve([{}]);
+    } else {
+      PROMISE = fetchJSON$1("./examples/bitovi-training.json");
     }
 
-    return PROMISE;
+    PROMISE.then(function (data) {
+      const daysShift = Math.round((dateToShift.getTime() - REFERENCE_DATE.getTime()) / DAY$1) - 0;
+      return adjustDateStrings(data, daysShift);
+    });
+  }
+
+  return PROMISE;
 }
 
-
-
 function adjustDateStrings(obj, days) {
-    const dateRegex = /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?([-+]\d{2}:\d{2})?)?/;
+  const dateRegex = /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?([-+]\d{2}:\d{2})?)?/;
 
-    function addDaysToDate(dateStr, daysToAdd) {
-        const date = new Date(dateStr);
-        date.setDate(date.getDate() + daysToAdd);
-        return date.toISOString();
+  function addDaysToDate(dateStr, daysToAdd) {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + daysToAdd);
+    return date.toISOString();
+  }
+
+  function formatDate(date, originalFormat) {
+    if (originalFormat.includes("T") && originalFormat.includes("-0600")) {
+      return date.replace("Z", "").replace(/\.\d{3}/, "") + "-0600";
+    } else if (originalFormat.includes("T")) {
+      return date.replace("Z", "");
+    } else if (originalFormat.includes("-")) {
+      return date.split("T")[0];
+    } else {
+      // Assumes format "yyyy-MM-dd HH:mm:ss.0"
+      return date
+        .replace("T", " ")
+        .replace("Z", "")
+        .replace(/\.\d{3}/, ".0");
     }
+  }
 
-    function formatDate(date, originalFormat) {
-        if (originalFormat.includes('T') && originalFormat.includes('-0600')) {
-            return date.replace('Z', '').replace(/\.\d{3}/, '') + '-0600';
-        } else if (originalFormat.includes('T')) {
-            return date.replace('Z', '');
-        } else if (originalFormat.includes('-')) {
-            return date.split('T')[0];
-        } else {
-            // Assumes format "yyyy-MM-dd HH:mm:ss.0"
-            return date.replace('T', ' ').replace('Z', '').replace(/\.\d{3}/, '.0');
+  for (let key in obj) {
+    if (typeof obj[key] === "string" && dateRegex.test(obj[key])) {
+      const newDate = addDaysToDate(obj[key], days);
+      obj[key] = formatDate(newDate, obj[key]);
+    } else if (typeof obj[key] === "object" && obj[key] !== null) {
+      adjustDateStrings(obj[key], days);
+    } else if (Array.isArray(obj[key])) {
+      obj[key] = obj[key].map((item) => {
+        if (typeof item === "string" && dateRegex.test(item)) {
+          const newDate = addDaysToDate(item, days);
+          return formatDate(newDate, item);
+        } else if (typeof item === "object" && item !== null) {
+          adjustDateStrings(item, days);
         }
+        return item;
+      });
     }
-
-    for (let key in obj) {
-        if (typeof obj[key] === 'string' && dateRegex.test(obj[key])) {
-            const newDate = addDaysToDate(obj[key], days);
-            obj[key] = formatDate(newDate, obj[key]);
-        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-            adjustDateStrings(obj[key], days);
-        } else if (Array.isArray(obj[key])) {
-            obj[key] = obj[key].map(item => {
-                if (typeof item === 'string' && dateRegex.test(item)) {
-                    const newDate = addDaysToDate(item, days);
-                    return formatDate(newDate, item);
-                } else if (typeof item === 'object' && item !== null) {
-                    adjustDateStrings(item, days);
-                }
-                return item;
-            });
-        }
-    }
-    return obj;
+  }
+  return obj;
 }
 
 const dateMatch = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -52944,171 +52928,167 @@ class IssueData extends ObservableObject {
         isLoggedIn: Boolean,
     }
 }*/
-const typesToHierarchyLevel = {Epic: 1, Story: 0, Initiative: 2};
-function csvToRawIssues(csvIssues){
-    const res = csvIssues.map( (issue)=> {
-        return {
-          ...issue,
-          fields: {
-            ...issue,
-            "Parent Link": {data: issue["Parent Link"]},
-            "Issue Type": {name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]]},
-            "Status": {name: issue.Status}
-          },
-          key: issue["Issue key"]
-        }
-    });
-    return res;
+const typesToHierarchyLevel = { Epic: 1, Story: 0, Initiative: 2 };
+function csvToRawIssues(csvIssues) {
+  const res = csvIssues.map((issue) => {
+    return {
+      ...issue,
+      fields: {
+        ...issue,
+        "Parent Link": { data: issue["Parent Link"] },
+        "Issue Type": { name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]] },
+        Status: { name: issue.Status },
+      },
+      key: issue["Issue key"],
+    };
+  });
+  return res;
 }
 
-function rawIssuesRequestData({jql, childJQL, isLoggedIn, loadChildren, jiraHelpers},{listenTo, resolve}) {
-    
-    const progressData = canValue_1_1_2_canValue.with(null);
-    
-    const promise = canValue_1_1_2_canValue.returnedBy(function rawIssuesPromise(){
-        if( isLoggedIn.value === false) {
-            return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
-        }
+function rawIssuesRequestData({ jql, childJQL, isLoggedIn, loadChildren, jiraHelpers }, { listenTo, resolve }) {
+  const progressData = canValue_1_1_2_canValue.with(null);
 
-        if(!jql.value) {
-            return undefined;
-        }
+  const promise = canValue_1_1_2_canValue.returnedBy(function rawIssuesPromise() {
+    if (isLoggedIn.value === false) {
+      return bitoviTrainingData(new Date()).then(csvToRawIssues);
+    }
 
-        progressData.value = null;
-    
-        const loadIssues = loadChildren.value ? 
-            jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers) :
-            jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
-          
-        return loadIssues({
-              jql: jql.value,
-              childJQL: childJQL.value ? " and "+childJQL.value : "",
-              fields: ["summary",
-                  "Rank",
-                  "Start date",
-                  "Due date",
-                  "Issue Type",
-                  "Fix versions",
-                  "Story points",
-                  "Story points median",
-                  "Confidence",
-                  "Story points confidence",
-                  "Labels", "Status", "Sprint", "Created","Parent"],
-              expand: ["changelog"]
-          }, (receivedProgressData)=> {            
-            progressData.value = {...receivedProgressData};
+    if (!jql.value) {
+      return undefined;
+    }
+
+    progressData.value = null;
+
+    const loadIssues = loadChildren.value
+      ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
+      : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
+
+    return loadIssues(
+      {
+        jql: jql.value,
+        childJQL: childJQL.value ? " and " + childJQL.value : "",
+        fields: [
+          "summary",
+          "Rank",
+          "Start date",
+          "Due date",
+          "Issue Type",
+          "Fix versions",
+          "Story points",
+          "Story points median",
+          "Confidence",
+          "Story points confidence",
+          "Labels",
+          "Status",
+          "Sprint",
+          "Created",
+          "Parent",
+        ],
+        expand: ["changelog"],
+      },
+      (receivedProgressData) => {
+        progressData.value = { ...receivedProgressData };
+      }
+    );
+  });
+
+  listenTo(promise, (value) => {
+    resolve({
+      progressData,
+      issuesPromise: value,
+    });
+  });
+
+  resolve({
+    progressData,
+    issuesPromise: promise.value,
+  });
+}
+
+function resolve(value) {
+  if (value instanceof Promise) {
+    return value;
+  } else {
+    return canReflect_1_19_2_canReflect.getValue(value);
+  }
+}
+
+function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
+  if (resolve(isLoggedIn)) {
+    return jiraHelpers.getServerInfo();
+  } else {
+    return fetchJSON$1("./examples/bitovi-training-server-info.json");
+  }
+}
+
+function configurationPromise({ serverInfoPromise, teamConfigurationPromise }) {
+  // we will give pending until we have both promises
+  const info = resolve(serverInfoPromise),
+    team = resolve(teamConfigurationPromise);
+  if (!info || !team) {
+    return new Promise(() => {});
+  }
+  return Promise.all([info, team]).then(
+    /**
+     *
+     * @param {[Object, TeamConfiguration]} param0
+     * @returns
+     */
+    ([serverInfo, teamData]) => {
+      return {
+        getConfidence({ fields }) {
+          return fields.Confidence;
+        },
+        getStoryPointsMedian({ fields }) {
+          return fields["Story points median"];
+        },
+        getUrl({ key }) {
+          return serverInfo.baseUrl + "/browse/" + key;
+        },
+        getVelocity(team) {
+          return teamData.getVelocityForTeam(team);
+        },
+        getDaysPerSprint(team) {
+          return teamData.getDaysPerSprintForTeam(team);
+        },
+        getParallelWorkLimit(team) {
+          return teamData.getTracksForTeam(team);
+        },
+      };
+    }
+  );
+}
+
+function derivedIssuesRequestData({ rawIssuesRequestData, configurationPromise }, { listenTo, resolve }) {
+  const promise = canValue_1_1_2_canValue.returnedBy(function derivedIssuesPromise() {
+    if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
+      return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
+        ([rawIssues, configuration]) => {
+          console.log({ rawIssues });
+          return rawIssues.map((issue) => {
+            const normalized = normalizeIssue(issue, configuration);
+            const derived = deriveIssue(normalized, configuration);
+            return derived;
           });
-    });
-
-    listenTo(promise, (value)=> {
-        resolve({
-            progressData,
-            issuesPromise: value
-        });
-    });
-
-
-    resolve({
-        progressData,
-        issuesPromise: promise.value
-    });
-
-
-}
-
-function resolve(value){
-    if(value instanceof Promise) {
-        return value;
-    } else {
-        return canReflect_1_19_2_canReflect.getValue(value)
-    }
-}
-
-function serverInfoPromise({jiraHelpers, isLoggedIn}) {
-    if(resolve(isLoggedIn)) {
-        return jiraHelpers.getServerInfo();
-    } else {
-        return nativeFetchJSON("./examples/bitovi-training-server-info.json");
-    }
-}
-
-function configurationPromise({
-    serverInfoPromise, 
-    teamConfigurationPromise
-}){
-    // we will give pending until we have both promises 
-    const info = resolve( serverInfoPromise ),
-        team = resolve(teamConfigurationPromise);
-    if(!info || !team) {
-        return new Promise(()=>{})
-    }
-    return Promise.all([info, team]).then(
-        /**
-         * 
-         * @param {[Object, TeamConfiguration]} param0 
-         * @returns 
-         */
-        ([serverInfo, teamData])=> {
-        return {
-            getConfidence({fields}){
-                return fields.Confidence;
-            },
-            getStoryPointsMedian({fields}) {
-                return fields["Story points median"]
-            },
-            getUrl({key}){
-                return serverInfo.baseUrl+"/browse/"+key
-            },
-            getVelocity(team) {
-                return teamData.getVelocityForTeam(team)
-            },
-            getDaysPerSprint(team) {
-                return teamData.getDaysPerSprintForTeam(team)
-            },
-            getParallelWorkLimit(team) {
-                return teamData.getTracksForTeam(team)
-            },
         }
-    })
-}
-
-
-function derivedIssuesRequestData({
-    rawIssuesRequestData, 
-    configurationPromise
-},{listenTo, resolve}) {
-    const promise = canValue_1_1_2_canValue.returnedBy(function derivedIssuesPromise(){
-        if(rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
-            return Promise.all([
-                rawIssuesRequestData.value.issuesPromise,
-                configurationPromise.value
-            ]).then( ([rawIssues, configuration])=> {
-                console.log({rawIssues});
-                return rawIssues.map( issue => {
-                    const normalized = normalizeIssue(issue,configuration);
-                    const derived = deriveIssue(normalized, configuration);
-                    return derived;
-                });
-                
-
-            })
-        } else {
-            // make a pending promise ...
-            const promise = new Promise(()=>{});
-            promise.__isAlwaysPending = true;
-            return promise;
-        }
-    });
-    listenTo(promise, (derivedIssues)=> {
-        resolve({
-            issuesPromise: derivedIssues,
-            progressData: rawIssuesRequestData.value.progressData
-        });
-    });
+      );
+    } else {
+      // make a pending promise ...
+      const promise = new Promise(() => {});
+      promise.__isAlwaysPending = true;
+      return promise;
+    }
+  });
+  listenTo(promise, (derivedIssues) => {
     resolve({
-        issuesPromise: promise.value,
-        progressData: rawIssuesRequestData.value.progressData
+      issuesPromise: derivedIssues,
+      progressData: rawIssuesRequestData.value.progressData,
     });
+  });
+  resolve({
+    issuesPromise: promise.value,
+    progressData: rawIssuesRequestData.value.progressData,
+  });
 }
 
 const booleanParsing = {
@@ -57938,39 +57918,35 @@ customElements.define("jira-login", JiraLogin);
 function fetchFromLocalStorage(key) {
   return window.localStorage.getItem(key);
 }
+
 async function fetchJSON(url, options) {
-	return fetch(url, options).then(responseToJSON)
+  return fetch(url, options).then(responseToJSON);
 }
 
 function getHostedRequestHelper({ JIRA_API_URL }) {
-  return function(urlFragment) {
-    return new Promise(async(resolve, reject) => {
+  return function (urlFragment) {
+    return new Promise(async (resolve, reject) => {
       try {
-        const scopeIdForJira = fetchFromLocalStorage('scopeId');
-        const accessToken = fetchFromLocalStorage('accessToken');
-  
+        const scopeIdForJira = fetchFromLocalStorage("scopeId");
+        const accessToken = fetchFromLocalStorage("accessToken");
+
         let requestUrl;
-        if(urlFragment.startsWith('https://')) {
+        if (urlFragment.startsWith("https://")) {
           requestUrl = urlFragment;
         } else {
           requestUrl = `${JIRA_API_URL}/${scopeIdForJira}/rest/${urlFragment}`;
         }
-        const result = await fetchJSON(
-          requestUrl,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            }
-          }
-        );
+        const result = await fetchJSON(requestUrl, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
         resolve(result);
-      }
-      catch(ex) {
+      } catch (ex) {
         reject(ex);
       }
-    })
-  }
-
+    });
+  };
 }
 
 async function mainHelper(config, host) {
@@ -57979,7 +57955,7 @@ async function mainHelper(config, host) {
     requestHelper = getHostedRequestHelper(config);
   }
 
-	const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
+	const jiraHelpers = createJiraHelpers(config, requestHelper, host);
 
 	const loginComponent = new JiraLogin().initialize({jiraHelpers});
 
@@ -58019,7 +57995,7 @@ async function mainHelper(config, host) {
 }
 
 async function main(config) {
-	return mainHelper(config);
+	return mainHelper(config, 'hosted');
 }
 
 export { main as default };

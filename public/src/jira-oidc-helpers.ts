@@ -1,5 +1,4 @@
 import { JtrEnv } from "./shared/types.js";
-
 import createJiraHelpers from "./shared/helpers";
 
 // TODO move this into main module
@@ -13,3 +12,5 @@ declare global {
 }
 
 export default createJiraHelpers;
+
+export { default as fetchJSON } from "./shared/fetch.js";

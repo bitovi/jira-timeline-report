@@ -1,4 +1,4 @@
-export default function responseToJSON(response) {
+function responseToText(response) {
     if (!response.ok) {
         return response.json().then(function (payload) {
             var err = new Error("HTTP status code: " + response.status);
@@ -7,6 +7,7 @@ export default function responseToJSON(response) {
             throw err;
         });
     }
-    return response.json();
+    return response.text();
 }
-//# sourceMappingURL=response-to-json.js.map
+export default responseToText;
+//# sourceMappingURL=response-to-text.js.map
