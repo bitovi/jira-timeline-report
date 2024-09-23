@@ -26,7 +26,7 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "COMMIT_SHA=${{ github.sha }}" > .env
+          echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > .env
           echo ".env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
       - id: deploy
