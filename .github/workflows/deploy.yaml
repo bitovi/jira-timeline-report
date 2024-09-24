@@ -15,6 +15,9 @@ jobs:
       name: main
       url: ${{ steps.deploy.outputs.vm_url }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
@@ -29,6 +32,7 @@ jobs:
         name: Deploy
         uses: bitovi/github-actions-deploy-docker-to-ec2@fix_env_repo
         with:
+          checkout: false
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
           aws_default_region: us-east-1
