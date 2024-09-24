@@ -26,7 +26,6 @@ jobs:
           npm run build
 
       - name: Commit `dist` Folder to `main`
-        if: github.ref == 'refs/head/main'
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
@@ -44,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure `dist` folder exists
+      - name: Ensure `dist` Folder Exists
         run: |
           if [ ! -d "dist" ]; then
             echo "Dist folder not found. Aborting deployment."
