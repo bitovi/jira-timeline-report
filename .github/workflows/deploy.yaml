@@ -9,16 +9,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  Build-App:
+  Build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 22
 
       - name: Run Build
         run: |
@@ -30,11 +30,11 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           git add -f public/dist/
-          git commit -m 'Build artifacts [skip ci]' || echo "No changes to commit"
+          git commit --no-verify -m 'Build artifacts [skip ci]' || echo "No changes to commit"
           git push origin HEAD:main
 
   EC2-Deploy:
-    needs: Build-App
+    needs: Build
     runs-on: ubuntu-latest
     environment:
       name: main
@@ -51,9 +51,9 @@ jobs:
           fi
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 22
 
       - name: Create repo_env file
         run: |
