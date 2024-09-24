@@ -29,11 +29,13 @@ export function getConfidenceDefault({ fields }: Fields): NormalizedIssue["confi
 }
 
 export function getHierarchyLevelDefault({ fields }: Fields): NormalizedIssue["hierarchyLevel"] {
-  if (typeof fields["Issue Type"] === "string") {
-    return parseInt(fields["Issue Type"], 10);
+  const issueType = fields["Issue Type"] || fields.issuetype;
+
+  if (typeof issueType === "string") {
+    return parseInt(issueType, 10);
   }
 
-  return fields["Issue Type"].hierarchyLevel;
+  return issueType.hierarchyLevel;
 }
 
 export function getIssueKeyDefault({ key }: Key): NormalizedIssue["key"] {
@@ -62,18 +64,20 @@ export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): NormalizedIs
 }
 
 export function getTypeDefault({ fields }: Fields): NormalizedIssue["type"] {
-  if (typeof fields["Issue Type"] === "string") {
-    return fields["Issue Type"];
+  const issueType = fields["Issue Type"] || fields.issuetype;
+
+  if (typeof issueType === "string") {
+    return issueType;
   }
 
-  return fields["Issue Type"].name;
+  return issueType.name;
 }
 
 export function getSprintsDefault({ fields }: Fields): NormalizedIssue["sprints"] {
   if (!fields.Sprint) {
     return null;
   }
-
+  // @ts-expect-error
   return fields.Sprint.map((sprint) => {
     return {
       name: sprint.name,
@@ -113,7 +117,7 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
   if (!Array.isArray(fixVersions)) {
     fixVersions = [fixVersions];
   }
-
+  // @ts-expect-error
   return fixVersions.map(({ name, id }) => {
     return { name, id, type: "Release", key: "SPECIAL:release-" + name, summary: name };
   });

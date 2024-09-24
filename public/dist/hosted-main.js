@@ -45540,10 +45540,11 @@ function getConfidenceDefault(_a) {
 }
 function getHierarchyLevelDefault(_a) {
     var fields = _a.fields;
-    if (typeof fields["Issue Type"] === "string") {
-        return parseInt(fields["Issue Type"], 10);
+    var issueType = fields["Issue Type"] || fields.issuetype;
+    if (typeof issueType === "string") {
+        return parseInt(issueType, 10);
     }
-    return fields["Issue Type"].hierarchyLevel;
+    return issueType.hierarchyLevel;
 }
 function getIssueKeyDefault(_a) {
     var key = _a.key;
@@ -45571,16 +45572,18 @@ function getTeamKeyDefault(_a) {
 }
 function getTypeDefault(_a) {
     var fields = _a.fields;
-    if (typeof fields["Issue Type"] === "string") {
-        return fields["Issue Type"];
+    var issueType = fields["Issue Type"] || fields.issuetype;
+    if (typeof issueType === "string") {
+        return issueType;
     }
-    return fields["Issue Type"].name;
+    return issueType.name;
 }
 function getSprintsDefault(_a) {
     var fields = _a.fields;
     if (!fields.Sprint) {
         return null;
     }
+    // @ts-expect-error
     return fields.Sprint.map(function (sprint) {
         return {
             name: sprint.name,
@@ -45618,6 +45621,7 @@ function getReleasesDefault(_a) {
     if (!Array.isArray(fixVersions)) {
         fixVersions = [fixVersions];
     }
+    // @ts-expect-error
     return fixVersions.map(function (_a) {
         var name = _a.name, id = _a.id;
         return { name: name, id: id, type: "Release", key: "SPECIAL:release-" + name, summary: name };
@@ -45644,7 +45648,7 @@ function normalizeIssue(issue, _a) {
     return {
         // .summary can come from a "parent"'s fields
         // TODO check what this was supposed to be flag^v
-        summary: issue.fields.Summary || "",
+        summary: issue.fields.Summary || issue.fields.summary || "",
         key: getIssueKey(issue),
         parentKey: getParentKey(issue),
         confidence: getConfidence(issue),
@@ -55139,46 +55143,54 @@ const coerce$1 = (version, options) => {
 };
 var coerce_1 = coerce$1;
 
-class LRUCache {
-  constructor () {
-    this.max = 1000;
-    this.map = new Map();
-  }
+var lrucache;
+var hasRequiredLrucache;
 
-  get (key) {
-    const value = this.map.get(key);
-    if (value === undefined) {
-      return undefined
-    } else {
-      // Remove the key from the map and add it to the end
-      this.map.delete(key);
-      this.map.set(key, value);
-      return value
-    }
-  }
+function requireLrucache () {
+	if (hasRequiredLrucache) return lrucache;
+	hasRequiredLrucache = 1;
+	class LRUCache {
+	  constructor () {
+	    this.max = 1000;
+	    this.map = new Map();
+	  }
 
-  delete (key) {
-    return this.map.delete(key)
-  }
+	  get (key) {
+	    const value = this.map.get(key);
+	    if (value === undefined) {
+	      return undefined
+	    } else {
+	      // Remove the key from the map and add it to the end
+	      this.map.delete(key);
+	      this.map.set(key, value);
+	      return value
+	    }
+	  }
 
-  set (key, value) {
-    const deleted = this.delete(key);
+	  delete (key) {
+	    return this.map.delete(key)
+	  }
 
-    if (!deleted && value !== undefined) {
-      // If cache is full, delete the least recently used item
-      if (this.map.size >= this.max) {
-        const firstKey = this.map.keys().next().value;
-        this.delete(firstKey);
-      }
+	  set (key, value) {
+	    const deleted = this.delete(key);
 
-      this.map.set(key, value);
-    }
+	    if (!deleted && value !== undefined) {
+	      // If cache is full, delete the least recently used item
+	      if (this.map.size >= this.max) {
+	        const firstKey = this.map.keys().next().value;
+	        this.delete(firstKey);
+	      }
 
-    return this
-  }
+	      this.map.set(key, value);
+	    }
+
+	    return this
+	  }
+	}
+
+	lrucache = LRUCache;
+	return lrucache;
 }
-
-var lrucache = LRUCache;
 
 var range;
 var hasRequiredRange;
@@ -55400,7 +55412,7 @@ function requireRange () {
 
 	range = Range;
 
-	const LRU = lrucache;
+	const LRU = requireLrucache();
 	const cache = new LRU();
 
 	const parseOptions = parseOptions_1;
@@ -58188,6 +58200,7 @@ async function mainHelper(config, host) {
 }
 
 async function main(config) {
+
 	return mainHelper(config);
 }
 
