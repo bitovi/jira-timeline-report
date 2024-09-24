@@ -24,10 +24,10 @@ jobs:
           LATEST_TAG=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-      - name: Create .env file
+      - name: Create repo_env file
         run: |
-          echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > .env
-          echo ".env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
+          echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
+          echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
       - id: deploy
         name: Deploy Prod
