@@ -30,13 +30,16 @@ jobs:
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
       - name: Create Jira Connect
-        run: npm run create:atlassian-connect
+        run: |
+          npm i
+          npm run create:atlassian-connect
 
       - id: deploy
         name: Deploy Prod
         if: ${{ github.ref_name == steps.latest_tag.outputs.latest_tag }}
         uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.1
         with:
+          checkout: false
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
           aws_default_region: us-east-1
