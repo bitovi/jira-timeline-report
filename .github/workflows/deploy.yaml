@@ -45,7 +45,7 @@ jobs:
 
       - name: Ensure `dist` Folder Exists
         run: |
-          if [ ! -d "dist" ]; then
+          if [ ! -d "public/dist" ]; then
             echo "Dist folder not found. Aborting deployment."
             exit 1
           fi
