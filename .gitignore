@@ -5,3 +5,4 @@ node_modules/
 .env.mis
 .DS_Store
 public/rollback/base-issues.json
+public/atlassian-connect.json
