@@ -18,7 +18,7 @@ cp .env.example .env
 
 Follow the steps below to get remaining environment variables:
 
-- Open Jira developer console. https://developer.atlassian.com/console/myapps/ 
+- Open Jira developer console. https://developer.atlassian.com/console/myapps/
 - Create your app and choose OAuth2.0, put in the app name and accept the terms.
 - Click Permissions, add the Jira API scope then configure it. Choose the scope "View Jira issue data"... or "read:jira-work" and save.
 - Click Authorization, input the callback url, as default for this application locally, use `http://localhost:3000/oauth-callback` and save.
@@ -26,7 +26,6 @@ Follow the steps below to get remaining environment variables:
 - The CLIENT_JIRA_API_URL is `https://api.atlassian.com`.
 
 Note: All environment variables that start with `CLIENT` will be sent to the client side and exposed.
-
 
 ### Running the project locally
 
@@ -40,8 +39,8 @@ Open a second terminal and run
 
 ```sh
 npm run fe:css:build
-```
 
+```
 
 Open a third terminal and run
 
@@ -80,9 +79,10 @@ The following steps are repeatable as many times as needed to re-deploy and re-t
 ```sh
 ngrok http 3000
 ```
-1. After the tunnel starts, copy the secure domain (e.g. `https://46f7-8-47-99-200.ngrok-free.app`) and
-update `baseUrl` in <span style="white-space: nowrap;">public/atlassian-connect.json</span> with the domain.
-1. Open your Jira dev environment and click Apps from the top nav, then `Manage Your Apps`.  If you have enabled devlopment mode, you should see an `Upload app` option next to `Build a new app`.  Click `Uplaod app`.
-1. Paste the secure domain into the text box, and add `/atlassian-connect.json` to the end (e.g. `https://46f7-8-47-99-200.ngrok-free.app/atlassian-connect.json`).  Click `Upload`.
-1. The apps list should refresh and show `Timeline Report` as a User-installed app.  From here, click `Apps` in the top nav and you should see a `Your Apps` heading with `Timeline Report` as an option underneath.  Click `Timeline Report` and you should see the Timeline Report app load in the window!
 
+2. After the tunnel starts, you need to create the `atlassian-connect.json` file by running `npm run create:atlassian-connect --local`
+3. Once created, copy the secure domain (e.g. `https://46f7-8-47-99-200.ngrok-free.app`) and
+   update `baseUrl` in <span style="white-space: nowrap;">public/atlassian-connect.json</span> with the domain.
+4. Open your Jira dev environment and click Apps from the top nav, then `Manage Your Apps`. If you have enabled devlopment mode, you should see an `Upload app` option next to `Build a new app`. Click `Uplaod app`.
+5. Paste the secure domain into the text box, and add `/atlassian-connect.json` to the end (e.g. `https://46f7-8-47-99-200.ngrok-free.app/atlassian-connect.json`). Click `Upload`.
+6. The apps list should refresh and show `Timeline Report` as a User-installed app. From here, click `Apps` in the top nav and you should see a `Your Apps` heading with `Timeline Report` as an option underneath. Click `Timeline Report` and you should see the Timeline Report app load in the window!

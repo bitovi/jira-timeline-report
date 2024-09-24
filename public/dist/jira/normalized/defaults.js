@@ -25,10 +25,11 @@ export function getConfidenceDefault(_a) {
 }
 export function getHierarchyLevelDefault(_a) {
     var fields = _a.fields;
-    if (typeof fields["Issue Type"] === "string") {
-        return parseInt(fields["Issue Type"], 10);
+    var issueType = fields["Issue Type"] || fields.issuetype;
+    if (typeof issueType === "string") {
+        return parseInt(issueType, 10);
     }
-    return fields["Issue Type"].hierarchyLevel;
+    return issueType.hierarchyLevel;
 }
 export function getIssueKeyDefault(_a) {
     var key = _a.key;
@@ -56,16 +57,18 @@ export function getTeamKeyDefault(_a) {
 }
 export function getTypeDefault(_a) {
     var fields = _a.fields;
-    if (typeof fields["Issue Type"] === "string") {
-        return fields["Issue Type"];
+    var issueType = fields["Issue Type"] || fields.issuetype;
+    if (typeof issueType === "string") {
+        return issueType;
     }
-    return fields["Issue Type"].name;
+    return issueType.name;
 }
 export function getSprintsDefault(_a) {
     var fields = _a.fields;
     if (!fields.Sprint) {
         return null;
     }
+    // @ts-expect-error
     return fields.Sprint.map(function (sprint) {
         return {
             name: sprint.name,
@@ -103,6 +106,7 @@ export function getReleasesDefault(_a) {
     if (!Array.isArray(fixVersions)) {
         fixVersions = [fixVersions];
     }
+    // @ts-expect-error
     return fixVersions.map(function (_a) {
         var name = _a.name, id = _a.id;
         return { name: name, id: id, type: "Release", key: "SPECIAL:release-" + name, summary: name };

@@ -20,6 +20,9 @@ jobs:
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
+      - name: Create Jira Connect
+        run: npm run create:atlassian-connect -- --staging
+
       - id: deploy
         name: Deploy
         uses: bitovi/github-actions-deploy-docker-to-ec2@fix_env_repo
