@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc",
     "prepare": "husky",
-    "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts"
+    "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts",
+    "build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify && rollup -c --sourcemap"
   },
   "keywords": [],
   "author": "",

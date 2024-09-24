@@ -9,7 +9,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  Build-App:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Run Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit `dist` Folder to `main`
+        if: github.ref == 'refs/head/main'
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add -f public/dist/
+          git commit -m 'Build artifacts [skip ci]' || echo "No changes to commit"
+          git push origin HEAD:main
+
   EC2-Deploy:
+    needs: Build-App
     runs-on: ubuntu-latest
     environment:
       name: main
@@ -18,6 +44,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure `dist` folder exists
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Dist folder not found. Aborting deployment."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
@@ -25,7 +63,7 @@ jobs:
 
       - name: Create Jira Connect
         run: |
-          npm i
+          npm ci
           npm run create:atlassian-connect -- --staging
 
       - id: deploy
