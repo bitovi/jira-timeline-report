@@ -17,6 +17,7 @@ export interface BaseFields {
   Rank?: string;
   [Key: string]: unknown;
 }
+type ParentFields = any;
 
 interface LegacyFields extends BaseFields {
   "Issue Type": string;
@@ -42,7 +43,7 @@ export interface IssueFields extends BaseFields {
 }
 
 export interface JiraIssue {
-  fields: IssueFields | LegacyFields;
+  fields: IssueFields | LegacyFields | ParentFields;
   id: string;
   key: string;
 }
@@ -149,7 +150,7 @@ export function normalizeIssue(
   return {
     // .summary can come from a "parent"'s fields
     // TODO check what this was supposed to be flag^v
-    summary: issue.fields.Summary || "",
+    summary: issue.fields.Summary || issue.fields.summary || "",
     key: getIssueKey(issue),
     parentKey: getParentKey(issue),
     confidence: getConfidence(issue),
