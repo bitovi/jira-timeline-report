@@ -15,6 +15,8 @@ const connectMetadata = {
   },
 };
 
+type Metadata = (typeof connectMetadata)[keyof typeof connectMetadata];
+
 const args = process.argv.slice(2);
 
 function main() {
@@ -43,7 +45,7 @@ function main() {
 
     fs.writeFileSync(
       path.resolve(__dirname, "../../", "public/atlassian-connect.json"),
-      JSON.stringify({ ...metadata, ...baseConnect })
+      JSON.stringify({ ...baseConnect, ...metadata, ...createModules(metadata) })
     );
 
     console.log("Created atlassian-connect.json");
@@ -54,3 +56,38 @@ function main() {
 }
 
 main();
+
+function createModules({ name }: Metadata) {
+  return {
+    modules: {
+      generalPages: [
+        {
+          url: "/connect",
+          key: "main",
+          location: "system.top.navigation.bar",
+          name: {
+            value: name,
+          },
+        },
+        {
+          url: "/connect?primaryIssueType={ac.primaryIssueType}&hideUnknownInitiatives={ac.hideUnknownInitiatives}&jql={ac.jql}&loadChildren={ac.loadChildren}&primaryReportType={ac.primaryReportType}&secondaryReportType={ac.secondaryReportType}&showPercentComplete={ac.showPercentComplete}&showOnlySemverReleases={ac.showOnlySemverReleases}",
+          key: "deeplink",
+          location: "none",
+          name: {
+            value: `${name} (Deep Link)`,
+          },
+        },
+      ],
+      jiraProjectPages: [
+        {
+          key: "project",
+          name: {
+            value: name,
+          },
+          url: "/connect?jql=project%3D'${project.key}'&primaryIssueType%3DInitiative",
+          weight: 1,
+        },
+      ],
+    },
+  };
+}
