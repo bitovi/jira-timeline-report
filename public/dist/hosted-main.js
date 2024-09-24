@@ -55143,46 +55143,54 @@ const coerce$1 = (version, options) => {
 };
 var coerce_1 = coerce$1;
 
-class LRUCache {
-  constructor () {
-    this.max = 1000;
-    this.map = new Map();
-  }
+var lrucache;
+var hasRequiredLrucache;
 
-  get (key) {
-    const value = this.map.get(key);
-    if (value === undefined) {
-      return undefined
-    } else {
-      // Remove the key from the map and add it to the end
-      this.map.delete(key);
-      this.map.set(key, value);
-      return value
-    }
-  }
+function requireLrucache () {
+	if (hasRequiredLrucache) return lrucache;
+	hasRequiredLrucache = 1;
+	class LRUCache {
+	  constructor () {
+	    this.max = 1000;
+	    this.map = new Map();
+	  }
 
-  delete (key) {
-    return this.map.delete(key)
-  }
+	  get (key) {
+	    const value = this.map.get(key);
+	    if (value === undefined) {
+	      return undefined
+	    } else {
+	      // Remove the key from the map and add it to the end
+	      this.map.delete(key);
+	      this.map.set(key, value);
+	      return value
+	    }
+	  }
 
-  set (key, value) {
-    const deleted = this.delete(key);
+	  delete (key) {
+	    return this.map.delete(key)
+	  }
 
-    if (!deleted && value !== undefined) {
-      // If cache is full, delete the least recently used item
-      if (this.map.size >= this.max) {
-        const firstKey = this.map.keys().next().value;
-        this.delete(firstKey);
-      }
+	  set (key, value) {
+	    const deleted = this.delete(key);
 
-      this.map.set(key, value);
-    }
+	    if (!deleted && value !== undefined) {
+	      // If cache is full, delete the least recently used item
+	      if (this.map.size >= this.max) {
+	        const firstKey = this.map.keys().next().value;
+	        this.delete(firstKey);
+	      }
 
-    return this
-  }
+	      this.map.set(key, value);
+	    }
+
+	    return this
+	  }
+	}
+
+	lrucache = LRUCache;
+	return lrucache;
 }
-
-var lrucache = LRUCache;
 
 var range;
 var hasRequiredRange;
@@ -55404,7 +55412,7 @@ function requireRange () {
 
 	range = Range;
 
-	const LRU = lrucache;
+	const LRU = requireLrucache();
 	const cache = new LRU();
 
 	const parseOptions = parseOptions_1;
@@ -58143,48 +58151,52 @@ function getHostedRequestHelper({ JIRA_API_URL }) {
 }
 
 async function mainHelper(config, host) {
+  console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
+
   let requestHelper;
   {
     requestHelper = getHostedRequestHelper(config);
   }
 
-	const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
+  const jiraHelpers = JiraOIDCHelpers(config, requestHelper);
 
-	const loginComponent = new JiraLogin().initialize({jiraHelpers});
+  const loginComponent = new JiraLogin().initialize({ jiraHelpers });
 
-	const savedUrls = document.querySelector("saved-urls");
-	savedUrls.loginComponent = loginComponent;
-	savedUrls.jiraHelpers = jiraHelpers;
+  const savedUrls = document.querySelector("saved-urls");
+  savedUrls.loginComponent = loginComponent;
+  savedUrls.jiraHelpers = jiraHelpers;
 
-	const selectCloud = document.querySelector("select-cloud");
-	if (selectCloud) {
-		selectCloud.loginComponent = loginComponent;
-		selectCloud.jiraHelpers = jiraHelpers;		
-	}
+  const selectCloud = document.querySelector("select-cloud");
+  if (selectCloud) {
+    selectCloud.loginComponent = loginComponent;
+    selectCloud.jiraHelpers = jiraHelpers;
+  }
 
-	const velocitiesConfiguration = document.querySelector("velocities-from-issue");
-	velocitiesConfiguration.jiraHelpers = jiraHelpers;
-	velocitiesConfiguration.isLoggedIn = loginComponent.isLoggedIn;
-	loginComponent.listenTo("isLoggedIn", ({value})=>{
-		velocitiesConfiguration.isLoggedIn = value;
-	});
-	
-	const listener = ({value})=>{
-		if(value) {
-			loginComponent.off("isResolved", listener);
-			mainElement.style.display = "none";
-			const report = new TimelineReport().initialize({jiraHelpers, loginComponent, mode: "TEAMS", velocitiesConfiguration});
-			report.className = "block";
-			document.body.append(report);
-		}
-	};
-	loginComponent.on("isResolved",listener);
-	login.appendChild(loginComponent);
+  const velocitiesConfiguration = document.querySelector("velocities-from-issue");
+  velocitiesConfiguration.jiraHelpers = jiraHelpers;
+  velocitiesConfiguration.isLoggedIn = loginComponent.isLoggedIn;
+  loginComponent.listenTo("isLoggedIn", ({ value }) => {
+    velocitiesConfiguration.isLoggedIn = value;
+  });
 
+  const listener = ({ value }) => {
+    if (value) {
+      loginComponent.off("isResolved", listener);
+      mainElement.style.display = "none";
+      const report = new TimelineReport().initialize({
+        jiraHelpers,
+        loginComponent,
+        mode: "TEAMS",
+        velocitiesConfiguration,
+      });
+      report.className = "block";
+      document.body.append(report);
+    }
+  };
+  loginComponent.on("isResolved", listener);
+  login.appendChild(loginComponent);
 
-	return loginComponent;
-
-
+  return loginComponent;
 }
 
 async function main(config) {
