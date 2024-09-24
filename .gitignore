@@ -6,3 +6,4 @@ node_modules/
 .DS_Store
 public/rollback/base-issues.json
 public/atlassian-connect.json
+public/dist/
