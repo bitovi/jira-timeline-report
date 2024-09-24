@@ -41,7 +41,6 @@ jobs:
 
           tf_state_bucket_destroy: true
           tf_state_bucket: bitovi-jira-timeline-report-prod-tf-state
-          #tf_stack_destroy: true
 
           aws_r53_enable: true
           aws_r53_sub_domain_name: timeline-report
@@ -51,8 +50,7 @@ jobs:
           aws_ec2_instance_type: t3.small
           aws_ec2_instance_root_vol_size: 30
 
-          # Provide a secret called `DOT_ENV` to append environment variables to the .env file
-
+          env_repo: repo_env
           env_ghs: ${{ secrets.DOT_ENV }}
 
       - name: Skip deployment
