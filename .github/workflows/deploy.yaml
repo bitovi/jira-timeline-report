@@ -45,10 +45,6 @@ jobs:
 
       - name: Ensure `dist` Folder Exists
         run: |
-          ls -a
-          echo "-------"
-          git branch
-          echo "-------"
           if [ ! -d "public/dist" ]; then
             echo "Dist folder not found. Aborting deployment."
             exit 1

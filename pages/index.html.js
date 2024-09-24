@@ -1,7 +1,7 @@
 const getSafeEnv = require("../server/client-env");
 
 module.exports = function (env, mainFileRoute) {
-	return `
+  return `
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -9,6 +9,8 @@ module.exports = function (env, mainFileRoute) {
 			<meta http-equiv="X-UA-Compatible" content="IE=edge">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>Jira Timeline Report</title>
+
+			<meta property="build-check" content="Need this to be in staging" />
 
 			<meta property="og:title" content="Jira Timeline Report">
 			<meta property="og:type" content="website" />
@@ -59,11 +61,11 @@ module.exports = function (env, mainFileRoute) {
 			</div>
 
 			<script type="module">
-				import main from "${ mainFileRoute }";
+				import main from "${mainFileRoute}";
 				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 
 	</body>
 	</html>
-	`
-}
+	`;
+};
