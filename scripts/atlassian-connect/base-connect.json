@@ -1,0 +1,43 @@
+{
+    "description": "Create reports to illustrate the timeline.",
+    "vendor": {
+      "name": "Bitovi LLC",
+      "url": "http://bitovi.com"
+    },
+    "authentication": {
+      "type": "none"
+    },
+    "apiVersion": 1,
+    "modules": {
+      "generalPages": [
+        {
+          "url": "/connect",
+          "key": "main",
+          "location": "system.top.navigation.bar",
+          "name": {
+            "value": "Timeline Report"
+          }
+        },
+        {
+          "url": "/connect?primaryIssueType={ac.primaryIssueType}&hideUnknownInitiatives={ac.hideUnknownInitiatives}&jql={ac.jql}&loadChildren={ac.loadChildren}&primaryReportType={ac.primaryReportType}&secondaryReportType={ac.secondaryReportType}&showPercentComplete={ac.showPercentComplete}&showOnlySemverReleases={ac.showOnlySemverReleases}",
+          "key": "deeplink",
+          "location": "none",
+          "name": {
+            "value": "Timeline Report (Deep Link)"
+          }
+        }
+      ],
+      "jiraProjectPages": [
+        {
+          "key": "project",
+          "name": {
+              "value": "Timeline Report"
+          },
+          "url": "/connect?jql=project%3D'${project.key}'&primaryIssueType%3DInitiative",
+          "weight": 1
+        }
+      ]
+    },
+    "scopes": ["read"]
+  }
+  
