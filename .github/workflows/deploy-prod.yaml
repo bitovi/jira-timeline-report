@@ -24,30 +24,39 @@ jobs:
           LATEST_TAG=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
+      - name: Create repo_env file
+        run: |
+          echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
+          echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
+
+      - name: Create Jira Connect
+        run: |
+          npm i
+          npm run create:atlassian-connect
+
       - id: deploy
         name: Deploy Prod
         if: ${{ github.ref_name == steps.latest_tag.outputs.latest_tag }}
         uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.1
         with:
+          checkout: false
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
           aws_default_region: us-east-1
           aws_resource_identifier: bitovi-jira-timeline-report-prod
-  
+
           tf_state_bucket_destroy: true
           tf_state_bucket: bitovi-jira-timeline-report-prod-tf-state
-          #tf_stack_destroy: true
-  
+
           aws_r53_enable: true
           aws_r53_sub_domain_name: timeline-report
           aws_r53_domain_name: bitovi-jira.com
           aws_elb_app_port: 3000
-          
+
           aws_ec2_instance_type: t3.small
           aws_ec2_instance_root_vol_size: 30
-  
-          # Provide a secret called `DOT_ENV` to append environment variables to the .env file
-  
+
+          env_repo: repo_env
           env_ghs: ${{ secrets.DOT_ENV }}
 
       - name: Skip deployment

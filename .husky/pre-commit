@@ -1,2 +1,2 @@
-npx tsc
-vitest run
+npm run typecheck
+npm run test

@@ -1,7 +1,7 @@
 const getSafeEnv = require("../server/client-env");
 
 module.exports = function (env, mainFileRoute) {
-	return `
+  return `
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -59,11 +59,11 @@ module.exports = function (env, mainFileRoute) {
 			</div>
 
 			<script type="module">
-				import main from "${ mainFileRoute }";
+				import main from "${mainFileRoute}";
 				main( ${JSON.stringify(getSafeEnv())} );
 			</script>
 
 	</body>
 	</html>
-	`
-}
+	`;
+};

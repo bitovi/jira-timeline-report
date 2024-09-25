@@ -1,7 +1,7 @@
 import { ObservableObject, value, Reflect } from "../can.js";
 import { deriveIssue } from "../jira/derived/derive.js";
 import bitoviTrainingData from "../examples/bitovi-training.js";
-import { normalizeIssue } from "../jira/normalized/normalize.js";
+import { normalizeIssue } from "../jira/normalized/normalize.ts";
 import {nativeFetchJSON} from "../jira-oidc-helpers";
 
 /*
@@ -34,7 +34,7 @@ export function rawIssuesRequestData({jql, childJQL, isLoggedIn, loadChildren, j
     
     const promise = value.returnedBy(function rawIssuesPromise(){
         if( isLoggedIn.value === false) {
-            return bitoviTrainingData(new Date()).then(csvToRawIssues) ;
+            return bitoviTrainingData(new Date()) //.then(csvToRawIssues) ;
         }
 
         if(!jql.value) {
@@ -64,6 +64,9 @@ export function rawIssuesRequestData({jql, childJQL, isLoggedIn, loadChildren, j
               expand: ["changelog"]
           }, (receivedProgressData)=> {            
             progressData.value = {...receivedProgressData};
+          }).then( (data)=>{
+            console.log("rawData", data);
+            return data;
           });
     })
 

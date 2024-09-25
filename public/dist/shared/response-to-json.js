@@ -9,4 +9,3 @@ export function responseToJSON(response) {
     }
     return response.json();
 }
-//# sourceMappingURL=response-to-json.js.map
