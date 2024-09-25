@@ -1,13 +1,23 @@
 import { expect, test } from "vitest";
 
-import { JiraIssue, NormalizeIssueConfig, ParentIssue, normalizeIssue } from "./normalize";
+import { JiraIssue, NormalizeIssueConfig, ParentIssue, normalizeIssue, normalizeParent } from "./normalize";
 import { parseDateIntoLocalTimezone } from "../../date-helpers";
+
+const parent: ParentIssue = {
+  key: "test-parent",
+  id: "23",
+  fields: {
+    summary: "parent summary",
+    issuetype: { name: "bug", hierarchyLevel: 8 },
+    status: { name: "in progress" },
+  },
+};
 
 const issue: JiraIssue = {
   id: "1",
   key: "test-key",
   fields: {
-    Parent: {} as ParentIssue,
+    Parent: parent,
     Summary: "language packs",
     "Issue Type": { hierarchyLevel: 1, name: "Epic" },
     Created: "2023-02-03T10:58:38.994-0600",
@@ -41,11 +51,27 @@ const issue: JiraIssue = {
 const startDate = new Date("20220715");
 const dueDate = new Date("20220716");
 
+test("normalizeParent", () => {
+  expect(normalizeParent(parent)).toEqual({
+    summary: "parent summary",
+    hierarchyLevel: 8,
+    type: "bug",
+  });
+});
+
+test("normalizeParent with overrides", () => {
+  expect(normalizeParent(parent, { getSummary: () => "hello", getHierarchyLevel: () => 21 })).toEqual({
+    summary: "hello",
+    hierarchyLevel: 21,
+    type: "bug",
+  });
+});
+
 test("normalizeIssue", () => {
   expect(normalizeIssue(issue, {})).toEqual({
     summary: "language packs",
     key: "test-key",
-    parentKey: "IMP-5",
+    parentKey: "test-parent",
     confidence: null,
     dueDate,
     hierarchyLevel: 1,

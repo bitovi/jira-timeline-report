@@ -139,6 +139,7 @@ export function normalizeParent(
   return {
     summary: getSummary(issue),
     hierarchyLevel: getHierarchyLevel(issue),
+    type: getType(issue),
   };
 }
 
