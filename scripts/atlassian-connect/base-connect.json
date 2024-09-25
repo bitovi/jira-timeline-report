@@ -1,0 +1,12 @@
+{
+  "description": "Create reports to illustrate the timeline.",
+  "vendor": {
+    "name": "Bitovi LLC",
+    "url": "http://bitovi.com"
+  },
+  "authentication": {
+    "type": "none"
+  },
+  "apiVersion": 1,
+  "scopes": ["read"]
+}

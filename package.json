@@ -10,7 +10,9 @@
     "test": "vitest --watch=false",
     "test:watch": "vitest",
     "typecheck": "tsc",
-    "prepare": "husky"
+    "prepare": "husky",
+    "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts",
+    "build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify && rollup -c --sourcemap"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +41,7 @@
     "rollup-plugin-typescript2": "^0.36.0",
     "semver": "^7.6.3",
     "tailwindcss": "^3.3.3",
+    "tsx": "^4.19.1",
     "typescript": "^5.5.4",
     "vitest": "^1.6.0"
   }
