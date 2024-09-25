@@ -55143,54 +55143,46 @@ const coerce$1 = (version, options) => {
 };
 var coerce_1 = coerce$1;
 
-var lrucache;
-var hasRequiredLrucache;
+class LRUCache {
+  constructor () {
+    this.max = 1000;
+    this.map = new Map();
+  }
 
-function requireLrucache () {
-	if (hasRequiredLrucache) return lrucache;
-	hasRequiredLrucache = 1;
-	class LRUCache {
-	  constructor () {
-	    this.max = 1000;
-	    this.map = new Map();
-	  }
+  get (key) {
+    const value = this.map.get(key);
+    if (value === undefined) {
+      return undefined
+    } else {
+      // Remove the key from the map and add it to the end
+      this.map.delete(key);
+      this.map.set(key, value);
+      return value
+    }
+  }
 
-	  get (key) {
-	    const value = this.map.get(key);
-	    if (value === undefined) {
-	      return undefined
-	    } else {
-	      // Remove the key from the map and add it to the end
-	      this.map.delete(key);
-	      this.map.set(key, value);
-	      return value
-	    }
-	  }
+  delete (key) {
+    return this.map.delete(key)
+  }
 
-	  delete (key) {
-	    return this.map.delete(key)
-	  }
+  set (key, value) {
+    const deleted = this.delete(key);
 
-	  set (key, value) {
-	    const deleted = this.delete(key);
+    if (!deleted && value !== undefined) {
+      // If cache is full, delete the least recently used item
+      if (this.map.size >= this.max) {
+        const firstKey = this.map.keys().next().value;
+        this.delete(firstKey);
+      }
 
-	    if (!deleted && value !== undefined) {
-	      // If cache is full, delete the least recently used item
-	      if (this.map.size >= this.max) {
-	        const firstKey = this.map.keys().next().value;
-	        this.delete(firstKey);
-	      }
+      this.map.set(key, value);
+    }
 
-	      this.map.set(key, value);
-	    }
-
-	    return this
-	  }
-	}
-
-	lrucache = LRUCache;
-	return lrucache;
+    return this
+  }
 }
+
+var lrucache = LRUCache;
 
 var range;
 var hasRequiredRange;
@@ -55412,7 +55404,7 @@ function requireRange () {
 
 	range = Range;
 
-	const LRU = requireLrucache();
+	const LRU = lrucache;
 	const cache = new LRU();
 
 	const parseOptions = parseOptions_1;
@@ -56606,30 +56598,51 @@ function deriveReleases(normalizedReleases){
 
 /**
  * Returns all releases from all issues
- * @param {Array<import("../normalized/normalize").NormalizedIssue>} normalizedIssues 
- * @return {Array<import("../normalized/normalize").NormalizedRelease>}
+ * @param {Array<NormalizedIssue>} normalizedIssues
+ * @param {Array<{ type: string }>} rollupTimingLevelsAndCalculations
+ * @return {Array<NormalizedRelease>}
  */
-function normalizeReleases(normalizedIssues, rollupTimingLevelsAndCalculations){
-    const releaseIndex = rollupTimingLevelsAndCalculations.findIndex( calc => calc.type === "Release");
-    if(releaseIndex === -1) {
+function normalizeReleases(normalizedIssues, rollupTimingLevelsAndCalculations) {
+    var e_1, _a, e_2, _b;
+    var releaseIndex = rollupTimingLevelsAndCalculations.findIndex(function (calc) { return calc.type === "Release"; });
+    if (releaseIndex === -1) {
         return [];
     }
-    const followingCalc = rollupTimingLevelsAndCalculations[releaseIndex+1];
-    if(!followingCalc) {
+    var followingCalc = rollupTimingLevelsAndCalculations[releaseIndex + 1];
+    if (!followingCalc) {
         return [];
     }
-    const followingType = followingCalc.type;
-
-    const nameToRelease = {};
-    for(let normalizedIssue of normalizedIssues) {
-        if(normalizedIssue.type === followingType) {
-            const releases = normalizedIssue.releases;
-            for(let release of releases) {
-                if(!nameToRelease[release.name]) {
-                    nameToRelease[release.name] = release;
+    var followingType = followingCalc.type;
+    var nameToRelease = {};
+    try {
+        for (var normalizedIssues_1 = __values(normalizedIssues), normalizedIssues_1_1 = normalizedIssues_1.next(); !normalizedIssues_1_1.done; normalizedIssues_1_1 = normalizedIssues_1.next()) {
+            var normalizedIssue = normalizedIssues_1_1.value;
+            if (normalizedIssue.type === followingType) {
+                var releases = normalizedIssue.releases;
+                try {
+                    for (var releases_1 = (e_2 = void 0, __values(releases)), releases_1_1 = releases_1.next(); !releases_1_1.done; releases_1_1 = releases_1.next()) {
+                        var release = releases_1_1.value;
+                        if (!nameToRelease[release.name]) {
+                            nameToRelease[release.name] = release;
+                        }
+                    }
+                }
+                catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                finally {
+                    try {
+                        if (releases_1_1 && !releases_1_1.done && (_b = releases_1.return)) _b.call(releases_1);
+                    }
+                    finally { if (e_2) throw e_2.error; }
                 }
             }
         }
+    }
+    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+    finally {
+        try {
+            if (normalizedIssues_1_1 && !normalizedIssues_1_1.done && (_a = normalizedIssues_1.return)) _a.call(normalizedIssues_1);
+        }
+        finally { if (e_1) throw e_1.error; }
     }
     return Object.values(nameToRelease);
 }
