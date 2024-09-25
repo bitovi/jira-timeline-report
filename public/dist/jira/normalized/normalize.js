@@ -36,7 +36,7 @@ export function normalizeIssue(issue, _a) {
     return {
         // .summary can come from a "parent"'s fields
         // TODO check what this was supposed to be flag^v
-        summary: issue.fields.Summary || "",
+        summary: issue.fields.Summary || issue.fields.summary || "",
         key: getIssueKey(issue),
         parentKey: getParentKey(issue),
         confidence: getConfidence(issue),
