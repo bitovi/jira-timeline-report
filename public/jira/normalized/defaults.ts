@@ -1,8 +1,19 @@
-import type { NormalizedIssue, JiraIssue } from "./normalize";
+import type { NormalizedIssue, JiraIssue, ParentIssue } from "./normalize";
 import { parseDateISOString } from "../../date-helpers.js";
+
+type ParentField<F extends keyof ParentIssue["fields"]> = { fields: Pick<ParentIssue["fields"], F> };
+type ChildField<F extends keyof JiraIssue["fields"]> = { fields: Pick<JiraIssue["fields"], F> };
 
 type Fields = Pick<JiraIssue, "fields">;
 type Key = Pick<JiraIssue, "key">;
+
+export function getSummaryDefault({ fields }: ParentField<"summary"> | ChildField<"Summary">): string {
+  if ("summary" in fields) {
+    return fields.summary;
+  }
+
+  return fields.Summary;
+}
 
 export function getDueDateDefault({ fields }: Fields): string | null {
   return fields["Due date"] || null;
@@ -28,8 +39,10 @@ export function getConfidenceDefault({ fields }: Fields): NormalizedIssue["confi
   return fields["Story points confidence"] || fields?.Confidence || null;
 }
 
-export function getHierarchyLevelDefault({ fields }: Fields): NormalizedIssue["hierarchyLevel"] {
-  const issueType = fields["Issue Type"] || fields.issuetype;
+export function getHierarchyLevelDefault({
+  fields,
+}: ChildField<"Issue Type"> | ParentField<"issuetype">): NormalizedIssue["hierarchyLevel"] {
+  const issueType = "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
 
   if (typeof issueType === "string") {
     return parseInt(issueType, 10);
@@ -63,8 +76,10 @@ export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): NormalizedIs
   return key.replace(/-.*/, "");
 }
 
-export function getTypeDefault({ fields }: Fields): NormalizedIssue["type"] {
-  const issueType = fields["Issue Type"] || fields.issuetype;
+export function getTypeDefault({
+  fields,
+}: ChildField<"Issue Type"> | ParentField<"issuetype">): NormalizedIssue["type"] {
+  const issueType = "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
 
   if (typeof issueType === "string") {
     return issueType;
@@ -77,7 +92,6 @@ export function getSprintsDefault({ fields }: Fields): NormalizedIssue["sprints"
   if (!fields.Sprint) {
     return null;
   }
-  // @ts-expect-error
   return fields.Sprint.map((sprint) => {
     return {
       name: sprint.name,
@@ -117,7 +131,6 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
   if (!Array.isArray(fixVersions)) {
     fixVersions = [fixVersions];
   }
-  // @ts-expect-error
   return fixVersions.map(({ name, id }) => {
     return { name, id, type: "Release", key: "SPECIAL:release-" + name, summary: name };
   });

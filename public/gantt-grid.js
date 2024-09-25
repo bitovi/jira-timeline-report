@@ -5,7 +5,7 @@ import { mergeStartAndDueData } from "./jira/rollup/dates/dates.js";
 
 import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
 import { workTypes } from "./jira/derived/work-status/work-status.js";
-import { normalizeIssue } from "./jira/normalized/normalize.js";
+import { normalizeIssue, normalizeParent } from "./jira/normalized/normalize.js";
 
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
@@ -22,7 +22,6 @@ import SimpleTooltip from "./shared/simple-tooltip.js";
 
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);*/
-
 
 const percentCompleteTooltip = stache(`
     <button class="remove-button">❌</button>
@@ -54,9 +53,9 @@ const percentCompleteTooltip = stache(`
 
 import { getQuartersAndMonths } from "./quarter-timeline.js";
 
-// loops through and creates 
+// loops through and creates
 export class GanttGrid extends StacheElement {
-    static view = `
+  static view = `
         <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
@@ -109,260 +108,270 @@ export class GanttGrid extends StacheElement {
             {{/ for }}
         </div>
     `;
-    static props = {
-        breakdown: Boolean,
-        showPercentComplete: {
-            get default(){
-                return !!localStorage.getItem("showPercentComplete")
-            }
-        }
+  static props = {
+    breakdown: Boolean,
+    showPercentComplete: {
+      get default() {
+        return !!localStorage.getItem("showPercentComplete");
+      },
+    },
+  };
+  get lotsOfIssues() {
+    return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
+  }
+  get textSize() {
+    return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1";
+  }
+  get bigBarSize() {
+    return this.lotsOfIssues ? "h-4" : "h-6";
+  }
+  getPercentComplete(issue) {
+    if (this.showPercentComplete) {
+      return (
+        Math.round((issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays) + "%"
+      );
+    } else {
+      return "";
+    }
+  }
+  showTooltip(event, issue) {
+    const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+    showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
+  }
+  showPercentCompleteTooltip(event, issue) {
+    const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+
+    // we should get all the children ...
+    const children = getChildren(issue);
+
+    showTooltipContent(
+      event.currentTarget,
+      percentCompleteTooltip({
+        issue,
+        children,
+        getPercentComplete: this.getPercentComplete.bind(this),
+        round: Math.round,
+      })
+    );
+  }
+  classForSpecialStatus(status, issue) {
+    if (status === "complete" || status === "blocked" || status === "warning") {
+      return "color-text-" + status;
+    } else {
+      return "";
+    }
+  }
+  plus(first, second) {
+    return first + second;
+  }
+  lastRowBorder(index) {
+    return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : "";
+  }
+  get quartersAndMonths() {
+    const rollupDates = this.primaryIssuesOrReleases.map((issue) => issue.rollupStatuses.rollup);
+    let { start, due } = mergeStartAndDueData(rollupDates);
+    // nothing has timing
+    if (!start) {
+      start = new Date();
+    }
+    if (!due) {
+      due = new Date(start.getTime() + 1000 * 60 * 60 * 24 * 90);
+    }
+    return getQuartersAndMonths(new Date(), due);
+  }
+  get todayMarginLeft() {
+    const { firstDay, lastDay } = this.quartersAndMonths;
+    const totalTime = lastDay - firstDay;
+    return ((new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime) * 100;
+  }
+  get gridRowData() {
+    if (this.groupBy === "parent") {
+      // get all the parents ...
+
+      let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.parentKey);
+      let keyToAllIssues = Object.groupBy(this.allDerivedIssues, (issue) => issue.key);
+
+      let parentKeys = Object.keys(obj);
+      let parents = parentKeys
+        .map((parentKey) => {
+          if (keyToAllIssues[parentKey]) {
+            return keyToAllIssues[parentKey][0];
+          } else if (obj[parentKey][0].issue.fields.Parent) {
+            return normalizeParent(obj[parentKey][0].issue.fields.Parent);
+          }
+        })
+        .filter(Boolean);
+
+      if (parents.length && parents[0].rank) {
+        parents.sort((p1, p2) => {
+          return p1.rank > p2.rank ? 1 : -1;
+        });
+      }
+
+      let parentsAndChildren = parents
+        .map((parent) => {
+          return [
+            { type: "parent", issue: parent },
+            ...obj[parent.key].map((issue) => {
+              return { type: "issue", issue };
+            }),
+          ];
+        })
+        .flat(1);
+
+      return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
+    } else if (this.groupBy === "team") {
+      let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.team.name);
+
+      const teams = Object.keys(issuesByTeam).map((teamName) => {
+        return {
+          ...issuesByTeam[teamName][0].team,
+          summary: teamName,
+        };
+      });
+
+      teams.sort((t1, t2) => {
+        return t1.name > t2.name ? 1 : -1;
+      });
+      return teams
+        .map((team) => {
+          return [
+            { type: "parent", issue: team },
+            ...issuesByTeam[team.name].map((issue) => {
+              return { type: "issue", issue };
+            }),
+          ];
+        })
+        .flat(1);
+    } else {
+      return this.primaryIssuesOrReleases.map((issue) => {
+        return { type: "issue", issue };
+      });
+    }
+  }
+  groupElement(issue, index) {
+    const base = {
+      gridColumn: "3 / span " + this.quartersAndMonths.months.length,
+      gridRow: `${index + 3}`,
     };
-    get lotsOfIssues(){
-        return this.primaryIssuesOrReleases.length > 20 && ! this.breakdown;
-    }
-    get textSize(){
-        return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1"
-    }
-    get bigBarSize(){
-        return this.lotsOfIssues ? "h-4" : "h-6"
-    }
-    getPercentComplete(issue) {
-        if(this.showPercentComplete) {
-            return Math.round( issue.completionRollup.completedWorkingDays * 100 / issue.completionRollup.totalWorkingDays )+"%"
-        } else {
-            return "";
+
+    const background = document.createElement("div");
+
+    Object.assign(background.style, {
+      ...base,
+      zIndex: 0,
+    });
+    background.className = index % 2 ? "color-bg-gray-20" : "";
+    return stache.safeString(background);
+  }
+  /**
+   *
+   * @param {} release
+   * @param {*} index
+   * @returns
+   */
+  getReleaseTimeline(release, index) {
+    const base = {
+      gridColumn: "3 / span " + this.quartersAndMonths.months.length,
+      gridRow: `${index + 3}`,
+    };
+
+    const background = document.createElement("div");
+
+    Object.assign(background.style, {
+      ...base,
+      zIndex: 0,
+    });
+
+    background.className = index % 2 ? "color-bg-gray-20" : "";
+
+    const root = document.createElement("div");
+    const lastPeriodRoot = document.createElement("div");
+    root.appendChild(lastPeriodRoot);
+
+    Object.assign(root.style, {
+      ...base,
+      position: "relative",
+      zIndex: 20,
+    });
+    root.className = "py-1";
+
+    Object.assign(lastPeriodRoot.style, {
+      position: "absolute",
+      top: "0",
+      left: "0",
+      right: "0",
+      bottom: "0",
+    });
+    lastPeriodRoot.className = "py-1 lastPeriod";
+
+    const { firstDay, lastDay } = this.quartersAndMonths;
+    const totalTime = lastDay - firstDay;
+
+    if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
+      function getPositions(work) {
+        if (work.start == null && work.due == null) {
+          return {
+            start: 0,
+            end: Infinity,
+            startExtends: false,
+            endExtends: false,
+            style: {
+              marginLeft: "1px",
+              marginRight: "1px",
+            },
+          };
         }
-    }
-    showTooltip(event, issue) {
-        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-        showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
-    }
-    showPercentCompleteTooltip(event, issue) {
-        const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-        
-        // we should get all the children ...
-        const children = getChildren( issue );
-        
-        showTooltipContent(event.currentTarget, percentCompleteTooltip(
-            {   issue, 
-                children,
-                getPercentComplete: this.getPercentComplete.bind(this),
-                round: Math.round
-            }));
-    }
-    classForSpecialStatus(status, issue){
-        if( status === "complete" || status === "blocked" || status === "warning") {
-            return "color-text-"+status;
-        } else {
-            return "";
-        }
-    }
-    plus(first, second) {
-        return first + second;
-    }
-    lastRowBorder(index) {
-        return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : ""
-    }
-    get quartersAndMonths(){
-        const rollupDates = this.primaryIssuesOrReleases.map(issue => issue.rollupStatuses.rollup );
-        let {start, due} = mergeStartAndDueData(rollupDates);
-        // nothing has timing
-        if(!start) {
-            start = new Date();
-        }
-        if(!due) {
-            due = new Date( start.getTime() + 1000 * 60 * 60 * 24 * 90 );
-        }
-        return getQuartersAndMonths(new Date(), due);
-    }
-    get todayMarginLeft() {
-        const { firstDay, lastDay } = this.quartersAndMonths;
-        const totalTime = (lastDay - firstDay);
-        return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
-    }
-    get gridRowData(){
-        if(this.groupBy === "parent") {
-            // get all the parents ...
-            
-            let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.parentKey );
-            let keyToAllIssues = Object.groupBy( this.allDerivedIssues, issue => issue.key );
 
+        const start = Math.max(firstDay, work.start);
+        const end = Math.min(lastDay, work.due);
+        const startExtends = work.start < firstDay;
+        const endExtends = work.due > lastDay;
 
-            let parentKeys = Object.keys(obj);
-            let parents = parentKeys.map((parentKey)=> {
-                if(keyToAllIssues[parentKey]) {
-                    return keyToAllIssues[parentKey][0]
-                } else if(obj[parentKey][0].issue.fields.Parent) {
-                    return normalizeIssue(obj[parentKey][0].issue.fields.Parent)
-                }
-            }).filter(Boolean);
-            
-            if(parents.length && parents[0].rank) {
-                parents.sort( (p1, p2)=> {
-                    return p1.rank > p2.rank ? 1 : -1;
-                });
-            }
-
-            let parentsAndChildren = parents.map( parent => {
-                return [
-                    {type: "parent", issue: parent}, 
-                    ...obj[parent.key].map( (issue) => {
-                        return {type: "issue", issue}
-                    })
-                ]
-            }).flat(1);
-            
-            return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
-        } else if(this.groupBy === "team"){
-            let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue)=> issue.team.name );
-
-            const teams = Object.keys(issuesByTeam).map( teamName => {
-                return {
-                    ...issuesByTeam[teamName][0].team,
-                    summary: teamName
-                };
-            })
-
-            teams.sort( (t1, t2) => {
-                return t1.name > t2.name ? 1 : -1;
-            });
-            return teams.map( team => {
-                return [
-                    {type: "parent", issue: team},
-                    ...issuesByTeam[team.name].map( (issue) => {
-                        return {type: "issue", issue}
-                    })
-                ]
-            }).flat(1);
-
-
-        } else {
-            return this.primaryIssuesOrReleases.map( (issue)=> {
-                return {type: "issue", issue}
-            })
-        }
-    }
-    groupElement(issue, index){
-        const base = {
-            gridColumn: '3 / span '+this.quartersAndMonths.months.length,
-            gridRow: `${index+3}`,
+        return {
+          start,
+          end,
+          startExtends,
+          endExtends,
+          style: {
+            width: Math.max(((end - start) / totalTime) * 100, 0) + "%",
+            marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
+          },
         };
+      }
 
-        const background = document.createElement("div");
+      function makeLastPeriodElement(status, timing) {
+        const behindTime = document.createElement("div");
+        behindTime.style.backgroundClip = "content-box";
+        behindTime.style.opacity = "0.9";
+        behindTime.style.position = "relative";
+        behindTime.className = "border-y-solid-1px";
 
-        Object.assign(background.style, {
-            ...base,
-            zIndex: 0
-        });
-        background.className = (index % 2 ? "color-bg-gray-20" : "")
-        return stache.safeString(background)
-    }
-    /**
-     * 
-     * @param {} release 
-     * @param {*} index 
-     * @returns 
-     */
-    getReleaseTimeline(release, index){
-        const base = {
-            gridColumn: '3 / span '+this.quartersAndMonths.months.length,
-            gridRow: `${index+3}`,
-        };
+        if (timing && status === "behind") {
+          Object.assign(behindTime.style, getPositions(timing || {}).style);
+          behindTime.style.zIndex = 1;
+          behindTime.classList.add("color-text-and-bg-behind-last-period");
+        }
+        if (timing && status === "ahead") {
+          Object.assign(behindTime.style, getPositions(timing || {}).style);
+          behindTime.classList.add("color-text-and-bg-ahead-last-period");
+          behindTime.style.zIndex = -1;
+        }
+        if (timing && status === "blocked") {
+          Object.assign(behindTime.style, getPositions(timing || {}).style);
+          behindTime.classList.add("color-text-and-bg-blocked-last-period");
+          behindTime.style.zIndex = 1;
+        }
+        if (timing && status === "warning") {
+          Object.assign(behindTime.style, getPositions(timing || {}).style);
+          behindTime.classList.add("color-text-and-bg-warning-last-period");
+          behindTime.style.zIndex = 1;
+        }
+        return behindTime;
+      }
 
-        const background = document.createElement("div");
-
-        Object.assign(background.style, {
-            ...base,
-            zIndex: 0
-        });
-
-        background.className = (index % 2 ? "color-bg-gray-20" : "")
-
-        const root = document.createElement("div");
-        const lastPeriodRoot = document.createElement("div");
-        root.appendChild(lastPeriodRoot);
-
-        Object.assign(root.style, {
-            ...base,
-            position: "relative",
-            zIndex: 20
-        });
-        root.className = "py-1";
-
-        Object.assign(lastPeriodRoot.style, {
-            position: "absolute",
-            top: "0",
-            left: "0",
-            right: "0",
-            bottom: "0",
-        });
-        lastPeriodRoot.className = "py-1 lastPeriod"
-
-
-        const { firstDay, lastDay } = this.quartersAndMonths;
-        const totalTime = (lastDay - firstDay);
-
-        if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
-
-                function getPositions(work) {
-                    if(work.start == null && work.due == null) {
-                        return {
-                            start: 0, end: Infinity, startExtends: false, endExtends: false,
-                            style: {
-                                marginLeft: "1px",
-                                marginRight: "1px"
-                            }
-                        }
-                    }
-
-                    const start = Math.max(firstDay, work.start);
-                    const end = Math.min(lastDay, work.due);
-                    const startExtends = work.start < firstDay;
-                    const endExtends = work.due > lastDay;
-
-                    return {
-                        start, end, startExtends, endExtends,
-                        style: {
-                            width: Math.max( (((end - start) / totalTime) * 100), 0) + "%",
-                            marginLeft: "max("+(((start - firstDay) / totalTime) * 100) +"%, 1px)"
-                        }
-                    }
-                }
-
-                function makeLastPeriodElement(status, timing){
-                    
-                    const behindTime =  document.createElement("div");
-                    behindTime.style.backgroundClip = "content-box";
-                    behindTime.style.opacity = "0.9";
-                    behindTime.style.position = "relative";
-                    behindTime.className = "border-y-solid-1px"
-
-                    if(timing && status === "behind") {
-                        Object.assign(behindTime.style, getPositions(timing || {}).style);
-                        behindTime.style.zIndex = 1;
-                        behindTime.classList.add("color-text-and-bg-behind-last-period");
-                    }
-                    if(timing && status === "ahead") {
-                        Object.assign(behindTime.style, getPositions(timing || {}).style);
-                        behindTime.classList.add("color-text-and-bg-ahead-last-period");
-                        behindTime.style.zIndex = -1;
-                    }
-                    if(timing && status === "blocked") {
-                        Object.assign(behindTime.style, getPositions(timing || {}).style);
-                        behindTime.classList.add("color-text-and-bg-blocked-last-period");
-                        behindTime.style.zIndex = 1;
-                    }
-                    if(timing && status === "warning") {
-                        Object.assign(behindTime.style, getPositions(timing || {}).style);
-                        behindTime.classList.add("color-text-and-bg-warning-last-period");
-                        behindTime.style.zIndex = 1;
-                    }
-                    return behindTime;
-                }
-    
-                if(this.breakdown) {
-
-                    /*
+      if (this.breakdown) {
+        /*
                     const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
                     lastDev.classList.add("h-2","py-[2px]");
                     lastPeriodRoot.appendChild(lastDev);
@@ -372,18 +381,22 @@ export class GanttGrid extends StacheElement {
                     Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
                     root.appendChild(dev);*/
 
-                    const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
-                    for(const {type} of workTypes) {
-                        const lastPeriod = makeLastPeriodElement(release.rollupStatuses[type].status, release.rollupStatuses[type].lastPeriod);
-                        lastPeriod.classList.add("h-2","py-[2px]");
-                        lastPeriodRoot.appendChild(lastPeriod);
+        const workTypes = this.hasWorkTypes.list.filter((wt) => wt.hasWork);
+        for (const { type } of workTypes) {
+          const lastPeriod = makeLastPeriodElement(
+            release.rollupStatuses[type].status,
+            release.rollupStatuses[type].lastPeriod
+          );
+          lastPeriod.classList.add("h-2", "py-[2px]");
+          lastPeriodRoot.appendChild(lastPeriod);
 
-                        const thisPeriod = document.createElement("div");
-                        thisPeriod.className = type+"_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses[type].status;
-                        Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
-                        root.appendChild(thisPeriod);
-                    }
-                    /*
+          const thisPeriod = document.createElement("div");
+          thisPeriod.className =
+            type + "_time h-2 border-y-solid-1px-white color-text-and-bg-" + release.rollupStatuses[type].status;
+          Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
+          root.appendChild(thisPeriod);
+        }
+        /*
                     if(this.hasQAWork) {
                         const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
                         lastQA.classList.add("h-2","py-[2px]");
@@ -410,54 +423,52 @@ export class GanttGrid extends StacheElement {
 
                         
                     }*/
-                } else {
+      } else {
+        const behindTime = makeLastPeriodElement(
+          release.rollupStatuses.rollup.status,
+          release.rollupStatuses.rollup.lastPeriod
+        );
+        behindTime.classList.add(this.bigBarSize, "py-1");
+        lastPeriodRoot.appendChild(behindTime);
 
-                    const behindTime = makeLastPeriodElement(release.rollupStatuses.rollup.status, release.rollupStatuses.rollup.lastPeriod);
-                    behindTime.classList.add(this.bigBarSize,"py-1")
-                    lastPeriodRoot.appendChild(behindTime);
+        const team = document.createElement("div");
+        team.className =
+          this.bigBarSize + " border-y-solid-1px-white color-text-and-bg-" + release.rollupStatuses.rollup.status;
+        Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
+        team.style.opacity = "0.9";
 
-                    const team = document.createElement("div");
-                    team.className = this.bigBarSize+" border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.rollup.status;
-                    Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
-                    team.style.opacity = "0.9";
-                    
-                    root.appendChild(team);
-
-                    
-                    
-                }
-
-
-
-        }
-        const frag = document.createDocumentFragment();
-        frag.appendChild(background);
-        frag.appendChild(root);
-        return stache.safeString(frag);
+        root.appendChild(team);
+      }
     }
-    get hasWorkTypes(){
-        const map = {};
-        const list = workTypes.map((type)=>{
-            let hasWork = this.primaryIssuesOrReleases ? 
-                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
-            return map[type] = {type, hasWork}
-        })
-        return {map, list};
+    const frag = document.createDocumentFragment();
+    frag.appendChild(background);
+    frag.appendChild(root);
+    return stache.safeString(frag);
+  }
+  get hasWorkTypes() {
+    const map = {};
+    const list = workTypes.map((type) => {
+      let hasWork = this.primaryIssuesOrReleases
+        ? this.primaryIssuesOrReleases.some((issue) => issue.rollupStatuses[type].issueKeys.length)
+        : false;
+      return (map[type] = { type, hasWork });
+    });
+    return { map, list };
+  }
+  get hasQAWork() {
+    if (this.primaryIssuesOrReleases) {
+      return this.primaryIssuesOrReleases.some((issue) => issue.rollupStatuses.qa.issueKeys.length);
+    } else {
+      return true;
     }
-    get hasQAWork(){
-        if(this.primaryIssuesOrReleases) {
-            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.qa.issueKeys.length )
-        } else {
-            return true;
-        }
+  }
+  get hasUATWork() {
+    if (this.primaryIssuesOrReleases) {
+      return this.primaryIssuesOrReleases.some((issue) => issue.rollupStatuses.uat.issueKeys.length);
+    } else {
+      return true;
     }
-    get hasUATWork(){
-        if(this.primaryIssuesOrReleases) {
-            return this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses.uat.issueKeys.length )
-        } else {
-            return true;
-        }
-    }
+  }
 }
 
-customElements.define("gantt-grid", GanttGrid)
+customElements.define("gantt-grid", GanttGrid);

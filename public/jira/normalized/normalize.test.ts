@@ -1,13 +1,13 @@
 import { expect, test } from "vitest";
 
-import { JiraIssue, NormalizeConfig, normalizeIssue } from "./normalize";
+import { JiraIssue, NormalizeIssueConfig, ParentIssue, normalizeIssue } from "./normalize";
 import { parseDateIntoLocalTimezone } from "../../date-helpers";
 
 const issue: JiraIssue = {
   id: "1",
   key: "test-key",
   fields: {
-    Parent: {} as JiraIssue,
+    Parent: {} as ParentIssue,
     Summary: "language packs",
     "Issue Type": { hierarchyLevel: 1, name: "Epic" },
     Created: "2023-02-03T10:58:38.994-0600",
@@ -93,7 +93,10 @@ test("normalizeIssue with custom getters", () => {
     },
   };
 
-  const overrides: NormalizeConfig = {
+  const overrides: NormalizeIssueConfig = {
+    getSummary: () => {
+      return "summary";
+    },
     getIssueKey: ({ key }) => {
       return key + "1";
     },
@@ -115,7 +118,7 @@ test("normalizeIssue with custom getters", () => {
       return "2023-02-17T16:58:00.000Z";
     },
     getHierarchyLevel: ({ fields }) => {
-      if (typeof fields.mockLevel === "number") {
+      if ("mockLevel" in fields && typeof fields.mockLevel === "number") {
         return fields.mockLevel;
       }
 
@@ -189,7 +192,7 @@ test("normalizeIssue with custom getters", () => {
   };
 
   expect(normalizeIssue(modifiedIssue, overrides)).toEqual({
-    summary: "language packs",
+    summary: "summary",
     key: "test-key1",
     parentKey: "mock",
     confidence: 10,
