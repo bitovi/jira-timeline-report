@@ -51,16 +51,12 @@ export const statusCategoryMap = (function () {
 })();
 
 export function getStatusTypeDefault(issue: { status?: string }): StatusCategory | "dev" {
-  const statusCategory = statusCategoryMap[toLowerCase(issue?.status || "")];
+  const statusCategory = statusCategoryMap[(issue?.status || "").toLowerCase()];
   if (statusCategory) {
     return statusCategory;
   } else {
     return "dev";
   }
-}
-
-function toLowerCase(str: string): string {
-  return str.toLowerCase();
 }
 
 const workPrefix = workType.map((wt) => wt + ":");
@@ -72,7 +68,7 @@ function getWorkTypeDefault(normalizedIssue: { summary?: string; labels?: string
     return wp.slice(0, -1) as WorkType;
   }
 
-  wp = workType.find((wt) => normalizedIssue.labels?.map(toLowerCase).includes(wt));
+  wp = workType.find((wt) => normalizedIssue.labels?.map((label) => label.toLowerCase()).includes(wt));
 
   if (wp) {
     return wp as WorkType;
