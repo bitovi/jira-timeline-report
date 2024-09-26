@@ -36,4 +36,4 @@ jobs:
         run: |
           git add -f public/dist/
           git commit --no-verify -m 'Build artifacts' || echo "No changes to commit"
-          git push origin main:staging
+          git push origin HEAD:staging
