@@ -1,4 +1,7 @@
 // this is the types work can be categorized as
+/**
+ * A comment
+ */
 export const workType = ["design","dev","qa","uat"];
 export const workTypes = workType;
 
