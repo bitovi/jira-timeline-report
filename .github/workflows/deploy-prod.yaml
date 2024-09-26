@@ -42,6 +42,9 @@ jobs:
           npm i
           npm run create:atlassian-connect
 
+      - name: Cleanup for Deploy
+        run: rm -rf node_modules
+
       - id: deploy
         name: Deploy Prod
         if: ${{ github.ref_name == steps.latest_tag.outputs.latest_tag }}
