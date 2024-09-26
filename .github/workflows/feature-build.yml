@@ -31,4 +31,4 @@ jobs:
           git config --local user.name "GitHub Actions"
           git add -f public/dist/
           git commit --no-verify -m 'Build artifacts' || echo "No changes to commit"
-          git push --force-with-lease origin HEAD:staging
+          git push --force origin HEAD:staging
