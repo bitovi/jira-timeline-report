@@ -10,7 +10,6 @@ concurrency:
 
 jobs:
   EC2-Deploy:
-    needs: Build
     runs-on: ubuntu-latest
     environment:
       name: staging
