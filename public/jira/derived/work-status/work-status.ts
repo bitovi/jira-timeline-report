@@ -1,5 +1,6 @@
 /**
- * This module
+ * This module is repsonsible for determining the correct workType ("design", "dev", "qa", "uat")
+ * and statusType ("qa", "uat", "todo", "done", "blocked") for an issue.
  */
 export const workType = ["design", "dev", "qa", "uat"] as const;
 export const workTypes = workType;

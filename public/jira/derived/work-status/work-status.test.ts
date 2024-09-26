@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
-import { getWorkStatus, statusCategoryMap } from "./work-status-new.ts";
-import { workType } from "./work-status";
+import { getWorkStatus, statusCategoryMap, workType } from "./work-status.ts";
 
 const unrecognizedStatusTestCase = {
   issue: { summary: "Some other summary", labels: ["other"], status: "UnknownStatus" },
