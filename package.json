@@ -15,7 +15,7 @@
     "typecheck": "tsc",
     "prepare": "husky",
     "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts",
-    "build": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify && rollup -c --sourcemap"
+    "build": "npm run fe:css:build:only && npm run fe:js:build:only"
   },
   "keywords": [],
   "author": "",
