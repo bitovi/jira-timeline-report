@@ -8,13 +8,13 @@ export const workTypes = workType;
 export const workflowHappyPath = ["todo", "design", "dev", "qa", "uat", "done"];
 export const workflowUnhappyStatuses = ["blocked"];
 
-const inQAStatus = { QA: true, "In QA": true, "QA Complete": true };
-const inPartnerReviewStatus = { "Partner Review": true, UAT: true };
-const inDoneStatus = { Done: true, Cancelled: true };
-const blockedStatus = { Blocked: true, blocked: true, delayed: true, Delayed: true };
+const inQAStatus = { qa: true, "in qa": true, "qa complete": true };
+const inPartnerReviewStatus = { "partner review": true, uat: true };
+const inDoneStatus = { done: true, cancelled: true };
+const blockedStatus = { blocked: true, delayed: true };
 
 export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
-export const inIdeaStatus = { Idea: true, "To Do": true, Open: true };
+export const inIdeaStatus = { idea: true, "to do": true, open: true };
 export const inIdeaStatuses = Object.keys(inIdeaStatus);
 
 type WorkType = (typeof workType)[number];
@@ -51,7 +51,7 @@ export const statusCategoryMap = (function () {
 })();
 
 export function getStatusTypeDefault(issue: { status?: string }): StatusCategory | "dev" {
-  const statusCategory = statusCategoryMap[issue.status || ""];
+  const statusCategory = statusCategoryMap[toLowerCase(issue?.status || "")];
   if (statusCategory) {
     return statusCategory;
   } else {
