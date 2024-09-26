@@ -65,6 +65,9 @@ jobs:
           npm ci
           npm run create:atlassian-connect -- --staging
 
+      - name: Cleanup for Deploy
+        run: rm -rf node_modules
+
       - id: deploy
         name: Deploy
         uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.1
