@@ -60,7 +60,7 @@ export interface IssueFields extends BaseFields {
   "Fix versions": Array<FixVersion>;
 }
 
-interface NormalizedRelease {
+export interface NormalizedRelease {
   name: string;
   id: string;
   type: "Release";
@@ -103,14 +103,6 @@ interface NormalizedTeam {
   parallelWorkLimit: number;
   totalPointsPerDay: number;
   pointsPerDayPerTrack: number;
-}
-
-interface NormalizedRelease {
-  name: string;
-  id: string;
-  type: "Release";
-  key: string;
-  summary: string;
 }
 
 interface NormalizedSprint {
