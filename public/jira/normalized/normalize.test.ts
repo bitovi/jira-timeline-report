@@ -1,13 +1,23 @@
 import { expect, test } from "vitest";
 
-import { JiraIssue, NormalizeConfig, normalizeIssue } from "./normalize";
+import { JiraIssue, NormalizeIssueConfig, ParentIssue, normalizeIssue, normalizeParent } from "./normalize";
 import { parseDateIntoLocalTimezone } from "../../date-helpers";
+
+const parent: ParentIssue = {
+  key: "test-parent",
+  id: "23",
+  fields: {
+    summary: "parent summary",
+    issuetype: { name: "bug", hierarchyLevel: 8 },
+    status: { name: "in progress" },
+  },
+};
 
 const issue: JiraIssue = {
   id: "1",
   key: "test-key",
   fields: {
-    Parent: {} as JiraIssue,
+    Parent: parent,
     Summary: "language packs",
     "Issue Type": { hierarchyLevel: 1, name: "Epic" },
     Created: "2023-02-03T10:58:38.994-0600",
@@ -41,11 +51,27 @@ const issue: JiraIssue = {
 const startDate = new Date("20220715");
 const dueDate = new Date("20220716");
 
+test("normalizeParent", () => {
+  expect(normalizeParent(parent)).toEqual({
+    summary: "parent summary",
+    hierarchyLevel: 8,
+    type: "bug",
+  });
+});
+
+test("normalizeParent with overrides", () => {
+  expect(normalizeParent(parent, { getSummary: () => "hello", getHierarchyLevel: () => 21 })).toEqual({
+    summary: "hello",
+    hierarchyLevel: 21,
+    type: "bug",
+  });
+});
+
 test("normalizeIssue", () => {
   expect(normalizeIssue(issue, {})).toEqual({
     summary: "language packs",
     key: "test-key",
-    parentKey: "IMP-5",
+    parentKey: "test-parent",
     confidence: null,
     dueDate,
     hierarchyLevel: 1,
@@ -93,7 +119,10 @@ test("normalizeIssue with custom getters", () => {
     },
   };
 
-  const overrides: NormalizeConfig = {
+  const overrides: NormalizeIssueConfig = {
+    getSummary: () => {
+      return "summary";
+    },
     getIssueKey: ({ key }) => {
       return key + "1";
     },
@@ -115,7 +144,7 @@ test("normalizeIssue with custom getters", () => {
       return "2023-02-17T16:58:00.000Z";
     },
     getHierarchyLevel: ({ fields }) => {
-      if (typeof fields.mockLevel === "number") {
+      if ("mockLevel" in fields && typeof fields.mockLevel === "number") {
         return fields.mockLevel;
       }
 
@@ -189,7 +218,7 @@ test("normalizeIssue with custom getters", () => {
   };
 
   expect(normalizeIssue(modifiedIssue, overrides)).toEqual({
-    summary: "language packs",
+    summary: "summary",
     key: "test-key1",
     parentKey: "mock",
     confidence: 10,
