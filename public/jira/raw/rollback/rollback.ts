@@ -109,10 +109,10 @@ export const fields: FieldRollbackFunctionMap = {
     return { Parent: { key: change.fromString || "", id: change.from || "" } };
   },
   "Parent Link": function (lastReturnValue: unknown, change: Change) {
-    return { Parent: { key: change.toString || "" } };
+    return { Parent: { key: change.fromString || "" } };
   },
   "Epic Link": function (lastReturnValue: unknown, change: Change) {
-    return { Parent: { key: change.toString || "" } };
+    return { Parent: { key: change.fromString || "" } };
   },
   Status: function (lastReturnValue, change, fieldName, { statuses }) {
     if (statuses.ids.has(change.from || "")) {
