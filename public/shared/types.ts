@@ -1,4 +1,4 @@
-import { JiraIssue } from "../jira/normalized/normalize"
+import { JiraIssue } from "../jira/shared/types"
 
 type JsonResponse = {
   accessToken: string
