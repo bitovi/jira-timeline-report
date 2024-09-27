@@ -280,10 +280,11 @@ export class TimelineConfiguration extends StacheElement {
         <div class="flex gap-2 mt-1">
             <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
             <status-filter 
-            statuses:from="this.statuses" 
-            param:raw="planningStatuses"
-            selectedStatuses:to="this.planningStatuses"
-            style="max-width: 400px;"></status-filter>
+                statuses:from="this.statuses" 
+                param:raw="planningStatuses"
+                selectedStatuses:to="this.planningStatuses"
+                inputPlaceholder:raw="Search for statuses"
+                style="max-width: 400px;"></status-filter>
         </div>
         {{/ if}}`;
 

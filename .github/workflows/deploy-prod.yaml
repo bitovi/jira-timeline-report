@@ -24,6 +24,14 @@ jobs:
           LATEST_TAG=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
+      - name: Ensure `dist` Folder Exists
+        run: |
+          if [ ! -d "public/dist" ]; then
+            echo "Dist folder not found. Aborting deployment."
+            echo "Did you release from staging?"
+            exit 1
+          fi
+
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
@@ -33,6 +41,9 @@ jobs:
         run: |
           npm i
           npm run create:atlassian-connect
+
+      - name: Cleanup for Deploy
+        run: rm -rf node_modules
 
       - id: deploy
         name: Deploy Prod

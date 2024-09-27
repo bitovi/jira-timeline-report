@@ -1,47 +1,29 @@
 name: Deploy Staging
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Feature Build"]
+    types:
+      - completed
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  Build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Run Build
-        run: |
-          npm ci
-          npm run build
-
-      - name: Commit `dist` Folder to `main`
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add -f public/dist/
-          git commit --no-verify -m 'Build artifacts [skip ci]' || echo "No changes to commit"
-          git push origin HEAD:main
-
   EC2-Deploy:
-    needs: Build
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment:
-      name: main
+      name: staging
       url: ${{ steps.deploy.outputs.vm_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: staging
 
       - name: Ensure `dist` Folder Exists
         run: |
@@ -64,6 +46,9 @@ jobs:
         run: |
           npm ci
           npm run create:atlassian-connect -- --staging
+
+      - name: Cleanup for Deploy
+        run: rm -rf node_modules
 
       - id: deploy
         name: Deploy
