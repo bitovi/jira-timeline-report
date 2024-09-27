@@ -36,7 +36,10 @@ function getSprintNumbers(value: string): number[] | null {
   if (value === "") {
     return null;
   } else {
-    return value.split(",").map((num) => +num);
+    return value
+      .split(",")
+      .map((num) => +num)
+      .filter((num) => !isNaN(num));
   }
 }
 
@@ -48,14 +51,14 @@ function getSprintNames(value: string): string[] | null {
   }
 }
 
-type FieldRollbackFunction = (
-  lastReturnValue: unknown,
+type FieldRollbackFunction<LastReturnValue = unknown, ReturnValue = unknown> = (
+  lastReturnValue: LastReturnValue,
   change: Change,
   fieldName: string,
   data: RollbackLookupData
-) => { [key: string]: unknown };
+) => Record<string, ReturnValue>;
 
-type FieldRollbackFunctionMap = { [fieldName: string]: FieldRollbackFunction };
+type FieldRollbackFunctionMap = Record<string, FieldRollbackFunction>;
 
 export const fields: FieldRollbackFunctionMap = {
   // from will look like "1619, 1647"
@@ -82,7 +85,7 @@ export const fields: FieldRollbackFunctionMap = {
               return undefined;
             }
           })
-          .filter((x): x is Sprint => x !== undefined),
+          .filter((x) => x !== undefined),
       };
     }
   },
@@ -126,7 +129,7 @@ export const fields: FieldRollbackFunctionMap = {
   },
 };
 
-const fieldAlias: { [key: string]: string } = {
+const fieldAlias = {
   duedate: "Due date",
   status: "Status",
   labels: "Labels",
@@ -178,28 +181,11 @@ export function rollbackIssues(
   const statuses = getStatusesFromIssues(issues);
   return issues
     .map((i) => rollbackIssue(i, { sprints, versions, statuses }, rollbackTime))
-    .filter((i): i is RolledBackJiraIssue => i !== undefined);
+    .filter((i) => i !== undefined);
 }
 
 const oneHourAgo = new Date(Date.now() - 1000 * 60 * 60);
 
-/**
- * @typedef {{
- *   rolledvackTo: Date,
- *   didNotExist: Boolean
- * }} RolledBackMetadata
- */
-
-/**
- * @typedef {import("../../shared/types").JiraIssue & {rollbackMetadata: RolledBackMetadata}} RolledBackJiraIssue
- */
-
-/**
- * @param {import("../../shared/types").JiraIssue} issue
- * @param {RollbackLookupData} data
- * @param {Date} rollbackTime
- * @returns {RolledBackJiraIssue | undefined}
- */
 export function rollbackIssue(
   issue: JiraIssue,
   data: RollbackLookupData,
@@ -230,7 +216,7 @@ export function rollbackIssue(
     }
     items.forEach((change) => {
       const { field } = change;
-      const fieldName = fieldAlias[field] || field;
+      const fieldName = fieldAlias[field as keyof typeof fieldAlias] || field;
       if (fields[fieldName]) {
         Object.assign(
           rolledBackIssue.fields,
@@ -250,62 +236,46 @@ export function rollbackIssue(
 }
 
 /*
-
-  export function collectChangelog(observableBaseIssues: JiraIssue[], priorTime: Date) {
-    const changes = observableBaseIssues
-      .map((baseIssue) => {
-        return baseIssue.changelog!.map((change) => {
-          return {
-            ...change,
-            issue: baseIssue,
-            createdDate: parseDateISOString(change.created),
-          };
-        });
-      })
-      .flat()
-      .sort((cl1, cl2) => cl1.createdDate - cl2.createdDate);
-
-    return changes.filter((change) => change.createdDate >= priorTime);
-  }
-
-  export function applyChangelog(changes: any[], data: Data) {
-    for (const { items, created, issue } of changes) {
-      items.forEach((change: Change) => {
-        const { field } = change;
-
-        if (field in issue) {
-          if (fields[field]) {
-            issue[field] = fields[field](issue[field], change, field, data);
-          } else {
-            issue[field] = change.from;
-          }
-        }
-      });
+export function collectChangelog(observableBaseIssues, priorTime) {
+    const changes = observableBaseIssues.map( baseIssue => {
+        return baseIssue.changelog.map( change => {
+            return {...change, issue: baseIssue, createdDate: parseDateISOString(change.created) };
+        })
+    } ).flat().sort( (cl1, cl2) => cl1.createdDate - cl2.createdDate);
+    return changes.filter( change => change.createdDate >= priorTime );
+}
+export function applyChangelog(changes, data) {
+    for(const {items, created, issue} of changes) {
+        items.forEach( (change) => {
+            const {field, from, to} = change;
+            if(field in issue) {
+                if(fields[field]) {
+                    issue[field] = fields[field](issue[field], change, data);
+                } else {
+                    issue[field] = from;
+                }
+                
+            }
+        })
     }
-  }
-
-  function sleep(time: number) {
-    return new Promise<void>(function (resolve) {
-      if (!time) {
-        resolve();
-      }
-    });
-  }
-
-  const CHANGE_APPLY_AMOUNT = 2000;
-  export async function applyChangelogs(
-    observableBaseIssues: JiraIssue[],
-    priorTime: Date
-  ) {
+}
+function sleep(time) {
+    return new Promise(function(resolve){
+        if(!time) {
+            resolve();
+        }
+    })
+}
+const CHANGE_APPLY_AMOUNT = 2000;
+export async function applyChangelogs(observableBaseIssues, priorTime) {
     const changes = collectChangelog(observableBaseIssues, priorTime);
-    console.log("processing", changes.length, "changes");
+    console.log("processing",changes.length, "changes");
     const sprints = getSprintsMapsFromIssues(observableBaseIssues);
     const batches = [];
-
-    while (changes.length) {
-      await sleep(0);
-      const batch = changes.splice(0, CHANGE_APPLY_AMOUNT);
-      applyChangelog(batch, { sprints });
+    
+    while(changes.length) {
+        await sleep();
+        const batch = changes.splice(0, CHANGE_APPLY_AMOUNT);
+        applyChangelog(batch, {sprints});
     }
-  }
-  */
+}*/

@@ -25,6 +25,7 @@ const issue: JiraIssue = {
     Parent: parent,
     Summary: "language packs",
     "Issue Type": { hierarchyLevel: 1, name: "Epic" },
+    Created: "2023-02-03T10:58:38.994-0600",
     Sprint: null,
     "Fix versions": [
       {
