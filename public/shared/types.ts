@@ -1,3 +1,5 @@
+import { JiraIssue } from "../jira/normalized/normalize"
+
 type JsonResponse = {
   accessToken: string
   data: any // TODO - what is the shape of this?
@@ -14,7 +16,7 @@ type JtrEnv = {
 }
 
 interface RequestHelperResponse extends JsonResponse {
-	issues: any,
+	issues: JiraIssue[],
 	maxResults: any,
 	total: any,
 	startAt: any,
