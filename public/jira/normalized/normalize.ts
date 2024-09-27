@@ -2,8 +2,27 @@ import { parseDateIntoLocalTimezone } from "../../date-helpers.js";
 
 import * as defaults from "./defaults";
 
+interface BaseIssue {
+  id: string;
+  key: string;
+}
+
+export interface JiraIssue extends BaseIssue {
+  fields: IssueFields | LegacyFields;
+}
+
+export interface ParentIssue extends BaseIssue {
+  fields: ParentFields;
+}
+
+export interface ParentFields {
+  issuetype: { name: string; hierarchyLevel: number };
+  summary: string;
+  status: { name: string };
+}
+
 export interface BaseFields {
-  Parent: JiraIssue;
+  Parent: ParentIssue;
   Confidence?: number;
   "Due date"?: string | null;
   "Project Key"?: string;
@@ -17,7 +36,6 @@ export interface BaseFields {
   Rank?: string;
   [Key: string]: unknown;
 }
-type ParentFields = any;
 
 interface LegacyFields extends BaseFields {
   "Issue Type": string;
@@ -40,12 +58,6 @@ export interface IssueFields extends BaseFields {
   "Parent Link"?: { data: { key: string } };
   Status: { name: string; statusCategory: { name: string } };
   "Fix versions": Array<FixVersion>;
-}
-
-export interface JiraIssue {
-  fields: IssueFields | LegacyFields | ParentFields;
-  id: string;
-  key: string;
 }
 
 interface NormalizedRelease {
@@ -111,7 +123,25 @@ type DefaultsToConfig<T> = {
   [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
 };
 
-export type NormalizeConfig = DefaultsToConfig<typeof defaults>;
+export type NormalizeIssueConfig = DefaultsToConfig<typeof defaults>;
+export type NormalizeParentConfig = DefaultsToConfig<
+  Pick<typeof defaults, "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault">
+>;
+
+export function normalizeParent(
+  issue: ParentIssue,
+  {
+    getSummary = defaults.getSummaryDefault,
+    getHierarchyLevel = defaults.getHierarchyLevelDefault,
+    getType = defaults.getTypeDefault,
+  }: Partial<NormalizeParentConfig> = {}
+) {
+  return {
+    summary: getSummary(issue),
+    hierarchyLevel: getHierarchyLevel(issue),
+    type: getType(issue),
+  };
+}
 
 export function normalizeIssue(
   issue: JiraIssue,
@@ -136,7 +166,8 @@ export function normalizeIssue(
     getLabels = defaults.getLabelsDefault,
     getReleases = defaults.getReleasesDefault,
     getRank = defaults.getRankDefault,
-  }: Partial<NormalizeConfig> = {}
+    getSummary = defaults.getSummaryDefault,
+  }: Partial<NormalizeIssueConfig> = {}
 ): NormalizedIssue {
   const teamName = getTeamKey(issue);
 
@@ -150,7 +181,7 @@ export function normalizeIssue(
   return {
     // .summary can come from a "parent"'s fields
     // TODO check what this was supposed to be flag^v
-    summary: issue.fields.Summary || issue.fields.summary || "",
+    summary: getSummary(issue),
     key: getIssueKey(issue),
     parentKey: getParentKey(issue),
     confidence: getConfidence(issue),

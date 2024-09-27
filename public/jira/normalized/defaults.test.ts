@@ -21,12 +21,12 @@ import {
   getUrlDefault,
   getVelocityDefault,
 } from "./defaults";
-import { JiraIssue, IssueFields } from "./normalize";
+import { JiraIssue, IssueFields, ParentIssue } from "./normalize";
 
 const createFields = (overrides: Partial<IssueFields> = {}): Pick<JiraIssue, "fields"> => {
   return {
     fields: {
-      Parent: {} as JiraIssue,
+      Parent: {} as ParentIssue,
       Summary: "summary",
       Sprint: null,
       Labels: [],
@@ -58,7 +58,17 @@ test("getHierarchyLevelDefault", () => {
 });
 
 test("getParentKeyDefault", () => {
-  expect(getParentKeyDefault({ ...createFields({ Parent: { key: "parent" } as JiraIssue }) })).toBe("parent");
+  expect(
+    getParentKeyDefault({
+      ...createFields({
+        Parent: {
+          key: "parent",
+          id: "",
+          fields: { issuetype: { name: "", hierarchyLevel: 8 }, summary: "", status: { name: "" } },
+        },
+      }),
+    })
+  ).toBe("parent");
   expect(getParentKeyDefault({ ...createFields({ "Parent Link": { data: { key: "link" } } }) })).toBe("link");
 });
 
