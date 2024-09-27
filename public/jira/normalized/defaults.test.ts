@@ -21,9 +21,11 @@ import {
   getUrlDefault,
   getVelocityDefault,
 } from "./defaults";
-import { JiraIssue, IssueFields, ParentIssue } from "./normalize";
+import { IssueFields, JiraIssue, ParentIssue } from "../shared/types";
 
-const createFields = (overrides: Partial<IssueFields> = {}): Pick<JiraIssue, "fields"> => {
+const createFields = (
+  overrides: Partial<IssueFields> = {}
+): Pick<JiraIssue, "fields"> => {
   return {
     fields: {
       Parent: {} as ParentIssue,
@@ -31,7 +33,7 @@ const createFields = (overrides: Partial<IssueFields> = {}): Pick<JiraIssue, "fi
       Sprint: null,
       Labels: [],
       "Issue Type": { hierarchyLevel: 1, name: "test" },
-      Status: { name: "status", statusCategory: { name: "category" } },
+      Status: { id: "1", name: "status", statusCategory: { name: "category" } },
       "Fix versions": [],
       ...overrides,
     },
@@ -39,22 +41,36 @@ const createFields = (overrides: Partial<IssueFields> = {}): Pick<JiraIssue, "fi
 };
 
 test("getConfidenceDefault", () => {
-  expect(getConfidenceDefault({ ...createFields({ Confidence: 20 }) })).toBe(20);
-  expect(getConfidenceDefault({ ...createFields({ "Story points confidence": 10 }) })).toBe(10);
+  expect(getConfidenceDefault({ ...createFields({ Confidence: 20 }) })).toBe(
+    20
+  );
+  expect(
+    getConfidenceDefault({ ...createFields({ "Story points confidence": 10 }) })
+  ).toBe(10);
   expect(getConfidenceDefault({ ...createFields() })).toBeNull();
 
-  expect(getConfidenceDefault({ ...createFields({ "Story points confidence": 10, Confidence: 20 }) })).toBe(10);
+  expect(
+    getConfidenceDefault({
+      ...createFields({ "Story points confidence": 10, Confidence: 20 }),
+    })
+  ).toBe(10);
 });
 
 test("getDueDataDefault", () => {
   const date = new Date().toString();
 
-  expect(getDueDateDefault({ ...createFields({ "Due date": date }) })).toBe(date);
+  expect(getDueDateDefault({ ...createFields({ "Due date": date }) })).toBe(
+    date
+  );
   expect(getDueDateDefault({ ...createFields() })).toBeNull();
 });
 
 test("getHierarchyLevelDefault", () => {
-  expect(getHierarchyLevelDefault({ ...createFields({ "Issue Type": { name: "", hierarchyLevel: 7 } }) })).toBe(7);
+  expect(
+    getHierarchyLevelDefault({
+      ...createFields({ "Issue Type": { name: "", hierarchyLevel: 7 } }),
+    })
+  ).toBe(7);
 });
 
 test("getParentKeyDefault", () => {
@@ -64,12 +80,20 @@ test("getParentKeyDefault", () => {
         Parent: {
           key: "parent",
           id: "",
-          fields: { issuetype: { name: "", hierarchyLevel: 8 }, summary: "", status: { name: "" } },
+          fields: {
+            issuetype: { name: "", hierarchyLevel: 8 },
+            summary: "",
+            status: { name: "" },
+          },
         },
       }),
     })
   ).toBe("parent");
-  expect(getParentKeyDefault({ ...createFields({ "Parent Link": { data: { key: "link" } } }) })).toBe("link");
+  expect(
+    getParentKeyDefault({
+      ...createFields({ "Parent Link": { data: { key: "link" } } }),
+    })
+  ).toBe("link");
 });
 
 test("getDaysPerSprintDefault", () => {
@@ -79,17 +103,25 @@ test("getDaysPerSprintDefault", () => {
 test("getStartDateDefault", () => {
   const date = new Date().toString();
 
-  expect(getStartDateDefault({ ...createFields({ "Start date": date }) })).toBe(date);
+  expect(getStartDateDefault({ ...createFields({ "Start date": date }) })).toBe(
+    date
+  );
   expect(getStartDateDefault({ ...createFields() })).toBeNull();
 });
 
 test("getStoryPointsDefault", () => {
-  expect(getStoryPointsDefault({ ...createFields({ "Story points": 3 }) })).toBe(3);
+  expect(
+    getStoryPointsDefault({ ...createFields({ "Story points": 3 }) })
+  ).toBe(3);
   expect(getStoryPointsDefault({ ...createFields() })).toBeNull();
 });
 
 test("getStoryPointsMedianDefault", () => {
-  expect(getStoryPointsMedianDefault({ ...createFields({ "Story points median": 3 }) })).toBe(3);
+  expect(
+    getStoryPointsMedianDefault({
+      ...createFields({ "Story points median": 3 }),
+    })
+  ).toBe(3);
   expect(getStoryPointsMedianDefault({ ...createFields() })).toBeNull();
 });
 
@@ -102,9 +134,13 @@ test("getTeamKeyDefault", () => {
 });
 
 test("getTypeDefault", () => {
-  expect(getTypeDefault({ ...createFields({ "Issue Type": { hierarchyLevel: 7, name: "issue type" } }) })).toBe(
-    "issue type"
-  );
+  expect(
+    getTypeDefault({
+      ...createFields({
+        "Issue Type": { hierarchyLevel: 7, name: "issue type" },
+      }),
+    })
+  ).toBe("issue type");
 });
 
 test("getVelocityDefault", () => {
@@ -116,30 +152,46 @@ test("getParallelWorkLimitDefault", () => {
 });
 
 test("getSprintsDefault", () => {
-  const sprints = [{ name: "hello", startDate: "20220715", endDate: "20220716" }];
+  const sprints = [
+    { id: "1", name: "hello", startDate: "20220715", endDate: "20220716" },
+  ];
 
   const startDate = new Date("20220715");
   const endDate = new Date("20220716");
 
-  expect(getSprintsDefault({ ...createFields({ Sprint: sprints }) })).toEqual([{ name: "hello", startDate, endDate }]);
+  expect(getSprintsDefault({ ...createFields({ Sprint: sprints }) })).toEqual([
+    { name: "hello", startDate, endDate },
+  ]);
   expect(getSprintsDefault({ ...createFields() })).toBeNull();
 });
 
 test("getStatusDefault", () => {
-  expect(getStatusDefault({ ...createFields({ Status: { name: "issue type", statusCategory: { name: "" } } }) })).toBe(
-    "issue type"
-  );
+  expect(
+    getStatusDefault({
+      ...createFields({
+        Status: { id: "1", name: "issue type", statusCategory: { name: "" } },
+      }),
+    })
+  ).toBe("issue type");
 });
 
 test("getLabelsDefault", () => {
-  expect(getLabelsDefault({ ...createFields({ Labels: ["label"] }) })).toEqual(["label"]);
+  expect(getLabelsDefault({ ...createFields({ Labels: ["label"] }) })).toEqual([
+    "label",
+  ]);
   expect(getLabelsDefault({ ...createFields() })).toEqual([]);
 });
 
 test("getStatusCategoryDefault", () => {
   expect(
     getStatusCategoryDefault({
-      ...createFields({ Status: { name: "issue type", statusCategory: { name: "category" } } }),
+      ...createFields({
+        Status: {
+          id: "1",
+          name: "issue type",
+          statusCategory: { name: "category" },
+        },
+      }),
     })
   ).toBe("category");
 });
@@ -150,8 +202,12 @@ test("getRankDefault", () => {
 });
 
 test("getReleaseDefault", () => {
-  expect(getReleasesDefault({ ...createFields({ "Fix versions": undefined }) })).toEqual([]);
-  expect(getReleasesDefault({ ...createFields({ "Fix versions": [] }) })).toEqual([]);
+  expect(
+    getReleasesDefault({ ...createFields({ "Fix versions": undefined }) })
+  ).toEqual([]);
+  expect(
+    getReleasesDefault({ ...createFields({ "Fix versions": [] }) })
+  ).toEqual([]);
   expect(
     getReleasesDefault({
       ...createFields({
@@ -167,5 +223,13 @@ test("getReleaseDefault", () => {
         ],
       }),
     })
-  ).toEqual([{ name: "release", id: "1", type: "Release", key: "SPECIAL:release-release", summary: "release" }]);
+  ).toEqual([
+    {
+      name: "release",
+      id: "1",
+      type: "Release",
+      key: "SPECIAL:release-release",
+      summary: "release",
+    },
+  ]);
 });
