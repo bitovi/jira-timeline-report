@@ -1,64 +1,7 @@
 import { parseDateIntoLocalTimezone } from "../../date-helpers.js";
+import { JiraIssue, ParentIssue } from "../shared/types";
 
 import * as defaults from "./defaults";
-
-interface BaseIssue {
-  id: string;
-  key: string;
-}
-
-export interface JiraIssue extends BaseIssue {
-  fields: IssueFields | LegacyFields;
-}
-
-export interface ParentIssue extends BaseIssue {
-  fields: ParentFields;
-}
-
-export interface ParentFields {
-  issuetype: { name: string; hierarchyLevel: number };
-  summary: string;
-  status: { name: string };
-}
-
-export interface BaseFields {
-  Parent: ParentIssue;
-  Confidence?: number;
-  "Due date"?: string | null;
-  "Project Key"?: string;
-  "Start date"?: string | null;
-  "Story points"?: number | null;
-  "Story points median"?: number;
-  "Story points confidence"?: number | null;
-  Summary: string;
-  Sprint: null | Array<{ startDate: string; endDate: string; name: string }>;
-  Labels: Array<string>;
-  Rank?: string;
-  [Key: string]: unknown;
-}
-
-interface LegacyFields extends BaseFields {
-  "Issue Type": string;
-  "Parent Link"?: string;
-  Status: string;
-  "Fix versions": FixVersion;
-}
-
-interface FixVersion {
-  self: string;
-  id: string;
-  description: string;
-  name: string;
-  archived: boolean;
-  released: boolean;
-}
-
-export interface IssueFields extends BaseFields {
-  "Issue Type": { hierarchyLevel: number; name: string };
-  "Parent Link"?: { data: { key: string } };
-  Status: { name: string; statusCategory: { name: string } };
-  "Fix versions": Array<FixVersion>;
-}
 
 export interface NormalizedRelease {
   name: string;
@@ -117,7 +60,10 @@ type DefaultsToConfig<T> = {
 
 export type NormalizeIssueConfig = DefaultsToConfig<typeof defaults>;
 export type NormalizeParentConfig = DefaultsToConfig<
-  Pick<typeof defaults, "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault">
+  Pick<
+    typeof defaults,
+    "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault"
+  >
 >;
 
 export function normalizeParent(
@@ -209,7 +155,9 @@ export function allStatusesSorted(issues: { status: string }[]): string[] {
 }
 
 export function allReleasesSorted(issues: NormalizedIssue[]): string[] {
-  const releases = issues.map((issue) => issue.releases.map((r) => r.name)).flat(1);
+  const releases = issues
+    .map((issue) => issue.releases.map((r) => r.name))
+    .flat(1);
 
   return [...new Set(releases)].sort();
 }

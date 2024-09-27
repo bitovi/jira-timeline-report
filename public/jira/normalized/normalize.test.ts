@@ -1,7 +1,12 @@
 import { expect, test } from "vitest";
 
-import { JiraIssue, NormalizeIssueConfig, ParentIssue, normalizeIssue, normalizeParent } from "./normalize";
+import {
+  NormalizeIssueConfig,
+  normalizeIssue,
+  normalizeParent,
+} from "./normalize";
 import { parseDateIntoLocalTimezone } from "../../date-helpers";
+import { JiraIssue, ParentIssue } from "../shared/types";
 
 const parent: ParentIssue = {
   key: "test-parent",
@@ -20,7 +25,6 @@ const issue: JiraIssue = {
     Parent: parent,
     Summary: "language packs",
     "Issue Type": { hierarchyLevel: 1, name: "Epic" },
-    Created: "2023-02-03T10:58:38.994-0600",
     Sprint: null,
     "Fix versions": [
       {
@@ -38,7 +42,7 @@ const issue: JiraIssue = {
     "Parent Link": { data: { key: "IMP-5" } },
     Rank: "0|hzzzzn:",
     "Due date": "20220716",
-    Status: { name: "Done", statusCategory: { name: "Done" } },
+    Status: { id: "1", name: "Done", statusCategory: { name: "Done" } },
     "Project key": "ORDER",
     "Issue key": "ORDER-15",
     url: "https://bitovi-training.atlassian.net/browse/ORDER-15",
@@ -60,7 +64,12 @@ test("normalizeParent", () => {
 });
 
 test("normalizeParent with overrides", () => {
-  expect(normalizeParent(parent, { getSummary: () => "hello", getHierarchyLevel: () => 21 })).toEqual({
+  expect(
+    normalizeParent(parent, {
+      getSummary: () => "hello",
+      getHierarchyLevel: () => 21,
+    })
+  ).toEqual({
     summary: "hello",
     hierarchyLevel: 21,
     type: "bug",
