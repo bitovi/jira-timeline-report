@@ -4,13 +4,13 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "dev":"concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:fe:css:build\" \"npm:fe:js:build\" \"npm:start-local\"",
+    "dev": "concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:fe:css:build\" \"npm:fe:js:build\" \"npm:start-local\"",
     "start-local": "node server/server.js",
     "fe:css:build:only": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify",
     "fe:css:build": "npm run fe:css:build:only -- --watch",
     "fe:js:build:only": "rollup -c --sourcemap",
     "fe:js:build": "npm run fe:js:build:only -- -w",
-    "test": "vitest --watch=false",
+    "test": "vitest --watch=false --exclude '**/playwright'",
     "test:watch": "vitest",
     "typecheck": "tsc",
     "prepare": "husky",
@@ -31,9 +31,11 @@
     "undici-types": "^6.19.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.47.2",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
+    "@types/node": "^22.7.4",
     "concurrently": "^9.0.1",
     "fsevents": "^2.3.3",
     "husky": "^9.1.4",
