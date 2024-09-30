@@ -11,6 +11,7 @@
     "fe:js:build:only": "rollup -c --sourcemap",
     "fe:js:build": "npm run fe:js:build:only -- -w",
     "test": "vitest --watch=false --exclude '**/playwright'",
+    "test:e2e": "npx playwright test",
     "test:watch": "vitest",
     "typecheck": "tsc",
     "prepare": "husky",
