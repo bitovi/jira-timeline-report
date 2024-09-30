@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "dev":"concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:fe:css:build\" \"npm:fe:js:build\" \"npm:start-local\"",
+    "dev": "concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:fe:css:build\" \"npm:fe:js:build\" \"npm:start-local\"",
     "start-local": "node server/server.js",
     "fe:css:build:only": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify",
     "fe:css:build": "npm run fe:css:build:only -- --watch",
@@ -21,12 +21,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@babel/preset-react": "^7.24.7",
+    "@rollup/plugin-babel": "^6.0.4",
     "@tailwindcss/container-queries": "^0.1.1",
     "axios": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "oauth": "^0.10.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "undici": "^6.19.5",
     "undici-types": "^6.19.5"
   },
@@ -34,6 +38,7 @@
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
+    "@types/react": "^18.3.10",
     "concurrently": "^9.0.1",
     "fsevents": "^2.3.3",
     "husky": "^9.1.4",

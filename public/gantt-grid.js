@@ -3,6 +3,11 @@ import { StacheElement, type, ObservableObject, stache } from "./can.js";
 import { showTooltip, showTooltipContent } from "./issue-tooltip.js";
 import { mergeStartAndDueData } from "./jira/rollup/dates/dates.js";
 
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+
+import TeamConfigure from "./react/Configure/Teams/index.ts";
+
 import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
 import { workTypes } from "./jira/derived/work-status/work-status.js";
 import { normalizeIssue, normalizeParent } from "./jira/normalized/normalize.js";
@@ -55,7 +60,14 @@ import { getQuartersAndMonths } from "./quarter-timeline.js";
 
 // loops through and creates
 export class GanttGrid extends StacheElement {
+  connectedCallback() {
+    createRoot(document.getElementById("test-attach")).render(
+      createElement(TeamConfigure, { primary: true, label: "React button created from a web component in auth.ts" })
+    );
+  }
+
   static view = `
+        <div id='test-attach'></div>
         <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
