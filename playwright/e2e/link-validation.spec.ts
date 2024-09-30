@@ -1,7 +1,8 @@
 import { test, expect } from '../base';
 
 test('has Jira Timeline Report title', async ({ page }) => {
-  await page.goto('http://localhost:3000/');
+  // Navigate to the page (baseURL is used automatically for relative paths)
+  await page.goto('/');
 
   // Expect a title "to contain" a substring.
   await expect(page).toHaveTitle(/Jira Timeline Report/);
@@ -9,8 +10,8 @@ test('has Jira Timeline Report title', async ({ page }) => {
 
 test.describe('Link validation test', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the page where the links exist
-    await page.goto('http://localhost:3000/');
+    // Navigate to the page where the links exist (baseURL is used automatically for relative paths)
+    await page.goto('/');
   });
 
   test('should check if the release end dates link exists and navigates to the correct URL', async ({ page }) => {
