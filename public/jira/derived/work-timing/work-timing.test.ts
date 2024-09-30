@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, MockedFunction, test, vi } from "vitest";
-import { deriveWorkTiming, DerivedWorkTiming } from "./work-timing.js";
-import { NormalizedIssue, NormalizedTeam } from "../../shared/types.js";
+import { deriveWorkTiming, DerivedWorkTiming } from "./work-timing";
+import { NormalizedIssue, NormalizedTeam } from "../../shared/types";
 import {
   estimateExtraPoints,
   sampleExtraPoints,
-} from "../../../shared/confidence.js";
+} from "../../../shared/confidence";
 
-vi.mock("../../../shared/confidence.js", () => ({
+vi.mock("../../../shared/confidence", () => ({
   estimateExtraPoints: vi.fn(),
   sampleExtraPoints: vi.fn(),
 }));
 
-describe("deriveWorkTiming", () => {
+describe("work-timing", () => {
   const mockEstimateExtraPoints = estimateExtraPoints as MockedFunction<
     typeof estimateExtraPoints
   >;
