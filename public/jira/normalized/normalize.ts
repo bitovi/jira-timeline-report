@@ -1,58 +1,7 @@
 import { parseDateIntoLocalTimezone } from "../../date-helpers.js";
-import { JiraIssue, ParentIssue } from "../shared/types";
+import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
 
 import * as defaults from "./defaults";
-
-export interface NormalizedRelease {
-  name: string;
-  id: string;
-  type: "Release";
-  key: string;
-  summary: string;
-}
-
-interface NormalizedSprint {
-  name: string;
-  startDate: Date;
-  endDate: Date;
-}
-
-export interface NormalizedIssue {
-  key: string;
-  summary: string;
-  parentKey: string | null;
-  confidence: number | null;
-  dueDate: Date;
-  hierarchyLevel: number;
-  startDate: Date;
-  storyPoints: number | null;
-  storyPointsMedian: number | null;
-  type: string;
-  team: NormalizedTeam;
-  url: string;
-  sprints: Array<NormalizedSprint> | null;
-  status: string | null;
-  statusCategory: string | null;
-  issue: JiraIssue;
-  labels: Array<string>;
-  releases: Array<NormalizedRelease>;
-  rank: string | null;
-}
-
-interface NormalizedTeam {
-  name: string;
-  velocity: number;
-  daysPerSprint: number;
-  parallelWorkLimit: number;
-  totalPointsPerDay: number;
-  pointsPerDayPerTrack: number;
-}
-
-interface NormalizedSprint {
-  name: string;
-  startDate: Date;
-  endDate: Date;
-}
 
 type DefaultsToConfig<T> = {
   [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
