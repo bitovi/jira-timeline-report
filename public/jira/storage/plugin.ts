@@ -9,9 +9,9 @@ declare global {
     request: <T = unknown>(
       url: string,
       config?: {
-        method?: "GET" | "PUT";
+        type?: "GET" | "PUT";
         headers: Record<string, string>;
-        body: any;
+        data: any;
       }
     ) => Promise<T>;
   }
@@ -27,21 +27,40 @@ interface SprintDefaultResponse {
 
 type SprintDefaults = SprintDefaultResponse["value"];
 
+const initialSprintLength = 10;
+
+const initialDefaults: SprintDefaults = {
+  sprintLength: initialSprintLength,
+};
+
 export const getSprintDefaults = ({ appKey }: Configuration): Promise<SprintDefaults> => {
-  return AP.request<SprintDefaultResponse>(`/atlassian-connect/1/addons/${appKey}/properties/sprintDefaults`).then(
-    (response) => {
+  return AP.request<{ body: string }>(`/rest/atlassian-connect/1/addons/${appKey}/properties/sprintDefaults`)
+    .then((res) => {
+      return JSON.parse(res.body) as SprintDefaultResponse;
+    })
+    .then((response) => {
       return response.value;
-    }
-  );
+    })
+    .catch((errorResponse) => {
+      if ("err" in errorResponse) {
+        const parsed = JSON.parse(errorResponse.err) as { statusCode: number; message: string };
+
+        if (parsed.statusCode === 404) {
+          return initialDefaults;
+        }
+      }
+
+      throw errorResponse;
+    });
 };
 
 export const setSprintDefaults = (updated: SprintDefaults, { appKey }: Configuration): Promise<void> => {
-  return AP.request<void>(`/atlassian-connect/1/addons/${appKey}/properties/sprintDefaults`, {
-    method: "PUT",
+  return AP.request<void>(`/rest/atlassian-connect/1/addons/${appKey}/properties/sprintDefaults`, {
+    type: "PUT",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(updated),
+    data: JSON.stringify(updated),
   });
 };
