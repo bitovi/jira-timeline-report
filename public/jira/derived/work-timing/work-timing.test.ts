@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, MockedFunction, test, vi } from "vitest";
+import { beforeEach, describe, expect, Mock, test, vi } from "vitest";
 import { deriveWorkTiming, DerivedWorkTiming } from "./work-timing";
 import { NormalizedIssue, NormalizedTeam } from "../../shared/types";
 import {
@@ -12,12 +12,8 @@ vi.mock("../../../shared/confidence", () => ({
 }));
 
 describe("work-timing", () => {
-  const mockEstimateExtraPoints = estimateExtraPoints as MockedFunction<
-    typeof estimateExtraPoints
-  >;
-  const mockSampleExtraPoints = sampleExtraPoints as MockedFunction<
-    typeof sampleExtraPoints
-  >;
+  const mockEstimateExtraPoints = estimateExtraPoints as Mock;
+  const mockSampleExtraPoints = sampleExtraPoints as Mock;
 
   const defaultTeam: NormalizedTeam = {
     name: "Team 1",
