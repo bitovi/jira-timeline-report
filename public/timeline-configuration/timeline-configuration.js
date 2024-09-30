@@ -1,26 +1,46 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value } from "../can.js";
 
-import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
-import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCalculations } from "../prepare-issues/date-data.js";
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
 
-import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData, serverInfoPromise} from "./state-helpers.js";
+import TeamConfigure from "../react/Configure/Teams/index.ts";
+
+import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
+import {
+  calculationKeysToNames,
+  allTimingCalculationOptions,
+  getImpliedTimingCalculations,
+} from "../prepare-issues/date-data.js";
+
+import {
+  rawIssuesRequestData,
+  configurationPromise,
+  derivedIssuesRequestData,
+  serverInfoPromise,
+} from "./state-helpers.js";
 
 import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 
 const booleanParsing = {
-    parse: x => {
-      return ({"": true, "true": true, "false": false})[x];
-    },
-    stringify: x => ""+x
-  };
+  parse: (x) => {
+    return { "": true, true: true, false: false }[x];
+  },
+  stringify: (x) => "" + x,
+};
 
-
-const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+const selectStyle =
+  "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
 
 export class TimelineConfiguration extends StacheElement {
-    static view = `
+  connectedCallback() {
+    createRoot(document.getElementById("team-configuration")).render(
+      createElement(TeamConfigure, { primary: true, label: "React button created from a web component in auth.ts" })
+    );
+  }
+
+  static view = `
         <p>
             Questions on the options? 
             <a class="link" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>, or 
@@ -286,383 +306,381 @@ export class TimelineConfiguration extends StacheElement {
                 inputPlaceholder:raw="Search for statuses"
                 style="max-width: 400px;"></status-filter>
         </div>
-        {{/ if}}`;
+        {{/ if}}
+        <div id='team-configuration'></div>`;
 
-    static props = {
-        // passed
+  static props = {
+    // passed
 
-        // "base" values that do not change when other value change
-        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
-        loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
-        childJQL: saveJSONToUrl("childJQL", "", String, {parse: x => ""+x, stringify: x => ""+x}),
-        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
-        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
-        showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
+    // "base" values that do not change when other value change
+    jql: saveJSONToUrl("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
+    childJQL: saveJSONToUrl("childJQL", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+    }),
+    primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+    }),
+    showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
 
-        groupBy: saveJSONToUrl("groupBy", "", String, {parse: x => ""+x, stringify: x => ""+x}),
-        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-        
-        // VALUES DERIVING FROM THE `jql`
-        rawIssuesRequestData: {
-            value({listenTo, resolve}) {
-                return rawIssuesRequestData({
-                    jql: value.from(this, "jql"),
-                    childJQL: value.from(this,"childJQL"),
-                    loadChildren: value.from(this, "loadChildren"),
-                    isLoggedIn: value.from(this, "isLoggedIn"),
-                    jiraHelpers: this.jiraHelpers
-                },{listenTo, resolve});
-            }
-        },
-        get serverInfoPromise(){
-            return serverInfoPromise({jiraHelpers: this.jiraHelpers, isLoggedIn: value.from(this, "isLoggedIn")});
-        },
-        get configurationPromise(){
-            return configurationPromise({teamConfigurationPromise: this.teamConfigurationPromise, serverInfoPromise: this.serverInfoPromise})
-        },
-        configuration: {
-            async() {
-                return this.configurationPromise
-            }
-        },
-        derivedIssuesRequestData: {
-            value({listenTo, resolve}) {
-                return derivedIssuesRequestData({
-                    rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
-                    configurationPromise: value.from(this, "configurationPromise")
-                },{listenTo, resolve});
-            }
-        },
-        get derivedIssuesPromise(){
-            return this.derivedIssuesRequestData.issuesPromise
-        },
-        derivedIssues: {
-            async() {
-                return this.derivedIssuesRequestData.issuesPromise
-            }
-        },
-        // PROPERTIES DERIVING FROM `derivedIssues`
-        get statuses(){
-            if(this.derivedIssues) {
-                return allStatusesSorted(this.derivedIssues)
-            } else {
-                return [];
-            }
-        },
-        get releases(){
-            if(this.derivedIssues) {
-                return allReleasesSorted(this.derivedIssues)
-            } else {
-                return [];
-            }
-        },
+    groupBy: saveJSONToUrl("groupBy", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
+    hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
 
+    // VALUES DERIVING FROM THE `jql`
+    rawIssuesRequestData: {
+      value({ listenTo, resolve }) {
+        return rawIssuesRequestData(
+          {
+            jql: value.from(this, "jql"),
+            childJQL: value.from(this, "childJQL"),
+            loadChildren: value.from(this, "loadChildren"),
+            isLoggedIn: value.from(this, "isLoggedIn"),
+            jiraHelpers: this.jiraHelpers,
+          },
+          { listenTo, resolve }
+        );
+      },
+    },
+    get serverInfoPromise() {
+      return serverInfoPromise({ jiraHelpers: this.jiraHelpers, isLoggedIn: value.from(this, "isLoggedIn") });
+    },
+    get configurationPromise() {
+      return configurationPromise({
+        teamConfigurationPromise: this.teamConfigurationPromise,
+        serverInfoPromise: this.serverInfoPromise,
+      });
+    },
+    configuration: {
+      async() {
+        return this.configurationPromise;
+      },
+    },
+    derivedIssuesRequestData: {
+      value({ listenTo, resolve }) {
+        return derivedIssuesRequestData(
+          {
+            rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
+            configurationPromise: value.from(this, "configurationPromise"),
+          },
+          { listenTo, resolve }
+        );
+      },
+    },
+    get derivedIssuesPromise() {
+      return this.derivedIssuesRequestData.issuesPromise;
+    },
+    derivedIssues: {
+      async() {
+        return this.derivedIssuesRequestData.issuesPromise;
+      },
+    },
+    // PROPERTIES DERIVING FROM `derivedIssues`
+    get statuses() {
+      if (this.derivedIssues) {
+        return allStatusesSorted(this.derivedIssues);
+      } else {
+        return [];
+      }
+    },
+    get releases() {
+      if (this.derivedIssues) {
+        return allReleasesSorted(this.derivedIssues);
+      } else {
+        return [];
+      }
+    },
 
-        allTimingCalculationOptions: {
-            async(resolve) {
-                if(this.derivedIssuesRequestData.issuesPromise) {
-                    return this.derivedIssuesRequestData.issuesPromise.then( issues => {
-                        return allTimingCalculationOptions(issues);
-                    })
-                }
-            }
-        },
-
-        // primary issue type depends on allTimingCalculationOptions
-        // but it can also be set itself
-        primaryIssueType: {
-            value({resolve, lastSet, listenTo}) {
-                
-                let currentPrimaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
-
-                listenTo("allTimingCalculationOptions",({value})=> {
-                    reconcileCurrentValue(value, currentPrimaryIssueType);
-                });
-
-                listenTo(lastSet, (value)=>{
-                    setCurrentValue(value);
-                });
-
-                //setCurrentValue(new URL(window.location).searchParams.get("primaryIssueType") )
-
-                
-                reconcileCurrentValue(this.allTimingCalculationOptions, currentPrimaryIssueType);
-
-                function reconcileCurrentValue(calculationOptions, primaryIssueType){
-                    // if we've actually loaded some stuff, but it doesn't match the current primary issue type
-                    if(calculationOptions && calculationOptions.list.length > 1) {
-                        if( calculationOptions.map[primaryIssueType] ) {
-                            // do nothing
-                            resolve(primaryIssueType);
-                        } else {
-                            updateUrlParam("primaryIssueType", "", "");
-                            resolve(currentPrimaryIssueType = calculationOptions.list[1].type)
-                        }
-                        // default to the thing after release
-                    } else {
-                        // folks can wait on the value until we know we have a valid one
-                        resolve(undefined);
-                    }
-                }
-
-                function setCurrentValue(value) {
-                    currentPrimaryIssueType = value;
-                    updateUrlParam("primaryIssueType", value, "");
-                    // calculationOptions ... need to pick the right one if empty
-                    resolve(value)
-                }
-                
-                
-  
-            }
-        },
-
-        // PROPERTIES only needing primaryIssue type and what it depends on
-
-        // looks like [{type: "initiative", calculation: "children-only"}, ...]
-        // in the URL like ?timingCalculations=initiative:children-only,epic:self
-        timingCalculations: {
-            value({resolve, lastSet, listenTo}) {
-              let currentValue;
-              updateValue(new URL(window.location).searchParams.get("timingCalculations"));
-  
-              listenTo(lastSet, (value)=>{
-                  updateValue(value);
-              });
-
-              // reset when primary issue type changes
-              listenTo("primaryIssueType",()=>{
-                updateValue([]);
-              });
-  
-              function updateValue(value) {
-                if(typeof value === "string"){
-                  try {
-                    value = parse(value);
-                  } catch(e) {
-                    value = [];
-                  }
-                } else if(!value){
-                  value = [];
-                }
-                  
-                updateUrlParam("timingCalculations", stringify(value), stringify([]));
-  
-                currentValue = value;
-                resolve(currentValue);
-              }
-  
-              function parse(value){
-                return value.split(",").map( piece => {
-                  const parts = piece.split(":");
-                  return {type: parts[0], calculation: parts[1]};
-                }).flat()
-              }
-              function stringify(array){
-                return array.map( (obj) => obj.type+":"+obj.calculation).join(",")
-              }
-  
-            }
-        },
-        get impliedTimingCalculations(){
-            if(this.primaryIssueType) {
-                return getImpliedTimingCalculations(this.primaryIssueType, 
-                    this.allTimingCalculationOptions.map, 
-                    this.timingCalculations);
-            }
-        },
-
-        // PROPERTIES from having a primaryIssueType and timingCalculations
-        get firstIssueTypeWithStatuses(){
-            if(this.primaryIssueType) {
-                if(this.primaryIssueType !== "Release") {
-                    return this.primaryIssueType;
-                } else {
-                    // timing calculations lets folks "skip" from release to some other child
-                    const calculations= this.impliedTimingCalculations;
-                    if(calculations[0].type !== "Release") {
-                        return calculations[0].type;
-                    } else {
-                        return calculations[1].type;
-                    }
-                }
-            }
-        },
-        // used to get the name of the secondary issue type
-        get secondaryIssueType(){
-            if(this.primaryIssueType) {
-                const calculations = this.impliedTimingCalculations;
-                if(calculations.length) {
-                    return calculations[0].type
-                }
-            }
-            
-        },
-
-        get timingCalculationMethods() {
-            if(this.primaryIssueType) {
-                return this.impliedTimingCalculations
-                    .map( (calc) => calc.calculation)
-            }
-        },
-
-        get timingLevels(){
-            if(this.primaryIssueType) {
-                return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
-            }            
-        },
-        get rollupTimingLevelsAndCalculations(){
-            if(this.impliedTimingCalculations) {
-                const impliedCalculations = this.impliedTimingCalculations;
-                const primaryIssueType = this.primaryIssueType;
-                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
-                const rollupCalculations = [];
-                for( let i = 0; i < impliedCalculations.length + 1; i++) {
-                    rollupCalculations.push({
-                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
-                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
-                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
-                    })
-                }
-                return rollupCalculations;
-            }
-        },
-        // dependent on primary issue type
-        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-
-        
-        // STATUS FILTERING STUFF
-        
-        planningStatuses: {
-          get default(){
-            return [];
-          }
-        },
-        // used for later filtering
-        // but the options come from the issues
-        statusesToRemove: {
-            get default(){
-                return [];
-            }
-        },
-        statusesToShow: {
-            get default(){
-                return [];
-            }
+    allTimingCalculationOptions: {
+      async(resolve) {
+        if (this.derivedIssuesRequestData.issuesPromise) {
+          return this.derivedIssuesRequestData.issuesPromise.then((issues) => {
+            return allTimingCalculationOptions(issues);
+          });
         }
-    };
-    // HOOKS
-    connected(){
+      },
+    },
 
-    }
-    // METHODS
-    updateCalculationType(index, value){
-    
-        const copyCalculations = [
-          ...getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations) 
-        ].slice(0,index+1);
-  
-        copyCalculations[index].type = value;
-        this.timingCalculations = copyCalculations;
-    }
-  
-    updateCalculation(index, value){
-    
-        const copyCalculations = [
-            ...getImpliedTimingCalculations(this.primaryIssueType, this.allTimingCalculationOptions.map, this.timingCalculations) 
-        ].slice(0,index+1);
+    // primary issue type depends on allTimingCalculationOptions
+    // but it can also be set itself
+    primaryIssueType: {
+      value({ resolve, lastSet, listenTo }) {
+        let currentPrimaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
 
-        copyCalculations[index].calculation = value;
-        this.timingCalculations = copyCalculations;
-    }
+        listenTo("allTimingCalculationOptions", ({ value }) => {
+          reconcileCurrentValue(value, currentPrimaryIssueType);
+        });
 
+        listenTo(lastSet, (value) => {
+          setCurrentValue(value);
+        });
 
-    // UI Helpers
-    paddingClass(depth) {
-        return "pl-"+(depth * 2);
-    }
+        //setCurrentValue(new URL(window.location).searchParams.get("primaryIssueType") )
 
+        reconcileCurrentValue(this.allTimingCalculationOptions, currentPrimaryIssueType);
 
+        function reconcileCurrentValue(calculationOptions, primaryIssueType) {
+          // if we've actually loaded some stuff, but it doesn't match the current primary issue type
+          if (calculationOptions && calculationOptions.list.length > 1) {
+            if (calculationOptions.map[primaryIssueType]) {
+              // do nothing
+              resolve(primaryIssueType);
+            } else {
+              updateUrlParam("primaryIssueType", "", "");
+              resolve((currentPrimaryIssueType = calculationOptions.list[1].type));
+            }
+            // default to the thing after release
+          } else {
+            // folks can wait on the value until we know we have a valid one
+            resolve(undefined);
+          }
+        }
 
+        function setCurrentValue(value) {
+          currentPrimaryIssueType = value;
+          updateUrlParam("primaryIssueType", value, "");
+          // calculationOptions ... need to pick the right one if empty
+          resolve(value);
+        }
+      },
+    },
 
-   
-    
-    
-    
+    // PROPERTIES only needing primaryIssue type and what it depends on
 
+    // looks like [{type: "initiative", calculation: "children-only"}, ...]
+    // in the URL like ?timingCalculations=initiative:children-only,epic:self
+    timingCalculations: {
+      value({ resolve, lastSet, listenTo }) {
+        let currentValue;
+        updateValue(new URL(window.location).searchParams.get("timingCalculations"));
+
+        listenTo(lastSet, (value) => {
+          updateValue(value);
+        });
+
+        // reset when primary issue type changes
+        listenTo("primaryIssueType", () => {
+          updateValue([]);
+        });
+
+        function updateValue(value) {
+          if (typeof value === "string") {
+            try {
+              value = parse(value);
+            } catch (e) {
+              value = [];
+            }
+          } else if (!value) {
+            value = [];
+          }
+
+          updateUrlParam("timingCalculations", stringify(value), stringify([]));
+
+          currentValue = value;
+          resolve(currentValue);
+        }
+
+        function parse(value) {
+          return value
+            .split(",")
+            .map((piece) => {
+              const parts = piece.split(":");
+              return { type: parts[0], calculation: parts[1] };
+            })
+            .flat();
+        }
+        function stringify(array) {
+          return array.map((obj) => obj.type + ":" + obj.calculation).join(",");
+        }
+      },
+    },
+    get impliedTimingCalculations() {
+      if (this.primaryIssueType) {
+        return getImpliedTimingCalculations(
+          this.primaryIssueType,
+          this.allTimingCalculationOptions.map,
+          this.timingCalculations
+        );
+      }
+    },
+
+    // PROPERTIES from having a primaryIssueType and timingCalculations
+    get firstIssueTypeWithStatuses() {
+      if (this.primaryIssueType) {
+        if (this.primaryIssueType !== "Release") {
+          return this.primaryIssueType;
+        } else {
+          // timing calculations lets folks "skip" from release to some other child
+          const calculations = this.impliedTimingCalculations;
+          if (calculations[0].type !== "Release") {
+            return calculations[0].type;
+          } else {
+            return calculations[1].type;
+          }
+        }
+      }
+    },
+    // used to get the name of the secondary issue type
+    get secondaryIssueType() {
+      if (this.primaryIssueType) {
+        const calculations = this.impliedTimingCalculations;
+        if (calculations.length) {
+          return calculations[0].type;
+        }
+      }
+    },
+
+    get timingCalculationMethods() {
+      if (this.primaryIssueType) {
+        return this.impliedTimingCalculations.map((calc) => calc.calculation);
+      }
+    },
+
+    get timingLevels() {
+      if (this.primaryIssueType) {
+        return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
+      }
+    },
+    get rollupTimingLevelsAndCalculations() {
+      if (this.impliedTimingCalculations) {
+        const impliedCalculations = this.impliedTimingCalculations;
+        const primaryIssueType = this.primaryIssueType;
+        const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
+        const rollupCalculations = [];
+        for (let i = 0; i < impliedCalculations.length + 1; i++) {
+          rollupCalculations.push({
+            type: i === 0 ? primaryIssueType : impliedCalculations[i - 1].type,
+            hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i - 1].hierarchyLevel,
+            calculation: i >= impliedCalculations.length ? "parentOnly" : impliedCalculations[i].calculation,
+          });
+        }
+        return rollupCalculations;
+      }
+    },
+    // dependent on primary issue type
+    showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
+
+    // STATUS FILTERING STUFF
+
+    planningStatuses: {
+      get default() {
+        return [];
+      },
+    },
+    // used for later filtering
+    // but the options come from the issues
+    statusesToRemove: {
+      get default() {
+        return [];
+      },
+    },
+    statusesToShow: {
+      get default() {
+        return [];
+      },
+    },
+  };
+  // HOOKS
+  connected() {}
+  // METHODS
+  updateCalculationType(index, value) {
+    const copyCalculations = [
+      ...getImpliedTimingCalculations(
+        this.primaryIssueType,
+        this.allTimingCalculationOptions.map,
+        this.timingCalculations
+      ),
+    ].slice(0, index + 1);
+
+    copyCalculations[index].type = value;
+    this.timingCalculations = copyCalculations;
+  }
+
+  updateCalculation(index, value) {
+    const copyCalculations = [
+      ...getImpliedTimingCalculations(
+        this.primaryIssueType,
+        this.allTimingCalculationOptions.map,
+        this.timingCalculations
+      ),
+    ].slice(0, index + 1);
+
+    copyCalculations[index].calculation = value;
+    this.timingCalculations = copyCalculations;
+  }
+
+  // UI Helpers
+  paddingClass(depth) {
+    return "pl-" + depth * 2;
+  }
 }
 
-// jql => 
-//    
-//    rawIssues => 
+// jql =>
+//
+//    rawIssues =>
 //        typeToIssueType
 
-// timingCalculations 
+// timingCalculations
 
 // firstIssueTypeWithStatuses(primaryIssueType, typeToIssueType, timingCalculations)
 
 // primaryIssueType
 
-
-
-
-
 customElements.define("timeline-configuration", TimelineConfiguration);
 
 /**
  * @type {{
- *   type: string, 
+ *   type: string,
  *   calculation: string
  * }} TimingCalculation
  */
 
 /**
- * 
- * @param {TimingCalculationsMap} issueTypeMap 
- * @param {string} primaryIssueType 
- * @param {Array<TimingCalculation>} timingCalculations 
- * @returns 
+ *
+ * @param {TimingCalculationsMap} issueTypeMap
+ * @param {string} primaryIssueType
+ * @param {Array<TimingCalculation>} timingCalculations
+ * @returns
  */
-function getTimingLevels(issueTypeMap, primaryIssueType, timingCalculations){
+function getTimingLevels(issueTypeMap, primaryIssueType, timingCalculations) {
+  const primaryType = issueTypeMap[primaryIssueType];
 
-    const primaryType = issueTypeMap[primaryIssueType];
+  let currentType = primaryIssueType;
 
-    let currentType = primaryIssueType;
-    
-    let childrenCalculations = primaryType.timingCalculations;
+  let childrenCalculations = primaryType.timingCalculations;
 
-    const timingLevels = [];
-    const setCalculations = [...timingCalculations];
-    
-    
-    while(childrenCalculations.length) {
-        // this is the calculation that should be selected for that level
-        let setLevelCalculation = setCalculations.shift() || 
-        {
-            type: childrenCalculations[0].child, 
-            calculation: childrenCalculations[0].calculations[0].calculation
+  const timingLevels = [];
+  const setCalculations = [...timingCalculations];
+
+  while (childrenCalculations.length) {
+    // this is the calculation that should be selected for that level
+    let setLevelCalculation = setCalculations.shift() || {
+      type: childrenCalculations[0].child,
+      calculation: childrenCalculations[0].calculations[0].calculation,
+    };
+    let selected = childrenCalculations.find((calculation) => setLevelCalculation.type === calculation.child);
+
+    let timingLevel = {
+      type: currentType,
+      types: childrenCalculations.map((calculationsForType) => {
+        return {
+          type: calculationsForType.child,
+          selected: setLevelCalculation?.type === calculationsForType.child,
         };
-        let selected = childrenCalculations.find( calculation => setLevelCalculation.type === calculation.child);
-
-        let timingLevel = {
-        type: currentType,
-        types: childrenCalculations.map( calculationsForType => {
-            return {
-            type: calculationsForType.child,
-            selected: setLevelCalculation?.type === calculationsForType.child
-            }
-        } ),
-        calculations: selected.calculations.map( (calculation)=> {
-            return {
-            ...calculation,
-            selected: calculation.calculation === setLevelCalculation.calculation
-            }
-        })
-        }
-        timingLevels.push(timingLevel);
-        currentType = setLevelCalculation.type;
-        childrenCalculations = issueTypeMap[setLevelCalculation.type].timingCalculations;
-    }
-    return timingLevels;
+      }),
+      calculations: selected.calculations.map((calculation) => {
+        return {
+          ...calculation,
+          selected: calculation.calculation === setLevelCalculation.calculation,
+        };
+      }),
+    };
+    timingLevels.push(timingLevel);
+    currentType = setLevelCalculation.type;
+    childrenCalculations = issueTypeMap[setLevelCalculation.type].timingCalculations;
+  }
+  return timingLevels;
 }
