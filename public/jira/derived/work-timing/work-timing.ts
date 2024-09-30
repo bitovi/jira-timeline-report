@@ -82,75 +82,65 @@ export function deriveWorkTiming(
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
 ) {
-  const isConfidenceValid: boolean = isConfidenceValueValid(
-      normalizedIssue.confidence
-    ),
-    usedConfidence: number = isConfidenceValid
-      ? normalizedIssue.confidence!
-      : getConfidence(normalizedIssue.team),
-    isStoryPointsValid: boolean = isStoryPointsValueValid(
-      normalizedIssue.storyPoints
-    ),
-    defaultOrStoryPoints: number = isStoryPointsValid
-      ? normalizedIssue.storyPoints!
-      : getStoryPoints(normalizedIssue.team),
-    storyPointsDaysOfWork: number =
-      defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack,
-    isStoryPointsMedianValid: boolean = isStoryPointsValueValid(
-      normalizedIssue.storyPointsMedian
-    ),
-    defaultOrStoryPointsMedian: number = isStoryPointsMedianValid
-      ? normalizedIssue.storyPointsMedian!
-      : getStoryPoints(normalizedIssue.team),
-    storyPointsMedianDaysOfWork: number =
-      defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack,
-    deterministicExtraPoints: number = estimateExtraPoints(
-      defaultOrStoryPointsMedian,
-      usedConfidence,
-      uncertaintyWeight
-    ),
-    deterministicExtraDaysOfWork: number =
-      deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack,
-    deterministicTotalPoints: number =
-      defaultOrStoryPointsMedian + deterministicExtraPoints,
-    deterministicTotalDaysOfWork: number =
-      deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack,
-    probablisticExtraPoints: number = sampleExtraPoints(
-      defaultOrStoryPointsMedian,
-      usedConfidence
-    ),
-    probablisticExtraDaysOfWork: number =
-      probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack,
-    probablisticTotalPoints: number =
-      defaultOrStoryPointsMedian + probablisticExtraPoints,
-    probablisticTotalDaysOfWork: number =
-      probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack,
-    hasStartAndDueDate: boolean = Boolean(
-      normalizedIssue.dueDate && normalizedIssue.startDate
-    ),
-    startAndDueDateDaysOfWork: number | null = hasStartAndDueDate
-      ? getBusinessDatesCount(
-          normalizedIssue.startDate,
-          normalizedIssue.dueDate
-        )
-      : null;
+  const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
+  const usedConfidence = isConfidenceValid
+    ? normalizedIssue.confidence!
+    : getConfidence(normalizedIssue.team);
+  const isStoryPointsValid = isStoryPointsValueValid(
+    normalizedIssue.storyPoints
+  );
+  const defaultOrStoryPoints = isStoryPointsValid
+    ? normalizedIssue.storyPoints!
+    : getStoryPoints(normalizedIssue.team);
+  const storyPointsDaysOfWork =
+    defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const isStoryPointsMedianValid = isStoryPointsValueValid(
+    normalizedIssue.storyPointsMedian
+  );
+  const defaultOrStoryPointsMedian = isStoryPointsMedianValid
+    ? normalizedIssue.storyPointsMedian!
+    : getStoryPoints(normalizedIssue.team);
+  const storyPointsMedianDaysOfWork =
+    defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
+  const deterministicExtraPoints = estimateExtraPoints(
+    defaultOrStoryPointsMedian,
+    usedConfidence,
+    uncertaintyWeight
+  );
+  const deterministicExtraDaysOfWork =
+    deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const deterministicTotalPoints =
+    defaultOrStoryPointsMedian + deterministicExtraPoints;
+  const deterministicTotalDaysOfWork =
+    deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const probablisticExtraPoints = sampleExtraPoints(
+    defaultOrStoryPointsMedian,
+    usedConfidence
+  );
+  const probablisticExtraDaysOfWork =
+    probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const probablisticTotalPoints =
+    defaultOrStoryPointsMedian + probablisticExtraPoints;
+  const probablisticTotalDaysOfWork =
+    probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const hasStartAndDueDate = Boolean(
+    normalizedIssue.dueDate && normalizedIssue.startDate
+  );
+  const startAndDueDateDaysOfWork = hasStartAndDueDate
+    ? getBusinessDatesCount(normalizedIssue.startDate, normalizedIssue.dueDate)
+    : null;
 
   const { startData: sprintStartData, dueData: endSprintData } =
     getStartDateAndDueDataFromSprints(normalizedIssue);
   const hasSprintStartAndEndDate = Boolean(sprintStartData && endSprintData);
-
-  let sprintDaysOfWork: number | null = null;
-  if (sprintStartData && endSprintData) {
-    sprintDaysOfWork = getBusinessDatesCount(
-      sprintStartData.start,
-      endSprintData.due
-    );
-  }
+  let sprintDaysOfWork = hasSprintStartAndEndDate
+    ? getBusinessDatesCount(sprintStartData.start, endSprintData.due)
+    : null;
 
   const { startData, dueData } =
     getStartDateAndDueDataFromFieldsOrSprints(normalizedIssue);
 
-  let totalDaysOfWork: number | null = null;
+  let totalDaysOfWork = null;
   if (startData && dueData) {
     totalDaysOfWork = getBusinessDatesCount(startData.start, dueData.due);
   } else if (isStoryPointsMedianValid) {
@@ -159,10 +149,10 @@ export function deriveWorkTiming(
     totalDaysOfWork = storyPointsDaysOfWork;
   }
 
-  const defaultOrTotalDaysOfWork: number | null =
+  const defaultOrTotalDaysOfWork =
     totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
 
-  const completedDaysOfWork: number = getSelfCompletedDays(
+  const completedDaysOfWork = getSelfCompletedDays(
     startData,
     dueData,
     totalDaysOfWork
