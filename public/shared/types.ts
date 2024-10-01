@@ -20,7 +20,7 @@ interface RequestHelperResponse<T> extends JsonResponse<T> {
 	maxResults: number,
 	total: number,
 	startAt: number,
-	values: any
+	values: any[]
 }
 
 export {
