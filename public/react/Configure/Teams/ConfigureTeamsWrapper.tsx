@@ -15,7 +15,7 @@ interface TeamConfigurationWrapperProps
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
   // Only render the configuration when inside of jira for now
-  if (!AP) {
+  if (!AP?.request) {
     return null;
   }
 
