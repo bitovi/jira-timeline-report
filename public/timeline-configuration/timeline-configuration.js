@@ -30,7 +30,7 @@ export class TimelineConfiguration extends StacheElement {
         <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
         <p>
             {{# if(this.isLoggedIn) }}
-            <input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/>
+            <input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql' data-testid="jql-input"/>
             {{ else }}
             <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
             {{/ if}}
