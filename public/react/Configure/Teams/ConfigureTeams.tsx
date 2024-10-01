@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import type { NormalizedIssue } from "../../../jira/normalized/normalize";
+import type { NormalizedIssue, NormalizeIssueConfig } from "../../../jira/normalized/normalize";
 
 import React, { Suspense } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
@@ -10,11 +10,10 @@ import { QueryClient, QueryClientProvider, useMutation, useSuspenseQuery, useQue
 
 import { getSprintDefaults, setSprintDefaults } from "../../../jira/storage/plugin";
 
-// import "atlaskit/css-reset";
-
 interface ConfigureTeamsProps {
   normalizedIssues?: Array<NormalizedIssue>;
   appKey: string;
+  onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
 }
 
 interface DefaultFormFields {
@@ -26,7 +25,7 @@ interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
   value: DefaultFormFields[TProperty];
 }
 
-const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey }) => {
+const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate }) => {
   const queryClient = useQueryClient();
 
   const { data } = useSuspenseQuery({
@@ -49,6 +48,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey }) => {
       { ...values, [name]: value },
       {
         onSuccess: () => {
+          onUpdate?.({ getDaysPerSprint: () => values.sprintLength });
           queryClient.invalidateQueries({ queryKey: ["configuration", "default"] });
         },
       }
