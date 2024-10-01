@@ -2,21 +2,6 @@ interface Configuration {
   appKey: string;
 }
 
-declare global {
-  const AP: AP | undefined;
-
-  interface AP {
-    request: <T = unknown>(
-      url: string,
-      config?: {
-        type?: "GET" | "PUT";
-        headers: Record<string, string>;
-        data: any;
-      }
-    ) => Promise<T>;
-  }
-}
-
 interface SprintDefaultResponse {
   key: string;
   value: {

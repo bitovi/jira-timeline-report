@@ -9,6 +9,8 @@ import JiraOIDCHelpers from "../jira-oidc-helpers.ts";
 import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
+import { webAppStorage } from "../jira/storage/index.web.ts";
+
 export default async function mainHelper(config, host) {
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 
