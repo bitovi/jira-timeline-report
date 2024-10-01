@@ -1,3 +1,8 @@
+/**
+ * This module processes a list of unsorted release strings by extracting and standardizing their version numbers,
+ * sorting them using semantic versioning, and generating unique short names for each release.
+ */
+
 import semver from "semver";
 import uniqueTrailingNames from "./unique-trailing-names";
 
@@ -12,14 +17,14 @@ interface SemverRelease {
   shortVersion: string | undefined;
 }
 
-function partialReleaseName(release: string) {
+function partialReleaseName(release: string): string | undefined {
   let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
   if (match) {
     return match[0].replace(".X", ".0");
   }
 }
 
-export function cleanedRelease(release: string) {
+export function cleanedRelease(release: string): string | undefined {
   let clean = partialReleaseName(release);
   if (clean) {
     if (clean.length === 1) {
@@ -34,7 +39,7 @@ export function cleanedRelease(release: string) {
   }
 }
 
-export function semverSort(values: string[]) {
+export function semverSort(values: string[]): string[] {
   const cleanMap: Record<string, string> = {};
   const cleanValues: string[] = [];
   values.forEach((release: string) => {
