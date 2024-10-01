@@ -1,1 +1,1 @@
-export { default } from "./ConfigureTeams";
+export { default } from "./ConfigureTeamsWrapper";

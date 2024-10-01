@@ -66,7 +66,7 @@ export default [
     plugins: [
       nodeResolve(),
       commonjs(),
-      terser(),
+      // terser(),
       typescript(),
       babel({
         exclude: "node_modules/**",

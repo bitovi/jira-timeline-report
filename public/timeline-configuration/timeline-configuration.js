@@ -155,6 +155,8 @@ export class TimelineConfiguration extends StacheElement {
     // from children
     issueTimingCalculations: null,
 
+    normalizeOptions: null,
+
     // VALUES DERIVING FROM THE `jql`
     rawIssuesRequestData: {
       value({ listenTo, resolve }) {
@@ -177,6 +179,7 @@ export class TimelineConfiguration extends StacheElement {
       return configurationPromise({
         teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
+        normalizeOptionsObservable: value.from(this.normalizeOptions),
       });
     },
     configuration: {
@@ -275,7 +278,14 @@ export class TimelineConfiguration extends StacheElement {
   // HOOKS
   connectedCallback() {
     createRoot(document.getElementById("team-configuration")).render(
-      createElement(TeamConfigure, { onSave: (parital) => {} })
+      createElement(TeamConfigure, {
+        onUpdate: (partial) => {
+          this.normalizeOptions = partial;
+        },
+        onInitialDefaultsLoad: (partial) => {
+          this.normalizeOptions = partial;
+        },
+      })
     );
   }
   connected() {}

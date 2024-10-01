@@ -1,54 +1,55 @@
 import type { FC } from "react";
 
 import type { NormalizedIssue, NormalizeIssueConfig } from "../../../jira/normalized/normalize";
+import type { UseSaveDefaultConfiguration } from "./useSaveDefaultConfiguration";
+import type { UseDefaultConfiguration } from "./useDefaultConfiguration";
 
-import React, { Suspense } from "react";
-import { useForm, UseFormReturn } from "react-hook-form";
-import Form, { Field, FormHeader } from "@atlaskit/form";
-import AtlasTextField from "@atlaskit/textfield";
-import { QueryClient, QueryClientProvider, useMutation, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import React from "react";
+import { useForm } from "react-hook-form";
+import Form, { FormHeader } from "@atlaskit/form";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { getSprintDefaults, setSprintDefaults } from "../../../jira/storage/plugin";
+import TextField from "./Textfield";
+import { SprintDefaults } from "./plugin";
 
-interface ConfigureTeamsProps {
-  normalizedIssues?: Array<NormalizedIssue>;
+export interface ConfigureTeamsProps {
   appKey: string;
+  useSave: UseSaveDefaultConfiguration;
+  useDefaults: UseDefaultConfiguration;
+  normalizedIssues?: Array<NormalizedIssue>;
+  onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
 }
 
-interface DefaultFormFields {
-  sprintLength: number;
-}
+export type DefaultFormFields = SprintDefaults;
 
-interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
+export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
   name: TProperty;
   value: DefaultFormFields[TProperty];
 }
 
-const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate }) => {
+export const createNormalizeConfiguration = (values: DefaultFormFields): Partial<NormalizeIssueConfig> => {
+  return {
+    getDaysPerSprint: () => Number(values.sprintLength),
+  };
+};
+
+const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate, onInitialDefaultsLoad, useSave, useDefaults }) => {
   const queryClient = useQueryClient();
+  const defaults = useDefaults({ appKey, onInitialDefaultsLoad });
+  const save = useSave({ appKey });
 
-  const { data } = useSuspenseQuery({
-    queryKey: ["configuration", "default"],
-    queryFn: () => getSprintDefaults({ appKey }),
-  });
-
-  const { register, handleSubmit, getValues } = useForm<DefaultFormFields>({ defaultValues: data });
-
-  const { mutate } = useMutation<void, Error, DefaultFormFields>({
-    mutationFn: (values) => {
-      return setSprintDefaults(values, { appKey });
-    },
-  });
+  const { register, handleSubmit, getValues } = useForm<DefaultFormFields>({ defaultValues: defaults });
 
   function update<TProperty extends keyof DefaultFormFields>({ name, value }: FieldUpdates<TProperty>) {
     const values = getValues();
 
-    mutate(
+    save(
       { ...values, [name]: value },
       {
         onSuccess: () => {
-          onUpdate?.({ getDaysPerSprint: () => values.sprintLength });
+          onUpdate?.(createNormalizeConfiguration(values));
+
           queryClient.invalidateQueries({ queryKey: ["configuration", "default"] });
         },
       }
@@ -59,7 +60,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate }) => {
     <Form
       onSubmit={() =>
         handleSubmit((values) => {
-          mutate(values, {
+          save(values, {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: ["configuration", "default"] });
             },
@@ -77,53 +78,4 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate }) => {
   );
 };
 
-function isFieldUpdate<TProperty extends keyof DefaultFormFields>(event: {
-  name: string;
-}): event is FieldUpdates<TProperty> {
-  return ["sprintLength"].includes(event.name);
-}
-
-const TextField: FC<{
-  type: string;
-  name: keyof DefaultFormFields;
-  label: string;
-  register: UseFormReturn<DefaultFormFields>["register"];
-  onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
-}> = ({ register, onSave, type, label, name }) => {
-  const handleBlur = (eventTarget: { name: string; value: string }) => {
-    if (!isFieldUpdate(eventTarget)) {
-      return;
-    }
-
-    onSave(eventTarget);
-  };
-
-  return (
-    <Field name="sprintLength" label={label} isRequired>
-      {() => (
-        <AtlasTextField
-          type={type}
-          autoComplete="off"
-          {...register(name)}
-          onBlur={({ target }) => handleBlur(target)}
-        />
-      )}
-    </Field>
-  );
-};
-
-const queryClient = new QueryClient();
-
-export default function TeamConfigurationWrapper() {
-  if (!AP) {
-    return null;
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback="loading">
-        <ConfigureTeams appKey="bitovi.timeline-report.local" />
-      </Suspense>
-    </QueryClientProvider>
-  );
-}
+export default ConfigureTeams;
