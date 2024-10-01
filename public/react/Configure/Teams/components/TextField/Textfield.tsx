@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { DefaultFormFields, FieldUpdates } from "./ConfigureTeams";
+import type { DefaultFormFields, FieldUpdates } from "../../ConfigureTeams";
 
 import React from "react";
 

@@ -1,7 +1,9 @@
+import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
+
 import { useSuspenseQuery } from "@tanstack/react-query";
+
 import { getSprintDefaults, SprintDefaults } from "./plugin";
-import { createNormalizeConfiguration } from "./ConfigureTeams";
-import { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
+import { createNormalizeConfiguration } from "../../shared/normalize";
 
 export type UseDefaultConfiguration = (config: {
   appKey: string;

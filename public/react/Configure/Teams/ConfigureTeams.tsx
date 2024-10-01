@@ -1,16 +1,15 @@
 import type { FC } from "react";
 
 import type { NormalizedIssue, NormalizeIssueConfig } from "../../../jira/normalized/normalize";
-import type { UseSaveDefaultConfiguration } from "./useSaveDefaultConfiguration";
-import type { UseDefaultConfiguration } from "./useDefaultConfiguration";
+import type { SprintDefaults, UseSaveDefaultConfiguration, UseDefaultConfiguration } from "./services/team-defaults";
 
 import React from "react";
 import { useForm } from "react-hook-form";
 import Form, { FormHeader } from "@atlaskit/form";
 import { useQueryClient } from "@tanstack/react-query";
 
-import TextField from "./Textfield";
-import { SprintDefaults } from "./plugin";
+import TextField from "./components/TextField";
+import { createNormalizeConfiguration } from "./shared/normalize";
 
 export interface ConfigureTeamsProps {
   appKey: string;
@@ -27,12 +26,6 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
   name: TProperty;
   value: DefaultFormFields[TProperty];
 }
-
-export const createNormalizeConfiguration = (values: DefaultFormFields): Partial<NormalizeIssueConfig> => {
-  return {
-    getDaysPerSprint: () => Number(values.sprintLength),
-  };
-};
 
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate, onInitialDefaultsLoad, useSave, useDefaults }) => {
   const queryClient = useQueryClient();
