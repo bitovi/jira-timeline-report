@@ -18,13 +18,19 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
     return null;
   }
 
+  const appKey = process.env.JIRA_APP_KEY;
+
+  if (!appKey) {
+    throw new Error("Cannot use Team Configuration without an app key");
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback="loading">
         <ConfigureTeams
           useSave={useSaveDefaultConfiguration}
           useDefaults={useDefaultConfiguration}
-          appKey="bitovi.timeline-report.local"
+          appKey={appKey}
           {...props}
         />
       </Suspense>
