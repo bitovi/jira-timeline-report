@@ -54,7 +54,7 @@ export function normalizeAndDeriveIssues(
   > & {
     uncertaintyWeight?: number;
   }
-) {
+): DerivedIssue[] {
   return issues.map((issue: JiraIssue) =>
     deriveIssue(normalizeIssue(issue, options), options)
   );

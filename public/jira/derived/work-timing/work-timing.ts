@@ -41,14 +41,14 @@ export type DerivedWorkTiming = {
   totalDaysOfWork: number | null;
   defaultOrTotalDaysOfWork: number | null;
   completedDaysOfWork: number;
-} & StartData &
-  DueData;
+} & Partial<StartData> &
+  Partial<DueData>;
 
 /**
  * @param {NormalizedTeam} team
  * @returns {number}
  */
-export function getConfidenceDefault(team: NormalizedTeam) {
+export function getConfidenceDefault(team: NormalizedTeam): number {
   return 50;
 }
 
@@ -57,7 +57,7 @@ export function getConfidenceDefault(team: NormalizedTeam) {
  * @param {NormalizedTeam} team
  * @returns number
  */
-export function getStoryPointsDefault(team: NormalizedTeam) {
+export function getStoryPointsDefault(team: NormalizedTeam): number {
   return team.velocity / team.parallelWorkLimit;
 }
 
@@ -81,7 +81,7 @@ export function deriveWorkTiming(
     getStoryPoints = getStoryPointsDefault,
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
-) {
+): DerivedWorkTiming {
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
   const usedConfidence = isConfidenceValid
     ? normalizedIssue.confidence!
@@ -134,7 +134,7 @@ export function deriveWorkTiming(
     getStartDateAndDueDataFromSprints(normalizedIssue);
   const hasSprintStartAndEndDate = Boolean(sprintStartData && endSprintData);
   let sprintDaysOfWork = hasSprintStartAndEndDate
-    ? getBusinessDatesCount(sprintStartData.start, endSprintData.due)
+    ? getBusinessDatesCount(sprintStartData?.start, endSprintData?.due)
     : null;
 
   const { startData, dueData } =
