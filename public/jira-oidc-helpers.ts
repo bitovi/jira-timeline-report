@@ -252,6 +252,7 @@ export default function (
 			progress?: (data: ProgressData) => void
 		): Promise<Issue[]>;
 		fetchJiraFields(): Promise<RequestHelperResponse>;
+		fetchIssueTypes(): Promise<Array<{avatarId: number, description: string, hierarchyLevel: number, iconUrl: string, id: number, name: string, subtask: boolean}>>
 		getAccessToken(): Promise<string | void | null>;
 		hasAccessToken(): boolean;
 		hasValidAccessToken(): boolean;
@@ -335,6 +336,11 @@ export default function (
 		},
 		fetchJiraIssue: async (issueId: string) => {
 			return requestHelper(`/api/3/issue/${issueId}`);
+		},
+		// Gets issue types https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-types/#api-rest-api-3-issuetype-get
+		fetchIssueTypes: async() => {
+			const response = requestHelper(`/api/3/issuetype`) as unknown;
+			return response as Promise<Array<{avatarId: number, description: string, hierarchyLevel: number, iconUrl: string, id: number, name: string, subtask: boolean}>>
 		},
 		editJiraIssueWithNamedFields: async (issueId: string, fields: Record<string, any>) => {
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');

@@ -9,21 +9,18 @@ import "./gantt-timeline.js";
 import "./status-report.js";
 import "./timeline-configuration/timeline-configuration.js"
 
+import "./select-issue-type/select-issue-type.js";
+import "./select-report-type/select-report-type.js";
+
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback.js";
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 
 export class TimelineReport extends StacheElement {
-    static view = `
-      <div 
-          class="drop-shadow-lg
-          fixed left-0 z-50 overflow-auto
-          top-fullish-vh height-fullish-vh 
-          bg-white flex max-w-4xl" id="configuration">
-        
+    static view = `<div class="flex">
         <timeline-configuration
-          class="border-gray-100 p-4 relative {{# not(this.showingConfiguration) }}hidden{{/}} block" 
-          style="border-top-width: 32px;overflow-y: auto"
+          class="border-gray-100 p-2 relative block bg-white shrink-0" 
+          style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
           teamConfigurationPromise:from="this.velocitiesConfiguration.teamConfigurationPromise"
@@ -31,49 +28,13 @@ export class TimelineReport extends StacheElement {
           jql:to="this.jql"
           derivedIssuesRequestData:to="this.derivedIssuesRequestData"
 
-          showOnlySemverReleases:to="this.showOnlySemverReleases"
-          statusesToRemove:to="this.statusesToRemove"
-          statusesToShow:to="this.statusesToShow"
-
-          secondaryReportType:to="this.secondaryReportType"
-          timingCalculationMethods:to="this.timingCalculationMethods"
-          primaryReportType:to="this.primaryReportType"
-          secondaryReportType:to="this.secondaryReportType"
-
-          primaryIssueType:to="this.primaryIssueType"
-          secondaryIssueType:to="this.secondaryIssueType"
-          hideUnknownInitiatives:to="this.hideUnknownInitiatives"
-          sortByDueDate:to="this.sortByDueDate"
-          showPercentComplete:to="this.showPercentComplete"
-          rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
+          issueTimingCalculations:to="this.issueTimingCalculations"
+          
           configuration:to="this.configuration"
-          planningStatuses:to="this.planningStatuses"
-          groupBy:to="this.groupBy"
-          releasesToShow:to="this.releasesToShow"
-          statusesToExclude:to="this.statusesToExclude"
+          
           ></timeline-configuration>
 
-        <div on:click="this.toggleConfiguration()"
-          class="w-8 hover:bg-gray-200 cursor-pointer bg-gray-100 ">
-        
-          {{#not(this.showingConfiguration)}}
-            <p class="-rotate-90 w-40 absolute" style="top: 40%; left: -65px">Configure</p>
-
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" data-slot="icon" class="w-8 h-8 mt-px">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-            </svg>
-
-          {{ else }}
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" data-slot="icon" class="w-8 h-8 mt-px">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-            </svg>
-        
-          {{/}}
-
-        </div>
-
-      </div>
-        <div class="w-1280 fullish-vh pt-4 left-config-width {{#this.showingConfiguration}}relative {{else}}place-center{{/}}">
+      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 
@@ -91,6 +52,16 @@ export class TimelineReport extends StacheElement {
           </div>
       {{/ not }}
 
+
+          <select-issue-type 
+            primaryIssueType:to="this.primaryIssueType"
+            secondaryIssueType:to="this.secondaryIssueType"
+            jiraHelpers:from="this.jiraHelpers"></select-issue-type>
+
+          <select-report-type 
+            primaryReportType:to="this.primaryReportType"
+            jiraHelpers:from="this.jiraHelpers"></select-report-type>
+      
           <div class='p-4 rounded-lg-gray-100-on-white mb-4 drop-shadow-md color-bg-white'>
             <p><label class="inline font-bold">Compare to {{this.compareToTime.text}}</label>
             - Specify what timepoint to use to determine if an initiative or release has fallen behind.</p>
@@ -165,6 +136,7 @@ export class TimelineReport extends StacheElement {
             </div>
           {{/ if }}
         </div>
+      </div>
   `;
     static props = {
         // passed values
@@ -251,6 +223,31 @@ export class TimelineReport extends StacheElement {
       updateFullishHeightSection();
     }
 
+    get rollupTimingLevelsAndCalculations(){
+      console.log({
+        issueTimingCalculations: this.issueTimingCalculations,
+        primaryIssueType: this.primaryIssueType,
+        secondaryIssueType: this.secondaryIssueType
+      });
+
+      function getIssueHierarchyUnderType(timingCalculations, type){
+        const index = timingCalculations.findIndex( calc => calc.type === type);
+        return timingCalculations.slice(index);
+      }
+
+      if(this.primaryIssueType === "Release") {
+        if(this.secondaryIssueType) {
+          const secondary = getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
+          return [
+            {type: 'Release', hierarchyLevel: Infinity, calculation: 'childrenOnly'},
+            ...secondary
+          ]
+        }
+      } else {
+        return getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
+      }
+    }
+
     // this all the data pre-compiled
     get rolledupAndRolledBackIssuesAndReleases(){
       if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
@@ -270,6 +267,7 @@ export class TimelineReport extends StacheElement {
       if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
         return [];
       }
+
       const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations)
       return groupedHierarchy.reverse();
     }
@@ -307,7 +305,7 @@ export class TimelineReport extends StacheElement {
           return false;
         }
 
-        if(this.releasesToShow.length) {
+        if(this?.releasesToShow?.length) {
           // O(n^2)
           const releases = issueOrRelease.releases.map( r => r.name);
           if(releases.filter( release => this.releasesToShow.includes(release)).length === 0) {
@@ -366,11 +364,6 @@ export class TimelineReport extends StacheElement {
       this.showingDebugPanel = open;
     }
 
-    toggleConfiguration() {
-      this.showingConfiguration = ! this.showingConfiguration;
-      const width = document.getElementById("configuration").clientWidth;
-      document.querySelector(".left-config-width").style.left = (width+16)+"px";
-    }
     
 }
 
