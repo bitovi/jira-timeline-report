@@ -124,10 +124,10 @@ export class TimelineConfiguration extends StacheElement {
         </div>
 
 
-        <p>
-            Questions? 
+        <p class="pt-6">
+            <h3 class="font-bold uppercase text-slate-300 text-xs">Questions? </h3>
             <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Guide</a>
-            <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect</a>.
+            <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect</a>
         </p>  
         
         

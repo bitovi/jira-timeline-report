@@ -33,7 +33,7 @@ class TypeSelectionDropdown extends StacheElement {
 }*/
 
 const attrsToAdd = `
-  statusesToRemove:to="this.statusesToRemove"
+    statusesToRemove:to="this.statusesToRemove"
           statusesToShow:to="this.statusesToShow"
                     showOnlySemverReleases:to="this.showOnlySemverReleases"
           secondaryReportType:to="this.secondaryReportType"

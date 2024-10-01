@@ -19,7 +19,7 @@ import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 export class TimelineReport extends StacheElement {
     static view = `<div class="flex">
         <timeline-configuration
-          class="border-gray-100 p-2 relative block bg-white shrink-0" 
+          class="border-gray-100 border-r border-nuetral-301 p-2 relative block bg-white shrink-0" 
           style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
@@ -34,7 +34,7 @@ export class TimelineReport extends StacheElement {
           
           ></timeline-configuration>
 
-      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative">
+      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 
@@ -52,31 +52,31 @@ export class TimelineReport extends StacheElement {
           </div>
       {{/ not }}
 
+          <div class="flex gap-1">
+            <select-issue-type 
+              primaryIssueType:to="this.primaryIssueType"
+              secondaryIssueType:to="this.secondaryIssueType"
+              jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
-          <select-issue-type 
-            primaryIssueType:to="this.primaryIssueType"
-            secondaryIssueType:to="this.secondaryIssueType"
-            jiraHelpers:from="this.jiraHelpers"></select-issue-type>
-
-          <select-report-type 
-            primaryReportType:to="this.primaryReportType"
-            jiraHelpers:from="this.jiraHelpers"></select-report-type>
-      
-          <div class='p-4 rounded-lg-gray-100-on-white mb-4 drop-shadow-md color-bg-white'>
-            <p><label class="inline font-bold">Compare to {{this.compareToTime.text}}</label>
-            - Specify what timepoint to use to determine if an initiative or release has fallen behind.</p>
-            <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
+            <select-report-type 
+              primaryReportType:to="this.primaryReportType"
+              jiraHelpers:from="this.jiraHelpers"></select-report-type>
+        
+            <div class='flex-grow'>
+              <p class="text-xs"><label class="inline">Compare to {{this.compareToTime.text}}</label></p>
+              <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
+            </div>
           </div>
 
           
 
 
           {{# and( not(this.jql), this.loginComponent.isLoggedIn  }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Configure a JQL in the sidebar on the left to get started.</div>
+            <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
           {{ /and }}
 
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-            <div class="my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
+            <div class="my-2   border-box block overflow-hidden color-bg-white">
             
               {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
                 <gantt-grid 
@@ -115,13 +115,13 @@ export class TimelineReport extends StacheElement {
             </div>
           {{/ and }}
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
               <p>No issues of type {{this.primaryIssueType}}</p>
               <p>Please check your JQL is correct!</p>
             </div>
           {{/}}
           {{# if(this.derivedIssuesRequestData.issuesPromise.isPending) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
               <p>Loading ...<p>
               {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
                 <p>Loaded {{this.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
@@ -129,7 +129,7 @@ export class TimelineReport extends StacheElement {
             </div>
           {{/ if }}
           {{# if(this.derivedIssuesRequestData.issuesPromise.isRejected) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
               <p>There was an error loading from Jira!</p>
               <p>Error message: {{this.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
               <p>Please check your JQL is correct!</p>
