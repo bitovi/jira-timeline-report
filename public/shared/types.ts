@@ -1,8 +1,8 @@
 import { JiraIssue } from "../jira/shared/types"
 
-type JsonResponse = {
+type JsonResponse <T>= {
   accessToken: string
-  data: any // TODO - what is the shape of this?
+  data: T
   expiryTimestamp: string
   refreshToken: string
   scopeId: string
@@ -15,11 +15,11 @@ type JtrEnv = {
   JIRA_API_URL: string
 }
 
-interface RequestHelperResponse extends JsonResponse {
+interface RequestHelperResponse<T> extends JsonResponse<T> {
 	issues: JiraIssue[],
-	maxResults: any,
-	total: any,
-	startAt: any,
+	maxResults: number,
+	total: number,
+	startAt: number,
 	values: any
 }
 

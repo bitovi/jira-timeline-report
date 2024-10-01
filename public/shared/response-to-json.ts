@@ -2,7 +2,7 @@ import {
   JsonResponse,
 } from './types.js';
 
-export function responseToJSON(response: Response): Promise<JsonResponse> {
+export function responseToJSON<T>(response: Response): Promise<JsonResponse<T>> {
 	if(!response.ok) {
 		return response.json().then((payload) => {
 			const err = new Error("HTTP status code: " + response.status);

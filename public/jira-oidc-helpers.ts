@@ -4,7 +4,7 @@ import {
 	RequestHelperResponse
 } from './shared/types.js';
 
-interface ResponseForFieldRequest extends RequestHelperResponse {
+interface ResponseForFieldRequest<T> extends RequestHelperResponse<T> {
 	idMap: { [key: string]: string },
 	nameMap: { [key: string]: string }
 }
@@ -73,8 +73,8 @@ function responseToText(response: Response) {
 	return response.text();
 }
 
-export function nativeFetchJSON(url: string, options?: RequestInit) {
-	return fetch(url, options).then(responseToJSON)
+export function nativeFetchJSON<T>(url: string, options?: RequestInit) {
+	return fetch(url, options).then(responseToJSON<T>)
 }
 
 function chunkArray<T>(array: T[], size: number): T[][] {
@@ -85,25 +85,25 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 	return chunkedArr;
 }
 
-export default function (
+export default function<T> (
 	{
 		JIRA_CLIENT_ID,
 		JIRA_SCOPE,
 		JIRA_CALLBACK_URL,
 		JIRA_API_URL
 	} = window.env,
-	requestHelper: (urlFragment: string) => Promise<RequestHelperResponse>,
+	requestHelper: (urlFragment: string) => Promise<RequestHelperResponse<T>>,
 	host: 'jira' | 'hosted'
 ) {
-	let fetchJSON = nativeFetchJSON;
+	let fetchJSON = nativeFetchJSON<T>;
 	if (CACHE_FETCH) {
-		fetchJSON = async function <T = any>(url: string, options?: RequestInit): Promise<T | JsonResponse> {
+		fetchJSON = async function <T = any>(url: string, options?: RequestInit) {
 			const cachedData = window.localStorage.getItem(url);
 
 			if (cachedData !== null) {
-				return JSON.parse(cachedData) as T;
+				return JSON.parse(cachedData) as JsonResponse<T>;
 			} else {
-				const result = nativeFetchJSON(url, options);
+				const result = nativeFetchJSON<T>(url, options);
 				result.then(async data => {
 					try {
 						window.localStorage.setItem(url, JSON.stringify(data));
@@ -117,7 +117,7 @@ export default function (
 		};
 	}
 
-	let fieldsRequest: Promise<ResponseForFieldRequest>;
+	let fieldsRequest: Promise<ResponseForFieldRequest<T>>;
 
 	type RootMethod = (params: Params, progress: Progress) => Promise<Issue[]>;
 
@@ -251,12 +251,12 @@ export default function (
 			sourceParentIssues: Issue[],
 			progress?: (data: ProgressData) => void
 		): Promise<Issue[]>;
-		fetchJiraFields(): Promise<RequestHelperResponse>;
+		fetchJiraFields(): Promise<RequestHelperResponse<T>>;
 		getAccessToken(): Promise<string | void | null>;
 		hasAccessToken(): boolean;
 		hasValidAccessToken(): boolean;
-		_cachedServerInfoPromise(): Promise<RequestHelperResponse>;
-		getServerInfo(): Promise<RequestHelperResponse>;
+		_cachedServerInfoPromise(): Promise<RequestHelperResponse<T>>;
+		getServerInfo(): Promise<RequestHelperResponse<T>>;
 		fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields?: (params: Params, progress?: Progress) => Promise<{ fields: { [key: string]: any; }; key: string; }[]>;
 	} = {
 		saveInformationToLocalStorage: (parameters) => {
@@ -285,7 +285,7 @@ export default function (
 					accessToken,
 					expiryTimestamp,
 					refreshToken,
-				} = response.data;
+				} = response;
 				jiraHelpers.saveInformationToLocalStorage({
 					accessToken,
 					refreshToken,
@@ -605,7 +605,7 @@ export default function (
 		_cachedServerInfoPromise: function () {
 			return requestHelper('/api/3/serverInfo')
 		},
-		getServerInfo(): Promise<RequestHelperResponse> {
+		getServerInfo(): Promise<RequestHelperResponse<T>> {
 			// if(this._cachedServerInfoPromise) {
 			// 	return this._cachedServerInfoPromise;
 			// }
