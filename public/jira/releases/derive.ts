@@ -1,3 +1,9 @@
+/**
+ * This module processes normalized release data to derive additional release information.
+ * It extracts and standardizes version numbers, sorts releases using semantic versioning,
+ * and generates unique short names for each release.
+ */
+
 import { NormalizedRelease } from "../shared/types";
 import uniqueTrailingNames from "./unique-trailing-names";
 import semver from "semver";
@@ -10,15 +16,20 @@ export type DerivedRelease = NormalizedRelease & {
     version: string | null;
   };
 };
-
-function partialReleaseName(release: string) {
+/**
+ * Extracts and standardizes the version number from a release string.
+ * For example "Release 1.2.3" becomes "1.2.3".
+ * If a wildcard "X" is present in the minor or patch version, it is replaced with "0" to standardize the format.
+ * For example, "1.2.X" becomes "1.2.0".
+ */
+function partialReleaseName(release: string): string | undefined {
   let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
   if (match) {
     return match[0].replace(".X", ".0");
   }
 }
 
-export function cleanedRelease(release: string) {
+export function cleanedRelease(release: string): string | undefined {
   let clean = partialReleaseName(release);
   if (clean) {
     if (clean.length === 1) {
@@ -33,7 +44,7 @@ export function cleanedRelease(release: string) {
   }
 }
 
-export function semverSort(values: string[]) {
+export function semverSort(values: string[]): string[] {
   const cleanMap: Record<string, string> = {};
   const cleanValues: string[] = [];
   values.forEach((release) => {

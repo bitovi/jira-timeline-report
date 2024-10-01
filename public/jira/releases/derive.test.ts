@@ -40,5 +40,3 @@ test("deriveReleases with Bitovi naming convention", () => {
     { shortName: "Two", shortVersion: null, version: null, semver: false },
   ]);
 });
-
-// Additional test cases can be added here to cover more scenarios
