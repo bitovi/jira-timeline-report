@@ -23,6 +23,7 @@
   "dependencies": {
     "@atlaskit/css-reset": "^6.11.1",
     "@atlaskit/form": "^10.5.4",
+    "@atlaskit/spinner": "^16.3.2",
     "@atlaskit/textfield": "^6.5.2",
     "@atlaskit/tokens": "^2.0.0",
     "@babel/preset-react": "^7.24.7",
