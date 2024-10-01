@@ -279,6 +279,7 @@ export class TimelineConfiguration extends StacheElement {
   connectedCallback() {
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
+        appKey: this.jiraHelpers.appKey,
         onUpdate: (partial) => {
           this.normalizeOptions = partial;
         },

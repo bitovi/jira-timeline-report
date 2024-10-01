@@ -29,6 +29,7 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
 
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate, onInitialDefaultsLoad, useSave, useDefaults }) => {
   const queryClient = useQueryClient();
+
   const defaults = useDefaults({ appKey, onInitialDefaultsLoad });
   const save = useSave({ appKey });
 
@@ -55,6 +56,8 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate, onInitialDe
         handleSubmit((values) => {
           save(values, {
             onSuccess: () => {
+              onUpdate?.(createNormalizeConfiguration(values));
+
               queryClient.invalidateQueries({ queryKey: ["configuration", "default"] });
             },
           });

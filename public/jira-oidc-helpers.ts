@@ -81,7 +81,7 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 }
 
 export default function (
-  { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL } = window.env,
+  { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY } = window.env,
   requestHelper: (urlFragment: string) => Promise<RequestHelperResponse>,
   host: "jira" | "hosted"
 ) {
@@ -184,6 +184,7 @@ export default function (
   }
 
   const jiraHelpers: {
+    appKey: string;
     saveInformationToLocalStorage(parameters: Record<string, string>): void;
     clearAuthFromLocalStorage(): void;
     fetchFromLocalStorage(key: string): string | null;
@@ -272,6 +273,7 @@ export default function (
       progress?: Progress
     ) => Promise<{ fields: { [key: string]: any }; key: string }[]>;
   } = {
+    appKey: JIRA_APP_KEY,
     saveInformationToLocalStorage: (parameters: Record<string, string>) => {
       const objectKeys = Object.keys(parameters);
       for (let key of objectKeys) {
@@ -782,12 +784,6 @@ export default function (
   // }
 
   window.jiraHelpers = jiraHelpers;
-
-  window.jiraHelpers.getAppProperties = () => {
-    requestHelper(
-      "https://training-bitovi.atlassian.net/rest/atlassian-connect/1/addons/bitovi.timeline-report.staging/properties"
-    );
-  };
 
   window.jiraHelpers.requester = requestHelper;
 

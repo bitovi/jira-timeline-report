@@ -16,9 +16,9 @@ export default [
       commonjs(),
       typescript(),
       babel({
-        exclude: "node_modules/**", // Exclude dependencies from being transpiled
-        presets: ["@babel/preset-react"], // Include the React preset
-        babelHelpers: "bundled", // Necessary for Babel to work properly
+        exclude: "node_modules/**",
+        presets: ["@babel/preset-react"],
+        babelHelpers: "bundled",
       }),
     ],
   },
@@ -66,7 +66,7 @@ export default [
     plugins: [
       nodeResolve(),
       commonjs(),
-      // terser(),
+      terser(),
       typescript(),
       babel({
         exclude: "node_modules/**",

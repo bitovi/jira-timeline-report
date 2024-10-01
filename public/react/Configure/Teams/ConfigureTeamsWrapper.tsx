@@ -10,7 +10,8 @@ import { useDefaultConfiguration } from "./services/team-defaults/useDefaultConf
 
 const queryClient = new QueryClient();
 
-interface TeamConfigurationWrapperProps extends Pick<ConfigureTeamsProps, "onUpdate" | "onInitialDefaultsLoad"> {}
+interface TeamConfigurationWrapperProps
+  extends Pick<ConfigureTeamsProps, "appKey" | "onUpdate" | "onInitialDefaultsLoad"> {}
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
   // Only render the configuration when inside of jira for now
@@ -18,21 +19,10 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
     return null;
   }
 
-  const appKey = process.env.JIRA_APP_KEY;
-
-  if (!appKey) {
-    throw new Error("Cannot use Team Configuration without an app key");
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback="loading">
-        <ConfigureTeams
-          useSave={useSaveDefaultConfiguration}
-          useDefaults={useDefaultConfiguration}
-          appKey={appKey}
-          {...props}
-        />
+        <ConfigureTeams useSave={useSaveDefaultConfiguration} useDefaults={useDefaultConfiguration} {...props} />
       </Suspense>
     </QueryClientProvider>
   );
