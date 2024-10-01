@@ -1,14 +1,14 @@
-import React, { Suspense, useState } from "react";
-import type { ComponentProps, FC } from "react";
+import type { FC } from "react";
 
 import type { NormalizedIssue } from "../../../jira/normalized/normalize";
 
-import Form, { ErrorMessage, Field, FormHeader, HelperMessage } from "@atlaskit/form";
-import AtlasTextField from "@atlaskit/textfield";
-import Spinner from "@atlaskit/spinner";
-import { QueryClient, QueryClientProvider, useMutation, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { getSprintDefaults, setSprintDefaults } from "../../../jira/storage/plugin";
+import React, { Suspense } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
+import Form, { Field, FormHeader } from "@atlaskit/form";
+import AtlasTextField from "@atlaskit/textfield";
+import { QueryClient, QueryClientProvider, useMutation, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+
+import { getSprintDefaults, setSprintDefaults } from "../../../jira/storage/plugin";
 
 // import "atlaskit/css-reset";
 
@@ -36,7 +36,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey }) => {
 
   const { register, handleSubmit, getValues } = useForm<DefaultFormFields>({ defaultValues: data });
 
-  const { mutate, isPending } = useMutation<void, Error, DefaultFormFields>({
+  const { mutate } = useMutation<void, Error, DefaultFormFields>({
     mutationFn: (values) => {
       return setSprintDefaults(values, { appKey });
     },
@@ -56,20 +56,24 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey }) => {
   }
 
   return (
-    <>
-      <form
-        onSubmit={handleSubmit((values) => {
+    <Form
+      onSubmit={() =>
+        handleSubmit((values) => {
           mutate(values, {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: ["configuration", "default"] });
             },
           });
-        })}
-      >
-        <FormHeader>Team Configuration</FormHeader>
-        <TextField name="sprintLength" type="number" label="Sprint length" register={register} onSave={update} />
-      </form>
-    </>
+        })
+      }
+    >
+      {() => (
+        <form>
+          <FormHeader title="Team Configuration" />
+          <TextField name="sprintLength" type="number" label="Sprint length" register={register} onSave={update} />
+        </form>
+      )}
+    </Form>
   );
 };
 
@@ -96,11 +100,10 @@ const TextField: FC<{
 
   return (
     <Field name="sprintLength" label={label} isRequired>
-      {({ fieldProps }) => (
+      {() => (
         <AtlasTextField
           type={type}
           autoComplete="off"
-          {...fieldProps}
           {...register(name)}
           onBlur={({ target }) => handleBlur(target)}
         />
