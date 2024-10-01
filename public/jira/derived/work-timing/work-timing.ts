@@ -71,7 +71,7 @@ export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
 /**
  *
  * @param {import("../../shared/types.js").NormalizedIssue} normalizedIssue
- * @param {*} param1
+ * @param {Partial<WorkTimingConfig> & { uncertaintyWeight?: number }} options
  * @returns {DerivedWorkTiming}
  */
 export function deriveWorkTiming(
