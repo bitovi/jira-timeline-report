@@ -21,7 +21,7 @@ interface AppPropertyResponse<TData = unknown> {
   self: string;
 }
 
-export const jiraPluginStorage: StorageFactory = (jiraHelpers) => {
+export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
   return {
     async canUseStorage() {
       return true;

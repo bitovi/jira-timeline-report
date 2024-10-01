@@ -154,7 +154,7 @@ export class TimelineConfiguration extends StacheElement {
 
     // from children
     issueTimingCalculations: null,
-
+    storage: null,
     normalizeOptions: null,
 
     // VALUES DERIVING FROM THE `jql`

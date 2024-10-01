@@ -61,7 +61,7 @@ const createCodeBlock = (using?: string): CodeBlock => {
   };
 };
 
-export const webAppStorage: StorageFactory = (jiraHelpers) => {
+export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
   return {
     async canUseStorage() {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);

@@ -1,13 +1,12 @@
 import { StacheElement, type } from "./can.js";
 
-
 //import "./steerco-timeline.js";
 import "./status-filter.js";
 import "./status-filter-only.js";
 import "./gantt-grid.js";
 import "./gantt-timeline.js";
 import "./status-report.js";
-import "./timeline-configuration/timeline-configuration.js"
+import "./timeline-configuration/timeline-configuration.js";
 
 import "./select-issue-type/select-issue-type.js";
 import "./select-report-type/select-report-type.js";
@@ -17,7 +16,7 @@ import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-sta
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 
 export class TimelineReport extends StacheElement {
-    static view = `<div class="flex">
+  static view = `<div class="flex">
         <timeline-configuration
           class="border-gray-100 border-r border-nuetral-301 p-2 relative block bg-white shrink-0" 
           style="overflow-y: auto"
@@ -29,6 +28,7 @@ export class TimelineReport extends StacheElement {
           derivedIssuesRequestData:to="this.derivedIssuesRequestData"
 
           issueTimingCalculations:to="this.issueTimingCalculations"
+          storage:from="this.storage"
           
           configuration:to="this.configuration"
           
@@ -138,244 +138,236 @@ export class TimelineReport extends StacheElement {
         </div>
       </div>
   `;
-    static props = {
-        // passed values
-        timingCalculationMethods: type.Any,
-
-        showingDebugPanel: {type: Boolean, default: false},
-        timeSliderValue: {
-          type: type.convert(Number),
-          default: 25
-        },
-        // default params
-        defaultSearch: type.Any,
-        get compareToTime(){
-          const SECOND = 1000;
-          const MIN = 60 * SECOND;
-          const HOUR = 60 * MIN;
-          const DAY = 24 * HOUR;
-          if(this.timeSliderValue === 0) {
-            return {timePrior: 0, text: "now"}
-          }
-          if(this.timeSliderValue === 1) {
-            return {timePrior: 30*SECOND, text: "30 seconds ago"}
-          }
-          if(this.timeSliderValue === 2) {
-            return {timePrior: MIN, text: "1 minute ago"}
-          }
-          if(this.timeSliderValue === 3) {
-            return {timePrior: 5*MIN, text: "5 minutes ago"}
-          }
-          if(this.timeSliderValue === 4) {
-            return {timePrior: 10*MIN, text: "10 minutes ago"}
-          }
-          if(this.timeSliderValue === 5) {
-            return {timePrior: 30*MIN, text: "30 minutes ago"}
-          }
-          if(this.timeSliderValue === 6) {
-            return {timePrior: HOUR, text: "1 hour ago"}
-          }
-          if(this.timeSliderValue === 7) {
-            return {timePrior: 3*HOUR, text: "3 hours ago"}
-          }
-          if(this.timeSliderValue === 8) {
-            return {timePrior: 6*HOUR, text: "6 hours ago"}
-          }
-          if(this.timeSliderValue === 9) {
-            return {timePrior: 12*HOUR, text: "12 hours ago"}
-          }
-          if(this.timeSliderValue === 10) {
-            return {timePrior: DAY, text: "1 day ago"}
-          } else {
-            const days = this.timeSliderValue - 10;
-            return {timePrior: DAY*days, text: days+" days ago"}
-          }
-          const days = this.timeSliderValue;
-          return {timePrior: (MIN / 2) *this.timeSliderValue, text: this.timeSliderValue+" days ago"}
-        },
-        
-
-        showingConfiguration: false,
-
-        get issuesPromise(){
-          return this.derivedIssuesRequestData?.issuesPromise;
-        },
-        derivedIssues: {
-            async(resolve){
-                this.derivedIssuesRequestData?.issuesPromise.then(resolve)
-            }
-        },
-        get filteredDerivedIssues(){
-          if(this.derivedIssues) {
-            if(this.statusesToExclude?.length) {
-              return this.derivedIssues.filter( ({status}) => !this.statusesToExclude.includes(status))
-            } else {
-              return this.derivedIssues 
-            }
-          }
-        }
-    };
-
-    
-
-    // hooks
-    async connected() {
-      updateFullishHeightSection();
-    }
-
-    get rollupTimingLevelsAndCalculations(){
-      console.log({
-        issueTimingCalculations: this.issueTimingCalculations,
-        primaryIssueType: this.primaryIssueType,
-        secondaryIssueType: this.secondaryIssueType
-      });
-
-      function getIssueHierarchyUnderType(timingCalculations, type){
-        const index = timingCalculations.findIndex( calc => calc.type === type);
-        return timingCalculations.slice(index);
+  static props = {
+    // passed values
+    timingCalculationMethods: type.Any,
+    storage: null,
+    showingDebugPanel: { type: Boolean, default: false },
+    timeSliderValue: {
+      type: type.convert(Number),
+      default: 25,
+    },
+    // default params
+    defaultSearch: type.Any,
+    get compareToTime() {
+      const SECOND = 1000;
+      const MIN = 60 * SECOND;
+      const HOUR = 60 * MIN;
+      const DAY = 24 * HOUR;
+      if (this.timeSliderValue === 0) {
+        return { timePrior: 0, text: "now" };
       }
-
-      if(this.primaryIssueType === "Release") {
-        if(this.secondaryIssueType) {
-          const secondary = getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
-          return [
-            {type: 'Release', hierarchyLevel: Infinity, calculation: 'childrenOnly'},
-            ...secondary
-          ]
-        }
+      if (this.timeSliderValue === 1) {
+        return { timePrior: 30 * SECOND, text: "30 seconds ago" };
+      }
+      if (this.timeSliderValue === 2) {
+        return { timePrior: MIN, text: "1 minute ago" };
+      }
+      if (this.timeSliderValue === 3) {
+        return { timePrior: 5 * MIN, text: "5 minutes ago" };
+      }
+      if (this.timeSliderValue === 4) {
+        return { timePrior: 10 * MIN, text: "10 minutes ago" };
+      }
+      if (this.timeSliderValue === 5) {
+        return { timePrior: 30 * MIN, text: "30 minutes ago" };
+      }
+      if (this.timeSliderValue === 6) {
+        return { timePrior: HOUR, text: "1 hour ago" };
+      }
+      if (this.timeSliderValue === 7) {
+        return { timePrior: 3 * HOUR, text: "3 hours ago" };
+      }
+      if (this.timeSliderValue === 8) {
+        return { timePrior: 6 * HOUR, text: "6 hours ago" };
+      }
+      if (this.timeSliderValue === 9) {
+        return { timePrior: 12 * HOUR, text: "12 hours ago" };
+      }
+      if (this.timeSliderValue === 10) {
+        return { timePrior: DAY, text: "1 day ago" };
       } else {
-        return getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
+        const days = this.timeSliderValue - 10;
+        return { timePrior: DAY * days, text: days + " days ago" };
       }
+      const days = this.timeSliderValue;
+      return { timePrior: (MIN / 2) * this.timeSliderValue, text: this.timeSliderValue + " days ago" };
+    },
+
+    showingConfiguration: false,
+
+    get issuesPromise() {
+      return this.derivedIssuesRequestData?.issuesPromise;
+    },
+    derivedIssues: {
+      async(resolve) {
+        this.derivedIssuesRequestData?.issuesPromise.then(resolve);
+      },
+    },
+    get filteredDerivedIssues() {
+      if (this.derivedIssues) {
+        if (this.statusesToExclude?.length) {
+          return this.derivedIssues.filter(({ status }) => !this.statusesToExclude.includes(status));
+        } else {
+          return this.derivedIssues;
+        }
+      }
+    },
+  };
+
+  // hooks
+  async connected() {
+    updateFullishHeightSection();
+  }
+
+  get rollupTimingLevelsAndCalculations() {
+    console.log({
+      issueTimingCalculations: this.issueTimingCalculations,
+      primaryIssueType: this.primaryIssueType,
+      secondaryIssueType: this.secondaryIssueType,
+    });
+
+    function getIssueHierarchyUnderType(timingCalculations, type) {
+      const index = timingCalculations.findIndex((calc) => calc.type === type);
+      return timingCalculations.slice(index);
     }
 
-    // this all the data pre-compiled
-    get rolledupAndRolledBackIssuesAndReleases(){
-      if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
-        return [];
+    if (this.primaryIssueType === "Release") {
+      if (this.secondaryIssueType) {
+        const secondary = getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
+        return [{ type: "Release", hierarchyLevel: Infinity, calculation: "childrenOnly" }, ...secondary];
       }
-      
-      const rolledUp = rollupAndRollback(this.filteredDerivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
-        new Date( new Date().getTime() - this.compareToTime.timePrior) );
-
-      
-
-      const statuses = calculateReportStatuses(rolledUp);
-      return statuses;
+    } else {
+      return getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
     }
-    
-    get groupedParentDownHierarchy(){
-      if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
-        return [];
-      }
+  }
 
-      const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations)
-      return groupedHierarchy.reverse();
+  // this all the data pre-compiled
+  get rolledupAndRolledBackIssuesAndReleases() {
+    if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
+      return [];
     }
-    get planningIssues(){
-      if(!this.groupedParentDownHierarchy.length || ! this?.planningStatuses?.length) {
-        return []
-      }
-      const planningSourceIssues = this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
-      return planningSourceIssues.filter( (normalizedIssue)=> {
-        return this.planningStatuses.includes(normalizedIssue.status);
-      })
+
+    const rolledUp = rollupAndRollback(
+      this.filteredDerivedIssues,
+      this.configuration,
+      this.rollupTimingLevelsAndCalculations,
+      new Date(new Date().getTime() - this.compareToTime.timePrior)
+    );
+
+    const statuses = calculateReportStatuses(rolledUp);
+    return statuses;
+  }
+
+  get groupedParentDownHierarchy() {
+    if (!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
+      return [];
     }
-    get primaryIssuesOrReleases(){
-      if(!this.groupedParentDownHierarchy.length) {
-        return [];
+
+    const groupedHierarchy = groupIssuesByHierarchyLevelOrType(
+      this.rolledupAndRolledBackIssuesAndReleases,
+      this.rollupTimingLevelsAndCalculations
+    );
+    return groupedHierarchy.reverse();
+  }
+  get planningIssues() {
+    if (!this.groupedParentDownHierarchy.length || !this?.planningStatuses?.length) {
+      return [];
+    }
+    const planningSourceIssues =
+      this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
+    return planningSourceIssues.filter((normalizedIssue) => {
+      return this.planningStatuses.includes(normalizedIssue.status);
+    });
+  }
+  get primaryIssuesOrReleases() {
+    if (!this.groupedParentDownHierarchy.length) {
+      return [];
+    }
+    const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
+
+    const hideUnknownInitiatives = this.hideUnknownInitiatives;
+    let statusesToRemove = this.statusesToRemove;
+    let statusesToShow = this.statusesToShow;
+
+    function startBeforeDue(initiative) {
+      return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
+    }
+
+    // lets remove stuff!
+    const filtered = unfilteredPrimaryIssuesOrReleases.filter((issueOrRelease) => {
+      // check if it's a planning issues
+      if (
+        this?.planningStatuses?.length &&
+        this.primaryIssueType !== "Release" &&
+        this.planningStatuses.includes(issueOrRelease.status)
+      ) {
+        return false;
       }
-      const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
-      
-      const hideUnknownInitiatives = this.hideUnknownInitiatives;
-      let statusesToRemove = this.statusesToRemove;
-      let statusesToShow =  this.statusesToShow;
 
-      function startBeforeDue(initiative) {
-        return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
-      }
-
-
-      // lets remove stuff!
-      const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
-        
-        // check if it's a planning issues
-        if(this?.planningStatuses?.length && 
-            this.primaryIssueType !== "Release" &&
-            this.planningStatuses.includes(issueOrRelease.status) ) {
+      if (this?.releasesToShow?.length) {
+        // O(n^2)
+        const releases = issueOrRelease.releases.map((r) => r.name);
+        if (releases.filter((release) => this.releasesToShow.includes(release)).length === 0) {
           return false;
         }
+      }
 
-        if(this?.releasesToShow?.length) {
-          // O(n^2)
-          const releases = issueOrRelease.releases.map( r => r.name);
-          if(releases.filter( release => this.releasesToShow.includes(release)).length === 0) {
+      if (this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
+        return false;
+      }
+
+      if (hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
+        return false;
+      }
+      if (this.primaryIssueType === "Release") {
+        // releases don't have statuses, so we look at their children
+        if (statusesToRemove && statusesToRemove.length) {
+          if (issueOrRelease.childStatuses.children.every(({ status }) => statusesToRemove.includes(status))) {
             return false;
           }
         }
 
-        if(this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
-          return false;
-        }
-
-        if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
-          return false;
-        }
-        if(this.primaryIssueType === "Release") {
-          // releases don't have statuses, so we look at their children
-          if(statusesToRemove && statusesToRemove.length) {
-            if( issueOrRelease.childStatuses.children.every( ({status}) => statusesToRemove.includes(status) ) ) {
-              return false;
-            }
-          }
-
-          if(statusesToShow && statusesToShow.length) {
-            // Keep if any valeue has a status to show
-            if( !issueOrRelease.childStatuses.children.some( ({status}) => statusesToShow.includes(status) ) ) {
-              return false;
-            }
-          }
-
-        } else {
-          if(statusesToShow && statusesToShow.length) {
-            if(!statusesToShow.includes(issueOrRelease.status)) {
-              return false;
-            }
-          }
-          if(statusesToRemove && statusesToRemove.length) {
-            if(statusesToRemove.includes(issueOrRelease.status)) {
-              return false;
-            }
+        if (statusesToShow && statusesToShow.length) {
+          // Keep if any valeue has a status to show
+          if (!issueOrRelease.childStatuses.children.some(({ status }) => statusesToShow.includes(status))) {
+            return false;
           }
         }
-
-        
-        return true;
-      });
-
-      if(this.sortByDueDate) {
-        return filtered.toSorted( (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
       } else {
-        return filtered;
+        if (statusesToShow && statusesToShow.length) {
+          if (!statusesToShow.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
+        if (statusesToRemove && statusesToRemove.length) {
+          if (statusesToRemove.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
       }
-    }
-    
 
-    showDebug(open) {
-      this.showingDebugPanel = open;
-    }
+      return true;
+    });
 
-    
+    if (this.sortByDueDate) {
+      return filtered.toSorted((i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
+    } else {
+      return filtered;
+    }
+  }
+
+  showDebug(open) {
+    this.showingDebugPanel = open;
+  }
 }
-
-
 
 customElements.define("timeline-report", TimelineReport);
 
-
-function getIssuesOfTypeAndStatus(issues, type, statuses){
-  return issues.filter( (issue)=>{
-    return issue["Issue Type"] === type && statuses.includes(issue.Status)
-  })
+function getIssuesOfTypeAndStatus(issues, type, statuses) {
+  return issues.filter((issue) => {
+    return issue["Issue Type"] === type && statuses.includes(issue.Status);
+  });
 }
 
 /*
@@ -410,44 +402,29 @@ function mapReleasesToIssues(issues, getReleaseValue) {
     return map;
 }*/
 
-
-
-
-
-
 function sortReadyFirst(initiatives) {
-    return initiatives.sort((a, b) => {
-        if (a.Status === "Ready") {
-            return -1;
-        }
-        return 1;
-    })
+  return initiatives.sort((a, b) => {
+    if (a.Status === "Ready") {
+      return -1;
+    }
+    return 1;
+  });
 }
-
-
 
 function newDateFromYYYYMMDD(dateString) {
-    const [year, month, day] = dateString.split("-");
-    return new Date(year, month - 1, day);
+  const [year, month, day] = dateString.split("-");
+  return new Date(year, month - 1, day);
 }
-
-
-
-
 
 function addTeamBreakdown(release) {
-
-    return {
-        ...release
-    }
+  return {
+    ...release,
+  };
 }
-
-
 
 // ontrack
 // behind
 // complete
-
 
 function getElementPosition(el) {
   var rect = el.getBoundingClientRect();
@@ -457,13 +434,9 @@ function getElementPosition(el) {
 }
 
 function updateFullishHeightSection() {
-  const position = getElementPosition( document.querySelector('.fullish-vh') )
-  document.documentElement.style.setProperty('--fullish-document-top', `${position.y}px`);
+  const position = getElementPosition(document.querySelector(".fullish-vh"));
+  document.documentElement.style.setProperty("--fullish-document-top", `${position.y}px`);
 }
 
-window.addEventListener('load', updateFullishHeightSection);
-window.addEventListener('resize', updateFullishHeightSection);
-
-
-
-
+window.addEventListener("load", updateFullishHeightSection);
+window.addEventListener("resize", updateFullishHeightSection);
