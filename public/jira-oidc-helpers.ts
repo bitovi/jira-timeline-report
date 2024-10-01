@@ -252,6 +252,17 @@ export default function (
     ): Promise<Issue[]>;
     fetchJiraFields(): Promise<RequestHelperResponse>;
     getAccessToken(): Promise<string | void | null>;
+    fetchIssueTypes(): Promise<
+      Array<{
+        avatarId: number;
+        description: string;
+        hierarchyLevel: number;
+        iconUrl: string;
+        id: number;
+        name: string;
+        subtask: boolean;
+      }>
+    >;
     hasAccessToken(): boolean;
     hasValidAccessToken(): boolean;
     _cachedServerInfoPromise(): Promise<RequestHelperResponse>;
@@ -332,6 +343,20 @@ export default function (
     },
     fetchJiraIssue: async (issueId: string) => {
       return requestHelper(`/api/3/issue/${issueId}`);
+    },
+    fetchIssueTypes: async () => {
+      const response = requestHelper(`/api/3/issuetype`) as unknown;
+      return response as Promise<
+        Array<{
+          avatarId: number;
+          description: string;
+          hierarchyLevel: number;
+          iconUrl: string;
+          id: number;
+          name: string;
+          subtask: boolean;
+        }>
+      >;
     },
     editJiraIssueWithNamedFields: async (issueId: string, fields: Record<string, any>) => {
       const scopeIdForJira = jiraHelpers.fetchFromLocalStorage("scopeId");

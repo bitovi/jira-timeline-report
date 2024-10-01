@@ -115,6 +115,10 @@ const TextField: FC<{
 const queryClient = new QueryClient();
 
 export default function TeamConfigurationWrapper() {
+  if (!AP) {
+    return null;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback="loading">
