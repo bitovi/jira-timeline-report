@@ -1,19 +1,19 @@
-import { getBusinessDatesCount } from "../../../status-helpers.js";
+import { getBusinessDatesCount } from "../../../status-helpers";
 import {
   estimateExtraPoints,
   sampleExtraPoints,
-} from "../../../shared/confidence.js";
+} from "../../../shared/confidence";
 import {
   DueData,
   getStartDateAndDueDataFromFieldsOrSprints,
   getStartDateAndDueDataFromSprints,
   StartData,
-} from "../../../shared/issue-data/date-data.js";
+} from "../../../shared/issue-data/date-data";
 import {
   DefaultsToConfig,
   NormalizedIssue,
   NormalizedTeam,
-} from "../../shared/types.js";
+} from "../../shared/types";
 
 export type DerivedWorkTiming = {
   isConfidenceValid: boolean;

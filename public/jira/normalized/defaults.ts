@@ -1,4 +1,4 @@
-import { parseDateISOString } from "../../date-helpers.js";
+import { parseDateISOString } from "../../date-helpers";
 import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
 
 type ParentField<F extends keyof ParentIssue["fields"]> = {

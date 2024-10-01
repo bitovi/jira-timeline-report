@@ -1,6 +1,6 @@
 // GET DATA FROM PLACES DIRECTLY RELATED TO ISSUE
 
-import { NormalizedIssue } from "../../jira/shared/types.js";
+import { NormalizedIssue } from "../../jira/shared/types";
 
 export type StartData = {
   start: Date;
