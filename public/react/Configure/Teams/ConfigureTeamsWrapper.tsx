@@ -16,7 +16,6 @@ interface TeamConfigurationWrapperProps extends Pick<ConfigureTeamsProps, "onUpd
 }
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, ...props }) => {
-  console.log("here");
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback="loading">

@@ -36,15 +36,11 @@ export const StorageProvider: FC<StorageProviderProps> = ({ storage, children })
   });
 
   const { mutate: createStorage } = useMutation({
-    mutationFn: () => storage.createStorageContainer(globalTeamConfigurationStorageKey, { sprintLength: 10 }),
+    mutationFn: () => storage.createStorageContainer(globalTeamConfigurationStorageKey, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.storageContainer() });
     },
   });
-
-  debugger;
-
-  console.log({ storageAvailable });
 
   if (!storageAvailable) {
     return (

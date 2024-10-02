@@ -65,7 +65,6 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
   return {
     storageContainerExists: async function () {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
-      console.log({ configurationIssue });
       return !!configurationIssue;
     },
     get: async function <TData>(key: string): Promise<TData> {
@@ -113,7 +112,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       });
     },
     createStorageContainer: async function <TData>(key: string, value: TData) {
-      throw new Error("not implmented");
+      window.location.href = "https://github.com/bitovi/jira-auto-scheduler/blob/main/docs/saved-configuration.md";
     },
   };
 };

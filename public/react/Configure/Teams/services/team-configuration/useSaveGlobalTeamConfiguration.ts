@@ -1,5 +1,5 @@
 import type { UseMutateFunction } from "@tanstack/react-query";
-import type { SprintDefaults } from "./plugin";
+import type { SprintDefaults } from "./defaults";
 
 import { useMutation } from "@tanstack/react-query";
 
