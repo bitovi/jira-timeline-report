@@ -31,7 +31,7 @@ module.exports = function (env, mainFileRoute) {
 			</script>
 	</head>
 	<body class='overflow-x-hidden'>
-	<div class="color-bg-white px-2 sticky top-0 z-50 border-b border-nuetral-301">
+	<div class="color-bg-white px-2 sticky top-0 z-50 border-b border-neutral-301">
 		<nav class="mx-auto py-2 place-center w-1280">
 			<div class="flex" style="align-items: center">
 				<ul class="flex gap-3 grow items-baseline">
