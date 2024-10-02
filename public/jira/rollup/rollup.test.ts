@@ -27,9 +27,7 @@ test("addChildrenFromGroupedHierarchy", () => {
     ],
   ] as IssueOrRelease[][];
 
-  const results = addChildrenFromGroupedHierarchy(
-    groupedHierarchy.reverse()
-  ).reverse();
+  const results = addChildrenFromGroupedHierarchy(groupedHierarchy.reverse()).reverse();
 
   expect(results).toStrictEqual([
     [
@@ -99,11 +97,10 @@ test("rollupGroupedHierarchy", () => {
       { key: "i-7", parentKey: "m-3", myValue: 32 },
     ],
   ] as IssueOrRelease<{ myValue: number }>[][];
-  const results = rollupGroupedHierarchy(groupedHierarchy.reverse(), {
+
+  const results = rollupGroupedHierarchy<{ myValue: number }, { sumValue: number }>(groupedHierarchy.reverse(), {
     createRollupDataFromParentAndChild(parent, childrenRollupValues) {
-      const childrenValue = childrenRollupValues.length
-        ? sum(childrenRollupValues.map((child) => child.sumValue))
-        : 0;
+      const childrenValue = childrenRollupValues.length ? sum(childrenRollupValues.map((child) => child.sumValue)) : 0;
 
       const parentValue = parent.myValue;
       return { sumValue: parentValue + childrenValue };
@@ -111,12 +108,7 @@ test("rollupGroupedHierarchy", () => {
   });
   expect(results).toStrictEqual([
     {
-      rollupData: [
-        { sumValue: 4 },
-        { sumValue: 8 },
-        { sumValue: 16 },
-        { sumValue: 32 },
-      ],
+      rollupData: [{ sumValue: 4 }, { sumValue: 8 }, { sumValue: 16 }, { sumValue: 32 }],
       metadata: {},
     },
     {
