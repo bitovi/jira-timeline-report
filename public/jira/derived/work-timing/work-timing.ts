@@ -48,7 +48,7 @@ export type DerivedWorkTiming = {
  * @param {NormalizedTeam} team
  * @returns {number}
  */
-export function getConfidenceDefault(team: NormalizedTeam): number {
+export function getDefaultConfidenceDefault(team: NormalizedTeam): number {
   return 50;
 }
 
@@ -57,13 +57,13 @@ export function getConfidenceDefault(team: NormalizedTeam): number {
  * @param {NormalizedTeam} team
  * @returns number
  */
-export function getStoryPointsDefault(team: NormalizedTeam): number {
+export function getDefaultStoryPointsDefault(team: NormalizedTeam): number {
   return team.velocity / team.parallelWorkLimit;
 }
 
 const defaults = {
-  getConfidenceDefault,
-  getStoryPointsDefault,
+  getDefaultConfidenceDefault,
+  getDefaultStoryPointsDefault,
 };
 
 export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
@@ -77,21 +77,21 @@ export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
 export function deriveWorkTiming(
   normalizedIssue: NormalizedIssue,
   {
-    getConfidence = getConfidenceDefault,
-    getStoryPoints = getStoryPointsDefault,
+    getDefaultConfidence = getDefaultConfidenceDefault,
+    getDefaultStoryPoints = getDefaultStoryPointsDefault,
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
 ): DerivedWorkTiming {
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
   const usedConfidence = isConfidenceValid
     ? normalizedIssue.confidence!
-    : getConfidence(normalizedIssue.team);
+    : getDefaultConfidence(normalizedIssue.team);
   const isStoryPointsValid = isStoryPointsValueValid(
     normalizedIssue.storyPoints
   );
   const defaultOrStoryPoints = isStoryPointsValid
     ? normalizedIssue.storyPoints!
-    : getStoryPoints(normalizedIssue.team);
+    : getDefaultStoryPoints(normalizedIssue.team);
   const storyPointsDaysOfWork =
     defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const isStoryPointsMedianValid = isStoryPointsValueValid(
@@ -99,7 +99,7 @@ export function deriveWorkTiming(
   );
   const defaultOrStoryPointsMedian = isStoryPointsMedianValid
     ? normalizedIssue.storyPointsMedian!
-    : getStoryPoints(normalizedIssue.team);
+    : getDefaultStoryPoints(normalizedIssue.team);
   const storyPointsMedianDaysOfWork =
     defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
   const deterministicExtraPoints = estimateExtraPoints(
