@@ -188,77 +188,7 @@ export default function<T> (
 		}
 	}
 
-	const jiraHelpers: {
-		saveInformationToLocalStorage(parameters: Record<string, string>): void;
-		clearAuthFromLocalStorage(): void;
-		fetchFromLocalStorage(key: string): string | null;
-		fetchAuthorizationCode(): void;
-		refreshAccessToken(accessCode?: string): Promise<string | void>;
-		fetchAccessTokenWithAuthCode(authCode: string): Promise<void>;
-		fetchAccessibleResources(): ReturnType<typeof requestHelper>;
-		fetchJiraSprint(sprintId: string): ReturnType<typeof requestHelper>;
-		fetchJiraIssue(issueId: string): ReturnType<typeof requestHelper>;
-		editJiraIssueWithNamedFields(issueId: string, fields: Record<string, any>): Promise<string>;
-		fetchJiraIssuesWithJQL(params: FetchJiraIssuesParams): ReturnType<typeof requestHelper>;
-		fetchJiraIssuesWithJQLWithNamedFields(params: FetchJiraIssuesParams): Promise<any[]>;
-		fetchAllJiraIssuesWithJQL(params: FetchJiraIssuesParams): Promise<JiraIssue[]>;
-		fetchAllJiraIssuesWithJQLUsingNamedFields(params: FetchJiraIssuesParams): Promise<any[]>;
-		fetchJiraChangelog(issueIdOrKey: string, params: FetchJiraIssuesParams): ReturnType<typeof requestHelper>;
-		isChangelogComplete(changelog: { histories: any[]; total: number; }): boolean;
-		fetchRemainingChangelogsForIssues(
-			issues: JiraIssue[],
-			progress?: {
-				data?: ProgressData;
-				(data: ProgressData): void;
-			}
-		): Promise<JiraIssue[]>;
-		fetchRemainingChangelogsForIssue(
-			issueIdOrKey: string,
-			mostRecentChangeLog: {
-				histories: { id: string; change: string; }[];
-				maxResults: number;
-				total: number;
-				startAt: number;
-			}
-		): Promise<{ id: string; change: string; }[]>;
-		fetchAllJiraIssuesWithJQLAndFetchAllChangelog(
-			params: {
-				limit?: number;
-				maxResults?: number;
-				startAt?: number;
-				expand?: string[];
-				[key: string]: any;
-			},
-			progress?: {
-				data?: ProgressData;
-				(data: ProgressData): void;
-			}
-		): Promise<Issue[]>;
-		fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(
-			params: { fields: string[];[key: string]: any },
-			progress?: (data: ProgressData) => void
-		): Promise<any[]>;
-		fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields(
-			params: { fields: string[];[key: string]: any },
-			progress?: {
-				data?: ProgressData;
-				(data: ProgressData): void;
-			}
-		): Promise<any[]>;
-		fetchChildrenResponses: (params: { [key: string]: any; fields: string[]; }, parentIssues: Issue[], progress?: ((data: ProgressData) => void) | undefined) => Promise<Issue[]>[];
-		fetchDeepChildren(
-			params: { fields: string[];[key: string]: any },
-			sourceParentIssues: Issue[],
-			progress?: (data: ProgressData) => void
-		): Promise<Issue[]>;
-		fetchJiraFields(): Promise<RequestHelperResponse<T>>;
-		getAccessToken(): Promise<string | void | null>;
-		hasAccessToken(): boolean;
-		hasValidAccessToken(): boolean;
-		_cachedServerInfoPromise(): Promise<RequestHelperResponse<T>>;
-		getServerInfo(): Promise<RequestHelperResponse<T>>;
-		fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields?: (params: Params, progress?: Progress) => Promise<{ fields: { [key: string]: any; }; key: string; }[]>;
-	} = {
+	const jiraHelpers = {
 		saveInformationToLocalStorage: (parameters: Record<string, string>) => {
 			const objectKeys = Object.keys(parameters)
 			for (let key of objectKeys) {
@@ -274,20 +204,20 @@ export default function<T> (
 			return window.localStorage.getItem(key);
 		},
 		fetchAuthorizationCode: () => {
-			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
-			window.location.href = url;
+		const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
+		window.location.href = url;
 		},
 		refreshAccessToken: async (accessCode?: string): Promise<string | void> => {
-			try {
+		try {
 				const response = await fetchJSON(`${window.env.JIRA_API_URL}/?code=${accessCode}`)
 
-				const {
+			const {
 					accessToken,
 					expiryTimestamp,
 					refreshToken,
-				} = response;
-				jiraHelpers.saveInformationToLocalStorage({
-					accessToken,
+			} = response;
+			jiraHelpers.saveInformationToLocalStorage({
+				accessToken,
 					refreshToken,
 					expiryTimestamp,
 				});
@@ -650,11 +580,11 @@ export default function<T> (
 		},
 		getServerInfo(): Promise<RequestHelperResponse<T>> {
 			return this._cachedServerInfoPromise();
-		},
+		}
 	}
 
-	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields = 
-		makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
+	// jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields = 
+	// 	makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
 
 	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields = 
 		makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
