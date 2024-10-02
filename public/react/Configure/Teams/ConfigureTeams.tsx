@@ -1,14 +1,7 @@
 import type { FC } from "react";
 
 import type { NormalizedIssue, NormalizeIssueConfig } from "../../../jira/normalized/normalize";
-import {
-  type SprintDefaults,
-  type UseSaveDefaultConfiguration,
-  type UseDefaultConfiguration,
-  useGlobalTeamConfiguration,
-  useSaveGlobalTeamConfiguration,
-  teamConfigurationKeys,
-} from "./services/team-configuration";
+import type { SprintDefaults } from "./services/team-configuration";
 
 import React from "react";
 import { useForm } from "react-hook-form";
@@ -17,6 +10,11 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import TextField from "./components/TextField";
 import { createNormalizeConfiguration } from "./shared/normalize";
+import {
+  useGlobalTeamConfiguration,
+  useSaveGlobalTeamConfiguration,
+  teamConfigurationKeys,
+} from "./services/team-configuration";
 
 export interface ConfigureTeamsProps {
   normalizedIssues?: Array<NormalizedIssue>;

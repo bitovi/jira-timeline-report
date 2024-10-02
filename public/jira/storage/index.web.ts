@@ -103,10 +103,13 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
       jiraHelpers.editJiraIssueWithNamedFields(configurationIssue.id, {
-        Description: [
-          ...configurationIssue.fields.Description.content.filter((content) => content.type !== "codeBlock"),
-          createCodeBlock(JSON.stringify({ ...store, [key]: value })),
-        ],
+        Description: {
+          ...configurationIssue.fields.Description,
+          content: [
+            ...configurationIssue.fields.Description.content.filter((content) => content.type !== "codeBlock"),
+            createCodeBlock(JSON.stringify({ ...store, [key]: value })),
+          ],
+        },
       });
     },
     createStorageContainer: async function <TData>(key: string, value: TData) {
