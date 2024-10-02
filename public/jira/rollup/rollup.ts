@@ -1,3 +1,9 @@
+/**
+ * This module provides utilities for building and processing reporting hierarchies of derived issues and releases.
+ * It includes functions to group issues by hierarchy levels or types, build parent-child relationships,
+ * and perform rollup calculations. The rollup functions enable aggregating data from child issues up through
+ * the hierarchy, allowing for customized data summaries and metadata generation at each hierarchy level.
+ */
 import type { DerivedIssue } from "../derived/derive";
 
 import type { DerivedRelease } from "../releases/derive";
