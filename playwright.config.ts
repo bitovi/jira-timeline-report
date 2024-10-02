@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './playwright/e2e',
+  testDir: './playwright/',
   outputDir: './playwright/test-results',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -32,14 +32,24 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    video: 'on'
+    video: 'on',
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
+      name: 'set-env-variables',
+      testMatch: /global\.setup\.ts/,
+      teardown: 'restore-env-variables',
+    },
+    {
+      name: 'restore-env-variables',
+      testMatch: /global\.teardown\.ts/,
+    },
+    {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      dependencies: ['set-env-variables'],
     },
     // {
     //   name: 'chromium',
@@ -77,4 +87,5 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI || true,
   },
+  reportSlowTests: null
 });
