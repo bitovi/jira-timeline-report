@@ -457,7 +457,7 @@ export default function<T> (
 			}
 		) {
 			const { maxResults, total } = mostRecentChangeLog
-			
+
 			const requests = [];
 			requests.push({ values: mostRecentChangeLog.histories });
 			for (let i = 0; i < total - maxResults; i += maxResults) {
@@ -649,12 +649,6 @@ export default function<T> (
 			return requestHelper('/api/3/serverInfo')
 		},
 		getServerInfo(): Promise<RequestHelperResponse<T>> {
-			// if(this._cachedServerInfoPromise) {
-			// 	return this._cachedServerInfoPromise;
-			// }
-			// // https://your-domain.atlassian.net/rest/api/3/serverInfo
-
-			// return this._cachedServerInfoPromise( = requestHelper('/api/3/serverInfo'));
 			return this._cachedServerInfoPromise();
 		},
 	}
@@ -664,22 +658,6 @@ export default function<T> (
 
 	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields = 
 		makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
-
-
-	// commented out because it's not used
-
-	// function makeFieldNameToIdMap(
-	// 	fields: {
-	// 		name: string;
-	// 		id: string | number;
-	// 	}[]
-	// ) {
-	// 	const map = {};
-	// 	fields.forEach((f) => {
-	// 		map[f.name] = f.id;
-	// 	});
-	// 	return map;
-	// }
 
 	if (host === "jira" || jiraHelpers.hasValidAccessToken()) {
 		// @ts-ignore
@@ -727,45 +705,10 @@ export default function<T> (
 		} = { fields: {}, update: {} };
 
 		for (let prop in obj) {
-			//if(prop === "Story points") {
-				// 10016 -> story point estimate
-				// 10034 -> story points
-				//obj[prop] = ""+obj[prop];
-				//mapped["customfield_10016"] = obj[prop];
-				//mapped["customfield_10034"] = obj[prop];
-				//mapped["Story points"] = obj[prop];
-				//mapped["storypoints"] = obj[prop];
-				//mapped["Story Points"] = obj[prop];
-				// 10016 -> story point estimate
-			//} else {
-			//mapped[fields.nameMap[prop] || prop] = obj[prop];
-			//}
 			editBody.update[fieldMapping.nameMap[prop] || prop] = [{ set: obj[prop] }];
 		}
 		return editBody;
 	}
-
-	// commented out because it's not used
-
-	// function mapNamesToIds(obj, fields) {
-	// 	const mapped = {};
-	// 	for (let prop in obj) {
-	// 		//if(prop === "Story points") {
-	// 			// 10016 -> story point estimate
-	// 			// 10034 -> story points
-	// 			//obj[prop] = ""+obj[prop];
-	// 			//mapped["customfield_10016"] = obj[prop];
-	// 			//mapped["customfield_10034"] = obj[prop];
-	// 			//mapped["Story points"] = obj[prop];
-	// 			//mapped["storypoints"] = obj[prop];
-	// 			//mapped["Story Points"] = obj[prop];
-	// 			// 10016 -> story point estimate
-	// 		//} else {
-	// 			mapped[fields.nameMap[prop] || prop] = obj[prop];
-	// 		//}
-			
-	// 	}
-	// }
 	
 	window.jiraHelpers = jiraHelpers;
 	return jiraHelpers;
