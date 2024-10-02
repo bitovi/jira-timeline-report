@@ -3,6 +3,8 @@ import type { ConfigureTeamsProps } from "./ConfigureTeams";
 
 import React, { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FlagsProvider } from "@atlaskit/flag";
+import { ErrorBoundary } from "react-error-boundary";
 
 import ConfigureTeams from "./ConfigureTeams";
 
@@ -18,11 +20,15 @@ interface TeamConfigurationWrapperProps extends Pick<ConfigureTeamsProps, "onUpd
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, ...props }) => {
   return (
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback="loading">
-        <StorageProvider storage={storage}>
-          <ConfigureTeams {...props} />
-        </StorageProvider>
-      </Suspense>
+      <FlagsProvider>
+        <ErrorBoundary fallbackRender={() => "Something went wrong"}>
+          <Suspense fallback="loading">
+            <StorageProvider storage={storage}>
+              <ConfigureTeams {...props} />
+            </StorageProvider>
+          </Suspense>
+        </ErrorBoundary>
+      </FlagsProvider>
     </QueryClientProvider>
   );
 };

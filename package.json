@@ -23,7 +23,9 @@
   "dependencies": {
     "@atlaskit/button": "^20.2.1",
     "@atlaskit/css-reset": "^6.11.1",
+    "@atlaskit/flag": "^15.8.3",
     "@atlaskit/form": "^10.5.4",
+    "@atlaskit/icon": "^22.20.1",
     "@atlaskit/spinner": "^16.3.2",
     "@atlaskit/textfield": "^6.5.2",
     "@atlaskit/tokens": "^2.0.0",
@@ -38,6 +40,7 @@
     "oauth": "^0.10.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-error-boundary": "^4.0.13",
     "react-hook-form": "^7.53.0",
     "undici": "^6.19.5",
     "undici-types": "^6.19.5"

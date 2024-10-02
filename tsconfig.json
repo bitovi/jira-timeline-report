@@ -23,7 +23,7 @@
   },
   "include": [
     "public/**/*.ts"
-  ],
+   ],
   "exclude": [
     "node_modules",
     "public/dist",
