@@ -1,11 +1,11 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value } from "../can.js";
 
 import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
-import {
-  calculationKeysToNames,
-  allTimingCalculationOptions,
-  getImpliedTimingCalculations,
-} from "../prepare-issues/date-data.js";
+// import {
+//   calculationKeysToNames,
+//   allTimingCalculationOptions,
+//   getImpliedTimingCalculations,
+// } from "../prepare-issues/date-data.js";
 
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
@@ -279,7 +279,7 @@ export class TimelineConfiguration extends StacheElement {
   connectedCallback() {
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
-        appKey: this.jiraHelpers.appKey,
+        storage: this.storage,
         onUpdate: (partial) => {
           this.normalizeOptions = partial;
         },

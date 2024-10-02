@@ -1,7 +1,14 @@
 import type { FC } from "react";
 
 import type { NormalizedIssue, NormalizeIssueConfig } from "../../../jira/normalized/normalize";
-import type { SprintDefaults, UseSaveDefaultConfiguration, UseDefaultConfiguration } from "./services/team-defaults";
+import {
+  type SprintDefaults,
+  type UseSaveDefaultConfiguration,
+  type UseDefaultConfiguration,
+  useGlobalTeamConfiguration,
+  useSaveGlobalTeamConfiguration,
+  teamConfigurationKeys,
+} from "./services/team-configuration";
 
 import React from "react";
 import { useForm } from "react-hook-form";
@@ -12,9 +19,6 @@ import TextField from "./components/TextField";
 import { createNormalizeConfiguration } from "./shared/normalize";
 
 export interface ConfigureTeamsProps {
-  appKey: string;
-  useSave: UseSaveDefaultConfiguration;
-  useDefaults: UseDefaultConfiguration;
   normalizedIssues?: Array<NormalizedIssue>;
   onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
@@ -27,11 +31,11 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
   value: DefaultFormFields[TProperty];
 }
 
-const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate, onInitialDefaultsLoad, useSave, useDefaults }) => {
+const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLoad }) => {
   const queryClient = useQueryClient();
 
-  const defaults = useDefaults({ appKey, onInitialDefaultsLoad });
-  const save = useSave({ appKey });
+  const defaults = useGlobalTeamConfiguration({ onInitialDefaultsLoad });
+  const save = useSaveGlobalTeamConfiguration();
 
   const { register, handleSubmit, getValues } = useForm<DefaultFormFields>({ defaultValues: defaults });
 
@@ -44,7 +48,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate, onInitialDe
         onSuccess: () => {
           onUpdate?.(createNormalizeConfiguration(values));
 
-          queryClient.invalidateQueries({ queryKey: ["configuration", "default"] });
+          queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.globalConfiguration() });
         },
       }
     );
@@ -58,7 +62,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ appKey, onUpdate, onInitialDe
             onSuccess: () => {
               onUpdate?.(createNormalizeConfiguration(values));
 
-              queryClient.invalidateQueries({ queryKey: ["configuration", "default"] });
+              queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.globalConfiguration() });
             },
           });
         })

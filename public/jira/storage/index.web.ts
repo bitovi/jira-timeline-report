@@ -23,7 +23,7 @@ interface StorageIssue {
   id: string;
   fields: {
     Summary: string;
-    Description: Array<StorageIssueContent>;
+    Description: { content: Array<StorageIssueContent> };
   };
 }
 
@@ -63,21 +63,22 @@ const createCodeBlock = (using?: string): CodeBlock => {
 
 export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
   return {
-    async canUseStorage() {
+    storageContainerExists: async function () {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
+      console.log({ configurationIssue });
       return !!configurationIssue;
     },
-    async get<TData>(key: string): Promise<TData> {
+    get: async function <TData>(key: string): Promise<TData> {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
       if (!configurationIssue) {
         throw new Error("[Storage Error]: get (web-app) needs a configuration issue");
       }
 
-      const storeContent = configurationIssue.fields.Description.find((content) => content.type === "codeBlock");
+      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === "codeBlock");
 
       if (!storeContent) {
-        throw new Error("Todo make custom 404 so its catchable");
+        storeContent = createCodeBlock();
       }
 
       const [stringifiedStore] = storeContent.content;
@@ -85,14 +86,14 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
 
       return store[key];
     },
-    async update<TData>(key: string, value: TData) {
+    update: async function <TData>(key: string, value: TData) {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
       if (!configurationIssue) {
         throw new Error("[Storage Error]: update (web-app) needs a configuration issue");
       }
 
-      let storeContent = configurationIssue.fields.Description.find((content) => content.type === "codeBlock");
+      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === "codeBlock");
 
       if (!storeContent) {
         storeContent = createCodeBlock();
@@ -103,10 +104,13 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
 
       jiraHelpers.editJiraIssueWithNamedFields(configurationIssue.id, {
         Description: [
-          ...configurationIssue.fields.Description.filter((content) => content.type !== "codeBlock"),
+          ...configurationIssue.fields.Description.content.filter((content) => content.type !== "codeBlock"),
           createCodeBlock(JSON.stringify({ ...store, [key]: value })),
         ],
       });
+    },
+    createStorageContainer: async function <TData>(key: string, value: TData) {
+      throw new Error("not implmented");
     },
   };
 };

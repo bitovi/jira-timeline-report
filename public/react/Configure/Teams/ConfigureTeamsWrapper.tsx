@@ -5,24 +5,24 @@ import React, { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import ConfigureTeams from "./ConfigureTeams";
-import { useSaveDefaultConfiguration } from "./services/team-defaults/useSaveDefaultConfiguration";
-import { useDefaultConfiguration } from "./services/team-defaults/useDefaultConfiguration";
+
+import { StorageFactory } from "../../../jira/storage/common";
+import { StorageProvider } from "./services/storage";
 
 const queryClient = new QueryClient();
 
-interface TeamConfigurationWrapperProps
-  extends Pick<ConfigureTeamsProps, "appKey" | "onUpdate" | "onInitialDefaultsLoad"> {}
+interface TeamConfigurationWrapperProps extends Pick<ConfigureTeamsProps, "onUpdate" | "onInitialDefaultsLoad"> {
+  storage: ReturnType<StorageFactory>;
+}
 
-const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
-  // Only render the configuration when inside of jira for now
-  if (!AP?.request) {
-    return null;
-  }
-
+const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, ...props }) => {
+  console.log("here");
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback="loading">
-        <ConfigureTeams useSave={useSaveDefaultConfiguration} useDefaults={useDefaultConfiguration} {...props} />
+        <StorageProvider storage={storage}>
+          <ConfigureTeams {...props} />
+        </StorageProvider>
       </Suspense>
     </QueryClientProvider>
   );
