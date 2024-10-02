@@ -2,7 +2,9 @@ import type { DerivedIssue } from "../derived/derive";
 
 import type { DerivedRelease } from "../releases/derive";
 
-export type IssueOrRelease<T = any> = (DerivedIssue & T) | (DerivedRelease & T);
+export type IssueOrRelease<CustomFields = unknown> =
+  | (DerivedIssue & CustomFields)
+  | (DerivedRelease & CustomFields);
 
 interface ReportingHierarchy {
   depth: number;
@@ -10,57 +12,73 @@ interface ReportingHierarchy {
   parentKeys: string[];
 }
 
-type ReportingHierarchyIssueOrRelease<T> = IssueOrRelease<T> & {
-  reportingHierarchy: ReportingHierarchy;
-};
+type ReportingHierarchyIssueOrRelease<CustomFields> =
+  IssueOrRelease<CustomFields> & {
+    reportingHierarchy: ReportingHierarchy;
+  };
 
-export type RollupData<D> = D & Record<string, any>;
-export type RollupMetadata<M> = Record<string, M>;
-
-export interface RollupResponseItem<D, M> {
-  metadata: RollupMetadata<M>;
-  rollupData: RollupData<D>[];
+export interface RollupResponseItem<Data, Meta> {
+  metadata: Meta;
+  rollupData: Data[];
 }
-export type RollupResponse<D, M> = RollupResponseItem<D, M>[];
+export type RollupResponse<Data, Meta> = RollupResponseItem<Data, Meta>[];
 
-export type CreateMetadataForHierarchyLevel<M> = (
+export type CreateMetadataForHierarchyLevel<CustomFields, Meta> = (
   hierarchyLevel: number,
-  reportingHierarchyIssuesOrReleases: ReportingHierarchyIssueOrRelease<any>[]
-) => RollupMetadata<M>;
+  reportingHierarchyIssuesOrReleases: ReportingHierarchyIssueOrRelease<CustomFields>[]
+) => Meta;
 
-export type CreateRollupDataFromParentAndChild<D, M, T> = (
-  reportingHierarchyIssueOrRelease: ReportingHierarchyIssueOrRelease<T>,
-  children: RollupData<D>[],
+export type CreateRollupDataFromParentAndChild<CustomFields, Data, Meta> = (
+  reportingHierarchyIssueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>,
+  children: Data[],
   hierarchyLevel: number,
-  metadata: RollupMetadata<M>
-) => RollupData<D>;
+  metadata: Meta
+) => Data;
 
-export type CreateSingleNodeRollupData<D, M> = (
-  reportingHierarchyIssueOrRelease: ReportingHierarchyIssueOrRelease<any>,
+export type CreateSingleNodeRollupData<CustomFields, Data, Meta> = (
+  reportingHierarchyIssueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>,
   hierarchyLevel: number,
-  metadata: RollupMetadata<M>
-) => RollupData<D>;
+  metadata: Meta
+) => Data;
 
-export type FinalizeMetadataForHierarchyLevel<D, M> = (
-  metadata: RollupMetadata<M>,
-  rollupData: RollupData<D>[]
+export type FinalizeMetadataForHierarchyLevel<Data, Meta> = (
+  metadata: Meta,
+  rollupData: Data[]
 ) => void;
 
-export type GetChildren = (reportingHierarchyIssueOrRelease: ReportingHierarchyIssueOrRelease<any>) => IssueOrRelease[];
+export type GetChildren<CustomFields> = (
+  reportingHierarchyIssueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>
+) => IssueOrRelease<CustomFields>[];
 
 interface RollupGroupedHierarchyOptions<CustomFields, Data, Meta> {
-  createMetadataForHierarchyLevel?: CreateMetadataForHierarchyLevel<Meta>;
-  createSingleNodeRollupData?: CreateSingleNodeRollupData<Data, Meta>;
-  createRollupDataFromParentAndChild?: CreateRollupDataFromParentAndChild<CustomFields, Data, Meta>;
-  finalizeMetadataForHierarchyLevel?: FinalizeMetadataForHierarchyLevel<Data, Meta>;
-  getChildren?: GetChildren;
+  createMetadataForHierarchyLevel?: CreateMetadataForHierarchyLevel<
+    CustomFields,
+    Meta
+  >;
+  createSingleNodeRollupData?: CreateSingleNodeRollupData<
+    CustomFields,
+    Data,
+    Meta
+  >;
+  createRollupDataFromParentAndChild?: CreateRollupDataFromParentAndChild<
+    CustomFields,
+    Data,
+    Meta
+  >;
+  finalizeMetadataForHierarchyLevel?: FinalizeMetadataForHierarchyLevel<
+    Data,
+    Meta
+  >;
+  getChildren?: GetChildren<CustomFields>;
 }
 /**
  * Type guard to determine if IssueOrRelease is DerivedIssue
  * @param {IssueOrRelease} issueOrRelease
  * @returns {issueOrRelease is DerivedIssue}
  */
-function isDerivedIssue(issueOrRelease: IssueOrRelease): issueOrRelease is DerivedIssue {
+function isDerivedIssue(
+  issueOrRelease: IssueOrRelease
+): issueOrRelease is DerivedIssue {
   return issueOrRelease.type !== "Release";
 }
 
@@ -115,10 +133,10 @@ function getHierarchyTest({
  * @param {{type: string, hierarchyLevel: number}[]} rollupTypesAndHierarchies
  * @returns {IssueOrRelease[][]}
  */
-export function groupIssuesByHierarchyLevelOrType(
-  issuesOrReleases: IssueOrRelease[],
+export function groupIssuesByHierarchyLevelOrType<CustomFields>(
+  issuesOrReleases: IssueOrRelease<CustomFields>[],
   rollupTypesAndHierarchies: Array<{ type: string; hierarchyLevel: number }>
-): IssueOrRelease[][] {
+): IssueOrRelease<CustomFields>[][] {
   return rollupTypesAndHierarchies
     .map((hierarchy) => {
       return issuesOrReleases.filter(getHierarchyTest(hierarchy));
@@ -139,22 +157,22 @@ export function groupIssuesByHierarchyLevelOrType(
  * @param {IssueOrRelease[][]} groupedHierarchy
  * @returns {ReportingHierarchyIssueOrRelease[][]}
  */
-export function addChildrenFromGroupedHierarchy<T>(
-  groupedHierarchy: IssueOrRelease<T>[][]
-): ReportingHierarchyIssueOrRelease<T>[][] {
+export function addChildrenFromGroupedHierarchy<CustomFields>(
+  groupedHierarchy: IssueOrRelease<CustomFields>[][]
+): ReportingHierarchyIssueOrRelease<CustomFields>[][] {
   // we should label each issue with its virtual hierarchy ... then we can make sure
   // children add themselves to the right parents ... we can probably do this in one pass as things are ordered
   // {PARENT_KEY: {allChildren: [issues..], index}}
   const parentKeyToChildren: Record<string, ReportingHierarchy> = {};
   const topDownGroups = [...groupedHierarchy].reverse();
-  const newGroups: ReportingHierarchyIssueOrRelease<any>[][] = [];
+  const newGroups: ReportingHierarchyIssueOrRelease<CustomFields>[][] = [];
   for (let g = 0; g < topDownGroups.length; g++) {
     let group = topDownGroups[g];
-    let newGroup: ReportingHierarchyIssueOrRelease<any>[] = [];
+    let newGroup: ReportingHierarchyIssueOrRelease<CustomFields>[] = [];
     newGroups.push(newGroup);
 
     for (let issue of group) {
-      let copy: ReportingHierarchyIssueOrRelease<any> = {
+      let copy: ReportingHierarchyIssueOrRelease<CustomFields> = {
         ...issue,
         reportingHierarchy: { depth: g, childKeys: [], parentKeys: [] },
       };
@@ -184,22 +202,30 @@ export function addChildrenFromGroupedHierarchy<T>(
  * @param {{type: string, hierarchyLevel: number}[]} rollupTypesAndHierarchies
  * @returns {ReportingHierarchyIssueOrRelease[]}
  */
-export function addReportingHierarchy(
-  issuesOrReleases: IssueOrRelease[],
+export function addReportingHierarchy<CustomFields>(
+  issuesOrReleases: IssueOrRelease<CustomFields>[],
   rollupTypesAndHierarchies: Array<{ type: string; hierarchyLevel: number }>
-): ReportingHierarchyIssueOrRelease<any>[] {
-  const groups = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies);
-  return addChildrenFromGroupedHierarchy(groups).flat(1);
+): ReportingHierarchyIssueOrRelease<CustomFields>[] {
+  const groups = groupIssuesByHierarchyLevelOrType(
+    issuesOrReleases,
+    rollupTypesAndHierarchies
+  );
+  return addChildrenFromGroupedHierarchy<CustomFields>(groups).flat(1);
 }
 
 /**
  * @param {ReportingHierarchyIssueOrRelease[][]} groupedHierarchy
  * @returns {(keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease) => IssueOrRelease[]}
  */
-export function makeGetChildrenFromGrouped(
-  groupedHierarchy: ReportingHierarchyIssueOrRelease<any>[][]
-): (keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<any>) => IssueOrRelease[] {
-  const keyToIssue = new Map<string, ReportingHierarchyIssueOrRelease<any>>();
+export function makeGetChildrenFromGrouped<CustomFields>(
+  groupedHierarchy: ReportingHierarchyIssueOrRelease<CustomFields>[][]
+): (
+  keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>
+) => IssueOrRelease<CustomFields>[] {
+  const keyToIssue = new Map<
+    string,
+    ReportingHierarchyIssueOrRelease<CustomFields>
+  >();
   for (let group of groupedHierarchy) {
     for (let issue of group) {
       keyToIssue.set(issue.key, issue);
@@ -210,10 +236,12 @@ export function makeGetChildrenFromGrouped(
    * @param {ReportingHierarchyIssueOrRelease} keyOrIssueOrRelease
    * @return {IssueOrRelease[][]}
    */
-  return function getChildren(keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<any>): IssueOrRelease[] {
+  return function getChildren<CustomFields>(
+    keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>
+  ) {
     return keyOrIssueOrRelease.reportingHierarchy.childKeys
       .map(getIssue)
-      .filter((issue: IssueOrRelease) => issue !== undefined);
+      .filter((issue) => issue !== undefined);
   };
 }
 
@@ -223,25 +251,27 @@ export function makeGetChildrenFromGrouped(
  * @param {RollupGroupedHierarchyOptions} options
  * @returns {RollupResponse}
  */
-export function rollupGroupedReportingHierarchy<D, M>(
-  groupedHierarchy: ReportingHierarchyIssueOrRelease<any>[][],
-  options: RollupGroupedHierarchyOptions<D, M>
-): RollupResponse<D, M> {
+export function rollupGroupedReportingHierarchy<CustomFields, Data, Meta>(
+  groupedHierarchy: ReportingHierarchyIssueOrRelease<CustomFields>[][],
+  options: RollupGroupedHierarchyOptions<CustomFields, Data, Meta>
+): RollupResponse<Data, Meta> {
   // We should add proper defaults here
   let {
-    createMetadataForHierarchyLevel = () => ({}),
+    createMetadataForHierarchyLevel = () => ({} as Meta),
     createSingleNodeRollupData,
-    createRollupDataFromParentAndChild = () => ({}),
+    createRollupDataFromParentAndChild = () => ({} as Data),
     finalizeMetadataForHierarchyLevel = () => {},
     getChildren,
   } = options;
 
   // we can build this ourselves if needed ... but costs memory.  Nice if we don't have to do this.
   if (!getChildren) {
-    getChildren = makeGetChildrenFromGrouped(groupedHierarchy);
+    getChildren = makeGetChildrenFromGrouped<CustomFields>(groupedHierarchy);
   }
-  const rollupDataByKey: Record<string, RollupData<D>> = {};
-  function getChildrenRollupData(issue: ReportingHierarchyIssueOrRelease<any>): RollupData<D>[] {
+  const rollupDataByKey: Record<string, Data> = {};
+  function getChildrenRollupData(
+    issue: ReportingHierarchyIssueOrRelease<CustomFields>
+  ): Data[] {
     return getChildren!(issue).map((childIssue) => {
       const result = rollupDataByKey[childIssue.key];
       if (!result) {
@@ -255,16 +285,22 @@ export function rollupGroupedReportingHierarchy<D, M>(
     });
   }
 
-  const rollupResponseData: RollupResponse<D, M> = [];
+  const rollupResponseData: RollupResponse<Data, Meta> = [];
 
-  for (let hierarchyLevel = 0; hierarchyLevel < groupedHierarchy.length; hierarchyLevel++) {
+  for (
+    let hierarchyLevel = 0;
+    hierarchyLevel < groupedHierarchy.length;
+    hierarchyLevel++
+  ) {
     let issues = groupedHierarchy[hierarchyLevel];
 
     if (!issues) {
       continue;
     }
 
-    let hierarchyData: RollupResponseItem<D, M> = (rollupResponseData[hierarchyLevel] = {
+    let hierarchyData: RollupResponseItem<Data, Meta> = (rollupResponseData[
+      hierarchyLevel
+    ] = {
       rollupData: [],
       metadata: createMetadataForHierarchyLevel(hierarchyLevel, issues),
     });
@@ -272,14 +308,22 @@ export function rollupGroupedReportingHierarchy<D, M>(
     for (let issue of issues) {
       // get children rollup data for issue
       let children = getChildrenRollupData(issue);
-      let rollupData = createRollupDataFromParentAndChild(issue, children, hierarchyLevel, hierarchyData.metadata);
+      let rollupData = createRollupDataFromParentAndChild(
+        issue,
+        children,
+        hierarchyLevel,
+        hierarchyData.metadata
+      );
       hierarchyData.rollupData.push(rollupData);
       rollupDataByKey[issue.key] = rollupData;
       // associate it with the issue
     }
 
     //onEndOfHierarchy(issueTypeData);
-    finalizeMetadataForHierarchyLevel(hierarchyData.metadata, hierarchyData.rollupData);
+    finalizeMetadataForHierarchyLevel(
+      hierarchyData.metadata,
+      hierarchyData.rollupData
+    );
   }
   return rollupResponseData;
 }
@@ -291,14 +335,13 @@ export function rollupGroupedReportingHierarchy<D, M>(
  */
 export function rollupGroupedHierarchy<CustomFields, Data, Meta = undefined>(
   groupedHierarchy: IssueOrRelease<CustomFields>[][],
-  options: RollupGroupedHierarchyOptions<Data, Meta, CustomFields>
+  options: RollupGroupedHierarchyOptions<CustomFields, Data, Meta>
 ): RollupResponse<Data, Meta> {
   // we add this children thing (which is dumb) to handle knowing what
   // a release's children are ...
   // there are probably better ways of doing this without having to
   // calculate it every time
   const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy);
-  console.log("reportingHierarch", reportingHierarchy);
   return rollupGroupedReportingHierarchy(reportingHierarchy, options);
 }
 
@@ -320,7 +363,9 @@ export function average(arr: number[]): number | undefined {
  * @param {IssueOrRelease[]} issues
  * @returns {IssueOrRelease[][]}
  */
-function groupIssuesByHierarchyLevel(issues: IssueOrRelease[]): IssueOrRelease[][] {
+function groupIssuesByHierarchyLevel(
+  issues: IssueOrRelease[]
+): IssueOrRelease[][] {
   const sorted = issues; //.sort(sortByIssueHierarchy);
   const group: IssueOrRelease[][] = [];
 
@@ -340,10 +385,15 @@ function groupIssuesByHierarchyLevel(issues: IssueOrRelease[]): IssueOrRelease[]
  * @param {ReportingHierarchyIssueOrRelease[]} issuesOrReleases
  * @returns {(keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease) => ReportingHierarchyIssueOrRelease[]}
  */
-export function makeGetChildrenFromReportingIssues(
-  issuesOrReleases: ReportingHierarchyIssueOrRelease<any>[]
-): (keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<any>) => ReportingHierarchyIssueOrRelease<any>[] {
-  const keyToIssue = new Map<string, ReportingHierarchyIssueOrRelease<any>>();
+export function makeGetChildrenFromReportingIssues<CustomFields>(
+  issuesOrReleases: ReportingHierarchyIssueOrRelease<CustomFields>[]
+): (
+  keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>
+) => ReportingHierarchyIssueOrRelease<CustomFields>[] {
+  const keyToIssue = new Map<
+    string,
+    ReportingHierarchyIssueOrRelease<CustomFields>
+  >();
   for (let issue of issuesOrReleases) {
     keyToIssue.set(issue.key, issue);
   }
@@ -354,11 +404,11 @@ export function makeGetChildrenFromReportingIssues(
    * @return {ReportingHierarchyIssueOrRelease[]}
    */
   return function getChildren(
-    keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<any>
-  ): ReportingHierarchyIssueOrRelease<any>[] {
+    keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>
+  ): ReportingHierarchyIssueOrRelease<CustomFields>[] {
     return keyOrIssueOrRelease.reportingHierarchy.childKeys
       .map(getIssue)
-      .filter((issue: IssueOrRelease) => issue !== undefined);
+      .filter((issue) => issue !== undefined);
   };
 }
 
@@ -369,9 +419,9 @@ export function makeGetChildrenFromReportingIssues(
  * @param {string} key
  * @returns {IssueOrRelease[][]}
  */
-export function zipRollupDataOntoGroupedData<D, M>(
+export function zipRollupDataOntoGroupedData<Data, Meta>(
   groupedHierarchy: IssueOrRelease[][],
-  rollupDatas: RollupResponse<D, M>,
+  rollupDatas: RollupResponse<Data, Meta>,
   key: string
 ): IssueOrRelease[][] {
   const newGroups: IssueOrRelease[][] = [];
