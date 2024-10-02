@@ -1,7 +1,7 @@
 import {
-	JsonResponse,
-	JtrEnv,
-	RequestHelperResponse
+  JsonResponse,
+  JtrEnv,
+  RequestHelperResponse
 } from './shared/types.js';
 
 interface ResponseForFieldRequest<T> extends RequestHelperResponse<T> {
@@ -10,17 +10,17 @@ interface ResponseForFieldRequest<T> extends RequestHelperResponse<T> {
 }
 
 type FetchJiraIssuesParams = {
-	jql?: string;
-	fields?: string[];
-	startAt?: number;
-	maxResults?: number;
+  jql?: string;
+  fields?: string[];
+  startAt?: number;
+  maxResults?: number;
 	limit?: number;
 };
 
 type JiraIssue = {
-	id: string;
-	key: string;
-	fields: Record<string, any>;
+  id: string;
+  key: string;
+  fields: Record<string, any>;
 	changelog?: any;
 };
 
@@ -42,8 +42,8 @@ type ProgressData = {
 }
 
 type Progress = {
-	data?: ProgressData;
-	(data: ProgressData): void;
+    data?: ProgressData;
+    (data: ProgressData): void;
 };
 
 
@@ -53,10 +53,10 @@ const CACHE_FETCH = false;
 
 // TODO move this into main module
 declare global {
-	interface Window {
-		env: JtrEnv;
-		localStorage: Storage;
-		location: Location;
+  interface Window {
+    env: JtrEnv;
+    localStorage: Storage;
+    location: Location;
 		jiraHelpers: any;
 	}
 }
@@ -80,7 +80,7 @@ export function nativeFetchJSON<T>(url: string, options?: RequestInit) {
 function chunkArray<T>(array: T[], size: number): T[][] {
 	const chunkedArr = [];
 	for (let i = 0; i < array.length; i += size) {
-		chunkedArr.push(array.slice(i, i + size));
+	  chunkedArr.push(array.slice(i, i + size));
 	}
 	return chunkedArr;
 }
@@ -141,7 +141,7 @@ export default function<T> (
 			// this needs to be flattened
 			return batchedResponses;
 		}
-
+	
 		async function fetchDeepChildren(params: Params, sourceParentIssues: Issue[], progress: Progress): Promise<Issue[]> {
 			const batchedFirstResponses = fetchChildrenResponses(params, sourceParentIssues, progress);
 
@@ -167,7 +167,7 @@ export default function<T> (
 				...params,
 				fields: params.fields?.map(f => fields.nameMap[f] || f)
 			}
-
+	
 			progress.data = progress.data || {
 				issuesRequested: 0,
 				issuesReceived: 0,
@@ -175,7 +175,7 @@ export default function<T> (
 				changeLogsReceived: 0
 			};
 			const parentIssues = await rootMethod(newParams, progress);
-
+	
 			// go get the children
 			const allChildrenIssues = await fetchDeepChildren(newParams, parentIssues, progress);
 			const combined = parentIssues.concat(allChildrenIssues);
@@ -259,7 +259,7 @@ export default function<T> (
 		getServerInfo(): Promise<RequestHelperResponse<T>>;
 		fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields?: (params: Params, progress?: Progress) => Promise<{ fields: { [key: string]: any; }; key: string; }[]>;
 	} = {
-		saveInformationToLocalStorage: (parameters) => {
+		saveInformationToLocalStorage: (parameters: Record<string, string>) => {
 			const objectKeys = Object.keys(parameters)
 			for (let key of objectKeys) {
 				window.localStorage.setItem(key, parameters[key]);
@@ -270,14 +270,14 @@ export default function<T> (
 			window.localStorage.removeItem("refreshToken");
 			window.localStorage.removeItem("expiryTimestamp");
 		},
-		fetchFromLocalStorage: (key) => {
+		fetchFromLocalStorage: (key: string) => {
 			return window.localStorage.getItem(key);
 		},
 		fetchAuthorizationCode: () => {
 			const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${JIRA_CLIENT_ID}&scope=${JIRA_SCOPE}&redirect_uri=${JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
 			window.location.href = url;
 		},
-		refreshAccessToken: async (accessCode) => {
+		refreshAccessToken: async (accessCode?: string): Promise<string | void> => {
 			try {
 				const response = await fetchJSON(`${window.env.JIRA_API_URL}/?code=${accessCode}`)
 
@@ -302,7 +302,7 @@ export default function<T> (
 				jiraHelpers.fetchAuthorizationCode();
 			}
 		},
-		fetchAccessTokenWithAuthCode: async (authCode) => {
+		fetchAccessTokenWithAuthCode: async (authCode: string): Promise<void> => {
 			try {
 				const {
 					accessToken,
@@ -330,18 +330,18 @@ export default function<T> (
 		fetchAccessibleResources: () => {
 			return requestHelper(`https://api.atlassian.com/oauth/token/accessible-resources`);
 		},
-		fetchJiraSprint: async (sprintId) => {
+		fetchJiraSprint: async (sprintId: string) => {
 			return requestHelper(`/agile/1.0/sprint/${sprintId}`);
 		},
-		fetchJiraIssue: async (issueId) => {
+		fetchJiraIssue: async (issueId: string) => {
 			return requestHelper(`/api/3/issue/${issueId}`);
 		},
-		editJiraIssueWithNamedFields: async (issueId, fields) => {
+		editJiraIssueWithNamedFields: async (issueId: string, fields: Record<string, any>) => {
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
 			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');
 
 			const fieldMapping = await fieldsRequest;
-
+			
 			const editBody = fieldsToEditBody(fields, fieldMapping);
 			//const fieldsWithIds = mapNamesToIds(fields || {}, fieldMapping),
 			//	updateWithIds = mapNamesToIds(update || {}, fieldMapping);
@@ -354,17 +354,17 @@ export default function<T> (
 					headers: {
 						'Authorization': `Bearer ${accessToken}`,
 						'Accept': 'application/json',
-						'Content-Type': 'application/json'
+    					'Content-Type': 'application/json'
 					},
 					body: JSON.stringify(editBody)
 				}
 			).then(responseToText);
 		},
-		fetchJiraIssuesWithJQL: function (params) {
+		fetchJiraIssuesWithJQL: function (params: FetchJiraIssuesParams) {
 			// TODO - investigate this and convert params to proper type
 			return requestHelper(`/api/3/search?` + new URLSearchParams(params as any));
 		},
-		fetchJiraIssuesWithJQLWithNamedFields: async function (params) {
+		fetchJiraIssuesWithJQLWithNamedFields: async function (params: FetchJiraIssuesParams) {
 			const fields = await fieldsRequest;
 			const newParams = {
 				...params,
@@ -380,12 +380,12 @@ export default function<T> (
 				}
 			});
 		},
-		fetchAllJiraIssuesWithJQL: async function (params) {
+		fetchAllJiraIssuesWithJQL: async function (params: FetchJiraIssuesParams) {
 			const { limit, ...apiParams } = params;
 			const firstRequest = jiraHelpers.fetchJiraIssuesWithJQL({ maxResults: 100, ...apiParams });
 			const { maxResults, total, startAt } = await firstRequest;
 			const requests = [firstRequest];
-
+			
 			const limitOrTotal = Math.min(total, limit || Infinity);
 			for (let i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
 				requests.push(
@@ -398,7 +398,7 @@ export default function<T> (
 				}
 			)
 		},
-		fetchAllJiraIssuesWithJQLUsingNamedFields: async function (params) {
+		fetchAllJiraIssuesWithJQLUsingNamedFields: async function(params: FetchJiraIssuesParams) {
 			const fields = await fieldsRequest;
 
 			const newParams = {
@@ -414,14 +414,20 @@ export default function<T> (
 				}
 			});
 		},
-		fetchJiraChangelog(issueIdOrKey, params) {
+		fetchJiraChangelog(issueIdOrKey: string, params: FetchJiraIssuesParams) {
 			// TODO investigate this - convert params to proper type
 			return requestHelper(`/api/3/issue/${issueIdOrKey}/changelog?` + new URLSearchParams(params as any));
 		},
-		isChangelogComplete(changelog) {
+		isChangelogComplete(changelog: { histories: any[]; total: number; }) {
 			return changelog.histories.length === changelog.total
 		},
-		fetchRemainingChangelogsForIssues(issues, _progress = () => { }) {
+		fetchRemainingChangelogsForIssues(
+			issues: JiraIssue[],
+			progress: {
+				data?: ProgressData;
+				(data: ProgressData): void;
+			} = () => {}
+		) {
 			// check for remainings
 			return Promise.all(issues.map(issue => {
 				if (jiraHelpers.isChangelogComplete(issue.changelog)) {
@@ -430,7 +436,7 @@ export default function<T> (
 						changelog: issue.changelog.histories
 					}
 				} else {
-					return jiraHelpers.fetchRemainingChangelogsForIssue(issue.key, issue.changelog).then((_histories) => {
+					return jiraHelpers.fetchRemainingChangelogsForIssue(issue.key, issue.changelog).then((histories) => {
 						return {
 							...issue,
 							changelog: issue.changelog.histories
@@ -441,9 +447,17 @@ export default function<T> (
 		},
 		// weirdly, this starts with the oldest, but we got the most recent
 		// returns an array of histories objects
-		fetchRemainingChangelogsForIssue(issueIdOrKey, mostRecentChangeLog) {
-			const { maxResults, total } = mostRecentChangeLog;
-
+		fetchRemainingChangelogsForIssue(
+			issueIdOrKey: string,
+			mostRecentChangeLog: {
+				histories: { id: string; change: string; }[];
+				maxResults: number;
+				total: number;
+				startAt: number;
+			}
+		) {
+			const { maxResults, total } = mostRecentChangeLog
+			
 			const requests = [];
 			requests.push({ values: mostRecentChangeLog.histories });
 			for (let i = 0; i < total - maxResults; i += maxResults) {
@@ -467,7 +481,19 @@ export default function<T> (
 				return response;
 			})
 		},
-		fetchAllJiraIssuesWithJQLAndFetchAllChangelog(params, progress = () => { }) {
+		fetchAllJiraIssuesWithJQLAndFetchAllChangelog(
+			params: {
+				limit?: number;
+				maxResults?: number;
+				startAt?: number;
+				expand?: string[];
+				[key: string]: any;
+			},
+			progress: {
+				data?: ProgressData;
+				(data: ProgressData): void;
+			} = () => {}
+		): Promise<Issue[]> {
 			const { limit, ...apiParams } = params;
 
 			// a weak map would be better
@@ -515,10 +541,13 @@ export default function<T> (
 				)
 			});
 
-
+			
 		},
 		// this could do each response incrementally, but I'm being lazy
-		fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: async function (params, progress = () => { }) {
+		fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: async function (
+			params: { fields: string[]; [key: string]: any },
+			progress: (data: ProgressData) => void = () => {}
+		) {
 			const fields = await fieldsRequest;
 			const newParams = {
 				...params,
@@ -535,11 +564,21 @@ export default function<T> (
 			});
 			// change the parms
 		},
-		fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: async function (_params, _progress = () => { }) {
+		fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: async function (
+			params: { fields: string[]; [key: string]: any },
+			progress: {
+				data?: ProgressData;
+				(data: ProgressData): void;
+			} = () => {}
+		) {
 			console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
 			return Promise.resolve(null as any);
 		},
-		fetchChildrenResponses(params, parentIssues, progress = () => { }) {
+		fetchChildrenResponses(
+			params: { fields: string[]; [key: string]: any },
+			parentIssues: Issue[],
+			progress: (data: ProgressData) => void = () => {}
+		) {
 			const issuesToQuery = chunkArray(parentIssues, 40);
 			const batchedResponses = issuesToQuery.map(issues => {
 				const keys = issues.map(issue => issue.key);
@@ -556,7 +595,11 @@ export default function<T> (
 		// 
 		// params - base params
 		// sourceParentIssues - the source of parent issues
-		fetchDeepChildren(params, sourceParentIssues, progress = () => { }) {
+		fetchDeepChildren(
+			params: { fields: string[]; [key: string]: any },
+			sourceParentIssues: Issue[],
+			progress: (data: ProgressData) => void = () => {}
+		): Promise<Issue[]> {
 			const batchedFirstResponses = this.fetchChildrenResponses(params, sourceParentIssues, progress);
 
 			const getChildren = (parentIssues: Issue[]) => {
@@ -616,10 +659,10 @@ export default function<T> (
 		},
 	}
 
-	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
+	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields = 
 		makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
 
-	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
+	jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields = 
 		makeDeepChildrenLoaderUsingNamedFields(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
 
 
@@ -685,15 +728,15 @@ export default function<T> (
 
 		for (let prop in obj) {
 			//if(prop === "Story points") {
-			// 10016 -> story point estimate
-			// 10034 -> story points
-			//obj[prop] = ""+obj[prop];
-			//mapped["customfield_10016"] = obj[prop];
-			//mapped["customfield_10034"] = obj[prop];
-			//mapped["Story points"] = obj[prop];
-			//mapped["storypoints"] = obj[prop];
-			//mapped["Story Points"] = obj[prop];
-			// 10016 -> story point estimate
+				// 10016 -> story point estimate
+				// 10034 -> story points
+				//obj[prop] = ""+obj[prop];
+				//mapped["customfield_10016"] = obj[prop];
+				//mapped["customfield_10034"] = obj[prop];
+				//mapped["Story points"] = obj[prop];
+				//mapped["storypoints"] = obj[prop];
+				//mapped["Story Points"] = obj[prop];
+				// 10016 -> story point estimate
 			//} else {
 			//mapped[fields.nameMap[prop] || prop] = obj[prop];
 			//}
@@ -720,10 +763,10 @@ export default function<T> (
 	// 		//} else {
 	// 			mapped[fields.nameMap[prop] || prop] = obj[prop];
 	// 		//}
-
+			
 	// 	}
 	// }
-
+	
 	window.jiraHelpers = jiraHelpers;
 	return jiraHelpers;
 }
