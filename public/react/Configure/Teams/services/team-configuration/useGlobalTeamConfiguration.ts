@@ -18,8 +18,8 @@ export const useGlobalTeamConfiguration: UseDefaultConfiguration = ({ onInitialD
   const { data } = useSuspenseQuery({
     queryKey: teamConfigurationKeys.globalConfiguration(),
     queryFn: async () => {
-      const defaults = await get<SprintDefaults | undefined>(globalTeamConfigurationStorageKey);
-      const values = defaults ?? defaultGlobalTeamConfiguration;
+      const loaded = await get<SprintDefaults | undefined>(globalTeamConfigurationStorageKey);
+      const values = { ...defaultGlobalTeamConfiguration, ...(loaded ?? {}) };
 
       onInitialDefaultsLoad?.(createNormalizeConfiguration(values));
 
