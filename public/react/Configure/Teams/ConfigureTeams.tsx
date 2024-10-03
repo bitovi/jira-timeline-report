@@ -1,6 +1,7 @@
 import type { FC } from "react";
 
-import type { NormalizedIssue, NormalizeIssueConfig } from "../../../jira/normalized/normalize";
+import type { NormalizedIssue } from "../../../jira/shared/types";
+import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
 import type { SprintDefaults } from "./services/team-configuration";
 
 import React from "react";
