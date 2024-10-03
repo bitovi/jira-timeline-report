@@ -18,7 +18,7 @@ interface ReportingHierarchy {
   parentKeys: string[];
 }
 
-type ReportingHierarchyIssueOrRelease<CustomFields> =
+export type ReportingHierarchyIssueOrRelease<CustomFields> =
   IssueOrRelease<CustomFields> & {
     reportingHierarchy: ReportingHierarchy;
   };
@@ -82,7 +82,7 @@ interface RollupGroupedHierarchyOptions<CustomFields, Data, Meta> {
  * @param {IssueOrRelease} issueOrRelease
  * @returns {issueOrRelease is DerivedIssue}
  */
-function isDerivedIssue(
+export function isDerivedIssue(
   issueOrRelease: IssueOrRelease
 ): issueOrRelease is DerivedIssue {
   return issueOrRelease.type !== "Release";
@@ -141,7 +141,7 @@ function getHierarchyTest({
  */
 export function groupIssuesByHierarchyLevelOrType<CustomFields>(
   issuesOrReleases: IssueOrRelease<CustomFields>[],
-  rollupTypesAndHierarchies: Array<{ type: string; hierarchyLevel: number }>
+  rollupTypesAndHierarchies: Array<{ type: string; hierarchyLevel?: number }>
 ): IssueOrRelease<CustomFields>[][] {
   return rollupTypesAndHierarchies
     .map((hierarchy) => {
@@ -347,8 +347,12 @@ export function rollupGroupedHierarchy<CustomFields, Data, Meta = undefined>(
   // a release's children are ...
   // there are probably better ways of doing this without having to
   // calculate it every time
-  const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy);
-  return rollupGroupedReportingHierarchy(reportingHierarchy, options);
+  const reportingHierarchy =
+    addChildrenFromGroupedHierarchy<CustomFields>(groupedHierarchy);
+  return rollupGroupedReportingHierarchy<CustomFields, Data, Meta>(
+    reportingHierarchy,
+    options
+  );
 }
 
 /**
@@ -425,19 +429,19 @@ export function makeGetChildrenFromReportingIssues<CustomFields>(
  * @param {string} key
  * @returns {IssueOrRelease[][]}
  */
-export function zipRollupDataOntoGroupedData<Data, Meta>(
-  groupedHierarchy: IssueOrRelease[][],
+export function zipRollupDataOntoGroupedData<CustomFields, Data, Meta>(
+  groupedHierarchy: IssueOrRelease<CustomFields>[][],
   rollupDatas: RollupResponse<Data, Meta>,
   key: string
-): IssueOrRelease[][] {
-  const newGroups: IssueOrRelease[][] = [];
+): IssueOrRelease<CustomFields>[][] {
+  const newGroups: IssueOrRelease<CustomFields>[][] = [];
   for (let g = 0; g < groupedHierarchy.length; g++) {
     let group = groupedHierarchy[g];
-    let newIssues: IssueOrRelease[] = [];
+    let newIssues: IssueOrRelease<CustomFields>[] = [];
     newGroups.push(newIssues);
     for (let i = 0; i < group.length; i++) {
       let issue = group[i];
-      let clone: IssueOrRelease = {
+      let clone: IssueOrRelease<CustomFields> = {
         ...issue,
         [key]: rollupDatas[g].rollupData[i],
       };
