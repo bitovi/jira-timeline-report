@@ -12,7 +12,6 @@ import {
   isDerivedIssue,
 } from "../rollup";
 /** *
- * @template CustomFields, Meta
  * @param {IssueOrRelease<CustomFields>[][]} groupedHierarchy - The grouped hierarchy of issues or releases, from low to high levels.
  * @returns {RollupResponse<IssueOrRelease<CustomFields>[], Meta>} - The rolled-up blocked issues for each hierarchy level.
  */
@@ -43,7 +42,6 @@ export function rollupBlockedIssuesForGroupedHierarchy<CustomFields, Meta>(
   });
 }
 /** *
- * @template CustomFields, Meta
  * @param {IssueOrRelease<CustomFields>[]} issuesOrReleases
  * @param {Array<{ type: string; hierarchyLevel: number }>} rollupTimingLevelsAndCalculations
  * @returns {IssueOrRelease<CustomFields>[]} - The list of issues or releases with rolled-up blocked status issues added.
@@ -64,7 +62,6 @@ export function rollupBlockedStatusIssues<CustomFields, Meta>(
     CustomFields,
     Meta
   >(groupedIssues);
-  console.log(rolledUpBlockers);
 
   const zipped = zipRollupDataOntoGroupedData<
     CustomFields,
