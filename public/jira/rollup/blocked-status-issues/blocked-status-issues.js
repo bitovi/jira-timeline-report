@@ -1,3 +1,9 @@
+/**
+ * Adds any child (or self) issues that are in the blocked status
+ * 
+ * Used for: Showing blocked issues in the report
+ */
+
 import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "../rollup";
 /**
  * 

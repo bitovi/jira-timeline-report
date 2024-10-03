@@ -1,13 +1,14 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value } from "../can.js";
 
 import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
-import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCalculations } from "../prepare-issues/date-data.js";
-
-import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData, serverInfoPromise} from "./state-helpers.js";
 
 import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
 
 import "../status-filter.js";
+
+import SimpleTooltip from "../shared/simple-tooltip.js";
+const TOOLTIP = new SimpleTooltip();
+document.body.append(TOOLTIP);
 
 const booleanParsing = {
     parse: x => {
@@ -18,7 +19,7 @@ const booleanParsing = {
 
 
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-
+const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
 /*
 class TypeSelectionDropdown extends StacheElement {
     static view = `
@@ -32,21 +33,9 @@ class TypeSelectionDropdown extends StacheElement {
     `
 }*/
 
-const attrsToAdd = `
-    statusesToRemove:to="this.statusesToRemove"
-          statusesToShow:to="this.statusesToShow"
-                    showOnlySemverReleases:to="this.showOnlySemverReleases"
-          secondaryReportType:to="this.secondaryReportType"
-          hideUnknownInitiatives:to="this.hideUnknownInitiatives"
-          sortByDueDate:to="this.sortByDueDate"
-          showPercentComplete:to="this.showPercentComplete"
-          planningStatuses:to="this.planningStatuses"
-          groupBy:to="this.groupBy"
-          releasesToShow:to="this.releasesToShow"
-          statusesToExclude:to="this.statusesToExclude"
-`
 
-export class SelectViewSettings extends StacheElement {
+
+class SelectViewSettingsDropdown extends StacheElement {
     static view = `
         <h3 class="h3">Secondary Status Report</h3>
         <div class="flex mt-2 gap-2 flex-wrap">
@@ -187,6 +176,16 @@ export class SelectViewSettings extends StacheElement {
                 style="max-width: 400px;"></status-filter>
         </div>
         {{/ if}}
+    `
+}
+customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
+
+
+export class SelectViewSettings extends StacheElement {
+    static view = `
+        <button 
+                class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}"
+                on:click="this.showChildOptions()">View Settings <img class="inline" src="/images/chevron-down.svg"/></button>
     `;
     static props ={
         secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
@@ -229,16 +228,41 @@ export class SelectViewSettings extends StacheElement {
                 if(this.primaryIssueType !== "Release") {
                     return this.primaryIssueType;
                 } else {
-                    // timing calculations lets folks "skip" from release to some other child
-                    const calculations= this.impliedTimingCalculations;
-                    if(calculations[0].type !== "Release") {
-                        return calculations[0].type;
-                    } else {
-                        return calculations[1].type;
-                    }
+                    return this.secondaryIssueType;
                 }
             }
-        },
+        }
+        
+    }
+    showChildOptions(){
+        let dropdown = new SelectViewSettingsDropdown().bindings({
+            showPercentComplete: value.bind(this,"showPercentComplete"),
+            secondaryReportType: value.bind(this,"secondaryReportType"),
+            groupBy: value.bind(this,"groupBy"),
+            sortByDueDate: value.bind(this,"sortByDueDate"),
+            hideUnknownInitiatives: value.bind(this,"hideUnknownInitiatives"),
+            showOnlySemverReleases: value.bind(this,"showOnlySemverReleases"),
+            primaryReportType: this.primaryReportType,
+
+
+            secondaryIssueType: value.from(this,"secondaryIssueType"),
+            primaryIssueType: value.from(this,"primaryIssueType"),
+
+            firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
+
+            // this could probably be calculated by itself
+            statuses: value.from(this,"statuses")
+            // onSelection: this.onSelection.bind(this)
+        })
+        
+        TOOLTIP.belowElementInScrollingContainer(this, dropdown);
+    }
+    connected(){
+        this.listenTo(window, "click", (event)=>{
+          if(!TOOLTIP.contains(event.target))   {
+            TOOLTIP.leftElement();
+          }
+        })
     }
 }
 

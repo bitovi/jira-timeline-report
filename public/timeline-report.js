@@ -10,6 +10,7 @@ import "./timeline-configuration/timeline-configuration.js";
 
 import "./select-issue-type/select-issue-type.js";
 import "./select-report-type/select-report-type.js";
+import "./select-view-settings/select-view-settings.js"
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback.js";
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
@@ -31,6 +32,8 @@ export class TimelineReport extends StacheElement {
           storage:from="this.storage"
           
           configuration:to="this.configuration"
+
+          statuses:to="this.statuses"
           
           ></timeline-configuration>
 
@@ -61,6 +64,25 @@ export class TimelineReport extends StacheElement {
               <p class="text-xs"><label class="inline">Compare to {{this.compareToTime.text}}</label></p>
               <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
             </div>
+            <select-view-settings
+              jiraHelpers:from="this.jiraHelpers"
+              
+              statusesToRemove:to="this.statusesToRemove"
+              statusesToShow:to="this.statusesToShow"
+              showOnlySemverReleases:to="this.showOnlySemverReleases"
+              secondaryReportType:to="this.secondaryReportType"
+              hideUnknownInitiatives:to="this.hideUnknownInitiatives"
+              sortByDueDate:to="this.sortByDueDate"
+              showPercentComplete:to="this.showPercentComplete"
+              planningStatuses:to="this.planningStatuses"
+              groupBy:to="this.groupBy"
+              releasesToShow:to="this.releasesToShow"
+              statusesToExclude:to="this.statusesToExclude"
+
+              primaryIssueType:from="this.primaryIssueType"
+              secondaryIssueType:from="this.secondaryIssueType"
+              statuses:from="this.statuses"
+              ></select-view-settings>
           </div>
 
           
