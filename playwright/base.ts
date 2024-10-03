@@ -1,7 +1,7 @@
 import { test as base, expect } from "@playwright/test";
 
 interface Log {
-    msg: any;
+    msg: string;
     type: string;
 }
 
@@ -11,7 +11,7 @@ interface Error {
 }
 
 // export the extended `test` object
-export const test = base.extend<{ page: void; failOnJSError: boolean; displayAsciiTable: boolean; }>({
+export const test = base.extend<{ failOnJSError: boolean; displayAsciiTable: boolean; }>({
     // The metadata { option: true } allows these options to be configurable by the user.
     failOnJSError: [true, { option: true }],
     displayAsciiTable: [true, { option: true }],

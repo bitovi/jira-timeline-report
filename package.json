@@ -12,7 +12,7 @@
     "fe:js:build": "npm run fe:js:build:only -- -w",
     "test": "vitest --watch=false --exclude '**/playwright'",
     "test:e2e": "npx playwright test",
-    "test:watch": "vitest",
+    "test:watch": "vitest --exclude '**/playwright'",
     "typecheck": "tsc",
     "prepare": "husky",
     "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts",
