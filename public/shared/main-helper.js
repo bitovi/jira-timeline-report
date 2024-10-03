@@ -9,7 +9,7 @@ import JiraOIDCHelpers from "../jira-oidc-helpers.ts";
 import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
-export default async function mainHelper(config, host) {
+export default async function mainHelper(config, { host, createStorage }) {
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 
   let requestHelper;
@@ -20,6 +20,8 @@ export default async function mainHelper(config, host) {
   }
 
   const jiraHelpers = JiraOIDCHelpers(config, requestHelper, host);
+
+  const storage = createStorage(jiraHelpers);
 
   const loginComponent = new JiraLogin().initialize({ jiraHelpers });
 
@@ -49,6 +51,7 @@ export default async function mainHelper(config, host) {
         loginComponent,
         mode: "TEAMS",
         velocitiesConfiguration,
+        storage,
       });
       report.className = "block";
       document.body.append(report);

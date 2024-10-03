@@ -19,10 +19,7 @@ export function csvToRawIssues(csvIssues) {
       fields: {
         ...issue,
         "Parent Link": { data: issue["Parent Link"] },
-        "Issue Type": {
-          name: issue["Issue Type"],
-          hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]],
-        },
+        "Issue Type": { name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]] },
         Status: { name: issue.Status },
       },
       key: issue["Issue key"],
@@ -31,10 +28,7 @@ export function csvToRawIssues(csvIssues) {
   return res;
 }
 
-export function rawIssuesRequestData(
-  { jql, childJQL, isLoggedIn, loadChildren, jiraHelpers },
-  { listenTo, resolve }
-) {
+export function rawIssuesRequestData({ jql, childJQL, isLoggedIn, loadChildren, jiraHelpers }, { listenTo, resolve }) {
   const progressData = value.with(null);
 
   const promise = value.returnedBy(function rawIssuesPromise() {
@@ -49,12 +43,8 @@ export function rawIssuesRequestData(
     progressData.value = null;
 
     const loadIssues = loadChildren.value
-      ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(
-          jiraHelpers
-        )
-      : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(
-          jiraHelpers
-        );
+      ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
+      : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
 
     return loadIssues(
       {
@@ -117,13 +107,12 @@ export function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
   }
 }
 
-export function configurationPromise({
-  serverInfoPromise,
-  teamConfigurationPromise,
-}) {
+export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizeOptionsObservable }) {
   // we will give pending until we have both promises
+
   const info = resolve(serverInfoPromise),
-    team = resolve(teamConfigurationPromise);
+    team = resolve(teamConfigurationPromise),
+    normalizeOptions = resolve(normalizeOptionsObservable);
   if (!info || !team) {
     return new Promise(() => {});
   }
@@ -153,31 +142,25 @@ export function configurationPromise({
         getParallelWorkLimit(team) {
           return teamData.getTracksForTeam(team);
         },
+        ...(normalizeOptions ?? {}),
       };
     }
   );
 }
 
-export function derivedIssuesRequestData(
-  { rawIssuesRequestData, configurationPromise },
-  { listenTo, resolve }
-) {
+export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPromise }, { listenTo, resolve }) {
   const promise = value.returnedBy(function derivedIssuesPromise() {
-    if (
-      rawIssuesRequestData.value.issuesPromise &&
-      configurationPromise.value
-    ) {
-      return Promise.all([
-        rawIssuesRequestData.value.issuesPromise,
-        configurationPromise.value,
-      ]).then(([rawIssues, configuration]) => {
-        console.log({ rawIssues });
-        return rawIssues.map((issue) => {
-          const normalized = normalizeIssue(issue, configuration);
-          const derived = deriveIssue(normalized, configuration);
-          return derived;
-        });
-      });
+    if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
+      return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
+        ([rawIssues, configuration]) => {
+          console.log({ rawIssues });
+          return rawIssues.map((issue) => {
+            const normalized = normalizeIssue(issue, configuration);
+            const derived = deriveIssue(normalized, configuration);
+            return derived;
+          });
+        }
+      );
     } else {
       // make a pending promise ...
       const promise = new Promise(() => {});
