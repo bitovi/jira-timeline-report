@@ -1,4 +1,4 @@
-import jiraOIDCHelpers from "./jira-oidc-helpers.ts";
+import jiraOIDCHelpers from "./jira-oidc-helpers";
 
 export default function oauthCallback(environment) {
 	const jiraHelpers = jiraOIDCHelpers(environment);

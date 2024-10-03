@@ -2,7 +2,7 @@ import {
 	JsonResponse,
 	JtrEnv,
 	RequestHelperResponse
-} from './shared/types.js';
+} from '../shared/types.js';
 
 interface ResponseForFieldRequest<T> extends RequestHelperResponse<T> {
 	idMap: { [key: string]: string },
@@ -47,7 +47,7 @@ type Progress = {
 };
 
 
-import { responseToJSON } from "./shared/response-to-json.js";
+import { responseToJSON } from "../shared/response-to-json.js";
 
 const CACHE_FETCH = false;
 
