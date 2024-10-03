@@ -1,6 +1,6 @@
 // GET DATA FROM PLACES DIRECTLY RELATED TO ISSUE
 
-import { NormalizedIssue } from "../../jira/shared/types.js";
+import { NormalizedIssue } from "../../jira/shared/types";
 
 export type StartData = {
   start: Date;
@@ -18,12 +18,18 @@ export type DueData = {
   };
 } | null;
 
+type StartAndDueData = {
+  startData: StartData;
+  dueData: DueData;
+};
 /**
  *
  * @param {import("../../jira/shared/types.js").NormalizedIssue} issue
- * @returns {{startData: StartData, dueData: DueData}}
+ * @returns {StartAndDueData}
  */
-export function getStartDateAndDueDataFromFields(issue: NormalizedIssue) {
+export function getStartDateAndDueDataFromFields(
+  issue: NormalizedIssue
+): StartAndDueData {
   let startData: StartData = null;
   let dueData: DueData = null;
 
@@ -51,10 +57,12 @@ export function getStartDateAndDueDataFromFields(issue: NormalizedIssue) {
 /**
  *
  * @param {import("../../jira/shared/types.js").NormalizedIssue} story
- * @returns {{startData: StartData, dueData: DueData}}
+ * @returns {StartAndDueData}
  */
-export function getStartDateAndDueDataFromSprints(story: NormalizedIssue) {
-  const records: { startData: StartData; dueData: DueData }[] = [];
+export function getStartDateAndDueDataFromSprints(
+  story: NormalizedIssue
+): StartAndDueData {
+  const records: StartAndDueData[] = [];
 
   if (story.sprints) {
     for (const sprint of story.sprints) {
@@ -83,12 +91,12 @@ export function getStartDateAndDueDataFromSprints(story: NormalizedIssue) {
 
 /**
  *
- * @param {Array<{ startData: StartData; dueData: DueData }>} records
- * @returns {{startData: StartData, dueData: DueData}}
+ * @param {Array<StartAndDueData>} records
+ * @returns {StartAndDueData}
  */
 export function mergeStartAndDueData(
-  records: Array<{ startData: StartData; dueData: DueData }>
-) {
+  records: Array<StartAndDueData>
+): StartAndDueData {
   const startData = records
     .filter(
       (
@@ -122,11 +130,11 @@ export function mergeStartAndDueData(
 /**
  *
  * @param {NormalizedIssue} issue
- * @returns {{startData: StartData, dueData: DueData}}
+ * @returns {StartAndDueData}
  */
 export function getStartDateAndDueDataFromFieldsOrSprints(
   issue: NormalizedIssue
-) {
+): StartAndDueData {
   return mergeStartAndDueData([
     getStartDateAndDueDataFromFields(issue),
     getStartDateAndDueDataFromSprints(issue),

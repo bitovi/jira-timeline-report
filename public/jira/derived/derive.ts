@@ -2,17 +2,14 @@ import {
   DerivedWorkTiming,
   deriveWorkTiming,
   WorkTimingConfig,
-} from "./work-timing/work-timing.js";
+} from "./work-timing/work-timing";
 import {
   DerivedWorkStatus,
   getWorkStatus,
   WorkStatusConfig,
-} from "./work-status/work-status.js";
-import {
-  normalizeIssue,
-  NormalizeIssueConfig,
-} from "../normalized/normalize.js";
-import { JiraIssue, NormalizedIssue } from "../shared/types.js";
+} from "./work-status/work-status";
+import { normalizeIssue, NormalizeIssueConfig } from "../normalized/normalize";
+import { JiraIssue, NormalizedIssue } from "../shared/types";
 
 /**
  * @typedef {import("../shared/types.js").NormalizedIssue & {
@@ -57,7 +54,7 @@ export function normalizeAndDeriveIssues(
   > & {
     uncertaintyWeight?: number;
   }
-) {
+): DerivedIssue[] {
   return issues.map((issue: JiraIssue) =>
     deriveIssue(normalizeIssue(issue, options), options)
   );

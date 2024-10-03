@@ -1,3 +1,8 @@
+/**
+ * This module generates unique trailing suffixes for a list of names.
+ * It constructs a character map to identify the minimal unique suffix needed for each name,
+ * ensuring that each name can be distinctly recognized by its trailing characters.
+ */
 interface CharacterMapNode {
   followers: string[];
   characterMap: CharacterMap;
@@ -43,7 +48,7 @@ function pruneFrom(
   rootMap: Map,
   path: string,
   namesToCharacter: NamesToCharacter
-) {
+): void {
   while (Object.keys(rootMap.characterMap).length) {
     const character = Object.keys(rootMap.characterMap)[0];
     const childMap = rootMap.characterMap[character];
@@ -61,7 +66,7 @@ function pruneFrom(
   }
 }
 
-function characterNamer(names: string[]) {
+function characterNamer(names: string[]): NamesToCharacter {
   const root: Map = {
     characterMap: {},
     followers: [],
@@ -74,7 +79,7 @@ function characterNamer(names: string[]) {
   return namesToCharacter;
 }
 
-export default function uniqueTrailingNames(names: string[]) {
+export default function uniqueTrailingNames(names: string[]): string[] {
   const root: Map = {
     characterMap: {},
     followers: [],

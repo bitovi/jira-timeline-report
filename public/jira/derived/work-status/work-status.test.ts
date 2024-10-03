@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { getWorkStatus, statusCategoryMap, workType } from "./work-status.ts";
-import { NormalizedIssue } from "../../shared/types.ts";
+import { getWorkStatus, statusCategoryMap, workType } from "./work-status";
+import { NormalizedIssue } from "../../shared/types";
 
 const unrecognizedStatusTestCase = {
   issue: {

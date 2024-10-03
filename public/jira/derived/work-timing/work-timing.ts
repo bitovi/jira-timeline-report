@@ -1,19 +1,19 @@
-import { getBusinessDatesCount } from "../../../status-helpers.js";
+import { getBusinessDatesCount } from "../../../status-helpers";
 import {
   estimateExtraPoints,
   sampleExtraPoints,
-} from "../../../shared/confidence.js";
+} from "../../../shared/confidence";
 import {
   DueData,
   getStartDateAndDueDataFromFieldsOrSprints,
   getStartDateAndDueDataFromSprints,
   StartData,
-} from "../../../shared/issue-data/date-data.js";
+} from "../../../shared/issue-data/date-data";
 import {
   DefaultsToConfig,
   NormalizedIssue,
   NormalizedTeam,
-} from "../../shared/types.js";
+} from "../../shared/types";
 
 export type DerivedWorkTiming = {
   isConfidenceValid: boolean;
@@ -41,14 +41,14 @@ export type DerivedWorkTiming = {
   totalDaysOfWork: number | null;
   defaultOrTotalDaysOfWork: number | null;
   completedDaysOfWork: number;
-} & StartData &
-  DueData;
+} & Partial<StartData> &
+  Partial<DueData>;
 
 /**
  * @param {NormalizedTeam} team
  * @returns {number}
  */
-export function getConfidenceDefault(team: NormalizedTeam) {
+export function getDefaultConfidenceDefault(team: NormalizedTeam): number {
   return 50;
 }
 
@@ -57,13 +57,13 @@ export function getConfidenceDefault(team: NormalizedTeam) {
  * @param {NormalizedTeam} team
  * @returns number
  */
-export function getStoryPointsDefault(team: NormalizedTeam) {
+export function getDefaultStoryPointsDefault(team: NormalizedTeam): number {
   return team.velocity / team.parallelWorkLimit;
 }
 
 const defaults = {
-  getConfidenceDefault,
-  getStoryPointsDefault,
+  getDefaultConfidenceDefault,
+  getDefaultStoryPointsDefault,
 };
 
 export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
@@ -71,27 +71,27 @@ export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
 /**
  *
  * @param {import("../../shared/types.js").NormalizedIssue} normalizedIssue
- * @param {*} param1
+ * @param {Partial<WorkTimingConfig> & { uncertaintyWeight?: number }} options
  * @returns {DerivedWorkTiming}
  */
 export function deriveWorkTiming(
   normalizedIssue: NormalizedIssue,
   {
-    getConfidence = getConfidenceDefault,
-    getStoryPoints = getStoryPointsDefault,
+    getDefaultConfidence = getDefaultConfidenceDefault,
+    getDefaultStoryPoints = getDefaultStoryPointsDefault,
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
-) {
+): DerivedWorkTiming {
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
   const usedConfidence = isConfidenceValid
     ? normalizedIssue.confidence!
-    : getConfidence(normalizedIssue.team);
+    : getDefaultConfidence(normalizedIssue.team);
   const isStoryPointsValid = isStoryPointsValueValid(
     normalizedIssue.storyPoints
   );
   const defaultOrStoryPoints = isStoryPointsValid
     ? normalizedIssue.storyPoints!
-    : getStoryPoints(normalizedIssue.team);
+    : getDefaultStoryPoints(normalizedIssue.team);
   const storyPointsDaysOfWork =
     defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const isStoryPointsMedianValid = isStoryPointsValueValid(
@@ -99,7 +99,7 @@ export function deriveWorkTiming(
   );
   const defaultOrStoryPointsMedian = isStoryPointsMedianValid
     ? normalizedIssue.storyPointsMedian!
-    : getStoryPoints(normalizedIssue.team);
+    : getDefaultStoryPoints(normalizedIssue.team);
   const storyPointsMedianDaysOfWork =
     defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
   const deterministicExtraPoints = estimateExtraPoints(
@@ -134,7 +134,7 @@ export function deriveWorkTiming(
     getStartDateAndDueDataFromSprints(normalizedIssue);
   const hasSprintStartAndEndDate = Boolean(sprintStartData && endSprintData);
   let sprintDaysOfWork = hasSprintStartAndEndDate
-    ? getBusinessDatesCount(sprintStartData.start, endSprintData.due)
+    ? getBusinessDatesCount(sprintStartData?.start, endSprintData?.due)
     : null;
 
   const { startData, dueData } =
