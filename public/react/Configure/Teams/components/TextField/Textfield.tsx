@@ -10,18 +10,19 @@ import { Field } from "@atlaskit/form";
 function isFieldUpdate<TProperty extends keyof DefaultFormFields>(event: {
   name: string;
 }): event is FieldUpdates<TProperty> {
-  return ["sprintLength"].includes(event.name);
+  return ["sprintLength", "velocityPerSprint", "tracks"].includes(event.name);
 }
 
 interface TextFieldProps {
   type: string;
   name: keyof DefaultFormFields;
   label: string;
+  min?: number;
   register: UseFormReturn<DefaultFormFields>["register"];
   onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
 }
 
-const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name }) => {
+const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min }) => {
   const handleBlur = (eventTarget: { name: string; value: string }) => {
     if (!isFieldUpdate(eventTarget)) {
       return;
@@ -35,6 +36,7 @@ const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name }) 
       {() => (
         <AtlasTextField
           type={type}
+          min={min}
           autoComplete="off"
           {...register(name)}
           onBlur={({ target }) => handleBlur(target)}

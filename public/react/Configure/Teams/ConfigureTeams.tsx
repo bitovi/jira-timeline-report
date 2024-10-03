@@ -32,10 +32,10 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLoad }) => {
   const queryClient = useQueryClient();
 
-  const defaults = useGlobalTeamConfiguration({ onInitialDefaultsLoad });
+  const fieldValues = useGlobalTeamConfiguration({ onInitialDefaultsLoad });
   const save = useSaveGlobalTeamConfiguration();
 
-  const { register, handleSubmit, getValues } = useForm<DefaultFormFields>({ defaultValues: defaults });
+  const { register, handleSubmit, getValues } = useForm<DefaultFormFields>({ defaultValues: fieldValues });
 
   function update<TProperty extends keyof DefaultFormFields>({ name, value }: FieldUpdates<TProperty>) {
     const values = getValues();
@@ -69,7 +69,23 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
       {() => (
         <form>
           <FormHeader title="Team Configuration" />
-          <TextField name="sprintLength" type="number" label="Sprint length" register={register} onSave={update} />
+          <TextField
+            name="sprintLength"
+            type="number"
+            label="Sprint length"
+            min={1}
+            register={register}
+            onSave={update}
+          />
+          <TextField
+            name="velocityPerSprint"
+            type="number"
+            label="Velocity Per Sprint"
+            min={1}
+            register={register}
+            onSave={update}
+          />
+          <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
         </form>
       )}
     </Form>
