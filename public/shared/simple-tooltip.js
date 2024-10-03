@@ -103,8 +103,11 @@ class SimpleTooltip extends HTMLElement {
       const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
       this.style.top = (topFromContainer + scrollingAdjustment) +"px";
     }
-
-    const leftFromContainer = elementRect.left - containerRect.left;
+    
+    let leftFromContainer = elementRect.left - containerRect.left;
+    if(elementRect.left  + tooltipRect.width > window.screenX) {
+      leftFromContainer = elementRect.right - containerRect.left - tooltipRect.width;
+    }
     this.style.left = leftFromContainer +"px";
     
   }

@@ -169,13 +169,17 @@ export class GanttGrid extends StacheElement {
   }
   get quartersAndMonths() {
     const rollupDates = this.primaryIssuesOrReleases.map((issue) => issue.rollupStatuses.rollup);
+    
     let { start, due } = mergeStartAndDueData(rollupDates);
     // nothing has timing
     if (!start) {
       start = new Date();
     }
-    if (!due) {
+    if ( !due ) {
       due = new Date(start.getTime() + 1000 * 60 * 60 * 24 * 90);
+    }
+    if( due < new Date() ) {
+      due = new Date((new Date()).getTime() + 1000 * 60 * 60 * 24 * 90);
     }
     return getQuartersAndMonths(new Date(), due);
   }
