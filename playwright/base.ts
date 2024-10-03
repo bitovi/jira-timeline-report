@@ -1,7 +1,7 @@
 import { test as base, expect } from "@playwright/test";
 
 interface Log {
-    msg: any;
+    msg: string;
     type: string;
 }
 
