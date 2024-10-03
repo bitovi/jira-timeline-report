@@ -43,12 +43,7 @@ export class TimelineReport extends StacheElement {
               "<a class="text-blue-400" href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html">Agile Program Management with Jira</a>" 
               training. Click "Connect to Jira" to load your own data.</p>
             <p class="mt-2">Checkout the following sample reports:</p>
-            <ul class="list-disc list-inside ml-2">
-              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with iniative work breakdown</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=breakdown">Ready and in-development initiative work breakdown</a></li>
-            </ul>
-
+           <ul class="list-disc list-inside ml-2"><li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status" data-testid="release-end-dates-link">Release end dates with initiative status</a></li><li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown" data-testid="release-timeline-link">Release timeline with initiative work breakdown</a></li><li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=breakdown" data-testid="initiative-work-breakdown-link">Ready and in-development initiative work breakdown</a></li></ul>
           </div>
       {{/ not }}
 
