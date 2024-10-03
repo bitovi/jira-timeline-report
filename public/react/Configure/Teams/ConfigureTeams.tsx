@@ -5,15 +5,12 @@ import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
 import type { SprintDefaults } from "./services/team-configuration";
 
 import React from "react";
-import { Controller, useForm } from "react-hook-form";
-import Form, { Field, FormHeader, Label } from "@atlaskit/form";
+import { useForm } from "react-hook-form";
+import Form, { FormHeader } from "@atlaskit/form";
 import { useQueryClient } from "@tanstack/react-query";
 
 import TextField from "./components/TextField";
-
-//
-import Select from "@atlaskit/select";
-//
+import Select from "./components/Select";
 
 import { createNormalizeConfiguration } from "./shared/normalize";
 import {
@@ -41,10 +38,9 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
 
   const fieldValues = useGlobalTeamConfiguration({ onInitialDefaultsLoad });
   const save = useSaveGlobalTeamConfiguration();
-  const jiraFields = useJiraIssueFields();
 
-  // @ts-ignore
-  window.jira = jiraFields;
+  const jiraFields = useJiraIssueFields();
+  const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
   const { register, handleSubmit, getValues, control } = useForm<DefaultFormFields>({ defaultValues: fieldValues });
 
@@ -80,34 +76,12 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
       {() => (
         <form>
           <FormHeader title="Team Configuration" />
-          <Controller
+          <Select
             name="estimateField"
+            label="Estimate Field"
+            jiraFields={selectableFields}
             control={control}
-            render={({ field }) => {
-              const options = jiraFields.map(({ name }) => ({
-                label: name,
-                value: name,
-              }));
-
-              const selectedOption = options.find((option) => option.value === field.value);
-
-              return (
-                <>
-                  <Label htmlFor="a">Estimate Field</Label>
-                  <Select
-                    id="a"
-                    name={field.name}
-                    value={selectedOption}
-                    options={options}
-                    onChange={(option) => {
-                      field.onChange(option?.value);
-                      update({ name: "estimateField", value: option!.value });
-                    }}
-                    onBlur={field.onBlur}
-                  />
-                </>
-              );
-            }}
+            onSave={update}
           />
           <TextField
             name="sprintLength"
