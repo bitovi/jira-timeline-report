@@ -13,7 +13,7 @@ export const useJira = () => {
   const storage = useContext(JiraContext);
 
   if (!storage) {
-    throw new Error("Cannot use useStorage outside of its provider");
+    throw new Error("Cannot use useJira outside of its provider");
   }
 
   return storage;

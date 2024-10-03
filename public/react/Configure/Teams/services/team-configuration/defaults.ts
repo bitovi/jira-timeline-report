@@ -2,14 +2,18 @@ export type SprintDefaults = {
   sprintLength: number;
   velocityPerSprint: number;
   tracks: number;
-  estimateInDays: number;
   estimateField: string;
+  confidenceField: string; //
+  startDateField: string; //
+  dueDateField: string; //
 };
 
 export const defaultGlobalTeamConfiguration: SprintDefaults = {
-  sprintLength: 10,
-  velocityPerSprint: 21,
+  sprintLength: 10, //
+  velocityPerSprint: 21, //
   tracks: 1,
-  estimateInDays: 10,
   estimateField: "Estimate in Days",
+  confidenceField: "Confidence",
+  startDateField: "Start Date",
+  dueDateField: "End Date",
 };

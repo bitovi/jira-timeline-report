@@ -116,6 +116,7 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
   if (!info || !team) {
     return new Promise(() => {});
   }
+
   return Promise.all([info, team]).then(
     /**
      *

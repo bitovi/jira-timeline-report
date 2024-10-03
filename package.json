@@ -27,6 +27,7 @@
     "@atlaskit/flag": "^15.8.3",
     "@atlaskit/form": "^10.5.4",
     "@atlaskit/icon": "^22.20.1",
+    "@atlaskit/primitives": "^12.2.2",
     "@atlaskit/select": "^17.19.3",
     "@atlaskit/spinner": "^16.3.2",
     "@atlaskit/textfield": "^6.5.2",

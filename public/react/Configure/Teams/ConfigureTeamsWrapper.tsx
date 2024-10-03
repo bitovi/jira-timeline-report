@@ -28,7 +28,7 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, 
     <QueryClientProvider client={queryClient}>
       <FlagsProvider>
         <ErrorBoundary fallbackRender={() => "Something went wrong"}>
-          <Suspense fallback="loading">
+          <Suspense fallback="...loading">
             <JiraProvider jira={jira}>
               <StorageProvider storage={storage}>
                 <ConfigureTeams {...props} />

@@ -24,10 +24,12 @@ const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave }) =
       name={name}
       control={control}
       render={({ field }) => {
-        const selectedOption = jiraFields.find((option) => option.value === field.value);
+        const selectedOption = jiraFields.find((option) => {
+          return option.value === field.value;
+        });
 
         return (
-          <>
+          <div className="mt-2">
             <Label htmlFor={id}>{label}</Label>
             <AtlasSelect
               id={id}
@@ -37,10 +39,11 @@ const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave }) =
               onBlur={field.onBlur}
               onChange={(option) => {
                 field.onChange(option?.value);
+                console.log({ name, option });
                 onSave({ name, value: option!.value });
               }}
             />
-          </>
+          </div>
         );
       }}
     />
