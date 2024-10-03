@@ -5,17 +5,23 @@ import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
 import type { SprintDefaults } from "./services/team-configuration";
 
 import React from "react";
-import { useForm } from "react-hook-form";
-import Form, { FormHeader } from "@atlaskit/form";
+import { Controller, useForm } from "react-hook-form";
+import Form, { Field, FormHeader, Label } from "@atlaskit/form";
 import { useQueryClient } from "@tanstack/react-query";
 
 import TextField from "./components/TextField";
+
+//
+import Select from "@atlaskit/select";
+//
+
 import { createNormalizeConfiguration } from "./shared/normalize";
 import {
   useGlobalTeamConfiguration,
   useSaveGlobalTeamConfiguration,
   teamConfigurationKeys,
 } from "./services/team-configuration";
+import { useJiraIssueFields } from "./services/jira";
 
 export interface ConfigureTeamsProps {
   normalizedIssues?: Array<NormalizedIssue>;
@@ -35,8 +41,12 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
 
   const fieldValues = useGlobalTeamConfiguration({ onInitialDefaultsLoad });
   const save = useSaveGlobalTeamConfiguration();
+  const jiraFields = useJiraIssueFields();
 
-  const { register, handleSubmit, getValues } = useForm<DefaultFormFields>({ defaultValues: fieldValues });
+  // @ts-ignore
+  window.jira = jiraFields;
+
+  const { register, handleSubmit, getValues, control } = useForm<DefaultFormFields>({ defaultValues: fieldValues });
 
   function update<TProperty extends keyof DefaultFormFields>({ name, value }: FieldUpdates<TProperty>) {
     const values = getValues();
@@ -70,6 +80,35 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
       {() => (
         <form>
           <FormHeader title="Team Configuration" />
+          <Controller
+            name="estimateField"
+            control={control}
+            render={({ field }) => {
+              const options = jiraFields.map(({ name }) => ({
+                label: name,
+                value: name,
+              }));
+
+              const selectedOption = options.find((option) => option.value === field.value);
+
+              return (
+                <>
+                  <Label htmlFor="a">Estimate Field</Label>
+                  <Select
+                    id="a"
+                    name={field.name}
+                    value={selectedOption}
+                    options={options}
+                    onChange={(option) => {
+                      field.onChange(option?.value);
+                      update({ name: "estimateField", value: option!.value });
+                    }}
+                    onBlur={field.onBlur}
+                  />
+                </>
+              );
+            }}
+          />
           <TextField
             name="sprintLength"
             type="number"

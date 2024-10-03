@@ -280,6 +280,7 @@ export class TimelineConfiguration extends StacheElement {
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
         storage: this.storage,
+        jira: this.jiraHelpers,
         onUpdate: (partial) => {
           this.normalizeOptions = partial;
         },
