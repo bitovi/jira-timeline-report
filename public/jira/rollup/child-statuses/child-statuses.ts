@@ -1,3 +1,7 @@
+/**
+ * This module provides functions to roll up child statuses within a hierarchical structure.
+ * It aggregates the status of each issue or release along with its child issues across different hierarchy levels.
+ */
 import {
   rollupGroupedHierarchy,
   groupIssuesByHierarchyLevelOrType,
