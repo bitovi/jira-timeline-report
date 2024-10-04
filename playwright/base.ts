@@ -20,10 +20,6 @@ export const test = base.extend<{ failOnJSError: boolean; displayAsciiTable: boo
         const errors: Array<Error> = [];
         const logs: Log[] = [];
 
-        /* throw Error() -  raises an exception in the current code block and causes it to exit, or to flow to the next catch statement if raised in a try block. */
-        
-        /* console.error() just prints out a red message to the browser developer tools' JavaScript console and does not cause any changes in the execution flow. */
-
         page.addListener("pageerror", (err) => {
             errors.push(err);
         });
