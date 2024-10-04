@@ -37,59 +37,28 @@ class TypeSelectionDropdown extends StacheElement {
 
 class SelectViewSettingsDropdown extends StacheElement {
     static view = `
-        <h3 class="h3">Secondary Status Report</h3>
-        <div class="flex mt-2 gap-2 flex-wrap">
-            <p>Secondary Report Type</p>
-            <div class="shrink-0">
-            <label class="px-2"><input 
-                type="radio" 
-                name="secondary" 
-                checked:from="eq(this.secondaryReportType, 'none')"
-                on:change="this.secondaryReportType = 'none'"
-                /> None </label>
-                
-            <label class="px-2"><input 
-                type="radio" 
-                name="secondary" 
-                checked:from="eq(this.secondaryReportType, 'status')"
-                on:change="this.secondaryReportType = 'status'"
-                /> {{this.secondaryIssueType}} status </label>
-            
-            {{# not(eq(this.secondaryIssueType, "Story") ) }}
-            <label class="px-2"><input 
-                type="radio" 
-                name="secondary" 
-                checked:from="eq(this.secondaryReportType, 'breakdown')"
-                on:change="this.secondaryReportType = 'breakdown'"
-                /> {{this.secondaryIssueType}} work breakdown </label>
-            {{/ not }}
-            </div>
-        </div>
+    <div class="p-2">
+        
 
-        <div class="flex mt-2 gap-2 flex-wrap">
-            <p>Do you want to report on completion percentage?</p>
-            <input type='checkbox' 
-                class='self-start mt-1.5'  checked:bind='this.showPercentComplete'/>
-        </div>
+        
 
 
         {{# eq(this.primaryReportType, 'start-due') }}
-        <h3 class="h3">Grouping</h3>
         <div>
-            Group by: 
-            <label class="px-2"><input 
+            <div class="font-bold uppercase text-slate-300 text-xs">Group by: </div>
+            <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
                 checked:from="eq(this.groupBy, '')"
                 on:change="this.groupBy = ''"
                 /> None</label>
-            <label class="px-2"><input 
+            <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
                 checked:from="eq(this.groupBy, 'parent')"
                 on:change="this.groupBy = 'parent'"
                 /> Parent</label>
-            <label class="px-2"><input 
+            <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
                 checked:from="eq(this.groupBy, 'team')"
@@ -99,83 +68,141 @@ class SelectViewSettingsDropdown extends StacheElement {
         {{/ eq }}
 
 
-        <h3 class="h3">Sorting</h3>
-        <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
-            <label class=''>Sort by Due Date</label>
-            <input type='checkbox' 
-                class='self-start mt-1.5' checked:bind='this.sortByDueDate'/>
-            <p class="m-0">Instead of ordering initiatives based on the order defined in the JQL, 
-            sort initiatives by their last epic's due date.
-            </p>
-        </div>
+        
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">Sort By:</div>
+             <label class="px-2 block"><input 
+                type="radio" 
+                name="sortByDueDate"
+                checked:from="not(this.sortByDueDate)"
+                on:change="this.sortByDueDate = false"
+                /> JQL Order</label>
+            <label class="px-2 block"><input 
+                type="radio" 
+                name="sortByDueDate"
+                checked:from="this.sortByDueDate"
+                on:change="this.sortByDueDate = true"
+                /> Due Date</label>    
+        
+
         {{# if(this.primaryIssueType) }}
-        <h3 class="h3">Filters</h3>
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
 
-        <div class="grid gap-3" style="grid-template-columns: max-content max-content 1fr">
-
-            <label class=''>Hide Unknown {{this.primaryIssueType}}s</label>
-            <input type='checkbox' 
-            class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/>
-            <p class="m-0">Hide {{this.primaryIssueType}}s whose timing can't be determined.
-            </p>
-
+            <div class="grid gap-2" style="grid-template-columns: max-content max-content">
+                <label>Show only {{this.firstIssueTypeWithStatuses}} statuses:</label>
             
-            
-
-            <label>{{this.firstIssueTypeWithStatuses}} Statuses to Report</label>
-            <status-filter 
-                statuses:from="this.statuses"
-                param:raw="statusesToShow"
-                selectedStatuses:to="this.statusesToShow"
-                inputPlaceholder:raw="Search for statuses"
-                style="max-width: 400px;">
-            </status-filter>
-            <p>Only include these statuses in the report</p>
-
-            <label>{{this.firstIssueTypeWithStatuses}} Statuses to Ignore</label>
-            <status-filter 
-                statuses:from="this.statuses" 
-                param:raw="statusesToRemove"
-                selectedStatuses:to="this.statusesToRemove"
-                inputPlaceholder:raw="Search for statuses"
-                style="max-width: 400px;">
+                <status-filter 
+                    statuses:from="this.statuses"
+                    param:raw="statusesToShow"
+                    selectedStatuses:to="this.statusesToShow"
+                    inputPlaceholder:raw="Search for statuses"
+                    style="max-width: 400px;">
                 </status-filter>
-            <p>Search for statuses to remove from the report</p>
 
-            <label>{{this.firstIssueTypeWithStatuses}} Release to Report</label>
-            <status-filter 
-                statuses:from="this.releases"
-                param:raw="releasesToShow"
-                selectedStatuses:to="this.releasesToShow"
-                inputPlaceholder:raw="Search for releases"
-                style="max-width: 400px;"></status-filter>
-            <p>Search for releases to include in the report</p>
+                <label>Hide {{this.firstIssueTypeWithStatuses}} statuses:</label>
 
+                <status-filter 
+                    statuses:from="this.statuses" 
+                    param:raw="statusesToRemove"
+                    selectedStatuses:to="this.statusesToRemove"
+                    inputPlaceholder:raw="Search for statuses"
+                    style="max-width: 400px;">
+                    </status-filter>
+
+                
+            </div>
+        </div>
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">Release Filters:</div>
+
+            <div class="grid gap-2" style="grid-template-columns: max-content max-content">
+                <label>Show only {{this.firstIssueTypeWithStatuses}}s with releases:</label>
+            
+                <status-filter 
+                    statuses:from="this.releases"
+                    param:raw="releasesToShow"
+                    selectedStatuses:to="this.releasesToShow"
+                    inputPlaceholder:raw="Search for releases"
+                    style="max-width: 400px;"></status-filter>
+
+                
+            </div>
 
             {{# eq(this.primaryIssueType, "Release") }}
-            <label class=''>Show Only Semver Releases</label>
-            <input type='checkbox' 
-                class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
-            <p class="m-0">This will only include releases that have a structure like <code>[NAME]_[D.D.D]</code>. Examples:
-            <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
-            </p>
+                    <label class=''>Show only Semver-like releases</label>
+                    <input type='checkbox' 
+                        class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
+                    <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
+                    <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
+                    </p>
             {{/ }}
+        </div>
 
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
 
+            <input type='checkbox' 
+                class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/> Hide {{this.primaryIssueType}}s without dates 
         </div>
         {{/ if }}
 
-        {{# if(this.firstIssueTypeWithStatuses) }}
-        <div class="flex gap-2 mt-1">
-            <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
-            <status-filter 
-                statuses:from="this.statuses" 
-                param:raw="planningStatuses"
-                selectedStatuses:to="this.planningStatuses"
-                inputPlaceholder:raw="Search for statuses"
-                style="max-width: 400px;"></status-filter>
+
+
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">View Options</div>
+
+            <div class="flex mt-2 gap-2 flex-wrap">
+                <input type='checkbox' 
+                    class='self-start mt-1.5'  checked:bind='this.showPercentComplete'/>
+                <p>Show completion percentage</p>
+                
+            </div>
         </div>
-        {{/ if}}
+
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">Secondary Status Report</div>
+            <div class="flex mt-2 gap-2 flex-wrap">
+                <p>Secondary Report Type</p>
+                <div class="shrink-0">
+                <label class="px-2"><input 
+                    type="radio" 
+                    name="secondary" 
+                    checked:from="eq(this.secondaryReportType, 'none')"
+                    on:change="this.secondaryReportType = 'none'"
+                    /> None </label>
+                    
+                <label class="px-2"><input 
+                    type="radio" 
+                    name="secondary" 
+                    checked:from="eq(this.secondaryReportType, 'status')"
+                    on:change="this.secondaryReportType = 'status'"
+                    /> {{this.secondaryIssueType}} status </label>
+                
+                {{# not(eq(this.secondaryIssueType, "Story") ) }}
+                <label class="px-2"><input 
+                    type="radio" 
+                    name="secondary" 
+                    checked:from="eq(this.secondaryReportType, 'breakdown')"
+                    on:change="this.secondaryReportType = 'breakdown'"
+                    /> {{this.secondaryIssueType}} work breakdown </label>
+                {{/ not }}
+                </div>
+            </div>
+
+            {{# if(this.firstIssueTypeWithStatuses) }}
+            <div class="flex gap-2 mt-1">
+                <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
+                <status-filter 
+                    statuses:from="this.statuses" 
+                    param:raw="planningStatuses"
+                    selectedStatuses:to="this.planningStatuses"
+                    inputPlaceholder:raw="Search for statuses"
+                    style="max-width: 400px;"></status-filter>
+            </div>
+            {{/ if}}
+        </div>
+    </div>
     `
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
@@ -235,6 +262,7 @@ export class SelectViewSettings extends StacheElement {
         
     }
     showChildOptions(){
+        
         let dropdown = new SelectViewSettingsDropdown().bindings({
             showPercentComplete: value.bind(this,"showPercentComplete"),
             secondaryReportType: value.bind(this,"secondaryReportType"),
@@ -243,6 +271,9 @@ export class SelectViewSettings extends StacheElement {
             hideUnknownInitiatives: value.bind(this,"hideUnknownInitiatives"),
             showOnlySemverReleases: value.bind(this,"showOnlySemverReleases"),
             primaryReportType: this.primaryReportType,
+            statusesToRemove: value.bind(this,"statusesToRemove"),
+            statusesToShow: value.bind(this,"statusesToShow"),
+            planningStatuses: value.bind(this,"planningStatuses"),
 
 
             secondaryIssueType: value.from(this,"secondaryIssueType"),
@@ -251,7 +282,8 @@ export class SelectViewSettings extends StacheElement {
             firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
 
             // this could probably be calculated by itself
-            statuses: value.from(this,"statuses")
+            statuses: value.from(this,"statuses"),
+            releases: value.from(this,"releases")
             // onSelection: this.onSelection.bind(this)
         })
         
@@ -259,12 +291,23 @@ export class SelectViewSettings extends StacheElement {
     }
     connected(){
         this.listenTo(window, "click", (event)=>{
-          if(!TOOLTIP.contains(event.target))   {
+          if(!TOOLTIP.contains(event.target) && ! findParentWithSelector(event.target, "simple-tooltip"))   {
             TOOLTIP.leftElement();
           }
         })
     }
 }
+
+function findParentWithSelector(element, selector) {
+    let parent = element.parentElement;
+    while (parent) {
+      if (parent.matches(selector)) {
+        return parent;
+      }
+      parent = parent.parentElement;
+    }
+    return null;
+  }
 
 
 customElements.define("select-view-settings", SelectViewSettings);

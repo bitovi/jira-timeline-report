@@ -83,10 +83,12 @@ export class TimelineReport extends StacheElement {
               groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
               statusesToExclude:to="this.statusesToExclude"
-
+              
+              primaryReportType:from="this.primaryReportType"
               primaryIssueType:from="this.primaryIssueType"
               secondaryIssueType:from="this.secondaryIssueType"
               statuses:from="this.statuses"
+              derivedIssues:from="this.derivedIssues"
               ></select-view-settings>
           </div>
 
@@ -246,11 +248,6 @@ export class TimelineReport extends StacheElement {
     }
 
     get rollupTimingLevelsAndCalculations(){
-      console.log({
-        issueTimingCalculations: this.issueTimingCalculations,
-        primaryIssueType: this.primaryIssueType,
-        secondaryIssueType: this.secondaryIssueType
-      });
 
       function getIssueHierarchyUnderType(timingCalculations, type){
         const index = timingCalculations.findIndex( calc => calc.type === type);
@@ -259,7 +256,7 @@ export class TimelineReport extends StacheElement {
 
       if(this.primaryIssueType === "Release") {
         if(this.secondaryIssueType) {
-          const secondary = getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
+          const secondary = getIssueHierarchyUnderType(this.issueTimingCalculations, this.secondaryIssueType);
           return [
             {type: 'Release', hierarchyLevel: Infinity, calculation: 'childrenOnly'},
             ...secondary
@@ -272,10 +269,11 @@ export class TimelineReport extends StacheElement {
 
     // this all the data pre-compiled
     get rolledupAndRolledBackIssuesAndReleases(){
+      console.log("here",this.filteredDerivedIssues ,this.rollupTimingLevelsAndCalculations, this.configuration)
       if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
         return [];
       }
-      
+      debugger;
       const rolledUp = rollupAndRollback(this.filteredDerivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
         new Date( new Date().getTime() - this.compareToTime.timePrior) );
 
