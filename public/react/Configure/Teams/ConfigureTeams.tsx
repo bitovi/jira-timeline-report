@@ -5,16 +5,18 @@ import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
 import type { TeamConfiguration } from "./services/team-configuration";
 
 import React from "react";
-import Form from "@atlaskit/form";
+import Form, { Label } from "@atlaskit/form";
 import { useForm } from "react-hook-form";
 import { Flex } from "@atlaskit/primitives";
 
 import TextField from "./components/TextField";
 import Select from "./components/Select";
+import Toggle from "./components/Toggle";
 import Hr from "../../components/Hr";
 
 import { useGlobalTeamConfiguration, useSaveGlobalTeamConfiguration } from "./services/team-configuration";
 import { useJiraIssueFields } from "./services/jira";
+import EnableableTextField from "./components/EnableableTextField";
 
 export interface ConfigureTeamsProps {
   normalizedIssues?: Array<NormalizedIssue>;
@@ -102,6 +104,17 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
               onSave={update}
             />
             <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
+            <Toggle label="Spread effort" description="Spread estimate access dates" />
+            <EnableableTextField
+              toggleLabel="Estimates"
+              toggleDescription="Assign average estimate to issues without estimates"
+              textFieldLabel="Default estimate"
+              message="Assign this value to issues without estimates"
+              type="number"
+              name="tracks"
+              onSave={update}
+              register={register}
+            />
           </Flex>
         </form>
       )}

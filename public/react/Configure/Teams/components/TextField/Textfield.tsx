@@ -10,6 +10,7 @@ import { Field } from "@atlaskit/form";
 import { isFieldUpdate } from "../../services/team-configuration";
 
 interface TextFieldProps {
+  disabled?: boolean;
   type: string;
   name: keyof DefaultFormFields;
   label: string;
@@ -18,7 +19,7 @@ interface TextFieldProps {
   onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
 }
 
-const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min }) => {
+const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min, disabled = false }) => {
   const handleBlur = (eventTarget: { name: string; value: string }) => {
     if (!isFieldUpdate(eventTarget)) {
       return;
@@ -31,6 +32,7 @@ const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, mi
     <Field name="sprintLength" label={label} isRequired>
       {() => (
         <AtlasTextField
+          isDisabled={disabled}
           type={type}
           min={min}
           autoComplete="off"

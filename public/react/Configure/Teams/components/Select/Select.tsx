@@ -4,8 +4,8 @@ import type { Control } from "react-hook-form";
 import React, { useId } from "react";
 import { Controller } from "react-hook-form";
 import AtlasSelect from "@atlaskit/select";
-import { Label } from "@atlaskit/form";
 
+import Label from "../Label";
 import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeams";
 import { TeamConfiguration } from "../../services/team-configuration";
 
@@ -31,7 +31,9 @@ const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave }) =
 
         return (
           <div className="mt-2">
-            <Label htmlFor={id}>{label}</Label>
+            <Label htmlFor={id} isRequired>
+              {label}
+            </Label>
             <AtlasSelect
               id={id}
               name={field.name}

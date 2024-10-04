@@ -24,6 +24,7 @@
   "dependencies": {
     "@atlaskit/button": "^20.2.1",
     "@atlaskit/css-reset": "^6.11.1",
+    "@atlaskit/ds-lib": "^2.6.0",
     "@atlaskit/flag": "^15.8.3",
     "@atlaskit/form": "^10.5.4",
     "@atlaskit/heading": "^2.4.6",
@@ -32,6 +33,7 @@
     "@atlaskit/select": "^17.19.3",
     "@atlaskit/spinner": "^16.3.2",
     "@atlaskit/textfield": "^6.5.2",
+    "@atlaskit/toggle": "^13.4.4",
     "@atlaskit/tokens": "^2.0.0",
     "@babel/preset-react": "^7.24.7",
     "@rollup/plugin-babel": "^6.0.4",
