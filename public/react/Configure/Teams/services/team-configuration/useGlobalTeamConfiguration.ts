@@ -21,8 +21,6 @@ export const useGlobalTeamConfiguration: UseDefaultConfiguration = ({ onInitialD
       const loaded = await get<SprintDefaults | undefined>(globalTeamConfigurationStorageKey);
       const values = { ...defaultGlobalTeamConfiguration, ...(loaded ?? {}) };
 
-      console.log("from invalidation", values);
-
       onInitialDefaultsLoad?.(createNormalizeConfiguration(values));
 
       return values;

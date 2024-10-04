@@ -28,8 +28,6 @@ export const useSaveGlobalTeamConfiguration: UseSaveDefaultConfiguration = ({ on
     onSuccess: (_, updatedValues) => {
       onUpdate?.(createNormalizeConfiguration(updatedValues));
 
-      console.log("from save", updatedValues);
-
       queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.globalConfiguration() });
     },
     onError: (error) => {
