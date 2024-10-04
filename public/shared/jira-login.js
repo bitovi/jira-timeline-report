@@ -5,7 +5,8 @@ export default class JiraLogin extends StacheElement {
     {{# if(this.isPending) }}
         <button
             class="p-1 block pointer bg-orange-400 text-white rounded-lg font-bitovipoppins font-lg font-bold"
-            style="border: none">
+            style="border: none"
+            data-testid="connecting-button">
             Connecting
         </button>
     {{ else }}
@@ -13,6 +14,7 @@ export default class JiraLogin extends StacheElement {
             <button
                 class="p-1 block pointer bg-orange-400 text-white rounded-lg font-bitovipoppins font-lg font-bold"
                 style="border: none"
+                data-testid="logout-button"
                 on:click="this.logout()">
                 Log Out
             </button>
@@ -20,6 +22,7 @@ export default class JiraLogin extends StacheElement {
             <button
                 class="p-1 block pointer bg-orange-400 text-white rounded-lg font-bitovipoppins font-lg font-bold"
                 style="border: none"
+                data-testid="login-button"
                 on:click="this.login()">
                 Connect to Jira
             </button>
@@ -79,5 +82,3 @@ export default class JiraLogin extends StacheElement {
 }
 
 customElements.define("jira-login", JiraLogin);
-
-
