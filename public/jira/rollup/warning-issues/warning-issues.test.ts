@@ -1,59 +1,54 @@
-// sum.test.js
-import { expect, test, describe, it } from "vitest";
+import { expect, describe, it } from "vitest";
 import {
-  rollupBlockedIssuesForGroupedHierarchy,
-  rollupBlockedStatusIssues,
-} from "./blocked-status-issues";
+  rollupWarningIssuesForGroupedHierarchy,
+  rollupWarningIssues,
+} from "./warning-issues";
 import { IssueOrRelease } from "../rollup";
 
-describe("rollupBlockedIssuesForGroupedHierarchy", () => {
-  // due, dueTo {message, reference} .... {start,startFrom}
-  // alt: {start, end, startedFrom, endedBy}
-
-  it("does the basics", () => {
+describe("rollupWarningIssuesForGroupedHierarchy", () => {
+  it("should correctly roll up warning issues in grouped hierarchy", () => {
     let i7;
-
-    const issuesAndReleases = (
+    const groupedHierarchy = (
       [
         [
           {
             key: "o-1",
             parentKey: null,
-            derivedStatus: { statusType: "dev", workType: "dev" },
+            labels: ["foo"],
           },
         ],
         [
           {
             key: "m-2",
             parentKey: "o-1",
-            derivedStatus: { statusType: "dev", workType: "dev" },
+            labels: ["foo"],
           },
           {
             key: "m-3",
             parentKey: "o-1",
-            derivedStatus: { statusType: "dev", workType: "dev" },
+            labels: ["foo"],
           },
         ],
         [
           {
             key: "i-4",
             parentKey: "m-2",
-            derivedStatus: { statusType: "dev", workType: "dev" },
+            labels: ["foo"],
           },
           {
             key: "i-5",
             parentKey: "m-2",
-            derivedStatus: { statusType: "dev", workType: "dev" },
+            labels: ["foo"],
           },
           {
             key: "i-6",
             parentKey: "m-3",
-            derivedStatus: { statusType: "dev", workType: "dev" },
+            labels: ["foo"],
           },
           (i7 = {
             key: "i-7",
             parentKey: "m-3",
-            derivedStatus: { statusType: "blocked", workType: "dev" },
+            labels: ["Warning"],
           }),
         ],
       ] as IssueOrRelease[][]
@@ -67,7 +62,9 @@ describe("rollupBlockedIssuesForGroupedHierarchy", () => {
       },
     };
 
-    const results = rollupBlockedIssuesForGroupedHierarchy(issuesAndReleases);
+    const results = rollupWarningIssuesForGroupedHierarchy(groupedHierarchy);
+
+    expect(results).toHaveLength(3);
     expect(results).toStrictEqual([
       {
         rollupData: [
@@ -109,75 +106,86 @@ describe("rollupBlockedIssuesForGroupedHierarchy", () => {
     ]);
   });
 });
-describe("rollupBlockedStatusIssues", () => {
-  it("should correctly roll up blocked status issues", () => {
+
+describe("rollupWarningIssues", () => {
+  it("should correctly roll up warning issues", () => {
     const i7 = {
       key: "i-7",
-      type: "Epic",
-      hierarchyLevel: 1,
+      type: "Story",
+      hierarchyLevel: 0,
       parentKey: "m-3",
-      derivedStatus: { statusType: "blocked", workType: "dev" },
+      labels: ["Warning"],
+    };
+
+    const i8 = {
+      key: "i-8",
+      type: "Story",
+      hierarchyLevel: 0,
+      parentKey: "m-3",
+      labels: ["Warning"],
     };
 
     const issuesAndReleases = [
       {
         key: "o-1",
-        type: "Release",
+        type: "Initiative",
+        hierarchyLevel: 2,
         parentKey: null,
-        derivedStatus: { statusType: "dev", workType: "dev" },
+        labels: ["foo"],
       },
       {
         key: "m-2",
-        type: "Initiative",
-        hierarchyLevel: 2,
+        type: "Epic",
+        hierarchyLevel: 1,
         parentKey: "o-1",
-        derivedStatus: { statusType: "dev", workType: "dev" },
+        labels: ["foo"],
       },
       {
         key: "m-3",
-        type: "Initiative",
-        hierarchyLevel: 2,
+        type: "Epic",
+        hierarchyLevel: 1,
         parentKey: "o-1",
-        derivedStatus: { statusType: "dev", workType: "dev" },
+        labels: ["foo"],
       },
       {
         key: "i-4",
-        type: "Epic",
-        hierarchyLevel: 1,
+        type: "Story",
+        hierarchyLevel: 0,
         parentKey: "m-2",
-        derivedStatus: { statusType: "dev", workType: "dev" },
+        labels: ["foo"],
       },
       {
         key: "i-5",
-        type: "Epic",
-        hierarchyLevel: 1,
+        type: "Story",
+        hierarchyLevel: 0,
         parentKey: "m-2",
-        derivedStatus: { statusType: "dev", workType: "dev" },
+        labels: ["foo"],
       },
       {
         key: "i-6",
-        type: "Epic",
-        hierarchyLevel: 1,
+        type: "Story",
+        hierarchyLevel: 0,
         parentKey: "m-3",
-        derivedStatus: { statusType: "dev", workType: "dev" },
+        labels: ["foo"],
       },
       i7,
-    ] as IssueOrRelease<{ blockedStatusIssues: IssueOrRelease[] }>[];
+      i8,
+    ] as IssueOrRelease<{ warningIssues: IssueOrRelease[] }>[];
 
     const rollupTimingLevelsAndCalculations = [
-      { type: "Release" },
       { type: "Initiative", hierarchyLevel: 2 },
       { type: "Epic", hierarchyLevel: 1 },
+      { type: "Story", hierarchyLevel: 0 },
     ];
-
-    const result = rollupBlockedStatusIssues(
+    const result = rollupWarningIssues(
       issuesAndReleases,
       rollupTimingLevelsAndCalculations
     );
+
     const issueMap = result.reduce((map, issue) => {
       map[issue.key] = issue;
       return map;
-    }, {} as { [key: string]: IssueOrRelease<{ blockedStatusIssues: IssueOrRelease[] }> });
+    }, {} as { [key: string]: IssueOrRelease<{ warningIssues: IssueOrRelease[] }> });
 
     const o1 = issueMap["o-1"];
     const m2 = issueMap["m-2"];
@@ -186,8 +194,9 @@ describe("rollupBlockedStatusIssues", () => {
     const i5 = issueMap["i-5"];
     const i6 = issueMap["i-6"];
     const _i7 = issueMap["i-7"];
+    const _i8 = issueMap["i-8"];
 
-    const blockedStatusIssues = [
+    const i7WarningIssues = [
       {
         ...i7,
         reportingHierarchy: {
@@ -197,14 +206,25 @@ describe("rollupBlockedStatusIssues", () => {
         },
       },
     ];
-    expect(i4?.blockedStatusIssues).toEqual([]);
-    expect(i5?.blockedStatusIssues).toEqual([]);
-    expect(i6?.blockedStatusIssues).toEqual([]);
-    expect(_i7?.blockedStatusIssues).toEqual(blockedStatusIssues);
+    const i8WarningIssues = [
+      {
+        ...i8,
+        reportingHierarchy: {
+          childKeys: [],
+          depth: 2,
+          parentKeys: ["m-3"],
+        },
+      },
+    ];
+    expect(i4?.warningIssues).toEqual([]);
+    expect(i5?.warningIssues).toEqual([]);
+    expect(i6?.warningIssues).toEqual([]);
+    expect(_i7?.warningIssues).toEqual(i7WarningIssues);
+    expect(_i8?.warningIssues).toEqual(i8WarningIssues);
 
-    expect(m2?.blockedStatusIssues).toEqual([]);
-    expect(m3?.blockedStatusIssues).toEqual(blockedStatusIssues);
+    expect(m2?.warningIssues).toEqual([]);
+    expect(m3?.warningIssues).toEqual([...i7WarningIssues, ...i8WarningIssues]);
 
-    expect(o1?.blockedStatusIssues).toEqual(blockedStatusIssues);
+    expect(o1?.warningIssues).toEqual([...i7WarningIssues, ...i8WarningIssues]);
   });
 });
