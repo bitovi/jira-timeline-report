@@ -1,4 +1,5 @@
 import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
+import { fields } from "../../../../jira/raw/rollback/rollback";
 import { DefaultFormFields } from "../ConfigureTeams";
 
 export const createNormalizeConfiguration = (values: DefaultFormFields): Partial<NormalizeIssueConfig> => {
@@ -38,6 +39,36 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
       }
 
       return value;
+    },
+    getStoryPoints: ({ fields }) => {
+      const value = fields[values.estimateField];
+
+      if (!value) {
+        return null;
+      }
+
+      const storyPoints = Number(value);
+
+      if (isNaN(storyPoints)) {
+        return null;
+      }
+
+      return storyPoints;
+    },
+    getStoryPointsMedian: ({ fields }) => {
+      const value = fields[values.estimateField];
+
+      if (!value) {
+        return null;
+      }
+
+      const storyPoints = Number(value);
+
+      if (isNaN(storyPoints)) {
+        return null;
+      }
+
+      return storyPoints;
     },
   };
 };

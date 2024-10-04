@@ -12,10 +12,10 @@ export const defaultGlobalTeamConfiguration: TeamConfiguration = {
   sprintLength: 10, //
   velocityPerSprint: 21, //
   tracks: 1,
-  estimateField: "Estimate in Days",
+  estimateField: "Story points",
   confidenceField: "Confidence",
-  startDateField: "Start Date",
-  dueDateField: "End Date",
+  startDateField: "Start date",
+  dueDateField: "Due date",
 };
 
 export function isFieldUpdate(event: { name: string }): event is { name: keyof TeamConfiguration } {
