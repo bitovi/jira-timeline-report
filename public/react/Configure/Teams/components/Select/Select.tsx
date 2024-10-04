@@ -7,10 +7,10 @@ import AtlasSelect from "@atlaskit/select";
 import { Label } from "@atlaskit/form";
 
 import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeams";
-import { SprintDefaults } from "../../services/team-configuration";
+import { TeamConfiguration } from "../../services/team-configuration";
 
 interface SelectProps {
-  control: Control<SprintDefaults>;
+  control: Control<TeamConfiguration>;
   name: keyof DefaultFormFields;
   label: string;
   jiraFields: Array<{ label: string; value: string }>;

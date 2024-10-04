@@ -1,5 +1,5 @@
 import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
-import type { SprintDefaults } from "./defaults";
+import type { TeamConfiguration } from "./defaults";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -10,7 +10,7 @@ import { defaultGlobalTeamConfiguration } from "./defaults";
 
 export type UseDefaultConfiguration = (config: {
   onInitialDefaultsLoad?: (config: Partial<NormalizeIssueConfig>) => void;
-}) => SprintDefaults;
+}) => TeamConfiguration;
 
 export const useGlobalTeamConfiguration: UseDefaultConfiguration = ({ onInitialDefaultsLoad }) => {
   const { get } = useStorage();
@@ -18,7 +18,7 @@ export const useGlobalTeamConfiguration: UseDefaultConfiguration = ({ onInitialD
   const { data } = useSuspenseQuery({
     queryKey: teamConfigurationKeys.globalConfiguration(),
     queryFn: async () => {
-      const loaded = await get<SprintDefaults | undefined>(globalTeamConfigurationStorageKey);
+      const loaded = await get<TeamConfiguration | undefined>(globalTeamConfigurationStorageKey);
       const values = { ...defaultGlobalTeamConfiguration, ...(loaded ?? {}) };
 
       onInitialDefaultsLoad?.(createNormalizeConfiguration(values));

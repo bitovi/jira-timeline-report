@@ -1,4 +1,4 @@
-export type SprintDefaults = {
+export type TeamConfiguration = {
   sprintLength: number;
   velocityPerSprint: number;
   tracks: number;
@@ -8,7 +8,7 @@ export type SprintDefaults = {
   dueDateField: string; //
 };
 
-export const defaultGlobalTeamConfiguration: SprintDefaults = {
+export const defaultGlobalTeamConfiguration: TeamConfiguration = {
   sprintLength: 10, //
   velocityPerSprint: 21, //
   tracks: 1,
@@ -18,7 +18,7 @@ export const defaultGlobalTeamConfiguration: SprintDefaults = {
   dueDateField: "End Date",
 };
 
-export function isFieldUpdate(event: { name: string }): event is { name: keyof SprintDefaults } {
+export function isFieldUpdate(event: { name: string }): event is { name: keyof TeamConfiguration } {
   return [
     "sprintLength",
     "velocityPerSprint",

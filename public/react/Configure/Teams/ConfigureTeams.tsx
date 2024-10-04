@@ -2,7 +2,7 @@ import type { FC } from "react";
 
 import type { NormalizedIssue } from "../../../jira/shared/types";
 import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
-import type { SprintDefaults } from "./services/team-configuration";
+import type { TeamConfiguration } from "./services/team-configuration";
 
 import React from "react";
 import Form from "@atlaskit/form";
@@ -22,7 +22,7 @@ export interface ConfigureTeamsProps {
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
 }
 
-export type DefaultFormFields = SprintDefaults;
+export type DefaultFormFields = TeamConfiguration;
 
 export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
   name: TProperty;

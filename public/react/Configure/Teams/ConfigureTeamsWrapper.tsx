@@ -5,17 +5,17 @@ import React, { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "react-error-boundary";
+import Heading from "@atlaskit/heading";
 
 import ConfigureTeams from "./ConfigureTeams";
-
 import { StorageFactory } from "../../../jira/storage/common";
 import { StorageProvider } from "./services/storage";
+import { Accordion, AccordionContent, AccordionTitle } from "../../components/Accordion";
 
 // TODO: Move type to module
 import jiraOidcHelpers from "../../../jira-oidc-helpers";
 type Jira = ReturnType<typeof jiraOidcHelpers>;
 import { JiraProvider } from "./services/jira";
-import { Accordion, AccordionContent, AccordionTitle } from "../../components/Accordion";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +34,9 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, 
               <JiraProvider jira={jira}>
                 <StorageProvider storage={storage}>
                   <Accordion>
-                    <AccordionTitle>Global Teams</AccordionTitle>
+                    <AccordionTitle>
+                      <Heading size="small">Global default</Heading>
+                    </AccordionTitle>
                     <AccordionContent>
                       <ConfigureTeams {...props} />
                     </AccordionContent>

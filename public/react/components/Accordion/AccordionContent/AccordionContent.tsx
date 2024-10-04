@@ -11,7 +11,7 @@ interface AccordionContentProps {
 const AccordionContent: FC<AccordionContentProps> = ({ children }) => {
   const { isOpen } = useAccordion();
 
-  return isOpen && <div className="p-4">{children}</div>;
+  return isOpen && <div className="px-4 py-0">{children}</div>;
 };
 
 export default AccordionContent;
