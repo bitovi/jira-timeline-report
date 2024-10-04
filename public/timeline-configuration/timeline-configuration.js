@@ -282,6 +282,8 @@ export class TimelineConfiguration extends StacheElement {
         storage: this.storage,
         jira: this.jiraHelpers,
         onUpdate: (partial) => {
+          console.log({ partial });
+          debugger;
           this.normalizeOptions = partial;
         },
         onInitialDefaultsLoad: (partial) => {

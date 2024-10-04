@@ -5,6 +5,7 @@ import React, { useId } from "react";
 import { Controller } from "react-hook-form";
 import AtlasSelect from "@atlaskit/select";
 import { Label } from "@atlaskit/form";
+
 import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeams";
 import { SprintDefaults } from "../../services/team-configuration";
 
@@ -38,9 +39,12 @@ const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave }) =
               options={jiraFields}
               onBlur={field.onBlur}
               onChange={(option) => {
+                if (!option?.value) {
+                  return;
+                }
+
                 field.onChange(option?.value);
-                console.log({ name, option });
-                onSave({ name, value: option!.value });
+                onSave({ name, value: option?.value });
               }}
             />
           </div>

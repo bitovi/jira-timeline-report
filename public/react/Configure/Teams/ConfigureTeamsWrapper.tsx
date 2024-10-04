@@ -15,6 +15,7 @@ import { StorageProvider } from "./services/storage";
 import jiraOidcHelpers from "../../../jira-oidc-helpers";
 type Jira = ReturnType<typeof jiraOidcHelpers>;
 import { JiraProvider } from "./services/jira";
+import { Accordion, AccordionContent, AccordionTitle } from "../../components/Accordion";
 
 const queryClient = new QueryClient();
 
@@ -25,19 +26,26 @@ interface TeamConfigurationWrapperProps extends Pick<ConfigureTeamsProps, "onUpd
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, jira, ...props }) => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <FlagsProvider>
-        <ErrorBoundary fallbackRender={() => "Something went wrong"}>
-          <Suspense fallback="...loading">
-            <JiraProvider jira={jira}>
-              <StorageProvider storage={storage}>
-                <ConfigureTeams {...props} />
-              </StorageProvider>
-            </JiraProvider>
-          </Suspense>
-        </ErrorBoundary>
-      </FlagsProvider>
-    </QueryClientProvider>
+    <div className="w-96">
+      <ErrorBoundary fallbackRender={() => "Something went wrong"}>
+        <Suspense fallback="...loading">
+          <QueryClientProvider client={queryClient}>
+            <FlagsProvider>
+              <JiraProvider jira={jira}>
+                <StorageProvider storage={storage}>
+                  <Accordion>
+                    <AccordionTitle>Global Teams</AccordionTitle>
+                    <AccordionContent>
+                      <ConfigureTeams {...props} />
+                    </AccordionContent>
+                  </Accordion>
+                </StorageProvider>
+              </JiraProvider>
+            </FlagsProvider>
+          </QueryClientProvider>
+        </Suspense>
+      </ErrorBoundary>
+    </div>
   );
 };
 

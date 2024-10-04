@@ -27,30 +27,17 @@ interface StorageIssue {
   };
 }
 
-let cached: StorageIssue | null;
-
 const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
-  if (cached) {
-    return cached;
-  }
-
-  // checked but doesn't exist
-  if (cached === null && cached !== undefined) {
-    return cached;
-  }
-
   const configurationIssues: StorageIssue[] = await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields({
     jql: `summary ~ "Jira Auto Scheduler Configuration"`,
     fields: ["summary", "Description"],
   });
 
   if (!configurationIssues.length) {
-    cached = null;
-    return cached;
+    return null;
   }
 
-  cached = configurationIssues[0];
-  return cached;
+  return configurationIssues[0];
 };
 
 const createCodeBlock = (using?: string): CodeBlock => {

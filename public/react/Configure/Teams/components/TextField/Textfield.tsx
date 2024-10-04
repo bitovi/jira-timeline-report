@@ -7,11 +7,7 @@ import AtlasTextField from "@atlaskit/textfield";
 import { UseFormReturn } from "react-hook-form";
 import { Field } from "@atlaskit/form";
 
-function isFieldUpdate<TProperty extends keyof DefaultFormFields>(event: {
-  name: string;
-}): event is FieldUpdates<TProperty> {
-  return ["sprintLength", "velocityPerSprint", "tracks"].includes(event.name);
-}
+import { isFieldUpdate } from "../../services/team-configuration";
 
 interface TextFieldProps {
   type: string;

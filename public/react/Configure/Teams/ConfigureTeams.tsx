@@ -5,22 +5,16 @@ import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
 import type { SprintDefaults } from "./services/team-configuration";
 
 import React from "react";
+import Form from "@atlaskit/form";
 import { useForm } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
-import Form, { FormHeader } from "@atlaskit/form";
 import { Flex } from "@atlaskit/primitives";
 
 import TextField from "./components/TextField";
 import Select from "./components/Select";
-
-import { createNormalizeConfiguration } from "./shared/normalize";
-import {
-  useGlobalTeamConfiguration,
-  useSaveGlobalTeamConfiguration,
-  teamConfigurationKeys,
-} from "./services/team-configuration";
-import { useJiraIssueFields } from "./services/jira";
 import Hr from "../../components/Hr";
+
+import { useGlobalTeamConfiguration, useSaveGlobalTeamConfiguration } from "./services/team-configuration";
+import { useJiraIssueFields } from "./services/jira";
 
 export interface ConfigureTeamsProps {
   normalizedIssues?: Array<NormalizedIssue>;
@@ -36,10 +30,8 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
 }
 
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLoad }) => {
-  const queryClient = useQueryClient();
-
   const fieldValues = useGlobalTeamConfiguration({ onInitialDefaultsLoad });
-  const save = useSaveGlobalTeamConfiguration();
+  const save = useSaveGlobalTeamConfiguration({ onUpdate });
 
   const jiraFields = useJiraIssueFields();
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
@@ -48,39 +40,22 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
 
   function update<TProperty extends keyof DefaultFormFields>({ name, value }: FieldUpdates<TProperty>) {
     const values = getValues();
-    console.log({ new: { ...values, [name]: value } });
 
-    save(
-      { ...values, [name]: value },
-      {
-        onSuccess: () => {
-          const config = createNormalizeConfiguration({ ...values, [name]: value });
-          onUpdate?.(config);
-
-          queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.globalConfiguration() });
-        },
-      }
-    );
+    save({ ...values, [name]: value });
   }
 
   return (
     <Form
       onSubmit={() =>
-        handleSubmit((values) => {
-          save(values, {
-            onSuccess: () => {
-              onUpdate?.(createNormalizeConfiguration(values));
-
-              queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.globalConfiguration() });
-            },
-          });
+        handleSubmit((values, event) => {
+          event?.preventDefault();
+          save(values);
         })
       }
     >
       {() => (
         <form>
           <Flex direction="column" gap="space.100">
-            <FormHeader title="Team Configuration" />
             <Select
               name="estimateField"
               label="Estimate Field"

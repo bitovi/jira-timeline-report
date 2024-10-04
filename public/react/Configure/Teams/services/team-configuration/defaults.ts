@@ -17,3 +17,15 @@ export const defaultGlobalTeamConfiguration: SprintDefaults = {
   startDateField: "Start Date",
   dueDateField: "End Date",
 };
+
+export function isFieldUpdate(event: { name: string }): event is { name: keyof SprintDefaults } {
+  return [
+    "sprintLength",
+    "velocityPerSprint",
+    "tracks",
+    "estimateField",
+    "confidenceField",
+    "startDateField",
+    "dueDateField",
+  ].includes(event.name);
+}
