@@ -57,52 +57,57 @@ describe("rollupChildStatusesForGroupedHierarchy", () => {
     const results = rollupChildStatusesForGroupedHierarchy(groupedHierarchy);
 
     expect(results).toHaveLength(3);
-
-    const level0RollupData = results[0].rollupData;
-    expect(level0RollupData).toEqual([
+    expect(results).toStrictEqual([
       {
-        self: { key: "i-4", status: "Done" },
-        children: [],
-      },
-      {
-        self: { key: "i-5", status: "Done" },
-        children: [],
-      },
-      {
-        self: { key: "i-6", status: "In Progress" },
-        children: [],
-      },
-      {
-        self: { key: "i-7", status: "Blocked" },
-        children: [],
-      },
-    ]);
-
-    const level1RollupData = results[1].rollupData;
-    expect(level1RollupData).toEqual([
-      {
-        self: { key: "m-2", status: "In Progress" },
-        children: [
-          { key: "i-4", status: "Done" },
-          { key: "i-5", status: "Done" },
+        metadata: {},
+        rollupData: [
+          {
+            self: { key: "i-4", status: "Done" },
+            children: [],
+          },
+          {
+            self: { key: "i-5", status: "Done" },
+            children: [],
+          },
+          {
+            self: { key: "i-6", status: "In Progress" },
+            children: [],
+          },
+          {
+            self: { key: "i-7", status: "Blocked" },
+            children: [],
+          },
         ],
       },
       {
-        self: { key: "m-3", status: "In Progress" },
-        children: [
-          { key: "i-6", status: "In Progress" },
-          { key: "i-7", status: "Blocked" },
+        metadata: {},
+        rollupData: [
+          {
+            self: { key: "m-2", status: "In Progress" },
+            children: [
+              { key: "i-4", status: "Done" },
+              { key: "i-5", status: "Done" },
+            ],
+          },
+          {
+            self: { key: "m-3", status: "In Progress" },
+            children: [
+              { key: "i-6", status: "In Progress" },
+              { key: "i-7", status: "Blocked" },
+            ],
+          },
         ],
       },
-    ]);
-
-    const level2RollupData = results[2].rollupData;
-    expect(level2RollupData).toEqual([
       {
-        self: { key: "o-1", status: "In Progress" },
-        children: [
-          { key: "m-2", status: "In Progress" },
-          { key: "m-3", status: "In Progress" },
+        metadata: {},
+        rollupData: [
+          {
+            self: { key: "o-1", status: "In Progress" },
+            children: [
+              { key: "m-2", status: "In Progress" },
+              { key: "m-3", status: "In Progress" },
+            ],
+          },
         ],
       },
     ]);
