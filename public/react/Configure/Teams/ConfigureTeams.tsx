@@ -4,7 +4,7 @@ import type { NormalizedIssue } from "../../../jira/shared/types";
 import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
 import type { TeamConfiguration } from "./services/team-configuration";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Form from "@atlaskit/form";
 import { useForm } from "react-hook-form";
 import { Flex } from "@atlaskit/primitives";
@@ -14,8 +14,13 @@ import Select from "./components/Select";
 import Toggle from "./components/Toggle";
 import Hr from "../../components/Hr";
 
-import { useGlobalTeamConfiguration, useSaveGlobalTeamConfiguration } from "./services/team-configuration";
+import {
+  addDefaultFormData,
+  useGlobalTeamConfiguration,
+  useSaveGlobalTeamConfiguration,
+} from "./services/team-configuration";
 import { useJiraIssueFields } from "./services/jira";
+import { createNormalizeConfiguration } from "./shared/normalize";
 // import EnableableTextField from "./components/EnableableTextField";
 
 export interface ConfigureTeamsProps {
@@ -32,13 +37,19 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
 }
 
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLoad }) => {
-  const fieldValues = useGlobalTeamConfiguration({ onInitialDefaultsLoad });
+  const fieldValues = useGlobalTeamConfiguration();
   const save = useSaveGlobalTeamConfiguration({ onUpdate });
 
   const jiraFields = useJiraIssueFields();
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
-  const { register, handleSubmit, getValues, control } = useForm<DefaultFormFields>({ defaultValues: fieldValues });
+  const { register, handleSubmit, getValues, control } = useForm<DefaultFormFields>({
+    defaultValues: addDefaultFormData(jiraFields, fieldValues),
+  });
+
+  useOnMount(() => {
+    onInitialDefaultsLoad?.(createNormalizeConfiguration(getValues()));
+  });
 
   function update<TProperty extends keyof DefaultFormFields>({ name, value }: FieldUpdates<TProperty>) {
     const values = getValues();
@@ -123,3 +134,10 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
 };
 
 export default ConfigureTeams;
+
+// Temporary - don't use
+const useOnMount = (effect: () => void) => {
+  useEffect(() => {
+    effect();
+  }, []);
+};
