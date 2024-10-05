@@ -22,7 +22,8 @@
     "sourceMap": false
   },
   "include": [
-    "public/**/*.ts"
+    "public/**/*.ts",
+    "public/**/*.tsx"
    ],
   "exclude": [
     "node_modules",
