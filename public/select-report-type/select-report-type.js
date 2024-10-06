@@ -81,6 +81,7 @@ export class SelectReportType extends StacheElement {
     }
     onSelection(reportType) {
         this.primaryReportType = reportType;
+        TOOLTIP.leftElement();
     }
     connected(){
         this.listenTo(window, "click", (event)=>{

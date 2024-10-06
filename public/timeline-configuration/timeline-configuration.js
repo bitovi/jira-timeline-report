@@ -29,21 +29,34 @@ const GOBACK_BUTTON = `
 
 export class TimelineConfiguration extends StacheElement {
     static view = `
-    <div class="">
+    <div class="px-3 py-2 h-full">
 
         {{# not(this.showSettings) }}
-            <h3 class="font-bold uppercase text-slate-300 text-xs">Report Settings</h3>
+            <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
         
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50 w-full text-left"
                 on:click="this.showSettings = 'SOURCES'"
-                >Sources</button>
+                >
+                    <img src="/images/magnifying-glass.svg" class="inline  align-bottom"/> 
+                    <span class="pl-3">Sources</span></button>
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left"
-                on:click="this.showSettings = 'TIMING'">Timing</button>
+                on:click="this.showSettings = 'TIMING'">
+                <img src="/images/calendar.svg" class="inline  align-bottom"/>
+                <span class="pl-3">Timing</span></button>
 
-            <h3 class="font-bold uppercase text-slate-300 text-xs pt-2">Global Settings</h3>
+            <h3 class="font-bold uppercase text-slate-300 text-xs pt-4 pb-1">Global Settings</h3>
 
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left"
-                on:click="this.showSettings = 'TEAMS'">Teams</button>
+                on:click="this.showSettings = 'TEAMS'">
+                    <img src="/images/team.svg" class="inline align-bottom"/> 
+                    <span class="pl-3">Teams</span>
+            </button>
+
+            <p class="fixed bottom-4">
+                <h3 class="font-bold uppercase text-slate-300 text-xs pb-1">Questions? </h3>
+                <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>
+                <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect with us</a>
+            </p>  
         {{/ not }}
 
         
@@ -53,7 +66,7 @@ export class TimelineConfiguration extends StacheElement {
             <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
             <p>
                 {{# if(this.isLoggedIn) }}
-                <input class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'/>
+                <textarea class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'></textarea>
                 {{ else }}
                 <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
                 {{/ if}}
@@ -124,11 +137,7 @@ export class TimelineConfiguration extends StacheElement {
         </div>
 
 
-        <p class="pt-6">
-            <h3 class="font-bold uppercase text-slate-300 text-xs">Questions? </h3>
-            <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Guide</a>
-            <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect</a>
-        </p>  
+        
         
         
     </div>
@@ -195,6 +204,9 @@ export class TimelineConfiguration extends StacheElement {
                 return [];
             }
         },
+        goBack(){
+            this.showSettings = ''
+        }
 
 
         /*

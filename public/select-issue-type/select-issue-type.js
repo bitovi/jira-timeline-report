@@ -1,9 +1,9 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../can.js";
 
-import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
-import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCalculations } from "../prepare-issues/date-data.js";
-
-import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
+import {updateUrlParam, pushStateObservable} from "../shared/state-storage.js";
+import { bitoviTrainingIssueData } from "../examples/bitovi-training.js";
+import { getSimplifiedIssueHierarchy } from "../stateful-data/jira-data-requests.js";
+import { mostCommonElement } from "../shared/array-helpers.js";
 
 import "../status-filter.js";
 
@@ -74,7 +74,7 @@ customElements.define("select-release-type-dropdown", ReleasesTypeSelectionDropd
 export class SelectIssueType extends StacheElement {
     static view = `
         {{# not(this.primaryIssueType) }}
-            ---
+            <button class="rounded bg-neutral-201 px-3 py-1">Loading ... </button>
         {{/ }}
         {{# if(this.primaryIssueType) }}
             <button class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}" on:click="this.showChildOptions()">
@@ -85,13 +85,22 @@ export class SelectIssueType extends StacheElement {
         {{/ }}
     `;
     static props ={
-        get jiraIssueHierarchyPromise(){
-            return this.jiraHelpers.fetchIssueTypes().then(getIssueHierarchy)
-        },
-        issueHierarchy: {
-            async(resolve){
-                return this.jiraIssueHierarchyPromise
+        simplifiedIssueHierarchy: {
+            async(){
+                return getSimplifiedIssueHierarchy({
+                    isLoggedIn: this.jiraHelpers.hasValidAccessToken(),
+                    jiraHelpers: this.jiraHelpers,
+                });
             }
+
+        },
+        
+        get issueHierarchy(){
+            
+            return this.derivedIssues && this.derivedIssues.length ?
+                issueHierarchyFromNormalizedIssues(this.derivedIssues) :
+                this.simplifiedIssueHierarchy;
+            
         },
 
 
@@ -99,6 +108,7 @@ export class SelectIssueType extends StacheElement {
             value({resolve, lastSet, listenTo}) {
 
                 const reconcileCurrentValue = (issueHierarchy, primaryIssueType) => {
+                    
                     if(primaryIssueType === "Release") {
                         resolve(primaryIssueType);
                     } else if(this.issueHierarchy && this.issueHierarchy.length) {
@@ -123,6 +133,10 @@ export class SelectIssueType extends StacheElement {
                 listenTo(lastSet, (value)=>{
                     setCurrentValue(value);
                 });
+
+                listenTo(pushStateObservable, ()=>{
+                    reconcileCurrentValue(this.issueHierarchy, new URL(window.location).searchParams.get("primaryIssueType"));
+                })
 
                 //setCurrentValue(new URL(window.location).searchParams.get("primaryIssueType") )
 
@@ -224,23 +238,21 @@ export class SelectIssueType extends StacheElement {
     }
 }
 
-// TODO: this is duplicated code
-function getIssueHierarchy(types){
-    
-    const levelsToTypes = []
-    for( let type of types) {
-        // ignore subtasks
-        if(type.hierarchyLevel >=0) {
-            if(!levelsToTypes[type.hierarchyLevel]) {
-                levelsToTypes[type.hierarchyLevel] = [];
-            }
-            levelsToTypes[type.hierarchyLevel].push(type)
+/**
+ * 
+ * @param {Array<import("../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
+ * @returns {Array<{type: string, hierarchyLevel: number}>}
+ */
+function issueHierarchyFromNormalizedIssues(normalizedIssues){
+    const levelsToNames = []
+    for( let issue of normalizedIssues) {
+        if(!levelsToNames[issue.hierarchyLevel]) {
+            levelsToNames[issue.hierarchyLevel] = [];
         }
-        
+        levelsToNames[issue.hierarchyLevel].push(issue.type)
     }
-    
-    return levelsToTypes.map( (types, i) => {
-        return types[0];
+    return levelsToNames.map( (names, i) => {
+        return {name: mostCommonElement(names), hierarchyLevel: i}
     }).filter( i => i ).reverse()
 }
 

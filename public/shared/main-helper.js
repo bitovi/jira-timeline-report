@@ -9,8 +9,22 @@ import JiraOIDCHelpers from "../jira-oidc-helpers.ts";
 import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
+import { updateUrlParam } from "./state-storage.js";
+function legacyPrimaryIssueTypeRoutingFix(){
+  const primaryIssueType = new URL(window.location).searchParams.get("primaryReportType");
+  if(primaryIssueType === "breakdown") {
+    updateUrlParam("primaryReportType", "start-due");
+    updateUrlParam("primaryReportBreakdown", "true");
+  }
+}
+
+
+
 export default async function mainHelper(config, host) {
+  legacyPrimaryIssueTypeRoutingFix();
+
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
+
 
   let requestHelper;
   if (host === "jira") {

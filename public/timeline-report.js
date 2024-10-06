@@ -20,7 +20,7 @@ import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 export class TimelineReport extends StacheElement {
     static view = `<div class="flex">
         <timeline-configuration
-          class="border-gray-100 border-r border-nuetral-301 p-2 relative block bg-white shrink-0" 
+          class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" 
           style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
@@ -34,10 +34,11 @@ export class TimelineReport extends StacheElement {
           configuration:to="this.configuration"
 
           statuses:to="this.statuses"
+          goBack:to="this.goBack"
           
           ></timeline-configuration>
 
-      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow">
+      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 
@@ -49,7 +50,7 @@ export class TimelineReport extends StacheElement {
             <ul class="list-disc list-inside ml-2">
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with iniative work breakdown</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=breakdown">Ready and in-development initiative work breakdown</a></li>
+              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a></li>
             </ul>
 
           </div>
@@ -59,6 +60,7 @@ export class TimelineReport extends StacheElement {
             <select-issue-type 
               primaryIssueType:to="this.primaryIssueType"
               secondaryIssueType:to="this.secondaryIssueType"
+              derivedIssues:from="this.derivedIssues"
               jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
             <select-report-type 
@@ -83,6 +85,7 @@ export class TimelineReport extends StacheElement {
               groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
               statusesToExclude:to="this.statusesToExclude"
+              primaryReportBreakdown:to="this.primaryReportBreakdown"
               
               primaryReportType:from="this.primaryReportType"
               primaryIssueType:from="this.primaryIssueType"
@@ -106,7 +109,7 @@ export class TimelineReport extends StacheElement {
                 <gantt-grid 
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                    breakdown:from="eq(this.primaryReportType, 'breakdown')"
+                    breakdown:from="this.primaryReportBreakdown"
                     showPercentComplete:from="this.showPercentComplete"
                     groupBy:from="this.groupBy"
                     allDerivedIssues:from="this.derivedIssues"
@@ -139,9 +142,9 @@ export class TimelineReport extends StacheElement {
             </div>
           {{/ and }}
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
-            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
               <p>No issues of type {{this.primaryIssueType}}</p>
-              <p>Please check your JQL is correct!</p>
+              <p>Please check your JQL and the View Settings.</p>
             </div>
           {{/}}
           {{# if(this.derivedIssuesRequestData.issuesPromise.isPending) }}
@@ -269,11 +272,11 @@ export class TimelineReport extends StacheElement {
 
     // this all the data pre-compiled
     get rolledupAndRolledBackIssuesAndReleases(){
-      console.log("here",this.filteredDerivedIssues ,this.rollupTimingLevelsAndCalculations, this.configuration)
+      // console.log("here",this.filteredDerivedIssues ,this.rollupTimingLevelsAndCalculations, this.configuration)
       if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
         return [];
       }
-      debugger;
+      
       const rolledUp = rollupAndRollback(this.filteredDerivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
         new Date( new Date().getTime() - this.compareToTime.timePrior) );
 

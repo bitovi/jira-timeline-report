@@ -1,9 +1,10 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value } from "../../can.js";
 
-import {saveJSONToUrl,updateUrlParam} from "../../shared/state-storage.js";
+import {updateUrlParam} from "../../shared/state-storage.js";
 
-import { allStatusesSorted, allReleasesSorted } from "../../jira/normalized/normalize.js";
+import { bitoviTrainingIssueData } from "../../examples/bitovi-training.js";
 
+import { getSimplifiedIssueHierarchy } from "../../stateful-data/jira-data-requests.js";
 
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 
@@ -37,7 +38,10 @@ export class TimingCalculation extends StacheElement {
     `;
     static props = {
         get jiraIssueHierarchyPromise(){
-            return this.jiraHelpers.fetchIssueTypes().then(getIssueHierarchy)
+            return getSimplifiedIssueHierarchy({
+                isLoggedIn: this.jiraHelpers.hasValidAccessToken(),
+                jiraHelpers: this.jiraHelpers,
+            }) 
         },
         issueHierarchy: {
             async(resolve){

@@ -4,6 +4,7 @@ import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
 
 import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
 
+
 import "../status-filter.js";
 
 import SimpleTooltip from "../shared/simple-tooltip.js";
@@ -38,10 +39,6 @@ class TypeSelectionDropdown extends StacheElement {
 class SelectViewSettingsDropdown extends StacheElement {
     static view = `
     <div class="p-2">
-        
-
-        
-
 
         {{# eq(this.primaryReportType, 'start-due') }}
         <div>
@@ -83,74 +80,80 @@ class SelectViewSettingsDropdown extends StacheElement {
                 checked:from="this.sortByDueDate"
                 on:change="this.sortByDueDate = true"
                 /> Due Date</label>    
-        
+        </div>
 
         {{# if(this.primaryIssueType) }}
-        <div class="my-4">
-            <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
+            <div class="my-4">
+                <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
 
-            <div class="grid gap-2" style="grid-template-columns: max-content max-content">
-                <label>Show only {{this.firstIssueTypeWithStatuses}} statuses:</label>
-            
-                <status-filter 
-                    statuses:from="this.statuses"
-                    param:raw="statusesToShow"
-                    selectedStatuses:to="this.statusesToShow"
-                    inputPlaceholder:raw="Search for statuses"
-                    style="max-width: 400px;">
-                </status-filter>
-
-                <label>Hide {{this.firstIssueTypeWithStatuses}} statuses:</label>
-
-                <status-filter 
-                    statuses:from="this.statuses" 
-                    param:raw="statusesToRemove"
-                    selectedStatuses:to="this.statusesToRemove"
-                    inputPlaceholder:raw="Search for statuses"
-                    style="max-width: 400px;">
+                <div class="grid gap-2" style="grid-template-columns: max-content max-content">
+                    <label>Show only {{this.firstIssueTypeWithStatuses}} statuses:</label>
+                
+                    <status-filter 
+                        statuses:from="this.statuses"
+                        param:raw="statusesToShow"
+                        selectedStatuses:to="this.statusesToShow"
+                        inputPlaceholder:raw="Search for statuses"
+                        style="max-width: 400px;">
                     </status-filter>
 
-                
+                    <label>Hide {{this.firstIssueTypeWithStatuses}} statuses:</label>
+
+                    <status-filter 
+                        statuses:from="this.statuses" 
+                        param:raw="statusesToRemove"
+                        selectedStatuses:to="this.statusesToRemove"
+                        inputPlaceholder:raw="Search for statuses"
+                        style="max-width: 400px;">
+                        </status-filter>
+
+                    
+                </div>
             </div>
-        </div>
-        <div class="my-4">
-            <div class="font-bold uppercase text-slate-300 text-xs">Release Filters:</div>
+            <div class="my-4">
+                <div class="font-bold uppercase text-slate-300 text-xs">Release Filters:</div>
 
-            <div class="grid gap-2" style="grid-template-columns: max-content max-content">
-                <label>Show only {{this.firstIssueTypeWithStatuses}}s with releases:</label>
-            
-                <status-filter 
-                    statuses:from="this.releases"
-                    param:raw="releasesToShow"
-                    selectedStatuses:to="this.releasesToShow"
-                    inputPlaceholder:raw="Search for releases"
-                    style="max-width: 400px;"></status-filter>
-
+                <div class="grid gap-2" style="grid-template-columns: max-content max-content">
+                    <label>Show only {{this.firstIssueTypeWithStatuses}}s with releases:</label>
                 
+                    <status-filter 
+                        statuses:from="this.releases"
+                        param:raw="releasesToShow"
+                        selectedStatuses:to="this.releasesToShow"
+                        inputPlaceholder:raw="Search for releases"
+                        style="max-width: 400px;"></status-filter>
+
+                    
+                </div>
+
+                {{# eq(this.primaryIssueType, "Release") }}
+                        <label class=''>Show only Semver-like releases</label>
+                        <input type='checkbox' 
+                            class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
+                        <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
+                        <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
+                        </p>
+                {{/ }}
             </div>
 
-            {{# eq(this.primaryIssueType, "Release") }}
-                    <label class=''>Show only Semver-like releases</label>
-                    <input type='checkbox' 
-                        class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
-                    <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
-                    <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
-                    </p>
-            {{/ }}
-        </div>
+            <div class="my-4">
+                <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
 
-        <div class="my-4">
-            <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
-
-            <input type='checkbox' 
-                class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/> Hide {{this.primaryIssueType}}s without dates 
-        </div>
+                <input type='checkbox' 
+                    class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/> Hide {{this.primaryIssueType}}s without dates 
+            </div>
         {{/ if }}
 
 
 
         <div class="my-4">
             <div class="font-bold uppercase text-slate-300 text-xs">View Options</div>
+            <div class="flex mt-2 gap-2 flex-wrap">
+                <input type='checkbox' 
+                    class='self-start mt-1.5'  checked:bind='this.primaryReportBreakdown'/>
+                <p>Show work breakdown</p>
+                
+            </div>
 
             <div class="flex mt-2 gap-2 flex-wrap">
                 <input type='checkbox' 
@@ -215,6 +218,7 @@ export class SelectViewSettings extends StacheElement {
                 on:click="this.showChildOptions()">View Settings <img class="inline" src="/images/chevron-down.svg"/></button>
     `;
     static props ={
+        primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
         secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
         showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
         groupBy: saveJSONToUrl("groupBy", "", String, {parse: x => ""+x, stringify: x => ""+x}),
@@ -270,10 +274,15 @@ export class SelectViewSettings extends StacheElement {
             sortByDueDate: value.bind(this,"sortByDueDate"),
             hideUnknownInitiatives: value.bind(this,"hideUnknownInitiatives"),
             showOnlySemverReleases: value.bind(this,"showOnlySemverReleases"),
+            primaryReportBreakdown: value.bind(this,"primaryReportBreakdown"),
+
             primaryReportType: this.primaryReportType,
-            statusesToRemove: value.bind(this,"statusesToRemove"),
-            statusesToShow: value.bind(this,"statusesToShow"),
-            planningStatuses: value.bind(this,"planningStatuses"),
+
+            statusesToRemove: value.to(this,"statusesToRemove"),
+            statusesToShow: value.to(this,"statusesToShow"),
+            planningStatuses: value.to(this,"planningStatuses"),
+
+            
 
 
             secondaryIssueType: value.from(this,"secondaryIssueType"),
