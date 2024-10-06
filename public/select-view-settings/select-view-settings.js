@@ -1,9 +1,10 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value } from "../can.js";
+import { StacheElement, type, ObservableObject, ObservableArray, value, diff } from "../can.js";
 
 import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
 
 import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
 
+import { pushStateObservable } from "../shared/state-storage.js";
 
 import "../status-filter.js";
 
@@ -40,7 +41,7 @@ class SelectViewSettingsDropdown extends StacheElement {
     static view = `
     <div class="p-2">
 
-        {{# eq(this.primaryReportType, 'start-due') }}
+        {{# if(this.canGroup) }}
         <div>
             <div class="font-bold uppercase text-slate-300 text-xs">Group by: </div>
             <label class="px-2 block"><input 
@@ -62,7 +63,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                 on:change="this.groupBy = 'team'"
                 /> Team (or Project)</label>
         </div>
-        {{/ eq }}
+        {{/ if }}
 
 
         
@@ -92,7 +93,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <status-filter 
                         statuses:from="this.statuses"
                         param:raw="statusesToShow"
-                        selectedStatuses:to="this.statusesToShow"
+                        selectedStatuses:bind="this.statusesToShow"
                         inputPlaceholder:raw="Search for statuses"
                         style="max-width: 400px;">
                     </status-filter>
@@ -102,7 +103,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <status-filter 
                         statuses:from="this.statuses" 
                         param:raw="statusesToRemove"
-                        selectedStatuses:to="this.statusesToRemove"
+                        selectedStatuses:bind="this.statusesToRemove"
                         inputPlaceholder:raw="Search for statuses"
                         style="max-width: 400px;">
                         </status-filter>
@@ -199,7 +200,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <status-filter 
                     statuses:from="this.statuses" 
                     param:raw="planningStatuses"
-                    selectedStatuses:to="this.planningStatuses"
+                    selectedStatuses:bind="this.planningStatuses"
                     inputPlaceholder:raw="Search for statuses"
                     style="max-width: 400px;"></status-filter>
             </div>
@@ -221,7 +222,42 @@ export class SelectViewSettings extends StacheElement {
         primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
         secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
         showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
-        groupBy: saveJSONToUrl("groupBy", "", String, {parse: x => ""+x, stringify: x => ""+x}),
+
+        // group by doesn't make sense for a release
+        
+        groupBy: {
+            value({resolve, lastSet, listenTo}) {
+                function getFromParam() {
+                    return new URL(window.location).searchParams.get("groupBy") || "";
+                }
+
+                const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
+                    if(primaryIssueType === "Release") {
+                        updateUrlParam("groupBy", "", "");
+                    } else {
+                        updateUrlParam("groupBy", currentGroupBy, "");
+                    }
+                }
+                
+                listenTo("primaryIssueType",({value})=> {    
+                    reconcileCurrentValue(value, getFromParam());
+                });
+
+                listenTo(lastSet, (value)=>{
+                    updateUrlParam("groupBy", value || "", "");
+                });
+
+                listenTo(pushStateObservable, ()=>{
+                    resolve( getFromParam() );
+                })
+
+                
+                resolve(getFromParam());
+            }
+        },
+
+
+
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
 
@@ -230,23 +266,13 @@ export class SelectViewSettings extends StacheElement {
         
         // STATUS FILTERING STUFF
         
-        planningStatuses: {
-          get default(){
-            return [];
-          }
-        },
         // used for later filtering
         // but the options come from the issues
-        statusesToRemove: {
-            get default(){
-                return [];
-            }
-        },
-        statusesToShow: {
-            get default(){
-                return [];
-            }
-        },
+        
+        statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
+        statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
+        planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
+
         get releases(){
             if(this.derivedIssues) {
                 return allReleasesSorted(this.derivedIssues)
@@ -262,6 +288,10 @@ export class SelectViewSettings extends StacheElement {
                     return this.secondaryIssueType;
                 }
             }
+        },
+        get canGroup(){
+            return this.primaryReportType === 'start-due' &&
+                this.primaryIssueType && this.primaryIssueType !== "Release"
         }
         
     }
@@ -270,6 +300,7 @@ export class SelectViewSettings extends StacheElement {
         let dropdown = new SelectViewSettingsDropdown().bindings({
             showPercentComplete: value.bind(this,"showPercentComplete"),
             secondaryReportType: value.bind(this,"secondaryReportType"),
+            
             groupBy: value.bind(this,"groupBy"),
             sortByDueDate: value.bind(this,"sortByDueDate"),
             hideUnknownInitiatives: value.bind(this,"hideUnknownInitiatives"),
@@ -278,15 +309,16 @@ export class SelectViewSettings extends StacheElement {
 
             primaryReportType: this.primaryReportType,
 
-            statusesToRemove: value.to(this,"statusesToRemove"),
-            statusesToShow: value.to(this,"statusesToShow"),
-            planningStatuses: value.to(this,"planningStatuses"),
+            statusesToRemove: value.bind(this,"statusesToRemove"),
+            statusesToShow: value.bind(this,"statusesToShow"),
+            planningStatuses: value.bind(this,"planningStatuses"),
 
             
 
 
             secondaryIssueType: value.from(this,"secondaryIssueType"),
             primaryIssueType: value.from(this,"primaryIssueType"),
+            canGroup: value.from(this,"canGroup"),
 
             firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
 
@@ -304,6 +336,38 @@ export class SelectViewSettings extends StacheElement {
             TOOLTIP.leftElement();
           }
         })
+    }
+}
+
+
+function makeArrayOfStringsQueryParamValue(queryParam){
+    return {
+        value: function({resolve, lastSet, listenTo}){
+            function urlValue(){
+                let value = new URL(window.location).searchParams.get(queryParam);
+                return !value ? [] : value.split(",")
+            }
+            let currentValue = urlValue();
+            resolve(currentValue);
+    
+            listenTo(lastSet, (value)=>{
+                console.log("SETTING")
+                if(!value) {
+                    value = "";
+                } else if( Array.isArray(value) ){
+                    value = value.join(",")
+                }
+                updateUrlParam(queryParam, value, "");
+            });
+    
+            listenTo(pushStateObservable, (ev)=>{
+                console.log("ROUTE CHANGED", ev)
+                let newValue = urlValue();
+                if(diff.list(newValue, currentValue).length) {
+                    resolve(currentValue = newValue);
+                }
+            })
+        }
     }
 }
 

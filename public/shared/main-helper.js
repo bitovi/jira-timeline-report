@@ -10,17 +10,28 @@ import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
 import { updateUrlParam } from "./state-storage.js";
-function legacyPrimaryIssueTypeRoutingFix(){
+function legacyPrimaryReportingTypeRoutingFix(){
   const primaryIssueType = new URL(window.location).searchParams.get("primaryReportType");
   if(primaryIssueType === "breakdown") {
     updateUrlParam("primaryReportType", "start-due");
     updateUrlParam("primaryReportBreakdown", "true");
+    console.warn("fixing url")
+  }
+}
+
+function legacyPrimaryIssueTypeRoutingFix(){
+  const primaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
+  if(primaryIssueType) {
+    updateUrlParam("primaryReportType", "","");
+    updateUrlParam("selectedIssueType", primaryIssueType,"");
+    console.warn("fixing url")
   }
 }
 
 
 
 export default async function mainHelper(config, host) {
+  legacyPrimaryReportingTypeRoutingFix();
   legacyPrimaryIssueTypeRoutingFix();
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);

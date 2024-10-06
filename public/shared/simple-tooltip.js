@@ -63,8 +63,10 @@ class SimpleTooltip extends HTMLElement {
           
       }
   }
+  
   belowElementInScrollingContainer(element, DOM){
     // find if there's a scrolling container and move ourselves to that 
+    
     const container = findScrollingContainer(element);
     this.innerHTML = "";
     container.appendChild(this);

@@ -96,107 +96,189 @@ export class SelectIssueType extends StacheElement {
         },
         
         get issueHierarchy(){
-            
             return this.derivedIssues && this.derivedIssues.length ?
                 issueHierarchyFromNormalizedIssues(this.derivedIssues) :
                 this.simplifiedIssueHierarchy;
             
         },
+        // needs to be atomic
+        // a value like `Initiative`
+        // or `Release-Initiative`
+        selectedIssueType: {
+            value({resolve, lastSet, listenTo}) {
+                function getParamValue(){
+                    return new URL(window.location).searchParams.get("selectedIssueType") || "";
+                }
+
+                // anything happens in state, update the route 
+                // the route updates, update the state (or the route if it's wrong)
+                const resolveCurrentValue = () => {
+                    // we wait to resolve to a defined value until we can check it's right
+                    if(this.issueHierarchy && this.issueHierarchy.length) {
+                        const curParamValue = getParamValue();
+                        // helps with legacy support to pick the first type
+                        if(curParamValue === "Release") {
+                            resolve( "Release-"+this.issueHierarchy[0].name );
+                        } else {
+                            const curSelectedParts = toSelectedParts(curParamValue);
+                            //const lastSelectedParts = toSelectedParts(lastSelectedValue);
+
+                            if(curSelectedParts) {
+                                // check it's ok
+                                let typeToCheck = curSelectedParts.secondary ?? curSelectedParts.primary;
+                                
+                                if(this.issueHierarchy.some( issue => issue.name === typeToCheck ) ) {
+                                    // make sure we actually need to update
+                                    resolve(curParamValue);
+                                } 
+                                // set back to default
+                                else {
+                                    setTimeout( ()=> {
+                                        updateUrlParam("selectedIssueType", "", "");
+                                    },1)
+                                }
+
+                            } else {
+                                // default to the first type
+                                resolve( this.issueHierarchy[0].name );
+                            }
+                        }
+                    } else {
+                        resolve(undefined)
+                    }
+                }
 
 
+                // when the route changes, check stuff ...
+                listenTo(pushStateObservable, ()=>{
+                    resolveCurrentValue();
+                })
+                
+                listenTo("issueHierarchy",({value})=> {
+                    resolveCurrentValue();
+                });
+
+                listenTo(lastSet, (value)=>{
+                    updateUrlParam("selectedIssueType", value, "");
+                });
+
+                resolveCurrentValue();
+
+            }
+        },
+        get primaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
+        },
+        get secondaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
+        }
+        /*
         primaryIssueType: {
             value({resolve, lastSet, listenTo}) {
+                function getParamValue(){
+                    return new URL(window.location).searchParams.get("primaryIssueType") || "";
+                }
 
-                const reconcileCurrentValue = (issueHierarchy, primaryIssueType) => {
+                // anything happens in state, update the route 
+                // the route updates, update the state (or the route if it's wrong)
+                const resolveCurrentValue = (issueHierarchy, primaryIssueType) => {
                     
                     if(primaryIssueType === "Release") {
                         resolve(primaryIssueType);
                     } else if(this.issueHierarchy && this.issueHierarchy.length) {
-                        if(this.issueHierarchy.some( issue => issue.name === primaryIssueType ) ) {
+                        if(primaryIssueType === "") {
+                            resolve( this.issueHierarchy[0].name);
+                        } 
+                        // make sure it's still relevante
+                        else if(this.issueHierarchy.some( issue => issue.name === primaryIssueType ) ) {
                             resolve(primaryIssueType);
-                        } else {
-                            updateUrlParam("primaryIssueType", "", "");
-                            resolve(currentPrimaryIssueType = this.issueHierarchy[0].name)
+                        } 
+                        // set back to default
+                        else {
+                            setTimeout( ()=> {
+                                updateUrlParam("primaryIssueType", "", "");
+                            },1)
                         }
                     } else {
                         resolve(undefined);
                     }
-                    
                 }
-                
-                let currentPrimaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
 
+
+                // when the route changes, check stuff ...
+                listenTo(pushStateObservable, ()=>{
+                    resolveCurrentValue(this.issueHierarchy, getParamValue());
+                })
+                
                 listenTo("issueHierarchy",({value})=> {
-                    reconcileCurrentValue(value, currentPrimaryIssueType);
+                    console.log("primaryIssueType / issueHierarchy", value, getParamValue())
+                    resolveCurrentValue(value, getParamValue());
                 });
 
                 listenTo(lastSet, (value)=>{
-                    setCurrentValue(value);
+                    updateUrlParam("primaryIssueType", value, "");
                 });
 
-                listenTo(pushStateObservable, ()=>{
-                    reconcileCurrentValue(this.issueHierarchy, new URL(window.location).searchParams.get("primaryIssueType"));
-                })
-
-                //setCurrentValue(new URL(window.location).searchParams.get("primaryIssueType") )
-
                 
-                reconcileCurrentValue(this.issueHierarchy, currentPrimaryIssueType);
+                resolveCurrentValue(this.issueHierarchy, getParamValue());
 
-                
-
-                function setCurrentValue(value) {
-                    currentPrimaryIssueType = value;
-                    updateUrlParam("primaryIssueType", value, "");
-                    // calculationOptions ... need to pick the right one if empty
-                    resolve(value)
-                }
             }
         },
         secondaryIssueType: {
             value({resolve, lastSet, listenTo}) {
 
+
+                function getSecondaryValue(){
+                    return new URL(window.location).searchParams.get("secondaryIssueType") || "";
+                }
+
+                function getPrimaryValue(){
+                    return new URL(window.location).searchParams.get("primaryIssueType") || "";
+                }
+
                 const reconcileCurrentValue = (issueHierarchy, primaryIssueType, secondaryIssueType) => {
-                    if(this.primaryIssueType && primaryIssueType === "Release") {
-                        if(issueHierarchy && this.issueHierarchy.length) {
+                    console.log("secondaryIssueType reconcile", {primaryIssueType, secondaryIssueType});
+                    if(primaryIssueType && primaryIssueType === "Release") {
+                        if(issueHierarchy && issueHierarchy.length) {
                             if(issueHierarchy.some( issue => issue.name === secondaryIssueType ) ) {
                                 resolve(secondaryIssueType);
                             } else {
                                 updateUrlParam("secondaryIssueType", "", "");
-                                resolve(secondaryIssueType = issueHierarchy[0].name)
                             }
                         }
                     } else {
-                        resolve(undefined);
+                        updateUrlParam("secondaryIssueType", "", "");
                     }
 
                 }
-                
-                let currentSecondaryIssueType = new URL(window.location).searchParams.get("secondaryIssueType");
 
+                listenTo(pushStateObservable, ()=>{
+                    reconcileCurrentValue(this.issueHierarchy, getPrimaryValue(), getSecondaryValue());
+                })
+                
                 listenTo("issueHierarchy",({value})=> {
-                    reconcileCurrentValue(value, this.primaryIssueType, currentSecondaryIssueType);
+                    reconcileCurrentValue(this.issueHierarchy, getPrimaryValue(), getSecondaryValue());
                 });
                 listenTo("primaryIssueType",({value})=> {
-                    reconcileCurrentValue(this.issueHierarchy, value, currentSecondaryIssueType);
+                    reconcileCurrentValue(this.issueHierarchy, getPrimaryValue(), getSecondaryValue());
                 });
 
                 listenTo(lastSet, (value)=>{
                     setCurrentValue(value);
                 });
 
-                //setCurrentValue(new URL(window.location).searchParams.get("primaryIssueType") )
-
-                
-                reconcileCurrentValue(this.issueHierarchy, this.primaryIssueType, currentSecondaryIssueType);
+    
+                reconcileCurrentValue(this.issueHierarchy, getPrimaryValue(), getSecondaryValue());
 
                 function setCurrentValue(value) {
-                    currentSecondaryIssueType = value;
-                    updateUrlParam("secondaryIssueType", value, "");
-                    resolve(value)
+                    console.log("URL secondaryIssueType", value);
+                    updateUrlParam("secondaryIssueType", value || "", "");
+                    //resolve(value)
                 }
+
+                
             }
-        }
+        }*/
         /*
         get secondaryIssueType(){
             if(this.primaryIssueType) {
@@ -209,12 +291,11 @@ export class SelectIssueType extends StacheElement {
         },*/
     };
     onSelection(primaryType, secondaryType){
-        queues.batch.start();
-        this.primaryIssueType = primaryType;
         if(secondaryType) {
-            this.secondaryIssueType = secondaryType;
+            this.selectedIssueType = "Release-"+secondaryType;
+        } else {
+            this.selectedIssueType = primaryType;
         }
-        queues.batch.stop();
         TOOLTIP.leftElement();
         RELEASES_TOOLTIP.leftElement();
     }
@@ -235,6 +316,18 @@ export class SelectIssueType extends StacheElement {
             RELEASES_TOOLTIP.leftElement();
           }
         })
+    }
+}
+
+function toSelectedParts(value){
+    if(value) {
+        if(value.startsWith("Release-")) {
+            return {primary: "Release", secondary: value.substring("Release-".length)}
+        } else {
+            return {primary: value}
+        }
+    } else {
+        return undefined;
     }
 }
 

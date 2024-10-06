@@ -47,7 +47,6 @@ export function saveJSONToUrl(key, defaultValue, Type, converter = JSON){
         listenTo(lastSet, (value) => {
           const valueJSON = stringify(value);
           updateUrlParam(key, valueJSON, defaultJSON)
-          //resolve(value);
         });
 
         listenTo(pushStateObservable, ()=>{
@@ -56,6 +55,8 @@ export function saveJSONToUrl(key, defaultValue, Type, converter = JSON){
       }
   }
 }
+
+
 
 export function updateUrlParam(key, valueJSON, defaultJSON) {
   const newUrl = new URL(window.location);

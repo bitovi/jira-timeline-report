@@ -189,7 +189,10 @@ export class GanttGrid extends StacheElement {
     return ((new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime) * 100;
   }
   get gridRowData() {
-    if (this.groupBy === "parent") {
+    
+    console.log("ROW DATA recompute", this.groupBy, this.primaryIssueType, this.primaryIssuesOrReleases)
+    // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
+    if (this.groupBy === "parent" && this.primaryIssueType !== "Release") {
       // get all the parents ...
 
       let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.parentKey);
@@ -224,7 +227,7 @@ export class GanttGrid extends StacheElement {
         .flat(1);
 
       return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
-    } else if (this.groupBy === "team") {
+    } else if (this.groupBy === "team" && this.primaryIssueType !== "Release") {
       let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.team.name);
 
       const teams = Object.keys(issuesByTeam).map((teamName) => {

@@ -112,6 +112,7 @@ export class TimelineReport extends StacheElement {
                     breakdown:from="this.primaryReportBreakdown"
                     showPercentComplete:from="this.showPercentComplete"
                     groupBy:from="this.groupBy"
+                    primaryIssueType:from="this.primaryIssueType"
                     allDerivedIssues:from="this.derivedIssues"
                     ></gantt-grid>
               {{ else }}
@@ -143,7 +144,7 @@ export class TimelineReport extends StacheElement {
           {{/ and }}
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
-              <p>No issues of type {{this.primaryIssueType}}</p>
+              <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.primaryIssueType}}.</p>
               <p>Please check your JQL and the View Settings.</p>
             </div>
           {{/}}
@@ -251,6 +252,11 @@ export class TimelineReport extends StacheElement {
     }
 
     get rollupTimingLevelsAndCalculations(){
+      /*console.log("rolledupAndRollrollupTimingLevelsAndCalculationsedBackIssuesAndReleases",{
+        primaryIssueType: this.primaryIssueType, 
+        secondaryIssueType: this.secondaryIssueType,
+        issueTimingCalculations: this.issueTimingCalculations
+      } )*/
 
       function getIssueHierarchyUnderType(timingCalculations, type){
         const index = timingCalculations.findIndex( calc => calc.type === type);
@@ -272,7 +278,11 @@ export class TimelineReport extends StacheElement {
 
     // this all the data pre-compiled
     get rolledupAndRolledBackIssuesAndReleases(){
-      // console.log("here",this.filteredDerivedIssues ,this.rollupTimingLevelsAndCalculations, this.configuration)
+      /*console.log("rolledupAndRolledBackIssuesAndReleases",{
+        filteredDerivedIssues: this.filteredDerivedIssues, 
+        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
+        configuration: this.configuration
+      } )*/
       if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
         return [];
       }
@@ -287,10 +297,13 @@ export class TimelineReport extends StacheElement {
     }
     
     get groupedParentDownHierarchy(){
+      /*console.log("groupedParentDownHierarchy",{
+        rolledupAndRolledBackIssuesAndReleases: this.rolledupAndRolledBackIssuesAndReleases, 
+        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations
+      } )*/
       if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
         return [];
       }
-
       const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations)
       return groupedHierarchy.reverse();
     }
@@ -304,9 +317,11 @@ export class TimelineReport extends StacheElement {
       })
     }
     get primaryIssuesOrReleases(){
+      //console.log("primaryIssuesOrReleases", this.groupedParentDownHierarchy.length)
       if(!this.groupedParentDownHierarchy.length) {
         return [];
       }
+      
       const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
       
       const hideUnknownInitiatives = this.hideUnknownInitiatives;
