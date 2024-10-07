@@ -1,5 +1,5 @@
 import fetchJSON from "./fetch";
-import { Config } from "../shared/types";
+import { Config } from "./types";
 import {
   saveInformationToLocalStorage,
   clearAuthFromLocalStorage,

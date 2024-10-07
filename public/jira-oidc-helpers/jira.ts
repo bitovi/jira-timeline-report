@@ -3,19 +3,16 @@ import mapIdsToNames from "../shared/map-ids-to-names";
 import { responseToText } from "../shared/response-to-text";
 import { FetchJiraIssuesParams } from "../jira/shared/types";
 import {
+    RequestHelperResponse,
+    Config,
     Issue,
     ProgressData,
-    RequestHelperResponse,
-    Config
-} from "../shared/types";
-import {
     OidcJiraIssue,
     ChangeLog,
     InterimJiraIssue,
     FieldsRequest,
-} from './types'
+} from "./types";
 import { fetchFromLocalStorage } from "./storage";
-import { makeFieldsRequest } from "./makeFieldsRequest";
 
 export function fetchAccessibleResources(config: Config) {
     return () => {
@@ -60,11 +57,11 @@ export function fetchJiraIssue(config: Config) {
     }
     return editBody;
 };
-export function fetchJiraIssuesWithJQLWithNamedFields(config: Config, fieldsRequest: FieldsRequest) {
+export function fetchJiraIssuesWithJQLWithNamedFields(config: Config, fieldsRequest?: FieldsRequest) {
     return async (params: FetchJiraIssuesParams) => {
         const fields = await fieldsRequest;
 
-        if (!fields) return;
+        if (!fields) return [];
 
         const newParams = {
             ...params,
@@ -98,7 +95,7 @@ export function JiraIssueParamsToParams(params: FetchJiraIssuesParams): Record<s
     if (params.fields) formattedParams.fields = params.fields.join(",");
     return formattedParams;
 }
-export async function fetchIssueTypes(config: Config) {
+export function fetchIssueTypes(config: Config) {
     return () => {
         const response = config.requestHelper(`/api/3/issuetype`) as unknown;
         return response as Promise<
@@ -139,7 +136,7 @@ export function fetchAllJiraIssuesWithJQL(config: Config) {
         });
     };
 }
-export function fetchAllJiraIssuesWithJQLUsingNamedFields(config: Config, fieldsRequest: FieldsRequest) {
+export function fetchAllJiraIssuesWithJQLUsingNamedFields(config: Config, fieldsRequest?: FieldsRequest) {
     return async (params: FetchJiraIssuesParams) => {
         const fields = await fieldsRequest;
 
@@ -307,15 +304,14 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
     };
 }
 // this could do each response incrementally, but I'm being lazy
-export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields = (config: Config, fieldsRequest: FieldsRequest) =>
+export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields = (config: Config, fieldsRequest?: FieldsRequest) =>
     async (
         params: { fields: string[];[key: string]: any; },
         progress: (data: ProgressData) => void = () => { }
     ) => {
         const fields = await fieldsRequest;
-        if (!fields) {
-            return Promise.resolve(null);
-        }
+        if (!fields) return
+
         const newParams = {
             ...params,
             fields: params.fields.map((f) => fields?.nameMap[f] || f),
@@ -395,13 +391,13 @@ export function fetchDeepChildren(config: Config) {
     };
 }
 
-export function editJiraIssueWithNamedFields(config: Config, fieldsRequest: FieldsRequest) {
+export function editJiraIssueWithNamedFields(config: Config, fieldsRequest?: FieldsRequest) {
     return async (issueId: string, fields: Record<string, any>) => {
         const scopeIdForJira = fetchFromLocalStorage("scopeId");
         const accessToken = fetchFromLocalStorage("accessToken");
 
         const fieldMapping = await fieldsRequest;
-        if (!fieldMapping) return;
+        if (!fieldMapping) return
 
         const editBody = fieldsToEditBody(fields, fieldMapping);
         //const fieldsWithIds = mapNamesToIds(fields || {}, fieldMapping),

@@ -1,3 +1,4 @@
+import { fields } from "../raw/rollback/rollback";
 import type { StorageFactory } from "./common";
 
 interface Table {
@@ -28,10 +29,10 @@ interface StorageIssue {
 }
 
 const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
-  const configurationIssues: StorageIssue[] = await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields({
+  const configurationIssues: StorageIssue[] = (await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields({
     jql: `summary ~ "Jira Auto Scheduler Configuration"`,
     fields: ["summary", "Description"],
-  });
+  })).map(({ id, fields: { Summary, Description } }) => ({ id, fields: { Summary, Description } }));
 
   if (!configurationIssues.length) {
     return null;

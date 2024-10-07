@@ -1,4 +1,5 @@
-import { Config } from "../shared/types";
+import { hasValidAccessToken } from "./auth";
+import { Config } from "./types";
 
 export function fetchJiraFields(config: Config) {
     return () => {
@@ -7,6 +8,7 @@ export function fetchJiraFields(config: Config) {
 }
 
 export function makeFieldsRequest(config: Config) {
+    if (config.host === "jira" || hasValidAccessToken()) {
     return fetchJiraFields(config)().then((fields) => {
         const nameMap: Record<string, any> = {};
         const idMap: Record<string, any> = {};
@@ -25,4 +27,5 @@ export function makeFieldsRequest(config: Config) {
             idMap: idMap,
         };
     });
+}
 }

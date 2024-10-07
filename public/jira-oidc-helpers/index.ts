@@ -1,8 +1,8 @@
 import {
-  JtrEnv,
   Config,
   RequestHelperResponse,
-} from "../shared/types";
+} from "./types";
+import { JtrEnv } from "../shared/types";
 import {
   saveInformationToLocalStorage,
   clearAuthFromLocalStorage,
@@ -35,6 +35,7 @@ import {
   JiraIssueParamsToParams,
   isChangelogComplete,
   fetchRemainingChangelogsForIssue,
+  fetchJiraIssuesWithJQLWithNamedFields,
 } from "./jira";
 import { fetchJiraFields, makeFieldsRequest } from "./makeFieldsRequest";
 import { _cachedServerInfoPromise, getServerInfo } from "./serverInfo.js";
@@ -53,17 +54,20 @@ declare global {
 }
 
 export default function createJiraHelpers(
-  { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL } = window.env,
+  { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY } = window.env,
   requestHelper: (urlFragment: string) => Promise<RequestHelperResponse>,
   host: "jira" | "hosted",
 ) {
   const config: Config = {
-    env: { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL },
+    env: { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY },
     requestHelper,
     host,
   };
 
-  const jiraHelpersBasic = {
+  const fieldsRequest = makeFieldsRequest(config);
+
+  const jiraHelpers = {
+    appKey: JIRA_APP_KEY,
     saveInformationToLocalStorage,
     clearAuthFromLocalStorage,
     fetchFromLocalStorage,
@@ -76,8 +80,7 @@ export default function createJiraHelpers(
     fieldsToEditBody,
     fetchJiraIssuesWithJQL: fetchJiraIssuesWithJQL(config),
     fetchAllJiraIssuesWithJQL: fetchAllJiraIssuesWithJQL(config),
-    fetchAllJiraIssuesWithJQLUsingNamedFields:
-      JiraIssueParamsToParams,
+    JiraIssueParamsToParams,
     fetchJiraChangelog: fetchJiraChangelog(config),
     isChangelogComplete,
     fetchRemainingChangelogsForIssues:
@@ -94,44 +97,34 @@ export default function createJiraHelpers(
     hasValidAccessToken,
     _cachedServerInfoPromise,
     getServerInfo: getServerInfo(config),
-    requester: requestHelper
+    requester: requestHelper,
+
+    editJiraIssueWithNamedFields: editJiraIssueWithNamedFields(config, fieldsRequest),
+    fetchJiraIssuesWithJQLWithNamedFields:
+      fetchJiraIssuesWithJQLWithNamedFields(config, fieldsRequest),
+    fetchAllJiraIssuesWithJQLUsingNamedFields:
+      fetchAllJiraIssuesWithJQLUsingNamedFields(config, fieldsRequest),
+    fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields:
+      fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config, fieldsRequest),
+    fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields:
+      makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
+        fetchAllJiraIssuesWithJQL(config)),
+    fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields:
+      makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
+        fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)),
   };
 
-  if (config.host === "jira" || hasValidAccessToken()) {
+  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
+    makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
+      jiraHelpers.fetchAllJiraIssuesWithJQL
+        .bind(jiraHelpers)
+    );
 
-    const fieldsRequest = makeFieldsRequest(config);
+  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
+    makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
+      jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog
+        .bind(jiraHelpers)
+    );
 
-    const jiraHelpers = {
-      ...jiraHelpersBasic,
-      editJiraIssueWithNamedFields: editJiraIssueWithNamedFields(config, fieldsRequest),
-      fetchJiraIssuesWithJQLWithNamedFields:
-        fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config, fieldsRequest),
-      fetchAllJiraIssuesWithJQLUsingNamedFields:
-        fetchAllJiraIssuesWithJQLUsingNamedFields(config, fieldsRequest),
-      fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields:
-        fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config, fieldsRequest),
-      fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields:
-        makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
-          fetchAllJiraIssuesWithJQL(config)),
-      fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields:
-        makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
-          fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)),
-    };
-
-    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
-      makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
-        jiraHelpers.fetchAllJiraIssuesWithJQL
-          .bind(jiraHelpers)
-      );
-
-    jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
-      makeDeepChildrenLoaderUsingNamedFields(fieldsRequest)(
-        jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog
-          .bind(jiraHelpers)
-      );
-
-    return jiraHelpers
-  }
-  
-  return jiraHelpersBasic
+  return jiraHelpers
 };
