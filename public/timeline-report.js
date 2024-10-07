@@ -1,79 +1,44 @@
 import { StacheElement, type } from "./can.js";
 
-
 //import "./steerco-timeline.js";
 import "./status-filter.js";
 import "./status-filter-only.js";
 import "./gantt-grid.js";
 import "./gantt-timeline.js";
 import "./status-report.js";
-import "./timeline-configuration/timeline-configuration.js"
+import "./timeline-configuration/timeline-configuration.js";
+
+import "./select-issue-type/select-issue-type.js";
+import "./select-report-type/select-report-type.js";
+import "./select-view-settings/select-view-settings.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback.js";
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 
+import { DROPDOWN_LABEL } from "./shared/style-strings.js";
+
 export class TimelineReport extends StacheElement {
-    static view = `
-      <div 
-          class="drop-shadow-lg
-          fixed left-0 z-50 overflow-auto
-          top-fullish-vh height-fullish-vh 
-          bg-white flex max-w-4xl" id="configuration">
-        
+  static view = `<div class="flex">
         <timeline-configuration
-          class="border-gray-100 p-4 relative {{# not(this.showingConfiguration) }}hidden{{/}} block" 
-          style="border-top-width: 32px;overflow-y: auto"
+          class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" 
+          style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
           teamConfigurationPromise:from="this.velocitiesConfiguration.teamConfigurationPromise"
 
           jql:to="this.jql"
           derivedIssuesRequestData:to="this.derivedIssuesRequestData"
-
-          showOnlySemverReleases:to="this.showOnlySemverReleases"
-          statusesToRemove:to="this.statusesToRemove"
-          statusesToShow:to="this.statusesToShow"
-
-          secondaryReportType:to="this.secondaryReportType"
-          timingCalculationMethods:to="this.timingCalculationMethods"
-          primaryReportType:to="this.primaryReportType"
-          secondaryReportType:to="this.secondaryReportType"
-
-          primaryIssueType:to="this.primaryIssueType"
-          secondaryIssueType:to="this.secondaryIssueType"
-          hideUnknownInitiatives:to="this.hideUnknownInitiatives"
-          sortByDueDate:to="this.sortByDueDate"
-          showPercentComplete:to="this.showPercentComplete"
-          rollupTimingLevelsAndCalculations:to="this.rollupTimingLevelsAndCalculations"
+          issueTimingCalculations:to="this.issueTimingCalculations"
           configuration:to="this.configuration"
-          planningStatuses:to="this.planningStatuses"
-          groupBy:to="this.groupBy"
-          releasesToShow:to="this.releasesToShow"
+          statuses:to="this.statuses"
           statusesToExclude:to="this.statusesToExclude"
+          goBack:to="this.goBack"
+          storage:from="this.storage"
+          
           ></timeline-configuration>
 
-        <div on:click="this.toggleConfiguration()"
-          class="w-8 hover:bg-gray-200 cursor-pointer bg-gray-100 ">
-        
-          {{#not(this.showingConfiguration)}}
-            <p class="-rotate-90 w-40 absolute" style="top: 40%; left: -65px">Configure</p>
-
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" data-slot="icon" class="w-8 h-8 mt-px">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-            </svg>
-
-          {{ else }}
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" data-slot="icon" class="w-8 h-8 mt-px">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-            </svg>
-        
-          {{/}}
-
-        </div>
-
-      </div>
-        <div class="w-1280 fullish-vh pt-4 left-config-width {{#this.showingConfiguration}}relative {{else}}place-center{{/}}">
+      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 
@@ -85,35 +50,74 @@ export class TimelineReport extends StacheElement {
             <ul class="list-disc list-inside ml-2">
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with iniative work breakdown</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=breakdown">Ready and in-development initiative work breakdown</a></li>
+              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a></li>
             </ul>
 
           </div>
       {{/ not }}
 
-          <div class='p-4 rounded-lg-gray-100-on-white mb-4 drop-shadow-md color-bg-white'>
-            <p><label class="inline font-bold">Compare to {{this.compareToTime.text}}</label>
-            - Specify what timepoint to use to determine if an initiative or release has fallen behind.</p>
-            <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
+          <div class="flex gap-1">
+            
+            <select-issue-type 
+              primaryIssueType:to="this.primaryIssueType"
+              secondaryIssueType:to="this.secondaryIssueType"
+              derivedIssues:from="this.derivedIssues"
+              jiraHelpers:from="this.jiraHelpers"></select-issue-type>
+
+            <select-report-type 
+              primaryReportType:to="this.primaryReportType"
+              jiraHelpers:from="this.jiraHelpers"></select-report-type>
+        
+            <div class='flex-grow'>
+              <label for="compareValue" class="${DROPDOWN_LABEL}">Compare to {{this.compareToTime.text}}</label>
+              <input class="w-full-border-box h-8" 
+                id="compareValue"
+                type='range' 
+                valueAsNumber:bind:on:input='this.timeSliderValue' 
+                min="0" max="100"/>
+            </div>
+            <select-view-settings
+              jiraHelpers:from="this.jiraHelpers"
+              
+              statusesToRemove:to="this.statusesToRemove"
+              statusesToShow:to="this.statusesToShow"
+              showOnlySemverReleases:to="this.showOnlySemverReleases"
+              secondaryReportType:to="this.secondaryReportType"
+              hideUnknownInitiatives:to="this.hideUnknownInitiatives"
+              sortByDueDate:to="this.sortByDueDate"
+              showPercentComplete:to="this.showPercentComplete"
+              planningStatuses:to="this.planningStatuses"
+              groupBy:to="this.groupBy"
+              releasesToShow:to="this.releasesToShow"
+              statusesToExclude:to="this.statusesToExclude"
+              primaryReportBreakdown:to="this.primaryReportBreakdown"
+              
+              primaryReportType:from="this.primaryReportType"
+              primaryIssueType:from="this.primaryIssueType"
+              secondaryIssueType:from="this.secondaryIssueType"
+              statuses:from="this.statuses"
+              derivedIssues:from="this.derivedIssues"
+              ></select-view-settings>
           </div>
 
           
 
 
           {{# and( not(this.jql), this.loginComponent.isLoggedIn  }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">Configure a JQL in the sidebar on the left to get started.</div>
+            <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
           {{ /and }}
 
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-            <div class="my-2  border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
+            <div class="my-2   border-box block overflow-hidden color-bg-white">
             
               {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
                 <gantt-grid 
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                    breakdown:from="eq(this.primaryReportType, 'breakdown')"
+                    breakdown:from="this.primaryReportBreakdown"
                     showPercentComplete:from="this.showPercentComplete"
                     groupBy:from="this.groupBy"
+                    primaryIssueType:from="this.primaryIssueType"
                     allDerivedIssues:from="this.derivedIssues"
                     ></gantt-grid>
               {{ else }}
@@ -144,245 +148,269 @@ export class TimelineReport extends StacheElement {
             </div>
           {{/ and }}
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
-              <p>No issues of type {{this.primaryIssueType}}</p>
-              <p>Please check your JQL is correct!</p>
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
+              <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.primaryIssueType}}.</p>
+              <p>Please check your JQL and the View Settings.</p>
             </div>
           {{/}}
-          {{# if(this.derivedIssuesRequestData.issuesPromise.isPending) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-bg-white drop-shadow-md">
+          {{# and(this.jql, this.derivedIssuesRequestData.issuesPromise.isPending) }}
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
               <p>Loading ...<p>
               {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
                 <p>Loaded {{this.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
               {{/ }}
             </div>
-          {{/ if }}
+          {{/ and }}
           {{# if(this.derivedIssuesRequestData.issuesPromise.isRejected) }}
-            <div class="my-2 p-2 h-780 border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked drop-shadow-md">
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
               <p>There was an error loading from Jira!</p>
               <p>Error message: {{this.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
               <p>Please check your JQL is correct!</p>
             </div>
           {{/ if }}
         </div>
+      </div>
   `;
-    static props = {
-        // passed values
-        timingCalculationMethods: type.Any,
+  static props = {
+    // passed values
+    timingCalculationMethods: type.Any,
 
-        showingDebugPanel: {type: Boolean, default: false},
-        timeSliderValue: {
-          type: type.convert(Number),
-          default: 25
-        },
-        // default params
-        defaultSearch: type.Any,
-        get compareToTime(){
-          const SECOND = 1000;
-          const MIN = 60 * SECOND;
-          const HOUR = 60 * MIN;
-          const DAY = 24 * HOUR;
-          if(this.timeSliderValue === 0) {
-            return {timePrior: 0, text: "now"}
-          }
-          if(this.timeSliderValue === 1) {
-            return {timePrior: 30*SECOND, text: "30 seconds ago"}
-          }
-          if(this.timeSliderValue === 2) {
-            return {timePrior: MIN, text: "1 minute ago"}
-          }
-          if(this.timeSliderValue === 3) {
-            return {timePrior: 5*MIN, text: "5 minutes ago"}
-          }
-          if(this.timeSliderValue === 4) {
-            return {timePrior: 10*MIN, text: "10 minutes ago"}
-          }
-          if(this.timeSliderValue === 5) {
-            return {timePrior: 30*MIN, text: "30 minutes ago"}
-          }
-          if(this.timeSliderValue === 6) {
-            return {timePrior: HOUR, text: "1 hour ago"}
-          }
-          if(this.timeSliderValue === 7) {
-            return {timePrior: 3*HOUR, text: "3 hours ago"}
-          }
-          if(this.timeSliderValue === 8) {
-            return {timePrior: 6*HOUR, text: "6 hours ago"}
-          }
-          if(this.timeSliderValue === 9) {
-            return {timePrior: 12*HOUR, text: "12 hours ago"}
-          }
-          if(this.timeSliderValue === 10) {
-            return {timePrior: DAY, text: "1 day ago"}
-          } else {
-            const days = this.timeSliderValue - 10;
-            return {timePrior: DAY*days, text: days+" days ago"}
-          }
-          const days = this.timeSliderValue;
-          return {timePrior: (MIN / 2) *this.timeSliderValue, text: this.timeSliderValue+" days ago"}
-        },
-        
+    showingDebugPanel: { type: Boolean, default: false },
+    timeSliderValue: {
+      type: type.convert(Number),
+      default: 25,
+    },
+    // default params
+    defaultSearch: type.Any,
+    get compareToTime() {
+      const SECOND = 1000;
+      const MIN = 60 * SECOND;
+      const HOUR = 60 * MIN;
+      const DAY = 24 * HOUR;
+      if (this.timeSliderValue === 0) {
+        return { timePrior: 0, text: "now" };
+      }
+      if (this.timeSliderValue === 1) {
+        return { timePrior: 30 * SECOND, text: "30 seconds ago" };
+      }
+      if (this.timeSliderValue === 2) {
+        return { timePrior: MIN, text: "1 minute ago" };
+      }
+      if (this.timeSliderValue === 3) {
+        return { timePrior: 5 * MIN, text: "5 minutes ago" };
+      }
+      if (this.timeSliderValue === 4) {
+        return { timePrior: 10 * MIN, text: "10 minutes ago" };
+      }
+      if (this.timeSliderValue === 5) {
+        return { timePrior: 30 * MIN, text: "30 minutes ago" };
+      }
+      if (this.timeSliderValue === 6) {
+        return { timePrior: HOUR, text: "1 hour ago" };
+      }
+      if (this.timeSliderValue === 7) {
+        return { timePrior: 3 * HOUR, text: "3 hours ago" };
+      }
+      if (this.timeSliderValue === 8) {
+        return { timePrior: 6 * HOUR, text: "6 hours ago" };
+      }
+      if (this.timeSliderValue === 9) {
+        return { timePrior: 12 * HOUR, text: "12 hours ago" };
+      }
+      if (this.timeSliderValue === 10) {
+        return { timePrior: DAY, text: "1 day ago" };
+      } else {
+        const days = this.timeSliderValue - 10;
+        return { timePrior: DAY * days, text: days + " days ago" };
+      }
+      const days = this.timeSliderValue;
+      return { timePrior: (MIN / 2) * this.timeSliderValue, text: this.timeSliderValue + " days ago" };
+    },
 
-        showingConfiguration: false,
+    showingConfiguration: false,
 
-        get issuesPromise(){
-          return this.derivedIssuesRequestData?.issuesPromise;
-        },
-        derivedIssues: {
-            async(resolve){
-                this.derivedIssuesRequestData?.issuesPromise.then(resolve)
-            }
-        },
-        get filteredDerivedIssues(){
-          if(this.derivedIssues) {
-            if(this.statusesToExclude?.length) {
-              return this.derivedIssues.filter( ({status}) => !this.statusesToExclude.includes(status))
-            } else {
-              return this.derivedIssues 
-            }
-          }
+    get issuesPromise() {
+      return this.derivedIssuesRequestData?.issuesPromise;
+    },
+    derivedIssues: {
+      async(resolve) {
+        this.derivedIssuesRequestData?.issuesPromise.then(resolve);
+      },
+    },
+    get filteredDerivedIssues() {
+      if (this.derivedIssues) {
+        if (this.statusesToExclude?.length) {
+          return this.derivedIssues.filter(({ status }) => !this.statusesToExclude.includes(status));
+        } else {
+          return this.derivedIssues;
         }
-    };
+      }
+    },
+  };
 
-    
+  // hooks
+  async connected() {
+    updateFullishHeightSection();
+  }
 
-    // hooks
-    async connected() {
-      updateFullishHeightSection();
+  get rollupTimingLevelsAndCalculations() {
+    /*console.log("rolledupAndRollrollupTimingLevelsAndCalculationsedBackIssuesAndReleases",{
+        primaryIssueType: this.primaryIssueType, 
+        secondaryIssueType: this.secondaryIssueType,
+        issueTimingCalculations: this.issueTimingCalculations
+      } )*/
+
+    function getIssueHierarchyUnderType(timingCalculations, type) {
+      const index = timingCalculations.findIndex((calc) => calc.type === type);
+      return timingCalculations.slice(index);
     }
 
-    // this all the data pre-compiled
-    get rolledupAndRolledBackIssuesAndReleases(){
-      if(!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
-        return [];
+    if (this.primaryIssueType === "Release") {
+      if (this.secondaryIssueType) {
+        const secondary = getIssueHierarchyUnderType(this.issueTimingCalculations, this.secondaryIssueType);
+        return [{ type: "Release", hierarchyLevel: Infinity, calculation: "childrenOnly" }, ...secondary];
       }
-      
-      const rolledUp = rollupAndRollback(this.filteredDerivedIssues, this.configuration, this.rollupTimingLevelsAndCalculations,
-        new Date( new Date().getTime() - this.compareToTime.timePrior) );
-
-      
-
-      const statuses = calculateReportStatuses(rolledUp);
-      return statuses;
+    } else {
+      return getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
     }
-    
-    get groupedParentDownHierarchy(){
-      if(!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
-        return [];
-      }
-      const groupedHierarchy = groupIssuesByHierarchyLevelOrType(this.rolledupAndRolledBackIssuesAndReleases, this.rollupTimingLevelsAndCalculations)
-      return groupedHierarchy.reverse();
+  }
+
+  // this all the data pre-compiled
+  get rolledupAndRolledBackIssuesAndReleases() {
+    /*console.log("rolledupAndRolledBackIssuesAndReleases",{
+        filteredDerivedIssues: this.filteredDerivedIssues, 
+        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
+        configuration: this.configuration
+      } )*/
+    if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
+      return [];
     }
-    get planningIssues(){
-      if(!this.groupedParentDownHierarchy.length || ! this?.planningStatuses?.length) {
-        return []
-      }
-      const planningSourceIssues = this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
-      return planningSourceIssues.filter( (normalizedIssue)=> {
-        return this.planningStatuses.includes(normalizedIssue.status);
-      })
+
+    const rolledUp = rollupAndRollback(
+      this.filteredDerivedIssues,
+      this.configuration,
+      this.rollupTimingLevelsAndCalculations,
+      new Date(new Date().getTime() - this.compareToTime.timePrior)
+    );
+
+    const statuses = calculateReportStatuses(rolledUp);
+    return statuses;
+  }
+
+  get groupedParentDownHierarchy() {
+    /*console.log("groupedParentDownHierarchy",{
+        rolledupAndRolledBackIssuesAndReleases: this.rolledupAndRolledBackIssuesAndReleases, 
+        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations
+      } )*/
+    if (!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
+      return [];
     }
-    get primaryIssuesOrReleases(){
-      if(!this.groupedParentDownHierarchy.length) {
-        return [];
+    const groupedHierarchy = groupIssuesByHierarchyLevelOrType(
+      this.rolledupAndRolledBackIssuesAndReleases,
+      this.rollupTimingLevelsAndCalculations
+    );
+    return groupedHierarchy.reverse();
+  }
+  get planningIssues() {
+    if (!this.groupedParentDownHierarchy.length || !this?.planningStatuses?.length) {
+      return [];
+    }
+    const planningSourceIssues =
+      this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
+    return planningSourceIssues.filter((normalizedIssue) => {
+      return this.planningStatuses.includes(normalizedIssue.status);
+    });
+  }
+  get primaryIssuesOrReleases() {
+    //console.log("primaryIssuesOrReleases", this.groupedParentDownHierarchy.length)
+    if (!this.groupedParentDownHierarchy.length) {
+      return [];
+    }
+
+    const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
+
+    const hideUnknownInitiatives = this.hideUnknownInitiatives;
+    let statusesToRemove = this.statusesToRemove;
+    let statusesToShow = this.statusesToShow;
+
+    function startBeforeDue(initiative) {
+      return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
+    }
+
+    // lets remove stuff!
+    const filtered = unfilteredPrimaryIssuesOrReleases.filter((issueOrRelease) => {
+      // check if it's a planning issues
+      if (
+        this?.planningStatuses?.length &&
+        this.primaryIssueType !== "Release" &&
+        this.planningStatuses.includes(issueOrRelease.status)
+      ) {
+        return false;
       }
-      const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
-      
-      const hideUnknownInitiatives = this.hideUnknownInitiatives;
-      let statusesToRemove = this.statusesToRemove;
-      let statusesToShow =  this.statusesToShow;
 
-      function startBeforeDue(initiative) {
-        return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
-      }
-
-
-      // lets remove stuff!
-      const filtered = unfilteredPrimaryIssuesOrReleases.filter( (issueOrRelease)=> {
-        
-        // check if it's a planning issues
-        if(this?.planningStatuses?.length && 
-            this.primaryIssueType !== "Release" &&
-            this.planningStatuses.includes(issueOrRelease.status) ) {
+      if (this?.releasesToShow?.length) {
+        // O(n^2)
+        const releases = issueOrRelease.releases.map((r) => r.name);
+        if (releases.filter((release) => this.releasesToShow.includes(release)).length === 0) {
           return false;
         }
+      }
 
-        if(this.releasesToShow.length) {
-          // O(n^2)
-          const releases = issueOrRelease.releases.map( r => r.name);
-          if(releases.filter( release => this.releasesToShow.includes(release)).length === 0) {
+      if (this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
+        return false;
+      }
+
+      if (hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
+        return false;
+      }
+      if (this.primaryIssueType === "Release") {
+        // releases don't have statuses, so we look at their children
+        if (statusesToRemove && statusesToRemove.length) {
+          if (issueOrRelease.childStatuses.children.every(({ status }) => statusesToRemove.includes(status))) {
             return false;
           }
         }
 
-        if(this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
-          return false;
-        }
-
-        if(hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
-          return false;
-        }
-        if(this.primaryIssueType === "Release") {
-          // releases don't have statuses, so we look at their children
-          if(statusesToRemove && statusesToRemove.length) {
-            if( issueOrRelease.childStatuses.children.every( ({status}) => statusesToRemove.includes(status) ) ) {
-              return false;
-            }
-          }
-
-          if(statusesToShow && statusesToShow.length) {
-            // Keep if any valeue has a status to show
-            if( !issueOrRelease.childStatuses.children.some( ({status}) => statusesToShow.includes(status) ) ) {
-              return false;
-            }
-          }
-
-        } else {
-          if(statusesToShow && statusesToShow.length) {
-            if(!statusesToShow.includes(issueOrRelease.status)) {
-              return false;
-            }
-          }
-          if(statusesToRemove && statusesToRemove.length) {
-            if(statusesToRemove.includes(issueOrRelease.status)) {
-              return false;
-            }
+        if (statusesToShow && statusesToShow.length) {
+          // Keep if any valeue has a status to show
+          if (!issueOrRelease.childStatuses.children.some(({ status }) => statusesToShow.includes(status))) {
+            return false;
           }
         }
-
-        
-        return true;
-      });
-
-      if(this.sortByDueDate) {
-        return filtered.toSorted( (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
       } else {
-        return filtered;
+        if (statusesToShow && statusesToShow.length) {
+          if (!statusesToShow.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
+        if (statusesToRemove && statusesToRemove.length) {
+          if (statusesToRemove.includes(issueOrRelease.status)) {
+            return false;
+          }
+        }
       }
-    }
-    
 
-    showDebug(open) {
-      this.showingDebugPanel = open;
-    }
+      return true;
+    });
 
-    toggleConfiguration() {
-      this.showingConfiguration = ! this.showingConfiguration;
-      const width = document.getElementById("configuration").clientWidth;
-      document.querySelector(".left-config-width").style.left = (width+16)+"px";
+    if (this.sortByDueDate) {
+      return filtered.toSorted((i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
+    } else {
+      return filtered;
     }
-    
+  }
+
+  showDebug(open) {
+    this.showingDebugPanel = open;
+  }
 }
-
-
 
 customElements.define("timeline-report", TimelineReport);
 
-
-function getIssuesOfTypeAndStatus(issues, type, statuses){
-  return issues.filter( (issue)=>{
-    return issue["Issue Type"] === type && statuses.includes(issue.Status)
-  })
+function getIssuesOfTypeAndStatus(issues, type, statuses) {
+  return issues.filter((issue) => {
+    return issue["Issue Type"] === type && statuses.includes(issue.Status);
+  });
 }
 
 /*
@@ -417,44 +445,29 @@ function mapReleasesToIssues(issues, getReleaseValue) {
     return map;
 }*/
 
-
-
-
-
-
 function sortReadyFirst(initiatives) {
-    return initiatives.sort((a, b) => {
-        if (a.Status === "Ready") {
-            return -1;
-        }
-        return 1;
-    })
+  return initiatives.sort((a, b) => {
+    if (a.Status === "Ready") {
+      return -1;
+    }
+    return 1;
+  });
 }
-
-
 
 function newDateFromYYYYMMDD(dateString) {
-    const [year, month, day] = dateString.split("-");
-    return new Date(year, month - 1, day);
+  const [year, month, day] = dateString.split("-");
+  return new Date(year, month - 1, day);
 }
-
-
-
-
 
 function addTeamBreakdown(release) {
-
-    return {
-        ...release
-    }
+  return {
+    ...release,
+  };
 }
-
-
 
 // ontrack
 // behind
 // complete
-
 
 function getElementPosition(el) {
   var rect = el.getBoundingClientRect();
@@ -464,13 +477,9 @@ function getElementPosition(el) {
 }
 
 function updateFullishHeightSection() {
-  const position = getElementPosition( document.querySelector('.fullish-vh') )
-  document.documentElement.style.setProperty('--fullish-document-top', `${position.y}px`);
+  const position = getElementPosition(document.querySelector(".fullish-vh"));
+  document.documentElement.style.setProperty("--fullish-document-top", `${position.y}px`);
 }
 
-window.addEventListener('load', updateFullishHeightSection);
-window.addEventListener('resize', updateFullishHeightSection);
-
-
-
-
+window.addEventListener("load", updateFullishHeightSection);
+window.addEventListener("resize", updateFullishHeightSection);

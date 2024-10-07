@@ -1,6 +1,5 @@
-import type { NormalizedIssue } from "./normalize";
-import { parseDateISOString } from "../../date-helpers.js";
-import { JiraIssue, ParentIssue } from "../shared/types";
+import { parseDateISOString } from "../../date-helpers";
+import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
 
 type ParentField<F extends keyof ParentIssue["fields"]> = {
   fields: Pick<ParentIssue["fields"], F>;

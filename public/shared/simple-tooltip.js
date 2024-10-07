@@ -63,7 +63,59 @@ class SimpleTooltip extends HTMLElement {
           
       }
   }
+  
   belowElementInScrollingContainer(element, DOM){
+    // find if there's a scrolling container and move ourselves to that 
+    
+    const container = findScrollingContainer(element);
+    this.innerHTML = "";
+    container.appendChild(this);
+    // find the relative position 
+    this.style.top = "-1000px";
+    this.style.left = "-1000px";
+    if(typeof DOM === "string") {
+      this.innerHTML = DOM;
+    } else {
+      this.appendChild(DOM);
+    }
+    this.style.display = "";
+    
+    // where is the container on the page
+    const containerRect = container.getBoundingClientRect(),
+      // where is the element we are positioning next to on the page
+      elementRect = element.getBoundingClientRect(),
+      // how big is the tooltip
+      tooltipRect = this.getBoundingClientRect();
+    
+    const containerStyles = window.getComputedStyle(container)
+    // how much room is there 
+    
+    // where would the tooltip's bottom reach in the viewport 
+    const howMuchPastTheBottom = elementRect.bottom + tooltipRect.height - window.innerHeight;
+    const howMuchAboveTheTop = elementRect.top - tooltipRect.height;
+
+    const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
+
+
+    // if the tooltip wouldn't be visible "down" 
+    if(howMuchPastTheBottom <= 0 || howMuchAboveTheTop < 0) {
+      const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
+      this.style.top = (topFromContainer + scrollingAdjustment) +"px";
+    } else {
+      const viewPortPosition = ( elementRect.top - tooltipRect.height );
+      const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
+      const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
+      this.style.top = ( posInContainerAccountingForScrolling )+"px";
+    }
+    
+    let leftFromContainer = elementRect.left - containerRect.left;
+    if(elementRect.left  + tooltipRect.width > window.screenX) {
+      leftFromContainer = elementRect.right - containerRect.left - tooltipRect.width;
+    }
+    this.style.left = leftFromContainer +"px";
+    
+  }
+  rightOfElementInScrollingContainer(element, DOM) {
     // find if there's a scrolling container and move ourselves to that 
     const container = findScrollingContainer(element);
     this.innerHTML = "";
@@ -89,24 +141,23 @@ class SimpleTooltip extends HTMLElement {
     // how much room is there 
     
     // where would the tooltip's bottom reach in the viewport 
-    const bottomInWindow = elementRect.bottom + tooltipRect.height;
+    const bottomInWindow = elementRect.top + tooltipRect.height;
 
     const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
 
     // if the tooltip wouldn't be visible "down" 
-    if(bottomInWindow > window.innerHeight) {
+    /*if(bottomInWindow > window.innerHeight) {
       const viewPortPosition = ( elementRect.top - tooltipRect.height );
       const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
       const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
       this.style.top = ( posInContainerAccountingForScrolling )+"px";
-    } else {
-      const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
+    } else {*/
+      const topFromContainer = elementRect.top - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
       this.style.top = (topFromContainer + scrollingAdjustment) +"px";
-    }
+    //}
 
-    const leftFromContainer = elementRect.left - containerRect.left;
-    this.style.left = leftFromContainer +"px";
-    
+    const leftFromContainer = elementRect.right - containerRect.left;
+    this.style.left = (leftFromContainer )+"px";
   }
   centeredBelowElement(element, html) {
     if(arguments.length > 1) {

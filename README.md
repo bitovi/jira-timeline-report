@@ -1,5 +1,4 @@
-# Jira Timeline Report 
-
+# Jira Timeline Report
 
 The [Jira Timeline Report](https://timeline-report.bitovi-jira.com/) creates easy-to-understand 🧠, power-point-ready 🖥️ timeline reports!
 
@@ -15,11 +14,10 @@ It can:
 
 ## Privacy Policy
 
-This project does NOT save any JIRA data.  In fact, other than transporting an access token
-to the browser, no JIRA data even flows through our servers.  
+This project does NOT save any JIRA data. In fact, other than transporting an access token
+to the browser, no JIRA data even flows through our servers.
 
 All the code is open source in [Github](https://github.com/bitovi/jira-timeline-report) so you can verify this yourself or host it yourself.
-
 
 ## Need Help or Have Questions?
 
@@ -32,7 +30,7 @@ You can get help or ask questions on our:
 
 ## Getting Started
 
-Bitovi's [Agile Project Management with Jira - Reporting](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html) training walks through 
+Bitovi's [Agile Project Management with Jira - Reporting](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html) training walks through
 configuring the tool.
 
 ## Configuration
@@ -55,7 +53,6 @@ Examples:
 
   > NOTE: Specifying `order by Rank` will list items in Rank order. This can be useful if you are using `Rank` to prioritize your issues.
 
-
 - The following loads all children of the issue `PROJ-1`.
 
   ```
@@ -64,24 +61,23 @@ Examples:
 
   > NOTE: `portfolioChildIssuesOf` is only available with advanced roadmaps.
 
-
 ### Primary Timeline
 
 > <img width="794" alt="image" src="https://github.com/bitovi/jira-timeline-report/assets/78602/f4cc9ae5-3d51-4e0e-beac-76744eec39f4">
 
-The primary timeline settings configure the main chart.  It has two parts.
+The primary timeline settings configure the main chart. It has two parts.
 
 #### What Jira artifact do you want to report on?
 
-This configures the __primary__ Jira artifact that be reported in the main chart.  
+This configures the **primary** Jira artifact that be reported in the main chart.
 
 #### What timing data do you want to report?
 
-This configures the type of report.  The options:
+This configures the type of report. The options:
 
-- _Start and due dates_ - Create a chart that shows the start and due date for each of the __primary__ Jira artifacts.
-- _Due dates only_ - Create a chart that shows only the due dates of the __primary__ Jira artifacts.
-- _Work breakdown_ - Create a _start and due date_ chart, but show the start and due dates for work identified as "dev", "qa" or "uat".  See [Understanding Work Breakdown](#understanding-work-breakdown) for more info.
+- _Start and due dates_ - Create a chart that shows the start and due date for each of the **primary** Jira artifacts.
+- _Due dates only_ - Create a chart that shows only the due dates of the **primary** Jira artifacts.
+- _Work breakdown_ - Create a _start and due date_ chart, but show the start and due dates for work identified as "dev", "qa" or "uat". See [Understanding Work Breakdown](#understanding-work-breakdown) for more info.
 
 ### Timing Calculation
 
@@ -102,16 +98,14 @@ Note, your epics and initiatives will need the following statuses for the tool t
 - `Blocked` - represending work that can not move forward.
 - `Done` or `Cancelled` - Work that is complete and will be hidden from the report.
 
-The [Agile Project Management with Jira - Continuous Exploration](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/continuous-exploration-board.html) training has 
-videos on how to create an initiative type with the right statuses. 
-
-
+The [Agile Project Management with Jira - Continuous Exploration](https://www.bitovi.com/academy/learn-agile-program-management-with-jira/continuous-exploration-board.html) training has
+videos on how to create an initiative type with the right statuses.
 
 ## How Timing is Calculated
 
-Initiative timing is calculated from __epic__ `Start date` and `Due date` fields. Initiative dates are _ignored_.
-If the __epic__ does not have a `Start date` or `End date`, the stories within the __epic__ can be used to determine 
-the timing of the __epic__. In this case, the latest story's end date will be used as the epic's `End date`
+Initiative timing is calculated from **epic** `Start date` and `Due date` fields. Initiative dates are _ignored_.
+If the **epic** does not have a `Start date` or `End date`, the stories within the **epic** can be used to determine
+the timing of the **epic**. In this case, the latest story's end date will be used as the epic's `End date`
 and the earliest story's start date will be used as the epic's `Start date`.
 
 Story timing itself is determined from:
@@ -119,18 +113,11 @@ Story timing itself is determined from:
 - The `Start date` and `End date` of the story; or if these don't exist
 - The story's sprints
 
-
-__NOTE:__ To use story timing, you must use a JQL that includes stories.  
-
-
+**NOTE:** To use story timing, you must use a JQL that includes stories.
 
 ## Labeling epics as QA or UAT
 
 To label epics as part of an initiative's QA or UAT timing, add a `Label` that includes the characters `QA` or `UAT`.
-
-
-
-
 
 ## Contributing
 

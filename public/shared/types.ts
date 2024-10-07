@@ -25,7 +25,7 @@ export type Progress = {
 
 export type JsonResponse = {
   accessToken: string
-  data: any
+  data: any; // TODO - what is the shape of this?
   expiryTimestamp: string
   refreshToken: string
   scopeId: string

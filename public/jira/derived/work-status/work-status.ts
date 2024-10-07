@@ -1,3 +1,5 @@
+import { DefaultsToConfig, NormalizedIssue } from "../../shared/types";
+
 /**
  * This module is repsonsible for determining the correct workType ("design", "dev", "qa", "uat")
  * and statusType ("qa", "uat", "todo", "done", "blocked") for an issue.
@@ -29,6 +31,11 @@ type Status =
 
 type StatusCategory = "qa" | "uat" | "todo" | "done" | "blocked";
 
+export type DerivedWorkStatus = {
+  statusType: StatusCategory | "dev";
+  workType: WorkType;
+};
+
 export const statusCategoryMap = (function () {
   const items = [
     ["qa", inQAStatus],
@@ -50,8 +57,11 @@ export const statusCategoryMap = (function () {
   return statusCategoryMap;
 })();
 
-export function getStatusTypeDefault(issue: { status?: string }): StatusCategory | "dev" {
-  const statusCategory = statusCategoryMap[(issue?.status || "").toLowerCase()];
+export function getStatusTypeDefault(
+  normalizedIssue: NormalizedIssue
+): StatusCategory | "dev" {
+  const statusCategory =
+    statusCategoryMap[(normalizedIssue?.status || "").toLowerCase()];
   if (statusCategory) {
     return statusCategory;
   } else {
@@ -61,14 +71,18 @@ export function getStatusTypeDefault(issue: { status?: string }): StatusCategory
 
 const workPrefix = workType.map((wt) => wt + ":");
 
-function getWorkTypeDefault(normalizedIssue: { summary?: string; labels?: string[] }): WorkType {
-  let wp = workPrefix.find((wp) => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0);
+function getWorkTypeDefault(normalizedIssue: NormalizedIssue): WorkType {
+  let wp = workPrefix.find(
+    (wp) => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0
+  );
 
   if (wp) {
     return wp.slice(0, -1) as WorkType;
   }
 
-  wp = workType.find((wt) => normalizedIssue.labels?.map((label) => label.toLowerCase()).includes(wt));
+  wp = workType.find((wt) =>
+    normalizedIssue.labels?.map((label) => label.toLowerCase()).includes(wt)
+  );
 
   if (wp) {
     return wp as WorkType;
@@ -82,17 +96,15 @@ const defaults = {
   getStatusTypeDefault,
 };
 
-// TODO: See if other files beside normalize need this and if they do pull it out
-type DefaultsToConfig<T> = {
-  [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
-};
-
-type WorkStatusConfig = DefaultsToConfig<typeof defaults>;
+export type WorkStatusConfig = DefaultsToConfig<typeof defaults>;
 
 export function getWorkStatus(
-  normalizedIssue: { summary?: string; labels?: string[]; status?: string },
-  { getStatusType = getStatusTypeDefault, getWorkType = getWorkTypeDefault }: Partial<WorkStatusConfig> = {}
-) {
+  normalizedIssue: NormalizedIssue,
+  {
+    getStatusType = getStatusTypeDefault,
+    getWorkType = getWorkTypeDefault,
+  }: Partial<WorkStatusConfig> = {}
+): DerivedWorkStatus {
   return {
     statusType: getStatusType(normalizedIssue),
     workType: getWorkType(normalizedIssue),

@@ -28,6 +28,19 @@ export default function bitoviTrainingData(dateToShift){
     return PROMISE;
 }
 
+let TRAINING_DATA_PROMISE = null;
+export function bitoviTrainingIssueData(){
+    if(TRAINING_DATA_PROMISE === null) {
+        if(isNode) {
+            TRAINING_DATA_PROMISE = Promise.resolve([{}])
+        } else {
+            TRAINING_DATA_PROMISE = nativeFetchJSON("./examples/bitovi-training-issue-types.json")
+        }
+    }
+
+    return TRAINING_DATA_PROMISE;
+}
+
 
 
 function adjustDateStrings(obj, days) {
