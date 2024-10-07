@@ -4,6 +4,16 @@ import commonjs from "@rollup/plugin-commonjs";
 import typescript from "rollup-plugin-typescript2";
 import babel from "@rollup/plugin-babel";
 
+const warn = {
+  onwarn(warning, warn) {
+    // ignores any 'use client' directive warnings
+    if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
+      return;
+    }
+    warn(warning);
+  },
+};
+
 export default [
   {
     input: "./public/oauth-callback.js",
@@ -21,6 +31,7 @@ export default [
         babelHelpers: "bundled",
       }),
     ],
+    ...warn,
   },
   {
     input: "./public/hosted-main.js",
@@ -38,6 +49,7 @@ export default [
         babelHelpers: "bundled",
       }),
     ],
+    ...warn,
   },
   {
     input: "./public/hosted-main.js",
@@ -56,6 +68,7 @@ export default [
         babelHelpers: "bundled",
       }),
     ],
+    ...warn,
   },
   {
     input: "./public/connect-main.js",
@@ -74,5 +87,6 @@ export default [
         babelHelpers: "bundled",
       }),
     ],
+    ...warn,
   },
 ];
