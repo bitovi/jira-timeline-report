@@ -70,7 +70,7 @@ export class TimelineReport extends StacheElement {
         
             <div class='flex-grow'>
               <label for="compareValue" class="${DROPDOWN_LABEL}">Compare to {{this.compareToTime.text}}</label>
-              <input class="w-full-border-box" 
+              <input class="w-full-border-box h-8" 
                 id="compareValue"
                 type='range' 
                 valueAsNumber:bind:on:input='this.timeSliderValue' 
