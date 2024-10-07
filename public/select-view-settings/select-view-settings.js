@@ -1,8 +1,10 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value } from "../can.js";
+import { StacheElement, type, ObservableObject, ObservableArray, value, diff } from "../can.js";
 
 import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
 
 import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
+
+import { pushStateObservable } from "../shared/state-storage.js";
 
 import "../status-filter.js";
 
@@ -33,17 +35,13 @@ class TypeSelectionDropdown extends StacheElement {
     `
 }*/
 
-
+import { makeArrayOfStringsQueryParamValue } from "../shared/state-storage.js";
 
 class SelectViewSettingsDropdown extends StacheElement {
     static view = `
     <div class="p-2">
-        
 
-        
-
-
-        {{# eq(this.primaryReportType, 'start-due') }}
+        {{# if(this.canGroup) }}
         <div>
             <div class="font-bold uppercase text-slate-300 text-xs">Group by: </div>
             <label class="px-2 block"><input 
@@ -65,7 +63,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                 on:change="this.groupBy = 'team'"
                 /> Team (or Project)</label>
         </div>
-        {{/ eq }}
+        {{/ if }}
 
 
         
@@ -83,74 +81,80 @@ class SelectViewSettingsDropdown extends StacheElement {
                 checked:from="this.sortByDueDate"
                 on:change="this.sortByDueDate = true"
                 /> Due Date</label>    
-        
+        </div>
 
         {{# if(this.primaryIssueType) }}
-        <div class="my-4">
-            <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
+            <div class="my-4">
+                <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
 
-            <div class="grid gap-2" style="grid-template-columns: max-content max-content">
-                <label>Show only {{this.firstIssueTypeWithStatuses}} statuses:</label>
-            
-                <status-filter 
-                    statuses:from="this.statuses"
-                    param:raw="statusesToShow"
-                    selectedStatuses:to="this.statusesToShow"
-                    inputPlaceholder:raw="Search for statuses"
-                    style="max-width: 400px;">
-                </status-filter>
-
-                <label>Hide {{this.firstIssueTypeWithStatuses}} statuses:</label>
-
-                <status-filter 
-                    statuses:from="this.statuses" 
-                    param:raw="statusesToRemove"
-                    selectedStatuses:to="this.statusesToRemove"
-                    inputPlaceholder:raw="Search for statuses"
-                    style="max-width: 400px;">
+                <div class="grid gap-2" style="grid-template-columns: max-content max-content">
+                    <label>Show only {{this.firstIssueTypeWithStatuses}} statuses:</label>
+                
+                    <status-filter 
+                        statuses:from="this.statuses"
+                        param:raw="statusesToShow"
+                        selectedStatuses:bind="this.statusesToShow"
+                        inputPlaceholder:raw="Search for statuses"
+                        style="max-width: 400px;">
                     </status-filter>
 
-                
+                    <label>Hide {{this.firstIssueTypeWithStatuses}} statuses:</label>
+
+                    <status-filter 
+                        statuses:from="this.statuses" 
+                        param:raw="statusesToRemove"
+                        selectedStatuses:bind="this.statusesToRemove"
+                        inputPlaceholder:raw="Search for statuses"
+                        style="max-width: 400px;">
+                        </status-filter>
+
+                    
+                </div>
             </div>
-        </div>
-        <div class="my-4">
-            <div class="font-bold uppercase text-slate-300 text-xs">Release Filters:</div>
+            <div class="my-4">
+                <div class="font-bold uppercase text-slate-300 text-xs">Release Filters:</div>
 
-            <div class="grid gap-2" style="grid-template-columns: max-content max-content">
-                <label>Show only {{this.firstIssueTypeWithStatuses}}s with releases:</label>
-            
-                <status-filter 
-                    statuses:from="this.releases"
-                    param:raw="releasesToShow"
-                    selectedStatuses:to="this.releasesToShow"
-                    inputPlaceholder:raw="Search for releases"
-                    style="max-width: 400px;"></status-filter>
-
+                <div class="grid gap-2" style="grid-template-columns: max-content max-content">
+                    <label>Show only {{this.firstIssueTypeWithStatuses}}s with releases:</label>
                 
+                    <status-filter 
+                        statuses:from="this.releases"
+                        param:raw="releasesToShow"
+                        selectedStatuses:to="this.releasesToShow"
+                        inputPlaceholder:raw="Search for releases"
+                        style="max-width: 400px;"></status-filter>
+
+                    
+                </div>
+
+                {{# eq(this.primaryIssueType, "Release") }}
+                        <label class=''>Show only Semver-like releases</label>
+                        <input type='checkbox' 
+                            class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
+                        <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
+                        <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
+                        </p>
+                {{/ }}
             </div>
 
-            {{# eq(this.primaryIssueType, "Release") }}
-                    <label class=''>Show only Semver-like releases</label>
-                    <input type='checkbox' 
-                        class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
-                    <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
-                    <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
-                    </p>
-            {{/ }}
-        </div>
+            <div class="my-4">
+                <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
 
-        <div class="my-4">
-            <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
-
-            <input type='checkbox' 
-                class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/> Hide {{this.primaryIssueType}}s without dates 
-        </div>
+                <input type='checkbox' 
+                    class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/> Hide {{this.primaryIssueType}}s without dates 
+            </div>
         {{/ if }}
 
 
 
         <div class="my-4">
             <div class="font-bold uppercase text-slate-300 text-xs">View Options</div>
+            <div class="flex mt-2 gap-2 flex-wrap">
+                <input type='checkbox' 
+                    class='self-start mt-1.5'  checked:bind='this.primaryReportBreakdown'/>
+                <p>Show work breakdown</p>
+                
+            </div>
 
             <div class="flex mt-2 gap-2 flex-wrap">
                 <input type='checkbox' 
@@ -196,7 +200,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <status-filter 
                     statuses:from="this.statuses" 
                     param:raw="planningStatuses"
-                    selectedStatuses:to="this.planningStatuses"
+                    selectedStatuses:bind="this.planningStatuses"
                     inputPlaceholder:raw="Search for statuses"
                     style="max-width: 400px;"></status-filter>
             </div>
@@ -207,17 +211,56 @@ class SelectViewSettingsDropdown extends StacheElement {
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
 
+import { DROPDOWN_LABEL } from "../shared/style-strings.js";
 
 export class SelectViewSettings extends StacheElement {
     static view = `
+        <label for="viewSettings" class="${DROPDOWN_LABEL} invisible">View settings</label>
         <button 
+                id="viewSettings"
                 class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}"
                 on:click="this.showChildOptions()">View Settings <img class="inline" src="/images/chevron-down.svg"/></button>
     `;
     static props ={
+        primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
         secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
         showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
-        groupBy: saveJSONToUrl("groupBy", "", String, {parse: x => ""+x, stringify: x => ""+x}),
+
+        // group by doesn't make sense for a release
+        
+        groupBy: {
+            value({resolve, lastSet, listenTo}) {
+                function getFromParam() {
+                    return new URL(window.location).searchParams.get("groupBy") || "";
+                }
+
+                const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
+                    if(primaryIssueType === "Release") {
+                        updateUrlParam("groupBy", "", "");
+                    } else {
+                        updateUrlParam("groupBy", currentGroupBy, "");
+                    }
+                }
+                
+                listenTo("primaryIssueType",({value})=> {    
+                    reconcileCurrentValue(value, getFromParam());
+                });
+
+                listenTo(lastSet, (value)=>{
+                    updateUrlParam("groupBy", value || "", "");
+                });
+
+                listenTo(pushStateObservable, ()=>{
+                    resolve( getFromParam() );
+                })
+
+                
+                resolve(getFromParam());
+            }
+        },
+
+
+
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
 
@@ -226,23 +269,13 @@ export class SelectViewSettings extends StacheElement {
         
         // STATUS FILTERING STUFF
         
-        planningStatuses: {
-          get default(){
-            return [];
-          }
-        },
         // used for later filtering
         // but the options come from the issues
-        statusesToRemove: {
-            get default(){
-                return [];
-            }
-        },
-        statusesToShow: {
-            get default(){
-                return [];
-            }
-        },
+        
+        statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
+        statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
+        planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
+
         get releases(){
             if(this.derivedIssues) {
                 return allReleasesSorted(this.derivedIssues)
@@ -258,6 +291,10 @@ export class SelectViewSettings extends StacheElement {
                     return this.secondaryIssueType;
                 }
             }
+        },
+        get canGroup(){
+            return this.primaryReportType === 'start-due' &&
+                this.primaryIssueType && this.primaryIssueType !== "Release"
         }
         
     }
@@ -266,18 +303,25 @@ export class SelectViewSettings extends StacheElement {
         let dropdown = new SelectViewSettingsDropdown().bindings({
             showPercentComplete: value.bind(this,"showPercentComplete"),
             secondaryReportType: value.bind(this,"secondaryReportType"),
+            
             groupBy: value.bind(this,"groupBy"),
             sortByDueDate: value.bind(this,"sortByDueDate"),
             hideUnknownInitiatives: value.bind(this,"hideUnknownInitiatives"),
             showOnlySemverReleases: value.bind(this,"showOnlySemverReleases"),
+            primaryReportBreakdown: value.bind(this,"primaryReportBreakdown"),
+
             primaryReportType: this.primaryReportType,
+
             statusesToRemove: value.bind(this,"statusesToRemove"),
             statusesToShow: value.bind(this,"statusesToShow"),
             planningStatuses: value.bind(this,"planningStatuses"),
 
+            
+
 
             secondaryIssueType: value.from(this,"secondaryIssueType"),
             primaryIssueType: value.from(this,"primaryIssueType"),
+            canGroup: value.from(this,"canGroup"),
 
             firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
 
@@ -297,6 +341,9 @@ export class SelectViewSettings extends StacheElement {
         })
     }
 }
+
+
+
 
 function findParentWithSelector(element, selector) {
     let parent = element.parentElement;

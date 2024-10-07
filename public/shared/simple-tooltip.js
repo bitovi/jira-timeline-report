@@ -63,8 +63,10 @@ class SimpleTooltip extends HTMLElement {
           
       }
   }
+  
   belowElementInScrollingContainer(element, DOM){
     // find if there's a scrolling container and move ourselves to that 
+    
     const container = findScrollingContainer(element);
     this.innerHTML = "";
     container.appendChild(this);
@@ -89,19 +91,21 @@ class SimpleTooltip extends HTMLElement {
     // how much room is there 
     
     // where would the tooltip's bottom reach in the viewport 
-    const bottomInWindow = elementRect.bottom + tooltipRect.height;
+    const howMuchPastTheBottom = elementRect.bottom + tooltipRect.height - window.innerHeight;
+    const howMuchAboveTheTop = elementRect.top - tooltipRect.height;
 
     const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
 
+
     // if the tooltip wouldn't be visible "down" 
-    if(bottomInWindow > window.innerHeight) {
+    if(howMuchPastTheBottom <= 0 || howMuchAboveTheTop < 0) {
+      const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
+      this.style.top = (topFromContainer + scrollingAdjustment) +"px";
+    } else {
       const viewPortPosition = ( elementRect.top - tooltipRect.height );
       const posInContainer = viewPortPosition - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
       const posInContainerAccountingForScrolling = posInContainer + scrollingAdjustment;
       this.style.top = ( posInContainerAccountingForScrolling )+"px";
-    } else {
-      const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
-      this.style.top = (topFromContainer + scrollingAdjustment) +"px";
     }
     
     let leftFromContainer = elementRect.left - containerRect.left;

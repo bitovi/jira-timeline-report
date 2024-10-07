@@ -2,13 +2,14 @@ import { StacheElement, type, stache } from "../can.js";
 import SimpleTooltip from "./simple-tooltip.js";
 
 
-const resourceSelection = stache(`<div class="">
+const resourceSelection = stache(`<div class="p-2">
     {{# for(resource of this.resources) }}
         <button class="link block" on:click="this.setResource(resource)">{{resource.name}}</button>
     {{/ for }}
 </div>`)
 
-const pillClass = `text-center inline-flex items-center mr-8 bg-gray-100 rounded-lg pt-1 pr-1 font-bitovipoppins font-lg`
+
+const pillClass = `text-center inline-flex items-center bg-neutral-201 hover:bg-neutral-301 rounded px-3 py-1`
 
 export default class SelectCloud extends StacheElement {
     static view = `
@@ -67,7 +68,6 @@ export default class SelectCloud extends StacheElement {
         const div = document.createElement("div");
         this.alternateResources.then((resources) => {
             // come back acround and fix this
-            
             
             this.simpleTooltip.belowElementInScrollingContainer(this, resourceSelection({
                 resources,

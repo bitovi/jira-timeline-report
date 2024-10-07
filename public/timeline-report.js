@@ -16,10 +16,12 @@ import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rol
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 
+import { DROPDOWN_LABEL } from "./shared/style-strings.js";
+
 export class TimelineReport extends StacheElement {
   static view = `<div class="flex">
         <timeline-configuration
-          class="border-gray-100 border-r border-nuetral-301 p-2 relative block bg-white shrink-0" 
+          class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" 
           style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
@@ -27,17 +29,16 @@ export class TimelineReport extends StacheElement {
 
           jql:to="this.jql"
           derivedIssuesRequestData:to="this.derivedIssuesRequestData"
-
           issueTimingCalculations:to="this.issueTimingCalculations"
-          storage:from="this.storage"
-          
           configuration:to="this.configuration"
-
           statuses:to="this.statuses"
+          statusesToExclude:to="this.statusesToExclude"
+          goBack:to="this.goBack"
+          storage:to="this.storage"
           
           ></timeline-configuration>
 
-      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow">
+      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 
@@ -49,16 +50,18 @@ export class TimelineReport extends StacheElement {
             <ul class="list-disc list-inside ml-2">
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
               <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with iniative work breakdown</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=breakdown">Ready and in-development initiative work breakdown</a></li>
+              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a></li>
             </ul>
 
           </div>
       {{/ not }}
 
           <div class="flex gap-1">
+            
             <select-issue-type 
               primaryIssueType:to="this.primaryIssueType"
               secondaryIssueType:to="this.secondaryIssueType"
+              derivedIssues:from="this.derivedIssues"
               jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
             <select-report-type 
@@ -66,8 +69,12 @@ export class TimelineReport extends StacheElement {
               jiraHelpers:from="this.jiraHelpers"></select-report-type>
         
             <div class='flex-grow'>
-              <p class="text-xs"><label class="inline">Compare to {{this.compareToTime.text}}</label></p>
-              <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
+              <label for="compareValue" class="${DROPDOWN_LABEL}">Compare to {{this.compareToTime.text}}</label>
+              <input class="w-full-border-box h-8" 
+                id="compareValue"
+                type='range' 
+                valueAsNumber:bind:on:input='this.timeSliderValue' 
+                min="0" max="100"/>
             </div>
             <select-view-settings
               jiraHelpers:from="this.jiraHelpers"
@@ -83,6 +90,7 @@ export class TimelineReport extends StacheElement {
               groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
               statusesToExclude:to="this.statusesToExclude"
+              primaryReportBreakdown:to="this.primaryReportBreakdown"
               
               primaryReportType:from="this.primaryReportType"
               primaryIssueType:from="this.primaryIssueType"
@@ -106,9 +114,10 @@ export class TimelineReport extends StacheElement {
                 <gantt-grid 
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                    breakdown:from="eq(this.primaryReportType, 'breakdown')"
+                    breakdown:from="this.primaryReportBreakdown"
                     showPercentComplete:from="this.showPercentComplete"
                     groupBy:from="this.groupBy"
+                    primaryIssueType:from="this.primaryIssueType"
                     allDerivedIssues:from="this.derivedIssues"
                     ></gantt-grid>
               {{ else }}
@@ -139,19 +148,19 @@ export class TimelineReport extends StacheElement {
             </div>
           {{/ and }}
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
-            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
-              <p>No issues of type {{this.primaryIssueType}}</p>
-              <p>Please check your JQL is correct!</p>
+            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
+              <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.primaryIssueType}}.</p>
+              <p>Please check your JQL and the View Settings.</p>
             </div>
           {{/}}
-          {{# if(this.derivedIssuesRequestData.issuesPromise.isPending) }}
+          {{# and(this.jql, this.derivedIssuesRequestData.issuesPromise.isPending) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
               <p>Loading ...<p>
               {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
                 <p>Loaded {{this.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
               {{/ }}
             </div>
-          {{/ if }}
+          {{/ and }}
           {{# if(this.derivedIssuesRequestData.issuesPromise.isRejected) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
               <p>There was an error loading from Jira!</p>
@@ -245,6 +254,12 @@ export class TimelineReport extends StacheElement {
   }
 
   get rollupTimingLevelsAndCalculations() {
+    /*console.log("rolledupAndRollrollupTimingLevelsAndCalculationsedBackIssuesAndReleases",{
+        primaryIssueType: this.primaryIssueType, 
+        secondaryIssueType: this.secondaryIssueType,
+        issueTimingCalculations: this.issueTimingCalculations
+      } )*/
+
     function getIssueHierarchyUnderType(timingCalculations, type) {
       const index = timingCalculations.findIndex((calc) => calc.type === type);
       return timingCalculations.slice(index);
@@ -262,11 +277,15 @@ export class TimelineReport extends StacheElement {
 
   // this all the data pre-compiled
   get rolledupAndRolledBackIssuesAndReleases() {
-    console.log("here", this.filteredDerivedIssues, this.rollupTimingLevelsAndCalculations, this.configuration);
+    /*console.log("rolledupAndRolledBackIssuesAndReleases",{
+        filteredDerivedIssues: this.filteredDerivedIssues, 
+        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
+        configuration: this.configuration
+      } )*/
     if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
       return [];
     }
-    debugger;
+
     const rolledUp = rollupAndRollback(
       this.filteredDerivedIssues,
       this.configuration,
@@ -279,10 +298,13 @@ export class TimelineReport extends StacheElement {
   }
 
   get groupedParentDownHierarchy() {
+    /*console.log("groupedParentDownHierarchy",{
+        rolledupAndRolledBackIssuesAndReleases: this.rolledupAndRolledBackIssuesAndReleases, 
+        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations
+      } )*/
     if (!this.rolledupAndRolledBackIssuesAndReleases || !this.rollupTimingLevelsAndCalculations) {
       return [];
     }
-
     const groupedHierarchy = groupIssuesByHierarchyLevelOrType(
       this.rolledupAndRolledBackIssuesAndReleases,
       this.rollupTimingLevelsAndCalculations
@@ -300,9 +322,11 @@ export class TimelineReport extends StacheElement {
     });
   }
   get primaryIssuesOrReleases() {
+    //console.log("primaryIssuesOrReleases", this.groupedParentDownHierarchy.length)
     if (!this.groupedParentDownHierarchy.length) {
       return [];
     }
+
     const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
 
     const hideUnknownInitiatives = this.hideUnknownInitiatives;

@@ -1,8 +1,8 @@
 import { ObservableObject, value, Reflect } from "../can.js";
-import { deriveIssue } from "../jira/derived/derive";
-import bitoviTrainingData from "../examples/bitovi-training.js";
+import { deriveIssue } from "../jira/derived/derive.js";
 import { normalizeIssue } from "../jira/normalized/normalize.ts";
-import { nativeFetchJSON } from "../jira-oidc-helpers";
+
+import { getServerInfo, getRawIssues } from "../stateful-data/jira-data-requests.js";
 
 /*
 class IssueData extends ObservableObject {
@@ -32,50 +32,23 @@ export function rawIssuesRequestData({ jql, childJQL, isLoggedIn, loadChildren, 
   const progressData = value.with(null);
 
   const promise = value.returnedBy(function rawIssuesPromise() {
-    if (isLoggedIn.value === false) {
-      return bitoviTrainingData(new Date()); //.then(csvToRawIssues) ;
-    }
-
-    if (!jql.value) {
-      return undefined;
-    }
-
     progressData.value = null;
 
-    const loadIssues = loadChildren.value
-      ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
-      : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
-
-    return loadIssues(
+    return getRawIssues(
       {
+        isLoggedIn: isLoggedIn.value,
+        loadChildren: loadChildren.value,
+        jiraHelpers,
         jql: jql.value,
-        childJQL: childJQL.value ? " and " + childJQL.value : "",
-        fields: [
-          "summary",
-          "Rank",
-          "Start date",
-          "Due date",
-          "Issue Type",
-          "Fix versions",
-          "Story points",
-          "Story points median",
-          "Confidence",
-          "Story points confidence",
-          "Labels",
-          "Status",
-          "Sprint",
-          "Created",
-          "Parent",
-        ],
-        expand: ["changelog"],
+        childJQL: childJQL.value,
+        // fields ... we will have to do this
       },
-      (receivedProgressData) => {
-        progressData.value = { ...receivedProgressData };
+      {
+        progressUpdate: (receivedProgressData) => {
+          progressData.value = { ...receivedProgressData };
+        },
       }
-    ).then((data) => {
-      console.log("rawData", data);
-      return data;
-    });
+    );
   });
 
   listenTo(promise, (value) => {
@@ -100,11 +73,7 @@ function resolve(value) {
 }
 
 export function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
-  if (resolve(isLoggedIn)) {
-    return jiraHelpers.getServerInfo();
-  } else {
-    return nativeFetchJSON("./examples/bitovi-training-server-info.json");
-  }
+  return getServerInfo({ jiraHelpers, isLoggedIn: resolve(isLoggedIn) });
 }
 
 export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizeOptionsObservable }) {

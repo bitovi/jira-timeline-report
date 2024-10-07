@@ -9,7 +9,33 @@ import JiraOIDCHelpers from "../jira-oidc-helpers.ts";
 import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
-export default async function mainHelper(config, { host, createStorage }) {
+import { directlyReplaceUrlParam } from "./state-storage.js";
+import { route } from "../can.js";
+
+function legacyPrimaryReportingTypeRoutingFix() {
+  const primaryIssueType = new URL(window.location).searchParams.get("primaryReportType");
+  if (primaryIssueType === "breakdown") {
+    directlyReplaceUrlParam("primaryReportType", "start-due");
+    directlyReplaceUrlParam("primaryReportBreakdown", "true");
+    console.warn("fixing url");
+  }
+}
+
+function legacyPrimaryIssueTypeRoutingFix() {
+  const primaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
+  if (primaryIssueType) {
+    directlyReplaceUrlParam("primaryIssueType", "", "");
+    directlyReplaceUrlParam("selectedIssueType", primaryIssueType, "");
+    console.warn("fixing url");
+  }
+}
+
+export default async function mainHelper(config, host) {
+  let fix = await legacyPrimaryReportingTypeRoutingFix();
+  fix = await legacyPrimaryIssueTypeRoutingFix();
+
+  route.start();
+
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 
   let requestHelper;
