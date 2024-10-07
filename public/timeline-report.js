@@ -34,7 +34,7 @@ export class TimelineReport extends StacheElement {
           statuses:to="this.statuses"
           statusesToExclude:to="this.statusesToExclude"
           goBack:to="this.goBack"
-          storage:to="this.storage"
+          storage:from="this.storage"
           
           ></timeline-configuration>
 

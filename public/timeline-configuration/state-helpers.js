@@ -1,5 +1,5 @@
 import { ObservableObject, value, Reflect } from "../can.js";
-import { deriveIssue } from "../jira/derived/derive.js";
+import { deriveIssue } from "../jira/derived/derive.ts";
 import { normalizeIssue } from "../jira/normalized/normalize.ts";
 
 import { getServerInfo, getRawIssues } from "../stateful-data/jira-data-requests.js";

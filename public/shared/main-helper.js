@@ -30,7 +30,7 @@ function legacyPrimaryIssueTypeRoutingFix() {
   }
 }
 
-export default async function mainHelper(config, host) {
+export default async function mainHelper(config, { host, createStorage }) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
@@ -72,6 +72,7 @@ export default async function mainHelper(config, host) {
     if (value) {
       loginComponent.off("isResolved", listener);
       mainElement.style.display = "none";
+
       const report = new TimelineReport().initialize({
         jiraHelpers,
         loginComponent,
