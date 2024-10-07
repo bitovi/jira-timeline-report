@@ -1,16 +1,21 @@
 import chunkArray from "../shared/chunk-array";
 import mapIdsToNames from "../shared/map-ids-to-names";
 import { responseToText } from "../shared/response-to-text";
-import { Config, Issue, ProgressData, RequestHelperResponse } from "../shared/types";
+import { FetchJiraIssuesParams } from "../jira/shared/types";
 import {
-    FetchJiraIssuesParams,
-    JiraIssue as SharedJiraIssue,
-    IssueFields as SharedIssueFields,
-    Changelog as SharedChangelog
-} from "../jira/shared/types";
-import { JiraIssue, ChangeLog, InterimJiraIssue } from './types'
-import { hasValidAccessToken } from "./auth";
+    Issue,
+    ProgressData,
+    RequestHelperResponse,
+    Config
+} from "../shared/types";
+import {
+    OidcJiraIssue,
+    ChangeLog,
+    InterimJiraIssue,
+    FieldsRequest,
+} from './types'
 import { fetchFromLocalStorage } from "./storage";
+import { makeFieldsRequest } from "./makeFieldsRequest";
 
 export function fetchAccessibleResources(config: Config) {
     return () => {
@@ -55,9 +60,9 @@ export function fetchJiraIssue(config: Config) {
     }
     return editBody;
 };
-export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
+export function fetchJiraIssuesWithJQLWithNamedFields(config: Config, fieldsRequest: FieldsRequest) {
     return async (params: FetchJiraIssuesParams) => {
-        const fields = await fieldsRequest(config)();
+        const fields = await fieldsRequest;
 
         if (!fields) return;
 
@@ -68,36 +73,12 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
         };
         const response = await fetchJiraIssuesWithJQL(config)(newParams);
 
-        return response.issues.map((issue: JiraIssue) => {
+        return (response.issues as OidcJiraIssue[]).map((issue: OidcJiraIssue) => {
             return {
                 ...issue,
                 fields: mapIdsToNames(issue.fields, fields),
             };
         });
-    };
-}
-export function fieldsRequest(config: Config) {
-    return () => {
-        if (config.host === "jira" || hasValidAccessToken()) {
-            return fetchJiraFields(config)().then((fields) => {
-                const nameMap: Record<string, any> = {};
-                const idMap: Record<string, any> = {};
-                // @ts-ignore
-                fields.forEach((f) => {
-                    // @ts-ignore
-                    idMap[f.id] = f.name;
-                    // @ts-ignore
-                    nameMap[f.name] = f.id;
-                });
-                console.log(nameMap);
-
-                return {
-                    list: fields,
-                    nameMap: nameMap,
-                    idMap: idMap,
-                };
-            });
-        }
     };
 }
 export function fetchJiraIssuesWithJQL(config: Config) {
@@ -117,11 +98,6 @@ export function JiraIssueParamsToParams(params: FetchJiraIssuesParams): Record<s
     if (params.fields) formattedParams.fields = params.fields.join(",");
     return formattedParams;
 }
-export function fetchJiraFields(config: Config) {
-    return () => {
-        return config.requestHelper(`/api/3/field`);
-    };
-}
 export async function fetchIssueTypes(config: Config) {
     return () => {
         const response = config.requestHelper(`/api/3/issuetype`) as unknown;
@@ -140,15 +116,15 @@ export async function fetchIssueTypes(config: Config) {
 }
 export function fetchAllJiraIssuesWithJQL(config: Config) {
     return async (params: FetchJiraIssuesParams) => {
-        const { limit: limit, ...apiParams } = params;
+        const { limit, ...apiParams } = params;
         const firstRequest = fetchJiraIssuesWithJQL(config)({
             maxResults: 100,
             ...apiParams,
         });
-        const { issues, maxResults, total, startAt } = await firstRequest;
+        const { maxResults, total, startAt } = await firstRequest;
         const requests = [firstRequest];
 
-        const limitOrTotal = Math.min(total, limit || Infinity);
+        const limitOrTotal = Math.min(total, limit ?? Infinity);
         for (let i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
             requests.push(
                 fetchJiraIssuesWithJQL(config)({
@@ -163,9 +139,9 @@ export function fetchAllJiraIssuesWithJQL(config: Config) {
         });
     };
 }
-export function fetchAllJiraIssuesWithJQLUsingNamedFields(config: Config) {
+export function fetchAllJiraIssuesWithJQLUsingNamedFields(config: Config, fieldsRequest: FieldsRequest) {
     return async (params: FetchJiraIssuesParams) => {
-        const fields = await fieldsRequest(config)();
+        const fields = await fieldsRequest;
 
         if (!fields) return;
 
@@ -192,15 +168,13 @@ export function fetchJiraChangelog(config: Config) {
         );
     };
 }
-export function isChangelogComplete(changelog: {
-    histories: any[];
-    total: number;
-}): boolean {
+export function isChangelogComplete(changelog: ChangeLog): boolean {
     return changelog.histories.length === changelog.total;
 }
+
 export function fetchRemainingChangelogsForIssues(config: Config) {
     return (
-        issues: JiraIssue[],
+        issues: OidcJiraIssue[],
         progress: {
             data?: ProgressData;
             (data: ProgressData): void;
@@ -208,21 +182,23 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
     ) => {
         // check for remainings
         return Promise.all(
-            issues.map((issue) => {
-                if (isChangelogComplete(issue.changelog)) {
+            issues.map(({ key, changelog, ...issue }) => {
+                if (!changelog || isChangelogComplete(changelog)) {
                     return {
+                        key,
                         ...issue,
-                        changelog: issue.changelog.histories,
-                    };
+                        changelog: changelog?.histories,
+                    } as InterimJiraIssue;
                 } else {
                     return fetchRemainingChangelogsForIssue(config)(
-                        issue.key,
-                        issue.changelog
+                        key,
+                        changelog
                     ).then((histories) => {
                         return {
+                            key,
                             ...issue,
-                            changelog: issue.changelog.histories,
-                        };
+                            changelog: histories,
+                        } as InterimJiraIssue;
                     });
                 }
             })
@@ -235,14 +211,9 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
 export function fetchRemainingChangelogsForIssue(config: Config) {
     return async (
         issueIdOrKey: string,
-        mostRecentChangeLog: {
-            histories: { id: string; change: string; }[];
-            maxResults: number;
-            total: number;
-            startAt: number;
-        }
+        mostRecentChangeLog: ChangeLog
     ) => {
-        const { histories, maxResults, total, startAt } = mostRecentChangeLog;
+        const { maxResults, total } = mostRecentChangeLog;
 
         const requests = [];
         requests.push({ values: mostRecentChangeLog.histories });
@@ -288,30 +259,28 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
                 changeLogsRequested: 0,
                 changeLogsReceived: 0,
             } as ProgressData);
-        function getRemainingChangeLogsForIssues(response: {
-            issues: JiraIssue[];
-        }) {
+        function getRemainingChangeLogsForIssues({ issues }: RequestHelperResponse) { //2
             if (progress.data) {
-                Object.assign(progress.data as ProgressData, {
-                    issuesReceived: progress.data.issuesReceived + response.issues.length,
+                Object.assign(progress.data, {
+                    issuesReceived: progress.data.issuesReceived + issues.length,
                 });
                 progress(progress.data);
             }
-            return fetchRemainingChangelogsForIssues(config)(
-                response.issues,
+            return fetchRemainingChangelogsForIssues(config)( //3
+                issues as OidcJiraIssue[],
                 progress
             );
         }
 
-        const firstRequest = fetchJiraIssuesWithJQL(config)({
+        const firstRequest = fetchJiraIssuesWithJQL(config)({ //1
             maxResults: 100,
             expand: ["changelog"],
             ...apiParams,
         });
 
-        return firstRequest.then(({ issues, maxResults, total, startAt }) => {
+        return firstRequest.then(({ maxResults, total, startAt }) => {
             if (progress.data) {
-                Object.assign(progress.data as ProgressData, {
+                Object.assign(progress.data, {
                     issuesRequested: progress.data.issuesRequested + total,
                     changeLogsRequested: 0,
                     changeLogsReceived: 0,
@@ -320,7 +289,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
             }
 
             const requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
-            const limitOrTotal = Math.min(total, limit || Infinity);
+            const limitOrTotal = Math.min(total, limit ?? Infinity);
 
             for (let i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
                 requests.push(
@@ -338,12 +307,12 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
     };
 }
 // this could do each response incrementally, but I'm being lazy
-export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields = (config: Config) =>
+export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields = (config: Config, fieldsRequest: FieldsRequest) =>
     async (
         params: { fields: string[];[key: string]: any; },
         progress: (data: ProgressData) => void = () => { }
     ) => {
-        const fields = await fieldsRequest(config)();
+        const fields = await fieldsRequest;
         if (!fields) {
             return Promise.resolve(null);
         }
@@ -363,14 +332,6 @@ export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields = (co
         });
         // change the parms
     };
-export async function fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields(params: { fields: string[];[key: string]: any; },
-    progress: {
-        data?: ProgressData;
-        (data: ProgressData): void;
-    } = () => { }) {
-    console.warn("THIS METHOD SHOULD BE IMPOSSIBLE TO CALL");
-    return Promise.resolve(null as any);
-}
 
 export function fetchChildrenResponses(config: Config) {
     return (
@@ -434,12 +395,12 @@ export function fetchDeepChildren(config: Config) {
     };
 }
 
-export function editJiraIssueWithNamedFields(config: Config) {
+export function editJiraIssueWithNamedFields(config: Config, fieldsRequest: FieldsRequest) {
     return async (issueId: string, fields: Record<string, any>) => {
         const scopeIdForJira = fetchFromLocalStorage("scopeId");
         const accessToken = fetchFromLocalStorage("accessToken");
 
-        const fieldMapping = await fieldsRequest(config)();
+        const fieldMapping = await fieldsRequest;
         if (!fieldMapping) return;
 
         const editBody = fieldsToEditBody(fields, fieldMapping);

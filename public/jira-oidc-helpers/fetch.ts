@@ -1,5 +1,9 @@
-import responseToJSON from "./responseToJson";
+import {responseToJSON} from "../shared/response-to-json";
 import { JsonResponse } from "../shared/types";
+
+export function nativeFetchJSON(url: string, options?: RequestInit): Promise<JsonResponse> {
+  return fetch(url, options).then(responseToJSON);
+}
 
 export default async function fetchJSON<T extends object>(
   url: string,
