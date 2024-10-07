@@ -1,7 +1,29 @@
 import { DefaultFormFields } from "../../ConfigureTeams";
 import { StorageFactory } from "../../../../../jira/storage/common";
 
-import { globalTeamConfigurationStorageKey } from ".";
+import { globalTeamConfigurationStorageKey } from "./key-factory";
+
+export type TeamConfiguration = {
+  sprintLength: number;
+  velocityPerSprint: number;
+  tracks: number;
+  estimateField: string;
+  confidenceField: string;
+  startDateField: string;
+  dueDateField: string;
+};
+
+export function isFieldUpdate(event: { name: string }): event is { name: keyof TeamConfiguration } {
+  return [
+    "sprintLength",
+    "velocityPerSprint",
+    "tracks",
+    "estimateField",
+    "confidenceField",
+    "startDateField",
+    "dueDateField",
+  ].includes(event.name);
+}
 
 import jiraOidcHelpers from "../../../../../jira-oidc-helpers";
 type Jira = ReturnType<typeof jiraOidcHelpers>;

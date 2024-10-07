@@ -1,5 +1,4 @@
-import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
-import type { TeamConfiguration } from "./defaults";
+import type { TeamConfiguration } from "./reconcile";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
