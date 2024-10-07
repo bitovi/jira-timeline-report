@@ -21,10 +21,12 @@ function makeLocalLink(originalLink) {
     return linkUrl.toString();
 }
 
+// mr-8 bg-neutral-201 hover:bg-neutral-301 rounded text-center inline-flex items-center
+
 export default class SavedUrls extends StacheElement {
     static view = `
         {{# if(this.canQuery) }}
-            <button class="text-center inline-flex items-center mr-8 hover:bg-gray-200 bg-gray-100 rounded-lg pt-1 pr-1 pl-2 font-bitovipoppins font-lg"
+            <button class="text-center inline-flex items-center mr-8 bg-neutral-201 hover:bg-neutral-301 rounded px-3 py-1 font-bitovipoppins"
                 on:click="this.showSavedReports()">
                 Saved Reports <svg class="w-2.5 h-2.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
@@ -71,10 +73,10 @@ export default class SavedUrls extends StacheElement {
             
             let html = ``
             if(!issue) {
-                html += `<a href="https://github.com/bitovi/jira-timeline-report/blob/main/docs/saved-reports.md" class="link block">Create Saved Reports</a>`
+                html += `<a href="https://github.com/bitovi/jira-timeline-report/blob/main/docs/saved-reports.md" class="link block p-2">Create Saved Reports</a>`
             } else {
                 html += `
-                <div class="divide-y divide-gray-100">
+                <div class="divide-y divide-gray-100 p-2">
                     <div class="py-2">
                         ${
                             links.map(link => {

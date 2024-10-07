@@ -203,6 +203,10 @@ export default function ({
 		fetchJiraIssue: async (issueId) => {
 			return requestHelper(`/api/3/issue/${issueId}`);
 		},
+		// Gets issue types https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-types/#api-rest-api-3-issuetype-get
+		fetchIssueTypes: async() => {
+			return requestHelper(`/api/3/issuetype`)
+		},
 		editJiraIssueWithNamedFields: async (issueId, fields) => {
 			const scopeIdForJira = jiraHelpers.fetchFromLocalStorage('scopeId');
 			const accessToken = jiraHelpers.fetchFromLocalStorage('accessToken');

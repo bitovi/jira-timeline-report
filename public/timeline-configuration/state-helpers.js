@@ -1,8 +1,8 @@
 import { ObservableObject, value, Reflect } from "../can.js";
-import { deriveIssue } from "../jira/derived/derive";
-import bitoviTrainingData from "../examples/bitovi-training.js";
+import { deriveIssue } from "../jira/derived/derive.ts";
 import { normalizeIssue } from "../jira/normalized/normalize.ts";
-import { nativeFetchJSON } from "../jira-oidc-helpers";
+
+import { getServerInfo, getRawIssues } from "../stateful-data/jira-data-requests.js";
 
 /*
 class IssueData extends ObservableObject {
@@ -19,10 +19,7 @@ export function csvToRawIssues(csvIssues) {
       fields: {
         ...issue,
         "Parent Link": { data: issue["Parent Link"] },
-        "Issue Type": {
-          name: issue["Issue Type"],
-          hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]],
-        },
+        "Issue Type": { name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]] },
         Status: { name: issue.Status },
       },
       key: issue["Issue key"],
@@ -31,61 +28,27 @@ export function csvToRawIssues(csvIssues) {
   return res;
 }
 
-export function rawIssuesRequestData(
-  { jql, childJQL, isLoggedIn, loadChildren, jiraHelpers },
-  { listenTo, resolve }
-) {
+export function rawIssuesRequestData({ jql, childJQL, isLoggedIn, loadChildren, jiraHelpers }, { listenTo, resolve }) {
   const progressData = value.with(null);
 
   const promise = value.returnedBy(function rawIssuesPromise() {
-    if (isLoggedIn.value === false) {
-      return bitoviTrainingData(new Date()); //.then(csvToRawIssues) ;
-    }
-
-    if (!jql.value) {
-      return undefined;
-    }
-
     progressData.value = null;
 
-    const loadIssues = loadChildren.value
-      ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(
-          jiraHelpers
-        )
-      : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(
-          jiraHelpers
-        );
-
-    return loadIssues(
+    return getRawIssues(
       {
+        isLoggedIn: isLoggedIn.value,
+        loadChildren: loadChildren.value,
+        jiraHelpers,
         jql: jql.value,
-        childJQL: childJQL.value ? " and " + childJQL.value : "",
-        fields: [
-          "summary",
-          "Rank",
-          "Start date",
-          "Due date",
-          "Issue Type",
-          "Fix versions",
-          "Story points",
-          "Story points median",
-          "Confidence",
-          "Story points confidence",
-          "Labels",
-          "Status",
-          "Sprint",
-          "Created",
-          "Parent",
-        ],
-        expand: ["changelog"],
+        childJQL: childJQL.value,
+        // fields ... we will have to do this
       },
-      (receivedProgressData) => {
-        progressData.value = { ...receivedProgressData };
+      {
+        progressUpdate: (receivedProgressData) => {
+          progressData.value = { ...receivedProgressData };
+        },
       }
-    ).then((data) => {
-      console.log("rawData", data);
-      return data;
-    });
+    );
   });
 
   listenTo(promise, (value) => {
@@ -110,23 +73,19 @@ function resolve(value) {
 }
 
 export function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
-  if (resolve(isLoggedIn)) {
-    return jiraHelpers.getServerInfo();
-  } else {
-    return nativeFetchJSON("./examples/bitovi-training-server-info.json");
-  }
+  return getServerInfo({ jiraHelpers, isLoggedIn: resolve(isLoggedIn) });
 }
 
-export function configurationPromise({
-  serverInfoPromise,
-  teamConfigurationPromise,
-}) {
+export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizeOptionsObservable }) {
   // we will give pending until we have both promises
+
   const info = resolve(serverInfoPromise),
-    team = resolve(teamConfigurationPromise);
-  if (!info || !team) {
+    team = resolve(teamConfigurationPromise),
+    normalizeOptions = resolve(normalizeOptionsObservable);
+  if (!info || !team || !normalizeOptions) {
     return new Promise(() => {});
   }
+
   return Promise.all([info, team]).then(
     /**
      *
@@ -135,12 +94,6 @@ export function configurationPromise({
      */
     ([serverInfo, teamData]) => {
       return {
-        getConfidence({ fields }) {
-          return fields.Confidence;
-        },
-        getStoryPointsMedian({ fields }) {
-          return fields["Story points median"];
-        },
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
@@ -153,31 +106,25 @@ export function configurationPromise({
         getParallelWorkLimit(team) {
           return teamData.getTracksForTeam(team);
         },
+        ...(normalizeOptions ?? {}),
       };
     }
   );
 }
 
-export function derivedIssuesRequestData(
-  { rawIssuesRequestData, configurationPromise },
-  { listenTo, resolve }
-) {
+export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPromise }, { listenTo, resolve }) {
   const promise = value.returnedBy(function derivedIssuesPromise() {
-    if (
-      rawIssuesRequestData.value.issuesPromise &&
-      configurationPromise.value
-    ) {
-      return Promise.all([
-        rawIssuesRequestData.value.issuesPromise,
-        configurationPromise.value,
-      ]).then(([rawIssues, configuration]) => {
-        console.log({ rawIssues });
-        return rawIssues.map((issue) => {
-          const normalized = normalizeIssue(issue, configuration);
-          const derived = deriveIssue(normalized, configuration);
-          return derived;
-        });
-      });
+    if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
+      return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
+        ([rawIssues, configuration]) => {
+          console.log({ rawIssues });
+          return rawIssues.map((issue) => {
+            const normalized = normalizeIssue(issue, configuration);
+            const derived = deriveIssue(normalized, configuration);
+            return derived;
+          });
+        }
+      );
     } else {
       // make a pending promise ...
       const promise = new Promise(() => {});

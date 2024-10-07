@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "es5",
+    "jsx": "react",
     "outDir": "./public/dist",
     "rootDir": "./public",
     "strict": true,
@@ -21,8 +22,9 @@
     "sourceMap": false
   },
   "include": [
-    "public/**/*.ts"
-  ],
+    "public/**/*.ts",
+    "public/**/*.tsx"
+   ],
   "exclude": [
     "node_modules",
     "public/dist",

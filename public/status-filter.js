@@ -18,29 +18,7 @@ export class StatusFilter extends StacheElement {
         },
         inputPlaceholder: String,
         param: String,
-        selectedStatuses: {
-            value({resolve, lastSet, listenTo}){
-                const updateValue = (value) => {
-                    if(!value) {
-                        value = "";
-                    } else if( Array.isArray(value) ){
-                        value = value.join(",")
-                    }
-                    updateUrlParam(this.param, value, "");
-
-                    currentValue = value === "" ? [] : value.split(",");
-                    resolve(currentValue);
-                }
-                let currentValue;
-                updateValue(new URL(window.location).searchParams.get(this.param));
-
-                listenTo(lastSet, (value)=>{
-                    updateValue(value);
-                });
-
-                
-            }
-        }
+        selectedStatuses: undefined
     };
 }
 

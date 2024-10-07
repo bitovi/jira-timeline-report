@@ -211,6 +211,7 @@ export function rollupDatesFromRollups(issues) {
  * @param {Array<import("../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
  * @returns {Array<{type: string, hierarchyLevel: number}>}
  */
+// TODO: I think this can be removed
 function issueHierarchy(normalizedIssues){
     const levelsToNames = []
     for( let issue of normalizedIssues) {
