@@ -1,5 +1,5 @@
 
-import { FetchJiraIssuesParams } from "./types";
+import { FetchJiraIssuesParams } from "../jira/shared/types";
 
 export function saveInformationToLocalStorage(
     parameters: Record<string, string | number | string[]>,

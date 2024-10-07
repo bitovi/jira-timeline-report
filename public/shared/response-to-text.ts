@@ -1,4 +1,4 @@
-function responseToText(response: Response): Promise<string> {
+export function responseToText(response: Response): Promise<string> {
   if (!response.ok) {
     return response.json().then((payload) => {
       const err = new Error("HTTP status code: " + response.status);
@@ -9,5 +9,3 @@ function responseToText(response: Response): Promise<string> {
   }
   return response.text();
 }
-
-export default responseToText;

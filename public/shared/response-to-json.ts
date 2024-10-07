@@ -1,9 +1,7 @@
-import {
-  JsonResponse,
-} from './types.js';
+import { JsonResponse } from './types';
 
 export function responseToJSON<T>(response: Response): Promise<JsonResponse<T>> {
-	if(!response.ok) {
+	if (!response.ok) {
 		return response.json().then((payload) => {
 			const err = new Error("HTTP status code: " + response.status);
 			Object.assign(err, payload);

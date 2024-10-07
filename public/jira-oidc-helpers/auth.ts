@@ -1,6 +1,10 @@
 import fetchJSON from "./fetch";
-import { Config } from "./types";
-import { saveInformationToLocalStorage, clearAuthFromLocalStorage, fetchFromLocalStorage } from "./storage";
+import { Config } from "../shared/types";
+import {
+  saveInformationToLocalStorage,
+  clearAuthFromLocalStorage,
+  fetchFromLocalStorage
+} from "./storage";
 
 export const fetchAuthorizationCode = (config: Config) => () => {
   const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${config.env.JIRA_CLIENT_ID}&scope=${config.env.JIRA_SCOPE}&redirect_uri=${config.env.JIRA_CALLBACK_URL}&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;

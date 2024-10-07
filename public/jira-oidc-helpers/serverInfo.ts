@@ -1,4 +1,4 @@
-import { Config, RequestHelperResponse } from "./types";
+import { Config, RequestHelperResponse } from "../shared/types";
 
 
 export const _cachedServerInfoPromise = (config: Config) => () => {

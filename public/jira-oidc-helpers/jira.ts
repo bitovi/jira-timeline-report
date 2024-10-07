@@ -1,9 +1,15 @@
+import chunkArray from "../shared/chunk-array";
+import mapIdsToNames from "../shared/map-ids-to-names";
+import { responseToText } from "../shared/response-to-text";
+import { Config, Issue, ProgressData, RequestHelperResponse } from "../shared/types";
+import {
+    FetchJiraIssuesParams,
+    JiraIssue as SharedJiraIssue,
+    IssueFields as SharedIssueFields,
+    Changelog as SharedChangelog
+} from "../jira/shared/types";
+import { JiraIssue, ChangeLog, InterimJiraIssue } from './types'
 import { hasValidAccessToken } from "./auth";
-import chunkArray from "./chunkArray";
-import { Config } from "./types";
-import mapIdsToNames from "./mapIdsToNames";
-import responseToText from "./responseToText";
-import { FetchJiraIssuesParams, Issue, JiraIssue, ProgressData } from "./types";
 import { fetchFromLocalStorage } from "./storage";
 
 export function fetchAccessibleResources(config: Config) {
@@ -115,6 +121,22 @@ export function fetchJiraFields(config: Config) {
     return () => {
         return config.requestHelper(`/api/3/field`);
     };
+}
+export async function fetchIssueTypes(config: Config) {
+    return () => {
+        const response = config.requestHelper(`/api/3/issuetype`) as unknown;
+        return response as Promise<
+            Array<{
+                avatarId: number;
+                description: string;
+                hierarchyLevel: number;
+                iconUrl: string;
+                id: number;
+                name: string;
+                subtask: boolean;
+            }>
+        >;
+    }
 }
 export function fetchAllJiraIssuesWithJQL(config: Config) {
     return async (params: FetchJiraIssuesParams) => {
@@ -255,7 +277,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
             (data: ProgressData): void;
         } = () => { }
     ): Promise<Issue[]> => {
-        const { limit: limit, ...apiParams } = params;
+        const { limit, ...apiParams } = params;
 
         // a weak map would be better
         progress.data =

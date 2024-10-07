@@ -1,7 +1,8 @@
 import {
   JtrEnv,
-  RequestHelperResponse,
-} from "./types";
+  Config,
+  RequestHelperResponse
+} from "../shared/types";
 import {
   saveInformationToLocalStorage,
   clearAuthFromLocalStorage,
@@ -25,6 +26,7 @@ import {
   fetchDeepChildren,
   fetchJiraChangelog,
   fetchJiraFields,
+  fetchIssueTypes,
   fetchJiraIssue,
   fetchJiraIssuesWithJQL,
   fetchJiraSprint,
@@ -37,7 +39,6 @@ import {
   fetchRemainingChangelogsForIssue,
   fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields
 } from "./jira";
-import { Config } from "./types.js";
 import { _cachedServerInfoPromise, getServerInfo } from "./serverInfo.js";
 
 // TODO move this into main module
@@ -93,11 +94,13 @@ const createJiraHelpers = (
     fetchChildrenResponses: fetchChildrenResponses(config),
     fetchDeepChildren: fetchDeepChildren(config),
     fetchJiraFields: fetchJiraFields(config),
+    fetchIssueTypes: fetchIssueTypes(config),
     getAccessToken: getAccessToken(config),
     hasAccessToken,
     hasValidAccessToken,
     _cachedServerInfoPromise,
     getServerInfo: getServerInfo(config),
+    requester: requestHelper
   };
 };
 

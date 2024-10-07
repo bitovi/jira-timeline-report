@@ -1,5 +1,5 @@
 import responseToJSON from "./responseToJson";
-import { JsonResponse } from "./types";
+import { JsonResponse } from "../shared/types";
 
 export default async function fetchJSON<T extends object>(
   url: string,
