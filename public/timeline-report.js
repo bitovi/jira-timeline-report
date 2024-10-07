@@ -17,6 +17,8 @@ import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rol
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 
+import { DROPDOWN_LABEL } from "./shared/style-strings.js";
+
 export class TimelineReport extends StacheElement {
     static view = `<div class="flex">
         <timeline-configuration
@@ -28,12 +30,10 @@ export class TimelineReport extends StacheElement {
 
           jql:to="this.jql"
           derivedIssuesRequestData:to="this.derivedIssuesRequestData"
-
           issueTimingCalculations:to="this.issueTimingCalculations"
-          
           configuration:to="this.configuration"
-
           statuses:to="this.statuses"
+          statusesToExclude:to="this.statusesToExclude"
           goBack:to="this.goBack"
           
           ></timeline-configuration>
@@ -57,6 +57,7 @@ export class TimelineReport extends StacheElement {
       {{/ not }}
 
           <div class="flex gap-1">
+            
             <select-issue-type 
               primaryIssueType:to="this.primaryIssueType"
               secondaryIssueType:to="this.secondaryIssueType"
@@ -68,8 +69,12 @@ export class TimelineReport extends StacheElement {
               jiraHelpers:from="this.jiraHelpers"></select-report-type>
         
             <div class='flex-grow'>
-              <p class="text-xs"><label class="inline">Compare to {{this.compareToTime.text}}</label></p>
-              <input class="w-full-border-box" type='range' valueAsNumber:bind:on:input='this.timeSliderValue' min="0" max="100"/>
+              <label for="compareValue" class="${DROPDOWN_LABEL}">Compare to {{this.compareToTime.text}}</label>
+              <input class="w-full-border-box" 
+                id="compareValue"
+                type='range' 
+                valueAsNumber:bind:on:input='this.timeSliderValue' 
+                min="0" max="100"/>
             </div>
             <select-view-settings
               jiraHelpers:from="this.jiraHelpers"
@@ -148,14 +153,14 @@ export class TimelineReport extends StacheElement {
               <p>Please check your JQL and the View Settings.</p>
             </div>
           {{/}}
-          {{# if(this.derivedIssuesRequestData.issuesPromise.isPending) }}
+          {{# and(this.jql, this.derivedIssuesRequestData.issuesPromise.isPending) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
               <p>Loading ...<p>
               {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
                 <p>Loaded {{this.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
               {{/ }}
             </div>
-          {{/ if }}
+          {{/ and }}
           {{# if(this.derivedIssuesRequestData.issuesPromise.isRejected) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
               <p>There was an error loading from Jira!</p>

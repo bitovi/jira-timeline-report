@@ -9,12 +9,15 @@ import JiraOIDCHelpers from "../jira-oidc-helpers.ts";
 import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
-import { updateUrlParam } from "./state-storage.js";
+import { directlyReplaceUrlParam } from "./state-storage.js";
+import { route } from "../can.js";
+
+
 function legacyPrimaryReportingTypeRoutingFix(){
   const primaryIssueType = new URL(window.location).searchParams.get("primaryReportType");
   if(primaryIssueType === "breakdown") {
-    updateUrlParam("primaryReportType", "start-due");
-    updateUrlParam("primaryReportBreakdown", "true");
+    directlyReplaceUrlParam("primaryReportType", "start-due");
+    directlyReplaceUrlParam("primaryReportBreakdown", "true");
     console.warn("fixing url")
   }
 }
@@ -22,8 +25,8 @@ function legacyPrimaryReportingTypeRoutingFix(){
 function legacyPrimaryIssueTypeRoutingFix(){
   const primaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
   if(primaryIssueType) {
-    updateUrlParam("primaryReportType", "","");
-    updateUrlParam("selectedIssueType", primaryIssueType,"");
+    directlyReplaceUrlParam("primaryIssueType", "","");
+    directlyReplaceUrlParam("selectedIssueType", primaryIssueType,"");
     console.warn("fixing url")
   }
 }
@@ -31,8 +34,10 @@ function legacyPrimaryIssueTypeRoutingFix(){
 
 
 export default async function mainHelper(config, host) {
-  legacyPrimaryReportingTypeRoutingFix();
-  legacyPrimaryIssueTypeRoutingFix();
+  let fix = await legacyPrimaryReportingTypeRoutingFix();
+  fix = await legacyPrimaryIssueTypeRoutingFix();
+
+  route.start();
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 

@@ -6,6 +6,7 @@ import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCa
 import { rawIssuesRequestData, configurationPromise, derivedIssuesRequestData, serverInfoPromise} from "./state-helpers.js";
 
 import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
+import { makeArrayOfStringsQueryParamValue } from "../shared/state-storage.js";
 
 import "../status-filter.js";
 import "./timing-calculation/timing-calculation.js"
@@ -111,7 +112,7 @@ export class TimelineConfiguration extends StacheElement {
                 <status-filter 
                     statuses:from="this.statuses"
                     param:raw="statusesToExclude"
-                    selectedStatuses:to="this.statusesToExclude"
+                    selectedStatuses:bind="this.statusesToExclude"
                     inputPlaceholder:raw="Search for statuses"
                     style="max-width: 400px;">
                 </status-filter>
@@ -149,6 +150,7 @@ export class TimelineConfiguration extends StacheElement {
         jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
         loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
         childJQL: saveJSONToUrl("childJQL", "", String, {parse: x => ""+x, stringify: x => ""+x}),
+        statusesToExclude: makeArrayOfStringsQueryParamValue("statusesToExclude"),
         
         // from children
         issueTimingCalculations: null,

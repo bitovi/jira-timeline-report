@@ -33,7 +33,7 @@ module.exports = function (env, mainFileRoute) {
 	<body class='overflow-x-hidden'>
 	<div class="color-bg-white px-4 sticky top-0 z-50 border-b border-nuetral-301">
 		<nav class="mx-auto py-2 place-center">
-			<div class="flex" style="align-items: center">
+			<div class="flex gap-4" style="align-items: center">
 				<ul class="flex gap-3 grow items-baseline">
 					<li>
 						<a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold">Jira Baseline Report</a>

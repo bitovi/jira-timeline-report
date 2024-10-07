@@ -8,6 +8,9 @@ import { mostCommonElement } from "../shared/array-helpers.js";
 import "../status-filter.js";
 
 import SimpleTooltip from "../shared/simple-tooltip.js";
+
+import { DROPDOWN_LABEL } from "../shared/style-strings.js";
+
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
@@ -73,11 +76,14 @@ customElements.define("select-release-type-dropdown", ReleasesTypeSelectionDropd
 
 export class SelectIssueType extends StacheElement {
     static view = `
+        <label for="reportOn" class="${DROPDOWN_LABEL}">Report on</label>
         {{# not(this.primaryIssueType) }}
-            <button class="rounded bg-neutral-201 px-3 py-1">Loading ... </button>
+            <button class="rounded bg-neutral-201 px-3 py-1" id="reportOn">Loading ... </button>
         {{/ }}
         {{# if(this.primaryIssueType) }}
-            <button class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}" on:click="this.showChildOptions()">
+            <button class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}" 
+                on:click="this.showChildOptions()" 
+                id="reportOn">
                 {{this.primaryIssueType}}s
                 {{# if(this.secondaryIssueType) }} / {{this.secondaryIssueType}}s {{/ if }}
                 <img class="inline" src="/images/chevron-down.svg"/>

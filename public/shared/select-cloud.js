@@ -9,7 +9,7 @@ const resourceSelection = stache(`<div class="p-2">
 </div>`)
 
 
-const pillClass = `text-center inline-flex items-center mr-8 bg-neutral-201 hover:bg-neutral-301 rounded px-3 py-1`
+const pillClass = `text-center inline-flex items-center bg-neutral-201 hover:bg-neutral-301 rounded px-3 py-1`
 
 export default class SelectCloud extends StacheElement {
     static view = `
@@ -68,7 +68,6 @@ export default class SelectCloud extends StacheElement {
         const div = document.createElement("div");
         this.alternateResources.then((resources) => {
             // come back acround and fix this
-            
             
             this.simpleTooltip.belowElementInScrollingContainer(this, resourceSelection({
                 resources,

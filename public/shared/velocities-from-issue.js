@@ -114,7 +114,7 @@ function normalizeTeamConfigurationArray(teamConfigurationArray){
 export class VelocitiesFromIssue extends StacheElement {
     static view = `
         {{# if(this.canQuery) }}
-            <div class="mr-8 bg-neutral-201 hover:bg-neutral-301 rounded text-center inline-flex items-center">
+            <div class="bg-neutral-201 hover:bg-neutral-301 rounded text-center inline-flex items-center">
                 {{# if(this.teamConfigurationPromise.isPending) }}
                     <span class="px-2 py-1">Loading ...</span>
                 {{/ }}

@@ -45,16 +45,18 @@ class ReportSelectionDropdown extends StacheElement {
 
 customElements.define("report-selection-dropdown", ReportSelectionDropdown);
 
-
+import { DROPDOWN_LABEL } from "../shared/style-strings.js";
 
 export class SelectReportType extends StacheElement {
     static view = `
+        <label for="reportType" class="${DROPDOWN_LABEL}">Report type</label>
         {{# not(this.primaryReportType) }}
             ---
         {{/ }}
         {{# if(this.primaryReportType) }}
             <button 
                 class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}"
+                id="reportType"
                 on:click="this.showChildOptions()">{{this.primaryReportName}} <img class="inline" src="/images/chevron-down.svg"/></button>
         {{/ }}
     `;

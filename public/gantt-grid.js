@@ -190,7 +190,6 @@ export class GanttGrid extends StacheElement {
   }
   get gridRowData() {
     
-    console.log("ROW DATA recompute", this.groupBy, this.primaryIssueType, this.primaryIssuesOrReleases)
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
     if (this.groupBy === "parent" && this.primaryIssueType !== "Release") {
       // get all the parents ...

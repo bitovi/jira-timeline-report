@@ -35,7 +35,7 @@ class TypeSelectionDropdown extends StacheElement {
     `
 }*/
 
-
+import { makeArrayOfStringsQueryParamValue } from "../shared/state-storage.js";
 
 class SelectViewSettingsDropdown extends StacheElement {
     static view = `
@@ -211,10 +211,13 @@ class SelectViewSettingsDropdown extends StacheElement {
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
 
+import { DROPDOWN_LABEL } from "../shared/style-strings.js";
 
 export class SelectViewSettings extends StacheElement {
     static view = `
+        <label for="viewSettings" class="${DROPDOWN_LABEL} invisible">View settings</label>
         <button 
+                id="viewSettings"
                 class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}"
                 on:click="this.showChildOptions()">View Settings <img class="inline" src="/images/chevron-down.svg"/></button>
     `;
@@ -340,36 +343,7 @@ export class SelectViewSettings extends StacheElement {
 }
 
 
-function makeArrayOfStringsQueryParamValue(queryParam){
-    return {
-        value: function({resolve, lastSet, listenTo}){
-            function urlValue(){
-                let value = new URL(window.location).searchParams.get(queryParam);
-                return !value ? [] : value.split(",")
-            }
-            let currentValue = urlValue();
-            resolve(currentValue);
-    
-            listenTo(lastSet, (value)=>{
-                console.log("SETTING")
-                if(!value) {
-                    value = "";
-                } else if( Array.isArray(value) ){
-                    value = value.join(",")
-                }
-                updateUrlParam(queryParam, value, "");
-            });
-    
-            listenTo(pushStateObservable, (ev)=>{
-                console.log("ROUTE CHANGED", ev)
-                let newValue = urlValue();
-                if(diff.list(newValue, currentValue).length) {
-                    resolve(currentValue = newValue);
-                }
-            })
-        }
-    }
-}
+
 
 function findParentWithSelector(element, selector) {
     let parent = element.parentElement;
