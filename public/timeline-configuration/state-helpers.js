@@ -80,9 +80,9 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
   // we will give pending until we have both promises
 
   const info = resolve(serverInfoPromise),
-    team = resolve(teamConfigurationPromise),
-    normalizeOptions = resolve(normalizeOptionsObservable);
-  if (!info || !team || !normalizeOptions) {
+    team = resolve(teamConfigurationPromise)//;,
+    //normalizeOptions = resolve(normalizeOptionsObservable);
+  if (!info || !team /*|| !normalizeOptions*/) {
     return new Promise(() => {});
   }
 
@@ -94,6 +94,12 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
      */
     ([serverInfo, teamData]) => {
       return {
+        getConfidence({fields}){
+            return fields.Confidence;
+        },
+        getStoryPointsMedian({fields}) {
+            return fields["Story points median"]
+        },
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
@@ -106,7 +112,7 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
         getParallelWorkLimit(team) {
           return teamData.getTracksForTeam(team);
         },
-        ...(normalizeOptions ?? {}),
+        //...(normalizeOptions ?? {}),
       };
     }
   );

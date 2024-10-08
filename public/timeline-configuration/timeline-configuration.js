@@ -7,10 +7,12 @@ import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
 //   getImpliedTimingCalculations,
 // } from "../prepare-issues/date-data.js";
 
+/*
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import TeamConfigure from "../react/Configure/Teams/index";
+*/
 
 import {
   rawIssuesRequestData,
@@ -147,7 +149,7 @@ export class TimelineConfiguration extends StacheElement {
   
         <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}}">
             <div>${GOBACK_BUTTON}</div>
-            <div> <div id="team-configuration"></div></div>
+            <div> <div id="team-configuration">Coming Soon</div></div>
         </div>
 
 
@@ -194,6 +196,7 @@ export class TimelineConfiguration extends StacheElement {
       return configurationPromise({
         teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
+        // normalizeOptionsObservable: value.from(this.normalizeOptions),
       });
     },
     configuration: {
@@ -230,128 +233,13 @@ export class TimelineConfiguration extends StacheElement {
     },
     goBack() {
       this.showSettings = "";
-    },
+    }
 
-    // VALUES DERIVING FROM THE `jql`
-    rawIssuesRequestData: {
-      value({ listenTo, resolve }) {
-        return rawIssuesRequestData(
-          {
-            jql: value.from(this, "jql"),
-            childJQL: value.from(this, "childJQL"),
-            loadChildren: value.from(this, "loadChildren"),
-            isLoggedIn: value.from(this, "isLoggedIn"),
-            jiraHelpers: this.jiraHelpers,
-          },
-          { listenTo, resolve }
-        );
-      },
-    },
-    get serverInfoPromise() {
-      return serverInfoPromise({ jiraHelpers: this.jiraHelpers, isLoggedIn: value.from(this, "isLoggedIn") });
-    },
-    get configurationPromise() {
-      return configurationPromise({
-        teamConfigurationPromise: this.teamConfigurationPromise,
-        serverInfoPromise: this.serverInfoPromise,
-        normalizeOptionsObservable: value.from(this.normalizeOptions),
-      });
-    },
-    configuration: {
-      async() {
-        return this.configurationPromise;
-      },
-    },
-    derivedIssuesRequestData: {
-      value({ listenTo, resolve }) {
-        return derivedIssuesRequestData(
-          {
-            rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
-            configurationPromise: value.from(this, "configurationPromise"),
-          },
-          { listenTo, resolve }
-        );
-      },
-    },
-    get derivedIssuesPromise() {
-      return this.derivedIssuesRequestData.issuesPromise;
-    },
-    derivedIssues: {
-      async() {
-        return this.derivedIssuesRequestData.issuesPromise;
-      },
-    },
-    // PROPERTIES DERIVING FROM `derivedIssues`
-    get statuses() {
-      if (this.derivedIssues) {
-        return allStatusesSorted(this.derivedIssues);
-      } else {
-        return [];
-      }
-    },
-
-    /*
-        allTimingCalculationOptions: {
-            async(resolve) {
-                if(this.derivedIssuesRequestData.issuesPromise) {
-                    return this.derivedIssuesRequestData.issuesPromise.then( issues => {
-                        return allTimingCalculationOptions(issues);
-                    })
-                }
-            }
-        },
-
-        // PROPERTIES only needing primaryIssue type and what it depends on
-
-        // looks like [{type: "initiative", calculation: "children-only"}, ...]
-        // in the URL like ?timingCalculations=initiative:children-only,epic:self
-        
-        get impliedTimingCalculations(){
-            if(this.primaryIssueType) {
-                return getImpliedTimingCalculations(this.primaryIssueType, 
-                    this.allTimingCalculationOptions.map, 
-                    this.timingCalculations);
-            }
-        },
-
-        // PROPERTIES from having a primaryIssueType and timingCalculations
-        
-        // used to get the name of the secondary issue type
-
-
-        get timingCalculationMethods() {
-            if(this.primaryIssueType) {
-                return this.impliedTimingCalculations
-                    .map( (calc) => calc.calculation)
-            }
-        },
-
-        get timingLevels(){
-            if(this.primaryIssueType) {
-                return getTimingLevels(this.allTimingCalculationOptions.map, this.primaryIssueType, this.timingCalculations);
-            }            
-        },
-        get rollupTimingLevelsAndCalculations(){
-            if(this.impliedTimingCalculations) {
-                const impliedCalculations = this.impliedTimingCalculations;
-                const primaryIssueType = this.primaryIssueType;
-                const primaryIssueHierarchy = this.allTimingCalculationOptions.map[this.primaryIssueType].hierarchyLevel;
-                const rollupCalculations = [];
-                for( let i = 0; i < impliedCalculations.length + 1; i++) {
-                    rollupCalculations.push({
-                        type: i === 0 ? primaryIssueType : impliedCalculations[i-1].type,
-                        hierarchyLevel: i === 0 ? primaryIssueHierarchy : impliedCalculations[i-1].hierarchyLevel,
-                        calculation: i >= impliedCalculations.length  ? "parentOnly" : impliedCalculations[i].calculation
-                    })
-                }
-                return rollupCalculations;
-            }
-        },
-        */
-    // dependent on primary issue type
+    
   };
   // HOOKS
   connectedCallback() {
+    /*
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
         storage: this.storage,
@@ -364,6 +252,7 @@ export class TimelineConfiguration extends StacheElement {
         },
       })
     );
+    */
   }
   connected() {}
   // METHODS
