@@ -234,7 +234,7 @@ export class TimelineConfiguration extends StacheElement {
   connectedCallback() {
     getFormData(this.jiraHelpers, this.storage)
       .then(createNormalizeConfiguration)
-      .catch(() => {
+      .then(() => {
         // Could fail because storage hasn't been setup yet
         return {};
       })
