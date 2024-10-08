@@ -4,13 +4,19 @@ import commonjs from "@rollup/plugin-commonjs";
 import typescript from "rollup-plugin-typescript2";
 import babel from "@rollup/plugin-babel";
 
+const babelProd = {
+  exclude: "node_modules/**",
+  plugins: ["@babel/plugin-transform-react-jsx"],
+  babelHelpers: "bundled",
+};
+
 const warn = {
   onwarn(warning, warn) {
     // ignores any 'use client' directive warnings
-
     if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
       return;
     }
+
     warn(warning);
   },
 };
@@ -22,16 +28,7 @@ export default [
       file: "./public/dist/oauth-callback.js",
       format: "esm",
     },
-    plugins: [
-      nodeResolve(),
-      commonjs(),
-      typescript(),
-      babel({
-        exclude: "node_modules/**",
-        presets: ["@babel/preset-react"],
-        babelHelpers: "bundled",
-      }),
-    ],
+    plugins: [nodeResolve(), commonjs(), typescript(), babel(babelProd)],
     ...warn,
   },
   {
@@ -46,7 +43,7 @@ export default [
       typescript(),
       babel({
         exclude: "node_modules/**",
-        presets: ["@babel/preset-react"],
+        plugins: ["@babel/plugin-transform-react-jsx-development"],
         babelHelpers: "bundled",
       }),
     ],
@@ -58,17 +55,7 @@ export default [
       file: "./public/dist/hosted-main.min.js",
       format: "esm",
     },
-    plugins: [
-      nodeResolve(),
-      commonjs(),
-      terser(),
-      typescript(),
-      babel({
-        exclude: "node_modules/**",
-        presets: ["@babel/preset-react"],
-        babelHelpers: "bundled",
-      }),
-    ],
+    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
     ...warn,
   },
   {
@@ -77,17 +64,7 @@ export default [
       file: "./public/dist/connect-main.min.js",
       format: "esm",
     },
-    plugins: [
-      nodeResolve(),
-      commonjs(),
-      terser(),
-      typescript(),
-      babel({
-        exclude: "node_modules/**",
-        presets: ["@babel/preset-react"],
-        babelHelpers: "bundled",
-      }),
-    ],
+    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
     ...warn,
   },
 ];

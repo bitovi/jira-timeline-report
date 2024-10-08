@@ -7,6 +7,7 @@ import Heading from "@atlaskit/heading";
 import Button from "@atlaskit/button/new";
 
 import { globalTeamConfigurationStorageKey, teamConfigurationKeys } from "../team-configuration";
+import { Flex } from "@atlaskit/primitives";
 
 type StorageContextValues = AppStorage | null;
 
@@ -44,12 +45,12 @@ export const StorageProvider: FC<StorageProviderProps> = ({ storage, children })
 
   if (!storageAvailable) {
     return (
-      <>
+      <Flex direction="column" gap="space.100" justifyContent="center" alignItems="center">
         <Heading size="medium">Team storage has not been configured</Heading>
         <Button appearance="primary" onClick={() => createStorage()}>
           Configure now
         </Button>
-      </>
+      </Flex>
     );
   }
 

@@ -73,7 +73,7 @@ The following steps are repeatable as many times as needed to re-deploy and re-t
 ngrok http 3000
 ```
 
-2. After the tunnel starts, you need to create the `atlassian-connect.json` file by running `npm run create:atlassian-connect --local`
+2. After the tunnel starts, you need to create the `atlassian-connect.json` file by running `npm run create:atlassian-connect -- --local`
 3. Once created, copy the secure domain (e.g. `https://46f7-8-47-99-200.ngrok-free.app`) and
    update `baseUrl` in <span style="white-space: nowrap;">public/atlassian-connect.json</span> with the domain.
 4. Open your Jira dev environment and click Apps from the top nav, then `Manage Your Apps`. If you have enabled devlopment mode, you should see an `Upload app` option next to `Build a new app`. Click `Uplaod app`.
