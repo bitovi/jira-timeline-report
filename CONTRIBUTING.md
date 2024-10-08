@@ -20,7 +20,13 @@ Follow the steps below to get remaining environment variables:
 
 - Open Jira developer console. https://developer.atlassian.com/console/myapps/
 - Create your app and choose OAuth2.0, put in the app name and accept the terms.
-- Click Permissions, add the Jira API scope then configure it. Choose the scope "View Jira issue data"... or "read:jira-work" and save.
+- Click Permissions, add the Jira API scope then configure it to the following scopes:
+  - Jira
+    - read:jira-work
+    - write:jira-work
+  - Confluence
+    - read:app-data:confluence
+    - write:app-data:confluence
 - Click Authorization, input the callback url, as default for this application locally, use `http://localhost:3000/oauth-callback` and save.
 - Click Settings and scroll down to copy your CLIENT_ID and CLIENT_SECRET.
 - The CLIENT_JIRA_API_URL is `https://api.atlassian.com`.
@@ -34,6 +40,7 @@ Open the terminal and run
 ```sh
 npm run dev
 ```
+
 Open your browser and navigate to http://localhost:3000/ to view the minified version of the app.
 
 Navigate to http://localhost:3000/dev to view the unminified version of the app.
