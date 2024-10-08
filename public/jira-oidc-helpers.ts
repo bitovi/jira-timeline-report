@@ -156,7 +156,7 @@ export default function (
       return allChildren.flat();
     }
 
-    return async function fetchAllDeepChildren(params: Params, progress: Progress = {} as any) {
+    return async function fetchAllDeepChildren(params: Params, progress: Progress = (()=>{}) as any) {
       const fields = await fieldsRequest;
       const newParams = {
         ...params,
@@ -569,6 +569,7 @@ export default function (
       params: { fields: string[]; [key: string]: any },
       progress: (data: ProgressData) => void = () => {}
     ) {
+
       const fields = await fieldsRequest;
       const newParams = {
         ...params,
