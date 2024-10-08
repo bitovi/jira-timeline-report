@@ -14,6 +14,9 @@ import { createElement } from "react";
 import TeamConfigure from "../react/Configure/Teams/index";
 */
 
+import {getFormData} from "../react/Configure/Teams/services/team-configuration";
+import {createNormalizeConfiguration} from "../react/Configure/Teams/shared/";
+
 import {
   rawIssuesRequestData,
   configurationPromise,
@@ -196,6 +199,7 @@ export class TimelineConfiguration extends StacheElement {
       return configurationPromise({
         teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
+        normalizePromise: getFormData(this.jiraHelpers, this.storage).then(createNormalizeConfiguration)
         // normalizeOptionsObservable: value.from(this.normalizeOptions),
       });
     },
