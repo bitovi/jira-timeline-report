@@ -76,23 +76,24 @@ export function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
   return getServerInfo({ jiraHelpers, isLoggedIn: resolve(isLoggedIn) });
 }
 
-export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizeOptionsObservable }) {
+export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizePromise }) {
   // we will give pending until we have both promises
 
   const info = resolve(serverInfoPromise),
-    team = resolve(teamConfigurationPromise)//;,
-    //normalizeOptions = resolve(normalizeOptionsObservable);
-  if (!info || !team /*|| !normalizeOptions*/) {
+    team = resolve(teamConfigurationPromise),
+    normalize = resolve(normalizePromise);
+
+  if (!info || !team || !normalize) {
     return new Promise(() => {});
   }
 
-  return Promise.all([info, team]).then(
+  return Promise.all([info, team, normalize]).then(
     /**
      *
      * @param {[Object, TeamConfiguration]} param0
      * @returns
      */
-    ([serverInfo, teamData]) => {
+    ([serverInfo, teamData, normalizeOptions]) => {
       return {
         getConfidence({fields}){
             return fields.Confidence;
@@ -112,7 +113,7 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
         getParallelWorkLimit(team) {
           return teamData.getTracksForTeam(team);
         },
-        //...(normalizeOptions ?? {}),
+        ...(normalizeOptions ?? {}),
       };
     }
   );
