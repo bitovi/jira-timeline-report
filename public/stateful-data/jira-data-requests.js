@@ -95,9 +95,6 @@ export function getRawIssues({isLoggedIn, loadChildren, jiraHelpers, jql, fields
           childJQL: childJQL ? " and "+childJQL : "",
           fields: fieldsToLoad,
           expand: ["changelog"]
-      }, progressUpdate).then((raw)=>{
-        console.log("rawed food2", raw);
-        return raw;
       });
 }
 
