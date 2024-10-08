@@ -7,10 +7,10 @@ import babel from "@rollup/plugin-babel";
 const warn = {
   onwarn(warning, warn) {
     // ignores any 'use client' directive warnings
-
     if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
       return;
     }
+
     warn(warning);
   },
 };

@@ -14,8 +14,8 @@ import { createElement } from "react";
 import TeamConfigure from "../react/Configure/Teams/index";
 */
 
-import {getFormData} from "../react/Configure/Teams/services/team-configuration";
-import {createNormalizeConfiguration} from "../react/Configure/Teams/shared/";
+import { getFormData } from "../react/Configure/Teams/services/team-configuration";
+import { createNormalizeConfiguration } from "../react/Configure/Teams/shared/";
 
 import {
   rawIssuesRequestData,
@@ -199,7 +199,12 @@ export class TimelineConfiguration extends StacheElement {
       return configurationPromise({
         teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
-        normalizePromise: getFormData(this.jiraHelpers, this.storage).then(createNormalizeConfiguration)
+        normalizePromise: getFormData(this.jiraHelpers, this.storage)
+          .then(createNormalizeConfiguration)
+          .catch(() => {
+            // Could fail because storage hasn't been setup yet
+            return {};
+          }),
         // normalizeOptionsObservable: value.from(this.normalizeOptions),
       });
     },
@@ -237,9 +242,7 @@ export class TimelineConfiguration extends StacheElement {
     },
     goBack() {
       this.showSettings = "";
-    }
-
-    
+    },
   };
   // HOOKS
   connectedCallback() {
