@@ -73,6 +73,7 @@ export type Config = {
     JIRA_APP_KEY: string;
   };
   requestHelper: RequestHelper;
+  fieldsRequest: ()=>FieldsRequest;
   host: "jira" | "hosted";
 };
 

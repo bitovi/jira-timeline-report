@@ -1,10 +1,10 @@
 import chunkArray from "../shared/chunk-array";
 import mapIdsToNames from "../shared/map-ids-to-names";
-import { FieldsRequest, Issue, Params, Progress } from "./types";
+import { Config, Issue, Params, Progress } from "./types";
 
 type RootMethod = (params: Params, progress: Progress) => Promise<Issue[]>;
 
-export function makeDeepChildrenLoaderUsingNamedFields(fieldsRequest?: FieldsRequest) {
+export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
     return (rootMethod: RootMethod) => {
         // Makes child requests in batches of 40
         //
@@ -52,8 +52,7 @@ export function makeDeepChildrenLoaderUsingNamedFields(fieldsRequest?: FieldsReq
         }
 
         return async function fetchAllDeepChildren(params: Params, progress: Progress = (()=>{}) as any) {
-            const fields = await fieldsRequest;
-            if (!fields) return
+            const fields = await config.fieldsRequest();
 
             const newParams = {
                 ...params,
