@@ -76,30 +76,30 @@ export function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
   return getServerInfo({ jiraHelpers, isLoggedIn: resolve(isLoggedIn) });
 }
 
-export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizePromise }) {
+export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizeObservable }) {
   // we will give pending until we have both promises
 
   const info = resolve(serverInfoPromise),
     team = resolve(teamConfigurationPromise),
-    normalize = resolve(normalizePromise);
+    normalizeOptions = resolve(normalizeObservable);
 
-  if (!info || !team || !normalize) {
+  if (!info || !team || !normalizeOptions) {
     return new Promise(() => {});
   }
 
-  return Promise.all([info, team, normalize]).then(
+  return Promise.all([info, team]).then(
     /**
      *
      * @param {[Object, TeamConfiguration]} param0
      * @returns
      */
-    ([serverInfo, teamData, normalizeOptions]) => {
+    ([serverInfo, teamData]) => {
       return {
-        getConfidence({fields}){
-            return fields.Confidence;
+        getConfidence({ fields }) {
+          return fields.Confidence;
         },
-        getStoryPointsMedian({fields}) {
-            return fields["Story points median"]
+        getStoryPointsMedian({ fields }) {
+          return fields["Story points median"];
         },
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;

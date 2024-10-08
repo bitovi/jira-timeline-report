@@ -7,15 +7,13 @@ import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
 //   getImpliedTimingCalculations,
 // } from "../prepare-issues/date-data.js";
 
-/*
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import TeamConfigure from "../react/Configure/Teams/index";
-*/
 
 import { getFormData } from "../react/Configure/Teams/services/team-configuration";
-import { createNormalizeConfiguration } from "../react/Configure/Teams/shared/";
+import { createNormalizeConfiguration } from "../react/Configure/Teams/shared/normalize";
 
 import {
   rawIssuesRequestData,
@@ -152,7 +150,7 @@ export class TimelineConfiguration extends StacheElement {
   
         <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}}">
             <div>${GOBACK_BUTTON}</div>
-            <div> <div id="team-configuration">Coming Soon</div></div>
+            <div> <div id="team-configuration"></div></div>
         </div>
 
 
@@ -199,13 +197,7 @@ export class TimelineConfiguration extends StacheElement {
       return configurationPromise({
         teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
-        normalizePromise: getFormData(this.jiraHelpers, this.storage)
-          .then(createNormalizeConfiguration)
-          .catch(() => {
-            // Could fail because storage hasn't been setup yet
-            return {};
-          }),
-        // normalizeOptionsObservable: value.from(this.normalizeOptions),
+        normalizeObservable: value.from(this.normalizeOptions),
       });
     },
     configuration: {
@@ -246,7 +238,16 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
-    /*
+    getFormData(this.jiraHelpers, this.storage)
+      .then(createNormalizeConfiguration)
+      .catch(() => {
+        // Could fail because storage hasn't been setup yet
+        return {};
+      })
+      .then((data) => {
+        this.normalizeOptions = data;
+      });
+
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
         storage: this.storage,
@@ -259,7 +260,6 @@ export class TimelineConfiguration extends StacheElement {
         },
       })
     );
-    */
   }
   connected() {}
   // METHODS
