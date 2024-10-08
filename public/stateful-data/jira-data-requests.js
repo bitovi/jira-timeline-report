@@ -95,7 +95,7 @@ export function getRawIssues({isLoggedIn, loadChildren, jiraHelpers, jql, fields
           childJQL: childJQL ? " and "+childJQL : "",
           fields: fieldsToLoad,
           expand: ["changelog"]
-      });
+      }, progressUpdate);
 }
 
 
