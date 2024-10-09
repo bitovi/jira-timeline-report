@@ -1,3 +1,7 @@
+/**
+ * this module gets available jira fields.
+ */
+
 import { hasValidAccessToken } from "./auth";
 import { Config, FieldsRequest } from "./types";
 

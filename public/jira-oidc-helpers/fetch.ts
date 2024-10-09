@@ -1,3 +1,6 @@
+/**
+ * this module contains helper functions for requesting json over http. 
+ */
 import {responseToJSON} from "../shared/response-to-json";
 import { JsonResponse } from "../shared/types";
 

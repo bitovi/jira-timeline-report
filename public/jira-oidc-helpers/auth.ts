@@ -1,3 +1,6 @@
+/**
+ * this module contains a collection of helper functions for authentication. 
+ */
 import fetchJSON from "./fetch";
 import { Config } from "./types";
 import {

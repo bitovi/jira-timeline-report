@@ -1,3 +1,6 @@
+/**
+ * this module is contains helpers for working with jira.
+ */
 import chunkArray from "../shared/chunk-array";
 import mapIdsToNames from "../shared/map-ids-to-names";
 import { responseToText } from "../shared/response-to-text";
@@ -172,6 +175,8 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
             (data: ProgressData): void;
         } = () => { }
     ) => {
+        const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
+
         // check for remainings
         return Promise.all(
             issues.map(({ key, changelog, ...issue }) => {
@@ -182,7 +187,7 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
                         changelog: changelog?.histories,
                     } as InterimJiraIssue;
                 } else {
-                    return fetchRemainingChangelogsForIssue(config)(
+                    return fetchChangelogs(
                         key,
                         changelog
                     ).then((histories) => {

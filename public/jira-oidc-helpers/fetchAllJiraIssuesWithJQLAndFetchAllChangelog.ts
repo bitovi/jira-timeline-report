@@ -1,5 +1,17 @@
-import { fetchRemainingChangelogsForIssues, fetchJiraIssuesWithJQL } from "./jira";
-import { Config, ProgressData, Issue, RequestHelperResponse, OidcJiraIssue } from "./types";
+/**
+ * this module is for requesting all jira issues and changelogs.
+ */
+import {
+    fetchRemainingChangelogsForIssues,
+    fetchJiraIssuesWithJQL
+} from "./jira";
+import {
+    Config,
+    ProgressData,
+    Issue,
+    OidcJiraIssue
+} from "./types";
+import { RequestHelperResponse } from "../shared/types";
 
 export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
     return (

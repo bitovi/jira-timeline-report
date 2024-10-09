@@ -1,3 +1,6 @@
+/**
+ * this module is for getting text strings from an http response.
+ */
 export function responseToText(response: Response): Promise<string> {
   if (!response.ok) {
     return response.json().then((payload) => {

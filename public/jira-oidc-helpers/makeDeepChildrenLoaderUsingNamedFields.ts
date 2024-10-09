@@ -1,3 +1,6 @@
+/**
+ * this module recursively fetches jira issues.
+ */
 import chunkArray from "../shared/chunk-array";
 import mapIdsToNames from "../shared/map-ids-to-names";
 import { Config, Issue, Params, Progress } from "./types";

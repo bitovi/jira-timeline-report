@@ -1,4 +1,6 @@
-
+/**
+ * this module is for working with storage
+ */
 import { FetchJiraIssuesParams } from "../jira/shared/types";
 
 export function saveInformationToLocalStorage(

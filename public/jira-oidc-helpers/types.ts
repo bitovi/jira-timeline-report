@@ -1,5 +1,7 @@
-import { JiraIssue } from "../jira/shared/types";
-import { JsonResponse } from "../shared/types";
+/**
+ * this module contains the types needed by the jira oidc helpers.
+ */
+import { RequestHelperResponse } from "../shared/types";
 
 export type History = {
     id: string;
@@ -52,14 +54,6 @@ export type Progress = {
 export interface ResponseForFieldRequest extends RequestHelperResponse {
   idMap: { [key: string]: string; };
   nameMap: { [key: string]: string; };
-}
-
-export interface RequestHelperResponse extends JsonResponse {
-  issues: OidcJiraIssue[] | JiraIssue[],
-  maxResults: number,
-  total: number,
-  startAt: number,
-  values: any[]
 }
 
 export type RequestHelper = (urlFragment: string) => Promise<RequestHelperResponse>;

@@ -1,3 +1,6 @@
+/**
+ * this module is for getting a json object from an http response.
+ */
 import { JsonResponse } from './types';
 
 export function responseToJSON(response: Response): Promise<JsonResponse> {
