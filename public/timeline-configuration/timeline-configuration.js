@@ -148,9 +148,8 @@ export class TimelineConfiguration extends StacheElement {
         
 
   
-        <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}}">
-            <div>${GOBACK_BUTTON}</div>
-            <div> <div id="team-configuration"></div></div>
+        <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}} h-full">
+           <div id="team-configuration" class='h-full'></div>
         </div>
 
     </div>
@@ -251,6 +250,9 @@ export class TimelineConfiguration extends StacheElement {
         },
         onInitialDefaultsLoad: (partial) => {
           this.normalizeOptions = partial;
+        },
+        onBackButtonClicked: () => {
+          this.showSettings = "";
         },
       })
     );

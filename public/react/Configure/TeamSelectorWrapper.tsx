@@ -20,6 +20,8 @@ const queryClient = new QueryClient();
 interface TeamConfigurationWrapperProps extends Pick<ConfigureTeamsProps, "onUpdate" | "onInitialDefaultsLoad"> {
   storage: AppStorage;
   jira: Jira;
+  // TODO derive from Team selector
+  onBackButtonClicked: () => void;
 }
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, jira, ...props }) => {
@@ -29,9 +31,9 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, 
         <QueryClientProvider client={queryClient}>
           <FlagsProvider>
             <JiraProvider jira={jira}>
-              <StorageProvider storage={storage}>
-                <TeamSelector />
-              </StorageProvider>
+              {/* <StorageProvider storage={storage}> */}
+              <TeamSelector storage={storage} {...props} />
+              {/* </StorageProvider> */}
             </JiraProvider>
           </FlagsProvider>
         </QueryClientProvider>
