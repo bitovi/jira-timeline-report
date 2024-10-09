@@ -96,7 +96,6 @@ class SimpleTooltip extends HTMLElement {
 
     const scrollingAdjustment = container === document.documentElement ? 0 : container.scrollTop;
 
-    debugger;
     // if the tooltip wouldn't be visible "down" 
     if(howMuchPastTheBottom <= 0 || howMuchAboveTheTop < 0) {
       const topFromContainer = elementRect.bottom - containerRect.top -  parseFloat( containerStyles.borderTopWidth, 10);
