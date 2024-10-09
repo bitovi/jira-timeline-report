@@ -1,5 +1,5 @@
-import { DefaultFormFields } from "../../ConfigureTeams";
-import { StorageFactory } from "../../../../../jira/storage/common";
+import type { DefaultFormFields } from "../../ConfigureTeams";
+import type { AppStorage } from "../../../../../jira/storage/common";
 
 import { globalTeamConfigurationStorageKey } from "./key-factory";
 
@@ -44,8 +44,8 @@ const nonFieldDefaults: Omit<
   DefaultFormFields,
   "estimateField" | "confidenceField" | "startDateField" | "dueDateField"
 > = {
-  sprintLength: 10, //
-  velocityPerSprint: 21, //
+  sprintLength: 10,
+  velocityPerSprint: 21,
   tracks: 1,
 };
 
@@ -101,7 +101,7 @@ const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["start
 
 const getDueDateField = createDefaultJiraFieldGetter("dueDateField", ["due date", "end date", "target date"]);
 
-export const getFormData = async (jira: Jira, storage: ReturnType<StorageFactory>): Promise<DefaultFormFields> => {
+export const getFormData = async (jira: Jira, storage: AppStorage): Promise<DefaultFormFields> => {
   const [jiraFields, userData] = await Promise.all([
     jira.fetchJiraFields() as unknown as IssueFields,
     storage.get<Partial<DefaultFormFields> | undefined>(globalTeamConfigurationStorageKey),
@@ -114,15 +114,6 @@ export const addDefaultFormData = (
   jiraFields: IssueFields,
   userData: Partial<DefaultFormFields>
 ): DefaultFormFields => {
-  console.log({
-    ...nonFieldDefaults,
-    ...userData,
-    estimateField: getEstimateField(userData, jiraFields),
-    confidenceField: getConfidenceField(userData, jiraFields),
-    startDateField: getStartDateField(userData, jiraFields),
-    dueDateField: getDueDateField(userData, jiraFields),
-  });
-
   return {
     ...nonFieldDefaults,
     ...userData,

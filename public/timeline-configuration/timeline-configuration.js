@@ -7,12 +7,13 @@ import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
 //   getImpliedTimingCalculations,
 // } from "../prepare-issues/date-data.js";
 
-/*
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import TeamConfigure from "../react/Configure/Teams/index";
-*/
+
+import { getFormData } from "../react/Configure/Teams/services/team-configuration";
+import { createNormalizeConfiguration } from "../react/Configure/Teams/shared/normalize";
 
 import {
   rawIssuesRequestData,
@@ -149,15 +150,9 @@ export class TimelineConfiguration extends StacheElement {
   
         <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}}">
             <div>${GOBACK_BUTTON}</div>
-            <div> <div id="team-configuration">Coming Soon</div></div>
+            <div> <div id="team-configuration"></div></div>
         </div>
 
-
-        <p class="pt-6">
-            <h3 class="font-bold uppercase text-slate-300 text-xs">Questions? </h3>
-            <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Guide</a>
-            <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect</a>
-        </p>  
     </div>
         `;
 
@@ -196,7 +191,7 @@ export class TimelineConfiguration extends StacheElement {
       return configurationPromise({
         teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
-        // normalizeOptionsObservable: value.from(this.normalizeOptions),
+        normalizeObservable: value.from(this.normalizeOptions),
       });
     },
     configuration: {
@@ -233,13 +228,20 @@ export class TimelineConfiguration extends StacheElement {
     },
     goBack() {
       this.showSettings = "";
-    }
-
-    
+    },
   };
   // HOOKS
   connectedCallback() {
-    /*
+    getFormData(this.jiraHelpers, this.storage)
+      .then(createNormalizeConfiguration)
+      .catch(() => {
+        // Could fail because storage hasn't been setup yet
+        return {};
+      })
+      .then((data) => {
+        this.normalizeOptions = data;
+      });
+
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
         storage: this.storage,
@@ -252,7 +254,6 @@ export class TimelineConfiguration extends StacheElement {
         },
       })
     );
-    */
   }
   connected() {}
   // METHODS

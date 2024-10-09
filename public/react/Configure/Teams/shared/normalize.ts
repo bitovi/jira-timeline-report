@@ -32,7 +32,7 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
       return confidence;
     },
     getDueDate: ({ fields }) => {
-      const value = fields[values.confidenceField];
+      const value = fields[values.dueDateField];
 
       if (!value || typeof value !== "string") {
         return null;

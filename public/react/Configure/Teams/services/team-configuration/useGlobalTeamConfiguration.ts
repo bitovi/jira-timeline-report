@@ -2,7 +2,6 @@ import type { TeamConfiguration } from "./reconcile";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { createNormalizeConfiguration } from "../../shared/normalize";
 import { useStorage } from "../storage";
 import { globalTeamConfigurationStorageKey, teamConfigurationKeys } from "./key-factory";
 
