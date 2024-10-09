@@ -40,31 +40,33 @@ const createUpdate = (jiraHelpers: Parameters<StorageFactory>[number]) => {
 
 export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
   return {
-    storageContainerExists: async function (key) {
-      if (!AP) {
-        throw new Error("[Storage Error]: canUseStorage (plugin) can only be used when connected with jira.");
-      }
-
-      return AP.request<{ body: string }>(`/rest/atlassian-connect/1/addons/${jiraHelpers.appKey}/properties`).then(
-        (res) => {
-          const parsed = JSON.parse(res.body) as { keys: Array<{ key: string; self: string }> };
-
-          return !!parsed.keys.find((keyData) => keyData.key === key);
-        }
-      );
+    storageContainerExists: async function () {
+      return true;
     },
-    get: async function <TData>(key: string): Promise<TData> {
+    get: async function <TData>(key: string): Promise<TData | null> {
       if (!AP) {
         throw new Error("[Storage Error]: get (plugin) can only be used when connected with jira.");
       }
 
-      return AP.request<{ body: string }>(
-        `/rest/atlassian-connect/1/addons/${jiraHelpers.appKey}/properties/${key}`
-      ).then((res) => {
-        const parsed = JSON.parse(res.body) as AppPropertyResponse<TData>;
+      return AP.request<{ body: string }>(`/rest/atlassian-connect/1/addons/${jiraHelpers.appKey}/properties/${key}`)
+        .then((res) => {
+          const parsed = JSON.parse(res.body) as AppPropertyResponse<TData>;
 
-        return parsed.value;
-      });
+          return parsed.value;
+        })
+        .catch((error) => {
+          if ("err" in error) {
+            const parsed = JSON.parse(error.err) as { statusCode: number; message: string };
+
+            if (parsed.statusCode === 404) {
+              const createContainer = createUpdate(jiraHelpers);
+              const newValue = null;
+
+              return createContainer(key, newValue).then(() => newValue);
+            }
+          }
+          throw error;
+        });
     },
     update: createUpdate(jiraHelpers),
     createStorageContainer: createUpdate(jiraHelpers),

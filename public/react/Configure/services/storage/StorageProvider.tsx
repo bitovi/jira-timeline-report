@@ -32,30 +32,5 @@ interface StorageProviderProps {
 }
 
 export const StorageProvider: FC<StorageProviderProps> = ({ storage, children }) => {
-  const queryClient = useQueryClient();
-
-  const { data: storageAvailable } = useSuspenseQuery({
-    queryKey: teamConfigurationKeys.storageContainer(),
-    queryFn: () => storage.storageContainerExists(globalTeamConfigurationStorageKey),
-  });
-
-  const { mutate: createStorage } = useMutation({
-    mutationFn: () => storage.createStorageContainer(globalTeamConfigurationStorageKey, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.storageContainer() });
-    },
-  });
-
-  if (!storageAvailable) {
-    return (
-      <Flex direction="column" gap="space.100" justifyContent="center" alignItems="center">
-        <Heading size="medium">Team storage has not been configured</Heading>
-        <Button appearance="primary" onClick={() => createStorage()}>
-          Configure now
-        </Button>
-      </Flex>
-    );
-  }
-
   return <StorageContext.Provider value={storage}>{children}</StorageContext.Provider>;
 };

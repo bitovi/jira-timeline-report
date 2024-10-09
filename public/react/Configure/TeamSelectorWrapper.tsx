@@ -31,9 +31,7 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, 
         <QueryClientProvider client={queryClient}>
           <FlagsProvider>
             <JiraProvider jira={jira}>
-              {/* <StorageProvider storage={storage}> */}
               <TeamSelector storage={storage} {...props} />
-              {/* </StorageProvider> */}
             </JiraProvider>
           </FlagsProvider>
         </QueryClientProvider>

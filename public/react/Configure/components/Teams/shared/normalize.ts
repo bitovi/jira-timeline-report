@@ -7,6 +7,9 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
     getDaysPerSprint: () => Number(values.sprintLength),
     getVelocity: () => Number(values.velocityPerSprint),
     getParallelWorkLimit: () => Number(values.tracks),
+    getTeamSpreadsEffortAcrossDates: () => {
+      return values.spreadEffortAcrossDates;
+    },
     getStartDate: ({ fields }) => {
       const value = fields[values.startDateField];
 

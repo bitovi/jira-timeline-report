@@ -54,11 +54,11 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
       return !!configurationIssue;
     },
-    get: async function <TData>(key: string): Promise<TData> {
+    get: async function <TData>(key: string): Promise<TData | null> {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
       if (!configurationIssue) {
-        throw new Error("[Storage Error]: get (web-app) needs a configuration issue");
+        return null;
       }
 
       let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === "codeBlock");

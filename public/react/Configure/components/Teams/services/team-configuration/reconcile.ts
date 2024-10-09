@@ -11,6 +11,7 @@ export type TeamConfiguration = {
   confidenceField: string;
   startDateField: string;
   dueDateField: string;
+  spreadEffortAcrossDates: boolean;
 };
 
 export function isFieldUpdate(event: { name: string }): event is { name: keyof TeamConfiguration } {
@@ -47,6 +48,7 @@ const nonFieldDefaults: Omit<
   sprintLength: 10,
   velocityPerSprint: 21,
   tracks: 1,
+  spreadEffortAcrossDates: false,
 };
 
 const findFieldCalled = (name: string, jiraFields: IssueFields): string | undefined => {

@@ -3,7 +3,7 @@ import type { FC, ReactNode } from "react";
 import React from "react";
 import { Label as AtlasLabel } from "@atlaskit/form";
 
-const RequiredAsterisk: FC = () => {
+export const RequiredAsterisk: FC = () => {
   return (
     <span className="text-rose-600" aria-hidden="true" title="required">
       *

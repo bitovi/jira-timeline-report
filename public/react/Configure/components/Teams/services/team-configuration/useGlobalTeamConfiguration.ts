@@ -5,7 +5,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useStorage } from "../../../../services/storage";
 import { globalTeamConfigurationStorageKey, teamConfigurationKeys } from "./key-factory";
 
-export type UseDefaultConfiguration = () => Partial<TeamConfiguration>;
+export type UseDefaultConfiguration = () => Partial<TeamConfiguration> | null;
 
 export const useGlobalTeamConfiguration: UseDefaultConfiguration = () => {
   const { get } = useStorage();
@@ -13,13 +13,7 @@ export const useGlobalTeamConfiguration: UseDefaultConfiguration = () => {
   const { data } = useSuspenseQuery({
     queryKey: teamConfigurationKeys.globalConfiguration(),
     queryFn: async () => {
-      const data = await get<Partial<TeamConfiguration> | undefined>(globalTeamConfigurationStorageKey);
-
-      if (!data) {
-        return {};
-      }
-
-      return data;
+      return await get<Partial<TeamConfiguration>>(globalTeamConfigurationStorageKey);
     },
   });
 

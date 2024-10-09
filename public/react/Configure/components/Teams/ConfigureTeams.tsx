@@ -11,7 +11,7 @@ import { Flex } from "@atlaskit/primitives";
 
 import TextField from "./components/TextField";
 import Select from "./components/Select";
-import Toggle from "./components/Toggle";
+import Toggle, { FormToggle } from "./components/Toggle";
 import Hr from "../../../components/Hr";
 
 import {
@@ -27,6 +27,7 @@ export interface ConfigureTeamsProps {
   normalizedIssues?: Array<NormalizedIssue>;
   onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
+  userData: Partial<DefaultFormFields>;
 }
 
 export type DefaultFormFields = TeamConfiguration;
@@ -36,15 +37,14 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
   value: DefaultFormFields[TProperty];
 }
 
-const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLoad }) => {
-  const fieldValues = useGlobalTeamConfiguration();
+const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, userData, onInitialDefaultsLoad }) => {
   const save = useSaveGlobalTeamConfiguration({ onUpdate });
 
   const jiraFields = useJiraIssueFields();
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
   const { register, handleSubmit, getValues, control } = useForm<DefaultFormFields>({
-    defaultValues: addDefaultFormData(jiraFields, fieldValues),
+    defaultValues: addDefaultFormData(jiraFields, userData),
   });
 
   useOnMount(() => {
@@ -115,7 +115,13 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, onInitialDefaultsLo
               onSave={update}
             />
             <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
-            <Toggle label="Spread effort" description="Spread estimate access dates" />
+            <FormToggle
+              name="spreadEffortAcrossDates"
+              control={control}
+              onSave={update}
+              label="Spread effort"
+              description="Spread estimate access dates"
+            />
             {/* <EnableableTextField
               toggleLabel="Estimates"
               toggleDescription="Assign average estimate to issues without estimates"
