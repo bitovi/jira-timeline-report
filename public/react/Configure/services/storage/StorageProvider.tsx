@@ -1,12 +1,15 @@
 import type { FC, ReactNode } from "react";
-import type { AppStorage } from "../../../../../jira/storage/common";
+import type { AppStorage } from "../../../../jira/storage/common";
 
 import React, { createContext, useContext } from "react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import Heading from "@atlaskit/heading";
 import Button from "@atlaskit/button/new";
 
-import { globalTeamConfigurationStorageKey, teamConfigurationKeys } from "../team-configuration";
+import {
+  globalTeamConfigurationStorageKey,
+  teamConfigurationKeys,
+} from "../../components/Teams/services/team-configuration";
 import { Flex } from "@atlaskit/primitives";
 
 type StorageContextValues = AppStorage | null;

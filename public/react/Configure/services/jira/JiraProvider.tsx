@@ -2,7 +2,7 @@ import type { FC, ReactNode } from "react";
 import React, { createContext, useContext } from "react";
 
 // TODO: Move type to module
-import jiraOidcHelpers from "../../../../../jira-oidc-helpers";
+import jiraOidcHelpers from "../../../../jira-oidc-helpers";
 type Jira = ReturnType<typeof jiraOidcHelpers>;
 
 type JiraContextValues = Jira | null;

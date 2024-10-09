@@ -10,10 +10,10 @@ import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
-import TeamConfigure from "../react/Configure/Teams/index";
+import TeamConfigure from "../react/Configure";
 
-import { getFormData } from "../react/Configure/Teams/services/team-configuration";
-import { createNormalizeConfiguration } from "../react/Configure/Teams/shared/normalize";
+import { getFormData } from "../react/Configure/components/Teams/services/team-configuration";
+import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 
 import {
   rawIssuesRequestData,

@@ -1,5 +1,5 @@
 import type { DefaultFormFields } from "../../ConfigureTeams";
-import type { AppStorage } from "../../../../../jira/storage/common";
+import type { AppStorage } from "../../../../../../jira/storage/common";
 
 import { globalTeamConfigurationStorageKey } from "./key-factory";
 
@@ -25,7 +25,7 @@ export function isFieldUpdate(event: { name: string }): event is { name: keyof T
   ].includes(event.name);
 }
 
-import jiraOidcHelpers from "../../../../../jira-oidc-helpers";
+import jiraOidcHelpers from "../../../../../../jira-oidc-helpers";
 type Jira = ReturnType<typeof jiraOidcHelpers>;
 
 type IssueFields = Array<{

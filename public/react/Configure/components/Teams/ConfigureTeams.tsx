@@ -1,7 +1,7 @@
 import type { FC } from "react";
 
-import type { NormalizedIssue } from "../../../jira/shared/types";
-import type { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
+import type { NormalizedIssue } from "../../../../jira/shared/types";
+import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 import type { TeamConfiguration } from "./services/team-configuration";
 
 import React, { useEffect } from "react";
@@ -12,14 +12,14 @@ import { Flex } from "@atlaskit/primitives";
 import TextField from "./components/TextField";
 import Select from "./components/Select";
 import Toggle from "./components/Toggle";
-import Hr from "../../components/Hr";
+import Hr from "../../../components/Hr";
 
 import {
   addDefaultFormData,
   useGlobalTeamConfiguration,
   useSaveGlobalTeamConfiguration,
 } from "./services/team-configuration";
-import { useJiraIssueFields } from "./services/jira";
+import { useJiraIssueFields } from "../../services/jira";
 import { createNormalizeConfiguration } from "./shared/normalize";
 // import EnableableTextField from "./components/EnableableTextField";
 

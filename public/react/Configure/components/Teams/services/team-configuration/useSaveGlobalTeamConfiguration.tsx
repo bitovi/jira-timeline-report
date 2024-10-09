@@ -1,13 +1,13 @@
 import type { UseMutateFunction } from "@tanstack/react-query";
 import type { TeamConfiguration } from "./reconcile";
-import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
+import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
 
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFlags } from "@atlaskit/flag";
 import ErrorIcon from "@atlaskit/icon/glyph/error";
 
-import { useStorage } from "../storage";
+import { useStorage } from "../../../../services/storage";
 import { globalTeamConfigurationStorageKey, teamConfigurationKeys } from "./key-factory";
 import { createNormalizeConfiguration } from "../../shared/normalize";
 
