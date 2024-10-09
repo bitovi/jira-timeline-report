@@ -38,7 +38,7 @@ import {
   fetchJiraIssuesWithJQLWithNamedFields,
 } from "./jira";
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from "./fetchAllJiraIssuesWithJQLAndFetchAllChangelog";
-import { fetchJiraFields, makeFieldsRequest } from "./makeFieldsRequest";
+import { fetchJiraFields, makeFieldsRequest } from "./fields";
 import { _cachedServerInfoPromise, getServerInfo } from "./serverInfo.js";
 import { makeDeepChildrenLoaderUsingNamedFields } from "./makeDeepChildrenLoaderUsingNamedFields";
 
