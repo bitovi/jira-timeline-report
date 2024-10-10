@@ -15,7 +15,7 @@ export const fetchAuthorizationCode = (config: Config) => () => {
 };
 
 export const refreshAccessToken = (config: Config) =>
-  async (accessCode?: string): Promise<string | void> => {
+  async (accessCode?: string): Promise<string | undefined> => {
     try {
       const response = await fetchJSON(
         `${config.env.JIRA_API_URL}/?code=${accessCode}`

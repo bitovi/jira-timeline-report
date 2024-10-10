@@ -32,7 +32,16 @@ const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[num
   const configurationIssues: StorageIssue[] = (await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields({
     jql: `summary ~ "Jira Auto Scheduler Configuration"`,
     fields: ["summary", "Description"],
-  })).map(({ id, fields: { Summary, Description } }) => ({ id, fields: { Summary, Description } }));
+  }))
+    .map(({ id, fields }) =>
+    ({
+      id,
+      // fields comes back from fetchJiraIssuesWithJQLWithNamedFields as "[key: string]: any"
+      fields: fields as {
+        Summary: string,
+        Description: { content: Array<StorageIssueContent> }
+      }
+    }));
 
   if (!configurationIssues.length) {
     return null;
