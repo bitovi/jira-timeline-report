@@ -50,10 +50,6 @@ const createCodeBlock = (using?: string): CodeBlock => {
 
 export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
   return {
-    storageContainerExists: async function () {
-      const configurationIssue = await getConfigurationIssue(jiraHelpers);
-      return !!configurationIssue;
-    },
     get: async function <TData>(key: string): Promise<TData | null> {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
@@ -97,9 +93,6 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
           ],
         },
       });
-    },
-    createStorageContainer: async function <TData>(key: string, value: TData) {
-      window.location.href = "https://github.com/bitovi/jira-auto-scheduler/blob/main/docs/saved-configuration.md";
     },
   };
 };

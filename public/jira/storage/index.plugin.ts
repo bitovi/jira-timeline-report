@@ -40,9 +40,6 @@ const createUpdate = (jiraHelpers: Parameters<StorageFactory>[number]) => {
 
 export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
   return {
-    storageContainerExists: async function () {
-      return true;
-    },
     get: async function <TData>(key: string): Promise<TData | null> {
       if (!AP) {
         throw new Error("[Storage Error]: get (plugin) can only be used when connected with jira.");
@@ -69,6 +66,5 @@ export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
         });
     },
     update: createUpdate(jiraHelpers),
-    createStorageContainer: createUpdate(jiraHelpers),
   };
 };
