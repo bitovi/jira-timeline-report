@@ -1,35 +1,34 @@
 import type { FC } from "react";
-import type { ConfigureTeamsProps } from "./ConfigureTeams";
+import type { ConfigureTeamsFormProps } from "./ConfigureTeamsForm";
+import type { AppStorage } from "../../../../jira/storage/common";
 
-import React from "react";
-
-import Heading from "@atlaskit/heading";
+import React, { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+import Spinner from "@atlaskit/spinner";
 
 import ConfigureTeams from "./ConfigureTeams";
-import { Accordion, AccordionContent, AccordionTitle } from "../../../components/Accordion";
-import { useGlobalTeamConfiguration } from "./services/team-configuration";
-import { StorageNeedsConfigured } from "../../services/storage";
+import { StorageProvider } from "../../services/storage";
 
-interface TeamConfigurationWrapperProps extends Pick<ConfigureTeamsProps, "onUpdate" | "onInitialDefaultsLoad"> {}
+export interface TeamConfigurationWrapperProps
+  extends Pick<ConfigureTeamsFormProps, "onUpdate" | "onInitialDefaultsLoad"> {
+  storage: AppStorage;
+}
 
-const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
-  const userData = useGlobalTeamConfiguration();
-
-  if (!userData) {
-    return <StorageNeedsConfigured />;
-  }
-
+const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, ...props }) => {
   return (
-    <div className="w-96">
-      <Accordion>
-        <AccordionTitle>
-          <Heading size="small">Global default</Heading>
-        </AccordionTitle>
-        <AccordionContent>
-          <ConfigureTeams userData={userData} {...props} />
-        </AccordionContent>
-      </Accordion>
-    </div>
+    <ErrorBoundary fallbackRender={({ error }) => error?.message || "Something went wrong"}>
+      <Suspense
+        fallback={
+          <div className="p-4 flex justify-center h-full items-center">
+            <Spinner size="large" label="loading" />
+          </div>
+        }
+      >
+        <StorageProvider storage={storage}>
+          <ConfigureTeams {...props} />
+        </StorageProvider>
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 

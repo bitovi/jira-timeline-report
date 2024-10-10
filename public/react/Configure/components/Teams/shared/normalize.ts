@@ -1,6 +1,6 @@
 import { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
 import { fields } from "../../../../../jira/raw/rollback/rollback";
-import { DefaultFormFields } from "../ConfigureTeams";
+import { DefaultFormFields } from "../ConfigureTeamsForm";
 
 export const createNormalizeConfiguration = (values: DefaultFormFields): Partial<NormalizeIssueConfig> => {
   return {

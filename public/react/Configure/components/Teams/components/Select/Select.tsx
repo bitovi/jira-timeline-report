@@ -6,7 +6,7 @@ import { Controller } from "react-hook-form";
 import AtlasSelect from "@atlaskit/select";
 
 import Label from "../Label";
-import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeams";
+import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
 import { TeamConfiguration } from "../../services/team-configuration";
 
 interface SelectProps {

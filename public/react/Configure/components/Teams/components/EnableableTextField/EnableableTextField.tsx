@@ -6,7 +6,7 @@ import { UseFormReturn } from "react-hook-form";
 
 import Toggle from "../Toggle";
 import TextField from "../TextField";
-import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeams";
+import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
 
 interface EnableableTextFieldProps {
   min?: number;

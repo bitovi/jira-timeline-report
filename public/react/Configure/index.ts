@@ -1,1 +1,1 @@
-export { default } from "./TeamSelectorWrapper";
+export { default } from "./ConfigurationPanelWrapper";

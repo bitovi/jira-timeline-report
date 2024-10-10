@@ -6,7 +6,7 @@ import AtlasToggle from "@atlaskit/toggle";
 import Label from "../Label";
 import { Control, Controller } from "react-hook-form";
 import { TeamConfiguration } from "../../services/team-configuration";
-import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeams";
+import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
 
 interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, "onChange" | "isChecked"> {
   label: string;

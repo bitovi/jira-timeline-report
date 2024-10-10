@@ -1,4 +1,4 @@
-import type { DefaultFormFields } from "../../ConfigureTeams";
+import type { DefaultFormFields } from "../../ConfigureTeamsForm";
 import type { AppStorage } from "../../../../../../jira/storage/common";
 
 import { globalTeamConfigurationStorageKey } from "./key-factory";
