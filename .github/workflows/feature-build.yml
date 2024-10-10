@@ -24,6 +24,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          cat < public/dist/production.css
 
       - name: Commit `dist` Folder to `staging`
         run: |
