@@ -134,6 +134,7 @@ export interface NormalizedTeam {
   parallelWorkLimit: number;
   totalPointsPerDay: number;
   pointsPerDayPerTrack: number;
+  spreadEffortAcrossDates: boolean;
 }
 
 export type DefaultsToConfig<T> = {

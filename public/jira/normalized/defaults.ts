@@ -11,9 +11,7 @@ type ChildField<F extends keyof JiraIssue["fields"]> = {
 type Fields = Pick<JiraIssue, "fields">;
 type Key = Pick<JiraIssue, "key">;
 
-export function getSummaryDefault({
-  fields,
-}: ParentField<"summary"> | ChildField<"Summary">): string {
+export function getSummaryDefault({ fields }: ParentField<"summary"> | ChildField<"Summary">): string {
   if ("summary" in fields) {
     return fields.summary;
   }
@@ -29,15 +27,11 @@ export function getStartDateDefault({ fields }: Fields): string | null {
   return fields["Start date"] || null;
 }
 
-export function getStoryPointsDefault({
-  fields,
-}: Fields): NormalizedIssue["storyPoints"] {
+export function getStoryPointsDefault({ fields }: Fields): NormalizedIssue["storyPoints"] {
   return fields["Story points"] || null;
 }
 
-export function getStoryPointsMedianDefault({
-  fields,
-}: Fields): NormalizedIssue["storyPointsMedian"] {
+export function getStoryPointsMedianDefault({ fields }: Fields): NormalizedIssue["storyPointsMedian"] {
   return fields["Story points median"] || null;
 }
 
@@ -45,19 +39,14 @@ export function getRankDefault({ fields }: Fields): NormalizedIssue["rank"] {
   return fields?.Rank || null;
 }
 
-export function getConfidenceDefault({
-  fields,
-}: Fields): NormalizedIssue["confidence"] {
+export function getConfidenceDefault({ fields }: Fields): NormalizedIssue["confidence"] {
   return fields["Story points confidence"] || fields?.Confidence || null;
 }
 
 export function getHierarchyLevelDefault({
   fields,
-}:
-  | ChildField<"Issue Type">
-  | ParentField<"issuetype">): NormalizedIssue["hierarchyLevel"] {
-  const issueType =
-    "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
+}: ChildField<"Issue Type"> | ParentField<"issuetype">): NormalizedIssue["hierarchyLevel"] {
+  const issueType = "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
 
   if (typeof issueType === "string") {
     return parseInt(issueType, 10);
@@ -70,9 +59,7 @@ export function getIssueKeyDefault({ key }: Key): NormalizedIssue["key"] {
   return key;
 }
 
-export function getParentKeyDefault({
-  fields,
-}: Fields): NormalizedIssue["parentKey"] {
+export function getParentKeyDefault({ fields }: Fields): NormalizedIssue["parentKey"] {
   if (fields?.Parent?.key) {
     return fields.Parent.key;
   }
@@ -85,25 +72,18 @@ export function getParentKeyDefault({
   return fields["Parent Link"]?.data?.key || null;
 }
 
-export function getUrlDefault({
-  key,
-}: Pick<JiraIssue, "key">): NormalizedIssue["url"] {
+export function getUrlDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue["url"] {
   return "javascript://";
 }
 
-export function getTeamKeyDefault({
-  key,
-}: Pick<JiraIssue, "key">): NormalizedIssue["team"]["name"] {
+export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue["team"]["name"] {
   return key.replace(/-.*/, "");
 }
 
 export function getTypeDefault({
   fields,
-}:
-  | ChildField<"Issue Type">
-  | ParentField<"issuetype">): NormalizedIssue["type"] {
-  const issueType =
-    "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
+}: ChildField<"Issue Type"> | ParentField<"issuetype">): NormalizedIssue["type"] {
+  const issueType = "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
 
   if (typeof issueType === "string") {
     return issueType;
@@ -112,9 +92,7 @@ export function getTypeDefault({
   return issueType.name;
 }
 
-export function getSprintsDefault({
-  fields,
-}: Fields): NormalizedIssue["sprints"] {
+export function getSprintsDefault({ fields }: Fields): NormalizedIssue["sprints"] {
   if (!fields.Sprint) {
     return null;
   }
@@ -127,9 +105,7 @@ export function getSprintsDefault({
   });
 }
 
-export function getStatusDefault({
-  fields,
-}: Fields): NormalizedIssue["status"] {
+export function getStatusDefault({ fields }: Fields): NormalizedIssue["status"] {
   if (typeof fields?.Status === "string") {
     return fields.Status;
   }
@@ -137,15 +113,11 @@ export function getStatusDefault({
   return fields?.Status?.name || null;
 }
 
-export function getLabelsDefault({
-  fields,
-}: Fields): NormalizedIssue["labels"] {
+export function getLabelsDefault({ fields }: Fields): NormalizedIssue["labels"] {
   return fields?.Labels || [];
 }
 
-export function getStatusCategoryDefault({
-  fields,
-}: Fields): NormalizedIssue["statusCategory"] {
+export function getStatusCategoryDefault({ fields }: Fields): NormalizedIssue["statusCategory"] {
   if (typeof fields?.Status === "string") {
     return null;
   }
@@ -153,9 +125,7 @@ export function getStatusCategoryDefault({
   return fields?.Status?.statusCategory?.name || null;
 }
 
-export function getReleasesDefault({
-  fields,
-}: Fields): NormalizedIssue["releases"] {
+export function getReleasesDefault({ fields }: Fields): NormalizedIssue["releases"] {
   let fixVersions = fields["Fix versions"];
 
   if (!fixVersions) {
@@ -176,20 +146,18 @@ export function getReleasesDefault({
   });
 }
 
-export function getVelocityDefault(
-  teamKey: string
-): NormalizedIssue["team"]["velocity"] {
+export function getVelocityDefault(teamKey: string): NormalizedIssue["team"]["velocity"] {
   return 21;
 }
 
-export function getParallelWorkLimitDefault(
-  teamKey: string
-): NormalizedIssue["team"]["parallelWorkLimit"] {
+export function getParallelWorkLimitDefault(teamKey: string): NormalizedIssue["team"]["parallelWorkLimit"] {
   return 1;
 }
 
-export function getDaysPerSprintDefault(
-  teamKey: string
-): NormalizedIssue["team"]["daysPerSprint"] {
+export function getDaysPerSprintDefault(teamKey: string): NormalizedIssue["team"]["daysPerSprint"] {
   return 10;
+}
+
+export function getTeamSpreadsEffortAcrossDatesDefault(): NormalizedIssue["team"]["spreadEffortAcrossDates"] {
+  return false;
 }

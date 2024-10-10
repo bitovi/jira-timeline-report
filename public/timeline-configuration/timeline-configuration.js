@@ -10,10 +10,10 @@ import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
-import TeamConfigure from "../react/Configure/Teams/index";
+import TeamConfigure from "../react/Configure";
 
-import { getFormData } from "../react/Configure/Teams/services/team-configuration";
-import { createNormalizeConfiguration } from "../react/Configure/Teams/shared/normalize";
+import { getFormData } from "../react/Configure/components/Teams/services/team-configuration";
+import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 
 import {
   rawIssuesRequestData,
@@ -148,9 +148,8 @@ export class TimelineConfiguration extends StacheElement {
         
 
   
-        <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}}">
-            <div>${GOBACK_BUTTON}</div>
-            <div> <div id="team-configuration"></div></div>
+        <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}} h-full">
+           <div id="team-configuration" class='h-full'></div>
         </div>
 
     </div>
@@ -251,6 +250,9 @@ export class TimelineConfiguration extends StacheElement {
         },
         onInitialDefaultsLoad: (partial) => {
           this.normalizeOptions = partial;
+        },
+        onBackButtonClicked: () => {
+          this.showSettings = "";
         },
       })
     );
