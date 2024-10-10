@@ -1,9 +1,9 @@
 import { OidcJiraIssue } from "../jira-oidc-helpers/types";
 import { JiraIssue } from "../jira/shared/types";
 
-export type JsonResponse = {
+export type JsonResponse<TData = object> = {
   accessToken: string;
-  data: any; // TODO - what is the shape of this?
+  data: TData;
   expiryTimestamp: string;
   refreshToken: string;
   scopeId: string;
@@ -17,7 +17,7 @@ export type JtrEnv = {
   JIRA_APP_KEY: string;
 };
 
-export interface RequestHelperResponse extends JsonResponse {
+export interface RequestHelperResponse {
   issues: OidcJiraIssue[] | JiraIssue[];
   maxResults: number;
   total: number;

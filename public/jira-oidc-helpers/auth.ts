@@ -21,7 +21,7 @@ export const refreshAccessToken = (config: Config) =>
         `${config.env.JIRA_API_URL}/?code=${accessCode}`
       );
 
-      const { accessToken, expiryTimestamp, refreshToken } = response.data;
+      const { accessToken, expiryTimestamp, refreshToken } = response;
       saveInformationToLocalStorage({
         accessToken,
         refreshToken,
