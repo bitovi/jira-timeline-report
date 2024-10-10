@@ -50,13 +50,7 @@ export interface BaseFields {
   Rank?: string;
   [Key: string]: unknown;
 }
-// TODO: to be removed in ticket https://bitovi.atlassian.net/browse/TR-52
-// interface LegacyFields extends BaseFields {
-//   "Issue Type": string;
-//   "Parent Link"?: string;
-//   Status: string;
-//   "Fix versions": FixVersion;
-// }
+
 export interface IssueFields extends BaseFields {
   "Issue Type": { hierarchyLevel: number; name: string };
   "Parent Link"?: { data: { key: string } };
@@ -84,12 +78,14 @@ export interface ParentFields {
   status: { name: string };
 }
 
-interface LegacyFields extends BaseFields {
-  "Issue Type": string;
-  "Parent Link"?: string;
-  Status: string;
-  "Fix versions": FixVersion;
-}
+export type FetchJiraIssuesParams = {
+  accessToken?: string;
+  jql?: string;
+  fields?: string[];
+  startAt?: number;
+  maxResults?: number;
+  limit?: number;
+};
 
 export interface NormalizedRelease {
   name: string;

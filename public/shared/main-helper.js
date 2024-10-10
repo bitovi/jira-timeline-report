@@ -5,7 +5,7 @@ import "../shared/select-cloud.js";
 import "../shared/velocities-from-issue.js";
 
 import JiraLogin from "../shared/jira-login.js";
-import JiraOIDCHelpers from "../jira-oidc-helpers.ts";
+import JiraOIDCHelpers from "../jira-oidc-helpers";
 import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
