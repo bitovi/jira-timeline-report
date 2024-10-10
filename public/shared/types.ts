@@ -17,11 +17,11 @@ export type JtrEnv = {
   JIRA_APP_KEY: string;
 };
 
-export interface RequestHelperResponse {
-  issues: OidcJiraIssue[] | JiraIssue[];
+export interface RequestHelperResponse<TValues = any[], TIssues = OidcJiraIssue[] | JiraIssue[]> {
+  issues: TIssues;
   maxResults: number;
   total: number;
   startAt: number;
-  values: any[];
+  values: TValues;
 }
 

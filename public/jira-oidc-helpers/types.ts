@@ -1,34 +1,35 @@
 /**
  * this module contains the types needed by the jira oidc helpers.
  */
+import { JiraIssue } from "../jira/shared/types";
 import { RequestHelperResponse } from "../shared/types";
 
 export type History = {
-    id: string;
-    change: string;
+  id: string;
+  change: string;
 };
 export type ChangeLog = {
-    histories: History[];
-    maxResults: number;
-    total: number;
-    startAt: number;
+  histories: History[];
+  maxResults: number;
+  total: number;
+  startAt: number;
 }
 export type OidcJiraIssue = {
-    id: string;
-    key: string;
-    fields: Record<string, any>;
-    changelog?: ChangeLog;
+  id: string;
+  key: string;
+  fields: Record<string, any>;
+  changelog?: ChangeLog;
 };
 export type InterimJiraIssue = {
-    id: string;
-    key: string;
-    fields: Record<string, any>;
-    changelog?: History[];
+  id: string;
+  key: string;
+  fields: Record<string, any>;
+  changelog?: History[];
 };
 export type FieldsRequest = Promise<{
-    list: RequestHelperResponse;
-    nameMap: Record<string, any>;
-    idMap: Record<string, any>;
+  list: RequestHelperResponse;
+  nameMap: Record<string, any>;
+  idMap: Record<string, any>;
 }>;
 export type Issue = {
   key: string;
@@ -56,7 +57,11 @@ export interface ResponseForFieldRequest extends RequestHelperResponse {
   nameMap: { [key: string]: string; };
 }
 
-export type RequestHelper = (urlFragment: string) => Promise<RequestHelperResponse>;
+export type RequestHelper = <
+  TValues = any[],
+  TIssues = OidcJiraIssue[] | JiraIssue[]
+>(urlFragment: string) =>
+  Promise<RequestHelperResponse<TValues, TIssues>>;
 
 export type Config = {
   env: {
@@ -67,7 +72,7 @@ export type Config = {
     JIRA_APP_KEY: string;
   };
   requestHelper: RequestHelper;
-  fieldsRequest: ()=>FieldsRequest;
+  fieldsRequest: () => FieldsRequest;
   host: "jira" | "hosted";
 };
 

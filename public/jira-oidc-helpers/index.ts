@@ -4,6 +4,7 @@
 import {
   Config,
   FieldsRequest,
+  RequestHelper,
 } from "./types";
 import { RequestHelperResponse, JtrEnv } from "../shared/types";
 import {
@@ -56,7 +57,7 @@ declare global {
 
 export default function createJiraHelpers(
   { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY } = window.env,
-  requestHelper: (urlFragment: string) => Promise<RequestHelperResponse>,
+  requestHelper: RequestHelper,
   host: "jira" | "hosted",
 ) {
   // TODO currently fieldsRequest has to be defined and passed to other functions before it's
