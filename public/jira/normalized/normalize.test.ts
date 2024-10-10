@@ -1,10 +1,6 @@
 import { expect, test } from "vitest";
 
-import {
-  NormalizeIssueConfig,
-  normalizeIssue,
-  normalizeParent,
-} from "./normalize";
+import { NormalizeIssueConfig, normalizeIssue, normalizeParent } from "./normalize";
 import { parseDateIntoLocalTimezone } from "../../date-helpers";
 import { JiraIssue, ParentIssue } from "../shared/types";
 
@@ -97,6 +93,7 @@ test("normalizeIssue", () => {
       parallelWorkLimit: 1,
       totalPointsPerDay: 2.1,
       pointsPerDayPerTrack: 2.1,
+      spreadEffortAcrossDates: false,
     },
     url: "javascript://",
     status: "Done",
@@ -130,6 +127,7 @@ test("normalizeIssue with custom getters", () => {
   };
 
   const overrides: NormalizeIssueConfig = {
+    getTeamSpreadsEffortAcrossDates: () => false,
     getSummary: () => {
       return "summary";
     },
@@ -246,6 +244,7 @@ test("normalizeIssue with custom getters", () => {
       parallelWorkLimit: 1,
       totalPointsPerDay: 0.05,
       pointsPerDayPerTrack: 0.05,
+      spreadEffortAcrossDates: false,
     },
     url: "fake url",
     status: "nice",

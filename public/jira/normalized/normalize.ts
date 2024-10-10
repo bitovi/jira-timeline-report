@@ -9,10 +9,7 @@ type DefaultsToConfig<T> = {
 
 export type NormalizeIssueConfig = DefaultsToConfig<typeof defaults>;
 export type NormalizeParentConfig = DefaultsToConfig<
-  Pick<
-    typeof defaults,
-    "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault"
-  >
+  Pick<typeof defaults, "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault">
 >;
 
 export function normalizeParent(
@@ -54,6 +51,7 @@ export function normalizeIssue(
     getReleases = defaults.getReleasesDefault,
     getRank = defaults.getRankDefault,
     getSummary = defaults.getSummaryDefault,
+    getTeamSpreadsEffortAcrossDates = defaults.getTeamSpreadsEffortAcrossDatesDefault,
   }: Partial<NormalizeIssueConfig> = {}
 ): NormalizedIssue {
   const teamName = getTeamKey(issue);
@@ -86,6 +84,7 @@ export function normalizeIssue(
       parallelWorkLimit,
       totalPointsPerDay,
       pointsPerDayPerTrack,
+      spreadEffortAcrossDates: getTeamSpreadsEffortAcrossDates(),
     },
     url: getUrl(issue),
     status: getStatus(issue),
@@ -104,9 +103,7 @@ export function allStatusesSorted(issues: { status: string }[]): string[] {
 }
 
 export function allReleasesSorted(issues: NormalizedIssue[]): string[] {
-  const releases = issues
-    .map((issue) => issue.releases.map((r) => r.name))
-    .flat(1);
+  const releases = issues.map((issue) => issue.releases.map((r) => r.name)).flat(1);
 
   return [...new Set(releases)].sort();
 }
