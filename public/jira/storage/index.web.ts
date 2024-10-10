@@ -60,7 +60,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === "codeBlock");
 
       if (!storeContent) {
-        storeContent = createCodeBlock();
+        storeContent = createCodeBlock(JSON.stringify({ [key]: {} }));
       }
 
       const [stringifiedStore] = storeContent.content;
