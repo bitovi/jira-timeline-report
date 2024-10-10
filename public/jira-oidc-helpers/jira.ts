@@ -97,6 +97,7 @@ export function JiraIssueParamsToParams(params: FetchJiraIssuesParams): Record<s
 }
 export function fetchIssueTypes(config: Config) {
     return () => {
+        // TODO this needs fixed, the type expectations here are all wrong
         const response = config.requestHelper(`/api/3/issuetype`) as unknown;
         return response as Promise<
             Array<{
