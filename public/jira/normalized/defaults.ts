@@ -77,12 +77,7 @@ export function getParentKeyDefault({
     return fields.Parent.key;
   }
 
-  if (typeof fields["Parent Link"] === "string") {
-    return fields["Parent Link"];
-  }
-
-  // this last part is probably a mistake ...
-  return fields["Parent Link"]?.data?.key || null;
+  return fields["Parent Link"]?.data?.key ?? null;
 }
 
 export function getUrlDefault({
@@ -130,10 +125,6 @@ export function getSprintsDefault({
 export function getStatusDefault({
   fields,
 }: Fields): NormalizedIssue["status"] {
-  if (typeof fields?.Status === "string") {
-    return fields.Status;
-  }
-
   return fields?.Status?.name || null;
 }
 
@@ -146,10 +137,6 @@ export function getLabelsDefault({
 export function getStatusCategoryDefault({
   fields,
 }: Fields): NormalizedIssue["statusCategory"] {
-  if (typeof fields?.Status === "string") {
-    return null;
-  }
-
   return fields?.Status?.statusCategory?.name || null;
 }
 
@@ -162,9 +149,6 @@ export function getReleasesDefault({
     return [];
   }
 
-  if (!Array.isArray(fixVersions)) {
-    fixVersions = [fixVersions];
-  }
   return fixVersions.map(({ name, id }) => {
     return {
       name,
