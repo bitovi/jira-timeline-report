@@ -93,6 +93,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, o
           name="sprintLength"
           type="number"
           label="Sprint length"
+          unit="business days"
           min={1}
           register={register}
           onSave={update}
@@ -100,7 +101,8 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, o
         <TextField
           name="velocityPerSprint"
           type="number"
-          label="Velocity Per Sprint"
+          label="Velocity per sprint"
+          unit="estimating units per sprint"
           min={1}
           register={register}
           onSave={update}

@@ -53,10 +53,7 @@ export const FormToggle: FC<FormToggleProps> = ({ name, label, description, cont
           isChecked={Boolean(field.value)}
           onChange={(event) => {
             field.onChange(event.target.checked);
-
-            if (isFieldUpdate(event.target)) {
-              onSave?.(event.target);
-            }
+            onSave?.({ name, value: event.target.checked });
           }}
         />
       )}

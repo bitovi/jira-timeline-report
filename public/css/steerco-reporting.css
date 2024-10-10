@@ -14,6 +14,17 @@
 --fullish-document-top: calc(40px + 20px); 
 }
 
+@layer utilities {
+    .no-spin-container > input[type="number"]::-webkit-outer-spin-button,
+    .no-spin-container > input[type="number"]::-webkit-inner-spin-button {
+      @apply appearance-none;
+    }
+  
+    .no-spin-container > input[type="number"] {
+      @apply appearance-none;
+      -moz-appearance: textfield; /* firefox */
+    }
+  }
 
 @layer components {
     .form-border {

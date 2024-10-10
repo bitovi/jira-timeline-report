@@ -15,11 +15,12 @@ interface TextFieldProps {
   name: keyof DefaultFormFields;
   label: string;
   min?: number;
+  unit?: string;
   register: UseFormReturn<DefaultFormFields>["register"];
   onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
 }
 
-const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min, disabled = false }) => {
+const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min, unit, disabled = false }) => {
   const handleBlur = (eventTarget: { name: string; value: string }) => {
     if (!isFieldUpdate(eventTarget)) {
       return;
@@ -31,14 +32,20 @@ const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, mi
   return (
     <Field name="sprintLength" label={label} isRequired>
       {() => (
-        <AtlasTextField
-          isDisabled={disabled}
-          type={type}
-          min={min}
-          autoComplete="off"
-          {...register(name)}
-          onBlur={({ target }) => handleBlur(target)}
-        />
+        <>
+          <AtlasTextField
+            // These classes are needed to make the `elemAfterProp` function the same as the
+            // `slot` prop in figma
+            className="[&>input]:!w-auto [&>input]:!p-0 !py-2 !px-2 !h-10 no-spin-container"
+            isDisabled={disabled}
+            type={type}
+            min={min}
+            autoComplete="off"
+            elemAfterInput={unit ? <div>{unit}</div> : null}
+            {...register(name)}
+            onBlur={({ target }) => handleBlur(target)}
+          />
+        </>
       )}
     </Field>
   );
