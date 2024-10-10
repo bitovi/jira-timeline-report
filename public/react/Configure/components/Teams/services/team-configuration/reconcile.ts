@@ -117,19 +117,6 @@ export const addDefaultFormData = (
   jiraFields: IssueFields,
   userData: Partial<DefaultFormFields>
 ): DefaultFormFields => {
-  console.log({
-    userData,
-    jiraFields,
-    rec: {
-      ...nonFieldDefaults,
-      ...userData,
-      estimateField: getEstimateField(userData, jiraFields),
-      confidenceField: getConfidenceField(userData, jiraFields),
-      startDateField: getStartDateField(userData, jiraFields),
-      dueDateField: getDueDateField(userData, jiraFields),
-    },
-  });
-
   return {
     ...nonFieldDefaults,
     ...userData,
