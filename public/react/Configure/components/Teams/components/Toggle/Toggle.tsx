@@ -5,7 +5,7 @@ import AtlasToggle from "@atlaskit/toggle";
 
 import Label from "../Label";
 import { Control, Controller } from "react-hook-form";
-import { TeamConfiguration } from "../../services/team-configuration";
+import { isFieldUpdate, TeamConfiguration } from "../../services/team-configuration";
 import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
 
 interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, "onChange" | "isChecked"> {
@@ -51,11 +51,12 @@ export const FormToggle: FC<FormToggleProps> = ({ name, label, description, cont
           label={label}
           description={description}
           isChecked={Boolean(field.value)}
-          onChange={(e) => {
-            const checked = e.target.checked;
+          onChange={(event) => {
+            field.onChange(event.target.checked);
 
-            field.onChange(checked);
-            onSave?.(e.target as any);
+            if (isFieldUpdate(event.target)) {
+              onSave?.(event.target);
+            }
           }}
         />
       )}

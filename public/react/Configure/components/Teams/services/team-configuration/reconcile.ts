@@ -23,6 +23,7 @@ export function isFieldUpdate(event: { name: string }): event is { name: keyof T
     "confidenceField",
     "startDateField",
     "dueDateField",
+    "spreadEffortAcrossDates",
   ].includes(event.name);
 }
 

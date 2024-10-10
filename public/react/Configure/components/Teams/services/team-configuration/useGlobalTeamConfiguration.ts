@@ -13,7 +13,7 @@ export const useGlobalTeamConfiguration: UseDefaultConfiguration = () => {
   const { data } = useSuspenseQuery({
     queryKey: teamConfigurationKeys.globalConfiguration(),
     queryFn: async () => {
-      return await get<Partial<TeamConfiguration>>(globalTeamConfigurationStorageKey);
+      return get<Partial<TeamConfiguration>>(globalTeamConfigurationStorageKey);
     },
   });
 
