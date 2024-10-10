@@ -60,7 +60,7 @@ export function fetchJiraIssue(config: Config) {
     return editBody;
 };
 export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
-    return async (params: FetchJiraIssuesParams) => {
+    return async <TField>(params: FetchJiraIssuesParams) => {
         const fields = await config.fieldsRequest();
 
         const newParams = {
@@ -73,7 +73,7 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
         return (response.issues as OidcJiraIssue[]).map((issue: OidcJiraIssue) => {
             return {
                 ...issue,
-                fields: mapIdsToNames(issue.fields, fields),
+                fields: mapIdsToNames(issue.fields, fields) as TField,
             };
         });
     };

@@ -29,19 +29,13 @@ interface StorageIssue {
 }
 
 const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
-  const configurationIssues: StorageIssue[] = (await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields({
+  const configurationIssues: StorageIssue[] = (await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
+    Summary: string;
+    Description: { content: Array<StorageIssueContent> };
+  }>({
     jql: `summary ~ "Jira Auto Scheduler Configuration"`,
     fields: ["summary", "Description"],
-  }))
-    .map(({ id, fields }) =>
-    ({
-      id,
-      // fields comes back from fetchJiraIssuesWithJQLWithNamedFields as "[key: string]: any"
-      fields: fields as {
-        Summary: string,
-        Description: { content: Array<StorageIssueContent> }
-      }
-    }));
+  }));
 
   if (!configurationIssues.length) {
     return null;
