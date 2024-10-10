@@ -21,7 +21,7 @@ interface TeamSelectorProps extends Pick<ConfigureTeamsProps, "onInitialDefaults
 type TeamName = "global" | (string & {});
 
 const TeamSelector: FC<TeamSelectorProps> = ({ onBackButtonClicked, storage, ...props }) => {
-  const [team, setTeam] = useState<TeamName>("");
+  const [team, setTeam] = useState<TeamName>("global");
 
   const getButtonClasses = (name: TeamName) => {
     return [

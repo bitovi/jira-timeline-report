@@ -5,20 +5,15 @@ import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize
 import type { TeamConfiguration } from "./services/team-configuration";
 
 import React, { useEffect } from "react";
-import Form from "@atlaskit/form";
 import { useForm } from "react-hook-form";
 import { Flex } from "@atlaskit/primitives";
 
 import TextField from "./components/TextField";
 import Select from "./components/Select";
-import Toggle, { FormToggle } from "./components/Toggle";
+import { FormToggle } from "./components/Toggle";
 import Hr from "../../../components/Hr";
 
-import {
-  addDefaultFormData,
-  useGlobalTeamConfiguration,
-  useSaveGlobalTeamConfiguration,
-} from "./services/team-configuration";
+import { addDefaultFormData, useSaveGlobalTeamConfiguration } from "./services/team-configuration";
 import { useJiraIssueFields } from "../../services/jira";
 import { createNormalizeConfiguration } from "./shared/normalize";
 // import EnableableTextField from "./components/EnableableTextField";
@@ -58,71 +53,67 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, userData, onInitial
   }
 
   return (
-    <Form
-      onSubmit={() =>
-        handleSubmit((values, event) => {
-          event?.preventDefault();
-          save(values);
-        })
-      }
+    <form
+      onSubmit={handleSubmit((values, event) => {
+        event?.preventDefault();
+        save(values);
+      })}
     >
-      {() => (
-        <form>
-          <Flex direction="column" gap="space.100">
-            <Select
-              name="estimateField"
-              label="Estimate Field"
-              jiraFields={selectableFields}
-              control={control}
-              onSave={update}
-            />
-            <Select
-              name="confidenceField"
-              label="Confidence field"
-              jiraFields={selectableFields}
-              control={control}
-              onSave={update}
-            />
-            <Select
-              name="startDateField"
-              label="Start date field"
-              jiraFields={selectableFields}
-              control={control}
-              onSave={update}
-            />
-            <Select
-              name="dueDateField"
-              label="End date field"
-              jiraFields={selectableFields}
-              control={control}
-              onSave={update}
-            />
-            <Hr />
-            <TextField
-              name="sprintLength"
-              type="number"
-              label="Sprint length"
-              min={1}
-              register={register}
-              onSave={update}
-            />
-            <TextField
-              name="velocityPerSprint"
-              type="number"
-              label="Velocity Per Sprint"
-              min={1}
-              register={register}
-              onSave={update}
-            />
-            <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
-            <FormToggle
-              name="spreadEffortAcrossDates"
-              control={control}
-              onSave={update}
-              label="Spread effort"
-              description="Spread estimate access dates"
-            />
-            {/* <EnableableTextField
+      <Flex direction="column" gap="space.100">
+        <Select
+          name="estimateField"
+          label="Estimate Field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <Select
+          name="confidenceField"
+          label="Confidence field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <Select
+          name="startDateField"
+          label="Start date field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <Select
+          name="dueDateField"
+          label="End date field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <Hr />
+        <TextField
+          name="sprintLength"
+          type="number"
+          label="Sprint length"
+          min={1}
+          register={register}
+          onSave={update}
+        />
+        <TextField
+          name="velocityPerSprint"
+          type="number"
+          label="Velocity Per Sprint"
+          min={1}
+          register={register}
+          onSave={update}
+        />
+        <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
+        <FormToggle
+          name="spreadEffortAcrossDates"
+          control={control}
+          onSave={update}
+          label="Spread effort"
+          description="Spread estimate access dates"
+        />
+        {/* <EnableableTextField
               toggleLabel="Estimates"
               toggleDescription="Assign average estimate to issues without estimates"
               textFieldLabel="Default estimate"
@@ -132,10 +123,9 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ onUpdate, userData, onInitial
               onSave={update}
               register={register}
             /> */}
-          </Flex>
-        </form>
-      )}
-    </Form>
+      </Flex>
+      <input type="submit" hidden />
+    </form>
   );
 };
 
