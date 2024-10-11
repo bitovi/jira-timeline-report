@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:fe:css:build\" \"npm:fe:js:build\" \"npm:start-local\"",
     "start-local": "node server/server.js",
-    "fe:css:build:only": "npx tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify",
+    "fe:css:build:only": "tailwindcss -i ./public/css/steerco-reporting.css -o ./public/dist/production.css --minify",
     "fe:css:build": "npm run fe:css:build:only -- --watch",
     "fe:js:build:only": "rollup -c --sourcemap",
     "fe:js:build": "npm run fe:js:build:only -- -w",
@@ -70,7 +70,7 @@
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "semver": "^7.6.3",
-    "tailwindcss": "^3.3.3",
+    "tailwindcss": "^3.4.13",
     "tsx": "^4.19.1",
     "typescript": "^5.5.4",
     "vitest": "^1.6.0"

@@ -78,6 +78,15 @@ export interface ParentFields {
   status: { name: string };
 }
 
+export type FetchJiraIssuesParams = {
+  accessToken?: string;
+  jql?: string;
+  fields?: string[];
+  startAt?: number;
+  maxResults?: number;
+  limit?: number;
+};
+
 export interface NormalizedRelease {
   name: string;
   id: string;

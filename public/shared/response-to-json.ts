@@ -1,9 +1,10 @@
-import {
-  JsonResponse,
-} from './types.js';
+/**
+ * this module is for getting a json object from an http response.
+ */
+import { JsonResponse } from './types';
 
-export function responseToJSON(response: Response): Promise<JsonResponse> {
-	if(!response.ok) {
+export function responseToJSON<TData = object>(response: Response): Promise<JsonResponse<TData>> {
+	if (!response.ok) {
 		return response.json().then((payload) => {
 			const err = new Error("HTTP status code: " + response.status);
 			Object.assign(err, payload);
