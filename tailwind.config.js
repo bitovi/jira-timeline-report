@@ -1,5 +1,5 @@
 module.exports = {
-  content: ["./public/**/*.{html,js}", "./pages/**/*.{html,js}"],
+  content: ["./public/**/*.{html,js,tsx,ts}", "./pages/**/*.{html,js}"],
   safelist: ["pl-2", "pl-4", "pl-6", "pl-8"],
   theme: {
     fontFamily: {
