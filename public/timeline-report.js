@@ -407,44 +407,6 @@ export class TimelineReport extends StacheElement {
 
 customElements.define("timeline-report", TimelineReport);
 
-function getIssuesOfTypeAndStatus(issues, type, statuses) {
-  return issues.filter((issue) => {
-    return issue["Issue Type"] === type && statuses.includes(issue.Status);
-  });
-}
-
-/*
-function goodStuffFromIssue(issue) {
-    return {
-        Summary: issue.Summary,
-        [ISSUE_KEY]: issue[ISSUE_KEY],
-    }
-}
-
-function filterReleases(issues, getReleaseValue) {
-    return issues.filter(issue => getReleaseValue(issue))
-}
-
-function filterOutReleases(issues, getReleaseValue) {
-    return issues.filter(issue => !getReleaseValue(issue));
-}
-function filterPlanningAndReady(issues) {
-    return issues.filter(issue => ["Ready", "Planning"].includes(issue.Status))
-}
-
-
-function mapReleasesToIssues(issues, getReleaseValue) {
-    const map = {};
-    issues.forEach((issue) => {
-        const release = getReleaseValue(issue)
-        if (!map[release]) {
-            map[release] = [];
-        }
-        map[release].push(issue);
-    })
-    return map;
-}*/
-
 function sortReadyFirst(initiatives) {
   return initiatives.sort((a, b) => {
     if (a.Status === "Ready") {
