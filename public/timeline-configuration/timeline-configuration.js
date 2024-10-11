@@ -245,6 +245,7 @@ export class TimelineConfiguration extends StacheElement {
       createElement(TeamConfigure, {
         storage: this.storage,
         jira: this.jiraHelpers,
+        derivedIssuesObservable: value.from(this, "derivedIssues"),
         onUpdate: (partial) => {
           this.normalizeOptions = partial;
         },

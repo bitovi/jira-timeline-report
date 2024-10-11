@@ -6,18 +6,23 @@ import React, { useState } from "react";
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
 
 import ConfigureTeams from "./components/Teams";
-import TeamSelector from "./components/TeamSelector";
+import TeamSelector, { TeamSelectorProps } from "./components/TeamSelector";
 
 import SidebarButton from "../components/SidebarButton";
 
 export interface ConfigurationPanelProps
-  extends Pick<TeamConfigurationWrapperProps, "onInitialDefaultsLoad" | "onUpdate" | "storage"> {
+  extends Pick<TeamConfigurationWrapperProps, "onInitialDefaultsLoad" | "onUpdate" | "storage">,
+    TeamSelectorProps {
   onBackButtonClicked: () => void;
 }
 
 type TeamName = "global" | (string & {});
 
-const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ onBackButtonClicked, ...props }) => {
+const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
+  onBackButtonClicked,
+  derivedIssuesObservable,
+  ...props
+}) => {
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
 
   return (
@@ -27,7 +32,11 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ onBackButtonClicked, 
           <ArrowLeftCircleIcon label="go back" />
           Go back
         </SidebarButton>
-        <TeamSelector selectedTeam={selectedTeam} setSelectedTeam={setSelectedTeam} />
+        <TeamSelector
+          selectedTeam={selectedTeam}
+          setSelectedTeam={setSelectedTeam}
+          derivedIssuesObservable={derivedIssuesObservable}
+        />
       </div>
       {selectedTeam === "global" && (
         <div className="w-96">

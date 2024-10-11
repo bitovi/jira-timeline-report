@@ -6,7 +6,7 @@ import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { JiraProvider } from "./services/jira";
-import TeamSelector, { ConfigurationPanelProps } from "./ConfigurationPanel";
+import ConfigurationPanel, { ConfigurationPanelProps } from "./ConfigurationPanel";
 
 // TODO: Move type to module
 import jiraOidcHelpers from "../../jira-oidc-helpers";
@@ -24,7 +24,7 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ jira, ...
       <QueryClientProvider client={queryClient}>
         <FlagsProvider>
           <JiraProvider jira={jira}>
-            <TeamSelector {...props} />
+            <ConfigurationPanel {...props} />
           </JiraProvider>
         </FlagsProvider>
       </QueryClientProvider>
