@@ -1,12 +1,15 @@
-type JsonResponse = {
+import { OidcJiraIssue } from "../jira-oidc-helpers/types";
+import { JiraIssue } from "../jira/shared/types";
+
+export type JsonResponse<TData = object> = {
   accessToken: string;
-  data: any; // TODO - what is the shape of this?
+  data: TData;
   expiryTimestamp: string;
   refreshToken: string;
   scopeId: string;
 };
 
-type JtrEnv = {
+export type JtrEnv = {
   JIRA_CLIENT_ID: string;
   JIRA_SCOPE: string;
   JIRA_CALLBACK_URL: string;
@@ -14,12 +17,11 @@ type JtrEnv = {
   JIRA_APP_KEY: string;
 };
 
-interface RequestHelperResponse extends JsonResponse {
-  issues: any;
-  maxResults: any;
-  total: any;
-  startAt: any;
-  values: any;
+export interface RequestHelperResponse<TValues = any[], TIssues = OidcJiraIssue[] | JiraIssue[]> {
+  issues: TIssues;
+  maxResults: number;
+  total: number;
+  startAt: number;
+  values: TValues;
 }
 
-export { JsonResponse, JtrEnv, RequestHelperResponse };
