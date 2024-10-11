@@ -57,7 +57,7 @@ export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
 
             if (parsed.statusCode === 404) {
               const createContainer = createUpdate(jiraHelpers);
-              const newValue = null;
+              const newValue = {} as TData;
 
               return createContainer(key, newValue).then(() => newValue);
             }
