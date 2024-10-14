@@ -69,10 +69,16 @@ const createDefaultJiraFieldGetter = <TFormField extends keyof DefaultFormFields
     }
 
     for (const possibleName of possibleNames) {
-      const field = findFieldCalled(possibleName, jiraFields);
+      const caseSensitiveField = jiraFields.find((field) => field.name === possibleName);
 
-      if (field) {
-        return field;
+      if (caseSensitiveField) {
+        return caseSensitiveField.name;
+      }
+
+      const caseInsensitiveField = findFieldCalled(possibleName, jiraFields);
+
+      if (caseInsensitiveField) {
+        return caseInsensitiveField;
       }
     }
 

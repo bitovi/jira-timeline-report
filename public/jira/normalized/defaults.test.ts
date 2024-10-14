@@ -23,9 +23,7 @@ import {
 } from "./defaults";
 import { IssueFields, JiraIssue, ParentIssue } from "../shared/types";
 
-const createFields = (
-  overrides: Partial<IssueFields> = {}
-): Pick<JiraIssue, "fields"> => {
+const createFields = (overrides: Partial<IssueFields> = {}): Pick<JiraIssue, "fields"> => {
   return {
     fields: {
       Parent: {} as ParentIssue,
@@ -35,18 +33,15 @@ const createFields = (
       "Issue Type": { hierarchyLevel: 1, name: "test" },
       Status: { id: "1", name: "status", statusCategory: { name: "category" } },
       "Fix versions": [],
+      Team: null,
       ...overrides,
     },
   };
 };
 
 test("getConfidenceDefault", () => {
-  expect(getConfidenceDefault({ ...createFields({ Confidence: 20 }) })).toBe(
-    20
-  );
-  expect(
-    getConfidenceDefault({ ...createFields({ "Story points confidence": 10 }) })
-  ).toBe(10);
+  expect(getConfidenceDefault({ ...createFields({ Confidence: 20 }) })).toBe(20);
+  expect(getConfidenceDefault({ ...createFields({ "Story points confidence": 10 }) })).toBe(10);
   expect(getConfidenceDefault({ ...createFields() })).toBeNull();
 
   expect(
@@ -59,9 +54,7 @@ test("getConfidenceDefault", () => {
 test("getDueDataDefault", () => {
   const date = new Date().toString();
 
-  expect(getDueDateDefault({ ...createFields({ "Due date": date }) })).toBe(
-    date
-  );
+  expect(getDueDateDefault({ ...createFields({ "Due date": date }) })).toBe(date);
   expect(getDueDateDefault({ ...createFields() })).toBeNull();
 });
 
@@ -103,16 +96,12 @@ test("getDaysPerSprintDefault", () => {
 test("getStartDateDefault", () => {
   const date = new Date().toString();
 
-  expect(getStartDateDefault({ ...createFields({ "Start date": date }) })).toBe(
-    date
-  );
+  expect(getStartDateDefault({ ...createFields({ "Start date": date }) })).toBe(date);
   expect(getStartDateDefault({ ...createFields() })).toBeNull();
 });
 
 test("getStoryPointsDefault", () => {
-  expect(
-    getStoryPointsDefault({ ...createFields({ "Story points": 3 }) })
-  ).toBe(3);
+  expect(getStoryPointsDefault({ ...createFields({ "Story points": 3 }) })).toBe(3);
   expect(getStoryPointsDefault({ ...createFields() })).toBeNull();
 });
 
@@ -130,7 +119,7 @@ test("getUrlDefault", () => {
 });
 
 test("getTeamKeyDefault", () => {
-  expect(getTeamKeyDefault({ key: "a-b-c" })).toBe("a");
+  expect(getTeamKeyDefault({ key: "a-b-c", ...createFields() })).toBe("a");
 });
 
 test("getTypeDefault", () => {
@@ -152,16 +141,12 @@ test("getParallelWorkLimitDefault", () => {
 });
 
 test("getSprintsDefault", () => {
-  const sprints = [
-    { id: "1", name: "hello", startDate: "20220715", endDate: "20220716" },
-  ];
+  const sprints = [{ id: "1", name: "hello", startDate: "20220715", endDate: "20220716" }];
 
   const startDate = new Date("20220715");
   const endDate = new Date("20220716");
 
-  expect(getSprintsDefault({ ...createFields({ Sprint: sprints }) })).toEqual([
-    { name: "hello", startDate, endDate },
-  ]);
+  expect(getSprintsDefault({ ...createFields({ Sprint: sprints }) })).toEqual([{ name: "hello", startDate, endDate }]);
   expect(getSprintsDefault({ ...createFields() })).toBeNull();
 });
 
@@ -176,9 +161,7 @@ test("getStatusDefault", () => {
 });
 
 test("getLabelsDefault", () => {
-  expect(getLabelsDefault({ ...createFields({ Labels: ["label"] }) })).toEqual([
-    "label",
-  ]);
+  expect(getLabelsDefault({ ...createFields({ Labels: ["label"] }) })).toEqual(["label"]);
   expect(getLabelsDefault({ ...createFields() })).toEqual([]);
 });
 
@@ -202,12 +185,8 @@ test("getRankDefault", () => {
 });
 
 test("getReleaseDefault", () => {
-  expect(
-    getReleasesDefault({ ...createFields({ "Fix versions": undefined }) })
-  ).toEqual([]);
-  expect(
-    getReleasesDefault({ ...createFields({ "Fix versions": [] }) })
-  ).toEqual([]);
+  expect(getReleasesDefault({ ...createFields({ "Fix versions": undefined }) })).toEqual([]);
+  expect(getReleasesDefault({ ...createFields({ "Fix versions": [] }) })).toEqual([]);
   expect(
     getReleasesDefault({
       ...createFields({
