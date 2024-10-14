@@ -7,12 +7,11 @@ import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
 //   getImpliedTimingCalculations,
 // } from "../prepare-issues/date-data.js";
 
-/*
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import TeamConfigure from "../react/Configure";
-*/
+
 import { getFormData } from "../react/Configure/components/Teams/services/team-configuration";
 import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 
@@ -241,7 +240,7 @@ export class TimelineConfiguration extends StacheElement {
       .then((data) => {
         this.normalizeOptions = data;
       });
-    /*
+
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
         storage: this.storage,
@@ -256,7 +255,7 @@ export class TimelineConfiguration extends StacheElement {
           this.showSettings = "";
         },
       })
-    );*/
+    );
   }
   connected() {}
   // METHODS
