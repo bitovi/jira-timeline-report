@@ -41,6 +41,7 @@ export type DerivedWorkTiming = {
   totalDaysOfWork: number | null;
   defaultOrTotalDaysOfWork: number | null;
   completedDaysOfWork: number;
+  datesDaysOfWork: number | null;
 } & Partial<StartData> &
   Partial<DueData>;
 
@@ -82,24 +83,31 @@ export function deriveWorkTiming(
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
 ): DerivedWorkTiming {
+
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
+  
   const usedConfidence = isConfidenceValid
     ? normalizedIssue.confidence!
     : getDefaultConfidence(normalizedIssue.team);
+  
   const isStoryPointsValid = isStoryPointsValueValid(
     normalizedIssue.storyPoints
   );
   const defaultOrStoryPoints = isStoryPointsValid
     ? normalizedIssue.storyPoints!
     : getDefaultStoryPoints(normalizedIssue.team);
+  
   const storyPointsDaysOfWork =
     defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  
   const isStoryPointsMedianValid = isStoryPointsValueValid(
     normalizedIssue.storyPointsMedian
   );
+
   const defaultOrStoryPointsMedian = isStoryPointsMedianValid
     ? normalizedIssue.storyPointsMedian!
     : getDefaultStoryPoints(normalizedIssue.team);
+
   const storyPointsMedianDaysOfWork =
     defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
   const deterministicExtraPoints = estimateExtraPoints(
@@ -140,15 +148,19 @@ export function deriveWorkTiming(
   const { startData, dueData } =
     getStartDateAndDueDataFromFieldsOrSprints(normalizedIssue);
 
+  const datesDaysOfWork = startData && dueData ? getBusinessDatesCount(startData.start, dueData.due) : null;
+
   let totalDaysOfWork = null;
-  if (startData && dueData) {
-    totalDaysOfWork = getBusinessDatesCount(startData.start, dueData.due);
+  if (datesDaysOfWork != null) {
+    totalDaysOfWork = datesDaysOfWork;
   } else if (isStoryPointsMedianValid) {
     totalDaysOfWork = deterministicTotalDaysOfWork;
   } else if (isStoryPointsValid) {
     totalDaysOfWork = storyPointsDaysOfWork;
   }
 
+  // defaultOrTotalDaysOfWork - will be 50% confidence of 1 sprint of work 
+  // Used if there is no estimate.  I don't think we need or should use this value.
   const defaultOrTotalDaysOfWork =
     totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
 
@@ -192,6 +204,7 @@ export function deriveWorkTiming(
     ...startData,
     ...dueData,
 
+    datesDaysOfWork,
     totalDaysOfWork,
     defaultOrTotalDaysOfWork,
     completedDaysOfWork,

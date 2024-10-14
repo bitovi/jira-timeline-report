@@ -80,9 +80,9 @@ function getWorkTypeDefault(normalizedIssue: NormalizedIssue): WorkType {
     return wp.slice(0, -1) as WorkType;
   }
 
-  wp = workType.find((wt) =>
-    normalizedIssue.labels?.map((label) => label.toLowerCase()).includes(wt)
-  );
+  wp = workType.find((wt) => {
+    return normalizedIssue.labels?.map((label) => label.toLowerCase()).includes(wt);
+  });
 
   if (wp) {
     return wp as WorkType;

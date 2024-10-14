@@ -118,6 +118,10 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
   if (!fixVersions) {
     return [];
   }
+  // Rollback is getting this property wrong and not always making it an array
+  if(!Array.isArray(fixVersions)) {
+    fixVersions = [fixVersions]
+  }
 
   return fixVersions.map(({ name, id }) => {
     return {

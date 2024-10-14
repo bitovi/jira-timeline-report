@@ -1,11 +1,11 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
-import { StacheElement, type, ObservableObject, stache } from "./can.js";
-import { showTooltip, showTooltipContent } from "./issue-tooltip.js";
-import { mergeStartAndDueData } from "./jira/rollup/dates/dates.js";
+import { StacheElement, type, ObservableObject, stache } from "../can.js";
+import { showTooltip, showTooltipContent } from "../issue-tooltip.js";
+import { mergeStartAndDueData } from "../jira/rollup/dates/dates.js";
 
-import { makeGetChildrenFromReportingIssues } from "./jira/rollup/rollup.js";
-import { workTypes } from "./jira/derived/work-status/work-status.js";
-import { normalizeIssue, normalizeParent } from "./jira/normalized/normalize.js";
+import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
+import { workTypes } from "../jira/derived/work-status/work-status.js";
+import { normalizeIssue, normalizeParent } from "../jira/normalized/normalize.js";
 
 /*
 import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
@@ -51,7 +51,7 @@ const percentCompleteTooltip = stache(`
    </div>
 `);
 
-import { getQuartersAndMonths } from "./quarter-timeline.js";
+import { getQuartersAndMonths } from "../quarter-timeline.js";
 
 // loops through and creates
 export class GanttGrid extends StacheElement {
