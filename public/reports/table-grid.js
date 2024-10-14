@@ -183,6 +183,11 @@ export class TableGrid extends StacheElement {
 
     let allChildren = this.primaryIssuesOrReleases.map( i => childrenRecursive(i)).flat(Infinity)
 
+
+    console.log( [...this.primaryIssuesOrReleases].sort((a,b)=> {
+        return a.completionRollup.totalWorkingDays - b.completionRollup.totalWorkingDays
+    }) )
+
     return allChildren;
   }
   padding(row){

@@ -224,9 +224,7 @@ export function rollbackIssue(
     items.forEach((change) => {
       const { field } = change;
       const fieldName = fieldAlias[field as keyof typeof fieldAlias] || field;
-      if(fieldName === "Labels") {
-       console.log(change);
-      }
+
       if (fields[fieldName]) {
         Object.assign(
           rolledBackIssue.fields,
