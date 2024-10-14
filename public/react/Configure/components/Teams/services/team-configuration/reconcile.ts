@@ -1,20 +1,33 @@
-import type { DefaultFormFields } from "../../ConfigureTeamsForm";
 import type { AppStorage } from "../../../../../../jira/storage/common";
 
 import { globalTeamConfigurationStorageKey } from "./key-factory";
 
-export type TeamConfiguration = {
-  sprintLength: number;
-  velocityPerSprint: number;
-  tracks: number;
-  estimateField: string;
-  confidenceField: string;
-  startDateField: string;
-  dueDateField: string;
-  spreadEffortAcrossDates: boolean;
+export type Configuration = {
+  sprintLength: number | null;
+  velocityPerSprint: number | null;
+  tracks: number | null;
+  estimateField: string | null;
+  confidenceField: string | null;
+  startDateField: string | null;
+  dueDateField: string | null;
+  spreadEffortAcrossDates: boolean | null;
 };
 
-export function isFieldUpdate(event: { name: string }): event is { name: keyof TeamConfiguration } {
+interface TeamConfiguration {
+  defaults: Configuration;
+  outcome: Configuration;
+  milestones: Configuration;
+  initiatives: Configuration;
+  epics: Configuration;
+  stories: Configuration;
+}
+
+interface TeamData {
+  __GLOBAL__: TeamConfiguration;
+  [teamName: string]: TeamConfiguration;
+}
+
+export function isFieldUpdate(event: { name: string }): event is { name: keyof Configuration } {
   return [
     "sprintLength",
     "velocityPerSprint",
@@ -42,10 +55,7 @@ type IssueFields = Array<{
   orderable: boolean;
 }>;
 
-const nonFieldDefaults: Omit<
-  DefaultFormFields,
-  "estimateField" | "confidenceField" | "startDateField" | "dueDateField"
-> = {
+const nonFieldDefaults: Omit<Configuration, "estimateField" | "confidenceField" | "startDateField" | "dueDateField"> = {
   sprintLength: 10,
   velocityPerSprint: 21,
   tracks: 1,
@@ -56,12 +66,12 @@ const findFieldCalled = (name: string, jiraFields: IssueFields): string | undefi
   return jiraFields.find((field) => field.name.toLowerCase() === name.toLowerCase())?.name;
 };
 
-const createDefaultJiraFieldGetter = <TFormField extends keyof DefaultFormFields>(
+const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
   formField: TFormField,
   possibleNames: string[],
   nameFragments: string[] = []
 ) => {
-  return function (userData: Partial<DefaultFormFields>, jiraFields: IssueFields) {
+  return function (userData: Partial<Configuration>, jiraFields: IssueFields) {
     const userDefinedFieldExists = findFieldCalled((userData[formField] ?? "").toString(), jiraFields);
 
     if (userData?.[formField] && userDefinedFieldExists) {
@@ -104,19 +114,16 @@ const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["start
 
 const getDueDateField = createDefaultJiraFieldGetter("dueDateField", ["due date", "end date", "target date"]);
 
-export const getFormData = async (jira: Jira, storage: AppStorage): Promise<DefaultFormFields> => {
+export const getFormData = async (jira: Jira, storage: AppStorage): Promise<Configuration> => {
   const [jiraFields, userData] = await Promise.all([
     jira.fetchJiraFields() as unknown as IssueFields,
-    storage.get<Partial<DefaultFormFields> | undefined>(globalTeamConfigurationStorageKey),
+    storage.get<Partial<Configuration> | undefined>(globalTeamConfigurationStorageKey),
   ]);
 
   return addDefaultFormData(jiraFields, userData ?? {});
 };
 
-export const addDefaultFormData = (
-  jiraFields: IssueFields,
-  userData: Partial<DefaultFormFields>
-): DefaultFormFields => {
+export const addDefaultFormData = (jiraFields: IssueFields, userData: Partial<Configuration>): Configuration => {
   return {
     ...nonFieldDefaults,
     ...userData,
