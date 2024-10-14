@@ -94,26 +94,30 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
      * @returns
      */
     ([serverInfo, teamData]) => {
+      const {getVelocity, getParallelWorkLimit, ...otherNormalizeParams} = (normalizeOptions ?? {});
       return {
-        getConfidence({ fields }) {
-          return fields.Confidence;
-        },
-        getStoryPointsMedian({ fields }) {
-          return fields["Story points median"];
-        },
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
         getVelocity(team) {
-          return teamData.getVelocityForTeam(team);
-        },
-        getDaysPerSprint(team) {
-          return teamData.getDaysPerSprintForTeam(team);
+
+          const legacyValue = teamData.getVelocityForTeam(team);
+          if(legacyValue !== null) {
+            return legacyValue;
+          }
+
+          return getVelocity(team);
         },
         getParallelWorkLimit(team) {
-          return teamData.getTracksForTeam(team);
+
+          const legacyValue = teamData.getTracksForTeam(team);
+          if(legacyValue !== null) {
+            return legacyValue;
+          }
+
+          return getParallelWorkLimit(team);
         },
-        ...(normalizeOptions ?? {}),
+        ...otherNormalizeParams,
       };
     }
   );

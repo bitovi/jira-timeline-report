@@ -4,14 +4,14 @@ import type { AppStorage } from "../../../../../../jira/storage/common";
 import { globalTeamConfigurationStorageKey } from "./key-factory";
 
 export type TeamConfiguration = {
-  sprintLength: number;
-  velocityPerSprint: number;
-  tracks: number;
-  estimateField: string;
-  confidenceField: string;
-  startDateField: string;
-  dueDateField: string;
-  spreadEffortAcrossDates: boolean;
+  sprintLength: number | null;
+  velocityPerSprint: number | null;
+  tracks: number | null;
+  estimateField: string | null;
+  confidenceField: string | null;
+  startDateField: string | null;
+  dueDateField: string | null;
+  spreadEffortAcrossDates: boolean | null;
 };
 
 export function isFieldUpdate(event: { name: string }): event is { name: keyof TeamConfiguration } {
@@ -77,14 +77,14 @@ const createDefaultJiraFieldGetter = <TFormField extends keyof DefaultFormFields
     }
 
     for (const fragment of nameFragments) {
-      const field = jiraFields.find(({ name }) => name.includes(fragment));
+      const field = jiraFields.find(({ name }) => name.toLowerCase().includes(fragment.toLowerCase()));
 
       if (field) {
         return field.name;
       }
     }
 
-    throw new Error(`Could not determine default value for ${formField}`);
+    return null;
   };
 };
 
@@ -100,7 +100,7 @@ const getConfidenceField = createDefaultJiraFieldGetter(
   ["confidence"]
 );
 
-const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["start date", "starting date"]);
+const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["Start date", "starting date"]);
 
 const getDueDateField = createDefaultJiraFieldGetter("dueDateField", ["due date", "end date", "target date"]);
 

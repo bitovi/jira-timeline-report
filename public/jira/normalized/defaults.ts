@@ -71,7 +71,10 @@ export function getUrlDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue[
   return "javascript://";
 }
 
-export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue["team"]["name"] {
+export function getTeamKeyDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["team"]["name"] {
+  if(fields.Team?.name) {
+    return fields.Team.name;
+  }
   return key.replace(/-.*/, "");
 }
 

@@ -75,7 +75,7 @@ export function getRawIssues({isLoggedIn, loadChildren, jiraHelpers, jql, fields
         "Story points median",
         "Confidence",
         "Story points confidence",
-        "Labels", "Status", "Sprint", "Created","Parent"]
+        "Labels", "Status", "Sprint", "Created","Parent", "Team"]
     // progressData.value = null; THIS NEEDS TO HAPPEN OUTSIDE
     if( isLoggedIn === false) {
         // mock data is already field-translated

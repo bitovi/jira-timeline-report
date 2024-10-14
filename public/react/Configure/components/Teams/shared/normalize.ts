@@ -8,9 +8,13 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
     getVelocity: () => Number(values.velocityPerSprint),
     getParallelWorkLimit: () => Number(values.tracks),
     getTeamSpreadsEffortAcrossDates: () => {
-      return values.spreadEffortAcrossDates;
+      return !!values.spreadEffortAcrossDates;
     },
     getStartDate: ({ fields }) => {
+      if (!values.startDateField) {
+        return null;
+      }
+
       const value = fields[values.startDateField];
 
       if (!value || typeof value !== "string") {
@@ -20,6 +24,10 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
       return value;
     },
     getConfidence: ({ fields }) => {
+      if (!values.confidenceField) {
+        return null;
+      }
+
       const value = fields[values.confidenceField];
 
       if (!value) {
@@ -35,6 +43,10 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
       return confidence;
     },
     getDueDate: ({ fields }) => {
+      if (!values.dueDateField) {
+        return null;
+      }
+
       const value = fields[values.dueDateField];
 
       if (!value || typeof value !== "string") {
@@ -44,6 +56,10 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
       return value;
     },
     getStoryPoints: ({ fields }) => {
+      if (!values.estimateField) {
+        return null;
+      }
+
       const value = fields[values.estimateField];
 
       if (!value) {
@@ -59,6 +75,10 @@ export const createNormalizeConfiguration = (values: DefaultFormFields): Partial
       return storyPoints;
     },
     getStoryPointsMedian: ({ fields }) => {
+      if (!values.estimateField) {
+        return null;
+      }
+
       const value = fields[values.estimateField];
 
       if (!value) {
