@@ -96,7 +96,7 @@ describe("Configuration Inheritance and Defaults", () => {
 
   test("getInheritedData applies team and global defaults correctly", () => {
     const allTeamData: AllTeamData = {
-      __GLOBAL__: {
+      __GLOBAL__: createTeamConfiguration({
         defaults: {
           sprintLength: 10,
           velocityPerSprint: 21,
@@ -107,13 +107,8 @@ describe("Configuration Inheritance and Defaults", () => {
           startDateField: "Start date",
           dueDateField: "Due date",
         },
-        outcome: createConfiguration(),
-        milestones: createConfiguration(),
-        initiatives: createConfiguration(),
-        epics: createConfiguration(),
-        stories: createConfiguration(),
-      },
-      "Team A": {
+      }),
+      "Team A": createTeamConfiguration({
         defaults: createConfiguration({
           sprintLength: 15,
           velocityPerSprint: 30,
@@ -121,11 +116,7 @@ describe("Configuration Inheritance and Defaults", () => {
         epics: createConfiguration({
           tracks: 2,
         }),
-        outcome: createConfiguration(),
-        milestones: createConfiguration(),
-        initiatives: createConfiguration(),
-        stories: createConfiguration(),
-      },
+      }),
     };
 
     const teamAInheritedData = getInheritedData("Team A", allTeamData);
@@ -174,7 +165,7 @@ describe("Configuration Inheritance and Defaults", () => {
 
   test("applyInheritance applies inheritance to team configurations correctly", () => {
     const allTeamData: AllTeamData = {
-      __GLOBAL__: {
+      __GLOBAL__: createTeamConfiguration({
         defaults: {
           sprintLength: 10,
           velocityPerSprint: 21,
@@ -185,26 +176,18 @@ describe("Configuration Inheritance and Defaults", () => {
           startDateField: "Start date",
           dueDateField: "Due date",
         },
-        outcome: createEmptyConfiguration(),
-        milestones: createEmptyConfiguration(),
-        initiatives: createEmptyConfiguration(),
         epics: createConfiguration({
           spreadEffortAcrossDates: true,
         }),
-        stories: createEmptyConfiguration(),
-      },
-      "Team B": {
+      }),
+      "Team B": createTeamConfiguration({
         defaults: createConfiguration({
           tracks: 3,
         }),
-        epics: createEmptyConfiguration(),
-        outcome: createEmptyConfiguration(),
-        milestones: createEmptyConfiguration(),
-        initiatives: createEmptyConfiguration(),
         stories: createConfiguration({
           estimateField: "Custom Estimate",
         }),
-      },
+      }),
     };
 
     const augmentedData = applyGlobalDefaultData(allTeamData, jiraFields);
