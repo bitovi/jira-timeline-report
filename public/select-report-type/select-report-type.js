@@ -29,7 +29,7 @@ const REPORTS = [{
     name: "Scatter Plot"
 },{
     key: "table",
-    name: "Table Grid"
+    name: "Estimation Table"
 }];
 
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";

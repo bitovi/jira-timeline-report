@@ -195,8 +195,10 @@ export class TableGrid extends StacheElement {
                 <tr on:click="console.log(tableRow.issue)">
                     <td style="{{this.padding(tableRow)}}" class="px-2 flex gap-2">
                         <img src:from="this.iconUrl(tableRow)" class="inline-block"/>
-                        <a href="{{tableRow.issue.url}}" target="_blank"
-                            class="link inline-block">{{tableRow.issue.key}}</a>
+                        {{# not(eq(tableRow.issue, "Release")) }}
+                            <a href="{{tableRow.issue.url}}" target="_blank"
+                                class="link inline-block">{{tableRow.issue.key}}</a>
+                        {{/ not }}
                         <span class="text-ellipsis truncate inline-block max-w-96">{{tableRow.issue.summary}}</span>
                     </td>
                     <td class="px-2 text-right" on:click="this.showEstimation(tableRow.issue, scope.event.target)">
@@ -253,7 +255,7 @@ export class TableGrid extends StacheElement {
     return "padding-left: "+(row.depth * 20)+"px"
   }
   iconUrl(row){
-    return row.issue.issue.fields["Issue Type"].iconUrl
+    return row.issue?.issue?.fields["Issue Type"]?.iconUrl
   }
   shortDate(date) {
     return date ? dateFormatter.format(date) : "";
