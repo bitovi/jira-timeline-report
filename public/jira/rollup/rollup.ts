@@ -12,7 +12,7 @@ export type IssueOrRelease<CustomFields = unknown> =
   | (DerivedIssue & CustomFields)
   | (DerivedRelease & CustomFields);
 
-interface ReportingHierarchy {
+export interface ReportingHierarchy {
   depth: number;
   childKeys: string[];
   parentKeys: string[];
@@ -204,7 +204,7 @@ export function addChildrenFromGroupedHierarchy<CustomFields>(
 
 /**
  *
- * @param {IssueOrRelease[]} issuesOrReleases
+ * @param {Array<IssueOrRelease>} issuesOrReleases
  * @param {{type: string, hierarchyLevel: number}[]} rollupTypesAndHierarchies
  * @returns {ReportingHierarchyIssueOrRelease[]}
  */
@@ -376,7 +376,6 @@ export function average(arr: number[]): number | undefined {
 function groupIssuesByHierarchyLevel(
   issues: IssueOrRelease[]
 ): IssueOrRelease[][] {
-  const sorted = issues; //.sort(sortByIssueHierarchy);
   const group: IssueOrRelease[][] = [];
 
   for (let issue of issues) {

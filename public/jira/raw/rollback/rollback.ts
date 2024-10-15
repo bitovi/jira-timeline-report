@@ -17,7 +17,7 @@ interface RolledBackMetadata {
   didNotExist?: boolean;
 }
 
-interface RolledBackJiraIssue extends JiraIssue {
+export interface RolledBackJiraIssue extends JiraIssue {
   rollbackMetadata: RolledBackMetadata;
 }
 

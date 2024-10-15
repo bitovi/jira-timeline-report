@@ -1,5 +1,10 @@
 
-import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "../rollup";
+import {
+     rollupGroupedHierarchy,
+      groupIssuesByHierarchyLevelOrType,
+       zipRollupDataOntoGroupedData,
+        IssueOrRelease
+     } from "../rollup";
 
 
 export const methods = {
@@ -15,7 +20,7 @@ export const methods = {
 
 /**
  * 
- * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
+ * @param {Array<IssueOrRelease>} issuesOrReleases Starting from low to high
  * @param {Array<String>} methodNames Starting from low to high
  * @return {Array<RollupDateData>}
  */
@@ -29,27 +34,25 @@ export function rollupDates(groupedHierarchy, methodNames, {getChildren}  = {}) 
     });
 }
 
-/**
- * @typedef {{
- *   due: Date,
- *   dueTo: {message: String, reference: Object},
- *   start: Date,
- *   startFrom: {message: String, reference: Object}
- * } | {}} RollupDateData
- */
+export type RollupDateData={
+    due: Date,
+    dueTo: {message: string, reference: Object},
+    start: Date,
+    startFrom: {message: string, reference: Object}
+}
 
-/**
- * @typedef {import("../rollup").IssueOrRelease & {rollupDates: RollupDateData}} RolledupDatesReleaseOrIssue
- */
-
+export type RolledupDatesReleaseOrIssue = IssueOrRelease & {rollupDates: RollupDateData}
 
 /**
  * 
- * @param {import("../rollup").IssuesOrReleases} issuesOrReleases 
+ * @param {Array<IssueOrRelease>} issuesOrReleases 
  * @param {Array<{type: String, hierarchyLevel: Number, calculation: String}>} rollupTimingLevelsAndCalculations 
  * @return {Array<RolledupDatesReleaseOrIssue>}
  */
-export function addRollupDates(issuesOrReleases, rollupTimingLevelsAndCalculations){
+export function addRollupDates(
+    issuesOrReleases:IssueOrRelease[], 
+    rollupTimingLevelsAndCalculations:{type: string, hierarchyLevel: number, calculation: string}[]
+){
     const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
     const rollupMethods = rollupTimingLevelsAndCalculations.map( rollupData => rollupData.calculation).reverse();
     const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
@@ -57,39 +60,44 @@ export function addRollupDates(issuesOrReleases, rollupTimingLevelsAndCalculatio
     return zipped.flat();
 }
 
-function makeQuickCopyDefinedProperties(keys) {
-    return function copy(source) {
-        const obj = {};
+function makeQuickCopyDefinedProperties<
+    TDest, 
+    TSrc extends { [K: string]: unknown } = {}
+>(keys:string[]) {
+    return function copy(source:TSrc) {
+        const obj:{ [K: string]: unknown } = {};
         for(let key of keys) {
             if(source[key] !== undefined) {
                 obj[key] = source[key];
             }
         }
-        return obj;
+        return obj as TDest;
     }
 }
 // makes testing easier if we don't create a bunch of "undefined" properties
-const getStartData = makeQuickCopyDefinedProperties(["start","startFrom"])
-const getDueData = makeQuickCopyDefinedProperties(["due","dueTo"])
+const getStartData = makeQuickCopyDefinedProperties<RollupDateData>(["start","startFrom"])
+const getDueData = makeQuickCopyDefinedProperties<RollupDateData>(["due","dueTo"])
 
-export function mergeStartAndDueData(records){
+export function mergeStartAndDueData(records:RollupDateData[]){
     
     const startData = records.filter( record => record?.start ).map(getStartData);
     const dueData = records.filter( record => record?.due ).map( getDueData );
 
     return {
-        ... (startData.length ? startData.sort( (d1, d2) => d1.start - d2.start )[0] : {}),
-        ... (dueData.length ? dueData.sort( (d1, d2) => d2.due - d1.due )[0] : {})
+        ... (startData.length ? startData.sort( (d1, d2) => 
+            d1.start.getTime() - d2.start.getTime() )[0] : {}),
+        ... (dueData.length ? dueData.sort( (d1, d2) => 
+            d2.due.getTime() - d1.due.getTime() )[0] : {})
     }
 }
 
 /**
  * 
- * @param {import("../rollup").IssueOrRelease} parentIssueOrRelease 
+ * @param {IssueOrRelease} parentIssueOrRelease 
  * @param {*} childrenRollups 
  * @returns 
  */
-export function parentFirstThenChildren(parentIssueOrRelease, childrenRollups){
+export function parentFirstThenChildren(parentIssueOrRelease:IssueOrRelease, childrenRollups){
 
     const childData = mergeStartAndDueData(childrenRollups);
     const parentData = parentIssueOrRelease?.derivedTiming;
