@@ -94,26 +94,30 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
      * @returns
      */
     ([serverInfo, teamData]) => {
+      const {getVelocity, getParallelWorkLimit, ...otherNormalizeParams} = (normalizeOptions ?? {});
       return {
-        getConfidence({ fields }) {
-          return fields.Confidence;
-        },
-        getStoryPointsMedian({ fields }) {
-          return fields["Story points median"];
-        },
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
         getVelocity(team) {
-          return teamData.getVelocityForTeam(team);
-        },
-        getDaysPerSprint(team) {
-          return teamData.getDaysPerSprintForTeam(team);
+
+          const legacyValue = teamData.getVelocityForTeam(team);
+          if(legacyValue !== null) {
+            return legacyValue;
+          }
+
+          return getVelocity(team);
         },
         getParallelWorkLimit(team) {
-          return teamData.getTracksForTeam(team);
+
+          const legacyValue = teamData.getTracksForTeam(team);
+          if(legacyValue !== null) {
+            return legacyValue;
+          }
+
+          return getParallelWorkLimit(team);
         },
-        ...(normalizeOptions ?? {}),
+        ...otherNormalizeParams,
       };
     }
   );
@@ -124,7 +128,7 @@ export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPr
     if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
       return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
         ([rawIssues, configuration]) => {
-          console.log({ rawIssues });
+          console.log("Normalizing and Deriving",{ rawIssues });
           return rawIssues.map((issue) => {
             const normalized = normalizeIssue(issue, configuration);
             const derived = deriveIssue(normalized, configuration);

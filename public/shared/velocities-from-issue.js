@@ -44,7 +44,7 @@ class TeamConfiguration extends ObservableObject {
         } else if(this._issueConfig?.[team]?.velocity) {
             return this._issueConfig?.[team].velocity;
         } else {
-            return 21;
+            return null;
         }
     }
     setVelocityForTeam(team, value) {
@@ -66,7 +66,7 @@ class TeamConfiguration extends ObservableObject {
         } else if(this._issueConfig?.[team]?.tracks) {
             return this._issueConfig?.[team].tracks;
         } else {
-            return 1;
+            return null;
         }
     }
     addTrackForTeam(team) {

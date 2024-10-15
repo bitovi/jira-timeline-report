@@ -71,7 +71,10 @@ export function getUrlDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue[
   return "javascript://";
 }
 
-export function getTeamKeyDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue["team"]["name"] {
+export function getTeamKeyDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["team"]["name"] {
+  if(fields.Team?.name) {
+    return fields.Team.name;
+  }
   return key.replace(/-.*/, "");
 }
 
@@ -117,6 +120,10 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
 
   if (!fixVersions) {
     return [];
+  }
+  // Rollback is getting this property wrong and not always making it an array
+  if(!Array.isArray(fixVersions)) {
+    fixVersions = [fixVersions]
   }
 
   return fixVersions.map(({ name, id }) => {

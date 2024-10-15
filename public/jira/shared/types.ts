@@ -56,6 +56,7 @@ export interface IssueFields extends BaseFields {
   "Parent Link"?: { data: { key: string } };
   Status: Status;
   "Fix versions": Array<FixVersion>;
+  Team: null | {name: string, id: string, avatarUrl?: string}
 }
 
 interface BaseIssue {

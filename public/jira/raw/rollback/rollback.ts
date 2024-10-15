@@ -89,12 +89,19 @@ export const fields: FieldRollbackFunctionMap = {
       };
     }
   },
+  Labels : function(lastReturnValue, change, fieldName){
+    if(change.fromString) {
+      return { [fieldName]: change.fromString.split(" ")}
+    } else {
+      return { [fieldName]: []}
+    }
+  },
   "Fix versions": function (lastReturnValue, change, fieldName, { versions }) {
     if (change.from) {
       if (versions.ids.has(change.from)) {
-        return { [fieldName]: versions.ids.get(change.from) };
+        return { [fieldName]: [versions.ids.get(change.from)] };
       } else if (versions.names.has(change.fromString || "")) {
-        return { [fieldName]: versions.names.get(change.fromString || "") };
+        return { [fieldName]: [versions.names.get(change.fromString || "")] };
       } else {
         console.warn(
           "Can't find release version ",
@@ -181,7 +188,7 @@ export function rollbackIssues(
   const statuses = getStatusesFromIssues(issues);
   return issues
     .map((i) => rollbackIssue(i, { sprints, versions, statuses }, rollbackTime))
-    .filter((i) => i !== undefined);
+    .filter((i) => i !== undefined) as RolledBackJiraIssue[];
 }
 
 const oneHourAgo = new Date(Date.now() - 1000 * 60 * 60);
@@ -217,6 +224,7 @@ export function rollbackIssue(
     items.forEach((change) => {
       const { field } = change;
       const fieldName = fieldAlias[field as keyof typeof fieldAlias] || field;
+
       if (fields[fieldName]) {
         Object.assign(
           rolledBackIssue.fields,
@@ -228,11 +236,20 @@ export function rollbackIssue(
           )
         );
       } else {
-        rolledBackIssue.fields[fieldName] = change.from;
+        rolledBackIssue.fields[fieldName] = getRollbackValue( change );
       }
     });
   }
   return rolledBackIssue;
+}
+
+
+function getRollbackValue(change: Change) {
+  if(change.from === null && change.fromString != null) {
+    return change.fromString
+  } else {
+    return change.from;
+  }
 }
 
 /*

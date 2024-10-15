@@ -23,10 +23,13 @@ document.body.append(TOOLTIP);
 
 const REPORTS = [{
     key: "start-due",
-    name: "Start and due dates"
+    name: "Gantt Chart"
 },{
     key: "due",
-    name: "Due dates only"
+    name: "Scatter Plot"
+},{
+    key: "table",
+    name: "Table Grid"
 }];
 
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
