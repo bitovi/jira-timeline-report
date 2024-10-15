@@ -195,7 +195,7 @@ export class TableGrid extends StacheElement {
                 <tr on:click="console.log(tableRow.issue)">
                     <td style="{{this.padding(tableRow)}}" class="px-2 flex gap-2">
                         <img src:from="this.iconUrl(tableRow)" class="inline-block"/>
-                        {{# not(eq(tableRow.issue, "Release")) }}
+                        {{# not(eq(tableRow.issue.type, "Release")) }}
                             <a href="{{tableRow.issue.url}}" target="_blank"
                                 class="link inline-block">{{tableRow.issue.key}}</a>
                         {{/ not }}
