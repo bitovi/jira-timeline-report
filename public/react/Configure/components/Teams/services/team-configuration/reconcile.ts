@@ -1,4 +1,3 @@
-import type { DefaultFormFields } from "../../ConfigureTeamsForm";
 import type { AppStorage } from "../../../../../../jira/storage/common";
 
 import { globalTeamConfigurationStorageKey } from "./key-factory";
@@ -43,7 +42,7 @@ type IssueFields = Array<{
 }>;
 
 const nonFieldDefaults: Omit<
-  DefaultFormFields,
+  TeamConfiguration,
   "estimateField" | "confidenceField" | "startDateField" | "dueDateField"
 > = {
   sprintLength: 10,
@@ -56,16 +55,16 @@ const findFieldCalled = (name: string, jiraFields: IssueFields): string | undefi
   return jiraFields.find((field) => field.name.toLowerCase() === name.toLowerCase())?.name;
 };
 
-const createDefaultJiraFieldGetter = <TFormField extends keyof DefaultFormFields>(
+const createDefaultJiraFieldGetter = <TFormField extends keyof TeamConfiguration>(
   formField: TFormField,
   possibleNames: string[],
   nameFragments: string[] = []
 ) => {
-  return function (userData: Partial<DefaultFormFields>, jiraFields: IssueFields) {
+  return function (userData: Partial<TeamConfiguration>, jiraFields: IssueFields) {
     const userDefinedFieldExists = findFieldCalled((userData[formField] ?? "").toString(), jiraFields);
 
-    if (userData?.[formField] && userDefinedFieldExists) {
-      return userData[formField];
+    if (userData?.[formField] !== undefined && userDefinedFieldExists) {
+      return userData[formField]!;
     }
 
     for (const possibleName of possibleNames) {
@@ -110,10 +109,10 @@ const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["Start
 
 const getDueDateField = createDefaultJiraFieldGetter("dueDateField", ["due date", "end date", "target date"]);
 
-export const getFormData = async (jira: Jira, storage: AppStorage): Promise<DefaultFormFields> => {
+export const getFormData = async (jira: Jira, storage: AppStorage): Promise<TeamConfiguration> => {
   const [jiraFields, userData] = await Promise.all([
     jira.fetchJiraFields() as unknown as IssueFields,
-    storage.get<Partial<DefaultFormFields> | undefined>(globalTeamConfigurationStorageKey),
+    storage.get<Partial<TeamConfiguration> | undefined>(globalTeamConfigurationStorageKey),
   ]);
 
   return addDefaultFormData(jiraFields, userData ?? {});
@@ -121,8 +120,8 @@ export const getFormData = async (jira: Jira, storage: AppStorage): Promise<Defa
 
 export const addDefaultFormData = (
   jiraFields: IssueFields,
-  userData: Partial<DefaultFormFields>
-): DefaultFormFields => {
+  userData: Partial<TeamConfiguration>
+): TeamConfiguration => {
   return {
     ...nonFieldDefaults,
     ...userData,

@@ -3,6 +3,7 @@ import { deriveIssue } from "../jira/derived/derive.ts";
 import { normalizeIssue } from "../jira/normalized/normalize.ts";
 
 import { getServerInfo, getRawIssues } from "../stateful-data/jira-data-requests.js";
+import { getVelocityDefault, getParallelWorkLimitDefault } from "../jira/normalized/defaults.ts";
 
 /*
 class IssueData extends ObservableObject {
@@ -100,22 +101,29 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
           return serverInfo.baseUrl + "/browse/" + key;
         },
         getVelocity(team) {
-
-          const legacyValue = teamData.getVelocityForTeam(team);
-          if(legacyValue !== null) {
-            return legacyValue;
+          const methodsToTry = [teamData.getVelocityForTeam.bind(teamData), getVelocity, getVelocityDefault];
+          for(let method of methodsToTry) {
+            let value;
+            if(method) {
+              value = method(team);
+            }
+            if(value != null) {
+              return value;
+            }
           }
-
-          return getVelocity(team);
         },
         getParallelWorkLimit(team) {
-
-          const legacyValue = teamData.getTracksForTeam(team);
-          if(legacyValue !== null) {
-            return legacyValue;
+          const methodsToTry = [teamData.getTracksForTeam.bind(teamData), getParallelWorkLimit, getParallelWorkLimitDefault];
+          for(let method of methodsToTry) {
+            let value;
+            if(method) {
+              value = method(team);
+            }
+            
+            if(value != null) {
+              return value;
+            }
           }
-
-          return getParallelWorkLimit(team);
         },
         ...otherNormalizeParams,
       };
