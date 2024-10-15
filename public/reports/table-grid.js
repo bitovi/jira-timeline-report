@@ -1,5 +1,5 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
-import { StacheElement, type, ObservableObject, stache } from "../can.js";
+import { StacheElement, type, ObservableObject, stache, key } from "../can.js";
 import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
 
 /*
@@ -25,6 +25,30 @@ export class EstimateBreakdown extends StacheElement {
     static view = `<button class="remove-button">X</button>
     <div class="p-4">
         {{# if( this.usedStoryPointsMedian(issue) ) }}
+
+            
+            <div class="flex gap-4 items-center my-2">
+                <div class="flex-col">
+                    <div class="text-xs text-neutral-801">&nbsp;</div>
+                    <div class="text-right">Current:</div>
+                    <div class="text-right text-xs">Last:</div>
+                </div>
+                <div>
+                    <div class="text-xs text-neutral-801">Estimated Days</div>
+                    {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalDaysOfWork") }}
+                </div>
+                <div class="text-center">=</div>
+                <div class="flex-col">
+                    <div class="text-xs text-neutral-801">Adjusted Estimate</div>
+                    {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalPoints") }}
+                </div>
+                <div class="align-middle"> / </div>
+                <div class="flex-col">
+                    <div class="text-xs text-neutral-801">Points per day per work track</div>
+                    {{ this.makeCurrentAndPreviousHTML("team.pointsPerDayPerTrack") }}
+                </div>
+            </div>
+            
             <div class="flex gap-4 items-center my-2">
                 <div class="flex-col">
                     <div class="text-xs text-neutral-801">&nbsp;</div>
@@ -32,27 +56,24 @@ export class EstimateBreakdown extends StacheElement {
                     <div class="text-right text-xs">Last:</div>
                 </div>
                 <div class="flex-col">
+                    <div class="text-xs text-neutral-801">Adjusted Estimate</div>
+                    {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalPoints") }}
+                </div>
+                <div>=</div>
+
+                <div class="flex-col">
                     <div class="text-xs text-neutral-801">Median Estimate</div>
-                    <div class="text-right">{{this.issue.storyPointsMedian}}</div>
-                    <div class="text-right text-xs">{{this.issue.issueLastPeriod.storyPointsMedian}}</div>
+                    {{ this.makeCurrentAndPreviousHTML("storyPointsMedian", "derivedTiming.isStoryPointsMedianValid") }}
                 </div>
                 <div>× LOGNORMINV(</div>
                 <div class="flex-col">
                     <div class="text-xs text-neutral-801">Confidence</div>
-                    <div class="text-right {{this.confidenceClass(issue)}}">
-                        {{this.confidenceValue(this.issue)}}%
-                    </div>
-                    <div class="text-right text-xs {{this.confidenceClass(this.issue.issueLastPeriod)}}">
-                        {{this.confidenceValue(this.issue.issueLastPeriod)}}%</div>
+                    {{ this.makeCurrentAndPreviousHTML("derivedTiming.usedConfidence", "derivedTiming.isConfidenceValid", this.formatPercent) }}
                 </div>
                 <div>)</div>
-                <div>=</div>
-                <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Adjusted Estimate</div>
-                    <div class="text-right">{{this.round( this.issue.derivedTiming.deterministicTotalPoints) }}</div>
-                    <div class="text-right text-xs">{{this.round( this.issue.issueLastPeriod.derivedTiming.deterministicTotalPoints) }}</div>
-                </div>
             </div>
+
+            {{# if(this.teamsAreTheSame() )}}
             <div class="flex gap-4 items-center my-2">
                 <div class="flex-col">
                     <div class="text-xs text-neutral-801">Estimate Points Per Sprint</div>
@@ -74,26 +95,64 @@ export class EstimateBreakdown extends StacheElement {
                     <div class="text-right">{{this.round( this.issue.team.pointsPerDayPerTrack, 2)}}</div>
                 </div>
             </div>
-            <div class="flex gap-4 items-center my-2">
-                <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Adjusted Estimate</div>
-                    <div class="text-right">{{this.round( this.issue.derivedTiming.deterministicTotalPoints ) }}</div>
+            {{else }}
+                <div class="flex gap-4 items-center my-2">
+            
+                    <div class="flex-col">
+                        <div class="text-xs text-neutral-801">Points per day per work track</div>
+                        {{ this.makeCurrentAndPreviousHTML("team.pointsPerDayPerTrack") }}
+                    </div>
+                    <div class="text-center">=</div>
+                    <div class="flex-col">
+                        <div class="text-xs text-neutral-801">Estimate Points Per Sprint</div>
+                        {{ this.makeCurrentAndPreviousHTML("team.velocity") }}
+                    </div>
+                    <div>/</div>
+                    <div class="flex-col">
+                        <div class="text-xs text-neutral-801">Parallel Work Tracks</div>
+                        {{ this.makeCurrentAndPreviousHTML("team.parallelWorkLimit") }}
+                    </div>
+                    <div>/</div>
+                    <div class="flex-col">
+                        <div class="text-xs text-neutral-801">Days Per Sprint</div>
+                        {{ this.makeCurrentAndPreviousHTML("team.daysPerSprint") }}
+                    </div>
+                    
                 </div>
-                <div class="align-middle"> / </div>
-                <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Points per day per work track</div>
-                    <div class="text-right">{{this.round( this.issue.team.pointsPerDayPerTrack, 2 ) }}</div>
-                </div>
-                <div class="text-center">=</div>
-                <div>
-                    <div class="text-xs text-neutral-801">Estimated Days</div>
-                    <div class="text-right">{{this.round( this.issue.derivedTiming.deterministicTotalDaysOfWork ) }}</div>
-                </div>
-            </div>
+            {{/ if }}
+            
             
         {{/ }}
     </div>
     `;
+    teamsAreTheSame(){
+        if(!this.issue.issueLastPeriod) {
+            return false
+        } else {
+            return this.issue.issueLastPeriod.team === this.issue.team
+        }
+    }
+    makeCurrentAndPreviousHTML(valueKey, validKey, format = (x)=> x){
+        const currentValue = key.get(this.issue,valueKey);
+        const lastValue = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, valueKey) : undefined;
+
+        let isCurrentValueValid = true, lastValueValid = true;
+        if(validKey) {
+            isCurrentValueValid = key.get(this.issue,validKey);
+            lastValueValid = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, validKey) : undefined ;
+        }
+
+        return stache.safeString(`
+            <div class="text-right ${isCurrentValueValid === false ? "bg-neutral-100" : ""}">${ format( this.round(currentValue, 1) ) }</div>
+            <div class="text-right text-xs ${lastValueValid === false? "bg-neutral-100" : ""}">
+                ${ this.issue.issueLastPeriod ? format( this.round(lastValue, 1) ) : "🚫"}
+            </div>    
+        `)
+        
+    }
+    formatPercent(value) {
+        return value+"%"
+    }
     usedStoryPointsMedian(issue){
         return issue.derivedTiming.isStoryPointsMedianValid
     }
@@ -101,7 +160,7 @@ export class EstimateBreakdown extends StacheElement {
         return issue?.derivedTiming?.usedConfidence;
     }
     confidenceClass(issue){
-        return issue.derivedTiming.isConfidenceValid ? "" : "bg-neutral-100"
+        return issue?.derivedTiming?.isConfidenceValid ? "" : "bg-neutral-100"
     }
     timingEquation(issue) {
         if(issue?.derivedTiming?.isStoryPointsMedianValid) {
@@ -111,7 +170,7 @@ export class EstimateBreakdown extends StacheElement {
         }
     }
     round(number, decimals = 0) {
-        return parseFloat(number.toFixed(decimals))
+        return typeof number === "number" ? parseFloat(number.toFixed(decimals)) : "∅"
     }
 }
 customElements.define("estimate-breakdown", EstimateBreakdown);
@@ -137,8 +196,8 @@ export class TableGrid extends StacheElement {
                     <td style="{{this.padding(tableRow)}}" class="px-2 flex gap-2">
                         <img src:from="this.iconUrl(tableRow)" class="inline-block"/>
                         <a href="{{tableRow.issue.url}}" target="_blank"
-                            class="link inline-block max-w-96">{{tableRow.issue.key}}</a>
-                        <span class="text-ellipsis truncate inline-block">{{tableRow.issue.summary}}</span>
+                            class="link inline-block">{{tableRow.issue.key}}</a>
+                        <span class="text-ellipsis truncate inline-block max-w-96">{{tableRow.issue.summary}}</span>
                     </td>
                     <td class="px-2 text-right" on:click="this.showEstimation(tableRow.issue, scope.event.target)">
                         {{this.estimatedDaysOfWork(tableRow.issue)}}

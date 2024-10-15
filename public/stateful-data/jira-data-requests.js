@@ -85,7 +85,7 @@ export function getRawIssues({isLoggedIn, loadChildren, jiraHelpers, jql, fields
     if(!jql) {
         return undefined;
     }
-
+    console.log("REQUESTING");
     const loadIssues = loadChildren ? 
         jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers) :
         jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);

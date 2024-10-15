@@ -128,7 +128,7 @@ export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPr
     if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
       return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
         ([rawIssues, configuration]) => {
-          console.log({ rawIssues });
+          console.log("Normalizing and Deriving",{ rawIssues });
           return rawIssues.map((issue) => {
             const normalized = normalizeIssue(issue, configuration);
             const derived = deriveIssue(normalized, configuration);
