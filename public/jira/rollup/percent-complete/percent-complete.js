@@ -320,7 +320,7 @@ function completionRollup(allIssueData){
       })
     }
   }
-  console.log(issueTypeDatas);
+  
   return {
     issues: completionRollups,
     hierarchyData: issueTypeDatas

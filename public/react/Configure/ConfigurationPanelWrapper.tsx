@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import type { NormalizeIssueConfig } from "../../jira/normalized/normalize";
-import type { CanObservable } from "../hooks/useCanObservable";
+import { useCanObservable, type CanObservable } from "../hooks/useCanObservable";
 import type { AppStorage } from "../../jira/storage/common";
 import type { Jira } from "../../jira-oidc-helpers";
 
@@ -19,12 +19,24 @@ const queryClient = new QueryClient();
 interface TeamConfigurationWrapperProps {
   onBackButtonClicked: () => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
-  derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
   jira: Jira;
   storage: AppStorage;
+  derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
+  showingTeamsObservable: CanObservable<boolean>;
 }
 
-const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ jira, storage, ...props }) => {
+const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({
+  jira,
+  storage,
+  showingTeamsObservable,
+  ...props
+}) => {
+  const isShowingTeam = useCanObservable(showingTeamsObservable);
+
+  if (!isShowingTeam) {
+    return null;
+  }
+
   return (
     <ErrorBoundary fallbackRender={({ error }) => error?.message || "Something went wrong"}>
       <Suspense

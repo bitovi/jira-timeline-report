@@ -69,9 +69,10 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
 export function fetchJiraIssuesWithJQL(config: Config) {
   return (params: FetchJiraIssuesParams) => {
     // TODO - investigate this and convert params to proper type
-    return config.requestHelper(`/api/3/search?` + new URLSearchParams(JiraIssueParamsToParams(params)));
+    return config.requestHelper(`/api/3/search?` + new URLSearchParams(params as Record<string, string>));
   };
 }
+// TODO ... we probably can remove this.  It's also not working right.
 export function JiraIssueParamsToParams(params: FetchJiraIssuesParams): Record<string, string> {
   const formattedParams: Record<string, string> = {};
   if (params.jql) formattedParams.jql = params.jql;

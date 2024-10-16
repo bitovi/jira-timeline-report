@@ -46,7 +46,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
       </SidebarButton>
       <Hr />
       <Label htmlFor="">TEAMS</Label>
-      {derivedTeams.length === 0 && <div>Derived Teams Not Found</div>}
+      {derivedTeams.length === 0 && <div>Derived Teams Not Found please add an issue source to show teams</div>}
       {teams.map((team) => {
         return (
           <SidebarButton

@@ -3,7 +3,8 @@ import { StacheElement, type } from "./can.js";
 //import "./steerco-timeline.js";
 import "./status-filter.js";
 import "./status-filter-only.js";
-import "./gantt-grid.js";
+import "./reports/gantt-grid.js";
+import "./reports/table-grid.js";
 import "./gantt-timeline.js";
 import "./status-report.js";
 import "./timeline-configuration/timeline-configuration.js";
@@ -110,7 +111,7 @@ export class TimelineReport extends StacheElement {
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
             <div class="my-2   border-box block overflow-hidden color-bg-white">
             
-              {{# or( eq(this.primaryReportType, "start-due"), eq(this.primaryReportType, "breakdown") ) }}
+              {{# eq(this.primaryReportType, "start-due")  }}
                 <gantt-grid 
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
@@ -120,11 +121,17 @@ export class TimelineReport extends StacheElement {
                     primaryIssueType:from="this.primaryIssueType"
                     allDerivedIssues:from="this.derivedIssues"
                     ></gantt-grid>
-              {{ else }}
+              {{/ eq }}
+              {{# eq(this.primaryReportType, "due") }}
                 <gantt-timeline 
                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                   allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></gantt-timeline>
-              {{/ or }}
+              {{/ eq }}
+              {{# eq(this.primaryReportType, "table") }}
+                <table-grid
+                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
+              {{/ eq }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
                 <status-report 

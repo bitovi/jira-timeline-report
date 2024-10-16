@@ -7,6 +7,8 @@ import bitoviTrainingData from "../examples/bitovi-training";
 import { nativeFetchJSON } from "../jira-oidc-helpers";
 
 
+//import { getFormData } from "../react/Configure/components/Teams/services/team-configuration"; 
+//import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 
 function makeCacheable(fn, time = 1000) {
     let cachePromise = null;
@@ -24,6 +26,15 @@ function makeCacheable(fn, time = 1000) {
 
     }
 }
+
+/*
+export function getTeamData({jiraHelpers, storage, isLoggedIn}) {
+    if(isLoggedIn) {
+        return getFormData(jiraHelpers, storage).then(createNormalizeConfiguration);
+     } else {
+         return Promise.resolve({});
+     }
+}*/
 
 
 export const getServerInfo = makeCacheable(({jiraHelpers, isLoggedIn}) => {
@@ -75,7 +86,7 @@ export function getRawIssues({isLoggedIn, loadChildren, jiraHelpers, jql, fields
         "Story points median",
         "Confidence",
         "Story points confidence",
-        "Labels", "Status", "Sprint", "Created","Parent"]
+        "Labels", "Status", "Sprint", "Created","Parent", "Team"]
     // progressData.value = null; THIS NEEDS TO HAPPEN OUTSIDE
     if( isLoggedIn === false) {
         // mock data is already field-translated
@@ -85,7 +96,7 @@ export function getRawIssues({isLoggedIn, loadChildren, jiraHelpers, jql, fields
     if(!jql) {
         return undefined;
     }
-
+    
     const loadIssues = loadChildren ? 
         jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers) :
         jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);

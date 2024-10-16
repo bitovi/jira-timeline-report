@@ -18,6 +18,7 @@ import {
   applyInheritance,
 } from "../react/Configure/components/Teams/services/team-configuration";
 import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
+//import { getTeamData } from "../stateful-data/jira-data-requests.js";
 
 import {
   rawIssuesRequestData,
@@ -229,6 +230,9 @@ export class TimelineConfiguration extends StacheElement {
         return [];
       }
     },
+    get isShowingTeams() {
+      return this.showSettings === "TEAMS";
+    },
     goBack() {
       this.showSettings = "";
     },
@@ -251,6 +255,7 @@ export class TimelineConfiguration extends StacheElement {
         storage: this.storage,
         jira: this.jiraHelpers,
         derivedIssuesObservable: value.from(this, "derivedIssues"),
+        showingTeamsObservable: value.from(this, "isShowingTeams"),
         onUpdate: (partial) => {
           this.normalizeOptions = partial;
         },

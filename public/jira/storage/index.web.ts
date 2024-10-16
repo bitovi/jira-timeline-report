@@ -1,4 +1,3 @@
-import { fields } from "../raw/rollback/rollback";
 import type { StorageFactory } from "./common";
 
 interface Table {
@@ -27,8 +26,6 @@ interface StorageIssue {
     Description: { content: Array<StorageIssueContent> };
   };
 }
-
-const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
 
 const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
   const configurationIssues: StorageIssue[] = await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
@@ -72,8 +69,6 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const [stringifiedStore] = storeContent.content;
       const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-      console.log("GET", store[key]);
-
       return store[key];
     },
     update: async function <TData>(key: string, value: TData) {
@@ -92,22 +87,17 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const [stringifiedStore] = storeContent.content;
       const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-      console.log("UPDATE", { ...store, [key]: value });
-
-      return (
-        jiraHelpers
-          .editJiraIssueWithNamedFields(configurationIssue.id, {
-            Description: {
-              ...configurationIssue.fields.Description,
-              content: [
-                ...configurationIssue.fields.Description.content.filter((content) => content.type !== "codeBlock"),
-                createCodeBlock(JSON.stringify({ ...store, [key]: value })),
-              ],
-            },
-          })
-          // .then(() => sleep(1_000))
-          .then(() => console.log("done!"))
-      );
+      return jiraHelpers
+        .editJiraIssueWithNamedFields(configurationIssue.id, {
+          Description: {
+            ...configurationIssue.fields.Description,
+            content: [
+              ...configurationIssue.fields.Description.content.filter((content) => content.type !== "codeBlock"),
+              createCodeBlock(JSON.stringify({ ...store, [key]: value })),
+            ],
+          },
+        })
+        .then();
     },
   };
 };

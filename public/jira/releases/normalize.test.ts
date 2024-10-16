@@ -7,6 +7,7 @@ const issue: JiraIssue = {
   id: "1",
   key: "test-key",
   fields: {
+    Team: null,
     Parent: {} as ParentIssue,
     Summary: "language packs",
     "Issue Type": { hierarchyLevel: 1, name: "Epic" },
