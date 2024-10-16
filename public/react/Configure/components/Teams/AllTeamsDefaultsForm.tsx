@@ -1,25 +1,19 @@
 import type { FC } from "react";
 
-import type { NormalizedIssue } from "../../../../jira/shared/types";
-import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
-import type { Configuration } from "./services/team-configuration/data";
+import type { Configuration, IssueFields } from "./services/team-configuration/data";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { Flex } from "@atlaskit/primitives";
 
 import TextField from "./components/TextField";
 import Select from "./components/Select";
-import { FormToggle } from "./components/Toggle";
 import Hr from "../../../components/Hr";
-
-import { addDefaultFormData, useSaveGlobalTeamConfiguration } from "./services/team-configuration";
-import { useJiraIssueFields } from "../../services/jira";
-import { createNormalizeConfiguration } from "./shared/normalize";
-// import EnableableTextField from "./components/EnableableTextField";
+import { FormToggle } from "./components/Toggle";
 
 export interface AllTeamsDefaultFormProps {
   save: (newConfiguration: Configuration) => void;
+  jiraFields: IssueFields;
   userData: Configuration;
   augmented: Configuration;
 }
@@ -29,11 +23,10 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
   value: Configuration[TProperty];
 }
 
-const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, augmented }) => {
-  const jiraFields = useJiraIssueFields();
+const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, augmented, jiraFields }) => {
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
-  const { register, handleSubmit, control, getValues } = useForm<Configuration>({
+  const { register, handleSubmit, control } = useForm<Configuration>({
     defaultValues: augmented,
   });
 

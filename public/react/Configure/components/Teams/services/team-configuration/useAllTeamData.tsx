@@ -32,9 +32,7 @@ export const useAllTeamData: UseAllTeamData = (jiraFields: IssueFields) => {
   const { data } = useSuspenseQuery({
     queryKey: updateTeamConfigurationKeys.allTeamData,
     queryFn: async () => {
-      return getAllTeamData(storage).then((newFromStor) => {
-        return newFromStor;
-      });
+      return getAllTeamData(storage);
     },
   });
 
@@ -42,14 +40,6 @@ export const useAllTeamData: UseAllTeamData = (jiraFields: IssueFields) => {
     userAllTeamData: data,
     augmentedAllTeamData: applyInheritance("__GLOBAL__", applyGlobalDefaultData(data, jiraFields)),
   };
-};
-
-const logData = (augmentedTeamData: TeamConfiguration, userTeamData: TeamConfiguration) => {
-  console.log("augmented");
-  console.table(augmentedTeamData);
-
-  console.log("userData");
-  console.table(userTeamData);
 };
 
 export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
@@ -61,7 +51,6 @@ export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
-    allTeamData: userAllTeamData,
   };
 };
 
@@ -71,7 +60,7 @@ const useSaveAllTeamData = () => {
 
   const { showFlag } = useFlags();
 
-  const { mutate } = useMutation<void, Error, AllTeamData, { previousUserData: AllTeamData | undefined }>({
+  const { mutate, isPending } = useMutation<void, Error, AllTeamData, { previousUserData: AllTeamData | undefined }>({
     mutationFn: (values) => {
       return updateAllTeamData(storage, values);
     },
@@ -106,7 +95,7 @@ const useSaveAllTeamData = () => {
     },
   });
 
-  return mutate;
+  return { save: mutate, isSaving: isPending };
 };
 
 export const useSaveTeamData = (config: {
@@ -116,29 +105,32 @@ export const useSaveTeamData = (config: {
 }) => {
   const { teamName, issueType, onUpdate } = config;
   const queryClient = useQueryClient();
-  const saveAllTeamData = useSaveAllTeamData();
+  const { save, isSaving } = useSaveAllTeamData();
 
-  // const allTeamData = queryClient.getQueryData<ReturnType<UseAllTeamData>["userAllTeamData"]>(
-  //   updateTeamConfigurationKeys.allTeamData
-  // );
+  return {
+    isSaving,
+    save: (updates: Configuration) => {
+      const allTeamData = queryClient.getQueryData<ReturnType<UseAllTeamData>["userAllTeamData"]>(
+        updateTeamConfigurationKeys.allTeamData
+      );
 
-  return (allTeamData: AllTeamData, updates: Configuration) => {
-    // console.log({
-    //   previous: allTeamData,
-    //   current: createUpdatedTeamData(allTeamData, {
-    //     teamName,
-    //     issueType,
-    //     configuration: updates,
-    //   }),
-    //   __updates: updates,
-    // });
+      if (!allTeamData) {
+        console.warn("Could not save without all team data");
+        return;
+      }
 
-    saveAllTeamData(
-      createUpdatedTeamData(allTeamData, {
-        teamName,
-        issueType,
-        configuration: updates,
-      })
-    );
+      save(
+        createUpdatedTeamData(allTeamData, {
+          teamName,
+          issueType,
+          configuration: updates,
+        }),
+        {
+          onSuccess: (_, values) => {
+            onUpdate?.(createNormalizeConfiguration(values[teamName]?.[issueType]));
+          },
+        }
+      );
+    },
   };
 };

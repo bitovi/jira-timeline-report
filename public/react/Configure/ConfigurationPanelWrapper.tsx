@@ -1,29 +1,40 @@
 import type { FC } from "react";
+import type { NormalizeIssueConfig } from "../../jira/normalized/normalize";
+import type { CanObservable } from "../hooks/useCanObservable";
+import type { AppStorage } from "../../jira/storage/common";
+import type { Jira } from "../../jira-oidc-helpers";
 
 import React, { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "react-error-boundary";
 
-import { JiraProvider } from "./services/jira";
-import ConfigurationPanel, { ConfigurationPanelProps } from "./ConfigurationPanel";
-
-// TODO: Move type to module
-import jiraOidcHelpers from "../../jira-oidc-helpers";
 import { StorageProvider } from "./services/storage";
-type Jira = ReturnType<typeof jiraOidcHelpers>;
+import { JiraProvider } from "./services/jira";
+import ConfigurationPanel from "./ConfigurationPanel";
+import Spinner from "@atlaskit/spinner";
 
 const queryClient = new QueryClient();
 
-interface TeamConfigurationWrapperProps extends ConfigurationPanelProps {
+interface TeamConfigurationWrapperProps {
+  onBackButtonClicked: () => void;
+  onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
+  derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
   jira: Jira;
+  storage: AppStorage;
 }
 
-const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ jira, ...props }) => {
+const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ jira, storage, ...props }) => {
   return (
     <ErrorBoundary fallbackRender={({ error }) => error?.message || "Something went wrong"}>
-      <Suspense>
-        <StorageProvider storage={props.storage}>
+      <Suspense
+        fallback={
+          <div className=" w-56 p-4 flex justify-center h-full items-center">
+            <Spinner size="large" label="loading" />
+          </div>
+        }
+      >
+        <StorageProvider storage={storage}>
           <QueryClientProvider client={queryClient}>
             <FlagsProvider>
               <JiraProvider jira={jira}>

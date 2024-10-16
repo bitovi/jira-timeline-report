@@ -1,24 +1,16 @@
 /**
  * this module creates the jira oidc helpers object from all the helper functions in the jira-oidc-helpers folder.
  */
-import {
-  Config,
-  FieldsRequest,
-  RequestHelper,
-} from "./types";
+import { Config, FieldsRequest, RequestHelper } from "./types";
 import { RequestHelperResponse, JtrEnv } from "../shared/types";
-import {
-  saveInformationToLocalStorage,
-  clearAuthFromLocalStorage,
-  fetchFromLocalStorage
-} from "./storage";
+import { saveInformationToLocalStorage, clearAuthFromLocalStorage, fetchFromLocalStorage } from "./storage";
 import {
   fetchAuthorizationCode,
   refreshAccessToken,
   fetchAccessTokenWithAuthCode,
   getAccessToken,
   hasAccessToken,
-  hasValidAccessToken
+  hasValidAccessToken,
 } from "./auth";
 import {
   fetchAccessibleResources,
@@ -43,7 +35,7 @@ import { fetchJiraFields, makeFieldsRequest } from "./fields";
 import { _cachedServerInfoPromise, getServerInfo } from "./serverInfo.js";
 import { makeDeepChildrenLoaderUsingNamedFields } from "./makeDeepChildrenLoaderUsingNamedFields";
 
-export { nativeFetchJSON } from './fetch'
+export { nativeFetchJSON } from "./fetch";
 
 // TODO move this into main module
 declare global {
@@ -55,16 +47,18 @@ declare global {
   }
 }
 
+export type Jira = ReturnType<typeof createJiraHelpers>;
+
 export default function createJiraHelpers(
   { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY } = window.env,
   requestHelper: RequestHelper,
-  host: "jira" | "hosted",
+  host: "jira" | "hosted"
 ) {
   // TODO currently fieldsRequest has to be defined and passed to other functions before it's
   // assigned, feels like there should be a better way to do it than this, but a setter function
   // was quickest solution i could come up with. Should revisit at some point.
-  let fieldsRequest: FieldsRequest
-  const setFieldsRequest = (req: FieldsRequest) => fieldsRequest = req
+  let fieldsRequest: FieldsRequest;
+  const setFieldsRequest = (req: FieldsRequest) => (fieldsRequest = req);
 
   const config: Config = {
     env: { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY },
@@ -88,25 +82,20 @@ export default function createJiraHelpers(
     fetchJiraIssue: fetchJiraIssue(config),
     editJiraIssueWithNamedFields: editJiraIssueWithNamedFields(config),
     fetchJiraIssuesWithJQL: fetchJiraIssuesWithJQL(config),
-    fetchJiraIssuesWithJQLWithNamedFields:
-      fetchJiraIssuesWithJQLWithNamedFields(config),
+    fetchJiraIssuesWithJQLWithNamedFields: fetchJiraIssuesWithJQLWithNamedFields(config),
     fetchAllJiraIssuesWithJQL: fetchAllJiraIssuesWithJQL(config),
-    fetchAllJiraIssuesWithJQLUsingNamedFields:
-      fetchAllJiraIssuesWithJQLUsingNamedFields(config),
+    fetchAllJiraIssuesWithJQLUsingNamedFields: fetchAllJiraIssuesWithJQLUsingNamedFields(config),
     fetchJiraChangelog: fetchJiraChangelog(config),
     isChangelogComplete,
-    fetchRemainingChangelogsForIssues:
-      fetchRemainingChangelogsForIssues(config),
-    fetchRemainingChangelogsForIssue:
-      fetchRemainingChangelogsForIssue(config),
-    fetchAllJiraIssuesWithJQLAndFetchAllChangelog:
-      fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config),
+    fetchRemainingChangelogsForIssues: fetchRemainingChangelogsForIssues(config),
+    fetchRemainingChangelogsForIssue: fetchRemainingChangelogsForIssue(config),
+    fetchAllJiraIssuesWithJQLAndFetchAllChangelog: fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config),
     fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields:
       fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config),
-    fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields:
-      makeDeep(fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)),
-    fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields:
-      makeDeep(fetchAllJiraIssuesWithJQL(config)),
+    fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: makeDeep(
+      fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)
+    ),
+    fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields: makeDeep(fetchAllJiraIssuesWithJQL(config)),
     fetchChildrenResponses: fetchChildrenResponses(config),
     fetchDeepChildren: fetchDeepChildren(config),
     fetchJiraFields: fetchJiraFields(config),
@@ -119,13 +108,15 @@ export default function createJiraHelpers(
     requester: requestHelper,
   };
 
-  makeFieldsRequest(config, setFieldsRequest)
+  makeFieldsRequest(config, setFieldsRequest);
 
-  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields =
-    makeDeep(jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers));
+  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields = makeDeep(
+    jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers)
+  );
 
-  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
-    makeDeep(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
+  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields = makeDeep(
+    jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers)
+  );
 
-  return jiraHelpers
-};
+  return jiraHelpers;
+}

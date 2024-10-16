@@ -41,7 +41,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
 
   function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {}
 
-  return <div>Coming Soon</div>;
+  return <div>🚧 Coming Soon 🚧</div>;
 
   // return (
   //   <form
