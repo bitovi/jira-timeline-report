@@ -9,7 +9,7 @@ import { StorageNeedsConfigured } from "../../services/storage";
 import { useAllTeamData, useGlobalTeamConfiguration, useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
 import { useJiraIssueFields } from "../../services/jira";
-import { IssueFields, TeamConfiguration } from "./services/team-configuration/data";
+import { createEmptyTeamConfiguration, IssueFields, TeamConfiguration } from "./services/team-configuration/data";
 import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 
 export interface ConfigureTeamsProps {
@@ -45,18 +45,12 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
 const IssueAccordions = ({ teamName, jiraFields, ...props }: { teamName: string; jiraFields: IssueFields }) => {
   const { userTeamData, augmentedTeamData } = useTeamData(teamName, jiraFields);
 
-  if (!userTeamData) {
-    return null;
-  }
-
-  if (!augmentedTeamData) {
-    return null;
-  }
+  console.log({ userTeamData, augmentedTeamData });
 
   return (
     <>
       {Object.keys(augmentedTeamData).map((key) => (
-        <Accordion key={key}>
+        <Accordion key={key} startsOpen={key === "defaults"}>
           <AccordionTitle>
             <Heading size="small">{issueNameMapping[key as keyof TeamConfiguration]}</Heading>
           </AccordionTitle>

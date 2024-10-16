@@ -18,11 +18,10 @@ import { useJiraIssueFields } from "../../services/jira";
 import { createNormalizeConfiguration } from "./shared/normalize";
 // import EnableableTextField from "./components/EnableableTextField";
 
-export interface ConfigureTeamsFormProps {
-  normalizedIssues?: Array<NormalizedIssue>;
-  onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
+export interface AllTeamsDefaultFormProps {
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
-  userData: Partial<DefaultFormFields>;
+  userData: Configuration;
+  augmented: Configuration;
 }
 
 export type DefaultFormFields = Configuration;
@@ -32,20 +31,19 @@ export interface FieldUpdates<TProperty extends keyof DefaultFormFields> {
   value: DefaultFormFields[TProperty];
 }
 
-const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData }) => {
+const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ onUpdate, userData, augmented }) => {
   const save = useSaveGlobalTeamConfiguration({ onUpdate });
 
   const jiraFields = useJiraIssueFields();
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
   const { register, handleSubmit, getValues, control } = useForm<DefaultFormFields>({
-    defaultValues: addDefaultFormData(jiraFields, userData),
+    defaultValues: augmented,
   });
 
   function update<TProperty extends keyof DefaultFormFields>({ name, value }: FieldUpdates<TProperty>) {
-    const values = getValues();
-
-    save({ ...values, [name]: value });
+    // const values = getValues();
+    // save({ ...values, [name]: value });
   }
 
   return (
@@ -127,4 +125,4 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData })
   );
 };
 
-export default ConfigureTeamsForm;
+export default AllTeamsDefaultForm;

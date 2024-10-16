@@ -35,6 +35,7 @@
     "@atlaskit/textfield": "^6.5.2",
     "@atlaskit/toggle": "^13.4.4",
     "@atlaskit/tokens": "^2.0.0",
+    "@atlaskit/tooltip": "^18.8.3",
     "@rollup/plugin-babel": "^6.0.4",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/react-query": "^5.56.2",

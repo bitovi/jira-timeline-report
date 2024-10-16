@@ -11,9 +11,10 @@ import TeamSelector, { TeamSelectorProps } from "./components/TeamSelector";
 import SidebarButton from "../components/SidebarButton";
 import { useJiraIssueFields } from "./services/jira";
 import { useAllTeamData } from "./components/Teams/services/team-configuration";
+import ConfigureAllTeams from "./components/Teams/ConfigureAllTeams";
 
 export interface ConfigurationPanelProps
-  extends Pick<TeamConfigurationWrapperProps, "onInitialDefaultsLoad" | "onUpdate" | "storage">,
+  extends Pick<TeamConfigurationWrapperProps, "onUpdate" | "storage">,
     TeamSelectorProps {
   onBackButtonClicked: () => void;
 }
@@ -48,14 +49,14 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
       </div>
       {selectedTeam === "global" && (
         <div className="w-96">
-          <div>global</div>
+          <ConfigureAllTeams jiraFields={jiraFields} {...props} />
         </div>
       )}
-      {
+      {!!selectedTeam && selectedTeam !== "global" && (
         <div className="w-96">
           <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...props} />
         </div>
-      }
+      )}
     </div>
   );
 };

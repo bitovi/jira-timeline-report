@@ -23,9 +23,7 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ storage, 
           </div>
         }
       >
-        <StorageProvider storage={storage}>
-          <ConfigureTeams {...props} />
-        </StorageProvider>
+        <ConfigureTeams {...props} />
       </Suspense>
     </ErrorBoundary>
   );

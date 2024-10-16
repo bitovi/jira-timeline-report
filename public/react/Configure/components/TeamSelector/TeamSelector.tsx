@@ -6,10 +6,12 @@ import SettingsIcon from "@atlaskit/icon/glyph/settings";
 import ArrowRightCircleIcon from "@atlaskit/icon/glyph/arrow-right-circle";
 import PeopleGroupIcon from "@atlaskit/icon/glyph/people-group";
 import { Label } from "@atlaskit/form";
+import EditorUnlinkIcon from "@atlaskit/icon/glyph/editor/unlink";
 
 import SidebarButton from "../../../components/SidebarButton";
 import { CanObservable, useCanObservable } from "../../../hooks/useCanObservable";
 import Hr from "../../../components/Hr";
+import Tooltip from "@atlaskit/tooltip";
 
 export interface TeamSelectorProps {
   teamsFromStorage: string[];
@@ -27,7 +29,9 @@ const TeamSelector: FC<TeamSelectorProps> = ({
   const derivedIssues = useCanObservable(derivedIssuesObservable);
   const derivedTeams = getDerivedTeams(derivedIssues);
 
-  const teams = mergeTeams(derivedTeams, teamsFromStorage);
+  const teams = mergeTeams(derivedTeams, teamsFromStorage)
+    .filter(({ name }) => name !== "__GLOBAL__")
+    .sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
 
   console.log({ derivedIssues, teams, teamsFromStorage });
 
@@ -53,8 +57,13 @@ const TeamSelector: FC<TeamSelectorProps> = ({
             onClick={() => setSelectedTeam(team.name)}
           >
             <PeopleGroupIcon label={`${team} settings`} />
-            <p className="flex-1">
-              Team {team.name} ({team.status})
+            <p className="flex-1 flex justify-between items-center">
+              Team {team.name}{" "}
+              {team.status !== "in-both" && (
+                <Tooltip position="top" content={getStatusText(team.status)}>
+                  <EditorUnlinkIcon label="unlinked team data" />
+                </Tooltip>
+              )}
             </p>
             {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
           </SidebarButton>
@@ -71,7 +80,7 @@ const getDerivedTeams = (derivedIssue: TeamSelectorProps["derivedIssuesObservabl
     return [];
   }
 
-  return [...new Set(derivedIssue.map(({ team }) => team.name))].sort();
+  return [...new Set(derivedIssue.map(({ team }) => team.name))];
 };
 
 const mergeTeams = (
@@ -94,4 +103,12 @@ const mergeTeams = (
 
     return { name, status: "only-storage" };
   });
+};
+
+const getStatusText = (status: "only-derived" | "only-storage") => {
+  if (status === "only-derived") {
+    return "Team does not exist in storage";
+  }
+
+  return "Team does not exist in derrived issues";
 };

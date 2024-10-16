@@ -6,17 +6,18 @@ import { UseFormReturn } from "react-hook-form";
 
 import Toggle from "../Toggle";
 import TextField from "../TextField";
-import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
+import { FieldUpdates } from "../../ConfigureTeamsForm";
+import { Configuration } from "../../services/team-configuration/data";
 
 interface EnableableTextFieldProps {
   min?: number;
   toggleLabel: string;
   toggleDescription: string;
   type: string;
-  name: keyof DefaultFormFields;
+  name: keyof Configuration;
   textFieldLabel: string;
-  register: UseFormReturn<DefaultFormFields>["register"];
-  onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
+  register: UseFormReturn<Configuration>["register"];
+  onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
   message?: string;
 }
 

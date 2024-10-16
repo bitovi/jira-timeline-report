@@ -12,8 +12,8 @@ export const useAccordion = () => {
   return context;
 };
 
-const Accordion: FC<{ children: ReactNode }> = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(true);
+const Accordion: FC<{ children: ReactNode; startsOpen?: boolean }> = ({ children, startsOpen = false }) => {
+  const [isOpen, setIsOpen] = useState(startsOpen);
 
   return (
     <AccordionContext.Provider value={{ isOpen, setIsOpen }}>
