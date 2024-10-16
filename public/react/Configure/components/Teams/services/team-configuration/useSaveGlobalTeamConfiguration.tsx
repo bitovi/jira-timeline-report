@@ -1,5 +1,5 @@
 import type { UseMutateFunction } from "@tanstack/react-query";
-import type { Configuration } from "./data";
+import type { Configuration } from "./team-configuration";
 import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
 
 import React from "react";

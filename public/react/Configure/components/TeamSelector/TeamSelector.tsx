@@ -46,6 +46,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
       </SidebarButton>
       <Hr />
       <Label htmlFor="">TEAMS</Label>
+      {derivedTeams.length === 0 && <div>Derived Teams Not Found</div>}
       {teams.map((team) => {
         return (
           <SidebarButton
@@ -56,12 +57,12 @@ const TeamSelector: FC<TeamSelectorProps> = ({
           >
             <PeopleGroupIcon label={`${team} settings`} />
             <div className="flex-1 flex justify-between items-center">
-              Team {team.name}{" "}
-              {team.status !== "in-both" && (
+              Team {team.name} 🚧
+              {/* {team.status !== "in-both" && (
                 <Tooltip position="top" content={getStatusText(team.status)}>
                   <EditorUnlinkIcon label="unlinked team data" />
                 </Tooltip>
-              )}
+              )} */}
             </div>
             {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
           </SidebarButton>

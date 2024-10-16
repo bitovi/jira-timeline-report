@@ -16,7 +16,7 @@ import {
   getAllTeamData,
   applyGlobalDefaultData,
   applyInheritance,
-} from "../react/Configure/components/Teams/services/team-configuration/data.js";
+} from "../react/Configure/components/Teams/services/team-configuration";
 import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 
 import {

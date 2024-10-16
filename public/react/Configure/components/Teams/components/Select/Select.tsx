@@ -1,13 +1,13 @@
 import type { FC } from "react";
 import type { Control } from "react-hook-form";
+import type { Configuration } from "../../services/team-configuration";
+import type { FieldUpdates } from "../../ConfigureTeamsForm";
 
 import React, { useId } from "react";
 import { Controller } from "react-hook-form";
 import AtlasSelect from "@atlaskit/select";
 
 import Label from "../Label";
-import { FieldUpdates } from "../../ConfigureTeamsForm";
-import { Configuration } from "../../services/team-configuration/data";
 
 interface SelectProps {
   control: Control<Configuration>;

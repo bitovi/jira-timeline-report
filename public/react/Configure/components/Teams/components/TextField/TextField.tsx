@@ -1,13 +1,12 @@
 import type { FC } from "react";
 import type { FieldUpdates } from "../../ConfigureTeamsForm";
+import type { Configuration } from "../../services/team-configuration";
 
 import React from "react";
 
 import AtlasTextField from "@atlaskit/textfield";
 import { UseFormReturn } from "react-hook-form";
 import { Field } from "@atlaskit/form";
-
-import { Configuration } from "../../services/team-configuration/data";
 
 interface TextFieldProps {
   disabled?: boolean;

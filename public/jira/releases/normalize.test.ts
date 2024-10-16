@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { normalizeReleases } from "./normalize";
 import { normalizeIssue } from "../normalized/normalize";
-import { JiraIssue, ParentIssue } from "../shared/types";
+import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
 
 const issue: JiraIssue = {
   id: "1",
@@ -60,21 +60,15 @@ const derivedIssues = normalizeIssue(issue, {});
 
 describe("normalizeReleases", () => {
   it("should return an empty array when no releases are found", () => {
-    const normalizedIssues = [];
-    const result = normalizeReleases(
-      normalizedIssues,
-      rollupTimingLevelsAndCalculations
-    );
+    const normalizedIssues: Array<NormalizedIssue> = [];
+    const result = normalizeReleases(normalizedIssues, rollupTimingLevelsAndCalculations);
     expect(result).toEqual([]);
   });
 
   it('should normalize releases when the type "Release" exists in rollupTimingLevelsAndCalculations', () => {
     const normalizedIssues = [normalizeIssue(issue, {})];
 
-    const result = normalizeReleases(
-      normalizedIssues,
-      rollupTimingLevelsAndCalculations
-    );
+    const result = normalizeReleases(normalizedIssues, rollupTimingLevelsAndCalculations);
 
     expect(result).toEqual([
       {
@@ -103,10 +97,7 @@ describe("normalizeReleases", () => {
 
     const normalizedIssues = [normalizeIssue(issue, {})];
 
-    const result = normalizeReleases(
-      normalizedIssues,
-      timingLevelsWithoutRelease
-    );
+    const result = normalizeReleases(normalizedIssues, timingLevelsWithoutRelease);
 
     expect(result).toEqual([]);
   });
@@ -122,10 +113,7 @@ describe("normalizeReleases", () => {
 
     const normalizedIssues = [normalizeIssue(issue, {})];
 
-    const result = normalizeReleases(
-      normalizedIssues,
-      timingLevelsWithOnlyRelease
-    );
+    const result = normalizeReleases(normalizedIssues, timingLevelsWithOnlyRelease);
 
     expect(result).toEqual([]);
   });
@@ -158,10 +146,7 @@ describe("normalizeReleases", () => {
 
     const normalizedIssues = [normalizeIssue(issueWithMultipleReleases, {})];
 
-    const result = normalizeReleases(
-      normalizedIssues,
-      rollupTimingLevelsAndCalculations
-    );
+    const result = normalizeReleases(normalizedIssues, rollupTimingLevelsAndCalculations);
 
     expect(result).toEqual([
       {

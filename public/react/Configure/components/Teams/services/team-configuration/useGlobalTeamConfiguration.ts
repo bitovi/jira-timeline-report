@@ -1,4 +1,4 @@
-import type { Configuration } from "./data";
+import type { Configuration } from "./team-configuration";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 

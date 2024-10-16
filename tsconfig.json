@@ -29,6 +29,5 @@
     "node_modules",
     "public/dist",
     "**/*.js",
-    "**/*.test.ts", "**/*.spec.ts"
   ]
 }

@@ -1,6 +1,5 @@
-import { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
-import { fields } from "../../../../../jira/raw/rollback/rollback";
-import { Configuration } from "../services/team-configuration/data";
+import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
+import type { Configuration } from "../services/team-configuration";
 
 export const createNormalizeConfiguration = (values?: Configuration | undefined): Partial<NormalizeIssueConfig> => {
   if (!values) {

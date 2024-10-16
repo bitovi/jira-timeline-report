@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { IssueFields, TeamConfiguration } from "./services/team-configuration/data";
+import type { IssueFields, TeamConfiguration } from "./services/team-configuration";
 
 import React from "react";
 import Heading from "@atlaskit/heading";

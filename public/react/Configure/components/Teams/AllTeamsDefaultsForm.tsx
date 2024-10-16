@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import type { Configuration, IssueFields } from "./services/team-configuration/data";
+import type { Configuration, IssueFields } from "./services/team-configuration";
 
 import React from "react";
 import { useForm } from "react-hook-form";

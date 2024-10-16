@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import type { Configuration } from "../../services/team-configuration";
 
 import React, { useState } from "react";
 import { HelperMessage } from "@atlaskit/form";
@@ -7,7 +8,6 @@ import { UseFormReturn } from "react-hook-form";
 import Toggle from "../Toggle";
 import TextField from "../TextField";
 import { FieldUpdates } from "../../ConfigureTeamsForm";
-import { Configuration } from "../../services/team-configuration/data";
 
 interface EnableableTextFieldProps {
   min?: number;
@@ -39,7 +39,7 @@ const EnableableTextField: FC<EnableableTextFieldProps> = ({
   return (
     <div>
       <Toggle isChecked={enabled} onChange={() => setEnabled((prev) => !prev)} {...toggleProps} />
-      {/* <TextField disabled={enabled} {...textFieldProps} /> */}
+      <TextField disabled={enabled} {...textFieldProps} />
       <HelperMessage>{message}</HelperMessage>
     </div>
   );

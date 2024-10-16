@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
-import type { IssueFields } from "./services/team-configuration/data";
+import type { IssueFields } from "./services/team-configuration";
 
 import React from "react";
 import { ErrorBoundary } from "react-error-boundary";

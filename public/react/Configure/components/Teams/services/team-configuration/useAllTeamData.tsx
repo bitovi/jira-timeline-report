@@ -1,25 +1,22 @@
+import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
+import type { AllTeamData, Configuration, IssueFields, TeamConfiguration } from "./team-configuration";
+
+import React from "react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useFlags } from "@atlaskit/flag";
 import ErrorIcon from "@atlaskit/icon/glyph/error";
 
 import { useStorage } from "../../../../services/storage";
 import { updateTeamConfigurationKeys } from "./key-factory";
 import {
-  AllTeamData,
   applyGlobalDefaultData,
   applyInheritance,
-  Configuration,
   createEmptyTeamConfiguration,
   createUpdatedTeamData,
   getAllTeamData,
-  IssueFields,
-  TeamConfiguration,
   updateAllTeamData,
-} from "./data";
-import { useFlags } from "@atlaskit/flag";
+} from "./team-configuration";
 import { createNormalizeConfiguration } from "../../shared/normalize";
-
-import React from "react";
-import { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
 
 export type UseAllTeamData = (jiraFields: IssueFields) => {
   userAllTeamData: AllTeamData;

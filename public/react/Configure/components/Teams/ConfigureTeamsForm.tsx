@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import type { NormalizedIssue } from "../../../../jira/shared/types";
+import type { Configuration, IssueFields } from "./services/team-configuration";
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 
 import React, { useEffect } from "react";
@@ -14,7 +14,6 @@ import Hr from "../../../components/Hr";
 
 import { useSaveGlobalTeamConfiguration } from "./services/team-configuration";
 
-import { Configuration, IssueFields } from "./services/team-configuration/data";
 // import EnableableTextField from "./components/EnableableTextField";
 
 export interface ConfigureTeamsFormProps {
