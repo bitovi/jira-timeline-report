@@ -1,20 +1,20 @@
 import type { FC } from "react";
 import type { Control } from "react-hook-form";
+import type { Configuration } from "../../services/team-configuration";
+import type { FieldUpdates } from "../../ConfigureTeamsForm";
 
 import React, { useId } from "react";
 import { Controller } from "react-hook-form";
 import AtlasSelect from "@atlaskit/select";
 
 import Label from "../Label";
-import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
-import { TeamConfiguration } from "../../services/team-configuration";
 
 interface SelectProps {
-  control: Control<TeamConfiguration>;
-  name: keyof DefaultFormFields;
+  control: Control<Configuration>;
+  name: keyof Configuration;
   label: string;
   jiraFields: Array<{ label: string; value: string }>;
-  onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
+  onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
 const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave }) => {

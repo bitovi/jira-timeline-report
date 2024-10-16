@@ -1,32 +1,56 @@
 import type { FC } from "react";
-import type { ConfigureTeamsFormProps } from "./ConfigureTeamsForm";
+import type { IssueFields, TeamConfiguration } from "./services/team-configuration";
 
 import React from "react";
 import Heading from "@atlaskit/heading";
 
 import { Accordion, AccordionContent, AccordionTitle } from "../../../components/Accordion";
-import { StorageNeedsConfigured } from "../../services/storage";
-import { useGlobalTeamConfiguration } from "./services/team-configuration";
+
+import { useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
 
-interface ConfigureTeamsProps extends Omit<ConfigureTeamsFormProps, "userData"> {}
+import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 
-const ConfigureTeams: FC<ConfigureTeamsProps> = (props) => {
-  const userData = useGlobalTeamConfiguration();
+export interface ConfigureTeamsProps {
+  onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
+  teamName: string;
+  jiraFields: IssueFields;
+}
 
-  if (!userData) {
-    return <StorageNeedsConfigured />;
-  }
+const issueNameMapping: Record<keyof TeamConfiguration, string> = {
+  defaults: "Team default",
+  outcome: "Outcomes",
+  milestones: "Milestones",
+  initiatives: "Initiatives",
+  epics: "Epics",
+  stories: "Stores",
+};
+
+const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, ...props }) => {
+  const { userTeamData, augmentedTeamData } = useTeamData(teamName, jiraFields);
 
   return (
-    <Accordion>
-      <AccordionTitle>
-        <Heading size="small">Global default</Heading>
-      </AccordionTitle>
-      <AccordionContent>
-        <ConfigureTeamsForm userData={userData} {...props} />
-      </AccordionContent>
-    </Accordion>
+    <>
+      {Object.keys(augmentedTeamData).map((rawKey) => {
+        const key = rawKey as keyof TeamConfiguration;
+
+        return (
+          <Accordion key={key} startsOpen={key === "defaults"}>
+            <AccordionTitle>
+              <Heading size="small">{issueNameMapping[key]}</Heading>
+            </AccordionTitle>
+            <AccordionContent>
+              <ConfigureTeamsForm
+                jiraFields={jiraFields}
+                userData={userTeamData[key]}
+                augmented={augmentedTeamData[key]}
+                {...props}
+              />
+            </AccordionContent>
+          </Accordion>
+        );
+      })}
+    </>
   );
 };
 

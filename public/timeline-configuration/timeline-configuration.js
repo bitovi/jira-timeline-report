@@ -12,7 +12,11 @@ import { createElement } from "react";
 
 import TeamConfigure from "../react/Configure";
 
-import { getFormData } from "../react/Configure/components/Teams/services/team-configuration";
+import {
+  getAllTeamData,
+  applyGlobalDefaultData,
+  applyInheritance,
+} from "../react/Configure/components/Teams/services/team-configuration";
 import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 //import { getTeamData } from "../stateful-data/jira-data-requests.js";
 
@@ -226,7 +230,7 @@ export class TimelineConfiguration extends StacheElement {
         return [];
       }
     },
-    get isShowingTeams(){
+    get isShowingTeams() {
       return this.showSettings === "TEAMS";
     },
     goBack() {
@@ -235,10 +239,9 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
-    
-    //getTeamData({jiraHelpers: this.jiraHelpers, storage: this.storage, isLoggedIn: this.isLoggedIn})
-    getFormData(this.jiraHelpers, this.storage)
-      .then(createNormalizeConfiguration)
+    getAllTeamData(this.storage)
+      .then((data) => applyInheritance("__GLOBAL__", applyGlobalDefaultData(data)))
+      .then((allTeamData) => createNormalizeConfiguration(allTeamData.__GLOBAL__.defaults))
       .catch(() => {
         // Could fail because storage hasn't been setup yet
         return {};
@@ -251,16 +254,14 @@ export class TimelineConfiguration extends StacheElement {
       createElement(TeamConfigure, {
         storage: this.storage,
         jira: this.jiraHelpers,
+        derivedIssuesObservable: value.from(this, "derivedIssues"),
+        showingTeamsObservable: value.from(this, "isShowingTeams"),
         onUpdate: (partial) => {
           this.normalizeOptions = partial;
         },
-        //onInitialDefaultsLoad: (partial) => {
-        //  this.normalizeOptions = partial;
-        //},
         onBackButtonClicked: () => {
           this.showSettings = "";
         },
-        showingTeamsObs: value.from(this,"isShowingTeams")
       })
     );
   }

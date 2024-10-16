@@ -1,12 +1,12 @@
 import type { ComponentProps, FC } from "react";
+import type { Configuration } from "../../services/team-configuration";
 
 import React, { useId } from "react";
 import AtlasToggle from "@atlaskit/toggle";
 
 import Label from "../Label";
 import { Control, Controller } from "react-hook-form";
-import { isFieldUpdate, TeamConfiguration } from "../../services/team-configuration";
-import { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
+import { FieldUpdates } from "../../ConfigureTeamsForm";
 
 interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, "onChange" | "isChecked"> {
   label: string;
@@ -34,11 +34,11 @@ const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked }) =>
 export default Toggle;
 
 interface FormToggleProps {
-  name: keyof DefaultFormFields;
+  name: keyof Configuration;
   label: string;
   description: string;
-  control: Control<TeamConfiguration>;
-  onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
+  control: Control<Configuration>;
+  onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
 export const FormToggle: FC<FormToggleProps> = ({ name, label, description, control, onSave }) => {

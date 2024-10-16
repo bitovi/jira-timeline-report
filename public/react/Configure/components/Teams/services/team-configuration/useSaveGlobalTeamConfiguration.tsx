@@ -1,5 +1,5 @@
 import type { UseMutateFunction } from "@tanstack/react-query";
-import type { TeamConfiguration } from "./reconcile";
+import type { Configuration } from "./team-configuration";
 import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
 
 import React from "react";
@@ -13,7 +13,7 @@ import { createNormalizeConfiguration } from "../../shared/normalize";
 
 export type UseSaveDefaultConfiguration = (config: {
   onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
-}) => UseMutateFunction<void, Error, TeamConfiguration>;
+}) => UseMutateFunction<void, Error, Configuration>;
 
 export const useSaveGlobalTeamConfiguration: UseSaveDefaultConfiguration = ({ onUpdate }) => {
   const queryClient = useQueryClient();
@@ -21,9 +21,9 @@ export const useSaveGlobalTeamConfiguration: UseSaveDefaultConfiguration = ({ on
   const { showFlag } = useFlags();
   const { update } = useStorage();
 
-  const { mutate } = useMutation<void, Error, TeamConfiguration>({
+  const { mutate } = useMutation<void, Error, Configuration>({
     mutationFn: (values) => {
-      return update<TeamConfiguration>(globalTeamConfigurationStorageKey, values);
+      return update<Configuration>(globalTeamConfigurationStorageKey, values);
     },
     onSuccess: (_, updatedValues) => {
       onUpdate?.(createNormalizeConfiguration(updatedValues));

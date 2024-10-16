@@ -1,23 +1,33 @@
 import type { FC } from "react";
-// TODO move to shared
-import type { TeamConfigurationWrapperProps } from "./components/Teams";
+import type { NormalizeIssueConfig } from "../../jira/normalized/normalize";
+import type { CanObservable } from "../hooks/useCanObservable";
 
 import React, { useState } from "react";
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
 
 import ConfigureTeams from "./components/Teams";
 import TeamSelector from "./components/TeamSelector";
-
 import SidebarButton from "../components/SidebarButton";
+import ConfigureAllTeams from "./components/Teams/ConfigureAllTeams";
+import { useJiraIssueFields } from "./services/jira";
+import { useAllTeamData } from "./components/Teams/services/team-configuration";
 
-export interface ConfigurationPanelProps
-  extends Pick<TeamConfigurationWrapperProps, "onInitialDefaultsLoad" | "onUpdate" | "storage"> {
+export interface ConfigurationPanelProps {
   onBackButtonClicked: () => void;
+  onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
+  derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
 }
 
 type TeamName = "global" | (string & {});
 
-const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ onBackButtonClicked, ...props }) => {
+const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
+  onBackButtonClicked,
+  derivedIssuesObservable,
+  ...configurationProps
+}) => {
+  const jiraFields = useJiraIssueFields();
+  const { userAllTeamData } = useAllTeamData(jiraFields);
+
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
 
   return (
@@ -27,11 +37,21 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ onBackButtonClicked, 
           <ArrowLeftCircleIcon label="go back" />
           Go back
         </SidebarButton>
-        <TeamSelector selectedTeam={selectedTeam} setSelectedTeam={setSelectedTeam} />
+        <TeamSelector
+          teamsFromStorage={Object.keys(userAllTeamData)}
+          selectedTeam={selectedTeam}
+          setSelectedTeam={setSelectedTeam}
+          derivedIssuesObservable={derivedIssuesObservable}
+        />
       </div>
       {selectedTeam === "global" && (
         <div className="w-96">
-          <ConfigureTeams {...props} />
+          <ConfigureAllTeams jiraFields={jiraFields} {...configurationProps} />
+        </div>
+      )}
+      {!!selectedTeam && selectedTeam !== "global" && (
+        <div className="w-96">
+          <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
         </div>
       )}
     </div>
