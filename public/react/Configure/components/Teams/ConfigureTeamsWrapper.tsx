@@ -6,11 +6,10 @@ import React, { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import Spinner from "@atlaskit/spinner";
 
-import ConfigureTeams from "./ConfigureTeams";
+import ConfigureTeams, { ConfigureTeamsProps } from "./ConfigureTeams";
 import { StorageProvider } from "../../services/storage";
 
-export interface TeamConfigurationWrapperProps
-  extends Pick<ConfigureTeamsFormProps, "onUpdate" | "onInitialDefaultsLoad"> {
+export interface TeamConfigurationWrapperProps extends ConfigureTeamsProps {
   storage: AppStorage;
 }
 

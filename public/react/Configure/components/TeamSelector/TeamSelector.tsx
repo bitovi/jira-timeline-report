@@ -12,16 +12,24 @@ import { CanObservable, useCanObservable } from "../../../hooks/useCanObservable
 import Hr from "../../../components/Hr";
 
 export interface TeamSelectorProps {
+  teamsFromStorage: string[];
   selectedTeam: "global" | (string & {});
   setSelectedTeam: (team: string) => void;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
 }
 
-const TeamSelector: FC<TeamSelectorProps> = ({ selectedTeam, setSelectedTeam, derivedIssuesObservable }) => {
+const TeamSelector: FC<TeamSelectorProps> = ({
+  selectedTeam,
+  setSelectedTeam,
+  teamsFromStorage,
+  derivedIssuesObservable,
+}) => {
   const derivedIssues = useCanObservable(derivedIssuesObservable);
-  const teams = getDerivedTeams(derivedIssues);
+  const derivedTeams = getDerivedTeams(derivedIssues);
 
-  console.log({ derivedIssues, teams });
+  const teams = mergeTeams(derivedTeams, teamsFromStorage);
+
+  console.log({ derivedIssues, teams, teamsFromStorage });
 
   return (
     <>
@@ -39,14 +47,16 @@ const TeamSelector: FC<TeamSelectorProps> = ({ selectedTeam, setSelectedTeam, de
       {teams.map((team) => {
         return (
           <SidebarButton
-            key={team}
+            key={team.name}
             className="mt-2"
-            isActive={selectedTeam === team}
-            onClick={() => setSelectedTeam(team)}
+            isActive={selectedTeam === team.name}
+            onClick={() => setSelectedTeam(team.name)}
           >
             <PeopleGroupIcon label={`${team} settings`} />
-            <p className="flex-1">Team {team}</p>
-            {selectedTeam === team && <ArrowRightCircleIcon label={`${team} settings selected`} />}
+            <p className="flex-1">
+              Team {team.name} ({team.status})
+            </p>
+            {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
           </SidebarButton>
         );
       })}
@@ -62,4 +72,26 @@ const getDerivedTeams = (derivedIssue: TeamSelectorProps["derivedIssuesObservabl
   }
 
   return [...new Set(derivedIssue.map(({ team }) => team.name))].sort();
+};
+
+const mergeTeams = (
+  derivedTeams: string[],
+  teamsFromStorage: string[]
+): Array<{ name: string; status: "only-derived" | "only-storage" | "in-both" }> => {
+  const allNames = [...new Set([...derivedTeams, ...teamsFromStorage])];
+
+  return allNames.map((name) => {
+    const inDerived = derivedTeams.includes(name);
+    const inStorage = teamsFromStorage.includes(name);
+
+    if (inDerived && inStorage) {
+      return { name, status: "in-both" };
+    }
+
+    if (inDerived) {
+      return { name, status: "only-derived" };
+    }
+
+    return { name, status: "only-storage" };
+  });
 };

@@ -30,6 +30,6 @@ export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
 
   return {
     userTeamData: userAllTeamData[teamName],
-    augmentedTeamData: applyInheritance(teamName, augmentedAllTeamData),
+    augmentedTeamData: applyInheritance(teamName, augmentedAllTeamData)[teamName],
   };
 };

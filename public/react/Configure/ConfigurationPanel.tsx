@@ -9,6 +9,8 @@ import ConfigureTeams from "./components/Teams";
 import TeamSelector, { TeamSelectorProps } from "./components/TeamSelector";
 
 import SidebarButton from "../components/SidebarButton";
+import { useJiraIssueFields } from "./services/jira";
+import { useAllTeamData } from "./components/Teams/services/team-configuration";
 
 export interface ConfigurationPanelProps
   extends Pick<TeamConfigurationWrapperProps, "onInitialDefaultsLoad" | "onUpdate" | "storage">,
@@ -23,7 +25,12 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
   derivedIssuesObservable,
   ...props
 }) => {
+  const jiraFields = useJiraIssueFields();
+  const { userAllTeamData, augmentedAllTeamData } = useAllTeamData(jiraFields);
+
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
+
+  console.log({ userAllTeamData, augmentedAllTeamData, selectedTeam });
 
   return (
     <div className="w-full h-full flex">
@@ -33,6 +40,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
           Go back
         </SidebarButton>
         <TeamSelector
+          teamsFromStorage={Object.keys(userAllTeamData)}
           selectedTeam={selectedTeam}
           setSelectedTeam={setSelectedTeam}
           derivedIssuesObservable={derivedIssuesObservable}
@@ -40,9 +48,14 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
       </div>
       {selectedTeam === "global" && (
         <div className="w-96">
-          <ConfigureTeams {...props} />
+          <div>global</div>
         </div>
       )}
+      {
+        <div className="w-96">
+          <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...props} />
+        </div>
+      }
     </div>
   );
 };

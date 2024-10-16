@@ -73,6 +73,10 @@ export const getAllTeamData = async (storage: AppStorage): Promise<AllTeamData> 
     return createEmptyAllTeamsData();
   }
 
+  if (Object.keys(data).length === 0) {
+    return createEmptyAllTeamsData();
+  }
+
   return data;
 };
 

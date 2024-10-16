@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, Mock, test, vi } from "vitest";
 import { deriveWorkTiming, DerivedWorkTiming } from "./work-timing";
 import { NormalizedIssue, NormalizedTeam } from "../../shared/types";
-import {
-  estimateExtraPoints,
-  sampleExtraPoints,
-} from "../../../shared/confidence";
+import { estimateExtraPoints, sampleExtraPoints } from "../../../shared/confidence";
 
 vi.mock("../../../shared/confidence", () => ({
   estimateExtraPoints: vi.fn(),
@@ -22,12 +19,12 @@ describe("work-timing", () => {
     velocity: 100,
     parallelWorkLimit: 5,
     pointsPerDayPerTrack: 10,
+    spreadEffortAcrossDates: false,
   };
 
   const defaultOptions = {
     getDefaultConfidence: (team: NormalizedTeam) => 50,
-    getDefaultStoryPoints: (team: NormalizedTeam) =>
-      team.velocity / team.parallelWorkLimit,
+    getDefaultStoryPoints: (team: NormalizedTeam) => team.velocity / team.parallelWorkLimit,
     uncertaintyWeight: 80,
   };
 
@@ -55,10 +52,7 @@ describe("work-timing", () => {
     mockEstimateExtraPoints.mockReturnValue(5);
     mockSampleExtraPoints.mockReturnValue(4);
 
-    const result: DerivedWorkTiming = deriveWorkTiming(
-      normalizedIssue,
-      defaultOptions
-    );
+    const result: DerivedWorkTiming = deriveWorkTiming(normalizedIssue, defaultOptions);
     expect(result.isConfidenceValid).toBe(true);
     expect(result.usedConfidence).toBe(70);
     expect(result.isStoryPointsValid).toBe(true);
@@ -128,10 +122,7 @@ describe("work-timing", () => {
     mockEstimateExtraPoints.mockReturnValue(0);
     mockSampleExtraPoints.mockReturnValue(0);
 
-    const result: DerivedWorkTiming = deriveWorkTiming(
-      normalizedIssue,
-      defaultOptions
-    );
+    const result: DerivedWorkTiming = deriveWorkTiming(normalizedIssue, defaultOptions);
 
     expect(result.isConfidenceValid).toBe(false);
     expect(result.usedConfidence).toBe(50);

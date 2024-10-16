@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { DefaultFormFields, FieldUpdates } from "../../ConfigureTeamsForm";
+import type { FieldUpdates } from "../../ConfigureTeamsForm";
 
 import React from "react";
 
@@ -8,16 +8,17 @@ import { UseFormReturn } from "react-hook-form";
 import { Field } from "@atlaskit/form";
 
 import { isFieldUpdate } from "../../services/team-configuration";
+import { Configuration } from "../../services/team-configuration/data";
 
 interface TextFieldProps {
   disabled?: boolean;
   type: string;
-  name: keyof DefaultFormFields;
+  name: keyof Configuration;
   label: string;
   min?: number;
   unit?: string;
-  register: UseFormReturn<DefaultFormFields>["register"];
-  onSave: <TProperty extends keyof DefaultFormFields>(config: FieldUpdates<TProperty>) => void;
+  register: UseFormReturn<Configuration>["register"];
+  onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
 const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min, unit, disabled = false }) => {

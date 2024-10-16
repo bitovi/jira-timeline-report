@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "react-error-boundary";
@@ -10,6 +10,7 @@ import ConfigurationPanel, { ConfigurationPanelProps } from "./ConfigurationPane
 
 // TODO: Move type to module
 import jiraOidcHelpers from "../../jira-oidc-helpers";
+import { StorageProvider } from "./services/storage";
 type Jira = ReturnType<typeof jiraOidcHelpers>;
 
 const queryClient = new QueryClient();
@@ -21,13 +22,17 @@ interface TeamConfigurationWrapperProps extends ConfigurationPanelProps {
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({ jira, ...props }) => {
   return (
     <ErrorBoundary fallbackRender={({ error }) => error?.message || "Something went wrong"}>
-      <QueryClientProvider client={queryClient}>
-        <FlagsProvider>
-          <JiraProvider jira={jira}>
-            <ConfigurationPanel {...props} />
-          </JiraProvider>
-        </FlagsProvider>
-      </QueryClientProvider>
+      <Suspense>
+        <StorageProvider storage={props.storage}>
+          <QueryClientProvider client={queryClient}>
+            <FlagsProvider>
+              <JiraProvider jira={jira}>
+                <ConfigurationPanel {...props} />
+              </JiraProvider>
+            </FlagsProvider>
+          </QueryClientProvider>
+        </StorageProvider>
+      </Suspense>
     </ErrorBoundary>
   );
 };
