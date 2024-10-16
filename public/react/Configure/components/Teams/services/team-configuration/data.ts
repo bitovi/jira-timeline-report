@@ -216,13 +216,12 @@ export const applyInheritance = (teamName: keyof AllTeamData, allTeamData: AllTe
   };
 };
 
-export const updateTeamData = <TField extends keyof Configuration>(
+export const createUpdatedTeamData = (
   allTeamData: AllTeamData,
   config: {
     teamName: keyof AllTeamData;
     issueType: keyof TeamConfiguration;
-    field: TField;
-    value: Configuration[TField];
+    configuration: Configuration;
   }
 ): AllTeamData => {
   const teamData = allTeamData[config.teamName] ?? createEmptyTeamConfiguration();
@@ -231,10 +230,11 @@ export const updateTeamData = <TField extends keyof Configuration>(
     ...allTeamData,
     [config.teamName]: {
       ...teamData,
-      [config.issueType]: {
-        ...teamData?.[config.issueType],
-        [config.field]: config.value,
-      },
+      [config.issueType]: { ...config.configuration },
     },
   };
+};
+
+export const updateAllTeamData = async (storage: AppStorage, updates: AllTeamData): Promise<void> => {
+  return storage.update(allTeamDataKey, updates);
 };

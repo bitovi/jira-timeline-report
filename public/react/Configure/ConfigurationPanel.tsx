@@ -31,8 +31,6 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
 
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
 
-  console.log({ userAllTeamData, augmentedAllTeamData, selectedTeam });
-
   return (
     <div className="w-full h-full flex">
       <div className="w-56 border-r border-neutral-30 pr-4">

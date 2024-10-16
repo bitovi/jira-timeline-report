@@ -1,15 +1,12 @@
 import type { FC } from "react";
-import type { ConfigureTeamsFormProps } from "./ConfigureTeamsForm";
 
 import React from "react";
 import Heading from "@atlaskit/heading";
 
 import { Accordion, AccordionContent, AccordionTitle } from "../../../components/Accordion";
-import { StorageNeedsConfigured } from "../../services/storage";
-import { useAllTeamData, useGlobalTeamConfiguration, useTeamData } from "./services/team-configuration";
+import { useSaveTeamData, useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
-import { useJiraIssueFields } from "../../services/jira";
-import { createEmptyTeamConfiguration, IssueFields, TeamConfiguration } from "./services/team-configuration/data";
+import { IssueFields, TeamConfiguration } from "./services/team-configuration/data";
 import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 import AllTeamsDefaultForm from "./AllTeamsDefaultsForm";
 
@@ -19,7 +16,7 @@ export interface ConfigureAllTeamsProps {
 }
 
 const issueNameMapping: Record<keyof TeamConfiguration, string> = {
-  defaults: "Team default",
+  defaults: "Global default",
   outcome: "Outcomes",
   milestones: "Milestones",
   initiatives: "Initiatives",
@@ -27,18 +24,10 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
   stories: "Stores",
 };
 
-const logData = (augmentedTeamData: TeamConfiguration, userTeamData: TeamConfiguration) => {
-  console.log("augmented");
-  console.table(augmentedTeamData);
-
-  console.log("userData");
-  console.table(userTeamData);
-};
-
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props }) => {
-  const { userTeamData, augmentedTeamData } = useTeamData("__GLOBAL__", jiraFields);
+  const { userTeamData, augmentedTeamData, allTeamData } = useTeamData("__GLOBAL__", jiraFields);
 
-  logData(augmentedTeamData, userTeamData);
+  const saveDefaults = useSaveTeamData({ teamName: "__GLOBAL__", issueType: "defaults" });
 
   return (
     <>
@@ -47,7 +36,12 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props })
           <Heading size="small">Global defaults</Heading>
         </AccordionTitle>
         <AccordionContent>
-          <AllTeamsDefaultForm userData={userTeamData.defaults} augmented={augmentedTeamData.defaults} {...props} />
+          <AllTeamsDefaultForm
+            save={(configuration) => saveDefaults(allTeamData, configuration)}
+            userData={userTeamData.defaults}
+            augmented={augmentedTeamData.defaults}
+            {...props}
+          />
         </AccordionContent>
       </Accordion>
       {Object.keys(augmentedTeamData)

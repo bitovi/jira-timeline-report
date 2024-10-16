@@ -33,8 +33,6 @@ const TeamSelector: FC<TeamSelectorProps> = ({
     .filter(({ name }) => name !== "__GLOBAL__")
     .sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
 
-  console.log({ derivedIssues, teams, teamsFromStorage });
-
   return (
     <>
       <div className="my-4">
@@ -57,14 +55,14 @@ const TeamSelector: FC<TeamSelectorProps> = ({
             onClick={() => setSelectedTeam(team.name)}
           >
             <PeopleGroupIcon label={`${team} settings`} />
-            <p className="flex-1 flex justify-between items-center">
+            <div className="flex-1 flex justify-between items-center">
               Team {team.name}{" "}
               {team.status !== "in-both" && (
                 <Tooltip position="top" content={getStatusText(team.status)}>
                   <EditorUnlinkIcon label="unlinked team data" />
                 </Tooltip>
               )}
-            </p>
+            </div>
             {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
           </SidebarButton>
         );

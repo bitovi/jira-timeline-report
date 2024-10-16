@@ -28,14 +28,16 @@ interface StorageIssue {
   };
 }
 
+const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
+
 const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
-  const configurationIssues: StorageIssue[] = (await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
+  const configurationIssues: StorageIssue[] = await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
     Summary: string;
     Description: { content: Array<StorageIssueContent> };
   }>({
     jql: `summary ~ "Jira Auto Scheduler Configuration"`,
     fields: ["summary", "Description"],
-  }));
+  });
 
   if (!configurationIssues.length) {
     return null;
@@ -70,6 +72,8 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const [stringifiedStore] = storeContent.content;
       const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
+      console.log("GET", store[key]);
+
       return store[key];
     },
     update: async function <TData>(key: string, value: TData) {
@@ -88,15 +92,22 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const [stringifiedStore] = storeContent.content;
       const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-      jiraHelpers.editJiraIssueWithNamedFields(configurationIssue.id, {
-        Description: {
-          ...configurationIssue.fields.Description,
-          content: [
-            ...configurationIssue.fields.Description.content.filter((content) => content.type !== "codeBlock"),
-            createCodeBlock(JSON.stringify({ ...store, [key]: value })),
-          ],
-        },
-      });
+      console.log("UPDATE", { ...store, [key]: value });
+
+      return (
+        jiraHelpers
+          .editJiraIssueWithNamedFields(configurationIssue.id, {
+            Description: {
+              ...configurationIssue.fields.Description,
+              content: [
+                ...configurationIssue.fields.Description.content.filter((content) => content.type !== "codeBlock"),
+                createCodeBlock(JSON.stringify({ ...store, [key]: value })),
+              ],
+            },
+          })
+          // .then(() => sleep(1_000))
+          .then(() => console.log("done!"))
+      );
     },
   };
 };

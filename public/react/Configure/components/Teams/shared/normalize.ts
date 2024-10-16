@@ -2,7 +2,11 @@ import { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
 import { fields } from "../../../../../jira/raw/rollback/rollback";
 import { Configuration } from "../services/team-configuration/data";
 
-export const createNormalizeConfiguration = (values: Configuration): Partial<NormalizeIssueConfig> => {
+export const createNormalizeConfiguration = (values?: Configuration | undefined): Partial<NormalizeIssueConfig> => {
+  if (!values) {
+    return {};
+  }
+
   return {
     getDaysPerSprint: () => Number(values.sprintLength),
     getVelocity: () => Number(values.velocityPerSprint),

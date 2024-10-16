@@ -30,6 +30,8 @@ const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, mi
     onSave(eventTarget);
   };
 
+  const props = register(name);
+
   return (
     <Field name="sprintLength" label={label} isRequired>
       {() => (
@@ -43,8 +45,11 @@ const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, mi
             min={min}
             autoComplete="off"
             elemAfterInput={unit ? <div>{unit}</div> : null}
-            {...register(name)}
-            onBlur={({ target }) => handleBlur(target)}
+            {...props}
+            onBlur={(e) => {
+              props.onBlur(e);
+              handleBlur(e.target);
+            }}
           />
         </>
       )}
