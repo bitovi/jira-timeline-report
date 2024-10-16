@@ -12,7 +12,11 @@ import { createElement } from "react";
 
 import TeamConfigure from "../react/Configure";
 
-import { getFormData } from "../react/Configure/components/Teams/services/team-configuration";
+import {
+  getAllTeamData,
+  applyGlobalDefaultData,
+  applyInheritance,
+} from "../react/Configure/components/Teams/services/team-configuration/data.js";
 import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 
 import {
@@ -231,8 +235,9 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
-    getFormData(this.jiraHelpers, this.storage)
-      .then(createNormalizeConfiguration)
+    getAllTeamData(this.storage)
+      .then((data) => applyInheritance("__GLOBAL__", applyGlobalDefaultData(data)))
+      .then((allTeamData) => createNormalizeConfiguration(allTeamData.__GLOBAL__.defaults))
       .catch(() => {
         // Could fail because storage hasn't been setup yet
         return {};
@@ -247,9 +252,6 @@ export class TimelineConfiguration extends StacheElement {
         jira: this.jiraHelpers,
         derivedIssuesObservable: value.from(this, "derivedIssues"),
         onUpdate: (partial) => {
-          this.normalizeOptions = partial;
-        },
-        onInitialDefaultsLoad: (partial) => {
           this.normalizeOptions = partial;
         },
         onBackButtonClicked: () => {

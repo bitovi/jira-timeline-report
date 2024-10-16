@@ -7,7 +7,6 @@ import AtlasTextField from "@atlaskit/textfield";
 import { UseFormReturn } from "react-hook-form";
 import { Field } from "@atlaskit/form";
 
-import { isFieldUpdate } from "../../services/team-configuration";
 import { Configuration } from "../../services/team-configuration/data";
 
 interface TextFieldProps {
@@ -19,6 +18,19 @@ interface TextFieldProps {
   unit?: string;
   register: UseFormReturn<Configuration>["register"];
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
+}
+
+export function isFieldUpdate(event: { name: string }): event is { name: keyof Configuration } {
+  return [
+    "sprintLength",
+    "velocityPerSprint",
+    "tracks",
+    "estimateField",
+    "confidenceField",
+    "startDateField",
+    "dueDateField",
+    "spreadEffortAcrossDates",
+  ].includes(event.name);
 }
 
 const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min, unit, disabled = false }) => {
