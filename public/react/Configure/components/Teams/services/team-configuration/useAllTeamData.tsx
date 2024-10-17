@@ -42,12 +42,21 @@ export const useAllTeamData: UseAllTeamData = (jiraFields: IssueFields) => {
 export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
   const { userAllTeamData, augmentedAllTeamData } = useAllTeamData(jiraFields);
 
+  console.log({ userAllTeamData, augmentedAllTeamData });
+
   const userData = userAllTeamData[teamName] || createEmptyTeamConfiguration();
-  const augmented = augmentedAllTeamData[teamName] || applyInheritance(teamName, userAllTeamData)[teamName]!;
+  const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
 
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
+    getInheritance: () => {
+      // Create a team that doesn't exist so the `applyInheritance` recalculates as though it wasn't there
+      // Will need to chance once issue types are introduced
+      const deriveInheritanceKey = `$$__${teamName}__$$`;
+
+      return applyInheritance(deriveInheritanceKey, augmentedAllTeamData)[deriveInheritanceKey]!;
+    },
   };
 };
 
@@ -107,6 +116,7 @@ export const useSaveTeamData = (config: {
   return {
     isSaving,
     save: (updates: Configuration) => {
+      console.log({ updates });
       const allTeamData = queryClient.getQueryData<ReturnType<UseAllTeamData>["userAllTeamData"]>(
         updateTeamConfigurationKeys.allTeamData
       );

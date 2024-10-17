@@ -3,10 +3,11 @@ import type { IssueFields, TeamConfiguration } from "./services/team-configurati
 
 import React from "react";
 import Heading from "@atlaskit/heading";
+import Spinner from "@atlaskit/spinner";
 
 import { Accordion, AccordionContent, AccordionTitle } from "../../../components/Accordion";
 
-import { useTeamData } from "./services/team-configuration";
+import { useSaveTeamData, useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
 
 import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
@@ -27,25 +28,39 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
 };
 
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, ...props }) => {
-  const { userTeamData, augmentedTeamData } = useTeamData(teamName, jiraFields);
+  const { userTeamData, augmentedTeamData, getInheritance } = useTeamData(teamName, jiraFields);
+
+  console.log({ userTeamData, augmentedTeamData });
 
   return (
     <>
       {Object.keys(augmentedTeamData).map((rawKey) => {
         const key = rawKey as keyof TeamConfiguration;
+        const { save, isSaving } = useSaveTeamData({ teamName, issueType: key });
 
         return (
-          <Accordion key={key} startsOpen>
+          <Accordion key={key}>
             <AccordionTitle>
               <Heading size="small">{issueNameMapping[key]}</Heading>
+              {isSaving && (
+                <div>
+                  <Spinner size="small" label="saving" />
+                </div>
+              )}
             </AccordionTitle>
             <AccordionContent>
-              <ConfigureTeamsForm
-                jiraFields={jiraFields}
-                userData={userTeamData[key]}
-                augmented={augmentedTeamData[key]}
-                {...props}
-              />
+              {key === "defaults" ? (
+                <ConfigureTeamsForm
+                  getInheritance={() => getInheritance()[key]}
+                  jiraFields={jiraFields}
+                  userData={userTeamData[key]}
+                  augmented={augmentedTeamData[key]}
+                  save={save}
+                  {...props}
+                />
+              ) : (
+                <>🚧 Coming Soon 🚧</>
+              )}
             </AccordionContent>
           </Accordion>
         );

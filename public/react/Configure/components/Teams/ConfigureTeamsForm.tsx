@@ -14,6 +14,7 @@ import Hr from "../../../components/Hr";
 
 import { useSaveGlobalTeamConfiguration } from "./services/team-configuration";
 import ToggleButton from "../../../components/ToggleButton";
+import InheritanceTextField from "./components/InheritanceTextField";
 
 // import EnableableTextField from "./components/EnableableTextField";
 
@@ -22,7 +23,9 @@ export interface ConfigureTeamsFormProps {
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
   userData: Configuration;
   augmented: Configuration;
+  getInheritance: () => Configuration;
   jiraFields: IssueFields;
+  save: (newConfiguration: Configuration) => void;
 }
 
 export interface FieldUpdates<TProperty extends keyof Configuration> {
@@ -30,39 +33,71 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
   value: Configuration[TProperty];
 }
 
-const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, augmented, jiraFields }) => {
-  const save = useSaveGlobalTeamConfiguration({ onUpdate });
-
+const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ save, userData, augmented, jiraFields, getInheritance }) => {
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
-  const { register, handleSubmit, getValues, control } = useForm<Configuration>({
+  const { register, handleSubmit, getValues, setValue, control } = useForm<Configuration>({
     defaultValues: augmented,
   });
 
-  function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {}
+  function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {
+    save({ ...userData, [name]: value });
+  }
+
+  const toggleInheritance = (field: keyof Configuration, shouldCustomize: boolean) => {
+    if (shouldCustomize) {
+      update({ name: field, value: getValues()[field] });
+      return;
+    }
+
+    // recalculate what the inherited value will be
+    const inheritedConfig = getInheritance();
+    console.log({ inheritedConfig });
+    setValue(field, inheritedConfig[field]);
+    update({ name: field, value: null });
+  };
 
   const [active, setActive] = useState(true);
 
   return (
     <Flex direction="column" gap="space.100">
-      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
-        <TextField
-          name="velocityPerSprint"
-          type="number"
-          label="Velocity per sprint"
-          unit="estimating units"
-          min={1}
-          register={register}
-          onSave={update}
-        />
-        <ToggleButton
-          active={active}
-          onActiveChange={setActive}
-          activeText={active ? "customized" : "customize"}
-          inactiveText={!active ? "inheriting" : "inherit"}
-        />
-      </div>
-      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+      <InheritanceTextField
+        isInheriting={!userData.velocityPerSprint}
+        onInheritanceChange={(shouldInherit) => toggleInheritance("velocityPerSprint", shouldInherit)}
+        name="velocityPerSprint"
+        type="number"
+        label="Velocity per sprint"
+        unit="estimating units"
+        min={1}
+        register={register}
+        onSave={update}
+      />
+      <InheritanceTextField
+        isInheriting={!userData.tracks}
+        onInheritanceChange={(shouldInherit) => toggleInheritance("tracks", shouldInherit)}
+        name="tracks"
+        type="number"
+        label="Tracks"
+        min={1}
+        register={register}
+        onSave={update}
+      />
+      {/*  */}
+      <InheritanceTextField
+        isInheriting={!userData.sprintLength}
+        onInheritanceChange={(shouldInherit) => toggleInheritance("sprintLength", shouldInherit)}
+        name="sprintLength"
+        type="number"
+        label="Sprint length"
+        unit="business days"
+        min={1}
+        register={register}
+        onSave={update}
+      />
+      {/* \
+        
+      </div> */}
+      {/* <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
         <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
         <ToggleButton
           active={active}
@@ -102,7 +137,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
           activeText={active ? "customized" : "customize"}
           inactiveText={!active ? "inheriting" : "inherit"}
         />
-      </div>
+      </div> */}
       <Hr />
       <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
         <Select
@@ -115,8 +150,8 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
         <ToggleButton
           active={active}
           onActiveChange={setActive}
-          activeText={active ? "customized" : "customize"}
-          inactiveText={!active ? "inheriting" : "inherit"}
+          right={active ? "customized" : "customize"}
+          left={!active ? "inheriting" : "inherit"}
         />
       </div>
       <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
@@ -130,8 +165,8 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
         <ToggleButton
           active={active}
           onActiveChange={setActive}
-          activeText={active ? "customized" : "customize"}
-          inactiveText={!active ? "inheriting" : "inherit"}
+          right={active ? "customized" : "customize"}
+          left={!active ? "inheriting" : "inherit"}
         />
       </div>
       <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
@@ -145,8 +180,8 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
         <ToggleButton
           active={active}
           onActiveChange={setActive}
-          activeText={active ? "customized" : "customize"}
-          inactiveText={!active ? "inheriting" : "inherit"}
+          right={active ? "customized" : "customize"}
+          left={!active ? "inheriting" : "inherit"}
         />
       </div>
       <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
@@ -160,8 +195,8 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
         <ToggleButton
           active={active}
           onActiveChange={setActive}
-          activeText={active ? "customized" : "customize"}
-          inactiveText={!active ? "inheriting" : "inherit"}
+          right={active ? "customized" : "customize"}
+          left={!active ? "inheriting" : "inherit"}
         />
       </div>
     </Flex>

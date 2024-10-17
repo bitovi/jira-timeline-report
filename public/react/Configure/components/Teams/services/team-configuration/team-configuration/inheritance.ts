@@ -7,10 +7,10 @@ import { getTeamData } from "./fetcher";
 export const getInheritedData = (teamName: keyof AllTeamData, allTeamData: AllTeamData): TeamConfiguration => {
   const teamData = getTeamData(teamName, allTeamData);
 
-  const issueKeys = ["outcome", "milestones", "initiatives", "epics", "stories"] as const;
+  const issueKeys = ["defaults", "outcome", "milestones", "initiatives", "epics", "stories"] as const;
 
   // Inheritance logic
-  const getInheritedData = (
+  const getInheritance = (
     issueType: (typeof issueKeys)[number],
     field: keyof Configuration
   ): Configuration[keyof Configuration] => {
@@ -26,7 +26,7 @@ export const getInheritedData = (teamName: keyof AllTeamData, allTeamData: AllTe
     (config, issueType) => {
       const issueFields = Object.keys(teamData[issueType]).reduce((fieldsAcc, field) => {
         const key = field as keyof Configuration;
-        const data = getInheritedData(issueType, key);
+        const data = getInheritance(issueType, key);
 
         return { ...fieldsAcc, [key]: data };
       }, {} as Configuration);

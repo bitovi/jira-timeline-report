@@ -35,7 +35,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props })
     <>
       <Accordion startsOpen={false}>
         <AccordionTitle>
-          <Heading size="small">Global defaults </Heading>
+          <Heading size="small">Global defaults</Heading>
           {isSaving && (
             <div>
               <Spinner size="small" label="saving" />
@@ -54,21 +54,28 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props })
       </Accordion>
       {Object.keys(augmentedTeamData)
         .filter((issueType) => issueType !== "defaults")
-        .map((key) => (
-          <Accordion key={key} startsOpen>
-            <AccordionTitle>
-              <Heading size="small">{issueNameMapping[key as keyof TeamConfiguration]}</Heading>
-            </AccordionTitle>
-            <AccordionContent>
-              <ConfigureTeamsForm
-                jiraFields={jiraFields}
-                userData={userTeamData[key as keyof TeamConfiguration]}
-                augmented={augmentedTeamData[key as keyof TeamConfiguration]}
-                {...props}
-              />
-            </AccordionContent>
-          </Accordion>
-        ))}
+        .map((rawKey) => {
+          const key = rawKey as keyof TeamConfiguration;
+          const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", issueType: key });
+
+          return (
+            <Accordion key={key}>
+              <AccordionTitle>
+                <Heading size="small">{issueNameMapping[key]}</Heading>
+              </AccordionTitle>
+              <AccordionContent>
+                🚧 Coming Soon 🚧
+                {/* <ConfigureTeamsForm
+                  jiraFields={jiraFields}
+                  userData={userTeamData[key]}
+                  augmented={augmentedTeamData[key]}
+                  save={save}
+                  {...props}
+                /> */}
+              </AccordionContent>
+            </Accordion>
+          );
+        })}
     </>
   );
 };
