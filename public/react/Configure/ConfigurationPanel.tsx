@@ -45,12 +45,12 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
         />
       </div>
       {selectedTeam === "global" && (
-        <div className="w-96">
+        <div className="w-128">
           <ConfigureAllTeams jiraFields={jiraFields} {...configurationProps} />
         </div>
       )}
       {!!selectedTeam && selectedTeam !== "global" && (
-        <div className="w-96">
+        <div className="w-128">
           <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
         </div>
       )}

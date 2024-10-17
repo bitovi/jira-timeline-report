@@ -33,7 +33,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props })
 
   return (
     <>
-      <Accordion startsOpen>
+      <Accordion startsOpen={false}>
         <AccordionTitle>
           <Heading size="small">Global defaults </Heading>
           {isSaving && (
@@ -55,7 +55,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props })
       {Object.keys(augmentedTeamData)
         .filter((issueType) => issueType !== "defaults")
         .map((key) => (
-          <Accordion key={key}>
+          <Accordion key={key} startsOpen>
             <AccordionTitle>
               <Heading size="small">{issueNameMapping[key as keyof TeamConfiguration]}</Heading>
             </AccordionTitle>

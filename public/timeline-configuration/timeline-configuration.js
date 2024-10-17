@@ -51,7 +51,7 @@ const GOBACK_BUTTON = `
 
 export class TimelineConfiguration extends StacheElement {
   static view = `
-    <div class="px-3 py-2 h-full">
+    <div class="pl-3 py-2 h-full">
 
         {{# not(this.showSettings) }}
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>

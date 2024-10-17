@@ -22,10 +22,10 @@ const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked }) =>
         {label}
       </Label>
       <div className="flex justify-between align-center">
-        <p>{description}</p>
         <div className="w-10">
           <AtlasToggle id={id} onChange={onChange} isChecked={isChecked} />
         </div>
+        <p>{description}</p>
       </div>
     </div>
   );

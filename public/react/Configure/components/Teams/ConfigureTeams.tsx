@@ -35,7 +35,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, ...prop
         const key = rawKey as keyof TeamConfiguration;
 
         return (
-          <Accordion key={key} startsOpen={key === "defaults"}>
+          <Accordion key={key} startsOpen>
             <AccordionTitle>
               <Heading size="small">{issueNameMapping[key]}</Heading>
             </AccordionTitle>

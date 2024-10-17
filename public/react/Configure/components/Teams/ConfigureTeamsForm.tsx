@@ -3,7 +3,7 @@ import type { FC } from "react";
 import type { Configuration, IssueFields } from "./services/team-configuration";
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Flex } from "@atlaskit/primitives";
 
@@ -13,6 +13,7 @@ import { FormToggle } from "./components/Toggle";
 import Hr from "../../../components/Hr";
 
 import { useSaveGlobalTeamConfiguration } from "./services/team-configuration";
+import ToggleButton from "../../../components/ToggleButton";
 
 // import EnableableTextField from "./components/EnableableTextField";
 
@@ -40,7 +41,131 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
 
   function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {}
 
-  return <div>🚧 Coming Soon 🚧</div>;
+  const [active, setActive] = useState(true);
+
+  return (
+    <Flex direction="column" gap="space.100">
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <TextField
+          name="velocityPerSprint"
+          type="number"
+          label="Velocity per sprint"
+          unit="estimating units"
+          min={1}
+          register={register}
+          onSave={update}
+        />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <FormToggle
+          name="spreadEffortAcrossDates"
+          control={control}
+          onSave={update}
+          label="Spread effort"
+          description="Spread estimate access dates"
+        />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <TextField
+          name="sprintLength"
+          type="number"
+          label="Sprint length"
+          unit="business days"
+          min={1}
+          register={register}
+          onSave={update}
+        />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+      <Hr />
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <Select
+          name="estimateField"
+          label="Estimate Field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <Select
+          name="confidenceField"
+          label="Confidence field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <Select
+          name="startDateField"
+          label="Start date field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
+        <Select
+          name="dueDateField"
+          label="End date field"
+          jiraFields={selectableFields}
+          control={control}
+          onSave={update}
+        />
+        <ToggleButton
+          active={active}
+          onActiveChange={setActive}
+          activeText={active ? "customized" : "customize"}
+          inactiveText={!active ? "inheriting" : "inherit"}
+        />
+      </div>
+    </Flex>
+  );
 
   // return (
   //   <form
@@ -50,44 +175,44 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
   //     })}
   //   >
   //     <Flex direction="column" gap="space.100">
-  //       <Select
-  //         name="estimateField"
-  //         label="Estimate Field"
-  //         jiraFields={selectableFields}
-  //         control={control}
-  //         onSave={update}
-  //       />
-  //       <Select
-  //         name="confidenceField"
-  //         label="Confidence field"
-  //         jiraFields={selectableFields}
-  //         control={control}
-  //         onSave={update}
-  //       />
-  //       <Select
-  //         name="startDateField"
-  //         label="Start date field"
-  //         jiraFields={selectableFields}
-  //         control={control}
-  //         onSave={update}
-  //       />
-  //       <Select
-  //         name="dueDateField"
-  //         label="End date field"
-  //         jiraFields={selectableFields}
-  //         control={control}
-  //         onSave={update}
-  //       />
+  // <Select
+  //   name="estimateField"
+  //   label="Estimate Field"
+  //   jiraFields={selectableFields}
+  //   control={control}
+  //   onSave={update}
+  // />
+  // <Select
+  //   name="confidenceField"
+  //   label="Confidence field"
+  //   jiraFields={selectableFields}
+  //   control={control}
+  //   onSave={update}
+  // />
+  // <Select
+  //   name="startDateField"
+  //   label="Start date field"
+  //   jiraFields={selectableFields}
+  //   control={control}
+  //   onSave={update}
+  // />
+  // <Select
+  //   name="dueDateField"
+  //   label="End date field"
+  //   jiraFields={selectableFields}
+  //   control={control}
+  //   onSave={update}
+  // />
   //       <Hr />
-  //       <TextField
-  //         name="sprintLength"
-  //         type="number"
-  //         label="Sprint length"
-  //         unit="business days"
-  //         min={1}
-  //         register={register}
-  //         onSave={update}
-  //       />
+  // <TextField
+  //   name="sprintLength"
+  //   type="number"
+  //   label="Sprint length"
+  //   unit="business days"
+  //   min={1}
+  //   register={register}
+  //   onSave={update}
+  // />
   //       <TextField
   //         name="velocityPerSprint"
   //         type="number"
@@ -98,13 +223,13 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ onUpdate, userData, a
   //         onSave={update}
   //       />
   //       <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
-  //       <FormToggle
-  //         name="spreadEffortAcrossDates"
-  //         control={control}
-  //         onSave={update}
-  //         label="Spread effort"
-  //         description="Spread estimate access dates"
-  //       />
+  // <FormToggle
+  //   name="spreadEffortAcrossDates"
+  //   control={control}
+  //   onSave={update}
+  //   label="Spread effort"
+  //   description="Spread estimate access dates"
+  // />
   //       {/* <EnableableTextField
   //             toggleLabel="Estimates"
   //             toggleDescription="Assign average estimate to issues without estimates"

@@ -50,7 +50,7 @@ const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, mi
           <AtlasTextField
             // These classes are needed to make the `elemAfterProp` function the same as the
             // `slot` prop in figma
-            className="[&>input]:!w-auto [&>input]:!p-0 !py-2 !px-2 !h-10 no-spin-container"
+            className="[&>input]:!flex-1 [&>input]:!p-0 !py-2 !px-2 !h-10 no-spin-container"
             isDisabled={disabled}
             type={type}
             min={min}
