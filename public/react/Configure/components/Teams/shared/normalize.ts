@@ -1,7 +1,11 @@
 import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
-import type { Configuration } from "../services/team-configuration";
+import type { AllTeamData } from "../services/team-configuration";
 
-export const createNormalizeConfiguration = (values?: Configuration | undefined): Partial<NormalizeIssueConfig> => {
+import * as defaults from "../../../../../jira/normalized/defaults";
+
+export const createNormalizeConfiguration = (allData?: AllTeamData | undefined): Partial<NormalizeIssueConfig> => {
+  const values = allData?.__GLOBAL__.defaults;
+
   if (!values) {
     return {};
   }
@@ -10,8 +14,11 @@ export const createNormalizeConfiguration = (values?: Configuration | undefined)
     getDaysPerSprint: () => Number(values.sprintLength),
     getVelocity: () => Number(values.velocityPerSprint),
     getParallelWorkLimit: () => Number(values.tracks),
-    getTeamSpreadsEffortAcrossDates: () => {
-      return !!values.spreadEffortAcrossDates;
+    getTeamSpreadsEffortAcrossDates: (teamKey?: string) => {
+      const key = teamKey || "__GLOBAL__";
+      const spreadValue = allData[key]?.defaults;
+
+      return !!spreadValue?.spreadEffortAcrossDates;
     },
     getStartDate: ({ fields }) => {
       if (!values.startDateField) {

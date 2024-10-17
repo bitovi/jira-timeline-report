@@ -14,6 +14,7 @@ import {
   createEmptyTeamConfiguration,
   createUpdatedTeamData,
   getAllTeamData,
+  getInheritedData,
   updateAllTeamData,
 } from "./team-configuration";
 import { createNormalizeConfiguration } from "../../shared/normalize";
@@ -42,25 +43,25 @@ export const useAllTeamData: UseAllTeamData = (jiraFields: IssueFields) => {
 export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
   const { userAllTeamData, augmentedAllTeamData } = useAllTeamData(jiraFields);
 
-  console.log({ userAllTeamData, augmentedAllTeamData });
-
   const userData = userAllTeamData[teamName] || createEmptyTeamConfiguration();
   const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
 
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
-    getInheritance: () => {
-      // Create a team that doesn't exist so the `applyInheritance` recalculates as though it wasn't there
-      // Will need to chance once issue types are introduced
-      const deriveInheritanceKey = `$$__${teamName}__$$`;
+    getInheritance: (issueType: keyof TeamConfiguration) => {
+      let empty = createEmptyTeamConfiguration();
 
-      return applyInheritance(deriveInheritanceKey, augmentedAllTeamData)[deriveInheritanceKey]!;
+      if (issueType !== "defaults") {
+        empty = { ...empty, defaults: { ...augmented.defaults } };
+      }
+
+      return getInheritedData(empty, augmentedAllTeamData);
     },
   };
 };
 
-const useSaveAllTeamData = () => {
+const useSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
   const queryClient = useQueryClient();
   const storage = useStorage();
 
@@ -77,11 +78,11 @@ const useSaveAllTeamData = () => {
 
       queryClient.setQueryData(updateTeamConfigurationKeys.allTeamData, updates);
 
-      console.log("optimistic", queryClient.getQueryData<AllTeamData>(updateTeamConfigurationKeys.allTeamData));
       return { previousUserData };
     },
-    onSettled: () => {
+    onSettled: (data, error, allTeamData) => {
       queryClient.invalidateQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
+      config?.onUpdate?.(createNormalizeConfiguration(allTeamData));
     },
     onError: (error, newUserData, context) => {
       queryClient.setQueryData(updateTeamConfigurationKeys.allTeamData, context?.previousUserData);
@@ -111,7 +112,7 @@ export const useSaveTeamData = (config: {
 }) => {
   const { teamName, issueType, onUpdate } = config;
   const queryClient = useQueryClient();
-  const { save, isSaving } = useSaveAllTeamData();
+  const { save, isSaving } = useSaveAllTeamData({ onUpdate: config.onUpdate });
 
   return {
     isSaving,
@@ -131,12 +132,7 @@ export const useSaveTeamData = (config: {
           teamName,
           issueType,
           configuration: updates,
-        }),
-        {
-          onSuccess: (_, values) => {
-            onUpdate?.(createNormalizeConfiguration(values[teamName]?.[issueType]));
-          },
-        }
+        })
       );
     },
   };

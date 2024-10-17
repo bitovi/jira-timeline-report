@@ -4,9 +4,7 @@ import { createEmptyTeamConfiguration } from "./shared";
 
 import { getTeamData } from "./fetcher";
 
-export const getInheritedData = (teamName: keyof AllTeamData, allTeamData: AllTeamData): TeamConfiguration => {
-  const teamData = getTeamData(teamName, allTeamData);
-
+export const getInheritedData = (teamData: TeamConfiguration, allTeamData: AllTeamData): TeamConfiguration => {
   const issueKeys = ["defaults", "outcome", "milestones", "initiatives", "epics", "stories"] as const;
 
   // Inheritance logic
@@ -40,9 +38,11 @@ export const getInheritedData = (teamName: keyof AllTeamData, allTeamData: AllTe
 };
 
 export const applyInheritance = (teamName: keyof AllTeamData, allTeamData: AllTeamData) => {
+  const teamData = getTeamData(teamName, allTeamData);
+
   return {
     ...allTeamData,
-    [teamName]: getInheritedData(teamName, allTeamData),
+    [teamName]: getInheritedData(teamData, allTeamData),
   };
 };
 

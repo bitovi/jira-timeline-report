@@ -15,36 +15,36 @@ export type UseSaveDefaultConfiguration = (config: {
   onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
 }) => UseMutateFunction<void, Error, Configuration>;
 
-export const useSaveGlobalTeamConfiguration: UseSaveDefaultConfiguration = ({ onUpdate }) => {
-  const queryClient = useQueryClient();
+// export const useSaveGlobalTeamConfiguration: UseSaveDefaultConfiguration = ({ onUpdate }) => {
+//   const queryClient = useQueryClient();
 
-  const { showFlag } = useFlags();
-  const { update } = useStorage();
+//   const { showFlag } = useFlags();
+//   const { update } = useStorage();
 
-  const { mutate } = useMutation<void, Error, Configuration>({
-    mutationFn: (values) => {
-      return update<Configuration>(globalTeamConfigurationStorageKey, values);
-    },
-    onSuccess: (_, updatedValues) => {
-      onUpdate?.(createNormalizeConfiguration(updatedValues));
+//   const { mutate } = useMutation<void, Error, Configuration>({
+//     mutationFn: (values) => {
+//       return update<Configuration>(globalTeamConfigurationStorageKey, values);
+//     },
+//     onSuccess: (_, updatedValues) => {
+//       onUpdate?.(createNormalizeConfiguration(updatedValues));
 
-      queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.globalConfiguration() });
-    },
-    onError: (error) => {
-      let description = error?.message;
+//       queryClient.invalidateQueries({ queryKey: teamConfigurationKeys.globalConfiguration() });
+//     },
+//     onError: (error) => {
+//       let description = error?.message;
 
-      if (!description) {
-        description = "Something went wrong";
-      }
+//       if (!description) {
+//         description = "Something went wrong";
+//       }
 
-      showFlag({
-        title: "Uh Oh!",
-        description,
-        isAutoDismiss: true,
-        icon: <ErrorIcon label="error" />,
-      });
-    },
-  });
+//       showFlag({
+//         title: "Uh Oh!",
+//         description,
+//         isAutoDismiss: true,
+//         icon: <ErrorIcon label="error" />,
+//       });
+//     },
+//   });
 
-  return mutate;
-};
+//   return mutate;
+// };

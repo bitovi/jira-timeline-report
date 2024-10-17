@@ -27,7 +27,7 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
   stories: "Stores",
 };
 
-const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, ...props }) => {
+const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdate, ...props }) => {
   const { userTeamData, augmentedTeamData, getInheritance } = useTeamData(teamName, jiraFields);
 
   console.log({ userTeamData, augmentedTeamData });
@@ -36,7 +36,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, ...prop
     <>
       {Object.keys(augmentedTeamData).map((rawKey) => {
         const key = rawKey as keyof TeamConfiguration;
-        const { save, isSaving } = useSaveTeamData({ teamName, issueType: key });
+        const { save, isSaving } = useSaveTeamData({ teamName, issueType: key, onUpdate });
 
         return (
           <Accordion key={key}>
@@ -49,18 +49,14 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, ...prop
               )}
             </AccordionTitle>
             <AccordionContent>
-              {key === "defaults" ? (
-                <ConfigureTeamsForm
-                  getInheritance={() => getInheritance()[key]}
-                  jiraFields={jiraFields}
-                  userData={userTeamData[key]}
-                  augmented={augmentedTeamData[key]}
-                  save={save}
-                  {...props}
-                />
-              ) : (
-                <>🚧 Coming Soon 🚧</>
-              )}
+              <ConfigureTeamsForm
+                getInheritance={() => getInheritance(key)[key]}
+                jiraFields={jiraFields}
+                userData={userTeamData[key]}
+                augmented={augmentedTeamData[key]}
+                save={save}
+                {...props}
+              />
             </AccordionContent>
           </Accordion>
         );

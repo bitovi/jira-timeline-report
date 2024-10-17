@@ -26,10 +26,10 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
   stories: "Stores",
 };
 
-const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props }) => {
+const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
   const { userTeamData, augmentedTeamData } = useTeamData("__GLOBAL__", jiraFields);
 
-  const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", issueType: "defaults" });
+  const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", issueType: "defaults", onUpdate });
 
   return (
     <>

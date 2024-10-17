@@ -12,9 +12,10 @@ import Select from "./components/Select";
 import { FormToggle } from "./components/Toggle";
 import Hr from "../../../components/Hr";
 
-import { useSaveGlobalTeamConfiguration } from "./services/team-configuration";
+// import { useSaveGlobalTeamConfiguration } from "./services/team-configuration";
 import ToggleButton from "../../../components/ToggleButton";
 import InheritanceTextField from "./components/InheritanceTextField";
+import InheritanceToggleField from "./components/InheritanceToggleField";
 
 // import EnableableTextField from "./components/EnableableTextField";
 
@@ -82,7 +83,15 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ save, userData, augme
         register={register}
         onSave={update}
       />
-      {/*  */}
+      <InheritanceToggleField
+        isInheriting={!userData.spreadEffortAcrossDates && typeof userData.spreadEffortAcrossDates === "object"}
+        onInheritanceChange={(shouldCustomize) => toggleInheritance("spreadEffortAcrossDates", shouldCustomize)}
+        name="spreadEffortAcrossDates"
+        control={control}
+        onSave={update}
+        label="Spread effort"
+        description="Spread estimate access dates"
+      />
       <InheritanceTextField
         isInheriting={!userData.sprintLength}
         onInheritanceChange={(shouldInherit) => toggleInheritance("sprintLength", shouldInherit)}

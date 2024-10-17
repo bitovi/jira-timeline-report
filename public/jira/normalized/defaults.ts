@@ -72,7 +72,7 @@ export function getUrlDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue[
 }
 
 export function getTeamKeyDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["team"]["name"] {
-  if(fields.Team?.name) {
+  if (fields.Team?.name) {
     return fields.Team.name;
   }
   return key.replace(/-.*/, "");
@@ -122,8 +122,8 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
     return [];
   }
   // Rollback is getting this property wrong and not always making it an array
-  if(!Array.isArray(fixVersions)) {
-    fixVersions = [fixVersions]
+  if (!Array.isArray(fixVersions)) {
+    fixVersions = [fixVersions];
   }
 
   return fixVersions.map(({ name, id }) => {
@@ -149,6 +149,8 @@ export function getDaysPerSprintDefault(teamKey: string): NormalizedIssue["team"
   return 10;
 }
 
-export function getTeamSpreadsEffortAcrossDatesDefault(): NormalizedIssue["team"]["spreadEffortAcrossDates"] {
+export function getTeamSpreadsEffortAcrossDatesDefault(
+  teamKey?: string
+): NormalizedIssue["team"]["spreadEffortAcrossDates"] {
   return false;
 }
