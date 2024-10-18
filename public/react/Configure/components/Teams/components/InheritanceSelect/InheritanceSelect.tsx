@@ -1,31 +1,26 @@
 import type { FC } from "react";
-import type { Configuration } from "../../services/team-configuration";
 import type { Control } from "react-hook-form";
+import type { Configuration } from "../../services/team-configuration";
 import type { FieldUpdates } from "../../ConfigureTeamsForm";
 
 import React from "react";
-
+import Select from "../Select";
 import ToggleButton from "../../../../../components/ToggleButton";
-import { FormToggle } from "../Toggle";
 
-interface InheritanceToggleFieldProps {
+interface SelectProps {
   isInheriting: boolean;
   onInheritanceChange: (newInheritance: boolean) => void;
+  control: Control<Configuration>;
   name: keyof Configuration;
   label: string;
-  description: string;
-  control: Control<Configuration>;
+  jiraFields: Array<{ label: string; value: string }>;
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
-const InheritanceToggleField: FC<InheritanceToggleFieldProps> = ({
-  isInheriting,
-  onInheritanceChange,
-  ...toggleProps
-}) => {
+const InheritanceSelect: FC<SelectProps> = ({ isInheriting, onInheritanceChange, ...selectProps }) => {
   return (
     <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
-      <FormToggle disabled={isInheriting} {...toggleProps} />
+      <Select disabled={isInheriting} {...selectProps} />
       <ToggleButton
         active={!isInheriting}
         onActiveChange={onInheritanceChange}
@@ -36,4 +31,4 @@ const InheritanceToggleField: FC<InheritanceToggleFieldProps> = ({
   );
 };
 
-export default InheritanceToggleField;
+export default InheritanceSelect;

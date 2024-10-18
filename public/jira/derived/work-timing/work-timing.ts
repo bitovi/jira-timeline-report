@@ -98,6 +98,7 @@ export function deriveWorkTiming(
   const deterministicExtraDaysOfWork = deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const deterministicTotalPoints = defaultOrStoryPointsMedian + deterministicExtraPoints;
   const deterministicTotalDaysOfWork = deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+
   const probablisticExtraPoints = sampleExtraPoints(defaultOrStoryPointsMedian, usedConfidence);
   const probablisticExtraDaysOfWork = probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const probablisticTotalPoints = defaultOrStoryPointsMedian + probablisticExtraPoints;
@@ -233,6 +234,14 @@ function getSelfCompletedDays(
     if (isSpreading) {
       const completedTimedDays = getBusinessDatesCount(startData.start, new Date());
       const totalTimedDays = getBusinessDatesCount(startData.start, dueData.due);
+
+      console.log({
+        daysOfWork,
+        completedTimedDays,
+        totalTimedDays,
+        calc: (daysOfWork * completedTimedDays) / totalTimedDays,
+      });
+
       return (daysOfWork * completedTimedDays) / totalTimedDays;
     } else {
       return getBusinessDatesCount(startData.start, new Date());

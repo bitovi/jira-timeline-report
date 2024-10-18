@@ -10,6 +10,7 @@ import AtlasSelect from "@atlaskit/select";
 import Label from "../Label";
 
 interface SelectProps {
+  disabled?: boolean;
   control: Control<Configuration>;
   name: keyof Configuration;
   label: string;
@@ -17,13 +18,14 @@ interface SelectProps {
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
-const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave }) => {
+const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave, disabled = false }) => {
   const id = useId();
 
   return (
     <Controller
       name={name}
       control={control}
+      disabled={disabled}
       render={({ field }) => {
         const selectedOption = jiraFields.find((option) => {
           return option.value === field.value;
@@ -35,6 +37,7 @@ const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave }) =
               {label}
             </Label>
             <AtlasSelect
+              isDisabled={disabled}
               id={id}
               name={field.name}
               value={selectedOption}

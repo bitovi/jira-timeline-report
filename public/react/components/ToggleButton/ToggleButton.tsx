@@ -14,11 +14,18 @@ const getButtonClasses = () => {
 };
 
 const getInactiveButtonStyles = (isInactive: boolean) => {
-  return [...getButtonClasses(), isInactive ? "bg-gray-200" : ""].filter(Boolean).join(" ");
+  return [...getButtonClasses(), isInactive ? "bg-gray-200" : "", !isInactive ? "text-zinc-400" : ""]
+    .filter(Boolean)
+    .join(" ");
 };
 
 const getActiveButtonStyles = (isActive: boolean) => {
-  return [...getButtonClasses(), isActive ? "bg-blue-50" : "", isActive ? "text-blue-700" : ""]
+  return [
+    ...getButtonClasses(),
+    isActive ? "bg-blue-50" : "",
+    isActive ? "text-blue-700" : "",
+    !isActive ? "text-zinc-400" : "",
+  ]
     .filter(Boolean)
     .join(" ");
 };
