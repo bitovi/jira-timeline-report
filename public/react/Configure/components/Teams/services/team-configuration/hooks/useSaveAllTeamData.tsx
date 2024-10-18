@@ -4,7 +4,7 @@ import type { UseJiraIssueFields } from "../../../../../services/jira";
 import type { UseAllTeamData } from "./useAllTeamData";
 
 import React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { UseMutateFunction, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFlags } from "@atlaskit/flag";
 import ErrorIcon from "@atlaskit/icon/glyph/error";
 
@@ -14,7 +14,12 @@ import { createFullyInheritedConfig, createUpdatedTeamData, updateAllTeamData } 
 import { createNormalizeConfiguration } from "../../../shared/normalize";
 import { jiraKeys } from "../../../../../services/jira";
 
-export const useSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
+type UseSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
+  save: UseMutateFunction<void, Error, AllTeamData, { previousUserData: AllTeamData | undefined }>;
+  isSaving: boolean;
+};
+
+export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
   const queryClient = useQueryClient();
   const storage = useStorage();
 
@@ -75,12 +80,18 @@ export const useSaveAllTeamData = (config?: { onUpdate?: (config: Partial<Normal
   return { save: mutate, isSaving: isPending };
 };
 
-export const useSaveTeamData = (config: {
+type UseSaveTeamData = (config: {
   teamName: string;
   issueType: keyof TeamConfiguration;
   onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
 }) => {
+  save: (updates: Configuration) => void;
+  isSaving: boolean;
+};
+
+export const useSaveTeamData: UseSaveTeamData = (config) => {
   const { teamName, issueType, onUpdate } = config;
+
   const queryClient = useQueryClient();
   const { save, isSaving } = useSaveAllTeamData({ onUpdate });
 

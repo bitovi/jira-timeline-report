@@ -24,8 +24,8 @@ const InheritanceSelect: FC<SelectProps> = ({ isInheriting, onInheritanceChange,
       <ToggleButton
         active={!isInheriting}
         onActiveChange={onInheritanceChange}
-        left={isInheriting ? "inheriting" : "inherit"}
-        right={isInheriting ? "customize" : "customized"}
+        inactiveLabel={isInheriting ? "inheriting" : "inherit"}
+        activeLabel={isInheriting ? "customize" : "customized"}
       />
     </div>
   );

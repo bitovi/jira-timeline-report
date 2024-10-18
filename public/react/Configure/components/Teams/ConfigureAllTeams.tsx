@@ -11,6 +11,7 @@ import { useSaveTeamData, useTeamData } from "./services/team-configuration";
 
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
 import AllTeamsDefaultForm from "./AllTeamsDefaultsForm";
+import ConfigureTeams from "./ConfigureTeams";
 
 export interface ConfigureAllTeamsProps {
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
@@ -33,7 +34,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, .
 
   return (
     <>
-      <Accordion startsOpen={false}>
+      <Accordion startsOpen>
         <AccordionTitle>
           <Heading size="small">Global defaults</Heading>
           {isSaving && (
@@ -52,30 +53,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, .
           />
         </AccordionContent>
       </Accordion>
-      {Object.keys(augmentedTeamData)
-        .filter((issueType) => issueType !== "defaults")
-        .map((rawKey) => {
-          const key = rawKey as keyof TeamConfiguration;
-          const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", issueType: key });
-
-          return (
-            <Accordion key={key}>
-              <AccordionTitle>
-                <Heading size="small">{issueNameMapping[key]}</Heading>
-              </AccordionTitle>
-              <AccordionContent>
-                🚧 Coming Soon 🚧
-                {/* <ConfigureTeamsForm
-                  jiraFields={jiraFields}
-                  userData={userTeamData[key]}
-                  augmented={augmentedTeamData[key]}
-                  save={save}
-                  {...props}
-                /> */}
-              </AccordionContent>
-            </Accordion>
-          );
-        })}
+      <ConfigureTeams jiraFields={jiraFields} teamName="__GLOBAL__" onUpdate={onUpdate} />
     </>
   );
 };

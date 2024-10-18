@@ -5,8 +5,8 @@ import React from "react";
 interface ToggleButtonProps {
   active: boolean;
   onActiveChange: (newActive: boolean) => void;
-  right: string;
-  left: string;
+  activeLabel: string;
+  inactiveLabel: string;
 }
 
 const getButtonClasses = () => {
@@ -30,14 +30,14 @@ const getActiveButtonStyles = (isActive: boolean) => {
     .join(" ");
 };
 
-const ToggleButton: FC<ToggleButtonProps> = ({ active, onActiveChange, left, right }) => {
+const ToggleButton: FC<ToggleButtonProps> = ({ active, onActiveChange, inactiveLabel, activeLabel }) => {
   return (
     <div className="bg-gray-100 p-1 rounded-sm grid grid-cols-2 h-10 w-48">
       <button className={getInactiveButtonStyles(!active)} disabled={!active} onClick={() => onActiveChange(!active)}>
-        {left}
+        {inactiveLabel}
       </button>
       <button className={getActiveButtonStyles(active)} disabled={active} onClick={() => onActiveChange(!active)}>
-        {right}
+        {activeLabel}
       </button>
     </div>
   );

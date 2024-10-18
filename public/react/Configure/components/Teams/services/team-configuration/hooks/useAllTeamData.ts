@@ -33,7 +33,16 @@ export const useAllTeamData: UseAllTeamData = (jiraFields) => {
   };
 };
 
-export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
+export type UseTeamData = (
+  teamName: string,
+  jiraFields: IssueFields
+) => {
+  userTeamData: TeamConfiguration;
+  augmentedTeamData: TeamConfiguration;
+  getInheritance: (issueType: keyof TeamConfiguration) => TeamConfiguration;
+};
+
+export const useTeamData: UseTeamData = (teamName, jiraFields) => {
   const { userAllTeamData, augmentedAllTeamData } = useAllTeamData(jiraFields);
 
   const userData = userAllTeamData[teamName] || createEmptyTeamConfiguration();
@@ -42,7 +51,7 @@ export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
-    getInheritance: (issueType: keyof TeamConfiguration) => {
+    getInheritance: (issueType) => {
       let empty = createEmptyTeamConfiguration();
 
       if (issueType !== "defaults") {

@@ -31,8 +31,8 @@ const InheritanceTextField: FC<InheritanceTextFieldProps> = ({
       <ToggleButton
         active={!isInheriting}
         onActiveChange={onInheritanceChange}
-        left={isInheriting ? "inheriting" : "inherit"}
-        right={isInheriting ? "customize" : "customized"}
+        inactiveLabel={isInheriting ? "inheriting" : "inherit"}
+        activeLabel={isInheriting ? "customize" : "customized"}
       />
     </div>
   );
