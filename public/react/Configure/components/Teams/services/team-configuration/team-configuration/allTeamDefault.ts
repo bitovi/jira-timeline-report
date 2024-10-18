@@ -1,14 +1,14 @@
 import { AllTeamData, Configuration, IssueFields } from "./shared";
 
+const findFieldCalled = (name: string, jiraFields: IssueFields): string | undefined => {
+  return jiraFields.find((field) => field.name.toLowerCase() === name.toLowerCase())?.name;
+};
+
 const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
   formField: TFormField,
   possibleNames: string[],
   nameFragments: string[] = []
 ) => {
-  const findFieldCalled = (name: string, jiraFields: IssueFields): string | undefined => {
-    return jiraFields.find((field) => field.name.toLowerCase() === name.toLowerCase())?.name;
-  };
-
   return function (userData: Partial<Configuration>, jiraFields: IssueFields) {
     const userDefinedFieldExists = findFieldCalled((userData[formField] ?? "").toString(), jiraFields);
 
@@ -53,6 +53,7 @@ const getConfidenceField = createDefaultJiraFieldGetter(
 const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["start date", "starting date"]);
 
 const getDueDateField = createDefaultJiraFieldGetter("dueDateField", ["due date", "end date", "target date"]);
+
 const nonFieldDefaults: Omit<Configuration, "estimateField" | "confidenceField" | "startDateField" | "dueDateField"> = {
   sprintLength: 10,
   velocityPerSprint: 21,

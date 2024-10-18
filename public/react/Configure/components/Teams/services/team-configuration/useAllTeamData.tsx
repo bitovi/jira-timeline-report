@@ -47,10 +47,6 @@ export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
   const userData = userAllTeamData[teamName] || createEmptyTeamConfiguration();
   const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
 
-  console.log({ userAllTeamData, augmentedAllTeamData });
-  console.table(userData);
-  console.table(augmented);
-
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
@@ -73,8 +69,8 @@ const useSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssu
 
   const { showFlag } = useFlags();
 
-  const { mutate, isPending } = useMutation<void, Error, AllTeamData, { previousUserData: AllTeamData | undefined }>({
-    mutationFn: (values) => {
+  const { mutate, isPending } = useMutation({
+    mutationFn: (values: AllTeamData) => {
       return updateAllTeamData(storage, values);
     },
     onMutate: async (updates) => {
@@ -100,7 +96,7 @@ const useSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssu
 
       config?.onUpdate?.(createNormalizeConfiguration(fullConfig));
     },
-    onError: (error, newUserData, context) => {
+    onError: (error, _, context) => {
       queryClient.setQueryData(updateTeamConfigurationKeys.allTeamData, context?.previousUserData);
 
       let description = error?.message;
