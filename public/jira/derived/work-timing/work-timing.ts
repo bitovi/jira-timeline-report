@@ -230,17 +230,9 @@ function getSelfCompletedDays(
   }
   // now is in between start and end date
   else if (startData && startData.start < new Date() && dueData && dueData.due > new Date()) {
-    let completedDays;
     if (isSpreading) {
       const completedTimedDays = getBusinessDatesCount(startData.start, new Date());
       const totalTimedDays = getBusinessDatesCount(startData.start, dueData.due);
-
-      console.log({
-        daysOfWork,
-        completedTimedDays,
-        totalTimedDays,
-        calc: (daysOfWork * completedTimedDays) / totalTimedDays,
-      });
 
       return (daysOfWork * completedTimedDays) / totalTimedDays;
     } else {
