@@ -1,9 +1,30 @@
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 
 import React from "react";
 import { Flex } from "@atlaskit/primitives";
 import Heading from "@atlaskit/heading";
 import { LinkButton } from "@atlaskit/button/new";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useStorage } from "./StorageProvider";
+
+import { allTeamDataKey } from "../../components/Teams/services/team-configuration";
+
+// Quick work around to check if storage is setup
+// Update later
+export const StorageCheck: FC<{ children: ReactNode }> = ({ children }) => {
+  const storage = useStorage();
+
+  const { data } = useSuspenseQuery({
+    queryKey: ["storage-check"],
+    queryFn: () => storage.get<{} | null>(allTeamDataKey),
+  });
+
+  if (!data) {
+    return <StorageNeedsConfigured />;
+  }
+
+  return <>{children}</>;
+};
 
 const StorageNeedsConfigured: FC = () => {
   return (

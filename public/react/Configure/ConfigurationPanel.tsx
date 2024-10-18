@@ -11,6 +11,7 @@ import SidebarButton from "../components/SidebarButton";
 import ConfigureAllTeams from "./components/Teams/ConfigureAllTeams";
 import { useJiraIssueFields } from "./services/jira";
 import { useAllTeamData } from "./components/Teams/services/team-configuration";
+import { StorageCheck } from "./services/storage";
 
 export interface ConfigurationPanelProps {
   onBackButtonClicked: () => void;
@@ -44,16 +45,19 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
           derivedIssuesObservable={derivedIssuesObservable}
         />
       </div>
-      {selectedTeam === "global" && (
-        <div className="w-128">
-          <ConfigureAllTeams jiraFields={jiraFields} {...configurationProps} />
-        </div>
-      )}
-      {!!selectedTeam && selectedTeam !== "global" && (
-        <div className="w-128">
-          <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
-        </div>
-      )}
+      {/* checks that configuration issue exists */}
+      <StorageCheck>
+        {selectedTeam === "global" && (
+          <div className="w-128">
+            <ConfigureAllTeams jiraFields={jiraFields} {...configurationProps} />
+          </div>
+        )}
+        {!!selectedTeam && selectedTeam !== "global" && (
+          <div className="w-128">
+            <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
+          </div>
+        )}
+      </StorageCheck>
     </div>
   );
 };
