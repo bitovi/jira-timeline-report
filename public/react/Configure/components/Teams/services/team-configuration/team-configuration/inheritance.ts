@@ -3,6 +3,7 @@ import type { AllTeamData, Configuration, TeamConfiguration, IssueFields } from 
 import { createEmptyTeamConfiguration } from "./shared";
 
 import { getTeamData } from "./fetcher";
+import { applyGlobalDefaultData } from "./allTeamDefault";
 
 export const getInheritedData = (teamData: TeamConfiguration, allTeamData: AllTeamData): TeamConfiguration => {
   const issueKeys = ["defaults", "outcome", "milestones", "initiatives", "epics", "stories"] as const;
@@ -63,4 +64,23 @@ export const createUpdatedTeamData = (
       [config.issueType]: { ...config.configuration },
     },
   };
+};
+
+export const createFullyInheritedConfig = (userAllTeamData: AllTeamData, jiraFields: IssueFields) => {
+  // global settings need to be setup before the rest of the teams
+  const augmentedAllTeam = applyInheritance("__GLOBAL__", applyGlobalDefaultData(userAllTeamData, jiraFields));
+
+  return Object.keys(augmentedAllTeam).reduce((augmented, team) => {
+    // already setup the global config
+    if (team === "__GLOBAL__") {
+      return { ...augmented, [team]: augmentedAllTeam[team] };
+    }
+
+    const teamData = getTeamData(team, augmentedAllTeam);
+
+    return {
+      ...augmented,
+      [team]: getInheritedData(teamData, augmentedAllTeam),
+    };
+  }, {} as AllTeamData);
 };

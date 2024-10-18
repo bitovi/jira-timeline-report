@@ -30,8 +30,6 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdate, ...props }) => {
   const { userTeamData, augmentedTeamData, getInheritance } = useTeamData(teamName, jiraFields);
 
-  console.log({ userTeamData, augmentedTeamData });
-
   return (
     <>
       {Object.keys(augmentedTeamData).map((rawKey) => {
