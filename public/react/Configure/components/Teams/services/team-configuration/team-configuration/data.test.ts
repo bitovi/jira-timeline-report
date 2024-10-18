@@ -3,6 +3,7 @@ import { expect, test, describe } from "vitest";
 import { createEmptyAllTeamsData, createEmptyConfiguration, createEmptyTeamConfiguration } from "./shared";
 import { applyInheritance, getInheritedData } from "./inheritance";
 import { applyGlobalDefaultData, getGlobalDefaultData } from "./allTeamDefault";
+import { getTeamData } from "./fetcher";
 
 const createConfiguration = (overrides: Partial<Configuration> = {}): Configuration => ({
   ...createEmptyConfiguration(),
@@ -86,55 +87,55 @@ describe("Configuration Inheritance and Defaults", () => {
     expect(globalDefaults).toEqual(expectedDefaults);
   });
 
-  // test("getInheritedData applies team and global defaults correctly", () => {
-  //   const allTeamData: AllTeamData = {
-  //     __GLOBAL__: createTeamConfiguration({
-  //       defaults: {
-  //         sprintLength: 10,
-  //         velocityPerSprint: 21,
-  //         tracks: 1,
-  //         spreadEffortAcrossDates: false,
-  //         estimateField: "Story points",
-  //         confidenceField: "Confidence",
-  //         startDateField: "Start date",
-  //         dueDateField: "Due date",
-  //       },
-  //     }),
-  //     "Team A": createTeamConfiguration({
-  //       defaults: createConfiguration({
-  //         sprintLength: 15,
-  //         velocityPerSprint: 30,
-  //       }),
-  //       epics: createConfiguration({
-  //         tracks: 2,
-  //       }),
-  //     }),
-  //   };
+  test("getInheritedData applies team and global defaults correctly", () => {
+    const allTeamData: AllTeamData = {
+      __GLOBAL__: createTeamConfiguration({
+        defaults: {
+          sprintLength: 10,
+          velocityPerSprint: 21,
+          tracks: 1,
+          spreadEffortAcrossDates: false,
+          estimateField: "Story points",
+          confidenceField: "Confidence",
+          startDateField: "Start date",
+          dueDateField: "Due date",
+        },
+      }),
+      "Team A": createTeamConfiguration({
+        defaults: createConfiguration({
+          sprintLength: 15,
+          velocityPerSprint: 30,
+        }),
+        epics: createConfiguration({
+          tracks: 2,
+        }),
+      }),
+    };
 
-  //   const teamAInheritedData = getInheritedData("Team A", allTeamData);
+    const teamAInheritedData = getInheritedData(getTeamData("Team A", allTeamData), allTeamData);
 
-  //   expect(teamAInheritedData.epics).toEqual({
-  //     sprintLength: 15,
-  //     velocityPerSprint: 30,
-  //     tracks: 2,
-  //     spreadEffortAcrossDates: false,
-  //     estimateField: "Story points",
-  //     confidenceField: "Confidence",
-  //     startDateField: "Start date",
-  //     dueDateField: "Due date",
-  //   });
+    expect(teamAInheritedData.epics).toEqual({
+      sprintLength: 15,
+      velocityPerSprint: 30,
+      tracks: 2,
+      spreadEffortAcrossDates: false,
+      estimateField: "Story points",
+      confidenceField: "Confidence",
+      startDateField: "Start date",
+      dueDateField: "Due date",
+    });
 
-  //   expect(teamAInheritedData.stories).toEqual({
-  //     sprintLength: 15,
-  //     velocityPerSprint: 30,
-  //     tracks: 1,
-  //     spreadEffortAcrossDates: false,
-  //     estimateField: "Story points",
-  //     confidenceField: "Confidence",
-  //     startDateField: "Start date",
-  //     dueDateField: "Due date",
-  //   });
-  // });
+    expect(teamAInheritedData.stories).toEqual({
+      sprintLength: 15,
+      velocityPerSprint: 30,
+      tracks: 1,
+      spreadEffortAcrossDates: false,
+      estimateField: "Story points",
+      confidenceField: "Confidence",
+      startDateField: "Start date",
+      dueDateField: "Due date",
+    });
+  });
 
   test("applyGlobalDefaultData augments allTeamData with computed global defaults", () => {
     const allTeamData = createAllTeamData();
