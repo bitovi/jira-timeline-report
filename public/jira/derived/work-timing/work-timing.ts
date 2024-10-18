@@ -130,7 +130,12 @@ export function deriveWorkTiming(
   // Used if there is no estimate.  I don't think we need or should use this value.
   const defaultOrTotalDaysOfWork = totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
 
-  const completedDaysOfWork = getSelfCompletedDays(startData, dueData, totalDaysOfWork);
+  const completedDaysOfWork = getSelfCompletedDays(
+    startData,
+    dueData,
+    totalDaysOfWork || 0,
+    normalizedIssue.team.spreadEffortAcrossDates
+  );
 
   return {
     isConfidenceValid,
@@ -187,20 +192,53 @@ export function isStoryPointsValueValid(value: number | null): value is number {
  * @param {import("../../../shared/issue-data/date-data.js").DueData} dueData
  * @returns number
  */
-function getSelfCompletedDays(startData: StartData, dueData: DueData, daysOfWork: number | null): number {
+function getSelfCompletedDays(
+  startData: StartData,
+  dueData: DueData,
+  daysOfWork: number,
+  isSpreading: boolean
+): number {
   // These are cases where the child issue (Epic) has a valid estimation
-
-  if (startData && startData.start < new Date()) {
-    if (!dueData || dueData.due > new Date()) {
-      return getBusinessDatesCount(startData.start, new Date());
-    } else {
-      return getBusinessDatesCount(startData.start, dueData.due);
-    }
+  // starting in the future
+  if (startData && startData.start >= new Date()) {
+    return 0;
   }
-  // if there's an end date in the past ...
-  else if (dueData && dueData.due < new Date()) {
-    return daysOfWork || 0;
+  // ending in the past
+  else if (dueData && dueData.due <= new Date()) {
+    // should this code be removed?
+    if (!isSpreading && startData && startData.start) {
+      const completedDays = getBusinessDatesCount(startData.start, dueData.due);
+      if (completedDays !== daysOfWork) {
+        console.warn("completed days should match days of work");
+      }
+    }
+    return daysOfWork;
+  }
+  // no dates to help
+  else if (!startData && !dueData) {
+    return 0;
+  }
+  // ending in the future with no start date
+  else if (!startData && dueData && dueData.due > new Date()) {
+    return 0;
+  }
+  // starting date in the past with no due date
+  else if (!dueData && startData && startData.start < new Date()) {
+    const completedDays = getBusinessDatesCount(startData.start, new Date());
+    return Math.min(completedDays, daysOfWork);
+  }
+  // now is in between start and end date
+  else if (startData && startData.start < new Date() && dueData && dueData.due > new Date()) {
+    let completedDays;
+    if (isSpreading) {
+      const completedTimedDays = getBusinessDatesCount(startData.start, new Date());
+      const totalTimedDays = getBusinessDatesCount(startData.start, dueData.due);
+      return (daysOfWork * completedTimedDays) / totalTimedDays;
+    } else {
+      return getBusinessDatesCount(startData.start, new Date());
+    }
   } else {
+    console.warn("we should never get here");
     return 0;
   }
 }

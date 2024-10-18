@@ -15,10 +15,10 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
     getVelocity: () => Number(values.velocityPerSprint),
     getParallelWorkLimit: () => Number(values.tracks),
     getTeamSpreadsEffortAcrossDates: (teamKey?: string) => {
-      const key = teamKey || "__GLOBAL__";
-      const spreadValue = allData[key]?.defaults;
+      const key = teamKey || "";
+      const teamConfig = allData[key]?.defaults || allData.__GLOBAL__.defaults;
 
-      return !!spreadValue?.spreadEffortAcrossDates;
+      return !!teamConfig?.spreadEffortAcrossDates;
     },
     getStartDate: ({ fields }) => {
       if (!values.startDateField) {

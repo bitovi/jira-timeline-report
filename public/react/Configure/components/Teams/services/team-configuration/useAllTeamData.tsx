@@ -18,6 +18,7 @@ import {
   updateAllTeamData,
 } from "./team-configuration";
 import { createNormalizeConfiguration } from "../../shared/normalize";
+import { useJiraIssueFields } from "../../../../services/jira";
 
 export type UseAllTeamData = (jiraFields: IssueFields) => {
   userAllTeamData: AllTeamData;
@@ -46,6 +47,10 @@ export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
   const userData = userAllTeamData[teamName] || createEmptyTeamConfiguration();
   const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
 
+  console.log({ userAllTeamData, augmentedAllTeamData });
+  console.table(userData);
+  console.table(augmented);
+
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
@@ -64,6 +69,7 @@ export const useTeamData = (teamName: string, jiraFields: IssueFields) => {
 const useSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
   const queryClient = useQueryClient();
   const storage = useStorage();
+  const jiraFields = useJiraIssueFields();
 
   const { showFlag } = useFlags();
 
@@ -82,7 +88,17 @@ const useSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssu
     },
     onSettled: (data, error, allTeamData) => {
       queryClient.invalidateQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
-      config?.onUpdate?.(createNormalizeConfiguration(allTeamData));
+      const augmentedAllTeam = applyInheritance("__GLOBAL__", applyGlobalDefaultData(allTeamData, jiraFields));
+
+      const fullConfig = Object.keys(augmentedAllTeam).reduce((augmented, team) => {
+        if (team === "__GLOBAL__") {
+          return { ...augmented, [team]: augmentedAllTeam[team] };
+        }
+
+        return { ...augmented, [team]: applyInheritance(team, augmentedAllTeam)[team] };
+      }, {} as AllTeamData);
+
+      config?.onUpdate?.(createNormalizeConfiguration(fullConfig));
     },
     onError: (error, newUserData, context) => {
       queryClient.setQueryData(updateTeamConfigurationKeys.allTeamData, context?.previousUserData);
@@ -112,7 +128,7 @@ export const useSaveTeamData = (config: {
 }) => {
   const { teamName, issueType, onUpdate } = config;
   const queryClient = useQueryClient();
-  const { save, isSaving } = useSaveAllTeamData({ onUpdate: config.onUpdate });
+  const { save, isSaving } = useSaveAllTeamData({ onUpdate });
 
   return {
     isSaving,
