@@ -43,7 +43,7 @@ const IssueAccordion: FC<IssueAccordionProps> = ({
   const { save, isSaving } = useSaveTeamData({ teamName, issueType, onUpdate });
 
   return (
-    <Accordion startsOpen={issueType === "defaults"}>
+    <Accordion>
       <AccordionTitle>
         <Heading size="small">{issueNameMapping[issueType]}</Heading>
         {isSaving && (
