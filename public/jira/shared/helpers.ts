@@ -23,4 +23,4 @@ export const selectStart = (data: Partial<StartData>) => data?.start;
 export const selectDue = (date: Partial<DueData>) => date?.due;
 
 export const sortByStart = sortByIssueDate(selectStart);
-export const sortByDue = sortByIssueDate(selectDue, "desc");
+export const descSortByDue = sortByIssueDate(selectDue, "desc");

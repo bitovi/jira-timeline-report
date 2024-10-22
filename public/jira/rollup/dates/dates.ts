@@ -10,7 +10,7 @@ import {
 import {
   selectDue,
   selectStart,
-  sortByDue,
+  descSortByDue,
   sortByStart,
 } from "../../shared/helpers";
 import { DerivedIssue } from "../../derived/derive";
@@ -31,24 +31,24 @@ export type RolledupDatesReleaseOrIssue = IssueOrRelease<DerivedIssue> & {
 };
 
 const getStartData = (d: Partial<StartData> | null) => {
-  if(!d)return {}
-  
-  const {start,startFrom}=d
+  if (!d) return {};
 
-  return ({
+  const { start, startFrom } = d;
+
+  return {
     ...(start && { start }),
     ...(startFrom && { startFrom }),
-  });
+  };
 };
 const getDueData = (d: Partial<DueData> | null) => {
-  if(!d)return {}
-  
-  const {due,dueTo}=d
+  if (!d) return {};
 
-  return ({
+  const { due, dueTo } = d;
+
+  return {
     ...(due && { due }),
     ...(dueTo && { dueTo }),
-  });
+  };
 };
 
 /**
@@ -57,10 +57,10 @@ const getDueData = (d: Partial<DueData> | null) => {
  * @param {Array<String>} methodNames Starting from low to high
  * @return {Array<RollupDateData>}
  */
-export function rollupDates<_CustomFields, Meta>(
+export function rollupDates(
   groupedHierarchy: DerivedIssue[][],
   methodNames: CalculationName[]
-): RollupResponse<RollupDateData, Meta> {
+): RollupResponse<RollupDateData, {}> {
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(
       issueOrRelease: ReportingHierarchyIssueOrRelease<DerivedIssue>,
@@ -108,20 +108,23 @@ export function addRollupDates(
 
 export function mergeStartAndDueData<T extends Partial<StartData & DueData>>(
   records: T[]
-) {
-  const startData = records.filter(selectStart).map(getStartData);
-  const dueData = records.filter(selectDue).map(getDueData);
+): Partial<StartData & DueData> {
+  const startDataSortAsc: Partial<StartData>[] = records
+    .filter(selectStart)
+    .map(getStartData)
+    .sort(sortByStart);
+  const dueDataSortDesc: Partial<DueData>[] = records
+    .filter(selectDue)
+    .map(getDueData)
+    .sort(descSortByDue);
 
-  const sortedStart = startData.sort(sortByStart);
-  const sortedDue = dueData.sort(sortByDue);
-
-  const sd = startData.length ? sortedStart[0] : {};
-  const ed = dueData.length ? sortedDue[0] : {};
+  const firstStart = startDataSortAsc.length ? startDataSortAsc[0] : {};
+  const lastDue = dueDataSortDesc.length ? dueDataSortDesc[0] : {};
 
   return {
-    ...sd,
-    ...ed,
-  } as T;
+    ...firstStart,
+    ...lastDue,
+  };
 }
 
 /**
