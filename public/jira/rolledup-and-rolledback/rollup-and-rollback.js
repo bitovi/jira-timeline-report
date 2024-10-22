@@ -6,10 +6,13 @@ import { addWorkTypeDates } from "../rolledup/work-type/work-type";
 import { rollupBlockedStatusIssues } from "../rollup/blocked-status-issues/blocked-status-issues";
 import { deriveReleases } from "../releases/derive";
 import { normalizeReleases } from "../releases/normalize";
-import { percentComplete as rollupPercentComplete, addPercentComplete } from "../rollup/percent-complete/percent-complete";
+import { addPercentComplete } from "../rollup/percent-complete/percent-complete";
 import { addReportingHierarchy } from "../rollup/rollup";
 import { rollupChildStatuses } from "../rollup/child-statuses/child-statuses";
 import { rollupWarningIssues } from "../rollup/warning-issues/warning-issues";
+import { addHistoricalAdjustedEstimatedTime } from "../rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
+import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from "../rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
+
 
 /**
  * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
@@ -47,6 +50,8 @@ export function rollupAndRollback(derivedIssues, configuration, rollupTimingLeve
     return currentStatusRolledUp;
 }
 
+
+
 function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
 
     const normalizedReleases = normalizeReleases(derivedIssues, rollupTimingLevelsAndCalculations)
@@ -56,7 +61,13 @@ function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
     const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
     const rolledUpWarnings = rollupWarningIssues(rolledUpBlockers, rollupTimingLevelsAndCalculations);
     const percentComplete = addPercentComplete(rolledUpWarnings, rollupTimingLevelsAndCalculations);
-    const childStatuses = rollupChildStatuses(percentComplete, rollupTimingLevelsAndCalculations);
+    let childStatuses;
+    if(FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
+        let historicalAdjusted = addHistoricalAdjustedEstimatedTime(percentComplete, rollupTimingLevelsAndCalculations);
+        childStatuses = rollupChildStatuses(historicalAdjusted, rollupTimingLevelsAndCalculations);
+    } else {
+        childStatuses = rollupChildStatuses(percentComplete, rollupTimingLevelsAndCalculations);
+    }
     return addWorkTypeDates(childStatuses, rollupTimingLevelsAndCalculations);
     
 }
