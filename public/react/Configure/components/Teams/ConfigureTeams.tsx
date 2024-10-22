@@ -62,15 +62,13 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
   const { augmentedTeamData, ...teamData } = useTeamData(teamName, jiraFields);
 
   const teamIssues = Object.keys(augmentedTeamData).filter((issueType): issueType is keyof TeamConfiguration => {
-    // global defaults are specially render else where
     if (teamName === "__GLOBAL__") {
       // Remove return false and return line 82 once ready to integrate issue types
       return false;
       // return issueType !== "defaults";
     }
 
-    // Remove once ready to integration issue types
-    return issueType === "defaults";
+    return true;
   });
 
   return (
