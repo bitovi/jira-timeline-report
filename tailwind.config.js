@@ -64,6 +64,9 @@ module.exports = {
         112: "28rem",
         128: "32rem",
       },
+      width: {
+        128: "28rem",
+      },
     },
   },
   plugins: [require("@tailwindcss/container-queries")],

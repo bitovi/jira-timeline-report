@@ -3,14 +3,13 @@ import type { AllTeamData, Configuration, TeamConfiguration, IssueFields } from 
 import { createEmptyTeamConfiguration } from "./shared";
 
 import { getTeamData } from "./fetcher";
+import { applyGlobalDefaultData } from "./allTeamDefault";
 
-export const getInheritedData = (teamName: keyof AllTeamData, allTeamData: AllTeamData): TeamConfiguration => {
-  const teamData = getTeamData(teamName, allTeamData);
-
-  const issueKeys = ["outcome", "milestones", "initiatives", "epics", "stories"] as const;
+export const getInheritedData = (teamData: TeamConfiguration, allTeamData: AllTeamData): TeamConfiguration => {
+  const issueKeys = ["defaults", "outcome", "milestones", "initiatives", "epics", "stories"] as const;
 
   // Inheritance logic
-  const getInheritedData = (
+  const getInheritance = (
     issueType: (typeof issueKeys)[number],
     field: keyof Configuration
   ): Configuration[keyof Configuration] => {
@@ -26,7 +25,7 @@ export const getInheritedData = (teamName: keyof AllTeamData, allTeamData: AllTe
     (config, issueType) => {
       const issueFields = Object.keys(teamData[issueType]).reduce((fieldsAcc, field) => {
         const key = field as keyof Configuration;
-        const data = getInheritedData(issueType, key);
+        const data = getInheritance(issueType, key);
 
         return { ...fieldsAcc, [key]: data };
       }, {} as Configuration);
@@ -40,9 +39,11 @@ export const getInheritedData = (teamName: keyof AllTeamData, allTeamData: AllTe
 };
 
 export const applyInheritance = (teamName: keyof AllTeamData, allTeamData: AllTeamData) => {
+  const teamData = getTeamData(teamName, allTeamData);
+
   return {
     ...allTeamData,
-    [teamName]: getInheritedData(teamName, allTeamData),
+    [teamName]: getInheritedData(teamData, allTeamData),
   };
 };
 
@@ -63,4 +64,23 @@ export const createUpdatedTeamData = (
       [config.issueType]: { ...config.configuration },
     },
   };
+};
+
+export const createFullyInheritedConfig = (userAllTeamData: AllTeamData, jiraFields: IssueFields) => {
+  // global settings need to be setup before the rest of the teams
+  const augmentedAllTeam = applyInheritance("__GLOBAL__", applyGlobalDefaultData(userAllTeamData, jiraFields));
+
+  return Object.keys(augmentedAllTeam).reduce((augmented, team) => {
+    // already setup the global config
+    if (team === "__GLOBAL__") {
+      return { ...augmented, [team]: augmentedAllTeam[team] };
+    }
+
+    const teamData = getTeamData(team, augmentedAllTeam);
+
+    return {
+      ...augmented,
+      [team]: getInheritedData(teamData, augmentedAllTeam),
+    };
+  }, {} as AllTeamData);
 };

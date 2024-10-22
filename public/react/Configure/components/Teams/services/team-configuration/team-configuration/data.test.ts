@@ -3,6 +3,7 @@ import { expect, test, describe } from "vitest";
 import { createEmptyAllTeamsData, createEmptyConfiguration, createEmptyTeamConfiguration } from "./shared";
 import { applyInheritance, getInheritedData } from "./inheritance";
 import { applyGlobalDefaultData, getGlobalDefaultData } from "./allTeamDefault";
+import { getTeamData } from "./fetcher";
 
 const createConfiguration = (overrides: Partial<Configuration> = {}): Configuration => ({
   ...createEmptyConfiguration(),
@@ -111,7 +112,7 @@ describe("Configuration Inheritance and Defaults", () => {
       }),
     };
 
-    const teamAInheritedData = getInheritedData("Team A", allTeamData);
+    const teamAInheritedData = getInheritedData(getTeamData("Team A", allTeamData), allTeamData);
 
     expect(teamAInheritedData.epics).toEqual({
       sprintLength: 15,

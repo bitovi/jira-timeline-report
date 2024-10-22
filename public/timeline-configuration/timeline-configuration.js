@@ -14,8 +14,7 @@ import TeamConfigure from "../react/Configure";
 
 import {
   getAllTeamData,
-  applyGlobalDefaultData,
-  applyInheritance,
+  createFullyInheritedConfig,
 } from "../react/Configure/components/Teams/services/team-configuration";
 import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
 //import { getTeamData } from "../stateful-data/jira-data-requests.js";
@@ -51,7 +50,7 @@ const GOBACK_BUTTON = `
 
 export class TimelineConfiguration extends StacheElement {
   static view = `
-    <div class="px-3 py-2 h-full">
+    <div class="pl-3 py-2 h-full">
 
         {{# not(this.showSettings) }}
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
@@ -239,9 +238,9 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
-    getAllTeamData(this.storage)
-      .then((data) => applyInheritance("__GLOBAL__", applyGlobalDefaultData(data)))
-      .then((allTeamData) => createNormalizeConfiguration(allTeamData.__GLOBAL__.defaults))
+    Promise.all([this.jiraHelpers.fetchJiraFields(), getAllTeamData(this.storage)])
+      .then(([jiraFields, teamData]) => createFullyInheritedConfig(teamData, jiraFields))
+      .then((allTeamData) => createNormalizeConfiguration(allTeamData))
       .catch(() => {
         // Could fail because storage hasn't been setup yet
         return {};

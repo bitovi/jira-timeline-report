@@ -84,7 +84,7 @@ export function normalizeIssue(
       parallelWorkLimit,
       totalPointsPerDay,
       pointsPerDayPerTrack,
-      spreadEffortAcrossDates: getTeamSpreadsEffortAcrossDates(),
+      spreadEffortAcrossDates: getTeamSpreadsEffortAcrossDates(teamName),
     },
     url: getUrl(issue),
     status: getStatus(issue),

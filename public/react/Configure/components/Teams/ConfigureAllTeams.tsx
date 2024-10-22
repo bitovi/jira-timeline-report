@@ -11,6 +11,7 @@ import { useSaveTeamData, useTeamData } from "./services/team-configuration";
 
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
 import AllTeamsDefaultForm from "./AllTeamsDefaultsForm";
+import ConfigureTeams from "./ConfigureTeams";
 
 export interface ConfigureAllTeamsProps {
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
@@ -26,16 +27,16 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
   stories: "Stores",
 };
 
-const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props }) => {
+const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
   const { userTeamData, augmentedTeamData } = useTeamData("__GLOBAL__", jiraFields);
 
-  const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", issueType: "defaults" });
+  const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", issueType: "defaults", onUpdate });
 
   return (
     <>
       <Accordion startsOpen>
         <AccordionTitle>
-          <Heading size="small">Global defaults </Heading>
+          <Heading size="small">Global defaults</Heading>
           {isSaving && (
             <div>
               <Spinner size="small" label="saving" />
@@ -52,23 +53,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, ...props })
           />
         </AccordionContent>
       </Accordion>
-      {Object.keys(augmentedTeamData)
-        .filter((issueType) => issueType !== "defaults")
-        .map((key) => (
-          <Accordion key={key}>
-            <AccordionTitle>
-              <Heading size="small">{issueNameMapping[key as keyof TeamConfiguration]}</Heading>
-            </AccordionTitle>
-            <AccordionContent>
-              <ConfigureTeamsForm
-                jiraFields={jiraFields}
-                userData={userTeamData[key as keyof TeamConfiguration]}
-                augmented={augmentedTeamData[key as keyof TeamConfiguration]}
-                {...props}
-              />
-            </AccordionContent>
-          </Accordion>
-        ))}
+      <ConfigureTeams jiraFields={jiraFields} teamName="__GLOBAL__" onUpdate={onUpdate} />
     </>
   );
 };

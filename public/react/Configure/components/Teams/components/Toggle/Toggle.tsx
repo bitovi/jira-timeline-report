@@ -8,12 +8,12 @@ import Label from "../Label";
 import { Control, Controller } from "react-hook-form";
 import { FieldUpdates } from "../../ConfigureTeamsForm";
 
-interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, "onChange" | "isChecked"> {
+interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, "onChange" | "isChecked" | "isDisabled"> {
   label: string;
   description: string;
 }
 
-const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked }) => {
+const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked, isDisabled }) => {
   const id = useId();
 
   return (
@@ -22,10 +22,10 @@ const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked }) =>
         {label}
       </Label>
       <div className="flex justify-between align-center">
-        <p>{description}</p>
         <div className="w-10">
-          <AtlasToggle id={id} onChange={onChange} isChecked={isChecked} />
+          <AtlasToggle id={id} onChange={onChange} isChecked={isChecked} isDisabled={isDisabled} />
         </div>
+        <p>{description}</p>
       </div>
     </div>
   );
@@ -34,6 +34,7 @@ const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked }) =>
 export default Toggle;
 
 interface FormToggleProps {
+  disabled?: boolean;
   name: keyof Configuration;
   label: string;
   description: string;
@@ -41,14 +42,16 @@ interface FormToggleProps {
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
-export const FormToggle: FC<FormToggleProps> = ({ name, label, description, control, onSave }) => {
+export const FormToggle: FC<FormToggleProps> = ({ name, label, description, control, onSave, disabled = false }) => {
   return (
     <Controller
       name={name}
       control={control}
+      disabled={disabled}
       render={({ field }) => (
         <Toggle
           label={label}
+          isDisabled={disabled}
           description={description}
           isChecked={Boolean(field.value)}
           onChange={(event) => {
