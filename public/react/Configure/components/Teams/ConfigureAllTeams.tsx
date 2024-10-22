@@ -34,7 +34,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, .
 
   return (
     <>
-      <Accordion>
+      <Accordion startsOpen>
         <AccordionTitle>
           <Heading size="small">Global defaults</Heading>
           {isSaving && (

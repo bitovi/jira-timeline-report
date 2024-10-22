@@ -7,10 +7,11 @@ import Spinner from "@atlaskit/spinner";
 
 import { Accordion, AccordionContent, AccordionTitle } from "../../../components/Accordion";
 
-import { useSaveTeamData, useTeamData } from "./services/team-configuration";
+import { useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
 
 import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
+import { useTeamForm } from "./useTeamForm";
 
 const issueNameMapping: Record<keyof TeamConfiguration, string> = {
   defaults: "Team default",
@@ -31,19 +32,11 @@ interface IssueAccordionProps {
   userTeamData: TeamConfiguration;
 }
 
-const IssueAccordion: FC<IssueAccordionProps> = ({
-  teamName,
-  issueType,
-  onUpdate,
-  getInheritance,
-  jiraFields,
-  augmentedTeamData,
-  userTeamData,
-}) => {
-  const { save, isSaving } = useSaveTeamData({ teamName, issueType, onUpdate });
+const IssueAccordion: FC<IssueAccordionProps> = ({ issueType, jiraFields, ...formData }) => {
+  const { isSaving, ...formProps } = useTeamForm({ issueType, ...formData });
 
   return (
-    <Accordion>
+    <Accordion startsOpen={issueType === "defaults"}>
       <AccordionTitle>
         <Heading size="small">{issueNameMapping[issueType]}</Heading>
         {isSaving && (
@@ -53,13 +46,7 @@ const IssueAccordion: FC<IssueAccordionProps> = ({
         )}
       </AccordionTitle>
       <AccordionContent>
-        <ConfigureTeamsForm
-          getInheritance={() => getInheritance(issueType)[issueType]}
-          jiraFields={jiraFields}
-          userData={userTeamData[issueType]}
-          augmented={augmentedTeamData[issueType]}
-          save={save}
-        />
+        <ConfigureTeamsForm jiraFields={jiraFields} {...formProps} />
       </AccordionContent>
     </Accordion>
   );

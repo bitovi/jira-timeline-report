@@ -2,9 +2,9 @@ import type { FC } from "react";
 
 import type { Configuration, IssueFields } from "./services/team-configuration";
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
+import type { Control, UseFormReturn } from "react-hook-form";
 
 import React from "react";
-import { useForm } from "react-hook-form";
 import { Flex } from "@atlaskit/primitives";
 
 import Hr from "../../../components/Hr";
@@ -15,12 +15,13 @@ import InheritanceSelect from "./components/InheritanceSelect";
 
 export interface ConfigureTeamsFormProps {
   onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
-  onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
   userData: Configuration;
   augmented: Configuration;
-  getInheritance: () => Configuration;
   jiraFields: IssueFields;
-  save: (newConfiguration: Configuration) => void;
+  register: UseFormReturn<Configuration>["register"];
+  control: Control<Configuration>;
+  update: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
+  toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean) => void;
 }
 
 export interface FieldUpdates<TProperty extends keyof Configuration> {
@@ -28,28 +29,15 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
   value: Configuration[TProperty];
 }
 
-const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({ save, userData, augmented, jiraFields, getInheritance }) => {
+const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
+  userData,
+  jiraFields,
+  register,
+  control,
+  update,
+  toggleInheritance,
+}) => {
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
-
-  const { register, setValue, control } = useForm<Configuration>({
-    defaultValues: augmented,
-  });
-
-  function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {
-    save({ ...userData, [name]: value });
-  }
-
-  const toggleInheritance = (field: keyof Configuration, shouldCustomize: boolean) => {
-    if (shouldCustomize) {
-      update({ name: field, value: augmented[field] });
-      return;
-    }
-
-    // recalculate what the inherited value will be
-    setValue(field, getInheritance()[field]);
-
-    update({ name: field, value: null });
-  };
 
   return (
     <Flex direction="column" gap="space.100">
