@@ -106,9 +106,9 @@ export function addRollupDates(
   return zipped.flat();
 }
 
-export function mergeStartAndDueData<T extends Partial<StartData & DueData>>(
+export function mergeStartAndDueData<T extends RollupDateData>(
   records: T[]
-): Partial<StartData & DueData> {
+): RollupDateData{
   const startDataSortAsc: Partial<StartData>[] = records
     .filter(selectStart)
     .map(getStartData)
