@@ -19,19 +19,25 @@ export function getSummaryDefault({ fields }: ParentField<"summary"> | ChildFiel
   return fields.Summary;
 }
 
-export function getDueDateDefault({ fields }: Fields): string | null {
+export function getDueDateDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): string | null {
   return fields["Due date"] || null;
 }
 
-export function getStartDateDefault({ fields }: Fields): string | null {
+export function getStartDateDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): string | null {
   return fields["Start date"] || null;
 }
 
-export function getStoryPointsDefault({ fields }: Fields): NormalizedIssue["storyPoints"] {
+export function getStoryPointsDefault({
+  key,
+  fields,
+}: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["storyPoints"] {
   return fields["Story points"] || null;
 }
 
-export function getStoryPointsMedianDefault({ fields }: Fields): NormalizedIssue["storyPointsMedian"] {
+export function getStoryPointsMedianDefault({
+  key,
+  fields,
+}: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["storyPointsMedian"] {
   return fields["Story points median"] || null;
 }
 
@@ -39,7 +45,10 @@ export function getRankDefault({ fields }: Fields): NormalizedIssue["rank"] {
   return fields?.Rank || null;
 }
 
-export function getConfidenceDefault({ fields }: Fields): NormalizedIssue["confidence"] {
+export function getConfidenceDefault({
+  key,
+  fields,
+}: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["confidence"] {
   return fields["Story points confidence"] || fields?.Confidence || null;
 }
 

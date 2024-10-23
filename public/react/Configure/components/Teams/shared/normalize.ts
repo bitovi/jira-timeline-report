@@ -1,5 +1,5 @@
 import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
-import type { AllTeamData, Configuration } from "../services/team-configuration";
+import type { AllTeamData, Configuration, TeamConfiguration } from "../services/team-configuration";
 
 import { getTeamKeyDefault } from "../../../../../jira/normalized/defaults";
 
@@ -9,7 +9,41 @@ const getConfiguration = (allData: AllTeamData, teamKey?: string): Configuration
   return allData[key]?.defaults || allData.__GLOBAL__.defaults;
 };
 
-export const createNormalizeConfiguration = (allData?: AllTeamData | undefined): Partial<NormalizeIssueConfig> => {
+const defaults = [
+  "Start date",
+  "Due date",
+  "Story points",
+  "Story points median",
+  "Confidence",
+  "Story points confidence",
+  "Days estimate",
+];
+
+const getAllFields = (allData?: AllTeamData): string[] => {
+  let allFields = [...defaults];
+
+  for (const team in allData) {
+    for (const issueType in allData[team]) {
+      const config = allData[team][issueType as keyof TeamConfiguration];
+
+      allFields = [
+        ...allFields,
+        config.estimateField ?? "",
+        config.confidenceField ?? "",
+        config.startDateField ?? "",
+        config.dueDateField ?? "",
+      ];
+    }
+  }
+
+  return [...new Set(allFields)];
+};
+
+export const createNormalizeConfiguration = (
+  allData?: AllTeamData | undefined
+): Partial<NormalizeIssueConfig> & { fields: string[] } => {
+  const fields = getAllFields(allData);
+
   if (!allData) {
     console.warn(
       [
@@ -19,10 +53,11 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
       ].join("\n")
     );
 
-    return {};
+    return { fields };
   }
 
   return {
+    fields,
     getDaysPerSprint: (teamKey) => {
       return Number(getConfiguration(allData, teamKey).sprintLength);
     },
@@ -35,8 +70,8 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
     getTeamSpreadsEffortAcrossDates: (teamKey?: string) => {
       return !!getConfiguration(allData, teamKey).spreadEffortAcrossDates;
     },
-    getStartDate: ({ fields }) => {
-      const teamKey = getTeamKeyDefault({ fields, key: "" });
+    getStartDate: ({ fields, key }) => {
+      const teamKey = getTeamKeyDefault({ fields, key });
       const config = getConfiguration(allData, teamKey);
 
       if (!config.startDateField) {
@@ -51,8 +86,8 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
 
       return value;
     },
-    getConfidence: ({ fields }) => {
-      const teamKey = getTeamKeyDefault({ fields, key: "" });
+    getConfidence: ({ fields, key }) => {
+      const teamKey = getTeamKeyDefault({ fields, key });
       const config = getConfiguration(allData, teamKey);
 
       if (!config.confidenceField) {
@@ -73,8 +108,8 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
 
       return confidence;
     },
-    getDueDate: ({ fields }) => {
-      const teamKey = getTeamKeyDefault({ fields, key: "" });
+    getDueDate: ({ fields, key }) => {
+      const teamKey = getTeamKeyDefault({ fields, key });
       const config = getConfiguration(allData, teamKey);
 
       if (!config.dueDateField) {
@@ -89,8 +124,8 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
 
       return value;
     },
-    getStoryPoints: ({ fields }) => {
-      const teamKey = getTeamKeyDefault({ fields, key: "" });
+    getStoryPoints: ({ fields, key }) => {
+      const teamKey = getTeamKeyDefault({ fields, key });
       const config = getConfiguration(allData, teamKey);
 
       if (!config.estimateField) {
@@ -111,8 +146,8 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
 
       return storyPoints;
     },
-    getStoryPointsMedian: ({ fields }) => {
-      const teamKey = getTeamKeyDefault({ fields, key: "" });
+    getStoryPointsMedian: ({ fields, key }) => {
+      const teamKey = getTeamKeyDefault({ fields, key });
       const config = getConfiguration(allData, teamKey);
 
       if (!config.estimateField) {
