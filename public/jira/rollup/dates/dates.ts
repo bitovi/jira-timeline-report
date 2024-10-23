@@ -1,4 +1,3 @@
-import { DueData, StartData } from "../../../shared/issue-data/date-data";
 import {
   rollupGroupedHierarchy,
   groupIssuesByHierarchyLevelOrType,
@@ -13,6 +12,8 @@ import {
   descSortByDue,
   sortByStart,
 } from "../../shared/helpers";
+import { RollupLevelAndCalculation } from "../../shared/types";
+import { DueData, StartData } from "../../../shared/issue-data/date-data";
 import { DerivedIssue } from "../../derived/derive";
 
 const methods = {
@@ -22,7 +23,7 @@ const methods = {
   widestRange,
   parentOnly,
 };
-export type CalculationName = keyof typeof methods;
+export type DateCalculations = keyof typeof methods;
 
 export type RollupDateData = Partial<StartData & DueData>;
 
@@ -53,42 +54,13 @@ const getDueData = (d: Partial<DueData> | null) => {
 
 /**
  *
- * @param {Array<IssueOrRelease>} issuesOrReleases Starting from low to high
- * @param {Array<String>} methodNames Starting from low to high
- * @return {Array<RollupDateData>}
- */
-export function rollupDates(
-  groupedHierarchy: DerivedIssue[][],
-  methodNames: CalculationName[]
-): RollupResponse<RollupDateData, {}> {
-  return rollupGroupedHierarchy(groupedHierarchy, {
-    createRollupDataFromParentAndChild(
-      issueOrRelease: ReportingHierarchyIssueOrRelease<DerivedIssue>,
-      children: RollupDateData[],
-      hierarchyLevel
-    ) {
-      const methodName =
-        methodNames[hierarchyLevel] || "childrenFirstThenParent";
-      const method = methods[methodName];
-      const result = method(issueOrRelease, children);
-      return result;
-    },
-  });
-}
-
-/**
- *
  * @param {Array<IssueOrRelease>} issuesOrReleases
  * @param {Array<{type: String, hierarchyLevel: Number, calculation: String}>} rollupTimingLevelsAndCalculations
  * @return {Array<RolledupDatesReleaseOrIssue>}
  */
 export function addRollupDates(
   issuesOrReleases: DerivedIssue[],
-  rollupTimingLevelsAndCalculations: {
-    type: string;
-    hierarchyLevel: number;
-    calculation: CalculationName;
-  }[]
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation<DateCalculations>[]
 ) {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
     issuesOrReleases,
@@ -104,6 +76,31 @@ export function addRollupDates(
     "rollupDates"
   );
   return zipped.flat();
+}
+
+/**
+ *
+ * @param {Array<IssueOrRelease>} issuesOrReleases Starting from low to high
+ * @param {Array<String>} methodNames Starting from low to high
+ * @return {Array<RollupDateData>}
+ */
+export function rollupDates(
+  groupedHierarchy: DerivedIssue[][],
+  methodNames: DateCalculations[]
+): RollupResponse<RollupDateData, {}> {
+  return rollupGroupedHierarchy(groupedHierarchy, {
+    createRollupDataFromParentAndChild(
+      issueOrRelease: ReportingHierarchyIssueOrRelease<DerivedIssue>,
+      children: RollupDateData[],
+      hierarchyLevel
+    ) {
+      const methodName =
+        methodNames[hierarchyLevel] || "childrenFirstThenParent";
+      const method = methods[methodName];
+      const result = method(issueOrRelease, children);
+      return result;
+    },
+  });
 }
 
 export function mergeStartAndDueData<T extends RollupDateData>(

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ESNext",
+    "module": "ESNext",
     "jsx": "react",
     "outDir": "./public/dist",
     "rootDir": "./public",
@@ -12,7 +13,6 @@
     "allowSyntheticDefaultImports": true,
     "downlevelIteration": true,
     "allowJs": true,
-    "module": "ESNext",
     "skipLibCheck": true,
     "paths": {
       "undici-types": [
