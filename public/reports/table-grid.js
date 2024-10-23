@@ -1,6 +1,7 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
-import { StacheElement, type, ObservableObject, stache, key } from "../can.js";
+import { StacheElement, type, ObservableObject, stache, key, value } from "../can.js";
 import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
+import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from "../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time.js";
 
 /*
 export const dateFormatter = new Intl.DateTimeFormat('en-US', { 
@@ -19,6 +20,10 @@ import SimpleTooltip from "../shared/simple-tooltip.js";
 
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
+
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+import Stats from "../react/Stats/Stats.js";
 
 
 export class EstimateBreakdown extends StacheElement {
@@ -172,6 +177,8 @@ export class EstimateBreakdown extends StacheElement {
     round(number, decimals = 0) {
         return typeof number === "number" ? parseFloat(number.toFixed(decimals)) : "∅"
     }
+
+    
 }
 customElements.define("estimate-breakdown", EstimateBreakdown);
 
@@ -182,6 +189,7 @@ customElements.define("estimate-breakdown", EstimateBreakdown);
 // loops through and creates
 export class TableGrid extends StacheElement {
   static view = `
+        <div id="stats"></div>
         <table>
             <thead>
                 <tr>
@@ -243,11 +251,6 @@ export class TableGrid extends StacheElement {
     }
 
     let allChildren = this.primaryIssuesOrReleases.map( i => childrenRecursive(i)).flat(Infinity)
-
-
-    console.log( [...this.primaryIssuesOrReleases].sort((a,b)=> {
-        return a.completionRollup.totalWorkingDays - b.completionRollup.totalWorkingDays
-    }) )
 
     return allChildren;
   }
@@ -323,8 +326,6 @@ export class TableGrid extends StacheElement {
   }
   showEstimation(issue, element) {
 
-
-
     TOOLTIP.belowElementInScrollingContainer(element, new EstimateBreakdown().initialize({
         issue
     }));
@@ -332,7 +333,19 @@ export class TableGrid extends StacheElement {
     TOOLTIP.querySelector(".remove-button").onclick = ()=> {
         TOOLTIP.leftElement()
     }
+    
   }
+  connected() {
+    if(FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
+        createRoot(document.getElementById("stats")).render(
+            createElement(Stats, {
+              primaryIssuesOrReleasesObs: value.from(this,"primaryIssuesOrReleases")
+            })
+          );
+    }
+    
+}
+  
 }
 
 customElements.define("table-grid", TableGrid);

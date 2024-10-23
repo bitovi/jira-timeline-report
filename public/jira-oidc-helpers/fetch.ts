@@ -12,7 +12,8 @@ export default async function fetchJSON<T extends object>(
   url: string,
   options?: RequestInit & { useCache?: boolean },
 ): Promise<JsonResponse<T>> {
-  if (options?.useCache) {
+  let useCache = options?.useCache;
+  if (useCache) {
     // Add a TTL or only keep in a variable so it clears on page refresh
     const cachedData = window.localStorage.getItem(url);
     if (cachedData !== null) {
@@ -29,7 +30,7 @@ export default async function fetchJSON<T extends object>(
     throw err;
   }
 
-  if (options?.useCache) {
+  if (useCache) {
     const result = await responseToJSON<T>(response);
     try {
       window.localStorage.setItem(url, JSON.stringify(result.data));

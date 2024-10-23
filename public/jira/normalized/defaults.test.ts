@@ -23,8 +23,9 @@ import {
 } from "./defaults";
 import { IssueFields, JiraIssue, ParentIssue } from "../shared/types";
 
-const createFields = (overrides: Partial<IssueFields> = {}): Pick<JiraIssue, "fields"> => {
+const createFields = (overrides: Partial<IssueFields> = {}, key: string = ""): Pick<JiraIssue, "fields" | "key"> => {
   return {
+    key,
     fields: {
       Parent: {} as ParentIssue,
       Summary: "summary",
@@ -119,7 +120,7 @@ test("getUrlDefault", () => {
 });
 
 test("getTeamKeyDefault", () => {
-  expect(getTeamKeyDefault({ key: "a-b-c", ...createFields() })).toBe("a");
+  expect(getTeamKeyDefault({ ...createFields({}, "a-b-c") })).toBe("a");
 });
 
 test("getTypeDefault", () => {
