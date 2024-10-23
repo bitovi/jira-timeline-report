@@ -39,7 +39,7 @@ export class TimelineReport extends StacheElement {
           
           ></timeline-configuration>
 
-      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow" on:click="this.goBack()">
+      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 
@@ -109,7 +109,7 @@ export class TimelineReport extends StacheElement {
           {{ /and }}
 
           {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-            <div class="my-2   border-box block overflow-hidden color-bg-white">
+            <div class="my-2   border-box block overflow-y-auto color-bg-white">
             
               {{# eq(this.primaryReportType, "start-due")  }}
                 <gantt-grid 
@@ -289,6 +289,7 @@ export class TimelineReport extends StacheElement {
         rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
         configuration: this.configuration
       } )*/
+     console.log("rolledupAndRolledBackIssuesAndReleases changed!")
     if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
       return [];
     }

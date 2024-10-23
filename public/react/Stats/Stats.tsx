@@ -74,6 +74,9 @@ function getTeamNames(issues: Array<RolledUpIssue>) {
 
 const ConfigurationPanel: FC<{primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>}> = ({ primaryIssuesOrReleasesObs }) => {
     const issues = useCanObservable(primaryIssuesOrReleasesObs);
+    if(!issues?.length) {
+        return <div>Loading ...</div>
+    }
 
     const allTeamNames = getTeamNames(issues)
 
@@ -95,7 +98,9 @@ const ConfigurationPanel: FC<{primaryIssuesOrReleasesObs: CanObservable<Array<Ro
                 return <tr className="my-3 text-lg" key={issue.key}>
                     <td>{issue.summary}</td>
                     {allTeamNames.map( teamName => {
-                        return <td key={issue.key+"/"+teamName}>num</td>
+                        return <td key={issue.key+"/"+teamName} className="border border-neutral-201">{
+                            round( issue.historicalAdjustedEstimatedTime.find( data => data.teamName === teamName )?.historicalAdjustedEstimatedTime )
+                        }</td>
                     })}
 
                 </tr>
@@ -112,7 +117,7 @@ function useCanObservable<T>(observable: CanObservable<T>) {
     const [value, setValue] = useState<T>(observable.value);
 
     useEffect(() => {
-        const handler = ({value}: {value: T}) => {
+        const handler = (value: T) => {
             setValue(value);
         };
 
