@@ -137,3 +137,9 @@ export interface NormalizedTeam {
 export type DefaultsToConfig<T> = {
   [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
 };
+
+export type RollupLevelAndCalculation<T extends string> = {
+  type: string;
+  hierarchyLevel: number;
+  calculation: T;
+};
