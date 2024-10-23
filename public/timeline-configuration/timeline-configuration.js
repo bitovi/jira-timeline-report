@@ -1,4 +1,4 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value } from "../can.js";
+import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../can.js";
 
 import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
 // import {
@@ -182,6 +182,7 @@ export class TimelineConfiguration extends StacheElement {
             loadChildren: value.from(this, "loadChildren"),
             isLoggedIn: value.from(this, "isLoggedIn"),
             jiraHelpers: this.jiraHelpers,
+            fields: value.from(this, "fields"),
           },
           { listenTo, resolve }
         );
@@ -245,8 +246,11 @@ export class TimelineConfiguration extends StacheElement {
         // Could fail because storage hasn't been setup yet
         return {};
       })
-      .then((data) => {
-        this.normalizeOptions = data;
+      .then(({ fields, ...config }) => {
+        queues.batch.start();
+        this.fields = fields;
+        this.normalizeOptions = config;
+        queues.batch.stop();
       });
 
     createRoot(document.getElementById("team-configuration")).render(
@@ -255,8 +259,11 @@ export class TimelineConfiguration extends StacheElement {
         jira: this.jiraHelpers,
         derivedIssuesObservable: value.from(this, "derivedIssues"),
         showingTeamsObservable: value.from(this, "isShowingTeams"),
-        onUpdate: (partial) => {
-          this.normalizeOptions = partial;
+        onUpdate: ({ fields, ...configuration }) => {
+          queues.batch.start();
+          this.fields = fields;
+          this.normalizeOptions = configuration;
+          queues.batch.stop();
         },
         onBackButtonClicked: () => {
           this.showSettings = "";
