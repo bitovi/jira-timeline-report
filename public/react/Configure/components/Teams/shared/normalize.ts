@@ -1,8 +1,6 @@
 import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
 import type { AllTeamData, Configuration, TeamConfiguration } from "../services/team-configuration";
 
-import { getTeamKeyDefault } from "../../../../../jira/normalized/defaults";
-
 const getConfiguration = (allData: AllTeamData, teamKey?: string, issueType?: string): Configuration => {
   const key = teamKey || "";
   const issue = (issueType || "") as keyof TeamConfiguration;
@@ -43,7 +41,7 @@ const getAllFields = (allData?: AllTeamData): string[] => {
 export const createNormalizeConfiguration = (
   allData?: AllTeamData | undefined
 ): Partial<NormalizeIssueConfig> & { fields: string[] } => {
-  const fields = getAllFields(allData);
+  const neededFields = getAllFields(allData);
 
   if (!allData) {
     console.warn(
@@ -54,32 +52,31 @@ export const createNormalizeConfiguration = (
       ].join("\n")
     );
 
-    return { fields };
+    return { fields: neededFields };
   }
 
   return {
-    fields,
-    getDaysPerSprint: (teamKey) => {
-      return Number(getConfiguration(allData, teamKey).sprintLength);
+    fields: neededFields,
+    getDaysPerSprint: (issue, config) => {
+      return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue)).sprintLength);
     },
-    getVelocity: (issue, { getIssueKey, getTeamKey }) => {
-      return Number(getConfiguration(allData, getTeamKey(issue), getIssueKey(issue)).velocityPerSprint);
+    getVelocity: (issue, config) => {
+      return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue)).velocityPerSprint);
     },
-    getParallelWorkLimit: (teamKey) => {
-      return Number(getConfiguration(allData, teamKey).tracks);
+    getParallelWorkLimit: (issue, config) => {
+      return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue)).tracks);
     },
-    getTeamSpreadsEffortAcrossDates: (teamKey?: string) => {
-      return !!getConfiguration(allData, teamKey).spreadEffortAcrossDates;
+    getTeamSpreadsEffortAcrossDates: (issue, config) => {
+      return !!getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue)).spreadEffortAcrossDates;
     },
-    getStartDate: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getStartDate: (issue, config) => {
+      const teamIssueConfiguration = getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue));
 
-      if (!config.startDateField) {
+      if (!teamIssueConfiguration.startDateField) {
         return null;
       }
 
-      const value = fields[config.startDateField];
+      const value = issue.fields[teamIssueConfiguration.startDateField];
 
       if (!value || typeof value !== "string") {
         return null;
@@ -87,15 +84,14 @@ export const createNormalizeConfiguration = (
 
       return value;
     },
-    getConfidence: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getConfidence: (issue, config) => {
+      const teamIssueConfiguration = getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue));
 
-      if (!config.confidenceField) {
+      if (!teamIssueConfiguration.confidenceField) {
         return null;
       }
 
-      const value = fields[config.confidenceField];
+      const value = issue.fields[teamIssueConfiguration.confidenceField];
 
       if (!value) {
         return null;
@@ -109,15 +105,14 @@ export const createNormalizeConfiguration = (
 
       return confidence;
     },
-    getDueDate: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getDueDate: (issue, config) => {
+      const teamIssueConfiguration = getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue));
 
-      if (!config.dueDateField) {
+      if (!teamIssueConfiguration.dueDateField) {
         return null;
       }
 
-      const value = fields[config.dueDateField];
+      const value = issue.fields[teamIssueConfiguration.dueDateField];
 
       if (!value || typeof value !== "string") {
         return null;
@@ -125,15 +120,14 @@ export const createNormalizeConfiguration = (
 
       return value;
     },
-    getStoryPoints: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getStoryPoints: (issue, config) => {
+      const teamIssueConfiguration = getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue));
 
-      if (!config.estimateField) {
+      if (!teamIssueConfiguration.estimateField) {
         return null;
       }
 
-      const value = fields[config.estimateField];
+      const value = issue.fields[teamIssueConfiguration.estimateField];
 
       if (!value) {
         return null;
@@ -147,15 +141,14 @@ export const createNormalizeConfiguration = (
 
       return storyPoints;
     },
-    getStoryPointsMedian: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getStoryPointsMedian: (issue, config) => {
+      const teamIssueConfiguration = getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue));
 
-      if (!config.estimateField) {
+      if (!teamIssueConfiguration.estimateField) {
         return null;
       }
 
-      const value = fields[config.estimateField];
+      const value = issue.fields[teamIssueConfiguration.estimateField];
 
       if (!value) {
         return null;

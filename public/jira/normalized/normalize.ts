@@ -57,8 +57,8 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
   const teamName = optionsWithDefaults.getTeamKey(issue);
 
   const velocity = optionsWithDefaults.getVelocity(issue, optionsWithDefaults);
-  const daysPerSprint = optionsWithDefaults.getDaysPerSprint(teamName);
-  const parallelWorkLimit = optionsWithDefaults.getParallelWorkLimit(teamName);
+  const daysPerSprint = optionsWithDefaults.getDaysPerSprint(issue, optionsWithDefaults);
+  const parallelWorkLimit = optionsWithDefaults.getParallelWorkLimit(issue, optionsWithDefaults);
 
   const totalPointsPerDay = velocity / daysPerSprint;
   const pointsPerDayPerTrack = totalPointsPerDay / parallelWorkLimit;
@@ -69,12 +69,12 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
     summary: optionsWithDefaults.getSummary(issue),
     key: optionsWithDefaults.getIssueKey(issue),
     parentKey: optionsWithDefaults.getParentKey(issue),
-    confidence: optionsWithDefaults.getConfidence(issue),
-    dueDate: parseDateIntoLocalTimezone(optionsWithDefaults.getDueDate(issue)),
+    confidence: optionsWithDefaults.getConfidence(issue, optionsWithDefaults),
+    dueDate: parseDateIntoLocalTimezone(optionsWithDefaults.getDueDate(issue, optionsWithDefaults)),
     hierarchyLevel: optionsWithDefaults.getHierarchyLevel(issue),
-    startDate: parseDateIntoLocalTimezone(optionsWithDefaults.getStartDate(issue)),
-    storyPoints: optionsWithDefaults.getStoryPoints(issue),
-    storyPointsMedian: optionsWithDefaults.getStoryPointsMedian(issue),
+    startDate: parseDateIntoLocalTimezone(optionsWithDefaults.getStartDate(issue, optionsWithDefaults)),
+    storyPoints: optionsWithDefaults.getStoryPoints(issue, optionsWithDefaults),
+    storyPointsMedian: optionsWithDefaults.getStoryPointsMedian(issue, optionsWithDefaults),
     type: optionsWithDefaults.getType(issue),
     sprints: optionsWithDefaults.getSprints(issue),
     team: {
@@ -84,7 +84,7 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
       parallelWorkLimit,
       totalPointsPerDay,
       pointsPerDayPerTrack,
-      spreadEffortAcrossDates: optionsWithDefaults.getTeamSpreadsEffortAcrossDates(teamName),
+      spreadEffortAcrossDates: optionsWithDefaults.getTeamSpreadsEffortAcrossDates(issue, optionsWithDefaults),
     },
     url: optionsWithDefaults.getUrl(issue),
     status: optionsWithDefaults.getStatus(issue),

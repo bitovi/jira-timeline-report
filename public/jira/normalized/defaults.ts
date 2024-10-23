@@ -2,6 +2,10 @@ import { parseDateISOString } from "../../date-helpers";
 import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
 import { NormalizeIssueConfig } from "./normalize";
 
+type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};
+
 type ParentField<F extends keyof ParentIssue["fields"]> = {
   fields: Pick<ParentIssue["fields"], F>;
 };
@@ -20,25 +24,63 @@ export function getSummaryDefault({ fields }: ParentField<"summary"> | ChildFiel
   return fields.Summary;
 }
 
-export function getDueDateDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): string | null {
+type DueDateMinimalIssue = {
+  fields: {
+    "Due date"?: JiraIssue["fields"]["Due date"];
+    [key: string]: unknown;
+  };
+} & MinimalIssueTypeIssue &
+  MinimalTeamKeyIssue;
+
+export function getDueDateDefault(
+  { fields }: DueDateMinimalIssue,
+  otpions?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+): string | null {
   return fields["Due date"] || null;
 }
 
-export function getStartDateDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): string | null {
+type StartDateMinimalIssue = {
+  fields: {
+    "Start date"?: JiraIssue["fields"]["Start date"];
+    [key: string]: unknown;
+  };
+} & MinimalIssueTypeIssue &
+  MinimalTeamKeyIssue;
+
+export function getStartDateDefault(
+  { fields }: StartDateMinimalIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+): string | null {
   return fields["Start date"] || null;
 }
 
-export function getStoryPointsDefault({
-  key,
-  fields,
-}: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["storyPoints"] {
+type StoryPointsMinimalIssue = {
+  fields: {
+    "Story points"?: JiraIssue["fields"]["Story points"];
+    [key: string]: unknown;
+  };
+} & MinimalIssueTypeIssue &
+  MinimalTeamKeyIssue;
+
+export function getStoryPointsDefault(
+  { key, fields }: StoryPointsMinimalIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+): NormalizedIssue["storyPoints"] {
   return fields["Story points"] || null;
 }
 
-export function getStoryPointsMedianDefault({
-  key,
-  fields,
-}: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["storyPointsMedian"] {
+type StoryPointsMedianMinimalIssue = {
+  fields: {
+    "Story points median"?: JiraIssue["fields"]["Story points median"];
+    [key: string]: unknown;
+  };
+} & MinimalIssueTypeIssue &
+  MinimalTeamKeyIssue;
+
+export function getStoryPointsMedianDefault(
+  { key, fields }: StoryPointsMedianMinimalIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+): NormalizedIssue["storyPointsMedian"] {
   return fields["Story points median"] || null;
 }
 
@@ -46,10 +88,19 @@ export function getRankDefault({ fields }: Fields): NormalizedIssue["rank"] {
   return fields?.Rank || null;
 }
 
-export function getConfidenceDefault({
-  key,
-  fields,
-}: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["confidence"] {
+type ConfidenceMinimalIssue = {
+  fields: {
+    "Story points confidence"?: JiraIssue["fields"]["Story points confidence"];
+    Confidence?: JiraIssue["fields"]["Confidence"];
+    [key: string]: unknown;
+  };
+} & MinimalIssueTypeIssue &
+  MinimalTeamKeyIssue;
+
+export function getConfidenceDefault(
+  { fields }: ConfidenceMinimalIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+): NormalizedIssue["confidence"] {
   return fields["Story points confidence"] || fields?.Confidence || null;
 }
 
@@ -81,16 +132,28 @@ export function getUrlDefault({ key }: Pick<JiraIssue, "key">): NormalizedIssue[
   return "javascript://";
 }
 
-export function getTeamKeyDefault({ key, fields }: Pick<JiraIssue, "key" | "fields">): NormalizedIssue["team"]["name"] {
+interface MinimalTeamKeyIssue {
+  key: JiraIssue["key"];
+  fields: { Team: JiraIssue["fields"]["Team"] };
+}
+
+export function getTeamKeyDefault({ key, fields }: MinimalTeamKeyIssue): NormalizedIssue["team"]["name"] {
   if (fields.Team?.name) {
     return fields.Team.name;
   }
+
   return key.replace(/-.*/, "");
 }
 
-export function getTypeDefault({
-  fields,
-}: ChildField<"Issue Type"> | ParentField<"issuetype">): NormalizedIssue["type"] {
+type MinimalIssueTypeIssue = {
+  fields:
+    | {
+        issuetype: ParentIssue["fields"]["issuetype"];
+      }
+    | { "Issue Type": JiraIssue["fields"]["Issue Type"] };
+};
+
+export function getTypeDefault({ fields }: MinimalIssueTypeIssue): NormalizedIssue["type"] {
   const issueType = "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
 
   if (typeof issueType === "string") {
@@ -147,23 +210,38 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
   });
 }
 
+type MinimalVelocityIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+
 export function getVelocityDefault(
-  normalizedIssue: Pick<JiraIssue, "key" | "fields">,
-  options: Pick<NormalizeIssueConfig, "getTeamKey" | "getIssueKey">
+  issue: MinimalVelocityIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
 ): NormalizedIssue["team"]["velocity"] {
   return 21;
 }
 
-export function getParallelWorkLimitDefault(teamKey: string): NormalizedIssue["team"]["parallelWorkLimit"] {
+type MinimalParallelWorkLimitIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+
+export function getParallelWorkLimitDefault(
+  issue: MinimalParallelWorkLimitIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+): NormalizedIssue["team"]["parallelWorkLimit"] {
   return 1;
 }
 
-export function getDaysPerSprintDefault(teamKey: string): NormalizedIssue["team"]["daysPerSprint"] {
+type MinimalDaysPerSprintIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+
+export function getDaysPerSprintDefault(
+  issue: MinimalDaysPerSprintIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+): NormalizedIssue["team"]["daysPerSprint"] {
   return 10;
 }
 
+type MinimalTeamSpreadEffortIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+
 export function getTeamSpreadsEffortAcrossDatesDefault(
-  teamKey?: string
+  issue: MinimalTeamSpreadEffortIssue,
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
 ): NormalizedIssue["team"]["spreadEffortAcrossDates"] {
   return false;
 }
