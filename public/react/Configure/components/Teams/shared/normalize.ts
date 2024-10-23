@@ -1,12 +1,13 @@
 import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
-import type { AllTeamData, Configuration } from "../services/team-configuration";
+import type { AllTeamData, Configuration, TeamConfiguration } from "../services/team-configuration";
 
 import { getTeamKeyDefault } from "../../../../../jira/normalized/defaults";
 
-const getConfiguration = (allData: AllTeamData, teamKey?: string): Configuration => {
+const getConfiguration = (allData: AllTeamData, teamKey?: string, issueType?: string): Configuration => {
   const key = teamKey || "";
+  const issue = (issueType || "") as keyof TeamConfiguration;
 
-  return allData[key]?.defaults || allData.__GLOBAL__.defaults;
+  return allData[key]?.[issue] || allData.__GLOBAL__.defaults;
 };
 
 export const createNormalizeConfiguration = (allData?: AllTeamData | undefined): Partial<NormalizeIssueConfig> => {
@@ -26,8 +27,8 @@ export const createNormalizeConfiguration = (allData?: AllTeamData | undefined):
     getDaysPerSprint: (teamKey) => {
       return Number(getConfiguration(allData, teamKey).sprintLength);
     },
-    getVelocity: (teamKey) => {
-      return Number(getConfiguration(allData, teamKey).velocityPerSprint);
+    getVelocity: (issue, { getIssueKey, getTeamKey }) => {
+      return Number(getConfiguration(allData, getTeamKey(issue), getIssueKey(issue)).velocityPerSprint);
     },
     getParallelWorkLimit: (teamKey) => {
       return Number(getConfiguration(allData, teamKey).tracks);

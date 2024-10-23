@@ -19,7 +19,7 @@ const issueNameMapping: Record<keyof TeamConfiguration, string> = {
   milestones: "Milestones",
   initiatives: "Initiatives",
   epics: "Epics",
-  stories: "Stores",
+  stories: "Stories",
 };
 
 interface IssueAccordionProps {

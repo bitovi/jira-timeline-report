@@ -1,5 +1,6 @@
 import { parseDateISOString } from "../../date-helpers";
 import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
+import { NormalizeIssueConfig } from "./normalize";
 
 type ParentField<F extends keyof ParentIssue["fields"]> = {
   fields: Pick<ParentIssue["fields"], F>;
@@ -137,7 +138,10 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
   });
 }
 
-export function getVelocityDefault(teamKey: string): NormalizedIssue["team"]["velocity"] {
+export function getVelocityDefault(
+  normalizedIssue: Pick<JiraIssue, "key" | "fields">,
+  options: Pick<NormalizeIssueConfig, "getTeamKey" | "getIssueKey">
+): NormalizedIssue["team"]["velocity"] {
   return 21;
 }
 
