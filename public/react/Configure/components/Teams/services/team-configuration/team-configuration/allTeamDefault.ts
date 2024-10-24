@@ -17,12 +17,19 @@ const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
     }
 
     for (const possibleName of possibleNames) {
-      const field = jiraFields.find(
-        (field) => field.name === possibleName || field.name.toLowerCase() === possibleName.toLowerCase()
+      const strictField = jiraFields.find(
+        (field) => field.name === possibleName 
       );
 
-      if (field) {
-        return field.name;
+      if (strictField) {
+        return strictField.name;
+      }
+      const caseInsensitiveField = jiraFields.find(
+        (field) => field.name.toLowerCase() === possibleName.toLowerCase()
+      );
+
+      if (caseInsensitiveField) {
+        return caseInsensitiveField.name;
       }
     }
 
@@ -50,9 +57,9 @@ const getConfidenceField = createDefaultJiraFieldGetter(
   ["confidence"]
 );
 
-const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["start date", "starting date"]);
+const getStartDateField = createDefaultJiraFieldGetter("startDateField", ["Start date", "starting date"]);
 
-const getDueDateField = createDefaultJiraFieldGetter("dueDateField", ["due date", "end date", "target date"]);
+const getDueDateField = createDefaultJiraFieldGetter("dueDateField", ["Due date", "end date", "target date"]);
 
 const nonFieldDefaults: Omit<Configuration, "estimateField" | "confidenceField" | "startDateField" | "dueDateField"> = {
   sprintLength: 10,

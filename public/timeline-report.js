@@ -333,7 +333,6 @@ export class TimelineReport extends StacheElement {
     if (!this.groupedParentDownHierarchy.length) {
       return [];
     }
-
     const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
 
     const hideUnknownInitiatives = this.hideUnknownInitiatives;
