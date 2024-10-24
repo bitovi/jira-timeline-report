@@ -10,33 +10,34 @@ import {
 
 const BASE_HIERARCHY_LEVEL = 1;
 
-type PercentCompleteRollup = {
+export type PercentCompleteRollup = {
   userSpecifiedValues: boolean;
-  totalWorkingDays: number;
-  completedWorkingDays: number;
-};
-
-type PercentCompleteMeta<CustomFields> = {
-  // how many children on average
-  childCounts: number[];
-  totalDays: number | undefined;
-  // an array of the total of the number of days of work. Used to calculate the average
-  totalDaysOfWorkForAverage: number[];
-  // which items need their average set after the average is calculated
-  needsAverageSet: RollupCompletion[];
-  // this will be set later
-  averageTotalDays: number | undefined;
-  averageChildCount: number | undefined;
-  issues: RolledupCompletionIssue<CustomFields>[];
-};
-
-type RollupCompletion = {
   totalWorkingDays: number;
   completedWorkingDays: number;
   remainingWorkingDays: number;
 };
 
-type RolledupCompletionIssue<CustomFields> = IssueOrRelease<CustomFields> & {
+export type PercentCompleteMeta<CustomFields> = {
+  // how many children on average
+  childCounts: number[];
+  totalDays: number;
+  // an array of the total of the number of days of work. Used to calculate the average
+  totalDaysOfWorkForAverage: number[];
+  // which items need their average set after the average is calculated
+  needsAverageSet: RollupCompletion[];
+  // this will be set later
+  averageTotalDays: number;
+  averageChildCount: number;
+  issues: RolledupCompletionIssue<CustomFields>[];
+};
+
+export type RollupCompletion = {
+  totalWorkingDays: number;
+  completedWorkingDays: number;
+  remainingWorkingDays: number;
+};
+
+export type RolledupCompletionIssue<CustomFields> = IssueOrRelease<CustomFields> & {
   completionRollup: RollupCompletion;
 };
 
@@ -80,15 +81,15 @@ export function rollupPercentComplete<CustomFields>(
       return {
         // how many children on average
         childCounts: [],
-        totalDays: undefined,
+        totalDays: 0,
 
         // an array of the total of the number of days of work. Used to calculate the average
         totalDaysOfWorkForAverage: [],
         // which items need their average set after the average is calculated
         needsAverageSet: [],
         // this will be set later
-        averageTotalDays: undefined,
-        averageChildCount: undefined,
+        averageTotalDays: 0,
+        averageChildCount: 0,
         issues: [],
       };
     },
@@ -172,7 +173,9 @@ export function childrenFirstThenParent<CustomFields>(
   }
 }
 
-function sumChildRollups(children: PercentCompleteRollup[]) {
+export function sumChildRollups(
+  children: PercentCompleteRollup[]
+): PercentCompleteRollup {
   const userSpecifiedValues = children.every((d) => d.userSpecifiedValues);
   const totalDays = children.map((child) => child.totalWorkingDays);
   const completedDays = children.map((child) => child.completedWorkingDays);
@@ -335,7 +338,7 @@ function sum(arr: number[]) {
   return arr.reduce((partialSum, a) => partialSum + a, 0);
 }
 function average(arr: number[]) {
-  return arr.length > 0 ? sum(arr) / arr.length : undefined;
+  return arr.length > 0 ? sum(arr) / arr.length : 0;
 }
 
 /**
