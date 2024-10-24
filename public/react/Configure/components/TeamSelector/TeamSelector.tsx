@@ -57,7 +57,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
           >
             <PeopleGroupIcon label={`${team} settings`} />
             <div className="flex-1 flex justify-between items-center">
-              Team {team.name}
+              {team.name}
               {team.status !== "in-both" && (
                 <Tooltip position="top" content={getStatusText(team.status)}>
                   <EditorUnlinkIcon label="unlinked team data" />
