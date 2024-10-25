@@ -29,7 +29,10 @@ export function csvToRawIssues(csvIssues) {
   return res;
 }
 
-export function rawIssuesRequestData({ jql, childJQL, isLoggedIn, loadChildren, jiraHelpers }, { listenTo, resolve }) {
+export function rawIssuesRequestData(
+  { jql, childJQL, isLoggedIn, loadChildren, jiraHelpers, fields },
+  { listenTo, resolve }
+) {
   const progressData = value.with(null);
 
   const promise = value.returnedBy(function rawIssuesPromise() {
@@ -42,7 +45,7 @@ export function rawIssuesRequestData({ jql, childJQL, isLoggedIn, loadChildren, 
         jiraHelpers,
         jql: jql.value,
         childJQL: childJQL.value,
-        // fields ... we will have to do this
+        fields: fields.value,
       },
       {
         progressUpdate: (receivedProgressData) => {
@@ -95,32 +98,36 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
      * @returns
      */
     ([serverInfo, teamData]) => {
-      const {getVelocity, getParallelWorkLimit, ...otherNormalizeParams} = (normalizeOptions ?? {});
+      const { getVelocity, getParallelWorkLimit, ...otherNormalizeParams } = normalizeOptions ?? {};
       return {
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
         getVelocity(team) {
           const methodsToTry = [teamData.getVelocityForTeam.bind(teamData), getVelocity, getVelocityDefault];
-          for(let method of methodsToTry) {
+          for (let method of methodsToTry) {
             let value;
-            if(method) {
+            if (method) {
               value = method(team);
             }
-            if(value != null) {
+            if (value != null) {
               return value;
             }
           }
         },
         getParallelWorkLimit(team) {
-          const methodsToTry = [teamData.getTracksForTeam.bind(teamData), getParallelWorkLimit, getParallelWorkLimitDefault];
-          for(let method of methodsToTry) {
+          const methodsToTry = [
+            teamData.getTracksForTeam.bind(teamData),
+            getParallelWorkLimit,
+            getParallelWorkLimitDefault,
+          ];
+          for (let method of methodsToTry) {
             let value;
-            if(method) {
+            if (method) {
               value = method(team);
             }
-            
-            if(value != null) {
+
+            if (value != null) {
               return value;
             }
           }
@@ -136,7 +143,7 @@ export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPr
     if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
       return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
         ([rawIssues, configuration]) => {
-          console.log("Normalizing and Deriving",{ rawIssues });
+          console.log("Normalizing and Deriving", { rawIssues });
           return rawIssues.map((issue) => {
             const normalized = normalizeIssue(issue, configuration);
             const derived = deriveIssue(normalized, configuration);
