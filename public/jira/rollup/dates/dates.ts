@@ -58,8 +58,8 @@ const getDueData = (d: Partial<DueData> | null) => {
  * @param {Array<{type: String, hierarchyLevel: Number, calculation: String}>} rollupTimingLevelsAndCalculations
  * @return {Array<RolledupDatesReleaseOrIssue>}
  */
-export function addRollupDates(
-  issuesOrReleases: DerivedIssue[],
+export function addRollupDates<CustomFields>(
+  issuesOrReleases: IssueOrRelease<CustomFields>[],
   rollupTimingLevelsAndCalculations: RollupLevelAndCalculation<DateCalculations>[]
 ) {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
@@ -84,8 +84,8 @@ export function addRollupDates(
  * @param {Array<String>} methodNames Starting from low to high
  * @return {Array<RollupDateData>}
  */
-export function rollupDates(
-  groupedHierarchy: DerivedIssue[][],
+export function rollupDates<CustomFields>(
+  groupedHierarchy: IssueOrRelease<CustomFields>[][],
   methodNames: DateCalculations[]
 ): RollupResponse<RollupDateData, {}> {
   return rollupGroupedHierarchy(groupedHierarchy, {

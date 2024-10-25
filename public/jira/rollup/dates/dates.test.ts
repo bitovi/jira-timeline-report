@@ -1,6 +1,7 @@
 import { expect, test, describe, it } from "vitest";
 import { rollupDates, parentOnly } from "./dates.js";
 import { DerivedIssue } from "../../derived/derive.js";
+import { IssueOrRelease } from "../rollup.js";
 
 describe("rollupDates", () => {
   // due, dueTo {message, reference} .... {start,startFrom}
@@ -37,7 +38,7 @@ describe("rollupDates", () => {
             derivedTiming: { start: _2001, due: _2003, dueTo: "2003" },
           },
         ],
-      ] as DerivedIssue[][]
+      ] as IssueOrRelease<{}>[][]
     ).reverse();
 
     const results = rollupDates(issuesAndReleases, []);
@@ -112,7 +113,7 @@ describe("rollupDates", () => {
             derivedTiming: { start: _2001, due: _2002 },
           },
         ],
-      ] as DerivedIssue[][]
+      ] as IssueOrRelease<{}>[][]
     ).reverse();
 
     const results = rollupDates(issuesAndReleases, [

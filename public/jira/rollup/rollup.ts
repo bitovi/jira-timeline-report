@@ -8,9 +8,9 @@ import type { DerivedIssue } from "../derived/derive";
 
 import type { DerivedRelease } from "../releases/derive";
 
-export type IssueOrRelease<CustomFields = unknown> =
-  | (DerivedIssue & CustomFields)
-  | (DerivedRelease & CustomFields);
+export type IssueOrRelease<CustomFields = unknown> = (DerivedIssue &
+  CustomFields) &
+  (DerivedRelease & CustomFields);
 
 interface ReportingHierarchy {
   depth: number;
@@ -82,9 +82,9 @@ interface RollupGroupedHierarchyOptions<CustomFields, Data, Meta> {
  * @param {IssueOrRelease} issueOrRelease
  * @returns {issueOrRelease is DerivedIssue}
  */
-export function isDerivedIssue(
-  issueOrRelease: IssueOrRelease
-): issueOrRelease is DerivedIssue {
+export function isDerivedIssue<CustomFields>(
+  issueOrRelease: IssueOrRelease<CustomFields>
+): boolean {
   return issueOrRelease.type !== "Release";
 }
 
