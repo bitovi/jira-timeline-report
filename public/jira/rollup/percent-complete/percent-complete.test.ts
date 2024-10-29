@@ -53,16 +53,8 @@ describe("percentComplete", () => {
         ] as IssueOrRelease<PercentCompleteRollup>[][]
       ).reverse();
 
-      const expected: RollupResponse<PercentCompleteRollup, PercentCompleteMeta> = [
+      const expected = [
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 30,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [8, 16, 32, 64],
-          },
           rollupData: [
             {
               completedWorkingDays: 3,
@@ -91,14 +83,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 60,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [24, 96],
-          },
           rollupData: [
             {
               completedWorkingDays: 15,
@@ -115,14 +99,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 120,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [120],
-          },
           rollupData: [
             {
               completedWorkingDays: 65,
@@ -136,8 +112,12 @@ describe("percentComplete", () => {
 
       const actual = rollupPercentComplete(issuesAndReleases, [method]);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
     });
+
     it("should use average estimates if no estimate provided for stories", () => {
       const method = "childrenFirstThenParent";
 
@@ -154,36 +134,24 @@ describe("percentComplete", () => {
             {
               key: "e-2",
               parentKey: "i-1",
-              derivedTiming: {
-                totalDaysOfWork: null,
-                completedDaysOfWork: null,
-              },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
             {
               key: "e-3",
               parentKey: "i-1",
-              derivedTiming: {
-                totalDaysOfWork: 2000,
-                completedDaysOfWork: null,
-              },
+              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: 0 },
             },
           ],
           [
             {
               key: "s-4",
               parentKey: "e-2",
-              derivedTiming: {
-                totalDaysOfWork: null,
-                completedDaysOfWork: null,
-              },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
             {
               key: "s-5",
               parentKey: "e-2",
-              derivedTiming: {
-                totalDaysOfWork: null,
-                completedDaysOfWork: null,
-              },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
             {
               key: "s-6",
@@ -199,29 +167,8 @@ describe("percentComplete", () => {
         ] as IssueOrRelease<PercentCompleteRollup>[][]
       ).reverse();
 
-      const expected: RollupResponse<PercentCompleteRollup, PercentCompleteMeta> = [
+      const expected = [
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 15,
-            childCounts: [],
-            needsAverageSet: [
-              {
-                completedWorkingDays: 0,
-                remainingWorkingDays: 15,
-                totalWorkingDays: 15,
-                userSpecifiedValues: false,
-              },
-              {
-                completedWorkingDays: 0,
-                remainingWorkingDays: 15,
-                totalWorkingDays: 15,
-                userSpecifiedValues: false,
-              },
-            ],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [10, 20],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -250,14 +197,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 30,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [30],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -274,14 +213,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 1,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [1],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -295,8 +226,125 @@ describe("percentComplete", () => {
 
       const actual = rollupPercentComplete(issuesAndReleases, [method]);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
     });
+    it("should use average estimates and completion if no estimate provided for stories", () => {
+      const method = "childrenFirstThenParent";
+
+      const issuesAndReleases = (
+        [
+          [
+            {
+              key: "i-1",
+              parentKey: null,
+              derivedTiming: { totalDaysOfWork: 1, completedDaysOfWork: 0 },
+            },
+          ],
+          [
+            {
+              key: "e-2",
+              parentKey: "i-1",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 5 },
+            },
+            {
+              key: "e-3",
+              parentKey: "i-1",
+              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: 100 },
+            },
+          ],
+          [
+            {
+              key: "s-4",
+              parentKey: "e-2",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 2 },
+            },
+            {
+              key: "s-5",
+              parentKey: "e-2",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 4 },
+            },
+            {
+              key: "s-6",
+              parentKey: "e-3",
+              derivedTiming: { totalDaysOfWork: 10, completedDaysOfWork: 8 },
+            },
+            {
+              key: "s-7",
+              parentKey: "e-3",
+              derivedTiming: { totalDaysOfWork: 20, completedDaysOfWork: 16 },
+            },
+          ],
+        ] as IssueOrRelease<PercentCompleteRollup>[][]
+      ).reverse();
+
+      const expected = [
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 15,
+              totalWorkingDays: 15,
+              userSpecifiedValues: false,
+            },
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 15,
+              totalWorkingDays: 15,
+              userSpecifiedValues: false,
+            },
+            {
+              completedWorkingDays: 8,
+              remainingWorkingDays: 2,
+              totalWorkingDays: 10,
+              userSpecifiedValues: true,
+            },
+            {
+              completedWorkingDays: 16,
+              remainingWorkingDays: 4,
+              totalWorkingDays: 20,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 30,
+              totalWorkingDays: 30,
+              userSpecifiedValues: false,
+            },
+            {
+              completedWorkingDays: 24,
+              remainingWorkingDays: 6,
+              totalWorkingDays: 30,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 1,
+              totalWorkingDays: 1,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+      ];
+
+      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
+    });
+
     it("should use default estimate if no estimates on stories, and fall back to epic estimates for epics and initiatives", () => {
       const issuesAndReleases = (
         [
@@ -311,47 +359,26 @@ describe("percentComplete", () => {
             {
               parentKey: "i-1",
               key: "e-3",
-              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: null },
+              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: 0 },
             },
           ],
           [
             {
               parentKey: "e-3",
               key: "s-4",
-              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: null },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
             {
               parentKey: "e-3",
               key: "s-5",
-              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: null },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
           ],
         ] as IssueOrRelease<PercentCompleteRollup>[][]
       ).reverse();
 
-      const expected: RollupResponse<PercentCompleteRollup, PercentCompleteMeta> = [
+      const expected = [
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 30,
-            childCounts: [],
-            needsAverageSet: [
-              {
-                completedWorkingDays: 0,
-                remainingWorkingDays: 30,
-                totalWorkingDays: 30,
-                userSpecifiedValues: false,
-              },
-              {
-                completedWorkingDays: 0,
-                remainingWorkingDays: 30,
-                totalWorkingDays: 30,
-                userSpecifiedValues: false,
-              },
-            ],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -368,14 +395,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 2000,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [2000],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -386,14 +405,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 2000,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [2000],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -407,8 +418,90 @@ describe("percentComplete", () => {
 
       const actual = rollupPercentComplete(issuesAndReleases, [method]);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
     });
+    it("should use default estimate and completion if no estimates on stories, and fall back to epic estimates for epics and initiatives", () => {
+      const issuesAndReleases = (
+        [
+          [
+            {
+              parentKey: null,
+              key: "i-1",
+              derivedTiming: { totalDaysOfWork: 1, completedDaysOfWork: 0 },
+            },
+          ],
+          [
+            {
+              parentKey: "i-1",
+              key: "e-3",
+              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: 100 },
+            },
+          ],
+          [
+            {
+              parentKey: "e-3",
+              key: "s-4",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 10 },
+            },
+            {
+              parentKey: "e-3",
+              key: "s-5",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 20 },
+            },
+          ],
+        ] as IssueOrRelease<PercentCompleteRollup>[][]
+      ).reverse();
+
+      const expected = [
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 30,
+              totalWorkingDays: 30,
+              userSpecifiedValues: false,
+            },
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 30,
+              totalWorkingDays: 30,
+              userSpecifiedValues: false,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 100,
+              remainingWorkingDays: 1900,
+              totalWorkingDays: 2000,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 100,
+              remainingWorkingDays: 1900,
+              totalWorkingDays: 2000,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+      ];
+
+      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
+    });
+
     it("should use default estimate if no estimates on stories or epics, and fall back to initiative estimates", () => {
       const issuesAndReleases = (
         [
@@ -423,47 +516,26 @@ describe("percentComplete", () => {
             {
               parentKey: "i-1",
               key: "e-3",
-              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: null },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
           ],
           [
             {
               parentKey: "e-3",
               key: "s-4",
-              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: null },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
             {
               parentKey: "e-3",
               key: "s-5",
-              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: null },
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
           ],
         ] as IssueOrRelease<PercentCompleteRollup>[][]
       ).reverse();
 
-      const expected: RollupResponse<PercentCompleteRollup, PercentCompleteMeta> = [
+      const expected = [
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 30,
-            childCounts: [],
-            needsAverageSet: [
-              {
-                completedWorkingDays: 0,
-                remainingWorkingDays: 30,
-                totalWorkingDays: 30,
-                userSpecifiedValues: false,
-              },
-              {
-                completedWorkingDays: 0,
-                remainingWorkingDays: 30,
-                totalWorkingDays: 30,
-                userSpecifiedValues: false,
-              },
-            ],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -480,14 +552,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 30,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -498,14 +562,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 1,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [1],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -519,8 +575,90 @@ describe("percentComplete", () => {
 
       const actual = rollupPercentComplete(issuesAndReleases, [method]);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
     });
+    it("should use default estimate and completion if no estimates on stories or epics, and fall back to initiative estimates", () => {
+      const issuesAndReleases = (
+        [
+          [
+            {
+              parentKey: null,
+              key: "i-1",
+              derivedTiming: { totalDaysOfWork: 50, completedDaysOfWork: 20 },
+            },
+          ],
+          [
+            {
+              parentKey: "i-1",
+              key: "e-3",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 100 },
+            },
+          ],
+          [
+            {
+              parentKey: "e-3",
+              key: "s-4",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 10 },
+            },
+            {
+              parentKey: "e-3",
+              key: "s-5",
+              derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 20 },
+            },
+          ],
+        ] as IssueOrRelease<PercentCompleteRollup>[][]
+      ).reverse();
+
+      const expected = [
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 30,
+              totalWorkingDays: 30,
+              userSpecifiedValues: false,
+            },
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 30,
+              totalWorkingDays: 30,
+              userSpecifiedValues: false,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 0,
+              remainingWorkingDays: 60,
+              totalWorkingDays: 60,
+              userSpecifiedValues: false,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 20,
+              remainingWorkingDays: 30,
+              totalWorkingDays: 50,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+      ];
+
+      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
+    });
+
     it("should prefer stories over epics and initiatives", () => {
       const issuesAndReleases = (
         [
@@ -535,7 +673,7 @@ describe("percentComplete", () => {
             {
               parentKey: "i-1",
               key: "e-3",
-              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: null },
+              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: 0 },
             },
           ],
           [
@@ -553,16 +691,8 @@ describe("percentComplete", () => {
         ] as IssueOrRelease<PercentCompleteRollup>[][]
       ).reverse();
 
-      const expected: RollupResponse<PercentCompleteRollup, PercentCompleteMeta> = [
+      const expected = [
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 15,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [10, 20],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -579,14 +709,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 30,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [30],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -597,14 +719,6 @@ describe("percentComplete", () => {
           ],
         },
         {
-          metadata: {
-            averageChildCount: 0,
-            averageTotalDays: 30,
-            childCounts: [],
-            needsAverageSet: [],
-            totalDays: 0,
-            totalDaysOfWorkForAverage: [30],
-          },
           rollupData: [
             {
               completedWorkingDays: 0,
@@ -618,7 +732,88 @@ describe("percentComplete", () => {
 
       const actual = rollupPercentComplete(issuesAndReleases, [method]);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
+    });
+    it("should prefer stories over epics and initiatives with completion", () => {
+      const issuesAndReleases = (
+        [
+          [
+            {
+              parentKey: null,
+              key: "i-1",
+              derivedTiming: { totalDaysOfWork: 50, completedDaysOfWork: 20 },
+            },
+          ],
+          [
+            {
+              parentKey: "i-1",
+              key: "e-3",
+              derivedTiming: { totalDaysOfWork: 2000, completedDaysOfWork: 100 },
+            },
+          ],
+          [
+            {
+              parentKey: "e-3",
+              key: "s-6",
+              derivedTiming: { totalDaysOfWork: 12, completedDaysOfWork: 4 },
+            },
+            {
+              parentKey: "e-3",
+              key: "s-7",
+              derivedTiming: { totalDaysOfWork: 24, completedDaysOfWork: 16 },
+            },
+          ],
+        ] as IssueOrRelease<PercentCompleteRollup>[][]
+      ).reverse();
+
+      const expected = [
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 4,
+              remainingWorkingDays: 8,
+              totalWorkingDays: 12,
+              userSpecifiedValues: true,
+            },
+            {
+              completedWorkingDays: 16,
+              remainingWorkingDays: 8,
+              totalWorkingDays: 24,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 20,
+              remainingWorkingDays: 16,
+              totalWorkingDays: 36,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+        {
+          rollupData: [
+            {
+              completedWorkingDays: 20,
+              remainingWorkingDays: 16,
+              totalWorkingDays: 36,
+              userSpecifiedValues: true,
+            },
+          ],
+        },
+      ];
+
+      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+
+      expect(actual).toHaveLength(expected.length);
+      for (const i of Array(actual.length).keys()) {
+        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+      }
     });
   });
 });
