@@ -1,8 +1,11 @@
 // sum.test.js
 import { expect, test } from "vitest";
-import { IssueOrRelease, rollupGroupedHierarchy, sum } from "./rollup";
-
-import { addChildrenFromGroupedHierarchy } from "./rollup";
+import {
+  IssueOrRelease,
+  addChildrenFromGroupedHierarchy,
+  rollupGroupedHierarchy,
+  sum,
+} from "./rollup";
 
 test("addChildrenFromGroupedHierarchy", () => {
   const groupedHierarchy = [
@@ -27,9 +30,7 @@ test("addChildrenFromGroupedHierarchy", () => {
     ],
   ] as IssueOrRelease[][];
 
-  const results = addChildrenFromGroupedHierarchy(
-    groupedHierarchy.reverse()
-  ).reverse();
+  const results = addChildrenFromGroupedHierarchy(groupedHierarchy.reverse()).reverse();
 
   expect(results).toStrictEqual([
     [
@@ -100,20 +101,13 @@ test("rollupGroupedHierarchy", () => {
     ],
   ] as IssueOrRelease<{ myValue: number }>[][];
 
-  const results = rollupGroupedHierarchy<
-    { myValue: number },
-    { sumValue: number },
-    { hierarchyLevel: number; totalMyValue: number; itemCount: number }
-  >(groupedHierarchy.reverse(), {
+  const results = rollupGroupedHierarchy(groupedHierarchy.reverse(), {
     createMetadataForHierarchyLevel(hierarchyLevel, issues) {
-      const totalMyValue = issues.reduce(
-        (sum, issue) => sum + issue.myValue,
-        0
-      );
+      const totalMyValue = issues.reduce((sum, issue) => sum + issue.myValue, 0);
       const itemCount = issues.length;
       return { hierarchyLevel, totalMyValue, itemCount };
     },
-    createRollupDataFromParentAndChild(parent, childrenRollupValues) {
+    createRollupDataFromParentAndChild(parent, childrenRollupValues: { sumValue: number }[]) {
       const childrenValue = childrenRollupValues.length
         ? sum(childrenRollupValues.map((child) => child.sumValue))
         : 0;
@@ -124,12 +118,7 @@ test("rollupGroupedHierarchy", () => {
   });
   expect(results).toStrictEqual([
     {
-      rollupData: [
-        { sumValue: 4 },
-        { sumValue: 8 },
-        { sumValue: 16 },
-        { sumValue: 32 },
-      ],
+      rollupData: [{ sumValue: 4 }, { sumValue: 8 }, { sumValue: 16 }, { sumValue: 32 }],
       metadata: { hierarchyLevel: 0, itemCount: 4, totalMyValue: 60 },
     },
     {

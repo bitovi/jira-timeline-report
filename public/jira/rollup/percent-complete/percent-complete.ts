@@ -5,10 +5,9 @@ import {
   groupIssuesByHierarchyLevelOrType,
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
-  ReportingHierarchyIssueOrRelease,
 } from "../rollup";
 
-const BASE_HIERARCHY_LEVEL = 1;
+// const BASE_HIERARCHY_LEVEL = 1;
 
 export type PercentCompleteMeta = {
   /** how many children on average */
@@ -30,8 +29,6 @@ export type PercentCompleteRollup = {
   remainingWorkingDays: number;
 };
 
-// export type RolledupCompletionIssue = DerivedIssue & PercentCompleteRollup;
-
 const methods = {
   childrenFirstThenParent,
 };
@@ -45,12 +42,17 @@ function average(arr: number[]) {
 }
 
 export function addPercentComplete(
-  issuesOrReleases: IssueOrRelease<PercentCompleteRollup>[],
+  issuesOrReleases: IssueOrRelease[],
   rollupTimingLevelsAndCalculations: RollupLevelAndCalculation<PercentCompleteCalculations>[]
 ) {
-  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(
+    issuesOrReleases,
+    rollupTimingLevelsAndCalculations
+  );
 
-  const rollupMethods = rollupTimingLevelsAndCalculations.map((rollupData) => rollupData.calculation).reverse();
+  const rollupMethods = rollupTimingLevelsAndCalculations
+    .map((rollupData) => rollupData.calculation)
+    .reverse();
   const rolledUpDates = rollupPercentComplete(groupedIssues, rollupMethods);
   const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "completionRollup");
   return zipped.flat();
@@ -58,15 +60,16 @@ export function addPercentComplete(
 
 /**
  *
- * @param {Array<IssuesOrReleases>} issuesOrReleases Starting from low to high
- * @param {Array<String>} methodNames Starting from low to high
- * @return {Array<Object>}
+ * @param issuesOrReleases Starting from low to high
+ * @param _methodNames 
+ * @return 
  */
 export function rollupPercentComplete(
-  groupedHierarchy: IssueOrRelease<PercentCompleteRollup>[][],
-  methodNames: PercentCompleteCalculations[]
+  groupedHierarchy: IssueOrRelease[][],
+  _methodNames: PercentCompleteCalculations[]
 ) {
   return rollupGroupedHierarchy(groupedHierarchy, {
+    // have to specify the return type on this func so it knows what type the arrays are
     createMetadataForHierarchyLevel(): PercentCompleteMeta {
       return {
         // how many children on average
@@ -83,6 +86,16 @@ export function rollupPercentComplete(
         // issues: [],
       };
     },
+    createRollupDataFromParentAndChild(
+      issueOrRelease,
+      children: PercentCompleteRollup[],
+      hierarchyLevel,
+      metadata
+    ) {
+      const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
+      const method = methods[methodName];
+      return method(issueOrRelease, children, hierarchyLevel, metadata);
+    },
     finalizeMetadataForHierarchyLevel(metadata) {
       let ave = average(metadata.totalDaysOfWorkForAverage) || 30;
       metadata.averageTotalDays = ave;
@@ -92,16 +105,6 @@ export function rollupPercentComplete(
       metadata.needsAverageSet.forEach((data) => {
         data.totalWorkingDays = ave;
       });
-    },
-    createRollupDataFromParentAndChild(
-      issueOrRelease: ReportingHierarchyIssueOrRelease<IssueOrRelease<PercentCompleteRollup>>,
-      children: PercentCompleteRollup[],
-      hierarchyLevel,
-      metadata
-    ) {
-      const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
-      const method = methods[methodName];
-      return method(issueOrRelease, children, hierarchyLevel, metadata);
     },
   });
 }
@@ -118,11 +121,13 @@ function emptyRollup() {
 }
 
 export function childrenFirstThenParent(
-  parentIssueOrRelease: IssueOrRelease<PercentCompleteRollup>,
+  parentIssueOrRelease: IssueOrRelease,
   childrenRollups: PercentCompleteRollup[],
-  hierarchyLevel: number,
+  _hierarchyLevel: number,
   metadata: PercentCompleteMeta
-): PercentCompleteRollup {
+) {
+  const { derivedTiming: parentDerivedTiming } = parentIssueOrRelease as DerivedIssue;
+
   let data;
   // if there is hard child data, use it
   if (childrenRollups.length && childrenRollups.every((d) => d.userSpecifiedValues)) {
@@ -131,10 +136,10 @@ export function childrenFirstThenParent(
     return data;
   }
   // if there is hard parent data, use it
-  else if (parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+  else if (parentDerivedTiming?.totalDaysOfWork) {
     data = {
-      completedWorkingDays: parentIssueOrRelease.derivedTiming.completedDaysOfWork,
-      totalWorkingDays: parentIssueOrRelease.derivedTiming.totalDaysOfWork,
+      completedWorkingDays: parentDerivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentDerivedTiming.totalDaysOfWork,
       userSpecifiedValues: true,
       get remainingWorkingDays() {
         return this.totalWorkingDays - this.completedWorkingDays;
@@ -158,7 +163,7 @@ export function childrenFirstThenParent(
   }
 }
 
-export function sumChildRollups(children: PercentCompleteRollup[]): PercentCompleteRollup {
+export function sumChildRollups(children: PercentCompleteRollup[]) {
   const userSpecifiedValues = children.every((child) => child.userSpecifiedValues);
   const totalDays = children.map((child) => child.totalWorkingDays);
   const completedDays = children.map((child) => child.completedWorkingDays);

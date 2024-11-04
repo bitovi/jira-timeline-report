@@ -1,6 +1,5 @@
-import { expect, test, describe, it } from "vitest";
-import { rollupDates, parentOnly } from "./dates.js";
-import { DerivedIssue } from "../../derived/derive.js";
+import { expect, describe, it } from "vitest";
+import { rollupDates, parentOnly, WithDateRollup } from "./dates.js";
 import { IssueOrRelease } from "../rollup.js";
 
 describe("rollupDates", () => {
@@ -38,7 +37,7 @@ describe("rollupDates", () => {
             derivedTiming: { start: _2001, due: _2003, dueTo: "2003" },
           },
         ],
-      ] as IssueOrRelease<{}>[][]
+      ] as IssueOrRelease<WithDateRollup>[][]
     ).reverse();
 
     const results = rollupDates(issuesAndReleases, []);
@@ -61,9 +60,7 @@ describe("rollupDates", () => {
         metadata: {},
       },
       {
-        rollupData: [
-          { start: _2000, startFrom: "2000", due: _2003, dueTo: "2003" },
-        ],
+        rollupData: [{ start: _2000, startFrom: "2000", due: _2003, dueTo: "2003" }],
         metadata: {},
       },
     ]);
@@ -113,14 +110,10 @@ describe("rollupDates", () => {
             derivedTiming: { start: _2001, due: _2002 },
           },
         ],
-      ] as IssueOrRelease<{}>[][]
+      ] as IssueOrRelease<WithDateRollup>[][]
     ).reverse();
 
-    const results = rollupDates(issuesAndReleases, [
-      "widestRange",
-      "widestRange",
-      "widestRange",
-    ]);
+    const results = rollupDates(issuesAndReleases, ["widestRange", "widestRange", "widestRange"]);
 
     expect(results).toStrictEqual([
       {
@@ -140,9 +133,7 @@ describe("rollupDates", () => {
         metadata: {},
       },
       {
-        rollupData: [
-          { start: _2000, due: _2005 },
-        ],
+        rollupData: [{ start: _2000, due: _2005 }],
         metadata: {},
       },
     ]);
@@ -150,7 +141,7 @@ describe("rollupDates", () => {
 
   it("parentOnly works as expected", () => {
     let results = parentOnly(
-      { derivedTiming: { start: _2003, due: _2004 } } as DerivedIssue,
+      { derivedTiming: { start: _2003, due: _2004 } } as IssueOrRelease<WithDateRollup>,
       [{ start: _2001, due: _2005 }]
     );
 
@@ -159,11 +150,10 @@ describe("rollupDates", () => {
       due: _2004,
     });
 
-    results = parentOnly({ derivedTiming: {} } as DerivedIssue, [
+    results = parentOnly({ derivedTiming: {} } as IssueOrRelease<WithDateRollup>, [
       { start: _2001, due: _2005 },
     ]);
 
-    expect(results).toStrictEqual({
-    });
+    expect(results).toStrictEqual({});
   });
 });

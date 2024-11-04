@@ -89,16 +89,19 @@ export type FetchJiraIssuesParams = {
 };
 
 export interface NormalizedRelease {
+  key: string;
+  type: "Release";
+  summary: string;
+
   name: string;
   id: string;
-  type: "Release";
-  key: string;
-  summary: string;
 }
 
 export interface NormalizedIssue {
   key: string;
+  type: string;
   summary: string;
+  
   parentKey: string | null;
   confidence: number | null;
   dueDate: Date;
@@ -106,7 +109,6 @@ export interface NormalizedIssue {
   startDate: Date;
   storyPoints: number | null;
   storyPointsMedian: number | null;
-  type: string;
   team: NormalizedTeam;
   url: string;
   sprints: Array<NormalizedSprint> | null;

@@ -1,8 +1,9 @@
 // sum.test.js
-import { expect, test, describe, it } from "vitest";
+import { expect, describe, it } from "vitest";
 import {
   rollupBlockedIssuesForGroupedHierarchy,
   rollupBlockedStatusIssues,
+  WithBlockedStatuses,
 } from "./blocked-status-issues";
 import { IssueOrRelease } from "../rollup";
 
@@ -56,7 +57,7 @@ describe("rollupBlockedIssuesForGroupedHierarchy", () => {
             derivedStatus: { statusType: "blocked", workType: "dev" },
           }),
         ],
-      ] as IssueOrRelease[][]
+      ] as IssueOrRelease<WithBlockedStatuses>[][]
     ).reverse();
 
     const i7ReportingHierarchy = {
@@ -162,7 +163,7 @@ describe("rollupBlockedStatusIssues", () => {
         derivedStatus: { statusType: "dev", workType: "dev" },
       },
       i7,
-    ] as IssueOrRelease<{ blockedStatusIssues: IssueOrRelease[] }>[];
+    ] as IssueOrRelease<WithBlockedStatuses>[];
 
     const rollupTimingLevelsAndCalculations = [
       { type: "Release" },
@@ -170,14 +171,11 @@ describe("rollupBlockedStatusIssues", () => {
       { type: "Epic", hierarchyLevel: 1 },
     ];
 
-    const result = rollupBlockedStatusIssues(
-      issuesAndReleases,
-      rollupTimingLevelsAndCalculations
-    );
+    const result = rollupBlockedStatusIssues(issuesAndReleases, rollupTimingLevelsAndCalculations);
     const issueMap = result.reduce((map, issue) => {
       map[issue.key] = issue;
       return map;
-    }, {} as { [key: string]: IssueOrRelease<{ blockedStatusIssues: IssueOrRelease[] }> });
+    }, {} as { [key: string]: IssueOrRelease & { blockedStatusIssues: IssueOrRelease[] } });
 
     const o1 = issueMap["o-1"];
     const m2 = issueMap["m-2"];

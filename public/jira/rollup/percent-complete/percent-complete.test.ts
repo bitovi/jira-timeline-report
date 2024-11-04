@@ -1,6 +1,6 @@
 import { expect, test, describe, it } from "vitest";
-import { PercentCompleteMeta, PercentCompleteRollup, rollupPercentComplete } from "./percent-complete";
-import { IssueOrRelease, RollupResponse } from "../rollup";
+import { rollupPercentComplete } from "./percent-complete";
+import { IssueOrRelease } from "../rollup";
 
 describe("percentComplete", () => {
   describe("childrenFirstThenParent", () => {
@@ -50,7 +50,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: 64, completedDaysOfWork: 31 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -164,7 +164,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: 20, completedDaysOfWork: 0 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -277,7 +277,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: 20, completedDaysOfWork: 16 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -374,7 +374,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -452,7 +452,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 20 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -531,7 +531,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 0 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -609,7 +609,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: null, completedDaysOfWork: 20 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -688,7 +688,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: 20, completedDaysOfWork: 0 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
@@ -766,7 +766,7 @@ describe("percentComplete", () => {
               derivedTiming: { totalDaysOfWork: 24, completedDaysOfWork: 16 },
             },
           ],
-        ] as IssueOrRelease<PercentCompleteRollup>[][]
+        ] as IssueOrRelease[][]
       ).reverse();
 
       const expected = [
