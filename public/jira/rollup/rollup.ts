@@ -8,6 +8,8 @@ import type { DerivedIssue } from "../derived/derive";
 
 import type { DerivedRelease } from "../releases/derive";
 
+// type GetInnerType<S> = S extends IssueOrRelease<infer T> ? T : never;
+
 export type IssueOrRelease<CustomFields = unknown> = (DerivedIssue | DerivedRelease) & CustomFields;
 
 interface ReportingHierarchy {
@@ -20,8 +22,12 @@ export type WithReportingHierarchy = {
   reportingHierarchy: ReportingHierarchy;
 };
 
-export type ReportingHierarchyIssueOrRelease<TRollupable extends IssueOrRelease> = TRollupable &
-  WithReportingHierarchy;
+export type CustomFieldsOf<T> = Omit<
+  T,
+  "reportingHierarchy" | keyof IssueOrRelease
+>;
+
+export type ReportingHierarchyIssueOrRelease<T extends IssueOrRelease> = T & WithReportingHierarchy;
 
 export type RollupGroupedHierarchyOptions<
   TRollupable extends IssueOrRelease,
@@ -49,18 +55,22 @@ export type RollupResponse<TMetadata extends Record<string, any>, TRollupValues>
 /**
  * Type guard to determine if IssueOrRelease is DerivedRelease
  * @param issueOrRelease
- * @returns 
+ * @returns
  */
-export function isDerivedRelease(issueOrRelease: IssueOrRelease): issueOrRelease is DerivedRelease {
+export function isDerivedRelease<T extends IssueOrRelease>(
+  issueOrRelease: T
+): issueOrRelease is Exclude<T, DerivedIssue> {
   return issueOrRelease.type === "Release";
 }
 
 /**
  * Type guard to determine if IssueOrRelease is DerivedIssue
  * @param issueOrRelease
- * @returns 
+ * @returns
  */
-export function isDerivedIssue(issueOrRelease: IssueOrRelease): issueOrRelease is DerivedIssue {
+export function isDerivedIssue<T extends IssueOrRelease>(
+  issueOrRelease: T
+): issueOrRelease is Exclude<T, DerivedRelease> {
   return issueOrRelease.type !== "Release";
 }
 
@@ -69,7 +79,7 @@ export function isDerivedIssue(issueOrRelease: IssueOrRelease): issueOrRelease i
 /**
  * Gets the parent's from some issue type. We probably need some way types can provide this.
  * @param issueOrRelease
- * @returns 
+ * @returns
  */
 export function getParentKeys(issueOrRelease: IssueOrRelease) {
   const parents: string[] = [];
@@ -87,13 +97,7 @@ export function getParentKeys(issueOrRelease: IssueOrRelease) {
 // =======================
 // Now need some way of building the hierarchy from the reporting topology
 
-function getHierarchyTest({
-  type,
-  hierarchyLevel,
-}: {
-  type: string;
-  hierarchyLevel?: number;
-}) {
+function getHierarchyTest({ type, hierarchyLevel }: { type: string; hierarchyLevel?: number }) {
   if (hierarchyLevel == null || hierarchyLevel === Infinity) {
     return (issue: IssueOrRelease) => {
       return issue.type === type;
@@ -137,7 +141,7 @@ export function addChildrenFromGroupedHierarchy<TRollupable extends IssueOrRelea
   const topDownGroups = [...groupedHierarchy].reverse();
   const newGroups: ReportingHierarchyIssueOrRelease<TRollupable>[][] = [];
   for (let g = 0; g < topDownGroups.length; g++) {
-    let group = topDownGroups[g];
+    let group: IssueOrRelease<TRollupable>[] = topDownGroups[g];
     let newGroup: ReportingHierarchyIssueOrRelease<TRollupable>[] = [];
     newGroups.push(newGroup);
 
@@ -184,7 +188,9 @@ export function makeGetChildrenFromGrouped<T extends IssueOrRelease>(
     }
   }
 
-  return function getChildren(keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<T>) {
+  return function getChildren(
+    keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<T>
+  ) {
     return keyOrIssueOrRelease.reportingHierarchy.childKeys
       .map((k) => keyToIssue.get(k))
       .filter((issue) => issue !== undefined);
@@ -208,7 +214,9 @@ export function rollupGroupedReportingHierarchy<
   } = options;
 
   const rollupDataByKey: Record<string, TRollupValues> = {};
-  function getChildrenRollupData(issue: ReportingHierarchyIssueOrRelease<TRollupable>) {
+  function getChildrenRollupData(
+    issue: ReportingHierarchyIssueOrRelease<TRollupable>
+  ) {
     return getChildren(issue).map((childIssue) => {
       const result = rollupDataByKey[childIssue.key];
       if (!result) {
@@ -263,7 +271,7 @@ export function rollupGroupedReportingHierarchy<
  * This "MUST" have the deepest children in the bottom
  * @param groupedHierarchy
  * @param options
- * @returns 
+ * @returns
  */
 export function rollupGroupedHierarchy<
   TRollupable extends IssueOrRelease,
