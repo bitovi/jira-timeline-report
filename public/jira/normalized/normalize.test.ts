@@ -58,6 +58,7 @@ test("normalizeParent", () => {
     summary: "parent summary",
     hierarchyLevel: 8,
     type: "bug",
+    key: "test-parent"
   });
 });
 
@@ -71,6 +72,7 @@ test("normalizeParent with overrides", () => {
     summary: "hello",
     hierarchyLevel: 21,
     type: "bug",
+    key: "test-parent"
   });
 });
 
