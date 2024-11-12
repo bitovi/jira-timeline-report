@@ -84,7 +84,6 @@ const CORE_FIELDS = [
 ];
 
 export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL }, { progressUpdate }) {
-  debugger;
   if (!fields) {
     return undefined;
   }

@@ -12,15 +12,10 @@ import ConfigureTeamsForm from "./ConfigureTeamsForm";
 
 import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 import { useTeamForm } from "./useTeamForm";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
-const issueNameMapping: Record<keyof TeamConfiguration, string> = {
-  defaults: "Team default",
-  outcome: "Outcomes",
-  milestones: "Milestones",
-  initiatives: "Initiatives",
-  epics: "Epics",
-  stories: "Stories",
-};
+import { getSimplifiedIssueHierarchy } from "../../../../stateful-data/jira-data-requests";
+import { useJira } from "../../services/jira";
 
 interface IssueAccordionProps {
   teamName: string;
@@ -33,12 +28,13 @@ interface IssueAccordionProps {
 }
 
 const IssueAccordion: FC<IssueAccordionProps> = ({ issueType, jiraFields, ...formData }) => {
+  // @ts-expect-error
   const { isSaving, ...formProps } = useTeamForm({ issueType, ...formData });
 
   return (
     <Accordion startsOpen={issueType === "defaults"}>
       <AccordionTitle>
-        <Heading size="small">{issueNameMapping[issueType]}</Heading>
+        <Heading size="small">{issueType === "defaults" ? "Team defaults" : issueType}</Heading>
         {isSaving && (
           <div>
             <Spinner size="small" label="saving" />

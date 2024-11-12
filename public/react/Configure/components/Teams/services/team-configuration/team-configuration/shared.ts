@@ -21,14 +21,9 @@ export type Configuration = {
   spreadEffortAcrossDates: boolean | null;
 };
 
-export interface TeamConfiguration {
+export type TeamConfiguration = Partial<Record<string, Configuration>> & {
   defaults: Configuration;
-  outcome: Configuration;
-  milestones: Configuration;
-  initiatives: Configuration;
-  epics: Configuration;
-  stories: Configuration;
-}
+};
 
 export type AllTeamData = Partial<Record<string, TeamConfiguration>> & {
   __GLOBAL__: TeamConfiguration;
@@ -47,17 +42,15 @@ export const createEmptyConfiguration = (): Configuration => {
   };
 };
 
-export const createEmptyTeamConfiguration = (): TeamConfiguration => {
-  return {
-    defaults: createEmptyConfiguration(),
-    outcome: createEmptyConfiguration(),
-    milestones: createEmptyConfiguration(),
-    initiatives: createEmptyConfiguration(),
-    epics: createEmptyConfiguration(),
-    stories: createEmptyConfiguration(),
-  };
+export const createEmptyTeamConfiguration = (issueTypes: string[]): TeamConfiguration => {
+  return issueTypes.reduce(
+    (config, issueType) => {
+      return { ...config, [issueType]: createEmptyConfiguration() };
+    },
+    { defaults: createEmptyConfiguration() }
+  );
 };
 
-export const createEmptyAllTeamsData = (): AllTeamData => {
-  return { __GLOBAL__: createEmptyTeamConfiguration() };
+export const createEmptyAllTeamsData = (issueTypes: string[] = []): AllTeamData => {
+  return { __GLOBAL__: createEmptyTeamConfiguration(issueTypes) };
 };

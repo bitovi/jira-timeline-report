@@ -23,14 +23,14 @@ const getAllFields = (allData?: AllTeamData): string[] => {
 
   for (const team in allData) {
     for (const issueType in allData[team]) {
-      const config = allData[team][issueType as keyof TeamConfiguration];
+      const config = allData[team][issueType];
 
       allFields = [
         ...allFields,
-        config.estimateField ?? "",
-        config.confidenceField ?? "",
-        config.startDateField ?? "",
-        config.dueDateField ?? "",
+        config?.estimateField ?? "",
+        config?.confidenceField ?? "",
+        config?.startDateField ?? "",
+        config?.dueDateField ?? "",
       ];
     }
   }

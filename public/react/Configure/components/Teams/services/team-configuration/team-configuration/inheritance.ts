@@ -1,12 +1,12 @@
 import type { AllTeamData, Configuration, TeamConfiguration, IssueFields } from "./shared";
 
-import { createEmptyTeamConfiguration } from "./shared";
+import { createEmptyConfiguration, createEmptyTeamConfiguration } from "./shared";
 
 import { getTeamData } from "./fetcher";
 import { applyGlobalDefaultData } from "./allTeamDefault";
 
 export const getInheritedData = (teamData: TeamConfiguration, allTeamData: AllTeamData): TeamConfiguration => {
-  const issueKeys = ["defaults", "outcome", "milestones", "initiatives", "epics", "stories"] as const;
+  const issueKeys = Object.keys(teamData);
 
   // Inheritance logic
   const getInheritance = (
@@ -14,17 +14,20 @@ export const getInheritedData = (teamData: TeamConfiguration, allTeamData: AllTe
     field: keyof Configuration
   ): Configuration[keyof Configuration] => {
     return (
-      teamData[issueType][field] ??
+      teamData?.[issueType]?.[field] ??
       teamData.defaults[field] ??
-      allTeamData.__GLOBAL__[issueType][field] ??
+      allTeamData.__GLOBAL__[issueType]?.[field] ??
       allTeamData.__GLOBAL__.defaults[field]
     );
   };
 
   const inheritedConfig = issueKeys.reduce(
     (config, issueType) => {
-      const issueFields = Object.keys(teamData[issueType]).reduce((fieldsAcc, field) => {
+      const issueConfig = teamData?.[issueType] ?? createEmptyConfiguration();
+
+      const issueFields = Object.keys(issueConfig).reduce((fieldsAcc, field) => {
         const key = field as keyof Configuration;
+
         const data = getInheritance(issueType, key);
 
         return { ...fieldsAcc, [key]: data };
@@ -55,7 +58,7 @@ export const createUpdatedTeamData = (
     configuration: Configuration;
   }
 ): AllTeamData => {
-  const teamData = allTeamData[config.teamName] ?? createEmptyTeamConfiguration();
+  const teamData = allTeamData[config.teamName] ?? createEmptyTeamConfiguration(Object.keys(allTeamData.__GLOBAL__));
 
   return {
     ...allTeamData,
