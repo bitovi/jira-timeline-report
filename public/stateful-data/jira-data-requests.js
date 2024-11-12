@@ -84,17 +84,17 @@ const CORE_FIELDS = [
 ];
 
 export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL }, { progressUpdate }) {
-  if (!fields) {
-    return undefined;
-  }
-
-  let fieldsToLoad = [...new Set([...fields, ...CORE_FIELDS])];
-
   // progressData.value = null; THIS NEEDS TO HAPPEN OUTSIDE
   if (isLoggedIn === false) {
     // mock data is already field-translated
     return bitoviTrainingData(new Date());
   }
+
+  if (!fields) {
+    return undefined;
+  }
+
+  let fieldsToLoad = [...new Set([...fields, ...CORE_FIELDS])];
 
   if (!jql) {
     return undefined;

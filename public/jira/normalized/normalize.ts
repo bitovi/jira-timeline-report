@@ -9,7 +9,7 @@ type DefaultsToConfig<T> = {
 
 export type NormalizeIssueConfig = DefaultsToConfig<typeof defaults>;
 export type NormalizeParentConfig = DefaultsToConfig<
-  Pick<typeof defaults, "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault">
+  Pick<typeof defaults, "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault" | "getIssueKeyDefault">
 >;
 
 export function normalizeParent(
@@ -18,12 +18,14 @@ export function normalizeParent(
     getSummary = defaults.getSummaryDefault,
     getHierarchyLevel = defaults.getHierarchyLevelDefault,
     getType = defaults.getTypeDefault,
+    getIssueKey = defaults.getIssueKeyDefault
   }: Partial<NormalizeParentConfig> = {}
 ) {
   return {
     summary: getSummary(issue),
     hierarchyLevel: getHierarchyLevel(issue),
     type: getType(issue),
+    key: getIssueKey(issue)
   };
 }
 
