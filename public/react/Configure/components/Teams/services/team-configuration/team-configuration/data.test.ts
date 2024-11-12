@@ -186,8 +186,6 @@ describe("Configuration Inheritance and Defaults", () => {
     const augmentedData = applyGlobalDefaultData(allTeamData, jiraFields);
     const inheritedData = applyInheritance("Team B", augmentedData);
 
-    console.log(inheritedData);
-
     expect(inheritedData["Team B"]?.epics).toEqual({
       sprintLength: 10,
       velocityPerSprint: 21,

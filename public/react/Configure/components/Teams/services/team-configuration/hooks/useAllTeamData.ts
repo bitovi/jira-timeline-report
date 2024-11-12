@@ -25,9 +25,7 @@ const getTeamDataWithIssueTypes = async (
   jiraHelpers: Jira,
   storage: AppStorage
 ): Promise<{ userData: AllTeamData; issueTypes: IssueType[] }> => {
-  const issueTypes = (await getSimplifiedIssueHierarchy({ jiraHelpers, isLoggedIn: true })) as IssueType[];
-
-  console.log({ issueTypes });
+  const issueTypes: IssueType[] = await getSimplifiedIssueHierarchy({ jiraHelpers, isLoggedIn: true });
 
   return {
     issueTypes,
