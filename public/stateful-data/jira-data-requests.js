@@ -62,8 +62,16 @@ function simplifyIssueHierarchy(types) {
     }
   }
 
+  console.log({ types, levelsToTypes });
+
   return levelsToTypes
     .map((types, i) => {
+      const story = types.find(({ name }) => name === "Story");
+
+      if (story) {
+        return story;
+      }
+
       return types[0];
     })
     .filter((i) => i)

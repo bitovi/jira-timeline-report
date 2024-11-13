@@ -78,9 +78,6 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
   const userData = userAllTeamData[teamName] || createEmptyTeamConfiguration(issueTypes.map((type) => type.name));
   const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
 
-  console.table(userData);
-  console.table(augmented);
-
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,

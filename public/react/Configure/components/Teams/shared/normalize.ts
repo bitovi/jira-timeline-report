@@ -3,7 +3,7 @@ import type { AllTeamData, Configuration, TeamConfiguration } from "../services/
 
 const getConfiguration = (allData: AllTeamData, teamKey?: string, issueType?: string): Configuration => {
   const key = teamKey || "";
-  const issue = (issueType || "") as keyof TeamConfiguration;
+  const issue = issueType || "";
 
   return allData[key]?.[issue] || allData.__GLOBAL__.defaults;
 };
@@ -122,6 +122,8 @@ export const createNormalizeConfiguration = (
     },
     getStoryPoints: (issue, config) => {
       const teamIssueConfiguration = getConfiguration(allData, config?.getTeamKey(issue), config?.getType(issue));
+
+      console.log({ name: issue.key, type: config?.getType(issue), teamIssueConfiguration });
 
       if (!teamIssueConfiguration.estimateField) {
         return null;
