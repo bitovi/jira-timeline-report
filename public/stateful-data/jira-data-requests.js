@@ -52,7 +52,7 @@ export const getSimplifiedIssueHierarchy = makeCacheable(({ jiraHelpers, isLogge
 
 function simplifyIssueHierarchy(types) {
   const levelsToTypes = [];
-  for (let type of types) {
+  for (let type of types.filter((type) => !type.scope)) {
     // ignore subtasks
     if (type.hierarchyLevel >= 0) {
       if (!levelsToTypes[type.hierarchyLevel]) {
@@ -62,16 +62,17 @@ function simplifyIssueHierarchy(types) {
     }
   }
 
-  console.log({ types, levelsToTypes });
-
   return levelsToTypes
     .map((types, i) => {
-      const story = types.find(({ name }) => name === "Story");
+      // might need to do this by level
+      const popularHierarchyNames = ["Story", "Epic", "Sub-Task"];
 
-      if (story) {
-        return story;
+      for (const popularName of popularHierarchyNames) {
+        const match = types.find(({ name }) => name === popularName);
+        if (match) {
+          return match;
+        }
       }
-
       return types[0];
     })
     .filter((i) => i)

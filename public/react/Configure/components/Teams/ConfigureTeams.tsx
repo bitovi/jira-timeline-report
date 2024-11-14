@@ -22,19 +22,20 @@ interface IssueAccordionProps {
   issueType: keyof TeamConfiguration;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
   getInheritance: (issueType: keyof TeamConfiguration) => TeamConfiguration;
+  getHierarchyLevelName: (level: number | string) => string;
   jiraFields: IssueFields;
   augmentedTeamData: TeamConfiguration;
   userTeamData: TeamConfiguration;
 }
 
-const IssueAccordion: FC<IssueAccordionProps> = ({ issueType, jiraFields, ...formData }) => {
+const IssueAccordion: FC<IssueAccordionProps> = ({ issueType, jiraFields, getHierarchyLevelName, ...formData }) => {
   // @ts-expect-error
   const { isSaving, ...formProps } = useTeamForm({ issueType, ...formData });
 
   return (
     <Accordion startsOpen={issueType === "defaults"}>
       <AccordionTitle>
-        <Heading size="small">{issueType === "defaults" ? "Team defaults" : issueType}</Heading>
+        <Heading size="small">{issueType === "defaults" ? "Team defaults" : getHierarchyLevelName(issueType)}</Heading>
         {isSaving && (
           <div>
             <Spinner size="small" label="saving" />
@@ -57,15 +58,22 @@ export interface ConfigureTeamsProps {
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdate }) => {
   const { augmentedTeamData, ...teamData } = useTeamData(teamName, jiraFields);
 
-  const teamIssues = Object.keys(augmentedTeamData).filter((issueType): issueType is keyof TeamConfiguration => {
-    if (teamName === "__GLOBAL__") {
-      // Remove return false and return line 82 once ready to integrate issue types
-      return false;
-      // return issueType !== "defaults";
-    }
+  const teamIssues = Object.keys(augmentedTeamData)
+    .sort((a, b) => {
+      if (a === "defaults") return -1;
+      if (b === "defaults") return 1;
 
-    return true;
-  });
+      return parseInt(b) - parseInt(a);
+    })
+    .filter((issueType): issueType is keyof TeamConfiguration => {
+      if (teamName === "__GLOBAL__") {
+        // Remove return false and return line 82 once ready to integrate issue types
+        return false;
+        // return issueType !== "defaults";
+      }
+
+      return true;
+    });
 
   return (
     <>

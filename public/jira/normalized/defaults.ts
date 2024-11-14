@@ -30,11 +30,12 @@ type DueDateMinimalIssue = {
     [key: string]: unknown;
   };
 } & MinimalIssueTypeIssue &
+  MinimalHierarchyLevelIssue &
   MinimalTeamKeyIssue;
 
 export function getDueDateDefault(
   { fields }: DueDateMinimalIssue,
-  otpions?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  otpions?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): string | null {
   return fields["Due date"] || null;
 }
@@ -45,11 +46,12 @@ type StartDateMinimalIssue = {
     [key: string]: unknown;
   };
 } & MinimalIssueTypeIssue &
+  MinimalHierarchyLevelIssue &
   MinimalTeamKeyIssue;
 
 export function getStartDateDefault(
   { fields }: StartDateMinimalIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): string | null {
   return fields["Start date"] || null;
 }
@@ -60,11 +62,12 @@ type StoryPointsMinimalIssue = {
     [key: string]: unknown;
   };
 } & MinimalIssueTypeIssue &
+  MinimalHierarchyLevelIssue &
   MinimalTeamKeyIssue;
 
 export function getStoryPointsDefault(
   { key, fields }: StoryPointsMinimalIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): NormalizedIssue["storyPoints"] {
   return fields["Story points"] || null;
 }
@@ -75,11 +78,12 @@ type StoryPointsMedianMinimalIssue = {
     [key: string]: unknown;
   };
 } & MinimalIssueTypeIssue &
+  MinimalHierarchyLevelIssue &
   MinimalTeamKeyIssue;
 
 export function getStoryPointsMedianDefault(
   { key, fields }: StoryPointsMedianMinimalIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): NormalizedIssue["storyPointsMedian"] {
   return fields["Story points median"] || null;
 }
@@ -95,19 +99,28 @@ type ConfidenceMinimalIssue = {
     [key: string]: unknown;
   };
 } & MinimalIssueTypeIssue &
+  MinimalHierarchyLevelIssue &
   MinimalTeamKeyIssue;
 
 export function getConfidenceDefault(
   { fields }: ConfidenceMinimalIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): NormalizedIssue["confidence"] {
   return fields["Story points confidence"] || fields?.Confidence || null;
 }
 
-export function getHierarchyLevelDefault({
-  fields,
-}: ChildField<"Issue Type"> | ParentField<"issuetype">): NormalizedIssue["hierarchyLevel"] {
+type MinimalHierarchyLevelIssue = {
+  fields:
+    | {
+        issuetype: ParentIssue["fields"]["issuetype"];
+      }
+    | { "Issue Type": JiraIssue["fields"]["Issue Type"] };
+};
+
+export function getHierarchyLevelDefault({ fields }: MinimalHierarchyLevelIssue): NormalizedIssue["hierarchyLevel"] {
   const issueType = "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
+
+  console.log({ fields, issueType, level: issueType.hierarchyLevel });
 
   if (typeof issueType === "string") {
     return parseInt(issueType, 10);
@@ -210,38 +223,38 @@ export function getReleasesDefault({ fields }: Fields): NormalizedIssue["release
   });
 }
 
-type MinimalVelocityIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+type MinimalVelocityIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
 
 export function getVelocityDefault(
   issue: MinimalVelocityIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): NormalizedIssue["team"]["velocity"] {
   return 21;
 }
 
-type MinimalParallelWorkLimitIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+type MinimalParallelWorkLimitIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
 
 export function getParallelWorkLimitDefault(
   issue: MinimalParallelWorkLimitIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): NormalizedIssue["team"]["parallelWorkLimit"] {
   return 1;
 }
 
-type MinimalDaysPerSprintIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+type MinimalDaysPerSprintIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
 
 export function getDaysPerSprintDefault(
   issue: MinimalDaysPerSprintIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): NormalizedIssue["team"]["daysPerSprint"] {
   return 10;
 }
 
-type MinimalTeamSpreadEffortIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue>;
+type MinimalTeamSpreadEffortIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
 
 export function getTeamSpreadsEffortAcrossDatesDefault(
   issue: MinimalTeamSpreadEffortIssue,
-  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType">
+  options?: Pick<NormalizeIssueConfig, "getTeamKey" | "getType" | "getHierarchyLevel">
 ): NormalizedIssue["team"]["spreadEffortAcrossDates"] {
   return false;
 }

@@ -35,7 +35,7 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
       const previousUserData = queryClient.getQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData);
 
       queryClient.setQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData, {
-        ...(previousUserData ?? { issueTypes: [] }),
+        ...(previousUserData ?? { issueHeirarchy: [] }),
         userData: updates,
       });
 
