@@ -104,6 +104,13 @@ export const createNormalizeConfiguration = (
         return null;
       }
 
+      if (
+        typeof teamHierarchyConfiguration.confidenceField === "string" &&
+        teamHierarchyConfiguration.confidenceField === "confidence-not-used"
+      ) {
+        return 100;
+      }
+
       const value = issue.fields[teamHierarchyConfiguration.confidenceField];
 
       if (!value) {
