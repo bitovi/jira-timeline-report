@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import type { IssueFields, TeamConfiguration } from "./services/team-configuration";
+import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 
 import React from "react";
 import Heading from "@atlaskit/heading";
@@ -9,33 +10,36 @@ import { Accordion, AccordionContent, AccordionTitle } from "../../../components
 
 import { useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
-
-import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 import { useTeamForm } from "./useTeamForm";
-import { useSuspenseQuery } from "@tanstack/react-query";
-
-import { getSimplifiedIssueHierarchy } from "../../../../stateful-data/jira-data-requests";
-import { useJira } from "../../services/jira";
 
 interface IssueAccordionProps {
   teamName: string;
-  issueType: keyof TeamConfiguration;
+  hierarchyLevel: keyof TeamConfiguration;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
-  getInheritance: (issueType: keyof TeamConfiguration) => TeamConfiguration;
+  getInheritance: (hierarchyLevel: keyof TeamConfiguration) => TeamConfiguration;
   getHierarchyLevelName: (level: number | string) => string;
   jiraFields: IssueFields;
   augmentedTeamData: TeamConfiguration;
   userTeamData: TeamConfiguration;
 }
 
-const IssueAccordion: FC<IssueAccordionProps> = ({ issueType, jiraFields, getHierarchyLevelName, ...formData }) => {
-  // @ts-expect-error
-  const { isSaving, ...formProps } = useTeamForm({ issueType, ...formData });
+const IssueAccordion: FC<IssueAccordionProps> = ({
+  hierarchyLevel,
+  jiraFields,
+  getHierarchyLevelName,
+  ...formData
+}) => {
+  const { isSaving, ...formProps } = useTeamForm({
+    hierarchyLevel,
+    ...formData,
+  });
 
   return (
-    <Accordion startsOpen={issueType === "defaults"}>
+    <Accordion startsOpen={hierarchyLevel === "defaults"}>
       <AccordionTitle>
-        <Heading size="small">{issueType === "defaults" ? "Team defaults" : getHierarchyLevelName(issueType)}</Heading>
+        <Heading size="small">
+          {hierarchyLevel === "defaults" ? "Team defaults" : getHierarchyLevelName(hierarchyLevel)}
+        </Heading>
         {isSaving && (
           <div>
             <Spinner size="small" label="saving" />
@@ -58,12 +62,13 @@ export interface ConfigureTeamsProps {
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdate }) => {
   const { augmentedTeamData, ...teamData } = useTeamData(teamName, jiraFields);
 
-  const teamIssues = Object.keys(augmentedTeamData)
-    .sort((a, b) => {
-      if (a === "defaults") return -1;
-      if (b === "defaults") return 1;
+  const hierarchyLevels = Object.keys(augmentedTeamData)
+    // hierarchyLevels should be defaults first then highest level to lowest
+    .sort((lhs, rhs) => {
+      if (lhs === "defaults") return -1;
+      if (rhs === "defaults") return 1;
 
-      return parseInt(b) - parseInt(a);
+      return parseInt(lhs) - parseInt(rhs);
     })
     .filter((issueType): issueType is keyof TeamConfiguration => {
       if (teamName === "__GLOBAL__") {
@@ -77,12 +82,12 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
 
   return (
     <>
-      {teamIssues.map((issueType) => {
+      {hierarchyLevels.map((hierarchyLevel) => {
         return (
           <IssueAccordion
-            key={issueType}
+            key={hierarchyLevel}
             teamName={teamName}
-            issueType={issueType}
+            hierarchyLevel={hierarchyLevel}
             onUpdate={onUpdate}
             jiraFields={jiraFields}
             augmentedTeamData={augmentedTeamData}

@@ -52,6 +52,7 @@ export const getSimplifiedIssueHierarchy = makeCacheable(({ jiraHelpers, isLogge
 
 function simplifyIssueHierarchy(types) {
   const levelsToTypes = [];
+  // ignore any level with scope
   for (let type of types.filter((type) => !type.scope)) {
     // ignore subtasks
     if (type.hierarchyLevel >= 0) {

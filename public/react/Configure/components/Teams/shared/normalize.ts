@@ -75,17 +75,17 @@ export const createNormalizeConfiguration = (
         .spreadEffortAcrossDates;
     },
     getStartDate: (issue, config) => {
-      const teamIssueConfiguration = getConfiguration(
+      const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
         config?.getHierarchyLevel(issue)
       );
 
-      if (!teamIssueConfiguration.startDateField) {
+      if (!teamHierarchyConfiguration.startDateField) {
         return null;
       }
 
-      const value = issue.fields[teamIssueConfiguration.startDateField];
+      const value = issue.fields[teamHierarchyConfiguration.startDateField];
 
       if (!value || typeof value !== "string") {
         return null;
@@ -94,17 +94,17 @@ export const createNormalizeConfiguration = (
       return value;
     },
     getConfidence: (issue, config) => {
-      const teamIssueConfiguration = getConfiguration(
+      const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
         config?.getHierarchyLevel(issue)
       );
 
-      if (!teamIssueConfiguration.confidenceField) {
+      if (!teamHierarchyConfiguration.confidenceField) {
         return null;
       }
 
-      const value = issue.fields[teamIssueConfiguration.confidenceField];
+      const value = issue.fields[teamHierarchyConfiguration.confidenceField];
 
       if (!value) {
         return null;
@@ -119,17 +119,17 @@ export const createNormalizeConfiguration = (
       return confidence;
     },
     getDueDate: (issue, config) => {
-      const teamIssueConfiguration = getConfiguration(
+      const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
         config?.getHierarchyLevel(issue)
       );
 
-      if (!teamIssueConfiguration.dueDateField) {
+      if (!teamHierarchyConfiguration.dueDateField) {
         return null;
       }
 
-      const value = issue.fields[teamIssueConfiguration.dueDateField];
+      const value = issue.fields[teamHierarchyConfiguration.dueDateField];
 
       if (!value || typeof value !== "string") {
         return null;
@@ -138,17 +138,17 @@ export const createNormalizeConfiguration = (
       return value;
     },
     getStoryPoints: (issue, config) => {
-      const teamIssueConfiguration = getConfiguration(
+      const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
         config?.getHierarchyLevel(issue)
       );
 
-      if (!teamIssueConfiguration.estimateField) {
+      if (!teamHierarchyConfiguration.estimateField) {
         return null;
       }
 
-      const value = issue.fields[teamIssueConfiguration.estimateField];
+      const value = issue.fields[teamHierarchyConfiguration.estimateField];
 
       if (!value) {
         return null;
@@ -163,17 +163,17 @@ export const createNormalizeConfiguration = (
       return storyPoints;
     },
     getStoryPointsMedian: (issue, config) => {
-      const teamIssueConfiguration = getConfiguration(
+      const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
         config?.getHierarchyLevel(issue)
       );
 
-      if (!teamIssueConfiguration.estimateField) {
+      if (!teamHierarchyConfiguration.estimateField) {
         return null;
       }
 
-      const value = issue.fields[teamIssueConfiguration.estimateField];
+      const value = issue.fields[teamHierarchyConfiguration.estimateField];
 
       if (!value) {
         return null;

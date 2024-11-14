@@ -1,4 +1,6 @@
 import type { AllTeamData, IssueFields, TeamConfiguration } from "../team-configuration";
+import type { Jira } from "../../../../../../../jira-oidc-helpers";
+import type { AppStorage } from "../../../../../../../jira/storage/common";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -13,8 +15,6 @@ import {
 } from "../../team-configuration";
 import { useJira } from "../../../../../services/jira";
 import { getSimplifiedIssueHierarchy } from "../../../../../../../stateful-data/jira-data-requests";
-import { Jira } from "../../../../../../../jira-oidc-helpers";
-import { AppStorage } from "../../../../../../../jira/storage/common";
 
 type IssueHierarchy = {
   name: string;

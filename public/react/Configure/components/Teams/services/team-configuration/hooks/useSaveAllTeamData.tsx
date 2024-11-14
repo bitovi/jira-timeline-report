@@ -1,7 +1,7 @@
 import type { NormalizeIssueConfig } from "../../../../../../../jira/normalized/normalize";
 import type { AllTeamData, Configuration, TeamConfiguration } from "../team-configuration";
 import type { UseJiraIssueFields } from "../../../../../services/jira";
-import type { TeamDataCache, UseAllTeamData } from "./useAllTeamData";
+import type { TeamDataCache } from "./useAllTeamData";
 
 import React from "react";
 import { UseMutateFunction, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -85,7 +85,7 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
 
 type UseSaveTeamData = (config: {
   teamName: string;
-  issueType: keyof TeamConfiguration;
+  hierarchyLevel: keyof TeamConfiguration;
   onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
 }) => {
   save: (updates: Configuration) => void;
@@ -93,7 +93,7 @@ type UseSaveTeamData = (config: {
 };
 
 export const useSaveTeamData: UseSaveTeamData = (config) => {
-  const { teamName, issueType, onUpdate } = config;
+  const { teamName, hierarchyLevel, onUpdate } = config;
 
   const queryClient = useQueryClient();
   const { save, isSaving } = useSaveAllTeamData({ onUpdate });
@@ -111,7 +111,7 @@ export const useSaveTeamData: UseSaveTeamData = (config) => {
       save(
         createUpdatedTeamData(allTeamData.userData, {
           teamName,
-          issueType,
+          hierarchyLevel,
           configuration: updates,
         })
       );

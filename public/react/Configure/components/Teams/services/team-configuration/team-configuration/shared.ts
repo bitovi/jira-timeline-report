@@ -42,15 +42,15 @@ export const createEmptyConfiguration = (): Configuration => {
   };
 };
 
-export const createEmptyTeamConfiguration = (issueTypes: string[]): TeamConfiguration => {
-  return issueTypes.reduce(
-    (config, issueType) => {
-      return { ...config, [issueType]: createEmptyConfiguration() };
+export const createEmptyTeamConfiguration = (issueHierarchy: string[]): TeamConfiguration => {
+  return issueHierarchy.reduce(
+    (config, level) => {
+      return { ...config, [level]: createEmptyConfiguration() };
     },
     { defaults: createEmptyConfiguration() }
   );
 };
 
-export const createEmptyAllTeamsData = (issueTypes: string[] = []): AllTeamData => {
-  return { __GLOBAL__: createEmptyTeamConfiguration(issueTypes) };
+export const createEmptyAllTeamsData = (issueHierarchy: string[] = []): AllTeamData => {
+  return { __GLOBAL__: createEmptyTeamConfiguration(issueHierarchy) };
 };

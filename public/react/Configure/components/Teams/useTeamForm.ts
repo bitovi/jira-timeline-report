@@ -1,19 +1,15 @@
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
-import type { Configuration } from "./services/team-configuration";
+import type { Configuration, TeamConfiguration } from "./services/team-configuration";
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
-import { useSaveTeamData } from "./services/team-configuration";
+import { createEmptyConfiguration, useSaveTeamData } from "./services/team-configuration";
 import { FieldUpdates } from "./ConfigureTeamsForm";
-
-export type TeamConfiguration = Record<string, Configuration> & {
-  defaults: Configuration;
-};
 
 type UseTeamFormConfig = {
   teamName: string;
-  issueType: keyof TeamConfiguration;
+  hierarchyLevel: keyof TeamConfiguration;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
   augmentedTeamData: TeamConfiguration;
   userTeamData: TeamConfiguration;
@@ -22,35 +18,57 @@ type UseTeamFormConfig = {
 
 export const useTeamForm = ({
   teamName,
-  issueType,
+  hierarchyLevel,
   onUpdate,
   augmentedTeamData,
   userTeamData,
   getInheritance,
 }: UseTeamFormConfig) => {
-  const { save, isSaving } = useSaveTeamData({ teamName, issueType, onUpdate });
+  const { save, isSaving } = useSaveTeamData({ teamName, hierarchyLevel, onUpdate });
   const { register, setValue, control, reset } = useForm<Configuration>({
-    defaultValues: augmentedTeamData[issueType],
+    defaultValues: augmentedTeamData[hierarchyLevel],
   });
 
   useEffect(() => {
-    reset(augmentedTeamData[issueType]);
+    reset(augmentedTeamData[hierarchyLevel]);
   }, [teamName, userTeamData]);
 
   function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {
-    save({ ...userTeamData[issueType]!, [name]: value });
+    save({ ...userTeamData[hierarchyLevel]!, [name]: value });
   }
 
   const toggleInheritance = (field: keyof Configuration, shouldCustomize: boolean) => {
     if (shouldCustomize) {
-      update({ name: field, value: augmentedTeamData[issueType]![field] });
+      update({ name: field, value: augmentedTeamData[hierarchyLevel]![field] });
       return;
     }
 
-    setValue(field, getInheritance(issueType)[issueType]![field]);
+    setValue(field, getInheritance(hierarchyLevel)[hierarchyLevel]![field]);
 
     update({ name: field, value: null });
   };
+
+  if (process.env.NODE_ENV !== "production") {
+    if (!userTeamData[hierarchyLevel]) {
+      console.warn(
+        [
+          "Could not find saved configuration in useTeamForm",
+          `looking in "userData" at level "${hierarchyLevel}"`,
+          "Returning an empty configuration",
+        ].join("\n")
+      );
+    }
+
+    if (!augmentedTeamData[hierarchyLevel]) {
+      console.warn(
+        [
+          "Could not find saved configuration in useTeamForm",
+          `looking in "augmentedTeamData" at level "${hierarchyLevel}"`,
+          "Returning an empty configuration",
+        ].join("\n")
+      );
+    }
+  }
 
   return {
     toggleInheritance,
@@ -58,7 +76,7 @@ export const useTeamForm = ({
     control,
     isSaving,
     update,
-    userData: userTeamData[issueType],
-    augmented: augmentedTeamData[issueType],
+    userData: userTeamData[hierarchyLevel] || createEmptyConfiguration(),
+    augmented: augmentedTeamData[hierarchyLevel] || createEmptyConfiguration(),
   };
 };
