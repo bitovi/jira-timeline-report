@@ -5,8 +5,6 @@ const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel
   const key = teamKey || "";
   const level = typeof heirarchyLevel === "undefined" ? 0 : heirarchyLevel;
 
-  console.log({ key, level, allData });
-
   return allData[key]?.[level] || allData.__GLOBAL__.defaults;
 };
 
@@ -145,8 +143,6 @@ export const createNormalizeConfiguration = (
         config?.getTeamKey(issue),
         config?.getHierarchyLevel(issue)
       );
-
-      console.log({ name: issue.key, type: config?.getHierarchyLevel(issue), teamIssueConfiguration });
 
       if (!teamIssueConfiguration.estimateField) {
         return null;

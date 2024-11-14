@@ -120,8 +120,6 @@ type MinimalHierarchyLevelIssue = {
 export function getHierarchyLevelDefault({ fields }: MinimalHierarchyLevelIssue): NormalizedIssue["hierarchyLevel"] {
   const issueType = "Issue Type" in fields ? fields["Issue Type"] : fields.issuetype;
 
-  console.log({ fields, issueType, level: issueType.hierarchyLevel });
-
   if (typeof issueType === "string") {
     return parseInt(issueType, 10);
   }

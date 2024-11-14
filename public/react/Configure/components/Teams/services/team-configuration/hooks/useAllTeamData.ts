@@ -81,9 +81,6 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
     createEmptyTeamConfiguration(issueHeirarchy.map((type) => type.hierarchyLevel.toString()));
   const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
 
-  console.table(userData);
-  console.table(augmented);
-
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
