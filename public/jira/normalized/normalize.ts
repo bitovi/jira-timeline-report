@@ -18,14 +18,14 @@ export function normalizeParent(
     getSummary = defaults.getSummaryDefault,
     getHierarchyLevel = defaults.getHierarchyLevelDefault,
     getType = defaults.getTypeDefault,
-    getIssueKey = defaults.getIssueKeyDefault
+    getIssueKey = defaults.getIssueKeyDefault,
   }: Partial<NormalizeParentConfig> = {}
 ) {
   return {
     summary: getSummary(issue),
     hierarchyLevel: getHierarchyLevel(issue),
     type: getType(issue),
-    key: getIssueKey(issue)
+    key: getIssueKey(issue),
   };
 }
 

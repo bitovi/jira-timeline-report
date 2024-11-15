@@ -17,6 +17,11 @@ import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rol
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
 
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+
+import SavedReports from "./react/SaveReports";
+
 import { DROPDOWN_LABEL } from "./shared/style-strings.js";
 
 export class TimelineReport extends StacheElement {
@@ -56,6 +61,8 @@ export class TimelineReport extends StacheElement {
 
           </div>
       {{/ not }}
+
+          <div id="saved-reports"></div>
 
           <div class="flex gap-1">
             
@@ -256,8 +263,12 @@ export class TimelineReport extends StacheElement {
   };
 
   // hooks
-  async connected() {
+  rendered() {
     updateFullishHeightSection();
+  }
+
+  async connected() {
+    createRoot(document.getElementById("saved-reports")).render(createElement(SavedReports, {}));
   }
 
   get rollupTimingLevelsAndCalculations() {
@@ -289,7 +300,7 @@ export class TimelineReport extends StacheElement {
         rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
         configuration: this.configuration
       } )*/
-     console.log("rolledupAndRolledBackIssuesAndReleases changed!")
+    console.log("rolledupAndRolledBackIssuesAndReleases changed!");
     if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
       return [];
     }
@@ -439,7 +450,7 @@ function addTeamBreakdown(release) {
 // complete
 
 function getElementPosition(el) {
-  var rect = el.getBoundingClientRect();
+  var rect = el?.getBoundingClientRect();
   var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
   var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
   return { x: rect.left + scrollLeft, y: rect.top + scrollTop };
