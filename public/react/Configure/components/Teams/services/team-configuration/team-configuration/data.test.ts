@@ -11,7 +11,7 @@ const createConfiguration = (overrides: Partial<Configuration> = {}): Configurat
 });
 
 const createTeamConfiguration = (overrides: Partial<TeamConfiguration> = {}): TeamConfiguration => ({
-  ...createEmptyTeamConfiguration(),
+  ...createEmptyTeamConfiguration(["defaults", "outcome", "milestones", "initiatives", "epics", "stories"]),
   ...overrides,
 });
 

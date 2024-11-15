@@ -29,38 +29,38 @@ export function normalizeParent(
   };
 }
 
-export function normalizeIssue(
-  issue: JiraIssue,
-  {
-    getIssueKey = defaults.getIssueKeyDefault,
-    getParentKey = defaults.getParentKeyDefault,
-    getConfidence = defaults.getConfidenceDefault,
-    getDueDate = defaults.getDueDateDefault,
-    getHierarchyLevel = defaults.getHierarchyLevelDefault,
-    getStartDate = defaults.getStartDateDefault,
-    getStoryPoints = defaults.getStoryPointsDefault,
-    getStoryPointsMedian = defaults.getStoryPointsMedianDefault,
-    getType = defaults.getTypeDefault,
-    getTeamKey = defaults.getTeamKeyDefault,
-    getUrl = defaults.getUrlDefault,
-    getVelocity = defaults.getVelocityDefault,
-    getDaysPerSprint = defaults.getDaysPerSprintDefault,
-    getParallelWorkLimit = defaults.getParallelWorkLimitDefault,
-    getSprints = defaults.getSprintsDefault,
-    getStatus = defaults.getStatusDefault,
-    getStatusCategory = defaults.getStatusCategoryDefault,
-    getLabels = defaults.getLabelsDefault,
-    getReleases = defaults.getReleasesDefault,
-    getRank = defaults.getRankDefault,
-    getSummary = defaults.getSummaryDefault,
-    getTeamSpreadsEffortAcrossDates = defaults.getTeamSpreadsEffortAcrossDatesDefault,
-  }: Partial<NormalizeIssueConfig> = {}
-): NormalizedIssue {
-  const teamName = getTeamKey(issue);
+export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssueConfig> = {}): NormalizedIssue {
+  const optionsWithDefaults = {
+    getIssueKey: defaults.getIssueKeyDefault,
+    getParentKey: defaults.getParentKeyDefault,
+    getConfidence: defaults.getConfidenceDefault,
+    getDueDate: defaults.getDueDateDefault,
+    getHierarchyLevel: defaults.getHierarchyLevelDefault,
+    getStartDate: defaults.getStartDateDefault,
+    getStoryPoints: defaults.getStoryPointsDefault,
+    getStoryPointsMedian: defaults.getStoryPointsMedianDefault,
+    getType: defaults.getTypeDefault,
+    getTeamKey: defaults.getTeamKeyDefault,
+    getUrl: defaults.getUrlDefault,
+    getVelocity: defaults.getVelocityDefault,
+    getDaysPerSprint: defaults.getDaysPerSprintDefault,
+    getParallelWorkLimit: defaults.getParallelWorkLimitDefault,
+    getSprints: defaults.getSprintsDefault,
+    getStatus: defaults.getStatusDefault,
+    getStatusCategory: defaults.getStatusCategoryDefault,
+    getLabels: defaults.getLabelsDefault,
+    getReleases: defaults.getReleasesDefault,
+    getRank: defaults.getRankDefault,
+    getSummary: defaults.getSummaryDefault,
+    getTeamSpreadsEffortAcrossDates: defaults.getTeamSpreadsEffortAcrossDatesDefault,
+    ...options,
+  };
 
-  const velocity = getVelocity(teamName);
-  const daysPerSprint = getDaysPerSprint(teamName);
-  const parallelWorkLimit = getParallelWorkLimit(teamName);
+  const teamName = optionsWithDefaults.getTeamKey(issue);
+
+  const velocity = optionsWithDefaults.getVelocity(issue, optionsWithDefaults);
+  const daysPerSprint = optionsWithDefaults.getDaysPerSprint(issue, optionsWithDefaults);
+  const parallelWorkLimit = optionsWithDefaults.getParallelWorkLimit(issue, optionsWithDefaults);
 
   const totalPointsPerDay = velocity / daysPerSprint;
   const pointsPerDayPerTrack = totalPointsPerDay / parallelWorkLimit;
@@ -68,17 +68,17 @@ export function normalizeIssue(
   return {
     // .summary can come from a "parent"'s fields
     // TODO check what this was supposed to be flag^v
-    summary: getSummary(issue),
-    key: getIssueKey(issue),
-    parentKey: getParentKey(issue),
-    confidence: getConfidence(issue),
-    dueDate: parseDateIntoLocalTimezone(getDueDate(issue)),
-    hierarchyLevel: getHierarchyLevel(issue),
-    startDate: parseDateIntoLocalTimezone(getStartDate(issue)),
-    storyPoints: getStoryPoints(issue),
-    storyPointsMedian: getStoryPointsMedian(issue),
-    type: getType(issue),
-    sprints: getSprints(issue),
+    summary: optionsWithDefaults.getSummary(issue),
+    key: optionsWithDefaults.getIssueKey(issue),
+    parentKey: optionsWithDefaults.getParentKey(issue),
+    confidence: optionsWithDefaults.getConfidence(issue, optionsWithDefaults),
+    dueDate: parseDateIntoLocalTimezone(optionsWithDefaults.getDueDate(issue, optionsWithDefaults)),
+    hierarchyLevel: optionsWithDefaults.getHierarchyLevel(issue),
+    startDate: parseDateIntoLocalTimezone(optionsWithDefaults.getStartDate(issue, optionsWithDefaults)),
+    storyPoints: optionsWithDefaults.getStoryPoints(issue, optionsWithDefaults),
+    storyPointsMedian: optionsWithDefaults.getStoryPointsMedian(issue, optionsWithDefaults),
+    type: optionsWithDefaults.getType(issue),
+    sprints: optionsWithDefaults.getSprints(issue),
     team: {
       name: teamName,
       velocity,
@@ -86,14 +86,14 @@ export function normalizeIssue(
       parallelWorkLimit,
       totalPointsPerDay,
       pointsPerDayPerTrack,
-      spreadEffortAcrossDates: getTeamSpreadsEffortAcrossDates(teamName),
+      spreadEffortAcrossDates: optionsWithDefaults.getTeamSpreadsEffortAcrossDates(issue, optionsWithDefaults),
     },
-    url: getUrl(issue),
-    status: getStatus(issue),
-    statusCategory: getStatusCategory(issue),
-    labels: getLabels(issue),
-    releases: getReleases(issue),
-    rank: getRank(issue),
+    url: optionsWithDefaults.getUrl(issue),
+    status: optionsWithDefaults.getStatus(issue),
+    statusCategory: optionsWithDefaults.getStatusCategory(issue),
+    labels: optionsWithDefaults.getLabels(issue),
+    releases: optionsWithDefaults.getReleases(issue),
+    rank: optionsWithDefaults.getRank(issue),
     issue,
   };
 }
