@@ -2,7 +2,7 @@ import type { AllTeamData, IssueFields, TeamConfiguration } from "../team-config
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { useStorage } from "../../../../../services/storage";
+import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
 import {
   applyGlobalDefaultData,

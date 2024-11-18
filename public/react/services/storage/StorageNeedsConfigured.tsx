@@ -6,8 +6,7 @@ import Heading from "@atlaskit/heading";
 import { LinkButton } from "@atlaskit/button/new";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useStorage } from "./StorageProvider";
-
-import { allTeamDataKey } from "../../components/Teams/services/team-configuration";
+import { allTeamDataKey } from "../../Configure/components/Teams/services/team-configuration";
 
 // Quick work around to check if storage is setup
 // Update later

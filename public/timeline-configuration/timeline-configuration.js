@@ -79,7 +79,10 @@ export class TimelineConfiguration extends StacheElement {
                 <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect with us</a>
             </p>  
         {{/ not }}
-
+        
+        <div width="w-96"  class="{{^ eq(this.showSettings, "REPORTS")}}hidden{{/}}">
+          Reports
+        </div>
         
         <div width="w-96"  class="{{^ eq(this.showSettings, "SOURCES")}}hidden{{/}}">
             ${GOBACK_BUTTON}

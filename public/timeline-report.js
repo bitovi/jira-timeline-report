@@ -16,6 +16,7 @@ import "./select-view-settings/select-view-settings.js";
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback.js";
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
+import { saveJSONToUrl } from "./shared/state-storage.js";
 
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
@@ -61,8 +62,8 @@ export class TimelineReport extends StacheElement {
 
           </div>
       {{/ not }}
-
-          <div id="saved-reports"></div>
+          <button on:click="this.showSettings = 'reports'">report</button>
+          <div id="saved-reports" class='pb-5'></div>
 
           <div class="flex gap-1">
             
@@ -188,6 +189,8 @@ export class TimelineReport extends StacheElement {
   static props = {
     // passed values
     timingCalculationMethods: type.Any,
+    storage: null,
+    showSettings: saveJSONToUrl("settings", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
 
     showingDebugPanel: { type: Boolean, default: false },
     timeSliderValue: {
@@ -268,7 +271,11 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
-    createRoot(document.getElementById("saved-reports")).render(createElement(SavedReports, {}));
+    createRoot(document.getElementById("saved-reports")).render(createElement(SavedReports, { storage: this.storage }));
+  }
+
+  showReports() {
+    this.showSettings = "reports";
   }
 
   get rollupTimingLevelsAndCalculations() {

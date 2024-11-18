@@ -1,6 +1,6 @@
 import type { NormalizeIssueConfig } from "../../../../../../../jira/normalized/normalize";
 import type { AllTeamData, Configuration, TeamConfiguration } from "../team-configuration";
-import type { UseJiraIssueFields } from "../../../../../services/jira";
+import type { UseJiraIssueFields } from "../../../../../../services/jira";
 import type { UseAllTeamData } from "./useAllTeamData";
 
 import React from "react";
@@ -8,11 +8,11 @@ import { UseMutateFunction, useMutation, useQueryClient } from "@tanstack/react-
 import { useFlags } from "@atlaskit/flag";
 import ErrorIcon from "@atlaskit/icon/glyph/error";
 
-import { useStorage } from "../../../../../services/storage";
+import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
 import { createFullyInheritedConfig, createUpdatedTeamData, updateAllTeamData } from "../team-configuration";
 import { createNormalizeConfiguration } from "../../../shared/normalize";
-import { jiraKeys } from "../../../../../services/jira";
+import { jiraKeys } from "../../../../../../services/jira";
 
 type UseSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
   save: UseMutateFunction<void, Error, AllTeamData, { previousUserData: AllTeamData | undefined }>;
