@@ -23,13 +23,6 @@ export function rollupAndRollback<TRollupable extends DerivedIssue>(
   rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
   when: Date
 ) {
-  console.log(
-    "DEBUG: rollupAndRollback",
-    derivedIssues,
-    configuration,
-    rollupTimingLevelsAndCalculations,
-    when
-  );
   // get old issues and prepare them
   const oldRawIssues = derivedIssuesToRawIssues(derivedIssues);
   const pastStatusRolledUp = rollbackNormalizeAndDeriveEverything(
