@@ -1,7 +1,7 @@
 import type { NormalizeIssueConfig } from "../../../../../../../jira/normalized/normalize";
 import type { AllTeamData, Configuration, TeamConfiguration } from "../team-configuration";
 import type { UseJiraIssueFields } from "../../../../../services/jira";
-import type { UseAllTeamData } from "./useAllTeamData";
+import type { TeamDataCache } from "./useAllTeamData";
 
 import React from "react";
 import { UseMutateFunction, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +15,7 @@ import { createNormalizeConfiguration } from "../../../shared/normalize";
 import { jiraKeys } from "../../../../../services/jira";
 
 type UseSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
-  save: UseMutateFunction<void, Error, AllTeamData, { previousUserData: AllTeamData | undefined }>;
+  save: UseMutateFunction<void, Error, AllTeamData, { previousUserData: TeamDataCache | undefined }>;
   isSaving: boolean;
 };
 
@@ -32,9 +32,12 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
     onMutate: async (updates) => {
       await queryClient.cancelQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
 
-      const previousUserData = queryClient.getQueryData<AllTeamData>(updateTeamConfigurationKeys.allTeamData);
+      const previousUserData = queryClient.getQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData);
 
-      queryClient.setQueryData(updateTeamConfigurationKeys.allTeamData, updates);
+      queryClient.setQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData, {
+        ...(previousUserData ?? { issueHeirarchy: [] }),
+        userData: updates,
+      });
 
       return { previousUserData };
     },
@@ -82,7 +85,7 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
 
 type UseSaveTeamData = (config: {
   teamName: string;
-  issueType: keyof TeamConfiguration;
+  hierarchyLevel: keyof TeamConfiguration;
   onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
 }) => {
   save: (updates: Configuration) => void;
@@ -90,7 +93,7 @@ type UseSaveTeamData = (config: {
 };
 
 export const useSaveTeamData: UseSaveTeamData = (config) => {
-  const { teamName, issueType, onUpdate } = config;
+  const { teamName, hierarchyLevel, onUpdate } = config;
 
   const queryClient = useQueryClient();
   const { save, isSaving } = useSaveAllTeamData({ onUpdate });
@@ -98,9 +101,7 @@ export const useSaveTeamData: UseSaveTeamData = (config) => {
   return {
     isSaving,
     save: (updates: Configuration) => {
-      const allTeamData = queryClient.getQueryData<ReturnType<UseAllTeamData>["userAllTeamData"]>(
-        updateTeamConfigurationKeys.allTeamData
-      );
+      const allTeamData = queryClient.getQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData);
 
       if (!allTeamData) {
         console.warn("Could not save without all team data");
@@ -108,9 +109,9 @@ export const useSaveTeamData: UseSaveTeamData = (config) => {
       }
 
       save(
-        createUpdatedTeamData(allTeamData, {
+        createUpdatedTeamData(allTeamData.userData, {
           teamName,
-          issueType,
+          hierarchyLevel,
           configuration: updates,
         })
       );

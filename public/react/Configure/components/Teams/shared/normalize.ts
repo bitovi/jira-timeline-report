@@ -1,12 +1,11 @@
 import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
 import type { AllTeamData, Configuration, TeamConfiguration } from "../services/team-configuration";
 
-import { getTeamKeyDefault } from "../../../../../jira/normalized/defaults";
-
-const getConfiguration = (allData: AllTeamData, teamKey?: string): Configuration => {
+const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel?: number): Configuration => {
   const key = teamKey || "";
+  const level = typeof heirarchyLevel === "undefined" ? 0 : heirarchyLevel;
 
-  return allData[key]?.defaults || allData.__GLOBAL__.defaults;
+  return allData[key]?.[level] || allData.__GLOBAL__.defaults;
 };
 
 const defaults = [
@@ -23,15 +22,15 @@ const getAllFields = (allData?: AllTeamData): string[] => {
   let allFields = [...defaults];
 
   for (const team in allData) {
-    for (const issueType in allData[team]) {
-      const config = allData[team][issueType as keyof TeamConfiguration];
+    for (const heirarchyLevel in allData[team]) {
+      const config = allData[team][heirarchyLevel];
 
       allFields = [
         ...allFields,
-        config.estimateField ?? "",
-        config.confidenceField ?? "",
-        config.startDateField ?? "",
-        config.dueDateField ?? "",
+        config?.estimateField ?? "",
+        config?.confidenceField ?? "",
+        config?.startDateField ?? "",
+        config?.dueDateField ?? "",
       ];
     }
   }
@@ -42,7 +41,7 @@ const getAllFields = (allData?: AllTeamData): string[] => {
 export const createNormalizeConfiguration = (
   allData?: AllTeamData | undefined
 ): Partial<NormalizeIssueConfig> & { fields: string[] } => {
-  const fields = getAllFields(allData);
+  const neededFields = getAllFields(allData);
 
   if (!allData) {
     console.warn(
@@ -53,32 +52,40 @@ export const createNormalizeConfiguration = (
       ].join("\n")
     );
 
-    return { fields };
+    return { fields: neededFields };
   }
 
   return {
-    fields,
-    getDaysPerSprint: (teamKey) => {
-      return Number(getConfiguration(allData, teamKey).sprintLength);
+    fields: neededFields,
+    getDaysPerSprint: (issue, config) => {
+      return Number(
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).sprintLength
+      );
     },
-    getVelocity: (teamKey) => {
-      return Number(getConfiguration(allData, teamKey).velocityPerSprint);
+    getVelocity: (issue, config) => {
+      return Number(
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).velocityPerSprint
+      );
     },
-    getParallelWorkLimit: (teamKey) => {
-      return Number(getConfiguration(allData, teamKey).tracks);
+    getParallelWorkLimit: (issue, config) => {
+      return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).tracks);
     },
-    getTeamSpreadsEffortAcrossDates: (teamKey?: string) => {
-      return !!getConfiguration(allData, teamKey).spreadEffortAcrossDates;
+    getTeamSpreadsEffortAcrossDates: (issue, config) => {
+      return !!getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
+        .spreadEffortAcrossDates;
     },
-    getStartDate: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getStartDate: (issue, config) => {
+      const teamHierarchyConfiguration = getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue)
+      );
 
-      if (!config.startDateField) {
+      if (!teamHierarchyConfiguration.startDateField) {
         return null;
       }
 
-      const value = fields[config.startDateField];
+      const value = issue.fields[teamHierarchyConfiguration.startDateField];
 
       if (!value || typeof value !== "string") {
         return null;
@@ -86,15 +93,25 @@ export const createNormalizeConfiguration = (
 
       return value;
     },
-    getConfidence: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getConfidence: (issue, config) => {
+      const teamHierarchyConfiguration = getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue)
+      );
 
-      if (!config.confidenceField) {
+      if (!teamHierarchyConfiguration.confidenceField) {
         return null;
       }
 
-      const value = fields[config.confidenceField];
+      if (
+        typeof teamHierarchyConfiguration.confidenceField === "string" &&
+        teamHierarchyConfiguration.confidenceField === "confidence-not-used"
+      ) {
+        return 100;
+      }
+
+      const value = issue.fields[teamHierarchyConfiguration.confidenceField];
 
       if (!value) {
         return null;
@@ -108,15 +125,18 @@ export const createNormalizeConfiguration = (
 
       return confidence;
     },
-    getDueDate: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getDueDate: (issue, config) => {
+      const teamHierarchyConfiguration = getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue)
+      );
 
-      if (!config.dueDateField) {
+      if (!teamHierarchyConfiguration.dueDateField) {
         return null;
       }
 
-      const value = fields[config.dueDateField];
+      const value = issue.fields[teamHierarchyConfiguration.dueDateField];
 
       if (!value || typeof value !== "string") {
         return null;
@@ -124,15 +144,18 @@ export const createNormalizeConfiguration = (
 
       return value;
     },
-    getStoryPoints: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getStoryPoints: (issue, config) => {
+      const teamHierarchyConfiguration = getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue)
+      );
 
-      if (!config.estimateField) {
+      if (!teamHierarchyConfiguration.estimateField) {
         return null;
       }
 
-      const value = fields[config.estimateField];
+      const value = issue.fields[teamHierarchyConfiguration.estimateField];
 
       if (!value) {
         return null;
@@ -146,15 +169,18 @@ export const createNormalizeConfiguration = (
 
       return storyPoints;
     },
-    getStoryPointsMedian: ({ fields, key }) => {
-      const teamKey = getTeamKeyDefault({ fields, key });
-      const config = getConfiguration(allData, teamKey);
+    getStoryPointsMedian: (issue, config) => {
+      const teamHierarchyConfiguration = getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue)
+      );
 
-      if (!config.estimateField) {
+      if (!teamHierarchyConfiguration.estimateField) {
         return null;
       }
 
-      const value = fields[config.estimateField];
+      const value = issue.fields[teamHierarchyConfiguration.estimateField];
 
       if (!value) {
         return null;

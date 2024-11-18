@@ -1,36 +1,39 @@
 import type { AllTeamData, Configuration, TeamConfiguration, IssueFields } from "./shared";
 
-import { createEmptyTeamConfiguration } from "./shared";
+import { createEmptyConfiguration, createEmptyTeamConfiguration } from "./shared";
 
 import { getTeamData } from "./fetcher";
 import { applyGlobalDefaultData } from "./allTeamDefault";
 
 export const getInheritedData = (teamData: TeamConfiguration, allTeamData: AllTeamData): TeamConfiguration => {
-  const issueKeys = ["defaults", "outcome", "milestones", "initiatives", "epics", "stories"] as const;
+  const hierarchyLevels = Object.keys(teamData);
 
   // Inheritance logic
   const getInheritance = (
-    issueType: (typeof issueKeys)[number],
+    heirarchyLevel: (typeof hierarchyLevels)[number],
     field: keyof Configuration
   ): Configuration[keyof Configuration] => {
     return (
-      teamData[issueType][field] ??
+      teamData?.[heirarchyLevel]?.[field] ??
       teamData.defaults[field] ??
-      allTeamData.__GLOBAL__[issueType][field] ??
+      allTeamData.__GLOBAL__[heirarchyLevel]?.[field] ??
       allTeamData.__GLOBAL__.defaults[field]
     );
   };
 
-  const inheritedConfig = issueKeys.reduce(
-    (config, issueType) => {
-      const issueFields = Object.keys(teamData[issueType]).reduce((fieldsAcc, field) => {
+  const inheritedConfig = hierarchyLevels.reduce(
+    (config, level) => {
+      const levelConfig = teamData?.[level] ?? createEmptyConfiguration();
+
+      const levelFields = Object.keys(levelConfig).reduce((fieldsAcc, field) => {
         const key = field as keyof Configuration;
-        const data = getInheritance(issueType, key);
+
+        const data = getInheritance(level, key);
 
         return { ...fieldsAcc, [key]: data };
       }, {} as Configuration);
 
-      return { ...config, [issueType]: issueFields };
+      return { ...config, [level]: levelFields };
     },
     { defaults: { ...teamData.defaults } } as TeamConfiguration
   );
@@ -51,17 +54,17 @@ export const createUpdatedTeamData = (
   allTeamData: AllTeamData,
   config: {
     teamName: keyof AllTeamData;
-    issueType: keyof TeamConfiguration;
+    hierarchyLevel: keyof TeamConfiguration;
     configuration: Configuration;
   }
 ): AllTeamData => {
-  const teamData = allTeamData[config.teamName] ?? createEmptyTeamConfiguration();
+  const teamData = allTeamData[config.teamName] ?? createEmptyTeamConfiguration(Object.keys(allTeamData.__GLOBAL__));
 
   return {
     ...allTeamData,
     [config.teamName]: {
       ...teamData,
-      [config.issueType]: { ...config.configuration },
+      [config.hierarchyLevel]: { ...config.configuration },
     },
   };
 };

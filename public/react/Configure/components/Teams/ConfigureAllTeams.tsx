@@ -18,19 +18,10 @@ export interface ConfigureAllTeamsProps {
   jiraFields: IssueFields;
 }
 
-const issueNameMapping: Record<keyof TeamConfiguration, string> = {
-  defaults: "Global default",
-  outcome: "Outcomes",
-  milestones: "Milestones",
-  initiatives: "Initiatives",
-  epics: "Epics",
-  stories: "Stores",
-};
-
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
   const { userTeamData, augmentedTeamData } = useTeamData("__GLOBAL__", jiraFields);
 
-  const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", issueType: "defaults", onUpdate });
+  const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", hierarchyLevel: "defaults", onUpdate });
 
   return (
     <>
