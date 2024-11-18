@@ -7,7 +7,7 @@ import { rollupBlockedStatusIssues } from "../rollup/blocked-status-issues/block
 import { deriveReleases } from "../releases/derive";
 import { normalizeReleases } from "../releases/normalize";
 import { addPercentComplete } from "../rollup/percent-complete/percent-complete";
-import { addReportingHierarchy } from "../rollup/rollup";
+import { addReportingHierarchy, IssueOrRelease } from "../rollup/rollup";
 import { rollupChildStatuses } from "../rollup/child-statuses/child-statuses";
 import { rollupWarningIssues } from "../rollup/warning-issues/warning-issues";
 import {
@@ -15,10 +15,15 @@ import {
   FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES,
 } from "../rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
 import { JiraIssue, RollupLevelAndCalculation } from "../shared/types";
-import { groupBy } from "../shared/helpers";
 
-export function rollupAndRollback<TRollupable extends DerivedIssue>(
-  derivedIssues: TRollupable[],
+type ExtractIssueOrReleaseType<T> = T extends IssueOrRelease<infer X> ? X : never;
+
+export type WithIssueLastPeriod<T> = {
+  issueLastPeriod: IssueOrRelease<T>;
+};
+
+export function rollupAndRollback(
+  derivedIssues: DerivedIssue[],
   configuration: Partial<NormalizeIssueConfig>,
   rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
   when: Date
@@ -36,8 +41,14 @@ export function rollupAndRollback<TRollupable extends DerivedIssue>(
   const currentStatusRolledUp = addRollups(derivedIssues, rollupTimingLevelsAndCalculations);
 
   // TODO: use id in the future to handle issue keys being changed
-  const oldMap = groupBy(pastStatusRolledUp, ({ key }) => key);
-  const result = currentStatusRolledUp.map((x) => ({ ...x, issueLastPeriod: oldMap[x.key] }));
+  const oldMap: { [key: string]: (typeof pastStatusRolledUp)[number] } = {};
+  for (const oldIssue of currentStatusRolledUp) {
+    oldMap[oldIssue.key] = oldIssue;
+  }
+  // associate
+  type rollupType = ExtractIssueOrReleaseType<(typeof currentStatusRolledUp)[number]>;
+  const result: IssueOrRelease<rollupType & WithIssueLastPeriod<rollupType>>[] =
+    currentStatusRolledUp.map((x) => ({ ...x, issueLastPeriod: oldMap[x.key] }));
 
   return result;
 }

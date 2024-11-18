@@ -24,13 +24,3 @@ export const selectDue = (date: Partial<DueData>) => date?.due;
 
 export const sortByStart = sortByIssueDate(selectStart);
 export const descSortByDue = sortByIssueDate(selectDue, "desc");
-
-// couldn't get Object.groupBy to work correctly in all cases with `lib: ["ESNext"]` in tsconfig
-export function groupBy<T>(arr: T[], fn: (item: T) => any) {
-  return arr.reduce<Record<string, T[]>>((prev, curr) => {
-      const groupKey = fn(curr);
-      const group = prev[groupKey] || [];
-      group.push(curr);
-      return { ...prev, [groupKey]: group };
-  }, {});
-}
