@@ -79,12 +79,12 @@ export function deriveWorkTiming(
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
 
   const usedConfidence = isConfidenceValid
-    ? normalizedIssue.confidence!
+    ? normalizedIssue.confidence as number
     : getDefaultConfidence(normalizedIssue.team);
 
   const isStoryPointsValid = isStoryPointsValueValid(normalizedIssue.storyPoints);
   const defaultOrStoryPoints = isStoryPointsValid
-    ? normalizedIssue.storyPoints!
+    ? normalizedIssue.storyPoints as number
     : getDefaultStoryPoints(normalizedIssue.team);
 
   const storyPointsDaysOfWork = defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
@@ -92,7 +92,7 @@ export function deriveWorkTiming(
   const isStoryPointsMedianValid = isStoryPointsValueValid(normalizedIssue.storyPointsMedian);
 
   const defaultOrStoryPointsMedian = isStoryPointsMedianValid
-    ? normalizedIssue.storyPointsMedian!
+    ? normalizedIssue.storyPointsMedian as number
     : getDefaultStoryPoints(normalizedIssue.team);
 
   const storyPointsMedianDaysOfWork =
