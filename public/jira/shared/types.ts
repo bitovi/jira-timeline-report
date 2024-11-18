@@ -56,7 +56,7 @@ export interface IssueFields extends BaseFields {
   "Parent Link"?: { data: { key: string } };
   Status: Status;
   "Fix versions": Array<FixVersion>;
-  Team: null | {name: string, id: string, avatarUrl?: string}
+  Team: null | { name: string; id: string; avatarUrl?: string };
 }
 
 interface BaseIssue {
@@ -101,7 +101,7 @@ export interface NormalizedIssue {
   key: string;
   type: string;
   summary: string;
-  
+
   parentKey: string | null;
   confidence: number | null;
   dueDate: Date;
@@ -140,8 +140,15 @@ export type DefaultsToConfig<T> = {
   [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
 };
 
-export type RollupLevelAndCalculation<T extends string> = {
+export type CalculationType =
+  | "parentFirstThenChildren"
+  | "childrenOnly"
+  | "childrenFirstThenParent"
+  | "widestRange"
+  | "parentOnly";
+  
+export type RollupLevelAndCalculation = {
   type: string;
   hierarchyLevel: number;
-  calculation: T;
+  calculation: CalculationType;
 };

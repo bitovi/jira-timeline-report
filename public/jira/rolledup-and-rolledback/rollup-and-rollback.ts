@@ -1,6 +1,6 @@
 import { rollbackIssues } from "../raw/rollback/rollback";
-import { deriveIssue } from "../derived/derive";
-import { normalizeIssue } from "../normalized/normalize";
+import { DerivedIssue, deriveIssue } from "../derived/derive";
+import { normalizeIssue, NormalizeIssueConfig } from "../normalized/normalize";
 import { addRollupDates } from "../rollup/dates/dates";
 import { addWorkTypeDates } from "../rolledup/work-type/work-type";
 import { rollupBlockedStatusIssues } from "../rollup/blocked-status-issues/blocked-status-issues";
@@ -10,82 +10,92 @@ import { addPercentComplete } from "../rollup/percent-complete/percent-complete"
 import { addReportingHierarchy } from "../rollup/rollup";
 import { rollupChildStatuses } from "../rollup/child-statuses/child-statuses";
 import { rollupWarningIssues } from "../rollup/warning-issues/warning-issues";
-import { addHistoricalAdjustedEstimatedTime } from "../rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
-import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from "../rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
+import {
+  addHistoricalAdjustedEstimatedTime,
+  FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES,
+} from "../rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
+import { JiraIssue, RollupLevelAndCalculation } from "../shared/types";
+import { groupBy } from "../shared/helpers";
 
+export function rollupAndRollback<TRollupable extends DerivedIssue>(
+  derivedIssues: TRollupable[],
+  configuration: Partial<NormalizeIssueConfig>,
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
+  when: Date
+) {
+  console.log(
+    "DEBUG: rollupAndRollback",
+    derivedIssues,
+    configuration,
+    rollupTimingLevelsAndCalculations,
+    when
+  );
+  // get old issues and prepare them
+  const oldRawIssues = derivedIssuesToRawIssues(derivedIssues);
+  const pastStatusRolledUp = rollbackNormalizeAndDeriveEverything(
+    oldRawIssues,
+    configuration,
+    rollupTimingLevelsAndCalculations,
+    when
+  );
 
-/**
- * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issue: import("../raw/rollback/rollback").RolledBackJiraIssue}} RolledBackWorkTypeTimingReleaseOrIssue
- */
+  // prepare current issues
+  const currentStatusRolledUp = addRollups(derivedIssues, rollupTimingLevelsAndCalculations);
 
-/**
- * @typedef {import("../rolledup/work-type/work-type").WorkTypeTimingReleaseOrIssue & {issueLastPeriod: RolledBackWorkTypeTimingReleaseOrIssue}} IssueOrReleaseWithPreviousTiming
- */
+  // TODO: use id in the future to handle issue keys being changed
+  const oldMap = groupBy(pastStatusRolledUp, ({ key }) => key);
+  const result = currentStatusRolledUp.map((x) => ({ ...x, issueLastPeriod: oldMap[x.key] }));
 
-/**
- * @param {derivedIssues} derivedIssues 
- * @param {*} configuration 
- * @param {*} when 
- * @return {IssueOrReleaseWithPreviousTiming}
- */
-export function rollupAndRollback(derivedIssues, configuration, rollupTimingLevelsAndCalculations, when){
-    
-    // get old issues and prepare them
-    const oldRawIssues = derivedIssuesToRawIssues(derivedIssues);
-    const pastStatusRolledUp = rollbackNormalizeAndDeriveEverything(oldRawIssues, configuration, rollupTimingLevelsAndCalculations, when);
-
-    // prepare current issues
-    const currentStatusRolledUp = addRollups(derivedIssues, rollupTimingLevelsAndCalculations);
-
-    const oldMap = {};
-    for(let oldIssue of pastStatusRolledUp) {
-        // TODO: use id in the future to handle issue keys being changed
-        oldMap[oldIssue.key] = oldIssue;
-    }
-    // associate
-    for(let newIssue of currentStatusRolledUp) {
-        // as this function creates new stuff anyway ... maybe it's ok to mutate?
-        newIssue.issueLastPeriod = oldMap[newIssue.key];
-    }
-    return currentStatusRolledUp;
+  return result;
 }
 
-
-
-function addRollups(derivedIssues, rollupTimingLevelsAndCalculations) {
-
-    const normalizedReleases = normalizeReleases(derivedIssues, rollupTimingLevelsAndCalculations)
-    const releases = deriveReleases(normalizedReleases);
-    const reporting = addReportingHierarchy([...releases,...derivedIssues], rollupTimingLevelsAndCalculations);
-    const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
-    const rolledUpBlockers=  rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
-    const rolledUpWarnings = rollupWarningIssues(rolledUpBlockers, rollupTimingLevelsAndCalculations);
-    const percentComplete = addPercentComplete(rolledUpWarnings, rollupTimingLevelsAndCalculations);
-    let childStatuses;
-    if(FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
-        let historicalAdjusted = addHistoricalAdjustedEstimatedTime(percentComplete, rollupTimingLevelsAndCalculations);
-        childStatuses = rollupChildStatuses(historicalAdjusted, rollupTimingLevelsAndCalculations);
-    } else {
-        childStatuses = rollupChildStatuses(percentComplete, rollupTimingLevelsAndCalculations);
-    }
-    return addWorkTypeDates(childStatuses, rollupTimingLevelsAndCalculations);
-    
+function addRollups<TRollupable extends DerivedIssue>(
+  derivedIssues: TRollupable[],
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]
+) {
+  const normalizedReleases = normalizeReleases(derivedIssues, rollupTimingLevelsAndCalculations);
+  const releases = deriveReleases(normalizedReleases);
+  const reporting = addReportingHierarchy(
+    [...releases, ...derivedIssues],
+    rollupTimingLevelsAndCalculations
+  );
+  const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
+  const rolledUpBlockers = rollupBlockedStatusIssues(
+    rolledUpDates,
+    rollupTimingLevelsAndCalculations
+  );
+  const rolledUpWarnings = rollupWarningIssues(rolledUpBlockers, rollupTimingLevelsAndCalculations);
+  const percentComplete = addPercentComplete(rolledUpWarnings, rollupTimingLevelsAndCalculations);
+  let childStatuses;
+  if (FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
+    // NOTE not converting `historical-adjusted-estimated-time.js` to TS yet since it's experimental, per JMeyer
+    let historicalAdjusted: typeof percentComplete = addHistoricalAdjustedEstimatedTime(
+      percentComplete,
+      rollupTimingLevelsAndCalculations
+    );
+    childStatuses = rollupChildStatuses(historicalAdjusted, rollupTimingLevelsAndCalculations);
+  } else {
+    childStatuses = rollupChildStatuses(percentComplete, rollupTimingLevelsAndCalculations);
+  }
+  return addWorkTypeDates(childStatuses, rollupTimingLevelsAndCalculations);
 }
 
-export function rollbackNormalizeAndDeriveEverything(rawIssues, configuration, rollupTimingLevelsAndCalculations, when){
-    const pastRawIssues = rollbackIssues(rawIssues, when);
-    //const dne = pastRawIssues.filter(ri => ri.rollbackMetadata.didNotExistBefore);
-    
-    const pastDerived = pastRawIssues.map( (issue)=>{
-        const normalized = normalizeIssue(issue,configuration);
-        return deriveIssue(normalized, configuration);
-    });
-    return addRollups(pastDerived, rollupTimingLevelsAndCalculations)
+export function rollbackNormalizeAndDeriveEverything(
+  rawIssues: JiraIssue[],
+  configuration: Partial<NormalizeIssueConfig>,
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
+  when: Date
+) {
+  const pastRawIssues = rollbackIssues(rawIssues, when);
+  //const dne = pastRawIssues.filter(ri => ri.rollbackMetadata.didNotExistBefore);
 
+  const pastDerived = pastRawIssues.map((issue) => {
+    const normalized = normalizeIssue(issue, configuration);
+    return deriveIssue(normalized);
+  });
+  return addRollups(pastDerived, rollupTimingLevelsAndCalculations);
 }
 
-
-
-function derivedIssuesToRawIssues(derivedIssues){
-    return derivedIssues.map(dI => dI.issue)
+function derivedIssuesToRawIssues<TRollupable extends DerivedIssue>(derivedIssues: TRollupable[]) {
+  return derivedIssues.map((dI) => dI.issue);
 }

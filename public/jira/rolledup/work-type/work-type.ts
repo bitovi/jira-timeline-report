@@ -1,19 +1,11 @@
 import {
-  makeGetChildrenFromReportingIssues,
   rollupGroupedHierarchy,
   groupIssuesByHierarchyLevelOrType,
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
-  ReportingHierarchyIssueOrRelease,
-  isDerivedIssue,
   isDerivedRelease,
 } from "../../rollup/rollup";
-import {
-  DateCalculations,
-  getStartAndDueData,
-  mergeStartAndDueData,
-  WithDateRollup,
-} from "../../rollup/dates/dates";
+import { getStartAndDueData, mergeStartAndDueData } from "../../rollup/dates/dates";
 import {
   workType as workTypes,
   WorkType,
@@ -42,10 +34,10 @@ export type WorkTypeRollups = {
 };
 
 export type WithChildren = {
-  children?: Partial<DateAndIssueKeys>;
+  children: Partial<DateAndIssueKeys>;
 };
 
-export type WithWorkTypeTiming = WithDateRollup & {
+export type WithWorkTypeTiming = {
   workTypeRollups: WorkTypeRollups & WithChildren;
 };
 
@@ -59,61 +51,10 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
-/**
- * Children are now recursive
- * @param issuesAndReleases
- * @return
- */
-
-function rollupDatesByWorkType(
-  issuesAndReleases: ReportingHierarchyIssueOrRelease<IssueOrRelease<WithWorkTypeTiming>>[]
-) {
-  // lets make the copies b/c we are going to mutate ...
-  const copies = issuesAndReleases.map((issue) => {
-    return { ...issue }; //Object.create(issue);
-  });
-
-  // we probably don't want to assign "issues" if we want to keep things functional ...
-  const getChildren = makeGetChildrenFromReportingIssues(copies);
-
-  for (let issue of copies) {
-    issue.workTypeRollups = getWorkTypeTimings(issue, getChildren);
-  }
-  return copies;
-}
-
-/**
- *
- * @param {import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue} issue
- * @param {function(import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue): Array<import("../../rollup/dates/dates").RolledupDatesReleaseOrIssue>} getChildren
- */
-export function getWorkTypeTimings(
-  issue: ReportingHierarchyIssueOrRelease<IssueOrRelease<WithWorkTypeTiming>>,
-  getChildren: (
-    issue: ReportingHierarchyIssueOrRelease<IssueOrRelease<WithWorkTypeTiming>>
-  ) => ReportingHierarchyIssueOrRelease<IssueOrRelease<WithWorkTypeTiming>>[]
-) {
-  const children = getChildren(issue).filter(isDerivedIssue);
-  const groupedByWorkType = Object.entries(
-    Object.groupBy(children, (child) => child.derivedStatus.workType)
-  );
-  const dateRangeRollups: WorkTypeRollups & WithChildren = Object.fromEntries(
-    groupedByWorkType.map(([type, issues]) => [
-      type as keyof (WorkTypeRollups & WithChildren),
-      {
-        ...mergeStartAndDueData(issues.map((issue) => issue.rollupDates)),
-        issueKeys: issues.map((issue) => issue.key),
-      },
-    ])
-  );
-
-  return dateRangeRollups;
-}
-
-export function addWorkTypeDates(
-  issuesOrReleases: IssueOrRelease<{}>[],
-  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation<DateCalculations>[]
-) {
+export function addWorkTypeDates<T>(
+  issuesOrReleases: IssueOrRelease<T>[],
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]
+): IssueOrRelease<T & WithWorkTypeTiming>[] {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
     issuesOrReleases,
     rollupTimingLevelsAndCalculations
@@ -122,7 +63,10 @@ export function addWorkTypeDates(
   //   .map((rollupData) => rollupData.calculation)
   //   .reverse();
   const rolledUpDates = rollupWorkTypeDates(groupedIssues);
-  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "workTypeRollups");
+  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, (item, values) => ({
+    ...item,
+    workTypeRollups: values,
+  }));
   return zipped.flat();
 }
 
@@ -132,7 +76,7 @@ export function addWorkTypeDates(
  * @param {Array<String>} methodNames Starting from low to high
  * @return {Array<RollupDateData>}
  */
-export function rollupWorkTypeDates(groupedHierarchy: IssueOrRelease<{}>[][]) {
+export function rollupWorkTypeDates<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(issueOrRelease, children: WorkTypeChildRollups[]) {
       //const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
@@ -142,7 +86,7 @@ export function rollupWorkTypeDates(groupedHierarchy: IssueOrRelease<{}>[][]) {
   });
 }
 
-function parentInfo(parent: IssueOrRelease<{}>) {
+function parentInfo<T>(parent: IssueOrRelease<T>) {
   if (isDerivedRelease(parent))
     return {
       key: parent.key,
@@ -183,8 +127,8 @@ function getSelf({
   };
 }
 
-export function mergeParentAndChildIfTheyHaveDates(
-  parentIssueOrRelease: IssueOrRelease<{}>,
+export function mergeParentAndChildIfTheyHaveDates<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
   childRollups: WorkTypeChildRollups[]
 ) {
   const parent = parentInfo(parentIssueOrRelease);

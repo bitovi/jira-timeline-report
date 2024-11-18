@@ -22,29 +22,27 @@ export type WithReportingHierarchy = {
   reportingHierarchy: ReportingHierarchy;
 };
 
-export type CustomFieldsOf<T> = Omit<
-  T,
-  "reportingHierarchy" | keyof IssueOrRelease
->;
-
-export type ReportingHierarchyIssueOrRelease<T extends IssueOrRelease> = T & WithReportingHierarchy;
+// export type ReportingHierarchyIssueOrRelease<T extends IssueOrRelease> = T & WithReportingHierarchy;
 
 export type RollupGroupedHierarchyOptions<
-  TRollupable extends IssueOrRelease,
+  T,
   TMetadata extends Record<string, any>,
   TRollupValues
 > = Partial<{
-  createMetadataForHierarchyLevel: (hierarchyLevel: number, issues: TRollupable[]) => TMetadata;
+  createMetadataForHierarchyLevel: (
+    hierarchyLevel: number,
+    issues: IssueOrRelease<T>[]
+  ) => TMetadata;
   createRollupDataFromParentAndChild: (
-    parent: TRollupable,
+    parent: IssueOrRelease<T>,
     childrenRollupValues: TRollupValues[],
     hierarchyLevel: number,
     metadata: TMetadata
   ) => TRollupValues;
   finalizeMetadataForHierarchyLevel: (metadata: TMetadata, rollupData: TRollupValues[]) => void;
   getChildren: (
-    reportingHierarchyIssueOrRelease: ReportingHierarchyIssueOrRelease<TRollupable>
-  ) => TRollupable[];
+    reportingHierarchyIssueOrRelease: IssueOrRelease<T & WithReportingHierarchy>
+  ) => IssueOrRelease<T>[];
 }>;
 
 export type RollupResponse<TMetadata extends Record<string, any>, TRollupValues> = {
@@ -57,9 +55,9 @@ export type RollupResponse<TMetadata extends Record<string, any>, TRollupValues>
  * @param issueOrRelease
  * @returns
  */
-export function isDerivedRelease<T extends IssueOrRelease>(
-  issueOrRelease: T
-): issueOrRelease is Exclude<T, DerivedIssue> {
+export function isDerivedRelease<T>(
+  issueOrRelease: IssueOrRelease<T>
+): issueOrRelease is DerivedRelease & T {
   return issueOrRelease.type === "Release";
 }
 
@@ -68,9 +66,9 @@ export function isDerivedRelease<T extends IssueOrRelease>(
  * @param issueOrRelease
  * @returns
  */
-export function isDerivedIssue<T extends IssueOrRelease>(
-  issueOrRelease: T
-): issueOrRelease is Exclude<T, DerivedRelease> {
+export function isDerivedIssue<T>(
+  issueOrRelease: IssueOrRelease<T>
+): issueOrRelease is DerivedIssue & T {
   return issueOrRelease.type !== "Release";
 }
 
@@ -109,8 +107,8 @@ function getHierarchyTest({ type, hierarchyLevel }: { type: string; hierarchyLev
   }
 }
 
-export function groupIssuesByHierarchyLevelOrType<TRollupable extends IssueOrRelease>(
-  issuesOrReleases: TRollupable[],
+export function groupIssuesByHierarchyLevelOrType<T>(
+  issuesOrReleases: IssueOrRelease<T>[],
   rollupTypesAndHierarchies: Array<{ type: string; hierarchyLevel?: number }>
 ) {
   return rollupTypesAndHierarchies
@@ -131,22 +129,20 @@ export function groupIssuesByHierarchyLevelOrType<TRollupable extends IssueOrRel
  * @param groupedHierarchy a bottom-up grouped hierarchy
  * @returns a new bottom-up grouped hierarchy of issues or releases
  */
-export function addChildrenFromGroupedHierarchy<TRollupable extends IssueOrRelease>(
-  groupedHierarchy: TRollupable[][]
-) {
+export function addChildrenFromGroupedHierarchy<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
   // we should label each issue with its virtual hierarchy ... then we can make sure
   // children add themselves to the right parents ... we can probably do this in one pass as things are ordered
   // {PARENT_KEY: {allChildren: [issues..], index}}
   const parentKeyToChildren: Record<string, ReportingHierarchy> = {};
   const topDownGroups = [...groupedHierarchy].reverse();
-  const newGroups: ReportingHierarchyIssueOrRelease<TRollupable>[][] = [];
+  const newGroups: IssueOrRelease<T & WithReportingHierarchy>[][] = [];
   for (let g = 0; g < topDownGroups.length; g++) {
-    let group: IssueOrRelease<TRollupable>[] = topDownGroups[g];
-    let newGroup: ReportingHierarchyIssueOrRelease<TRollupable>[] = [];
+    let group: IssueOrRelease<T>[] = topDownGroups[g];
+    let newGroup: IssueOrRelease<T & WithReportingHierarchy>[] = [];
     newGroups.push(newGroup);
 
     for (let issue of group) {
-      let copy: ReportingHierarchyIssueOrRelease<TRollupable> = {
+      let copy: IssueOrRelease<T & WithReportingHierarchy> = {
         ...issue,
         reportingHierarchy: { depth: g, childKeys: [], parentKeys: [] },
       };
@@ -170,27 +166,25 @@ export function addChildrenFromGroupedHierarchy<TRollupable extends IssueOrRelea
   return newGroups.reverse();
 }
 
-export function addReportingHierarchy(
-  issuesOrReleases: IssueOrRelease[],
+export function addReportingHierarchy<T>(
+  issuesOrReleases: IssueOrRelease<T>[],
   rollupTypesAndHierarchies: Array<{ type: string; hierarchyLevel: number }>
 ) {
   const groups = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTypesAndHierarchies);
   return addChildrenFromGroupedHierarchy(groups).flat(1);
 }
 
-export function makeGetChildrenFromGrouped<T extends IssueOrRelease>(
-  groupedHierarchy: ReportingHierarchyIssueOrRelease<T>[][]
+export function makeGetChildrenFromGrouped<T>(
+  groupedHierarchy: IssueOrRelease<T & WithReportingHierarchy>[][]
 ) {
-  const keyToIssue = new Map<string, ReportingHierarchyIssueOrRelease<T>>();
+  const keyToIssue = new Map<string, IssueOrRelease<T & WithReportingHierarchy>>();
   for (let group of groupedHierarchy) {
     for (let issue of group) {
       keyToIssue.set(issue.key, issue);
     }
   }
 
-  return function getChildren(
-    keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<T>
-  ) {
+  return function getChildren(keyOrIssueOrRelease: IssueOrRelease<T & WithReportingHierarchy>) {
     return keyOrIssueOrRelease.reportingHierarchy.childKeys
       .map((k) => keyToIssue.get(k))
       .filter((issue) => issue !== undefined);
@@ -198,12 +192,12 @@ export function makeGetChildrenFromGrouped<T extends IssueOrRelease>(
 }
 
 export function rollupGroupedReportingHierarchy<
-  TRollupable extends IssueOrRelease,
+  T,
   TMetadata extends Record<string, any>,
   TRollupValues
 >(
-  groupedHierarchy: ReportingHierarchyIssueOrRelease<TRollupable>[][],
-  options: RollupGroupedHierarchyOptions<TRollupable, TMetadata, TRollupValues>
+  groupedHierarchy: IssueOrRelease<T & WithReportingHierarchy>[][],
+  options: RollupGroupedHierarchyOptions<T, TMetadata, TRollupValues>
 ) {
   // We should add proper defaults here
   const {
@@ -214,9 +208,7 @@ export function rollupGroupedReportingHierarchy<
   } = options;
 
   const rollupDataByKey: Record<string, TRollupValues> = {};
-  function getChildrenRollupData(
-    issue: ReportingHierarchyIssueOrRelease<TRollupable>
-  ) {
+  function getChildrenRollupData(issue: IssueOrRelease<T & WithReportingHierarchy>) {
     return getChildren(issue).map((childIssue) => {
       const result = rollupDataByKey[childIssue.key];
       if (!result) {
@@ -273,23 +265,16 @@ export function rollupGroupedReportingHierarchy<
  * @param options
  * @returns
  */
-export function rollupGroupedHierarchy<
-  TRollupable extends IssueOrRelease,
-  TMetadata extends Record<string, any>,
-  TRollupValues
->(
-  groupedHierarchy: TRollupable[][],
-  options: RollupGroupedHierarchyOptions<TRollupable, TMetadata, TRollupValues>
+export function rollupGroupedHierarchy<T, TMetadata extends Record<string, any>, TRollupValues>(
+  groupedHierarchy: IssueOrRelease<T>[][],
+  options: RollupGroupedHierarchyOptions<T, TMetadata, TRollupValues>
 ) {
   // we add this children thing (which is dumb) to handle knowing what
   // a release's children are ...
   // there are probably better ways of doing this without having to
   // calculate it every time
   const reportingHierarchy = addChildrenFromGroupedHierarchy(groupedHierarchy);
-  return rollupGroupedReportingHierarchy<TRollupable, TMetadata, TRollupValues>(
-    reportingHierarchy,
-    options
-  );
+  return rollupGroupedReportingHierarchy<T, TMetadata, TRollupValues>(reportingHierarchy, options);
 }
 
 export function sum(arr: number[]): number {
@@ -300,44 +285,49 @@ export function average(arr: number[]): number | undefined {
   return arr.length > 0 ? sum(arr) / arr.length : undefined;
 }
 
-export function makeGetChildrenFromReportingIssues<T extends IssueOrRelease>(
-  issuesOrReleases: ReportingHierarchyIssueOrRelease<T>[]
+export function makeGetChildrenFromReportingIssues<T>(
+  issuesOrReleases: IssueOrRelease<T & WithReportingHierarchy>[]
 ) {
-  const keyToIssue = new Map<string, ReportingHierarchyIssueOrRelease<T>>();
+  const keyToIssue = new Map<string, IssueOrRelease<T & WithReportingHierarchy>>();
   for (let issue of issuesOrReleases) {
     keyToIssue.set(issue.key, issue);
   }
 
   const getIssue = keyToIssue.get.bind(keyToIssue);
-  return function getChildren(
-    keyOrIssueOrRelease: ReportingHierarchyIssueOrRelease<T>
-  ): ReportingHierarchyIssueOrRelease<T>[] {
+  return function getChildren(keyOrIssueOrRelease: IssueOrRelease<T & WithReportingHierarchy>) {
     return keyOrIssueOrRelease.reportingHierarchy.childKeys
       .map(getIssue)
       .filter((issue) => issue !== undefined);
   };
 }
 
+const defaultZipCloneFn =
+  <T, TRollupValues, Tout extends T>(key: string) =>
+  (issueOrRelease: IssueOrRelease<T>, values: TRollupValues) =>
+    ({
+      ...issueOrRelease,
+      [key]: values,
+    } as IssueOrRelease<Tout>);
 export function zipRollupDataOntoGroupedData<
-  TRollupable extends IssueOrRelease,
+  T,
   TMetadata extends Record<string, any>,
-  TRollupValues
+  TRollupValues,
+  Tout extends T
 >(
-  groupedHierarchy: TRollupable[][],
+  groupedHierarchy: IssueOrRelease<T>[][],
   rollupDatas: RollupResponse<TMetadata, TRollupValues>,
-  key: string
-) {
-  const newGroups: TRollupable[][] = [];
+  key: string | ((issueOrRelease: IssueOrRelease<T>, values: TRollupValues) => IssueOrRelease<Tout>)
+): IssueOrRelease<Tout>[][] {
+  const cloneFn = typeof key === "string" ? defaultZipCloneFn<T, TRollupValues, Tout>(key) : key;
+  const newGroups: IssueOrRelease<Tout>[][] = [];
   for (let g = 0; g < groupedHierarchy.length; g++) {
     let group = groupedHierarchy[g];
-    let newIssues: TRollupable[] = [];
+    let newIssues: IssueOrRelease<Tout>[] = [];
     newGroups.push(newIssues);
     for (let i = 0; i < group.length; i++) {
-      let issue = group[i];
-      let clone: TRollupable = {
-        ...issue,
-        [key]: rollupDatas[g].rollupData[i],
-      };
+      const issue = group[i];
+      const values = rollupDatas[g].rollupData[i];
+      const clone = cloneFn(issue, values);
       newIssues.push(clone);
     }
   }

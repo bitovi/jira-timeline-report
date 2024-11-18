@@ -52,7 +52,7 @@ describe("rollupWarningIssuesForGroupedHierarchy", () => {
           },
           i7,
         ],
-      ] as IssueOrRelease<WithWarningIssues>[][]
+      ] as IssueOrRelease[][]
     ).reverse();
 
     const i7ReportingHierarchy = {
@@ -171,7 +171,7 @@ describe("rollupWarningIssues", () => {
       },
       i7,
       i8,
-    ] as IssueOrRelease<WithWarningIssues>[];
+    ] as IssueOrRelease[];
 
     const rollupTimingLevelsAndCalculations = [
       { type: "Initiative", hierarchyLevel: 2 },

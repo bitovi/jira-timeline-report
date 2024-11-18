@@ -4,8 +4,6 @@ import { IssueOrRelease } from "../rollup";
 
 describe("percentComplete", () => {
   describe("childrenFirstThenParent", () => {
-    const method = "childrenFirstThenParent";
-
     test("estimates for stories should override epics and initiatives", () => {
       const issuesAndReleases = (
         [
@@ -110,7 +108,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -119,8 +117,6 @@ describe("percentComplete", () => {
     });
 
     it("should use average estimates if no estimate provided for stories", () => {
-      const method = "childrenFirstThenParent";
-
       const issuesAndReleases = (
         [
           [
@@ -224,7 +220,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -232,8 +228,6 @@ describe("percentComplete", () => {
       }
     });
     it("should use average estimates and completion if no estimate provided for stories", () => {
-      const method = "childrenFirstThenParent";
-
       const issuesAndReleases = (
         [
           [
@@ -337,7 +331,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -416,7 +410,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -494,7 +488,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -573,7 +567,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -651,7 +645,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -730,7 +724,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
@@ -808,7 +802,7 @@ describe("percentComplete", () => {
         },
       ];
 
-      const actual = rollupPercentComplete(issuesAndReleases, [method]);
+      const actual = rollupPercentComplete(issuesAndReleases);
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {

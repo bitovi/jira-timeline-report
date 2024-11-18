@@ -1,6 +1,6 @@
 import { expect, describe, it } from "vitest";
-import { rollupDates, parentOnly, WithDateRollup } from "./dates.js";
-import { IssueOrRelease } from "../rollup.js";
+import { rollupDates, parentOnly, WithDateRollup } from "./dates";
+import { IssueOrRelease } from "../rollup";
 
 describe("rollupDates", () => {
   // due, dueTo {message, reference} .... {start,startFrom}

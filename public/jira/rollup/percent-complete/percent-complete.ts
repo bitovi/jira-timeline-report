@@ -1,10 +1,10 @@
-import { DerivedIssue } from "../../derived/derive";
 import { RollupLevelAndCalculation } from "../../shared/types";
 import {
   rollupGroupedHierarchy,
   groupIssuesByHierarchyLevelOrType,
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
+  isDerivedIssue,
 } from "../rollup";
 
 // const BASE_HIERARCHY_LEVEL = 1;
@@ -26,7 +26,11 @@ export type PercentCompleteRollup = {
   userSpecifiedValues: boolean;
   totalWorkingDays: number;
   completedWorkingDays: number;
-  remainingWorkingDays: number;
+  readonly remainingWorkingDays: number;
+};
+
+export type WithPercentComplete = {
+  completionRollup: PercentCompleteRollup;
 };
 
 const methods = {
@@ -41,33 +45,33 @@ function average(arr: number[]) {
   return arr.length > 0 ? sum(arr) / arr.length : 0;
 }
 
-export function addPercentComplete(
-  issuesOrReleases: IssueOrRelease[],
-  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation<PercentCompleteCalculations>[]
-) {
+export function addPercentComplete<T>(
+  issuesOrReleases: IssueOrRelease<T>[],
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]
+): IssueOrRelease<T & WithPercentComplete>[] {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
     issuesOrReleases,
     rollupTimingLevelsAndCalculations
   );
 
-  const rollupMethods = rollupTimingLevelsAndCalculations
-    .map((rollupData) => rollupData.calculation)
-    .reverse();
-  const rolledUpDates = rollupPercentComplete(groupedIssues, rollupMethods);
-  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, "completionRollup");
+  // const rollupMethods = rollupTimingLevelsAndCalculations
+  //   .map((rollupData) => rollupData.calculation)
+  //   .reverse();
+  const rolledUpDates = rollupPercentComplete(groupedIssues);
+  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpDates, (item, values) => ({
+    ...item,
+    completionRollup: values,
+  }));
   return zipped.flat();
 }
 
 /**
  *
  * @param issuesOrReleases Starting from low to high
- * @param _methodNames 
- * @return 
+ * @param _methodNames
+ * @return
  */
-export function rollupPercentComplete(
-  groupedHierarchy: IssueOrRelease[][],
-  _methodNames: PercentCompleteCalculations[]
-) {
+export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
   return rollupGroupedHierarchy(groupedHierarchy, {
     // have to specify the return type on this func so it knows what type the arrays are
     createMetadataForHierarchyLevel(): PercentCompleteMeta {
@@ -120,14 +124,12 @@ function emptyRollup() {
   };
 }
 
-export function childrenFirstThenParent(
-  parentIssueOrRelease: IssueOrRelease,
+export function childrenFirstThenParent<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: PercentCompleteRollup[],
   _hierarchyLevel: number,
   metadata: PercentCompleteMeta
 ) {
-  const { derivedTiming: parentDerivedTiming } = parentIssueOrRelease as DerivedIssue;
-
   let data;
   // if there is hard child data, use it
   if (childrenRollups.length && childrenRollups.every((d) => d.userSpecifiedValues)) {
@@ -136,10 +138,13 @@ export function childrenFirstThenParent(
     return data;
   }
   // if there is hard parent data, use it
-  else if (parentDerivedTiming?.totalDaysOfWork) {
+  else if (
+    isDerivedIssue(parentIssueOrRelease) &&
+    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork
+  ) {
     data = {
-      completedWorkingDays: parentDerivedTiming.completedDaysOfWork,
-      totalWorkingDays: parentDerivedTiming.totalDaysOfWork,
+      completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentIssueOrRelease?.derivedTiming.totalDaysOfWork,
       userSpecifiedValues: true,
       get remainingWorkingDays() {
         return this.totalWorkingDays - this.completedWorkingDays;
@@ -177,211 +182,3 @@ export function sumChildRollups(children: PercentCompleteRollup[]) {
     },
   };
 }
-
-/**
- * @param { JiraIssue[] } issues
- * @param { PercentCompleteOptions } options
- */
-// export function percentComplete(derivedWorkIssues: DerivedIssue[]) {
-//   return completionRollup(derivedWorkIssues);
-// }
-
-// function groupIssuesByHierarchyLevel<T extends { hierarchyLevel: number }>(
-//   issues: T[]
-// ): T[][] {
-//   const result: T[][] = [];
-//   for (const issue of issues) {
-//     if (!result[issue.hierarchyLevel]) {
-//       result[issue.hierarchyLevel] = [];
-//     }
-//     result[issue.hierarchyLevel].push(issue);
-//   }
-//   return result;
-// }
-
-/**
- *
- * @param {Array<DerivedIssue> issues
- * @returns {Array<RolledupCompletionIssue>}
- */
-// function toCompletionRollups<CustomFields>(
-//   issues: IssueOrRelease<CustomFields>[]
-// ): RolledupCompletionIssue<CustomFields>[] {
-//   return issues.map((issue) => ({
-//     ...issue,
-//     completionRollup: {
-//       totalWorkingDays: 0,
-//       completedWorkingDays: 0,
-//       remainingWorkingDays: 0,
-//     },
-//   }));
-// }
-
-/**
- *
- * @param {Array<DerivedIssue> allIssueData
- * @param {*} options
- * @returns {{issues: Array<RolledupCompletionIssue>, hierarchyData: Array<IssueTypeData>}}
- */
-// function completionRollup<CustomFields>(allIssueData: DerivedIssue[]) {
-//   const completionRollups = toCompletionRollups(allIssueData);
-
-//   const groupedIssueData = groupIssuesByHierarchyLevel(completionRollups);
-
-//   // Object.groupBy requires "target: ESNext" in tsconfig
-//   const issueKeyToChildren = Object.groupBy(
-//     completionRollups,
-//     (issue) => issue.parentKey ?? ""
-//   );
-
-//   // Store information for each level of of the hierarchy
-//   const issueTypeDatas = [];
-
-//   // for each level of the hierarchy, starting with the bottom
-//   for (
-//     let hierarchyLevel = BASE_HIERARCHY_LEVEL;
-//     hierarchyLevel < groupedIssueData.length;
-//     hierarchyLevel++
-//   ) {
-//     /**
-//      * @type {Array<RolledupCompletionIssue>}
-//      */
-//     let issues = groupedIssueData[hierarchyLevel];
-
-//     if (issues) {
-//       // Track rollup data
-//       /**
-//        * @type {IssueTypeData}
-//        */
-//       let issueTypeData: PercentCompleteMeta<CustomFields> = (issueTypeDatas[
-//         hierarchyLevel
-//       ] = {
-//         // how many children on average
-//         childCounts: [],
-
-//         totalDays: 0,
-
-//         // an array of the total of the number of days of work. Used to calculate the average
-//         totalDaysOfWorkForAverage: [],
-//         // which items need their average set after the average is calculated
-//         needsAverageSet: [],
-//         // this will be set later
-//         averageTotalDays: 0,
-//         averageChildCount: 0,
-
-//         issues: issues,
-//       });
-
-//       // for issues on that level
-//       for (let issueData of issues) {
-//         if (hierarchyLevel === BASE_HIERARCHY_LEVEL) {
-//           // we roll this up no matter what ... it's ok to roll up 0
-//           issueData.completionRollup.completedWorkingDays =
-//             issueData.derivedTiming.completedDaysOfWork;
-
-//           // if it has self-calculated total days ..
-//           if (issueData.derivedTiming.totalDaysOfWork) {
-//             // add those days to the average
-//             issueTypeData.totalDaysOfWorkForAverage.push(
-//               issueData.derivedTiming.totalDaysOfWork
-//             );
-//             // set the rollup value
-//             issueData.completionRollup.totalWorkingDays =
-//               issueData.derivedTiming.totalDaysOfWork;
-//             issueData.completionRollup.remainingWorkingDays =
-//               issueData.completionRollup.totalWorkingDays -
-//               issueData.completionRollup.completedWorkingDays;
-//           } else {
-//             // add this issue to what needs its average
-//             issueTypeData.needsAverageSet.push(issueData.completionRollup);
-//           }
-//         }
-//         // initiatives and above
-//         if (hierarchyLevel > BASE_HIERARCHY_LEVEL) {
-//           // handle "parent-like" issue
-//           handleInitiative(issueData, { issueTypeData, issueKeyToChildren });
-//         }
-//       }
-
-//       // calculate the average
-//       let ave = average(issueTypeData.totalDaysOfWorkForAverage) ?? 30;
-//       issueTypeData.averageTotalDays = ave;
-
-//       issueTypeData.averageChildCount = average(issueTypeData.childCounts);
-
-//       // set average on children that need it
-//       issueTypeData.needsAverageSet.forEach((issueData) => {
-//         issueData.totalWorkingDays = ave;
-//         issueData.remainingWorkingDays =
-//           issueData.totalWorkingDays - issueData.completedWorkingDays;
-//       });
-//     }
-//   }
-
-//   return {
-//     issues: completionRollups,
-//     hierarchyData: issueTypeDatas,
-//   };
-// }
-
-/**
- *
- * @param {RolledupCompletionIssue} issueData
- * @param {*} param1
- * @param {*} options
- * @returns
- */
-// function handleInitiative<CustomFields>(
-//   issueData: RolledupCompletionIssue<DerivedIssue>,
-//   {
-//     issueTypeData,
-//     issueKeyToChildren,
-//   }: {
-//     issueTypeData: PercentCompleteMeta<CustomFields>;
-//     issueKeyToChildren: Partial<
-//       Record<string, RolledupCompletionIssue<CustomFields>[]>
-//     >;
-//   }
-// ) {
-//   // Empty
-//   if (!issueKeyToChildren[issueData.key]) {
-//     issueTypeData.needsAverageSet.push(issueData.completionRollup);
-//     return;
-//   }
-
-//   /**
-//    * @type {Array<RolledupCompletionIssue>}
-//    */
-//   const children = issueKeyToChildren[issueData.key] ?? [];
-//   const totalDays = children.map(
-//     (child) => child.completionRollup.totalWorkingDays
-//   );
-//   const completedDays = children.map(
-//     (child) => child.completionRollup.completedWorkingDays
-//   );
-//   issueTypeData.childCounts.push(children.length);
-
-//   // Fully Estimated
-//   if (children.every((child) => child.completionRollup.totalWorkingDays)) {
-//     // we probably want a better signal ... but this will do for now
-//     issueData.completionRollup.totalWorkingDays = sum(totalDays);
-
-//     // Add so average can be calculated
-//     issueTypeData.totalDaysOfWorkForAverage.push(
-//       issueData.completionRollup.totalWorkingDays
-//     );
-//   }
-//   // Partially estimated
-//   else {
-//     // Do nothing
-//   }
-
-//   // Roll up the days from the children
-//   // This works b/c children that originally had no estimate will already have their rollup total days
-//   // set to the average.
-//   issueData.completionRollup.completedWorkingDays = sum(completedDays);
-//   issueData.completionRollup.totalWorkingDays = sum(totalDays);
-//   issueData.completionRollup.remainingWorkingDays =
-//     issueData.completionRollup.totalWorkingDays -
-//     issueData.completionRollup.completedWorkingDays;
-// }

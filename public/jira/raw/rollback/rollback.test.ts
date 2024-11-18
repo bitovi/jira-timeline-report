@@ -1,7 +1,7 @@
 // tests/rollback.test.ts
 
 import { expect, test } from "vitest";
-import { rollbackIssue } from "./rollback.js";
+import { rollbackIssue } from "./rollback";
 import {
   JiraIssue,
   Changelog,

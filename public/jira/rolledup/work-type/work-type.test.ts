@@ -1,8 +1,8 @@
 // sum.test.js
 import { expect, test } from "vitest";
-import { rollupWorkTypeDates } from "./work-type.js";
-import { IssueOrRelease } from "../../rollup/rollup.js";
-import { WithDateRollup } from "../../rollup/dates/dates.js";
+import { rollupWorkTypeDates } from "./work-type";
+import { IssueOrRelease } from "../../rollup/rollup";
+import { WithDateRollup } from "../../rollup/dates/dates";
 
 test("rollupWorkTypeDates all with dates", () => {
   const _2000 = new Date(2000, 0),

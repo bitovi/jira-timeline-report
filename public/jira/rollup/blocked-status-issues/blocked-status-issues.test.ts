@@ -57,7 +57,7 @@ describe("rollupBlockedIssuesForGroupedHierarchy", () => {
             derivedStatus: { statusType: "blocked", workType: "dev" },
           }),
         ],
-      ] as IssueOrRelease<WithBlockedStatuses>[][]
+      ] as IssueOrRelease[][]
     ).reverse();
 
     const i7ReportingHierarchy = {
@@ -163,7 +163,7 @@ describe("rollupBlockedStatusIssues", () => {
         derivedStatus: { statusType: "dev", workType: "dev" },
       },
       i7,
-    ] as IssueOrRelease<WithBlockedStatuses>[];
+    ] as IssueOrRelease[];
 
     const rollupTimingLevelsAndCalculations = [
       { type: "Release" },
@@ -175,7 +175,7 @@ describe("rollupBlockedStatusIssues", () => {
     const issueMap = result.reduce((map, issue) => {
       map[issue.key] = issue;
       return map;
-    }, {} as { [key: string]: IssueOrRelease & { blockedStatusIssues: IssueOrRelease[] } });
+    }, {} as { [key: string]: IssueOrRelease<WithBlockedStatuses> });
 
     const o1 = issueMap["o-1"];
     const m2 = issueMap["m-2"];
