@@ -96,7 +96,7 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, aug
           control={control}
           onSave={update}
           label="Spread effort"
-          description="Spread estimate access dates"
+          description="Spread estimate accross dates"
         />
         {/* <EnableableTextField
               toggleLabel="Estimates"

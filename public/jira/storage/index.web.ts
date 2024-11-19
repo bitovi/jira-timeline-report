@@ -1,5 +1,8 @@
 import type { StorageFactory } from "./common";
 
+import { defineFeatureFlag } from "../../shared/feature-flag";
+import { configurationIssueTitle } from "../../shared/configurationIssue";
+
 interface Table {
   type: "table";
   attrs: Record<string, string>;
@@ -32,7 +35,7 @@ const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[num
     Summary: string;
     Description: { content: Array<StorageIssueContent> };
   }>({
-    jql: `summary ~ "Jira Auto Scheduler Configuration"`,
+    jql: `summary ~ "${configurationIssueTitle()}"`,
     fields: ["summary", "Description"],
   });
 

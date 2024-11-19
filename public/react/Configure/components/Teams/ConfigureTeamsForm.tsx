@@ -69,7 +69,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         control={control}
         onSave={update}
         label="Spread effort"
-        description="Spread estimate access dates"
+        description="Spread estimate accross dates"
       />
       <InheritanceTextField
         isInheriting={!userData.sprintLength}
