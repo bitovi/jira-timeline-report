@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useCreateReport } from "./services/reports/useSaveReports";
 import { FlagsProvider } from "@atlaskit/flag";
 import Heading from "@atlaskit/heading";
+import ViewReports from "../ViewReports/ViewReports";
 
 const gridStyles = xcss({
   width: "100%",
@@ -31,9 +32,11 @@ const titleContainerStyles = xcss({
   gridArea: "title",
 });
 
-interface SaveReportProps {}
+interface SaveReportProps {
+  onViewReportsButtonClicked: () => void;
+}
 
-const SaveReport: FC<SaveReportProps> = () => {
+const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
   const [isOpen, setIsOpen] = useState(false);
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
@@ -44,13 +47,13 @@ const SaveReport: FC<SaveReportProps> = () => {
     const selectedReport = params.get("report");
 
     if (!selectedReport) {
-      return "";
+      return "Untitled Report";
     }
 
     return (
       Object.values(reports)
         .filter((r) => !!r)
-        .find(({ id }) => id === selectedReport)?.name || ""
+        .find(({ id }) => id === selectedReport)?.name || "Untitled Report"
     );
   });
 
@@ -67,7 +70,16 @@ const SaveReport: FC<SaveReportProps> = () => {
         </Button>
       </div>
       <div>
-        <Button appearance="subtle">Saved reports</Button>
+        <Button
+          appearance="subtle"
+          onClick={(event) => {
+            event.stopPropagation();
+
+            onViewReportsButtonClicked();
+          }}
+        >
+          Saved reports
+        </Button>
       </div>
       <SaveReportModal
         isOpen={isOpen}
@@ -99,17 +111,25 @@ const SaveReport: FC<SaveReportProps> = () => {
 
 const queryClient = new QueryClient();
 
-export default function ({ storage }: { storage: AppStorage }) {
+export default function ({
+  storage,
+  ...saveReportProps
+}: {
+  storage: AppStorage;
+  onViewReportsButtonClicked: () => void;
+}) {
   return (
-    <StorageProvider storage={storage}>
-      <FlagsProvider>
-        <Suspense>
-          <QueryClientProvider client={queryClient}>
-            <SaveReport />
-          </QueryClientProvider>
-        </Suspense>
-      </FlagsProvider>
-    </StorageProvider>
+    <>
+      <StorageProvider storage={storage}>
+        <FlagsProvider>
+          <Suspense>
+            <QueryClientProvider client={queryClient}>
+              <SaveReport {...saveReportProps} />
+            </QueryClientProvider>
+          </Suspense>
+        </FlagsProvider>
+      </StorageProvider>
+    </>
   );
 }
 
