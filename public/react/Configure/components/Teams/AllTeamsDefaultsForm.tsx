@@ -10,6 +10,7 @@ import TextField from "./components/TextField";
 import Select from "./components/Select";
 import Hr from "../../../components/Hr";
 import { FormToggle } from "./components/Toggle";
+import { RequiredAsterisk } from "./components/Label";
 
 export interface AllTeamsDefaultFormProps {
   save: (newConfiguration: Configuration) => void;
@@ -36,6 +37,7 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, aug
 
   return (
     <form
+      className="py-2"
       onSubmit={handleSubmit((values, event) => {
         event?.preventDefault();
 
@@ -43,6 +45,9 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, aug
       })}
     >
       <Flex direction="column" gap="space.100">
+        <div className="flex gap-1">
+          <RequiredAsterisk /> <p className="text-sm text-slate-300"> indicates a required field</p>
+        </div>
         <Select
           name="estimateField"
           label="Estimate Field"
@@ -96,7 +101,7 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, aug
           control={control}
           onSave={update}
           label="Spread effort"
-          description="Spread estimate access dates"
+          description="Spread estimate across dates"
         />
         {/* <EnableableTextField
               toggleLabel="Estimates"

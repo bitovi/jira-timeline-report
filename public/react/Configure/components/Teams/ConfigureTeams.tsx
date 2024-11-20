@@ -11,6 +11,7 @@ import { Accordion, AccordionContent, AccordionTitle } from "../../../components
 import { useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
 import { useTeamForm } from "./useTeamForm";
+import Hr from "../../../components/Hr";
 
 interface IssueAccordionProps {
   teamName: string;
@@ -38,7 +39,9 @@ const IssueAccordion: FC<IssueAccordionProps> = ({
     <Accordion startsOpen={hierarchyLevel === "defaults"}>
       <AccordionTitle>
         <Heading size="small">
-          {hierarchyLevel === "defaults" ? "Team defaults" : getHierarchyLevelName(hierarchyLevel)}
+          {hierarchyLevel === "defaults"
+            ? `Team defaults (${formData.teamName})`
+            : getHierarchyLevelName(hierarchyLevel)}
         </Heading>
         {isSaving && (
           <div>
@@ -68,7 +71,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
       if (lhs === "defaults") return -1;
       if (rhs === "defaults") return 1;
 
-      return parseInt(lhs) - parseInt(rhs);
+      return parseInt(rhs) - parseInt(lhs);
     })
     .filter((issueType): issueType is keyof TeamConfiguration => {
       if (teamName === "__GLOBAL__") {
@@ -82,17 +85,22 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
 
   return (
     <>
-      {hierarchyLevels.map((hierarchyLevel) => {
+      {hierarchyLevels.map((hierarchyLevel, index) => {
+        const isLast = index === hierarchyLevels.length - 1;
+
         return (
-          <IssueAccordion
-            key={hierarchyLevel}
-            teamName={teamName}
-            hierarchyLevel={hierarchyLevel}
-            onUpdate={onUpdate}
-            jiraFields={jiraFields}
-            augmentedTeamData={augmentedTeamData}
-            {...teamData}
-          />
+          <>
+            <IssueAccordion
+              key={hierarchyLevel}
+              teamName={teamName}
+              hierarchyLevel={hierarchyLevel}
+              onUpdate={onUpdate}
+              jiraFields={jiraFields}
+              augmentedTeamData={augmentedTeamData}
+              {...teamData}
+            />
+            {!isLast && <Hr className="my-2 h-[2px]" />}
+          </>
         );
       })}
     </>
