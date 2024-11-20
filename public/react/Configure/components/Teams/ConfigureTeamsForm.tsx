@@ -97,7 +97,10 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         onInheritanceChange={(shouldCustomize) => toggleInheritance("confidenceField", shouldCustomize)}
         name="confidenceField"
         label="Confidence field"
-        jiraFields={[{ value: "confidence-not-used", label: "Don't use confidence" }, ...selectableFields]}
+        jiraFields={[
+          { label: "", options: [{ value: "confidence-not-used", label: "Don't use confidence" }] },
+          { label: "Fields", options: selectableFields },
+        ]}
         control={control}
         onSave={update}
       />
