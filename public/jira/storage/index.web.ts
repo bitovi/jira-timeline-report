@@ -5,23 +5,6 @@ import type { AllTeamData } from "../../react/Configure/components/Teams/service
 import { searchDocument, getTextFromWithinCell, matchTeamTable } from "../../shared/velocities-from-issue";
 //
 
-interface Table {
-  type: "table";
-  attrs: Record<string, string>;
-  content: Array<TableRow>;
-}
-
-type TableRow = {
-  type: "tableRow";
-  content: TableCell[];
-};
-
-type TableCell = {
-  type: "tableHeader" | "tableCell";
-  attrs: Record<string, unknown>;
-  content: Paragraph[];
-};
-
 interface Paragraph {
   type: "paragraph";
   content: Array<TextContent>;
@@ -77,42 +60,6 @@ const createCodeBlock = (using?: string): CodeBlock => {
   };
 };
 
-const createHead = (head: string[]): TableCell[] => {
-  return head.map((name) => {
-    return {
-      type: "tableHeader",
-      attrs: {},
-      content: [{ type: "paragraph", content: [{ type: "text", text: name, marks: [{ type: "strong" }] }] }],
-    };
-  });
-};
-
-const createRowCells = (cells: string[]): TableCell[] => {
-  return cells.map((value) => {
-    return {
-      type: "tableCell",
-      attrs: {},
-      content: [{ type: "paragraph", content: [{ type: "text", text: value }] }],
-    };
-  });
-};
-
-const createTable = (tableHead: string[], rows: string[][]): Table => {
-  return {
-    type: "table",
-    attrs: {},
-    content: [
-      { type: "tableRow", content: createHead(tableHead) },
-      ...rows.map((row) => {
-        return {
-          type: "tableRow" as const,
-          content: createRowCells(row),
-        };
-      }),
-    ],
-  };
-};
-
 function findTeamTable(document: any): Array<Record<"team" | "velocity" | "tracks" | "sprint length", string>> | null {
   return (
     searchDocument(document, (fragment: any) => {
@@ -164,100 +111,15 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       }
 
       /**
-       * Special temporary logic to keep the Tabular data in sync with app data.
-       * This is to allow the auto scheduler to be configured using the team configuration
-       * section of the timeline reporter. For more information see
-       *
-       * [TR-133](https://bitovi.atlassian.net/browse/TR-133)
+       * Temporary special logic, see below
        */
-
-      const teamTable = findTeamTable(configurationIssue)?.map((team) => ({
-        team: team.team,
-        velocity: team.velocity,
-        tracks: team.tracks,
-        sprintLength: team["sprint length"],
-      }));
+      const teamTable = findTeamTable(configurationIssue);
 
       let newTeamsTable: Table | undefined;
 
       if (!!teamTable && key === "all-team-data") {
-        const { __GLOBAL__, ...teams } = value as AllTeamData;
-
-        const teamsToSaveInTable = Object.keys(teams)
-          .map((teamName) => {
-            // Check if the team has some custom configuration in their defaults or epic level configuration for
-            // velocity, tracks, and sprintLength
-            const epicHierarchyLevel = "1";
-
-            const formattedData = ["defaults", epicHierarchyLevel].reduce((teamInfo, level) => {
-              const config = teams?.[teamName]?.[level];
-              const data: Partial<Record<"sprintLength" | "velocity" | "tracks", number>> = {};
-
-              if (config?.sprintLength) {
-                data.sprintLength = config?.sprintLength;
-              }
-
-              if (config?.tracks) {
-                data.tracks = config.tracks;
-              }
-
-              if (config?.velocityPerSprint) {
-                data.velocity = config.velocityPerSprint;
-              }
-
-              return {
-                ...teamInfo,
-                [level]: data,
-              };
-            }, {} as Record<"defaults" | typeof epicHierarchyLevel, Partial<Record<"sprintLength" | "velocity" | "tracks", number>>>);
-
-            const updates = {
-              ...formattedData.defaults,
-              ...formattedData[epicHierarchyLevel],
-            };
-
-            if (Object.keys(updates).length === 0) {
-              return;
-            }
-
-            return {
-              team: teamName,
-              ...updates,
-            };
-          })
-          .filter((team) => !!team);
-
-        if (teamsToSaveInTable.length) {
-          const teamMap: Record<
-            string,
-            {
-              team: string;
-              velocity?: string | number;
-              tracks?: string | number;
-              sprintLength?: string | number;
-            }
-          > = {};
-
-          for (const existingTeam of teamTable) {
-            teamMap[existingTeam.team] = existingTeam;
-          }
-
-          for (const newTeam of teamsToSaveInTable) {
-            teamMap[newTeam.team] = { ...(teamMap?.[newTeam.team] ?? {}), ...newTeam };
-          }
-
-          newTeamsTable = createTable(
-            ["Team", "Velocity", "Tracks", "Sprint Length"],
-            Object.keys(teamMap).map((key) => [
-              teamMap[key].team,
-              (teamMap[key].velocity || "")?.toString(),
-              (teamMap[key].tracks || "")?.toString(),
-              (teamMap[key].sprintLength || "")?.toString(),
-            ])
-          );
-        }
+        newTeamsTable = getUpdatedTeamTable(value as AllTeamData, teamTable);
       }
-
       /**
        * End special logic
        */
@@ -267,9 +129,15 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
 
       const newContent: Array<StorageIssueContent> = [createCodeBlock(JSON.stringify({ ...store, [key]: value }))];
 
+      /**
+       * Temporary special logic, see below
+       */
       if (newTeamsTable) {
         newContent.unshift(newTeamsTable);
       }
+      /**
+       * End special logic
+       */
 
       return jiraHelpers
         .editJiraIssueWithNamedFields(configurationIssue.id, {
@@ -277,9 +145,15 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
             ...configurationIssue.fields.Description,
             content: [
               ...configurationIssue.fields.Description.content.filter((content) => {
+                /**
+                 * Temporary special logic, see below
+                 */
                 if (!!newTeamsTable) {
                   return content.type !== "codeBlock" && content.type !== "table";
                 }
+                /**
+                 * End special logic
+                 */
 
                 return content.type !== "codeBlock";
               }),
@@ -293,7 +167,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
 };
 
 /**
- * Special temporary logic to keep the Tabular data in sync with app data.
+ * Below is special temporary logic to keep the Tabular data in sync with app data.
  * This is to allow the auto scheduler to be configured using the team configuration
  * section of the timeline reporter. For more information see
  *
@@ -371,7 +245,7 @@ const getUpdatedTeamTable = (
     }
 
     for (const newTeam of teamsToSaveInTable) {
-      teamMap[newTeam.team] = { ...(teamMap?.[newTeam.team] ?? {}), ...newTeam };
+      teamMap[newTeam.team] = newTeam;
     }
 
     return createTable(
@@ -384,4 +258,59 @@ const getUpdatedTeamTable = (
       ])
     );
   }
+};
+
+//
+
+interface Table {
+  type: "table";
+  attrs: Record<string, string>;
+  content: Array<TableRow>;
+}
+
+type TableRow = {
+  type: "tableRow";
+  content: TableCell[];
+};
+
+type TableCell = {
+  type: "tableHeader" | "tableCell";
+  attrs: Record<string, unknown>;
+  content: Paragraph[];
+};
+
+const createHead = (head: string[]): TableCell[] => {
+  return head.map((name) => {
+    return {
+      type: "tableHeader",
+      attrs: {},
+      content: [{ type: "paragraph", content: [{ type: "text", text: name, marks: [{ type: "strong" }] }] }],
+    };
+  });
+};
+
+const createRowCells = (cells: string[]): TableCell[] => {
+  return cells.map((value) => {
+    return {
+      type: "tableCell",
+      attrs: {},
+      content: [{ type: "paragraph", content: [{ type: "text", text: value }] }],
+    };
+  });
+};
+
+const createTable = (tableHead: string[], rows: string[][]): Table => {
+  return {
+    type: "table",
+    attrs: {},
+    content: [
+      { type: "tableRow", content: createHead(tableHead) },
+      ...rows.map((row) => {
+        return {
+          type: "tableRow" as const,
+          content: createRowCells(row),
+        };
+      }),
+    ],
+  };
 };
