@@ -13,7 +13,6 @@ import InheritanceTextField from "./components/InheritanceTextField";
 import InheritanceToggleField from "./components/InheritanceToggleField";
 import InheritanceSelect from "./components/InheritanceSelect";
 import { RequiredAsterisk } from "./components/Label";
-import { HelperMessage } from "@atlaskit/form";
 
 export interface ConfigureTeamsFormProps {
   onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
