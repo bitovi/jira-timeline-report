@@ -2,7 +2,7 @@ import type { FC } from "react";
 import type { IssueFields, TeamConfiguration } from "./services/team-configuration";
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 
-import React from "react";
+import React, { Fragment } from "react";
 import Heading from "@atlaskit/heading";
 import Spinner from "@atlaskit/spinner";
 
@@ -89,9 +89,8 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
         const isLast = index === hierarchyLevels.length - 1;
 
         return (
-          <>
+          <Fragment key={hierarchyLevel}>
             <IssueAccordion
-              key={hierarchyLevel}
               teamName={teamName}
               hierarchyLevel={hierarchyLevel}
               onUpdate={onUpdate}
@@ -100,7 +99,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
               {...teamData}
             />
             {!isLast && <Hr className="my-2 h-[2px]" />}
-          </>
+          </Fragment>
         );
       })}
     </>
