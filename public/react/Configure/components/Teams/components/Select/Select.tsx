@@ -9,12 +9,18 @@ import AtlasSelect from "@atlaskit/select";
 
 import Label from "../Label";
 
+const isSingle = (obj: SelectProps["jiraFields"]): obj is Array<{ label: string; value: string }> => {
+  return "value" in obj[0];
+};
+
+type SelectField = { label: string; value: string };
+
 interface SelectProps {
   disabled?: boolean;
   control: Control<Configuration>;
   name: keyof Configuration;
   label: string;
-  jiraFields: Array<{ label: string; value: string }>;
+  jiraFields: Array<SelectField> | Array<{ label: string; options: Array<SelectField> }>;
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
@@ -27,7 +33,9 @@ const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave, dis
       control={control}
       disabled={disabled}
       render={({ field }) => {
-        const selectedOption = jiraFields.find((option) => {
+        const allFields = isSingle(jiraFields) ? jiraFields : jiraFields.flatMap((group) => group.options);
+
+        const selectedOption = allFields.find((option) => {
           return option.value === field.value;
         });
 

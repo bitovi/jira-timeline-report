@@ -58,7 +58,10 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, aug
         <Select
           name="confidenceField"
           label="Confidence field"
-          jiraFields={selectableFields}
+          jiraFields={[
+            { label: "", options: [{ value: "confidence-not-used", label: "Don't use confidence" }] },
+            { label: "Fields", options: selectableFields },
+          ]}
           control={control}
           onSave={update}
         />
