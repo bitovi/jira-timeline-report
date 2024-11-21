@@ -17,16 +17,12 @@ const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
     }
 
     for (const possibleName of possibleNames) {
-      const strictField = jiraFields.find(
-        (field) => field.name === possibleName 
-      );
+      const strictField = jiraFields.find((field) => field.name === possibleName);
 
       if (strictField) {
         return strictField.name;
       }
-      const caseInsensitiveField = jiraFields.find(
-        (field) => field.name.toLowerCase() === possibleName.toLowerCase()
-      );
+      const caseInsensitiveField = jiraFields.find((field) => field.name.toLowerCase() === possibleName.toLowerCase());
 
       if (caseInsensitiveField) {
         return caseInsensitiveField.name;
@@ -45,13 +41,32 @@ const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
   };
 };
 
+/**
+ * Confidence has special non-fields to denote turning on and off confidence
+ */
+const createDefaultConfidenceField = (
+  formField: "confidenceField",
+  possibleNames: string[],
+  nameFragments: string[] = []
+) => {
+  const getField = createDefaultJiraFieldGetter(formField, possibleNames, nameFragments);
+
+  return (userData: Partial<Configuration>, jiraFields: IssueFields): string | null => {
+    if (userData.confidenceField === "confidence-not-used") {
+      return "confidence-not-used";
+    }
+
+    return getField(userData, jiraFields);
+  };
+};
+
 const getEstimateField = createDefaultJiraFieldGetter(
   "estimateField",
   ["story points median", "days median", "story points", "story point estimate"],
   ["median", "estimate"]
 );
 
-const getConfidenceField = createDefaultJiraFieldGetter(
+const getConfidenceField = createDefaultConfidenceField(
   "confidenceField",
   ["Story points confidence", "Estimate confidence", "Days confidence"],
   ["confidence"]
