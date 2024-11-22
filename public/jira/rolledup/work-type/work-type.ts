@@ -72,9 +72,8 @@ export function addWorkTypeDates<T>(
 
 /**
  *
- * @param {Array<import("../rollup").IssuesOrReleases>} issuesOrReleases Starting from low to high
- * @param {Array<String>} methodNames Starting from low to high
- * @return {Array<RollupDateData>}
+ * @param issuesOrReleases Starting from low to high
+ * @return rollup response with work types
  */
 export function rollupWorkTypeDates<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
   return rollupGroupedHierarchy(groupedHierarchy, {

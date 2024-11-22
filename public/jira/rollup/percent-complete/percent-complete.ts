@@ -68,8 +68,7 @@ export function addPercentComplete<T>(
 /**
  *
  * @param issuesOrReleases Starting from low to high
- * @param _methodNames
- * @return
+ * @return rollup response for percent complete
  */
 export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
   return rollupGroupedHierarchy(groupedHierarchy, {
