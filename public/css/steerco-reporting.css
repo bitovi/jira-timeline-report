@@ -2,11 +2,13 @@
 @import "./colors.css";
 @import "./fonts.css";
 @import "./spacing.css";
-@import "./steerco-reporting.css";
+/* @import "./steerco-reporting.css"; */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+
+@import "tailwindcss/components";
+
+@import "tailwindcss/utilities";
 
 :root {
   /* this should be set to what it typically is */

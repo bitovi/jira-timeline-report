@@ -8,7 +8,7 @@ import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition
 import { Flex, Grid, xcss } from "@atlaskit/primitives";
 
 import CrossIcon from "@atlaskit/icon/glyph/cross";
-import { ErrorMessage, Field } from "@atlaskit/form";
+import { ErrorMessage, Field, HelperMessage } from "@atlaskit/form";
 import Textfield from "@atlaskit/textfield";
 import Form from "@atlaskit/form";
 import { StorageProvider } from "../services/storage";
@@ -19,6 +19,10 @@ import { useCreateReport } from "./services/reports/useSaveReports";
 import { FlagsProvider } from "@atlaskit/flag";
 import Heading from "@atlaskit/heading";
 import ViewReports from "../ViewReports/ViewReports";
+import SectionMessage from "@atlaskit/section-message";
+import { ErrorBoundary } from "react-error-boundary";
+import Skeleton from "../components/Skeleton";
+import LinkButton from "../components/LinkButton";
 
 const gridStyles = xcss({
   width: "100%",
@@ -57,17 +61,15 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
     );
   });
 
-  const { createReport } = useCreateReport();
+  // throw new Error("lol");
 
-  console.log(reports);
+  const { createReport } = useCreateReport();
 
   return (
     <div className="flex gap-1 justify-between items-center">
-      <div className="flex gap-1 items-center">
+      <div className="flex gap-3 items-center">
         {name && <Heading size="xlarge">{name}</Heading>}
-        <Button appearance="subtle" onClick={openModal}>
-          Save Report
-        </Button>
+        <LinkButton onClick={openModal}>Save Report</LinkButton>
       </div>
       <div>
         <Button
@@ -119,17 +121,23 @@ export default function ({
   onViewReportsButtonClicked: () => void;
 }) {
   return (
-    <>
+    <ErrorBoundary
+      fallbackRender={({ error }) => (
+        <SectionMessage title="Cannot connect to app data" appearance="error">
+          There is an issue communicating with Jira. We're unable to load or save reports. Please try again later.
+        </SectionMessage>
+      )}
+    >
       <StorageProvider storage={storage}>
         <FlagsProvider>
-          <Suspense>
+          <Suspense fallback={<Skeleton height="32px" />}>
             <QueryClientProvider client={queryClient}>
               <SaveReport {...saveReportProps} />
             </QueryClientProvider>
           </Suspense>
         </FlagsProvider>
       </StorageProvider>
-    </>
+    </ErrorBoundary>
   );
 }
 
