@@ -8,6 +8,10 @@ import Heading from "@atlaskit/heading";
 import { CanObservable, useCanObservable } from "../hooks/useCanObservable";
 import SidebarButton from "../components/SidebarButton";
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
+import Skeleton from "../components/Skeleton";
+import { ErrorBoundary } from "react-error-boundary";
+import SectionMessage from "@atlaskit/section-message";
+import LinkButton from "../components/LinkButton";
 
 const queryClient = new QueryClient();
 
@@ -27,15 +31,59 @@ export default function ({
   }
 
   return (
-    <StorageProvider storage={storage}>
-      <Suspense>
-        <QueryClientProvider client={queryClient}>
-          <ViewReports {...viewReportProps} />
-        </QueryClientProvider>
-      </Suspense>
-    </StorageProvider>
+    <ErrorBoundary
+      fallbackRender={({ error }) => (
+        <SectionMessage appearance="error" title="Unable to load saved reports">
+          We're having trouble connecting to Jira. Please try again later. Click here to{" "}
+          <LinkButton onClick={() => viewReportProps.onBackButtonClicked()}>return to create reports</LinkButton>.
+        </SectionMessage>
+      )}
+    >
+      <StorageProvider storage={storage}>
+        <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
+          <QueryClientProvider client={queryClient}>
+            <ViewReports {...viewReportProps} />
+          </QueryClientProvider>
+        </Suspense>
+      </StorageProvider>
+    </ErrorBoundary>
   );
 }
+
+const ViewReportSkeleton: FC<{ onBackButtonClicked: () => void }> = ({ onBackButtonClicked }) => {
+  const selectedReportExists = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return !!params.get("report");
+  }, []);
+
+  const rows = [...Array.from({ length: 10 }).keys()].map((i) => {
+    return {
+      key: i.toString(),
+      cells: [
+        {
+          key: `${i}-report`,
+          content: <Skeleton height="40px" />,
+        },
+      ],
+    };
+  });
+
+  return (
+    <div className="p-6">
+      <SidebarButton className="flex items-center" onClick={() => onBackButtonClicked()}>
+        <ArrowLeftCircleIcon label="go back" />
+        <div className="flex-col gap-1">
+          Back to report
+          {selectedReportExists && <Skeleton />}
+        </div>
+      </SidebarButton>
+      <div className="py-4">
+        <Heading size="large">Saved Reports</Heading>
+      </div>
+      <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={rows} />
+    </div>
+  );
+};
 
 const ViewReports: FC<{ onBackButtonClicked: () => void }> = ({ onBackButtonClicked }) => {
   const reports = useAllReports();
@@ -53,7 +101,7 @@ const ViewReports: FC<{ onBackButtonClicked: () => void }> = ({ onBackButtonClic
         .filter((r) => !!r)
         .find(({ id }) => id === selectedReport)?.name || ""
     );
-  }, []);
+  }, [reports]);
 
   const reportRows = Object.values(reports)
     .filter((r) => !!r)

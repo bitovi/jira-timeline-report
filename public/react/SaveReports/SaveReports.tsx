@@ -8,9 +8,8 @@ import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition
 import { Flex, Grid, xcss } from "@atlaskit/primitives";
 
 import CrossIcon from "@atlaskit/icon/glyph/cross";
-import { ErrorMessage, Field, HelperMessage } from "@atlaskit/form";
+import { ErrorMessage, Field } from "@atlaskit/form";
 import Textfield from "@atlaskit/textfield";
-import Form from "@atlaskit/form";
 import { StorageProvider } from "../services/storage";
 import { AppStorage } from "../../jira/storage/common";
 import { useAllReports } from "./services/reports/useAllReports";
@@ -18,11 +17,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useCreateReport } from "./services/reports/useSaveReports";
 import { FlagsProvider } from "@atlaskit/flag";
 import Heading from "@atlaskit/heading";
-import ViewReports from "../ViewReports/ViewReports";
 import SectionMessage from "@atlaskit/section-message";
 import { ErrorBoundary } from "react-error-boundary";
 import Skeleton from "../components/Skeleton";
 import LinkButton from "../components/LinkButton";
+import Spinner from "@atlaskit/spinner";
 
 const gridStyles = xcss({
   width: "100%",
@@ -61,9 +60,7 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
     );
   });
 
-  // throw new Error("lol");
-
-  const { createReport } = useCreateReport();
+  const { createReport, isCreating } = useCreateReport();
 
   return (
     <div className="flex gap-1 justify-between items-center">
@@ -85,6 +82,7 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
       </div>
       <SaveReportModal
         isOpen={isOpen}
+        isCreating={isCreating}
         closeModal={closeModal}
         validate={(name) => {
           const match = Object.values(reports).find((report) => report?.name === name);
@@ -146,11 +144,19 @@ interface SaveReportModalProps {
   onCreate: (name: string) => void;
   closeModal: () => void;
   isOpen: boolean;
+  isCreating: boolean;
   name: string;
   setName: (newName: string) => void;
 }
 
-const SaveReportModal: FC<SaveReportModalProps> = ({ isOpen, closeModal, name: nameProp, onCreate, validate }) => {
+const SaveReportModal: FC<SaveReportModalProps> = ({
+  isOpen,
+  closeModal,
+  name: nameProp,
+  onCreate,
+  validate,
+  isCreating,
+}) => {
   const [errorMessage, setErrorMessage] = useState("");
   const handleSubmit = (name: string) => {
     onCreate(name);
@@ -215,8 +221,8 @@ const SaveReportModal: FC<SaveReportModalProps> = ({ isOpen, closeModal, name: n
               <Button appearance="subtle" onClick={closeModal}>
                 Cancel
               </Button>
-              <Button isDisabled={!!errorMessage} type="submit" appearance="primary">
-                Confirm
+              <Button isDisabled={!!errorMessage || isCreating} type="submit" appearance="primary">
+                {isCreating ? <Spinner /> : "Confirm"}
               </Button>
             </ModalFooter>
           </form>

@@ -91,5 +91,5 @@ export const useCreateReport = () => {
     );
   };
 
-  return { createReport, isPending };
+  return { createReport, isCreating: isPending };
 };
