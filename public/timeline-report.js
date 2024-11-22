@@ -14,7 +14,7 @@ import "./select-report-type/select-report-type.js";
 import "./select-view-settings/select-view-settings.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
-import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
+import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup";
 
 import { DROPDOWN_LABEL } from "./shared/style-strings.js";

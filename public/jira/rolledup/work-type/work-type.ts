@@ -14,6 +14,7 @@ import {
 import { RollupLevelAndCalculation } from "../../shared/types";
 import { StartData, DueData } from "../../../shared/issue-data/date-data";
 import { DerivedWorkTiming } from "../../derived/work-timing/work-timing";
+import { notEmpty } from "../../shared/helpers";
 
 // TODO:
 
@@ -34,10 +35,10 @@ export type WorkTypeRollups = {
 };
 
 export type WithChildren = {
-  children: Partial<DateAndIssueKeys>;
+  children: {[key in WorkType]?: Partial<DateAndIssueKeys>};
 };
 
-export type WithWorkTypeTiming = {
+export type WithWorkTypeRollups = {
   workTypeRollups: WorkTypeRollups & WithChildren;
 };
 
@@ -47,14 +48,10 @@ export type WorkTypeChildRollups = {
   children: WorkTypeRollups;
 };
 
-function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
-  return value !== null && value !== undefined;
-}
-
 export function addWorkTypeDates<T>(
   issuesOrReleases: IssueOrRelease<T>[],
   rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]
-): IssueOrRelease<T & WithWorkTypeTiming>[] {
+): IssueOrRelease<T & WithWorkTypeRollups>[] {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
     issuesOrReleases,
     rollupTimingLevelsAndCalculations
