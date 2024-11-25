@@ -1,1 +1,1 @@
-export { default } from "./ViewReports";
+export { default } from "./ViewReportsWrapper";
