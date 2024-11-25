@@ -24,6 +24,7 @@
   "dependencies": {
     "@atlaskit/button": "^20.2.1",
     "@atlaskit/css-reset": "^6.11.1",
+    "@atlaskit/dropdown-menu": "^12.22.3",
     "@atlaskit/ds-lib": "^2.6.0",
     "@atlaskit/dynamic-table": "^16.1.1",
     "@atlaskit/flag": "^15.8.3",

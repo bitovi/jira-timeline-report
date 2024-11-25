@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Report, Reports } from "../../../../jira/reports";
 import { updateReports } from "../../../../jira/reports";
 import { useStorage } from "../../../services/storage";
-import { v4 as uuidv4 } from "uuid";
 
 import { useFlags } from "@atlaskit/flag";
 import { reportKeys } from "./key-factory";
@@ -46,7 +45,7 @@ export const useCreateReport = () => {
   const { save, isPending } = useSaveReport();
   const { showFlag } = useFlags();
 
-  const createReport = (newReport: Omit<Report, "id">, options?: Parameters<typeof save>[1]) => {
+  const createReport = (newReport: Report, options?: Parameters<typeof save>[1]) => {
     const allReports = queryClient.getQueryData<Reports>(reportKeys.allReports);
 
     if (!allReports) {
@@ -65,19 +64,16 @@ export const useCreateReport = () => {
       });
     }
 
-    const id = uuidv4();
-
     const urlParams = new URLSearchParams(newReport.queryParams);
-    urlParams.append("report", id);
+    urlParams.append("report", newReport.id);
 
     save(
-      { ...allReports, [id]: { id, ...newReport, queryParams: urlParams.toString() } },
+      { ...allReports, [newReport.id]: { ...newReport, queryParams: urlParams.toString() } },
       {
         ...(options ?? {}),
         onSuccess: (...args) => {
           options?.onSuccess?.(...args);
 
-          console.log(urlParams.toString());
           window.location.search = urlParams.toString();
 
           showFlag({

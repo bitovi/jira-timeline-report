@@ -12,6 +12,8 @@ import Skeleton from "../components/Skeleton";
 import { ErrorBoundary } from "react-error-boundary";
 import SectionMessage from "@atlaskit/section-message";
 import LinkButton from "../components/LinkButton";
+import { useRecentReports } from "../SaveReports/services/reports/useRecentReports";
+import Button from "@atlaskit/button/new";
 
 const queryClient = new QueryClient();
 
@@ -77,8 +79,11 @@ const ViewReportSkeleton: FC<{ onBackButtonClicked: () => void }> = ({ onBackBut
           {selectedReportExists && <Skeleton />}
         </div>
       </SidebarButton>
-      <div className="py-4">
+      <div className="py-4 flex justify-between">
         <Heading size="large">Saved Reports</Heading>
+        <Button appearance="primary" onClick={() => onBackButtonClicked()}>
+          Create new report
+        </Button>
       </div>
       <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={rows} />
     </div>
@@ -87,6 +92,7 @@ const ViewReportSkeleton: FC<{ onBackButtonClicked: () => void }> = ({ onBackBut
 
 const ViewReports: FC<{ onBackButtonClicked: () => void }> = ({ onBackButtonClicked }) => {
   const reports = useAllReports();
+  const { addReportToRecents } = useRecentReports();
 
   const selectedReport = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -112,7 +118,11 @@ const ViewReports: FC<{ onBackButtonClicked: () => void }> = ({ onBackButtonClic
           {
             key: `${report.id}-report`,
             content: (
-              <a href={"?" + report.queryParams} className="flex items-center font-normal text-sm leading-5 h-10">
+              <a
+                href={"?" + report.queryParams}
+                onClick={() => addReportToRecents(report.id)}
+                className="flex items-center font-normal text-sm leading-5 h-10"
+              >
                 Report name {report.name}
               </a>
             ),
@@ -130,8 +140,11 @@ const ViewReports: FC<{ onBackButtonClicked: () => void }> = ({ onBackButtonClic
           {selectedReport && <p>{selectedReport}</p>}
         </div>
       </SidebarButton>
-      <div className="py-4">
+      <div className="py-4 flex justify-between">
         <Heading size="large">Saved Reports</Heading>
+        <Button appearance="primary" onClick={() => onBackButtonClicked()}>
+          Create new report
+        </Button>
       </div>
       <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={reportRows} />
     </div>

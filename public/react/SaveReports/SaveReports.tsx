@@ -1,8 +1,9 @@
-import type { FC } from "react";
+import type { ComponentProps, ComponentPropsWithRef, FC } from "react";
 
-import React, { Suspense, useCallback, useState } from "react";
+import React, { forwardRef, Suspense, useCallback, useState } from "react";
 import Link from "@atlaskit/link";
 import Button, { IconButton } from "@atlaskit/button/new";
+import { v4 as uuidv4 } from "uuid";
 
 import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition } from "@atlaskit/modal-dialog";
 import { Flex, Grid, xcss } from "@atlaskit/primitives";
@@ -22,6 +23,9 @@ import { ErrorBoundary } from "react-error-boundary";
 import Skeleton from "../components/Skeleton";
 import LinkButton from "../components/LinkButton";
 import Spinner from "@atlaskit/spinner";
+import DropdownMenu, { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
+import { useRecentReports } from "./services/reports/useRecentReports";
+import Hr from "../components/Hr";
 
 const gridStyles = xcss({
   width: "100%",
@@ -44,6 +48,7 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
   const reports = useAllReports();
+  const { recentReports, addReportToRecents } = useRecentReports();
 
   const [name, setName] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -59,6 +64,8 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
         .find(({ id }) => id === selectedReport)?.name || "Untitled Report"
     );
   });
+
+  console.log({ recentReports });
 
   const { createReport, isCreating } = useCreateReport();
 
@@ -79,6 +86,55 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
         >
           Saved reports
         </Button>
+        <DropdownMenu trigger="Saved Reports" shouldRenderToParent>
+          {recentReports?.length === 0 ? (
+            <DropdownItemGroup>
+              <div className="max-w-64 flex flex-col items-center gap-4 p-4 text-center">
+                <img src="/assets/no-reports.png" />
+                <p className="text-xl font-semibold">You don't have any saved reports</p>
+                <p className="text-sm">When you save your first report, you will be able to access it here.</p>
+              </div>
+            </DropdownItemGroup>
+          ) : (
+            <>
+              <DropdownItemGroup>
+                <p className="p-4 text-xs text-slate-400 font-semibold uppercase">Recent</p>
+                {recentReports.map((reportId) => {
+                  const matched = Object.values(reports).find((report) => report?.id === reportId);
+
+                  if (!matched) {
+                    return null;
+                  }
+
+                  return (
+                    <DropdownItem
+                      key={reportId}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        window.location.search = "?" + matched.queryParams;
+                      }}
+                    >
+                      Report name {matched.name}
+                    </DropdownItem>
+                  );
+                })}
+              </DropdownItemGroup>
+              <Hr className="!my-1" />
+              <DropdownItemGroup>
+                <DropdownItem>
+                  <button
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onViewReportsButtonClicked();
+                    }}
+                  >
+                    View all saved reports
+                  </button>
+                </DropdownItem>
+              </DropdownItemGroup>
+            </>
+          )}
+        </DropdownMenu>
       </div>
       <SaveReportModal
         isOpen={isOpen}
@@ -95,11 +151,14 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
         name={name}
         setName={setName}
         onCreate={(name: string) => {
+          const id = uuidv4();
+
           createReport(
-            { name, queryParams: window.location.search },
+            { id, name, queryParams: window.location.search },
             {
-              onSuccess: () => {
+              onSuccess: (_, variables) => {
                 closeModal();
+                addReportToRecents(id);
               },
             }
           );
@@ -193,7 +252,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
                       {...fieldProps}
                       onChange={(event) => {
                         const casted = event.target as any as { value: string };
-                        const { isValid, message } = validate(casted.value);
+                        const { message } = validate(casted.value);
 
                         setErrorMessage(message);
 
@@ -218,7 +277,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
               </Field>
             </ModalBody>
             <ModalFooter>
-              <Button appearance="subtle" onClick={closeModal}>
+              <Button isDisabled={!!isCreating} appearance="subtle" onClick={closeModal}>
                 Cancel
               </Button>
               <Button isDisabled={!!errorMessage || isCreating} type="submit" appearance="primary">

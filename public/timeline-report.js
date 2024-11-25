@@ -269,8 +269,8 @@ export class TimelineReport extends StacheElement {
     createRoot(document.getElementById("saved-reports")).render(
       createElement(SavedReports, {
         storage: this.storage,
-        onViewReportsButtonClicked: () => {
-          this.showReports();
+        onViewReportsButtonClicked: (event) => {
+          this.showReports(event);
         },
       })
     );
