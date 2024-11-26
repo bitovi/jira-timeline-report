@@ -62,6 +62,8 @@ export const useCreateReport = () => {
         isAutoDismiss: true,
         icon: <ErrorIcon label="error" />,
       });
+
+      return;
     }
 
     const urlParams = new URLSearchParams(newReport.queryParams);
@@ -88,4 +90,57 @@ export const useCreateReport = () => {
   };
 
   return { createReport, isCreating: isPending };
+};
+
+export const useUpdateReport = () => {
+  const queryClient = useQueryClient();
+  const { save, isPending } = useSaveReport();
+  const { showFlag } = useFlags();
+
+  const updateReport = (
+    id: Report["id"],
+    updates: Partial<Omit<Report, "id">>,
+    options?: Parameters<typeof save>[1]
+  ) => {
+    const allReports = queryClient.getQueryData<Reports>(reportKeys.allReports);
+
+    if (!allReports?.[id]) {
+      console.warn(
+        [
+          "Tried to create a report without fetching the reports.",
+          `Attempted to retrieve ${reportKeys.allReports} from the cache and it wasn't there`,
+        ].join("\n")
+      );
+
+      showFlag({
+        title: "Uh oh!",
+        description: "Something went wrong trying to update the report",
+        isAutoDismiss: true,
+        icon: <ErrorIcon label="error" />,
+      });
+
+      return;
+    }
+
+    const newReport = { ...allReports[id], ...updates };
+
+    save(
+      { ...allReports, [id]: newReport },
+      {
+        ...(options ?? {}),
+        onSuccess: (...args) => {
+          options?.onSuccess?.(...args);
+
+          showFlag({
+            title: "Success",
+            description: `Successfully updated ${newReport.name}`,
+            isAutoDismiss: true,
+            icon: <SuccessIcon label="success" />,
+          });
+        },
+      }
+    );
+  };
+
+  return { updateReport, isUpdating: isPending };
 };

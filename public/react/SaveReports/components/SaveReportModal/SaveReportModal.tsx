@@ -52,8 +52,9 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
             onSubmit={(event) => {
               event.preventDefault();
 
-              const casted = event.target as any as { name: { value: string } };
-              handleSubmit(casted.name.value);
+              if (isValidSubmit(event.target)) {
+                handleSubmit(event.target.name.value);
+              }
             }}
           >
             <ModalHeader>
@@ -74,18 +75,20 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
                       defaultValue={nameProp}
                       {...fieldProps}
                       onChange={(event) => {
-                        const casted = event.target as any as { value: string };
-                        const { message } = validate(casted.value);
+                        if (!isValidChange(event.target)) {
+                          return;
+                        }
+
+                        const { message } = validate(event.target.value);
 
                         setErrorMessage(message);
 
                         fieldProps.onChange(event);
                       }}
-                      onBlur={(e) => {
+                      onBlur={(event) => {
                         setErrorMessage("");
 
-                        const name = e.target.value;
-                        const { isValid, message } = validate(name);
+                        const { isValid, message } = validate(event.target.value);
 
                         if (isValid) {
                           return;
@@ -115,3 +118,11 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
 };
 
 export default SaveReportModal;
+
+const isValidChange = (event: any): event is { value: string } => {
+  return "value" in event;
+};
+
+const isValidSubmit = (event: any): event is { name: { value: string } } => {
+  return "name" in event && "value" in event?.name;
+};
