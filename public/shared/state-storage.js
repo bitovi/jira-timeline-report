@@ -45,8 +45,6 @@ export function saveJSONToUrl(key, defaultValue, Type, converter = JSON) {
       }
 
       listenTo(lastSet, (value) => {
-        debugger;
-        console.log("Last set changed", value);
         const valueJSON = stringify(value);
         updateUrlParam(key, valueJSON, defaultJSON);
       });
