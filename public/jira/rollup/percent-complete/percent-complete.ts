@@ -7,8 +7,6 @@ import {
   isDerivedIssue,
 } from "../rollup";
 
-// const BASE_HIERARCHY_LEVEL = 1;
-
 export type PercentCompleteMeta = {
   /** how many children on average */
   childCounts: number[];
@@ -54,6 +52,7 @@ export function addPercentComplete<T>(
     rollupTimingLevelsAndCalculations
   );
 
+  // TODO remove commented code - DBrandon 2024/11/26
   // const rollupMethods = rollupTimingLevelsAndCalculations
   //   .map((rollupData) => rollupData.calculation)
   //   .reverse();
@@ -86,7 +85,6 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
         // this will be set later
         averageTotalDays: 0,
         averageChildCount: 0,
-        // issues: [],
       };
     },
     createRollupDataFromParentAndChild(
@@ -95,6 +93,7 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       hierarchyLevel,
       metadata
     ) {
+      // TODO remove commented code - DBrandon 2024/11/26
       const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
       const method = methods[methodName];
       return method(issueOrRelease, children, hierarchyLevel, metadata);
@@ -103,6 +102,7 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       let ave = average(metadata.totalDaysOfWorkForAverage) || 30;
       metadata.averageTotalDays = ave;
 
+      // TODO remove commented code - DBrandon 2024/11/26
       //metadata.averageChildCount = average( metadata.childCounts )
       // set average on children that need it
       metadata.needsAverageSet.forEach((data) => {

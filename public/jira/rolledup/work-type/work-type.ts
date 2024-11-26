@@ -59,6 +59,7 @@ export function addWorkTypeDates<T>(
     issuesOrReleases,
     rollupTimingLevelsAndCalculations
   );
+  // TODO remove commented code - DBrandon 2024/11/26
   // const rollupMethods = rollupTimingLevelsAndCalculations
   //   .map((rollupData) => rollupData.calculation)
   //   .reverse();
@@ -78,6 +79,7 @@ export function addWorkTypeDates<T>(
 export function rollupWorkTypeDates<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(issueOrRelease, children: WorkTypeChildRollups[]) {
+      // TODO remove commented code - DBrandon 2024/11/26
       //const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
       const method = mergeParentAndChildIfTheyHaveDates; //methods[methodName];
       return method(issueOrRelease, children);

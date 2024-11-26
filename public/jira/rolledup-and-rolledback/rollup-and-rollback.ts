@@ -91,6 +91,7 @@ export function rollbackNormalizeAndDeriveEverything(
   when: Date
 ) {
   const pastRawIssues = rollbackIssues(rawIssues, when);
+  // TODO remove commented code - DBrandon 2024/11/26
   //const dne = pastRawIssues.filter(ri => ri.rollbackMetadata.didNotExistBefore);
 
   const pastDerived = pastRawIssues.map((issue) => {
