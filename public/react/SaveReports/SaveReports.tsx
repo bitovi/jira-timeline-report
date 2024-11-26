@@ -1,38 +1,21 @@
 import type { FC } from "react";
+import type { Report } from "../../jira/reports";
 
 import React, { useMemo, useState } from "react";
 
 import { v4 as uuidv4 } from "uuid";
-import Heading from "@atlaskit/heading";
-import InlineEdit from "@atlaskit/inline-edit";
 
 import { useAllReports } from "./services/reports/useAllReports";
-import { useCreateReport, useUpdateReport } from "./services/reports/useSaveReports";
-import LinkButton from "../components/LinkButton";
-
+import { useCreateReport } from "./services/reports/useSaveReports";
 import { useRecentReports } from "./services/reports/useRecentReports";
-
+import LinkButton from "../components/LinkButton";
 import SaveReportModal from "./components/SaveReportModal";
 import SavedReportDropdown from "./components/SavedReportDropdown";
-
-import { css, jsx } from "@emotion/react";
-import { token } from "@atlaskit/tokens";
-import Textfield from "@atlaskit/textfield";
-import { xcss } from "@atlaskit/primitives";
-import { ErrorMessage } from "@atlaskit/form";
-import { Report } from "../../jira/reports";
-import Spinner from "@atlaskit/spinner";
+import EditableTitle from "./components/EditableTitle";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
 }
-
-const readViewContainerStyles = xcss({
-  font: "font.heading.large",
-  paddingBlock: "space.100",
-  paddingInline: "space.075",
-  wordBreak: "break-word",
-});
 
 const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,7 +25,6 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
   const reports = useAllReports();
   const { recentReports, addReportToRecents } = useRecentReports();
   const { createReport, isCreating } = useCreateReport();
-  const { updateReport, isUpdating } = useUpdateReport();
 
   const selectedReport = useMemo<Report | undefined>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -57,7 +39,6 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
       .find(({ id }) => id === selectedReport);
   }, []);
 
-  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(selectedReport?.name || "Untitled Report");
 
   const validateName = (name: string) => {
@@ -86,51 +67,8 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
   return (
     <div className="flex gap-1 justify-between items-center">
       <div className="flex gap-3 items-center">
-        <InlineEdit
-          isEditing={!!selectedReport && editing}
-          onEdit={() => setEditing((prev) => !prev)}
-          defaultValue={name}
-          editButtonLabel={name}
-          validate={(value) => validateName(value).message}
-          editView={({ errorMessage, ...fieldProps }) => (
-            <>
-              <Textfield
-                {...fieldProps}
-                autoFocus
-                autoComplete="new-password"
-                className="[&>input]:!font-semibold [&>input]:!text-[29px] [&>input]:!p-0"
-              />
-              {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
-            </>
-          )}
-          readView={() => (
-            <div className="flex gap-1 items-center">
-              <Heading size="xlarge">{name}</Heading>
-              {isUpdating && <Spinner size="small" />}
-            </div>
-          )}
-          onConfirm={(newName) => {
-            setEditing(false);
-
-            if (!selectedReport) {
-              console.warn("Tried to update report but couldn't determine the selected report");
-              return;
-            }
-
-            updateReport(
-              selectedReport.id,
-              { name: newName },
-              {
-                onSettled: () => {
-                  setName(newName);
-                },
-              }
-            );
-          }}
-        />
-        <LinkButton onClick={openModal} disabled={editing}>
-          Save Report
-        </LinkButton>
+        <EditableTitle name={name} setName={setName} selectedReport={selectedReport} validate={validateName} />
+        <LinkButton onClick={openModal}>Save Report</LinkButton>
       </div>
       <div>
         <SavedReportDropdown
