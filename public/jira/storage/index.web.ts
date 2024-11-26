@@ -81,6 +81,10 @@ function findTeamTable(document: any): Array<Record<"team" | "velocity" | "track
 
 export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
   return {
+    storageInitialized: async () => {
+      const configurationIssue = await getConfigurationIssue(jiraHelpers);
+      return !!configurationIssue;
+    },
     get: async function <TData>(key: string): Promise<TData | null> {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 

@@ -13,8 +13,8 @@ import {
   getAllTeamData,
   getInheritedData,
 } from "../../team-configuration";
-import { useJira } from "../../../../../services/jira";
 import { getSimplifiedIssueHierarchy } from "../../../../../../../stateful-data/jira-data-requests";
+import { useJira } from "../../../../../../services/jira";
 
 type IssueHierarchy = {
   name: string;
