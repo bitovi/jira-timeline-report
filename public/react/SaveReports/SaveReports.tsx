@@ -1,8 +1,8 @@
 import type { FC } from "react";
 import type { Report } from "../../jira/reports";
-import { useCanObservable, type CanObservable } from "../hooks/useCanObservable";
+import type { CanObservable } from "../hooks/useCanObservable";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -13,26 +13,12 @@ import LinkButton from "../components/LinkButton";
 import SaveReportModal from "./components/SaveReportModal";
 import SavedReportDropdown from "./components/SavedReportDropdown";
 import EditableTitle from "./components/EditableTitle";
+import { useQueryParams } from "../hooks/useQueryParams";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
   queryParamObservable: CanObservable<string>;
 }
-
-const useQueryParams = (
-  queryParamObservable: CanObservable<string>,
-  config: { onChange: (params: URLSearchParams) => void }
-) => {
-  const queryParamString = useCanObservable(queryParamObservable);
-
-  useEffect(() => {
-    const params = new URLSearchParams(queryParamString);
-
-    config.onChange(params);
-  }, [queryParamString]);
-
-  return { queryParamString, queryParams: new URLSearchParams(queryParamString) };
-};
 
 const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsButtonClicked }) => {
   const [isOpen, setIsOpen] = useState(false);
