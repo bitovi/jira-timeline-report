@@ -16,6 +16,7 @@ import "./select-view-settings/select-view-settings.js";
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback.js";
 import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
+import { pushStateObservable } from "./shared/state-storage.js";
 
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
@@ -268,6 +269,7 @@ export class TimelineReport extends StacheElement {
   async connected() {
     createRoot(document.getElementById("saved-reports")).render(
       createElement(SavedReports, {
+        queryParamObservable: pushStateObservable,
         storage: this.storage,
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);

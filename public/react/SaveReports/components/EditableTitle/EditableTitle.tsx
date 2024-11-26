@@ -1,4 +1,4 @@
-import type { Reports, Report } from "../../../../jira/reports";
+import type { Report } from "../../../../jira/reports";
 import type { FC } from "react";
 
 import React, { useState } from "react";

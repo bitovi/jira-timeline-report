@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import type { AppStorage } from "../../jira/storage/common";
+import type { CanObservable } from "../hooks/useCanObservable";
 
 import React, { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,10 +11,12 @@ import { FlagsProvider } from "@atlaskit/flag";
 import { StorageProvider } from "../services/storage";
 import Skeleton from "../components/Skeleton";
 import SaveReports from "./SaveReports";
+import { useCanObservable } from "../hooks/useCanObservable";
 
 interface SaveReportsWrapperProps {
   storage: AppStorage;
   onViewReportsButtonClicked: () => void;
+  queryParamObservable: CanObservable<string>;
 }
 
 const queryClient = new QueryClient();

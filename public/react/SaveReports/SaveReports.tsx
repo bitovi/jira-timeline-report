@@ -1,7 +1,8 @@
 import type { FC } from "react";
 import type { Report } from "../../jira/reports";
+import { useCanObservable, type CanObservable } from "../hooks/useCanObservable";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -15,9 +16,25 @@ import EditableTitle from "./components/EditableTitle";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
+  queryParamObservable: CanObservable<string>;
 }
 
-const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
+const useQueryParams = (
+  queryParamObservable: CanObservable<string>,
+  config: { onChange: (params: URLSearchParams) => void }
+) => {
+  const queryParamString = useCanObservable(queryParamObservable);
+
+  useEffect(() => {
+    const params = new URLSearchParams(queryParamString);
+
+    config.onChange(params);
+  }, [queryParamString]);
+
+  return { queryParamString, queryParams: new URLSearchParams(queryParamString) };
+};
+
+const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsButtonClicked }) => {
   const [isOpen, setIsOpen] = useState(false);
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
@@ -25,6 +42,16 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
   const reports = useAllReports();
   const { recentReports, addReportToRecents } = useRecentReports();
   const { createReport, isCreating } = useCreateReport();
+
+  useQueryParams(queryParamObservable, {
+    onChange: (params) => {
+      const report = params.get("report");
+
+      if (report) {
+        addReportToRecents(report);
+      }
+    },
+  });
 
   const selectedReport = useMemo<Report | undefined>(() => {
     const params = new URLSearchParams(window.location.search);
