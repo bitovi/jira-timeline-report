@@ -29,8 +29,8 @@ export type DerivedWorkTiming = {
   startAndDueDateDaysOfWork: number | null;
   hasSprintStartAndEndDate: boolean;
   sprintDaysOfWork: number | null;
-  sprintStartData: StartData;
-  endSprintData: DueData;
+  sprintStartData: StartData | null;
+  endSprintData: DueData | null;
   totalDaysOfWork: number | null;
   defaultOrTotalDaysOfWork: number | null;
   completedDaysOfWork: number;
@@ -78,11 +78,13 @@ export function deriveWorkTiming(
 ): DerivedWorkTiming {
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
 
-  const usedConfidence = isConfidenceValid ? normalizedIssue.confidence! : getDefaultConfidence(normalizedIssue.team);
+  const usedConfidence = isConfidenceValid
+    ? normalizedIssue.confidence as number
+    : getDefaultConfidence(normalizedIssue.team);
 
   const isStoryPointsValid = isStoryPointsValueValid(normalizedIssue.storyPoints);
   const defaultOrStoryPoints = isStoryPointsValid
-    ? normalizedIssue.storyPoints!
+    ? normalizedIssue.storyPoints as number
     : getDefaultStoryPoints(normalizedIssue.team);
 
   const storyPointsDaysOfWork = defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
@@ -90,25 +92,35 @@ export function deriveWorkTiming(
   const isStoryPointsMedianValid = isStoryPointsValueValid(normalizedIssue.storyPointsMedian);
 
   const defaultOrStoryPointsMedian = isStoryPointsMedianValid
-    ? normalizedIssue.storyPointsMedian!
+    ? normalizedIssue.storyPointsMedian as number
     : getDefaultStoryPoints(normalizedIssue.team);
 
-  const storyPointsMedianDaysOfWork = defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
-  const deterministicExtraPoints = estimateExtraPoints(defaultOrStoryPointsMedian, usedConfidence, uncertaintyWeight);
-  const deterministicExtraDaysOfWork = deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const storyPointsMedianDaysOfWork =
+    defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
+  const deterministicExtraPoints = estimateExtraPoints(
+    defaultOrStoryPointsMedian,
+    usedConfidence,
+    uncertaintyWeight
+  );
+  const deterministicExtraDaysOfWork =
+    deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const deterministicTotalPoints = defaultOrStoryPointsMedian + deterministicExtraPoints;
-  const deterministicTotalDaysOfWork = deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const deterministicTotalDaysOfWork =
+    deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
 
   const probablisticExtraPoints = sampleExtraPoints(defaultOrStoryPointsMedian, usedConfidence);
-  const probablisticExtraDaysOfWork = probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const probablisticExtraDaysOfWork =
+    probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const probablisticTotalPoints = defaultOrStoryPointsMedian + probablisticExtraPoints;
-  const probablisticTotalDaysOfWork = probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const probablisticTotalDaysOfWork =
+    probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const hasStartAndDueDate = Boolean(normalizedIssue.dueDate && normalizedIssue.startDate);
   const startAndDueDateDaysOfWork = hasStartAndDueDate
     ? getBusinessDatesCount(normalizedIssue.startDate, normalizedIssue.dueDate)
     : null;
 
-  const { startData: sprintStartData, dueData: endSprintData } = getStartDateAndDueDataFromSprints(normalizedIssue);
+  const { startData: sprintStartData, dueData: endSprintData } =
+    getStartDateAndDueDataFromSprints(normalizedIssue);
   const hasSprintStartAndEndDate = Boolean(sprintStartData && endSprintData);
   let sprintDaysOfWork = hasSprintStartAndEndDate
     ? getBusinessDatesCount(sprintStartData?.start, endSprintData?.due)
@@ -116,7 +128,8 @@ export function deriveWorkTiming(
 
   const { startData, dueData } = getStartDateAndDueDataFromFieldsOrSprints(normalizedIssue);
 
-  const datesDaysOfWork = startData && dueData ? getBusinessDatesCount(startData.start, dueData.due) : null;
+  const datesDaysOfWork =
+    startData && dueData ? getBusinessDatesCount(startData.start, dueData.due) : null;
 
   let totalDaysOfWork = null;
   if (!normalizedIssue.team.spreadEffortAcrossDates && datesDaysOfWork != null) {
@@ -129,7 +142,8 @@ export function deriveWorkTiming(
 
   // defaultOrTotalDaysOfWork - will be 50% confidence of 1 sprint of work
   // Used if there is no estimate.  I don't think we need or should use this value.
-  const defaultOrTotalDaysOfWork = totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
+  const defaultOrTotalDaysOfWork =
+    totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
 
   const completedDaysOfWork = getSelfCompletedDays(
     startData,
@@ -194,8 +208,8 @@ export function isStoryPointsValueValid(value: number | null): value is number {
  * @returns number
  */
 function getSelfCompletedDays(
-  startData: StartData,
-  dueData: DueData,
+  startData: StartData | null,
+  dueData: DueData | null,
   daysOfWork: number,
   isSpreading: boolean
 ): number {

@@ -1,6 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "module": "ESNext",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react",
     "outDir": "./public/dist",
     "rootDir": "./public",
@@ -12,7 +18,6 @@
     "allowSyntheticDefaultImports": true,
     "downlevelIteration": true,
     "allowJs": true,
-    "module": "ESNext",
     "skipLibCheck": true,
     "paths": {
       "undici-types": [
@@ -24,7 +29,7 @@
   "include": [
     "public/**/*.ts",
     "public/**/*.tsx"
-   ],
+  ],
   "exclude": [
     "node_modules",
     "public/dist",

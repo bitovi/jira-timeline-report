@@ -3,6 +3,7 @@ import {
   rollupChildStatusesForGroupedHierarchy,
   rollupChildStatuses,
   ChildStatuses,
+  WithChildStatuses,
 } from "./child-statuses";
 import { IssueOrRelease } from "../rollup";
 
@@ -51,7 +52,7 @@ describe("rollupChildStatusesForGroupedHierarchy", () => {
             status: "Blocked",
           },
         ],
-      ] as IssueOrRelease[][]
+      ] as IssueOrRelease<WithChildStatuses>[][]
     ).reverse();
 
     const results = rollupChildStatusesForGroupedHierarchy(groupedHierarchy);
@@ -166,7 +167,7 @@ describe("rollupChildStatuses", () => {
         parentKey: "m-3",
         status: "Blocked",
       },
-    ] as IssueOrRelease<{ childStatuses: ChildStatuses }>[];
+    ] as IssueOrRelease<WithChildStatuses>[];
 
     const rollupTimingLevelsAndCalculations = [
       { type: "Initiative", hierarchyLevel: 2 },
@@ -174,15 +175,12 @@ describe("rollupChildStatuses", () => {
       { type: "Story", hierarchyLevel: 0 },
     ];
 
-    const result = rollupChildStatuses(
-      issuesAndReleases,
-      rollupTimingLevelsAndCalculations
-    );
+    const result = rollupChildStatuses(issuesAndReleases, rollupTimingLevelsAndCalculations);
 
     const issueMap = result.reduce((map, issue) => {
       map[issue.key] = issue;
       return map;
-    }, {} as { [key: string]: IssueOrRelease<{ childStatuses: ChildStatuses }> });
+    }, {} as { [key: string]: IssueOrRelease<WithChildStatuses> });
 
     const o1 = issueMap["o-1"];
     const m2 = issueMap["m-2"];
