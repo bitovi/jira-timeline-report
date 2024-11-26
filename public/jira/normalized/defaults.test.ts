@@ -91,7 +91,7 @@ test("getParentKeyDefault", () => {
 });
 
 test("getDaysPerSprintDefault", () => {
-  expect(getDaysPerSprintDefault("")).toBe(10);
+  expect(getDaysPerSprintDefault(createFields())).toBe(10);
 });
 
 test("getStartDateDefault", () => {
@@ -134,11 +134,11 @@ test("getTypeDefault", () => {
 });
 
 test("getVelocityDefault", () => {
-  expect(getVelocityDefault("")).toBe(21);
+  expect(getVelocityDefault(createFields())).toBe(21);
 });
 
 test("getParallelWorkLimitDefault", () => {
-  expect(getParallelWorkLimitDefault("")).toBe(1);
+  expect(getParallelWorkLimitDefault(createFields())).toBe(1);
 });
 
 test("getSprintsDefault", () => {

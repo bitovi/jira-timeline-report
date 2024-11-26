@@ -52,7 +52,8 @@ export const getSimplifiedIssueHierarchy = makeCacheable(({ jiraHelpers, isLogge
 
 function simplifyIssueHierarchy(types) {
   const levelsToTypes = [];
-  for (let type of types) {
+  // ignore any level with scope
+  for (let type of types.filter((type) => !type.scope)) {
     // ignore subtasks
     if (type.hierarchyLevel >= 0) {
       if (!levelsToTypes[type.hierarchyLevel]) {
@@ -64,6 +65,15 @@ function simplifyIssueHierarchy(types) {
 
   return levelsToTypes
     .map((types, i) => {
+      // might need to do this by level
+      const popularHierarchyNames = ["Story", "Epic", "Sub-Task"];
+
+      for (const popularName of popularHierarchyNames) {
+        const match = types.find(({ name }) => name === popularName);
+        if (match) {
+          return match;
+        }
+      }
       return types[0];
     })
     .filter((i) => i)
@@ -84,7 +94,6 @@ const CORE_FIELDS = [
 ];
 
 export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL }, { progressUpdate }) {
-
   // progressData.value = null; THIS NEEDS TO HAPPEN OUTSIDE
   if (isLoggedIn === false) {
     // mock data is already field-translated

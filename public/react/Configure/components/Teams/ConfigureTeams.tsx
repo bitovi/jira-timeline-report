@@ -1,7 +1,8 @@
 import type { FC } from "react";
 import type { IssueFields, TeamConfiguration } from "./services/team-configuration";
+import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 
-import React from "react";
+import React, { Fragment } from "react";
 import Heading from "@atlaskit/heading";
 import Spinner from "@atlaskit/spinner";
 
@@ -9,36 +10,39 @@ import { Accordion, AccordionContent, AccordionTitle } from "../../../components
 
 import { useTeamData } from "./services/team-configuration";
 import ConfigureTeamsForm from "./ConfigureTeamsForm";
-
-import { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 import { useTeamForm } from "./useTeamForm";
-
-const issueNameMapping: Record<keyof TeamConfiguration, string> = {
-  defaults: "Team default",
-  outcome: "Outcomes",
-  milestones: "Milestones",
-  initiatives: "Initiatives",
-  epics: "Epics",
-  stories: "Stores",
-};
+import Hr from "../../../components/Hr";
 
 interface IssueAccordionProps {
   teamName: string;
-  issueType: keyof TeamConfiguration;
+  hierarchyLevel: keyof TeamConfiguration;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
-  getInheritance: (issueType: keyof TeamConfiguration) => TeamConfiguration;
+  getInheritance: (hierarchyLevel: keyof TeamConfiguration) => TeamConfiguration;
+  getHierarchyLevelName: (level: number | string) => string;
   jiraFields: IssueFields;
   augmentedTeamData: TeamConfiguration;
   userTeamData: TeamConfiguration;
 }
 
-const IssueAccordion: FC<IssueAccordionProps> = ({ issueType, jiraFields, ...formData }) => {
-  const { isSaving, ...formProps } = useTeamForm({ issueType, ...formData });
+const IssueAccordion: FC<IssueAccordionProps> = ({
+  hierarchyLevel,
+  jiraFields,
+  getHierarchyLevelName,
+  ...formData
+}) => {
+  const { isSaving, ...formProps } = useTeamForm({
+    hierarchyLevel,
+    ...formData,
+  });
 
   return (
-    <Accordion startsOpen={issueType === "defaults"}>
+    <Accordion startsOpen={hierarchyLevel === "defaults"}>
       <AccordionTitle>
-        <Heading size="small">{issueNameMapping[issueType]}</Heading>
+        <Heading size="small">
+          {hierarchyLevel === "defaults"
+            ? `Team defaults (${formData.teamName})`
+            : getHierarchyLevelName(hierarchyLevel)}
+        </Heading>
         {isSaving && (
           <div>
             <Spinner size="small" label="saving" />
@@ -61,31 +65,41 @@ export interface ConfigureTeamsProps {
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdate }) => {
   const { augmentedTeamData, ...teamData } = useTeamData(teamName, jiraFields);
 
-  const teamIssues = Object.keys(augmentedTeamData).filter((issueType): issueType is keyof TeamConfiguration => {
-    // global defaults are specially render else where
-    if (teamName === "__GLOBAL__") {
-      // Remove return false and return line 82 once ready to integrate issue types
-      return false;
-      // return issueType !== "defaults";
-    }
+  const hierarchyLevels = Object.keys(augmentedTeamData)
+    // hierarchyLevels should be defaults first then highest level to lowest
+    .sort((lhs, rhs) => {
+      if (lhs === "defaults") return -1;
+      if (rhs === "defaults") return 1;
 
-    // Remove once ready to integration issue types
-    return issueType === "defaults";
-  });
+      return parseInt(rhs) - parseInt(lhs);
+    })
+    .filter((issueType): issueType is keyof TeamConfiguration => {
+      if (teamName === "__GLOBAL__") {
+        // Remove return false and return line 82 once ready to integrate issue types
+        return false;
+        // return issueType !== "defaults";
+      }
+
+      return true;
+    });
 
   return (
     <>
-      {teamIssues.map((issueType) => {
+      {hierarchyLevels.map((hierarchyLevel, index) => {
+        const isLast = index === hierarchyLevels.length - 1;
+
         return (
-          <IssueAccordion
-            key={issueType}
-            teamName={teamName}
-            issueType={issueType}
-            onUpdate={onUpdate}
-            jiraFields={jiraFields}
-            augmentedTeamData={augmentedTeamData}
-            {...teamData}
-          />
+          <Fragment key={hierarchyLevel}>
+            <IssueAccordion
+              teamName={teamName}
+              hierarchyLevel={hierarchyLevel}
+              onUpdate={onUpdate}
+              jiraFields={jiraFields}
+              augmentedTeamData={augmentedTeamData}
+              {...teamData}
+            />
+            {!isLast && <Hr className="my-2 h-[2px]" />}
+          </Fragment>
         );
       })}
     </>

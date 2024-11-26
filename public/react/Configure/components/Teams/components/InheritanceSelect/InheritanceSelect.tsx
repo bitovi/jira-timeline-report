@@ -13,7 +13,9 @@ interface SelectProps {
   control: Control<Configuration>;
   name: keyof Configuration;
   label: string;
-  jiraFields: Array<{ label: string; value: string }>;
+  jiraFields:
+    | Array<{ label: string; value: string }>
+    | Array<{ label: string; options: Array<{ label: string; value: string }> }>;
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 

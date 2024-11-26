@@ -231,11 +231,11 @@ function isParagraph(frag) {
 function getTextFromParagraph(p) {
   return p.content.filter((text) => text.type === "text").map((text) => text.text);
 }
-function getTextFromWithinCell(cell) {
+export function getTextFromWithinCell(cell) {
   return cell.content.filter(isParagraph).map(getTextFromParagraph).flat().join(" ");
 }
 
-function matchTeamTable(fragment) {
+export function matchTeamTable(fragment) {
   if (fragment.type !== "table") {
     return false;
   }
@@ -269,7 +269,7 @@ function matchTeamTable(fragment) {
   return records;
 }
 
-function searchDocument(document, matcher) {
+export function searchDocument(document, matcher) {
   let matches = [];
 
   // Helper function to recursively search for matches
