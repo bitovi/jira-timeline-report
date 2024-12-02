@@ -11,7 +11,6 @@ import { FlagsProvider } from "@atlaskit/flag";
 import { StorageProvider } from "../services/storage";
 import Skeleton from "../components/Skeleton";
 import SaveReports from "./SaveReports";
-import { useCanObservable } from "../hooks/useCanObservable";
 
 interface SaveReportsWrapperProps {
   storage: AppStorage;

@@ -5,9 +5,7 @@ import React, { useState } from "react";
 import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
 import { v4 as uuidv4 } from "uuid";
 
-import { useAllReports } from "./services/reports/useAllReports";
-import { useCreateReport } from "./services/reports/useSaveReports";
-import { useRecentReports } from "./services/reports/useRecentReports";
+import { useAllReports, useCreateReport, useRecentReports } from "../services/reports";
 import SaveReportModal from "./components/SaveReportModal";
 import SavedReportDropdown from "./components/SavedReportDropdown";
 import EditableTitle from "./components/EditableTitle";

@@ -8,6 +8,7 @@ import { ErrorMessage, Field } from "@atlaskit/form";
 import Textfield from "@atlaskit/textfield";
 import Spinner from "@atlaskit/spinner";
 import CrossIcon from "@atlaskit/icon/glyph/cross";
+
 import { isValidChange, isValidSubmit } from "./utilities";
 
 const gridStyles = xcss({

@@ -3,8 +3,8 @@ import type { FC } from "react";
 import React, { useMemo } from "react";
 import DynamicTable from "@atlaskit/dynamic-table";
 
-import { useAllReports } from "../SaveReports/services/reports/useAllReports";
 import ViewReportsLayout from "./components/ViewReportsLayout";
+import { useAllReports } from "../services/reports";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;

@@ -9,7 +9,7 @@ import Textfield from "@atlaskit/textfield";
 import { ErrorMessage } from "@atlaskit/form";
 import Spinner from "@atlaskit/spinner";
 
-import { useUpdateReport } from "./../../services/reports/useSaveReports";
+import { useUpdateReport } from "../../../services/reports";
 
 interface EditableTitleProps {
   validate: (name: string) => { isValid: boolean; message: string };

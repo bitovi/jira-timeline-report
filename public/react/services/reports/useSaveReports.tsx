@@ -1,8 +1,8 @@
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Report, Reports } from "../../../../jira/reports";
-import { updateReports } from "../../../../jira/reports";
-import { useStorage } from "../../../services/storage";
+import type { Report, Reports } from "../../../jira/reports";
+import { updateReports } from "../../../jira/reports";
+import { useStorage } from "../../services/storage";
 
 import { useFlags } from "@atlaskit/flag";
 import { reportKeys } from "./key-factory";

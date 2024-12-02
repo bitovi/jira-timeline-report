@@ -3,7 +3,7 @@ import type { Report, Reports } from "../../../../jira/reports";
 import { useMemo, useState } from "react";
 import { useQueryParams } from "../../../hooks/useQueryParams";
 import { CanObservable } from "../../../hooks/useCanObservable";
-import { useUpdateReport } from "../../services/reports/useSaveReports";
+import { useUpdateReport } from "../../../services/reports";
 import { getReportFromParams, paramsMatchReport } from "./utilities";
 
 export const useSelectedReport = ({
