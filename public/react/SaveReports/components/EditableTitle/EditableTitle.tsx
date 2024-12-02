@@ -23,10 +23,12 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
   const { updateReport, isUpdating } = useUpdateReport();
 
   const edit = (newName: string) => {
-    setEditing(false);
-
     if (!selectedReport) {
       console.warn("Tried to update report but couldn't determine the selected report");
+      return;
+    }
+
+    if (newName === selectedReport.name) {
       return;
     }
 
@@ -46,8 +48,14 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
       isEditing={!!selectedReport && editing}
       onEdit={() => setEditing((prev) => !prev)}
       defaultValue={name}
-      validate={(value) => validate(value).message}
-      onConfirm={edit}
+      validate={(value) => {
+        value === selectedReport?.name ? "" : validate(value).message;
+      }}
+      onConfirm={(value) => {
+        setEditing(false);
+        edit(value);
+      }}
+      onCancel={() => setEditing(false)}
       editButtonLabel={name}
       editView={({ errorMessage, ...fieldProps }) => (
         <>

@@ -67,6 +67,7 @@ export const useCreateReport = () => {
     }
 
     const urlParams = new URLSearchParams(newReport.queryParams);
+    urlParams.delete("report");
     urlParams.append("report", newReport.id);
 
     save(
