@@ -1,10 +1,11 @@
 import type { FC } from "react";
-import type { Reports } from "../../../../jira/reports";
+import type { Report, Reports } from "../../../../jira/reports";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
-import DropdownMenu, { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
-import Hr from "../../../components/Hr";
+import DropdownMenu from "@atlaskit/dropdown-menu";
+import EmptyView from "./EmptyView";
+import RecentReports from "./RecentReports";
 
 interface SavedReportDropdownProps {
   onViewReportsButtonClicked: () => void;
@@ -12,9 +13,26 @@ interface SavedReportDropdownProps {
   reports: Reports;
 }
 
-const SavedReportDropdown: FC<SavedReportDropdownProps> = ({ onViewReportsButtonClicked, recentReports, reports }) => {
-  // needed to not interfer with can routing
+const numberOfRecentReportsToShow = 5;
+
+const SavedReportDropdown: FC<SavedReportDropdownProps> = ({
+  onViewReportsButtonClicked,
+  recentReports: recentReportsProp,
+  reports,
+}) => {
+  // Need to control so not to interfere with can routing
   const [isOpen, setIsOpen] = useState(false);
+
+  const recentReports = useMemo(() => {
+    if (recentReportsProp.length >= numberOfRecentReportsToShow) {
+      return recentReportsProp;
+    }
+
+    // User could have reports but no recents
+    const allReports = Object.values(reports) as Array<Report>;
+
+    return [...recentReportsProp, ...allReports.map(({ id }) => id)].slice(0, numberOfRecentReportsToShow - 1);
+  }, [reports, recentReportsProp]);
 
   return (
     <DropdownMenu
@@ -26,70 +44,15 @@ const SavedReportDropdown: FC<SavedReportDropdownProps> = ({ onViewReportsButton
       {recentReports?.length === 0 ? (
         <EmptyView />
       ) : (
-        <>
-          <DropdownItemGroup>
-            <p className="p-4 text-xs text-slate-400 font-semibold uppercase">Recent</p>
-            {recentReports.map((reportId) => (
-              <ReportListItem key={reportId} reportId={reportId} reports={reports} />
-            ))}
-          </DropdownItemGroup>
-          <Hr className="!my-1" />
-          <DropdownItemGroup>
-            <DropdownItem
-              onClick={(event) => {
-                // needed to not interfer with can routing
-
-                event.stopPropagation();
-
-                onViewReportsButtonClicked();
-                setIsOpen(false);
-              }}
-            >
-              View all saved reports
-            </DropdownItem>
-          </DropdownItemGroup>
-        </>
+        <RecentReports
+          recentReports={recentReports}
+          reports={reports}
+          onViewReportsButtonClicked={onViewReportsButtonClicked}
+          setIsOpen={setIsOpen}
+        />
       )}
     </DropdownMenu>
   );
 };
 
 export default SavedReportDropdown;
-
-const EmptyView = () => {
-  return (
-    <DropdownItemGroup>
-      <div className="max-w-64 flex flex-col items-center gap-4 p-4 text-center">
-        <img src="/assets/no-reports.png" />
-        <p className="text-xl font-semibold">You don't have any saved reports</p>
-        <p className="text-sm">When you save your first report, you will be able to access it here.</p>
-      </div>
-    </DropdownItemGroup>
-  );
-};
-
-interface ReportListItemProps {
-  reports: Reports;
-  reportId: string;
-}
-
-const ReportListItem: FC<ReportListItemProps> = ({ reports, reportId }) => {
-  const matched = Object.values(reports).find((report) => report?.id === reportId);
-
-  if (!matched) {
-    return null;
-  }
-
-  return (
-    <DropdownItem
-      key={reportId}
-      onClick={(event) => {
-        // needed to not interfer with can routing
-        window.location.search = "?" + matched.queryParams;
-        event.stopPropagation();
-      }}
-    >
-      Report name {matched.name}
-    </DropdownItem>
-  );
-};

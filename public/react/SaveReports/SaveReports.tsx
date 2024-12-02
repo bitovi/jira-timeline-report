@@ -1,33 +1,18 @@
 import type { FC } from "react";
-import type { Report } from "../../jira/reports";
 import type { CanObservable } from "../hooks/useCanObservable";
 
-import React, { useMemo, useState } from "react";
-
+import React, { useState } from "react";
+import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
 import { v4 as uuidv4 } from "uuid";
 
 import { useAllReports } from "./services/reports/useAllReports";
-import { useCreateReport, useUpdateReport } from "./services/reports/useSaveReports";
+import { useCreateReport } from "./services/reports/useSaveReports";
 import { useRecentReports } from "./services/reports/useRecentReports";
-import LinkButton from "../components/LinkButton";
 import SaveReportModal from "./components/SaveReportModal";
 import SavedReportDropdown from "./components/SavedReportDropdown";
 import EditableTitle from "./components/EditableTitle";
 import { useQueryParams } from "../hooks/useQueryParams";
-import DropdownMenu, { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
-
-const paramsEqual = (lhs: URLSearchParams, rhs: URLSearchParams): boolean => {
-  const lhsEntries = [...lhs.entries()];
-  const rhsEntries = [...rhs.entries()];
-
-  if (lhsEntries.length !== rhsEntries.length) {
-    return false;
-  }
-
-  return lhsEntries.reduce((isEqual, [lhsName, lhsValue]) => {
-    return isEqual && rhsEntries.some(([rhsName, rhsValue]) => lhsName === rhsName && lhsValue === rhsValue);
-  }, true);
-};
+import { useSelectedReport } from "./hooks/useSelectedReports";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
@@ -40,33 +25,13 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const closeModal = () => setIsOpen(false);
 
   const reports = useAllReports();
-  const { recentReports, addReportToRecents } = useRecentReports();
+
   const { createReport, isCreating } = useCreateReport();
-  const { updateReport } = useUpdateReport();
+  const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({ reports, queryParamObservable });
 
-  const [isDirty, setIsDirty] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const selectedReport = params.get("report");
+  const [name, setName] = useState(selectedReport?.name || "Untitled Report");
 
-    if (!selectedReport) {
-      return true;
-    }
-
-    const report = Object.values(reports)
-      .filter((r) => !!r)
-      .find(({ id }) => id === selectedReport);
-
-    if (!report) {
-      return true;
-    }
-
-    const reportParams = new URLSearchParams(report.queryParams);
-
-    reportParams.delete("settings");
-    params.delete("settings");
-
-    return !paramsEqual(reportParams, params);
-  });
+  const { recentReports, addReportToRecents } = useRecentReports();
 
   useQueryParams(queryParamObservable, {
     onChange: (params) => {
@@ -75,47 +40,8 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       if (report) {
         addReportToRecents(report);
       }
-
-      setIsDirty(() => {
-        const params = new URLSearchParams(window.location.search);
-        const selectedReport = params.get("report");
-
-        if (!selectedReport) {
-          return true;
-        }
-
-        const report = Object.values(reports)
-          .filter((r) => !!r)
-          .find(({ id }) => id === selectedReport);
-
-        if (!report) {
-          return true;
-        }
-
-        const reportParams = new URLSearchParams(report.queryParams);
-
-        reportParams.delete("settings");
-        params.delete("settings");
-
-        return !paramsEqual(reportParams, params);
-      });
     },
   });
-
-  const selectedReport = useMemo<Report | undefined>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const selectedReport = params.get("report");
-
-    if (!selectedReport) {
-      return;
-    }
-
-    return Object.values(reports)
-      .filter((r) => !!r)
-      .find(({ id }) => id === selectedReport);
-  }, []);
-
-  const [name, setName] = useState(selectedReport?.name || "Untitled Report");
 
   const validateName = (name: string) => {
     const match = Object.values(reports).find((report) => report?.name === name);
@@ -149,18 +75,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
             <DropdownItem
               onClick={(event) => {
                 event.stopPropagation();
-
-                if (!selectedReport) return;
-
-                const queryParams = new URLSearchParams(window.location.search);
-
-                queryParams.delete("settings");
-
-                updateReport(
-                  selectedReport.id,
-                  { queryParams: queryParams.toString() },
-                  { onSuccess: () => setIsDirty(false) }
-                );
+                updateSelectedReport();
               }}
             >
               Save changes

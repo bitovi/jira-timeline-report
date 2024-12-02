@@ -8,6 +8,7 @@ import { ErrorMessage, Field } from "@atlaskit/form";
 import Textfield from "@atlaskit/textfield";
 import Spinner from "@atlaskit/spinner";
 import CrossIcon from "@atlaskit/icon/glyph/cross";
+import { isValidChange, isValidSubmit } from "./utilities";
 
 const gridStyles = xcss({
   width: "100%",
@@ -69,37 +70,46 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
             </ModalHeader>
             <ModalBody>
               <Field name="name" label="Name" isRequired>
-                {({ fieldProps }) => (
-                  <>
-                    <Textfield
-                      defaultValue={nameProp}
-                      {...fieldProps}
-                      onChange={(event) => {
-                        if (!isValidChange(event.target)) {
-                          return;
-                        }
+                {({ fieldProps }) => {
+                  const handleChange = (value: string) => {
+                    const { message } = validate(value);
 
-                        const { message } = validate(event.target.value);
+                    setErrorMessage(message);
+                    fieldProps.onChange(value);
+                  };
 
-                        setErrorMessage(message);
+                  const handleBlur = (value: string) => {
+                    setErrorMessage("");
 
-                        fieldProps.onChange(event);
-                      }}
-                      onBlur={(event) => {
-                        setErrorMessage("");
+                    const { isValid, message } = validate(value);
 
-                        const { isValid, message } = validate(event.target.value);
+                    if (isValid) {
+                      return;
+                    }
 
-                        if (isValid) {
-                          return;
-                        }
+                    setErrorMessage(message);
+                  };
 
-                        setErrorMessage(message);
-                      }}
-                    />
-                    {!!errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
-                  </>
-                )}
+                  return (
+                    <>
+                      <Textfield
+                        defaultValue={nameProp}
+                        {...fieldProps}
+                        onChange={(event) => {
+                          // types for this textfield are coming from ADS as a FORMEVENT
+                          if (!isValidChange(event.target)) {
+                            return;
+                          }
+                          handleChange(event.target.value);
+                        }}
+                        onBlur={(event) => {
+                          handleBlur(event.target.value);
+                        }}
+                      />
+                      {!!errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+                    </>
+                  );
+                }}
               </Field>
             </ModalBody>
             <ModalFooter>
@@ -118,11 +128,3 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
 };
 
 export default SaveReportModal;
-
-const isValidChange = (event: any): event is { value: string } => {
-  return "value" in event;
-};
-
-const isValidSubmit = (event: any): event is { name: { value: string } } => {
-  return "name" in event && "value" in event?.name;
-};
