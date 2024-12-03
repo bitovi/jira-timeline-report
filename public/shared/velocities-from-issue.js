@@ -11,13 +11,19 @@ class TeamConfiguration extends ObservableObject {
     });
 
     return Promise.all([jiraHelpers.getServerInfo(), getIssues]).then(([serverInfo, issues]) => {
-      const first = issues.find((issue) => issue.fields.Summary === "Jira Auto Scheduler Configuration");
+      const first = issues.find(
+        (issue) => issue.fields.Summary === "Jira Auto Scheduler Configuration"
+      );
 
       if (first) {
         //const description = first.fields.Description.content,
         //    teamConfiguration = searchDocument(description, matchTeamTable);
+        window.openConfigurationIssue = () =>
+          window.open(serverInfo.baseUrl + "/browse/" + first.key, "_blank").focus();
 
-        return new TeamConfiguration({ issue: { ...first, url: serverInfo.baseUrl + "/browse/" + first.key } });
+        return new TeamConfiguration({
+          issue: { ...first, url: serverInfo.baseUrl + "/browse/" + first.key },
+        });
       } else {
         return new TeamConfiguration({ issue: null });
       }
@@ -32,7 +38,10 @@ class TeamConfiguration extends ObservableObject {
   };
   get _issueConfig() {
     if (this.issue) {
-      const teamConfigurationArray = searchDocument(this.issue.fields.Description.content, matchTeamTable);
+      const teamConfigurationArray = searchDocument(
+        this.issue.fields.Description.content,
+        matchTeamTable
+      );
       if (teamConfigurationArray.length) {
         return normalizeTeamConfigurationArray(teamConfigurationArray[0]);
       }
@@ -103,7 +112,9 @@ function normalizeTeamConfigurationArray(teamConfigurationArray) {
     const record = {};
     for (let prop in team) {
       let propToSet = prop in aliases ? aliases[prop] : prop;
-      record[propToSet] = propertiesToTurnIntoNumbers.includes(propToSet) ? +team[prop] : team[prop];
+      record[propToSet] = propertiesToTurnIntoNumbers.includes(propToSet)
+        ? +team[prop]
+        : team[prop];
     }
     normalizedTeamData[record.name] = record;
   }
@@ -113,31 +124,7 @@ function normalizeTeamConfigurationArray(teamConfigurationArray) {
 // mr-8 bg-neutral-201 hover:bg-neutral-301 rounded px-3 py-1
 
 export class VelocitiesFromIssue extends StacheElement {
-  static view = `
-        {{# if(this.canQuery) }}
-            <div class="bg-neutral-201 hover:bg-neutral-301 rounded text-center inline-flex items-center">
-                {{# if(this.teamConfigurationPromise.isPending) }}
-                    <span class="px-2 py-1">Loading ...</span>
-                {{/ }}
-
-                {{# if(this.teamConfigurationPromise.isResolved) }}
-                    
-                    {{# if(this.teamConfigurationPromise.value.issue) }}
-
-                        <a class="px-2 py-1" href="{{this.teamConfigurationPromise.value.issue.url}}" target="_blank">
-                            Configuration Issue
-                        </a>
-                    {{ else }}
-                            <a class="px-2 py-1" href="https://github.com/bitovi/jira-auto-scheduler/blob/main/docs/saved-configuration.md" target="_blank">
-                            Create Configuration
-                            </a>
-                    {{/ if }}
-
-                {{/ }}
-            </div>
-        {{/ if}}
-
-    `;
+  static view = ``;
   static props = {
     jiraHelpers: type.Any,
     isLoggedIn: Boolean,
