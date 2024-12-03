@@ -24,3 +24,7 @@ export const selectDue = (date: Partial<DueData>) => date?.due;
 
 export const sortByStart = sortByIssueDate(selectStart);
 export const descSortByDue = sortByIssueDate(selectDue, "desc");
+
+export function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
+  return value !== null && value !== undefined;
+}

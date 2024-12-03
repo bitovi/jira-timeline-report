@@ -7,12 +7,12 @@ The `/derived/derive.js` module is responsible for adding derived data to normal
 - **`deriveIssue(normalizedIssue, options)`**:
   - **Purpose**: Adds derived data to a normalized Jira issue, specifically:
     - `derivedTiming`: Timing-related information, calculated using the `deriveWorkTiming` function from `work-timing.js`.
-    - `derivedStatus`: Work status, calculated using the `getWorkStatus` function from `work-status.js`.
+    - `derivedStatus`: Work status, calculated using the `getWorkStatus` function from `work-status`.
   - **Returns**: An enhanced issue that includes derived timing and status data in addition to the normalized data.
 
 ---
 
-### `/derived/work-status/work-status.js` - Work Status
+### `/derived/work-status/work-status` - Work Status
 
 This module categorizes the status of a Jira issue based on its current status field and other metadata. It helps determine the current phase of work (e.g., "Dev", "QA", "Blocked").
 

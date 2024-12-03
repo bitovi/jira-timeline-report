@@ -4,7 +4,7 @@ import { showTooltip, showTooltipContent } from "../issue-tooltip.js";
 import { mergeStartAndDueData } from "../jira/rollup/dates/dates.js";
 
 import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
-import { workTypes } from "../jira/derived/work-status/work-status.js";
+import { workTypes } from "../jira/derived/work-status/work-status";
 import { normalizeIssue, normalizeParent } from "../jira/normalized/normalize.js";
 
 /*
