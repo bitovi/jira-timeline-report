@@ -53,7 +53,10 @@ const ViewReportsError: FC<ViewReportsErrorProps> = ({ onBackButtonClicked }) =>
   return (
     <SectionMessage appearance="error" title="Unable to load saved reports">
       We're having trouble connecting to Jira. Please try again later. Click here to{" "}
-      <LinkButton onClick={() => onBackButtonClicked()}>return to create reports</LinkButton>.
+      <LinkButton underlined onClick={() => onBackButtonClicked()}>
+        return to create reports
+      </LinkButton>
+      .
     </SectionMessage>
   );
 };

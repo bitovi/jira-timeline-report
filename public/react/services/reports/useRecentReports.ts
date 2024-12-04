@@ -28,8 +28,9 @@ export const useRecentReports = () => {
   });
 
   const addReportToRecents = (newReportId: string) => {
+    const maxRecentSize = 5;
     setRecentReports((current) => {
-      return [newReportId, ...current.filter((id) => id !== newReportId)];
+      return [newReportId, ...current.filter((id) => id !== newReportId)].slice(0, maxRecentSize);
     });
   };
 

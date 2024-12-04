@@ -44,37 +44,40 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
   };
 
   return (
-    <InlineEdit
-      isEditing={!!selectedReport && editing}
-      onEdit={() => setEditing((prev) => !prev)}
-      defaultValue={name}
-      validate={(value) => {
-        value === selectedReport?.name ? "" : validate(value).message;
-      }}
-      onConfirm={(value) => {
-        setEditing(false);
-        edit(value);
-      }}
-      onCancel={() => setEditing(false)}
-      editButtonLabel={name}
-      editView={({ errorMessage, ...fieldProps }) => (
-        <>
-          <Textfield
-            {...fieldProps}
-            autoFocus
-            autoComplete="new-password"
-            className="[&>input]:!font-semibold [&>input]:!text-[29px] [&>input]:!p-0"
-          />
-          {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
-        </>
-      )}
-      readView={() => (
-        <div className="flex gap-1 items-center">
-          <Heading size="xlarge">{name}</Heading>
-          {isUpdating && <Spinner size="small" />}
-        </div>
-      )}
-    />
+    // Cannot override styles inside InLineEdit thorugh props. This removes excess margin
+    <div className="[&>form>div]:!m-0">
+      <InlineEdit
+        isEditing={!!selectedReport && editing}
+        onEdit={() => setEditing((prev) => !prev)}
+        defaultValue={name}
+        validate={(value) => {
+          value === selectedReport?.name ? "" : validate(value).message;
+        }}
+        onConfirm={(value) => {
+          setEditing(false);
+          edit(value);
+        }}
+        onCancel={() => setEditing(false)}
+        editButtonLabel={name}
+        editView={({ errorMessage, ...fieldProps }) => (
+          <>
+            <Textfield
+              {...fieldProps}
+              autoFocus
+              autoComplete="new-password"
+              className="[&>input]:!font-semibold [&>input]:!text-[29px] [&>input]:!p-0"
+            />
+            {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+          </>
+        )}
+        readView={() => (
+          <div className="flex gap-1 items-center">
+            <Heading size="xlarge">{name}</Heading>
+            {isUpdating && <Spinner size="small" />}
+          </div>
+        )}
+      />
+    </div>
   );
 };
 
