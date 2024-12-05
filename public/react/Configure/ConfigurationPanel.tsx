@@ -9,9 +9,9 @@ import ConfigureTeams from "./components/Teams";
 import TeamSelector from "./components/TeamSelector";
 import SidebarButton from "../components/SidebarButton";
 import ConfigureAllTeams from "./components/Teams/ConfigureAllTeams";
-import { useJiraIssueFields } from "./services/jira";
+import { useJiraIssueFields } from "../services/jira";
 import { useAllTeamData } from "./components/Teams/services/team-configuration";
-import { StorageCheck } from "./services/storage";
+import { StorageCheck } from "../services/storage";
 
 export interface ConfigurationPanelProps {
   onBackButtonClicked: () => void;

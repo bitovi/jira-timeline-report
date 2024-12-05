@@ -1,4 +1,5 @@
 import { StacheElement, type, ObservableObject } from "../can.js";
+import { configurationIssueTitle } from "./configurationIssue.ts";
 //import SimpleTooltip from "./simple-tooltip.js";
 
 // ["velocity","tracks","sprint length"];
@@ -6,12 +7,12 @@ import { StacheElement, type, ObservableObject } from "../can.js";
 class TeamConfiguration extends ObservableObject {
   static getTeamConfiguration(jiraHelpers) {
     const getIssues = jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields({
-      jql: `summary ~ "Jira Auto Scheduler Configuration"`,
+      jql: `summary ~ "${configurationIssueTitle()}"`,
       fields: ["summary", "Description"],
     });
 
     return Promise.all([jiraHelpers.getServerInfo(), getIssues]).then(([serverInfo, issues]) => {
-      const first = issues.find((issue) => issue.fields.Summary === "Jira Auto Scheduler Configuration");
+      const first = issues.find((issue) => issue.fields.Summary === configurationIssueTitle());
 
       if (first) {
         //const description = first.fields.Description.content,

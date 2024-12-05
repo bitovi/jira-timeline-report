@@ -1,5 +1,7 @@
 import type { StorageFactory } from "./common";
 
+import { configurationIssueTitle } from "../../shared/configurationIssue";
+
 // Todo remove. See special logic note below
 import type { AllTeamData } from "../../react/Configure/components/Teams/services/team-configuration";
 import { searchDocument, getTextFromWithinCell, matchTeamTable } from "../../shared/velocities-from-issue";
@@ -41,7 +43,7 @@ const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[num
     Summary: string;
     Description: { content: Array<StorageIssueContent> };
   }>({
-    jql: `summary ~ "Jira Auto Scheduler Configuration"`,
+    jql: `summary ~ "${configurationIssueTitle()}"`,
     fields: ["summary", "Description"],
   });
 
@@ -79,6 +81,10 @@ function findTeamTable(document: any): Array<Record<"team" | "velocity" | "track
 
 export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
   return {
+    storageInitialized: async () => {
+      const configurationIssue = await getConfigurationIssue(jiraHelpers);
+      return !!configurationIssue;
+    },
     get: async function <TData>(key: string): Promise<TData | null> {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
