@@ -2,12 +2,17 @@ import { expect, describe, it } from "vitest";
 import {
   rollupWarningIssuesForGroupedHierarchy,
   rollupWarningIssues,
+  WithWarningIssues,
 } from "./warning-issues";
 import { IssueOrRelease } from "../rollup";
 
 describe("rollupWarningIssuesForGroupedHierarchy", () => {
   it("should correctly roll up warning issues in grouped hierarchy", () => {
-    let i7;
+    const i7 = {
+      key: "i-7",
+      parentKey: "m-3",
+      labels: ["Warning"],
+    };
     const groupedHierarchy = (
       [
         [
@@ -45,11 +50,7 @@ describe("rollupWarningIssuesForGroupedHierarchy", () => {
             parentKey: "m-3",
             labels: ["foo"],
           },
-          (i7 = {
-            key: "i-7",
-            parentKey: "m-3",
-            labels: ["Warning"],
-          }),
+          i7,
         ],
       ] as IssueOrRelease[][]
     ).reverse();
@@ -170,22 +171,19 @@ describe("rollupWarningIssues", () => {
       },
       i7,
       i8,
-    ] as IssueOrRelease<{ warningIssues: IssueOrRelease[] }>[];
+    ] as IssueOrRelease[];
 
     const rollupTimingLevelsAndCalculations = [
       { type: "Initiative", hierarchyLevel: 2 },
       { type: "Epic", hierarchyLevel: 1 },
       { type: "Story", hierarchyLevel: 0 },
     ];
-    const result = rollupWarningIssues(
-      issuesAndReleases,
-      rollupTimingLevelsAndCalculations
-    );
+    const result = rollupWarningIssues(issuesAndReleases, rollupTimingLevelsAndCalculations);
 
     const issueMap = result.reduce((map, issue) => {
       map[issue.key] = issue;
       return map;
-    }, {} as { [key: string]: IssueOrRelease<{ warningIssues: IssueOrRelease[] }> });
+    }, {} as { [key: string]: IssueOrRelease<WithWarningIssues> });
 
     const o1 = issueMap["o-1"];
     const m2 = issueMap["m-2"];

@@ -1,19 +1,13 @@
-import { DueData, StartData } from "../../../shared/issue-data/date-data";
 import {
   rollupGroupedHierarchy,
   groupIssuesByHierarchyLevelOrType,
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
-  RollupResponse,
-  ReportingHierarchyIssueOrRelease,
+  isDerivedRelease,
 } from "../rollup";
-import {
-  selectDue,
-  selectStart,
-  descSortByDue,
-  sortByStart,
-} from "../../shared/helpers";
-import { DerivedIssue } from "../../derived/derive";
+import { selectDue, selectStart, descSortByDue, sortByStart } from "../../shared/helpers";
+import { CalculationType, RollupLevelAndCalculation } from "../../shared/types";
+import { DueData, StartData } from "../../../shared/issue-data/date-data";
 
 const methods = {
   parentFirstThenChildren,
@@ -22,15 +16,14 @@ const methods = {
   widestRange,
   parentOnly,
 };
-export type CalculationName = keyof typeof methods;
 
 export type RollupDateData = Partial<StartData & DueData>;
 
-export type RolledupDatesReleaseOrIssue = IssueOrRelease<DerivedIssue> & {
+export type WithDateRollup = {
   rollupDates: RollupDateData;
 };
 
-const getStartData = (d: Partial<StartData> | null) => {
+export const getStartData = (d: Partial<StartData> | null) => {
   if (!d) return {};
 
   const { start, startFrom } = d;
@@ -40,7 +33,7 @@ const getStartData = (d: Partial<StartData> | null) => {
     ...(startFrom && { startFrom }),
   };
 };
-const getDueData = (d: Partial<DueData> | null) => {
+export const getDueData = (d: Partial<DueData> | null) => {
   if (!d) return {};
 
   const { due, dueTo } = d;
@@ -50,46 +43,17 @@ const getDueData = (d: Partial<DueData> | null) => {
     ...(dueTo && { dueTo }),
   };
 };
+export const getStartAndDueData = (d: RollupDateData | null) => {
+  return {
+    ...getStartData(d),
+    ...getDueData(d),
+  };
+};
 
-/**
- *
- * @param {Array<IssueOrRelease>} issuesOrReleases Starting from low to high
- * @param {Array<String>} methodNames Starting from low to high
- * @return {Array<RollupDateData>}
- */
-export function rollupDates(
-  groupedHierarchy: DerivedIssue[][],
-  methodNames: CalculationName[]
-): RollupResponse<RollupDateData, {}> {
-  return rollupGroupedHierarchy(groupedHierarchy, {
-    createRollupDataFromParentAndChild(
-      issueOrRelease: ReportingHierarchyIssueOrRelease<DerivedIssue>,
-      children: RollupDateData[],
-      hierarchyLevel
-    ) {
-      const methodName =
-        methodNames[hierarchyLevel] || "childrenFirstThenParent";
-      const method = methods[methodName];
-      const result = method(issueOrRelease, children);
-      return result;
-    },
-  });
-}
-
-/**
- *
- * @param {Array<IssueOrRelease>} issuesOrReleases
- * @param {Array<{type: String, hierarchyLevel: Number, calculation: String}>} rollupTimingLevelsAndCalculations
- * @return {Array<RolledupDatesReleaseOrIssue>}
- */
-export function addRollupDates(
-  issuesOrReleases: DerivedIssue[],
-  rollupTimingLevelsAndCalculations: {
-    type: string;
-    hierarchyLevel: number;
-    calculation: CalculationName;
-  }[]
-) {
+export function addRollupDates<T>(
+  issuesOrReleases: IssueOrRelease<T>[],
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]
+): IssueOrRelease<T & WithDateRollup>[] {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
     issuesOrReleases,
     rollupTimingLevelsAndCalculations
@@ -101,14 +65,32 @@ export function addRollupDates(
   const zipped = zipRollupDataOntoGroupedData(
     groupedIssues,
     rolledUpDates,
-    "rollupDates"
+    (item, values) => ({ ...item, rollupDates: values })
   );
   return zipped.flat();
 }
 
-export function mergeStartAndDueData<T extends RollupDateData>(
-  records: T[]
-): RollupDateData{
+/**
+ *
+ * @param issuesOrReleases Starting from low to high
+ * @param methodNames
+ * @return
+ */
+export function rollupDates<T>(
+  groupedHierarchy: IssueOrRelease<T>[][],
+  methodNames: CalculationType[]
+) {
+  return rollupGroupedHierarchy(groupedHierarchy, {
+    createRollupDataFromParentAndChild(issueOrRelease, children: RollupDateData[], hierarchyLevel) {
+      const methodName = methodNames[hierarchyLevel] || "childrenFirstThenParent";
+      const method = methods[methodName];
+      const result = method(issueOrRelease, children);
+      return result;
+    },
+  });
+}
+
+export function mergeStartAndDueData<T extends RollupDateData>(records: T[]) {
   const startDataSortAsc: Partial<StartData>[] = records
     .filter(selectStart)
     .map(getStartData)
@@ -127,16 +109,13 @@ export function mergeStartAndDueData<T extends RollupDateData>(
   };
 }
 
-/**
- *
- * @param {IssueOrRelease} parentIssueOrRelease
- * @param {*} childrenRollups
- * @returns
- */
-export function parentFirstThenChildren(
-  { derivedTiming: parentDerivedTiming }: DerivedIssue,
+export function parentFirstThenChildren<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: RollupDateData[]
-): RollupDateData {
+) {
+  if (isDerivedRelease(parentIssueOrRelease)) return {};
+
+  const { derivedTiming: parentDerivedTiming } = parentIssueOrRelease;
   const childData = mergeStartAndDueData(childrenRollups);
 
   const parentHasStart = parentDerivedTiming?.start;
@@ -144,73 +123,80 @@ export function parentFirstThenChildren(
 
   const combinedData = {
     start: parentHasStart ? parentDerivedTiming?.start : childData?.start,
-    startFrom: parentHasStart
-      ? parentDerivedTiming?.startFrom
-      : childData?.startFrom,
+    startFrom: parentHasStart ? parentDerivedTiming?.startFrom : childData?.startFrom,
     due: parentHasDue ? parentDerivedTiming?.due : childData?.due,
     dueTo: parentHasDue ? parentDerivedTiming?.dueTo : childData?.dueTo,
   };
 
-  return {
-    ...getStartData(combinedData),
-    ...getDueData(combinedData),
-  };
+  return getStartAndDueData(combinedData);
 }
 
-export function childrenOnly(
-  _parentIssueOrRelease: DerivedIssue,
+export function childrenOnly<T>(
+  _parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: RollupDateData[]
 ) {
   return mergeStartAndDueData(childrenRollups);
 }
 
-export function parentOnly(
-  { derivedTiming: parentDerivedTiming }: DerivedIssue,
+export function parentOnly<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
   _childrenRollups: RollupDateData[]
 ) {
-  return {
-    ...getStartData(parentDerivedTiming),
-    ...getDueData(parentDerivedTiming),
-  };
+  if (isDerivedRelease(parentIssueOrRelease)) return {};
+
+  const { derivedTiming: parentDerivedTiming } = parentIssueOrRelease;
+
+  return getStartAndDueData(parentDerivedTiming);
 }
 
-export function childrenFirstThenParent(
-  { derivedTiming: parentDerivedTiming }: DerivedIssue,
+export function childrenFirstThenParent<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: RollupDateData[]
 ) {
+  if (isDerivedRelease(parentIssueOrRelease)) return {};
+
+  const { derivedTiming: parentDerivedTiming } = parentIssueOrRelease;
+
   if (childrenRollups.length) {
     return mergeStartAndDueData(childrenRollups);
   }
   return mergeStartAndDueData([parentDerivedTiming]);
 }
 
-export function widestRange(
-  { derivedTiming: parentDerivedTiming }: DerivedIssue,
+export function widestRange<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: RollupDateData[]
 ) {
+  if (isDerivedRelease(parentIssueOrRelease)) return {};
+
+  const { derivedTiming: parentDerivedTiming } = parentIssueOrRelease;
+
   return mergeStartAndDueData([parentDerivedTiming, ...childrenRollups]);
 }
 
 export const calculationKeysToNames = {
-  parentFirstThenChildren: function (
-    parent: IssueOrRelease,
+  parentFirstThenChildren: function <T>(
+    parent: IssueOrRelease<T & WithDateRollup>,
     child: { plural: string }
   ) {
     return `From ${parent.type}, then ${child.plural}`;
   },
-  childrenOnly: function (_parent: IssueOrRelease, child: { plural: string }) {
+  childrenOnly: function <T>(
+    _parent: IssueOrRelease<T & WithDateRollup>,
+    child: { plural: string }
+  ) {
     return `From ${child.plural}`;
   },
-  childrenFirstThenParent: function (
-    parent: IssueOrRelease,
+  childrenFirstThenParent: function <T>(
+    parent: IssueOrRelease<T & WithDateRollup>,
     child: { plural: string }
   ) {
     return `From ${child.plural}, then ${parent.type}`;
   },
-  widestRange: function (parent: IssueOrRelease, child: { plural: string }) {
+  widestRange: function <T>(parent: IssueOrRelease<T & WithDateRollup>, child: { plural: string }) {
     return `From ${parent.type} or ${child.plural} (earliest to latest)`;
   },
-  parentOnly: function (parent: IssueOrRelease, _child: { plural: string }) {
+  parentOnly: function <T>(parent: IssueOrRelease<T & WithDateRollup>, _child: { plural: string }) {
     return `From ${parent.type}`;
   },
 };

@@ -197,7 +197,6 @@ export class TimelineConfiguration extends StacheElement {
     },
     get configurationPromise() {
       return configurationPromise({
-        teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
         normalizeObservable: value.from(this.normalizeOptions),
       });

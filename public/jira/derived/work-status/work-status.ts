@@ -19,7 +19,7 @@ export const inPartnerReviewStatuses = Object.keys(inPartnerReviewStatus);
 export const inIdeaStatus = { idea: true, "to do": true, open: true };
 export const inIdeaStatuses = Object.keys(inIdeaStatus);
 
-type WorkType = (typeof workType)[number];
+export type WorkType = (typeof workType)[number];
 
 type Status =
   | keyof typeof inQAStatus
@@ -73,7 +73,7 @@ const workPrefix = workType.map((wt) => wt + ":");
 
 function getWorkTypeDefault(normalizedIssue: NormalizedIssue): WorkType {
   let wp = workPrefix.find(
-    (wp) => (normalizedIssue?.summary || "").toLowerCase().indexOf(wp) === 0
+    (wp) => (normalizedIssue?.summary || "").toLowerCase().startsWith(wp)
   );
 
   if (wp) {
