@@ -80,31 +80,30 @@ export function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
   return getServerInfo({ jiraHelpers, isLoggedIn: resolve(isLoggedIn) });
 }
 
-export function configurationPromise({ serverInfoPromise, teamConfigurationPromise, normalizeObservable }) {
+export function configurationPromise({ serverInfoPromise, normalizeObservable }) {
   // we will give pending until we have both promises
 
   const info = resolve(serverInfoPromise),
-    team = resolve(teamConfigurationPromise),
     normalizeOptions = resolve(normalizeObservable);
 
-  if (!info || !team || !normalizeOptions) {
+  if (!info || !normalizeOptions) {
     return new Promise(() => {});
   }
 
-  return Promise.all([info, team]).then(
+  return Promise.all([info]).then(
     /**
      *
      * @param {[Object, TeamConfiguration]} param0
      * @returns
      */
-    ([serverInfo, teamData]) => {
+    ([serverInfo]) => {
       const { getVelocity, getParallelWorkLimit, ...otherNormalizeParams } = normalizeOptions ?? {};
       return {
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
         getVelocity(team) {
-          const methodsToTry = [teamData.getVelocityForTeam.bind(teamData), getVelocity, getVelocityDefault];
+          const methodsToTry = [ getVelocity, getVelocityDefault];
           for (let method of methodsToTry) {
             let value;
             if (method) {
@@ -117,7 +116,6 @@ export function configurationPromise({ serverInfoPromise, teamConfigurationPromi
         },
         getParallelWorkLimit(team) {
           const methodsToTry = [
-            teamData.getTracksForTeam.bind(teamData),
             getParallelWorkLimit,
             getParallelWorkLimitDefault,
           ];
