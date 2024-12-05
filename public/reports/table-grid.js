@@ -27,107 +27,133 @@ import Stats from "../react/Stats/Stats.js";
 
 
 export class EstimateBreakdown extends StacheElement {
-    static view = `<button class="remove-button">X</button>
+    static view = `<div class="text-right"><button class="remove-button text-red-500 p-2 text-lg">X</button></div>
     <div class="p-4">
         {{# if( this.usedStoryPointsMedian(issue) ) }}
 
-            
-            <div class="flex gap-4 items-center my-2">
+            <div class="flex gap-4 items-center mb-2 items-stretch">
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">&nbsp;</div>
+                    <div class="text-base text-neutral-801">&nbsp;</div>
                     <div class="text-right">Current:</div>
                     <div class="text-right text-xs">Last:</div>
                 </div>
                 <div>
-                    <div class="text-xs text-neutral-801">Estimated Days</div>
+                    <div class="text-base font-bold">Estimated Days</div>
                     {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalDaysOfWork") }}
                 </div>
                 <div class="text-center">=</div>
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Adjusted Estimate</div>
+                    <div class="text-base text-green-300">Adjusted Estimate</div>
                     {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalPoints") }}
                 </div>
-                <div class="align-middle"> / </div>
+                <div class="align-middle"> ÷ </div>
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Points per day per work track</div>
+                    <div class="text-base text-blue-200">Points per Day per Parallel Track</div>
                     {{ this.makeCurrentAndPreviousHTML("team.pointsPerDayPerTrack") }}
                 </div>
             </div>
             
-            <div class="flex gap-4 items-center my-2">
+            <div class="flex gap-4 items-center my-4 items-stretch">
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">&nbsp;</div>
+                    <div class="text-base text-neutral-801">&nbsp;</div>
                     <div class="text-right">Current:</div>
                     <div class="text-right text-xs">Last:</div>
                 </div>
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Adjusted Estimate</div>
+                    <div class="text-base text-green-300">Adjusted Estimate</div>
                     {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalPoints") }}
                 </div>
                 <div>=</div>
 
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Median Estimate</div>
+                    <div class="text-base text-neutral-801">Median Estimate</div>
                     {{ this.makeCurrentAndPreviousHTML("storyPointsMedian", "derivedTiming.isStoryPointsMedianValid") }}
                 </div>
                 <div>× LOGNORMINV(</div>
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Confidence</div>
+                    <div class="text-base text-neutral-801">Confidence</div>
                     {{ this.makeCurrentAndPreviousHTML("derivedTiming.usedConfidence", "derivedTiming.isConfidenceValid", this.formatPercent) }}
                 </div>
                 <div>)</div>
             </div>
 
-            {{# if(this.teamsAreTheSame() )}}
-            <div class="flex gap-4 items-center my-2">
+            
+        {{ else }}
+
+            <div class="flex gap-4 items-center mb-2 items-stretch">
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Estimate Points Per Sprint</div>
-                    <div class="text-right">{{this.issue.team.velocity}}</div>
+                    <div class="text-base text-neutral-801">&nbsp;</div>
+                    <div class="text-right">Current:</div>
+                    <div class="text-right text-xs">Last:</div>
                 </div>
-                <div>/</div>
-                <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Parallel Work Tracks</div>
-                    <div class="text-right">{{this.issue.team.parallelWorkLimit}}</div>
-                </div>
-                <div>/</div>
-                <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Days Per Sprint</div>
-                    <div class="text-right">{{this.issue.team.daysPerSprint}}</div>
+                <div>
+                    <div class="text-base font-bold">Estimated Days</div>
+                    {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalDaysOfWork") }}
                 </div>
                 <div class="text-center">=</div>
                 <div class="flex-col">
-                    <div class="text-xs text-neutral-801">Points per day per work track</div>
-                    <div class="text-right">{{this.round( this.issue.team.pointsPerDayPerTrack, 2)}}</div>
+                    <div class="text-base text-green-300">Estimate</div>
+                    {{ this.makeCurrentAndPreviousHTML("derivedTiming.deterministicTotalPoints") }}
+                </div>
+                <div class="align-middle"> ÷ </div>
+                <div class="flex-col">
+                    <div class="text-base text-blue-200">Points per Day per Parallel Track</div>
+                    {{ this.makeCurrentAndPreviousHTML("team.pointsPerDayPerTrack") }}
                 </div>
             </div>
-            {{else }}
-                <div class="flex gap-4 items-center my-2">
-            
-                    <div class="flex-col">
-                        <div class="text-xs text-neutral-801">Points per day per work track</div>
-                        {{ this.makeCurrentAndPreviousHTML("team.pointsPerDayPerTrack") }}
-                    </div>
-                    <div class="text-center">=</div>
-                    <div class="flex-col">
-                        <div class="text-xs text-neutral-801">Estimate Points Per Sprint</div>
-                        {{ this.makeCurrentAndPreviousHTML("team.velocity") }}
-                    </div>
-                    <div>/</div>
-                    <div class="flex-col">
-                        <div class="text-xs text-neutral-801">Parallel Work Tracks</div>
-                        {{ this.makeCurrentAndPreviousHTML("team.parallelWorkLimit") }}
-                    </div>
-                    <div>/</div>
-                    <div class="flex-col">
-                        <div class="text-xs text-neutral-801">Days Per Sprint</div>
-                        {{ this.makeCurrentAndPreviousHTML("team.daysPerSprint") }}
-                    </div>
-                    
-                </div>
-            {{/ if }}
-            
             
         {{/ }}
+
+        {{# if(this.teamsAreTheSame() )}}
+            <div class="flex gap-4 items-center mt-4 items-stretch">
+                <div class="flex-col">
+                    <div class="text-base text-blue-200">Points per Day per Track</div>
+                    <div class="text-right">{{this.round( this.issue.team.pointsPerDayPerTrack, 2)}}</div>
+                </div>
+                <div class="text-center">=</div>
+                <div class="flex-col">
+                    <div class="text-base text-neutral-801">Estimate Points Per Sprint</div>
+                    <div class="text-right">{{this.issue.team.velocity}}</div>
+                </div>
+                <div>÷</div>
+                <div class="flex-col">
+                    <div class="text-base text-neutral-801">Days Per Sprint</div>
+                    <div class="text-right">{{this.issue.team.daysPerSprint}}</div>
+                </div>
+                <div>÷</div>
+                <div class="flex-col">
+                    <div class="text-base text-neutral-801">Parallel Work Tracks</div>
+                    <div class="text-right">{{this.issue.team.parallelWorkLimit}}</div>
+                </div>
+                
+                
+                
+            </div>
+        {{else }}
+            <div class="flex gap-4 items-center mt-4 items-stretch">
+        
+                <div class="flex-col">
+                    <div class="text-base text-blue-200">Points per Day per Track</div>
+                    {{ this.makeCurrentAndPreviousHTML("team.pointsPerDayPerTrack") }}
+                </div>
+                <div class="text-center">=</div>
+                <div class="flex-col">
+                    <div class="text-base text-neutral-801">Estimate Points Per Sprint</div>
+                    {{ this.makeCurrentAndPreviousHTML("team.velocity") }}
+                </div>
+                <div>÷</div>
+                <div class="flex-col">
+                    <div class="text-base text-neutral-801">Parallel Work Tracks</div>
+                    {{ this.makeCurrentAndPreviousHTML("team.parallelWorkLimit") }}
+                </div>
+                <div>÷</div>
+                <div class="flex-col">
+                    <div class="text-base text-neutral-801">Days Per Sprint</div>
+                    {{ this.makeCurrentAndPreviousHTML("team.daysPerSprint") }}
+                </div>
+                
+            </div>
+        {{/ if }}
     </div>
     `;
     teamsAreTheSame(){
@@ -159,7 +185,7 @@ export class EstimateBreakdown extends StacheElement {
         return value+"%"
     }
     usedStoryPointsMedian(issue){
-        return issue.derivedTiming.isStoryPointsMedianValid
+        return issue?.derivedTiming?.isStoryPointsMedianValid && (issue?.derivedTiming?.usedConfidence !== 100)
     }
     confidenceValue(issue){
         return issue?.derivedTiming?.usedConfidence;
