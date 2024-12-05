@@ -62,6 +62,7 @@ export function addRollupDates<T>(
     .map((rollupData) => rollupData.calculation)
     .reverse();
   const rolledUpDates = rollupDates(groupedIssues, rollupMethods);
+  debugger;
   const zipped = zipRollupDataOntoGroupedData(
     groupedIssues,
     rolledUpDates,

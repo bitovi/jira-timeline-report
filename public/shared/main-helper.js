@@ -69,7 +69,6 @@ export default async function mainHelper(config, { host, createStorage }) {
         jiraHelpers,
         loginComponent,
         mode: "TEAMS",
-        velocitiesConfiguration,
         storage,
       });
       report.className = "block";
