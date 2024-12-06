@@ -63,7 +63,7 @@ const ReportListItem: FC<ReportListItemProps> = ({ reports, reportId }) => {
         event.stopPropagation();
       }}
     >
-      Report name {matched.name}
+      {matched.name}
     </DropdownItem>
   );
 };

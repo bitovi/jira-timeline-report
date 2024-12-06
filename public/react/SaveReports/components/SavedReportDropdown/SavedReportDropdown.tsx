@@ -31,10 +31,10 @@ const SavedReportDropdown: FC<SavedReportDropdownProps> = ({
     // User could have reports but no recents
     const allReports = Object.values(reports) as Array<Report>;
 
-    return [...recentReportsProp, ...allReports.filter(({ id }) => id !== id).map(({ id }) => id)].slice(
-      0,
-      numberOfRecentReportsToShow
-    );
+    return [
+      ...recentReportsProp,
+      ...allReports.filter((report) => !recentReportsProp.includes(report.id)).map(({ id }) => id),
+    ].slice(0, numberOfRecentReportsToShow);
   }, [reports, recentReportsProp]);
 
   return (

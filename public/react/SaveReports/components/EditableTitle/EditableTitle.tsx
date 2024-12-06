@@ -51,7 +51,7 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
         onEdit={() => setEditing((prev) => !prev)}
         defaultValue={name}
         validate={(value) => {
-          value === selectedReport?.name ? "" : validate(value).message;
+          return value === selectedReport?.name ? "" : validate(value).message;
         }}
         onConfirm={(value) => {
           setEditing(false);
