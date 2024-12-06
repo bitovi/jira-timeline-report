@@ -19,7 +19,8 @@
         "./node_modules/undici/types"
       ]
     },
-    "sourceMap": false
+    "sourceMap": false,
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
     "public/**/*.ts",
