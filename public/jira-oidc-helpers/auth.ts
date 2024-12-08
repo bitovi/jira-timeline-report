@@ -47,7 +47,7 @@ export async function fetchAccessTokenWithAuthCode(authCode: string): Promise<vo
       accessToken,
       refreshToken,
       expiryTimestamp,
-      scopeId,
+      //scopeId,
     });
     //redirect to data page
     const addOnQuery = new URL(
