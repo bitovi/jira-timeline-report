@@ -246,8 +246,14 @@ export class TimelineConfiguration extends StacheElement {
   // HOOKS
   connectedCallback() {
     Promise.all([this.jiraHelpers.fetchJiraFields(), getAllTeamData(this.storage)])
-      .then(([jiraFields, teamData]) => createFullyInheritedConfig(teamData, jiraFields))
-      .then((allTeamData) => createNormalizeConfiguration(allTeamData))
+      .then(([jiraFields, teamData]) => {
+        const allTeamData = createFullyInheritedConfig(teamData, jiraFields);
+        return allTeamData;
+      })
+      .then((allTeamData) => {
+        const normalizedConfig = createNormalizeConfiguration(allTeamData);
+        return normalizedConfig;
+      })
       .catch(() => {
         // Could fail because storage hasn't been setup yet
         return {};

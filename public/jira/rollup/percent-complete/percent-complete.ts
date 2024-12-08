@@ -32,7 +32,8 @@ export type WithPercentComplete = {
 };
 
 const methods = {
-  childrenFirstThenParent,
+  childrenFirstThenParent// ,
+  //widestRange
 };
 export type PercentCompleteCalculations = keyof typeof methods;
 
@@ -63,6 +64,7 @@ export function addPercentComplete<T>(
   }));
   return zipped.flat();
 }
+
 
 /**
  *
@@ -122,6 +124,73 @@ function emptyRollup() {
     },
   };
 }
+/*
+export function widestRange<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
+  childrenRollups: PercentCompleteRollup[],
+  _hierarchyLevel: number,
+  metadata: PercentCompleteMeta
+) {
+  
+  const hasHardChildData = childrenRollups.length && childrenRollups.every((d) => d.userSpecifiedValues);
+  let childTotalWorkingDays, parentWorkingDays;
+  let data;
+
+  if(hasHardChildData) {
+    data = sumChildRollups(childrenRollups);
+    childTotalWorkingDays = data.totalWorkingDays;
+  }
+
+  const hasHardParentData = isDerivedIssue(parentIssueOrRelease) &&
+    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork;
+  
+  if(hasHardParentData) {
+    parentWorkingDays = parentIssueOrRelease?.derivedTiming?.totalDaysOfWork;
+  }
+
+  if(hasHardChildData && hasHardParentData) {
+
+  }
+
+
+
+  let data;
+  // if there is hard child data, use it
+  if (childrenRollups.length && childrenRollups.every((d) => d.userSpecifiedValues)) {
+    data = sumChildRollups(childrenRollups);
+    metadata.totalDaysOfWorkForAverage.push(data.totalWorkingDays);
+    return data;
+  }
+  // if there is hard parent data, use it
+  else if (
+    isDerivedIssue(parentIssueOrRelease) &&
+    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork
+  ) {
+    data = {
+      completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentIssueOrRelease?.derivedTiming.totalDaysOfWork,
+      userSpecifiedValues: true,
+      get remainingWorkingDays() {
+        return this.totalWorkingDays - this.completedWorkingDays;
+      },
+    };
+    // make sure we can build an average from it
+    metadata.totalDaysOfWorkForAverage.push(data.totalWorkingDays);
+    return data;
+  }
+
+  // if there is weak children data, use it, but don't use it for other averages
+  else if (childrenRollups.length) {
+    data = sumChildRollups(childrenRollups);
+    return data;
+  }
+  // if there are no children, add to get the uncertainty
+  else {
+    data = emptyRollup();
+    metadata.needsAverageSet.push(data);
+    return data;
+  }
+}*/
 
 export function childrenFirstThenParent<T>(
   parentIssueOrRelease: IssueOrRelease<T>,
