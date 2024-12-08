@@ -46,6 +46,7 @@ export type ProgressData = {
   issuesReceived: number;
   changeLogsRequested: number;
   changeLogsReceived: number;
+  keysWhoseChildrenWeAreAlreadyLoading:Set<string>
 };
 
 export type Progress = {
