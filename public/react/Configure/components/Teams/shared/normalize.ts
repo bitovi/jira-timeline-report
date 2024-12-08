@@ -63,6 +63,7 @@ export const createNormalizeConfiguration = (
       );
     },
     getVelocity: (issue, config) => {
+      
       return Number(
         getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).velocityPerSprint
       );

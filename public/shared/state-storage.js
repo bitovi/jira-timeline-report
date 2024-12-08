@@ -18,6 +18,7 @@ const underlyingReplaceState = history.replaceState;
 export const pushStateObservable = new RoutePushstate();
 route.urlData = pushStateObservable;
 route.urlData.root = window.location.pathname;
+route.register("");
 
 const dateMatch = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 

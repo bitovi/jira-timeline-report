@@ -102,19 +102,19 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
-        getVelocity(team) {
+        getVelocity(team, config) {
           const methodsToTry = [ getVelocity, getVelocityDefault];
           for (let method of methodsToTry) {
             let value;
             if (method) {
-              value = method(team);
+              value = method(team, config);
             }
             if (value != null) {
               return value;
             }
           }
         },
-        getParallelWorkLimit(team) {
+        getParallelWorkLimit(team, config) {
           const methodsToTry = [
             getParallelWorkLimit,
             getParallelWorkLimitDefault,
@@ -122,7 +122,7 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
           for (let method of methodsToTry) {
             let value;
             if (method) {
-              value = method(team);
+              value = method(team, config);
             }
 
             if (value != null) {
