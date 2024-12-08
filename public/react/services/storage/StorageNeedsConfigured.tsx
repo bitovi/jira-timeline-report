@@ -7,8 +7,6 @@ import { LinkButton } from "@atlaskit/button/new";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useStorage } from "./StorageProvider";
 
-import { allTeamDataKey } from "../../components/Teams/services/team-configuration";
-
 // Quick work around to check if storage is setup
 // Update later
 export const StorageCheck: FC<{ children: ReactNode }> = ({ children }) => {
@@ -16,7 +14,7 @@ export const StorageCheck: FC<{ children: ReactNode }> = ({ children }) => {
 
   const { data } = useSuspenseQuery({
     queryKey: ["storage-check"],
-    queryFn: () => storage.get<{} | null>(allTeamDataKey),
+    queryFn: () => storage.storageInitialized(),
   });
 
   if (!data) {
