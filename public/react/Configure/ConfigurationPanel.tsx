@@ -27,7 +27,10 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
   ...configurationProps
 }) => {
   const jiraFields = useJiraIssueFields();
-  const { userAllTeamData } = useAllTeamData(jiraFields);
+  const { userAllTeamData, ...rest} = useAllTeamData(jiraFields);
+
+  console.table(userAllTeamData)
+  console.table(rest.augmentedAllTeamData)
 
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
 
