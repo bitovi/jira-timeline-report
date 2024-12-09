@@ -15,9 +15,9 @@ export const getInheritedData = (teamData: TeamConfiguration, allTeamData: AllTe
   ): Configuration[keyof Configuration] => {
     return (
       teamData?.[heirarchyLevel]?.[field] ??
-      teamData.defaults[field] ??
-      allTeamData.__GLOBAL__[heirarchyLevel]?.[field] ??
-      allTeamData.__GLOBAL__.defaults[field]
+      teamData?.defaults?.[field] ??
+      allTeamData?.__GLOBAL__[heirarchyLevel]?.[field] ??
+      allTeamData?.__GLOBAL__?.defaults?.[field]
     );
   };
 
