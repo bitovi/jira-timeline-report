@@ -56,11 +56,16 @@ export const useAllTeamData: UseAllTeamData = (jiraFields) => {
     queryFn: async () => getTeamDataWithIssueHierarchys(jira, storage),
   });
 
-  return {
+  const result = {
     issueHeirarchy: data.issueHeirarchy,
     userAllTeamData: data.userData,
     augmentedAllTeamData: applyInheritance("__GLOBAL__", applyGlobalDefaultData(data.userData, jiraFields)),
   };
+
+  console.table(result.userAllTeamData)
+  console.table(result.augmentedAllTeamData)
+
+  return result;
 };
 
 export type UseTeamData = (
@@ -80,6 +85,8 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
     userAllTeamData[teamName] ||
     createEmptyTeamConfiguration(issueHeirarchy.map((type) => type.hierarchyLevel.toString()));
   const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
+  console.table(userData)
+  console.table(augmented)
 
   return {
     userTeamData: userData,
