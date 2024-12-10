@@ -124,73 +124,58 @@ function emptyRollup() {
     },
   };
 }
-/*
+
 export function widestRange<T>(
   parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: PercentCompleteRollup[],
   _hierarchyLevel: number,
   metadata: PercentCompleteMeta
 ) {
-  
-  const hasHardChildData = childrenRollups.length && childrenRollups.every((d) => d.userSpecifiedValues);
-  let childTotalWorkingDays, parentWorkingDays;
-  let data;
+  const  childRollup = sumChildRollups(childrenRollups);
+  const hasHardChildData = childrenRollups.length && childRollup.userSpecifiedValues;
 
-  if(hasHardChildData) {
-    data = sumChildRollups(childrenRollups);
-    childTotalWorkingDays = data.totalWorkingDays;
+  let hasHardParentData = false,
+    parentRollup,
+    parentTotalDaysOfWork = 0;
+  if(isDerivedIssue(parentIssueOrRelease) &&
+    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+    hasHardParentData = true;
+    parentTotalDaysOfWork = parentIssueOrRelease?.derivedTiming.totalDaysOfWork || 0;
+    parentRollup = {
+        completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
+        totalWorkingDays: parentTotalDaysOfWork,
+        userSpecifiedValues: true,
+        get remainingWorkingDays() {
+          return this.totalWorkingDays - this.completedWorkingDays;
+        },
+      };
   }
 
-  const hasHardParentData = isDerivedIssue(parentIssueOrRelease) &&
-    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork;
-  
-  if(hasHardParentData) {
-    parentWorkingDays = parentIssueOrRelease?.derivedTiming?.totalDaysOfWork;
-  }
 
   if(hasHardChildData && hasHardParentData) {
-
-  }
-
-
-
-  let data;
-  // if there is hard child data, use it
-  if (childrenRollups.length && childrenRollups.every((d) => d.userSpecifiedValues)) {
-    data = sumChildRollups(childrenRollups);
-    metadata.totalDaysOfWorkForAverage.push(data.totalWorkingDays);
-    return data;
-  }
-  // if there is hard parent data, use it
-  else if (
-    isDerivedIssue(parentIssueOrRelease) &&
-    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork
-  ) {
-    data = {
-      completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
-      totalWorkingDays: parentIssueOrRelease?.derivedTiming.totalDaysOfWork,
-      userSpecifiedValues: true,
-      get remainingWorkingDays() {
-        return this.totalWorkingDays - this.completedWorkingDays;
-      },
+    if(childRollup.totalWorkingDays > (parentTotalDaysOfWork)) {
+      return childRollup;
+    } else {
+      return parentRollup
     };
-    // make sure we can build an average from it
-    metadata.totalDaysOfWorkForAverage.push(data.totalWorkingDays);
-    return data;
+  }
+  if(hasHardChildData) {
+    return childRollup;
+  }
+  if(hasHardParentData) {
+    return parentRollup;
   }
 
-  // if there is weak children data, use it, but don't use it for other averages
-  else if (childrenRollups.length) {
-    data = sumChildRollups(childrenRollups);
-    return data;
-  }
-  // if there are no children, add to get the uncertainty
-  else {
-    data = emptyRollup();
-    metadata.needsAverageSet.push(data);
-    return data;
-  }
-}*/
+  // now we have no hard parent, do we have soft data?
+  if (childrenRollups.length) {
+    return sumChildRollups(childrenRollups);
+  } 
+
+  // no data ... lets get an average and do our best ...
+  const data = emptyRollup();
+  metadata.needsAverageSet.push(data);
+  return data;
+}
 
 export function childrenFirstThenParent<T>(
   parentIssueOrRelease: IssueOrRelease<T>,
