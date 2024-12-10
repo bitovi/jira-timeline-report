@@ -72,7 +72,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         <InheritanceToggleField
           isInheriting={
             // Look for undefined and null but not false
-            !userData.spreadEffortAcrossDates == null
+            userData.spreadEffortAcrossDates == null
           }
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("spreadEffortAcrossDates", shouldCustomize)
