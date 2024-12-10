@@ -63,7 +63,7 @@ export const createUpdatedTeamData = (
 ): AllTeamData => {
   const teamData =
     allTeamData[config.teamName] ??
-    createEmptyTeamConfiguration(Object.keys(allTeamData.__GLOBAL__));
+    createEmptyTeamConfiguration(Object.keys(allTeamData?.__GLOBAL__ ?? {}));
 
   return {
     ...allTeamData,
