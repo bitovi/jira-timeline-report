@@ -6,7 +6,7 @@ import "./status-filter-only.js";
 import "./reports/gantt-grid.js";
 import "./reports/table-grid.js";
 import "./reports/scatter-timeline.js";
-import "./status-report.js";
+import "./reports/status-report.js";
 import "./timeline-configuration/timeline-configuration.js";
 
 import "./select-issue-type/select-issue-type.js";
@@ -14,8 +14,8 @@ import "./select-report-type/select-report-type.js";
 import "./select-view-settings/select-view-settings.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
-import { calculateReportStatuses } from "./jira/rolledup/work-status.js/work-status.js";
-import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup.js";
+import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
+import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup";
 import { pushStateObservable } from "./shared/state-storage.js";
 
 import { createRoot } from "react-dom/client";

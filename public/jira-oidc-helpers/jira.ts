@@ -8,6 +8,7 @@ import { FetchJiraIssuesParams } from "../jira/shared/types";
 import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from "./types";
 import { fetchFromLocalStorage } from "./storage";
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from "./fetchAllJiraIssuesWithJQLAndFetchAllChangelog";
+import { uniqueKeys } from "../shared/unique";
 
 export function fetchAccessibleResources(config: Config) {
   return () => {
@@ -24,7 +25,10 @@ export function fetchJiraIssue(config: Config) {
     return config.requestHelper(`/api/3/issue/${issueId}`);
   };
 }
-export const fieldsToEditBody = (obj: Record<string, any>, fieldMapping: { nameMap: Record<string, string> }) => {
+export const fieldsToEditBody = (
+  obj: Record<string, any>,
+  fieldMapping: { nameMap: Record<string, string> }
+) => {
   const editBody: {
     fields: Record<string, any>;
     update: Record<string, { set: any }[]>;
@@ -57,8 +61,9 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
       fields: params.fields?.map((f) => (f in fields.nameMap ? fields.nameMap[f] : f)),
     };
     const response = await fetchJiraIssuesWithJQL(config)(newParams);
+    const uniqueIssues = uniqueKeys(response.issues as OidcJiraIssue[]);
 
-    return (response.issues as OidcJiraIssue[]).map((issue: OidcJiraIssue) => {
+    return uniqueIssues.map((issue: OidcJiraIssue) => {
       return {
         ...issue,
         fields: mapIdsToNames(issue.fields, fields) as TField,
@@ -69,7 +74,9 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
 export function fetchJiraIssuesWithJQL(config: Config) {
   return (params: FetchJiraIssuesParams) => {
     // TODO - investigate this and convert params to proper type
-    return config.requestHelper(`/api/3/search?` + new URLSearchParams(params as Record<string, string>));
+    return config.requestHelper(
+      `/api/3/search?` + new URLSearchParams(params as Record<string, string>)
+    );
   };
 }
 // TODO ... we probably can remove this.  It's also not working right.
@@ -145,7 +152,8 @@ export function fetchJiraChangelog(config: Config) {
   return (issueIdOrKey: string, params: FetchJiraIssuesParams) => {
     // TODO investigate this - convert params to proper type
     return config.requestHelper(
-      `/api/3/issue/${issueIdOrKey}/changelog?` + new URLSearchParams(JiraIssueParamsToParams(params))
+      `/api/3/issue/${issueIdOrKey}/changelog?` +
+        new URLSearchParams(JiraIssueParamsToParams(params))
     );
   };
 }
@@ -214,14 +222,20 @@ export function fetchRemainingChangelogsForIssue(config: Config) {
 // this could do each response incrementally, but I'm being lazy
 export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields =
   (config: Config) =>
-  async (params: { fields: string[]; [key: string]: any }, progress: (data: ProgressData) => void = () => {}) => {
+  async (
+    params: { fields: string[]; [key: string]: any },
+    progress: (data: ProgressData) => void = () => {}
+  ) => {
     const fields = await config.fieldsRequest();
 
     const newParams = {
       ...params,
       fields: params.fields.map((f) => fields?.nameMap[f] || f),
     };
-    const response = await fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(newParams, progress);
+    const response = await fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(
+      newParams,
+      progress
+    );
 
     return response.map((issue) => {
       return {
@@ -264,13 +278,19 @@ export function fetchDeepChildren(config: Config) {
     sourceParentIssues: Issue[],
     progress: (data: ProgressData) => void = () => {}
   ): Promise<Issue[]> => {
-    const batchedFirstResponses = fetchChildrenResponses(config)(params, sourceParentIssues, progress);
+    const batchedFirstResponses = fetchChildrenResponses(config)(
+      params,
+      sourceParentIssues,
+      progress
+    );
 
     const getChildren = (parentIssues: Issue[]) => {
       if (parentIssues.length) {
-        return fetchDeepChildren(config)(params, parentIssues, progress).then((deepChildrenIssues) => {
-          return parentIssues.concat(deepChildrenIssues);
-        });
+        return fetchDeepChildren(config)(params, parentIssues, progress).then(
+          (deepChildrenIssues) => {
+            return parentIssues.concat(deepChildrenIssues);
+          }
+        );
       } else {
         return parentIssues;
       }
