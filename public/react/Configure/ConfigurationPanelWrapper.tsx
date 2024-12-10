@@ -9,8 +9,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "react-error-boundary";
 
-import { StorageProvider } from "./services/storage";
-import { JiraProvider } from "./services/jira";
+import { StorageProvider } from "../services/storage";
+import { JiraProvider } from "../services/jira";
 import ConfigurationPanel from "./ConfigurationPanel";
 import Spinner from "@atlaskit/spinner";
 

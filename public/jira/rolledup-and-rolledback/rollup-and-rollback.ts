@@ -42,7 +42,7 @@ export function rollupAndRollback(
 
   // TODO: use id in the future to handle issue keys being changed
   const oldMap: { [key: string]: (typeof pastStatusRolledUp)[number] } = {};
-  for (const oldIssue of currentStatusRolledUp) {
+  for (const oldIssue of pastStatusRolledUp) {
     oldMap[oldIssue.key] = oldIssue;
   }
   // associate

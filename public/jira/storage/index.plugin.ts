@@ -40,6 +40,8 @@ const createUpdate = (jiraHelpers: Parameters<StorageFactory>[number]) => {
 
 export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
   return {
+    // if they're in the plugin app data gets initialized in the get
+    storageInitialized: async () => true,
     get: async function <TData>(key: string): Promise<TData | null> {
       if (!AP) {
         throw new Error("[Storage Error]: get (plugin) can only be used when connected with jira.");

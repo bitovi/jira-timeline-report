@@ -36,6 +36,7 @@ export default [
     output: {
       file: "./public/dist/hosted-main.js",
       format: "esm",
+      inlineDynamicImports: true,
     },
     plugins: [
       nodeResolve(),
@@ -54,6 +55,7 @@ export default [
     output: {
       file: "./public/dist/hosted-main.min.js",
       format: "esm",
+      inlineDynamicImports: true,
     },
     plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
     ...warn,
@@ -63,6 +65,7 @@ export default [
     output: {
       file: "./public/dist/connect-main.min.js",
       format: "esm",
+      inlineDynamicImports: true,
     },
     plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
     ...warn,
