@@ -35,6 +35,9 @@ const IssueAccordion: FC<IssueAccordionProps> = ({
     ...formData,
   });
 
+  console.table(formProps.userData);
+  console.table(formProps.augmented);
+
   return (
     <Accordion startsOpen={hierarchyLevel === "defaults"}>
       <AccordionTitle>

@@ -25,7 +25,10 @@ const getTeamDataWithIssueHierarchys = async (
   jiraHelpers: Jira,
   storage: AppStorage
 ): Promise<{ userData: AllTeamData; issueHeirarchy: IssueHierarchy[] }> => {
-  const issueHeirarchy: IssueHierarchy[] = await getSimplifiedIssueHierarchy({ jiraHelpers, isLoggedIn: true });
+  const issueHeirarchy: IssueHierarchy[] = await getSimplifiedIssueHierarchy({
+    jiraHelpers,
+    isLoggedIn: true,
+  });
 
   return {
     issueHeirarchy,
@@ -56,16 +59,15 @@ export const useAllTeamData: UseAllTeamData = (jiraFields) => {
     queryFn: async () => getTeamDataWithIssueHierarchys(jira, storage),
   });
 
-  const result = {
+  return {
     issueHeirarchy: data.issueHeirarchy,
     userAllTeamData: data.userData,
-    augmentedAllTeamData: applyInheritance("__GLOBAL__", applyGlobalDefaultData(data.userData, jiraFields)),
+    augmentedAllTeamData: applyInheritance(
+      "__GLOBAL__",
+      applyGlobalDefaultData(data.userData, jiraFields),
+      data.issueHeirarchy.map((level) => level.hierarchyLevel.toString())
+    ),
   };
-
-  console.table(result.userAllTeamData)
-  console.table(result.augmentedAllTeamData)
-
-  return result;
 };
 
 export type UseTeamData = (
@@ -84,15 +86,18 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
   const userData =
     userAllTeamData[teamName] ||
     createEmptyTeamConfiguration(issueHeirarchy.map((type) => type.hierarchyLevel.toString()));
-  const augmented = applyInheritance(teamName, augmentedAllTeamData)[teamName]!;
-  console.table(userData)
-  console.table(augmented)
+  const augmented = applyInheritance(
+    teamName,
+    augmentedAllTeamData,
+    issueHeirarchy.map((level) => level.hierarchyLevel.toString())
+  )[teamName]!;
 
   return {
     userTeamData: userData,
     augmentedTeamData: augmented,
     getHierarchyLevelName: (unformattedLevel: number | string) => {
-      const level = typeof unformattedLevel === "number" ? unformattedLevel : parseInt(unformattedLevel, 10);
+      const level =
+        typeof unformattedLevel === "number" ? unformattedLevel : parseInt(unformattedLevel, 10);
       const issueHeirarchyLevel = issueHeirarchy.find((issue) => issue.hierarchyLevel === level);
 
       if (!issueHeirarchyLevel) {
@@ -112,13 +117,19 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
       return issueHeirarchyLevel.name;
     },
     getInheritance: (issueType) => {
-      let empty = createEmptyTeamConfiguration(issueHeirarchy.map((type) => type.hierarchyLevel.toString()));
+      let empty = createEmptyTeamConfiguration(
+        issueHeirarchy.map((type) => type.hierarchyLevel.toString())
+      );
 
       if (issueType !== "defaults") {
         empty = { ...empty, defaults: { ...augmented.defaults } };
       }
 
-      return getInheritedData(empty, augmentedAllTeamData);
+      return getInheritedData(
+        empty,
+        augmentedAllTeamData,
+        issueHeirarchy.map((level) => level.hierarchyLevel.toString())
+      );
     },
   };
 };

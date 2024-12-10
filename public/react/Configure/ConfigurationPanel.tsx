@@ -27,10 +27,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
   ...configurationProps
 }) => {
   const jiraFields = useJiraIssueFields();
-  const { userAllTeamData, ...rest} = useAllTeamData(jiraFields);
-
-  console.table(userAllTeamData)
-  console.table(rest.augmentedAllTeamData)
+  const { userAllTeamData } = useAllTeamData(jiraFields);
 
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
 
@@ -57,7 +54,11 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
         )}
         {!!selectedTeam && selectedTeam !== "global" && (
           <div className="w-128">
-            <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
+            <ConfigureTeams
+              teamName={selectedTeam}
+              jiraFields={jiraFields}
+              {...configurationProps}
+            />
           </div>
         )}
       </StorageCheck>

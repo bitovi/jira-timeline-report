@@ -10,12 +10,23 @@ import ErrorIcon from "@atlaskit/icon/glyph/error";
 
 import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
-import { createFullyInheritedConfig, createUpdatedTeamData, updateAllTeamData } from "../team-configuration";
+import {
+  createFullyInheritedConfig,
+  createUpdatedTeamData,
+  updateAllTeamData,
+} from "../team-configuration";
 import { createNormalizeConfiguration } from "../../../shared/normalize";
 import { jiraKeys } from "../../../../../../services/jira";
 
-type UseSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
-  save: UseMutateFunction<void, Error, AllTeamData, { previousUserData: TeamDataCache | undefined }>;
+type UseSaveAllTeamData = (config?: {
+  onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
+}) => {
+  save: UseMutateFunction<
+    void,
+    Error,
+    AllTeamData,
+    { previousUserData: TeamDataCache | undefined }
+  >;
   isSaving: boolean;
 };
 
@@ -32,7 +43,9 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
     onMutate: async (updates) => {
       await queryClient.cancelQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
 
-      const previousUserData = queryClient.getQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData);
+      const previousUserData = queryClient.getQueryData<TeamDataCache>(
+        updateTeamConfigurationKeys.allTeamData
+      );
 
       queryClient.setQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData, {
         ...(previousUserData ?? { issueHeirarchy: [] }),
@@ -43,7 +56,13 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
     },
     onSettled: (data, error, allTeamData) => {
       queryClient.invalidateQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
-      const jiraFields = queryClient.getQueryData<ReturnType<UseJiraIssueFields>>(jiraKeys.allIssueFields());
+      const jiraFields = queryClient.getQueryData<ReturnType<UseJiraIssueFields>>(
+        jiraKeys.allIssueFields()
+      );
+
+      const allData = queryClient.getQueryData<TeamDataCache>(
+        updateTeamConfigurationKeys.allTeamData
+      );
 
       if (!jiraFields) {
         console.warn(
@@ -58,7 +77,24 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
         return;
       }
 
-      const fullConfig = createFullyInheritedConfig(allTeamData, jiraFields);
+      if (!allData) {
+        console.warn(
+          [
+            "useSaveAllTeamData (react/team-configuration):",
+            "Tried to derive all team data without heirarchyeLevels.",
+            "Empty normalize override was returned",
+          ].join("\n")
+        );
+
+        config?.onUpdate?.({});
+        return;
+      }
+
+      const fullConfig = createFullyInheritedConfig(
+        allTeamData,
+        jiraFields,
+        allData?.issueHeirarchy?.map((level) => level.hierarchyLevel.toString())
+      );
 
       config?.onUpdate?.(createNormalizeConfiguration(fullConfig));
     },
@@ -101,20 +137,56 @@ export const useSaveTeamData: UseSaveTeamData = (config) => {
   return {
     isSaving,
     save: (updates: Configuration) => {
-      const allTeamData = queryClient.getQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData);
+      const allTeamData = queryClient.getQueryData<TeamDataCache>(
+        updateTeamConfigurationKeys.allTeamData
+      );
 
       if (!allTeamData) {
         console.warn("Could not save without all team data");
         return;
       }
 
-      save(
-        createUpdatedTeamData(allTeamData.userData, {
-          teamName,
-          hierarchyLevel,
-          configuration: updates,
-        })
-      );
+      const allUpdates = createUpdatedTeamData(allTeamData.userData, {
+        teamName,
+        hierarchyLevel,
+        configuration: updates,
+      });
+
+      const sanitized = entriesFlatMap(allUpdates, ([teamKey, teamConfig]) => {
+        if (!teamConfig) return [];
+
+        const configs = entriesFlatMap(teamConfig, ([configKey, config]) => {
+          if (!config) return [];
+
+          const sanitizedConfig = filterNullValues(config);
+          return notEmpty(sanitizedConfig, [configKey, sanitizedConfig]);
+        });
+
+        return notEmpty(configs, [teamKey, configs]);
+      });
+
+      save(sanitized as any);
     },
   };
 };
+
+function entriesFlatMap<T, R extends readonly [string, any]>(
+  obj: Record<string, T>,
+  fn: (entry: [string, T]) => R[]
+): T {
+  return Object.fromEntries(Object.entries(obj).flatMap(fn)) as T;
+}
+
+function filterNullValues<T extends object>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => value != null)
+  ) as Partial<T>;
+}
+
+function notEmpty<T extends object | undefined>(value: T, result: [string, T]) {
+  if (!value) {
+    return [];
+  }
+
+  return Object.keys(value).length > 0 ? [result] : [];
+}

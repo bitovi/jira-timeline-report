@@ -32,6 +32,7 @@ import { makeArrayOfStringsQueryParamValue } from "../shared/state-storage.js";
 
 import "../status-filter.js";
 import "./timing-calculation/timing-calculation.js";
+import { getSimplifiedIssueHierarchy } from "../stateful-data/jira-data-requests.js";
 
 const booleanParsing = {
   parse: (x) => {
@@ -165,10 +166,16 @@ export class TimelineConfiguration extends StacheElement {
 
   static props = {
     // passed
-    showSettings: saveJSONToUrl("settings", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    showSettings: saveJSONToUrl("settings", "", String, {
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+    }),
     jql: saveJSONToUrl("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
     loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
-    childJQL: saveJSONToUrl("childJQL", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    childJQL: saveJSONToUrl("childJQL", "", String, {
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+    }),
     statusesToExclude: makeArrayOfStringsQueryParamValue("statusesToExclude"),
 
     // from children
@@ -193,7 +200,10 @@ export class TimelineConfiguration extends StacheElement {
       },
     },
     get serverInfoPromise() {
-      return serverInfoPromise({ jiraHelpers: this.jiraHelpers, isLoggedIn: value.from(this, "isLoggedIn") });
+      return serverInfoPromise({
+        jiraHelpers: this.jiraHelpers,
+        isLoggedIn: value.from(this, "isLoggedIn"),
+      });
     },
     get configurationPromise() {
       return configurationPromise({
@@ -245,9 +255,17 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
-    Promise.all([this.jiraHelpers.fetchJiraFields(), getAllTeamData(this.storage)])
-      .then(([jiraFields, teamData]) => {
-        const allTeamData = createFullyInheritedConfig(teamData, jiraFields);
+    Promise.all([
+      this.jiraHelpers.fetchJiraFields(),
+      getAllTeamData(this.storage),
+      getSimplifiedIssueHierarchy(this.jiraHelpers, { isLoggedIn: this.isLoggedIn }),
+    ])
+      .then(([jiraFields, teamData, hierarchyLevels]) => {
+        const allTeamData = createFullyInheritedConfig(
+          teamData,
+          jiraFields,
+          hierarchyLevels.map((type) => type.hierarchyLevel.toString())
+        );
         return allTeamData;
       })
       .then((allTeamData) => {
