@@ -108,7 +108,7 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       //metadata.averageChildCount = average( metadata.childCounts )
       // set average on children that need it
       metadata.needsAverageSet.forEach((data) => {
-        data.totalWorkingDays = ave;
+        data.totalWorkingDays += ave;
       });
     },
   });
@@ -216,6 +216,10 @@ export function childrenFirstThenParent<T>(
   // if there are no children, add to get the uncertainty
   else {
     data = emptyRollup();
+    if (isDerivedIssue(parentIssueOrRelease)) {
+      data.completedWorkingDays = data.totalWorkingDays =
+        parentIssueOrRelease?.derivedTiming.completedDaysOfWork;
+    }
     metadata.needsAverageSet.push(data);
     return data;
   }
