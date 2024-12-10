@@ -6,7 +6,7 @@ import "./status-filter-only.js";
 import "./reports/gantt-grid.js";
 import "./reports/table-grid.js";
 import "./reports/scatter-timeline.js";
-import "./status-report.js";
+import "./reports/status-report.js";
 import "./timeline-configuration/timeline-configuration.js";
 
 import "./select-issue-type/select-issue-type.js";
