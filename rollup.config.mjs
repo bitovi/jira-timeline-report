@@ -3,11 +3,13 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "rollup-plugin-typescript2";
 import babel from "@rollup/plugin-babel";
+import alias from "@rollup/plugin-alias";
 
 const babelProd = {
   exclude: "node_modules/**",
   plugins: ["@babel/plugin-transform-react-jsx"],
   babelHelpers: "bundled",
+
 };
 
 const warn = {
@@ -18,6 +20,19 @@ const warn = {
     }
 
     warn(warning);
+  },
+};
+
+const aliases = {
+  hosted: {
+    entries: {
+      '@routing-observable': `${import.meta.dirname}/public/shared/route-pushstate`,
+    },
+  },
+  connect: {
+    entries: {
+      "@routing-observable": `${import.meta.dirname}/public/jira/history/observable`,
+    },
   },
 };
 
@@ -46,6 +61,7 @@ export default [
         plugins: ["@babel/plugin-transform-react-jsx-development"],
         babelHelpers: "bundled",
       }),
+      alias(aliases.hosted),
     ],
     ...warn,
   },
@@ -55,7 +71,7 @@ export default [
       file: "./public/dist/hosted-main.min.js",
       format: "esm",
     },
-    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
+    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd), alias(aliases.hosted)],
     ...warn,
   },
   {
@@ -64,7 +80,7 @@ export default [
       file: "./public/dist/connect-main.min.js",
       format: "esm",
     },
-    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
+    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd), alias(aliases.connect)],
     ...warn,
   },
 ];

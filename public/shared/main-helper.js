@@ -34,7 +34,7 @@ export default async function mainHelper(config, { host, createStorage }) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
-  route.start();
+  // route.start();
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 

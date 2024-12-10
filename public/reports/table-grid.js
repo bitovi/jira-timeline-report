@@ -337,15 +337,23 @@ export class TableGrid extends StacheElement {
   }
   connected() {
     if(FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
-        createRoot(document.getElementById("stats")).render(
+        let root = this.statsRoot;
+        if (!root) {
+            root = this.statsRoot = createRoot(document.getElementById("stats"));
+        }
+        root.render(
             createElement(Stats, {
               primaryIssuesOrReleasesObs: value.from(this,"primaryIssuesOrReleases")
             })
           );
     }
-    
-}
-  
+  }
+  disconnected() {
+    if (this.statsRoot) {
+      this.statsRoot.unmount();
+      this.statsRoot = null;
+    }
+  }
 }
 
 customElements.define("table-grid", TableGrid);

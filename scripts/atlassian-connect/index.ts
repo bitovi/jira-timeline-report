@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const connectMetadata = {
-  local: { name: "Timeline Report (Local)", baseUrl: "<add-ngrok-url>", key: "bitovi.timeline-report.local" },
+  local: { name: "Timeline Report (Local, Brad)", baseUrl: "https://0342-68-187-209-164.ngrok-free.app", key: "bitovi.timeline-report.local.brad" },
   staging: {
     name: "Timeline Report (Staging)",
     baseUrl: "https://timeline-report-staging.bitovi-jira.com",
@@ -57,7 +57,7 @@ function main() {
 
 main();
 
-function createModules({ name }: Metadata) {
+function createModules({ name, key }: Metadata) {
   return {
     modules: {
       generalPages: [
@@ -70,7 +70,7 @@ function createModules({ name }: Metadata) {
           },
         },
         {
-          url: "/connect?primaryIssueType={ac.primaryIssueType}&hideUnknownInitiatives={ac.hideUnknownInitiatives}&jql={ac.jql}&loadChildren={ac.loadChildren}&primaryReportType={ac.primaryReportType}&secondaryReportType={ac.secondaryReportType}&showPercentComplete={ac.showPercentComplete}&showOnlySemverReleases={ac.showOnlySemverReleases}",
+          url: `/connect?primaryIssueType={ac.${key}.primaryIssueType}&hideUnknownInitiatives={ac.${key}.hideUnknownInitiatives}&jql={ac.${key}.jql}&loadChildren={ac.${key}.loadChildren}&primaryReportType={ac.${key}.primaryReportType}&secondaryReportType={ac.${key}.secondaryReportType}&showPercentComplete={ac.${key}.showPercentComplete}&showOnlySemverReleases={ac.${key}.showOnlySemverReleases}`,
           key: "deeplink",
           location: "none",
           name: {
