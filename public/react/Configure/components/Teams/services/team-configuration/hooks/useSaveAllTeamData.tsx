@@ -10,13 +10,10 @@ import ErrorIcon from "@atlaskit/icon/glyph/error";
 
 import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
-import {
-  createFullyInheritedConfig,
-  createUpdatedTeamData,
-  updateAllTeamData,
-} from "../team-configuration";
+import { createFullyInheritedConfig, updateAllTeamData } from "../team-configuration";
 import { createNormalizeConfiguration } from "../../../shared/normalize";
 import { jiraKeys } from "../../../../../../services/jira";
+import { sanitizeAllTeamData } from "./sanitizeAllTeamData";
 
 type UseSaveAllTeamData = (config?: {
   onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
@@ -146,47 +143,14 @@ export const useSaveTeamData: UseSaveTeamData = (config) => {
         return;
       }
 
-      const allUpdates = createUpdatedTeamData(allTeamData.userData, {
+      const sanitized = sanitizeAllTeamData(
+        allTeamData.userData,
         teamName,
         hierarchyLevel,
-        configuration: updates,
-      });
-
-      const sanitized = entriesFlatMap(allUpdates, ([teamKey, teamConfig]) => {
-        if (!teamConfig) return [];
-
-        const configs = entriesFlatMap(teamConfig, ([configKey, config]) => {
-          if (!config) return [];
-
-          const sanitizedConfig = filterNullValues(config);
-          return notEmpty(sanitizedConfig, [configKey, sanitizedConfig]);
-        });
-
-        return notEmpty(configs, [teamKey, configs]);
-      });
+        updates
+      );
 
       save(sanitized as any);
     },
   };
 };
-
-function entriesFlatMap<T, R extends readonly [string, any]>(
-  obj: Record<string, T>,
-  fn: (entry: [string, T]) => R[]
-): T {
-  return Object.fromEntries(Object.entries(obj).flatMap(fn)) as T;
-}
-
-function filterNullValues<T extends object>(obj: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([_, value]) => value != null)
-  ) as Partial<T>;
-}
-
-function notEmpty<T extends object | undefined>(value: T, result: [string, T]) {
-  if (!value) {
-    return [];
-  }
-
-  return Object.keys(value).length > 0 ? [result] : [];
-}

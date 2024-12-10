@@ -1,6 +1,10 @@
 import type { AllTeamData, Configuration, IssueFields, TeamConfiguration } from "./shared";
 import { expect, test, describe } from "vitest";
-import { createEmptyAllTeamsData, createEmptyConfiguration, createEmptyTeamConfiguration } from "./shared";
+import {
+  createEmptyAllTeamsData,
+  createEmptyConfiguration,
+  createEmptyTeamConfiguration,
+} from "./shared";
 import { applyInheritance, getInheritedData } from "./inheritance";
 import { applyGlobalDefaultData, getGlobalDefaultData } from "./allTeamDefault";
 import { getTeamData } from "./fetcher";
@@ -10,15 +14,28 @@ const createConfiguration = (overrides: Partial<Configuration> = {}): Configurat
   ...overrides,
 });
 
-const createTeamConfiguration = (overrides: Partial<TeamConfiguration> = {}): TeamConfiguration => ({
-  ...createEmptyTeamConfiguration(["defaults", "outcome", "milestones", "initiatives", "epics", "stories"]),
+const createTeamConfiguration = (
+  overrides: Partial<TeamConfiguration> = {}
+): TeamConfiguration => ({
+  ...createEmptyTeamConfiguration([
+    "defaults",
+    "outcome",
+    "milestones",
+    "initiatives",
+    "epics",
+    "stories",
+  ]),
   ...overrides,
 });
 
-const createAllTeamData = (teamOverrides: Partial<Record<string, TeamConfiguration>> = {}): AllTeamData => ({
+const createAllTeamData = (
+  teamOverrides: Partial<Record<string, TeamConfiguration>> = {}
+): AllTeamData => ({
   ...createEmptyAllTeamsData(),
   ...teamOverrides,
 });
+
+const hierarchyLevels = ["3", "2", "1", "0"];
 
 const jiraFields: IssueFields = [
   {
@@ -106,15 +123,19 @@ describe("Configuration Inheritance and Defaults", () => {
           sprintLength: 15,
           velocityPerSprint: 30,
         }),
-        epics: createConfiguration({
+        ["2"]: createConfiguration({
           tracks: 2,
         }),
       }),
     };
 
-    const teamAInheritedData = getInheritedData(getTeamData("Team A", allTeamData), allTeamData);
+    const teamAInheritedData = getInheritedData(
+      getTeamData("Team A", allTeamData),
+      allTeamData,
+      hierarchyLevels
+    );
 
-    expect(teamAInheritedData.epics).toEqual({
+    expect(teamAInheritedData[2]).toEqual({
       sprintLength: 15,
       velocityPerSprint: 30,
       tracks: 2,
@@ -125,7 +146,7 @@ describe("Configuration Inheritance and Defaults", () => {
       dueDateField: "Due date",
     });
 
-    expect(teamAInheritedData.stories).toEqual({
+    expect(teamAInheritedData[3]).toEqual({
       sprintLength: 15,
       velocityPerSprint: 30,
       tracks: 1,
@@ -169,7 +190,7 @@ describe("Configuration Inheritance and Defaults", () => {
           startDateField: "Start date",
           dueDateField: "Due date",
         },
-        epics: createConfiguration({
+        ['2']: createConfiguration({
           spreadEffortAcrossDates: true,
         }),
       }),
@@ -177,16 +198,16 @@ describe("Configuration Inheritance and Defaults", () => {
         defaults: createConfiguration({
           tracks: 3,
         }),
-        stories: createConfiguration({
+        ['3']: createConfiguration({
           estimateField: "Custom Estimate",
         }),
       }),
     };
 
     const augmentedData = applyGlobalDefaultData(allTeamData, jiraFields);
-    const inheritedData = applyInheritance("Team B", augmentedData);
+    const inheritedData = applyInheritance("Team B", augmentedData, hierarchyLevels);
 
-    expect(inheritedData["Team B"]?.epics).toEqual({
+    expect(inheritedData["Team B"]?.['2']).toEqual({
       sprintLength: 10,
       velocityPerSprint: 21,
       tracks: 3,
@@ -197,7 +218,7 @@ describe("Configuration Inheritance and Defaults", () => {
       dueDateField: "Due date",
     });
 
-    expect(inheritedData["Team B"]?.stories).toEqual({
+    expect(inheritedData["Team B"]?.['3']).toEqual({
       sprintLength: 10,
       velocityPerSprint: 21,
       tracks: 3,
