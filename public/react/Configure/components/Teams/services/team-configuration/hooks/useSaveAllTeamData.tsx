@@ -150,7 +150,7 @@ export const useSaveTeamData: UseSaveTeamData = (config) => {
         updates
       );
 
-      save(sanitized as any);
+      save(sanitized);
     },
   };
 };

@@ -40,11 +40,11 @@ describe("updateAllTeamData", () => {
       },
     };
 
-    const allTeamData2 = sanitizeAllTeamData(allTeamData, "__GLOBAL__", "defaults", {
+    const tmp = sanitizeAllTeamData(allTeamData, "__GLOBAL__", "defaults", {
       sprintLength: 1,
       velocityPerSprint: 2,
     } as Configuration);
-    const actual = sanitizeAllTeamData(allTeamData2, "bazbat", "0", {
+    const actual = sanitizeAllTeamData(tmp, "bazbat", "0", {
       sprintLength: 4,
       velocityPerSprint: 2,
     } as Configuration);
