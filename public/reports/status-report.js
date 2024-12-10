@@ -5,7 +5,7 @@ import { dateFormatter } from "../issue-tooltip.js";
 import { DAY_IN_MS } from "../date-helpers.js";
 
 import { showTooltip } from "../issue-tooltip.js";
-import { workTypes } from "../jira/derived/work-status/work-status.js";
+import { workTypes } from "../jira/derived/work-status/work-status";
 
 const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
 
