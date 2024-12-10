@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from "react";
-import type { AppStorage } from "../../../../jira/storage/common";
 
 import React, { createContext, useContext } from "react";
+import { AppStorage } from "../../../jira/storage/common";
 
 type StorageContextValues = AppStorage | null;
 

@@ -4,7 +4,7 @@ import type { AppStorage } from "../../../../../../../jira/storage/common";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { useStorage } from "../../../../../services/storage";
+import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
 import {
   applyGlobalDefaultData,
@@ -13,8 +13,8 @@ import {
   getAllTeamData,
   getInheritedData,
 } from "../../team-configuration";
-import { useJira } from "../../../../../services/jira";
 import { getSimplifiedIssueHierarchy } from "../../../../../../../stateful-data/jira-data-requests";
+import { useJira } from "../../../../../../services/jira";
 
 type IssueHierarchy = {
   name: string;

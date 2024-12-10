@@ -8,9 +8,6 @@ import {
 import { IssueOrRelease } from "../rollup";
 
 describe("rollupBlockedIssuesForGroupedHierarchy", () => {
-  // due, dueTo {message, reference} .... {start,startFrom}
-  // alt: {start, end, startedFrom, endedBy}
-
   it("does the basics", () => {
     let i7;
 

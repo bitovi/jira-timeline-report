@@ -6,7 +6,7 @@ import "./status-filter-only.js";
 import "./reports/gantt-grid.js";
 import "./reports/table-grid.js";
 import "./reports/scatter-timeline.js";
-import "./status-report.js";
+import "./reports/status-report.js";
 import "./timeline-configuration/timeline-configuration.js";
 
 import "./select-issue-type/select-issue-type.js";
@@ -16,6 +16,12 @@ import "./select-view-settings/select-view-settings.js";
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
 import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup";
+import { pushStateObservable } from "./shared/state-storage.js";
+
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+
+import SavedReports from "./react/SaveReports";
 
 import { DROPDOWN_LABEL } from "./shared/style-strings.js";
 
@@ -26,7 +32,6 @@ export class TimelineReport extends StacheElement {
           style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
-          teamConfigurationPromise:from="this.velocitiesConfiguration.teamConfigurationPromise"
 
           jql:to="this.jql"
           derivedIssuesRequestData:to="this.derivedIssuesRequestData"
@@ -56,9 +61,8 @@ export class TimelineReport extends StacheElement {
 
           </div>
       {{/ not }}
-
+          <div id="saved-reports" class='pb-5'></div>
           <div class="flex gap-1">
-            
             <select-issue-type 
               primaryIssueType:to="this.primaryIssueType"
               secondaryIssueType:to="this.secondaryIssueType"
@@ -181,6 +185,7 @@ export class TimelineReport extends StacheElement {
   static props = {
     // passed values
     timingCalculationMethods: type.Any,
+    storage: null,
 
     showingDebugPanel: { type: Boolean, default: false },
     timeSliderValue: {
@@ -231,7 +236,10 @@ export class TimelineReport extends StacheElement {
         return { timePrior: DAY * days, text: days + " days ago" };
       }
       const days = this.timeSliderValue;
-      return { timePrior: (MIN / 2) * this.timeSliderValue, text: this.timeSliderValue + " days ago" };
+      return {
+        timePrior: (MIN / 2) * this.timeSliderValue,
+        text: this.timeSliderValue + " days ago",
+      };
     },
 
     showingConfiguration: false,
@@ -247,7 +255,9 @@ export class TimelineReport extends StacheElement {
     get filteredDerivedIssues() {
       if (this.derivedIssues) {
         if (this.statusesToExclude?.length) {
-          return this.derivedIssues.filter(({ status }) => !this.statusesToExclude.includes(status));
+          return this.derivedIssues.filter(
+            ({ status }) => !this.statusesToExclude.includes(status)
+          );
         } else {
           return this.derivedIssues;
         }
@@ -256,8 +266,25 @@ export class TimelineReport extends StacheElement {
   };
 
   // hooks
-  async connected() {
+  rendered() {
     updateFullishHeightSection();
+  }
+
+  async connected() {
+    createRoot(document.getElementById("saved-reports")).render(
+      createElement(SavedReports, {
+        queryParamObservable: pushStateObservable,
+        storage: this.storage,
+        onViewReportsButtonClicked: (event) => {
+          this.showReports(event);
+        },
+      })
+    );
+  }
+
+  showReports(event) {
+    event?.stopPropagation?.();
+    document.querySelector("timeline-configuration").showSettings = "REPORTS";
   }
 
   get rollupTimingLevelsAndCalculations() {
@@ -274,8 +301,14 @@ export class TimelineReport extends StacheElement {
 
     if (this.primaryIssueType === "Release") {
       if (this.secondaryIssueType) {
-        const secondary = getIssueHierarchyUnderType(this.issueTimingCalculations, this.secondaryIssueType);
-        return [{ type: "Release", hierarchyLevel: Infinity, calculation: "childrenOnly" }, ...secondary];
+        const secondary = getIssueHierarchyUnderType(
+          this.issueTimingCalculations,
+          this.secondaryIssueType
+        );
+        return [
+          { type: "Release", hierarchyLevel: Infinity, calculation: "childrenOnly" },
+          ...secondary,
+        ];
       }
     } else {
       return getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
@@ -289,8 +322,12 @@ export class TimelineReport extends StacheElement {
         rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
         configuration: this.configuration
       } )*/
-     console.log("rolledupAndRolledBackIssuesAndReleases changed!")
-    if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.configuration) {
+    console.log("rolledupAndRolledBackIssuesAndReleases changed!");
+    if (
+      !this.filteredDerivedIssues ||
+      !this.rollupTimingLevelsAndCalculations ||
+      !this.configuration
+    ) {
       return [];
     }
 
@@ -324,7 +361,9 @@ export class TimelineReport extends StacheElement {
       return [];
     }
     const planningSourceIssues =
-      this.primaryIssueType === "Release" ? this.groupedParentDownHierarchy[1] : this.groupedParentDownHierarchy[0];
+      this.primaryIssueType === "Release"
+        ? this.groupedParentDownHierarchy[1]
+        : this.groupedParentDownHierarchy[0];
     return planningSourceIssues.filter((normalizedIssue) => {
       return this.planningStatuses.includes(normalizedIssue.status);
     });
@@ -363,7 +402,11 @@ export class TimelineReport extends StacheElement {
         }
       }
 
-      if (this.showOnlySemverReleases && this.primaryIssueType === "Release" && !issueOrRelease.names.semver) {
+      if (
+        this.showOnlySemverReleases &&
+        this.primaryIssueType === "Release" &&
+        !issueOrRelease.names.semver
+      ) {
         return false;
       }
 
@@ -373,14 +416,22 @@ export class TimelineReport extends StacheElement {
       if (this.primaryIssueType === "Release") {
         // releases don't have statuses, so we look at their children
         if (statusesToRemove && statusesToRemove.length) {
-          if (issueOrRelease.childStatuses.children.every(({ status }) => statusesToRemove.includes(status))) {
+          if (
+            issueOrRelease.childStatuses.children.every(({ status }) =>
+              statusesToRemove.includes(status)
+            )
+          ) {
             return false;
           }
         }
 
         if (statusesToShow && statusesToShow.length) {
           // Keep if any valeue has a status to show
-          if (!issueOrRelease.childStatuses.children.some(({ status }) => statusesToShow.includes(status))) {
+          if (
+            !issueOrRelease.childStatuses.children.some(({ status }) =>
+              statusesToShow.includes(status)
+            )
+          ) {
             return false;
           }
         }
@@ -401,7 +452,9 @@ export class TimelineReport extends StacheElement {
     });
 
     if (this.sortByDueDate) {
-      return filtered.toSorted((i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
+      return filtered.toSorted(
+        (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due
+      );
     } else {
       return filtered;
     }
@@ -439,7 +492,7 @@ function addTeamBreakdown(release) {
 // complete
 
 function getElementPosition(el) {
-  var rect = el.getBoundingClientRect();
+  var rect = el?.getBoundingClientRect();
   var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
   var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
   return { x: rect.left + scrollLeft, y: rect.top + scrollTop };

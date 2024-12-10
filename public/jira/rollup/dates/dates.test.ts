@@ -3,9 +3,6 @@ import { rollupDates, parentOnly, WithDateRollup } from "./dates";
 import { IssueOrRelease } from "../rollup";
 
 describe("rollupDates", () => {
-  // due, dueTo {message, reference} .... {start,startFrom}
-  // alt: {start, end, startedFrom, endedBy}
-
   const _2000 = new Date(2000, 0),
     _2001 = new Date(2001, 0),
     _2002 = new Date(2002, 0),

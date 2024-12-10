@@ -59,7 +59,7 @@ export function rollupAndRollback(
 
   // TODO: use id in the future to handle issue keys being changed
   const oldMap: { [key: string]: (typeof pastStatusRolledUp)[number] } = {};
-  for (const oldIssue of currentStatusRolledUp) {
+  for (const oldIssue of pastStatusRolledUp) {
     oldMap[oldIssue.key] = oldIssue;
   }
   // associate
@@ -107,6 +107,7 @@ export function rollbackNormalizeAndDeriveEverything(
   when: Date
 ) {
   const pastRawIssues = rollbackIssues(rawIssues, when);
+  // TODO remove commented code - DBrandon 2024/11/26
   //const dne = pastRawIssues.filter(ri => ri.rollbackMetadata.didNotExistBefore);
 
   const pastDerived = pastRawIssues.map((issue) => {

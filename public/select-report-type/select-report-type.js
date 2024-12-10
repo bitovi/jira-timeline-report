@@ -64,7 +64,16 @@ export class SelectReportType extends StacheElement {
         {{/ }}
     `;
     static props ={
-        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {parse: x => ""+x, stringify: x => ""+x}),
+        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
+            parse: function(x) {
+                if( REPORTS.find( report => report.key === x) ) {
+                    return x;
+                } else {
+                    return "start-due"
+                }
+            }, 
+            stringify: x => ""+x
+        }),
         reports: {
             get default(){
                 return REPORTS;

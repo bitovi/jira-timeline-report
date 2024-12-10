@@ -7,8 +7,6 @@ import {
   isDerivedIssue,
 } from "../rollup";
 
-// const BASE_HIERARCHY_LEVEL = 1;
-
 export type PercentCompleteMeta = {
   /** how many children on average */
   childCounts: number[];
@@ -34,7 +32,8 @@ export type WithPercentComplete = {
 };
 
 const methods = {
-  childrenFirstThenParent,
+  childrenFirstThenParent// ,
+  //widestRange
 };
 export type PercentCompleteCalculations = keyof typeof methods;
 
@@ -54,6 +53,7 @@ export function addPercentComplete<T>(
     rollupTimingLevelsAndCalculations
   );
 
+  // TODO remove commented code - DBrandon 2024/11/26
   // const rollupMethods = rollupTimingLevelsAndCalculations
   //   .map((rollupData) => rollupData.calculation)
   //   .reverse();
@@ -64,6 +64,7 @@ export function addPercentComplete<T>(
   }));
   return zipped.flat();
 }
+
 
 /**
  *
@@ -86,7 +87,6 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
         // this will be set later
         averageTotalDays: 0,
         averageChildCount: 0,
-        // issues: [],
       };
     },
     createRollupDataFromParentAndChild(
@@ -95,6 +95,7 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       hierarchyLevel,
       metadata
     ) {
+      // TODO remove commented code - DBrandon 2024/11/26
       const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
       const method = methods[methodName];
       return method(issueOrRelease, children, hierarchyLevel, metadata);
@@ -103,10 +104,11 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       let ave = average(metadata.totalDaysOfWorkForAverage) || 30;
       metadata.averageTotalDays = ave;
 
+      // TODO remove commented code - DBrandon 2024/11/26
       //metadata.averageChildCount = average( metadata.childCounts )
       // set average on children that need it
       metadata.needsAverageSet.forEach((data) => {
-        data.totalWorkingDays = ave;
+        data.totalWorkingDays += ave;
       });
     },
   });
@@ -121,6 +123,58 @@ function emptyRollup() {
       return this.totalWorkingDays - this.completedWorkingDays;
     },
   };
+}
+
+export function widestRange<T>(
+  parentIssueOrRelease: IssueOrRelease<T>,
+  childrenRollups: PercentCompleteRollup[],
+  _hierarchyLevel: number,
+  metadata: PercentCompleteMeta
+) {
+  const  childRollup = sumChildRollups(childrenRollups);
+  const hasHardChildData = childrenRollups.length && childRollup.userSpecifiedValues;
+
+  let hasHardParentData = false,
+    parentRollup,
+    parentTotalDaysOfWork = 0;
+  if(isDerivedIssue(parentIssueOrRelease) &&
+    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+    hasHardParentData = true;
+    parentTotalDaysOfWork = parentIssueOrRelease?.derivedTiming.totalDaysOfWork || 0;
+    parentRollup = {
+        completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
+        totalWorkingDays: parentTotalDaysOfWork,
+        userSpecifiedValues: true,
+        get remainingWorkingDays() {
+          return this.totalWorkingDays - this.completedWorkingDays;
+        },
+      };
+  }
+
+
+  if(hasHardChildData && hasHardParentData) {
+    if(childRollup.totalWorkingDays > (parentTotalDaysOfWork)) {
+      return childRollup;
+    } else {
+      return parentRollup
+    };
+  }
+  if(hasHardChildData) {
+    return childRollup;
+  }
+  if(hasHardParentData) {
+    return parentRollup;
+  }
+
+  // now we have no hard parent, do we have soft data?
+  if (childrenRollups.length) {
+    return sumChildRollups(childrenRollups);
+  } 
+
+  // no data ... lets get an average and do our best ...
+  const data = emptyRollup();
+  metadata.needsAverageSet.push(data);
+  return data;
 }
 
 export function childrenFirstThenParent<T>(
@@ -162,6 +216,10 @@ export function childrenFirstThenParent<T>(
   // if there are no children, add to get the uncertainty
   else {
     data = emptyRollup();
+    if (isDerivedIssue(parentIssueOrRelease)) {
+      data.completedWorkingDays = data.totalWorkingDays =
+        parentIssueOrRelease?.derivedTiming.completedDaysOfWork;
+    }
     metadata.needsAverageSet.push(data);
     return data;
   }

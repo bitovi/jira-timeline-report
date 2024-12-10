@@ -11,6 +11,7 @@ import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import TeamConfigure from "../react/Configure";
+import ViewReports from "../react/ViewReports";
 
 import {
   getAllTeamData,
@@ -50,7 +51,7 @@ const GOBACK_BUTTON = `
 
 export class TimelineConfiguration extends StacheElement {
   static view = `
-    <div class="pl-3 py-2 h-full">
+    <div class="px-3 py-2 h-full">
 
         {{# not(this.showSettings) }}
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
@@ -79,7 +80,6 @@ export class TimelineConfiguration extends StacheElement {
                 <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect with us</a>
             </p>  
         {{/ not }}
-
         
         <div width="w-96"  class="{{^ eq(this.showSettings, "SOURCES")}}hidden{{/}}">
             ${GOBACK_BUTTON}
@@ -156,6 +156,10 @@ export class TimelineConfiguration extends StacheElement {
            <div id="team-configuration" class='h-full'></div>
         </div>
 
+        <div class="{{^ eq(this.showSettings, "REPORTS")}}hidden{{/}} h-full">
+          <div id="view-reports" style="width:100vw;" class='h-full'></div>
+        </div>
+
     </div>
         `;
 
@@ -193,7 +197,6 @@ export class TimelineConfiguration extends StacheElement {
     },
     get configurationPromise() {
       return configurationPromise({
-        teamConfigurationPromise: this.teamConfigurationPromise,
         serverInfoPromise: this.serverInfoPromise,
         normalizeObservable: value.from(this.normalizeOptions),
       });
@@ -233,6 +236,9 @@ export class TimelineConfiguration extends StacheElement {
     get isShowingTeams() {
       return this.showSettings === "TEAMS";
     },
+    get isShowingReports() {
+      return this.showSettings === "REPORTS";
+    },
     goBack() {
       this.showSettings = "";
     },
@@ -240,8 +246,14 @@ export class TimelineConfiguration extends StacheElement {
   // HOOKS
   connectedCallback() {
     Promise.all([this.jiraHelpers.fetchJiraFields(), getAllTeamData(this.storage)])
-      .then(([jiraFields, teamData]) => createFullyInheritedConfig(teamData, jiraFields))
-      .then((allTeamData) => createNormalizeConfiguration(allTeamData))
+      .then(([jiraFields, teamData]) => {
+        const allTeamData = createFullyInheritedConfig(teamData, jiraFields);
+        return allTeamData;
+      })
+      .then((allTeamData) => {
+        const normalizedConfig = createNormalizeConfiguration(allTeamData);
+        return normalizedConfig;
+      })
       .catch(() => {
         // Could fail because storage hasn't been setup yet
         return {};
@@ -265,6 +277,16 @@ export class TimelineConfiguration extends StacheElement {
           this.normalizeOptions = configuration;
           queues.batch.stop();
         },
+        onBackButtonClicked: () => {
+          this.showSettings = "";
+        },
+      })
+    );
+
+    createRoot(document.getElementById("view-reports")).render(
+      createElement(ViewReports, {
+        storage: this.storage,
+        showingReportsObservable: value.from(this, "isShowingReports"),
         onBackButtonClicked: () => {
           this.showSettings = "";
         },
