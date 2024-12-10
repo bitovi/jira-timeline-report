@@ -21,7 +21,11 @@ export interface ConfigureAllTeamsProps {
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
   const { userTeamData, augmentedTeamData } = useTeamData("__GLOBAL__", jiraFields);
 
-  const { save, isSaving } = useSaveTeamData({ teamName: "__GLOBAL__", hierarchyLevel: "defaults", onUpdate });
+  const { save, isSaving } = useSaveTeamData({
+    teamName: "__GLOBAL__",
+    hierarchyLevel: "defaults",
+    onUpdate,
+  });
 
   return (
     <>

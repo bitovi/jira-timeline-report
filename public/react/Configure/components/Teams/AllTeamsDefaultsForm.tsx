@@ -24,7 +24,12 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
   value: Configuration[TProperty];
 }
 
-const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, augmented, jiraFields }) => {
+const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
+  save,
+  userData,
+  augmented,
+  jiraFields,
+}) => {
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
   const { register, handleSubmit, control } = useForm<Configuration>({
@@ -59,7 +64,10 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, aug
           name="confidenceField"
           label="Confidence field"
           jiraFields={[
-            { label: "", options: [{ value: "confidence-not-used", label: "Don't use confidence" }] },
+            {
+              label: "",
+              options: [{ value: "confidence-not-used", label: "Don't use confidence" }],
+            },
             { label: "Fields", options: selectableFields },
           ]}
           control={control}
@@ -98,7 +106,14 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, userData, aug
           register={register}
           onSave={update}
         />
-        <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
+        <TextField
+          name="tracks"
+          type="number"
+          label="Tracks"
+          min={1}
+          register={register}
+          onSave={update}
+        />
         <FormToggle
           name="spreadEffortAcrossDates"
           control={control}

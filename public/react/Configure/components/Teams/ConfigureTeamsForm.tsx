@@ -48,7 +48,9 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         </div>
         <InheritanceTextField
           isInheriting={!userData.velocityPerSprint}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance("velocityPerSprint", shouldCustomize)}
+          onInheritanceChange={(shouldCustomize) =>
+            toggleInheritance("velocityPerSprint", shouldCustomize)
+          }
           name="velocityPerSprint"
           type="number"
           label="Velocity per sprint"
@@ -68,8 +70,13 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           onSave={update}
         />
         <InheritanceToggleField
-          isInheriting={!userData.spreadEffortAcrossDates && typeof userData.spreadEffortAcrossDates === "object"}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance("spreadEffortAcrossDates", shouldCustomize)}
+          isInheriting={
+            // Look for undefined and null but not false
+            userData.spreadEffortAcrossDates == null
+          }
+          onInheritanceChange={(shouldCustomize) =>
+            toggleInheritance("spreadEffortAcrossDates", shouldCustomize)
+          }
           name="spreadEffortAcrossDates"
           control={control}
           onSave={update}
@@ -78,7 +85,9 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         />
         <InheritanceTextField
           isInheriting={!userData.sprintLength}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance("sprintLength", shouldCustomize)}
+          onInheritanceChange={(shouldCustomize) =>
+            toggleInheritance("sprintLength", shouldCustomize)
+          }
           name="sprintLength"
           type="number"
           label="Sprint length"
@@ -90,7 +99,9 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         <Hr />
         <InheritanceSelect
           isInheriting={!userData.estimateField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance("estimateField", shouldCustomize)}
+          onInheritanceChange={(shouldCustomize) =>
+            toggleInheritance("estimateField", shouldCustomize)
+          }
           name="estimateField"
           label="Estimate Field"
           jiraFields={selectableFields}
@@ -99,11 +110,16 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         />
         <InheritanceSelect
           isInheriting={!userData.confidenceField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance("confidenceField", shouldCustomize)}
+          onInheritanceChange={(shouldCustomize) =>
+            toggleInheritance("confidenceField", shouldCustomize)
+          }
           name="confidenceField"
           label="Confidence field"
           jiraFields={[
-            { label: "", options: [{ value: "confidence-not-used", label: "Don't use confidence" }] },
+            {
+              label: "",
+              options: [{ value: "confidence-not-used", label: "Don't use confidence" }],
+            },
             { label: "Fields", options: selectableFields },
           ]}
           control={control}
@@ -111,7 +127,9 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         />
         <InheritanceSelect
           isInheriting={!userData.startDateField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance("startDateField", shouldCustomize)}
+          onInheritanceChange={(shouldCustomize) =>
+            toggleInheritance("startDateField", shouldCustomize)
+          }
           name="startDateField"
           label="Start date field"
           jiraFields={selectableFields}
@@ -120,7 +138,9 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         />
         <InheritanceSelect
           isInheriting={!userData.dueDateField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance("dueDateField", shouldCustomize)}
+          onInheritanceChange={(shouldCustomize) =>
+            toggleInheritance("dueDateField", shouldCustomize)
+          }
           name="dueDateField"
           label="End date field"
           jiraFields={selectableFields}

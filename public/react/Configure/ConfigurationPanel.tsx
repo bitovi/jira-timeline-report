@@ -54,7 +54,11 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
         )}
         {!!selectedTeam && selectedTeam !== "global" && (
           <div className="w-128">
-            <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
+            <ConfigureTeams
+              teamName={selectedTeam}
+              jiraFields={jiraFields}
+              {...configurationProps}
+            />
           </div>
         )}
       </StorageCheck>
