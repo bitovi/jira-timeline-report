@@ -14,7 +14,9 @@ export const useSelectedReport = ({
   reports: Reports;
 }) => {
   const { updateReport } = useUpdateReport();
-  const selectedReport = useMemo<Report | undefined>(() => getReportFromParams(reports), [reports]);
+  const [selectedReport, setSelectedReport] = useState<Report | undefined>(() =>
+    getReportFromParams(reports)
+  );
 
   const [isDirty, setIsDirty] = useState(
     () => !paramsMatchReport(new URLSearchParams(window.location.search), reports)
@@ -22,6 +24,12 @@ export const useSelectedReport = ({
 
   useQueryParams(queryParamObservable, {
     onChange: (params) => {
+      const newSelectedReport = getReportFromParams(reports);
+
+      if (newSelectedReport?.id !== selectedReport?.id) {
+        setSelectedReport(newSelectedReport);
+      }
+
       setIsDirty(() => !paramsMatchReport(params, reports));
     },
   });
@@ -38,7 +46,11 @@ export const useSelectedReport = ({
 
       queryParams.delete("settings");
 
-      updateReport(selectedReport.id, { queryParams: queryParams.toString() }, { onSuccess: () => setIsDirty(false) });
+      updateReport(
+        selectedReport.id,
+        { queryParams: queryParams.toString() },
+        { onSuccess: () => setIsDirty(false) }
+      );
     },
     isDirty,
   };

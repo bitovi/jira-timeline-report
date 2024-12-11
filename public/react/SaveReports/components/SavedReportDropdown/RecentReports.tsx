@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import type { Reports } from "../../../../jira/reports";
 
-import React from "react";
+import React, { forwardRef } from "react";
 
 import { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
 import Hr from "../../../components/Hr";
@@ -13,7 +13,12 @@ interface RecentReportsProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-const RecentReports: FC<RecentReportsProps> = ({ recentReports, reports, onViewReportsButtonClicked, setIsOpen }) => {
+const RecentReports: FC<RecentReportsProps> = ({
+  recentReports,
+  reports,
+  onViewReportsButtonClicked,
+  setIsOpen,
+}) => {
   return (
     <>
       <DropdownItemGroup>
@@ -57,11 +62,9 @@ const ReportListItem: FC<ReportListItemProps> = ({ reports, reportId }) => {
   return (
     <DropdownItem
       key={reportId}
-      onClick={(event) => {
-        window.location.search = "?" + matched.queryParams;
-        // needed to not interfere with can routing
-        event.stopPropagation();
-      }}
+      // @ts-expect-error types for component overrides on ADS don't work
+      component="a"
+      href={"?" + matched.queryParams}
     >
       {matched.name}
     </DropdownItem>

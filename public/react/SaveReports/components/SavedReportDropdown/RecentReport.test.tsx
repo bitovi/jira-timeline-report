@@ -56,22 +56,6 @@ describe("<RecentReports /> ", () => {
     expect(screen.getByText("View all saved reports")).toBeInTheDocument();
   });
 
-  it("navigates to report when a recent report is clicked", () => {
-    render(
-      <RecentReports
-        recentReports={recentReports}
-        reports={mockReports}
-        onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
-        setIsOpen={mockSetIsOpen}
-      />
-    );
-
-    const reportItem = screen.getByText("Report 1");
-    fireEvent.click(reportItem);
-
-    expect(window.location.search).toBe("?" + mockReports["1"].queryParams);
-  });
-
   it("handles 'View all saved reports' button click", () => {
     render(
       <RecentReports

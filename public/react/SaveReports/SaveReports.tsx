@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import type { CanObservable } from "../hooks/useCanObservable";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
 import { v4 as uuidv4 } from "uuid";
 import Button from "@atlaskit/button/new";
@@ -28,9 +28,20 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const reports = useAllReports();
 
   const { createReport, isCreating } = useCreateReport();
-  const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({ reports, queryParamObservable });
+  const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
+    reports,
+    queryParamObservable,
+  });
 
   const [name, setName] = useState(selectedReport?.name || "Untitled Report");
+
+  useEffect(() => {
+    if (!selectedReport) {
+      return;
+    }
+
+    setName(selectedReport.name);
+  }, [selectedReport]);
 
   const { recentReports, addReportToRecents } = useRecentReports();
 
@@ -82,7 +93,12 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     <div className="flex gap-1 justify-between items-center">
       <div className="flex gap-3 items-center">
         {selectedReport && (
-          <EditableTitle name={name} setName={setName} selectedReport={selectedReport} validate={validateName} />
+          <EditableTitle
+            name={name}
+            setName={setName}
+            selectedReport={selectedReport}
+            validate={validateName}
+          />
         )}
         {selectedReport && !isDirty && <LinkButton onClick={openModal}>Copy</LinkButton>}
         {selectedReport && isDirty && (
