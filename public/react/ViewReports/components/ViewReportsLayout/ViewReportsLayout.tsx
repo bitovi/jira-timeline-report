@@ -5,7 +5,6 @@ import React from "react";
 import SidebarButton from "../../../components/SidebarButton";
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
 import Heading from "@atlaskit/heading";
-import Button from "@atlaskit/button/new";
 
 interface ViewReportsLayoutProps {
   onBackButtonClicked: () => void;
@@ -25,9 +24,6 @@ const ViewReportsLayout: FC<ViewReportsLayoutProps> = ({ onBackButtonClicked, re
       </SidebarButton>
       <div className="py-4 flex justify-between">
         <Heading size="large">Saved Reports</Heading>
-        <Button appearance="primary" onClick={onBackButtonClicked}>
-          Create new report
-        </Button>
       </div>
       {children}
     </div>

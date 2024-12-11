@@ -13,7 +13,6 @@ describe("<ViewReportsLayout />", () => {
 
     expect(screen.getByText("Back to report")).toBeInTheDocument();
     expect(screen.getByText("Saved Reports")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Create new report/i })).toBeInTheDocument();
   });
 
   it("renders reportInfo and children when provided", () => {
