@@ -10,6 +10,7 @@ import {
   applyGlobalDefaultData,
   applyInheritance,
   createEmptyTeamConfiguration,
+  fixAnyNonExistingFields,
   getAllTeamData,
   getInheritedData,
 } from "../../team-configuration";
@@ -25,17 +26,24 @@ const getTeamDataWithIssueHierarchys = async (
   jiraHelpers: Jira,
   storage: AppStorage
 ): Promise<{ userData: AllTeamData; issueHeirarchy: IssueHierarchy[] }> => {
-  const issueHeirarchy: IssueHierarchy[] = await getSimplifiedIssueHierarchy({
-    jiraHelpers,
-    isLoggedIn: true,
-  });
+  const [issueHeirarchy, jiraIssues] = await Promise.all([
+    getSimplifiedIssueHierarchy({
+      jiraHelpers,
+      isLoggedIn: true,
+    }) as Promise<IssueHierarchy[]>,
+    jiraHelpers.fetchJiraFields() as unknown as Promise<IssueFields>,
+  ]);
+
+  const userData = await getAllTeamData(
+    storage,
+    issueHeirarchy.map((type) => type.hierarchyLevel.toString())
+  );
+
+  const normalizedTeamData = fixAnyNonExistingFields(storage, userData, jiraIssues);
 
   return {
     issueHeirarchy,
-    userData: await getAllTeamData(
-      storage,
-      issueHeirarchy.map((type) => type.hierarchyLevel.toString())
-    ),
+    userData: normalizedTeamData,
   };
 };
 

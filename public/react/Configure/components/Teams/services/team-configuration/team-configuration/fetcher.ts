@@ -1,5 +1,5 @@
 import type { AppStorage } from "../../../../../../../jira/storage/common";
-import type { AllTeamData, TeamConfiguration } from "./shared";
+import type { AllTeamData, IssueFields, TeamConfiguration } from "./shared";
 
 import { allTeamDataKey } from "../key-factory";
 import { createEmptyAllTeamsData, createEmptyTeamConfiguration } from "./shared";
@@ -36,4 +36,75 @@ export const updateAllTeamData = async (
   updates: AllTeamData
 ): Promise<void> => {
   await storage.update(allTeamDataKey, updates);
+};
+
+export const fixAnyNonExistingFields = (
+  storage: AppStorage,
+  userData: AllTeamData,
+  jiraIssues: IssueFields
+) => {
+  const fieldExistMap: Record<string, boolean> = {
+    "confidence-not-used": true,
+  };
+
+  let normalizedTeamData = structuredClone(userData);
+
+  for (const [teamKey, team] of Object.entries(userData)) {
+    if (!team) {
+      continue;
+    }
+
+    for (const [issueHierarchyKey, configuration] of Object.entries(team)) {
+      if (!configuration) {
+        continue;
+      }
+
+      for (const fieldName of [
+        "confidenceField",
+        "estimateField",
+        "startDateField",
+        "dueDateField",
+      ] as const) {
+        const field = configuration[fieldName];
+
+        if (!field) {
+          continue;
+        }
+
+        if (fieldExistMap[field]) {
+          continue;
+        }
+
+        const matched = jiraIssues.find((issue) => {
+          return issue.name === field;
+        });
+
+        if (matched) {
+          fieldExistMap[field] = true;
+        } else {
+          console.log(
+            `Detected a descrepancy between jiraFields and userData field "${field}" does not exist`
+          );
+
+          delete normalizedTeamData?.[teamKey]?.[issueHierarchyKey]?.[fieldName];
+        }
+      }
+    }
+  }
+
+  if (JSON.stringify(userData) !== JSON.stringify(normalizedTeamData)) {
+    updateAllTeamData(storage, normalizedTeamData)
+      .then(() => console.log("Resolved discrepancies with the data source"))
+      .catch((error) =>
+        console.log(
+          [
+            "Could not update the data source",
+            "users will not be impacted",
+            `error: ${error?.message || "could not parse error"}`,
+          ].join("\n")
+        )
+      );
+  }
+
+  return normalizedTeamData;
 };
