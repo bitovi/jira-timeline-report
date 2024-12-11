@@ -103,5 +103,6 @@ export function updateUrlParam(key, valueJSON, defaultJSON) {
     newUrl.searchParams.delete(key );
     routeObservable.set(key, null);
   }
+  pushStateObservable.value = newUrl.search;
   //history.pushState({}, '', );
 }
