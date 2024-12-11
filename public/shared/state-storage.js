@@ -98,10 +98,8 @@ export function updateUrlParam(key, valueJSON, defaultJSON) {
   const newUrl = new URL(window.location);
   if(valueJSON !== defaultJSON) {
     newUrl.searchParams.set(key, valueJSON );
-    routeObservable.set(key, valueJSON );
   } else {
     newUrl.searchParams.delete(key );
-    routeObservable.set(key, null);
   }
   pushStateObservable.value = newUrl.search;
   //history.pushState({}, '', );

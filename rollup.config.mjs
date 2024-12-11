@@ -55,13 +55,13 @@ export default [
     plugins: [
       nodeResolve(),
       commonjs(),
+      alias(aliases.hosted),
       typescript(),
       babel({
         exclude: "node_modules/**",
         plugins: ["@babel/plugin-transform-react-jsx-development"],
         babelHelpers: "bundled",
       }),
-      alias(aliases.hosted),
     ],
     ...warn,
   },
@@ -71,7 +71,7 @@ export default [
       file: "./public/dist/hosted-main.min.js",
       format: "esm",
     },
-    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd), alias(aliases.hosted)],
+    plugins: [nodeResolve(), commonjs(), terser(), , alias(aliases.hosted), typescript(), babel(babelProd)],
     ...warn,
   },
   {
@@ -80,7 +80,7 @@ export default [
       file: "./public/dist/connect-main.min.js",
       format: "esm",
     },
-    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd), alias(aliases.connect)],
+    plugins: [nodeResolve(), commonjs(), terser(), alias(aliases.connect), typescript(), babel(babelProd)],
     ...warn,
   },
 ];

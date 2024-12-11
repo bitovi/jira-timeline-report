@@ -56,9 +56,15 @@ export interface JiraStateSync {
   [isValueLikeSymbol]: true,
   on: (key: string | undefined, handler: KeyHandler, queue?: string) => void;
   off: (key: string | undefined, handler: KeyHandler, queue?: string) => void;
-  get: <T extends string | undefined> (key: T) => T extends string ? (string | undefined) : Record<string, string>;
+  get: ObjectGetter;
   set: (...args: [string] | [string, string | null] | [state: Record<string, string | null>]) => void;
   value: string;
+}
+
+interface ObjectGetter {
+  (): Record<string, string>;
+  (key: undefined): Record<string, string>;
+  (key: string): (string | undefined);
 }
 
 const handlers = new Map<string, Set<KeyHandler>>();
@@ -71,7 +77,7 @@ const searchParamsToObject = (params: URLSearchParams) => (
   Array.from(params.entries()).reduce((a, [key, val]) => ({ ...a, [key]: val }), {})
 );
 
-const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set' | 'value'> = {
+const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
   on: function(key, handler, queue) {
     if (!key) {
       valueHandlers.add(handler);
@@ -151,15 +157,6 @@ const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set' | 'value'> = {
       state: { fromPopState: 'false' }
     })
   },
-  get value() {
-    const params = this.get(undefined);
-    const searchString = new URLSearchParams(params);
-    searchString.sort();
-    return searchString.toString();
-  },
-  set value(params: string) {
-    this.set(params);
-  } 
 }
 
 const dispatchKeyHandlers: (key: string, newValue?: string | null, oldValue?: string | null) => void = (key, newValue, oldValue) => {
@@ -181,6 +178,15 @@ export const browserState: JiraStateSync = {
   [setKeyValueSymbol]: stateApi.set as JiraStateSync[typeof setKeyValueSymbol],
   [isValueLikeSymbol]: true,
   [isMapLikeSymbol]: true,
+  get value() {
+    const params = this.get(undefined);
+    const searchString = new URLSearchParams(params);
+    searchString.sort();
+    return searchString.toString();
+  },
+  set value(params: string) {
+    this.set(params);
+  },
 };
 
 AP?.history?.subscribeState("change", ({ query, state }: JiraLocationState) => {
