@@ -60,8 +60,12 @@ const ReportListItem: FC<ReportListItemProps> = ({ reports, reportId }) => {
   }
 
   return (
-    // @ts-expect-error
-    <DropdownItem key={reportId} component="a" href={"?" + matched.queryParams}>
+    <DropdownItem
+      key={reportId}
+      // @ts-expect-error types for component overrides on ADS don't work
+      component="a"
+      href={"?" + matched.queryParams}
+    >
       {matched.name}
     </DropdownItem>
   );
