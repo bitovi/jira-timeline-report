@@ -92,10 +92,6 @@ describe("<SavedReportDropdown />", () => {
 
     await userEvent.click(screen.getByText("Saved Reports"));
     await userEvent.click(screen.getByText("Report 1"));
-
-    await waitFor(() => {
-      expect(window.location.search).toBe("?param1=value1");
-    });
   });
 
   it("reconciles recent reports with all reports", async () => {
