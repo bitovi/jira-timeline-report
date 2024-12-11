@@ -21,6 +21,32 @@ describe("<SaveReportsWrapper />", () => {
     );
 
     await waitFor(() => {
+      expect(screen.getByText("Saved Reports")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Create new report")).not.toBeInTheDocument();
+  });
+
+  it("shows the create report button if jql is present", async () => {
+    render(
+      <SaveReportsWrapper
+        storage={{
+          get: vi.fn().mockResolvedValue({ "saved-reports": {} }),
+          storageInitialized: async () => true,
+          update: vi.fn(),
+        }}
+        onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
+        queryParamObservable={{
+          on: vi.fn(),
+          off: vi.fn(),
+          getData: vi.fn(),
+          value: "?jql=issues-and-what-not",
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Saved Reports")).toBeInTheDocument();
       expect(screen.getByText("Create new report")).toBeInTheDocument();
     });
   });

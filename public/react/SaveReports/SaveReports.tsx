@@ -45,7 +45,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const { recentReports, addReportToRecents } = useRecentReports();
 
-  useQueryParams(queryParamObservable, {
+  const { queryParams } = useQueryParams(queryParamObservable, {
     onChange: (params) => {
       const report = params.get("report");
 
@@ -129,7 +129,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
         )}
       </div>
       <div className="flex gap-4">
-        {!selectedReport && (
+        {!selectedReport && !!queryParams.get("jql") && (
           <Button appearance="primary" onClick={openModal}>
             Create new report
           </Button>
