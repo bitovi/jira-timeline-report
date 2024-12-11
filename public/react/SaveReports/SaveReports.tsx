@@ -28,13 +28,16 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const reports = useAllReports();
 
   const { createReport, isCreating } = useCreateReport();
-  const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({ reports, queryParamObservable });
+  const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
+    reports,
+    queryParamObservable,
+  });
 
   const [name, setName] = useState(selectedReport?.name || "Untitled Report");
 
   const { recentReports, addReportToRecents } = useRecentReports();
 
-  useQueryParams(queryParamObservable, {
+  const { queryParams } = useQueryParams(queryParamObservable, {
     onChange: (params) => {
       const report = params.get("report");
 
@@ -82,7 +85,12 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     <div className="flex gap-1 justify-between items-center">
       <div className="flex gap-3 items-center">
         {selectedReport && (
-          <EditableTitle name={name} setName={setName} selectedReport={selectedReport} validate={validateName} />
+          <EditableTitle
+            name={name}
+            setName={setName}
+            selectedReport={selectedReport}
+            validate={validateName}
+          />
         )}
         {selectedReport && !isDirty && <LinkButton onClick={openModal}>Copy</LinkButton>}
         {selectedReport && isDirty && (
@@ -113,7 +121,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
         )}
       </div>
       <div className="flex gap-4">
-        {!selectedReport && (
+        {!selectedReport && !!queryParams.get("jql") && (
           <Button appearance="primary" onClick={openModal}>
             Create new report
           </Button>

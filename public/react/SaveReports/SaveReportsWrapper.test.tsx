@@ -21,7 +21,7 @@ describe("<SaveReportsWrapper />", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Create new report")).toBeInTheDocument();
+      expect(screen.getByText("Saved Reports")).toBeInTheDocument();
     });
   });
 });
