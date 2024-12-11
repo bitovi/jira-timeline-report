@@ -28,5 +28,5 @@ export const useJiraIssueFields: UseJiraIssueFields = () => {
     },
   });
 
-  return data;
+  return data.sort((lhs, rhs) => lhs.name.toLowerCase().localeCompare(rhs.name.toLowerCase()));
 };
