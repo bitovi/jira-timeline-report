@@ -27,7 +27,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
   ...configurationProps
 }) => {
   const jiraFields = useJiraIssueFields();
-  const { userAllTeamData } = useAllTeamData(jiraFields);
+  const { savedUserAllTeamData } = useAllTeamData(jiraFields);
 
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
 
@@ -39,7 +39,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
           Go back
         </SidebarButton>
         <TeamSelector
-          teamsFromStorage={Object.keys(userAllTeamData)}
+          teamsFromStorage={Object.keys(savedUserAllTeamData)}
           selectedTeam={selectedTeam}
           setSelectedTeam={setSelectedTeam}
           derivedIssuesObservable={derivedIssuesObservable}

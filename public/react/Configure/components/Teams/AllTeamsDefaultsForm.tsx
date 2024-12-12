@@ -15,8 +15,8 @@ import { RequiredAsterisk } from "./components/Label";
 export interface AllTeamsDefaultFormProps {
   save: (newConfiguration: Configuration) => void;
   jiraFields: IssueFields;
-  userData: Configuration;
-  augmented: Configuration;
+  savedUserData: Configuration;
+  inheritedData: Configuration;
 }
 
 export interface FieldUpdates<TProperty extends keyof Configuration> {
@@ -26,18 +26,18 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
 
 const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
   save,
-  userData,
-  augmented,
+  savedUserData,
+  inheritedData,
   jiraFields,
 }) => {
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
   const { register, handleSubmit, control } = useForm<Configuration>({
-    defaultValues: augmented,
+    defaultValues: inheritedData,
   });
 
   function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {
-    save({ ...userData, [name]: value });
+    save({ ...savedUserData, [name]: value });
   }
 
   return (
