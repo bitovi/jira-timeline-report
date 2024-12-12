@@ -18,10 +18,20 @@ const useSaveReport = () => {
     mutationFn: (toSave: Reports) => {
       return updateReports(storage, toSave);
     },
-    onSuccess: () => {
+    onMutate: async (toSave) => {
+      await queryClient.cancelQueries({ queryKey: reportKeys.allReports });
+
+      const previousReports = queryClient.getQueryData<Reports>(reportKeys.allReports);
+      queryClient.setQueryData<Reports>(reportKeys.allReports, toSave);
+
+      return { previousReports };
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: reportKeys.allReports });
     },
-    onError: (error) => {
+    onError: (error, _, context) => {
+      queryClient.setQueryData<Reports>(reportKeys.allReports, context?.previousReports);
+
       let description = error?.message;
 
       if (!description) {
@@ -66,18 +76,12 @@ export const useCreateReport = () => {
       return;
     }
 
-    const urlParams = new URLSearchParams(newReport.queryParams);
-    urlParams.delete("report");
-    urlParams.append("report", newReport.id);
-
     save(
-      { ...allReports, [newReport.id]: { ...newReport, queryParams: urlParams.toString() } },
+      { ...allReports, [newReport.id]: newReport },
       {
         ...(options ?? {}),
         onSuccess: (...args) => {
           options?.onSuccess?.(...args);
-
-          window.location.search = urlParams.toString();
 
           showFlag({
             title: "Success",
