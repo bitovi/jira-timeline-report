@@ -56,7 +56,7 @@ export interface IssueFields extends BaseFields {
   "Parent Link"?: { data: { key: string } };
   Status: Status;
   "Fix versions": Array<FixVersion>;
-  Team: null | {name: string, id: string, avatarUrl?: string}
+  Team: null | { name: string; id: string; avatarUrl?: string };
 }
 
 interface BaseIssue {
@@ -89,16 +89,19 @@ export type FetchJiraIssuesParams = {
 };
 
 export interface NormalizedRelease {
+  key: string;
+  type: "Release";
+  summary: string;
+
   name: string;
   id: string;
-  type: "Release";
-  key: string;
-  summary: string;
 }
 
 export interface NormalizedIssue {
   key: string;
+  type: string;
   summary: string;
+
   parentKey: string | null;
   confidence: number | null;
   dueDate: Date;
@@ -106,7 +109,6 @@ export interface NormalizedIssue {
   startDate: Date;
   storyPoints: number | null;
   storyPointsMedian: number | null;
-  type: string;
   team: NormalizedTeam;
   url: string;
   sprints: Array<NormalizedSprint> | null;
@@ -136,4 +138,17 @@ export interface NormalizedTeam {
 
 export type DefaultsToConfig<T> = {
   [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
+};
+
+export type CalculationType =
+  | "parentFirstThenChildren"
+  | "childrenOnly"
+  | "childrenFirstThenParent"
+  | "widestRange"
+  | "parentOnly";
+  
+export type RollupLevelAndCalculation = {
+  type: string;
+  hierarchyLevel: number;
+  calculation: CalculationType;
 };

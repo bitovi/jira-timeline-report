@@ -54,11 +54,16 @@ export interface JiraStateSync {
   [setKeyValueSymbol]: (key: string, value: string | null) => void;
   [isMapLikeSymbol]: true,
   [isValueLikeSymbol]: true,
-  on: (key: string | undefined, handler: KeyHandler, queue?: string) => void;
-  off: (key: string | undefined, handler: KeyHandler, queue?: string) => void;
+  on: AddHandlerWithOptionalKey;
+  off: AddHandlerWithOptionalKey;
   get: ObjectGetter;
   set: (...args: [string] | [string, string | null] | [state: Record<string, string | null>]) => void;
   value: string;
+}
+
+interface AddHandlerWithOptionalKey {
+  (handler: KeyHandler, queue?: string): void;
+  (key: string | undefined, handler: KeyHandler, queue?: string): void;
 }
 
 interface ObjectGetter {
@@ -79,6 +84,12 @@ const searchParamsToObject = (params: URLSearchParams) => (
 
 const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
   on: function(key, handler, queue) {
+    if (typeof key === 'function' && typeof handler !== 'function') {
+      queue = handler;
+      handler = key;
+      key = undefined;
+    }
+
     if (!key) {
       valueHandlers.add(handler);
     } else if (key === 'can.patches') {
@@ -95,8 +106,13 @@ const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
       handlerSet.add(handler);
       handlers.set(key, handlerSet);
     }
-  },
+  } as JiraStateSync['on'],
   off: function(key, handler, queue) {
+    if (typeof key === 'function' && typeof handler !== 'function') {
+      queue = handler;
+      handler = key;
+      key = undefined;
+    }
     if (!key) {
       valueHandlers.delete(handler);
     } else if (key === 'can.patches') {
@@ -105,7 +121,7 @@ const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
       const keyHandlers = handlers.get(key)!;
       keyHandlers.delete(handler);
     }
-  },
+  } as JiraStateSync['off'],
   get: function(key?: string) {
     const params = new URLSearchParams(decodeURIComponent(AP?.history.getState('all').query?.state ?? ''));
     if (arguments.length > 0) {

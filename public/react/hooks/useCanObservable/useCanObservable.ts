@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 export interface CanObservable<TData> {
   value: TData;
-  getData(): TData;
   on(handler: () => void): void;
   off(handler: () => void): void;
 }

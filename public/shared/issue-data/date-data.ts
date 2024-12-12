@@ -8,7 +8,7 @@ export type StartData = {
     message: string;
     reference: NormalizedIssue;
   };
-} | null;
+};
 
 export type DueData = {
   due: Date;
@@ -16,25 +16,22 @@ export type DueData = {
     message: string;
     reference: NormalizedIssue;
   };
-} | null;
+};
 
 type StartAndDueData = {
-  startData: StartData;
-  dueData: DueData;
+  startData: StartData | null;
+  dueData: DueData | null;
 };
 /**
  *
  * @param {import("../../jira/shared/types.js").NormalizedIssue} issue
  * @returns {StartAndDueData}
  */
-export function getStartDateAndDueDataFromFields(
-  issue: NormalizedIssue
-): StartAndDueData {
-  let startData: StartData = null;
-  let dueData: DueData = null;
+export function getStartDateAndDueDataFromFields(issue: NormalizedIssue) {
+  const result: StartAndDueData = { startData: null, dueData: null };
 
   if (issue.startDate) {
-    startData = {
+    result.startData = {
       start: issue.startDate,
       startFrom: {
         message: `start date`,
@@ -43,7 +40,7 @@ export function getStartDateAndDueDataFromFields(
     };
   }
   if (issue.dueDate) {
-    dueData = {
+    result.dueData = {
       due: issue.dueDate,
       dueTo: {
         message: `due date`,
@@ -51,7 +48,7 @@ export function getStartDateAndDueDataFromFields(
       },
     };
   }
-  return { startData, dueData };
+  return result;
 }
 
 /**
@@ -59,9 +56,7 @@ export function getStartDateAndDueDataFromFields(
  * @param {import("../../jira/shared/types.js").NormalizedIssue} story
  * @returns {StartAndDueData}
  */
-export function getStartDateAndDueDataFromSprints(
-  story: NormalizedIssue
-): StartAndDueData {
+export function getStartDateAndDueDataFromSprints(story: NormalizedIssue): StartAndDueData {
   const records: StartAndDueData[] = [];
 
   if (story.sprints) {
@@ -94,9 +89,7 @@ export function getStartDateAndDueDataFromSprints(
  * @param {Array<StartAndDueData>} records
  * @returns {StartAndDueData}
  */
-export function mergeStartAndDueData(
-  records: Array<StartAndDueData>
-): StartAndDueData {
+export function mergeStartAndDueData(records: Array<StartAndDueData>): StartAndDueData {
   const startData = records
     .filter(
       (
@@ -119,11 +112,8 @@ export function mergeStartAndDueData(
     .map((record) => record.dueData);
 
   return {
-    startData:
-      startData.sort((d1, d2) => d1.start.getTime() - d2.start.getTime())[0] ||
-      null,
-    dueData:
-      dueData.sort((d1, d2) => d2.due.getTime() - d1.due.getTime())[0] || null,
+    startData: startData.sort((d1, d2) => d1.start.getTime() - d2.start.getTime())[0] || null,
+    dueData: dueData.sort((d1, d2) => d2.due.getTime() - d1.due.getTime())[0] || null,
   };
 }
 
@@ -132,9 +122,7 @@ export function mergeStartAndDueData(
  * @param {NormalizedIssue} issue
  * @returns {StartAndDueData}
  */
-export function getStartDateAndDueDataFromFieldsOrSprints(
-  issue: NormalizedIssue
-): StartAndDueData {
+export function getStartDateAndDueDataFromFieldsOrSprints(issue: NormalizedIssue): StartAndDueData {
   return mergeStartAndDueData([
     getStartDateAndDueDataFromFields(issue),
     getStartDateAndDueDataFromSprints(issue),

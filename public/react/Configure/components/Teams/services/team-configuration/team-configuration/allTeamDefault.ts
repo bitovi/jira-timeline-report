@@ -10,7 +10,7 @@ const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
   nameFragments: string[] = []
 ) => {
   return function (userData: Partial<Configuration>, jiraFields: IssueFields) {
-    const userDefinedFieldExists = findFieldCalled((userData[formField] ?? "").toString(), jiraFields);
+    const userDefinedFieldExists = findFieldCalled((userData?.[formField] ?? "").toString(), jiraFields);
 
     if (userData?.[formField] && userDefinedFieldExists) {
       return userData[formField];
@@ -52,7 +52,7 @@ const createDefaultConfidenceField = (
   const getField = createDefaultJiraFieldGetter(formField, possibleNames, nameFragments);
 
   return (userData: Partial<Configuration>, jiraFields: IssueFields): string | null => {
-    if (userData.confidenceField === "confidence-not-used") {
+    if (userData?.confidenceField === "confidence-not-used") {
       return "confidence-not-used";
     }
 
@@ -85,15 +85,15 @@ const nonFieldDefaults: Omit<Configuration, "estimateField" | "confidenceField" 
 
 export const getGlobalDefaultData = (allTeamData: AllTeamData, jiraFields: IssueFields): Configuration => {
   return {
-    sprintLength: allTeamData.__GLOBAL__.defaults.sprintLength ?? nonFieldDefaults.sprintLength,
-    velocityPerSprint: allTeamData.__GLOBAL__.defaults.velocityPerSprint ?? nonFieldDefaults.velocityPerSprint,
-    tracks: allTeamData.__GLOBAL__.defaults.tracks ?? nonFieldDefaults.tracks,
+    sprintLength: allTeamData.__GLOBAL__?.defaults?.sprintLength ?? nonFieldDefaults.sprintLength,
+    velocityPerSprint: allTeamData.__GLOBAL__?.defaults?.velocityPerSprint ?? nonFieldDefaults.velocityPerSprint,
+    tracks: allTeamData.__GLOBAL__?.defaults?.tracks ?? nonFieldDefaults.tracks,
     spreadEffortAcrossDates:
-      allTeamData.__GLOBAL__.defaults.spreadEffortAcrossDates ?? nonFieldDefaults.spreadEffortAcrossDates,
-    estimateField: getEstimateField(allTeamData.__GLOBAL__.defaults, jiraFields),
-    confidenceField: getConfidenceField(allTeamData.__GLOBAL__.defaults, jiraFields),
-    startDateField: getStartDateField(allTeamData.__GLOBAL__.defaults, jiraFields),
-    dueDateField: getDueDateField(allTeamData.__GLOBAL__.defaults, jiraFields),
+      allTeamData.__GLOBAL__?.defaults?.spreadEffortAcrossDates ?? nonFieldDefaults.spreadEffortAcrossDates,
+    estimateField: getEstimateField(allTeamData.__GLOBAL__?.defaults, jiraFields),
+    confidenceField: getConfidenceField(allTeamData.__GLOBAL__?.defaults, jiraFields),
+    startDateField: getStartDateField(allTeamData.__GLOBAL__?.defaults, jiraFields),
+    dueDateField: getDueDateField(allTeamData.__GLOBAL__?.defaults, jiraFields),
   };
 };
 

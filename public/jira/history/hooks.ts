@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import routeDataObservable from '@routing-observable';
 
-export const useJiraStateValue:
+export const useHistoryStateValue:
   (key: string) => [string | undefined, (val: string | undefined) => void] =
   (key) => {
     const [value, setValue] = useState<string | undefined>(routeDataObservable.get(key));
@@ -20,7 +20,7 @@ export const useJiraStateValue:
     return [value, setValue];
   };
 
-export const useJiraState:
+export const useHistoryState:
   () => [Record<string, string | null>, (val: Record<string, string | null>) => void] =
   () => {
     const [value, setValue] = useState<Record<string, string | null>>((routeDataObservable.get() ?? {}));

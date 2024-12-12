@@ -1,8 +1,9 @@
 import type { StorageFactory } from "./common";
 
+import { configurationIssueTitle } from "../../shared/configurationIssue";
+
 // Todo remove. See special logic note below
 import type { AllTeamData } from "../../react/Configure/components/Teams/services/team-configuration";
-import { searchDocument, getTextFromWithinCell, matchTeamTable } from "../../shared/velocities-from-issue";
 //
 
 interface Paragraph {
@@ -36,14 +37,17 @@ interface StorageIssue {
   };
 }
 
-const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
-  const configurationIssues: StorageIssue[] = await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
-    Summary: string;
-    Description: { content: Array<StorageIssueContent> };
-  }>({
-    jql: `summary ~ "Jira Auto Scheduler Configuration"`,
-    fields: ["summary", "Description"],
-  });
+const getConfigurationIssue = async (
+  jiraHelpers: Parameters<StorageFactory>[number]
+): Promise<StorageIssue | null> => {
+  const configurationIssues: StorageIssue[] =
+    await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
+      Summary: string;
+      Description: { content: Array<StorageIssueContent> };
+    }>({
+      jql: `summary ~ "${configurationIssueTitle()}"`,
+      fields: ["summary", "Description"],
+    });
 
   if (!configurationIssues.length) {
     return null;
@@ -60,14 +64,18 @@ const createCodeBlock = (using?: string): CodeBlock => {
   };
 };
 
-function findTeamTable(document: any): Array<Record<"team" | "velocity" | "tracks" | "sprint length", string>> | null {
+function findTeamTable(
+  document: any
+): Array<Record<"team" | "velocity" | "tracks" | "sprint length", string>> | null {
   return (
     searchDocument(document, (fragment: any) => {
       if (fragment.type === "table") {
         const headerRow = fragment.content?.[0];
         if (
           headerRow?.type === "tableRow" &&
-          headerRow.content?.some((header: any) => getTextFromWithinCell(header).toLowerCase() === "team")
+          headerRow.content?.some(
+            (header: any) => getTextFromWithinCell(header).toLowerCase() === "team"
+          )
         ) {
           return matchTeamTable(fragment);
         }
@@ -79,6 +87,10 @@ function findTeamTable(document: any): Array<Record<"team" | "velocity" | "track
 
 export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
   return {
+    storageInitialized: async () => {
+      const configurationIssue = await getConfigurationIssue(jiraHelpers);
+      return !!configurationIssue;
+    },
     get: async function <TData>(key: string): Promise<TData | null> {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
@@ -86,7 +98,9 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
         return null;
       }
 
-      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === "codeBlock");
+      let storeContent = configurationIssue.fields.Description.content.find(
+        (content) => content.type === "codeBlock"
+      );
 
       if (!storeContent) {
         storeContent = createCodeBlock(JSON.stringify({ [key]: {} }));
@@ -104,7 +118,9 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
         throw new Error("[Storage Error]: update (web-app) needs a configuration issue");
       }
 
-      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === "codeBlock");
+      let storeContent = configurationIssue.fields.Description.content.find(
+        (content) => content.type === "codeBlock"
+      );
 
       if (!storeContent) {
         storeContent = createCodeBlock();
@@ -127,7 +143,9 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const [stringifiedStore] = storeContent.content;
       const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-      const newContent: Array<StorageIssueContent> = [createCodeBlock(JSON.stringify({ ...store, [key]: value }))];
+      const newContent: Array<StorageIssueContent> = [
+        createCodeBlock(JSON.stringify({ ...store, [key]: value })),
+      ];
 
       /**
        * Temporary special logic, see below
@@ -284,7 +302,9 @@ const createHead = (head: string[]): TableCell[] => {
     return {
       type: "tableHeader",
       attrs: {},
-      content: [{ type: "paragraph", content: [{ type: "text", text: name, marks: [{ type: "strong" }] }] }],
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: name, marks: [{ type: "strong" }] }] },
+      ],
     };
   });
 };
@@ -314,3 +334,78 @@ const createTable = (tableHead: string[], rows: string[][]): Table => {
     ],
   };
 };
+
+export function getTextFromWithinCell(cell: TableCell) {
+  return cell.content
+    .filter(({ type }) => type === "paragraph")
+    .map(getTextFromParagraph)
+    .flat()
+    .join(" ");
+}
+
+function getTextFromParagraph(p: Paragraph) {
+  return p.content.filter((text) => text.type === "text").map((text) => text.text);
+}
+
+export function matchTeamTable(fragment: StorageIssueContent) {
+  if (fragment.type !== "table") {
+    return false;
+  }
+  if (fragment.content[0].type !== "tableRow") {
+    return false;
+  }
+  const headerRow = fragment.content[0];
+  const headerTitles = headerRow.content.map((header) => {
+    // gets the first text from each header cell
+    return getTextFromWithinCell(header).toLowerCase();
+  });
+
+  if (!headerTitles.includes("team")) {
+    return false;
+  }
+
+  const records = [];
+
+  // build objects from other table content
+  for (let i = 1; i < fragment.content.length; i++) {
+    let row = fragment.content[i];
+    let record: Record<string, string> = {};
+    // loop
+    for (let c = 0; c < row.content.length; c++) {
+      let name = headerTitles[c];
+      let cell = row.content[c];
+      record[name] = getTextFromWithinCell(cell);
+    }
+    records.push(record);
+  }
+  return records;
+}
+
+export function searchDocument<T extends object = object, U = any>(
+  document: T,
+  matcher: (doc: {}) => U
+) {
+  let matches: Array<U> = [];
+
+  // Helper function to recursively search for matches
+  function recurse<T>(doc: T) {
+    if (Array.isArray(doc)) {
+      for (const item of doc) {
+        recurse(item);
+      }
+    } else if (typeof doc === "object" && doc !== null) {
+      const result = matcher(doc);
+      if (result) {
+        matches.push(result); // Collect matching substructure
+      } else {
+        for (const key of Object.keys(doc)) {
+          const toRecurse = doc as Record<string, any>;
+          recurse(toRecurse[key]);
+        }
+      }
+    }
+  }
+
+  recurse(document); // Start the recursive search
+  return matches; // Return all matching substructures
+}

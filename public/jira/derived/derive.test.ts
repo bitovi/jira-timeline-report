@@ -4,11 +4,11 @@ import { NormalizedIssue } from "../shared/types";
 import { deriveWorkTiming, DerivedWorkTiming } from "./work-timing/work-timing";
 import { getWorkStatus, DerivedWorkStatus } from "./work-status/work-status";
 
-vi.mock("./work-timing/work-timing.js", () => ({
+vi.mock("./work-timing/work-timing", () => ({
   deriveWorkTiming: vi.fn(),
 }));
 
-vi.mock("./work-status/work-status.js", () => ({
+vi.mock("./work-status/work-status", () => ({
   getWorkStatus: vi.fn(),
 }));
 

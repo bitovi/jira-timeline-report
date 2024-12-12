@@ -7,66 +7,49 @@ import {
   groupIssuesByHierarchyLevelOrType,
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
-  RollupResponse,
-  ReportingHierarchyIssueOrRelease,
   isDerivedIssue,
 } from "../rollup";
+
+export type WithBlockedStatuses<T = unknown> = { blockedStatusIssues: IssueOrRelease<T>[] };
+
 /** *
- * @param {IssueOrRelease<CustomFields>[][]} groupedHierarchy - The grouped hierarchy of issues or releases, from low to high levels.
- * @returns {RollupResponse<IssueOrRelease<CustomFields>[], Meta>} - The rolled-up blocked issues for each hierarchy level.
- */
-export function rollupBlockedIssuesForGroupedHierarchy<CustomFields, Meta>(
-  groupedHierarchy: IssueOrRelease<CustomFields>[][]
-): RollupResponse<IssueOrRelease<CustomFields>[], Meta> {
-  return rollupGroupedHierarchy<
-    CustomFields,
-    IssueOrRelease<CustomFields>[],
-    Meta
-  >(groupedHierarchy, {
-    createRollupDataFromParentAndChild(
-      issueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>,
-      children: IssueOrRelease<CustomFields>[][],
-      hierarchyLevel: number,
-      metadata: Meta
-    ): IssueOrRelease<CustomFields>[] {
-      const blockedIssues = children.flat(1);
-      // releases don't have a status
-      if (
-        isDerivedIssue(issueOrRelease) &&
-        issueOrRelease?.derivedStatus?.statusType === "blocked"
-      ) {
-        blockedIssues.push(issueOrRelease);
-      }
-      return blockedIssues;
-    },
-  });
-}
-/** *
- * @param {IssueOrRelease<CustomFields>[]} issuesOrReleases
+ * @param {IssueOrRelease[]} issuesOrReleases
  * @param {Array<{ type: string; hierarchyLevel: number }>} rollupTimingLevelsAndCalculations
- * @returns {IssueOrRelease<CustomFields>[]} - The list of issues or releases with rolled-up blocked status issues added.
+ * @returns {IssueOrRelease[]} - The list of issues or releases with rolled-up blocked status issues added.
  */
 // these functions shouldn't be used eventually for performance ...
-export function rollupBlockedStatusIssues<CustomFields, Meta>(
-  issuesOrReleases: IssueOrRelease<CustomFields>[],
+export function rollupBlockedStatusIssues<T>(
+  issuesOrReleases: IssueOrRelease<T>[],
   rollupTimingLevelsAndCalculations: Array<{
     type: string;
     hierarchyLevel?: number;
   }>
-): IssueOrRelease<CustomFields>[] {
+): IssueOrRelease<T & WithBlockedStatuses<T>>[] {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
     issuesOrReleases,
     rollupTimingLevelsAndCalculations
   );
-  const rolledUpBlockers = rollupBlockedIssuesForGroupedHierarchy<
-    CustomFields,
-    Meta
-  >(groupedIssues);
+  const rolledUpBlockers = rollupBlockedIssuesForGroupedHierarchy(groupedIssues);
 
-  const zipped = zipRollupDataOntoGroupedData<
-    CustomFields,
-    IssueOrRelease<CustomFields>[],
-    Meta
-  >(groupedIssues, rolledUpBlockers, "blockedStatusIssues");
+  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, (item, values) => ({
+    ...item,
+    blockedStatusIssues: values,
+  }));
   return zipped.flat();
+}
+
+/** *
+ * @param {IssueOrRelease[][]} groupedHierarchy - The grouped hierarchy of issues or releases, from low to high levels.
+ * @returns {RollupResponse<IssueOrRelease[], Meta>} - The rolled-up blocked issues for each hierarchy level.
+ */
+export function rollupBlockedIssuesForGroupedHierarchy<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
+  return rollupGroupedHierarchy(groupedHierarchy, {
+    createRollupDataFromParentAndChild(issueOrRelease, children: IssueOrRelease<T>[][]) {
+      const addParent =
+        isDerivedIssue(issueOrRelease) && issueOrRelease?.derivedStatus?.statusType === "blocked"
+          ? [issueOrRelease]
+          : [];
+      return [...children.flat(1), ...addParent];
+    },
+  });
 }

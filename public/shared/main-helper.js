@@ -2,7 +2,6 @@ import { TimelineReport } from "../timeline-report.js";
 
 import "../shared/saved-urls.js";
 import "../shared/select-cloud.js";
-import "../shared/velocities-from-issue.js";
 
 import JiraLogin from "../shared/jira-login.js";
 import JiraOIDCHelpers from "../jira-oidc-helpers";
@@ -61,13 +60,6 @@ export default async function mainHelper(config, { host, createStorage }) {
     selectCloud.jiraHelpers = jiraHelpers;
   }
 
-  const velocitiesConfiguration = document.querySelector("velocities-from-issue");
-  velocitiesConfiguration.jiraHelpers = jiraHelpers;
-  velocitiesConfiguration.isLoggedIn = loginComponent.isLoggedIn;
-  loginComponent.listenTo("isLoggedIn", ({ value }) => {
-    velocitiesConfiguration.isLoggedIn = value;
-  });
-
   const listener = ({ value }) => {
     if (value) {
       loginComponent.off("isResolved", listener);
@@ -77,7 +69,6 @@ export default async function mainHelper(config, { host, createStorage }) {
         jiraHelpers,
         loginComponent,
         mode: "TEAMS",
-        velocitiesConfiguration,
         storage,
       });
       report.className = "block";

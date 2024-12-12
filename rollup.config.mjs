@@ -51,11 +51,12 @@ export default [
     output: {
       file: "./public/dist/hosted-main.js",
       format: "esm",
+      inlineDynamicImports: true,
     },
     plugins: [
+      alias(aliases.hosted),
       nodeResolve(),
       commonjs(),
-      alias(aliases.hosted),
       typescript(),
       babel({
         exclude: "node_modules/**",
@@ -70,8 +71,9 @@ export default [
     output: {
       file: "./public/dist/hosted-main.min.js",
       format: "esm",
+      inlineDynamicImports: true,
     },
-    plugins: [nodeResolve(), commonjs(), terser(), , alias(aliases.hosted), typescript(), babel(babelProd)],
+    plugins: [alias(aliases.hosted), nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
     ...warn,
   },
   {
@@ -79,8 +81,9 @@ export default [
     output: {
       file: "./public/dist/connect-main.min.js",
       format: "esm",
+      inlineDynamicImports: true,
     },
-    plugins: [nodeResolve(), commonjs(), terser(), alias(aliases.connect), typescript(), babel(babelProd)],
+    plugins: [alias(aliases.connect), nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
     ...warn,
   },
 ];

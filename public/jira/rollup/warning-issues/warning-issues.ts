@@ -7,70 +7,45 @@ import {
   groupIssuesByHierarchyLevelOrType,
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
-  RollupResponse,
-  ReportingHierarchyIssueOrRelease,
-  isDerivedIssue,
+  isDerivedRelease,
 } from "../rollup";
 
-/**
- * @param {IssueOrRelease[][]} groupedHierarchy
- * @returns {RollupResponse}
- */
-export function rollupWarningIssuesForGroupedHierarchy<CustomFields, Meta>(
-  groupedHierarchy: IssueOrRelease<CustomFields>[][]
-): RollupResponse<IssueOrRelease<CustomFields>[], Meta> {
-  return rollupGroupedHierarchy<
-    CustomFields,
-    IssueOrRelease<CustomFields>[],
-    Meta
-  >(groupedHierarchy, {
-    createRollupDataFromParentAndChild(
-      issueOrRelease: ReportingHierarchyIssueOrRelease<CustomFields>,
-      children: IssueOrRelease<CustomFields>[][]
-    ): IssueOrRelease<CustomFields>[] {
-      const warningIssues = children.flat(1);
-      // releases don't have a status
-      if (isDerivedIssue(issueOrRelease)) {
-        const lowerCaseLabels = (issueOrRelease.labels || []).map((label) =>
-          label.toLowerCase()
-        );
-        if (lowerCaseLabels.some((label) => label === "warning")) {
-          warningIssues.push(issueOrRelease);
-        }
-      }
-      return warningIssues;
-    },
-  });
-}
+export type WithWarningIssues<T = unknown> = { warningIssues: IssueOrRelease<T>[] };
 
-/**
- * @param {IssueOrRelease[]} issuesOrReleases
- * @param {Array<{ type: string; hierarchyLevel?: number }>} rollupTimingLevelsAndCalculations
- * @returns {IssueOrRelease[]}
- */
 // these functions shouldn't be used eventually for performance ...
-export function rollupWarningIssues<CustomFields, Meta>(
-  issuesOrReleases: IssueOrRelease<CustomFields>[],
+export function rollupWarningIssues<T>(
+  issuesOrReleases: IssueOrRelease<T>[],
   rollupTimingLevelsAndCalculations: Array<{
     type: string;
     hierarchyLevel?: number;
   }>
-): IssueOrRelease<CustomFields>[] {
+): IssueOrRelease<T & WithWarningIssues<T>>[] {
   const groupedIssues = groupIssuesByHierarchyLevelOrType(
     issuesOrReleases,
     rollupTimingLevelsAndCalculations
   );
 
-  const rolledUpWarnings = rollupWarningIssuesForGroupedHierarchy<
-    CustomFields,
-    Meta
-  >(groupedIssues);
+  const rolledUpWarnings = rollupWarningIssuesForGroupedHierarchy(groupedIssues);
 
-  const zipped = zipRollupDataOntoGroupedData<
-    CustomFields,
-    IssueOrRelease<CustomFields>[],
-    Meta
-  >(groupedIssues, rolledUpWarnings, "warningIssues");
+  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpWarnings, (item, values) => ({
+    ...item,
+    warningIssues: values,
+  }));
 
   return zipped.flat();
+}
+
+export function rollupWarningIssuesForGroupedHierarchy<T>(groupedHierarchy: IssueOrRelease<T>[][]) {
+  return rollupGroupedHierarchy(groupedHierarchy, {
+    createRollupDataFromParentAndChild(issueOrRelease, children: IssueOrRelease<T>[][]) {
+      if (isDerivedRelease(issueOrRelease)) return [...children.flat(1)];
+
+      const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
+      const addParent = lowerCaseLabels.some((label) => label === "warning")
+        ? [issueOrRelease]
+        : [];
+
+      return [...children.flat(1), ...addParent];
+    },
+  });
 }

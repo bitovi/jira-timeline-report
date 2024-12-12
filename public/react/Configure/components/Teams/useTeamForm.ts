@@ -48,28 +48,6 @@ export const useTeamForm = ({
     update({ name: field, value: null });
   };
 
-  if (process.env.NODE_ENV !== "production") {
-    if (!userTeamData[hierarchyLevel]) {
-      console.warn(
-        [
-          "Could not find saved configuration in useTeamForm",
-          `looking in "userData" at level "${hierarchyLevel}"`,
-          "Returning an empty configuration",
-        ].join("\n")
-      );
-    }
-
-    if (!augmentedTeamData[hierarchyLevel]) {
-      console.warn(
-        [
-          "Could not find saved configuration in useTeamForm",
-          `looking in "augmentedTeamData" at level "${hierarchyLevel}"`,
-          "Returning an empty configuration",
-        ].join("\n")
-      );
-    }
-  }
-
   return {
     toggleInheritance,
     register,

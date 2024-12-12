@@ -2,7 +2,7 @@ import type { FC } from "react";
 import React, { useState, useEffect } from "react";
 
 import type { DerivedIssue } from "../../jira/derived/derive";
-import { useJiraStateValue } from "../../jira/history/hooks";
+import { useHistoryStateValue } from "../../jira/history/hooks";
 
 import { jStat } from 'jstat';
 
@@ -75,7 +75,7 @@ function getTeamNames(issues: Array<RolledUpIssue>) {
 
 const ConfigurationPanel: FC<{primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>}> = ({ primaryIssuesOrReleasesObs }) => {
     const issues = useCanObservable(primaryIssuesOrReleasesObs);
-    const [jql] = useJiraStateValue('jql');
+    const [jql] = useHistoryStateValue('jql');
     if(!issues?.length) {
         return <div>Loading ...</div>
     }
