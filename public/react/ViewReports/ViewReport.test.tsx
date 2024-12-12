@@ -13,8 +13,10 @@ describe("ViewReports Component", () => {
     vi.resetAllMocks();
 
     (useAllReports as Mock).mockReturnValue({
-      "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
-      "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+      data: {
+        "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
+        "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+      },
     });
   });
 

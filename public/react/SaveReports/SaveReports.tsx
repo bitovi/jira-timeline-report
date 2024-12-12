@@ -25,12 +25,24 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
 
-  const reports = useAllReports();
+  const { data: reports, refetch: refetchReports } = useAllReports();
 
-  const { createReport, isCreating } = useCreateReport();
   const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
     reports,
     queryParamObservable,
+  });
+  const { createReport, isCreating } = useCreateReport({
+    onCreate: async (newReportId) => {
+      // changing the search params will auto update the selected report, but it uses reports
+      // from useAllReports to find the report, so have to refetch the reports after the new
+      // one is created
+      await refetchReports()
+
+      // add the report param and push state
+      const url = new URL(window.location.toString());
+      url.searchParams.set("report", newReportId);
+      queryParamObservable.set(url.search);
+    },
   });
 
   const [name, setName] = useState(selectedReport?.name || "Untitled Report");

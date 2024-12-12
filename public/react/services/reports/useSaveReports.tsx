@@ -40,7 +40,16 @@ const useSaveReport = () => {
   return { save, isPending };
 };
 
-export const useCreateReport = () => {
+export const useCreateReport = (
+  {
+    onCreate,
+  }: {
+    /**a function that gets run when the report is saved successfully */
+    onCreate: (newReportId: string) => Promise<void>;
+  } = {
+    onCreate: (_: string) => Promise.resolve(),
+  }
+) => {
   const queryClient = useQueryClient();
   const { save, isPending } = useSaveReport();
   const { showFlag } = useFlags();
@@ -67,8 +76,6 @@ export const useCreateReport = () => {
     }
 
     const urlParams = new URLSearchParams(newReport.queryParams);
-    urlParams.delete("report");
-    urlParams.append("report", newReport.id);
 
     save(
       { ...allReports, [newReport.id]: { ...newReport, queryParams: urlParams.toString() } },
@@ -77,7 +84,7 @@ export const useCreateReport = () => {
         onSuccess: (...args) => {
           options?.onSuccess?.(...args);
 
-          window.location.search = urlParams.toString();
+          onCreate(newReport.id);
 
           showFlag({
             title: "Success",
