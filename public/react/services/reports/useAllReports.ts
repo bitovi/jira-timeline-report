@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import type { Reports } from "../../../jira/reports";

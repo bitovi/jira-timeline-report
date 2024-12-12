@@ -27,13 +27,13 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const reports = useAllReports();
 
+  const { createReport, isCreating } = useCreateReport();
   const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
     reports,
     queryParamObservable,
   });
-  const { createReport, isCreating } = useCreateReport();
 
-  const [name, setName] = useState(selectedReport?.name || "Untitled Report");
+  const [name, setName] = useState(selectedReport?.name ?? "Untitled Report");
 
   useEffect(() => {
     if (!selectedReport) {
@@ -92,9 +92,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       return;
     }
 
-    // @David
-    const url = new URL(selectedReport.queryParams);
-    queryParamObservable.set(url.search);
+    queryParamObservable.set(`?${selectedReport.queryParams}`);
   };
 
   return (
