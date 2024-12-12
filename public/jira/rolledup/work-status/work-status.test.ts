@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { calculateReportStatuses, WithRollupStatus } from "./work-status";
-import { WithIssueLastPeriod } from "../../rolledup-and-rolledback/rollup-and-rollback";
+import {
+  rollupAndRollback,
+  WithIssueLastPeriod,
+} from "../../rolledup-and-rolledback/rollup-and-rollback";
 import { WithBlockedStatuses } from "../../rollup/blocked-status-issues/blocked-status-issues";
 import { WithDateRollup } from "../../rollup/dates/dates";
 import { IssueOrRelease } from "../../rollup/rollup";
 import { WithWarningIssues } from "../../rollup/warning-issues/warning-issues";
 import { DateAndIssueKeys, WithWorkTypeRollups } from "../work-type/work-type";
+import { JiraIssue } from "../../shared/types";
+import { deriveIssue } from "../../derived/derive";
+import { normalizeIssue } from "../../normalized/normalize";
 // import { JiraIssue, NormalizedTeam, ParentIssue } from "../../shared/types";
 // import { DerivedWorkTiming } from "../../derived/work-timing/work-timing";
 // import { DerivedWorkStatus } from "../../derived/work-status/work-status";
@@ -232,5 +238,69 @@ describe("calculateReportStatuses", () => {
 
     const actual = calculateReportStatuses(input);
     expect(actual).toStrictEqual(expected);
+  });
+
+  // tests fix for https://bitovi.atlassian.net/browse/TR-149
+  it("handles new epic with empty childKeys", () => {
+    const issue = {
+      key: "PLAY-5",
+      expand: "operations,versionedRepresentations,editmeta,changelog,renderedFields",
+      id: "10552",
+      self: "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issue/10552",
+      fields: {
+        Summary: "Empty Epic with Timing in the Future",
+        "Issue Type": {
+          self: "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10000",
+          id: "10000",
+          description:
+            "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
+          iconUrl: "https://bitovi-training.atlassian.net/images/icons/issuetypes/epic.svg",
+          name: "Epic",
+          subtask: false,
+          hierarchyLevel: 1,
+        },
+        "Story points median": null,
+        Created: "2024-12-12T11:10:55.538-0600",
+        Sprint: null,
+        "Fix versions": [],
+        Team: null,
+        "Story points": null,
+        "Story points confidence": null,
+        Labels: [],
+        "Start date": "2025-02-09",
+        Rank: "0|i001qr:",
+        "Due date": "2025-03-08",
+        Status: {
+          self: "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/status/10003",
+          description: "",
+          iconUrl: "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/",
+          name: "To Do",
+          id: "10003",
+          statusCategory: {
+            self: "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/statuscategory/2",
+            id: 2,
+            key: "new",
+            colorName: "blue-gray",
+            name: "To Do",
+          },
+        },
+      },
+    } as unknown as JiraIssue;
+
+    const rolled = rollupAndRollback(
+      [issue].map((normalized) => deriveIssue(normalizeIssue(normalized))),
+      {},
+      [{ calculation: "widestRange", hierarchyLevel: 1, type: "Epic" }],
+      new Date(2024, 6, 17)
+    );
+
+    // @TODO fix types between work status and rollup
+    // @ts-expect-error type mismatch
+    const [status] = calculateReportStatuses(rolled);
+
+    expect(status.rollupStatuses.rollup.status).toBe("new");
+    expect(status.rollupStatuses.rollup.statusFrom).toEqual({
+      message: "Unable to find this last period",
+    });
   });
 });
