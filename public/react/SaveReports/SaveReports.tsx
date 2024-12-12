@@ -25,25 +25,13 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
 
-  const { data: reports, refetch: refetchReports } = useAllReports();
+  const reports = useAllReports();
 
   const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
     reports,
     queryParamObservable,
   });
-  const { createReport, isCreating } = useCreateReport({
-    onCreate: async (newReportId) => {
-      // changing the search params will auto update the selected report, but it uses reports
-      // from useAllReports to find the report, so have to refetch the reports after the new
-      // one is created
-      await refetchReports()
-
-      // add the report param and push state
-      const url = new URL(window.location.toString());
-      url.searchParams.set("report", newReportId);
-      queryParamObservable.set(url.search);
-    },
-  });
+  const { createReport, isCreating } = useCreateReport();
 
   const [name, setName] = useState(selectedReport?.name || "Untitled Report");
 
@@ -81,13 +69,19 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const handleCreate = (name: string) => {
     const id = uuidv4();
+    const params = new URLSearchParams(window.location.search);
+    params.set("report", id);
 
     createReport(
-      { id, name, queryParams: window.location.search },
+      { id, name, queryParams: params.toString() },
       {
         onSuccess: () => {
           closeModal();
           addReportToRecents(id);
+
+          const url = new URL(window.location.toString());
+          url.searchParams.set("report", id);
+          queryParamObservable.set(url.search);
         },
       }
     );
@@ -98,7 +92,9 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       return;
     }
 
-    window.location.search = "?" + selectedReport.queryParams;
+    // @David
+    const url = new URL(selectedReport.queryParams);
+    queryParamObservable.set(url.search);
   };
 
   return (

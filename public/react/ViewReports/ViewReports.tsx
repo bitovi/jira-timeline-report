@@ -11,7 +11,7 @@ interface ViewReportProps {
 }
 
 const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
-  const { data: reports } = useAllReports();
+  const reports = useAllReports();
 
   const selectedReport = useMemo(() => {
     const params = new URLSearchParams(window.location.search);

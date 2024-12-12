@@ -18,10 +18,20 @@ const useSaveReport = () => {
     mutationFn: (toSave: Reports) => {
       return updateReports(storage, toSave);
     },
-    onSuccess: () => {
+    onMutate: async (toSave) => {
+      await queryClient.cancelQueries({ queryKey: reportKeys.allReports });
+
+      const previousReports = queryClient.getQueryData<Reports>(reportKeys.allReports);
+      queryClient.setQueryData<Reports>(reportKeys.allReports, toSave);
+
+      return { previousReports };
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: reportKeys.allReports });
     },
-    onError: (error) => {
+    onError: (error, _, context) => {
+      queryClient.setQueryData<Reports>(reportKeys.allReports, context?.previousReports);
+
       let description = error?.message;
 
       if (!description) {
@@ -40,16 +50,7 @@ const useSaveReport = () => {
   return { save, isPending };
 };
 
-export const useCreateReport = (
-  {
-    onCreate,
-  }: {
-    /**a function that gets run when the report is saved successfully */
-    onCreate: (newReportId: string) => Promise<void>;
-  } = {
-    onCreate: (_: string) => Promise.resolve(),
-  }
-) => {
+export const useCreateReport = () => {
   const queryClient = useQueryClient();
   const { save, isPending } = useSaveReport();
   const { showFlag } = useFlags();
@@ -75,16 +76,12 @@ export const useCreateReport = (
       return;
     }
 
-    const urlParams = new URLSearchParams(newReport.queryParams);
-
     save(
-      { ...allReports, [newReport.id]: { ...newReport, queryParams: urlParams.toString() } },
+      { ...allReports, [newReport.id]: newReport },
       {
         ...(options ?? {}),
         onSuccess: (...args) => {
           options?.onSuccess?.(...args);
-
-          onCreate(newReport.id);
 
           showFlag({
             title: "Success",
