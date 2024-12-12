@@ -2,7 +2,13 @@ import type { FC } from "react";
 
 import React, { useState } from "react";
 import Button, { IconButton } from "@atlaskit/button/new";
-import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition } from "@atlaskit/modal-dialog";
+import Modal, {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ModalTransition,
+} from "@atlaskit/modal-dialog";
 import { Flex, Grid, xcss } from "@atlaskit/primitives";
 import { ErrorMessage, Field } from "@atlaskit/form";
 import Textfield from "@atlaskit/textfield";
@@ -31,6 +37,7 @@ interface SaveReportModalProps {
   isCreating: boolean;
   name: string;
   setName: (newName: string) => void;
+  autoFocus?: boolean;
 }
 
 const SaveReportModal: FC<SaveReportModalProps> = ({
@@ -40,6 +47,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
   onCreate,
   validate,
   isCreating,
+  autoFocus = true,
 }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const handleSubmit = (name: string) => {
@@ -62,7 +70,12 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
             <ModalHeader>
               <Grid gap="space.200" templateAreas={["title close"]} xcss={gridStyles}>
                 <Flex xcss={closeContainerStyles} justifyContent="end">
-                  <IconButton appearance="subtle" icon={CrossIcon} label="Close Modal" onClick={closeModal} />
+                  <IconButton
+                    appearance="subtle"
+                    icon={CrossIcon}
+                    label="Close Modal"
+                    onClick={closeModal}
+                  />
                 </Flex>
                 <Flex xcss={titleContainerStyles} justifyContent="start">
                   <ModalTitle>Save Report</ModalTitle>
@@ -95,6 +108,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
                     <>
                       <Textfield
                         defaultValue={nameProp}
+                        autoFocus={autoFocus}
                         {...fieldProps}
                         onChange={(event) => {
                           // types for this textfield are coming from ADS as a FORMEVENT

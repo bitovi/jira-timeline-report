@@ -1,6 +1,5 @@
 import { TimelineReport } from "../timeline-report.js";
 
-import "../shared/saved-urls.js";
 import "../shared/select-cloud.js";
 
 import JiraLogin from "../shared/jira-login.js";
@@ -49,10 +48,6 @@ export default async function mainHelper(config, { host, createStorage }) {
   const storage = createStorage(jiraHelpers);
 
   const loginComponent = new JiraLogin().initialize({ jiraHelpers });
-
-  const savedUrls = document.querySelector("saved-urls");
-  savedUrls.loginComponent = loginComponent;
-  savedUrls.jiraHelpers = jiraHelpers;
 
   const selectCloud = document.querySelector("select-cloud");
   if (selectCloud) {

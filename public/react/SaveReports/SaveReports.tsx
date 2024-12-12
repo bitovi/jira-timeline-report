@@ -33,7 +33,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     queryParamObservable,
   });
 
-  const [name, setName] = useState(selectedReport?.name || "Untitled Report");
+  const [name, setName] = useState(selectedReport?.name ?? "Untitled Report");
 
   useEffect(() => {
     if (!selectedReport) {
@@ -69,13 +69,19 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const handleCreate = (name: string) => {
     const id = uuidv4();
+    const params = new URLSearchParams(window.location.search);
+    params.set("report", id);
 
     createReport(
-      { id, name, queryParams: window.location.search },
+      { id, name, queryParams: params.toString() },
       {
         onSuccess: () => {
           closeModal();
           addReportToRecents(id);
+
+          const url = new URL(window.location.toString());
+          url.searchParams.set("report", id);
+          queryParamObservable.set(url.search);
         },
       }
     );
@@ -86,7 +92,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       return;
     }
 
-    window.location.search = "?" + selectedReport.queryParams;
+    queryParamObservable.set(`?${selectedReport.queryParams}`);
   };
 
   return (

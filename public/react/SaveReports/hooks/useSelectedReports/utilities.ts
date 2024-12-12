@@ -10,7 +10,10 @@ export const paramsEqual = (lhs: URLSearchParams, rhs: URLSearchParams): boolean
   }
 
   return lhsEntries.reduce((isEqual, [lhsName, lhsValue]) => {
-    return isEqual && rhsEntries.some(([rhsName, rhsValue]) => lhsName === rhsName && lhsValue === rhsValue);
+    return (
+      isEqual &&
+      rhsEntries.some(([rhsName, rhsValue]) => lhsName === rhsName && lhsValue === rhsValue)
+    );
   }, true);
 };
 
@@ -26,7 +29,11 @@ export const getReportFromParams = (reports: Reports): Report | undefined => {
     .find(({ id }) => id === selectedReport);
 };
 
-export const paramsMatchReport = (params: URLSearchParams, reports: Reports, paramsToOmit: string[] = ["settings"]) => {
+export const paramsMatchReport = (
+  params: URLSearchParams,
+  reports: Reports,
+  paramsToOmit: string[] = ["settings"]
+) => {
   const report = getReportFromParams(reports);
 
   if (!report) {

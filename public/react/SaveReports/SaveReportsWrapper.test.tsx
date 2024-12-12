@@ -16,7 +16,7 @@ describe("<SaveReportsWrapper />", () => {
           update: vi.fn(),
         }}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
-        queryParamObservable={{ on: vi.fn(), off: vi.fn(), value: "" }}
+        queryParamObservable={{ on: vi.fn(), off: vi.fn(), value: "", set: vi.fn() }}
       />
     );
 
@@ -40,6 +40,7 @@ describe("<SaveReportsWrapper />", () => {
           on: vi.fn(),
           off: vi.fn(),
           value: "?jql=issues-and-what-not",
+          set: vi.fn(),
         }}
       />
     );

@@ -4,6 +4,7 @@ export interface CanObservable<TData> {
   value: TData;
   on(handler: () => void): void;
   off(handler: () => void): void;
+  set(value: TData): void;
 }
 
 export const useCanObservable = <TData>(observable: CanObservable<TData>): TData => {

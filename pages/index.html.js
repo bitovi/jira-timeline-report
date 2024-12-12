@@ -48,7 +48,6 @@ module.exports = function (env, mainFileRoute) {
 					</li>
 				</ul>
 				${mainFileRoute.includes("connect") ? "" : "<select-cloud></select-cloud>"}
-				<saved-urls></saved-urls>
 				<div id="login">
 					
 				</div>

@@ -66,6 +66,7 @@ function calculateStatuses<
   const timingData = prepareTimingData(issueWithPriorTiming);
 
   const isIssue = isDerivedIssue(issueWithPriorTiming);
+  const childKeys = getAllWorkTypeRollupChildIssueKeys();
 
   // do the rollup
   if (isIssue && issueWithPriorTiming.statusCategory === "done") {
@@ -74,7 +75,8 @@ function calculateStatuses<
   } else if (
     // we should check all the children ...
     isIssue &&
-    getIssuesByKeys(getAllWorkTypeRollupChildIssueKeys()).every(
+    childKeys.length &&
+    getIssuesByKeys(childKeys).every(
       (issue) => isDerivedIssue(issue) && issue.statusCategory === "done"
     )
   ) {
@@ -103,7 +105,7 @@ function calculateStatuses<
 
   function getAllWorkTypeRollupChildIssueKeys(): string[] {
     return workTypes.flatMap(
-      (x) => issueWithPriorTiming.workTypeRollups.children[x]?.issueKeys ?? []
+      (workType) => issueWithPriorTiming.workTypeRollups.children[workType]?.issueKeys ?? []
     );
   }
 }

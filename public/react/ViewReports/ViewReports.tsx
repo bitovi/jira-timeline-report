@@ -37,7 +37,10 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
           {
             key: `${report.id}-report`,
             content: (
-              <a href={"?" + report.queryParams} className="flex items-center font-normal text-sm leading-5 h-10">
+              <a
+                href={"?" + report.queryParams}
+                className="flex items-center font-normal text-sm leading-5 h-10"
+              >
                 Report name {report.name}
               </a>
             ),
@@ -51,7 +54,10 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
       onBackButtonClicked={onBackButtonClicked}
       reportInfo={selectedReport ? <p>{selectedReport}</p> : null}
     >
-      <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={reportRows} />
+      <DynamicTable
+        head={{ cells: [{ key: "report-heading", content: "Report" }] }}
+        rows={reportRows}
+      />
     </ViewReportsLayout>
   );
 };
