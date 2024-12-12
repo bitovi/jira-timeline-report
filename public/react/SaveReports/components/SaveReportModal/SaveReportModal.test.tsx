@@ -65,6 +65,7 @@ describe("<SaveReportModal />", () => {
           validate={mockValidate}
           isCreating={false}
           setName={vi.fn()}
+          autoFocus={false}
         />
       );
     });
