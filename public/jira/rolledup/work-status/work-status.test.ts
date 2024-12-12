@@ -240,7 +240,8 @@ describe("calculateReportStatuses", () => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it("handles empty childKeys", () => {
+  // tests fix for https://bitovi.atlassian.net/browse/TR-149
+  it("handles new epic with empty childKeys", () => {
     const issue = {
       key: "PLAY-5",
       expand: "operations,versionedRepresentations,editmeta,changelog,renderedFields",
