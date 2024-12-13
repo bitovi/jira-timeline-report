@@ -7,6 +7,7 @@ import ArrowRightCircleIcon from "@atlaskit/icon/glyph/arrow-right-circle";
 import PeopleGroupIcon from "@atlaskit/icon/glyph/people-group";
 import { Label } from "@atlaskit/form";
 import EditorUnlinkIcon from "@atlaskit/icon/glyph/editor/unlink";
+import Badge from "@atlaskit/badge";
 
 import SidebarButton from "../../../components/SidebarButton";
 import { CanObservable, useCanObservable } from "../../../hooks/useCanObservable";
@@ -33,48 +34,112 @@ const TeamSelector: FC<TeamSelectorProps> = ({
     .filter(({ name }) => name !== "__GLOBAL__")
     .sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
 
+  const groups = Object.groupBy(teams, ({ status }) => status);
+
+  console.log({ teams, groups, derivedTeams, teamsFromStorage });
+
   return (
     <>
       <div className="my-4">
         <Heading size="small">Team Configuration</Heading>
       </div>
       <Label htmlFor="default-settings">DEFAULT</Label>
-      <SidebarButton className="mt-2" isActive={selectedTeam === "global"} onClick={() => setSelectedTeam("global")}>
+      <SidebarButton
+        className="mt-2"
+        isActive={selectedTeam === "global"}
+        onClick={() => setSelectedTeam("global")}
+      >
         <SettingsIcon label="default settings" />
         <p className="flex-1">Default Settings</p>
         {selectedTeam === "global" && <ArrowRightCircleIcon label="default settings selected" />}
       </SidebarButton>
       <Hr />
-      <Label htmlFor="">TEAMS</Label>
-      {derivedTeams.length === 0 && <div>Derived Teams Not Found please add an issue source to show teams</div>}
-      {teams.map((team) => {
-        return (
-          <SidebarButton
-            key={team.name}
-            className="mt-2"
-            isActive={selectedTeam === team.name}
-            onClick={() => setSelectedTeam(team.name)}
-          >
-            <PeopleGroupIcon label={`${team} settings`} />
-            <div className="flex-1 flex justify-between items-center">
-              {team.name}
-              {team.status !== "in-both" && (
-                <Tooltip position="top" content={getStatusText(team.status)}>
-                  <EditorUnlinkIcon label="unlinked team data" />
-                </Tooltip>
-              )}
-            </div>
-            {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
-          </SidebarButton>
-        );
-      })}
+      {derivedTeams.length === 0 && (
+        <>
+          <Label htmlFor="">TEAMS</Label>
+          <div>Derived Teams Not Found please add an issue source to show teams</div>
+        </>
+      )}
+      {(groups["in-both"]?.length || groups["only-derived"]?.length) && (
+        <>
+          <Label htmlFor="">TEAMS IN REPORT</Label>
+          {groups["in-both"]?.map((team) => {
+            return (
+              <TeamListItem
+                key={team.name}
+                team={team}
+                selectedTeam={selectedTeam}
+                setSelectedTeam={setSelectedTeam}
+              />
+            );
+          })}
+          {groups["only-derived"]?.map((team) => {
+            return (
+              <TeamListItem
+                key={team.name}
+                team={team}
+                selectedTeam={selectedTeam}
+                setSelectedTeam={setSelectedTeam}
+              />
+            );
+          })}
+        </>
+      )}
+      {groups["only-storage"]?.length && (
+        <>
+          <Label htmlFor="">TEAMS OUTSIDE REPORT</Label>
+          {groups["only-storage"]?.map((team) => {
+            return (
+              <TeamListItem
+                key={team.name}
+                team={team}
+                selectedTeam={selectedTeam}
+                setSelectedTeam={setSelectedTeam}
+              />
+            );
+          })}
+        </>
+      )}
     </>
   );
 };
 
 export default TeamSelector;
 
-const getDerivedTeams = (derivedIssue: TeamSelectorProps["derivedIssuesObservable"]["value"]): string[] => {
+export interface TeamListItemProps {
+  team: ReturnType<typeof mergeTeams>[number];
+  selectedTeam: "global" | (string & {});
+  setSelectedTeam: (team: string) => void;
+}
+
+const TeamListItem: FC<TeamListItemProps> = ({ team, selectedTeam, setSelectedTeam }) => {
+  return (
+    <SidebarButton
+      key={team.name}
+      className="mt-2 items-center justify-center"
+      isActive={selectedTeam === team.name}
+      onClick={() => setSelectedTeam(team.name)}
+    >
+      <div className="[&>span]:!block">
+        <PeopleGroupIcon label={`${team} settings`} />
+      </div>
+      <div className="flex-1 flex flex-col justify-between items-start">
+        {team.name}
+        {team.status === "only-derived" && <Badge>not configured</Badge>}
+        {/* {team.status !== "in-both" && (
+          <Tooltip position="top" content={getStatusText(team.status)}>
+            <EditorUnlinkIcon label="unlinked team data" />
+          </Tooltip>
+        )} */}
+      </div>
+      {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
+    </SidebarButton>
+  );
+};
+
+const getDerivedTeams = (
+  derivedIssue: TeamSelectorProps["derivedIssuesObservable"]["value"]
+): string[] => {
   if (!derivedIssue) {
     return [];
   }
