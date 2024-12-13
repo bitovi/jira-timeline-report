@@ -120,6 +120,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
                         onBlur={(event) => {
                           handleBlur(event.target.value);
                         }}
+                        onFocus={(e) => e.target.select()}
                       />
                       {!!errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
                     </>
