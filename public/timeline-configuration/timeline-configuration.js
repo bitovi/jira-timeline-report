@@ -255,6 +255,7 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
+    
     Promise.all([
       this.jiraHelpers.fetchJiraFields(),
       getAllTeamData(this.storage),
