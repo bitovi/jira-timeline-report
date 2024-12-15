@@ -7,6 +7,7 @@ import "./reports/gantt-grid.js";
 import "./reports/table-grid.js";
 import "./reports/scatter-timeline.js";
 import "./reports/status-report.js";
+import "./reports/group-grid/group-grid.js";
 import "./timeline-configuration/timeline-configuration.js";
 
 import "./select-issue-type/select-issue-type.js";
@@ -94,9 +95,7 @@ export class TimelineReport extends StacheElement {
               planningStatuses:to="this.planningStatuses"
               groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
-              statusesToExclude:to="this.statusesToExclude"
               primaryReportBreakdown:to="this.primaryReportBreakdown"
-              
               primaryReportType:from="this.primaryReportType"
               primaryIssueType:from="this.primaryIssueType"
               secondaryIssueType:from="this.secondaryIssueType"
@@ -135,6 +134,11 @@ export class TimelineReport extends StacheElement {
                 <table-grid
                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
+              {{/ eq }}
+              {{# eq(this.primaryReportType, "group-grid") }}
+                <group-grid
+                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
               {{/ eq }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
