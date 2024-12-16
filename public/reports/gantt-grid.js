@@ -204,6 +204,8 @@ export class GanttGrid extends StacheElement {
             return keyToAllIssues[parentKey][0];
           } else if (obj[parentKey][0].issue.fields.Parent) {
             return normalizeParent(obj[parentKey][0].issue.fields.Parent);
+          } else {
+            return {key: parentKey, summary: "No Parent"}
           }
         })
         .filter(Boolean);
