@@ -6,13 +6,11 @@ import SettingsIcon from "@atlaskit/icon/glyph/settings";
 import ArrowRightCircleIcon from "@atlaskit/icon/glyph/arrow-right-circle";
 import PeopleGroupIcon from "@atlaskit/icon/glyph/people-group";
 import { Label } from "@atlaskit/form";
-import EditorUnlinkIcon from "@atlaskit/icon/glyph/editor/unlink";
 import Badge from "@atlaskit/badge";
 
 import SidebarButton from "../../../components/SidebarButton";
 import { CanObservable, useCanObservable } from "../../../hooks/useCanObservable";
 import Hr from "../../../components/Hr";
-import Tooltip from "@atlaskit/tooltip";
 
 export interface TeamSelectorProps {
   teamsFromStorage: string[];
@@ -60,10 +58,10 @@ const TeamSelector: FC<TeamSelectorProps> = ({
           <div>Derived Teams Not Found please add an issue source to show teams</div>
         </>
       )}
-      {(groups["in-both"]?.length || groups["only-derived"]?.length) && (
+      {(groups.storageAndReport?.length || groups.reportOnly?.length) && (
         <>
           <Label htmlFor="">TEAMS IN REPORT</Label>
-          {groups["in-both"]?.map((team) => {
+          {groups.storageAndReport?.map((team) => {
             return (
               <TeamListItem
                 key={team.name}
@@ -73,7 +71,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
               />
             );
           })}
-          {groups["only-derived"]?.map((team) => {
+          {groups.reportOnly?.map((team) => {
             return (
               <TeamListItem
                 key={team.name}
@@ -85,10 +83,10 @@ const TeamSelector: FC<TeamSelectorProps> = ({
           })}
         </>
       )}
-      {groups["only-storage"]?.length && (
+      {groups.storageOnly?.length && (
         <>
           <Label htmlFor="">TEAMS OUTSIDE REPORT</Label>
-          {groups["only-storage"]?.map((team) => {
+          {groups.storageOnly?.map((team) => {
             return (
               <TeamListItem
                 key={team.name}
@@ -125,12 +123,7 @@ const TeamListItem: FC<TeamListItemProps> = ({ team, selectedTeam, setSelectedTe
       </div>
       <div className="flex-1 flex flex-col justify-between items-start">
         {team.name}
-        {team.status === "only-derived" && <Badge>not configured</Badge>}
-        {/* {team.status !== "in-both" && (
-          <Tooltip position="top" content={getStatusText(team.status)}>
-            <EditorUnlinkIcon label="unlinked team data" />
-          </Tooltip>
-        )} */}
+        {team.status === "reportOnly" && <Badge>not configured</Badge>}
       </div>
       {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
     </SidebarButton>
@@ -150,7 +143,7 @@ const getDerivedTeams = (
 const mergeTeams = (
   derivedTeams: string[],
   teamsFromStorage: string[]
-): Array<{ name: string; status: "only-derived" | "only-storage" | "in-both" }> => {
+): Array<{ name: string; status: "reportOnly" | "storageOnly" | "storageAndReport" }> => {
   const allNames = [...new Set([...derivedTeams, ...teamsFromStorage])];
 
   return allNames.map((name) => {
@@ -158,19 +151,19 @@ const mergeTeams = (
     const inStorage = teamsFromStorage.includes(name);
 
     if (inDerived && inStorage) {
-      return { name, status: "in-both" };
+      return { name, status: "storageAndReport" };
     }
 
     if (inDerived) {
-      return { name, status: "only-derived" };
+      return { name, status: "reportOnly" };
     }
 
-    return { name, status: "only-storage" };
+    return { name, status: "storageOnly" };
   });
 };
 
-const getStatusText = (status: "only-derived" | "only-storage") => {
-  if (status === "only-derived") {
+const getStatusText = (status: "reportOnly" | "storageOnly") => {
+  if (status === "reportOnly") {
     return "Team does not exist in storage";
   }
 
