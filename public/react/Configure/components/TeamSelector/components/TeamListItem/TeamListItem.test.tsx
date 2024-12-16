@@ -2,9 +2,10 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vi, beforeEach } from "vitest";
+
 import TeamListItem from "./TeamListItem";
 
-describe("TeamListItem Component", () => {
+describe("<TeamListItem />", () => {
   const mockSetSelectedTeam = vi.fn();
 
   const defaultProps = {

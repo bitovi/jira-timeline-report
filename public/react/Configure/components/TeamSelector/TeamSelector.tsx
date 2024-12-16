@@ -33,8 +33,6 @@ const TeamSelector: FC<TeamSelectorProps> = ({
 
   const groups = Object.groupBy(teams, ({ status }) => status);
 
-  console.log({ teams, groups, derivedTeams, teamsFromStorage });
-
   return (
     <>
       <div className="my-4">
