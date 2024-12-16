@@ -4,13 +4,12 @@ import React from "react";
 import Heading from "@atlaskit/heading";
 import SettingsIcon from "@atlaskit/icon/glyph/settings";
 import ArrowRightCircleIcon from "@atlaskit/icon/glyph/arrow-right-circle";
-import PeopleGroupIcon from "@atlaskit/icon/glyph/people-group";
 import { Label } from "@atlaskit/form";
-import Badge from "@atlaskit/badge";
 
 import SidebarButton from "../../../components/SidebarButton";
 import { CanObservable, useCanObservable } from "../../../hooks/useCanObservable";
 import Hr from "../../../components/Hr";
+import TeamListItem from "./components/TeamListItem";
 
 export interface TeamSelectorProps {
   teamsFromStorage: string[];
@@ -104,32 +103,6 @@ const TeamSelector: FC<TeamSelectorProps> = ({
 
 export default TeamSelector;
 
-export interface TeamListItemProps {
-  team: ReturnType<typeof mergeTeams>[number];
-  selectedTeam: "global" | (string & {});
-  setSelectedTeam: (team: string) => void;
-}
-
-const TeamListItem: FC<TeamListItemProps> = ({ team, selectedTeam, setSelectedTeam }) => {
-  return (
-    <SidebarButton
-      key={team.name}
-      className="mt-2 items-center justify-center"
-      isActive={selectedTeam === team.name}
-      onClick={() => setSelectedTeam(team.name)}
-    >
-      <div className="[&>span]:!block">
-        <PeopleGroupIcon label={`${team} settings`} />
-      </div>
-      <div className="flex-1 flex flex-col justify-between items-start">
-        {team.name}
-        {team.status === "reportOnly" && <Badge>not configured</Badge>}
-      </div>
-      {selectedTeam === team.name && <ArrowRightCircleIcon label={`${team} settings selected`} />}
-    </SidebarButton>
-  );
-};
-
 const getDerivedTeams = (
   derivedIssue: TeamSelectorProps["derivedIssuesObservable"]["value"]
 ): string[] => {
@@ -160,12 +133,4 @@ const mergeTeams = (
 
     return { name, status: "storageOnly" };
   });
-};
-
-const getStatusText = (status: "reportOnly" | "storageOnly") => {
-  if (status === "reportOnly") {
-    return "Team does not exist in storage";
-  }
-
-  return "Team does not exist in derrived issues";
 };
