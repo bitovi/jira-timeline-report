@@ -14,6 +14,7 @@ import ViewReportLayout from "./components/ViewReportsLayout";
 import Skeleton from "../components/Skeleton";
 import { StorageProvider } from "../services/storage";
 import { useCanObservable } from "../hooks/useCanObservable";
+import { FlagsProvider } from "@atlaskit/flag";
 
 interface ViewReportsWrapperProps {
   storage: AppStorage;
@@ -23,7 +24,11 @@ interface ViewReportsWrapperProps {
 
 const queryClient = new QueryClient();
 
-const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ storage, showingReportsObservable, ...viewReportProps }) => {
+const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
+  storage,
+  showingReportsObservable,
+  ...viewReportProps
+}) => {
   const shouldShowReports = useCanObservable(showingReportsObservable);
 
   if (!shouldShowReports) {
@@ -31,15 +36,19 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ storage, showingRepor
   }
 
   return (
-    <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>
-      <StorageProvider storage={storage}>
-        <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-          <QueryClientProvider client={queryClient}>
-            <ViewReports {...viewReportProps} />
-          </QueryClientProvider>
-        </Suspense>
-      </StorageProvider>
-    </ErrorBoundary>
+    <FlagsProvider>
+      <ErrorBoundary
+        fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}
+      >
+        <StorageProvider storage={storage}>
+          <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
+            <QueryClientProvider client={queryClient}>
+              <ViewReports {...viewReportProps} />
+            </QueryClientProvider>
+          </Suspense>
+        </StorageProvider>
+      </ErrorBoundary>
+    </FlagsProvider>
   );
 };
 
@@ -81,7 +90,10 @@ const ViewReportSkeleton: FC<ViewReportSkeletonProps> = ({ onBackButtonClicked }
   });
 
   return (
-    <ViewReportLayout onBackButtonClicked={onBackButtonClicked} reportInfo={selectedReportExists ? <Skeleton /> : null}>
+    <ViewReportLayout
+      onBackButtonClicked={onBackButtonClicked}
+      reportInfo={selectedReportExists ? <Skeleton /> : null}
+    >
       <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={rows} />
     </ViewReportLayout>
   );

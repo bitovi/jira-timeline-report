@@ -1,10 +1,23 @@
 import type { FC } from "react";
+import type { Report } from "../../jira/reports";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import DynamicTable from "@atlaskit/dynamic-table";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import ViewReportsLayout from "./components/ViewReportsLayout";
-import { useAllReports } from "../services/reports";
+import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
+import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
+import { IconButton } from "@atlaskit/button/new";
+
+import Modal, {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ModalTransition,
+} from "@atlaskit/modal-dialog";
+import Button from "@atlaskit/button/new";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
@@ -12,6 +25,11 @@ interface ViewReportProps {
 
 const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
   const reports = useAllReports();
+
+  const { deleteReport, isDeleting } = useDeleteReport();
+  const [managedReport, setManagedReport] = useState<Report>();
+
+  const { removeFromRecentReports } = useRecentReports();
 
   const selectedReport = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -45,21 +63,108 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
               </a>
             ),
           },
+          {
+            key: `${report.id}-manager`,
+            content: (
+              <DropdownMenu
+                shouldRenderToParent
+                trigger={({ triggerRef, ...props }) => (
+                  <IconButton
+                    // className="flex items-center justify-center"
+                    icon={ShowMoreHorizontalIcon}
+                    label="manage report"
+                    ref={triggerRef}
+                    {...props}
+                  />
+                )}
+              >
+                <DropdownItem
+                  onClick={() => {
+                    setManagedReport(report);
+                  }}
+                >
+                  Delete
+                </DropdownItem>
+              </DropdownMenu>
+            ),
+          },
         ],
       };
     });
 
   return (
-    <ViewReportsLayout
-      onBackButtonClicked={onBackButtonClicked}
-      reportInfo={selectedReport ? <p>{selectedReport}</p> : null}
-    >
-      <DynamicTable
-        head={{ cells: [{ key: "report-heading", content: "Report" }] }}
-        rows={reportRows}
+    <>
+      <ViewReportsLayout
+        onBackButtonClicked={onBackButtonClicked}
+        reportInfo={selectedReport ? <p>{selectedReport}</p> : null}
+      >
+        <DynamicTable
+          head={{
+            cells: [
+              { key: "report-heading", content: "Report" },
+              { key: " manage-reports", content: "Manage" },
+            ],
+          }}
+          rows={reportRows}
+        />
+      </ViewReportsLayout>
+      <DeleteReportModal
+        isOpen={!!managedReport}
+        isDeleting={isDeleting}
+        closeModal={() => setManagedReport(undefined)}
+        deleteReport={() => {
+          if (!managedReport) {
+            return;
+          }
+
+          deleteReport(managedReport.id, {
+            onSuccess: () => {
+              removeFromRecentReports(managedReport.id);
+            },
+            onSettled: () => setManagedReport(undefined),
+          });
+        }}
+        report={managedReport}
       />
-    </ViewReportsLayout>
+    </>
   );
 };
 
 export default ViewReports;
+
+interface DeleteReportModalProps {
+  isOpen: boolean;
+  closeModal: () => void;
+  isDeleting: boolean;
+  deleteReport: () => void;
+  report?: Report;
+}
+
+const DeleteReportModal: FC<DeleteReportModalProps> = ({
+  isOpen,
+  closeModal,
+  deleteReport,
+  isDeleting,
+  report,
+}) => {
+  if (!isOpen) {
+    return;
+  }
+
+  return (
+    <ModalTransition>
+      <Modal>
+        <ModalHeader>
+          <ModalTitle>{report?.name} to be deleted</ModalTitle>
+        </ModalHeader>
+        <ModalBody>Are you sure you want to delete this report?</ModalBody>
+        <ModalFooter>
+          <Button appearance="danger" isDisabled={isDeleting} onClick={() => deleteReport()}>
+            Delete
+          </Button>
+          <Button onClick={() => closeModal()}>Cancel</Button>
+        </ModalFooter>
+      </Modal>
+    </ModalTransition>
+  );
+};
