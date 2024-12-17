@@ -47,7 +47,7 @@ describe("<SavedReportDropdown />", () => {
       />
     );
 
-    expect(screen.getByText("Saved Reports")).toBeInTheDocument();
+    expect(screen.getByText("Saved reports")).toBeInTheDocument();
   });
 
   it("renders the empty view when no reports are available", async () => {
@@ -59,7 +59,7 @@ describe("<SavedReportDropdown />", () => {
       />
     );
 
-    await userEvent.click(screen.getByText("Saved Reports"));
+    await userEvent.click(screen.getByText("Saved reports"));
 
     await waitFor(() => {
       expect(screen.getByText("You don't have any saved reports")).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("<SavedReportDropdown />", () => {
       />
     );
 
-    await userEvent.click(screen.getByText("Saved Reports"));
+    await userEvent.click(screen.getByText("Saved reports"));
 
     expect(screen.getByText("Report 1")).toBeInTheDocument();
     expect(screen.getByText("Report 2")).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("<SavedReportDropdown />", () => {
       />
     );
 
-    await userEvent.click(screen.getByText("Saved Reports"));
+    await userEvent.click(screen.getByText("Saved reports"));
 
     await waitFor(() => {
       expect(screen.getByText("Report 1")).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe("<SavedReportDropdown />", () => {
       />
     );
 
-    await userEvent.click(screen.getByText("Saved Reports"));
+    await userEvent.click(screen.getByText("Saved reports"));
     await userEvent.click(screen.getByText("View all saved reports"));
 
     await waitFor(() => {

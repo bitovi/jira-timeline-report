@@ -41,7 +41,7 @@ const SavedReportDropdown: FC<SavedReportDropdownProps> = ({
     <DropdownMenu
       isOpen={isOpen}
       onOpenChange={() => setIsOpen((prev) => !prev)}
-      trigger="Saved Reports"
+      trigger="Saved reports"
       shouldRenderToParent
     >
       {recentReports?.length === 0 ? (

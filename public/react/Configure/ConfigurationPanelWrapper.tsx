@@ -5,16 +5,15 @@ import type { AppStorage } from "../../jira/storage/common";
 import type { Jira } from "../../jira-oidc-helpers";
 
 import React, { Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "react-error-boundary";
+import Spinner from "@atlaskit/spinner";
 
 import { StorageProvider } from "../services/storage";
 import { JiraProvider } from "../services/jira";
 import ConfigurationPanel from "./ConfigurationPanel";
-import Spinner from "@atlaskit/spinner";
-
-const queryClient = new QueryClient();
+import { queryClient } from "../services/query";
 
 interface TeamConfigurationWrapperProps {
   onBackButtonClicked: () => void;

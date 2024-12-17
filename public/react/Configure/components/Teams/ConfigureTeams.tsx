@@ -20,8 +20,8 @@ interface IssueAccordionProps {
   getInheritance: (hierarchyLevel: keyof TeamConfiguration) => TeamConfiguration;
   getHierarchyLevelName: (level: number | string) => string;
   jiraFields: IssueFields;
-  augmentedTeamData: TeamConfiguration;
-  userTeamData: TeamConfiguration;
+  inheritedTeamData: TeamConfiguration;
+  savedUserTeamData: TeamConfiguration;
 }
 
 const IssueAccordion: FC<IssueAccordionProps> = ({
@@ -63,9 +63,9 @@ export interface ConfigureTeamsProps {
 }
 
 const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdate }) => {
-  const { augmentedTeamData, ...teamData } = useTeamData(teamName, jiraFields);
+  const { inheritedTeamData, ...teamData } = useTeamData(teamName, jiraFields);
 
-  const hierarchyLevels = Object.keys(augmentedTeamData)
+  const hierarchyLevels = Object.keys(inheritedTeamData)
     // hierarchyLevels should be defaults first then highest level to lowest
     .sort((lhs, rhs) => {
       if (lhs === "defaults") return -1;
@@ -95,7 +95,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
               hierarchyLevel={hierarchyLevel}
               onUpdate={onUpdate}
               jiraFields={jiraFields}
-              augmentedTeamData={augmentedTeamData}
+              inheritedTeamData={inheritedTeamData}
               {...teamData}
             />
             {!isLast && <Hr className="my-2 h-[2px]" />}

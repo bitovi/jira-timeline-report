@@ -22,6 +22,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@atlaskit/badge": "^16.4.3",
     "@atlaskit/button": "^20.2.1",
     "@atlaskit/css-reset": "^6.11.1",
     "@atlaskit/dropdown-menu": "^12.22.3",

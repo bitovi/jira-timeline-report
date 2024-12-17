@@ -1,3 +1,7 @@
+/**
+ * Handles data retrieval and updating from storage
+ */
+
 import type { AppStorage } from "../../../../../../../jira/storage/common";
 import type { AllTeamData, IssueFields, TeamConfiguration } from "./shared";
 
@@ -38,6 +42,15 @@ export const updateAllTeamData = async (
   await storage.update(allTeamDataKey, updates);
 };
 
+/**
+ * Jira fields might be removed in between app loads.
+ * Since we don't know when that happens this function checks the stored
+ * user data against the existing jiraIssues and normalizes the user data.
+ *
+ * If it finds mismatches it will attempt to update the configuration issue.
+ * The results of this request are ultimately ignore since we are returning the
+ * normalized data to the UI already and if it fails we will retry on next request.
+ */
 export const fixAnyNonExistingFields = (
   storage: AppStorage,
   userData: AllTeamData,

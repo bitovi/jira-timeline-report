@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
-import type { IssueFields, TeamConfiguration } from "./services/team-configuration";
+import type { IssueFields } from "./services/team-configuration";
 
 import React from "react";
 import Heading from "@atlaskit/heading";
@@ -9,7 +9,6 @@ import Spinner from "@atlaskit/spinner";
 import { Accordion, AccordionContent, AccordionTitle } from "../../../components/Accordion";
 import { useSaveTeamData, useTeamData } from "./services/team-configuration";
 
-import ConfigureTeamsForm from "./ConfigureTeamsForm";
 import AllTeamsDefaultForm from "./AllTeamsDefaultsForm";
 import ConfigureTeams from "./ConfigureTeams";
 
@@ -19,7 +18,7 @@ export interface ConfigureAllTeamsProps {
 }
 
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
-  const { userTeamData, augmentedTeamData } = useTeamData("__GLOBAL__", jiraFields);
+  const { savedUserTeamData, inheritedTeamData } = useTeamData("__GLOBAL__", jiraFields);
 
   const { save, isSaving } = useSaveTeamData({
     teamName: "__GLOBAL__",
@@ -41,8 +40,8 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, .
         <AccordionContent>
           <AllTeamsDefaultForm
             save={save}
-            userData={userTeamData.defaults}
-            augmented={augmentedTeamData.defaults}
+            savedUserData={savedUserTeamData.defaults}
+            inheritedData={inheritedTeamData.defaults}
             jiraFields={jiraFields}
             {...props}
           />

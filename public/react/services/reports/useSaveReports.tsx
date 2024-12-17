@@ -151,3 +151,57 @@ export const useUpdateReport = () => {
 
   return { updateReport, isUpdating: isPending };
 };
+
+export const useDeleteReport = () => {
+  const queryClient = useQueryClient();
+  const { save, isPending } = useSaveReport();
+  const { showFlag } = useFlags();
+
+  const deleteReport = (id: Report["id"], options?: Parameters<typeof save>[1]) => {
+    const allReports = queryClient.getQueryData<Reports>(reportKeys.allReports);
+
+    if (!allReports?.[id]) {
+      console.warn(
+        [
+          "Tried to create a report without fetching the reports.",
+          `Attempted to retrieve ${reportKeys.allReports} from the cache and it wasn't there`,
+        ].join("\n")
+      );
+
+      showFlag({
+        title: "Uh oh!",
+        description: "Something went wrong trying to delete the report",
+        isAutoDismiss: true,
+        icon: <ErrorIcon label="error" />,
+      });
+
+      return;
+    }
+
+    const newReports = structuredClone(allReports);
+    const report = newReports[id];
+
+    if (!report) {
+      console.warn(`Tried to delete ${id} but it didn't exist`);
+      return;
+    }
+
+    delete newReports[id];
+
+    save(newReports, {
+      ...(options ?? {}),
+      onSuccess: (...args) => {
+        options?.onSuccess?.(...args);
+
+        showFlag({
+          title: "Success",
+          description: `Successfully deleted ${report.name}`,
+          isAutoDismiss: true,
+          icon: <SuccessIcon label="success" />,
+        });
+      },
+    });
+  };
+
+  return { deleteReport, isDeleting: isPending };
+};

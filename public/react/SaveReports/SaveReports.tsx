@@ -2,18 +2,16 @@ import type { FC } from "react";
 import type { CanObservable } from "../hooks/useCanObservable";
 
 import React, { useEffect, useState } from "react";
-import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
 import { v4 as uuidv4 } from "uuid";
 import Button from "@atlaskit/button/new";
-import ChevronDown from "@atlaskit/icon/glyph/chevron-down";
 
 import { useAllReports, useCreateReport, useRecentReports } from "../services/reports";
 import SaveReportModal from "./components/SaveReportModal";
 import SavedReportDropdown from "./components/SavedReportDropdown";
+import ReportControls from "./components/ReportControls";
 import EditableTitle from "./components/EditableTitle";
 import { useQueryParams } from "../hooks/useQueryParams";
 import { useSelectedReport } from "./hooks/useSelectedReports";
-import LinkButton from "../components/LinkButton";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
@@ -106,33 +104,13 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
             validate={validateName}
           />
         )}
-        {selectedReport && !isDirty && <LinkButton onClick={openModal}>Copy</LinkButton>}
-        {selectedReport && isDirty && (
-          <DropdownMenu
-            trigger={({ triggerRef, ...props }) => (
-              <LinkButton ref={triggerRef} className="flex items-center" {...props}>
-                Save report <ChevronDown label="open save report options" />
-              </LinkButton>
-            )}
-          >
-            <DropdownItem
-              onClick={(event) => {
-                event.stopPropagation();
-                updateSelectedReport();
-              }}
-            >
-              Save changes
-            </DropdownItem>
-            <DropdownItem
-              onClick={(event) => {
-                event.stopPropagation();
-                openModal();
-              }}
-            >
-              Save new report
-            </DropdownItem>
-          </DropdownMenu>
-        )}
+        <ReportControls
+          hasSelectedReport={!!selectedReport}
+          isDirty={isDirty}
+          updateSelectedReport={updateSelectedReport}
+          openModal={openModal}
+          resetChanges={resetChanges}
+        />
       </div>
       <div className="flex gap-4">
         {!selectedReport && !!queryParams.get("jql") && (
@@ -140,7 +118,6 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
             Create new report
           </Button>
         )}
-        {selectedReport && isDirty && <LinkButton onClick={resetChanges}>Reset Changes</LinkButton>}
         <SavedReportDropdown
           onViewReportsButtonClicked={onViewReportsButtonClicked}
           recentReports={recentReports}

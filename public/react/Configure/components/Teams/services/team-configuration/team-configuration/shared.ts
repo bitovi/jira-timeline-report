@@ -1,3 +1,7 @@
+/**
+ * Contains shared type definitions and utility functions to create empty configurations for consumption by the UI
+ */
+
 export type IssueFields = Array<{
   name: string;
   key: string;

@@ -1,46 +1,161 @@
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { describe, it, vi, beforeEach, Mock } from "vitest";
-import ViewReports from "./ViewReports";
-import { useAllReports } from "../services/reports";
+import type { AppStorage } from "../../jira/storage/common";
+import type { ComponentProps } from "react";
 
-vi.mock("../services/reports");
+import React, { Suspense } from "react";
+import { render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
+import { describe, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FlagsProvider } from "@atlaskit/flag";
+import userEvent from "@testing-library/user-event";
+
+import ViewReports from "./ViewReports";
+import { StorageProvider } from "../services/storage";
+
+type OverrideStorage = Omit<AppStorage, "get"> & {
+  get: (key: string) => any;
+};
+
+type RenderConfig = {
+  props: ComponentProps<typeof ViewReports>;
+  storage: Partial<OverrideStorage>;
+};
+
+async function get<T>(key: string): Promise<T | null> {
+  return null;
+}
+
+async function update<T>(key: string, updates: T): Promise<void> {}
+
+const renderWithWrappers = (config?: Partial<RenderConfig>) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  const { props, storage }: RenderConfig = {
+    props: { onBackButtonClicked: vi.fn(), ...(config?.props ?? {}) },
+    storage: {
+      get,
+      update,
+      storageInitialized: async () => true,
+      ...(config?.storage ?? {}),
+    },
+  };
+
+  return render(
+    <Suspense fallback="loading">
+      <FlagsProvider>
+        <StorageProvider storage={storage as ComponentProps<typeof StorageProvider>["storage"]}>
+          <QueryClientProvider client={queryClient}>
+            <ViewReports {...props} />
+          </QueryClientProvider>
+        </StorageProvider>
+      </FlagsProvider>
+    </Suspense>
+  );
+};
 
 describe("ViewReports Component", () => {
-  const mockOnBackButtonClicked = vi.fn();
-
-  beforeEach(() => {
-    vi.resetAllMocks();
-
-    (useAllReports as Mock).mockReturnValue({
-      "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
-      "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+  it("renders without crashing", async () => {
+    renderWithWrappers({
+      storage: {
+        get: async () => {
+          return {
+            "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
+            "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+          };
+        },
+      },
     });
+
+    const backButton = await screen.findByText("Back to report");
+    const title = await screen.findByText("Saved Reports");
+    const manageHeading = await screen.findByText("Manage");
+    const reportHeading = await screen.findByText("Report");
+    const report = await screen.findByText("Report 1");
+
+    expect(backButton).toBeInTheDocument();
+    expect(manageHeading).toBeInTheDocument();
+    expect(reportHeading).toBeInTheDocument();
+    expect(title).toBeInTheDocument();
+    expect(report).toBeInTheDocument();
   });
 
-  it("renders without crashing ", () => {
-    render(<ViewReports onBackButtonClicked={mockOnBackButtonClicked} />);
+  it("renders reports in the table", async () => {
+    renderWithWrappers({
+      storage: {
+        get: async () => {
+          return {
+            "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
+            "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+          };
+        },
+      },
+    });
 
-    expect(screen.getByText("Back to report")).toBeInTheDocument();
-    expect(screen.getByText("Saved Reports")).toBeInTheDocument();
-    expect(screen.getByText("Report")).toBeInTheDocument();
+    expect(await screen.findByText("Report 1")).toBeInTheDocument();
+    expect(await screen.findByText("Report 2")).toBeInTheDocument();
   });
 
-  it("renders reports in the table", () => {
-    render(<ViewReports onBackButtonClicked={mockOnBackButtonClicked} />);
-
-    expect(screen.getByText("Report 1")).toBeInTheDocument();
-    expect(screen.getByText("Report 2")).toBeInTheDocument();
-  });
-
-  it("renders the selected report's name in the reportInfo section", () => {
+  it("renders the selected report's name in the reportInfo section", async () => {
     Object.defineProperty(window, "location", {
       writable: true,
       value: { search: "?report=1" },
     });
 
-    render(<ViewReports onBackButtonClicked={mockOnBackButtonClicked} />);
+    renderWithWrappers({
+      storage: {
+        get: async () => {
+          return {
+            "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
+            "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+          };
+        },
+      },
+    });
 
-    expect(screen.getByText("Report 1", { selector: "a" })).toBeInTheDocument();
+    expect(await screen.findByText("Report 1", { selector: "a" })).toBeInTheDocument();
+  });
+
+  it("deletes report", async () => {
+    const mockUpdate = vi.fn();
+
+    renderWithWrappers({
+      storage: {
+        get: async () => {
+          return {
+            "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
+            "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+          };
+        },
+        update: async (...args) => mockUpdate(...args),
+      },
+    });
+
+    const manage = await screen.findByText(`manage report, Report 1`);
+
+    userEvent.click(manage);
+
+    const deleteButton = await screen.findByText("Delete");
+
+    userEvent.click(deleteButton);
+
+    expect(await screen.findByText("Report 1 to be deleted")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Are you sure you want to delete this report?")
+    ).toBeInTheDocument();
+
+    expect(await screen.findByText("Cancel")).toBeInTheDocument();
+
+    userEvent.click(await screen.findByText("Delete report"));
+
+    await waitFor(() =>
+      expect(mockUpdate).toHaveBeenLastCalledWith("saved-reports", {
+        "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+      })
+    );
   });
 });
