@@ -5,8 +5,6 @@ import React, { useMemo, useState } from "react";
 import DynamicTable from "@atlaskit/dynamic-table";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
-import ViewReportsLayout from "./components/ViewReportsLayout";
-import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
 import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
 import { IconButton } from "@atlaskit/button/new";
 
@@ -18,6 +16,10 @@ import Modal, {
   ModalTransition,
 } from "@atlaskit/modal-dialog";
 import Button from "@atlaskit/button/new";
+import Spinner from "@atlaskit/spinner";
+
+import ViewReportsLayout from "./components/ViewReportsLayout";
+import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
@@ -70,7 +72,6 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
                 shouldRenderToParent
                 trigger={({ triggerRef, ...props }) => (
                   <IconButton
-                    // className="flex items-center justify-center"
                     icon={ShowMoreHorizontalIcon}
                     label="manage report"
                     ref={triggerRef}
@@ -160,7 +161,7 @@ const DeleteReportModal: FC<DeleteReportModalProps> = ({
         <ModalBody>Are you sure you want to delete this report?</ModalBody>
         <ModalFooter>
           <Button appearance="danger" isDisabled={isDeleting} onClick={() => deleteReport()}>
-            Delete
+            {isDeleting ? <Spinner size="xsmall" /> : "Delete"}
           </Button>
           <Button onClick={() => closeModal()}>Cancel</Button>
         </ModalFooter>

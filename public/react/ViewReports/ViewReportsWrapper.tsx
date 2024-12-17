@@ -15,6 +15,7 @@ import Skeleton from "../components/Skeleton";
 import { StorageProvider } from "../services/storage";
 import { useCanObservable } from "../hooks/useCanObservable";
 import { FlagsProvider } from "@atlaskit/flag";
+import { queryClient } from "../services/query";
 
 interface ViewReportsWrapperProps {
   storage: AppStorage;
@@ -22,7 +23,7 @@ interface ViewReportsWrapperProps {
   onBackButtonClicked: () => void;
 }
 
-const queryClient = new QueryClient();
+// const queryClient = new QueryClient();
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
   storage,
