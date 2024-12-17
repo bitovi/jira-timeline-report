@@ -6,6 +6,9 @@ import type { TeamDataCache } from "./useAllTeamData";
 import React from "react";
 import { UseMutateFunction, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFlags } from "@atlaskit/flag";
+import ErrorIcon from "@atlaskit/icon/core/error";
+import { Text } from "@atlaskit/primitives";
+import { token } from "@atlaskit/tokens";
 
 import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
@@ -13,7 +16,6 @@ import { createFullyInheritedConfig, updateAllTeamData } from "../team-configura
 import { createNormalizeConfiguration } from "../../../shared/normalize";
 import { jiraKeys } from "../../../../../../services/jira";
 import { sanitizeAllTeamData } from "./sanitizeAllTeamData";
-import { errorHeader, errorIcon } from "../../../../../../../shared/messaging";
 
 type UseSaveAllTeamData = (config?: {
   onUpdate?: (config: Partial<NormalizeIssueConfig>) => void;
@@ -105,10 +107,10 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
       }
 
       showFlag({
-        title: errorHeader(),
+        title: <Text color="color.text.danger">"Uh Oh!"</Text>,
         description,
         isAutoDismiss: true,
-        icon: errorIcon,
+        icon: <ErrorIcon color={token("color.icon.danger")} label="error" />,
       });
     },
   });
