@@ -30,6 +30,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
 
   const reportRows = Object.values(reports)
     .filter((r) => !!r)
+    .sort((a, b) => a.name.localeCompare(b.name))
     .map((report) => {
       return {
         key: report.id,
@@ -41,7 +42,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
                 href={"?" + report.queryParams}
                 className="flex items-center font-normal text-sm leading-5 h-10"
               >
-                Report name {report.name}
+                {report.name}
               </a>
             ),
           },

@@ -1,10 +1,11 @@
 import type { FC } from "react";
-import type { Reports } from "../../../../jira/reports";
+import type { Report, Reports } from "../../../../jira/reports";
 
-import React, { forwardRef } from "react";
+import React, { useMemo } from "react";
 
 import { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
 import Hr from "../../../components/Hr";
+import { notEmpty } from "../../../../jira/shared/helpers";
 
 interface RecentReportsProps {
   recentReports: string[];
@@ -19,12 +20,21 @@ const RecentReports: FC<RecentReportsProps> = ({
   onViewReportsButtonClicked,
   setIsOpen,
 }) => {
+  const reportsToShow = useMemo(
+    () =>
+      recentReports
+        .map((id) => reports[id])
+        .filter(notEmpty)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [recentReports, reports]
+  );
+  
   return (
     <>
       <DropdownItemGroup>
         <p className="p-4 text-xs text-slate-400 font-semibold uppercase">Recent</p>
-        {recentReports.map((reportId) => (
-          <ReportListItem key={reportId} reportId={reportId} reports={reports} />
+        {reportsToShow.map((report) => (
+          <ReportListItem key={report.id} report={report} />
         ))}
       </DropdownItemGroup>
       <Hr className="!my-1" />
@@ -47,26 +57,13 @@ const RecentReports: FC<RecentReportsProps> = ({
 
 export default RecentReports;
 
-interface ReportListItemProps {
-  reports: Reports;
-  reportId: string;
-}
-
-const ReportListItem: FC<ReportListItemProps> = ({ reports, reportId }) => {
-  const matched = Object.values(reports).find((report) => report?.id === reportId);
-
-  if (!matched) {
-    return null;
-  }
-
-  return (
-    <DropdownItem
-      key={reportId}
-      // @ts-expect-error types for component overrides on ADS don't work
-      component="a"
-      href={"?" + matched.queryParams}
-    >
-      {matched.name}
-    </DropdownItem>
-  );
-};
+const ReportListItem: FC<{ report: Report }> = ({ report }) => (
+  <DropdownItem
+    key={report.id}
+    // @ts-expect-error types for component overrides on ADS don't work
+    component="a"
+    href={"?" + report.queryParams}
+  >
+    {report.name}
+  </DropdownItem>
+);

@@ -29,8 +29,8 @@ describe("ViewReports Component", () => {
   it("renders reports in the table", () => {
     render(<ViewReports onBackButtonClicked={mockOnBackButtonClicked} />);
 
-    expect(screen.getByText("Report name Report 1")).toBeInTheDocument();
-    expect(screen.getByText("Report name Report 2")).toBeInTheDocument();
+    expect(screen.getByText("Report 1")).toBeInTheDocument();
+    expect(screen.getByText("Report 2")).toBeInTheDocument();
   });
 
   it("renders the selected report's name in the reportInfo section", () => {
@@ -41,6 +41,6 @@ describe("ViewReports Component", () => {
 
     render(<ViewReports onBackButtonClicked={mockOnBackButtonClicked} />);
 
-    expect(screen.getByText("Report 1")).toBeInTheDocument();
+    expect(screen.getByText("Report 1", { selector: "a" })).toBeInTheDocument();
   });
 });

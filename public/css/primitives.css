@@ -7,8 +7,8 @@
 	--last-period-warning-color: #c78a27;
 	--unknown-color: #dab092;
 	--notstarted-color: #97A0AF; /* N80 - Spooky ghost */
-	--blocked-color: rgb(242, 0, 11);
-	--last-period-blocked-color: rgb(176, 40, 47);
+	--blocked-color: #f2000b;
+	--last-period-blocked-color: #b0282f;
 	--ahead-color: #79E2F2; /* T100 - Hairy fairy */
 	--ahead-dark-color: #00A3BF;
 	--new-color: #6554C0;
@@ -24,6 +24,15 @@
 	--sky-100-color: rgb(224 242 254);
 
 	--bitovi-red-orange: #F5532D;
+
+
+	/* design system, for Atlassian */
+	--ds-icon-success: var(--complete-color);
+	--ds-icon-warning: var(--warning-color);
+	--ds-icon-danger: var(--blocked-color);
+	--ds-text-success: #36885e;
+	--ds-text-warning: var(--last-period-warning-color);
+	--ds-text-danger: var(--last-period-blocked-color);
 
 
   --space-0px: 0px;

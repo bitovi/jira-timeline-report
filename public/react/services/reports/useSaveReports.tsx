@@ -1,13 +1,12 @@
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useFlags } from "@atlaskit/flag";
+
 import type { Report, Reports } from "../../../jira/reports";
 import { updateReports } from "../../../jira/reports";
 import { useStorage } from "../../services/storage";
-
-import { useFlags } from "@atlaskit/flag";
 import { reportKeys } from "./key-factory";
-import ErrorIcon from "@atlaskit/icon/glyph/error";
-import SuccessIcon from "@atlaskit/icon/core/success";
+import { errorHeader, errorIcon, successHeader, successIcon } from "../../../shared/messaging";
 
 const useSaveReport = () => {
   const storage = useStorage();
@@ -39,10 +38,10 @@ const useSaveReport = () => {
       }
 
       showFlag({
-        title: "Uh Oh!",
+        title: errorHeader(),
         description,
         isAutoDismiss: true,
-        icon: <ErrorIcon label="error" />,
+        icon: errorIcon,
       });
     },
   });
@@ -67,10 +66,10 @@ export const useCreateReport = () => {
       );
 
       showFlag({
-        title: "Uh oh!",
-        description: "Something went wrong trying to save " + name,
+        title: errorHeader(),
+        description: `Something went wrong trying to save "${newReport.name}"`,
         isAutoDismiss: true,
-        icon: <ErrorIcon label="error" />,
+        icon: errorIcon,
       });
 
       return;
@@ -84,10 +83,10 @@ export const useCreateReport = () => {
           options?.onSuccess?.(...args);
 
           showFlag({
-            title: "Success",
-            description: `Successfully created ${newReport.name}`,
+            title: successHeader(),
+            description: `Successfully created report: "${newReport.name}"`,
             isAutoDismiss: true,
-            icon: <SuccessIcon label="success" />,
+            icon: successIcon,
           });
         },
       }
@@ -118,10 +117,10 @@ export const useUpdateReport = () => {
       );
 
       showFlag({
-        title: "Uh oh!",
+        title: errorHeader(),
         description: "Something went wrong trying to update the report",
         isAutoDismiss: true,
-        icon: <ErrorIcon label="error" />,
+        icon: errorIcon,
       });
 
       return;
@@ -137,10 +136,10 @@ export const useUpdateReport = () => {
           options?.onSuccess?.(...args);
 
           showFlag({
-            title: "Success",
-            description: `Successfully updated ${newReport.name}`,
+            title: successHeader(),
+            description: `Successfully updated report: "${newReport.name}"`,
             isAutoDismiss: true,
-            icon: <SuccessIcon label="success" />,
+            icon: successIcon,
           });
         },
       }
