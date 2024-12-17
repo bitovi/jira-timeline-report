@@ -1,20 +1,23 @@
-import React, { ComponentProps, Suspense } from "react";
+import type { AppStorage } from "../../jira/storage/common";
+import type { ComponentProps } from "react";
+
+import React, { Suspense } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, vi, beforeEach, Mock } from "vitest";
-import ViewReports from "./ViewReports";
-import { useAllReports } from "../services/reports";
+import { describe, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StorageProvider } from "../services/storage";
 import { FlagsProvider } from "@atlaskit/flag";
 import userEvent from "@testing-library/user-event";
 
+import ViewReports from "./ViewReports";
+import { StorageProvider } from "../services/storage";
+
+type OverrideStorage = Omit<AppStorage, "get"> & {
+  get: (key: string) => any;
+};
+
 type RenderConfig = {
   props: ComponentProps<typeof ViewReports>;
-  storage: Partial<
-    {
-      get: (key: string) => any;
-    } & Omit<ComponentProps<typeof StorageProvider>["storage"], "get">
-  >;
+  storage: Partial<OverrideStorage>;
 };
 
 async function get<T>(key: string): Promise<T | null> {

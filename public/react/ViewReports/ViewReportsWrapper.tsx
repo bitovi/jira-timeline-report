@@ -95,7 +95,15 @@ const ViewReportSkeleton: FC<ViewReportSkeletonProps> = ({ onBackButtonClicked }
       onBackButtonClicked={onBackButtonClicked}
       reportInfo={selectedReportExists ? <Skeleton /> : null}
     >
-      <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={rows} />
+      <DynamicTable
+        head={{
+          cells: [
+            { key: "report-heading", content: "Report" },
+            { key: " manage-reports", content: "Manage" },
+          ],
+        }}
+        rows={rows}
+      />
     </ViewReportLayout>
   );
 };
