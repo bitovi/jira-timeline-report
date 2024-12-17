@@ -8,11 +8,10 @@ import Button from "@atlaskit/button/new";
 import { useAllReports, useCreateReport, useRecentReports } from "../services/reports";
 import SaveReportModal from "./components/SaveReportModal";
 import SavedReportDropdown from "./components/SavedReportDropdown";
-import ReportControls from "./components/SavedReportDropdown/ReportControls";
+import ReportControls from "./components/ReportControls";
 import EditableTitle from "./components/EditableTitle";
 import { useQueryParams } from "../hooks/useQueryParams";
 import { useSelectedReport } from "./hooks/useSelectedReports";
-import LinkButton from "../components/LinkButton";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
