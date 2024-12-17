@@ -6,7 +6,9 @@ import type { TeamDataCache } from "./useAllTeamData";
 import React from "react";
 import { UseMutateFunction, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFlags } from "@atlaskit/flag";
-import ErrorIcon from "@atlaskit/icon/glyph/error";
+import ErrorIcon from "@atlaskit/icon/core/error";
+import { Text } from "@atlaskit/primitives";
+import { token } from "@atlaskit/tokens";
 
 import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
@@ -111,10 +113,10 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
       }
 
       showFlag({
-        title: "Uh Oh!",
+        title: <Text color="color.text.danger">"Uh Oh!"</Text>,
         description,
         isAutoDismiss: true,
-        icon: <ErrorIcon label="error" />,
+        icon: <ErrorIcon color={token("color.icon.danger")} label="error" />,
       });
     },
   });

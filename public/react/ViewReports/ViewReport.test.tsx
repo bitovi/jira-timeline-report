@@ -2,7 +2,7 @@ import type { AppStorage } from "../../jira/storage/common";
 import type { ComponentProps } from "react";
 
 import React, { Suspense } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 import { describe, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FlagsProvider } from "@atlaskit/flag";
@@ -75,7 +75,7 @@ describe("ViewReports Component", () => {
     const title = await screen.findByText("Saved Reports");
     const manageHeading = await screen.findByText("Manage");
     const reportHeading = await screen.findByText("Report");
-    const report = await screen.findByText("Report name Report 1");
+    const report = await screen.findByText("Report 1");
 
     expect(backButton).toBeInTheDocument();
     expect(manageHeading).toBeInTheDocument();
@@ -96,8 +96,8 @@ describe("ViewReports Component", () => {
       },
     });
 
-    expect(await screen.findByText("Report name Report 1")).toBeInTheDocument();
-    expect(await screen.findByText("Report name Report 2")).toBeInTheDocument();
+    expect(await screen.findByText("Report 1")).toBeInTheDocument();
+    expect(await screen.findByText("Report 2")).toBeInTheDocument();
   });
 
   it("renders the selected report's name in the reportInfo section", async () => {
@@ -117,7 +117,7 @@ describe("ViewReports Component", () => {
       },
     });
 
-    expect(await screen.findByText("Report 1")).toBeInTheDocument();
+    expect(await screen.findByText("Report 1", { selector: "a" })).toBeInTheDocument();
   });
 
   it("deletes report", async () => {
