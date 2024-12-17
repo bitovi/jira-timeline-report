@@ -34,5 +34,11 @@ export const useRecentReports = () => {
     });
   };
 
-  return { recentReports, addReportToRecents };
+  const removeFromRecentReports = (reportId: string) => {
+    setRecentReports((current) => {
+      return current.filter((id) => id !== reportId);
+    });
+  };
+
+  return { recentReports, addReportToRecents, removeFromRecentReports };
 };

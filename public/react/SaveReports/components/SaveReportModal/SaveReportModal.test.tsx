@@ -73,7 +73,7 @@ describe("<SaveReportModal />", () => {
     const input = screen.getByText("Name");
     await userEvent.type(input, "1");
 
-    expect(mockValidate).toHaveBeenCalledWith("Test Report1");
+    expect(mockValidate).toHaveBeenCalledWith("1");
     expect(screen.getByText("Invalid name")).toBeInTheDocument();
   });
 

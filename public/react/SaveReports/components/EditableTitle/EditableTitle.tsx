@@ -1,7 +1,7 @@
 import type { Report } from "../../../../jira/reports";
 import type { FC } from "react";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import Heading from "@atlaskit/heading";
 import InlineEdit from "@atlaskit/inline-edit";
@@ -22,26 +22,31 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
   const [editing, setEditing] = useState(false);
   const { updateReport, isUpdating } = useUpdateReport();
 
-  const edit = (newName: string) => {
-    if (!selectedReport) {
-      console.warn("Tried to update report but couldn't determine the selected report");
-      return;
-    }
-
-    if (newName === selectedReport.name) {
-      return;
-    }
-
-    updateReport(
-      selectedReport.id,
-      { name: newName },
-      {
-        onSuccess: () => {
-          setName(newName);
-        },
+  const edit = useCallback(
+    (newName: string) => {
+      if (!selectedReport) {
+        console.warn("Tried to update report but couldn't determine the selected report");
+        return;
       }
-    );
-  };
+
+      if (newName === name) {
+        return;
+      }
+
+      setName(newName);
+
+      updateReport(
+        selectedReport.id,
+        { name: newName },
+        {
+          onError: () => {
+            setName(name); // rollback to old name
+          },
+        }
+      );
+    },
+    [selectedReport, name, setName]
+  );
 
   return (
     // Cannot override styles inside InLineEdit thorugh props. This removes excess margin
@@ -50,9 +55,7 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
         isEditing={!!selectedReport && editing}
         onEdit={() => setEditing((prev) => !prev)}
         defaultValue={name}
-        validate={(value) => {
-          return value === selectedReport?.name ? "" : validate(value).message;
-        }}
+        validate={(value) => (value === selectedReport?.name ? "" : validate(value).message)}
         onConfirm={(value) => {
           setEditing(false);
           edit(value);
