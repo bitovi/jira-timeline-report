@@ -73,7 +73,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
                 trigger={({ triggerRef, ...props }) => (
                   <IconButton
                     icon={ShowMoreHorizontalIcon}
-                    label="manage report"
+                    label={`manage report, ${report.name}`}
                     ref={triggerRef}
                     {...props}
                   />
@@ -161,7 +161,7 @@ const DeleteReportModal: FC<DeleteReportModalProps> = ({
         <ModalBody>Are you sure you want to delete this report?</ModalBody>
         <ModalFooter>
           <Button appearance="danger" isDisabled={isDeleting} onClick={() => deleteReport()}>
-            {isDeleting ? <Spinner size="xsmall" /> : "Delete"}
+            {isDeleting ? <Spinner size="xsmall" /> : "Delete report"}
           </Button>
           <Button onClick={() => closeModal()}>Cancel</Button>
         </ModalFooter>

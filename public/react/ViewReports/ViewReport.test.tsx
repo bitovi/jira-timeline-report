@@ -6,6 +6,7 @@ import { useAllReports } from "../services/reports";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StorageProvider } from "../services/storage";
 import { FlagsProvider } from "@atlaskit/flag";
+import userEvent from "@testing-library/user-event";
 
 type RenderConfig = {
   props: ComponentProps<typeof ViewReports>;
@@ -71,7 +72,7 @@ describe("ViewReports Component", () => {
     const title = await screen.findByText("Saved Reports");
     const manageHeading = await screen.findByText("Manage");
     const reportHeading = await screen.findByText("Report");
-    const report = await screen.findByText(/Report 1/);
+    const report = await screen.findByText("Report name Report 1");
 
     expect(backButton).toBeInTheDocument();
     expect(manageHeading).toBeInTheDocument();
@@ -114,5 +115,44 @@ describe("ViewReports Component", () => {
     });
 
     expect(await screen.findByText("Report 1")).toBeInTheDocument();
+  });
+
+  it("deletes report", async () => {
+    const mockUpdate = vi.fn();
+
+    renderWithWrappers({
+      storage: {
+        get: async () => {
+          return {
+            "1": { id: "1", name: "Report 1", queryParams: "param1=value1" },
+            "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+          };
+        },
+        update: async (...args) => mockUpdate(...args),
+      },
+    });
+
+    const manage = await screen.findByText(`manage report, Report 1`);
+
+    userEvent.click(manage);
+
+    const deleteButton = await screen.findByText("Delete");
+
+    userEvent.click(deleteButton);
+
+    expect(await screen.findByText("Report 1 to be deleted")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Are you sure you want to delete this report?")
+    ).toBeInTheDocument();
+
+    expect(await screen.findByText("Cancel")).toBeInTheDocument();
+
+    userEvent.click(await screen.findByText("Delete report"));
+
+    await waitFor(() =>
+      expect(mockUpdate).toHaveBeenLastCalledWith("saved-reports", {
+        "2": { id: "2", name: "Report 2", queryParams: "param2=value2" },
+      })
+    );
   });
 });
