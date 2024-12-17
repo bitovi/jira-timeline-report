@@ -1,3 +1,6 @@
+/**
+ * Implements the inheritance logic and computes the final configurations
+ */
 import type { AllTeamData, Configuration, TeamConfiguration, IssueFields } from "./shared";
 
 import { createEmptyConfiguration, createEmptyTeamConfiguration } from "./shared";
@@ -80,23 +83,23 @@ export const createFullyInheritedConfig = (
   hierarchyLevels: string[]
 ) => {
   // global settings need to be setup before the rest of the teams
-  const augmentedAllTeam = applyInheritance(
+  const inheritedAllTeamData = applyInheritance(
     "__GLOBAL__",
     applyGlobalDefaultData(userAllTeamData, jiraFields),
     hierarchyLevels
   );
 
-  return Object.keys(augmentedAllTeam).reduce((augmented, team) => {
+  return Object.keys(inheritedAllTeamData).reduce((augmented, team) => {
     // already setup the global config
     if (team === "__GLOBAL__") {
-      return { ...augmented, [team]: augmentedAllTeam[team] };
+      return { ...augmented, [team]: inheritedAllTeamData[team] };
     }
 
-    const teamData = getTeamData(team, augmentedAllTeam);
+    const teamData = getTeamData(team, inheritedAllTeamData);
 
     return {
       ...augmented,
-      [team]: getInheritedData(teamData, augmentedAllTeam, hierarchyLevels),
+      [team]: getInheritedData(teamData, inheritedAllTeamData, hierarchyLevels),
     };
   }, {} as AllTeamData);
 };

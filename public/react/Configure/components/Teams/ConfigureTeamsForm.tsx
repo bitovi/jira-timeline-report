@@ -16,8 +16,7 @@ import { RequiredAsterisk } from "./components/Label";
 
 export interface ConfigureTeamsFormProps {
   onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
-  userData: Configuration;
-  augmented: Configuration;
+  savedUserData: Configuration;
   jiraFields: IssueFields;
   register: UseFormReturn<Configuration>["register"];
   control: Control<Configuration>;
@@ -31,7 +30,7 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
 }
 
 const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
-  userData,
+  savedUserData,
   jiraFields,
   register,
   control,
@@ -47,7 +46,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           <RequiredAsterisk /> <p className="text-sm text-slate-300"> indicates a required field</p>
         </div>
         <InheritanceTextField
-          isInheriting={!userData.velocityPerSprint}
+          isInheriting={!savedUserData.velocityPerSprint}
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("velocityPerSprint", shouldCustomize)
           }
@@ -60,7 +59,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           onSave={update}
         />
         <InheritanceTextField
-          isInheriting={!userData.tracks}
+          isInheriting={!savedUserData.tracks}
           onInheritanceChange={(shouldCustomize) => toggleInheritance("tracks", shouldCustomize)}
           name="tracks"
           type="number"
@@ -72,7 +71,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         <InheritanceToggleField
           isInheriting={
             // Look for undefined and null but not false
-            userData.spreadEffortAcrossDates == null
+            savedUserData.spreadEffortAcrossDates == null
           }
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("spreadEffortAcrossDates", shouldCustomize)
@@ -84,7 +83,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           description="Spread estimate across dates"
         />
         <InheritanceTextField
-          isInheriting={!userData.sprintLength}
+          isInheriting={!savedUserData.sprintLength}
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("sprintLength", shouldCustomize)
           }
@@ -98,7 +97,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         />
         <Hr />
         <InheritanceSelect
-          isInheriting={!userData.estimateField}
+          isInheriting={!savedUserData.estimateField}
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("estimateField", shouldCustomize)
           }
@@ -109,7 +108,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           onSave={update}
         />
         <InheritanceSelect
-          isInheriting={!userData.confidenceField}
+          isInheriting={!savedUserData.confidenceField}
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("confidenceField", shouldCustomize)
           }
@@ -126,7 +125,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           onSave={update}
         />
         <InheritanceSelect
-          isInheriting={!userData.startDateField}
+          isInheriting={!savedUserData.startDateField}
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("startDateField", shouldCustomize)
           }
@@ -137,7 +136,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           onSave={update}
         />
         <InheritanceSelect
-          isInheriting={!userData.dueDateField}
+          isInheriting={!savedUserData.dueDateField}
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("dueDateField", shouldCustomize)
           }
