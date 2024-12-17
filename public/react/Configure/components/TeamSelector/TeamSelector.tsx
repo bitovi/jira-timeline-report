@@ -81,7 +81,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
         </>
       )}
       {groups.storageOnly?.length && (
-        <>
+        <div className="mt-2">
           <Label htmlFor="">TEAMS OUTSIDE REPORT</Label>
           {groups.storageOnly?.map((team) => {
             return (
@@ -93,7 +93,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
               />
             );
           })}
-        </>
+        </div>
       )}
     </>
   );
