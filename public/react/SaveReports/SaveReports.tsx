@@ -116,16 +116,14 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
             )}
           >
             <DropdownItem
-              onClick={(event) => {
-                event.stopPropagation();
+              onClick={() => {
                 updateSelectedReport();
               }}
             >
               Save changes
             </DropdownItem>
             <DropdownItem
-              onClick={(event) => {
-                event.stopPropagation();
+              onClick={() => {
                 openModal();
               }}
             >
