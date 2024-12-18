@@ -253,9 +253,20 @@ export class TimelineReport extends StacheElement {
       return this.derivedIssuesRequestData?.issuesPromise;
     },
     derivedIssues: {
+      // this can't use async b/c we need the value to turn to undefined
+      value({listenTo, resolve}){
+        const resolveValueFromPromise = () => {
+          resolve(undefined);
+          if(this.derivedIssuesRequestData?.issuesPromise) {
+            this.derivedIssuesRequestData.issuesPromise.then(resolve);
+          }
+        };
+        listenTo("derivedIssuesRequestData", resolveValueFromPromise);
+        resolveValueFromPromise();
+      }/*,
       async(resolve) {
         this.derivedIssuesRequestData?.issuesPromise.then(resolve);
-      },
+      },*/
     },
     get filteredDerivedIssues() {
       if (this.derivedIssues) {
@@ -322,12 +333,6 @@ export class TimelineReport extends StacheElement {
 
   // this all the data pre-compiled
   get rolledupAndRolledBackIssuesAndReleases() {
-    /*console.log("rolledupAndRolledBackIssuesAndReleases",{
-        filteredDerivedIssues: this.filteredDerivedIssues, 
-        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
-        configuration: this.configuration
-      } )*/
-    console.log("rolledupAndRolledBackIssuesAndReleases changed!");
     if (
       !this.filteredDerivedIssues ||
       !this.rollupTimingLevelsAndCalculations ||
