@@ -98,6 +98,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       <div className="flex gap-3 items-center">
         {selectedReport && (
           <EditableTitle
+            key={selectedReport.id}
             name={name}
             setName={setName}
             selectedReport={selectedReport}
