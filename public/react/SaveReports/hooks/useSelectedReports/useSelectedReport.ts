@@ -1,16 +1,16 @@
 import type { Report, Reports } from "../../../../jira/reports";
 
 import { useMemo, useState } from "react";
-import { useQueryParams } from "../../../hooks/useQueryParams";
 import { CanObservable } from "../../../hooks/useCanObservable";
 import { useUpdateReport } from "../../../services/reports";
 import { getReportFromParams, paramsMatchReport } from "./utilities";
+import { useHistoryCallback, useHistoryParams, useHistoryState } from "../../../../jira/history/hooks";
+import routeDataObservable from "@routing-observable";
+import { param } from "../../../../can";
 
 export const useSelectedReport = ({
   reports,
-  queryParamObservable,
 }: {
-  queryParamObservable: CanObservable<string>;
   reports: Reports;
 }) => {
   const { updateReport } = useUpdateReport();
@@ -18,20 +18,22 @@ export const useSelectedReport = ({
     getReportFromParams(reports)
   );
 
+  const [initial] = useHistoryState();
+
+  const [search] = useHistoryParams();
+
   const [isDirty, setIsDirty] = useState(
-    () => !paramsMatchReport(new URLSearchParams(window.location.search), reports)
+    () => !paramsMatchReport(new URLSearchParams(search), reports)
   );
 
-  useQueryParams(queryParamObservable, {
-    onChange: (params) => {
-      const newSelectedReport = getReportFromParams(reports);
+  useHistoryCallback((params) => {
+    const newSelectedReport = getReportFromParams(reports);
 
-      if (newSelectedReport?.id !== selectedReport?.id) {
-        setSelectedReport(newSelectedReport);
-      }
+    if (newSelectedReport?.id !== selectedReport?.id) {
+      setSelectedReport(newSelectedReport);
+    }
 
-      setIsDirty(() => !paramsMatchReport(params, reports));
-    },
+    setIsDirty(() => !paramsMatchReport(new URLSearchParams(params), reports));
   });
 
   return {
@@ -42,13 +44,12 @@ export const useSelectedReport = ({
         return;
       }
 
-      const queryParams = new URLSearchParams(window.location.search);
-
-      queryParams.delete("settings");
+      const queryParams = routeDataObservable.get();
+      delete queryParams.settings;
 
       updateReport(
         selectedReport.id,
-        { queryParams: queryParams.toString() },
+        { queryParams: param(queryParams) },
         { onSuccess: () => setIsDirty(false) }
       );
     },

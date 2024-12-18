@@ -84,7 +84,7 @@ const ConfigurationPanel: FC<{primaryIssuesOrReleasesObs: CanObservable<Array<Ro
 
     return (
         <div className="">
-            <div>{issues.length} items for JQL: {jql}</div>
+            <div>{issues.length} items</div>
             <table className="w-full">
                 <thead>
                 <tr>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import routeDataObservable from '@routing-observable';
+import routeDataObservable, { pushStateObservable } from '@routing-observable';
 
 export const useHistoryStateValue:
   (key: string) => [string | undefined, (val: string | undefined) => void] =
@@ -12,12 +12,11 @@ export const useHistoryStateValue:
 
       routeDataObservable.on(key, handler);
 
-      const setValue = (val: string | undefined) => routeDataObservable.set(key, val ?? null);
-
       return () => routeDataObservable.off(key, handler);
     }, []);
 
-    return [value, setValue];
+    const exportSetValue = (val: string | undefined) => routeDataObservable.set(key, val ?? null);
+    return [value, exportSetValue];
   };
 
 export const useHistoryState:
@@ -31,11 +30,47 @@ export const useHistoryState:
 
       routeDataObservable.on(undefined, handler);
 
-      const setValue = (val: Record<string, string | null>) => routeDataObservable.set(val);
-
       return () => routeDataObservable.off(undefined, handler);
     }, []);
 
+    const exportSetValue = (val: Record<string, string | null>) => routeDataObservable.set(val);
+    return [value, exportSetValue];
+  };
+
+export const useHistoryParams:
+  () => [string, (val: string) => void] =
+  () => {
+    const [value, setValue] = useState<string>(pushStateObservable.value);
+    useEffect(() => {
+      const handler = () => {
+        setValue(pushStateObservable.value);
+      };
+
+      routeDataObservable.on(handler);
+
+      return () => routeDataObservable.off(handler);
+    }, []);
+
+    const exportSetValue = (val: string) => pushStateObservable.set(val);
     return [value, setValue];
+  };
+
+
+export const useHistoryValueCallback:
+  (key: string, callback: (newVal: string | undefined) => void) => void =
+  (key, callback) => {
+    useEffect(() => {
+      routeDataObservable.on(key, callback);
+      return () => routeDataObservable.off(key, callback);
+    }, [key, callback]);
+  };
+
+export const useHistoryCallback:
+  (callback: (newVal: Record<string, string>) => void) => void =
+  (callback) => {
+    useEffect(() => {
+      routeDataObservable.on(undefined, callback);
+      return () => routeDataObservable.off(undefined, callback);
+    }, [callback]);
   };
 

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, vi } from "vitest";
 
 import SaveReportsWrapper from "./SaveReportsWrapper";
+import { pushStateObservable } from "@routing-observable";
 
 const mockOnViewReportsButtonClicked = vi.fn();
 
@@ -16,7 +17,6 @@ describe("<SaveReportsWrapper />", () => {
           update: vi.fn(),
         }}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
-        queryParamObservable={{ on: vi.fn(), off: vi.fn(), value: "", set: vi.fn() }}
       />
     );
 
@@ -28,6 +28,7 @@ describe("<SaveReportsWrapper />", () => {
   });
 
   it("shows the create report button if jql is present", async () => {
+    pushStateObservable.set("?jql=issues-and-what-not");
     render(
       <SaveReportsWrapper
         storage={{
@@ -36,12 +37,6 @@ describe("<SaveReportsWrapper />", () => {
           update: vi.fn(),
         }}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
-        queryParamObservable={{
-          on: vi.fn(),
-          off: vi.fn(),
-          value: "?jql=issues-and-what-not",
-          set: vi.fn(),
-        }}
       />
     );
 

@@ -5,6 +5,9 @@ import DynamicTable from "@atlaskit/dynamic-table";
 
 import ViewReportsLayout from "./components/ViewReportsLayout";
 import { useAllReports } from "../services/reports";
+import { RoutingLink } from "../../jira/history/components";
+import routeDataObservable from "@routing-observable";
+import { useHistoryStateValue } from "../../jira/history/hooks";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
@@ -13,20 +16,18 @@ interface ViewReportProps {
 const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
   const reports = useAllReports();
 
-  const selectedReport = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    const selectedReport = params.get("report");
-
-    if (!selectedReport) {
+  const [selectedReportId] = useHistoryStateValue("report");
+  const selectedReportName = useMemo(() => {
+    if (!selectedReportId) {
       return "";
     }
 
     return (
       Object.values(reports)
         .filter((report) => !!report)
-        .find(({ id }) => id === selectedReport)?.name || ""
+        .find(({ id }) => id === selectedReportId)?.name || ""
     );
-  }, [reports]);
+  }, [reports, selectedReportId]);
 
   const reportRows = Object.values(reports)
     .filter((r) => !!r)
@@ -37,12 +38,13 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
           {
             key: `${report.id}-report`,
             content: (
-              <a
+              <RoutingLink
                 href={"?" + report.queryParams}
                 className="flex items-center font-normal text-sm leading-5 h-10"
+                replaceAll
               >
                 Report name {report.name}
-              </a>
+              </RoutingLink>
             ),
           },
         ],
@@ -52,7 +54,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
   return (
     <ViewReportsLayout
       onBackButtonClicked={onBackButtonClicked}
-      reportInfo={selectedReport ? <p>{selectedReport}</p> : null}
+      reportInfo={selectedReportName ? <p>{selectedReportName}</p> : null}
     >
       <DynamicTable
         head={{ cells: [{ key: "report-heading", content: "Report" }] }}

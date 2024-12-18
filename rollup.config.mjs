@@ -12,6 +12,12 @@ const babelProd = {
 
 };
 
+const babelDev = {
+  exclude: "node_modules/**",
+  plugins: ["@babel/plugin-transform-react-jsx-development"],
+  babelHelpers: "bundled",
+};
+
 const warn = {
   onwarn(warning, warn) {
     // ignores any 'use client' directive warnings
@@ -58,11 +64,7 @@ export default [
       nodeResolve(),
       commonjs(),
       typescript(),
-      babel({
-        exclude: "node_modules/**",
-        plugins: ["@babel/plugin-transform-react-jsx-development"],
-        babelHelpers: "bundled",
-      }),
+      babel(babelDev),
     ],
     ...warn,
   },

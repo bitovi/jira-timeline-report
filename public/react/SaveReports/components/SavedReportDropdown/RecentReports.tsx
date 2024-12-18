@@ -5,6 +5,7 @@ import React, { forwardRef } from "react";
 
 import { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
 import Hr from "../../../components/Hr";
+import { pushStateObservable } from "@routing-observable";
 
 interface RecentReportsProps {
   recentReports: string[];
@@ -65,6 +66,11 @@ const ReportListItem: FC<ReportListItemProps> = ({ reports, reportId }) => {
       // @ts-expect-error types for component overrides on ADS don't work
       component="a"
       href={"?" + matched.queryParams}
+      onClick={(ev) => {
+        ev.preventDefault();
+        const { href } = (ev.target as HTMLElement).closest('a') as HTMLAnchorElement;
+        pushStateObservable.set(new URL(href).search)
+      }}
     >
       {matched.name}
     </DropdownItem>

@@ -82,7 +82,26 @@ const searchParamsToObject = (params: URLSearchParams) => (
   Array.from(params.entries()).reduce((a, [key, val]) => ({ ...a, [key]: val }), {})
 );
 
+const keyblocklist = [
+  "xdm_e",
+  "xdm_c",
+  "cp",
+  "xdm_deprecated_addon_key_do_not_use",
+  "lic",
+  "cv",
+];
+
 const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
+/**
+ * on(key, handler): fire `handler` when `key` changes on the history state.
+ *   handler receives the new string or undefined value and the previous string or undefined value
+ * on(handler) or on(undefined, handler): fire `handler` when any property changes in history state
+ *   handler receives the new state and the previous state
+ * on('can.patches', handler): fire 'handler' when any property changes in the history state
+ *   handler receives an array of CanPatch objects describing changes to the state.
+ *
+ * `queue` is not used and is only preserved for CanJS compatibility
+ */
   on: function(key, handler, queue) {
     if (typeof key === 'function' && typeof handler !== 'function') {
       queue = handler;
@@ -107,6 +126,13 @@ const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
       handlers.set(key, handlerSet);
     }
   } as JiraStateSync['on'],
+/**
+ * off(key, handler): remove handler from dispatch targets for key
+ * off(handler) or off(undefined, handler): remove handler from dispatch targets for full history state
+ * of('can.patches', handler): remove handler from dispatch targets for 'can.patches'
+ *
+ * `queue` is not used and is only preserved for CanJS compatibility
+ */
   off: function(key, handler, queue) {
     if (typeof key === 'function' && typeof handler !== 'function') {
       queue = handler;
@@ -122,6 +148,10 @@ const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
       keyHandlers.delete(handler);
     }
   } as JiraStateSync['off'],
+  /**
+   * get(key):  return the possibly undefined string value of `key` on the state
+   * get() or get(undefined): return the current history state as a Record of string values
+   */
   get: function(key?: string) {
     const params = new URLSearchParams(decodeURIComponent(AP?.history.getState('all').query?.state ?? ''));
     if (arguments.length > 0) {
@@ -130,6 +160,14 @@ const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
       return searchParamsToObject(params);
     }
   } as JiraStateSync['get'],
+  /**
+   * set(key, value): set the property `key` to `value` on the state
+   * set(value: Object): set the history state to `value`. Do not preserve any previous property values
+   * set(params: string): set the history state to the deparameterized form of `value`. Do not preserve
+   *   any previous property values.
+   *
+   * If the new state is the same as the previous one, no changes will be dispatched.
+   */
   set(...args) {
     const [keyOrState, val] = args;
     const { query } = AP?.history.getState('all') ?? {};
@@ -156,6 +194,10 @@ const stateApi: Pick<JiraStateSync, 'on' | 'off' | 'get' | 'set'> = {
         }
       });
     }
+    keyblocklist.forEach(key => {
+      delete newParams[key];
+    });
+
     if (
       Object.keys(newParams)
       .concat(Object.keys(currentParams))
@@ -184,8 +226,42 @@ const dispatchKeyHandlers: (key: string, newValue?: string | null, oldValue?: st
   }
 }
 
+/**
+ * construct and dispatch "patches", which detail the changes made from the 
+ * previous state to the current one.
+ */
+const dispatchPatchHandlers = (queryParams: Record<string, string>, lastQuery: Record<string, string> | null) => {
+  if (patchHandlers.size > 0) {
+    const patches = [];
+    if (lastQuery == null) {
+      const newEntries = Object.entries(queryParams);
+      patches.push(...newEntries.map(([key, val]) => ({ key, type: 'add', value: val })));
+    } else if (Object.keys(queryParams).length < 1) {
+      const oldEntries = Object.entries(lastQuery);
+      patches.push(...oldEntries.map(([key]) => ({ key, type: 'delete' })));
+    } else {
+      const newKeys = Object.keys(queryParams);
+      const oldKeys = Object.keys(lastQuery);
+      const adds = newKeys.filter(key => !oldKeys.includes(key));
+      const dels = oldKeys.filter(key => !newKeys.includes(key));
+      const sets = newKeys.filter(key => !adds.includes(key));
+
+      patches.push(
+        ...dels.map(key => ({ type: 'delete', key })),
+        ...sets.filter(key => queryParams[key] !== lastQuery?.[key]).map(key => ({ type: 'set', key, value: queryParams[key] })),
+        ...adds.map(key => ({ type: 'add', key, value: queryParams[key] })),
+      );
+    }
+    for(const handler of patchHandlers.values()) {
+      handler(patches, undefined);
+    };
+
+  }  
+}
+
 export const browserState: JiraStateSync = {
   ...stateApi,
+  // CanJS reflection symbols let this observable be used with `listenTo` in value resolvers.
   [onKeyValueSymbol]: stateApi.on,
   [offKeyValueSymbol]: stateApi.off,
   [onPatchesSymbol]: stateApi.on.bind(null, 'can.patches'),
@@ -194,8 +270,11 @@ export const browserState: JiraStateSync = {
   [setKeyValueSymbol]: stateApi.set as JiraStateSync[typeof setKeyValueSymbol],
   [isValueLikeSymbol]: true,
   [isMapLikeSymbol]: true,
+  // Special `value` getter/setter which lets the browser state object behave similar to
+  //  a PushStateObservable.  `value` resolves to the parameterized string form of the 
+  //  history state.
   get value() {
-    const params = this.get(undefined);
+    const params = this.get();
     const searchString = new URLSearchParams(params);
     searchString.sort();
     return searchString.toString();
@@ -205,6 +284,19 @@ export const browserState: JiraStateSync = {
   },
 };
 
+/**
+ * Listen to the history state from Jira.  "change" events will dispatch a JiraLocationState 
+ * the same as when calling `AP.history.getState('all')`.  This object contains information 
+ * about the parent frame URL and the app frame's history properties.
+
+ * We are interested in the query, which contains any query param in the parent frame prefixed with
+ * `ac.` and the app key.  For convenience this app only uses one query param, `state`, which contains
+ * the full parameterized URL search params for the frame minus the ones set up by Jira itself to
+ * set up cross-frame messaging (see `keyblocklist` above).
+ *
+ * We also use `state` as in history state, but only to indicate that we should not push a new state
+ * onto the local history when the change occurs due to a popstate
+ */
 AP?.history?.subscribeState("change", ({ query, state }: JiraLocationState) => {
   if (!lastQuery && !query) {
     return;
@@ -228,33 +320,9 @@ AP?.history?.subscribeState("change", ({ query, state }: JiraLocationState) => {
       }
     });    
   }
-  if (patchHandlers.size > 0) {
-    const patches = [];
-    if (lastQuery == null) {
-      const newEntries = Object.entries(queryParams);
-      patches.push(...newEntries.map(([key, val]) => ({ key, type: 'add', value: val })));
-    } else if (query == null) {
-      const oldEntries = Object.entries(lastQuery);
-      patches.push(...oldEntries.map(([key]) => ({ key, type: 'delete' })));
-    } else {
-      const newKeys = Object.keys(queryParams);
-      const oldKeys = Object.keys(lastQuery);
-      const adds = newKeys.filter(key => !oldKeys.includes(key));
-      const dels = oldKeys.filter(key => !newKeys.includes(key));
-      const sets = newKeys.filter(key => !adds.includes(key));
+  dispatchPatchHandlers(queryParams, lastQuery);
 
-      patches.push(
-        ...dels.map(key => ({ type: 'delete', key })),
-        ...sets.filter(key => queryParams[key] !== lastQuery?.[key]).map(key => ({ type: 'set', key, value: queryParams[key] })),
-        ...adds.map(key => ({ type: 'add', key, value: queryParams[key] })),
-      );
-    }
-    for(const handler of patchHandlers.values()) {
-      handler(patches, undefined);
-    };
-
-    disablePushState = false;
-  }
+  disablePushState = false;
   // Value handlers are dispatched after patch handlers
   //  because the local URL is being updated by a patch 
   //  handler, while the observables looking at the URL
@@ -269,15 +337,6 @@ AP?.history?.subscribeState("change", ({ query, state }: JiraLocationState) => {
   lastQuery = decodedQuery ? queryParams : null;
 });
 export default browserState;
-
-const keyblocklist = [
-  "xdm_e",
-  "xdm_c",
-  "cp",
-  "xdm_deprecated_addon_key_do_not_use",
-  "lic",
-  "cv",
-];
 // This listener keeps the frame URL search in sync with
 // the outer page's `ac` params, allowing our existing
 // observables to continue using the interior URL for 
@@ -301,6 +360,11 @@ browserState.on('can.patches', (patches: CanPatch[]) => {
   }
 });
 
+/**
+ * When the user moves back or forward in navigation, the app iframe's state updates.
+ * We send the change back up to the parent frame, which will then trigger the "change"
+ * event and fire any key or value event listeners bound to the history state.
+ */
 window.addEventListener('popstate', () => {
   const { search } = window.location;
   const searchParams = new URLSearchParams(search);
@@ -310,12 +374,33 @@ window.addEventListener('popstate', () => {
   AP?.history.replaceState({ query: { state: encodeURIComponent(searchParams.toString()) }, state: { fromPopState: 'true' }});
 });
 
+/**
+ * At frame load, get the initial state from the history API and dispatch all changes.
+ * If any params have been set on the URL directly, i.e. from the Atlassian Connect app URL,
+ * add those to the initial state as well.
+ */
 AP?.history?.getState('all', ({ query }) => {
   const newState = decodeURIComponent(query?.state ?? '')
-  history.pushState(deparam(newState), '', `?${newState}`);
+  const { search } = window.location;
+  const searchParams = new URLSearchParams(search);
+  const newStateParams = new URLSearchParams(newState);
+  newStateParams.forEach((val, key) => {
+    searchParams.set(key, val);
+  });
+  searchParams.sort();
+  keyblocklist.forEach(key => {
+    searchParams.delete(key);
+  })
+  const combinedState = searchParamsToObject(searchParams);
+
+  searchParams.forEach(([key, val]) => {
+    dispatchKeyHandlers(key, val, undefined);
+  });
+  dispatchPatchHandlers(combinedState, null)
   valueHandlers.forEach(handler => {
     handler(newState, undefined);
   });
+  lastQuery = combinedState;
 });
 
 export const underlyingReplaceState = history.replaceState;

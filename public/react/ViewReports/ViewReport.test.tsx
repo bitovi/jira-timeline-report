@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, vi, beforeEach, Mock } from "vitest";
 import ViewReports from "./ViewReports";
 import { useAllReports } from "../services/reports";
+import { pushStateObservable } from "@routing-observable";
 
 vi.mock("../services/reports");
 
@@ -34,10 +35,7 @@ describe("ViewReports Component", () => {
   });
 
   it("renders the selected report's name in the reportInfo section", () => {
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: { search: "?report=1" },
-    });
+    pushStateObservable.set("?report=1")
 
     render(<ViewReports onBackButtonClicked={mockOnBackButtonClicked} />);
 
