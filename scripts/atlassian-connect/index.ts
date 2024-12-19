@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { Command } from "commander";
 
-const connectMetadata = {
-  local: { name: "Timeline Report (Local)", baseUrl: "<add-ngrok-url>", key: "bitovi.timeline-report.local" },
+const deploymentConnectMetadata = {
   staging: {
     name: "Timeline Report (Staging)",
     baseUrl: "https://timeline-report-staging.bitovi-jira.com",
@@ -13,31 +13,55 @@ const connectMetadata = {
     baseUrl: "https://timeline-report.bitovi-jira.com",
     key: "bitovi.timeline-report",
   },
+} as const;
+
+const createLocalConnectMetaData = ({ name, url }: { name: string; url: string }) => {
+  return {
+    name: `Timeline Report (Local - ${name})`,
+    baseUrl: `${url}`,
+    key: `bitovi.timeline-report.local.${name.toLowerCase()}`,
+  };
+};
+
+const createMetadata = (options: { name: string; url: string }) => {
+  return {
+    ...deploymentConnectMetadata,
+    local: createLocalConnectMetaData(options),
+  };
 };
 
 type Metadata = (typeof connectMetadata)[keyof typeof connectMetadata];
 
-const args = process.argv.slice(2);
+const program = new Command();
+
+program
+  .option("-e, --environment <env>", "specify the environment", "production")
+  .option("-n, --name <developer-name>", "your name", "<your-name-here>")
+  .option("-u, --url <url>", "your fully qualified url", "<ngrok-url-here>")
+  .parse(process.argv);
+
+const { environment, ...localOptions } = program.opts<{
+  environment: string;
+  name: string;
+  url: string;
+}>();
+
+const connectMetadata = createMetadata(localOptions);
 
 function main() {
-  const passedIn = args.find((arg) => arg.startsWith("--"))?.slice(2);
-  const environment = passedIn || "production";
+  console.log({ here: program.opts() });
 
-  if (!passedIn) {
-    console.log("No environment was passed in - defaulting to 'production'");
-  }
-
-  const metadata = connectMetadata[environment];
-
-  if (!metadata) {
+  if (!Object.keys(connectMetadata).includes(environment)) {
     console.error(
       [
-        `Specified environment ${environment} does not exist.`,
-        "The only allowed environemnts are 'local', 'staging', or 'production' ",
+        `Specified environment "${environment}" does not exist.`,
+        "The only allowed environments are 'local', 'staging', or 'production'.",
       ].join("\n")
     );
     process.exit(1);
   }
+
+  const metadata: Metadata = connectMetadata[environment];
 
   try {
     const rawConnect = fs.readFileSync(path.resolve(__dirname, "base-connect.json"), "utf-8");
@@ -55,9 +79,7 @@ function main() {
   }
 }
 
-main();
-
-function createModules({ name }: Metadata) {
+function createModules({ name }: Metadata): { modules: object } {
   return {
     modules: {
       generalPages: [
@@ -91,3 +113,5 @@ function createModules({ name }: Metadata) {
     },
   };
 }
+
+main();
