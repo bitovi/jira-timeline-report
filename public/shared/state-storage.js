@@ -1,4 +1,6 @@
-import { RoutePushstate, route, diff } from "../can.js";
+import { route, diff } from "../can.js";
+
+import routeObservable, { underlyingReplaceState, pushStateObservable } from "@routing-observable";
 
 export function saveToLocalStorage(key, defaultValue) {
   return {
@@ -13,12 +15,7 @@ export function saveToLocalStorage(key, defaultValue) {
   };
 }
 
-const underlyingReplaceState = history.replaceState;
-
-export const pushStateObservable = new RoutePushstate();
-route.urlData = pushStateObservable;
-route.urlData.root = window.location.pathname;
-route.register("");
+export { routeObservable as pushStateObservable };
 
 const dateMatch = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
