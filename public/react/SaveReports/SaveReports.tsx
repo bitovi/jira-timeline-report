@@ -17,7 +17,7 @@ import routeDataObservable, { pushStateObservable as queryParamObservable } from
 import { useHistoryState, useHistoryStateValue, useHistoryValueCallback } from "../../jira/history/hooks";
 import { param } from "../../can";
 
-interface SaveReportProps {
+export interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
 }
 
@@ -47,9 +47,8 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
 
   const { recentReports, addReportToRecents } = useRecentReports();
 
-  const [ queryParams ] = useHistoryState();
+  const [queryParams] = useHistoryState();
   useHistoryValueCallback("report", (report: string | undefined) => {
-
     // TODO: If confirm `report` exists in `reports` before adding
     // TODO: Reconcile deleted reports with whats there
 
@@ -85,7 +84,7 @@ const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
           url.searchParams.set("report", id);
           queryParamObservable.set(url.search);
         },
-      }
+      },
     );
   };
 

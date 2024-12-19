@@ -2,7 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 const connectMetadata = {
-  local: { name: "Timeline Report (Local, Brad)", baseUrl: "https://0342-68-187-209-164.ngrok-free.app", key: "bitovi.timeline-report.local.brad" },
+  local: {
+    name: "Timeline Report (Local)",
+    baseUrl: "https://0342-68-187-209-164.ngrok-free.app",
+    key: "bitovi.timeline-report.local",
+  },
   staging: {
     name: "Timeline Report (Staging)",
     baseUrl: "https://timeline-report-staging.bitovi-jira.com",
@@ -34,7 +38,7 @@ function main() {
       [
         `Specified environment ${environment} does not exist.`,
         "The only allowed environemnts are 'local', 'staging', or 'production' ",
-      ].join("\n")
+      ].join("\n"),
     );
     process.exit(1);
   }
@@ -45,7 +49,7 @@ function main() {
 
     fs.writeFileSync(
       path.resolve(__dirname, "../../", "public/atlassian-connect.json"),
-      JSON.stringify({ ...baseConnect, ...metadata, ...createModules(metadata) })
+      JSON.stringify({ ...baseConnect, ...metadata, ...createModules(metadata) }),
     );
 
     console.log("Created atlassian-connect.json");

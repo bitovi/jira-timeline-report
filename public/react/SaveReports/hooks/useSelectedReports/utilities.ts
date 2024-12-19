@@ -1,5 +1,5 @@
 import type { Reports, Report } from "../../../../jira/reports";
-import routeDataObservable from '@routing-observable';
+import routeDataObservable from "@routing-observable";
 
 export const paramsEqual = (lhs: URLSearchParams, rhs: URLSearchParams): boolean => {
   const lhsEntries = [...lhs.entries()];
@@ -10,10 +10,7 @@ export const paramsEqual = (lhs: URLSearchParams, rhs: URLSearchParams): boolean
   }
 
   return lhsEntries.reduce((isEqual, [lhsName, lhsValue]) => {
-    return (
-      isEqual &&
-      rhsEntries.some(([rhsName, rhsValue]) => lhsName === rhsName && lhsValue === rhsValue)
-    );
+    return isEqual && rhsEntries.some(([rhsName, rhsValue]) => lhsName === rhsName && lhsValue === rhsValue);
   }, true);
 };
 
@@ -32,7 +29,7 @@ export const getReportFromParams = (reports: Reports): Report | undefined => {
 export const paramsMatchReport = (
   params: URLSearchParams,
   reports: Reports,
-  paramsToOmit: string[] = ["settings"]
+  paramsToOmit: string[] = ["settings"],
 ) => {
   const report = getReportFromParams(reports);
 

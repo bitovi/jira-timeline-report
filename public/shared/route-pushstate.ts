@@ -7,7 +7,7 @@ export const pushStateObservable = new RoutePushstate();
 route.urlData = pushStateObservable;
 route.urlData.root = window.location.pathname;
 // @ts-expect-error
-route.register('/');
+route.register("/");
 // @ts-expect-error
 route.start();
 
@@ -29,25 +29,26 @@ const keyObservable = new (ObservableObject as ObjectConstructor)();
 //   keyObservable.set(deparam(pushStateObservable.value));
 // });
 
-const proxiedRouteData = new Proxy(
-  route.data,
-  {
-    get(target, p) {
-      if (p === 'set') {
-        return function(...args: [string, any] | [any]) {
-          const value = args.pop();
-          const key = args[0];
+const proxiedRouteData = new Proxy(route.data, {
+  get(target, p) {
+    if (p === "set") {
+      return function (...args: [string, any] | [any]) {
+        const value = args.pop();
+        const key = args[0];
 
-          if (!key && value && typeof value === 'object') {
-            const newValue = Object.entries(value).reduce((a, [key, val]) => ({ ...a, [key]: val ?? undefined }), {});
-            target.set.call(newValue);
-          } else if (key) {
-            target.set.call(target, key, value ?? undefined);
-          }
-        };
-      } else {
-        return target[p];
-      }
+        if (!key && value && typeof value === "object") {
+          const newValue = Object.entries(value).reduce(
+            (a, [key, val]) => ({ ...a, [key]: val ?? undefined }),
+            {},
+          );
+          target.set.call(newValue);
+        } else if (key) {
+          target.set.call(target, key, value ?? undefined);
+        }
+      };
+    } else {
+      return target[p];
+    }
   },
 });
 

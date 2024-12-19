@@ -56,10 +56,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
       onBackButtonClicked={onBackButtonClicked}
       reportInfo={selectedReportName ? <p>{selectedReportName}</p> : null}
     >
-      <DynamicTable
-        head={{ cells: [{ key: "report-heading", content: "Report" }] }}
-        rows={reportRows}
-      />
+      <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={reportRows} />
     </ViewReportsLayout>
   );
 };

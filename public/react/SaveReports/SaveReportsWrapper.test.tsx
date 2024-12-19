@@ -17,7 +17,7 @@ describe("<SaveReportsWrapper />", () => {
           update: vi.fn(),
         }}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -37,7 +37,7 @@ describe("<SaveReportsWrapper />", () => {
           update: vi.fn(),
         }}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
-      />
+      />,
     );
 
     await waitFor(() => {

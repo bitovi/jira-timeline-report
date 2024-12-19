@@ -68,8 +68,8 @@ const ReportListItem: FC<ReportListItemProps> = ({ reports, reportId }) => {
       href={"?" + matched.queryParams}
       onClick={(ev) => {
         ev.preventDefault();
-        const { href } = (ev.target as HTMLElement).closest('a') as HTMLAnchorElement;
-        pushStateObservable.set(new URL(href).search)
+        const { href } = (ev.target as HTMLElement).closest("a") as HTMLAnchorElement;
+        pushStateObservable.set(new URL(href).search);
       }}
     >
       {matched.name}

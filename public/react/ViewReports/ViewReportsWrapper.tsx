@@ -25,7 +25,11 @@ interface ViewReportsWrapperProps {
 
 const queryClient = new QueryClient();
 
-const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ storage, showingReportsObservable, ...viewReportProps }) => {
+const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
+  storage,
+  showingReportsObservable,
+  ...viewReportProps
+}) => {
   const shouldShowReports = useCanObservable(showingReportsObservable);
 
   if (!shouldShowReports) {
@@ -81,7 +85,10 @@ const ViewReportSkeleton: FC<ViewReportSkeletonProps> = ({ onBackButtonClicked }
   });
 
   return (
-    <ViewReportLayout onBackButtonClicked={onBackButtonClicked} reportInfo={selectedReportExists ? <Skeleton /> : null}>
+    <ViewReportLayout
+      onBackButtonClicked={onBackButtonClicked}
+      reportInfo={selectedReportExists ? <Skeleton /> : null}
+    >
       <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={rows} />
     </ViewReportLayout>
   );

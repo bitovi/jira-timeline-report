@@ -10,11 +10,11 @@ export const dateFormatter = new Intl.DateTimeFormat('en-US', {
     year: 'numeric'  // Full year (e.g., "1982") 
 });*/
 
-export const dateFormatter = new Intl.DateTimeFormat('en-US', { 
-    month: '2-digit',  // Abbreviated month (e.g., "Oct")
-    day: '2-digit',  // Numeric day (e.g., "20")
-    year: '2-digit'  // Full year (e.g., "1982") 
-})
+export const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "2-digit", // Abbreviated month (e.g., "Oct")
+  day: "2-digit", // Numeric day (e.g., "20")
+  year: "2-digit", // Full year (e.g., "1982")
+});
 
 import SimpleTooltip from "../shared/simple-tooltip.js";
 
@@ -25,9 +25,8 @@ import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 import Stats from "../react/Stats/Stats.js";
 
-
 export class EstimateBreakdown extends StacheElement {
-    static view = `<div class="text-right"><button class="remove-button text-red-500 p-2 text-lg">X</button></div>
+  static view = `<div class="text-right"><button class="remove-button text-red-500 p-2 text-lg">X</button></div>
     <div class="p-4">
         {{# if( this.usedStoryPointsMedian(issue) ) }}
 
@@ -156,55 +155,61 @@ export class EstimateBreakdown extends StacheElement {
         {{/ if }}
     </div>
     `;
-    teamsAreTheSame(){
-        if(!this.issue.issueLastPeriod) {
-            return false
-        } else {
-            return this.issue.issueLastPeriod.team === this.issue.team
-        }
+  teamsAreTheSame() {
+    if (!this.issue.issueLastPeriod) {
+      return false;
+    } else {
+      return this.issue.issueLastPeriod.team === this.issue.team;
     }
-    makeCurrentAndPreviousHTML(valueKey, validKey, format = (x)=> x){
-        const currentValue = key.get(this.issue,valueKey);
-        const lastValue = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, valueKey) : undefined;
+  }
+  makeCurrentAndPreviousHTML(valueKey, validKey, format = (x) => x) {
+    const currentValue = key.get(this.issue, valueKey);
+    const lastValue = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, valueKey) : undefined;
 
-        let isCurrentValueValid = true, lastValueValid = true;
-        if(validKey) {
-            isCurrentValueValid = key.get(this.issue,validKey);
-            lastValueValid = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, validKey) : undefined ;
-        }
+    let isCurrentValueValid = true,
+      lastValueValid = true;
+    if (validKey) {
+      isCurrentValueValid = key.get(this.issue, validKey);
+      lastValueValid = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, validKey) : undefined;
+    }
 
-        return stache.safeString(`
-            <div class="text-right ${isCurrentValueValid === false ? "bg-neutral-100" : ""}">${ format( this.round(currentValue, 1) ) }</div>
-            <div class="text-right text-xs ${lastValueValid === false? "bg-neutral-100" : ""}">
-                ${ this.issue.issueLastPeriod ? format( this.round(lastValue, 1) ) : "🚫"}
+    return stache.safeString(`
+            <div class="text-right ${isCurrentValueValid === false ? "bg-neutral-100" : ""}">${format(this.round(currentValue, 1))}</div>
+            <div class="text-right text-xs ${lastValueValid === false ? "bg-neutral-100" : ""}">
+                ${this.issue.issueLastPeriod ? format(this.round(lastValue, 1)) : "🚫"}
             </div>    
-        `)
-        
+        `);
+  }
+  formatPercent(value) {
+    return value + "%";
+  }
+  usedStoryPointsMedian(issue) {
+    return issue?.derivedTiming?.isStoryPointsMedianValid && issue?.derivedTiming?.usedConfidence !== 100;
+  }
+  confidenceValue(issue) {
+    return issue?.derivedTiming?.usedConfidence;
+  }
+  confidenceClass(issue) {
+    return issue?.derivedTiming?.isConfidenceValid ? "" : "bg-neutral-100";
+  }
+  timingEquation(issue) {
+    if (issue?.derivedTiming?.isStoryPointsMedianValid) {
+      return (
+        Math.round(issue.derivedTiming.deterministicTotalPoints) +
+        " / " +
+        issue.team.velocity +
+        " / " +
+        issue.team.parallelWorkLimit +
+        " * " +
+        issue.team.daysPerSprint +
+        " = " +
+        Math.round(issue.derivedTiming.deterministicTotalDaysOfWork)
+      );
     }
-    formatPercent(value) {
-        return value+"%"
-    }
-    usedStoryPointsMedian(issue){
-        return issue?.derivedTiming?.isStoryPointsMedianValid && (issue?.derivedTiming?.usedConfidence !== 100)
-    }
-    confidenceValue(issue){
-        return issue?.derivedTiming?.usedConfidence;
-    }
-    confidenceClass(issue){
-        return issue?.derivedTiming?.isConfidenceValid ? "" : "bg-neutral-100"
-    }
-    timingEquation(issue) {
-        if(issue?.derivedTiming?.isStoryPointsMedianValid) {
-            return Math.round( issue.derivedTiming.deterministicTotalPoints ) + 
-                " / " +issue.team.velocity + " / "+issue.team.parallelWorkLimit  + " * " + issue.team.daysPerSprint + " = " +
-                Math.round(issue.derivedTiming.deterministicTotalDaysOfWork)
-        }
-    }
-    round(number, decimals = 0) {
-        return typeof number === "number" ? parseFloat(number.toFixed(decimals)) : "∅"
-    }
-
-    
+  }
+  round(number, decimals = 0) {
+    return typeof number === "number" ? parseFloat(number.toFixed(decimals)) : "∅";
+  }
 }
 customElements.define("estimate-breakdown", EstimateBreakdown);
 
@@ -248,130 +253,151 @@ export class TableGrid extends StacheElement {
     `;
   static props = {
     columns: {
-        get default(){
-            return [{
-                path: "summary",
-                name: "Summary",
-            },{
-                path: "rollupDates.start",
-                name: "Rollup Start"
-            },
-            {
-                path: "rollupDates.start",
-                name: "Rollup Due"
-            }]
-        }
-    }
+      get default() {
+        return [
+          {
+            path: "summary",
+            name: "Summary",
+          },
+          {
+            path: "rollupDates.start",
+            name: "Rollup Start",
+          },
+          {
+            path: "rollupDates.start",
+            name: "Rollup Due",
+          },
+        ];
+      },
+    },
   };
 
-  get tableRows(){
-
-
+  get tableRows() {
     const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-    
+
     function childrenRecursive(issue, depth = 0) {
-        return [
-            {depth: depth, issue},
-            ...getChildren(issue).map( issue => childrenRecursive(issue, depth+1))
-        ]
+      return [
+        { depth: depth, issue },
+        ...getChildren(issue).map((issue) => childrenRecursive(issue, depth + 1)),
+      ];
     }
 
-    let allChildren = this.primaryIssuesOrReleases.map( i => childrenRecursive(i)).flat(Infinity)
+    let allChildren = this.primaryIssuesOrReleases.map((i) => childrenRecursive(i)).flat(Infinity);
 
     return allChildren;
   }
-  padding(row){
-    return "padding-left: "+(row.depth * 20)+"px"
+  padding(row) {
+    return "padding-left: " + row.depth * 20 + "px";
   }
-  iconUrl(row){
-    return row.issue?.issue?.fields["Issue Type"]?.iconUrl
+  iconUrl(row) {
+    return row.issue?.issue?.fields["Issue Type"]?.iconUrl;
   }
   shortDate(date) {
     return date ? dateFormatter.format(date) : "";
   }
   startDate(issue) {
-    return compareToLast(issue, issue => issue?.rollupDates?.start,  formatDate)
+    return compareToLast(issue, (issue) => issue?.rollupDates?.start, formatDate);
   }
   endDate(issue) {
-    return compareToLast(issue, issue => issue?.rollupDates?.due,  formatDate)
+    return compareToLast(issue, (issue) => issue?.rollupDates?.due, formatDate);
   }
   estimate(issue) {
-    return compareToLast(issue, getEstimate,  x => x)
-
+    return compareToLast(issue, getEstimate, (x) => x);
   }
-  estimatedDaysOfWork(issue){
-    return compareToLast(issue, (issue) => {
+  estimatedDaysOfWork(issue) {
+    return compareToLast(
+      issue,
+      (issue) => {
         // if we have story points median, use that
-        if(issue?.derivedTiming?.isStoryPointsMedianValid) {
-            return issue.derivedTiming.deterministicTotalDaysOfWork
-        } else if(issue?.derivedTiming?.isStoryPointsValid ) {
-            return issue?.derivedTiming?.storyPointsDaysOfWork
+        if (issue?.derivedTiming?.isStoryPointsMedianValid) {
+          return issue.derivedTiming.deterministicTotalDaysOfWork;
+        } else if (issue?.derivedTiming?.isStoryPointsValid) {
+          return issue?.derivedTiming?.storyPointsDaysOfWork;
         }
-    }, value => {
-        if(typeof value === "number") {
-            return Math.round(value)
+      },
+      (value) => {
+        if (typeof value === "number") {
+          return Math.round(value);
         } else {
-            return value;
+          return value;
         }
-    })
+      },
+    );
   }
-  timedDays(issue){
-    return compareToLast(issue, (issue) => {
+  timedDays(issue) {
+    return compareToLast(
+      issue,
+      (issue) => {
         // if we have story points median, use that
-        if(issue?.derivedTiming?.datesDaysOfWork) {
-            return issue?.derivedTiming?.datesDaysOfWork
-        } 
-    }, value => {
-        if(typeof value === "number") {
-            return Math.round(value)
-        } else {
-            return value;
+        if (issue?.derivedTiming?.datesDaysOfWork) {
+          return issue?.derivedTiming?.datesDaysOfWork;
         }
-    })
+      },
+      (value) => {
+        if (typeof value === "number") {
+          return Math.round(value);
+        } else {
+          return value;
+        }
+      },
+    );
   }
-  rolledUpDays(issue){
-    return compareToLast(issue, (issue) => {
+  rolledUpDays(issue) {
+    return compareToLast(
+      issue,
+      (issue) => {
         // if we have story points median, use that
-        if(issue?.completionRollup?.totalWorkingDays) {
-            return issue?.completionRollup?.totalWorkingDays;
-        } 
-    }, value => {
-        if(typeof value === "number") {
-            return Math.round(value)
-        } else {
-            return value;
+        if (issue?.completionRollup?.totalWorkingDays) {
+          return issue?.completionRollup?.totalWorkingDays;
         }
-    })
+      },
+      (value) => {
+        if (typeof value === "number") {
+          return Math.round(value);
+        } else {
+          return value;
+        }
+      },
+    );
   }
   timingEquation(issue) {
-    if(issue?.derivedTiming?.isStoryPointsMedianValid) {
-        return Math.round( issue.derivedTiming.deterministicTotalPoints ) + 
-            " / " +issue.team.velocity + " / "+issue.team.parallelWorkLimit  + " * " + issue.team.daysPerSprint + " = " +
-            Math.round(issue.derivedTiming.deterministicTotalDaysOfWork)
+    if (issue?.derivedTiming?.isStoryPointsMedianValid) {
+      return (
+        Math.round(issue.derivedTiming.deterministicTotalPoints) +
+        " / " +
+        issue.team.velocity +
+        " / " +
+        issue.team.parallelWorkLimit +
+        " * " +
+        issue.team.daysPerSprint +
+        " = " +
+        Math.round(issue.derivedTiming.deterministicTotalDaysOfWork)
+      );
     }
   }
   showEstimation(issue, element) {
+    TOOLTIP.belowElementInScrollingContainer(
+      element,
+      new EstimateBreakdown().initialize({
+        issue,
+      }),
+    );
 
-    TOOLTIP.belowElementInScrollingContainer(element, new EstimateBreakdown().initialize({
-        issue
-    }));
-
-    TOOLTIP.querySelector(".remove-button").onclick = ()=> {
-        TOOLTIP.leftElement()
-    }
-    
+    TOOLTIP.querySelector(".remove-button").onclick = () => {
+      TOOLTIP.leftElement();
+    };
   }
   connected() {
-    if(FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
-        let root = this.statsRoot;
-        if (!root) {
-            root = this.statsRoot = createRoot(document.getElementById("stats"));
-        }
-        root.render(
-            createElement(Stats, {
-              primaryIssuesOrReleasesObs: value.from(this,"primaryIssuesOrReleases")
-            })
-          );
+    if (FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
+      let root = this.statsRoot;
+      if (!root) {
+        root = this.statsRoot = createRoot(document.getElementById("stats"));
+      }
+      root.render(
+        createElement(Stats, {
+          primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
+        }),
+      );
     }
   }
   disconnected() {
@@ -384,43 +410,39 @@ export class TableGrid extends StacheElement {
 
 customElements.define("table-grid", TableGrid);
 
-function getEstimate(issue){
-    if(issue?.derivedTiming?.isStoryPointsMedianValid) {
-        return issue.storyPointsMedian + " "+ issue.confidence+"%"
-    } else if(issue?.storyPoints != null){
-        return issue.storyPoints
-    } else {
-        return null;
-    }
+function getEstimate(issue) {
+  if (issue?.derivedTiming?.isStoryPointsMedianValid) {
+    return issue.storyPointsMedian + " " + issue.confidence + "%";
+  } else if (issue?.storyPoints != null) {
+    return issue.storyPoints;
+  } else {
+    return null;
+  }
 }
 
-function anythingToString(value){
-    return value == null ? "∅" : ""+value;
+function anythingToString(value) {
+  return value == null ? "∅" : "" + value;
 }
 
 function compareToLast(issue, getValue, formatValue) {
- 
-    const currentValue = anythingToString( formatValue( getValue(issue) ) );
+  const currentValue = anythingToString(formatValue(getValue(issue)));
 
-    if(!issue.issueLastPeriod) {
-        return "🚫 ➡ "+currentValue
-    }
-    const lastValue = anythingToString( formatValue( getValue(issue.issueLastPeriod) ) );
+  if (!issue.issueLastPeriod) {
+    return "🚫 ➡ " + currentValue;
+  }
+  const lastValue = anythingToString(formatValue(getValue(issue.issueLastPeriod)));
 
-    if(currentValue !== lastValue) {
-        return lastValue + " ➡ " + currentValue;
-    } else {
-        return currentValue === "∅" ? "" : currentValue;
-    }
-
+  if (currentValue !== lastValue) {
+    return lastValue + " ➡ " + currentValue;
+  } else {
+    return currentValue === "∅" ? "" : currentValue;
+  }
 }
 
-function formatDate(date){
-    return date ? dateFormatter.format(date) : date;
+function formatDate(date) {
+  return date ? dateFormatter.format(date) : date;
 }
 
-function getStartDate(issue){
-    return formatDate(issue?.rollupDates?.start)
+function getStartDate(issue) {
+  return formatDate(issue?.rollupDates?.start);
 }
-
-

@@ -8,23 +8,17 @@ import { useHistoryCallback, useHistoryParams, useHistoryState } from "../../../
 import routeDataObservable from "@routing-observable";
 import { param } from "../../../../can";
 
-export const useSelectedReport = ({
-  reports,
-}: {
-  reports: Reports;
-}) => {
+export const useSelectedReport = ({ reports }: { reports: Reports }) => {
   const { updateReport } = useUpdateReport();
   const [selectedReport, setSelectedReport] = useState<Report | undefined>(() =>
-    getReportFromParams(reports)
+    getReportFromParams(reports),
   );
 
   const [initial] = useHistoryState();
 
   const [search] = useHistoryParams();
 
-  const [isDirty, setIsDirty] = useState(
-    () => !paramsMatchReport(new URLSearchParams(search), reports)
-  );
+  const [isDirty, setIsDirty] = useState(() => !paramsMatchReport(new URLSearchParams(search), reports));
 
   useHistoryCallback((params) => {
     const newSelectedReport = getReportFromParams(reports);
@@ -50,7 +44,7 @@ export const useSelectedReport = ({
       updateReport(
         selectedReport.id,
         { queryParams: param(queryParams) },
-        { onSuccess: () => setIsDirty(false) }
+        { onSuccess: () => setIsDirty(false) },
       );
     },
     isDirty,

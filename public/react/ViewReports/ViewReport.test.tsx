@@ -35,7 +35,7 @@ describe("ViewReports Component", () => {
   });
 
   it("renders the selected report's name in the reportInfo section", () => {
-    pushStateObservable.set("?report=1")
+    pushStateObservable.set("?report=1");
 
     render(<ViewReports onBackButtonClicked={mockOnBackButtonClicked} />);
 

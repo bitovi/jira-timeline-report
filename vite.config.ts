@@ -7,7 +7,7 @@ export default defineConfig({
     setupFiles: "./vitest.setup.ts",
     globals: true,
     alias: {
-      '@routing-observable': import.meta.dirname + '/public/shared/route-pushstate'
-    }
+      "@routing-observable": import.meta.dirname + "/public/shared/route-pushstate",
+    },
   },
 });
