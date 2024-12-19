@@ -30,7 +30,7 @@
   "include": [
     "public/**/*.ts",
     "public/**/*.tsx"
-  ],
+, "public/routing/routing.js"  ],
   "exclude": [
     "node_modules",
     "public/dist",

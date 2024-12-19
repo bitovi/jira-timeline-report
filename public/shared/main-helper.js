@@ -9,6 +9,7 @@ import { getConnectRequestHelper } from "../request-helpers/connect-request-help
 
 import { directlyReplaceUrlParam } from "./state-storage.js";
 import { route } from "../can.js";
+import { beforeCanRouteIsCalled, initialize } from "../routing/routing.js";
 
 function legacyPrimaryReportingTypeRoutingFix() {
   const primaryIssueType = new URL(window.location).searchParams.get("primaryReportType");
@@ -32,7 +33,12 @@ export default async function mainHelper(config, { host, createStorage }) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
+  console.log("before before is called", window.location.search);
+  beforeCanRouteIsCalled();
+  console.log("after before is called", window.location.search);
+  route._onStartComplete = initialize;
   route.start();
+  // initialize();
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 
