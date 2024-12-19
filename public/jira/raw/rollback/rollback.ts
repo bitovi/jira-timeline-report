@@ -3,7 +3,7 @@
  * It processes changes to fields such as Sprint, Fix Versions, Parent associations, and Status,
  * ensuring that issues are accurately reverted to their historical configurations.
  */
-import { parseDateISOString } from "../../../date-helpers";
+import { parseDateISOString } from "../../../utils/date/date-helpers";
 import {
   Change,
   FixVersion,

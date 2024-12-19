@@ -1,4 +1,4 @@
-import { responseToJSON } from "../shared/response-to-json";
+import { responseToJSON } from "../utils/fetch/response-to-json";
 
 async function fetchJSON(url, options) {
   return fetch(url, options).then(responseToJSON);

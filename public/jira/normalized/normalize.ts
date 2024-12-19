@@ -1,4 +1,4 @@
-import { parseDateIntoLocalTimezone } from "../../date-helpers";
+import { parseDateIntoLocalTimezone } from "../../utils/date/date-helpers";
 import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
 
 import * as defaults from "./defaults";

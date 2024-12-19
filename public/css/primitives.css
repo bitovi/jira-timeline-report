@@ -52,7 +52,7 @@
 }
 
 
-menu, body, steerco-timeline ol, steerco-timeline ul, nav ul, steerco-timeline p {
+menu, body, nav ul {
     list-style: none;
     margin: 0;
     padding: 0;

@@ -7,21 +7,6 @@ import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
 import { workTypes } from "../jira/derived/work-status/work-status";
 import { normalizeIssue, normalizeParent } from "../jira/normalized/normalize.js";
 
-/*
-import { getCalendarHtml, getQuarter, getQuartersAndMonths } from "./quarter-timeline.js";
-import { howMuchHasDueDateMovedForwardChangedSince, DAY_IN_MS } from "./date-helpers.js";
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', { day: "numeric", month: "short" })
-
-const inQAStatus = { "QA": true, "In QA": true };
-const inDevStatus = { "In Development": true, "Development": true };
-const inPartnerReviewStatus = { "Partner Review": true };
-const inDoneStatus = { "Done": true };
-
-import SimpleTooltip from "./shared/simple-tooltip.js";
-
-const TOOLTIP = new SimpleTooltip();
-document.body.append(TOOLTIP);*/
 
 const percentCompleteTooltip = stache(`
     <button class="remove-button">❌</button>
@@ -51,7 +36,7 @@ const percentCompleteTooltip = stache(`
    </div>
 `);
 
-import { getQuartersAndMonths } from "../quarter-timeline.js";
+import { getQuartersAndMonths } from "../utils/date/quarters-and-months";
 
 // loops through and creates
 export class GanttGrid extends StacheElement {

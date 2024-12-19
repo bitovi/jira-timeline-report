@@ -1,9 +1,6 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value } from "../can.js";
 
 import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
-import { calculationKeysToNames, allTimingCalculationOptions, getImpliedTimingCalculations } from "../prepare-issues/date-data.js";
-
-import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 

@@ -1,4 +1,4 @@
-import { parseDateISOString } from "../../date-helpers";
+import { parseDateISOString } from "../../utils/date/date-helpers";
 import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
 import { NormalizeIssueConfig } from "./normalize";
 
