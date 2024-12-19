@@ -10,13 +10,11 @@ import { FlagsProvider } from "@atlaskit/flag";
 
 import { StorageProvider } from "../services/storage";
 import Skeleton from "../components/Skeleton";
-import SaveReports from "./SaveReports";
+import SaveReports, { SaveReportProps } from "./SaveReports";
 import { queryClient } from "../services/query";
 
-interface SaveReportsWrapperProps {
+interface SaveReportsWrapperProps extends SaveReportProps {
   storage: AppStorage;
-  onViewReportsButtonClicked: () => void;
-  queryParamObservable: CanObservable<string>;
 }
 
 const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({ storage, ...saveReportProps }) => {

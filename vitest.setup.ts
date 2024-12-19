@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
+import { globals } from "./public/can";
 
 window.matchMedia = vi.fn().mockImplementation((query) => ({
   matches: vi.fn(),
@@ -11,3 +12,5 @@ window.matchMedia = vi.fn().mockImplementation((query) => ({
   removeEventListener: vi.fn(),
   dispatchEvent: vi.fn(),
 }));
+
+globals.setKeyValue("isNode", false);

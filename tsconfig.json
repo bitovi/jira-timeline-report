@@ -22,6 +22,10 @@
     "paths": {
       "undici-types": [
         "./node_modules/undici/types"
+      ],
+      "@routing-observable": [
+        "./public/jira/history/observable",
+        "./public/shared/route-pushstate"
       ]
     },
     "sourceMap": false,

@@ -274,7 +274,7 @@ function logNormalAverageConfidenceInterval(values) {
 }
 
 function getTeamAverageEstimatedPointPerDay(epics) {
-  const epicsToUseAsBaseline = epics.filter(issueWasEstimatedDatedAndCompleted);
+  const epicsToUseAsBaseline = epics?.filter(issueWasEstimatedDatedAndCompleted) ?? [];
   const metadata = { completedEstimatedVSActualForTeam: {} };
   epicsToUseAsBaseline.forEach((epic) => {
     addEstimatedAndActualForTeam(metadata, epic);

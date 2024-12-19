@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { paramsEqual, getReportFromParams, paramsMatchReport } from "./utilities";
+import routeDataObservable, { pushStateObservable } from "@routing-observable";
 
 const mockReports = {
   "1": { id: "1", name: "Report 1", queryParams: "param1=value1&param2=value2" },
@@ -56,21 +57,21 @@ describe("useSelectedReports > utilities", () => {
 
   describe("getReportFromParams", () => {
     it("returns the correct report based on URLSearchParams", () => {
-      window.location.search = "?report=1";
+      pushStateObservable.set("?report=1");
 
       const report = getReportFromParams(mockReports);
       expect(report).toEqual(mockReports["1"]);
     });
 
     it("returns undefined if the 'report' param is missing", () => {
-      window.location.search = "?otherParam=1";
+      pushStateObservable.set("?otherParam=1");
 
       const report = getReportFromParams(mockReports);
       expect(report).toBeUndefined();
     });
 
     it("returns undefined if no matching report is found", () => {
-      window.location.search = "?report=nonexistent";
+      pushStateObservable.set("?report=nonexistent");
 
       const report = getReportFromParams(mockReports);
       expect(report).toBeUndefined();
@@ -79,28 +80,28 @@ describe("useSelectedReports > utilities", () => {
 
   describe("paramsMatchReport", () => {
     it("returns true when params match the report's queryParams", () => {
-      window.location.search = "?report=1";
+      pushStateObservable.set("report=1");
       const params = new URLSearchParams("param1=value1&param2=value2");
 
       expect(paramsMatchReport(params, mockReports)).toBe(true);
     });
 
     it("returns false when params do not match the report's queryParams", () => {
-      window.location.search = "?report=1";
+      pushStateObservable.set("report=1");
       const params = new URLSearchParams("param1=value1&param2=differentValue");
 
       expect(paramsMatchReport(params, mockReports)).toBe(false);
     });
 
     it("ignores params specified in paramsToOmit", () => {
-      window.location.search = "?report=1";
+      pushStateObservable.set("report=1");
       const params = new URLSearchParams("param1=value1&param2=value2&settings=value3");
 
       expect(paramsMatchReport(params, mockReports, ["settings"])).toBe(true);
     });
 
     it("returns false if no matching report is found", () => {
-      window.location.search = "?report=nonexistent";
+      pushStateObservable.set("report=nonexistent");
       const params = new URLSearchParams("param1=value1&param2=value2");
 
       expect(paramsMatchReport(params, mockReports)).toBe(false);

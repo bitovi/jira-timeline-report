@@ -5,6 +5,7 @@ import React, { useMemo } from "react";
 
 import { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
 import Hr from "../../../components/Hr";
+import { pushStateObservable } from "@routing-observable";
 import { notEmpty } from "../../../../jira/shared/helpers";
 
 interface RecentReportsProps {
