@@ -1,10 +1,10 @@
 
 import { StacheElement, type, ObservableObject, stache } from "../can.js";
 
-import { rollupDatesFromRollups } from "../prepare-issues/date-data.js";
-import { getQuartersAndMonths } from "../quarter-timeline.js";
-import { getCalendarHtml } from "../quarter-timeline.js";
+import { getQuartersAndMonths } from "../utils/date/quarters-and-months";
 import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
+import {mergeStartAndDueData} from "../jira/rollup/dates/dates";
+
 const DAY = 1000*60*60*24;
 export class ScatterTimeline extends StacheElement {
     static view = `
@@ -49,14 +49,14 @@ export class ScatterTimeline extends StacheElement {
         
         // handle if there are no issues
         const endDates = this.primaryIssuesOrReleases.map((issue)=> {
-            return {dateData: {rollup: {
+            return {
                 start: issue.rollupDates.due,
                 startFrom: issue.rollupDates.dueTo,
                 due: issue.rollupDates.due,
                 dueTo: issue.rollupDates.dueTo
-            }}}
+            };
         })
-        const {start, due} = rollupDatesFromRollups(endDates);
+        const {start, due} = mergeStartAndDueData(endDates);
         let firstEndDate = new Date( (start || new Date()).getTime() - DAY * 30 ) ;
         
         return getQuartersAndMonths(firstEndDate, due || new Date( new Date().getTime() + DAY*30));
@@ -66,6 +66,7 @@ export class ScatterTimeline extends StacheElement {
         const totalTime = (lastDay - firstDay);
         return (new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime * 100;
     }
+    /*
     get calendarData() {
         const {start, due} = rollupDatesFromRollups(this.primaryIssuesOrReleases);
         return getCalendarHtml(new Date(), due);
@@ -73,6 +74,7 @@ export class ScatterTimeline extends StacheElement {
     get calendarHTML() {
         return stache.safeString(this.calendarData.html);
     }
+    */
     get rows() {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);

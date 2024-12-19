@@ -1,4 +1,4 @@
-import { getBusinessDatesCount } from "../../../status-helpers";
+import {getBusinessDatesCount} from "../../../utils/date/business-days"
 import { estimateExtraPoints, sampleExtraPoints } from "../../../shared/confidence";
 import {
   DueData,

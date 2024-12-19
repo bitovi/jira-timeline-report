@@ -1,9 +1,9 @@
 /**
  * this module recursively fetches jira issues.
  */
-import chunkArray from "../shared/chunk-array";
-import mapIdsToNames from "../shared/map-ids-to-names";
-import { uniqueKeys } from "../shared/unique";
+import chunkArray from "../utils/array/chunk-array";
+import mapIdsToNames from "../utils/object/map-ids-to-names";
+import { uniqueKeys } from "../utils/array/unique";
 import { Config, Issue, Params, Progress } from "./types";
 
 type RootMethod = (params: Params, progress: Progress) => Promise<Issue[]>;
