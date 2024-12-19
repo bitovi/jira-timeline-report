@@ -22,18 +22,6 @@ const booleanParsing = {
 
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
-/*
-class TypeSelectionDropdown extends StacheElement {
-    static view = `
-        {{# for(issueType of this.allTimingCalculationOptions.list) }}
-        <label class="px-2"><input 
-            type="radio" 
-            name="primaryIssueType" 
-            checked:from="eq(this.primaryIssueType, issueType.type)"
-            on:change="this.primaryIssueType = issueType.type"/> {{issueType.plural}} </label>
-        {{/ }}
-    `
-}*/
 
 import { makeArrayOfStringsQueryParamValue } from "../shared/state-storage.js";
 

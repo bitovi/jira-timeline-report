@@ -4,7 +4,7 @@
 import { fetchRemainingChangelogsForIssues, fetchJiraIssuesWithJQL } from "./jira";
 import { Config, ProgressData, Issue, OidcJiraIssue } from "./types";
 import { RequestHelperResponse } from "../shared/types";
-import { uniqueKeys } from "../shared/unique";
+import { uniqueKeys } from "../utils/array/unique";
 
 export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
   return (

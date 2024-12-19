@@ -3,7 +3,7 @@ import { StacheElement, type, ObservableObject, ObservableArray, value, queues }
 import {updateUrlParam, pushStateObservable} from "../shared/state-storage.js";
 import { bitoviTrainingIssueData } from "../examples/bitovi-training.js";
 import { getSimplifiedIssueHierarchy } from "../stateful-data/jira-data-requests.js";
-import { mostCommonElement } from "../shared/array-helpers.js";
+import { mostCommonElement } from "../utils/array/array-helpers.js";
 
 import "../status-filter.js";
 

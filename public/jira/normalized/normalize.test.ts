@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 
 import { NormalizeIssueConfig, normalizeIssue, normalizeParent } from "./normalize";
-import { parseDateIntoLocalTimezone } from "../../date-helpers";
+import { parseDateIntoLocalTimezone } from "../../utils/date/date-helpers";
 import { JiraIssue, ParentIssue } from "../shared/types";
 
 const parent: ParentIssue = {
