@@ -11,12 +11,11 @@ import { FlagsProvider } from "@atlaskit/flag";
 import { StorageProvider } from "../services/storage";
 import Skeleton from "../components/Skeleton";
 import SaveReports, { SaveReportProps } from "./SaveReports";
+import { queryClient } from "../services/query";
 
 interface SaveReportsWrapperProps extends SaveReportProps {
   storage: AppStorage;
 }
-
-const queryClient = new QueryClient();
 
 const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({ storage, ...saveReportProps }) => {
   return (
@@ -39,7 +38,8 @@ export default SaveReportsWrapper;
 const SaveReportError: FC = () => {
   return (
     <SectionMessage title="Cannot connect to app data" appearance="error">
-      There is an issue communicating with Jira. We're unable to load or save reports. Please try again later.
+      There is an issue communicating with Jira. We're unable to load or save reports. Please try
+      again later.
     </SectionMessage>
   );
 };

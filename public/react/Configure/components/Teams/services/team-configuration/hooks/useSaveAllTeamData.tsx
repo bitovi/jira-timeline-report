@@ -6,7 +6,9 @@ import type { TeamDataCache } from "./useAllTeamData";
 import React from "react";
 import { UseMutateFunction, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFlags } from "@atlaskit/flag";
-import ErrorIcon from "@atlaskit/icon/glyph/error";
+import ErrorIcon from "@atlaskit/icon/core/error";
+import { Text } from "@atlaskit/primitives";
+import { token } from "@atlaskit/tokens";
 
 import { useStorage } from "../../../../../../services/storage";
 import { updateTeamConfigurationKeys } from "../key-factory";
@@ -22,11 +24,14 @@ type UseSaveAllTeamData = (config?: {
     void,
     Error,
     AllTeamData,
-    { previousUserData: TeamDataCache | undefined }
+    { previousSavedUserData: TeamDataCache | undefined }
   >;
   isSaving: boolean;
 };
 
+/**
+ * Handles saving all team data, allowing for an update of the entire team configuration
+ */
 export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
   const queryClient = useQueryClient();
   const storage = useStorage();
@@ -40,16 +45,16 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
     onMutate: async (updates) => {
       await queryClient.cancelQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
 
-      const previousUserData = queryClient.getQueryData<TeamDataCache>(
+      const previousSavedUserData = queryClient.getQueryData<TeamDataCache>(
         updateTeamConfigurationKeys.allTeamData
       );
 
       queryClient.setQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData, {
-        ...(previousUserData ?? { issueHeirarchy: [] }),
-        userData: updates,
+        ...(previousSavedUserData ?? { issueHeirarchy: [] }),
+        savedUserData: updates,
       });
 
-      return { previousUserData };
+      return { previousSavedUserData };
     },
     onSettled: (data, error, allTeamData) => {
       queryClient.invalidateQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
@@ -96,7 +101,10 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
       config?.onUpdate?.(createNormalizeConfiguration(fullConfig));
     },
     onError: (error, _, context) => {
-      queryClient.setQueryData(updateTeamConfigurationKeys.allTeamData, context?.previousUserData);
+      queryClient.setQueryData(
+        updateTeamConfigurationKeys.allTeamData,
+        context?.previousSavedUserData
+      );
 
       let description = error?.message;
 
@@ -105,10 +113,10 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
       }
 
       showFlag({
-        title: "Uh Oh!",
+        title: <Text color="color.text.danger">"Uh Oh!"</Text>,
         description,
         isAutoDismiss: true,
-        icon: <ErrorIcon label="error" />,
+        icon: <ErrorIcon color={token("color.icon.danger")} label="error" />,
       });
     },
   });
@@ -125,6 +133,10 @@ type UseSaveTeamData = (config: {
   isSaving: boolean;
 };
 
+/**
+ * hook handles saving team-specific data for a particular team and hierarchy level. It works in conjunction with
+ * `useSaveAllTeamData` to update specific portions of the team configuration.
+ */
 export const useSaveTeamData: UseSaveTeamData = (config) => {
   const { teamName, hierarchyLevel, onUpdate } = config;
 
@@ -144,7 +156,7 @@ export const useSaveTeamData: UseSaveTeamData = (config) => {
       }
 
       const sanitized = sanitizeAllTeamData(
-        allTeamData.userData,
+        allTeamData.savedUserData,
         teamName,
         hierarchyLevel,
         updates

@@ -115,13 +115,22 @@ export class SelectIssueType extends StacheElement {
                 function getParamValue(){
                     return new URL(window.location).searchParams.get("selectedIssueType") || "";
                 }
+                let timers = [];
+                function clearTimers() {
+                    timers.forEach((value) => clearTimeout(value));
+                    timers = [];
+                }
 
                 // anything happens in state, update the route 
                 // the route updates, update the state (or the route if it's wrong)
                 const resolveCurrentValue = () => {
+                    clearTimers();
+                    const curParamValue = getParamValue();
+
                     // we wait to resolve to a defined value until we can check it's right
                     if(this.issueHierarchy && this.issueHierarchy.length) {
                         const curParamValue = getParamValue();
+
                         // helps with legacy support to pick the first type
                         if(curParamValue === "Release") {
                             resolve( "Release-"+this.issueHierarchy[0].name );
@@ -139,9 +148,9 @@ export class SelectIssueType extends StacheElement {
                                 } 
                                 // set back to default
                                 else {
-                                    setTimeout( ()=> {
+                                    timers.push( setTimeout( ()=> {
                                         updateUrlParam("selectedIssueType", "", "");
-                                    },1)
+                                    },20) );
                                 }
 
                             } else {
@@ -165,6 +174,7 @@ export class SelectIssueType extends StacheElement {
                 });
 
                 listenTo(lastSet, (value)=>{
+                    console.log("LAST SET sit", value)
                     updateUrlParam("selectedIssueType", value, "");
                 });
 

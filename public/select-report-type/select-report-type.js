@@ -30,6 +30,9 @@ const REPORTS = [{
 },{
     key: "table",
     name: "Estimation Table"
+},{
+    key: "group-grid",
+    name: "Group Grid"
 }];
 
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";

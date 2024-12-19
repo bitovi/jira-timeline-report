@@ -11,8 +11,8 @@ type UseTeamFormConfig = {
   teamName: string;
   hierarchyLevel: keyof TeamConfiguration;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
-  augmentedTeamData: TeamConfiguration;
-  userTeamData: TeamConfiguration;
+  inheritedTeamData: TeamConfiguration;
+  savedUserTeamData: TeamConfiguration;
   getInheritance: (issueType: keyof TeamConfiguration) => TeamConfiguration;
 };
 
@@ -20,26 +20,26 @@ export const useTeamForm = ({
   teamName,
   hierarchyLevel,
   onUpdate,
-  augmentedTeamData,
-  userTeamData,
+  inheritedTeamData,
+  savedUserTeamData,
   getInheritance,
 }: UseTeamFormConfig) => {
   const { save, isSaving } = useSaveTeamData({ teamName, hierarchyLevel, onUpdate });
   const { register, setValue, control, reset } = useForm<Configuration>({
-    defaultValues: augmentedTeamData[hierarchyLevel],
+    defaultValues: inheritedTeamData[hierarchyLevel],
   });
 
   useEffect(() => {
-    reset(augmentedTeamData[hierarchyLevel]);
-  }, [teamName, userTeamData]);
+    reset(inheritedTeamData[hierarchyLevel]);
+  }, [teamName, savedUserTeamData]);
 
   function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {
-    save({ ...userTeamData[hierarchyLevel]!, [name]: value });
+    save({ ...savedUserTeamData[hierarchyLevel]!, [name]: value });
   }
 
   const toggleInheritance = (field: keyof Configuration, shouldCustomize: boolean) => {
     if (shouldCustomize) {
-      update({ name: field, value: augmentedTeamData[hierarchyLevel]![field] });
+      update({ name: field, value: inheritedTeamData[hierarchyLevel]![field] });
       return;
     }
 
@@ -54,7 +54,7 @@ export const useTeamForm = ({
     control,
     isSaving,
     update,
-    userData: userTeamData[hierarchyLevel] || createEmptyConfiguration(),
-    augmented: augmentedTeamData[hierarchyLevel] || createEmptyConfiguration(),
+    savedUserData: savedUserTeamData[hierarchyLevel] || createEmptyConfiguration(),
+    inheritedUserData: inheritedTeamData[hierarchyLevel] || createEmptyConfiguration(),
   };
 };

@@ -7,6 +7,7 @@ import "./reports/gantt-grid.js";
 import "./reports/table-grid.js";
 import "./reports/scatter-timeline.js";
 import "./reports/status-report.js";
+import "./reports/group-grid/group-grid.js";
 import "./timeline-configuration/timeline-configuration.js";
 
 import "./select-issue-type/select-issue-type.js";
@@ -94,9 +95,7 @@ export class TimelineReport extends StacheElement {
               planningStatuses:to="this.planningStatuses"
               groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
-              statusesToExclude:to="this.statusesToExclude"
               primaryReportBreakdown:to="this.primaryReportBreakdown"
-              
               primaryReportType:from="this.primaryReportType"
               primaryIssueType:from="this.primaryIssueType"
               secondaryIssueType:from="this.secondaryIssueType"
@@ -135,6 +134,11 @@ export class TimelineReport extends StacheElement {
                 <table-grid
                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
+              {{/ eq }}
+              {{# eq(this.primaryReportType, "group-grid") }}
+                <group-grid
+                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
               {{/ eq }}
 
               {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
@@ -190,7 +194,7 @@ export class TimelineReport extends StacheElement {
     showingDebugPanel: { type: Boolean, default: false },
     timeSliderValue: {
       type: type.convert(Number),
-      default: 25,
+      default: 75,
     },
     // default params
     defaultSearch: type.Any,
@@ -199,46 +203,47 @@ export class TimelineReport extends StacheElement {
       const MIN = 60 * SECOND;
       const HOUR = 60 * MIN;
       const DAY = 24 * HOUR;
-      if (this.timeSliderValue === 0) {
+      const timeValueInPast = 100 - this.timeSliderValue;
+      if (timeValueInPast === 0) {
         return { timePrior: 0, text: "now" };
       }
-      if (this.timeSliderValue === 1) {
+      if (timeValueInPast === 1) {
         return { timePrior: 30 * SECOND, text: "30 seconds ago" };
       }
-      if (this.timeSliderValue === 2) {
+      if (timeValueInPast === 2) {
         return { timePrior: MIN, text: "1 minute ago" };
       }
-      if (this.timeSliderValue === 3) {
+      if (timeValueInPast === 3) {
         return { timePrior: 5 * MIN, text: "5 minutes ago" };
       }
-      if (this.timeSliderValue === 4) {
+      if (timeValueInPast === 4) {
         return { timePrior: 10 * MIN, text: "10 minutes ago" };
       }
-      if (this.timeSliderValue === 5) {
+      if (timeValueInPast === 5) {
         return { timePrior: 30 * MIN, text: "30 minutes ago" };
       }
-      if (this.timeSliderValue === 6) {
+      if (timeValueInPast === 6) {
         return { timePrior: HOUR, text: "1 hour ago" };
       }
-      if (this.timeSliderValue === 7) {
+      if (timeValueInPast === 7) {
         return { timePrior: 3 * HOUR, text: "3 hours ago" };
       }
-      if (this.timeSliderValue === 8) {
+      if (timeValueInPast === 8) {
         return { timePrior: 6 * HOUR, text: "6 hours ago" };
       }
-      if (this.timeSliderValue === 9) {
+      if (timeValueInPast === 9) {
         return { timePrior: 12 * HOUR, text: "12 hours ago" };
       }
-      if (this.timeSliderValue === 10) {
+      if (timeValueInPast === 10) {
         return { timePrior: DAY, text: "1 day ago" };
       } else {
-        const days = this.timeSliderValue - 10;
+        const days = timeValueInPast - 10;
         return { timePrior: DAY * days, text: days + " days ago" };
       }
-      const days = this.timeSliderValue;
+      const days = timeValueInPast;
       return {
-        timePrior: (MIN / 2) * this.timeSliderValue,
-        text: this.timeSliderValue + " days ago",
+        timePrior: (MIN / 2) * timeValueInPast,
+        text: timeValueInPast + " days ago",
       };
     },
 
@@ -248,9 +253,20 @@ export class TimelineReport extends StacheElement {
       return this.derivedIssuesRequestData?.issuesPromise;
     },
     derivedIssues: {
+      // this can't use async b/c we need the value to turn to undefined
+      value({listenTo, resolve}){
+        const resolveValueFromPromise = () => {
+          resolve(undefined);
+          if(this.derivedIssuesRequestData?.issuesPromise) {
+            this.derivedIssuesRequestData.issuesPromise.then(resolve);
+          }
+        };
+        listenTo("derivedIssuesRequestData", resolveValueFromPromise);
+        resolveValueFromPromise();
+      }/*,
       async(resolve) {
         this.derivedIssuesRequestData?.issuesPromise.then(resolve);
-      },
+      },*/
     },
     get filteredDerivedIssues() {
       if (this.derivedIssues) {
@@ -317,12 +333,6 @@ export class TimelineReport extends StacheElement {
 
   // this all the data pre-compiled
   get rolledupAndRolledBackIssuesAndReleases() {
-    /*console.log("rolledupAndRolledBackIssuesAndReleases",{
-        filteredDerivedIssues: this.filteredDerivedIssues, 
-        rollupTimingLevelsAndCalculations: this.rollupTimingLevelsAndCalculations,
-        configuration: this.configuration
-      } )*/
-    console.log("rolledupAndRolledBackIssuesAndReleases changed!");
     if (
       !this.filteredDerivedIssues ||
       !this.rollupTimingLevelsAndCalculations ||

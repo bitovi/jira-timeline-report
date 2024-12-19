@@ -14,8 +14,9 @@ import ViewReportLayout from "./components/ViewReportsLayout";
 import Skeleton from "../components/Skeleton";
 import { StorageProvider } from "../services/storage";
 import { useCanObservable } from "../hooks/useCanObservable";
-import routeDataObservable from "@routing-observable";
 import { useHistoryStateValue } from "../../jira/history/hooks";
+import { FlagsProvider } from "@atlaskit/flag";
+import { queryClient } from "../services/query";
 
 interface ViewReportsWrapperProps {
   storage: AppStorage;
@@ -23,7 +24,7 @@ interface ViewReportsWrapperProps {
   onBackButtonClicked: () => void;
 }
 
-const queryClient = new QueryClient();
+// const queryClient = new QueryClient();
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
   storage,
@@ -37,15 +38,19 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
   }
 
   return (
-    <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>
-      <StorageProvider storage={storage}>
-        <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-          <QueryClientProvider client={queryClient}>
-            <ViewReports {...viewReportProps} />
-          </QueryClientProvider>
-        </Suspense>
-      </StorageProvider>
-    </ErrorBoundary>
+    <FlagsProvider>
+      <ErrorBoundary
+        fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}
+      >
+        <StorageProvider storage={storage}>
+          <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
+            <QueryClientProvider client={queryClient}>
+              <ViewReports {...viewReportProps} />
+            </QueryClientProvider>
+          </Suspense>
+        </StorageProvider>
+      </ErrorBoundary>
+    </FlagsProvider>
   );
 };
 
@@ -89,7 +94,15 @@ const ViewReportSkeleton: FC<ViewReportSkeletonProps> = ({ onBackButtonClicked }
       onBackButtonClicked={onBackButtonClicked}
       reportInfo={selectedReportExists ? <Skeleton /> : null}
     >
-      <DynamicTable head={{ cells: [{ key: "report-heading", content: "Report" }] }} rows={rows} />
+      <DynamicTable
+        head={{
+          cells: [
+            { key: "report-heading", content: "Report" },
+            { key: " manage-reports", content: "Manage" },
+          ],
+        }}
+        rows={rows}
+      />
     </ViewReportLayout>
   );
 };

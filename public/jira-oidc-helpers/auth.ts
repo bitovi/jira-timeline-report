@@ -47,7 +47,8 @@ export async function fetchAccessTokenWithAuthCode(authCode: string): Promise<vo
       accessToken,
       refreshToken,
       expiryTimestamp,
-      //scopeId,
+      // Only include the scopeId if there wasn't one already set
+      ...  fetchFromLocalStorage("scopeId") ? {} : {scopeId}
     });
     //redirect to data page
     const addOnQuery = new URL(

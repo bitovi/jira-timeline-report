@@ -1,5 +1,7 @@
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 
+const maxRecentSize = 5;
+
 const getReportKey = () => {
   const base = "local-reports";
 
@@ -28,11 +30,16 @@ export const useRecentReports = () => {
   });
 
   const addReportToRecents = (newReportId: string) => {
-    const maxRecentSize = 5;
     setRecentReports((current) => {
       return [newReportId, ...current.filter((id) => id !== newReportId)].slice(0, maxRecentSize);
     });
   };
 
-  return { recentReports, addReportToRecents };
+  const removeFromRecentReports = (reportId: string) => {
+    setRecentReports((current) => {
+      return current.filter((id) => id !== reportId);
+    });
+  };
+
+  return { recentReports, addReportToRecents, removeFromRecentReports };
 };

@@ -21,7 +21,7 @@ describe("<SaveReportsWrapper />", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Saved Reports")).toBeInTheDocument();
+      expect(screen.getByText("Saved reports")).toBeInTheDocument();
     });
 
     expect(screen.queryByText("Create new report")).not.toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("<SaveReportsWrapper />", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Saved Reports")).toBeInTheDocument();
+      expect(screen.getByText("Saved reports")).toBeInTheDocument();
       expect(screen.getByText("Create new report")).toBeInTheDocument();
     });
   });
