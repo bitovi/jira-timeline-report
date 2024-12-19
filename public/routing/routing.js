@@ -1,15 +1,17 @@
 export function beforeCanRouteIsCalled() {
-  debugger;
-  const search = new URLSearchParams(
-    decodeURIComponent(AP?.history.getState("all").query?.state ?? "")
-  );
+  if (!window?.AP?.history.getState) {
+    return;
+  }
 
-  history.replaceState(null, "", "?" + search.toString());
+  history.replaceState(
+    null,
+    "",
+    "?" + objectToQueryString(window?.AP?.history.getState("all")?.query ?? {})
+  );
 }
 
 export function initialize() {
-  if (!window.AP) {
-    console.log("Not in plugin mode");
+  if (!window?.AP?.history.getState) {
     return;
   }
 
@@ -17,10 +19,9 @@ export function initialize() {
 
   history.pushState = function (...args) {
     originalPushState.apply(this, args);
-    console.log("push state", { args: [...args], location: window.location });
 
     AP?.history.replaceState({
-      query: { state: new URLSearchParams(window.location.search).toString() },
+      query: queryStringToObject(window.location.search),
       state: { fromPopState: "false" },
     });
   };
@@ -29,9 +30,45 @@ export function initialize() {
     console.log("popstate", args);
   });
 
-  setInterval(function () {
-    document.querySelector("nav").innerHTML = window.location.search.toString();
-  }, 200);
+  // setInterval(function () {
+  //   document.querySelector("nav").innerHTML = window.location.search.toString();
+  // }, 200);
+}
+
+function queryStringToObject(queryString) {
+  const params = new URLSearchParams(queryString);
+  const result = {};
+
+  for (const [key, value] of params.entries()) {
+    // If the key already exists, convert it to an array to store multiple values
+    if (result[key]) {
+      if (Array.isArray(result[key])) {
+        result[key].push(value);
+      } else {
+        result[key] = [result[key], value];
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+function objectToQueryString(obj) {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (Array.isArray(value)) {
+      // If the value is an array, append each value separately
+      value.forEach((val) => params.append(key, val));
+    } else {
+      // Otherwise, add the key-value pair as usual
+      params.append(key, decodeURIComponent(value));
+    }
+  }
+
+  return params.toString();
 }
 
 // let listeners: Array<() => void> = [];
