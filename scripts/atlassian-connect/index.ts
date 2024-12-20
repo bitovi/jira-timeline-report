@@ -49,8 +49,6 @@ const { environment, ...localOptions } = program.opts<{
 const connectMetadata = createMetadata(localOptions);
 
 function main() {
-  console.log({ here: program.opts() });
-
   if (!Object.keys(connectMetadata).includes(environment)) {
     console.error(
       [
