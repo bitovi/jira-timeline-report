@@ -34,7 +34,9 @@ module.exports = function (env, mainFileRoute) {
 
     <body class='overflow-x-hidden'>
 
-      ${mainFileRoute.includes("connect") ? '' : `
+      ${mainFileRoute.includes("connect") ? 
+        '<div id="login"></div>' 
+        : `
         <div class="color-bg-white px-4 sticky top-0 z-50 border-b border-neutral-301">
           <nav class="mx-auto py-2 place-center">
             <div class="flex gap-4" style="align-items: center">
