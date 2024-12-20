@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { ObservableObject, value } from "../can.js";
+import { ObservableObject, value } from "../../../can.js";
 import { rawIssuesRequestData, derivedIssuesRequestData } from "./state-helpers.js";
 
 const ResolverObservable = (function () {

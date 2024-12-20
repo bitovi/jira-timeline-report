@@ -1,7 +1,7 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
-import { StacheElement, type, ObservableObject, stache, key, value } from "../can.js";
-import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
-import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from "../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time.js";
+import { StacheElement, type, ObservableObject, stache, key, value } from "../../can.js";
+import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup.js";
+import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from "../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time.js";
 
 /*
 export const dateFormatter = new Intl.DateTimeFormat('en-US', { 
@@ -16,14 +16,14 @@ export const dateFormatter = new Intl.DateTimeFormat('en-US', {
     year: '2-digit'  // Full year (e.g., "1982") 
 })
 
-import SimpleTooltip from "../shared/simple-tooltip.js";
+import SimpleTooltip from "../ui/simple-tooltip/simple-tooltip";
 
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
-import Stats from "../react/Stats/Stats.js";
+import Stats from "../../react/Stats/Stats.js";
 
 
 export class EstimateBreakdown extends StacheElement {

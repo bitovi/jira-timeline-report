@@ -16,5 +16,4 @@ Proposed short-term folder organization:
 
 - main - main functions and the CanJS main component, other items that are injected into builds
 
-
 - utils - Pure JS utilities unaware of Jira data 

@@ -1,19 +1,19 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../can.js";
+import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../../../can.js";
 
-import { saveJSONToUrl, updateUrlParam } from "../shared/state-storage.js";
-
+import { saveJSONToUrl, updateUrlParam, makeArrayOfStringsQueryParamValue } from "../../routing/state-storage.js";
+import { getSimplifiedIssueHierarchy } from "../../../stateful-data/jira-data-requests.js";
 
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
-import TeamConfigure from "../react/Configure";
-import ViewReports from "../react/ViewReports";
+import TeamConfigure from "../../../react/Configure";
+import ViewReports from "../../../react/ViewReports";
 
 import {
   getAllTeamData,
   createFullyInheritedConfig,
-} from "../react/Configure/components/Teams/services/team-configuration";
-import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
+} from "../../../react/Configure/components/Teams/services/team-configuration";
+import { createNormalizeConfiguration } from "../../../react/Configure/components/Teams/shared/normalize";
 //import { getTeamData } from "../stateful-data/jira-data-requests.js";
 
 import {
@@ -23,12 +23,11 @@ import {
   serverInfoPromise,
 } from "./state-helpers.js";
 
-import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
-import { makeArrayOfStringsQueryParamValue } from "../shared/state-storage.js";
+import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 import "./timing-calculation/timing-calculation.js";
-import { getSimplifiedIssueHierarchy } from "../stateful-data/jira-data-requests.js";
+
 
 const booleanParsing = {
   parse: (x) => {

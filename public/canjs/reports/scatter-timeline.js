@@ -1,9 +1,9 @@
 
-import { StacheElement, type, ObservableObject, stache } from "../can.js";
+import { StacheElement, type, ObservableObject, stache } from "../../can.js";
 
-import { getQuartersAndMonths } from "../utils/date/quarters-and-months";
-import { makeGetChildrenFromReportingIssues } from "../jira/rollup/rollup.js";
-import {mergeStartAndDueData} from "../jira/rollup/dates/dates";
+import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
+import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup.js";
+import {mergeStartAndDueData} from "../../jira/rollup/dates/dates";
 
 const DAY = 1000*60*60*24;
 export class ScatterTimeline extends StacheElement {

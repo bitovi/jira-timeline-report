@@ -1,5 +1,5 @@
 import { StacheElement, type, stache } from "../can.js";
-import SimpleTooltip from "./simple-tooltip.js";
+import SimpleTooltip from "../canjs/ui/simple-tooltip/simple-tooltip.js";
 
 
 const resourceSelection = stache(`<div class="p-2">

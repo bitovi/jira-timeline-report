@@ -1,4 +1,4 @@
-import { RoutePushstate, route, diff } from "../can.js";
+import { RoutePushstate, route, diff } from "../../can.js";
 
 export function saveToLocalStorage(key, defaultValue) {
   return {

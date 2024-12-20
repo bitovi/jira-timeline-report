@@ -7,7 +7,7 @@ import JiraOIDCHelpers from "../jira-oidc-helpers";
 import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper.js";
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
-import { directlyReplaceUrlParam } from "./state-storage.js";
+import { directlyReplaceUrlParam } from "../canjs/routing/state-storage.js";
 import { route } from "../can.js";
 
 function legacyPrimaryReportingTypeRoutingFix() {
