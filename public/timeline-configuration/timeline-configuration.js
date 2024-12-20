@@ -48,7 +48,27 @@ const GOBACK_BUTTON = `
 
 export class TimelineConfiguration extends StacheElement {
   static view = `
-    <div class="px-3 py-2 h-full">
+    <div class="px-3 py-2 h-full min-w-40">
+
+        {{# if(this.showSidebarBranding)}}
+          <div class="flex gap-2 pt-4">
+            <div class="flex-none pt-1">
+              <img src="./images/eggbert-light-minimum.svg"/>
+            </div>
+            <div class="flex-auto grow items-baseline leading-4">
+              <div class="color-gray-900 underline-on-hover bitovi-font-poppins font-bold">
+                <a href="https://github.com/bitovi/jira-timeline-report" target="_blank">
+                  Baseline Report
+                </a>
+              </div>
+              <div class="bitovi-poppins text-neutral-100 text-sm">
+                <a href="https://www.bitovi.com/services/agile-project-management-consulting" target="_blank">
+                  by Bitovi
+                </a>
+              </div>
+            </div>
+          </div>
+        {{/ if}}
 
         {{# not(this.showSettings) }}
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
@@ -71,11 +91,24 @@ export class TimelineConfiguration extends StacheElement {
                     <span class="pl-3">Teams</span>
             </button>
 
-            <p class="fixed bottom-4">
-                <h3 class="font-bold uppercase text-slate-300 text-xs pb-1">Questions? </h3>
-                <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">Read the guide</a>
-                <a class="link block" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#need-help-or-have-questions">Connect with us</a>
-            </p>  
+            <div class="fixed bottom-4 grid justify-items-center gap-2 p-1">
+              <img class='pb-2' width="24px" src="./images/_QuestionCircleIcon_.svg"/>
+              <a class='link text-slate-300 text-sm' target="_blank" 
+                href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started"
+              >
+                Read the guide
+              </a>
+              <a class='link text-slate-300 text-sm' target="_blank" 
+                href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira.html"
+              >
+                APM Training
+              </a>
+              <a class='link text-slate-300 text-sm' target="_blank" 
+                href="https://www.bitovi.com/services/agile-project-management-consulting"
+              >
+                Connect with Bitovi
+              </a>
+            </div>
         {{/ not }}
         
         <div width="w-96"  class="{{^ eq(this.showSettings, "SOURCES")}}hidden{{/}}">

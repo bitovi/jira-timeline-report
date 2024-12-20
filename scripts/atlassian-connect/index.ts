@@ -77,7 +77,9 @@ function main() {
   }
 }
 
-function createModules({ name }: Metadata): { modules: object } {
+main();
+
+function createModules({ name, key }: Metadata) {
   return {
     modules: {
       generalPages: [
@@ -90,7 +92,7 @@ function createModules({ name }: Metadata): { modules: object } {
           },
         },
         {
-          url: "/connect?primaryIssueType={ac.primaryIssueType}&hideUnknownInitiatives={ac.hideUnknownInitiatives}&jql={ac.jql}&loadChildren={ac.loadChildren}&primaryReportType={ac.primaryReportType}&secondaryReportType={ac.secondaryReportType}&showPercentComplete={ac.showPercentComplete}&showOnlySemverReleases={ac.showOnlySemverReleases}",
+          url: `/connect?primaryIssueType={ac.${key}.primaryIssueType}&hideUnknownInitiatives={ac.${key}.hideUnknownInitiatives}&jql={ac.${key}.jql}&loadChildren={ac.${key}.loadChildren}&primaryReportType={ac.${key}.primaryReportType}&secondaryReportType={ac.${key}.secondaryReportType}&showPercentComplete={ac.${key}.showPercentComplete}&showOnlySemverReleases={ac.${key}.showOnlySemverReleases}&settings={ac.${key}.settings}`,
           key: "deeplink",
           location: "none",
           name: {
