@@ -1,16 +1,21 @@
-export function unique<TItem>(list: TItem[], uniqueBy: (item: TItem) => string) {
-  const result: { [key: string]: TItem } = {};
+export function unique<TItem, TKey extends string | number | symbol>(
+  list: TItem[],
+  uniqueBy: (item: TItem) => TKey
+) {
+  const result = new Map<TKey, TItem>();
   for (const item of list) {
     const itemKey = uniqueBy(item);
-    if (!result[itemKey]) result[itemKey] = item;
+    if (!result.has(itemKey)) result.set(itemKey, item);
   }
-  return Object.values(result);
+  return [...result.values()];
 }
 
 export function uniqueKeys<TItem extends { key: string }>(list: TItem[]) {
   return unique(list, ({ key }) => key);
 }
 
-export function uniqueIds<TItem extends { id: string }>(list: TItem[]) {
+export function uniqueIds<TId extends string | number | symbol, TItem extends { id: TId }>(
+  list: TItem[]
+) {
   return unique(list, ({ id }) => id);
 }
