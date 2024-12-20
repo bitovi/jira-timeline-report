@@ -67,7 +67,7 @@ export default [
       format: "esm",
       inlineDynamicImports: true,
     },
-    plugins: [nodeResolve(), commonjs(), terser(), typescript(), babel(babelProd)],
+    plugins: [nodeResolve(), commonjs(), typescript(), babel(babelProd)],
     ...warn,
   },
 ];
