@@ -28,7 +28,7 @@ function legacyPrimaryIssueTypeRoutingFix() {
   }
 }
 
-export default async function mainHelper(config, { host, createStorage, configureRouting }) {
+export default async function mainHelper(config, { host, createStorage, configureRouting, showSidebarBranding }) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
@@ -65,6 +65,7 @@ export default async function mainHelper(config, { host, createStorage, configur
         loginComponent,
         mode: "TEAMS",
         storage,
+        showSidebarBranding
       });
       report.className = "block";
       document.body.append(report);

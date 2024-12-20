@@ -12,6 +12,7 @@ export default async function main(config) {
       route._onStartComplete = routing.syncRouters;
       route.start();
     },
+    showSidebarBranding: true
   });
 
   loginComponent.isLoggedIn = true;

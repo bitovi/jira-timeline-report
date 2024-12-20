@@ -22,16 +22,16 @@ app.use(express.static(path.join(__dirname,'..', 'public')))
 const makeIndex = require("../pages/index.html");
 const makeOAuthCallback = require("../pages/oauth-callback.html");
 app.get('/', (req, res) => {
-	res.send(makeIndex(req, "./dist/hosted-main.min.js"));
+	res.send(makeIndex(req, "./dist/hosted-main.min.js", { showHeader: true }));
 });
 
 app.get('/dev', (req, res) => {
-	res.send(makeIndex(req, "./dist/hosted-main.js"));
+	res.send(makeIndex(req, "./dist/hosted-main.js", { showHeader: true }));
 });
 
 // Atlassian Connect specific endpoints
 app.get('/connect', (req, res) => {
-	res.send(makeIndex(req, "./dist/connect-main.min.js"));
+	res.send(makeIndex(req, "./dist/connect-main.min.js", { showHeader: false }));
 });
 
 app.get('/oauth-callback', (req, res) => {
