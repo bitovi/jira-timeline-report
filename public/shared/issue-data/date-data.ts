@@ -85,7 +85,7 @@ export function getStartDateAndDueDataFromSprints(story: NormalizedIssue): Start
 }
 
 /**
- *
+ * I think we have 2 of these functions ... 
  * @param {Array<StartAndDueData>} records
  * @returns {StartAndDueData}
  */

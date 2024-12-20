@@ -8,13 +8,13 @@ type JiraContextValues = Jira | null;
 const JiraContext = createContext<JiraContextValues>(null);
 
 export const useJira = () => {
-  const storage = useContext(JiraContext);
+  const jira = useContext(JiraContext);
 
-  if (!storage) {
+  if (!jira) {
     throw new Error("Cannot use useJira outside of its provider");
   }
 
-  return storage;
+  return jira;
 };
 
 interface JiraProviderProps {

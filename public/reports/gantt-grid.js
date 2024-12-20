@@ -41,28 +41,36 @@ import { getQuartersAndMonths } from "../utils/date/quarters-and-months";
 // loops through and creates
 export class GanttGrid extends StacheElement {
   static view = `
-        <div style="display: grid; grid-template-columns: auto auto repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto {{this.gridColumnsCSS}} repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
-            <div></div><div></div>
+            <div></div>
+            {{# for(column of this.columnsToShow) }}
+            <div></div>
+            {{/ for }}
 
             {{# for(quarter of this.quartersAndMonths.quarters) }}
                 <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
             {{ / for }}
 
-            <div></div><div></div>
+            <div></div>
+            
+            {{# for(column of this.columnsToShow) }}
+              <div></div>
+            {{/ for }}
+
             {{# for(month of this.quartersAndMonths.months)}}
                 <div class='border-b border-neutral-80 text-center'>{{month.name}}</div>
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: 3 / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
+            <div style="grid-column: {{plus(2,this.columnsToShow.length)}} / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 3) }}; grid-row: 3 / span {{this.gridRowData.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 2, this.columnsToShow.length) }}; grid-row: 3 / span {{this.gridRowData.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
@@ -74,9 +82,12 @@ export class GanttGrid extends StacheElement {
                         class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                         {{data.issue.summary}}
                     </div>
-                    <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
-                        on:click="this.showPercentCompleteTooltip(scope.event, data.issue)">{{this.getPercentComplete(data.issue)}}
-                    </div>
+
+                    {{# for(column of this.columnsToShow) }}
+                      <div style="grid-column: plus(2, scope.index)" class="{{this.textSize}} text-right pointer"
+                        on:click="column.onclick(scope.event, data.issue, this.allIssues)">{{column.getValue(data.issue)}}</div>
+                    {{/ for }}
+
                     {{ this.getReleaseTimeline(data.issue, scope.index) }}
                 {{/ eq }}
 
@@ -85,9 +96,9 @@ export class GanttGrid extends StacheElement {
                         class='pointer border-y-solid-1px-white text-left font-bold {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                         {{data.issue.summary}}
                     </div>
-                    <div style="grid-column: 2" class="{{this.textSize}} text-right pointer"
-                        on:click="this.showPercentCompleteTooltip(scope.event, data.issue)">
-                    </div>
+                    {{# for(column of this.columnsToShow) }}
+                      <div style="grid-column: plus(2, scope.index)"></div>
+                    {{/ for }}
                     {{ this.groupElement(data.issue, scope.index) }}
                 {{/ }}
             {{/ for }}
@@ -109,6 +120,43 @@ export class GanttGrid extends StacheElement {
   }
   get bigBarSize() {
     return this.lotsOfIssues ? "h-4" : "h-6";
+  }
+  get columnsToShow(){
+    if(this.showPercentComplete) {
+      return [{
+        name: "percentComplete",
+        getValue(issue) {
+          return (
+            Math.round((issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays) + "%"
+          );
+        },
+        onclick: (event, issue, allIssues) => {
+          const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+
+          // we should get all the children ...
+          const children = getChildren(issue);
+
+          showTooltipContent(
+            event.currentTarget,
+            percentCompleteTooltip({
+              issue,
+              children,
+              getPercentComplete: this.getPercentComplete.bind(this),
+              round: Math.round,
+            })
+          );
+        }
+      }]
+    } else {
+      return []
+    }
+  }
+  get gridColumnsCSS(){
+    if(this.columnsToShow.length) {
+      return "repeat("+this.columnsToShow.length+", auto)"
+    } else {
+      return "";
+    }
   }
   getPercentComplete(issue) {
     if (this.showPercentComplete) {
@@ -146,8 +194,8 @@ export class GanttGrid extends StacheElement {
       return "";
     }
   }
-  plus(first, second) {
-    return first + second;
+  plus(first, second, third) {
+    return first + second + (third || 0);
   }
   lastRowBorder(index) {
     return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : "";
@@ -265,7 +313,7 @@ export class GanttGrid extends StacheElement {
    */
   getReleaseTimeline(release, index) {
     const base = {
-      gridColumn: "3 / span " + this.quartersAndMonths.months.length,
+      gridColumn: `${this.columnsToShow.length + 2} / span ${this.quartersAndMonths.months.length}`,
       gridRow: `${index + 3}`,
     };
 

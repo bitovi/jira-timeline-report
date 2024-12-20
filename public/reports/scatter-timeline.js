@@ -44,7 +44,24 @@ export class ScatterTimeline extends StacheElement {
             
         </div>
     `;
-
+    static props = {
+        // how wide we can show the scatter changes with the window resize
+        visibleWidth: {
+            value({listenTo, resolve}) {
+                listenTo(window,"resize", ()=> resolve(this.offsetWidth));
+                listenTo(this, "isConnected", ()=> {
+                    resolve(this.offsetWidth);
+                });
+                if(this.offsetWidth && this.offsetWidth > 0) {
+                    resolve(this.offsetWidth);
+                }
+            }
+        },
+        isConnected: Boolean
+    };
+    connected() {
+        this.isConnected = true;
+    }
     get quartersAndMonths(){
         
         // handle if there are no issues
@@ -75,11 +92,18 @@ export class ScatterTimeline extends StacheElement {
         return stache.safeString(this.calendarData.html);
     }
     */
+    
     get rows() {
+        // if we don't know our space, wait until we know it
+        if(!this.visibleWidth) {
+            return [];
+        }
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
-        const issuesWithDates = this.primaryIssuesOrReleases.filter( issue => issue.rollupDates.due )
+        const issuesWithDates = this.primaryIssuesOrReleases.filter( issue => issue.rollupDates.due );
+
         const rows = calculate({
+            widthOfArea: this.visibleWidth,
             issues: issuesWithDates,
             firstDay,
             totalTime,
@@ -187,8 +211,7 @@ function defaultGetWidth(element){
 
 
 function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, totalTime, getWidth = defaultGetWidth}){
-    
-    
+
     const rows = [];
     
     const issueUIData = issues.map( issue => {

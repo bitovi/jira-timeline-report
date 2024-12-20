@@ -43,7 +43,7 @@ export class TimelineReport extends StacheElement {
           
           ></timeline-configuration>
 
-      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
+      <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 

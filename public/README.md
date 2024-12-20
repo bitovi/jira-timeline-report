@@ -5,7 +5,7 @@ Proposed short-term folder organization:
 
 - jira - functionality specific to operating on Jira data
 - jira-oidc-helpers - functionality to load jira data
-
+- jira-request-helpers - stateful (but framework agnostic) request helpers
 
 - react - All react code
 - canjs - All CanJS code (minus the main component)
@@ -15,6 +15,6 @@ Proposed short-term folder organization:
   - routing - routing helpers
 
 - main - main functions and the CanJS main component, other items that are injected into builds
-    - jira-request-helpers - functionality used to swap how the oidc helpers are making requests
+
 
 - utils - Pure JS utilities unaware of Jira data 
