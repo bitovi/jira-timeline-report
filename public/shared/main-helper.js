@@ -28,11 +28,11 @@ function legacyPrimaryIssueTypeRoutingFix() {
   }
 }
 
-export default async function mainHelper(config, { host, createStorage }) {
+export default async function mainHelper(config, { host, createStorage, configureRouting, showSidebarBranding }) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
-  route.start();
+  configureRouting(route);
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 
@@ -65,6 +65,7 @@ export default async function mainHelper(config, { host, createStorage }) {
         loginComponent,
         mode: "TEAMS",
         storage,
+        showSidebarBranding
       });
       report.className = "block";
       document.body.append(report);
