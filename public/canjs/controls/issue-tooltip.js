@@ -1,5 +1,5 @@
 
-import SimpleTooltip from "./shared/simple-tooltip.js";
+import SimpleTooltip from "../ui/simple-tooltip/simple-tooltip.js";
 export const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 const TOOLTIP = new SimpleTooltip();

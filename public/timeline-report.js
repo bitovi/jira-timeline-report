@@ -1,21 +1,21 @@
 import { StacheElement, type } from "./can.js";
 
-import "./status-filter.js";
-import "./reports/gantt-grid.js";
-import "./reports/table-grid.js";
-import "./reports/scatter-timeline.js";
-import "./reports/status-report.js";
-import "./reports/group-grid/group-grid.js";
-import "./timeline-configuration/timeline-configuration.js";
+import "./canjs/controls/status-filter.js";
+import "./canjs/reports/gantt-grid.js";
+import "./canjs/reports/table-grid.js";
+import "./canjs/reports/scatter-timeline.js";
+import "./canjs/reports/status-report.js";
+import "./canjs/reports/group-grid/group-grid.js";
+import "./canjs/controls/timeline-configuration/timeline-configuration.js";
 
-import "./select-issue-type/select-issue-type.js";
-import "./select-report-type/select-report-type.js";
-import "./select-view-settings/select-view-settings.js";
+import "./canjs/controls/select-issue-type/select-issue-type.js";
+import "./canjs/controls/select-report-type/select-report-type.js";
+import "./canjs/controls/select-view-settings/select-view-settings.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
 import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
 import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup";
-import { pushStateObservable } from "./shared/state-storage.js";
+import { pushStateObservable } from "./canjs/routing/state-storage.js";
 
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
@@ -44,7 +44,7 @@ export class TimelineReport extends StacheElement {
           
           ></timeline-configuration>
 
-      <div class="min-w-[1280px] fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
+      <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 

@@ -1,15 +1,15 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../can.js";
+import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../../../can.js";
 
-import {updateUrlParam, pushStateObservable} from "../shared/state-storage.js";
-import { bitoviTrainingIssueData } from "../examples/bitovi-training.js";
-import { getSimplifiedIssueHierarchy } from "../stateful-data/jira-data-requests.js";
-import { mostCommonElement } from "../utils/array/array-helpers.js";
+import {updateUrlParam, pushStateObservable} from "../../routing/state-storage.js";
+import { bitoviTrainingIssueData } from "../../../examples/bitovi-training.js";
+import { getSimplifiedIssueHierarchy } from "../../../stateful-data/jira-data-requests.js";
+import { mostCommonElement } from "../../../utils/array/array-helpers.js";
 
 import "../status-filter.js";
 
-import SimpleTooltip from "../shared/simple-tooltip.js";
+import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 
-import { DROPDOWN_LABEL } from "../shared/style-strings.js";
+import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
@@ -349,7 +349,7 @@ function toSelectedParts(value){
 
 /**
  * 
- * @param {Array<import("../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
+ * @param {Array<import("../../../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
  * @returns {Array<{type: string, hierarchyLevel: number}>}
  */
 function issueHierarchyFromNormalizedIssues(normalizedIssues){

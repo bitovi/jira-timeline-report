@@ -1,5 +1,5 @@
-import { StacheElement, type, ObservableObject, fromAttribute } from "../../can.js";
-import SimpleTooltip from "../simple-tooltip.js";
+import { StacheElement, type, ObservableObject, fromAttribute } from "../../../can.js";
+import SimpleTooltip from "../simple-tooltip/simple-tooltip.js";
 
 // create global tooltip reference
 

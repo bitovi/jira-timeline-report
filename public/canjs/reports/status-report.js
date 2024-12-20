@@ -1,11 +1,11 @@
-import { StacheElement, type, ObservableObject, stache } from "../can.js";
+import { StacheElement, type, ObservableObject, stache } from "../../can.js";
 
-import { dateFormatter } from "../issue-tooltip.js";
+import { dateFormatter } from "../controls/issue-tooltip.js";
 
-import { DAY_IN_MS } from "../utils/date/date-helpers.js";
+import { DAY_IN_MS } from "../../utils/date/date-helpers.js";
 
-import { showTooltip } from "../issue-tooltip.js";
-import { workTypes } from "../jira/derived/work-status/work-status";
+import { showTooltip } from "../controls/issue-tooltip.js";
+import { workTypes } from "../../jira/derived/work-status/work-status";
 
 const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
 

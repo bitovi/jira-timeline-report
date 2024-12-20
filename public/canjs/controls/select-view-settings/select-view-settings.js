@@ -1,14 +1,14 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value, diff } from "../can.js";
+import { StacheElement, type, ObservableObject, ObservableArray, value, diff } from "../../../can.js";
 
-import {saveJSONToUrl,updateUrlParam} from "../shared/state-storage.js";
+import {saveJSONToUrl,updateUrlParam} from "../../routing/state-storage.js";
 
-import { allStatusesSorted, allReleasesSorted } from "../jira/normalized/normalize.js";
+import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
 
-import { pushStateObservable } from "../shared/state-storage.js";
+import { pushStateObservable } from "../../routing/state-storage.js";
 
 import "../status-filter.js";
 
-import SimpleTooltip from "../shared/simple-tooltip.js";
+import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
@@ -23,7 +23,7 @@ const booleanParsing = {
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
 
-import { makeArrayOfStringsQueryParamValue } from "../shared/state-storage.js";
+import { makeArrayOfStringsQueryParamValue } from "../../routing/state-storage.js";
 
 class SelectViewSettingsDropdown extends StacheElement {
     static view = `
@@ -199,7 +199,7 @@ class SelectViewSettingsDropdown extends StacheElement {
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
 
-import { DROPDOWN_LABEL } from "../shared/style-strings.js";
+import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
 export class SelectViewSettings extends StacheElement {
     static view = `

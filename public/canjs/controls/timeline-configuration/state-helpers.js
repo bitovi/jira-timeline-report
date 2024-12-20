@@ -1,9 +1,9 @@
-import { ObservableObject, value, Reflect } from "../can.js";
-import { deriveIssue } from "../jira/derived/derive.ts";
-import { normalizeIssue } from "../jira/normalized/normalize.ts";
+import { ObservableObject, value, Reflect } from "../../../can.js";
+import { deriveIssue } from "../../../jira/derived/derive.ts";
+import { normalizeIssue } from "../../../jira/normalized/normalize.ts";
 
-import { getServerInfo, getRawIssues } from "../stateful-data/jira-data-requests.js";
-import { getVelocityDefault, getParallelWorkLimitDefault } from "../jira/normalized/defaults.ts";
+import { getServerInfo, getRawIssues } from "../../../stateful-data/jira-data-requests.js";
+import { getVelocityDefault, getParallelWorkLimitDefault } from "../../../jira/normalized/defaults.ts";
 
 /*
 class IssueData extends ObservableObject {
