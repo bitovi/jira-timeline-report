@@ -54,6 +54,26 @@ export class TimelineConfiguration extends StacheElement {
   static view = `
     <div class="px-3 py-2 h-full">
 
+        {{# if(this.isPlugin)}}
+          <div class="flex gap-2 pt-4">
+            <div class="flex-none pt-1">
+              <img src="./images/eggbert-light-minimum.svg"/>
+            </div>
+            <div class="flex-auto grow items-baseline leading-4">
+              <div class="color-gray-900 underline-on-hover bitovi-font-poppins font-bold">
+                <a href="https://github.com/bitovi/jira-timeline-report" target="_blank">
+                  Baseline Report
+                </a>
+              </div>
+              <div class="bitovi-poppins text-neutral-100 text-sm">
+                <a href="https://www.bitovi.com/services/agile-project-management-consulting" target="_blank">
+                  by Bitovi
+                </a>
+              </div>
+            </div>
+          </div>
+        {{/ if}}
+
         {{# not(this.showSettings) }}
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
         

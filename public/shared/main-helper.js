@@ -65,6 +65,7 @@ export default async function mainHelper(config, { host, createStorage }) {
         loginComponent,
         mode: "TEAMS",
         storage,
+        isPlugin: host === 'jira'
       });
       report.className = "block";
       document.body.append(report);
