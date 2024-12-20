@@ -46,7 +46,7 @@ jobs:
       - name: Create Jira Connect
         run: |
           npm ci
-          npm run create:atlassian-connect -- --staging
+          npm run create:atlassian-connect -- --environment=staging
 
       - name: Cleanup for Deploy
         run: rm -rf node_modules
