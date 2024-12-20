@@ -1,6 +1,35 @@
 const getSafeEnv = require("../server/client-env");
 
-module.exports = function (env, mainFileRoute) {
+const header = `
+  <div class="color-bg-white px-4 sticky top-0 z-50 border-b border-neutral-301">
+    <nav class="mx-auto py-2 place-center">
+      <div class="flex gap-4" style="align-items: center">
+        <ul class="flex gap-3 grow items-baseline">
+          <li>
+            <a
+              href="https://github.com/bitovi/jira-timeline-report" 
+              class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold"
+            >
+              Jira Baseline Report
+            </a>
+          </li>
+          <li>
+            <a 
+              href="https://www.bitovi.com/services/agile-project-management-consulting" 
+              class="bitovi-poppins color-text-bitovi-red-orange"
+              style="line-height: 37px; font-size: 14px; text-decoration: none"
+            >
+              by <img src="./images/bitovi-logo.png" class="inline align-baseline"/>
+            </a>
+          </li>
+        </ul>
+        <select-cloud></select-cloud>
+        <div id="login"></div>
+      </div>
+    </nav>
+  </div>`
+
+module.exports = function (env, mainFileRoute, { showHeader }) {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -34,37 +63,7 @@ module.exports = function (env, mainFileRoute) {
 
     <body class='overflow-x-hidden'>
 
-      ${mainFileRoute.includes("connect") ? 
-        '<div id="login"></div>' 
-        : `
-        <div class="color-bg-white px-4 sticky top-0 z-50 border-b border-neutral-301">
-          <nav class="mx-auto py-2 place-center">
-            <div class="flex gap-4" style="align-items: center">
-              <ul class="flex gap-3 grow items-baseline">
-                <li>
-                  <a
-                    href="https://github.com/bitovi/jira-timeline-report" 
-                    class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold"
-                  >
-                    Jira Baseline Report
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="https://www.bitovi.com/services/agile-project-management-consulting" 
-                    class="bitovi-poppins color-text-bitovi-red-orange"
-                    style="line-height: 37px; font-size: 14px; text-decoration: none"
-                  >
-                    by <img src="./images/bitovi-logo.png" class="inline align-baseline"/>
-                  </a>
-                </li>
-              </ul>
-              <select-cloud></select-cloud>
-              <div id="login"></div>
-            </div>
-          </nav>
-        </div>`
-      }
+      ${showHeader ? header : '<div id="login"></div>'}
 
       <div id="mainElement" class='place-center w-1280'>
         <p class="my-2">Loading the Jira Timeline Report ...</p>

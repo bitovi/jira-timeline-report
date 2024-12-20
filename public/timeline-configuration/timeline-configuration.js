@@ -50,7 +50,7 @@ export class TimelineConfiguration extends StacheElement {
   static view = `
     <div class="px-3 py-2 h-full min-w-40">
 
-        {{# if(this.isPlugin)}}
+        {{# if(this.showSidebarBranding)}}
           <div class="flex gap-2 pt-4">
             <div class="flex-none pt-1">
               <img src="./images/eggbert-light-minimum.svg"/>

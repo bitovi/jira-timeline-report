@@ -31,7 +31,7 @@ export class TimelineReport extends StacheElement {
           style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
-          isPlugin:from="this.isPlugin"
+          showSidebarBranding:from="this.showSidebarBranding"
 
           jql:to="this.jql"
           derivedIssuesRequestData:to="this.derivedIssuesRequestData"

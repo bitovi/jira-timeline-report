@@ -8,5 +8,6 @@ export default async function main(config) {
     configureRouting: (route) => {
       route.start();
     },
+    showSidebarBranding: false
   });
 }
