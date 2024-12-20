@@ -1,37 +1,33 @@
 import type { Report, Reports } from "../../../../jira/reports";
 
 import { useMemo, useState } from "react";
-import { useQueryParams } from "../../../hooks/useQueryParams";
 import { CanObservable } from "../../../hooks/useCanObservable";
 import { useUpdateReport } from "../../../services/reports";
 import { getReportFromParams, paramsMatchReport } from "./utilities";
+import { useHistoryCallback, useHistoryParams, useHistoryState } from "../../../hooks/history";
+import routeDataObservable from "@routing-observable";
+import { param } from "../../../../can";
 
-export const useSelectedReport = ({
-  reports,
-  queryParamObservable,
-}: {
-  queryParamObservable: CanObservable<string>;
-  reports: Reports;
-}) => {
+export const useSelectedReport = ({ reports }: { reports: Reports }) => {
   const { updateReport } = useUpdateReport();
   const [selectedReport, setSelectedReport] = useState<Report | undefined>(() =>
-    getReportFromParams(reports)
+    getReportFromParams(reports),
   );
 
-  const [isDirty, setIsDirty] = useState(
-    () => !paramsMatchReport(new URLSearchParams(window.location.search), reports)
-  );
+  const [initial] = useHistoryState();
 
-  useQueryParams(queryParamObservable, {
-    onChange: (params) => {
-      const newSelectedReport = getReportFromParams(reports);
+  const [search] = useHistoryParams();
 
-      if (newSelectedReport?.id !== selectedReport?.id) {
-        setSelectedReport(newSelectedReport);
-      }
+  const [isDirty, setIsDirty] = useState(() => !paramsMatchReport(new URLSearchParams(search), reports));
 
-      setIsDirty(() => !paramsMatchReport(params, reports));
-    },
+  useHistoryCallback((params) => {
+    const newSelectedReport = getReportFromParams(reports);
+
+    if (newSelectedReport?.id !== selectedReport?.id) {
+      setSelectedReport(newSelectedReport);
+    }
+
+    setIsDirty(() => !paramsMatchReport(new URLSearchParams(params), reports));
   });
 
   return {
@@ -42,14 +38,13 @@ export const useSelectedReport = ({
         return;
       }
 
-      const queryParams = new URLSearchParams(window.location.search);
-
-      queryParams.delete("settings");
+      const queryParams = routeDataObservable.get();
+      delete queryParams.settings;
 
       updateReport(
         selectedReport.id,
-        { queryParams: queryParams.toString() },
-        { onSuccess: () => setIsDirty(false) }
+        { queryParams: param(queryParams) },
+        { onSuccess: () => setIsDirty(false) },
       );
     },
     isDirty,

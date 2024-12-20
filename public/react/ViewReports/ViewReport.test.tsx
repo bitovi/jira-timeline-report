@@ -9,6 +9,7 @@ import { FlagsProvider } from "@atlaskit/flag";
 import userEvent from "@testing-library/user-event";
 
 import ViewReports from "./ViewReports";
+import { pushStateObservable } from "@routing-observable";
 import { StorageProvider } from "../services/storage";
 
 type OverrideStorage = Omit<AppStorage, "get"> & {
@@ -101,10 +102,7 @@ describe("ViewReports Component", () => {
   });
 
   it("renders the selected report's name in the reportInfo section", async () => {
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: { search: "?report=1" },
-    });
+    pushStateObservable.set("?report=1");
 
     renderWithWrappers({
       storage: {

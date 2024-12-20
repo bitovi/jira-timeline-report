@@ -14,6 +14,7 @@ import ViewReportLayout from "./components/ViewReportsLayout";
 import Skeleton from "../components/Skeleton";
 import { StorageProvider } from "../services/storage";
 import { useCanObservable } from "../hooks/useCanObservable";
+import { useHistoryStateValue } from "../hooks/history";
 import { FlagsProvider } from "@atlaskit/flag";
 import { queryClient } from "../services/query";
 
@@ -78,10 +79,8 @@ interface ViewReportSkeletonProps {
 const numberOfSkeletonRows = 5;
 
 const ViewReportSkeleton: FC<ViewReportSkeletonProps> = ({ onBackButtonClicked }) => {
-  const selectedReportExists = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    return !!params.get("report");
-  }, []);
+  const [selectedReport] = useHistoryStateValue("report");
+  const selectedReportExists = !!selectedReport;
 
   const rows = [...Array.from({ length: numberOfSkeletonRows }).keys()].map((i) => {
     return {

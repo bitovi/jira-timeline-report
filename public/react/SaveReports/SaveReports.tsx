@@ -10,15 +10,16 @@ import SaveReportModal from "./components/SaveReportModal";
 import SavedReportDropdown from "./components/SavedReportDropdown";
 import ReportControls from "./components/ReportControls";
 import EditableTitle from "./components/EditableTitle";
-import { useQueryParams } from "../hooks/useQueryParams";
 import { useSelectedReport } from "./hooks/useSelectedReports";
+import routeDataObservable, { pushStateObservable as queryParamObservable } from "@routing-observable";
+import { useHistoryState, useHistoryStateValue, useHistoryValueCallback } from "../hooks/history";
+import { param } from "../../can";
 
-interface SaveReportProps {
+export interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
-  queryParamObservable: CanObservable<string>;
 }
 
-const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsButtonClicked }) => {
+const SaveReport: FC<SaveReportProps> = ({ onViewReportsButtonClicked }) => {
   const [isOpen, setIsOpen] = useState(false);
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
@@ -28,10 +29,11 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const { createReport, isCreating } = useCreateReport();
   const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
     reports,
-    queryParamObservable,
   });
 
   const [name, setName] = useState(selectedReport?.name ?? "Untitled Report");
+
+  const [jql] = useHistoryStateValue("jql");
 
   useEffect(() => {
     if (!selectedReport) {
@@ -43,17 +45,14 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const { recentReports, addReportToRecents } = useRecentReports();
 
-  const { queryParams } = useQueryParams(queryParamObservable, {
-    onChange: (params) => {
-      const report = params.get("report");
+  const [queryParams] = useHistoryState();
+  useHistoryValueCallback("report", (report: string | undefined) => {
+    // TODO: If confirm `report` exists in `reports` before adding
+    // TODO: Reconcile deleted reports with whats there
 
-      // TODO: If confirm `report` exists in `reports` before adding
-      // TODO: Reconcile deleted reports with whats there
-
-      if (report) {
-        addReportToRecents(report);
-      }
-    },
+    if (report) {
+      addReportToRecents(report);
+    }
   });
 
   const validateName = (name: string) => {
@@ -67,11 +66,13 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const handleCreate = (name: string) => {
     const id = uuidv4();
-    const params = new URLSearchParams(window.location.search);
-    params.set("report", id);
+    const params = {
+      ...routeDataObservable.get(),
+      report: id,
+    };
 
     createReport(
-      { id, name, queryParams: params.toString() },
+      { id, name, queryParams: param(params) },
       {
         onSuccess: () => {
           closeModal();
@@ -81,7 +82,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
           url.searchParams.set("report", id);
           queryParamObservable.set(url.search);
         },
-      }
+      },
     );
   };
 
@@ -114,7 +115,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
         />
       </div>
       <div className="flex gap-4">
-        {!selectedReport && !!queryParams.get("jql") && (
+        {!selectedReport && !!jql && (
           <Button appearance="primary" onClick={openModal}>
             Create new report
           </Button>
