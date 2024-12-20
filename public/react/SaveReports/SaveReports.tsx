@@ -12,7 +12,7 @@ import ReportControls from "./components/ReportControls";
 import EditableTitle from "./components/EditableTitle";
 import { useSelectedReport } from "./hooks/useSelectedReports";
 import routeDataObservable, { pushStateObservable as queryParamObservable } from "@routing-observable";
-import { useHistoryState, useHistoryStateValue, useHistoryValueCallback } from "../../jira/history/hooks";
+import { useHistoryState, useHistoryStateValue, useHistoryValueCallback } from "../hooks/history";
 import { param } from "../../can";
 
 export interface SaveReportProps {

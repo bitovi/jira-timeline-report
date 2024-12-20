@@ -11,9 +11,9 @@ import { IconButton } from "@atlaskit/button/new";
 import ViewReportsLayout from "./components/ViewReportsLayout";
 import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
 import DeleteReportModal from "./components/DeleteReportModal";
-import { RoutingLink } from "../../jira/history/components";
+import { RoutingLink } from "../components/RoutingLink";
 import routeDataObservable from "@routing-observable";
-import { useHistoryStateValue } from "../../jira/history/hooks";
+import { useHistoryStateValue } from "../hooks/history";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;

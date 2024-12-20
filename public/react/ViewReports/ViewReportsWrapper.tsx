@@ -14,7 +14,7 @@ import ViewReportLayout from "./components/ViewReportsLayout";
 import Skeleton from "../components/Skeleton";
 import { StorageProvider } from "../services/storage";
 import { useCanObservable } from "../hooks/useCanObservable";
-import { useHistoryStateValue } from "../../jira/history/hooks";
+import { useHistoryStateValue } from "../hooks/history";
 import { FlagsProvider } from "@atlaskit/flag";
 import { queryClient } from "../services/query";
 

@@ -2,7 +2,7 @@ import type { FC } from "react";
 import React, { useState, useEffect } from "react";
 
 import type { DerivedIssue } from "../../jira/derived/derive";
-import { useHistoryStateValue } from "../../jira/history/hooks";
+import { useHistoryStateValue } from "../hooks/history";
 
 import { jStat } from "jstat";
 

@@ -1,7 +1,7 @@
 import { MouseEvent, PropsWithChildren, default as React } from "react";
 
 import routeDataObservable from "@routing-observable";
-import { deparam, param } from "../../can";
+import { deparam, param } from "../../../can";
 
 interface RoutingLinkPropsBase extends PropsWithChildren {
   as?: "a" | "button";
@@ -40,3 +40,4 @@ export const RoutingLink = ({ as = "a", replaceAll, children, className, ...rest
     className,
   });
 };
+export default RoutingLink;

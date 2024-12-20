@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { CanObservable } from "../../../hooks/useCanObservable";
 import { useUpdateReport } from "../../../services/reports";
 import { getReportFromParams, paramsMatchReport } from "./utilities";
-import { useHistoryCallback, useHistoryParams, useHistoryState } from "../../../../jira/history/hooks";
+import { useHistoryCallback, useHistoryParams, useHistoryState } from "../../../hooks/history";
 import routeDataObservable from "@routing-observable";
 import { param } from "../../../../can";
 
