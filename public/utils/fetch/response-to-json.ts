@@ -1,7 +1,7 @@
 /**
  * this module is for getting a json object from an http response.
  */
-import { JsonResponse } from './types';
+import { JsonResponse } from '../../shared/types';
 
 export function responseToJSON<TData = object>(response: Response): Promise<JsonResponse<TData>> {
 	if (!response.ok) {

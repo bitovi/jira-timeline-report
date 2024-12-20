@@ -1,8 +1,6 @@
 import { StacheElement, type } from "./can.js";
 
-//import "./steerco-timeline.js";
 import "./status-filter.js";
-import "./status-filter-only.js";
 import "./reports/gantt-grid.js";
 import "./reports/table-grid.js";
 import "./reports/scatter-timeline.js";

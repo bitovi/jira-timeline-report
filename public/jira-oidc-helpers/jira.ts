@@ -1,14 +1,14 @@
 /**
  * this module is contains helpers for working with jira.
  */
-import chunkArray from "../shared/chunk-array";
-import mapIdsToNames from "../shared/map-ids-to-names";
-import { responseToText } from "../shared/response-to-text";
+import chunkArray from "../utils/array/chunk-array";
+import mapIdsToNames from "../utils/object/map-ids-to-names";
+import { responseToText } from "../utils/fetch/response-to-text";
 import { FetchJiraIssuesParams } from "../jira/shared/types";
 import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from "./types";
 import { fetchFromLocalStorage } from "./storage";
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from "./fetchAllJiraIssuesWithJQLAndFetchAllChangelog";
-import { uniqueKeys } from "../shared/unique";
+import { uniqueKeys } from "../utils/array/unique";
 
 export function fetchAccessibleResources(config: Config) {
   return () => {
