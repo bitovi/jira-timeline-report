@@ -1,14 +1,16 @@
-export function unique<TItem, TKey extends string | number | symbol>(list: TItem[], uniqueBy: (list: TItem) => TKey) {
-  return list.filter((item, i, listInner) => {
+export function unique<TItem>(list: TItem[], uniqueBy: (item: TItem) => string) {
+  const result: { [key: string]: TItem } = {};
+  for (const item of list) {
     const itemKey = uniqueBy(item);
-    return listInner.findIndex((itemInner) => uniqueBy(itemInner) === itemKey) === i;
-  });
+    if (!result[itemKey]) result[itemKey] = item;
+  }
+  return Object.values(result);
 }
 
 export function uniqueKeys<TItem extends { key: string }>(list: TItem[]) {
   return unique(list, ({ key }) => key);
 }
 
-export function uniqueIds<TId extends string | number | symbol, TItem extends { id: TId }>(list: TItem[]) {
+export function uniqueIds<TItem extends { id: string }>(list: TItem[]) {
   return unique(list, ({ id }) => id);
 }
