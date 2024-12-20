@@ -81,7 +81,7 @@ npm run create:atlassian-connect -- --environment=local --name=<your-name-here> 
 
 3. Add a `CLIENT_JIRA_APP_KEY` environment variable and set it equal to the `key` in the newly created `atlassian-connect.json` file.
    - ex: `CLIENT_JIRA_APP_KEY=bitovi.timeline-report.local.david`
-4. Open your Jira dev environment and click Apps from the top nav, then `Manage Your Apps`. If you have enabled devlopment mode, you should see an `Upload app` option next to `Build a new app`. Click `Upload app`.
+4. Open your Jira dev environment and click Apps from the top nav, then `Manage Your Apps`. If you have enabled development mode, you should see an `Upload app` option next to `Build a new app`. Click `Upload app`.
 5. Paste the secure domain into the text box, and add `/atlassian-connect.json` to the end (e.g. `https://46f7-8-47-99-200.ngrok-free.app/atlassian-connect.json`). Click `Upload`.
 6. The apps list should refresh and show `Timeline Report (Local <Your Name>)` as a User-installed app. From here, click `Apps` in the top nav and you should see a `Your Apps` heading with `Timeline Report (Local <Your Name>)` as an option underneath. Click `Timeline Report (Local <Your Name>)` and you should see the Timeline Report app load in the window!
 
