@@ -1,6 +1,7 @@
 import { StacheElement, type } from "./can.js";
 
 import "./canjs/controls/status-filter.js";
+import "./canjs/controls/compare-slider.js";
 import "./canjs/reports/gantt-grid.js";
 import "./canjs/reports/table-grid.js";
 import "./canjs/reports/scatter-timeline.js";
@@ -22,7 +23,10 @@ import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
 
-import { DROPDOWN_LABEL } from "./shared/style-strings.js";
+import { get, set } from "react-hook-form";
+
+
+
 
 export class TimelineReport extends StacheElement {
   static view = `<div class="flex">
@@ -73,14 +77,9 @@ export class TimelineReport extends StacheElement {
               primaryReportType:to="this.primaryReportType"
               jiraHelpers:from="this.jiraHelpers"></select-report-type>
         
-            <div class='flex-grow'>
-              <label for="compareValue" class="${DROPDOWN_LABEL}">Compare to {{this.compareToTime.text}}</label>
-              <input class="w-full-border-box h-8" 
-                id="compareValue"
-                type='range' 
-                valueAsNumber:bind:on:input='this.timeSliderValue' 
-                min="0" max="100"/>
-            </div>
+            <compare-slider class='flex-grow'
+              compareToTime:to="compareToTime"></compare-slider>
+
             <select-view-settings
               jiraHelpers:from="this.jiraHelpers"
               
@@ -191,60 +190,10 @@ export class TimelineReport extends StacheElement {
     storage: null,
 
     showingDebugPanel: { type: Boolean, default: false },
-    timeSliderValue: {
-      type: type.convert(Number),
-      default: 75,
-    },
+
     // default params
     defaultSearch: type.Any,
-    get compareToTime() {
-      const SECOND = 1000;
-      const MIN = 60 * SECOND;
-      const HOUR = 60 * MIN;
-      const DAY = 24 * HOUR;
-      const timeValueInPast = 100 - this.timeSliderValue;
-      if (timeValueInPast === 0) {
-        return { timePrior: 0, text: "now" };
-      }
-      if (timeValueInPast === 1) {
-        return { timePrior: 30 * SECOND, text: "30 seconds ago" };
-      }
-      if (timeValueInPast === 2) {
-        return { timePrior: MIN, text: "1 minute ago" };
-      }
-      if (timeValueInPast === 3) {
-        return { timePrior: 5 * MIN, text: "5 minutes ago" };
-      }
-      if (timeValueInPast === 4) {
-        return { timePrior: 10 * MIN, text: "10 minutes ago" };
-      }
-      if (timeValueInPast === 5) {
-        return { timePrior: 30 * MIN, text: "30 minutes ago" };
-      }
-      if (timeValueInPast === 6) {
-        return { timePrior: HOUR, text: "1 hour ago" };
-      }
-      if (timeValueInPast === 7) {
-        return { timePrior: 3 * HOUR, text: "3 hours ago" };
-      }
-      if (timeValueInPast === 8) {
-        return { timePrior: 6 * HOUR, text: "6 hours ago" };
-      }
-      if (timeValueInPast === 9) {
-        return { timePrior: 12 * HOUR, text: "12 hours ago" };
-      }
-      if (timeValueInPast === 10) {
-        return { timePrior: DAY, text: "1 day ago" };
-      } else {
-        const days = timeValueInPast - 10;
-        return { timePrior: DAY * days, text: days + " days ago" };
-      }
-      const days = timeValueInPast;
-      return {
-        timePrior: (MIN / 2) * timeValueInPast,
-        text: timeValueInPast + " days ago",
-      };
-    },
+    
 
     showingConfiguration: false,
 

@@ -49,7 +49,7 @@ export class ScatterTimeline extends StacheElement {
         visibleWidth: {
             value({listenTo, resolve}) {
                 listenTo(window,"resize", ()=> resolve(this.offsetWidth));
-                listenTo(this, "isConnected", ()=> {
+                listenTo(this, "isElementConnected", ()=> {
                     resolve(this.offsetWidth);
                 });
                 if(this.offsetWidth && this.offsetWidth > 0) {
@@ -57,10 +57,10 @@ export class ScatterTimeline extends StacheElement {
                 }
             }
         },
-        isConnected: Boolean
+        isElementConnected: Boolean
     };
     connected() {
-        this.isConnected = true;
+        this.isElementConnected = true;
     }
     get quartersAndMonths(){
         
