@@ -16,6 +16,7 @@ export function saveToLocalStorage(key, defaultValue) {
 const underlyingReplaceState = history.replaceState;
 
 export const pushStateObservable = new RoutePushstate();
+pushStateObservable.replaceStateKeys.push("compareTo");
 route.urlData = pushStateObservable;
 route.urlData.root = window.location.pathname;
 route.register("");
