@@ -41,9 +41,9 @@ import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
 // loops through and creates
 export class GanttGrid extends StacheElement {
   static view = `
-        <div style="display: grid; grid-template-columns: auto {{this.gridColumnsCSS}} repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
-            <div></div>
+            <div></div><div></div>
             {{# for(column of this.columnsToShow) }}
             <div></div>
             {{/ for }}
@@ -52,7 +52,7 @@ export class GanttGrid extends StacheElement {
                 <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
             {{ / for }}
 
-            <div></div>
+            <div></div><div></div>
             
             {{# for(column of this.columnsToShow) }}
               <div></div>
@@ -63,21 +63,32 @@ export class GanttGrid extends StacheElement {
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
-            <div style="grid-column: {{plus(2,this.columnsToShow.length)}} / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
+            <div style="grid-column: {{plus(3,this.columnsToShow.length)}} / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
                 <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
             </div>
 
 
             <!-- VERTICAL COLUMNS -->
             {{# for(month of this.quartersAndMonths.months)}}
-                <div style="grid-column: {{ plus(scope.index, 2, this.columnsToShow.length) }}; grid-row: 3 / span {{this.gridRowData.length}}; z-index: 10"
+                <div style="grid-column: {{ plus(scope.index, 3, this.columnsToShow.length) }}; grid-row: 3 / span {{this.gridRowData.length}}; z-index: 10"
                     class='border-l border-b border-neutral-80 {{this.lastRowBorder(scope.index)}}'></div>
             {{/ for }}
 
             <!-- Each of the issues -->
             {{# for(data of this.gridRowData) }}
                 {{# eq(data.type, "issue") }}
-                
+                    <div on:click='this.toggleShowingChildren(data.issue)' class="hidden"
+                      class="pl-{{multiply(data.issue.reportingHierarchy.depth,4)}}">
+
+                      {{# if(data.isShowingChildren) }}
+                        <img class="inline" src="/images/chevron-down.svg"/>
+                      {{ else }}
+                        {{# if(data.issue.reportingHierarchy.childKeys.length) }}
+                          <img class="inline" src="/images/chevron-right-new.svg"/>
+                        {{/ }}
+                      {{/ if}}
+                      
+                    </div>
                     <div on:click='this.showTooltip(scope.event,data.issue)' 
                         class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                         {{data.issue.summary}}
@@ -92,6 +103,7 @@ export class GanttGrid extends StacheElement {
                 {{/ eq }}
 
                 {{# eq(data.type, "parent") }}
+                    <div></div>
                     <div on:click='this.showTooltip(scope.event,data.issue)' 
                         class='pointer border-y-solid-1px-white text-left font-bold {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                         {{data.issue.summary}}
@@ -111,7 +123,25 @@ export class GanttGrid extends StacheElement {
         return !!localStorage.getItem("showPercentComplete");
       },
     },
+    showChildrenByKey: {
+      get default(){
+        return new ObservableObject();
+      }
+    },
+    getChildren: {
+      type: Function,
+      get: function(){
+        return makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+      }
+    }
   };
+  toggleShowingChildren(issue) {
+    if(this.showChildrenByKey[issue.key]) {
+      this.showChildrenByKey[issue.key] = false;
+    } else {
+      this.showChildrenByKey[issue.key] = true;
+    }
+  }
   get lotsOfIssues() {
     return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
   }
@@ -196,6 +226,9 @@ export class GanttGrid extends StacheElement {
   }
   plus(first, second, third) {
     return first + second + (third || 0);
+  }
+  multiply(first, second) {
+    return first* second;
   }
   lastRowBorder(index) {
     return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : "";
@@ -285,9 +318,20 @@ export class GanttGrid extends StacheElement {
         })
         .flat(1);
     } else {
-      return this.primaryIssuesOrReleases.map((issue) => {
-        return { type: "issue", issue };
-      });
+
+      const getRow = (issue, depth = 0) => {
+        const isShowingChildren = this.showChildrenByKey[issue.key];
+
+        const row = { type: "issue", issue, isShowingChildren, depth };
+        if(isShowingChildren) {
+          return [row, ...this.getChildren(issue).map((issue)=> getRow(issue, depth+1)).flat(1)]
+        } else {
+          return [row]
+        }
+      }
+
+
+      return this.primaryIssuesOrReleases.map( issue => getRow(issue)).flat(1);
     }
   }
   groupElement(issue, index) {
@@ -313,7 +357,7 @@ export class GanttGrid extends StacheElement {
    */
   getReleaseTimeline(release, index) {
     const base = {
-      gridColumn: `${this.columnsToShow.length + 2} / span ${this.quartersAndMonths.months.length}`,
+      gridColumn: `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
       gridRow: `${index + 3}`,
     };
 
