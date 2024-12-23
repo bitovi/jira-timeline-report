@@ -77,8 +77,8 @@ export class GanttGrid extends StacheElement {
             <!-- Each of the issues -->
             {{# for(data of this.gridRowData) }}
                 {{# eq(data.type, "issue") }}
-                    <div on:click='this.toggleShowingChildren(data.issue)' class="hidden"
-                      class="pl-{{multiply(data.issue.reportingHierarchy.depth,4)}}">
+                    <div on:click='this.toggleShowingChildren(data.issue)'
+                      class="hidden pl-{{multiply(data.issue.reportingHierarchy.depth,4)}}">
 
                       {{# if(data.isShowingChildren) }}
                         <img class="inline" src="/images/chevron-down.svg"/>
