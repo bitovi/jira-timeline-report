@@ -1,6 +1,17 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../../../can.js";
+import {
+  StacheElement,
+  type,
+  ObservableObject,
+  ObservableArray,
+  value,
+  queues,
+} from "../../../can.js";
 
-import { saveJSONToUrl, updateUrlParam, makeArrayOfStringsQueryParamValue } from "../../routing/state-storage.js";
+import {
+  saveJSONToUrl,
+  updateUrlParam,
+  makeArrayOfStringsQueryParamValue,
+} from "../../routing/state-storage.js";
 import { getSimplifiedIssueHierarchy } from "../../../stateful-data/jira-data-requests.js";
 
 import { createRoot } from "react-dom/client";
@@ -27,7 +38,6 @@ import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/n
 
 import "../status-filter.js";
 import "./timing-calculation/timing-calculation.js";
-
 
 const booleanParsing = {
   parse: (x) => {
@@ -57,7 +67,7 @@ export class TimelineConfiguration extends StacheElement {
             <div class="flex-auto grow items-baseline leading-4">
               <div class="color-gray-900 underline-on-hover bitovi-font-poppins font-bold">
                 <a href="https://github.com/bitovi/jira-timeline-report" target="_blank">
-                  Baseline Report
+                  Status Reports
                 </a>
               </div>
               <div class="bitovi-poppins text-neutral-100 text-sm">
@@ -283,7 +293,6 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
-    
     Promise.all([
       this.jiraHelpers.fetchJiraFields(),
       getAllTeamData(this.storage),

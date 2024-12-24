@@ -1,14 +1,13 @@
 const getSafeEnv = require("../server/client-env");
 
 module.exports = function () {
-
-	return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jira Baseline Report OAuth Callback</title>
+    <title>Status Reports for Jira OAuth Callback</title>
 	<link rel="stylesheet" href="dist/production.css">
 </head>
 	<body class='color-bg-white overflow-x-hidden'>
@@ -17,7 +16,7 @@ module.exports = function () {
 			<div class="flex" style="align-items: center">
 				<ul class="flex gap-3 grow items-baseline">
 					<li>
-						<a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold">Jira Timeline Report - Authorization Callback</a>
+						<a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold">Status Reports for Jira - Authorization Callback</a>
 					</li>
 				</ul>
 			</div>
@@ -35,6 +34,5 @@ module.exports = function () {
 
 	</body>
 
-</html>`
-
-}
+</html>`;
+};

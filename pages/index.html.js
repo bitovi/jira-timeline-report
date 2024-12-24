@@ -10,7 +10,7 @@ const header = `
               href="https://github.com/bitovi/jira-timeline-report" 
               class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold"
             >
-              Jira Baseline Report
+              Status Reports for Jira
             </a>
           </li>
           <li>
@@ -27,7 +27,7 @@ const header = `
         <div id="login"></div>
       </div>
     </nav>
-  </div>`
+  </div>`;
 
 module.exports = function (env, mainFileRoute, { showHeader }) {
   return `
@@ -49,7 +49,9 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="dist/production.css">
-      <script src="https://connect-cdn.atl-paas.net/all${env.NODE_ENV === "development" ? "-debug" : ""}.js"></script>
+      <script src="https://connect-cdn.atl-paas.net/all${
+        env.NODE_ENV === "development" ? "-debug" : ""
+      }.js"></script>
       <!-- Google tag (gtag.js) -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
       <script>
