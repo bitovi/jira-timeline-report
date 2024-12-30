@@ -5,12 +5,12 @@ import { Command } from "commander";
 const deploymentConnectMetadata = {
   staging: {
     name: "Status Reports for Jira (Staging)",
-    baseUrl: "https://timeline-report-staging.bitovi-jira.com",
+    baseUrl: "https://statusreports-staging.bitovi.com",
     key: "bitovi.status-report.staging",
   },
   production: {
     name: "Status Reports for Jira",
-    baseUrl: "https://timeline-report.bitovi-jira.com",
+    baseUrl: "https://statusreports.bitovi.com",
     key: "bitovi.status-report",
   },
 } as const;
