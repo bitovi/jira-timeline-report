@@ -61,6 +61,7 @@ jobs:
           tf_state_bucket: bitovi-jira-timeline-report-prod-tf-state
 
           aws_r53_enable: true
+          aws_r53_create_sub_cert: true
           aws_r53_sub_domain_name: timeline-report
           aws_r53_domain_name: bitovi-jira.com
           aws_elb_app_port: 3000
