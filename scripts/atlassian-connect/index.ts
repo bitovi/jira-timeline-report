@@ -4,22 +4,22 @@ import { Command } from "commander";
 
 const deploymentConnectMetadata = {
   staging: {
-    name: "Timeline Report (Staging)",
-    baseUrl: "https://timeline-report-staging.bitovi-jira.com",
-    key: "bitovi.timeline-report.staging",
+    name: "Status Reports for Jira (Staging)",
+    baseUrl: "https://statusreports-staging.bitovi.com",
+    key: "bitovi.status-report.staging",
   },
   production: {
-    name: "Timeline Report",
-    baseUrl: "https://timeline-report.bitovi-jira.com",
-    key: "bitovi.timeline-report",
+    name: "Status Reports for Jira",
+    baseUrl: "https://statusreports.bitovi.com",
+    key: "bitovi.status-report",
   },
 } as const;
 
 const createLocalConnectMetaData = ({ name, url }: { name: string; url: string }) => {
   return {
-    name: `Timeline Report (Local - ${name})`,
+    name: `Status Reports for Jira (Local - ${name})`,
     baseUrl: `${url}`,
-    key: `bitovi.timeline-report.local.${name.toLowerCase()}`,
+    key: `bitovi.status-report.local.${name.toLowerCase()}`,
   };
 };
 
