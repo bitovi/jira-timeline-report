@@ -203,10 +203,10 @@ import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
 export class SelectViewSettings extends StacheElement {
     static view = `
-        <label for="viewSettings" class="${DROPDOWN_LABEL} invisible {{ hiddenIfLoggedOut }}">View settings</label>
+        <label for="viewSettings" class="${DROPDOWN_LABEL} invisible {{#unless(this.isLoggedIn)}}hidden{{/unless}}">View settings</label>
         <button 
                 id="viewSettings"
-                class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect} {{ hiddenIfLoggedOut }}"
+                class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect} {{#unless(this.isLoggedIn)}}hidden{{/unless}}"
                 on:click="this.showChildOptions()">View Settings <img class="inline" src="/images/chevron-down.svg"/></button>
     `;
     static props ={
@@ -283,10 +283,7 @@ export class SelectViewSettings extends StacheElement {
         get canGroup(){
             return this.primaryReportType === 'start-due' &&
                 this.primaryIssueType && this.primaryIssueType !== "Release"
-        },
-        get hiddenIfLoggedOut() {
-            return this.isLoggedIn ? '' : 'hidden';
-        }        
+        }    
     }
     showChildOptions(){
         
