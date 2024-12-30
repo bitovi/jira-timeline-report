@@ -35,7 +35,7 @@ jobs:
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
-          echo "CLIENT_JIRA_APP_KEY=bitovi.timeline-report" >> repo_env
+          echo "CLIENT_JIRA_APP_KEY=bitovi.status-report" >> repo_env
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
       - name: Create Jira Connect
