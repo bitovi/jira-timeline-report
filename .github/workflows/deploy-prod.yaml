@@ -63,7 +63,6 @@ jobs:
           aws_r53_enable: true
           aws_r53_sub_domain_name: status-reports
           aws_r53_domain_name: bitovi.tools
-          aws_r53_create_sub_cert: true
           aws_elb_app_port: 3000
 
           docker_full_cleanup: true
