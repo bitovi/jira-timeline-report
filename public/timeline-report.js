@@ -25,9 +25,6 @@ import SavedReports from "./react/SaveReports";
 
 import { get, set } from "react-hook-form";
 
-
-
-
 export class TimelineReport extends StacheElement {
   static view = `<div class="flex">
         <timeline-configuration
@@ -58,9 +55,9 @@ export class TimelineReport extends StacheElement {
               training. Click "Connect to Jira" to load your own data.</p>
             <p class="mt-2">Checkout the following sample reports:</p>
             <ul class="list-disc list-inside ml-2">
-              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with iniative work breakdown</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a></li>
+              <li><a data-testid="release-status" class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
+              <li><a data-testid="release-work-breakdown" class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with initiative work breakdown</a></li>
+              <li><a data-testid="initiative-work-breakdown" class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a></li>
             </ul>
 
           </div>
@@ -194,7 +191,6 @@ export class TimelineReport extends StacheElement {
 
     // default params
     defaultSearch: type.Any,
-    
 
     showingConfiguration: false,
 
@@ -203,19 +199,19 @@ export class TimelineReport extends StacheElement {
     },
     derivedIssues: {
       // this can't use async b/c we need the value to turn to undefined
-      value({listenTo, resolve}){
+      value({ listenTo, resolve }) {
         const resolveValueFromPromise = () => {
           resolve(undefined);
-          if(this.derivedIssuesRequestData?.issuesPromise) {
+          if (this.derivedIssuesRequestData?.issuesPromise) {
             this.derivedIssuesRequestData.issuesPromise.then(resolve);
           }
         };
         listenTo("derivedIssuesRequestData", resolveValueFromPromise);
         resolveValueFromPromise();
-      }/*,
+      } /*,
       async(resolve) {
         this.derivedIssuesRequestData?.issuesPromise.then(resolve);
-      },*/
+      },*/,
     },
     get filteredDerivedIssues() {
       if (this.derivedIssues) {
