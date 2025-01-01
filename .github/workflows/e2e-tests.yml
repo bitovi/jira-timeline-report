@@ -1,9 +1,10 @@
 name: e2e Tests
 on:
   push:
-    branches: [staging]
+    # update to staging when it's ready
+    branches: [ilfo/test]
   pull_request:
-    branches: [staging]
+    branches: [ilfo/test]
 jobs:
   test:
     timeout-minutes: 60
