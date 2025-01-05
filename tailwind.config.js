@@ -3,13 +3,19 @@ module.exports = {
   safelist: ["pl-2", "pl-4", "pl-6", "pl-8"],
   theme: {
     fontFamily: {
-      sans: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+      sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
       serif: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
       mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       bitovipoppins:
         'Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
     },
     extend: {
+      blur: {
+        xs: '2px',
+      },
+      fontSize: {
+        'xxs': ["0.5rem", "0.75rem"]
+      },
       colors: {
         blue: {
           500: "#0747A6",
@@ -43,14 +49,17 @@ module.exports = {
           300: "#5E6C84",
           200: "#6B778C",
           100: "#7A869A",
-          80: "#97A0AF",
+          80: "#091E4224", // was "#97A0AF" ... now is 14% alpha of Nuetral300
           50: "#C1C7D0",
           40: "#DFE1E6", // secondary buttton color
+          41: '#DCDFE4', // accent.gray.subtler
           30: "#EBECF0",
-          20: "#F4F5F7", // stripe color
+          20: "#091E4208", // stripe color
           10: "#FAFBFC", //
           301: "#091E4224",
           201: "#091E420F", // NEW nuetral 6% opacity
+
+          
         },
         orange: {
           400: "#F5532D", // Bitovi color

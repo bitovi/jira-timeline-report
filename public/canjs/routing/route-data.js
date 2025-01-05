@@ -21,7 +21,7 @@ class RouteData extends ObservableObject {
             stringify(number){
                 return ""+number;
             }
-        })
+        }),
     }
 }
 

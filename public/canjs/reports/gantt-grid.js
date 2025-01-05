@@ -95,7 +95,7 @@ export class GanttGrid extends StacheElement {
                     </div>
 
                     {{# for(column of this.columnsToShow) }}
-                      <div style="grid-column: plus(2, scope.index)" class="{{this.textSize}} text-right pointer"
+                      <div style="grid-column: {{plus(3, scope.index)}}" class="{{this.textSize}} text-right pointer"
                         on:click="column.onclick(scope.event, data.issue, this.allIssues)">{{column.getValue(data.issue)}}</div>
                     {{/ for }}
 
@@ -109,7 +109,7 @@ export class GanttGrid extends StacheElement {
                         {{data.issue.summary}}
                     </div>
                     {{# for(column of this.columnsToShow) }}
-                      <div style="grid-column: plus(2, scope.index)"></div>
+                      <div style="grid-column: {{ plus(3, scope.index) }}"></div>
                     {{/ for }}
                     {{ this.groupElement(data.issue, scope.index) }}
                 {{/ }}
@@ -146,9 +146,12 @@ export class GanttGrid extends StacheElement {
     return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
   }
   get textSize() {
-    return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "p-1";
+    return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "pt-1 pb-0.5 px-1";
   }
   get bigBarSize() {
+    return this.lotsOfIssues ? "h-2" : "h-4";
+  }
+  get shadowBarSize(){
     return this.lotsOfIssues ? "h-4" : "h-6";
   }
   get columnsToShow(){
@@ -335,18 +338,15 @@ export class GanttGrid extends StacheElement {
     }
   }
   groupElement(issue, index) {
-    const base = {
-      gridColumn: "3 / span " + this.quartersAndMonths.months.length,
+    const baseGridStyles = {
+      gridColumn: `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
       gridRow: `${index + 3}`,
     };
 
-    const background = document.createElement("div");
-
-    Object.assign(background.style, {
-      ...base,
+    const background = makeElement([index % 2 ? "bg-neutral-20" : ""], {
+      ...baseGridStyles,
       zIndex: 0,
-    });
-    background.className = index % 2 ? "color-bg-gray-20" : "";
+    })
     return stache.safeString(background);
   }
   /**
@@ -356,178 +356,154 @@ export class GanttGrid extends StacheElement {
    * @returns
    */
   getReleaseTimeline(release, index) {
-    const base = {
+    // we will have 2 elements, one for a background, the other for the chart stuff ...
+    const frag = document.createDocumentFragment();
+
+    // background and chart stuff have the same grid config
+    const baseGridStyles = {
       gridColumn: `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
       gridRow: `${index + 3}`,
     };
 
-    const background = document.createElement("div");
+    const background = makeElement(
+      [index % 2 ? "bg-neutral-20" : ""],
+      {
+        ...baseGridStyles,
+        zIndex: 0,
+      }
+    );
 
-    Object.assign(background.style, {
-      ...base,
-      zIndex: 0,
-    });
-
-    background.className = index % 2 ? "color-bg-gray-20" : "";
-
-    const root = document.createElement("div");
-    const lastPeriodRoot = document.createElement("div");
-    root.appendChild(lastPeriodRoot);
-
-    Object.assign(root.style, {
-      ...base,
+    // the root element contains the last period and current period bars
+    const root = makeElement([],{
+      ...baseGridStyles,
       position: "relative",
       zIndex: 20,
     });
-    root.className = "py-1";
 
-    Object.assign(lastPeriodRoot.style, {
+    // this has the last period stuff ... it's absolutely stretched to match the same space
+    // we probably could have put this in the grid, but it's nice to have this stuff w/i an element
+    const lastPeriodRoot = makeElement(
+      [this.breakdown ? "": "py-1"],
+    {
       position: "absolute",
       top: "0",
       left: "0",
       right: "0",
       bottom: "0",
     });
-    lastPeriodRoot.className = "py-1 lastPeriod";
+    
+    frag.appendChild(background);
+    frag.appendChild(root);
+
+    root.appendChild(lastPeriodRoot);
 
     const { firstDay, lastDay } = this.quartersAndMonths;
-    const totalTime = lastDay - firstDay;
-
+    
+    const getPositions = getPositionsFromWork.bind(this, {firstDay, lastDay});
+    
     if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
-      function getPositions(work) {
-        if (work.start == null && work.due == null) {
-          return {
-            start: 0,
-            end: Infinity,
-            startExtends: false,
-            endExtends: false,
-            style: {
-              marginLeft: "1px",
-              marginRight: "1px",
-            },
-          };
+      
+      function makeLastPeriodElement(status, timing, currentPositions, extraClasses) {
+
+        const positions = getPositions(timing || {});
+
+        if(currentPositions.start === positions.start && currentPositions.end === positions.end) {
+          return makeElement([],{});
         }
 
-        const start = Math.max(firstDay, work.start);
-        const end = Math.min(lastDay, work.due);
-        const startExtends = work.start < firstDay;
-        const endExtends = work.due > lastDay;
+        if(positions.endIsBeforeFirstDay) {
+          return makeElement([],{}); 
+        }
 
-        return {
-          start,
-          end,
-          startExtends,
-          endExtends,
-          style: {
-            width: Math.max(((end - start) / totalTime) * 100, 0) + "%",
-            marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
-          },
-        };
-      }
+        const behindTime = makeElement([
+           "bg-neutral-41","blur-xs", roundBasedOnIfTheBarsExtend(positions) 
 
-      function makeLastPeriodElement(status, timing) {
-        const behindTime = document.createElement("div");
-        behindTime.style.backgroundClip = "content-box";
-        behindTime.style.opacity = "0.9";
-        behindTime.style.position = "relative";
-        behindTime.className = "border-y-solid-1px";
+          /* "color-border-"+status, ...borderBasedOnIfTheBarsExtend(positions), roundBasedOnIfTheBarsExtend(positions)*/
 
-        if (timing && status === "behind") {
-          Object.assign(behindTime.style, getPositions(timing || {}).style);
-          behindTime.style.zIndex = 1;
-          behindTime.classList.add("color-text-and-bg-behind-last-period");
-        }
-        if (timing && status === "ahead") {
-          Object.assign(behindTime.style, getPositions(timing || {}).style);
-          behindTime.classList.add("color-text-and-bg-ahead-last-period");
-          behindTime.style.zIndex = -1;
-        }
-        if (timing && status === "blocked") {
-          Object.assign(behindTime.style, getPositions(timing || {}).style);
-          behindTime.classList.add("color-text-and-bg-blocked-last-period");
-          behindTime.style.zIndex = 1;
-        }
-        if (timing && status === "warning") {
-          Object.assign(behindTime.style, getPositions(timing || {}).style);
-          behindTime.classList.add("color-text-and-bg-warning-last-period");
-          behindTime.style.zIndex = 1;
-        }
+          , ... extraClasses
+        ],{
+          backgroundClip: "content-box",
+          position: "relative",
+          ...positions.style
+        })
+        
         return behindTime;
       }
 
       if (this.breakdown) {
-        /*
-                    const lastDev = makeLastPeriodElement(release.rollupStatuses.dev.status, release.rollupStatuses.dev.lastPeriod);
-                    lastDev.classList.add("h-2","py-[2px]");
-                    lastPeriodRoot.appendChild(lastDev);
-
-                    const dev = document.createElement("div");
-                    dev.className = "dev_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.dev.status;
-                    Object.assign(dev.style, getPositions(release.rollupStatuses.dev).style);
-                    root.appendChild(dev);*/
 
         const workTypes = this.hasWorkTypes.list.filter((wt) => wt.hasWork);
         for (const { type } of workTypes) {
+          const thisPeriodPositions = getPositions(release.rollupStatuses[type])
+
           const lastPeriod = makeLastPeriodElement(
             release.rollupStatuses[type].status,
-            release.rollupStatuses[type].lastPeriod
+            release.rollupStatuses[type].lastPeriod,
+            thisPeriodPositions,
+            ["h-2"/*, "py-[2px]"*/]
           );
-          lastPeriod.classList.add("h-2", "py-[2px]");
+
           lastPeriodRoot.appendChild(lastPeriod);
 
-          const thisPeriod = document.createElement("div");
-          thisPeriod.className =
-            type + "_time h-2 border-y-solid-1px-white color-text-and-bg-" + release.rollupStatuses[type].status;
-          Object.assign(thisPeriod.style, getPositions(release.rollupStatuses[type]).style);
+          
+
+          const thisPeriod = makeElement([
+            type+"_time","h-[6px]","my-[1px]", "rounded-sm", "color-text-and-bg-"+release.rollupStatuses[type].status,
+          ], {
+            ...thisPeriodPositions.style,
+            position: "relative" // for some reason needed to bring this ahead of `lastPeriod`
+          })
+          
           root.appendChild(thisPeriod);
         }
-        /*
-                    if(this.hasQAWork) {
-                        const lastQA = makeLastPeriodElement(release.rollupStatuses.qa.status, release.rollupStatuses.qa.lastPeriod);
-                        lastQA.classList.add("h-2","py-[2px]");
-                        lastPeriodRoot.appendChild(lastQA);
-
-
-                        const qa = document.createElement("div");
-                        qa.className = "qa_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.qa.status;
-                        Object.assign(qa.style, getPositions(release.rollupStatuses.qa).style);
-                        root.appendChild(qa);
-
-                        
-                    }
-                    if(this.hasUATWork) {
-                        const lastUAT = makeLastPeriodElement(release.rollupStatuses.uat.status, release.rollupStatuses.uat.lastPeriod);
-                        lastUAT.classList.add("h-2","py-[2px]");
-                        lastPeriodRoot.appendChild(lastUAT);
-
-
-                        const uat = document.createElement("div");
-                        uat.className = "uat_time h-2 border-y-solid-1px-white color-text-and-bg-"+release.rollupStatuses.uat.status;
-                        Object.assign(uat.style, getPositions(release.rollupStatuses.uat).style);
-                        root.appendChild(uat);
-
-                        
-                    }*/
       } else {
+        // make the last one ...
+        const currentPositions = getPositions(release.rollupStatuses.rollup);
+
+        let team;
+
+        if(currentPositions.endIsBeforeFirstDay) {
+          /*
+          team = makeElement(["p-2"],{});
+          team.appendChild(
+            makeCircle("←",["color-text-and-bg-" + release.rollupStatuses.rollup.status, "w-4","h-4","text-xs"],
+              {zIndex: 30, position: "relative"})
+          );*/
+          team = makeCircleForStatus(release.rollupStatuses.rollup.status, "←", this.lotsOfIssues)
+        } else {
+          team = makeElement([
+            "my-2", this.bigBarSize, "color-text-and-bg-" + release.rollupStatuses.rollup.status,
+            roundBasedOnIfTheBarsExtend(currentPositions)
+          ],{
+            /*opacity: "0.9",*/
+            ... currentPositions.style,
+            zIndex: 30, position: "relative"
+          })
+        }
+
         const behindTime = makeLastPeriodElement(
           release.rollupStatuses.rollup.status,
-          release.rollupStatuses.rollup.lastPeriod
+          release.rollupStatuses.rollup.lastPeriod,
+          currentPositions,
+          [this.shadowBarSize]
         );
-        behindTime.classList.add(this.bigBarSize, "py-1");
+
         lastPeriodRoot.appendChild(behindTime);
-
-        const team = document.createElement("div");
-        team.className =
-          this.bigBarSize + " border-y-solid-1px-white color-text-and-bg-" + release.rollupStatuses.rollup.status;
-        Object.assign(team.style, getPositions(release.rollupStatuses.rollup).style);
-        team.style.opacity = "0.9";
-
+        
         root.appendChild(team);
       }
+    } else {
+      let team = makeCircleForStatus("unknown", "∅", this.lotsOfIssues)
+      /*
+      let team = makeElement(["p-2"],{});
+      team.appendChild(
+        makeCircle("∅",["color-text-and-bg-unknown", "w-4","h-4","text-xs"],
+          {zIndex: 30, position: "relative"})
+      ); */
+
+      root.appendChild(team);
     }
-    const frag = document.createDocumentFragment();
-    frag.appendChild(background);
-    frag.appendChild(root);
+    
     return stache.safeString(frag);
   }
   get hasWorkTypes() {
@@ -555,5 +531,102 @@ export class GanttGrid extends StacheElement {
     }
   }
 }
+
+function roundBasedOnIfTheBarsExtend({startExtends, endExtends}) {
+  if(!startExtends && !endExtends) {
+    return "rounded"
+  }
+  else if(startExtends && endExtends) {
+    return "rounded-none"
+  } else if(startExtends) {
+    return "rounded-r"
+  } else {
+    return "rounded-l"
+  }
+}
+
+function borderBasedOnIfTheBarsExtend({startExtends, endExtends}) {
+  if(!startExtends && !endExtends) {
+    return "border"
+  }
+  else if(startExtends && endExtends) {
+    return ["border-0"]
+  } else if(startExtends) {
+    return ["border-r", "border-y"]
+  } else {
+    return ["border-l", "border-y"]
+  }
+}
+
+function makeElement(classNames, styles) {
+  const div = document.createElement("div");
+  div.classList.add(...classNames.filter( x => x));
+  Object.assign(div.style, styles);
+  return div;
+}
+
+
+function getPositionsFromWork({firstDay, lastDay}, work) {
+  const totalTime = lastDay - firstDay;
+
+  if (work.start == null && work.due == null) {
+    return {
+      start: 0,
+      end: Infinity,
+      startExtends: false,
+      endExtends: false,
+      style: {
+        marginLeft: "1px",
+        marginRight: "1px",
+      },
+    };
+  }
+
+  const start = Math.max(firstDay, work.start);
+  const end = Math.min(lastDay, work.due);
+  const startExtends = work.start < firstDay;
+  const endExtends = work.due > lastDay;
+
+  return {
+
+    start,
+    end,
+    endIsBeforeFirstDay: work.due && work.due <= firstDay,
+    startIsAfterLastDay: work.start && work.start >= lastDay,
+    startExtends, // is the start before the first day
+    endExtends,   // is the end after the last day
+    style: {
+      width: Math.max(((end - start) / totalTime) * 100, 0) + "%",
+      marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
+    },
+  };
+}
+
+
+function makeCircle(innerHTML, styles, css) {
+  const element = makeElement(styles, {
+    ...css,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  });
+  element.innerHTML = innerHTML;
+  return element;
+}
+
+const fewerIssuesClasses = ["w-4","h-4","text-xs"];
+const lotsOfIssueClasses = ["w-4","h-4","text-xs"];
+function makeCircleForStatus(status,innerHTML, lotsOfIssues) {
+
+  let team = makeElement([ lotsOfIssues ? "p-1" : "p-2"],{});
+  team.appendChild(
+    makeCircle(innerHTML,["color-text-and-bg-" + status, ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
+      {zIndex: 30, position: "relative"})
+  ); 
+
+  return team;
+}
+
 
 customElements.define("gantt-grid", GanttGrid);
