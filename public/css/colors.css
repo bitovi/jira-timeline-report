@@ -145,6 +145,37 @@
 }
 
 
+
+.color-border-complete {
+	border-color: var(--complete-color);
+}
+.color-border-ontrack {
+	border-color: var(--ontrack-color);
+}
+.color-border-behind {
+	border-color: var(--behind-color);
+}
+.color-border-unknown {
+	border-color: var(--unknown-color);
+}
+.color-border-notstarted {
+	border-color: var(--notstarted-color);
+}
+.color-border-blocked {
+	border-color: var(--blocked-color);
+}
+.color-border-warning {
+	border-color: var(--warning-color);
+}
+.color-border-ahead {
+	border-color: var(--ahead-color);
+}
+.color-border-new {
+	border-color: var(--new-color);
+}
+
+
+
 .color-border-slate-900 {
 	border-color: var(--slate-900-color);
 }
