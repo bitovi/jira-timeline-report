@@ -353,15 +353,6 @@ export class TimelineConfiguration extends StacheElement {
   // METHODS
 }
 
-// jql =>
-//
-//    rawIssues =>
-//        typeToIssueType
 
-// timingCalculations
-
-// firstIssueTypeWithStatuses(primaryIssueType, typeToIssueType, timingCalculations)
-
-// primaryIssueType
 
 customElements.define("timeline-configuration", TimelineConfiguration);
