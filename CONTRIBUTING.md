@@ -3,8 +3,8 @@
 Clone the application into your local machine and install node modules.
 
 ```sh
-git clone https://github.com/bitovi/jira-integrations.git
-cd jira-integrations
+git clone https://github.com/bitovi/jira-timeline-report.git
+cd jira-timeline-report
 npm i
 ```
 
