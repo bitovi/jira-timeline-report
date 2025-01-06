@@ -30,6 +30,8 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npx playwright install
+      - name: Get env details
+        run: cat .env
       - run: npm run test:e2e
       - name: Save Artifacts
         if: always()
