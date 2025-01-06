@@ -32,6 +32,7 @@ jobs:
       - run: npx playwright install
       - run: npm run test:e2e
       - name: Save Artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-videos
