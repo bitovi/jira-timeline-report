@@ -416,10 +416,10 @@ export class GanttGrid extends StacheElement {
         }
 
         const behindTime = makeElement([
-           "bg-neutral-41","blur-xs", roundBasedOnIfTheBarsExtend(positions) 
+          /*"bg-neutral-41","blur-xs", roundBasedOnIfTheBarsExtend(positions) */
 
           /* "color-border-"+status, ...borderBasedOnIfTheBarsExtend(positions), roundBasedOnIfTheBarsExtend(positions)*/
-
+          "border-black","blur-xs", ...borderBasedOnIfTheBarsExtend(positions), roundBasedOnIfTheBarsExtend(positions)
           , ... extraClasses
         ],{
           backgroundClip: "content-box",

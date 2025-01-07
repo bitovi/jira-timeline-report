@@ -8,30 +8,17 @@ import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
 import { directlyReplaceUrlParam } from "../canjs/routing/state-storage.js";
-import { route } from "../can.js";
+import { route, value } from "../can.js";
+import routeData from "../canjs/routing/route-data.js";
 
-function legacyPrimaryReportingTypeRoutingFix() {
-  const primaryIssueType = new URL(window.location).searchParams.get("primaryReportType");
-  if (primaryIssueType === "breakdown") {
-    directlyReplaceUrlParam("primaryReportType", "start-due");
-    directlyReplaceUrlParam("primaryReportBreakdown", "true");
-    console.warn("fixing url");
-  }
-}
 
-function legacyPrimaryIssueTypeRoutingFix() {
-  const primaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
-  if (primaryIssueType) {
-    directlyReplaceUrlParam("primaryIssueType", "", "");
-    directlyReplaceUrlParam("selectedIssueType", primaryIssueType, "");
-    console.warn("fixing url");
-  }
-}
+
 
 export default async function mainHelper(config, { host, createStorage, configureRouting, showSidebarBranding }) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
+  
   configureRouting(route);
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
@@ -48,6 +35,9 @@ export default async function mainHelper(config, { host, createStorage, configur
   const storage = createStorage(jiraHelpers);
 
   const loginComponent = new JiraLogin().initialize({ jiraHelpers });
+  routeData.isLoggedInObservable = value.from(loginComponent, "isLoggedIn");
+  routeData.jiraHelpers = jiraHelpers;
+  routeData.storage = storage;
 
   const selectCloud = document.querySelector("select-cloud");
   if (selectCloud) {
@@ -76,6 +66,27 @@ export default async function mainHelper(config, { host, createStorage, configur
   if (host === "jira") {
     login.style.display = "none";
   }
+  
 
   return loginComponent;
+}
+
+
+// LEGACY URL SUPPORT
+function legacyPrimaryReportingTypeRoutingFix() {
+  const primaryIssueType = new URL(window.location).searchParams.get("primaryReportType");
+  if (primaryIssueType === "breakdown") {
+    directlyReplaceUrlParam("primaryReportType", "start-due");
+    directlyReplaceUrlParam("primaryReportBreakdown", "true");
+    console.warn("fixing url");
+  }
+}
+
+function legacyPrimaryIssueTypeRoutingFix() {
+  const primaryIssueType = new URL(window.location).searchParams.get("primaryIssueType");
+  if (primaryIssueType) {
+    directlyReplaceUrlParam("primaryIssueType", "", "");
+    directlyReplaceUrlParam("selectedIssueType", primaryIssueType, "");
+    console.warn("fixing url");
+  }
 }
