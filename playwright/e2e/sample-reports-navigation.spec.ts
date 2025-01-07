@@ -5,8 +5,8 @@ test.describe("Sample reports navigation", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/");
       const releaseLink = page.getByTestId("release-status");
-      console.log('releaseLink HTML', await releaseLink.innerHTML());
       await releaseLink.waitFor({state: 'visible'})
+      console.log('releaseLink HTML', await releaseLink.innerHTML());
       await releaseLink.click();
     });
 
