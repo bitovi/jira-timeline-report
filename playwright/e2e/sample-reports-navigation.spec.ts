@@ -4,7 +4,7 @@ test.describe("Sample reports navigation", () => {
   test.describe("On 'Release end dates with initiative status' click", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/");
-      const releaseLink = page.getByTestId("release-status")
+      const releaseLink = page.getByText('Release end dates with initiative status')
       await releaseLink.waitFor()
       await releaseLink.click();
     });
