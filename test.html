@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en" style="--fullish-document-top: 66.5px;">
+    <head>
+        <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Jira Timeline Report</title>
+                    <meta property="og:title" content="Jira Timeline Report">
+                        <meta property="og:type" content="website">
+                            <meta property="og:description" content="A Jira to PowerPoint slide generator for high-level status reporting.">
+                                <meta property="og:image" content="https://repository-images.githubusercontent.com/593300471/11f569ce-1e8d-4ad7-ada8-76ab8321ab25">
+                                    <meta property="og:url" content="https://timeline-report.bitovi-jira.com/">
+                                        <meta name="twitter:card" content="summary_large_image">
+                                            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&amp;display=swap" rel="stylesheet">
+                                                <link rel="stylesheet" href="dist/production.css">
+                                                    <script src="https://connect-cdn.atl-paas.net/all.js"></script>
+                                                    <!-- Google tag (gtag.js) -->
+                                                    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
+                                                    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XQR3T6BZL3');
+      </script>
+                                                    <style data-emotion="css" data-s=""></style>
+                                                </head>
+                                                <body class="overflow-x-hidden" style="margin: 0px !important;">
+                                                    <div class="color-bg-white px-4 sticky top-0 z-50 border-b border-neutral-301">
+                                                        <nav class="mx-auto py-2 place-center">
+                                                            <div class="flex gap-4" style="align-items: center">
+                                                                <ul class="flex gap-3 grow items-baseline">
+                                                                    <li>
+                                                                        <a href="https://github.com/bitovi/jira-timeline-report" class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold">
+              Status Reports for Jira
+            </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a href="https://www.bitovi.com/services/agile-project-management-consulting" class="bitovi-poppins color-text-bitovi-red-orange" style="line-height: 37px; font-size: 14px; text-decoration: none">
+              by 
+                                                                            <img src="./images/bitovi-logo.png" class="inline align-baseline">
+                                                                            </a>
+                                                                        </li>
+                                                                    </ul>
+                                                                    <select-cloud>
+                                                                        <!--kt<{{#if(this.alternateResources.isPending)}}>-->
+                                                                        <!--/kt<{{#if(this.alternateResources.isPending)}}>-->
+                                                                        <!--kt<{{#if(this.alternateResources.value.length)}}>-->
+                                                                        <!--/kt<{{#if(this.alternateResources.value.length)}}>-->
+                                                                        <!--kt<{{#and(not(this.alternateResources.value.length), this.currentResource.value.name)}}>-->
+                                                                        <!--/kt<{{#and(not(this.alternateResources.value.length), this.currentResource.value.name)}}>-->
+                                                                    </select-cloud>
+                                                                    <div id="login">
+                                                                        <jira-login>
+                                                                            <!--kt<{{#if(this.isPending)}}>-->
+                                                                            <!--kt<{{#if(this.isLoggedIn)}}>-->
+                                                                            <button class="p-1 block pointer bg-orange-400 text-white rounded-lg font-bitovipoppins font-lg font-bold" style="border: none" data-testid="login-button" on:click="this.login()">
+                Connect to Jira
+            </button>
+                                                                            <!--/kt<{{#if(this.isLoggedIn)}}>-->
+                                                                            <!--/kt<{{#if(this.isPending)}}>-->
+                                                                            <!--kt<{{#not(this.isResolved)}}>-->
+                                                                            <!--/kt<{{#not(this.isResolved)}}>-->
+                                                                        </jira-login>
+                                                                    </div>
+                                                                    <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                                </div>
+                                                            </nav>
+                                                        </div>
+                                                        <div id="mainElement" class="place-center w-1280" style="display: none;">
+                                                            <p class="my-2">Loading the Jira Timeline Report ...</p>
+                                                        </div>
+                                                        <script type="module">
+        import main from "./dist/hosted-main.min.js";
+        main( {} );
+      </script>
+                                                        <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                        <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                        <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                        <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                        <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                        <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                        <simple-tooltip style="display: none; position: absolute;"></simple-tooltip>
+                                                        <timeline-report class="block">
+                                                            <div class="flex">
+                                                                <timeline-configuration class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" style="overflow-y: auto" is:u:logged:u:in:from="this.loginComponent.isLoggedIn" jira:u:helpers:from="this.jiraHelpers" show:u:sidebar:u:branding:from="this.showSidebarBranding" jql:to="this.jql" derived:u:issues:u:request:u:data:to="this.derivedIssuesRequestData" issue:u:timing:u:calculations:to="this.issueTimingCalculations" configuration:to="this.configuration" statuses:to="this.statuses" statuses:u:to:u:exclude:to="this.statusesToExclude" go:u:back:to="this.goBack" storage:from="this.storage">
+                                                                    <div class="px-3 py-2 h-full min-w-40">
+                                                                        <!--kt<{{#if(this.showSidebarBranding)}}>-->
+                                                                        <!--/kt<{{#if(this.showSidebarBranding)}}>-->
+                                                                        <!--kt<{{#not(this.showSettings)}}>-->
+                                                                        <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
+                                                                        <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50 w-full text-left" on:click="this.showSettings = 'SOURCES'">
+                                                                            <img src="/images/magnifying-glass.svg" class="inline  align-bottom">
+                                                                                <span class="pl-3">Sources</span>
+                                                                            </button>
+                                                                            <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left" on:click="this.showSettings = 'TIMING'">
+                                                                                <img src="/images/calendar.svg" class="inline  align-bottom">
+                                                                                    <span class="pl-3">Timing</span>
+                                                                                </button>
+                                                                                <h3 class="font-bold uppercase text-slate-300 text-xs pt-4 pb-1">Global Settings</h3>
+                                                                                <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left" on:click="this.showSettings = 'TEAMS'">
+                                                                                    <img src="/images/team.svg" class="inline align-bottom">
+                                                                                        <span class="pl-3">Teams</span>
+                                                                                    </button>
+                                                                                    <div class="fixed bottom-4 grid justify-items-center gap-2 p-1">
+                                                                                        <img class="pb-2" width="24px" src="./images/_QuestionCircleIcon_.svg">
+                                                                                            <a class="link text-slate-300 text-sm" target="_blank" href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">
+                Read the guide
+              </a>
+                                                                                            <a class="link text-slate-300 text-sm" target="_blank" href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira.html">
+                APM Training
+              </a>
+                                                                                            <a class="link text-slate-300 text-sm" target="_blank" href="https://www.bitovi.com/services/agile-project-management-consulting">
+                Connect with Bitovi
+              </a>
+                                                                                        </div>
+                                                                                        <!--/kt<{{#not(this.showSettings)}}>-->
+                                                                                        <div width="w-96" class="hidden">
+                                                                                            <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left" on:click="this.showSettings = ''">
+                                                                                                <img src="/images/go-back.svg" class="inline"> Go back
+                                                                                                </button>
+                                                                                                <h3 class="h3">Issue Source</h3>
+                                                                                                <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
+                                                                                                <p>
+                                                                                                    <!--kt<{{#if(this.isLoggedIn)}}>-->
+                                                                                                    <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled="">
+                                                                                                        <!--/kt<{{#if(this.isLoggedIn)}}>-->
+                                                                                                    </p>
+                                                                                                    <!--kt<{{#if(this.rawIssuesRequestData.issuesPromise.isRejected)}}>-->
+                                                                                                    <!--/kt<{{#if(this.rawIssuesRequestData.issuesPromise.isRejected)}}>-->
+                                                                                                    <div class="flex justify-between mt-1">
+                                                                                                        <p class="text-xs flex">
+                                                                                                            <input type="checkbox" class="self-start align-middle h-6 mr-0.5" checked:bind="this.loadChildren">
+                                                                                                                <div class="align-middle h-6" style="line-height: 26px">
+                            Load children. 
+                            
+                                                                                                                    <!--kt<{{#if(this.loadChildren)}}>-->
+                                                                                                                    <!--/kt<{{#if(this.loadChildren)}}>-->
+                                                                                                                </div>
+                                                                                                            </p>
+                                                                                                            <p class="text-xs" style="line-height: 26px;">
+                                                                                                                <!--kt<{{#if(this.rawIssuesRequestData.issuesPromise.isPending)}}>-->
+                                                                                                                <!--/kt<{{#if(this.rawIssuesRequestData.issuesPromise.isPending)}}>-->
+                                                                                                                <!--kt<{{#if(this.rawIssuesRequestData.issuesPromise.isResolved)}}>-->
+                        Loaded 53 issues
+                    
+                                                                                                                <!--/kt<{{#if(this.rawIssuesRequestData.issuesPromise.isResolved)}}>-->
+                                                                                                            </p>
+                                                                                                        </div>
+                                                                                                        <!--kt<{{#and(this.statuses, this.statuses.length)}}>-->
+                                                                                                        <h4 class="py-2 text-sm text-slate-300 font-bold">Statuses to exclude from all issue types</h4>
+                                                                                                        <status-filter statuses:from="this.statuses" param:raw="statusesToExclude" selected:u:statuses:bind="this.statusesToExclude" input:u:placeholder:raw="Search for statuses" style="max-width: 400px;">
+                                                                                                            <auto-complete data:from="this.statuses" selected:bind="this.selectedStatuses" input:u:placeholder:from="this.inputPlaceholder">
+                                                                                                                <div class="flex gap-2 align-middle flex-wrap">
+                                                                                                                    <!--Pc{{this.selected}}-->
+                                                                                                                    <!--/Pc{{this.selected}}-->
+                                                                                                                    <input class="form-border rounded-md px-1 placeholder:italic placeholder:text-slate-400" on:focus="this.suggestItems(scope.element.value)" on:input="this.suggestItems(scope.element.value)" placeholder="Search for statuses">
+                                                                                                                    </div>
+                                                                                                                </auto-complete>
+                                                                                                            </status-filter>
+                                                                                                            <!--/kt<{{#and(this.statuses, this.statuses.length)}}>-->
+                                                                                                        </div>
+                                                                                                        <div class="hidden">
+                                                                                                            <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left" on:click="this.showSettings = ''">
+                                                                                                                <img src="/images/go-back.svg" class="inline"> Go back
+                                                                                                                </button>
+                                                                                                                <timing-calculation jira:u:helpers:from="this.jiraHelpers" issue:u:timing:u:calculations:to="this.issueTimingCalculations">
+                                                                                                                    <h3 class="h3">Timing Calculation</h3>
+                                                                                                                    <div class="grid gap-2 my-2" style="grid-template-columns: auto auto auto;">
+                                                                                                                        <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">Parent Type</div>
+                                                                                                                        <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">Child Type</div>
+                                                                                                                        <div class="text-sm py-1 text-slate-600 font-semibold" style="grid-column: 3 / span 1; grid-row: 1 / span 1;">How is timing calculated between parent and child?</div>
+                                                                                                                        <div class="border-b-2 border-neutral-40" style="grid-column: 1 / span 3; grid-row: 1 / span 1;"></div>
+                                                                                                                        <!--Pc{{this.selectableTimingLevels}}-->
+                                                                                                                        <label class="pr-2 py-2 pl-0">Milestone</label>
+                                                                                                                        <span class="p-2">Initiative</span>
+                                                                                                                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" on:change="this.updateCalculation(timingLevel.type, scope.element.value)">
+                                                                                                                            <!--Pc{{timingLevel.calculations}}-->
+                                                                                                                            <option value="parentFirstThenChildren">From Milestone, then Initiatives</option>
+                                                                                                                            <option value="childrenOnly">From Initiatives</option>
+                                                                                                                            <option value="childrenFirstThenParent">From Initiatives, then Milestone</option>
+                                                                                                                            <option value="widestRange" selected="">From Milestone or Initiatives (earliest to latest)</option>
+                                                                                                                            <option value="parentOnly">From Milestone</option>
+                                                                                                                            <!--/Pc{{timingLevel.calculations}}-->
+                                                                                                                        </select>
+                                                                                                                        <label class="pr-2 py-2 pl-2">Initiative</label>
+                                                                                                                        <span class="p-2">Epic</span>
+                                                                                                                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" on:change="this.updateCalculation(timingLevel.type, scope.element.value)">
+                                                                                                                            <!--Pc{{timingLevel.calculations}}-->
+                                                                                                                            <option value="parentFirstThenChildren">From Initiative, then Epics</option>
+                                                                                                                            <option value="childrenOnly">From Epics</option>
+                                                                                                                            <option value="childrenFirstThenParent">From Epics, then Initiative</option>
+                                                                                                                            <option value="widestRange" selected="">From Initiative or Epics (earliest to latest)</option>
+                                                                                                                            <option value="parentOnly">From Initiative</option>
+                                                                                                                            <!--/Pc{{timingLevel.calculations}}-->
+                                                                                                                        </select>
+                                                                                                                        <label class="pr-2 py-2 pl-4">Epic</label>
+                                                                                                                        <span class="p-2">Story</span>
+                                                                                                                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" on:change="this.updateCalculation(timingLevel.type, scope.element.value)">
+                                                                                                                            <!--Pc{{timingLevel.calculations}}-->
+                                                                                                                            <option value="parentFirstThenChildren">From Epic, then Storys</option>
+                                                                                                                            <option value="childrenOnly">From Storys</option>
+                                                                                                                            <option value="childrenFirstThenParent">From Storys, then Epic</option>
+                                                                                                                            <option value="widestRange" selected="">From Epic or Storys (earliest to latest)</option>
+                                                                                                                            <option value="parentOnly">From Epic</option>
+                                                                                                                            <!--/Pc{{timingLevel.calculations}}-->
+                                                                                                                        </select>
+                                                                                                                        <!--/Pc{{this.selectableTimingLevels}}-->
+                                                                                                                    </div>
+                                                                                                                </timing-calculation>
+                                                                                                            </div>
+                                                                                                            <div class="hidden h-full">
+                                                                                                                <div id="team-configuration" class="h-full"></div>
+                                                                                                            </div>
+                                                                                                            <div class="hidden h-full">
+                                                                                                                <div id="view-reports" style="width:100vw;" class="h-full"></div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </timeline-configuration>
+                                                                                                    <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
+                                                                                                        <!--kt<{{#not(this.loginComponent.isLoggedIn)}}>-->
+                                                                                                        <div class="p-4 mb-4 drop-shadow-md hide-on-fullscreen bg-yellow-300">
+                                                                                                            <p>The following is a sample report. Learn more about it in the 
+              "
+                                                                                                                <a class="text-blue-400" href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html">Agile Program Management with Jira</a>" 
+              training. Click "Connect to Jira" to load your own data.
+                                                                                                            </p>
+                                                                                                            <p class="mt-2">Checkout the following sample reports:</p>
+                                                                                                            <ul class="list-disc list-inside ml-2">
+                                                                                                                <li>
+                                                                                                                    <a data-testid="release-status" class="text-blue-400" href="?primaryIssueType=Release&amp;hideUnknownInitiatives=true&amp;primaryReportType=due&amp;secondaryReportType=status">Release end dates with initiative status</a>
+                                                                                                                </li>
+                                                                                                                <li>
+                                                                                                                    <a data-testid="release-work-breakdown" class="text-blue-400" href="?primaryIssueType=Release&amp;hideUnknownInitiatives=true&amp;secondaryReportType=breakdown">Release timeline with initiative work breakdown</a>
+                                                                                                                </li>
+                                                                                                                <li>
+                                                                                                                    <a data-testid="initiative-work-breakdown" class="text-blue-400" href="?primaryIssueType=Initiative&amp;hideUnknownInitiatives=true&amp;primaryReportType=start-due&amp;primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a>
+                                                                                                                </li>
+                                                                                                            </ul>
+                                                                                                        </div>
+                                                                                                        <!--/kt<{{#not(this.loginComponent.isLoggedIn)}}>-->
+                                                                                                        <div id="saved-reports" class="pb-5">
+                                                                                                            <div class="bg-gray-200 animate-pulse rounded-sm  " style="width: 100%; height: 32px;"></div>
+                                                                                                        </div>
+                                                                                                        <div class="flex gap-1">
+                                                                                                            <select-issue-type primary:u:issue:u:type:to="this.primaryIssueType" secondary:u:issue:u:type:to="this.secondaryIssueType" derived:u:issues:from="this.derivedIssues" jira:u:helpers:from="this.jiraHelpers">
+                                                                                                                <label for="reportOn" class="block text-neutral-801 font-semibold text-xs pb-1">Report on</label>
+                                                                                                                <!--kt<{{#not(this.primaryIssueType)}}>-->
+                                                                                                                <!--/kt<{{#not(this.primaryIssueType)}}>-->
+                                                                                                                <!--kt<{{#if(this.primaryIssueType)}}>-->
+                                                                                                                <button class="rounded bg-neutral-201 px-3 py-1 hover:bg-neutral-301 cursor-pointer" on:click="this.showChildOptions()" id="reportOn">
+                Initiatives
+                
+                                                                                                                    <!--kt<{{#if(this.secondaryIssueType)}}>-->
+                                                                                                                    <!--/kt<{{#if(this.secondaryIssueType)}}>-->
+                                                                                                                    <img class="inline" src="/images/chevron-down.svg">
+                                                                                                                    </button>
+                                                                                                                    <!--/kt<{{#if(this.primaryIssueType)}}>-->
+                                                                                                                </select-issue-type>
+                                                                                                                <select-report-type primary:u:report:u:type:to="this.primaryReportType" jira:u:helpers:from="this.jiraHelpers">
+                                                                                                                    <label for="reportType" class="block text-neutral-801 font-semibold text-xs pb-1">Report type</label>
+                                                                                                                    <!--kt<{{#not(this.primaryReportType)}}>-->
+                                                                                                                    <!--/kt<{{#not(this.primaryReportType)}}>-->
+                                                                                                                    <!--kt<{{#if(this.primaryReportType)}}>-->
+                                                                                                                    <button class="rounded bg-neutral-201 px-3 py-1 hover:bg-neutral-301 cursor-pointer" id="reportType" on:click="this.showChildOptions()">Gantt Chart 
+                                                                                                                        <img class="inline" src="/images/chevron-down.svg">
+                                                                                                                        </button>
+                                                                                                                        <!--/kt<{{#if(this.primaryReportType)}}>-->
+                                                                                                                    </select-report-type>
+                                                                                                                    <compare-slider class="flex-grow" compare:u:to:u:time:to="compareToTime">
+                                                                                                                        <label for="compareValue" class="block text-neutral-801 font-semibold text-xs pb-1">Compare to 15 days ago</label>
+                                                                                                                        <input class="w-full-border-box h-8" id="compareValue" type="range" valueasnumber:bind:on:input="this.timeSliderValue" min="0" max="100">
+                                                                                                                        </compare-slider>
+                                                                                                                        <select-view-settings jira:u:helpers:from="this.jiraHelpers" statuses:u:to:u:remove:to="this.statusesToRemove" statuses:u:to:u:show:to="this.statusesToShow" show:u:only:u:semver:u:releases:to="this.showOnlySemverReleases" secondary:u:report:u:type:to="this.secondaryReportType" hide:u:unknown:u:initiatives:to="this.hideUnknownInitiatives" sort:u:by:u:due:u:date:to="this.sortByDueDate" show:u:percent:u:complete:to="this.showPercentComplete" planning:u:statuses:to="this.planningStatuses" group:u:by:to="this.groupBy" releases:u:to:u:show:to="this.releasesToShow" primary:u:report:u:breakdown:to="this.primaryReportBreakdown" primary:u:report:u:type:from="this.primaryReportType" primary:u:issue:u:type:from="this.primaryIssueType" secondary:u:issue:u:type:from="this.secondaryIssueType" statuses:from="this.statuses" derived:u:issues:from="this.derivedIssues" is:u:logged:u:in:from="this.loginComponent.isLoggedIn">
+                                                                                                                            <label for="viewSettings" class="block text-neutral-801 font-semibold text-xs pb-1 invisible hidden">View settings</label>
+                                                                                                                            <button id="viewSettings" on:click="this.showChildOptions()" class="rounded bg-neutral-201 px-3 py-1 hover:bg-neutral-301 cursor-pointer hidden">View Settings 
+                                                                                                                                <img class="inline" src="/images/chevron-down.svg">
+                                                                                                                                </button>
+                                                                                                                            </select-view-settings>
+                                                                                                                        </div>
+                                                                                                                        <!--kt<{{#and( not(this.jql), this.loginComponent.isLoggedIn}}>-->
+                                                                                                                        <!--/kt<{{#and( not(this.jql), this.loginComponent.isLoggedIn}}>-->
+                                                                                                                        <!--kt<{{#and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length)}}>-->
+                                                                                                                        <div class="my-2   border-box block overflow-y-auto color-bg-white">
+                                                                                                                            <!--kt<{{#eq(this.primaryReportType, "start-due")}}>-->
+                                                                                                                            <gantt-grid primary:u:issues:u:or:u:releases:from="this.primaryIssuesOrReleases" all:u:issues:u:or:u:releases:from="this.rolledupAndRolledBackIssuesAndReleases" breakdown:from="this.primaryReportBreakdown" show:u:percent:u:complete:from="this.showPercentComplete" group:u:by:from="this.groupBy" primary:u:issue:u:type:from="this.primaryIssueType" all:u:derived:u:issues:from="this.derivedIssues">
+                                                                                                                                <div class="p-2 mb-10" style="display: grid; grid-template-columns: auto auto repeat(6, [col] 1fr); grid-template-rows: repeat(12, auto);">
+                                                                                                                                    <div></div>
+                                                                                                                                    <div></div>
+                                                                                                                                    <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                    <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                    <!--Pc{{this.quartersAndMonths.quarters}}-->
+                                                                                                                                    <div style="grid-column: span 3" class="text-center">Q1</div>
+                                                                                                                                    <div style="grid-column: span 3" class="text-center">Q2</div>
+                                                                                                                                    <!--/Pc{{this.quartersAndMonths.quarters}}-->
+                                                                                                                                    <div></div>
+                                                                                                                                    <div></div>
+                                                                                                                                    <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                    <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                    <!--Pc{{this.quartersAndMonths.months}}-->
+                                                                                                                                    <div class="border-b border-neutral-80 text-center">Jan</div>
+                                                                                                                                    <div class="border-b border-neutral-80 text-center">Feb</div>
+                                                                                                                                    <div class="border-b border-neutral-80 text-center">Mar</div>
+                                                                                                                                    <div class="border-b border-neutral-80 text-center">Apr</div>
+                                                                                                                                    <div class="border-b border-neutral-80 text-center">May</div>
+                                                                                                                                    <div class="border-b border-neutral-80 text-center">Jun</div>
+                                                                                                                                    <!--/Pc{{this.quartersAndMonths.months}}-->
+                                                                                                                                    <!-- CURRENT TIME BOX -->
+                                                                                                                                    <div style="grid-area: 3 / 3 / span 12 / span 6;">
+                                                                                                                                        <div class="today" style="margin-left: 2.60298%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
+                                                                                                                                    </div>
+                                                                                                                                    <!-- VERTICAL COLUMNS -->
+                                                                                                                                    <!--Pc{{this.quartersAndMonths.months}}-->
+                                                                                                                                    <div style="grid-area: 3 / 3 / span 12; z-index: 10;" class="border-l border-b border-neutral-80 "></div>
+                                                                                                                                    <div style="grid-area: 3 / 4 / span 12; z-index: 10;" class="border-l border-b border-neutral-80 "></div>
+                                                                                                                                    <div style="grid-area: 3 / 5 / span 12; z-index: 10;" class="border-l border-b border-neutral-80 "></div>
+                                                                                                                                    <div style="grid-area: 3 / 6 / span 12; z-index: 10;" class="border-l border-b border-neutral-80 "></div>
+                                                                                                                                    <div style="grid-area: 3 / 7 / span 12; z-index: 10;" class="border-l border-b border-neutral-80 "></div>
+                                                                                                                                    <div style="grid-area: 3 / 8 / span 12; z-index: 10;" class="border-l border-b border-neutral-80 border-r-solid-1px-slate-900"></div>
+                                                                                                                                    <!--/Pc{{this.quartersAndMonths.months}}-->
+                                                                                                                                    <!-- Each of the issues -->
+                                                                                                                                    <!--Pc{{this.gridRowData}}-->
+                                                                                                                                    <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                    <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                        <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                        <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                        <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                            <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                            <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                        </div>
+                                                                                                                                        <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Favorite sharing
+                    </div>
+                                                                                                                                        <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                        <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                        <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                        <div class="" style="grid-area: 3 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                        <div class="" style="grid-area: 3 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                            <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                <div class=""></div>
+                                                                                                                                            </div>
+                                                                                                                                            <div class="my-2 h-4 color-text-and-bg-behind rounded-r" style="width: 7.18232%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                        </div>
+                                                                                                                                        <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                        <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                        <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                        <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                        <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                        <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                            <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                            <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                            <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                            </div>
+                                                                                                                                            <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Internationalization
+                    </div>
+                                                                                                                                            <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                            <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                            <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                            <div class="bg-neutral-20" style="grid-area: 4 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                            <div class="" style="grid-area: 4 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                    <div class="bg-neutral-41 blur-xs rounded-r h-6" style="background-clip: content-box; position: relative; width: 7.18232%; margin-left: max(0%, 1px);"></div>
+                                                                                                                                                </div>
+                                                                                                                                                <div class="my-2 h-4 color-text-and-bg-behind rounded-r" style="width: 13.2597%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                            </div>
+                                                                                                                                            <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                            <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                            <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                            <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                            <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                            <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                    <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                    <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                </div>
+                                                                                                                                                <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Pets corner
+                    </div>
+                                                                                                                                                <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                <div class="" style="grid-area: 5 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                <div class="" style="grid-area: 5 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                    <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                        <div class=""></div>
+                                                                                                                                                    </div>
+                                                                                                                                                    <div class="my-2 h-4 color-text-and-bg-behind rounded-r" style="width: 23.2044%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                </div>
+                                                                                                                                                <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                    <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                    <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                    <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                        <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                        <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                    </div>
+                                                                                                                                                    <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Pet Photo Sharing
+                    </div>
+                                                                                                                                                    <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                    <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                    <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                    <div class="bg-neutral-20" style="grid-area: 6 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                    <div class="" style="grid-area: 6 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                        <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                            <div class=""></div>
+                                                                                                                                                        </div>
+                                                                                                                                                        <div class="my-2 h-4 color-text-and-bg-ontrack rounded-r" style="width: 33.7017%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                    </div>
+                                                                                                                                                    <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                    <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                    <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                    <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                    <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                    <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                        <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                        <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                        <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                            <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                            <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                        </div>
+                                                                                                                                                        <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right color-text-complete truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Order Playback 
+                    </div>
+                                                                                                                                                        <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                        <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                        <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                        <div class="" style="grid-area: 7 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                        <div class="" style="grid-area: 7 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                            <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                                <div class=""></div>
+                                                                                                                                                            </div>
+                                                                                                                                                            <div class="my-2 h-4 color-text-and-bg-complete rounded-r" style="width: 2.20994%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                        </div>
+                                                                                                                                                        <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                        <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                        <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                        <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                        <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                        <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                            <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                            <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                            <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                                <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                            </div>
+                                                                                                                                                            <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Customer Events
+                    </div>
+                                                                                                                                                            <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                            <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                            <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                            <div class="bg-neutral-20" style="grid-area: 8 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                            <div class="" style="grid-area: 8 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                                <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                                    <div class=""></div>
+                                                                                                                                                                </div>
+                                                                                                                                                                <div class="my-2 h-4 color-text-and-bg-ontrack rounded-r" style="width: 17.1271%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                            </div>
+                                                                                                                                                            <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                            <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                            <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                            <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                            <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                            <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                                <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                                    <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                    <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                </div>
+                                                                                                                                                                <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Social sharing
+                    </div>
+                                                                                                                                                                <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                                <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                                <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                <div class="" style="grid-area: 9 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                                <div class="" style="grid-area: 9 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                                    <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                                        <div class=""></div>
+                                                                                                                                                                    </div>
+                                                                                                                                                                    <div class="my-2 h-4 color-text-and-bg-ontrack rounded-r" style="width: 15.4696%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                                </div>
+                                                                                                                                                                <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                                    <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                    <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                    <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                                        <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                        <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                    </div>
+                                                                                                                                                                    <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Customer Reviews
+                    </div>
+                                                                                                                                                                    <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                                    <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                                    <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                    <div class="bg-neutral-20" style="grid-area: 10 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                                    <div class="" style="grid-area: 10 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                                        <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                                            <div class=""></div>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        <div class="my-2 h-4 color-text-and-bg-ontrack rounded-r" style="width: 40.884%; margin-left: max(0%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                                    </div>
+                                                                                                                                                                    <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                    <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                    <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                    <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                    <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                    <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                                        <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                        <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                        <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                                            <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                            <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                        </div>
+                                                                                                                                                                        <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Live chat support
+                    </div>
+                                                                                                                                                                        <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                                        <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                                        <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                        <div class="" style="grid-area: 11 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                                        <div class="" style="grid-area: 11 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                                            <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                                                <div class=""></div>
+                                                                                                                                                                            </div>
+                                                                                                                                                                            <div class="my-2 h-4 color-text-and-bg-notstarted rounded" style="width: 32.0442%; margin-left: max(5.52486%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                        <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                        <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                        <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                        <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                        <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                                            <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                            <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                            <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                                                <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                                <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                            </div>
+                                                                                                                                                                            <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Track your order maps
+                    </div>
+                                                                                                                                                                            <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                                            <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                                            <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                            <div class="bg-neutral-20" style="grid-area: 12 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                                            <div class="" style="grid-area: 12 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                                                <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                                                    <div class=""></div>
+                                                                                                                                                                                </div>
+                                                                                                                                                                                <div class="my-2 h-4 color-text-and-bg-notstarted rounded" style="width: 17.1271%; margin-left: max(11.6022%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                                            </div>
+                                                                                                                                                                            <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                            <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                            <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                            <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                            <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                            <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                                                <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                                <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                                <img class="hidden" src="/images/chevron-right-new.svg">
+                                                                                                                                                                                    <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                                    <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                                </div>
+                                                                                                                                                                                <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        1-click checkout
+                    </div>
+                                                                                                                                                                                <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                                                <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                                                <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                                <div class="" style="grid-area: 13 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                                                <div class="" style="grid-area: 13 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                                                    <div class="py-1" style="position: absolute; inset: 0px;">
+                                                                                                                                                                                        <div class=""></div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                    <div class="my-2 h-4 color-text-and-bg-behind rounded" style="width: 23.2044%; margin-left: max(31.4917%, 1px); z-index: 30; position: relative;"></div>
+                                                                                                                                                                                </div>
+                                                                                                                                                                                <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                                <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                                <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                                <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                                <!--kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                                <div on:click="this.toggleShowingChildren(data.issue)" class="pl-0">
+                                                                                                                                                                                    <!--kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                                    <!--kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                                    <!--/kt<{{#if(data.issue.reportingHierarchy.childKeys.length)}}>-->
+                                                                                                                                                                                    <!--/kt<{{#if(data.isShowingChildren)}}>-->
+                                                                                                                                                                                </div>
+                                                                                                                                                                                <div on:click="this.showTooltip(scope.event,data.issue)" class="pointer border-y-solid-1px-white text-right  truncate max-w-96 pt-1 pb-0.5 px-1">
+                        Upselling
+                    </div>
+                                                                                                                                                                                <!--Pc{{this.columnsToShow}}-->
+                                                                                                                                                                                <!--/Pc{{this.columnsToShow}}-->
+                                                                                                                                                                                <!--Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                                <div class="bg-neutral-20" style="grid-area: 14 / 3 / auto / span 6; z-index: 0;"></div>
+                                                                                                                                                                                <div class="" style="grid-area: 14 / 3 / auto / span 6; position: relative; z-index: 20;">
+                                                                                                                                                                                    <div class="py-1" style="position: absolute; inset: 0px;"></div>
+                                                                                                                                                                                    <div class="p-2">
+                                                                                                                                                                                        <div class="color-text-and-bg-unknown w-4 h-4 text-xs" style="z-index: 30; position: relative; border-radius: 50%; display: flex; align-items: center; justify-content: center;">∅</div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                </div>
+                                                                                                                                                                                <!--/Lo<{{this.getReleaseTimeline(data.issue,scope.index)}}>-->
+                                                                                                                                                                                <!--/kt<{{#eq(data.type, "issue")}}>-->
+                                                                                                                                                                                <!--kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                                <!--/kt<{{#eq(data.type, "parent")}}>-->
+                                                                                                                                                                                <!--/Pc{{this.gridRowData}}-->
+                                                                                                                                                                            </div>
+                                                                                                                                                                        </gantt-grid>
+                                                                                                                                                                        <!--/kt<{{#eq(this.primaryReportType, "start-due")}}>-->
+                                                                                                                                                                        <!--kt<{{#eq(this.primaryReportType, "due")}}>-->
+                                                                                                                                                                        <!--/kt<{{#eq(this.primaryReportType, "due")}}>-->
+                                                                                                                                                                        <!--kt<{{#eq(this.primaryReportType, "table")}}>-->
+                                                                                                                                                                        <!--/kt<{{#eq(this.primaryReportType, "table")}}>-->
+                                                                                                                                                                        <!--kt<{{#eq(this.primaryReportType, "group-grid")}}>-->
+                                                                                                                                                                        <!--/kt<{{#eq(this.primaryReportType, "group-grid")}}>-->
+                                                                                                                                                                        <!--kt<{{#or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") )}}>-->
+                                                                                                                                                                        <!--/kt<{{#or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") )}}>-->
+                                                                                                                                                                        <div class="p-2">
+                                                                                                                                                                            <span class="color-text-and-bg-unknown p-2 inline-block">Unknown</span>
+                                                                                                                                                                            <span class="color-text-and-bg-new p-2 inline-block">New</span>
+                                                                                                                                                                            <span class="color-text-and-bg-notstarted p-2 inline-block">Not Started</span>
+                                                                                                                                                                            <span class="color-text-and-bg-ontrack p-2 inline-block">On Track</span>
+                                                                                                                                                                            <span class="color-text-and-bg-ahead p-2 inline-block">Ahead</span>
+                                                                                                                                                                            <span class="color-text-and-bg-behind p-2 inline-block">Behind</span>
+                                                                                                                                                                            <span class="color-text-and-bg-warning p-2 inline-block">Warning</span>
+                                                                                                                                                                            <span class="color-text-and-bg-blocked p-2 inline-block">Blocked</span>
+                                                                                                                                                                            <span class="color-text-and-bg-complete p-2 inline-block">Complete</span>
+                                                                                                                                                                        </div>
+                                                                                                                                                                    </div>
+                                                                                                                                                                    <!--/kt<{{#and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length)}}>-->
+                                                                                                                                                                    <!--kt<{{#and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) )}}>-->
+                                                                                                                                                                    <!--/kt<{{#and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) )}}>-->
+                                                                                                                                                                    <!--kt<{{#and(this.jql, this.derivedIssuesRequestData.issuesPromise.isPending)}}>-->
+                                                                                                                                                                    <!--/kt<{{#and(this.jql, this.derivedIssuesRequestData.issuesPromise.isPending)}}>-->
+                                                                                                                                                                    <!--kt<{{#if(this.derivedIssuesRequestData.issuesPromise.isRejected)}}>-->
+                                                                                                                                                                    <!--/kt<{{#if(this.derivedIssuesRequestData.issuesPromise.isRejected)}}>-->
+                                                                                                                                                                </div>
+                                                                                                                                                            </div>
+                                                                                                                                                        </timeline-report>
+                                                                                                                                                        <div class="atlaskit-portal-container" style="display: flex;">
+                                                                                                                                                            <div class="atlaskit-portal" style="z-index: 600;">
+                                                                                                                                                                <div class="css-1xdxiey"></div>
+                                                                                                                                                            </div>
+                                                                                                                                                        </div>
+                                                                                                                                                    </body>
+                                                                                                                                                </html>
