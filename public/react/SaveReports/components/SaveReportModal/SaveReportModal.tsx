@@ -59,7 +59,6 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
       {isOpen && (
         <Modal onClose={closeModal}>
           <form
-          style={{border: '1px solid red'}}
             onSubmit={(event) => {
               event.preventDefault();
 
