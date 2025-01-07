@@ -5,7 +5,9 @@ test.describe("Sample reports navigation", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/");
       console.log('dom goes here', await page.content());
-      await page.getByTestId("release-status").click();
+      const releaseLink = page.getByTestId("release-end-dates")
+      await releaseLink.waitFor()
+      await releaseLink.click();
     });
 
     test("URL contains primaryIssueType=Release", async ({ page }) => {
