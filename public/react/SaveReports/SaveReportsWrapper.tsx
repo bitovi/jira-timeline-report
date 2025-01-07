@@ -47,5 +47,7 @@ const SaveReportError: FC = () => {
 };
 
 const SaveReportSkeleton: FC = () => {
-  return <Skeleton height="32px" />;
+  return <div style={{border: '1px solid red'}}>
+  <Skeleton height="32px" />;
+  </div>
 };
