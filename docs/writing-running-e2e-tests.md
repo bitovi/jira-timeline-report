@@ -61,5 +61,3 @@ To write unit tests using Playwright, follow these guidelines:
    ```
 
 For more detailed information, refer to the [Playwright documentation](https://playwright.dev/docs/intro).
-
-6. Using Allure Reporter
