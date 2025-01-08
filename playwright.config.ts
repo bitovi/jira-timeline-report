@@ -22,7 +22,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [["html", { outputFolder: "./playwright/report" }]],
+  reporter: [["allure-playwright", { resultsDir: "./playwright/report" }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -42,8 +42,8 @@ export default defineConfig({
     //   use: { ...devices["Desktop Firefox"] },
     // },
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
     // {
     //   name: 'webkit',

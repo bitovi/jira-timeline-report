@@ -40,4 +40,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: e2e-videos
-          path: playwright/**/*.webm
+          path: playwright/report
+# TODO - set line 35 back to sudo
