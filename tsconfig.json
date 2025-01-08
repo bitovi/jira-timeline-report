@@ -30,7 +30,7 @@
   "include": [
     "public/**/*.ts",
     "public/**/*.tsx"
- ],
+  ],
   "exclude": [
     "node_modules",
     "public/dist",
