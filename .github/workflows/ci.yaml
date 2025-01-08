@@ -11,7 +11,7 @@ jobs:
   unit-test:
     name: Run Tests
     runs-on: ubuntu-latest
-    if: github.event_name = 'pull_request'
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,7 +24,7 @@ jobs:
   e2e-test:
     name: Run E2E Tests
     runs-on: ubuntu-latest
-    if: github.event_name = 'pull_request'
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
