@@ -31,6 +31,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm ci
+          npm run build
           npx playwright install
           sudo npx playwright install-deps
       - name: Run E2E Tests
