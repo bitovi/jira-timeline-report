@@ -100,3 +100,7 @@ npm run create:atlassian-connect -- --environment=local --name=<your-name-here> 
 ```js
 const issue = await jiraHelper.jiraFetch(urlPath);
 ```
+
+### Additional Docs
+
+[Writing and running E2E Tests](./docs/writing-running-e2e-tests.md)
