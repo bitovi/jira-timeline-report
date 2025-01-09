@@ -29,6 +29,7 @@ import { get, set } from "react-hook-form";
 
 export class TimelineReport extends StacheElement {
   static view = `<div class="flex">
+    {{#if(showingConfiguration)}}
         <timeline-configuration
           class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" 
           style="overflow-y: auto"
@@ -41,7 +42,7 @@ export class TimelineReport extends StacheElement {
           storage:from="this.storage"
           
           ></timeline-configuration>
-
+    {{/if}}
       <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
@@ -195,7 +196,9 @@ export class TimelineReport extends StacheElement {
     // default params
     defaultSearch: type.Any,
 
-    showingConfiguration: false,
+    get showingConfiguration() {
+      return this.loginComponent.isLoggedIn;
+    },
 
     get issuesPromise() {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
