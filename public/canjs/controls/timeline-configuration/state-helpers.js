@@ -33,11 +33,11 @@ export function rawIssuesRequestData(
   { jql, childJQL, isLoggedIn, loadChildren, jiraHelpers, fields },
   { listenTo, resolve }
 ) {
+  
   const progressData = value.with(null);
 
   const promise = value.returnedBy(function rawIssuesPromise() {
     progressData.value = null;
-
     return getRawIssues(
       {
         isLoggedIn: isLoggedIn.value,
@@ -97,6 +97,7 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
      * @returns
      */
     ([serverInfo]) => {
+      
       const { getVelocity, getParallelWorkLimit, ...otherNormalizeParams } = normalizeOptions ?? {};
       return {
         getUrl({ key }) {
@@ -141,7 +142,6 @@ export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPr
     if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
       return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
         ([rawIssues, configuration]) => {
-          console.log("Normalizing and Deriving", { rawIssues });
           return rawIssues.map((issue) => {
             const normalized = normalizeIssue(issue, configuration);
             const derived = deriveIssue(normalized, configuration);

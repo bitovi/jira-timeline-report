@@ -1,5 +1,7 @@
 import { StacheElement, type } from "./can.js";
 
+import routeData from "./canjs/routing/route-data.js"
+
 import "./canjs/controls/status-filter.js";
 import "./canjs/controls/compare-slider.js";
 import "./canjs/reports/gantt-grid.js";
@@ -33,13 +35,8 @@ export class TimelineReport extends StacheElement {
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
           showSidebarBranding:from="this.showSidebarBranding"
-
-          jql:to="this.jql"
-          derivedIssuesRequestData:to="this.derivedIssuesRequestData"
           issueTimingCalculations:to="this.issueTimingCalculations"
-          configuration:to="this.configuration"
           statuses:to="this.statuses"
-          statusesToExclude:to="this.statusesToExclude"
           goBack:to="this.goBack"
           storage:from="this.storage"
           
@@ -67,7 +64,7 @@ export class TimelineReport extends StacheElement {
             <select-issue-type 
               primaryIssueType:to="this.primaryIssueType"
               secondaryIssueType:to="this.secondaryIssueType"
-              derivedIssues:from="this.derivedIssues"
+              derivedIssues:from="this.routeData.derivedIssues"
               jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
             <select-report-type 
@@ -95,7 +92,7 @@ export class TimelineReport extends StacheElement {
               primaryIssueType:from="this.primaryIssueType"
               secondaryIssueType:from="this.secondaryIssueType"
               statuses:from="this.statuses"
-              derivedIssues:from="this.derivedIssues"
+              derivedIssues:from="this.routeData.derivedIssues"
               isLoggedIn:from="this.loginComponent.isLoggedIn"
               ></select-view-settings>
           </div>
@@ -103,11 +100,11 @@ export class TimelineReport extends StacheElement {
           
 
 
-          {{# and( not(this.jql), this.loginComponent.isLoggedIn  }}
+          {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
             <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
           {{ /and }}
 
-          {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
+          {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
             <div class="my-2   border-box block overflow-y-auto color-bg-white">
             
               {{# eq(this.primaryReportType, "start-due")  }}
@@ -118,7 +115,7 @@ export class TimelineReport extends StacheElement {
                     showPercentComplete:from="this.showPercentComplete"
                     groupBy:from="this.groupBy"
                     primaryIssueType:from="this.primaryIssueType"
-                    allDerivedIssues:from="this.derivedIssues"
+                    allDerivedIssues:from="this.routeData.derivedIssues"
                     ></gantt-grid>
               {{/ eq }}
               {{# eq(this.primaryReportType, "due") }}
@@ -158,24 +155,24 @@ export class TimelineReport extends StacheElement {
               </div>
             </div>
           {{/ and }}
-          {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
+          {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
               <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.primaryIssueType}}.</p>
               <p>Please check your JQL and the View Settings.</p>
             </div>
           {{/}}
-          {{# and(this.jql, this.derivedIssuesRequestData.issuesPromise.isPending) }}
+          {{# and(this.routeData.jql, this.routeData.derivedIssuesRequestData.issuesPromise.isPending) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
               <p>Loading ...<p>
-              {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
-                <p>Loaded {{this.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
+              {{# if(this.routeData.derivedIssuesRequestData.progressData.issuesRequested)}}
+                <p>Loaded {{this.routeData.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.routeData.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
               {{/ }}
             </div>
           {{/ and }}
-          {{# if(this.derivedIssuesRequestData.issuesPromise.isRejected) }}
+          {{# if(this.routeData.derivedIssuesRequestData.issuesPromise.isRejected) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
               <p>There was an error loading from Jira!</p>
-              <p>Error message: {{this.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
+              <p>Error message: {{this.routeData.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
               <p>Please check your JQL is correct!</p>
             </div>
           {{/ if }}
@@ -183,6 +180,12 @@ export class TimelineReport extends StacheElement {
       </div>
   `;
   static props = {
+    routeData: {
+      get default(){
+        return routeData;
+      }
+    },
+
     // passed values
     timingCalculationMethods: type.Any,
     storage: null,
@@ -195,32 +198,17 @@ export class TimelineReport extends StacheElement {
     showingConfiguration: false,
 
     get issuesPromise() {
-      return this.derivedIssuesRequestData?.issuesPromise;
+      return this.routeData.derivedIssuesRequestData?.issuesPromise;
     },
-    derivedIssues: {
-      // this can't use async b/c we need the value to turn to undefined
-      value({ listenTo, resolve }) {
-        const resolveValueFromPromise = () => {
-          resolve(undefined);
-          if (this.derivedIssuesRequestData?.issuesPromise) {
-            this.derivedIssuesRequestData.issuesPromise.then(resolve);
-          }
-        };
-        listenTo("derivedIssuesRequestData", resolveValueFromPromise);
-        resolveValueFromPromise();
-      } /*,
-      async(resolve) {
-        this.derivedIssuesRequestData?.issuesPromise.then(resolve);
-      },*/,
-    },
+    
     get filteredDerivedIssues() {
-      if (this.derivedIssues) {
-        if (this.statusesToExclude?.length) {
-          return this.derivedIssues.filter(
-            ({ status }) => !this.statusesToExclude.includes(status)
+      if (this.routeData.derivedIssues) {
+        if (this.routeData.statusesToExclude?.length) {
+          return this.routeData.derivedIssues.filter(
+            ({ status }) => !this.routeData.statusesToExclude.includes(status)
           );
         } else {
-          return this.derivedIssues;
+          return this.routeData.derivedIssues;
         }
       }
     },
@@ -245,7 +233,7 @@ export class TimelineReport extends StacheElement {
 
   showReports(event) {
     event?.stopPropagation?.();
-    document.querySelector("timeline-configuration").showSettings = "REPORTS";
+    routeData.showSettings = "REPORTS";
   }
 
   get rollupTimingLevelsAndCalculations() {
@@ -281,14 +269,14 @@ export class TimelineReport extends StacheElement {
     if (
       !this.filteredDerivedIssues ||
       !this.rollupTimingLevelsAndCalculations ||
-      !this.configuration
+      !this.routeData.normalizeOptions
     ) {
       return [];
     }
 
     const rolledUp = rollupAndRollback(
       this.filteredDerivedIssues,
-      this.configuration,
+      this.routeData.normalizeOptions,
       this.rollupTimingLevelsAndCalculations,
       new Date(new Date().getTime() - this.compareToTime.timePrior)
     );
