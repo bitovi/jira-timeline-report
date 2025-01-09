@@ -30,8 +30,7 @@ import { get, set } from "react-hook-form";
 export class TimelineReport extends StacheElement {
   static view = `<div class="flex">
         <timeline-configuration
-          class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" 
-          style="overflow-y: auto"
+          class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
           showSidebarBranding:from="this.showSidebarBranding"
@@ -42,7 +41,7 @@ export class TimelineReport extends StacheElement {
           
           ></timeline-configuration>
 
-      <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
+      <div class=" fullish-vh pt-4 pl-4 pr-4 overflow-auto flex flex-col" on:click="this.goBack()">
 
         {{# not(this.loginComponent.isLoggedIn) }}
 
