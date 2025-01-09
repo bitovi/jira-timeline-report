@@ -3,8 +3,8 @@
 Clone the application into your local machine and install node modules.
 
 ```sh
-git clone https://github.com/bitovi/jira-integrations.git
-cd jira-integrations
+git clone https://github.com/bitovi/jira-timeline-report.git
+cd jira-timeline-report
 npm i
 ```
 
@@ -100,3 +100,7 @@ npm run create:atlassian-connect -- --environment=local --name=<your-name-here> 
 ```js
 const issue = await jiraHelper.jiraFetch(urlPath);
 ```
+
+### Additional Docs
+
+[Writing and running E2E Tests](./docs/writing-running-e2e-tests.md)
