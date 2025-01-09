@@ -40,7 +40,6 @@ class RouteData extends ObservableObject {
 
         // passed values
         jiraHelpers: null,
-        jiraHelpers: null,
         isLoggedInObservable: null,
 
         // static requests
