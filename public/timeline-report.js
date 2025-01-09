@@ -1,6 +1,6 @@
 import { StacheElement, type } from "./can.js";
 
-import routeData from "./canjs/routing/route-data.js"
+import routeData from "./canjs/routing/route-data.js";
 
 import "./canjs/controls/status-filter.js";
 import "./canjs/controls/compare-slider.js";
@@ -181,9 +181,9 @@ export class TimelineReport extends StacheElement {
   `;
   static props = {
     routeData: {
-      get default(){
+      get default() {
         return routeData;
-      }
+      },
     },
 
     // passed values
@@ -200,7 +200,7 @@ export class TimelineReport extends StacheElement {
     get issuesPromise() {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
     },
-    
+
     get filteredDerivedIssues() {
       if (this.routeData.derivedIssues) {
         if (this.routeData.statusesToExclude?.length) {
@@ -224,6 +224,7 @@ export class TimelineReport extends StacheElement {
       createElement(SavedReports, {
         queryParamObservable: pushStateObservable,
         storage: this.storage,
+        shouldShowReportsObservable: this.routeData.isLoggedInObservable,
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);
         },

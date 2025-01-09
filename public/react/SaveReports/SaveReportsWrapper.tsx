@@ -3,23 +3,35 @@ import type { AppStorage } from "../../jira/storage/common";
 import type { CanObservable } from "../hooks/useCanObservable";
 
 import React, { Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
 import SectionMessage from "@atlaskit/section-message";
 import { FlagsProvider } from "@atlaskit/flag";
 
-import { StorageProvider } from "../services/storage";
 import Skeleton from "../components/Skeleton";
 import SaveReports from "./SaveReports";
+import { StorageProvider } from "../services/storage";
 import { queryClient } from "../services/query";
+import { useCanObservable } from "../hooks/useCanObservable";
 
 interface SaveReportsWrapperProps {
   storage: AppStorage;
   onViewReportsButtonClicked: () => void;
   queryParamObservable: CanObservable<string>;
+  shouldShowReportsObservable: CanObservable<boolean>;
 }
 
-const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({ storage, ...saveReportProps }) => {
+const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({
+  storage,
+  shouldShowReportsObservable,
+  ...saveReportProps
+}) => {
+  const shouldShowReports = useCanObservable(shouldShowReportsObservable);
+
+  if (!shouldShowReports) {
+    return null;
+  }
+
   return (
     <StorageProvider storage={storage}>
       <ErrorBoundary fallback={<SaveReportError />}>
