@@ -20,3 +20,25 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test
+  e2e-test:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Dependencies
+        run: |
+          npm ci
+          npx playwright install
+          sudo npx playwright install-deps
+          npm run build
+      - name: Run E2E Tests
+        run: npm run test:e2e
+      - name: Save Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-videos
+          path: playwright/report

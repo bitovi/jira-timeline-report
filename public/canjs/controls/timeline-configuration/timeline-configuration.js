@@ -7,11 +7,10 @@ import {
   queues,
 } from "../../../can.js";
 
-import {
-  saveJSONToUrl,
-  updateUrlParam,
-  makeArrayOfStringsQueryParamValue,
-} from "../../routing/state-storage.js";
+import routeData from "../../routing/route-data.js";
+
+
+
 import { getSimplifiedIssueHierarchy } from "../../../stateful-data/jira-data-requests.js";
 
 import { createRoot } from "react-dom/client";
@@ -27,31 +26,21 @@ import {
 import { createNormalizeConfiguration } from "../../../react/Configure/components/Teams/shared/normalize";
 //import { getTeamData } from "../stateful-data/jira-data-requests.js";
 
-import {
-  rawIssuesRequestData,
-  configurationPromise,
-  derivedIssuesRequestData,
-  serverInfoPromise,
-} from "./state-helpers.js";
+
 
 import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 import "./timing-calculation/timing-calculation.js";
 
-const booleanParsing = {
-  parse: (x) => {
-    return { "": true, true: true, false: false }[x];
-  },
-  stringify: (x) => "" + x,
-};
+
 
 const selectStyle =
   "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
 
 const GOBACK_BUTTON = `
   <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left"
-    on:click="this.showSettings = ''">
+    on:click="this.routeData.showSettings = ''">
     <img src="/images/go-back.svg" class="inline"/> Go back</button>
 `;
 
@@ -79,23 +68,23 @@ export class TimelineConfiguration extends StacheElement {
           </div>
         {{/ if}}
 
-        {{# not(this.showSettings) }}
+        {{# not(this.routeData.showSettings) }}
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
         
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50 w-full text-left"
-                on:click="this.showSettings = 'SOURCES'"
+                on:click="this.routeData.showSettings = 'SOURCES'"
                 >
                     <img src="/images/magnifying-glass.svg" class="inline  align-bottom"/> 
                     <span class="pl-3">Sources</span></button>
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left"
-                on:click="this.showSettings = 'TIMING'">
+                on:click="this.routeData.showSettings = 'TIMING'">
                 <img src="/images/calendar.svg" class="inline  align-bottom"/>
                 <span class="pl-3">Timing</span></button>
 
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-4 pb-1">Global Settings</h3>
 
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left"
-                on:click="this.showSettings = 'TEAMS'">
+                on:click="this.routeData.showSettings = 'TEAMS'">
                     <img src="/images/team.svg" class="inline align-bottom"/> 
                     <span class="pl-3">Teams</span>
             </button>
@@ -120,22 +109,22 @@ export class TimelineConfiguration extends StacheElement {
             </div>
         {{/ not }}
         
-        <div width="w-96"  class="{{^ eq(this.showSettings, "SOURCES")}}hidden{{/}}">
+        <div width="w-96"  class="{{^ eq(this.routeData.showSettings, "SOURCES")}}hidden{{/}}">
             ${GOBACK_BUTTON}
             <h3 class="h3">Issue Source</h3>
             <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
             <p>
                 {{# if(this.isLoggedIn) }}
-                <textarea class="w-full-border-box mt-2 form-border p-1" value:bind='this.jql'></textarea>
+                <textarea class="w-full-border-box mt-2 form-border p-1" value:bind='this.routeData.jql'></textarea>
                 {{ else }}
                 <input class="w-full-border-box mt-2 form-border p-1 text-yellow-300" value="Sample data. Connect to Jira to specify." disabled/>
                 {{/ if}}
             </p>
             
-            {{# if(this.rawIssuesRequestData.issuesPromise.isRejected) }}
+            {{# if(this.routeData.rawIssuesRequestData.issuesPromise.isRejected) }}
                 <div class="border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked p-1">
                 <p>There was an error loading from Jira!</p>
-                <p>Error message: {{this.rawIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
+                <p>Error message: {{this.routeData.rawIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
                 <p>Please check your JQL is correct!</p>
                 </div>
             {{/ if }}
@@ -143,24 +132,24 @@ export class TimelineConfiguration extends StacheElement {
 
                 <p class="text-xs flex">
                     <input type='checkbox' 
-                        class='self-start align-middle h-6 mr-0.5' checked:bind='this.loadChildren'/>
+                        class='self-start align-middle h-6 mr-0.5' checked:bind='this.routeData.loadChildren'/>
                         <div class="align-middle h-6" style="line-height: 26px">
                             Load children. 
-                            {{# if(this.loadChildren) }}
-                                Optional children JQL filters: <input type='text' class="form-border p-1 h-5" value:bind="this.childJQL"/>
+                            {{# if(this.routeData.loadChildren) }}
+                                Optional children JQL filters: <input type='text' class="form-border p-1 h-5" value:bind="this.routeData.childJQL"/>
                             {{/ if }}
                         </div>
                 </p>
                 <p class="text-xs" style="line-height: 26px;">
-                    {{# if(this.rawIssuesRequestData.issuesPromise.isPending) }}
-                        {{# if(this.rawIssuesRequestData.progressData.issuesRequested)}}
-                            Loaded {{this.rawIssuesRequestData.progressData.issuesReceived}} of {{this.rawIssuesRequestData.progressData.issuesRequested}} issues
+                    {{# if(this.routeData.rawIssuesRequestData.issuesPromise.isPending) }}
+                        {{# if(this.routeData.rawIssuesRequestData.progressData.issuesRequested)}}
+                            Loaded {{this.routeData.rawIssuesRequestData.progressData.issuesReceived}} of {{this.routeData.rawIssuesRequestData.progressData.issuesRequested}} issues
                         {{ else }}
                             Loading issues ...
                         {{/ if}}
                     {{/ if }}
-                    {{# if(this.rawIssuesRequestData.issuesPromise.isResolved) }}
-                        Loaded {{this.rawIssuesRequestData.issuesPromise.value.length}} issues
+                    {{# if(this.routeData.rawIssuesRequestData.issuesPromise.isResolved) }}
+                        Loaded {{this.routeData.rawIssuesRequestData.issuesPromise.value.length}} issues
                     {{/ if }}
                 </p>
                 
@@ -171,7 +160,7 @@ export class TimelineConfiguration extends StacheElement {
                 <status-filter 
                     statuses:from="this.statuses"
                     param:raw="statusesToExclude"
-                    selectedStatuses:bind="this.statusesToExclude"
+                    selectedStatuses:bind="this.routeData.statusesToExclude"
                     inputPlaceholder:raw="Search for statuses"
                     style="max-width: 400px;">
                 </status-filter>
@@ -182,7 +171,7 @@ export class TimelineConfiguration extends StacheElement {
 
 
         
-        <div class="{{^ eq(this.showSettings, "TIMING")}}hidden{{/}}">
+        <div class="{{^ eq(this.routeData.showSettings, "TIMING")}}hidden{{/}}">
             ${GOBACK_BUTTON}
             <timing-calculation 
                 jiraHelpers:from="this.jiraHelpers"
@@ -191,11 +180,11 @@ export class TimelineConfiguration extends StacheElement {
         
 
   
-        <div class="{{^ eq(this.showSettings, "TEAMS")}}hidden{{/}} h-full">
+        <div class="{{^ eq(this.routeData.showSettings, "TEAMS")}}hidden{{/}} h-full">
            <div id="team-configuration" class='h-full'></div>
         </div>
 
-        <div class="{{^ eq(this.showSettings, "REPORTS")}}hidden{{/}} h-full">
+        <div class="{{^ eq(this.routeData.showSettings, "REPORTS")}}hidden{{/}} h-full">
           <div id="view-reports" style="width:100vw;" class='h-full'></div>
         </div>
 
@@ -204,147 +193,64 @@ export class TimelineConfiguration extends StacheElement {
 
   static props = {
     // passed
-    showSettings: saveJSONToUrl("settings", "", String, {
-      parse: (x) => "" + x,
-      stringify: (x) => "" + x,
-    }),
-    jql: saveJSONToUrl("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
-    loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
-    childJQL: saveJSONToUrl("childJQL", "", String, {
-      parse: (x) => "" + x,
-      stringify: (x) => "" + x,
-    }),
-    statusesToExclude: makeArrayOfStringsQueryParamValue("statusesToExclude"),
+    routeData: {
+      get default(){
+        return routeData;
+      }
+    },
 
     // from children
     issueTimingCalculations: null,
-    storage: null,
-    normalizeOptions: null,
 
     // VALUES DERIVING FROM THE `jql`
-    rawIssuesRequestData: {
-      value({ listenTo, resolve }) {
-        return rawIssuesRequestData(
-          {
-            jql: value.from(this, "jql"),
-            childJQL: value.from(this, "childJQL"),
-            loadChildren: value.from(this, "loadChildren"),
-            isLoggedIn: value.from(this, "isLoggedIn"),
-            jiraHelpers: this.jiraHelpers,
-            fields: value.from(this, "fields"),
-          },
-          { listenTo, resolve }
-        );
-      },
-    },
-    get serverInfoPromise() {
-      return serverInfoPromise({
-        jiraHelpers: this.jiraHelpers,
-        isLoggedIn: value.from(this, "isLoggedIn"),
-      });
-    },
-    get configurationPromise() {
-      return configurationPromise({
-        serverInfoPromise: this.serverInfoPromise,
-        normalizeObservable: value.from(this.normalizeOptions),
-      });
-    },
-    configuration: {
-      async() {
-        return this.configurationPromise;
-      },
-    },
-    derivedIssuesRequestData: {
-      value({ listenTo, resolve }) {
-        return derivedIssuesRequestData(
-          {
-            rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
-            configurationPromise: value.from(this, "configurationPromise"),
-          },
-          { listenTo, resolve }
-        );
-      },
-    },
-    get derivedIssuesPromise() {
-      return this.derivedIssuesRequestData.issuesPromise;
-    },
-    derivedIssues: {
-      async() {
-        return this.derivedIssuesRequestData.issuesPromise;
-      },
-    },
+
     // PROPERTIES DERIVING FROM `derivedIssues`
     get statuses() {
-      if (this.derivedIssues) {
-        return allStatusesSorted(this.derivedIssues);
+      if (this.routeData.derivedIssues) {
+        return allStatusesSorted(this.routeData.derivedIssues);
       } else {
         return [];
       }
     },
     get isShowingTeams() {
-      return this.showSettings === "TEAMS";
+      return this.routeData.showSettings === "TEAMS";
     },
     get isShowingReports() {
-      return this.showSettings === "REPORTS";
+      return this.routeData.showSettings === "REPORTS";
     },
     goBack() {
-      this.showSettings = "";
+      this.routeData.showSettings = "";
     },
   };
   // HOOKS
   connectedCallback() {
-    Promise.all([
-      this.jiraHelpers.fetchJiraFields(),
-      getAllTeamData(this.storage),
-      getSimplifiedIssueHierarchy(this.jiraHelpers, { isLoggedIn: this.isLoggedIn }),
-    ])
-      .then(([jiraFields, teamData, hierarchyLevels]) => {
-        const allTeamData = createFullyInheritedConfig(
-          teamData,
-          jiraFields,
-          hierarchyLevels.map((type) => type.hierarchyLevel.toString())
-        );
-        return allTeamData;
-      })
-      .then((allTeamData) => {
-        const normalizedConfig = createNormalizeConfiguration(allTeamData);
-        return normalizedConfig;
-      })
-      .catch(() => {
-        // Could fail because storage hasn't been setup yet
-        return {};
-      })
-      .then(({ fields, ...config }) => {
-        queues.batch.start();
-        this.fields = fields;
-        this.normalizeOptions = config;
-        queues.batch.stop();
-      });
+
 
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
-        storage: this.storage,
+        storage: this.routeData.storage,
         jira: this.jiraHelpers,
-        derivedIssuesObservable: value.from(this, "derivedIssues"),
+        derivedIssuesObservable: value.from(this.routeData, "derivedIssues"),
         showingTeamsObservable: value.from(this, "isShowingTeams"),
         onUpdate: ({ fields, ...configuration }) => {
           queues.batch.start();
-          this.fields = fields;
-          this.normalizeOptions = configuration;
+
+          this.routeData.fieldsToRequest = fields;
+          this.routeData.normalizeOptions = configuration;
           queues.batch.stop();
         },
         onBackButtonClicked: () => {
-          this.showSettings = "";
+          this.routeData.showSettings = "";
         },
       })
     );
 
     createRoot(document.getElementById("view-reports")).render(
       createElement(ViewReports, {
-        storage: this.storage,
+        storage: this.routeData.storage,
         showingReportsObservable: value.from(this, "isShowingReports"),
         onBackButtonClicked: () => {
-          this.showSettings = "";
+          this.routeData.showSettings = "";
         },
       })
     );

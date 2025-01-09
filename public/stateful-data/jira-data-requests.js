@@ -94,6 +94,7 @@ const CORE_FIELDS = [
 ];
 
 export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL }, { progressUpdate }) {
+  // console.log("REQUESTING", { isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL })
   // progressData.value = null; THIS NEEDS TO HAPPEN OUTSIDE
   if (isLoggedIn === false) {
     // mock data is already field-translated
@@ -109,7 +110,7 @@ export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, field
   if (!jql) {
     return undefined;
   }
-
+  console.log("REQUESTING");
   const loadIssues = loadChildren
     ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
     : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
