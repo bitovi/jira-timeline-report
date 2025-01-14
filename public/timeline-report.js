@@ -245,7 +245,7 @@ export class TimelineReport extends StacheElement {
         issueTimingCalculations: this.issueTimingCalculations
       } )*/
 
-    function getIssueHierarchyUnderType(timingCalculations, type) {
+    function getIssueHierarchyUnderType(timingCalculations = [], type) {
       const index = timingCalculations.findIndex((calc) => calc.type === type);
       return timingCalculations.slice(index);
     }
