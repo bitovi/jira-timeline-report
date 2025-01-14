@@ -94,7 +94,6 @@ export class TimelineReport extends StacheElement {
               secondaryIssueType:from="this.secondaryIssueType"
               statuses:from="this.statuses"
               derivedIssues:from="this.routeData.derivedIssues"
-              isLoggedIn:from="this.loginComponent.isLoggedIn"
               ></select-view-settings>
           </div>
 
