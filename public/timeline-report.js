@@ -68,7 +68,6 @@ export class TimelineReport extends StacheElement {
               jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
             <select-report-type 
-              primaryReportType:to="this.primaryReportType"
               jiraHelpers:from="this.jiraHelpers"></select-report-type>
         
             <compare-slider class='flex-grow'
@@ -88,7 +87,7 @@ export class TimelineReport extends StacheElement {
               groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
               primaryReportBreakdown:to="this.primaryReportBreakdown"
-              primaryReportType:from="this.primaryReportType"
+              primaryReportType:from="this.routeData.primaryReportType"
               primaryIssueType:from="this.primaryIssueType"
               secondaryIssueType:from="this.secondaryIssueType"
               statuses:from="this.statuses"
@@ -107,7 +106,7 @@ export class TimelineReport extends StacheElement {
           {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
             <div class="my-2   border-box block overflow-y-auto color-bg-white">
             
-              {{# eq(this.primaryReportType, "start-due")  }}
+              {{# eq(this.routeData.primaryReportType, "start-due")  }}
                 <gantt-grid 
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
@@ -118,17 +117,17 @@ export class TimelineReport extends StacheElement {
                     allDerivedIssues:from="this.routeData.derivedIssues"
                     ></gantt-grid>
               {{/ eq }}
-              {{# eq(this.primaryReportType, "due") }}
+              {{# eq(this.routeData.primaryReportType, "due") }}
                 <scatter-timeline 
                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                   allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></scatter-timeline>
               {{/ eq }}
-              {{# eq(this.primaryReportType, "table") }}
+              {{# eq(this.routeData.primaryReportType, "table") }}
                 <table-grid
                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
               {{/ eq }}
-              {{# eq(this.primaryReportType, "group-grid") }}
+              {{# eq(this.routeData.primaryReportType, "group-grid") }}
                 <group-grid
                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
