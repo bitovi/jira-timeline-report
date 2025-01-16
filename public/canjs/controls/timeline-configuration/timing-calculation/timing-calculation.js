@@ -3,6 +3,7 @@ import { StacheElement, type, ObservableObject, ObservableArray, value } from ".
 import {updateUrlParam} from "../../../routing/state-storage.js";
 
 import { getSimplifiedIssueHierarchy } from "../../../../stateful-data/jira-data-requests.js";
+import routeData from "../../../routing/route-data.js";
 
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 
@@ -35,6 +36,11 @@ export class TimingCalculation extends StacheElement {
         </div>
     `;
     static props = {
+        routeData: {
+            get default() {
+                return routeData;
+            }
+        },
         get jiraIssueHierarchyPromise(){
             return getSimplifiedIssueHierarchy({
                 isLoggedIn: this.jiraHelpers.hasValidAccessToken(),
@@ -50,56 +56,15 @@ export class TimingCalculation extends StacheElement {
             if(!this.issueHierarchy) {
                 return [];
             } else {
-                const allLevels = getTimingLevels(this.issueHierarchy, this.timingCalculations);
+                const allLevels = getTimingLevels(this.issueHierarchy, this.routeData.timingCalculations);
                 return allLevels.slice(0, allLevels.length - 1);
-            }
-        },
-        timingCalculations: {
-            value({resolve, lastSet, listenTo}) {
-              let currentValue;
-              updateValue(new URL(window.location).searchParams.get("timingCalculations"));
-  
-              listenTo(lastSet, (value)=>{
-                  updateValue(value);
-              });
-  
-              function updateValue(value) {
-                if(typeof value === "string"){
-                  try {
-                    value = parse(value);
-                  } catch(e) {
-                    value = [];
-                  }
-                } else if(!value){
-                  value = [];
-                }
-                  
-                updateUrlParam("timingCalculations", stringify(value), stringify([]));
-  
-                currentValue = value;
-                resolve(currentValue);
-              }
-  
-              function parse(value){
-                let phrases = value.split(",");
-                const data = {};
-                for(let phrase of phrases) {
-                    const parts = phrase.split(":");
-                    data[parts[0]] = parts[1]
-                }
-                return data;
-              }
-              function stringify(obj){
-                return Object.keys(obj).map( (key)=> key+":"+obj[key]).join(",");
-              }
-  
             }
         },
         get issueTimingCalculations(){
             if(!this.issueHierarchy) {
                 return [];
             } else {
-                const allLevels = getTimingLevels(this.issueHierarchy, this.timingCalculations);
+                const allLevels = getTimingLevels(this.issueHierarchy, this.routeData.timingCalculations);
                 return allLevels.map( level => {
                     return {
                         type: level.type,
@@ -113,14 +78,14 @@ export class TimingCalculation extends StacheElement {
     
       
     updateCalculation(type, value){
-        let current = {...this.timingCalculations};
+        let current = {...this.routeData.timingCalculations};
         if(value === DEFAULT_CALCULATION_METHOD) {
             delete current[type]
         } else {
             current[type] = value;
         }
     
-        this.timingCalculations = current;
+        this.routeData.timingCalculations = current;
     }
 
 
