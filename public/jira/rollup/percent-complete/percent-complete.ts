@@ -217,10 +217,23 @@ export function childrenFirstThenParent<T>(
   else {
     data = emptyRollup();
     if (isDerivedIssue(parentIssueOrRelease)) {
+      // Is there any situation that completedDaysOfWork will not be 0?
       data.completedWorkingDays = data.totalWorkingDays =
-        parentIssueOrRelease?.derivedTiming.completedDaysOfWork;
+        parentIssueOrRelease?.derivedTiming.completedDaysOfWork || 0;
+
+      if(parentIssueOrRelease.statusCategory === "Done") {
+        // This make it take on the average amount of work, but will 
+        // have it as completed work.
+        Object.defineProperty(data, "completedWorkingDays",{
+          get(){
+            return this.totalWorkingDays;
+          }
+        })
+      }
+      metadata.needsAverageSet.push(data);
+
     }
-    metadata.needsAverageSet.push(data);
+    
     return data;
   }
 }
