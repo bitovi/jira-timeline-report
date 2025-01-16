@@ -281,7 +281,7 @@ export default routeData;
  * @param {Array<import("../../../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
  * @returns {Array<{type: string, hierarchyLevel: number}>}
  */
-function issueHierarchyFromNormalizedIssues(normalizedIssues){
+export function issueHierarchyFromNormalizedIssues(normalizedIssues){
     const levelsToNames = []
     for( let issue of normalizedIssues) {
         if(!levelsToNames[issue.hierarchyLevel]) {

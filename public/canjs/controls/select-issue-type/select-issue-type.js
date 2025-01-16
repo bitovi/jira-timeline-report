@@ -3,7 +3,7 @@ import { StacheElement, type, ObservableObject, ObservableArray, value, queues }
 import {updateUrlParam, pushStateObservable} from "../../routing/state-storage.js";
 import { bitoviTrainingIssueData } from "../../../examples/bitovi-training.js";
 
-import routeData from "../../routing/route-data.js";
+import routeData, { issueHierarchyFromNormalizedIssues } from "../../routing/route-data.js";
 import "../status-filter.js";
 
 import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
