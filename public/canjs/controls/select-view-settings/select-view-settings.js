@@ -1,14 +1,12 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value, diff } from "../../../can.js";
+import { StacheElement, value } from "../../../can.js";
+import { allReleasesSorted } from "../../../jira/normalized/normalize.js";
+import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
-import {saveJSONToUrl,updateUrlParam} from "../../routing/state-storage.js";
-
-import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
-
-import { pushStateObservable } from "../../routing/state-storage.js";
+import routeData from "../../routing/route-data.js";
+import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 
 import "../status-filter.js";
 
-import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
@@ -199,8 +197,6 @@ class SelectViewSettingsDropdown extends StacheElement {
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
 
-import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
-
 export class SelectViewSettings extends StacheElement {
     static view = `
         <label for="viewSettings" class="${DROPDOWN_LABEL} invisible {{#unless(this.isLoggedIn)}}hidden{{/unless}}">View settings</label>
@@ -210,51 +206,11 @@ export class SelectViewSettings extends StacheElement {
                 on:click="this.showChildOptions()">View Settings <img class="inline" src="/images/chevron-down.svg"/></button>
     `;
     static props ={
-        primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
-        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
-        showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
-
-        // group by doesn't make sense for a release
-        
-        groupBy: {
-            value({resolve, lastSet, listenTo}) {
-                function getFromParam() {
-                    return new URL(window.location).searchParams.get("groupBy") || "";
-                }
-
-                const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
-                    if(primaryIssueType === "Release") {
-                        updateUrlParam("groupBy", "", "");
-                    } else {
-                        updateUrlParam("groupBy", currentGroupBy, "");
-                    }
-                }
-                
-                listenTo("primaryIssueType",({value})=> {    
-                    reconcileCurrentValue(value, getFromParam());
-                });
-
-                listenTo(lastSet, (value)=>{
-                    updateUrlParam("groupBy", value || "", "");
-                });
-
-                listenTo(pushStateObservable, ()=>{
-                    resolve( getFromParam() );
-                })
-
-                
-                resolve(getFromParam());
+        routeData: {
+            get default() {
+                return routeData;
             }
         },
-
-
-
-        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-
-        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-
-        
         // STATUS FILTERING STUFF
         
         // used for later filtering
@@ -281,23 +237,23 @@ export class SelectViewSettings extends StacheElement {
             }
         },
         get canGroup(){
-            return this.primaryReportType === 'start-due' &&
+            return this.routeData.primaryReportType === 'start-due' &&
                 this.primaryIssueType && this.primaryIssueType !== "Release"
         }    
     }
     showChildOptions(){
         
         let dropdown = new SelectViewSettingsDropdown().bindings({
-            showPercentComplete: value.bind(this,"showPercentComplete"),
-            secondaryReportType: value.bind(this,"secondaryReportType"),
+            showPercentComplete: value.bind(this.routeData,"showPercentComplete"),
+            secondaryReportType: value.bind(this.routeData,"secondaryReportType"),
             
-            groupBy: value.bind(this,"groupBy"),
-            sortByDueDate: value.bind(this,"sortByDueDate"),
-            hideUnknownInitiatives: value.bind(this,"hideUnknownInitiatives"),
-            showOnlySemverReleases: value.bind(this,"showOnlySemverReleases"),
-            primaryReportBreakdown: value.bind(this,"primaryReportBreakdown"),
+            groupBy: value.bind(this.routeData,"groupBy"),
+            sortByDueDate: value.bind(this.routeData,"sortByDueDate"),
+            hideUnknownInitiatives: value.bind(this.routeData,"hideUnknownInitiatives"),
+            showOnlySemverReleases: value.bind(this.routeData,"showOnlySemverReleases"),
+            primaryReportBreakdown: value.bind(this.routeData,"primaryReportBreakdown"),
 
-            primaryReportType: this.primaryReportType,
+            primaryReportType: this.reportData.primaryReportType,
 
             statusesToRemove: value.bind(this,"statusesToRemove"),
             statusesToShow: value.bind(this,"statusesToShow"),
@@ -306,8 +262,8 @@ export class SelectViewSettings extends StacheElement {
             
 
 
-            secondaryIssueType: value.from(this,"secondaryIssueType"),
-            primaryIssueType: value.from(this,"primaryIssueType"),
+            secondaryIssueType: value.from(this.routeData,"secondaryIssueType"),
+            primaryIssueType: value.from(this.routeData,"primaryIssueType"),
             canGroup: value.from(this,"canGroup"),
 
             firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
