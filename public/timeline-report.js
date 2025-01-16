@@ -28,10 +28,9 @@ import SavedReports from "./react/SaveReports";
 import { get, set } from "react-hook-form";
 
 export class TimelineReport extends StacheElement {
-  static view = `<div class="flex">
+  static view = `
         <timeline-configuration
-          class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" 
-          style="overflow-y: auto"
+          class="border-gray-100 border-r border-neutral-301 bg-white"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
           showSidebarBranding:from="this.showSidebarBranding"
@@ -42,9 +41,9 @@ export class TimelineReport extends StacheElement {
           
           ></timeline-configuration>
 
-      <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
+    <div class="fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
 
-        {{# not(this.loginComponent.isLoggedIn) }}
+      {{# not(this.loginComponent.isLoggedIn) }}
 
           <div class="p-4 mb-4 drop-shadow-md hide-on-fullscreen bg-yellow-300">
             <p>The following is a sample report. Learn more about it in the 
@@ -57,7 +56,7 @@ export class TimelineReport extends StacheElement {
               <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a></li>
             </ul>
 
-          </div>
+        </div>
       {{/ not }}
           <div id="saved-reports" class='pb-5'></div>
           <div class="flex gap-1">
@@ -67,12 +66,7 @@ export class TimelineReport extends StacheElement {
               derivedIssues:from="this.routeData.derivedIssues"
               jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
-            <select-report-type 
-              primaryReportType:to="this.primaryReportType"
-              jiraHelpers:from="this.jiraHelpers"></select-report-type>
-        
-            <compare-slider class='flex-grow'
-              compareToTime:to="compareToTime"></compare-slider>
+      <div id="saved-reports" class='pb-5'></div>
 
             <select-view-settings
               jiraHelpers:from="this.jiraHelpers"
@@ -97,7 +91,38 @@ export class TimelineReport extends StacheElement {
               ></select-view-settings>
           </div>
 
+        <select-report-type 
+          primaryReportType:to="this.primaryReportType"
+          jiraHelpers:from="this.jiraHelpers"
+        />
+    
+        <compare-slider 
+          class='flex-grow'
+          compareToTime:to="compareToTime"
+        />
+        
+        <select-view-settings
+          jiraHelpers:from="this.jiraHelpers"
           
+          statusesToRemove:to="this.statusesToRemove"
+          statusesToShow:to="this.statusesToShow"
+          showOnlySemverReleases:to="this.showOnlySemverReleases"
+          secondaryReportType:to="this.secondaryReportType"
+          hideUnknownInitiatives:to="this.hideUnknownInitiatives"
+          sortByDueDate:to="this.sortByDueDate"
+          showPercentComplete:to="this.showPercentComplete"
+          planningStatuses:to="this.planningStatuses"
+          groupBy:to="this.groupBy"
+          releasesToShow:to="this.releasesToShow"
+          primaryReportBreakdown:to="this.primaryReportBreakdown"
+          primaryReportType:from="this.primaryReportType"
+          primaryIssueType:from="this.primaryIssueType"
+          secondaryIssueType:from="this.secondaryIssueType"
+          statuses:from="this.statuses"
+          derivedIssues:from="this.derivedIssues"
+          isLoggedIn:from="this.loginComponent.isLoggedIn"
+        />
+      </div>
 
 
           {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
@@ -105,7 +130,7 @@ export class TimelineReport extends StacheElement {
           {{ /and }}
 
           {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-            <div class="my-2   border-box block overflow-y-auto color-bg-white">
+            <div class="my-2   border-box overflow-auto color-bg-white">
             
               {{# eq(this.primaryReportType, "start-due")  }}
                 <gantt-grid 
@@ -134,13 +159,13 @@ export class TimelineReport extends StacheElement {
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
               {{/ eq }}
 
-              {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
-                <status-report 
-                  breakdown:from="eq(this.secondaryReportType, 'breakdown')"
-                  planningIssues:from="this.planningIssues"
-                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
-              {{/ }}
+          {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
+            <status-report 
+              breakdown:from="eq(this.secondaryReportType, 'breakdown')"
+              planningIssues:from="this.planningIssues"
+              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
+          {{/ }}
 
               <div class='p-2'>
                 <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
@@ -177,7 +202,28 @@ export class TimelineReport extends StacheElement {
             </div>
           {{/ if }}
         </div>
-      </div>
+      {{/ and }}
+      {{# and(this.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
+        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
+          <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.primaryIssueType}}.</p>
+          <p>Please check your JQL and the View Settings.</p>
+        </div>
+      {{/}}
+      {{# and(this.jql, this.derivedIssuesRequestData.issuesPromise.isPending) }}
+        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
+          <p>Loading ...<p>
+          {{# if(this.derivedIssuesRequestData.progressData.issuesRequested)}}
+            <p>Loaded {{this.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
+          {{/ }}
+        </div>
+      {{/ and }}
+      {{# if(this.derivedIssuesRequestData.issuesPromise.isRejected) }}
+        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
+          <p>There was an error loading from Jira!</p>
+          <p>Error message: {{this.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
+          <p>Please check your JQL is correct!</p>
+        </div>
+      {{/ if }}
   `;
   static props = {
     routeData: {
