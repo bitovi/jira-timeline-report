@@ -197,7 +197,46 @@ class RouteData extends ObservableObject {
               resolveValueFromPromise();
             }
         },
-
+        timingCalculations: {
+            value({resolve, lastSet, listenTo}) {
+                let currentValue;
+                updateValue(new URL(window.location).searchParams.get("timingCalculations"));
+ 
+                listenTo(lastSet, (value)=>{
+                    updateValue(value);
+                });
+  
+                function updateValue(value) {
+                    if(typeof value === "string"){
+                        try {
+                            value = parse(value);
+                        } catch(e) {
+                            value = [];
+                        }
+                    } else if(!value){
+                        value = [];
+                    }
+                  
+                    updateUrlParam("timingCalculations", stringify(value), stringify([]));
+      
+                    currentValue = value;
+                    resolve(currentValue);
+                }
+  
+                function parse(value){
+                    let phrases = value.split(",");
+                    const data = {};
+                    for(let phrase of phrases) {
+                        const parts = phrase.split(":");
+                        data[parts[0]] = parts[1]
+                    }
+                    return data;
+                }
+                function stringify(obj){
+                    return Object.keys(obj).map( (key)=> key+":"+obj[key]).join(",");
+                }
+			},
+		},
         primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
             parse: function(x) {
                 if( REPORTS.find( report => report.key === x) ) {
