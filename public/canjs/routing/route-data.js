@@ -17,9 +17,6 @@ makeArrayOfStringsQueryParamValue,
 pushStateObservable,
 } from "./state-storage.js";
 
-
-import { mostCommonElement } from "../../utils/array/array-helpers.js";
-
 import {
     getAllTeamData,
     createFullyInheritedConfig,
@@ -28,6 +25,11 @@ import {
 import { createNormalizeConfiguration } from "../../react/Configure/components/Teams/shared/normalize";
 
 import { getSimplifiedIssueHierarchy } from "../../stateful-data/jira-data-requests.js";
+import {
+    issueHierarchyFromNormalizedIssues,
+    makeAsyncFromObservableButStillSettableProperty,
+    toSelectedParts
+} from "./data-utils.js";
 
 const _15DAYS_IN_S = DAY_IN_MS / 1000 * 15;
 
@@ -37,6 +39,20 @@ const booleanParsing = {
     },
     stringify: (x) => "" + x,
 };
+
+const REPORTS = [{
+                    key: "start-due",
+                    name: "Gantt Chart"
+                },{
+                    key: "due",
+                    name: "Scatter Plot"
+                },{
+                    key: "table",
+                    name: "Estimation Table"
+                },{
+                    key: "group-grid",
+                    name: "Group Grid"
+                }];
 
 class RouteData extends ObservableObject {
     static props = {
@@ -182,6 +198,21 @@ class RouteData extends ObservableObject {
             }
         },
 
+        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
+            parse: function(x) {
+                if( REPORTS.find( report => report.key === x) ) {
+                    return x;
+                } else {
+                    return "start-due"
+                }
+            }, 
+            stringify: x => ""+x
+        }),
+        reports: {
+            get default(){
+                return REPORTS;
+			}
+		},
         get issueHierarchy(){
             return this.derivedIssues && this.derivedIssues.length ?
                 issueHierarchyFromNormalizedIssues(this.derivedIssues) :
@@ -240,7 +271,6 @@ class RouteData extends ObservableObject {
                     }
                 }
 
-
                 // when the route changes, check stuff ...
                 listenTo(pushStateObservable, ()=>{
                     resolveCurrentValue();
@@ -258,14 +288,7 @@ class RouteData extends ObservableObject {
                 resolveCurrentValue();
 
             }
-        },
-        get primaryIssueType() {
-            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
-        },
-        get secondaryIssueType() {
-            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
         }
-
 
     }
 }
@@ -275,50 +298,3 @@ console.log("routeData", routeData);
 
 export default routeData;
 
-
-/**
- * 
- * @param {Array<import("../../../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
- * @returns {Array<{type: string, hierarchyLevel: number}>}
- */
-export function issueHierarchyFromNormalizedIssues(normalizedIssues){
-    const levelsToNames = []
-    for( let issue of normalizedIssues) {
-        if(!levelsToNames[issue.hierarchyLevel]) {
-            levelsToNames[issue.hierarchyLevel] = [];
-        }
-        levelsToNames[issue.hierarchyLevel].push(issue.type)
-    }
-    return levelsToNames.map( (names, i) => {
-        return {name: mostCommonElement(names), hierarchyLevel: i}
-    }).filter( i => i ).reverse()
-}
-
-function toSelectedParts(value){
-    if(value) {
-        if(value.startsWith("Release-")) {
-            return {primary: "Release", secondary: value.substring("Release-".length)}
-        } else {
-            return {primary: value}
-        }
-    } else {
-        return undefined;
-    }
-}
-
-function makeAsyncFromObservableButStillSettableProperty(promiseProperty) {
-    return {
-        value({resolve, listenTo, lastSet}) {
-
-            listenTo(promiseProperty, ({value})=>{
-                value.then(resolve);
-            });
-            if(this[promiseProperty]) {
-                this[promiseProperty].then(resolve);
-            }
-            listenTo(lastSet, (value)=>{
-                resolve(value);
-            });
-        }
-    }
-}
