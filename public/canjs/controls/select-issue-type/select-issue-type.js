@@ -6,7 +6,6 @@ import "../status-filter.js";
 import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 
 import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
-import { issueHierarchyFromNormalizedIssues, toSelectedParts } from "../../routing/data-utils.js";
 
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
@@ -46,7 +45,7 @@ class TypeSelectionDropdown extends StacheElement {
         let dropdown = new ReleasesTypeSelectionDropdown().initialize({
             issueHierarchy: this.issueHierarchy,
             onSelection: this.onSelection,
-            secondaryIssueType: this.routeData.secondaryIssueType
+            secondaryIssueType: this.secondaryIssueType
         })
 
         RELEASES_TOOLTIP.rightOfElementInScrollingContainer(label, dropdown);
@@ -74,9 +73,6 @@ customElements.define("select-release-type-dropdown", ReleasesTypeSelectionDropd
 export class SelectIssueType extends StacheElement {
     static view = `
         <label for="reportOn" class="${DROPDOWN_LABEL}">Report on</label>
-        {{# not(this.routeData.primaryIssueType) }}
-            <button class="rounded bg-neutral-201 px-3 py-1" id="reportOn">Loading ... </button>
-        {{/ }}
         {{# if(this.routeData.primaryIssueType) }}
             <button class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}" 
                 on:click="this.showChildOptions()" 
@@ -85,17 +81,13 @@ export class SelectIssueType extends StacheElement {
                 {{# if(this.routeData.secondaryIssueType) }} / {{this.routeData.secondaryIssueType}}s {{/ if }}
                 <img class="inline" src="/images/chevron-down.svg"/>
             </button>
+        {{ else }}
+            <button class="rounded bg-neutral-201 px-3 py-1" id="reportOn">Loading ... </button>
         {{/ }}
     `;
     static props ={     
         routeData: {
           get default() { return routeData; }
-        },
-        get issueHierarchy(){
-            return this.derivedIssues && this.derivedIssues.length ?
-                issueHierarchyFromNormalizedIssues(this.derivedIssues) :
-                this.simplifiedIssueHierarchy;
-            
         }
     };
     onSelection(primaryType, secondaryType){
@@ -111,7 +103,7 @@ export class SelectIssueType extends StacheElement {
         let dropdown = new TypeSelectionDropdown().initialize({
             primaryIssueType: this.routeData.primaryIssueType,
             secondaryIssueType: this.routeData.secondaryIssueType,
-            issueHierarchy: this.issueHierarchy,
+            issueHierarchy: this.routeData.issueHierarchy,
             onSelection: this.onSelection.bind(this)
         })
 

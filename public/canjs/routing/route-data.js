@@ -235,8 +235,8 @@ class RouteData extends ObservableObject {
                 function stringify(obj){
                     return Object.keys(obj).map( (key)=> key+":"+obj[key]).join(",");
                 }
-			},
-		},
+            },
+        },
         primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
             parse: function(x) {
                 if( REPORTS.find( report => report.key === x) ) {
@@ -250,8 +250,13 @@ class RouteData extends ObservableObject {
         reports: {
             get default(){
                 return REPORTS;
-			}
-		},
+            }
+        },
+        simplifiedIssueHierarchy: {
+            async(){
+                return this.simplifiedIssueHierarchyPromise;
+            }
+        },
         get issueHierarchy(){
             return this.derivedIssues && this.derivedIssues.length ?
                 issueHierarchyFromNormalizedIssues(this.derivedIssues) :
