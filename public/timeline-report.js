@@ -62,8 +62,6 @@ export class TimelineReport extends StacheElement {
           <div id="saved-reports" class='pb-5'></div>
           <div class="flex gap-1">
             <select-issue-type 
-              primaryIssueType:to="this.primaryIssueType"
-              secondaryIssueType:to="this.secondaryIssueType"
               derivedIssues:from="this.routeData.derivedIssues"
               jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
@@ -76,17 +74,8 @@ export class TimelineReport extends StacheElement {
             <select-view-settings
               jiraHelpers:from="this.jiraHelpers"
               
-              statusesToRemove:to="this.statusesToRemove"
-              statusesToShow:to="this.statusesToShow"
-              showOnlySemverReleases:to="this.showOnlySemverReleases"
-              secondaryReportType:to="this.secondaryReportType"
-              hideUnknownInitiatives:to="this.hideUnknownInitiatives"
-              sortByDueDate:to="this.sortByDueDate"
-              showPercentComplete:to="this.showPercentComplete"
-              planningStatuses:to="this.planningStatuses"
               groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
-              primaryReportBreakdown:to="this.primaryReportBreakdown"
               statuses:from="this.statuses"
               derivedIssues:from="this.routeData.derivedIssues"
               isLoggedIn:from="this.loginComponent.isLoggedIn"
@@ -107,10 +96,10 @@ export class TimelineReport extends StacheElement {
                 <gantt-grid 
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                    breakdown:from="this.primaryReportBreakdown"
-                    showPercentComplete:from="this.showPercentComplete"
-                    groupBy:from="this.groupBy"
-                    primaryIssueType:from="this.primaryIssueType"
+                    breakdown:from="this.routeData.primaryReportBreakdown"
+                    showPercentComplete:from="this.routeData.showPercentComplete"
+                    groupBy:from="this.routeData.groupBy"
+                    primaryIssueType:from="this.routeData.primaryIssueType"
                     allDerivedIssues:from="this.routeData.derivedIssues"
                     ></gantt-grid>
               {{/ eq }}
@@ -130,9 +119,9 @@ export class TimelineReport extends StacheElement {
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
               {{/ eq }}
 
-              {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
+              {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
                 <status-report 
-                  breakdown:from="eq(this.secondaryReportType, 'breakdown')"
+                  breakdown:from="eq(this.routeData.secondaryReportType, 'breakdown')"
                   planningIssues:from="this.planningIssues"
                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                   allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
@@ -153,7 +142,7 @@ export class TimelineReport extends StacheElement {
           {{/ and }}
           {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
             <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
-              <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.primaryIssueType}}.</p>
+              <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.routeData.primaryIssueType}}.</p>
               <p>Please check your JQL and the View Settings.</p>
             </div>
           {{/}}
@@ -245,11 +234,11 @@ export class TimelineReport extends StacheElement {
       return timingCalculations.slice(index);
     }
 
-    if (this.primaryIssueType === "Release") {
-      if (this.secondaryIssueType) {
+    if (this.routeData.primaryIssueType === "Release") {
+      if (this.routeData.secondaryIssueType) {
         const secondary = getIssueHierarchyUnderType(
           this.issueTimingCalculations,
-          this.secondaryIssueType
+          this.routeData.secondaryIssueType
         );
         return [
           { type: "Release", hierarchyLevel: Infinity, calculation: "childrenOnly" },
@@ -257,7 +246,7 @@ export class TimelineReport extends StacheElement {
         ];
       }
     } else {
-      return getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
+      return getIssueHierarchyUnderType(this.issueTimingCalculations, this.routeData.primaryIssueType);
     }
   }
 
@@ -297,15 +286,15 @@ export class TimelineReport extends StacheElement {
     return groupedHierarchy.reverse();
   }
   get planningIssues() {
-    if (!this.groupedParentDownHierarchy.length || !this?.planningStatuses?.length) {
+    if (!this.groupedParentDownHierarchy.length || !this?.routeData?.planningStatuses?.length) {
       return [];
     }
     const planningSourceIssues =
-      this.primaryIssueType === "Release"
+      this.routeData.primaryIssueType === "Release"
         ? this.groupedParentDownHierarchy[1]
         : this.groupedParentDownHierarchy[0];
     return planningSourceIssues.filter((normalizedIssue) => {
-      return this.planningStatuses.includes(normalizedIssue.status);
+      return this.routeData.planningStatuses.includes(normalizedIssue.status);
     });
   }
   get primaryIssuesOrReleases() {
@@ -315,9 +304,9 @@ export class TimelineReport extends StacheElement {
     }
     const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
 
-    const hideUnknownInitiatives = this.hideUnknownInitiatives;
-    let statusesToRemove = this.statusesToRemove;
-    let statusesToShow = this.statusesToShow;
+    const hideUnknownInitiatives = this.routeData.hideUnknownInitiatives;
+    let statusesToRemove = this.routeData.statusesToRemove;
+    let statusesToShow = this.routeData.statusesToShow;
 
     function startBeforeDue(initiative) {
       return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
@@ -327,9 +316,9 @@ export class TimelineReport extends StacheElement {
     const filtered = unfilteredPrimaryIssuesOrReleases.filter((issueOrRelease) => {
       // check if it's a planning issues
       if (
-        this?.planningStatuses?.length &&
-        this.primaryIssueType !== "Release" &&
-        this.planningStatuses.includes(issueOrRelease.status)
+        this?.routeData?.planningStatuses?.length &&
+        this.routeData.primaryIssueType !== "Release" &&
+        this.routeData.planningStatuses.includes(issueOrRelease.status)
       ) {
         return false;
       }
@@ -343,8 +332,8 @@ export class TimelineReport extends StacheElement {
       }
 
       if (
-        this.showOnlySemverReleases &&
-        this.primaryIssueType === "Release" &&
+        this.routeData.showOnlySemverReleases &&
+        this.routeData.primaryIssueType === "Release" &&
         !issueOrRelease.names.semver
       ) {
         return false;
@@ -353,7 +342,7 @@ export class TimelineReport extends StacheElement {
       if (hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
         return false;
       }
-      if (this.primaryIssueType === "Release") {
+      if (this.routeData.primaryIssueType === "Release") {
         // releases don't have statuses, so we look at their children
         if (statusesToRemove && statusesToRemove.length) {
           if (
@@ -391,7 +380,7 @@ export class TimelineReport extends StacheElement {
       return true;
     });
 
-    if (this.sortByDueDate) {
+    if (this.routeData.sortByDueDate) {
       return filtered.toSorted(
         (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due
       );

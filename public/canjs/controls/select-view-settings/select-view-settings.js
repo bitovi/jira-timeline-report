@@ -216,10 +216,6 @@ export class SelectViewSettings extends StacheElement {
         // used for later filtering
         // but the options come from the issues
         
-        statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
-        statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
-        planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
-
         get releases(){
             if(this.derivedIssues) {
                 return allReleasesSorted(this.derivedIssues)
@@ -253,11 +249,11 @@ export class SelectViewSettings extends StacheElement {
             showOnlySemverReleases: value.bind(this.routeData,"showOnlySemverReleases"),
             primaryReportBreakdown: value.bind(this.routeData,"primaryReportBreakdown"),
 
-            primaryReportType: this.reportData.primaryReportType,
+            primaryReportType: this.routeData.primaryReportType,
 
-            statusesToRemove: value.bind(this,"statusesToRemove"),
-            statusesToShow: value.bind(this,"statusesToShow"),
-            planningStatuses: value.bind(this,"planningStatuses"),
+            statusesToRemove: value.bind(this.routeData,"statusesToRemove"),
+            statusesToShow: value.bind(this.routeData,"statusesToShow"),
+            planningStatuses: value.bind(this.routeData,"planningStatuses"),
 
             
 

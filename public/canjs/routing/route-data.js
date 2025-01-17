@@ -329,10 +329,10 @@ class RouteData extends ObservableObject {
             }
         },
         get primaryIssueType() {
-            return this.routeData.selectedIssueType && toSelectedParts(this.routeData.selectedIssueType).primary;
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
         },
         get secondaryIssueType() {
-            return this.routeData.selectedIssueType && toSelectedParts(this.routeData.selectedIssueType).secondary;
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
         },
 
         primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
@@ -341,6 +341,9 @@ class RouteData extends ObservableObject {
         sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
         hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
         showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
+        statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
+        statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
+        planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
         groupBy: {
             value({resolve, lastSet, listenTo}) {
                 function getFromParam() {
