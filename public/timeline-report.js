@@ -75,7 +75,6 @@ export class TimelineReport extends StacheElement {
             <select-view-settings
               jiraHelpers:from="this.jiraHelpers"
               
-              groupBy:to="this.groupBy"
               releasesToShow:to="this.releasesToShow"
               statuses:from="this.statuses"
               derivedIssues:from="this.routeData.derivedIssues"
@@ -96,11 +95,6 @@ export class TimelineReport extends StacheElement {
                 <gantt-grid 
                     primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                     allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                    breakdown:from="this.routeData.primaryReportBreakdown"
-                    showPercentComplete:from="this.routeData.showPercentComplete"
-                    groupBy:from="this.routeData.groupBy"
-                    primaryIssueType:from="this.routeData.primaryIssueType"
-                    allDerivedIssues:from="this.routeData.derivedIssues"
                     ></gantt-grid>
               {{/ eq }}
               {{# eq(this.routeData.primaryReportType, "due") }}
