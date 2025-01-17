@@ -24,13 +24,12 @@ import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
-
-import { get, set } from "react-hook-form";
+import SampleDataNotice from "./react/SampleDataNotice";
 
 export class TimelineReport extends StacheElement {
   static view = `<div class="flex">
         <timeline-configuration
-          class="border-gray-100 border-r border-nuetral-301 relative block bg-white shrink-0" 
+          class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
           style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
           jiraHelpers:from="this.jiraHelpers"
@@ -43,22 +42,7 @@ export class TimelineReport extends StacheElement {
           ></timeline-configuration>
 
       <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
-
-        {{# not(this.loginComponent.isLoggedIn) }}
-
-          <div class="p-4 mb-4 drop-shadow-md hide-on-fullscreen bg-yellow-300">
-            <p>The following is a sample report. Learn more about it in the 
-              "<a class="text-blue-400" href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira/reporting.html">Agile Program Management with Jira</a>" 
-              training. Click "Connect to Jira" to load your own data.</p>
-            <p class="mt-2">Checkout the following sample reports:</p>
-            <ul class="list-disc list-inside ml-2">
-              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status">Release end dates with initiative status</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown">Release timeline with initiative work breakdown</a></li>
-              <li><a class="text-blue-400" href="?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true">Ready and in-development initiative work breakdown</a></li>
-            </ul>
-
-          </div>
-      {{/ not }}
+        <div id='sample-data-notice'></div>
           <div id="saved-reports" class='pb-5'></div>
           <div class="flex gap-1">
             <select-issue-type 
@@ -220,6 +204,15 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
+    createRoot(document.getElementById("sample-data-notice")).render(
+      createElement(SampleDataNotice, {
+        shouldHideNoticeObservable: this.routeData.isLoggedInObservable,
+        onLoginClicked: () => {
+          this.loginComponent.login();
+        },
+      })
+    );
+
     createRoot(document.getElementById("saved-reports")).render(
       createElement(SavedReports, {
         queryParamObservable: pushStateObservable,
