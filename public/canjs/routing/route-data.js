@@ -14,8 +14,11 @@ import {
 saveJSONToUrl,
 updateUrlParam,
 makeArrayOfStringsQueryParamValue,
+pushStateObservable,
 } from "./state-storage.js";
 
+
+import { mostCommonElement } from "../../utils/array/array-helpers.js";
 
 import {
     getAllTeamData,
@@ -177,7 +180,92 @@ class RouteData extends ObservableObject {
               listenTo("derivedIssuesRequestData", resolveValueFromPromise);
               resolveValueFromPromise();
             }
+        },
+
+        get issueHierarchy(){
+            return this.derivedIssues && this.derivedIssues.length ?
+                issueHierarchyFromNormalizedIssues(this.derivedIssues) :
+                this.simplifiedIssueHierarchy;            
+        },
+        selectedIssueType: {
+            value({resolve, lastSet, listenTo}) {
+                function getParamValue(){
+                    return new URL(window.location).searchParams.get("selectedIssueType") || "";
+                }
+                let timers = [];
+                function clearTimers() {
+                    timers.forEach((value) => clearTimeout(value));
+                    timers = [];
+                }
+
+                // anything happens in state, update the route 
+                // the route updates, update the state (or the route if it's wrong)
+                const resolveCurrentValue = () => {
+                    clearTimers();
+                    const curParamValue = getParamValue();
+
+                    // we wait to resolve to a defined value until we can check it's right
+                    if(this.issueHierarchy && this.issueHierarchy.length) {
+                        const curParamValue = getParamValue();
+
+                        // helps with legacy support to pick the first type
+                        if(curParamValue === "Release") {
+                            resolve( "Release-"+this.issueHierarchy[0].name );
+                        } else {
+                            const curSelectedParts = toSelectedParts(curParamValue);
+                            //const lastSelectedParts = toSelectedParts(lastSelectedValue);
+
+                            if(curSelectedParts) {
+                                // check it's ok
+                                let typeToCheck = curSelectedParts.secondary ?? curSelectedParts.primary;
+                                
+                                if(this.issueHierarchy.some( issue => issue.name === typeToCheck ) ) {
+                                    // make sure we actually need to update
+                                    resolve(curParamValue);
+                                } 
+                                // set back to default
+                                else {
+                                    timers.push( setTimeout( ()=> {
+                                        updateUrlParam("selectedIssueType", "", "");
+                                    },20) );
+                                }
+
+                            } else {
+                                // default to the first type
+                                resolve( this.issueHierarchy[0].name );
+                            }
+                        }
+                    } else {
+                        resolve(undefined)
+                    }
+                }
+
+
+                // when the route changes, check stuff ...
+                listenTo(pushStateObservable, ()=>{
+                    resolveCurrentValue();
+                })
+                
+                listenTo("issueHierarchy",({value})=> {
+                    resolveCurrentValue();
+                });
+
+                listenTo(lastSet, (value)=>{
+                    console.log("LAST SET sit", value)
+                    updateUrlParam("selectedIssueType", value, "");
+                });
+
+                resolveCurrentValue();
+
+            }
+        },
+        get primaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
+        },
+        get secondaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
         }
+
 
     }
 }
@@ -188,7 +276,35 @@ console.log("routeData", routeData);
 export default routeData;
 
 
+/**
+ * 
+ * @param {Array<import("../../../jira/normalized/normalize.js").NormalizedIssue>} normalizedIssues 
+ * @returns {Array<{type: string, hierarchyLevel: number}>}
+ */
+export function issueHierarchyFromNormalizedIssues(normalizedIssues){
+    const levelsToNames = []
+    for( let issue of normalizedIssues) {
+        if(!levelsToNames[issue.hierarchyLevel]) {
+            levelsToNames[issue.hierarchyLevel] = [];
+        }
+        levelsToNames[issue.hierarchyLevel].push(issue.type)
+    }
+    return levelsToNames.map( (names, i) => {
+        return {name: mostCommonElement(names), hierarchyLevel: i}
+    }).filter( i => i ).reverse()
+}
 
+function toSelectedParts(value){
+    if(value) {
+        if(value.startsWith("Release-")) {
+            return {primary: "Release", secondary: value.substring("Release-".length)}
+        } else {
+            return {primary: value}
+        }
+    } else {
+        return undefined;
+    }
+}
 
 function makeAsyncFromObservableButStillSettableProperty(promiseProperty) {
     return {
