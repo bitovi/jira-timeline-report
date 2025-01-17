@@ -17,6 +17,10 @@ makeArrayOfStringsQueryParamValue,
 pushStateObservable,
 } from "./state-storage.js";
 
+import {roundDate} from "../../utils/date/round.js";
+
+const ROUND_OPTIONS = ["day", ... Object.keys(roundDate)];
+
 import {
     getAllTeamData,
     createFullyInheritedConfig,
@@ -41,18 +45,20 @@ const booleanParsing = {
 };
 
 const REPORTS = [{
-                    key: "start-due",
-                    name: "Gantt Chart"
-                },{
-                    key: "due",
-                    name: "Scatter Plot"
-                },{
-                    key: "table",
-                    name: "Estimation Table"
-                },{
-                    key: "group-grid",
-                    name: "Group Grid"
-                }];
+    key: "start-due",
+    name: "Gantt Chart"
+},{
+    key: "due",
+    name: "Scatter Plot"
+},{
+    key: "table",
+    name: "Estimation Table"
+},{
+    key: "group-grid",
+    name: "Group Grid"
+}];
+
+
 
 class RouteData extends ObservableObject {
     static props = {
@@ -89,6 +95,18 @@ class RouteData extends ObservableObject {
             parse: (x) => "" + x,
             stringify: (x) => "" + x,
         }),
+
+        roundTo: saveJSONToUrl("roundTo", "day", String, {
+            parse: function(x) {
+                if( ROUND_OPTIONS.find( key => key === x) ) {
+                    return x;
+                } else {
+                    return "day"
+                }
+            }, 
+            stringify: x => ""+x
+        }),
+
         statusesToExclude: makeArrayOfStringsQueryParamValue("statusesToExclude"),
 
         compareTo: saveJSONToUrl("compareTo", _15DAYS_IN_S, Number, {
