@@ -10,12 +10,21 @@ class SimpleTooltip extends HTMLElement {
     this.style.display = "none";
 
     this.style.position = "absolute";
+
+    this.handleResize = this.handleResize.bind(this);
+    window.addEventListener("resize", this.handleResize)
+  }
+  handleResize(){
+    if(this._resizeFunction) {
+      this[this._resizeFunction]();
+    }
   }
   disconnectedCallback(){
     if(this._forElement) {
       this._forElement.removeEventListener("mouseenter", this.enteredElement);
       this._forElement.removeEventListener("mouseenter", this.leftElement);
     }
+    window.removeEventListener("resize", this.handleResize)
   }
   set forElement(element){
     if(typeof element === "string") {
@@ -66,7 +75,6 @@ class SimpleTooltip extends HTMLElement {
   
   belowElementInScrollingContainer(element, DOM){
     // find if there's a scrolling container and move ourselves to that 
-    
     const container = findScrollingContainer(element);
     this.innerHTML = "";
     container.appendChild(this);
@@ -79,7 +87,15 @@ class SimpleTooltip extends HTMLElement {
       this.appendChild(DOM);
     }
     this.style.display = "";
-    
+    // HACKY AF
+    this._relativeElement = element;
+    this._resizeFunction = "resize_belowElementInScrollingContainer";
+    this.handleResize();
+  }
+  resize_belowElementInScrollingContainer() {
+    const container = this.parentNode;
+    const element = this._relativeElement;
+
     // where is the container on the page
     const containerRect = container.getBoundingClientRect(),
       // where is the element we are positioning next to on the page
@@ -112,7 +128,6 @@ class SimpleTooltip extends HTMLElement {
       leftFromContainer = elementRect.right - containerRect.left - tooltipRect.width;
     }
     this.style.left = leftFromContainer +"px";
-    
   }
   rightOfElementInScrollingContainer(element, DOM) {
     // find if there's a scrolling container and move ourselves to that 

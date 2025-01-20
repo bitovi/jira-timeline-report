@@ -7,6 +7,23 @@ import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 
 import "../status-filter.js";
 
+import {roundDate} from "../../../utils/date/round.js";
+
+const ROUNDING_OPTIONS = [
+    {key: "day", name: "Day"},
+    {key: "week", name: "Week"},
+    {key: "month", name: "Month"},
+    {key: "halfQuarter", name: "Half Quarter"},
+    {key: "quarter", name: "Quarter"}
+];
+
+// A quick check that we don't have anything wrong
+ROUNDING_OPTIONS.forEach( ({key})=> { 
+    if(!roundDate[key]) {
+        console.error("Missing rounding capability ", key);
+    }
+});
+
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
@@ -68,6 +85,16 @@ class SelectViewSettingsDropdown extends StacheElement {
                 on:change="this.sortByDueDate = true"
                 /> Due Date</label>    
         </div>
+
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">Round Dates To:</div>
+            <select class="rounded-sm border-2 bg-white border-neutral-80 p-2" value:bind="this.routeData.roundTo">
+                {{# for(option of this.roundingOptions) }}
+                    <option value:from="option.key">{{option.name}}</option>
+                {{/ }}
+            </select>
+        </div>
+
 
         {{# if(this.primaryIssueType) }}
             <div class="my-4">
@@ -193,7 +220,20 @@ class SelectViewSettingsDropdown extends StacheElement {
             {{/ if}}
         </div>
     </div>
-    `
+    `;
+    static props = {
+
+        roundingOptions: {
+            get default(){
+                return ROUNDING_OPTIONS;
+            }
+        },
+        routeData: {
+            get default(){
+                return routeData;
+            }
+        }
+    }
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
 
@@ -209,6 +249,7 @@ export class SelectViewSettings extends StacheElement {
         routeData: {
             get default() {
                 return routeData;
+
             }
         },
         // STATUS FILTERING STUFF
