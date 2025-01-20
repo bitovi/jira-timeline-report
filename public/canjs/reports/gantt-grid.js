@@ -42,6 +42,7 @@ const percentCompleteTooltip = stache(`
 `);
 
 import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
+import routeData from "../routing/route-data.js";
 
 // loops through and creates
 export class GanttGrid extends StacheElement {
@@ -122,10 +123,15 @@ export class GanttGrid extends StacheElement {
         </div>
     `;
   static props = {
-    breakdown: Boolean,
+    routeData: {
+      get default() { return routeData; }
+    },
+    get breakdown() {
+      return this.routeData.primaryReportBreakdown;
+    },
     showPercentComplete: {
-      get default() {
-        return !!localStorage.getItem("showPercentComplete");
+      get() {
+        return this.routeData.showPercentComplete ?? !!localStorage.getItem("showPercentComplete");
       },
     },
     showChildrenByKey: {
@@ -273,11 +279,11 @@ export class GanttGrid extends StacheElement {
   get gridRowData() {
     
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
-    if (this.groupBy === "parent" && this.primaryIssueType !== "Release") {
+    if (this.routeData.groupBy === "parent" && this.routeData.primaryIssueType !== "Release") {
       // get all the parents ...
 
       let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.parentKey);
-      let keyToAllIssues = Object.groupBy(this.allDerivedIssues, (issue) => issue.key);
+      let keyToAllIssues = Object.groupBy(this.routeData.DerivedIssues, (issue) => issue.key);
 
       let parentKeys = Object.keys(obj);
       let parents = parentKeys
@@ -310,7 +316,7 @@ export class GanttGrid extends StacheElement {
         .flat(1);
 
       return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
-    } else if (this.groupBy === "team" && this.primaryIssueType !== "Release") {
+    } else if (this.routeData.groupBy === "team" && this.routeData.primaryIssueType !== "Release") {
       let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.team.name);
 
       const teams = Object.keys(issuesByTeam).map((teamName) => {
