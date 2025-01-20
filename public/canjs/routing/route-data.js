@@ -345,8 +345,53 @@ class RouteData extends ObservableObject {
                 resolveCurrentValue();
 
             }
-        }
+        },
+        get primaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
+        },
+        get secondaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
+        },
 
+        primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
+        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
+        showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
+        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
+        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
+        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
+        statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
+        statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
+        planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
+        groupBy: {
+            value({resolve, lastSet, listenTo}) {
+                function getFromParam() {
+                    return new URL(window.location).searchParams.get("groupBy") || "";
+                }
+
+                const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
+                    if(primaryIssueType === "Release") {
+                        updateUrlParam("groupBy", "", "");
+                    } else {
+                        updateUrlParam("groupBy", currentGroupBy, "");
+                    }
+                }
+                
+                listenTo("primaryIssueType",({value})=> {    
+                    reconcileCurrentValue(value, getFromParam());
+                });
+
+                listenTo(lastSet, (value)=>{
+                    updateUrlParam("groupBy", value || "", "");
+                });
+
+                listenTo(pushStateObservable, ()=>{
+                    resolve( getFromParam() );
+                })
+
+                
+                resolve(getFromParam());
+            }
+        },
     }
 }
 

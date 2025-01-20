@@ -34,7 +34,7 @@ function alignToEndOfWeek(date) {
     const diff = (day === 0 ? 5 : 5 - day); // Offset to Friday
     const endOfWeek = new Date(date);
     endOfWeek.setDate(date.getDate() + diff);
-    endOfWeek.setHours(23, 59, 59, 999);
+    endOfWeek.setHours(0, 0, 0, 0);
     return endOfWeek;
 }
 
@@ -53,7 +53,7 @@ function alignToStartOfMonth(date) {
  * @returns {Date} - The end of the month.
  */
 function alignToEndOfMonth(date) {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0, 0, 0, 0, 0);
 }
 
 /**
@@ -73,7 +73,7 @@ function alignToStartOfQuarter(date) {
  */
 function alignToEndOfQuarter(date) {
     const quarterStartMonth = Math.floor(date.getMonth() / 3) * 3;
-    return new Date(date.getFullYear(), quarterStartMonth + 3, 0, 23, 59, 59, 999);
+    return new Date(date.getFullYear(), quarterStartMonth + 3, 0, 0, 0, 0, 0);
 }
 
 /**

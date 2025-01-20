@@ -1,7 +1,4 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value, queues } from "../../../can.js";
-
-import {updateUrlParam, pushStateObservable} from "../../routing/state-storage.js";
-import { bitoviTrainingIssueData } from "../../../examples/bitovi-training.js";
+import { StacheElement } from "../../../can.js";
 
 import routeData from "../../routing/route-data.js";
 import "../status-filter.js";
@@ -77,15 +74,15 @@ customElements.define("select-release-type-dropdown", ReleasesTypeSelectionDropd
 export class SelectIssueType extends StacheElement {
     static view = `
         <label for="reportOn" class="${DROPDOWN_LABEL}">Report on</label>
-        {{# not(this.primaryIssueType) }}
+        {{# not(this.routeData.primaryIssueType) }}
             <button class="rounded bg-neutral-201 px-3 py-1" id="reportOn">Loading ... </button>
         {{/ }}
-        {{# if(this.primaryIssueType) }}
+        {{# if(this.routeData.primaryIssueType) }}
             <button class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}" 
                 on:click="this.showChildOptions()" 
                 id="reportOn">
-                {{this.primaryIssueType}}s
-                {{# if(this.secondaryIssueType) }} / {{this.secondaryIssueType}}s {{/ if }}
+                {{this.routeData.primaryIssueType}}s
+                {{# if(this.routeData.secondaryIssueType) }} / {{this.routeData.secondaryIssueType}}s {{/ if }}
                 <img class="inline" src="/images/chevron-down.svg"/>
             </button>
         {{/ }}
@@ -99,15 +96,7 @@ export class SelectIssueType extends StacheElement {
                 issueHierarchyFromNormalizedIssues(this.derivedIssues) :
                 this.simplifiedIssueHierarchy;
             
-        },
-        get primaryIssueType() {
-            return this.routeData.selectedIssueType && toSelectedParts(this.routeData.selectedIssueType).primary;
-        },
-        get secondaryIssueType() {
-            return this.routeData.selectedIssueType && toSelectedParts(this.routeData.selectedIssueType).secondary;
         }
-
-
     };
     onSelection(primaryType, secondaryType){
         if(secondaryType) {
@@ -120,8 +109,8 @@ export class SelectIssueType extends StacheElement {
     }
     showChildOptions(){
         let dropdown = new TypeSelectionDropdown().initialize({
-            primaryIssueType: this.primaryIssueType,
-            secondaryIssueType: this.secondaryIssueType,
+            primaryIssueType: this.routeData.primaryIssueType,
+            secondaryIssueType: this.routeData.secondaryIssueType,
             issueHierarchy: this.issueHierarchy,
             onSelection: this.onSelection.bind(this)
         })
