@@ -189,7 +189,7 @@ export class TimelineConfiguration extends StacheElement {
         </div>
 
     </div>
-        `;
+  `;
 
   static props = {
     // passed
