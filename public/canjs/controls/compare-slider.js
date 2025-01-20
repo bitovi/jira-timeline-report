@@ -10,6 +10,11 @@ const MINUTE_IN_S = 60;
 const HOUR_IN_S = MINUTE_IN_S*60;
 const DAY_IN_S = 24 * HOUR_IN_S;
 
+const SECOND = 1000;
+const MIN = 60 * SECOND;
+const HOUR = 60 * MIN;
+const DAY = 24 * HOUR;
+
 const MAPPING_POINTS = [
   [0,0],
   [2,60],
@@ -25,6 +30,8 @@ const MAPPING_POINTS = [
   [100, 365*DAY_IN_S]
 ];
 
+const dateFormatter = new Intl.DateTimeFormat(navigator.language).format(new Date())
+
 
 const valueToSeconds = createLinearMapping(MAPPING_POINTS),
     secondsToValue = createInverseMapping(MAPPING_POINTS);
@@ -32,7 +39,19 @@ const valueToSeconds = createLinearMapping(MAPPING_POINTS),
 
 export class ComapreSlider extends StacheElement {
     static view = `
-        <label for="compareValue" class="${DROPDOWN_LABEL}">Compare to {{this.compareToTime.text}}</label>
+        <div class="flex justify-between text-neutral-801 text-xs">
+            <div>
+                Compare to 
+                <input type="date" 
+                    class="rounded bg-neutral-201 py-1 px-2 leading-3 hover:bg-neutral-301 cursor-pointer {{this.dateSelectedClassName}}" 
+                    value:from="this.isoString"
+                    on:input="this.updateRouteData(scope.element.value)"/>
+            </div>
+            <label for="compareValue" class="pt-1">
+                <span class="{{this.timeAgoClassName}}">{{this.compareToTime.timeText}}</span> 
+                {{this.compareToTime.unitText}}</label>
+        </div>
+        
         <input class="w-full-border-box h-8" 
             id="compareValue"
             type='range' 
@@ -56,30 +75,73 @@ export class ComapreSlider extends StacheElement {
         },
         get compareToTime() {
             const compareTo = this.routeData.compareTo;
-
-            const SECOND = 1000;
-            const MIN = 60 * SECOND;
-            const HOUR = 60 * MIN;
-            const DAY = 24 * HOUR;
+            let timeText, unitText;
 
             if (compareTo === 0) {
-              return { timePrior: 0, text: "now" };
+                timeText = "now"
+                unitText = "";
             }
             else if(compareTo < MINUTE_IN_S) {
-                return { timePrior: compareTo * SECOND, text: compareTo+" seconds ago" };
+                timeText = ""+compareTo
+                unitText = "seconds ago";
             }
             else if(compareTo < HOUR_IN_S) {
-                return { timePrior: compareTo * SECOND, text: Math.round(compareTo / MINUTE_IN_S)+" minutes ago" };
+                timeText = Math.round(compareTo / MINUTE_IN_S);
+                unitText = " minutes ago";
             }
             else if(compareTo < DAY_IN_S) {
-                return { timePrior: compareTo * SECOND, text: Math.round(compareTo / HOUR_IN_S)+" hours ago" };
+                timeText = Math.round(compareTo / HOUR_IN_S);
+                unitText = " hours ago";
+            }
+            else if(compareTo == DAY_IN_S) {
+                timeText = Math.round(compareTo / DAY_IN_S)
+                unitText = " day ago";
             }
             else {
-                return { timePrior: compareTo * SECOND, text: Math.round(compareTo / DAY_IN_S)+" days ago" };
+                timeText = Math.round(compareTo / DAY_IN_S)
+                unitText = " days ago";
+            }
+
+            return {
+                timePrior: compareTo * SECOND, timeText, unitText
+            }
+        },
+        get isoString(){
+            const compareTo = this.routeData.compareTo;
+            if(compareTo < DAY_IN_S) {
+                return getDateDaysAgoLocal(0);
+            } else {
+                const daysAgo = Math.round(compareTo / DAY_IN_S);
+                return getDateDaysAgoLocal(daysAgo);
+            }
+        },
+        get dateSelectedClassName() {
+            if(this.routeData.compareToType === "date") {
+                return " font-semibold "
+            }
+        },
+        get timeAgoClassName() {
+            if(this.routeData.compareToType === "seconds") {
+                return " font-semibold "
             }
         }
     }
+    updateRouteData(isoDate) {
+        this.routeData.compareTo = isoDate;
+    }
       
 }
+
+
+function getDateDaysAgoLocal(daysAgo) {
+    const now = new Date(); // Current date and time in the user's local timezone
+
+    // Create a new date object representing 'daysAgo' days before today
+    const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo);
+
+    // Format the date as ISO 8601 (yyyy-mm-dd)
+    return localDate.toISOString().split("T")[0];
+}
+  
 
 customElements.define("compare-slider", ComapreSlider);

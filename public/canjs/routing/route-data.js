@@ -1,6 +1,8 @@
 import {ObservableObject, value} from "../../can";
 
 import { DAY_IN_MS } from "../../utils/date/date-helpers.js";
+import {daysBetween} from "../../utils/date/days-between.js";
+import {isoToLocalDate} from "../../utils/date/local.js"
 
 import {
     rawIssuesRequestData,
@@ -109,19 +111,49 @@ class RouteData extends ObservableObject {
 
         statusesToExclude: makeArrayOfStringsQueryParamValue("statusesToExclude"),
 
-        compareTo: saveJSONToUrl("compareTo", _15DAYS_IN_S, Number, {
+        // this is always in seconds
+        compareTo: saveJSONToUrl("compareTo", _15DAYS_IN_S, undefined, {
             parse(string){
+                
+                const parsedAsDate = isoToLocalDate(string);
                 if(/^\d+$/.test(string)) {
                     return Number(string);
                 } 
+                else if(! isNaN( parsedAsDate ) ) {
+                    // parsedAsDate is 2025-01-18 to a UTC "date"
+                    // want to know how many days that was in the past compare to someone's timeframe right now
+                    return daysBetween(new Date(), parsedAsDate) * DAY_IN_MS / 1000;
+                }
                 else {
                     return _15DAYS_IN_S;
                 }
             },
             stringify(number){
+                // assume the date is in UTC?
+                if(number instanceof Date) {
+                    return date.toISOString().split("T")[0];
+                }
                 return ""+number;
             }
         }),
+        // returns "seconds" or "date"
+        // duplicates some code above. We should refactor at some point
+        get compareToType(){
+            // just for the side effects:
+            pushStateObservable.value
+            // we probably should make the pushstate observable go into new URL()
+            const string = new URL(window.location).searchParams.get("compareTo") || "";
+            const parsedAsDate = isoToLocalDate(string);
+            if(/^\d+$/.test(string)) {
+                return "seconds";
+            } 
+            else if(! isNaN( parsedAsDate ) ) {
+                return "date";
+            }
+            else {
+                return "seconds";
+            }
+        },
 
 
         // DERIVED 

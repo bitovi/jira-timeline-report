@@ -60,7 +60,7 @@ export class TimelineReport extends StacheElement {
 
           </div>
       {{/ not }}
-          <div id="saved-reports" class='pb-5'></div>
+          <div id="saved-reports" class='pb-4'></div>
           <div class="flex gap-1">
             <select-issue-type 
               derivedIssues:from="this.routeData.derivedIssues"
@@ -69,7 +69,7 @@ export class TimelineReport extends StacheElement {
             <select-report-type 
               jiraHelpers:from="this.jiraHelpers"></select-report-type>
         
-            <compare-slider class='flex-grow'
+            <compare-slider class='flex-grow px-2'
               compareToTime:to="compareToTime"></compare-slider>
 
             <select-view-settings
@@ -407,10 +407,6 @@ function sortReadyFirst(initiatives) {
   });
 }
 
-function newDateFromYYYYMMDD(dateString) {
-  const [year, month, day] = dateString.split("-");
-  return new Date(year, month - 1, day);
-}
 
 function addTeamBreakdown(release) {
   return {
