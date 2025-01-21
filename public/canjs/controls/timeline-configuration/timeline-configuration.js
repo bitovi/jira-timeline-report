@@ -44,9 +44,16 @@ const GOBACK_BUTTON = `
     <img src="/images/go-back.svg" class="inline"/> Go back</button>
 `;
 
+const getDrawerWidth = (showSettings = false) => {
+  if (showSettings === 'SOURCES') return 'w-96'
+  if (showSettings === 'TIMING') return 'w-96'
+  if (showSettings === 'TEAMS') return 'w-96'
+  return 'min-w-40'
+}
+
 export class TimelineConfiguration extends StacheElement {
   static view = `
-    <div class="px-3 py-2 h-full min-w-40">
+    <div class="px-3 py-2 h-full ${getDrawerWidth(this.routeData?.showSettings)} transition-[width] transition-slowest ease">
 
         {{# if(this.showSidebarBranding)}}
           <div class="flex gap-2 pt-4">
@@ -193,7 +200,7 @@ export class TimelineConfiguration extends StacheElement {
   static props = {
     // passed
     routeData: {
-      get default(){
+      get default() {
         return routeData;
       }
     },
@@ -251,7 +258,7 @@ export class TimelineConfiguration extends StacheElement {
       })
     );
   }
-  connected() {}
+  connected() { }
   // METHODS
 }
 

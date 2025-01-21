@@ -37,7 +37,7 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
 
     <body>
 
-      <div id="mainContent" class="flex flex-col h-screen">
+      <div id="mainContent" class="flex flex-col w-full h-full overflow-hidden">
         ${Header(showHeader)}
 
         <div id="loadingJira" class='place-center'>
