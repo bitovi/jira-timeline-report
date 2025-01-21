@@ -3,7 +3,7 @@ import { createJiraPluginStorage } from "./jira/storage/index.plugin";
 import routing from "./routing/index.plugin";
 
 export default async function main(config) {
-  const loginComponent = await mainHelper(config, {
+  return mainHelper(config, {
     host: "jira",
     createStorage: createJiraPluginStorage,
     configureRouting: (route) => {
@@ -12,10 +12,7 @@ export default async function main(config) {
       route._onStartComplete = routing.syncRouters;
       route.start();
     },
-    showSidebarBranding: true
+    showSidebarBranding: true,
+    isAlwaysLoggedIn: true,
   });
-
-  loginComponent.isLoggedIn = true;
-
-  return loginComponent;
 }
