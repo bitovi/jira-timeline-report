@@ -53,7 +53,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
           </div>
         )}
         {!!selectedTeam && selectedTeam !== "global" && (
-          <div className="w-128 overflow-auto">
+          <div key={selectedTeam} className="w-128 overflow-auto">
             <ConfigureTeams
               teamName={selectedTeam}
               jiraFields={jiraFields}

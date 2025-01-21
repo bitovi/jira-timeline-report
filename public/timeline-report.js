@@ -42,7 +42,7 @@ export class TimelineReport extends StacheElement {
         
         ></timeline-configuration>
     {{/if}}
-    <div class="fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
+    <div class="fullish-vh pt-4 pl-4 pr-4 flex flex-1 flex-col overflow-hidden" on:click="this.goBack()">
 
       {{# not(this.loginComponent.isLoggedIn) }}
         <div class="p-4 mb-4 drop-shadow-md hide-on-fullscreen bg-yellow-300">
@@ -84,8 +84,8 @@ export class TimelineReport extends StacheElement {
       {{ /and }}
 
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-        <div class="my-2 border-box block overflow-y-auto color-bg-white overflow-auto">
-        
+        <div class="my-2 border-box overflow-y-auto color-bg-white flex-1">
+                
           {{# eq(this.routeData.primaryReportType, "start-due")  }}
             <gantt-grid 
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
@@ -127,7 +127,7 @@ export class TimelineReport extends StacheElement {
             <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
             <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
           </div>
-          
+
         </div>
       {{/ and }}
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
