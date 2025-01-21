@@ -36,7 +36,6 @@ export class TimelineReport extends StacheElement {
         isLoggedIn:from="this.loginComponent.isLoggedIn"
         jiraHelpers:from="this.jiraHelpers"
         showSidebarBranding:from="this.showSidebarBranding"
-        issueTimingCalculations:to="this.issueTimingCalculations"
         statuses:to="this.statuses"
         goBack:to="this.goBack"
         storage:from="this.storage"
@@ -229,7 +228,7 @@ export class TimelineReport extends StacheElement {
     if (this.routeData.primaryIssueType === "Release") {
       if (this.routeData.secondaryIssueType) {
         const secondary = getIssueHierarchyUnderType(
-          this.issueTimingCalculations,
+          this.routeData.issueTimingCalculations,
           this.routeData.secondaryIssueType
         );
         return [
@@ -238,7 +237,7 @@ export class TimelineReport extends StacheElement {
         ];
       }
     } else {
-      return getIssueHierarchyUnderType(this.issueTimingCalculations, this.routeData.primaryIssueType);
+      return getIssueHierarchyUnderType(this.routeData.issueTimingCalculations, this.routeData.primaryIssueType);
     }
   }
 
