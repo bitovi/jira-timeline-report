@@ -40,12 +40,16 @@ export function getQuartersAndMonths(startDate, endDate){
 	const months = []
 
 	for (let i = 0; i < quarters; i++) {
+		const first = new Date(quarterStartDate),
+			firstNumber = first.getMonth() + i * 3,
+			secondNumber = first.getMonth() + i * 3 + 1,
+			thirdNumber = first.getMonth() + + i * 3 + 2;
 		const firstMonth = new Date(quarterStartDate);
-		firstMonth.setMonth(firstMonth.getMonth() + i * 3);
+		firstMonth.setMonth(firstNumber);
 		const secondMonth = new Date(quarterStartDate);
-		secondMonth.setMonth(secondMonth.getMonth() + i * 3 + 1);
+		secondMonth.setMonth(secondNumber);
 		const thirdMonth = new Date(quarterStartDate);
-		thirdMonth.setMonth(thirdMonth.getMonth() + + i * 3 + 2);
+		thirdMonth.setMonth(thirdNumber);
 
 		quartersList.push({
 			number: Math.floor(firstMonth.getMonth() / 3) + 1,
@@ -54,13 +58,19 @@ export function getQuartersAndMonths(startDate, endDate){
 
 		months.push({
 			first: true,
+			date: firstMonth,
+			number: firstNumber,
 			name: month(firstMonth)
 		});
 		months.push({
+			date: secondMonth, 
+			number: secondNumber,
 			name: month(secondMonth)
 		})
 		months.push({
 			last: true,
+			date: thirdMonth,
+			number: thirdNumber,
 			name: month(thirdMonth)
 		})
 	}

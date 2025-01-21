@@ -174,8 +174,7 @@ export class TimelineConfiguration extends StacheElement {
         <div class="{{^ eq(this.routeData.showSettings, "TIMING")}}hidden{{/}}">
             ${GOBACK_BUTTON}
             <timing-calculation 
-                jiraHelpers:from="this.jiraHelpers"
-                issueTimingCalculations:to="this.issueTimingCalculations"></timing-calculation>
+                jiraHelpers:from="this.jiraHelpers"></timing-calculation>
         </div>
         
 
@@ -189,7 +188,7 @@ export class TimelineConfiguration extends StacheElement {
         </div>
 
     </div>
-        `;
+  `;
 
   static props = {
     // passed
@@ -198,9 +197,6 @@ export class TimelineConfiguration extends StacheElement {
         return routeData;
       }
     },
-
-    // from children
-    issueTimingCalculations: null,
 
     // VALUES DERIVING FROM THE `jql`
 

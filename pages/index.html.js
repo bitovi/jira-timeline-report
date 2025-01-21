@@ -1,34 +1,5 @@
 const getSafeEnv = require("../server/client-env");
 
-const header = `
-  <div class="color-bg-white px-4 sticky top-0 z-50 border-b border-neutral-301">
-    <nav class="mx-auto py-2 place-center">
-      <div class="flex gap-4" style="align-items: center">
-        <ul class="flex gap-3 grow items-baseline">
-          <li>
-            <a
-              href="https://github.com/bitovi/jira-timeline-report" 
-              class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold"
-            >
-              Status Reports for Jira
-            </a>
-          </li>
-          <li>
-            <a 
-              href="https://www.bitovi.com/services/agile-project-management-consulting" 
-              class="bitovi-poppins color-text-bitovi-red-orange"
-              style="line-height: 37px; font-size: 14px; text-decoration: none"
-            >
-              by <img src="./images/bitovi-logo.png" class="inline align-baseline"/>
-            </a>
-          </li>
-        </ul>
-        <select-cloud></select-cloud>
-        <div id="login"></div>
-      </div>
-    </nav>
-  </div>`;
-
 module.exports = function (env, mainFileRoute, { showHeader }) {
   return `
     <!DOCTYPE html>
@@ -47,6 +18,7 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       <meta property="og:url" content="https://timeline-report.bitovi-jira.com/">
       <meta name="twitter:card" content="summary_large_image">
       
+      <link rel="icon" type="image/png" href="./images/favicon.png" />
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="dist/production.css">
       <script src="https://connect-cdn.atl-paas.net/all${
@@ -63,12 +35,14 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       </script>
     </head>
 
-    <body class='overflow-x-hidden'>
+    <body class="overflow-hidden">
 
-      ${showHeader ? header : '<div id="login"></div>'}
+      <div id="mainContent" class="flex flex-col w-screen h-screen overflow-hidden">
+        ${Header(showHeader)}
 
-      <div id="mainElement" class='place-center w-1280'>
-        <p class="my-2">Loading the Jira Timeline Report ...</p>
+        <div id="loadingJira" class='place-center'>
+          <p class="my-2">Loading the Jira Timeline Report ...</p>
+        </div>
       </div>
 
       <script type="module">
@@ -80,3 +54,37 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
     </html>
   `;
 };
+
+function Header(showHeader = true) {
+  return showHeader
+    ? `
+    <div class="color-bg-white px-4 top-0 z-50 border-b border-neutral-301">
+      <nav class="mx-auto py-2 place-center">
+        <div class="flex gap-4" style="align-items: center">
+          <ul class="flex gap-3 grow items-baseline">
+            <li>
+              <a
+                href="https://github.com/bitovi/jira-timeline-report" 
+                class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold"
+              >
+                Status Reports for Jira
+              </a>
+            </li>
+            <li>
+              <a 
+                href="https://www.bitovi.com/services/agile-project-management-consulting" 
+                class="bitovi-poppins color-text-bitovi-red-orange"
+                style="line-height: 37px; font-size: 14px; text-decoration: none"
+              >
+                by <img src="./images/bitovi-logo.png" class="inline align-baseline"/>
+              </a>
+            </li>
+          </ul>
+          <select-cloud></select-cloud>
+          <div id="login"></div>
+        </div>
+      </nav>
+    </div>
+  `
+    : '<div id="login"></div>';
+}

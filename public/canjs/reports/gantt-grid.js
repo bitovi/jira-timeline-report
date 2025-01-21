@@ -7,6 +7,11 @@ import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup.js"
 import { workTypes } from "../../jira/derived/work-status/work-status";
 import { normalizeIssue, normalizeParent } from "../../jira/normalized/normalize.js";
 
+import {roundDateByRoundToParam} from "../routing/utils/round.js";
+import {getDaysInMonth} from "../../utils/date/days-in-month.js";
+
+const DAY_IN_MS = 1000*60*60*24;
+
 
 const percentCompleteTooltip = stache(`
     <button class="remove-button">❌</button>
@@ -37,11 +42,12 @@ const percentCompleteTooltip = stache(`
 `);
 
 import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
+import routeData from "../routing/route-data.js";
 
 // loops through and creates
 export class GanttGrid extends StacheElement {
   static view = `
-        <div style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} repeat({{this.quartersAndMonths.months.length}}, [col] 1fr); grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} ; grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
             <div></div><div></div>
             {{# for(column of this.columnsToShow) }}
@@ -117,10 +123,15 @@ export class GanttGrid extends StacheElement {
         </div>
     `;
   static props = {
-    breakdown: Boolean,
+    routeData: {
+      get default() { return routeData; }
+    },
+    get breakdown() {
+      return this.routeData.primaryReportBreakdown;
+    },
     showPercentComplete: {
-      get default() {
-        return !!localStorage.getItem("showPercentComplete");
+      get() {
+        return this.routeData.showPercentComplete ?? !!localStorage.getItem("showPercentComplete");
       },
     },
     showChildrenByKey: {
@@ -185,11 +196,19 @@ export class GanttGrid extends StacheElement {
     }
   }
   get gridColumnsCSS(){
+
+    let columnCSS = ""
+    // repeat({{this.quartersAndMonths.months.length}}, [col] 1fr)
+
     if(this.columnsToShow.length) {
-      return "repeat("+this.columnsToShow.length+", auto)"
-    } else {
-      return "";
-    }
+      columnCSS += "repeat("+this.columnsToShow.length+", auto)"
+    } 
+
+    columnCSS += this.quartersAndMonths.months.map( ({date}) => {
+      return getDaysInMonth(date.getYear(), date.getMonth() + 1)+ "fr"
+    }).join(" ");
+
+    return columnCSS;
   }
   getPercentComplete(issue) {
     if (this.showPercentComplete) {
@@ -260,11 +279,11 @@ export class GanttGrid extends StacheElement {
   get gridRowData() {
     
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
-    if (this.groupBy === "parent" && this.primaryIssueType !== "Release") {
+    if (this.routeData.groupBy === "parent" && this.routeData.primaryIssueType !== "Release") {
       // get all the parents ...
 
       let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.parentKey);
-      let keyToAllIssues = Object.groupBy(this.allDerivedIssues, (issue) => issue.key);
+      let keyToAllIssues = Object.groupBy(this.routeData.DerivedIssues, (issue) => issue.key);
 
       let parentKeys = Object.keys(obj);
       let parents = parentKeys
@@ -297,7 +316,7 @@ export class GanttGrid extends StacheElement {
         .flat(1);
 
       return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
-    } else if (this.groupBy === "team" && this.primaryIssueType !== "Release") {
+    } else if (this.routeData.groupBy === "team" && this.routeData.primaryIssueType !== "Release") {
       let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.team.name);
 
       const teams = Object.keys(issuesByTeam).map((teamName) => {
@@ -431,7 +450,6 @@ export class GanttGrid extends StacheElement {
       }
 
       if (this.breakdown) {
-
         const workTypes = this.hasWorkTypes.list.filter((wt) => wt.hasWork);
         for (const { type } of workTypes) {
           const thisPeriodPositions = getPositions(release.rollupStatuses[type])
@@ -457,6 +475,7 @@ export class GanttGrid extends StacheElement {
           root.appendChild(thisPeriod);
         }
       } else {
+        
         // make the last one ...
         const currentPositions = getPositions(release.rollupStatuses.rollup);
 
@@ -494,12 +513,6 @@ export class GanttGrid extends StacheElement {
       }
     } else {
       let team = makeCircleForStatus("unknown", "∅", this.lotsOfIssues)
-      /*
-      let team = makeElement(["p-2"],{});
-      team.appendChild(
-        makeCircle("∅",["color-text-and-bg-unknown", "w-4","h-4","text-xs"],
-          {zIndex: 30, position: "relative"})
-      ); */
 
       root.appendChild(team);
     }
@@ -567,9 +580,16 @@ function makeElement(classNames, styles) {
 
 
 function getPositionsFromWork({firstDay, lastDay}, work) {
+  
+
   const totalTime = lastDay - firstDay;
 
-  if (work.start == null && work.due == null) {
+  const roundedWork = {
+    start: roundDateByRoundToParam.start(work.start),
+    due: roundDateByRoundToParam.end(work.due)
+  }
+
+  if (roundedWork.start == null && roundedWork.due == null) {
     return {
       start: 0,
       end: Infinity,
@@ -582,21 +602,21 @@ function getPositionsFromWork({firstDay, lastDay}, work) {
     };
   }
 
-  const start = Math.max(firstDay, work.start);
-  const end = Math.min(lastDay, work.due);
-  const startExtends = work.start < firstDay;
-  const endExtends = work.due > lastDay;
+  const start = Math.max(firstDay, roundedWork.start);
+  const end = Math.min(lastDay, roundedWork.due);
+  const startExtends = roundedWork.start < firstDay;
+  const endExtends = roundedWork.due > lastDay;
 
   return {
 
     start,
     end,
-    endIsBeforeFirstDay: work.due && work.due <= firstDay,
-    startIsAfterLastDay: work.start && work.start >= lastDay,
+    endIsBeforeFirstDay: roundedWork.due && roundedWork.due <= firstDay,
+    startIsAfterLastDay: roundedWork.start && roundedWork.start >= lastDay,
     startExtends, // is the start before the first day
     endExtends,   // is the end after the last day
     style: {
-      width: Math.max(((end - start) / totalTime) * 100, 0) + "%",
+      width: Math.max(((end+DAY_IN_MS - start) / totalTime) * 100, 0) + "%",
       marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
     },
   };
