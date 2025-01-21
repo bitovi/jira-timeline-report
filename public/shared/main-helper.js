@@ -11,9 +11,6 @@ import { directlyReplaceUrlParam } from "../canjs/routing/state-storage.js";
 import { route, value } from "../can.js";
 import routeData from "../canjs/routing/route-data.js";
 
-
-
-
 export default async function mainHelper(config, { host, createStorage, configureRouting, showSidebarBranding }) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
@@ -48,7 +45,7 @@ export default async function mainHelper(config, { host, createStorage, configur
   const listener = ({ value }) => {
     if (value) {
       loginComponent.off("isResolved", listener);
-      mainElement.style.display = "none";
+      loadingJira.style.display = "none";
 
       const report = new TimelineReport().initialize({
         jiraHelpers,
@@ -57,8 +54,9 @@ export default async function mainHelper(config, { host, createStorage, configur
         storage,
         showSidebarBranding
       });
-      report.className = "block";
-      document.body.append(report);
+      report.className = "flex"
+      report.style = "height: calc(100svh - 5rem);"
+      mainContent.append(report);
     }
   };
   loginComponent.on("isResolved", listener);
@@ -67,7 +65,6 @@ export default async function mainHelper(config, { host, createStorage, configur
     login.style.display = "none";
   }
   
-
   return loginComponent;
 }
 

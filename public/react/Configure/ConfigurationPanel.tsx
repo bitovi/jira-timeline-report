@@ -33,7 +33,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
 
   return (
     <div className="w-full h-full flex">
-      <div className="w-56 border-r border-neutral-30 pr-4">
+      <div className="w-56 border-r border-neutral-30 pr-4 flex flex-col">
         <SidebarButton onClick={onBackButtonClicked}>
           <ArrowLeftCircleIcon label="go back" />
           Go back
@@ -48,12 +48,12 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
       {/* checks that configuration issue exists */}
       <StorageCheck>
         {selectedTeam === "global" && (
-          <div className="w-128">
+          <div className="w-128 overflow-auto">
             <ConfigureAllTeams jiraFields={jiraFields} {...configurationProps} />
           </div>
         )}
         {!!selectedTeam && selectedTeam !== "global" && (
-          <div className="w-128">
+          <div className="w-128 overflow-auto">
             <ConfigureTeams
               teamName={selectedTeam}
               jiraFields={jiraFields}
