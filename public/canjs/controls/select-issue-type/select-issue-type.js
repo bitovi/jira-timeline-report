@@ -29,23 +29,28 @@ document.body.append(RELEASES_TOOLTIP);
 
 class TypeSelectionDropdown extends StacheElement {
     static view = `
-        {{# for(issueType of this.issueHierarchy) }}
-        <label class="px-4 py-2 block {{#eq(this.primaryIssueType, issueType.name)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
+        {{# for(issueType of this.routeData.issueHierarchy) }}
+        <label class="px-4 py-2 block {{#eq(this.routeData.primaryIssueType, issueType.name)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
             type="radio" 
             name="primaryIssueType" 
-            checked:from="eq(this.primaryIssueType, issueType.name)"
+            checked:from="eq(this.routeData.primaryIssueType, issueType.name)"
             on:change="this.onSelection(issueType.name)"/> {{issueType.name}}s </label>
         {{/ }}
-        <label class="px-4 py-2  block {{#eq(this.primaryIssueType, 'Release')}}bg-blue-101{{else}}${hoverEffect}{{/eq}} border-t border-t-2 border-t-neutral-301"
+        <label class="px-4 py-2  block {{#eq(this.routeData.primaryIssueType, 'Release')}}bg-blue-101{{else}}${hoverEffect}{{/eq}} border-t border-t-2 border-t-neutral-301"
             on:mouseenter="this.showReleases(scope.element)">
             Releases <img class="inline" src="/images/chevron-right-new.svg"/> 
         </label>
-    `
+    `;
+    static props = {
+        routeData: {
+            get default() { return routeData; }
+        },
+        onSelection: Function,
+    };
+
     showReleases(label) {
         let dropdown = new ReleasesTypeSelectionDropdown().initialize({
-            issueHierarchy: this.issueHierarchy,
-            onSelection: this.onSelection,
-            secondaryIssueType: this.secondaryIssueType
+            onSelection: this.onSelection
         })
 
         RELEASES_TOOLTIP.rightOfElementInScrollingContainer(label, dropdown);
@@ -56,14 +61,20 @@ customElements.define("select-type-dropdown", TypeSelectionDropdown);
 
 class ReleasesTypeSelectionDropdown extends StacheElement {
     static view = `
-        {{# for(issueType of this.issueHierarchy) }}
-        <label class="px-4 py-2 block {{#eq(this.secondaryIssueType, issueType.name)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
+        {{# for(issueType of this.routeData.issueHierarchy) }}
+        <label class="px-4 py-2 block {{#eq(this.routeData.secondaryIssueType, issueType.name)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
             type="radio" 
             name="primaryIssueType" 
-            checked:from="eq(this.secondaryIssueType, issueType.name)"
+            checked:from="eq(this.routeData.secondaryIssueType, issueType.name)"
             on:change="this.onSelection('Release', issueType.name)"/> {{issueType.name}}s </label>
         {{/ }}
-    `
+    `;
+    static props = {
+        routeData: {
+            get default() { return routeData; }
+        },
+        onSelection: Function,
+    }
 }
 customElements.define("select-release-type-dropdown", ReleasesTypeSelectionDropdown);
 
@@ -101,9 +112,6 @@ export class SelectIssueType extends StacheElement {
     }
     showChildOptions(){
         let dropdown = new TypeSelectionDropdown().initialize({
-            primaryIssueType: this.routeData.primaryIssueType,
-            secondaryIssueType: this.routeData.secondaryIssueType,
-            issueHierarchy: this.routeData.issueHierarchy,
             onSelection: this.onSelection.bind(this)
         })
 
