@@ -18,7 +18,7 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       <meta property="og:url" content="https://timeline-report.bitovi-jira.com/">
       <meta name="twitter:card" content="summary_large_image">
       
-      <link rel="icon" type="image/png" href="/images/favicon.png" />
+      <link rel="icon" type="image/png" href="./images/favicon.png" />
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="dist/production.css">
       <script src="https://connect-cdn.atl-paas.net/all${
