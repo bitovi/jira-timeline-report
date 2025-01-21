@@ -43,7 +43,7 @@ export const getServerInfo = makeCacheable(({ jiraHelpers, isLoggedIn }) => {
 });
 
 export const getSimplifiedIssueHierarchy = makeCacheable(({ jiraHelpers, isLoggedIn }) => {
-  if (jiraHelpers.hasValidAccessToken()) {
+  if (isLoggedIn) {
     return jiraHelpers.fetchIssueTypes().then(simplifyIssueHierarchy);
   } else {
     return bitoviTrainingIssueData().then(simplifyIssueHierarchy);

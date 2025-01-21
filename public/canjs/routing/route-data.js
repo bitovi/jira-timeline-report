@@ -37,6 +37,8 @@ import {
     toSelectedParts
 } from "./data-utils.js";
 
+import {getTimingLevels} from "../controls/timeline-configuration/timing-calculation/helpers.js";
+
 const _15DAYS_IN_S = DAY_IN_MS / 1000 * 15;
 
 const booleanParsing = {
@@ -82,7 +84,29 @@ class RouteData extends ObservableObject {
             return getAllTeamData(this.storage)
         },
         get simplifiedIssueHierarchyPromise(){
-            return getSimplifiedIssueHierarchy( { jiraHelpers: this.jiraHelpers, isLoggedIn: this.isLoggedInObservable.value })
+            return getSimplifiedIssueHierarchy( { 
+                jiraHelpers: this.jiraHelpers, 
+                isLoggedIn: this.isLoggedInObservable.value 
+            })
+        },
+        simplifiedIssueHierarchy: {
+            async(resolve){
+                return this.simplifiedIssueHierarchyPromise;
+            }
+        },
+        get issueTimingCalculations(){
+            if(!this.simplifiedIssueHierarchy) {
+                return [];
+            } else {
+                const allLevels = getTimingLevels(this.simplifiedIssueHierarchy, this.timingCalculations);
+                return allLevels.map( level => {
+                    return {
+                        type: level.type,
+                        hierarchyLevel: level.hierarchyLevel,
+                        calculation: level.calculations.find( (level) => level.selected).calculation
+                    }
+                })
+            }
         },
 
 
@@ -302,6 +326,7 @@ class RouteData extends ObservableObject {
                 return REPORTS;
 			}
 		},
+
         get issueHierarchy(){
             return this.derivedIssues && this.derivedIssues.length ?
                 issueHierarchyFromNormalizedIssues(this.derivedIssues) :
@@ -426,6 +451,9 @@ class RouteData extends ObservableObject {
         },
     }
 }
+
+
+
 
 const routeData = new RouteData();
 console.log("routeData", routeData);
