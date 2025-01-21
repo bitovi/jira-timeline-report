@@ -22,6 +22,7 @@ interface TeamConfigurationWrapperProps {
   storage: AppStorage;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
   showingTeamsObservable: CanObservable<boolean>;
+  showSidebarBranding:CanObservable<boolean>
 }
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({

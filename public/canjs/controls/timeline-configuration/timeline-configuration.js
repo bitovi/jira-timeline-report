@@ -44,31 +44,35 @@ const GOBACK_BUTTON = `
     <img src="/images/go-back.svg" class="inline"/> Go back</button>
 `;
 
+const BRANDING = `
+  {{# if(this.showSidebarBranding)}}
+    <div class="flex gap-2 pt-4">
+      <div class="flex-none pt-1">
+        <img src="./images/eggbert-light-minimum.svg"/>
+      </div>
+      <div class="flex-auto grow items-baseline leading-4">
+        <div class="color-gray-900 underline-on-hover bitovi-font-poppins font-bold">
+          <a href="https://github.com/bitovi/jira-timeline-report" target="_blank">
+            Status Reports
+          </a>
+        </div>
+        <div class="bitovi-poppins text-neutral-100 text-sm">
+          <a href="https://www.bitovi.com/services/agile-project-management-consulting" target="_blank">
+            by Bitovi
+          </a>
+        </div>
+      </div>
+    </div>
+  {{/ if}}`
+
 export class TimelineConfiguration extends StacheElement {
   static view = `
     <div class="px-3 py-2 h-full min-w-40">
 
-        {{# if(this.showSidebarBranding)}}
-          <div class="flex gap-2 pt-4">
-            <div class="flex-none pt-1">
-              <img src="./images/eggbert-light-minimum.svg"/>
-            </div>
-            <div class="flex-auto grow items-baseline leading-4">
-              <div class="color-gray-900 underline-on-hover bitovi-font-poppins font-bold">
-                <a href="https://github.com/bitovi/jira-timeline-report" target="_blank">
-                  Status Reports
-                </a>
-              </div>
-              <div class="bitovi-poppins text-neutral-100 text-sm">
-                <a href="https://www.bitovi.com/services/agile-project-management-consulting" target="_blank">
-                  by Bitovi
-                </a>
-              </div>
-            </div>
-          </div>
-        {{/ if}}
-
         {{# not(this.routeData.showSettings) }}
+
+            ${BRANDING}
+          
             <h3 class="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
         
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50 w-full text-left"
@@ -110,6 +114,7 @@ export class TimelineConfiguration extends StacheElement {
         {{/ not }}
         
         <div width="w-96"  class="{{^ eq(this.routeData.showSettings, "SOURCES")}}hidden{{/}}">
+            ${BRANDING}
             ${GOBACK_BUTTON}
             <h3 class="h3">Issue Source</h3>
             <p>Specify a JQL that loads all issues you want to report on and help determine the timeline of your report.</p>
@@ -172,6 +177,7 @@ export class TimelineConfiguration extends StacheElement {
 
         
         <div class="{{^ eq(this.routeData.showSettings, "TIMING")}}hidden{{/}}">
+            ${BRANDING}
             ${GOBACK_BUTTON}
             <timing-calculation 
                 jiraHelpers:from="this.jiraHelpers"></timing-calculation>
@@ -228,6 +234,7 @@ export class TimelineConfiguration extends StacheElement {
         jira: this.jiraHelpers,
         derivedIssuesObservable: value.from(this.routeData, "derivedIssues"),
         showingTeamsObservable: value.from(this, "isShowingTeams"),
+        showSidebarBranding: value.from(this, "showSidebarBranding"),
         onUpdate: ({ fields, ...configuration }) => {
           queues.batch.start();
 
