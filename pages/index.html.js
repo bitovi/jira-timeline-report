@@ -35,9 +35,9 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       </script>
     </head>
 
-    <body>
+    <body class="overflow-hidden">
 
-      <div id="mainContent" class="flex flex-col h-screen">
+      <div id="mainContent" class="flex flex-col w-screen h-screen overflow-hidden">
         ${Header(showHeader)}
 
         <div id="loadingJira" class='place-center'>
@@ -58,7 +58,7 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
 function Header(showHeader = true) {
   return showHeader
     ? `
-    <div class="color-bg-white px-4 sticky top-0 z-50 border-b border-neutral-301">
+    <div class="color-bg-white px-4 top-0 z-50 border-b border-neutral-301">
       <nav class="mx-auto py-2 place-center">
         <div class="flex gap-4" style="align-items: center">
           <ul class="flex gap-3 grow items-baseline">

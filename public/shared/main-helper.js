@@ -62,8 +62,7 @@ export default async function mainHelper(
         storage,
         showSidebarBranding,
       });
-      report.className = "flex";
-      report.style = "height: calc(100svh - 5rem);";
+      report.className = "flex flex-1 overflow-hidden"
       mainContent.append(report);
     }
   };
