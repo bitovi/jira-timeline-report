@@ -8,6 +8,7 @@ module.exports = function () {
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Status Reports for Jira OAuth Callback</title>
+	<link rel="icon" type="image/png" href="/images/favicon.png" />
 	<link rel="stylesheet" href="dist/production.css">
 </head>
 	<body class='color-bg-white overflow-x-hidden'>

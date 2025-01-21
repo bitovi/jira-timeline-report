@@ -18,11 +18,12 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       <meta property="og:url" content="https://timeline-report.bitovi-jira.com/">
       <meta name="twitter:card" content="summary_large_image">
       
+      <link rel="icon" type="image/png" href="/images/favicon.png" />
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="dist/production.css">
       <script src="https://connect-cdn.atl-paas.net/all${
         env.NODE_ENV === "development" ? "-debug" : ""
-    }.js"></script>
+      }.js"></script>
       <!-- Google tag (gtag.js) -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
       <script>
@@ -55,7 +56,8 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
 };
 
 function Header(showHeader = true) {
-  return showHeader ? `
+  return showHeader
+    ? `
     <div class="color-bg-white px-4 sticky top-0 z-50 border-b border-neutral-301">
       <nav class="mx-auto py-2 place-center">
         <div class="flex gap-4" style="align-items: center">
@@ -83,6 +85,6 @@ function Header(showHeader = true) {
         </div>
       </nav>
     </div>
-  ` : 
-  '<div id="login"></div>';
+  `
+    : '<div id="login"></div>';
 }
