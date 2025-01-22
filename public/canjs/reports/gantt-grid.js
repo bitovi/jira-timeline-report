@@ -7,11 +7,10 @@ import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup.js"
 import { workTypes } from "../../jira/derived/work-status/work-status";
 import { normalizeIssue, normalizeParent } from "../../jira/normalized/normalize.js";
 
-import {roundDateByRoundToParam} from "../routing/utils/round.js";
-import {getDaysInMonth} from "../../utils/date/days-in-month.js";
+import { roundDateByRoundToParam } from "../routing/utils/round.js";
+import { getDaysInMonth } from "../../utils/date/days-in-month.js";
 
-const DAY_IN_MS = 1000*60*60*24;
-
+const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 const percentCompleteTooltip = stache(`
     <button class="remove-button">❌</button>
@@ -49,28 +48,28 @@ export class GanttGrid extends StacheElement {
   static view = `
         <div style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} ; grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
-            <div></div><div></div>
+            <div class='z-50 bg-white sticky top-0'></div><div class='z-50 bg-white sticky top-0'></div>
             {{# for(column of this.columnsToShow) }}
-            <div></div>
+            <div class='z-50 bg-white sticky top-0'></div>
             {{/ for }}
 
             {{# for(quarter of this.quartersAndMonths.quarters) }}
-                <div style="grid-column: span 3" class="text-center">{{quarter.name}}</div>
+                <div style="grid-column: span 3" class="text-center z-50 bg-white sticky top-0">{{quarter.name}}</div>
             {{ / for }}
 
-            <div></div><div></div>
+            <div class='z-50 bg-white sticky top-6' ></div><div class='z-50 bg-white sticky top-6'></div>
             
             {{# for(column of this.columnsToShow) }}
-              <div></div>
+              <div class='z-50 bg-white sticky top-6'></div>
             {{/ for }}
 
             {{# for(month of this.quartersAndMonths.months)}}
-                <div class='border-b border-neutral-80 text-center'>{{month.name}}</div>
+                <div class='border-b border-neutral-80 text-center z-50 bg-white sticky top-6'>{{month.name}}</div>
             {{/ for }}
 
             <!-- CURRENT TIME BOX -->
             <div style="grid-column: {{plus(3,this.columnsToShow.length)}} / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
-                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 1000; position: relative; height: 100%;"></div>
+                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 45; position: relative; height: 100%;"></div>
             </div>
 
 
@@ -124,7 +123,9 @@ export class GanttGrid extends StacheElement {
     `;
   static props = {
     routeData: {
-      get default() { return routeData; }
+      get default() {
+        return routeData;
+      },
     },
     get breakdown() {
       return this.routeData.primaryReportBreakdown;
@@ -135,19 +136,19 @@ export class GanttGrid extends StacheElement {
       },
     },
     showChildrenByKey: {
-      get default(){
+      get default() {
         return new ObservableObject();
-      }
+      },
     },
     getChildren: {
       type: Function,
-      get: function(){
+      get: function () {
         return makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-      }
-    }
+      },
+    },
   };
   toggleShowingChildren(issue) {
-    if(this.showChildrenByKey[issue.key]) {
+    if (this.showChildrenByKey[issue.key]) {
       this.showChildrenByKey[issue.key] = false;
     } else {
       this.showChildrenByKey[issue.key] = true;
@@ -162,58 +163,67 @@ export class GanttGrid extends StacheElement {
   get bigBarSize() {
     return this.lotsOfIssues ? "h-2" : "h-4";
   }
-  get shadowBarSize(){
+  get shadowBarSize() {
     return this.lotsOfIssues ? "h-4" : "h-6";
   }
-  get columnsToShow(){
-    if(this.showPercentComplete) {
-      return [{
-        name: "percentComplete",
-        getValue(issue) {
-          return (
-            Math.round((issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays) + "%"
-          );
+  get columnsToShow() {
+    if (this.showPercentComplete) {
+      return [
+        {
+          name: "percentComplete",
+          getValue(issue) {
+            return (
+              Math.round(
+                (issue.completionRollup.completedWorkingDays * 100) /
+                  issue.completionRollup.totalWorkingDays
+              ) + "%"
+            );
+          },
+          onclick: (event, issue, allIssues) => {
+            const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+
+            // we should get all the children ...
+            const children = getChildren(issue);
+
+            showTooltipContent(
+              event.currentTarget,
+              percentCompleteTooltip({
+                issue,
+                children,
+                getPercentComplete: this.getPercentComplete.bind(this),
+                round: Math.round,
+              })
+            );
+          },
         },
-        onclick: (event, issue, allIssues) => {
-          const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-
-          // we should get all the children ...
-          const children = getChildren(issue);
-
-          showTooltipContent(
-            event.currentTarget,
-            percentCompleteTooltip({
-              issue,
-              children,
-              getPercentComplete: this.getPercentComplete.bind(this),
-              round: Math.round,
-            })
-          );
-        }
-      }]
+      ];
     } else {
-      return []
+      return [];
     }
   }
-  get gridColumnsCSS(){
-
-    let columnCSS = ""
+  get gridColumnsCSS() {
+    let columnCSS = "";
     // repeat({{this.quartersAndMonths.months.length}}, [col] 1fr)
 
-    if(this.columnsToShow.length) {
-      columnCSS += "repeat("+this.columnsToShow.length+", auto)"
-    } 
+    if (this.columnsToShow.length) {
+      columnCSS += "repeat(" + this.columnsToShow.length + ", auto)";
+    }
 
-    columnCSS += this.quartersAndMonths.months.map( ({date}) => {
-      return getDaysInMonth(date.getYear(), date.getMonth() + 1)+ "fr"
-    }).join(" ");
+    columnCSS += this.quartersAndMonths.months
+      .map(({ date }) => {
+        return getDaysInMonth(date.getYear(), date.getMonth() + 1) + "fr";
+      })
+      .join(" ");
 
     return columnCSS;
   }
   getPercentComplete(issue) {
     if (this.showPercentComplete) {
       return (
-        Math.round((issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays) + "%"
+        Math.round(
+          (issue.completionRollup.completedWorkingDays * 100) /
+            issue.completionRollup.totalWorkingDays
+        ) + "%"
       );
     } else {
       return "";
@@ -250,24 +260,24 @@ export class GanttGrid extends StacheElement {
     return first + second + (third || 0);
   }
   multiply(first, second) {
-    return first* second;
+    return first * second;
   }
   lastRowBorder(index) {
     return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : "";
   }
   get quartersAndMonths() {
     const rollupDates = this.primaryIssuesOrReleases.map((issue) => issue.rollupStatuses.rollup);
-    
+
     let { start, due } = mergeStartAndDueData(rollupDates);
     // nothing has timing
     if (!start) {
       start = new Date();
     }
-    if ( !due ) {
+    if (!due) {
       due = new Date(start.getTime() + 1000 * 60 * 60 * 24 * 90);
     }
-    if( due < new Date() ) {
-      due = new Date((new Date()).getTime() + 1000 * 60 * 60 * 24 * 90);
+    if (due < new Date()) {
+      due = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 90);
     }
     return getQuartersAndMonths(new Date(), due);
   }
@@ -277,7 +287,6 @@ export class GanttGrid extends StacheElement {
     return ((new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime) * 100;
   }
   get gridRowData() {
-    
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
     if (this.routeData.groupBy === "parent" && this.routeData.primaryIssueType !== "Release") {
       // get all the parents ...
@@ -293,7 +302,7 @@ export class GanttGrid extends StacheElement {
           } else if (obj[parentKey][0].issue.fields.Parent) {
             return normalizeParent(obj[parentKey][0].issue.fields.Parent);
           } else {
-            return {key: parentKey, summary: "No Parent"}
+            return { key: parentKey, summary: "No Parent" };
           }
         })
         .filter(Boolean);
@@ -340,20 +349,23 @@ export class GanttGrid extends StacheElement {
         })
         .flat(1);
     } else {
-
       const getRow = (issue, depth = 0) => {
         const isShowingChildren = this.showChildrenByKey[issue.key];
 
         const row = { type: "issue", issue, isShowingChildren, depth };
-        if(isShowingChildren) {
-          return [row, ...this.getChildren(issue).map((issue)=> getRow(issue, depth+1)).flat(1)]
+        if (isShowingChildren) {
+          return [
+            row,
+            ...this.getChildren(issue)
+              .map((issue) => getRow(issue, depth + 1))
+              .flat(1),
+          ];
         } else {
-          return [row]
+          return [row];
         }
-      }
+      };
 
-
-      return this.primaryIssuesOrReleases.map( issue => getRow(issue)).flat(1);
+      return this.primaryIssuesOrReleases.map((issue) => getRow(issue)).flat(1);
     }
   }
   groupElement(issue, index) {
@@ -365,7 +377,7 @@ export class GanttGrid extends StacheElement {
     const background = makeElement([index % 2 ? "bg-neutral-20" : ""], {
       ...baseGridStyles,
       zIndex: 0,
-    })
+    });
     return stache.safeString(background);
   }
   /**
@@ -384,16 +396,13 @@ export class GanttGrid extends StacheElement {
       gridRow: `${index + 3}`,
     };
 
-    const background = makeElement(
-      [index % 2 ? "bg-neutral-20" : ""],
-      {
-        ...baseGridStyles,
-        zIndex: 0,
-      }
-    );
+    const background = makeElement([index % 2 ? "bg-neutral-20" : ""], {
+      ...baseGridStyles,
+      zIndex: 0,
+    });
 
     // the root element contains the last period and current period bars
-    const root = makeElement([],{
+    const root = makeElement([], {
       ...baseGridStyles,
       position: "relative",
       zIndex: 20,
@@ -401,103 +410,115 @@ export class GanttGrid extends StacheElement {
 
     // this has the last period stuff ... it's absolutely stretched to match the same space
     // we probably could have put this in the grid, but it's nice to have this stuff w/i an element
-    const lastPeriodRoot = makeElement(
-      [this.breakdown ? "": "py-1"],
-    {
+    const lastPeriodRoot = makeElement([this.breakdown ? "" : "py-1"], {
       position: "absolute",
       top: "0",
       left: "0",
       right: "0",
       bottom: "0",
     });
-    
+
     frag.appendChild(background);
     frag.appendChild(root);
 
     root.appendChild(lastPeriodRoot);
 
     const { firstDay, lastDay } = this.quartersAndMonths;
-    
-    const getPositions = getPositionsFromWork.bind(this, {firstDay, lastDay});
-    
-    if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
-      
-      function makeLastPeriodElement(status, timing, currentPositions, extraClasses) {
 
+    const getPositions = getPositionsFromWork.bind(this, { firstDay, lastDay });
+
+    if (release.rollupStatuses.rollup.start && release.rollupStatuses.rollup.due) {
+      function makeLastPeriodElement(status, timing, currentPositions, extraClasses) {
         const positions = getPositions(timing || {});
 
-        if(currentPositions.start === positions.start && currentPositions.end === positions.end) {
-          return makeElement([],{});
+        if (currentPositions.start === positions.start && currentPositions.end === positions.end) {
+          return makeElement([], {});
         }
 
-        if(positions.endIsBeforeFirstDay) {
-          return makeElement([],{}); 
+        if (positions.endIsBeforeFirstDay) {
+          return makeElement([], {});
         }
 
-        const behindTime = makeElement([
-          /*"bg-neutral-41","blur-xs", roundBasedOnIfTheBarsExtend(positions) */
+        const behindTime = makeElement(
+          [
+            /*"bg-neutral-41","blur-xs", roundBasedOnIfTheBarsExtend(positions) */
 
-          /* "color-border-"+status, ...borderBasedOnIfTheBarsExtend(positions), roundBasedOnIfTheBarsExtend(positions)*/
-          "border-black","blur-xs", ...borderBasedOnIfTheBarsExtend(positions), roundBasedOnIfTheBarsExtend(positions)
-          , ... extraClasses
-        ],{
-          backgroundClip: "content-box",
-          position: "relative",
-          ...positions.style
-        })
-        
+            /* "color-border-"+status, ...borderBasedOnIfTheBarsExtend(positions), roundBasedOnIfTheBarsExtend(positions)*/
+            "border-black",
+            "blur-xs",
+            ...borderBasedOnIfTheBarsExtend(positions),
+            roundBasedOnIfTheBarsExtend(positions),
+            ...extraClasses,
+          ],
+          {
+            backgroundClip: "content-box",
+            position: "relative",
+            ...positions.style,
+          }
+        );
+
         return behindTime;
       }
 
       if (this.breakdown) {
         const workTypes = this.hasWorkTypes.list.filter((wt) => wt.hasWork);
         for (const { type } of workTypes) {
-          const thisPeriodPositions = getPositions(release.rollupStatuses[type])
+          const thisPeriodPositions = getPositions(release.rollupStatuses[type]);
 
           const lastPeriod = makeLastPeriodElement(
             release.rollupStatuses[type].status,
             release.rollupStatuses[type].lastPeriod,
             thisPeriodPositions,
-            ["h-2"/*, "py-[2px]"*/]
+            ["h-2" /*, "py-[2px]"*/]
           );
 
           lastPeriodRoot.appendChild(lastPeriod);
 
-          
+          const thisPeriod = makeElement(
+            [
+              type + "_time",
+              "h-[6px]",
+              "my-[1px]",
+              "rounded-sm",
+              "color-text-and-bg-" + release.rollupStatuses[type].status,
+            ],
+            {
+              ...thisPeriodPositions.style,
+              position: "relative", // for some reason needed to bring this ahead of `lastPeriod`
+            }
+          );
 
-          const thisPeriod = makeElement([
-            type+"_time","h-[6px]","my-[1px]", "rounded-sm", "color-text-and-bg-"+release.rollupStatuses[type].status,
-          ], {
-            ...thisPeriodPositions.style,
-            position: "relative" // for some reason needed to bring this ahead of `lastPeriod`
-          })
-          
           root.appendChild(thisPeriod);
         }
       } else {
-        
         // make the last one ...
         const currentPositions = getPositions(release.rollupStatuses.rollup);
 
         let team;
 
-        if(currentPositions.endIsBeforeFirstDay) {
+        if (currentPositions.endIsBeforeFirstDay) {
           /*
           team = makeElement(["p-2"],{});
           team.appendChild(
             makeCircle("←",["color-text-and-bg-" + release.rollupStatuses.rollup.status, "w-4","h-4","text-xs"],
               {zIndex: 30, position: "relative"})
           );*/
-          team = makeCircleForStatus(release.rollupStatuses.rollup.status, "←", this.lotsOfIssues)
+          team = makeCircleForStatus(release.rollupStatuses.rollup.status, "←", this.lotsOfIssues);
         } else {
-          team = makeElement([
-            "my-2", this.bigBarSize, "color-text-and-bg-" + release.rollupStatuses.rollup.status,
-            roundBasedOnIfTheBarsExtend(currentPositions)
-          ],{
-            /*opacity: "0.9",*/
-            ... currentPositions.style,
-            zIndex: 30, position: "relative"
-          })
+          team = makeElement(
+            [
+              "my-2",
+              this.bigBarSize,
+              "color-text-and-bg-" + release.rollupStatuses.rollup.status,
+              roundBasedOnIfTheBarsExtend(currentPositions),
+            ],
+            {
+              /*opacity: "0.9",*/
+              ...currentPositions.style,
+              zIndex: 30,
+              position: "relative",
+            }
+          );
         }
 
         const behindTime = makeLastPeriodElement(
@@ -508,15 +529,15 @@ export class GanttGrid extends StacheElement {
         );
 
         lastPeriodRoot.appendChild(behindTime);
-        
+
         root.appendChild(team);
       }
     } else {
-      let team = makeCircleForStatus("unknown", "∅", this.lotsOfIssues)
+      let team = makeCircleForStatus("unknown", "∅", this.lotsOfIssues);
 
       root.appendChild(team);
     }
-    
+
     return stache.safeString(frag);
   }
   get hasWorkTypes() {
@@ -538,56 +559,53 @@ export class GanttGrid extends StacheElement {
   }
   get hasUATWork() {
     if (this.primaryIssuesOrReleases) {
-      return this.primaryIssuesOrReleases.some((issue) => issue.rollupStatuses.uat.issueKeys.length);
+      return this.primaryIssuesOrReleases.some(
+        (issue) => issue.rollupStatuses.uat.issueKeys.length
+      );
     } else {
       return true;
     }
   }
 }
 
-function roundBasedOnIfTheBarsExtend({startExtends, endExtends}) {
-  if(!startExtends && !endExtends) {
-    return "rounded"
-  }
-  else if(startExtends && endExtends) {
-    return "rounded-none"
-  } else if(startExtends) {
-    return "rounded-r"
+function roundBasedOnIfTheBarsExtend({ startExtends, endExtends }) {
+  if (!startExtends && !endExtends) {
+    return "rounded";
+  } else if (startExtends && endExtends) {
+    return "rounded-none";
+  } else if (startExtends) {
+    return "rounded-r";
   } else {
-    return "rounded-l"
+    return "rounded-l";
   }
 }
 
-function borderBasedOnIfTheBarsExtend({startExtends, endExtends}) {
-  if(!startExtends && !endExtends) {
-    return "border"
-  }
-  else if(startExtends && endExtends) {
-    return ["border-0"]
-  } else if(startExtends) {
-    return ["border-r", "border-y"]
+function borderBasedOnIfTheBarsExtend({ startExtends, endExtends }) {
+  if (!startExtends && !endExtends) {
+    return "border";
+  } else if (startExtends && endExtends) {
+    return ["border-0"];
+  } else if (startExtends) {
+    return ["border-r", "border-y"];
   } else {
-    return ["border-l", "border-y"]
+    return ["border-l", "border-y"];
   }
 }
 
 function makeElement(classNames, styles) {
   const div = document.createElement("div");
-  div.classList.add(...classNames.filter( x => x));
+  div.classList.add(...classNames.filter((x) => x));
   Object.assign(div.style, styles);
   return div;
 }
 
-
-function getPositionsFromWork({firstDay, lastDay}, work) {
-  
-
+function getPositionsFromWork({ firstDay, lastDay }, work) {
   const totalTime = lastDay - firstDay;
 
   const roundedWork = {
     start: roundDateByRoundToParam.start(work.start),
-    due: roundDateByRoundToParam.end(work.due)
-  }
+    due: roundDateByRoundToParam.end(work.due),
+  };
 
   if (roundedWork.start == null && roundedWork.due == null) {
     return {
@@ -608,20 +626,18 @@ function getPositionsFromWork({firstDay, lastDay}, work) {
   const endExtends = roundedWork.due > lastDay;
 
   return {
-
     start,
     end,
     endIsBeforeFirstDay: roundedWork.due && roundedWork.due <= firstDay,
     startIsAfterLastDay: roundedWork.start && roundedWork.start >= lastDay,
     startExtends, // is the start before the first day
-    endExtends,   // is the end after the last day
+    endExtends, // is the end after the last day
     style: {
-      width: Math.max(((end+DAY_IN_MS - start) / totalTime) * 100, 0) + "%",
+      width: Math.max(((end + DAY_IN_MS - start) / totalTime) * 100, 0) + "%",
       marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
     },
   };
 }
-
 
 function makeCircle(innerHTML, styles, css) {
   const element = makeElement(styles, {
@@ -629,24 +645,25 @@ function makeCircle(innerHTML, styles, css) {
     borderRadius: "50%",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   });
   element.innerHTML = innerHTML;
   return element;
 }
 
-const fewerIssuesClasses = ["w-4","h-4","text-xs"];
-const lotsOfIssueClasses = ["w-4","h-4","text-xs"];
-function makeCircleForStatus(status,innerHTML, lotsOfIssues) {
-
-  let team = makeElement([ lotsOfIssues ? "p-1" : "p-2"],{});
+const fewerIssuesClasses = ["w-4", "h-4", "text-xs"];
+const lotsOfIssueClasses = ["w-4", "h-4", "text-xs"];
+function makeCircleForStatus(status, innerHTML, lotsOfIssues) {
+  let team = makeElement([lotsOfIssues ? "p-1" : "p-2"], {});
   team.appendChild(
-    makeCircle(innerHTML,["color-text-and-bg-" + status, ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
-      {zIndex: 30, position: "relative"})
-  ); 
+    makeCircle(
+      innerHTML,
+      ["color-text-and-bg-" + status, ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
+      { zIndex: 30, position: "relative" }
+    )
+  );
 
   return team;
 }
-
 
 customElements.define("gantt-grid", GanttGrid);
