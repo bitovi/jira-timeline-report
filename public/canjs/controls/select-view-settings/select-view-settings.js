@@ -38,8 +38,6 @@ const booleanParsing = {
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
 
-import { makeArrayOfStringsQueryParamValue } from "../../routing/state-storage.js";
-
 class SelectViewSettingsDropdown extends StacheElement {
     static view = `
     <div class="p-2">
@@ -50,20 +48,20 @@ class SelectViewSettingsDropdown extends StacheElement {
             <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
-                checked:from="eq(this.groupBy, '')"
-                on:change="this.groupBy = ''"
+                checked:from="eq(this.routeData.groupBy, '')"
+                on:change="this.routeData.groupBy = ''"
                 /> None</label>
             <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
-                checked:from="eq(this.groupBy, 'parent')"
-                on:change="this.groupBy = 'parent'"
+                checked:from="eq(this.routeData.groupBy, 'parent')"
+                on:change="this.routeData.groupBy = 'parent'"
                 /> Parent</label>
             <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
-                checked:from="eq(this.groupBy, 'team')"
-                on:change="this.groupBy = 'team'"
+                checked:from="eq(this.routeData.groupBy, 'team')"
+                on:change="this.routeData.groupBy = 'team'"
                 /> Team (or Project)</label>
         </div>
         {{/ if }}
@@ -75,14 +73,14 @@ class SelectViewSettingsDropdown extends StacheElement {
              <label class="px-2 block"><input 
                 type="radio" 
                 name="sortByDueDate"
-                checked:from="not(this.sortByDueDate)"
-                on:change="this.sortByDueDate = false"
+                checked:from="not(this.routeData.sortByDueDate)"
+                on:change="this.routeData.sortByDueDate = false"
                 /> JQL Order</label>
             <label class="px-2 block"><input 
                 type="radio" 
                 name="sortByDueDate"
-                checked:from="this.sortByDueDate"
-                on:change="this.sortByDueDate = true"
+                checked:from="this.routeData.sortByDueDate"
+                on:change="this.routeData.sortByDueDate = true"
                 /> Due Date</label>    
         </div>
 
@@ -96,7 +94,7 @@ class SelectViewSettingsDropdown extends StacheElement {
         </div>
 
 
-        {{# if(this.primaryIssueType) }}
+        {{# if(this.routeData.primaryIssueType) }}
             <div class="my-4">
                 <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
 
@@ -106,7 +104,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <status-filter 
                         statuses:from="this.statuses"
                         param:raw="statusesToShow"
-                        selectedStatuses:bind="this.statusesToShow"
+                        selectedStatuses:bind="this.routeData.statusesToShow"
                         inputPlaceholder:raw="Search for statuses"
                         style="max-width: 400px;">
                     </status-filter>
@@ -116,7 +114,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <status-filter 
                         statuses:from="this.statuses" 
                         param:raw="statusesToRemove"
-                        selectedStatuses:bind="this.statusesToRemove"
+                        selectedStatuses:bind="this.routeData.statusesToRemove"
                         inputPlaceholder:raw="Search for statuses"
                         style="max-width: 400px;">
                         </status-filter>
@@ -140,10 +138,10 @@ class SelectViewSettingsDropdown extends StacheElement {
                     
                 </div>
 
-                {{# eq(this.primaryIssueType, "Release") }}
+                {{# eq(this.routeData.primaryIssueType, "Release") }}
                         <label class=''>Show only Semver-like releases</label>
                         <input type='checkbox' 
-                            class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
+                            class='self-start mt-1.5'  checked:bind='this.routeData.showOnlySemverReleases'/>
                         <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
                         <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
                         </p>
@@ -154,7 +152,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
 
                 <input type='checkbox' 
-                    class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/> Hide {{this.primaryIssueType}}s without dates 
+                    class='self-start mt-1.5' checked:bind='this.routeData.hideUnknownInitiatives'/> Hide {{this.routeData.primaryIssueType}}s without dates 
             </div>
         {{/ if }}
 
@@ -164,14 +162,14 @@ class SelectViewSettingsDropdown extends StacheElement {
             <div class="font-bold uppercase text-slate-300 text-xs">View Options</div>
             <div class="flex mt-2 gap-2 flex-wrap">
                 <input type='checkbox' 
-                    class='self-start mt-1.5'  checked:bind='this.primaryReportBreakdown'/>
+                    class='self-start mt-1.5'  checked:bind='this.routeData.primaryReportBreakdown'/>
                 <p>Show work breakdown</p>
                 
             </div>
 
             <div class="flex mt-2 gap-2 flex-wrap">
                 <input type='checkbox' 
-                    class='self-start mt-1.5'  checked:bind='this.showPercentComplete'/>
+                    class='self-start mt-1.5'  checked:bind='this.routeData.showPercentComplete'/>
                 <p>Show completion percentage</p>
                 
             </div>
@@ -185,24 +183,24 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <label class="px-2"><input 
                     type="radio" 
                     name="secondary" 
-                    checked:from="eq(this.secondaryReportType, 'none')"
-                    on:change="this.secondaryReportType = 'none'"
+                    checked:from="eq(this.routeData.secondaryReportType, 'none')"
+                    on:change="this.routeData.secondaryReportType = 'none'"
                     /> None </label>
                     
                 <label class="px-2"><input 
                     type="radio" 
                     name="secondary" 
-                    checked:from="eq(this.secondaryReportType, 'status')"
-                    on:change="this.secondaryReportType = 'status'"
-                    /> {{this.secondaryIssueType}} status </label>
+                    checked:from="eq(this.routeData.secondaryReportType, 'status')"
+                    on:change="this.routeData.secondaryReportType = 'status'"
+                    /> {{this.routeData.secondaryIssueType}} status </label>
                 
-                {{# not(eq(this.secondaryIssueType, "Story") ) }}
+                {{# not(eq(this.routeData.secondaryIssueType, "Story") ) }}
                 <label class="px-2"><input 
                     type="radio" 
                     name="secondary" 
-                    checked:from="eq(this.secondaryReportType, 'breakdown')"
-                    on:change="this.secondaryReportType = 'breakdown'"
-                    /> {{this.secondaryIssueType}} work breakdown </label>
+                    checked:from="eq(this.routeData.secondaryReportType, 'breakdown')"
+                    on:change="this.routeData.secondaryReportType = 'breakdown'"
+                    /> {{this.routeData.secondaryIssueType}} work breakdown </label>
                 {{/ not }}
                 </div>
             </div>
@@ -213,7 +211,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <status-filter 
                     statuses:from="this.statuses" 
                     param:raw="planningStatuses"
-                    selectedStatuses:bind="this.planningStatuses"
+                    selectedStatuses:bind="this.routeData.planningStatuses"
                     inputPlaceholder:raw="Search for statuses"
                     style="max-width: 400px;"></status-filter>
             </div>
@@ -222,7 +220,6 @@ class SelectViewSettingsDropdown extends StacheElement {
     </div>
     `;
     static props = {
-
         roundingOptions: {
             get default(){
                 return ROUNDING_OPTIONS;
@@ -232,7 +229,7 @@ class SelectViewSettingsDropdown extends StacheElement {
             get default(){
                 return routeData;
             }
-        }
+        },
     }
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
@@ -265,45 +262,24 @@ export class SelectViewSettings extends StacheElement {
             }
         },
         get firstIssueTypeWithStatuses(){
-            if(this.primaryIssueType) {
-                if(this.primaryIssueType !== "Release") {
-                    return this.primaryIssueType;
+            if(this.routeData.primaryIssueType) {
+                if(this.routeData.primaryIssueType !== "Release") {
+                    return this.routeData.primaryIssueType;
                 } else {
-                    return this.secondaryIssueType;
+                    return this.routeData.secondaryIssueType;
                 }
             }
         },
         get canGroup(){
             return this.routeData.primaryReportType === 'start-due' &&
-                this.primaryIssueType && this.primaryIssueType !== "Release"
+                this.routeData.primaryIssueType && this.routeData.primaryIssueType !== "Release"
         }
         
     }
     showChildOptions(){
         
         let dropdown = new SelectViewSettingsDropdown().bindings({
-            showPercentComplete: value.bind(this.routeData,"showPercentComplete"),
-            secondaryReportType: value.bind(this.routeData,"secondaryReportType"),
-            
-            groupBy: value.bind(this.routeData,"groupBy"),
-            sortByDueDate: value.bind(this.routeData,"sortByDueDate"),
-            hideUnknownInitiatives: value.bind(this.routeData,"hideUnknownInitiatives"),
-            showOnlySemverReleases: value.bind(this.routeData,"showOnlySemverReleases"),
-            primaryReportBreakdown: value.bind(this.routeData,"primaryReportBreakdown"),
-
-            primaryReportType: this.routeData.primaryReportType,
-
-            statusesToRemove: value.bind(this.routeData,"statusesToRemove"),
-            statusesToShow: value.bind(this.routeData,"statusesToShow"),
-            planningStatuses: value.bind(this.routeData,"planningStatuses"),
-
-            
-
-
-            secondaryIssueType: value.from(this.routeData,"secondaryIssueType"),
-            primaryIssueType: value.from(this.routeData,"primaryIssueType"),
             canGroup: value.from(this,"canGroup"),
-
             firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
 
             // this could probably be calculated by itself
