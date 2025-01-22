@@ -234,7 +234,7 @@ export class TimelineConfiguration extends StacheElement {
         jira: this.jiraHelpers,
         derivedIssuesObservable: value.from(this.routeData, "derivedIssues"),
         showingTeamsObservable: value.from(this, "isShowingTeams"),
-        showSidebarBranding: value.from(this, "showSidebarBranding"),
+        showSidebarBranding: this.showSidebarBranding,
         onUpdate: ({ fields, ...configuration }) => {
           queues.batch.start();
 

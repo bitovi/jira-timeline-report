@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import type { NormalizeIssueConfig } from "../../jira/normalized/normalize";
-import { useCanObservable, type CanObservable } from "../hooks/useCanObservable";
+import type { CanObservable } from "../hooks/useCanObservable";
 
 import React, { useState } from "react";
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
@@ -17,7 +17,7 @@ export interface ConfigurationPanelProps {
   onBackButtonClicked: () => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
-  showSidebarBranding: CanObservable<boolean>;
+  showSidebarBranding: boolean;
 }
 
 type TeamName = "global" | (string & {});
@@ -30,14 +30,13 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
 }) => {
   const jiraFields = useJiraIssueFields();
   const { savedUserAllTeamData } = useAllTeamData(jiraFields);
-  const isShowSidebarBranding = useCanObservable(showSidebarBranding);
 
   const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
 
   return (
     <div className="w-full h-full flex">
       <div className="w-56 border-r border-neutral-30 pr-4 flex flex-col">
-        {isShowSidebarBranding && <Branding />}
+        {showSidebarBranding && <Branding />}
         <SidebarButton onClick={onBackButtonClicked}>
           <ArrowLeftCircleIcon label="go back" />
           Go back
