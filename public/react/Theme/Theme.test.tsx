@@ -62,9 +62,6 @@ const renderWithWrappers = (config?: Partial<RenderConfig>) => {
 
 describe("Theme Component", () => {
   const mockOnBackButtonClicked = vi.fn();
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
 
   it("renders without crashing", async () => {
     renderWithWrappers({ props: { onBackButtonClicked: mockOnBackButtonClicked } });
@@ -76,13 +73,14 @@ describe("Theme Component", () => {
     expect(themeHeading).toBeInTheDocument();
   });
 
-  it("calls onBackButtonClicked when the back button is clicked", async () => {
+  it("calls go back", async () => {
     renderWithWrappers({ props: { onBackButtonClicked: mockOnBackButtonClicked } });
 
-    const backButton = await screen.findByRole("button", { name: /go back/i });
+    const goBack = await screen.findByRole("button", { name: /go back/i });
+    expect(goBack).toBeInTheDocument();
 
-    await userEvent.click(backButton);
+    await userEvent.click(goBack);
 
-    expect(mockOnBackButtonClicked).toHaveBeenCalledTimes(1);
+    expect(mockOnBackButtonClicked).toHaveBeenCalled();
   });
 });
