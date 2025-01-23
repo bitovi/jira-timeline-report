@@ -1,14 +1,14 @@
 import { getTextColorUsingAPCA } from "../../utils/color";
 import { AppStorage } from "../storage/common";
 
-const defaultTheme = {
+export const defaultTheme = {
   complete: {
     label: "Complete",
     description: `End date in the past`,
     backgroundColor: "#22A06B",
     backgroundCssVar: "--complete-color",
-    textColor: "--complete-text-color",
-    textCssVar: "#FFFFFF",
+    textColor: "#FFFFFF",
+    textCssVar: "--complete-text-color",
   },
   blocked: {
     label: "Blocked",

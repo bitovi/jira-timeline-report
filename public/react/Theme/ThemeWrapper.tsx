@@ -12,8 +12,12 @@ import Skeleton from "../components/Skeleton";
 import { StorageProvider } from "../services/storage";
 import { useCanObservable } from "../hooks/useCanObservable";
 import { FlagsProvider } from "@atlaskit/flag";
+import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
+
 import { queryClient } from "../services/query";
 import Theme from "./Theme";
+import SidebarButton from "../components/SidebarButton";
+import Heading from "@atlaskit/heading";
 
 interface ThemeWrapper {
   storage: AppStorage;
@@ -23,8 +27,6 @@ interface ThemeWrapper {
 
 const ViewReportsWrapper: FC<ThemeWrapper> = ({ storage, showingThemeObservable, ...props }) => {
   const showTheme = useCanObservable(showingThemeObservable);
-
-  console.log(showTheme);
 
   if (!showTheme) {
     return null;
@@ -55,7 +57,7 @@ interface ThemeErrorProps {
 
 const ThemeError: FC<ThemeErrorProps> = ({ onBackButtonClicked }) => {
   return (
-    <SectionMessage appearance="error" title="Unable to load saved reports">
+    <SectionMessage appearance="error" title="Unable to load theme">
       We're having trouble connecting to Jira. Please try again later. Click here to{" "}
       <LinkButton underlined onClick={() => onBackButtonClicked()}>
         return to create reports
@@ -70,5 +72,20 @@ interface ThemeSkeletonProps {
 }
 
 const ThemeSkeleton: FC<ThemeSkeletonProps> = ({ onBackButtonClicked }) => {
-  return <Skeleton height="40px" />;
+  return (
+    <>
+      <SidebarButton onClick={onBackButtonClicked}>
+        <ArrowLeftCircleIcon label="go back" />
+        Go back
+      </SidebarButton>
+      <div className="my-4">
+        <Heading size="small">Theme</Heading>
+      </div>
+      <div className="pt-6 flex flex-col gap-8">
+        {[...Array.from({ length: 9 }).keys()].map((i) => (
+          <Skeleton key={i} height="44px" />
+        ))}
+      </div>
+    </>
+  );
 };

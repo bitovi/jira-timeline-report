@@ -29,6 +29,8 @@ import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/n
 
 import "../status-filter.js";
 import "./timing-calculation/timing-calculation.js";
+import { getTheme } from "../../../jira/theme/fetcher.js";
+import { applyThemeToCssVars } from "../../../jira/theme/utils.js";
 
 const selectStyle =
   "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
@@ -89,7 +91,7 @@ export class TimelineConfiguration extends StacheElement {
             </button>
             <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left"
                 on:click="this.routeData.showSettings = 'THEME'">
-                    <img src="/images/team.svg" class="inline align-bottom"/> 
+                    <img src="/images/theme.svg" class="inline align-bottom w-[18px]"/> 
                     <span class="pl-3">Theme</span>
             </button>
 
@@ -233,6 +235,10 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
+    getTheme(this.routeData.storage)
+      .then(applyThemeToCssVars)
+      .catch((error) => console.error("Something went wrong getting the theme", error));
+
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
         storage: this.routeData.storage,

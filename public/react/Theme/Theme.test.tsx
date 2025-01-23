@@ -67,8 +67,11 @@ describe("Theme Component", () => {
     const goBack = await screen.findByRole("button", { name: /go back/i });
     expect(goBack).toBeInTheDocument();
 
-    const themeHeading = await screen.findByText(/theme/i);
+    const themeHeading = await screen.findByText("Theme");
     expect(themeHeading).toBeInTheDocument();
+
+    const reset = await screen.findByText("Reset theme");
+    expect(reset).toBeInTheDocument();
   });
 
   it("calls go back", async () => {
