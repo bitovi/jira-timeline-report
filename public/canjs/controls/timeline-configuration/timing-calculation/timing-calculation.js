@@ -1,7 +1,5 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value } from "../../../../can.js";
 
-import {updateUrlParam} from "../../../routing/state-storage.js";
-
 import { getSimplifiedIssueHierarchy } from "../../../../stateful-data/jira-data-requests.js";
 import routeData from "../../../routing/route-data.js";
 
