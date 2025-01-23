@@ -17,7 +17,11 @@ export class StatusFilter extends StacheElement {
         },
         inputPlaceholder: String,
         param: String,
-        selectedStatuses: undefined
+        selectedStatuses: {
+          get default() {
+            return [];
+          }
+        }
     };
 }
 

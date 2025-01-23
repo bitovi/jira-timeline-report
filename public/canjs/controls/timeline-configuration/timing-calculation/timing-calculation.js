@@ -1,11 +1,12 @@
 import { StacheElement, type, ObservableObject, ObservableArray, value } from "../../../../can.js";
 
-import {updateUrlParam} from "../../../routing/state-storage.js";
-
 import { getSimplifiedIssueHierarchy } from "../../../../stateful-data/jira-data-requests.js";
+import routeData from "../../../routing/route-data.js";
 
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 
+
+import {getTimingLevels} from "./helpers.js";
 
 const DEFAULT_CALCULATION_METHOD = "widestRange";
 
@@ -35,11 +36,13 @@ export class TimingCalculation extends StacheElement {
         </div>
     `;
     static props = {
+        routeData: {
+            get default() {
+                return routeData;
+            }
+        },
         get jiraIssueHierarchyPromise(){
-            return getSimplifiedIssueHierarchy({
-                isLoggedIn: this.jiraHelpers.hasValidAccessToken(),
-                jiraHelpers: this.jiraHelpers,
-            }) 
+            return this.routeData.simplifiedIssueHierarchyPromise;
         },
         issueHierarchy: {
             async(resolve){
@@ -50,77 +53,22 @@ export class TimingCalculation extends StacheElement {
             if(!this.issueHierarchy) {
                 return [];
             } else {
-                const allLevels = getTimingLevels(this.issueHierarchy, this.timingCalculations);
+                const allLevels = getTimingLevels(this.issueHierarchy, this.routeData.timingCalculations);
                 return allLevels.slice(0, allLevels.length - 1);
-            }
-        },
-        timingCalculations: {
-            value({resolve, lastSet, listenTo}) {
-              let currentValue;
-              updateValue(new URL(window.location).searchParams.get("timingCalculations"));
-  
-              listenTo(lastSet, (value)=>{
-                  updateValue(value);
-              });
-  
-              function updateValue(value) {
-                if(typeof value === "string"){
-                  try {
-                    value = parse(value);
-                  } catch(e) {
-                    value = [];
-                  }
-                } else if(!value){
-                  value = [];
-                }
-                  
-                updateUrlParam("timingCalculations", stringify(value), stringify([]));
-  
-                currentValue = value;
-                resolve(currentValue);
-              }
-  
-              function parse(value){
-                let phrases = value.split(",");
-                const data = {};
-                for(let phrase of phrases) {
-                    const parts = phrase.split(":");
-                    data[parts[0]] = parts[1]
-                }
-                return data;
-              }
-              function stringify(obj){
-                return Object.keys(obj).map( (key)=> key+":"+obj[key]).join(",");
-              }
-  
-            }
-        },
-        get issueTimingCalculations(){
-            if(!this.issueHierarchy) {
-                return [];
-            } else {
-                const allLevels = getTimingLevels(this.issueHierarchy, this.timingCalculations);
-                return allLevels.map( level => {
-                    return {
-                        type: level.type,
-                        hierarchyLevel: level.hierarchyLevel,
-                        calculation: level.calculations.find( (level) => level.selected).calculation
-                    }
-                })
             }
         }
     }
     
       
     updateCalculation(type, value){
-        let current = {...this.timingCalculations};
+        let current = {...this.routeData.timingCalculations};
         if(value === DEFAULT_CALCULATION_METHOD) {
             delete current[type]
         } else {
             current[type] = value;
         }
     
-        this.timingCalculations = current;
+        this.routeData.timingCalculations = current;
     }
 
 
@@ -159,89 +107,8 @@ function getIssueHierarchy(types){
 */
 
 
-export const calculationKeysToNames = {
-    parentFirstThenChildren: function(parent, child){
-        return `From ${parent.type}, then ${child.plural}`
-    },
-    childrenOnly: function(parent, child){
-        return `From ${child.plural}`
-    },
-    childrenFirstThenParent: function(parent, child){
-        return `From ${child.plural}, then ${parent.type}`
-    },
-    widestRange: function(parent, child){
-        return `From ${parent.type} or ${child.plural} (earliest to latest)`
-    },
-    parentOnly: function(parent, child){
-        return `From ${parent.type}`
-    }
-}
-
-function createBaseLevels(issueHierarchy) {
-    return issueHierarchy.map((issue)=> {
-        return {
-            type: issue.name,
-            source: issue,
-            plural: issue.name+"s",
-            hierarchyLevel: issue.hierarchyLevel
-        }
-    });
-}
-
-function calculationsForLevel(parent, child, selected, last){
-    if(!last) {
-        return Object.keys(calculationKeysToNames).map( calculationName => {
-            return {
-                parent: parent.type,
-                child: child.type,
-                calculation: calculationName,
-                name:  calculationKeysToNames[calculationName](parent, child),
-                selected: selected ? selected === calculationName : "widestRange" === calculationName
-            }
-        })
-    } else {
-        return [{
-            parent: parent.type,
-            child: null,
-            calculation: "parentOnly",
-            name:  calculationKeysToNames.parentOnly(parent),
-            selected: true
-        }];
-    }
-}
-
-/*
-return {
-    child: issueTypeName, 
-    parent: issueType.type, 
-    calculation: calculationName, name: calculationKeysToNames[calculationName](issueType, typeToIssueType[issueTypeName]) }
-*/
-
-/**
-* 
-* @param {TimingCalculationsMap} issueTypeMap 
-* @param {string} primaryIssueType 
-* @param {Array<TimingCalculation>} timingCalculations 
-* @returns 
-*/
-function getTimingLevels(issueHierarchy, timingCalculations){
 
 
-    const baseLevels = createBaseLevels(issueHierarchy);
-
-    return baseLevels.map( (level, i)=> {
-        const child = baseLevels[i+1];
-        const isLast = i === baseLevels.length - 1;
-
-        return {
-            ...level,
-            childType: child ? child.type : null,
-            calculations: calculationsForLevel(level, child, timingCalculations[level.type], isLast)
-        }
-    });
-    
-   
-}
 
 
 customElements.define("timing-calculation", TimingCalculation);

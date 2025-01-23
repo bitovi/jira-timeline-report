@@ -27,7 +27,8 @@ import SavedReports from "./react/SaveReports";
 import SampleDataNotice from "./react/SampleDataNotice";
 
 export class TimelineReport extends StacheElement {
-  static view = `<div class="flex">
+  static view = `
+    {{#if(showingConfiguration)}}
         <timeline-configuration
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
           style="overflow-y: auto"
@@ -40,128 +41,105 @@ export class TimelineReport extends StacheElement {
           storage:from="this.storage"
           
           ></timeline-configuration>
+    {{/if}}
+    <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto" on:click="this.goBack()">
 
-      <div class=" fullish-vh pt-4 pl-4 pr-4 relative grow flex flex-col" on:click="this.goBack()">
-        <div id='sample-data-notice'></div>
-          <div id="saved-reports" class='pb-5'></div>
-          <div class="flex gap-1">
-            <select-issue-type 
-              primaryIssueType:to="this.primaryIssueType"
-              secondaryIssueType:to="this.secondaryIssueType"
-              derivedIssues:from="this.routeData.derivedIssues"
-              jiraHelpers:from="this.jiraHelpers"></select-issue-type>
+      <div id='sample-data-notice' class='pt-4'></div>
 
-            <select-report-type 
-              primaryReportType:to="this.primaryReportType"
-              jiraHelpers:from="this.jiraHelpers"></select-report-type>
-        
-            <compare-slider class='flex-grow'
-              compareToTime:to="compareToTime"></compare-slider>
+      <div id="saved-reports" class='py-4'></div>
+      <div class="flex gap-1">
+        <select-issue-type 
+          derivedIssues:from="this.routeData.derivedIssues"
+          jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
-            <select-view-settings
-              jiraHelpers:from="this.jiraHelpers"
-              
-              statusesToRemove:to="this.statusesToRemove"
-              statusesToShow:to="this.statusesToShow"
-              showOnlySemverReleases:to="this.showOnlySemverReleases"
-              secondaryReportType:to="this.secondaryReportType"
-              hideUnknownInitiatives:to="this.hideUnknownInitiatives"
-              sortByDueDate:to="this.sortByDueDate"
-              showPercentComplete:to="this.showPercentComplete"
-              planningStatuses:to="this.planningStatuses"
-              groupBy:to="this.groupBy"
-              releasesToShow:to="this.releasesToShow"
-              primaryReportBreakdown:to="this.primaryReportBreakdown"
-              primaryReportType:from="this.primaryReportType"
-              primaryIssueType:from="this.primaryIssueType"
-              secondaryIssueType:from="this.secondaryIssueType"
-              statuses:from="this.statuses"
-              derivedIssues:from="this.routeData.derivedIssues"
-              isLoggedIn:from="this.loginComponent.isLoggedIn"
-              ></select-view-settings>
+        <select-report-type 
+          jiraHelpers:from="this.jiraHelpers"></select-report-type>
+    
+        <compare-slider class='flex-grow px-2'
+          compareToTime:to="compareToTime"></compare-slider>
+
+        <select-view-settings
+          jiraHelpers:from="this.jiraHelpers"
+          
+          releasesToShow:to="this.releasesToShow"
+          statuses:from="this.statuses"
+          derivedIssues:from="this.routeData.derivedIssues"
+          ></select-view-settings>
+      </div>
+
+      {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
+        <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
+      {{ /and }}
+
+      {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
+        <div class="my-2 border-box color-bg-white flex-1">
+                
+          {{# eq(this.routeData.primaryReportType, "start-due")  }}
+            <gantt-grid 
+                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
+                ></gantt-grid>
+          {{/ eq }}
+          {{# eq(this.routeData.primaryReportType, "due") }}
+            <scatter-timeline 
+              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></scatter-timeline>
+          {{/ eq }}
+          {{# eq(this.routeData.primaryReportType, "table") }}
+            <table-grid
+                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
+          {{/ eq }}
+          {{# eq(this.routeData.primaryReportType, "group-grid") }}
+            <group-grid
+                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
+          {{/ eq }}
+
+          {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
+            <status-report 
+              breakdown:from="eq(this.routeData.secondaryReportType, 'breakdown')"
+              planningIssues:from="this.planningIssues"
+              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
+          {{/ }}
+
+          <div class='p-2'>
+            <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
+            <span class='color-text-and-bg-new p-2 inline-block'>New</span>
+            <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
+            <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
+            <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
+            <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
+            <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
+            <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
+            <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
           </div>
 
-          
-
-
-          {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
-            <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
-          {{ /and }}
-
-          {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-            <div class="my-2   border-box block overflow-y-auto color-bg-white">
-            
-              {{# eq(this.primaryReportType, "start-due")  }}
-                <gantt-grid 
-                    primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                    breakdown:from="this.primaryReportBreakdown"
-                    showPercentComplete:from="this.showPercentComplete"
-                    groupBy:from="this.groupBy"
-                    primaryIssueType:from="this.primaryIssueType"
-                    allDerivedIssues:from="this.routeData.derivedIssues"
-                    ></gantt-grid>
-              {{/ eq }}
-              {{# eq(this.primaryReportType, "due") }}
-                <scatter-timeline 
-                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></scatter-timeline>
-              {{/ eq }}
-              {{# eq(this.primaryReportType, "table") }}
-                <table-grid
-                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
-              {{/ eq }}
-              {{# eq(this.primaryReportType, "group-grid") }}
-                <group-grid
-                   primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                    allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
-              {{/ eq }}
-
-              {{# or( eq(this.secondaryReportType, "status"), eq(this.secondaryReportType, "breakdown") ) }}
-                <status-report 
-                  breakdown:from="eq(this.secondaryReportType, 'breakdown')"
-                  planningIssues:from="this.planningIssues"
-                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
-              {{/ }}
-
-              <div class='p-2'>
-                <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
-                <span class='color-text-and-bg-new p-2 inline-block'>New</span>
-                <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
-                <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
-                <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
-                <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
-                <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
-                <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
-                <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
-              </div>
-            </div>
-          {{/ and }}
-          {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
-            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
-              <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.primaryIssueType}}.</p>
-              <p>Please check your JQL and the View Settings.</p>
-            </div>
-          {{/}}
-          {{# and(this.routeData.jql, this.routeData.derivedIssuesRequestData.issuesPromise.isPending) }}
-            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
-              <p>Loading ...<p>
-              {{# if(this.routeData.derivedIssuesRequestData.progressData.issuesRequested)}}
-                <p>Loaded {{this.routeData.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.routeData.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
-              {{/ }}
-            </div>
-          {{/ and }}
-          {{# if(this.routeData.derivedIssuesRequestData.issuesPromise.isRejected) }}
-            <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
-              <p>There was an error loading from Jira!</p>
-              <p>Error message: {{this.routeData.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
-              <p>Please check your JQL is correct!</p>
-            </div>
-          {{/ if }}
         </div>
-      </div>
+      {{/ and }}
+      {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
+        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
+          <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.routeData.primaryIssueType}}.</p>
+          <p>Please check your JQL and the View Settings.</p>
+        </div>
+      {{/}}
+      {{# and(this.routeData.jql, this.routeData.derivedIssuesRequestData.issuesPromise.isPending) }}
+        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
+          <p>Loading ...<p>
+          {{# if(this.routeData.derivedIssuesRequestData.progressData.issuesRequested)}}
+            <p>Loaded {{this.routeData.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.routeData.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
+          {{/ }}
+        </div>
+      {{/ and }}
+      {{# if(this.routeData.derivedIssuesRequestData.issuesPromise.isRejected) }}
+        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
+          <p>There was an error loading from Jira!</p>
+          <p>Error message: {{this.routeData.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
+              <p>Please check your JQL is correct!</p>
+        </div>
+      {{/ if }}
+    </div>
   `;
   static props = {
     routeData: {
@@ -179,7 +157,9 @@ export class TimelineReport extends StacheElement {
     // default params
     defaultSearch: type.Any,
 
-    showingConfiguration: false,
+    get showingConfiguration() {
+      return this.loginComponent.isLoggedIn;
+    },
 
     get issuesPromise() {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
@@ -237,16 +217,16 @@ export class TimelineReport extends StacheElement {
         issueTimingCalculations: this.issueTimingCalculations
       } )*/
 
-    function getIssueHierarchyUnderType(timingCalculations, type) {
+    function getIssueHierarchyUnderType(timingCalculations = [], type) {
       const index = timingCalculations.findIndex((calc) => calc.type === type);
       return timingCalculations.slice(index);
     }
 
-    if (this.primaryIssueType === "Release") {
-      if (this.secondaryIssueType) {
+    if (this.routeData.primaryIssueType === "Release") {
+      if (this.routeData.secondaryIssueType) {
         const secondary = getIssueHierarchyUnderType(
-          this.issueTimingCalculations,
-          this.secondaryIssueType
+          this.routeData.issueTimingCalculations,
+          this.routeData.secondaryIssueType
         );
         return [
           { type: "Release", hierarchyLevel: Infinity, calculation: "childrenOnly" },
@@ -254,7 +234,10 @@ export class TimelineReport extends StacheElement {
         ];
       }
     } else {
-      return getIssueHierarchyUnderType(this.issueTimingCalculations, this.primaryIssueType);
+      return getIssueHierarchyUnderType(
+        this.routeData.issueTimingCalculations,
+        this.routeData.primaryIssueType
+      );
     }
   }
 
@@ -294,15 +277,15 @@ export class TimelineReport extends StacheElement {
     return groupedHierarchy.reverse();
   }
   get planningIssues() {
-    if (!this.groupedParentDownHierarchy.length || !this?.planningStatuses?.length) {
+    if (!this.groupedParentDownHierarchy.length || !this?.routeData?.planningStatuses?.length) {
       return [];
     }
     const planningSourceIssues =
-      this.primaryIssueType === "Release"
+      this.routeData.primaryIssueType === "Release"
         ? this.groupedParentDownHierarchy[1]
         : this.groupedParentDownHierarchy[0];
     return planningSourceIssues.filter((normalizedIssue) => {
-      return this.planningStatuses.includes(normalizedIssue.status);
+      return this.routeData.planningStatuses.includes(normalizedIssue.status);
     });
   }
   get primaryIssuesOrReleases() {
@@ -312,9 +295,9 @@ export class TimelineReport extends StacheElement {
     }
     const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
 
-    const hideUnknownInitiatives = this.hideUnknownInitiatives;
-    let statusesToRemove = this.statusesToRemove;
-    let statusesToShow = this.statusesToShow;
+    const hideUnknownInitiatives = this.routeData.hideUnknownInitiatives;
+    let statusesToRemove = this.routeData.statusesToRemove;
+    let statusesToShow = this.routeData.statusesToShow;
 
     function startBeforeDue(initiative) {
       return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
@@ -324,9 +307,9 @@ export class TimelineReport extends StacheElement {
     const filtered = unfilteredPrimaryIssuesOrReleases.filter((issueOrRelease) => {
       // check if it's a planning issues
       if (
-        this?.planningStatuses?.length &&
-        this.primaryIssueType !== "Release" &&
-        this.planningStatuses.includes(issueOrRelease.status)
+        this?.routeData?.planningStatuses?.length &&
+        this.routeData.primaryIssueType !== "Release" &&
+        this.routeData.planningStatuses.includes(issueOrRelease.status)
       ) {
         return false;
       }
@@ -340,8 +323,8 @@ export class TimelineReport extends StacheElement {
       }
 
       if (
-        this.showOnlySemverReleases &&
-        this.primaryIssueType === "Release" &&
+        this.routeData.showOnlySemverReleases &&
+        this.routeData.primaryIssueType === "Release" &&
         !issueOrRelease.names.semver
       ) {
         return false;
@@ -350,7 +333,7 @@ export class TimelineReport extends StacheElement {
       if (hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
         return false;
       }
-      if (this.primaryIssueType === "Release") {
+      if (this.routeData.primaryIssueType === "Release") {
         // releases don't have statuses, so we look at their children
         if (statusesToRemove && statusesToRemove.length) {
           if (
@@ -388,7 +371,7 @@ export class TimelineReport extends StacheElement {
       return true;
     });
 
-    if (this.sortByDueDate) {
+    if (this.routeData.sortByDueDate) {
       return filtered.toSorted(
         (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due
       );
@@ -411,11 +394,6 @@ function sortReadyFirst(initiatives) {
     }
     return 1;
   });
-}
-
-function newDateFromYYYYMMDD(dateString) {
-  const [year, month, day] = dateString.split("-");
-  return new Date(year, month - 1, day);
 }
 
 function addTeamBreakdown(release) {

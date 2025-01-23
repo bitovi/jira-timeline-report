@@ -55,46 +55,48 @@ const TeamSelector: FC<TeamSelectorProps> = ({
           <div>Derived Teams Not Found please add an issue source to show teams</div>
         </>
       )}
-      {(groups.storageAndReport?.length || groups.reportOnly?.length) && (
-        <>
-          <Label htmlFor="">TEAMS IN REPORT</Label>
-          {groups.storageAndReport?.map((team) => {
-            return (
-              <TeamListItem
-                key={team.name}
-                team={team}
-                selectedTeam={selectedTeam}
-                setSelectedTeam={setSelectedTeam}
-              />
-            );
-          })}
-          {groups.reportOnly?.map((team) => {
-            return (
-              <TeamListItem
-                key={team.name}
-                team={team}
-                selectedTeam={selectedTeam}
-                setSelectedTeam={setSelectedTeam}
-              />
-            );
-          })}
-        </>
-      )}
-      {groups.storageOnly?.length && (
-        <div className="mt-2">
-          <Label htmlFor="">TEAMS OUTSIDE REPORT</Label>
-          {groups.storageOnly?.map((team) => {
-            return (
-              <TeamListItem
-                key={team.name}
-                team={team}
-                selectedTeam={selectedTeam}
-                setSelectedTeam={setSelectedTeam}
-              />
-            );
-          })}
-        </div>
-      )}
+      <div className="overflow-auto">
+        {(groups.storageAndReport?.length || groups.reportOnly?.length) && (
+          <div className="mt-2">
+            <Label htmlFor="">TEAMS IN REPORT</Label>
+            {groups.storageAndReport?.map((team) => {
+              return (
+                <TeamListItem
+                  key={team.name}
+                  team={team}
+                  selectedTeam={selectedTeam}
+                  setSelectedTeam={setSelectedTeam}
+                />
+              );
+            })}
+            {groups.reportOnly?.map((team) => {
+              return (
+                <TeamListItem
+                  key={team.name}
+                  team={team}
+                  selectedTeam={selectedTeam}
+                  setSelectedTeam={setSelectedTeam}
+                />
+              );
+            })}
+          </div>
+        )}
+        {groups.storageOnly?.length && (
+          <div className="mt-2">
+            <Label htmlFor="">TEAMS OUTSIDE REPORT</Label>
+            {groups.storageOnly?.map((team) => {
+              return (
+                <TeamListItem
+                  key={team.name}
+                  team={team}
+                  selectedTeam={selectedTeam}
+                  setSelectedTeam={setSelectedTeam}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
     </>
   );
 };

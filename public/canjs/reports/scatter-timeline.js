@@ -5,6 +5,8 @@ import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
 import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup.js";
 import {mergeStartAndDueData} from "../../jira/rollup/dates/dates";
 
+import {roundDateByRoundToParam} from "../routing/utils/round.js";
+
 const DAY = 1000*60*60*24;
 export class ScatterTimeline extends StacheElement {
     static view = `
@@ -145,7 +147,7 @@ export class ScatterTimeline extends StacheElement {
 
         for(let row of rows) {
             for(let item of row.items) {
-                item.element.style.right = ( (totalTime - (item.issue.rollupStatuses.rollup.due - firstDay)) / totalTime * 100) + "%";
+                item.element.style.right = item.endPercentFromRight + "%";
             }
         }
         
@@ -216,21 +218,26 @@ function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, t
     
     const issueUIData = issues.map( issue => {
 
+        const roundedDueDate = roundDateByRoundToParam.end(issue.rollupStatuses.rollup.due);
+
         const element = makeElementForIssue(issue),
             width = getWidth(element),
             widthInPercent = width  * 100 / widthOfArea,
-            rightPercentEnd = Math.ceil( (issue.rollupStatuses.rollup.due - firstDay) / totalTime * 100),
+            rightPercentEnd = Math.ceil( (roundedDueDate - firstDay) / totalTime * 100),
+            endPercentFromRight = ( (totalTime - (roundedDueDate- firstDay)) / totalTime * 100),
             leftPercentStart = rightPercentEnd - widthInPercent;
 
         element.setAttribute("measured-width", width);
         element.setAttribute("left-p", leftPercentStart);
         element.setAttribute("right-p", leftPercentStart);
         return {
+            roundedDueDate,
             issue,
             element,
             widthInPercent,
             leftPercentStart,
-            rightPercentEnd
+            rightPercentEnd,
+            endPercentFromRight
         }
     });
 

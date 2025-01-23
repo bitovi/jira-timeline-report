@@ -1,6 +1,7 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value } from "../../../can.js";
+import { StacheElement } from "../../../can.js";
+import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
-import {saveJSONToUrl,updateUrlParam} from "../../routing/state-storage.js";
+import routeData from "../../routing/route-data.js";
 
 import "../status-filter.js";
 
@@ -18,83 +19,63 @@ import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
-const REPORTS = [{
-    key: "start-due",
-    name: "Gantt Chart"
-},{
-    key: "due",
-    name: "Scatter Plot"
-},{
-    key: "table",
-    name: "Estimation Table"
-},{
-    key: "group-grid",
-    name: "Group Grid"
-}];
-
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
 
 class ReportSelectionDropdown extends StacheElement {
     static view = `
-         {{# for(report of this.reports) }}
-            <label class="px-4 py-2 block {{#eq(this.primaryReportType, report.key)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
+         {{# for(report of this.routeData.reports) }}
+            <label class="px-4 py-2 block {{#eq(this.routeData.primaryReportType, report.key)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
                 type="radio" 
                 name="primaryReportType" 
-                checked:from="eq(this.primaryReportType, report.key)"
+                checked:from="eq(this.routeData.primaryReportType, report.key)"
                 on:change="this.onSelection(report.key)"/> {{report.name}} </label>
         {{/ }}
-    `
+    `;
+    static props = {
+        routeData: {
+            get default(){
+                return routeData;
+            }
+        },
+        onSelection: Function,
+    };
 }
 
 customElements.define("report-selection-dropdown", ReportSelectionDropdown);
 
-import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
-
 export class SelectReportType extends StacheElement {
     static view = `
         <label for="reportType" class="${DROPDOWN_LABEL}">Report type</label>
-        {{# not(this.primaryReportType) }}
+        {{# not(this.routeData.primaryReportType) }}
             ---
         {{/ }}
-        {{# if(this.primaryReportType) }}
+        {{# if(this.routeData.primaryReportType) }}
             <button 
                 class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}"
                 id="reportType"
                 on:click="this.showChildOptions()">{{this.primaryReportName}} <img class="inline" src="/images/chevron-down.svg"/></button>
         {{/ }}
     `;
-    static props ={
-        primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
-            parse: function(x) {
-                if( REPORTS.find( report => report.key === x) ) {
-                    return x;
-                } else {
-                    return "start-due"
-                }
-            }, 
-            stringify: x => ""+x
-        }),
-        reports: {
+    static props = {
+        routeData: {
             get default(){
-                return REPORTS;
+                return routeData;
             }
         },
         get primaryReportName(){
-            return this.reports.find( report => report.key === this.primaryReportType).name;
+            return this.routeData.reports.find( report => report.key === this.routeData.primaryReportType).name;
         }
     };
 
     showChildOptions(){
         let dropdown = new ReportSelectionDropdown().initialize({
-            primaryReportType: this.primaryReportType,
-            reports: this.reports,
             onSelection: this.onSelection.bind(this)
         })
 
         TOOLTIP.belowElementInScrollingContainer(this, dropdown);
     }
     onSelection(reportType) {
-        this.primaryReportType = reportType;
+        this.routeData.primaryReportType = reportType;
         TOOLTIP.leftElement();
     }
     connected(){

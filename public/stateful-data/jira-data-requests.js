@@ -43,7 +43,7 @@ export const getServerInfo = makeCacheable(({ jiraHelpers, isLoggedIn }) => {
 });
 
 export const getSimplifiedIssueHierarchy = makeCacheable(({ jiraHelpers, isLoggedIn }) => {
-  if (jiraHelpers.hasValidAccessToken()) {
+  if (isLoggedIn) {
     return jiraHelpers.fetchIssueTypes().then(simplifyIssueHierarchy);
   } else {
     return bitoviTrainingIssueData().then(simplifyIssueHierarchy);
@@ -110,7 +110,7 @@ export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, field
   if (!jql) {
     return undefined;
   }
-  console.log("REQUESTING");
+  
   const loadIssues = loadChildren
     ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
     : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);

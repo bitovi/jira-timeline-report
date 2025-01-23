@@ -1,14 +1,29 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value, diff } from "../../../can.js";
+import { StacheElement, value } from "../../../can.js";
+import { allReleasesSorted } from "../../../jira/normalized/normalize.js";
+import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
-import {saveJSONToUrl,updateUrlParam} from "../../routing/state-storage.js";
-
-import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
-
-import { pushStateObservable } from "../../routing/state-storage.js";
+import routeData from "../../routing/route-data.js";
+import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 
 import "../status-filter.js";
 
-import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
+import {roundDate} from "../../../utils/date/round.js";
+
+const ROUNDING_OPTIONS = [
+    {key: "day", name: "Day"},
+    {key: "week", name: "Week"},
+    {key: "month", name: "Month"},
+    {key: "halfQuarter", name: "Half Quarter"},
+    {key: "quarter", name: "Quarter"}
+];
+
+// A quick check that we don't have anything wrong
+ROUNDING_OPTIONS.forEach( ({key})=> { 
+    if(!roundDate[key]) {
+        console.error("Missing rounding capability ", key);
+    }
+});
+
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
@@ -23,8 +38,6 @@ const booleanParsing = {
 const selectStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
 
-import { makeArrayOfStringsQueryParamValue } from "../../routing/state-storage.js";
-
 class SelectViewSettingsDropdown extends StacheElement {
     static view = `
     <div class="p-2">
@@ -35,20 +48,20 @@ class SelectViewSettingsDropdown extends StacheElement {
             <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
-                checked:from="eq(this.groupBy, '')"
-                on:change="this.groupBy = ''"
+                checked:from="eq(this.routeData.groupBy, '')"
+                on:change="this.routeData.groupBy = ''"
                 /> None</label>
             <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
-                checked:from="eq(this.groupBy, 'parent')"
-                on:change="this.groupBy = 'parent'"
+                checked:from="eq(this.routeData.groupBy, 'parent')"
+                on:change="this.routeData.groupBy = 'parent'"
                 /> Parent</label>
             <label class="px-2 block"><input 
                 type="radio" 
                 name="groupBy"
-                checked:from="eq(this.groupBy, 'team')"
-                on:change="this.groupBy = 'team'"
+                checked:from="eq(this.routeData.groupBy, 'team')"
+                on:change="this.routeData.groupBy = 'team'"
                 /> Team (or Project)</label>
         </div>
         {{/ if }}
@@ -60,18 +73,28 @@ class SelectViewSettingsDropdown extends StacheElement {
              <label class="px-2 block"><input 
                 type="radio" 
                 name="sortByDueDate"
-                checked:from="not(this.sortByDueDate)"
-                on:change="this.sortByDueDate = false"
+                checked:from="not(this.routeData.sortByDueDate)"
+                on:change="this.routeData.sortByDueDate = false"
                 /> JQL Order</label>
             <label class="px-2 block"><input 
                 type="radio" 
                 name="sortByDueDate"
-                checked:from="this.sortByDueDate"
-                on:change="this.sortByDueDate = true"
+                checked:from="this.routeData.sortByDueDate"
+                on:change="this.routeData.sortByDueDate = true"
                 /> Due Date</label>    
         </div>
 
-        {{# if(this.primaryIssueType) }}
+        <div class="my-4">
+            <div class="font-bold uppercase text-slate-300 text-xs">Round Dates To:</div>
+            <select class="rounded-sm border-2 bg-white border-neutral-80 p-2" value:bind="this.routeData.roundTo">
+                {{# for(option of this.roundingOptions) }}
+                    <option value:from="option.key">{{option.name}}</option>
+                {{/ }}
+            </select>
+        </div>
+
+
+        {{# if(this.routeData.primaryIssueType) }}
             <div class="my-4">
                 <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
 
@@ -81,7 +104,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <status-filter 
                         statuses:from="this.statuses"
                         param:raw="statusesToShow"
-                        selectedStatuses:bind="this.statusesToShow"
+                        selectedStatuses:bind="this.routeData.statusesToShow"
                         inputPlaceholder:raw="Search for statuses"
                         style="max-width: 400px;">
                     </status-filter>
@@ -91,7 +114,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <status-filter 
                         statuses:from="this.statuses" 
                         param:raw="statusesToRemove"
-                        selectedStatuses:bind="this.statusesToRemove"
+                        selectedStatuses:bind="this.routeData.statusesToRemove"
                         inputPlaceholder:raw="Search for statuses"
                         style="max-width: 400px;">
                         </status-filter>
@@ -115,10 +138,10 @@ class SelectViewSettingsDropdown extends StacheElement {
                     
                 </div>
 
-                {{# eq(this.primaryIssueType, "Release") }}
+                {{# eq(this.routeData.primaryIssueType, "Release") }}
                         <label class=''>Show only Semver-like releases</label>
                         <input type='checkbox' 
-                            class='self-start mt-1.5'  checked:bind='this.showOnlySemverReleases'/>
+                            class='self-start mt-1.5'  checked:bind='this.routeData.showOnlySemverReleases'/>
                         <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
                         <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
                         </p>
@@ -129,7 +152,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
 
                 <input type='checkbox' 
-                    class='self-start mt-1.5' checked:bind='this.hideUnknownInitiatives'/> Hide {{this.primaryIssueType}}s without dates 
+                    class='self-start mt-1.5' checked:bind='this.routeData.hideUnknownInitiatives'/> Hide {{this.routeData.primaryIssueType}}s without dates 
             </div>
         {{/ if }}
 
@@ -139,14 +162,14 @@ class SelectViewSettingsDropdown extends StacheElement {
             <div class="font-bold uppercase text-slate-300 text-xs">View Options</div>
             <div class="flex mt-2 gap-2 flex-wrap">
                 <input type='checkbox' 
-                    class='self-start mt-1.5'  checked:bind='this.primaryReportBreakdown'/>
+                    class='self-start mt-1.5'  checked:bind='this.routeData.primaryReportBreakdown'/>
                 <p>Show work breakdown</p>
                 
             </div>
 
             <div class="flex mt-2 gap-2 flex-wrap">
                 <input type='checkbox' 
-                    class='self-start mt-1.5'  checked:bind='this.showPercentComplete'/>
+                    class='self-start mt-1.5'  checked:bind='this.routeData.showPercentComplete'/>
                 <p>Show completion percentage</p>
                 
             </div>
@@ -160,24 +183,24 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <label class="px-2"><input 
                     type="radio" 
                     name="secondary" 
-                    checked:from="eq(this.secondaryReportType, 'none')"
-                    on:change="this.secondaryReportType = 'none'"
+                    checked:from="eq(this.routeData.secondaryReportType, 'none')"
+                    on:change="this.routeData.secondaryReportType = 'none'"
                     /> None </label>
                     
                 <label class="px-2"><input 
                     type="radio" 
                     name="secondary" 
-                    checked:from="eq(this.secondaryReportType, 'status')"
-                    on:change="this.secondaryReportType = 'status'"
-                    /> {{this.secondaryIssueType}} status </label>
+                    checked:from="eq(this.routeData.secondaryReportType, 'status')"
+                    on:change="this.routeData.secondaryReportType = 'status'"
+                    /> {{this.routeData.secondaryIssueType}} status </label>
                 
-                {{# not(eq(this.secondaryIssueType, "Story") ) }}
+                {{# not(eq(this.routeData.secondaryIssueType, "Story") ) }}
                 <label class="px-2"><input 
                     type="radio" 
                     name="secondary" 
-                    checked:from="eq(this.secondaryReportType, 'breakdown')"
-                    on:change="this.secondaryReportType = 'breakdown'"
-                    /> {{this.secondaryIssueType}} work breakdown </label>
+                    checked:from="eq(this.routeData.secondaryReportType, 'breakdown')"
+                    on:change="this.routeData.secondaryReportType = 'breakdown'"
+                    /> {{this.routeData.secondaryIssueType}} work breakdown </label>
                 {{/ not }}
                 </div>
             </div>
@@ -188,82 +211,49 @@ class SelectViewSettingsDropdown extends StacheElement {
                 <status-filter 
                     statuses:from="this.statuses" 
                     param:raw="planningStatuses"
-                    selectedStatuses:bind="this.planningStatuses"
+                    selectedStatuses:bind="this.routeData.planningStatuses"
                     inputPlaceholder:raw="Search for statuses"
                     style="max-width: 400px;"></status-filter>
             </div>
             {{/ if}}
         </div>
     </div>
-    `
+    `;
+    static props = {
+        roundingOptions: {
+            get default(){
+                return ROUNDING_OPTIONS;
+            }
+        },
+        routeData: {
+            get default(){
+                return routeData;
+            }
+        },
+    }
 }
 customElements.define("select-view-settings-dropdown", SelectViewSettingsDropdown);
 
-import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
-
 export class SelectViewSettings extends StacheElement {
     static view = `
-        <label for="viewSettings" class="${DROPDOWN_LABEL} invisible {{#unless(this.isLoggedIn)}}hidden{{/unless}}">View settings</label>
+        <label for="viewSettings" class="${DROPDOWN_LABEL} invisible">View settings</label>
         <button 
                 id="viewSettings"
-                class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect} {{#unless(this.isLoggedIn)}}hidden{{/unless}}"
+                class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}"
                 on:click="this.showChildOptions()">View Settings <img class="inline" src="/images/chevron-down.svg"/></button>
     `;
     static props ={
-        primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
-        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {parse: x => ""+x, stringify: x => ""+x}),
-        showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
+        routeData: {
+            get default() {
+                return routeData;
 
-        // group by doesn't make sense for a release
-        
-        groupBy: {
-            value({resolve, lastSet, listenTo}) {
-                function getFromParam() {
-                    return new URL(window.location).searchParams.get("groupBy") || "";
-                }
-
-                const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
-                    if(primaryIssueType === "Release") {
-                        updateUrlParam("groupBy", "", "");
-                    } else {
-                        updateUrlParam("groupBy", currentGroupBy, "");
-                    }
-                }
-                
-                listenTo("primaryIssueType",({value})=> {    
-                    reconcileCurrentValue(value, getFromParam());
-                });
-
-                listenTo(lastSet, (value)=>{
-                    updateUrlParam("groupBy", value || "", "");
-                });
-
-                listenTo(pushStateObservable, ()=>{
-                    resolve( getFromParam() );
-                })
-
-                
-                resolve(getFromParam());
             }
         },
-
-
-
-        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-
-        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-
-        
         // STATUS FILTERING STUFF
         
         // used for later filtering
         // but the options come from the issues
         
-        statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
-        statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
-        planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
-
         get releases(){
             if(this.derivedIssues) {
                 return allReleasesSorted(this.derivedIssues)
@@ -272,44 +262,24 @@ export class SelectViewSettings extends StacheElement {
             }
         },
         get firstIssueTypeWithStatuses(){
-            if(this.primaryIssueType) {
-                if(this.primaryIssueType !== "Release") {
-                    return this.primaryIssueType;
+            if(this.routeData.primaryIssueType) {
+                if(this.routeData.primaryIssueType !== "Release") {
+                    return this.routeData.primaryIssueType;
                 } else {
-                    return this.secondaryIssueType;
+                    return this.routeData.secondaryIssueType;
                 }
             }
         },
         get canGroup(){
-            return this.primaryReportType === 'start-due' &&
-                this.primaryIssueType && this.primaryIssueType !== "Release"
-        }    
+            return this.routeData.primaryReportType === 'start-due' &&
+                this.routeData.primaryIssueType && this.routeData.primaryIssueType !== "Release"
+        }
+        
     }
     showChildOptions(){
         
         let dropdown = new SelectViewSettingsDropdown().bindings({
-            showPercentComplete: value.bind(this,"showPercentComplete"),
-            secondaryReportType: value.bind(this,"secondaryReportType"),
-            
-            groupBy: value.bind(this,"groupBy"),
-            sortByDueDate: value.bind(this,"sortByDueDate"),
-            hideUnknownInitiatives: value.bind(this,"hideUnknownInitiatives"),
-            showOnlySemverReleases: value.bind(this,"showOnlySemverReleases"),
-            primaryReportBreakdown: value.bind(this,"primaryReportBreakdown"),
-
-            primaryReportType: this.primaryReportType,
-
-            statusesToRemove: value.bind(this,"statusesToRemove"),
-            statusesToShow: value.bind(this,"statusesToShow"),
-            planningStatuses: value.bind(this,"planningStatuses"),
-
-            
-
-
-            secondaryIssueType: value.from(this,"secondaryIssueType"),
-            primaryIssueType: value.from(this,"primaryIssueType"),
             canGroup: value.from(this,"canGroup"),
-
             firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
 
             // this could probably be calculated by itself

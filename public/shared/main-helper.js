@@ -11,14 +11,13 @@ import { directlyReplaceUrlParam } from "../canjs/routing/state-storage.js";
 import { route, value } from "../can.js";
 import routeData from "../canjs/routing/route-data.js";
 
-
-
-
-export default async function mainHelper(config, { host, createStorage, configureRouting, showSidebarBranding }) {
+export default async function mainHelper(
+  config,
+  { host, createStorage, configureRouting, showSidebarBranding, isAlwaysLoggedIn }
+) {
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
-  
   configureRouting(route);
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
@@ -34,7 +33,13 @@ export default async function mainHelper(config, { host, createStorage, configur
 
   const storage = createStorage(jiraHelpers);
 
-  const loginComponent = new JiraLogin().initialize({ jiraHelpers });
+  const props = isAlwaysLoggedIn
+    ? {
+        isLoggedIn: true,
+      }
+    : {};
+
+  const loginComponent = new JiraLogin().initialize({ jiraHelpers, ...props });
   routeData.isLoggedInObservable = value.from(loginComponent, "isLoggedIn");
   routeData.jiraHelpers = jiraHelpers;
   routeData.storage = storage;
@@ -48,17 +53,17 @@ export default async function mainHelper(config, { host, createStorage, configur
   const listener = ({ value }) => {
     if (value) {
       loginComponent.off("isResolved", listener);
-      mainElement.style.display = "none";
+      loadingJira.style.display = "none";
 
       const report = new TimelineReport().initialize({
         jiraHelpers,
         loginComponent,
         mode: "TEAMS",
         storage,
-        showSidebarBranding
+        showSidebarBranding,
       });
-      report.className = "block";
-      document.body.append(report);
+      report.className = "flex flex-1 overflow-hidden"
+      mainContent.append(report);
     }
   };
   loginComponent.on("isResolved", listener);
@@ -66,11 +71,9 @@ export default async function mainHelper(config, { host, createStorage, configur
   if (host === "jira") {
     login.style.display = "none";
   }
-  
 
   return loginComponent;
 }
-
 
 // LEGACY URL SUPPORT
 function legacyPrimaryReportingTypeRoutingFix() {

@@ -21,7 +21,7 @@ const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`
 
 export class StatusReport extends StacheElement {
     static view = `
-    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex gap-2'>
+    <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex flex-wrap gap-2'>
         {{# for(primaryIssue of this.primaryIssuesOrReleases) }}
             <div class='release_box grow'>
                 <div 

@@ -7,6 +7,9 @@ import { WithWarningIssues } from "../../rollup/warning-issues/warning-issues";
 import { notEmpty } from "../../shared/helpers";
 import { DateAndIssueKeys, WithWorkTypeRollups } from "../work-type/work-type";
 
+//!! This breaks the "clean" jira folder.  We should probably give these as arguments.
+import {roundDateByRoundToParam} from "../../../canjs/routing/utils/round.js";
+
 const workTypeWithChildren = ["children", ...workTypes] as const;
 const WIGGLE_ROOM = 0;
 
@@ -168,20 +171,20 @@ function setWorkTypeStatus<T extends IssueOrRelease & WithBlockedStatuses>(
 }
 
 function timedStatus(timedRecord: DatesIssueKeysLastPeriodAndStatus): PeriodStatus {
-  if (!timedRecord.due) {
+  if (timedRecord.due == null) {
     return { status: "unknown", statusFrom: { message: "there is no timing data" } };
   }
   // if now is after the complete date
   // we force complete ... however, we probably want to warn if this isn't in the
   // completed state
-  else if (timedRecord.due < new Date()) {
+  else if (roundDateByRoundToParam.end(timedRecord.due) < new Date()) {
     return {
       status: "complete",
       statusFrom: { message: "Issue is in the past, but not marked as done", warning: true },
     };
   } else if (
     timedRecord.lastPeriod?.due &&
-    +timedRecord.due > WIGGLE_ROOM + +timedRecord.lastPeriod.due
+    roundDateByRoundToParam.end( timedRecord.due ) > roundDateByRoundToParam.end(timedRecord.lastPeriod.due)
   ) {
     return {
       status: "behind",
@@ -189,7 +192,7 @@ function timedStatus(timedRecord: DatesIssueKeysLastPeriodAndStatus): PeriodStat
     };
   } else if (
     timedRecord.lastPeriod?.due &&
-    +timedRecord.due + WIGGLE_ROOM < +timedRecord.lastPeriod.due
+    roundDateByRoundToParam.end( timedRecord.due ) < roundDateByRoundToParam.end(timedRecord.lastPeriod.due)
   ) {
     return { status: "ahead", statusFrom: { message: "Ahead of schedule compared to last time" } };
   } else if (!timedRecord.lastPeriod) {
