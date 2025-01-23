@@ -23,14 +23,22 @@ const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
 
 class ReportSelectionDropdown extends StacheElement {
     static view = `
-         {{# for(report of this.reports) }}
-            <label class="px-4 py-2 block {{#eq(this.primaryReportType, report.key)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
+         {{# for(report of this.routeData.reports) }}
+            <label class="px-4 py-2 block {{#eq(this.routeData.primaryReportType, report.key)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
                 type="radio" 
                 name="primaryReportType" 
-                checked:from="eq(this.primaryReportType, report.key)"
+                checked:from="eq(this.routeData.primaryReportType, report.key)"
                 on:change="this.onSelection(report.key)"/> {{report.name}} </label>
         {{/ }}
-    `
+    `;
+    static props = {
+        routeData: {
+            get default(){
+                return routeData;
+            }
+        },
+        onSelection: Function,
+    };
 }
 
 customElements.define("report-selection-dropdown", ReportSelectionDropdown);
@@ -61,8 +69,6 @@ export class SelectReportType extends StacheElement {
 
     showChildOptions(){
         let dropdown = new ReportSelectionDropdown().initialize({
-            primaryReportType: this.routeData.primaryReportType,
-            reports: this.routeData.reports,
             onSelection: this.onSelection.bind(this)
         })
 

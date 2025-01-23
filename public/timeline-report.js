@@ -42,7 +42,7 @@ export class TimelineReport extends StacheElement {
         
         ></timeline-configuration>
     {{/if}}
-    <div class="fullish-vh pt-4 pl-4 pr-4 flex flex-1 flex-col overflow-hidden" on:click="this.goBack()">
+    <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto" on:click="this.goBack()">
 
       {{# not(this.loginComponent.isLoggedIn) }}
         <div class="p-4 mb-4 drop-shadow-md hide-on-fullscreen bg-yellow-300">
@@ -58,7 +58,7 @@ export class TimelineReport extends StacheElement {
         </div>
       {{/ not }}
 
-      <div id="saved-reports" class='pb-4'></div>
+      <div id="saved-reports" class='py-4'></div>
       <div class="flex gap-1">
         <select-issue-type 
           derivedIssues:from="this.routeData.derivedIssues"
@@ -84,7 +84,7 @@ export class TimelineReport extends StacheElement {
       {{ /and }}
 
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-        <div class="my-2 border-box overflow-y-auto color-bg-white flex-1">
+        <div class="my-2 border-box color-bg-white flex-1">
                 
           {{# eq(this.routeData.primaryReportType, "start-due")  }}
             <gantt-grid 
@@ -237,7 +237,10 @@ export class TimelineReport extends StacheElement {
         ];
       }
     } else {
-      return getIssueHierarchyUnderType(this.routeData.issueTimingCalculations, this.routeData.primaryIssueType);
+      return getIssueHierarchyUnderType(
+        this.routeData.issueTimingCalculations,
+        this.routeData.primaryIssueType
+      );
     }
   }
 
@@ -395,7 +398,6 @@ function sortReadyFirst(initiatives) {
     return 1;
   });
 }
-
 
 function addTeamBreakdown(release) {
   return {

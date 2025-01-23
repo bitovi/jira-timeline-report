@@ -9,13 +9,13 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       <meta charset="UTF-8">
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Jira Timeline Report</title>
+      <title>Status Reports for Jira</title>
 
-      <meta property="og:title" content="Jira Timeline Report">
+      <meta property="og:title" content="Status Reports for Jira">
       <meta property="og:type" content="website" />
       <meta property="og:description" content="A Jira to PowerPoint slide generator for high-level status reporting.">
       <meta property="og:image" content="https://repository-images.githubusercontent.com/593300471/11f569ce-1e8d-4ad7-ada8-76ab8321ab25">
-      <meta property="og:url" content="https://timeline-report.bitovi-jira.com/">
+      <meta property="og:url" content="https://statusreports.bitovi.com/">
       <meta name="twitter:card" content="summary_large_image">
       
       <link rel="icon" type="image/png" href="./images/favicon.png" />
@@ -23,7 +23,7 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       <link rel="stylesheet" href="dist/production.css">
       <script src="https://connect-cdn.atl-paas.net/all${
         env.NODE_ENV === "development" ? "-debug" : ""
-      }.js"></script>
+      }.js" data-options="sizeToParent:true;"></script>
       <!-- Google tag (gtag.js) -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
       <script>

@@ -5,13 +5,6 @@ import { normalizeIssue } from "../../../jira/normalized/normalize.ts";
 import { getServerInfo, getRawIssues } from "../../../stateful-data/jira-data-requests.js";
 import { getVelocityDefault, getParallelWorkLimitDefault } from "../../../jira/normalized/defaults.ts";
 
-/*
-class IssueData extends ObservableObject {
-    static props = {
-        jql: saveJSONToUrl("jql", "", String, {parse: x => ""+x, stringify: x => ""+x}),
-        isLoggedIn: Boolean,
-    }
-}*/
 const typesToHierarchyLevel = { Epic: 1, Story: 0, Initiative: 2 };
 export function csvToRawIssues(csvIssues) {
   const res = csvIssues.map((issue) => {
