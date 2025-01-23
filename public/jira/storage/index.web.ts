@@ -91,7 +91,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
       return !!configurationIssue;
     },
-    get: async function <TData>(key: string): Promise<TData | null> {
+    get: async function <TData>(key: string, defaultShape: unknown = {}): Promise<TData | null> {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
       if (!configurationIssue) {
@@ -103,7 +103,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       );
 
       if (!storeContent) {
-        storeContent = createCodeBlock(JSON.stringify({ [key]: {} }));
+        storeContent = createCodeBlock(JSON.stringify({ [key]: defaultShape }));
       }
 
       const [stringifiedStore] = storeContent.content;

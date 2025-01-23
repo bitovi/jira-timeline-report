@@ -16,8 +16,6 @@ export const useTheme: UseTheme = () => {
     queryFn: async () => {
       const theme = await getTheme(storage);
 
-      applyThemeToCssVars(theme);
-
       return theme;
     },
   });

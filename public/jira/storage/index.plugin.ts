@@ -24,17 +24,22 @@ interface AppPropertyResponse<TData = unknown> {
 const createUpdate = (jiraHelpers: Parameters<StorageFactory>[number]) => {
   return async function update<TData>(key: string, value: TData): Promise<void> {
     if (!AP) {
-      throw new Error("[Storage Error]: update (plugin) can only be used when connected with jira.");
+      throw new Error(
+        "[Storage Error]: update (plugin) can only be used when connected with jira."
+      );
     }
 
-    return AP.request<void>(`/rest/atlassian-connect/1/addons/${jiraHelpers.appKey}/properties/${key}`, {
-      type: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      data: JSON.stringify(value),
-    });
+    return AP.request<void>(
+      `/rest/atlassian-connect/1/addons/${jiraHelpers.appKey}/properties/${key}`,
+      {
+        type: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify(value),
+      }
+    );
   };
 };
 
@@ -42,12 +47,14 @@ export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
   return {
     // if they're in the plugin app data gets initialized in the get
     storageInitialized: async () => true,
-    get: async function <TData>(key: string): Promise<TData | null> {
+    get: async function <TData>(key: string, defaultShape: unknown = {}): Promise<TData | null> {
       if (!AP) {
         throw new Error("[Storage Error]: get (plugin) can only be used when connected with jira.");
       }
 
-      return AP.request<{ body: string }>(`/rest/atlassian-connect/1/addons/${jiraHelpers.appKey}/properties/${key}`)
+      return AP.request<{ body: string }>(
+        `/rest/atlassian-connect/1/addons/${jiraHelpers.appKey}/properties/${key}`
+      )
         .then((res) => {
           const parsed = JSON.parse(res.body) as AppPropertyResponse<TData>;
 
@@ -59,7 +66,7 @@ export const createJiraPluginStorage: StorageFactory = (jiraHelpers) => {
 
             if (parsed.statusCode === 404) {
               const createContainer = createUpdate(jiraHelpers);
-              const newValue = {} as TData;
+              const newValue = defaultShape as TData;
 
               return createContainer(key, newValue).then(() => newValue);
             }

@@ -6,7 +6,6 @@ import SidebarButton from "../components/SidebarButton";
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
 import Heading from "@atlaskit/heading";
 import Lozenge from "@atlaskit/lozenge";
-import { getTextColorUsingAPCA } from "../../utils/color";
 import { useTheme } from "../services/theme/useTheme";
 import { useSaveTheme } from "../services/theme/useSaveTheme";
 import { applyThemeToCssVars, defaultTheme, Theme } from "../../jira/theme";
@@ -51,8 +50,8 @@ const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
           {isPending && <Spinner size="small" />}
         </div>
         <div className="pt-6 flex flex-col gap-8">
-          {Object.entries(localTheme).map(
-            ([key, { textCssVar, backgroundColor, description, backgroundCssVar, label }]) => {
+          {localTheme.map(
+            ({ textCssVar, backgroundColor, description, backgroundCssVar, label }, index) => {
               return (
                 <div key={label}>
                   <div className="flex gap-4 justify-between items-center">
@@ -73,13 +72,16 @@ const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
                       value={backgroundColor}
                       onChange={({ target }) => {
                         const newColor = target.value;
-                        updateLocalTheme({
-                          ...theme,
-                          [key]: {
-                            ...theme[key as keyof typeof theme],
-                            backgroundColor: newColor,
-                          },
-                        });
+
+                        updateLocalTheme(
+                          localTheme.map((themeItem, updateIndex) => {
+                            if (updateIndex === index) {
+                              return { ...themeItem, backgroundColor: newColor };
+                            }
+
+                            return themeItem;
+                          })
+                        );
                       }}
                     />
                   </div>

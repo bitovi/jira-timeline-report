@@ -25,8 +25,6 @@ export const useSaveTheme = () => {
       const previousTheme = queryClient.getQueryData<Theme>(themeKeys.theme);
       queryClient.setQueryData<Theme>(themeKeys.theme, toSave);
 
-      applyThemeToCssVars(toSave);
-
       return { previousTheme };
     },
     onSettled: () => {
