@@ -1,17 +1,38 @@
 :root {
   --complete-color: #22a06b;
-  --ontrack-color: #388bff; /* B100 - Arvo breeze */
-  --behind-color: #f5cd47; /* Y200 - Pub mix */
+  --complete-text-color: #fff;
+
+  --ontrack-color: #388bff;
+  --ontrack-text-color: "#fff";
+
+  --behind-color: #f5cd47;
+  --behind-text-color: #000;
+
   --last-period-behind-color: #ffe380; /*Y100 - Cowbell*/
-  --warning-color: #ff8e09; /* CUSTOM, was Y300 - Golden state */
+
+  --warning-color: #ff8e09;
+  --warning-text-color: #000;
+
   --last-period-warning-color: #c78a27;
+
   --unknown-color: #dab092;
-  --notstarted-color: #8590a2; /* N80 - Spooky ghost */
+
+  --notstarted-color: #8590a2;
+  --notstarted-text-color: #fff;
+
   --blocked-color: #e2483d;
+  --blocked-text-color: #fff;
+
   --last-period-blocked-color: #b0282f;
-  --ahead-color: #2898bd; /* T100 - Hairy fairy */
+
+  --ahead-color: #2898bd;
+  --ahead-text-color: #fff;
+
   --ahead-dark-color: #00a3bf;
+
   --new-color: #8f7ee7;
+  --new-text-color: #fff;
+
   --white-color: rgb(255 255 255);
   --black-color: rgb(0 0 0);
   --slate-900-color: rgb(17 24 39);

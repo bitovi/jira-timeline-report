@@ -2,16 +2,14 @@ import type { ComponentProps } from "react";
 import type { AppStorage } from "../../jira/storage/common";
 
 import React, { Suspense } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FlagsProvider } from "@atlaskit/flag";
 
 import Theme from "./Theme";
-import { FlagsProvider } from "@atlaskit/flag";
 import { StorageProvider } from "../services/storage";
-
-import * as ThemeHooks from "../services/theme/useSaveTheme";
 
 type OverrideStorage = Omit<AppStorage, "get"> & {
   get: (key: string) => any;

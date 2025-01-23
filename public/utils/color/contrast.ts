@@ -15,7 +15,7 @@ export function getTextColorUsingAPCA(backgroundColor: string): string {
 
   const betterContrast = Math.abs(+whiteContrast) > Math.abs(+blackContrast);
 
-  return betterContrast ? "white" : "black";
+  return betterContrast ? "#ffffff" : "#000000";
 }
 
 function hexToRgb(hex: string): [number, number, number] {
