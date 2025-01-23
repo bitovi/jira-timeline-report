@@ -1,18 +1,53 @@
 import type { FC } from "react";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import SidebarButton from "../components/SidebarButton";
 
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
 import Heading from "@atlaskit/heading";
 import Lozenge from "@atlaskit/lozenge";
 import { getTextColorUsingAPCA } from "../../utils/color";
+import { useTheme } from "../services/theme/useTheme";
+import { useSaveTheme } from "../services/theme/useSaveTheme";
+import { applyThemeToCssVars, Theme } from "../../jira/theme";
 
 interface ThemeProps {
   onBackButtonClicked: () => void;
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
+  const theme = useTheme();
+  const { save } = useSaveTheme();
+
+  const [localTheme, setLocalTheme] = useState(theme);
+
+  const updateLocalTheme = (t: Theme) => {
+    applyThemeToCssVars(t);
+    setLocalTheme(t);
+  };
+
+  const debouncedTheme = useDebounce(localTheme, 1_000);
+
+  useEffect(() => {
+    save(debouncedTheme);
+  }, [debouncedTheme, save]);
+
   return (
     <>
       <SidebarButton onClick={onBackButtonClicked}>
@@ -20,9 +55,9 @@ const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
         Go back
       </SidebarButton>
       <div className="my-4">
-        <Heading size="small">Team Configuration</Heading>
+        <Heading size="small">Theme</Heading>
         <div className="pt-6 flex flex-col gap-8">
-          {Object.values(theme).map(({ color, description, cssVar, label }) => {
+          {Object.entries(localTheme).map(([key, { color, description, cssVar, label }]) => {
             return (
               <div key={label}>
                 <div className="flex gap-4 justify-between items-center">
@@ -41,9 +76,12 @@ const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
                     type="color"
                     className="flex-shrink-0 h-11 min-w-20"
                     value={color}
-                    onChange={({ target }) =>
-                      document.documentElement.setAttribute("style", `${cssVar}: ${target.value}`)
-                    }
+                    onChange={({ target }) => {
+                      updateLocalTheme({
+                        ...theme,
+                        [key]: { ...theme[key as keyof typeof theme], color: target.value },
+                      });
+                    }}
                   />
                 </div>
               </div>
@@ -56,57 +94,3 @@ const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
 };
 
 export default Theme;
-
-const theme = {
-  complete: {
-    label: "Complete",
-    description: `End date in the past`,
-    color: "#22A06B",
-    cssVar: "--complete-color",
-  },
-  blocked: {
-    label: "Blocked",
-    description: `Has Jira status of "blocked" or label of "blocked"`,
-    color: "#E2483D",
-    cssVar: "--blocked-color",
-  },
-  warning: {
-    label: "Warning",
-    description: `Has Jira status of "warning" or label of "warning"`,
-    color: "#FF8E09",
-    cssVar: "--warning-color",
-  },
-  new: {
-    label: "New",
-    description: `Issue did not exist in "last period"`,
-    color: "#8F7EE7",
-    cssVar: "--new-color",
-  },
-  behind: {
-    label: "Behind",
-    description: `End date "today" is later than end date in "last period"`,
-    color: "#F5CD47",
-    cssVar: "--behind-color",
-  },
-  ahead: {
-    label: "Ahead",
-    description: `End date "today" is earlier than end date in "last period"`,
-    color: "#2898BD",
-    cssVar: "--ahead-color",
-  },
-  onTrack: {
-    label: "On Track",
-    description: `Timing didn't change, starts before now, ends after now`,
-    color: "#388BFF",
-    cssVar: "--ontrack-color",
-  },
-  notStarted: {
-    label: "Not Started",
-    description: `Start date is after now`,
-    color: "#8590A2",
-    cssVar: "--notstarted-color",
-  },
-} as const;
-
-//@ts-ignore
-window.theme = theme;
