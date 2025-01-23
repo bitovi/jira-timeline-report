@@ -23,7 +23,7 @@ module.exports = function (env, mainFileRoute, { showHeader }) {
       <link rel="stylesheet" href="dist/production.css">
       <script src="https://connect-cdn.atl-paas.net/all${
         env.NODE_ENV === "development" ? "-debug" : ""
-      }.js"></script>
+      }.js" data-options="sizeToParent:true;"></script>
       <!-- Google tag (gtag.js) -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-XQR3T6BZL3"></script>
       <script>

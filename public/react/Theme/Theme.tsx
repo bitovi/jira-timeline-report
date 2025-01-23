@@ -10,25 +10,10 @@ import { getTextColorUsingAPCA } from "../../utils/color";
 import { useTheme } from "../services/theme/useTheme";
 import { useSaveTheme } from "../services/theme/useSaveTheme";
 import { applyThemeToCssVars, Theme } from "../../jira/theme";
+import { useDebounce } from "../hooks/useDebounce";
 
 interface ThemeProps {
   onBackButtonClicked: () => void;
-}
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }
 
 const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {

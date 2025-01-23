@@ -18,8 +18,6 @@ export const useTheme: UseTheme = () => {
 
       applyThemeToCssVars(theme);
 
-      console.log(document.documentElement.style);
-
       return theme;
     },
   });
