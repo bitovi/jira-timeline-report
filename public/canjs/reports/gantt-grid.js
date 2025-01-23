@@ -292,7 +292,7 @@ export class GanttGrid extends StacheElement {
       // get all the parents ...
 
       let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.parentKey);
-      let keyToAllIssues = Object.groupBy(this.routeData.DerivedIssues, (issue) => issue.key);
+      let keyToAllIssues = Object.groupBy(this.routeData.derivedIssues, (issue) => issue.key);
 
       let parentKeys = Object.keys(obj);
       let parents = parentKeys
