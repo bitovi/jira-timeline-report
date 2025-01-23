@@ -10,8 +10,6 @@ import { token } from "@atlaskit/tokens";
 import { useStorage } from "../../services/storage";
 import { themeKeys } from "./key-factory";
 
-import { useState, useEffect } from "react";
-
 export const useSaveTheme = () => {
   const storage = useStorage();
   const queryClient = useQueryClient();
