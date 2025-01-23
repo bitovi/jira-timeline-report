@@ -78,7 +78,6 @@ const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
                           [key]: {
                             ...theme[key as keyof typeof theme],
                             backgroundColor: newColor,
-                            textColor: getTextColorUsingAPCA(newColor),
                           },
                         });
                       }}

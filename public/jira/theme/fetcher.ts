@@ -7,7 +7,6 @@ export const defaultTheme = {
     description: `End date in the past`,
     backgroundColor: "#22A06B",
     backgroundCssVar: "--complete-color",
-    textColor: "#FFFFFF",
     textCssVar: "--complete-text-color",
   },
   blocked: {
@@ -15,7 +14,6 @@ export const defaultTheme = {
     description: `Has Jira status of "blocked" or label of "blocked"`,
     backgroundColor: "#E2483D",
     backgroundCssVar: "--blocked-color",
-    textColor: "#FFFFFF",
     textCssVar: "--blocked-text-color",
   },
   warning: {
@@ -23,7 +21,6 @@ export const defaultTheme = {
     description: `Has Jira status of "warning" or label of "warning"`,
     backgroundColor: "#FF8E09",
     backgroundCssVar: "--warning-color",
-    textColor: "#000000",
     textCssVar: "--warning-text-color",
   },
   new: {
@@ -31,7 +28,6 @@ export const defaultTheme = {
     description: `Issue did not exist in "last period"`,
     backgroundColor: "#8F7EE7",
     backgroundCssVar: "--new-color",
-    textColor: "#FFFFFF",
     textCssVar: "--new-text-color",
   },
   behind: {
@@ -39,7 +35,6 @@ export const defaultTheme = {
     description: `End date "today" is later than end date in "last period"`,
     backgroundColor: "#F5CD47",
     backgroundCssVar: "--behind-color",
-    textColor: "#000000",
     textCssVar: "--behind-text-color",
   },
   ahead: {
@@ -47,7 +42,6 @@ export const defaultTheme = {
     description: `End date "today" is earlier than end date in "last period"`,
     backgroundColor: "#2898BD",
     backgroundCssVar: "--ahead-color",
-    textColor: "#fff",
     textCssVar: "--ahead-text-color",
   },
   onTrack: {
@@ -55,7 +49,6 @@ export const defaultTheme = {
     description: `Timing didn't change, starts before now, ends after now`,
     backgroundColor: "#388BFF",
     backgroundCssVar: "--ontrack-color",
-    textColor: "#FFFFFF",
     textCssVar: "--ontrack-text-color",
   },
   notStarted: {
@@ -63,7 +56,6 @@ export const defaultTheme = {
     description: `Start date is after now`,
     backgroundColor: "#8590A2",
     backgroundCssVar: "--notstarted-color",
-    textColor: "#fff",
     textCssVar: "--notstarted-text-color",
   },
 };
@@ -83,7 +75,6 @@ export const getTheme = (storage: AppStorage): Promise<Theme> => {
       merged[key] = {
         ...merged[key],
         backgroundColor: themeValues.backgroundColor,
-        textColor: getTextColorUsingAPCA(themeValues.backgroundColor),
       };
     }
 
