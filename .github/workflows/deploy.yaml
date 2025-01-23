@@ -53,7 +53,7 @@ jobs:
 
       - id: deploy
         name: Deploy
-        uses: bitovi/github-actions-deploy-docker-to-ec2@upload-atifact-test
+        uses: bitovi/github-actions-deploy-docker-to-ec2@upload-artifact-test
         with:
           checkout: false
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
