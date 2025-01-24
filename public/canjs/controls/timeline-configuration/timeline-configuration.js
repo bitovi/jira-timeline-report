@@ -9,14 +9,13 @@ import {
 
 import routeData from "../../routing/route-data.js";
 
-
-
 import { getSimplifiedIssueHierarchy } from "../../../stateful-data/jira-data-requests.js";
 
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import TeamConfigure from "../../../react/Configure";
+import Theme from "../../../react/Theme";
 import ViewReports from "../../../react/ViewReports";
 
 import {
@@ -26,14 +25,12 @@ import {
 import { createNormalizeConfiguration } from "../../../react/Configure/components/Teams/shared/normalize";
 //import { getTeamData } from "../stateful-data/jira-data-requests.js";
 
-
-
 import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
 
 import "../status-filter.js";
 import "./timing-calculation/timing-calculation.js";
-
-
+import { getTheme } from "../../../jira/theme/fetcher.js";
+import { applyThemeToCssVars } from "../../../jira/theme/utils.js";
 
 const selectStyle =
   "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
@@ -63,7 +60,7 @@ const BRANDING = `
         </div>
       </div>
     </div>
-  {{/ if}}`
+  {{/ if}}`;
 
 export class TimelineConfiguration extends StacheElement {
   static view = `
@@ -91,6 +88,11 @@ export class TimelineConfiguration extends StacheElement {
                 on:click="this.routeData.showSettings = 'TEAMS'">
                     <img src="/images/team.svg" class="inline align-bottom"/> 
                     <span class="pl-3">Teams</span>
+            </button>
+            <button class="block p-2 text-sm text-slate-300 hover:bg-blue-50  w-full text-left"
+                on:click="this.routeData.showSettings = 'THEME'">
+                    <img src="/images/theme.svg" class="inline align-bottom w-[18px]"/> 
+                    <span class="pl-3">Theme</span>
             </button>
 
             <div class="fixed bottom-4 grid justify-items-center gap-2 p-1">
@@ -189,6 +191,10 @@ export class TimelineConfiguration extends StacheElement {
            <div id="team-configuration" class='h-full'></div>
         </div>
 
+        <div class="{{^ eq(this.routeData.showSettings, "THEME")}}hidden{{/}} h-full">
+           <div id="theme" class='h-full'></div>
+        </div>
+
         <div class="{{^ eq(this.routeData.showSettings, "REPORTS")}}hidden{{/}} h-full">
           <div id="view-reports" style="width:100vw;" class='h-full'></div>
         </div>
@@ -199,9 +205,9 @@ export class TimelineConfiguration extends StacheElement {
   static props = {
     // passed
     routeData: {
-      get default(){
+      get default() {
         return routeData;
-      }
+      },
     },
 
     // VALUES DERIVING FROM THE `jql`
@@ -217,6 +223,9 @@ export class TimelineConfiguration extends StacheElement {
     get isShowingTeams() {
       return this.routeData.showSettings === "TEAMS";
     },
+    get isShowingTheme() {
+      return this.routeData.showSettings === "THEME";
+    },
     get isShowingReports() {
       return this.routeData.showSettings === "REPORTS";
     },
@@ -226,7 +235,9 @@ export class TimelineConfiguration extends StacheElement {
   };
   // HOOKS
   connectedCallback() {
-
+    getTheme(this.routeData.storage)
+      .then(applyThemeToCssVars)
+      .catch((error) => console.error("Something went wrong getting the theme", error));
 
     createRoot(document.getElementById("team-configuration")).render(
       createElement(TeamConfigure, {
@@ -248,6 +259,16 @@ export class TimelineConfiguration extends StacheElement {
       })
     );
 
+    createRoot(document.getElementById("theme")).render(
+      createElement(Theme, {
+        storage: this.routeData.storage,
+        showingThemeObservable: value.from(this, "isShowingTheme"),
+        onBackButtonClicked: () => {
+          this.routeData.showSettings = "";
+        },
+      })
+    );
+
     createRoot(document.getElementById("view-reports")).render(
       createElement(ViewReports, {
         storage: this.routeData.storage,
@@ -261,7 +282,5 @@ export class TimelineConfiguration extends StacheElement {
   connected() {}
   // METHODS
 }
-
-
 
 customElements.define("timeline-configuration", TimelineConfiguration);
