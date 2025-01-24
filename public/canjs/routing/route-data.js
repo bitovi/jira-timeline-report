@@ -66,11 +66,12 @@ const REPORTS = [
     },
 ];
 
-class RouteData extends ObservableObject {
+export class RouteData extends ObservableObject {
     static props = {
         // passed values
         jiraHelpers: null,
         isLoggedInObservable: null,
+        storage: null,
 
         // static requests
         jiraFieldsPromise: {

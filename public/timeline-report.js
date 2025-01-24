@@ -9,7 +9,6 @@ import "./canjs/reports/table-grid.js";
 import "./canjs/reports/scatter-timeline.js";
 import "./canjs/reports/status-report.js";
 import "./canjs/reports/group-grid/group-grid.js";
-import "./canjs/controls/timeline-configuration/timeline-configuration.js";
 
 import "./canjs/controls/select-issue-type/select-issue-type.js";
 import "./canjs/controls/select-report-type/select-report-type.js";
@@ -24,23 +23,17 @@ import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
+import { SettingsSidebar } from "./react/Configure/SettingsSidebar"
+
+import { get, set } from "react-hook-form";
 import SampleDataNotice from "./react/SampleDataNotice";
 
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
-        <timeline-configuration
+        <div id="timeline-configuration" 
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
-          style="overflow-y: auto"
-          isLoggedIn:from="this.loginComponent.isLoggedIn"
-          jiraHelpers:from="this.jiraHelpers"
-          showSidebarBranding:from="this.showSidebarBranding"
-          issueTimingCalculations:to="this.issueTimingCalculations"
-          statuses:to="this.statuses"
-          goBack:to="this.goBack"
-          storage:from="this.storage"
-          
-          ></timeline-configuration>
+        ></div>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto" on:click="this.goBack()">
 
@@ -201,6 +194,12 @@ export class TimelineReport extends StacheElement {
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);
         },
+      })
+    );
+    createRoot(document.getElementById("timeline-configuration")).render(
+      createElement(SettingsSidebar, {
+        isLoggedIn: this.loginComponent.isLoggedIn,
+        showSidebarBranding: this.showSidebarBranding
       })
     );
   }
