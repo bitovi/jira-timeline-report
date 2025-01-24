@@ -11,6 +11,7 @@ import { IconButton } from "@atlaskit/button/new";
 import ViewReportsLayout from "./components/ViewReportsLayout";
 import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
 import DeleteReportModal from "./components/DeleteReportModal";
+import { useRouting } from "../services/routing";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
@@ -23,6 +24,8 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
   const [managedReport, setManagedReport] = useState<Report>();
 
   const { removeFromRecentReports } = useRecentReports();
+
+  const { linkBuilder } = useRouting();
 
   const selectedReport = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -50,7 +53,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
             key: `${report.id}-report`,
             content: (
               <a
-                href={"?" + report.queryParams}
+                href={linkBuilder(report.queryParams)}
                 className="flex items-center font-normal text-sm leading-5 h-10"
               >
                 {report.name}

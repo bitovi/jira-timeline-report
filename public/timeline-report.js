@@ -39,6 +39,7 @@ export class TimelineReport extends StacheElement {
         statuses:to="this.statuses"
         goBack:to="this.goBack"
         storage:from="this.storage"
+        linkBuilder:from="this.linkBuilder"
         
         ></timeline-configuration>
     {{/if}}
