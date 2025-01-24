@@ -163,6 +163,7 @@ export class TimelineReport extends StacheElement {
     // passed values
     timingCalculationMethods: type.Any,
     storage: null,
+    linkBuilder: null,
 
     showingDebugPanel: { type: Boolean, default: false },
 
@@ -200,6 +201,7 @@ export class TimelineReport extends StacheElement {
       createElement(SavedReports, {
         queryParamObservable: pushStateObservable,
         storage: this.storage,
+        linkBuilder: this.linkBuilder,
         shouldShowReportsObservable: this.routeData.isLoggedInObservable,
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);
