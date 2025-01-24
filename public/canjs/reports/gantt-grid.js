@@ -492,7 +492,6 @@ export class GanttGrid extends StacheElement {
         }
       } else {
         // make the last one ...
-        debugger;
         const currentPositions = getPositions(release.rollupStatuses.rollup);
 
         let team;
