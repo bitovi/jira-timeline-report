@@ -109,7 +109,7 @@ class RouteData extends ObservableObject {
             }
         },
 
-                // PURE ROUTES
+        // PURE ROUTES
         showSettings: saveJSONToUrl("settings", "", String, {
             parse: (x) => "" + x,
             stringify: (x) => "" + x,
@@ -173,19 +173,19 @@ class RouteData extends ObservableObject {
             }
         },
 
-        // DERIVED 
+        // DERIVED
         rawIssuesRequestData: {
             value({ listenTo, resolve }) {
                 return rawIssuesRequestData(
-                {
-                    jql: value.from(this, "jql"),
-                    childJQL: value.from(this, "childJQL"),
-                    loadChildren: value.from(this, "loadChildren"),
-                    isLoggedIn: this.isLoggedInObservable,
-                    jiraHelpers: this.jiraHelpers,
-                    fields: value.from(this, "fieldsToRequest"),
-                },
-                { listenTo, resolve }
+                    {
+                        jql: value.from(this, "jql"),
+                        childJQL: value.from(this, "childJQL"),
+                        loadChildren: value.from(this, "loadChildren"),
+                        isLoggedIn: this.isLoggedInObservable,
+                        jiraHelpers: this.jiraHelpers,
+                        fields: value.from(this, "fieldsToRequest"),
+                    },
+                    { listenTo, resolve }
                 );
             },
         },
@@ -202,31 +202,31 @@ class RouteData extends ObservableObject {
                 this.allTeamDataPromise,
                 this.simplifiedIssueHierarchyPromise,
             ])
-            .then(([jiraFields, teamData, hierarchyLevels]) => {
-                const allTeamData = createFullyInheritedConfig(
-                    teamData,
-                    jiraFields,
-                    hierarchyLevels.map((type) => type.hierarchyLevel.toString())
+                .then(([jiraFields, teamData, hierarchyLevels]) => {
+                    const allTeamData = createFullyInheritedConfig(
+                        teamData,
+                        jiraFields,
+                        hierarchyLevels.map((type) => type.hierarchyLevel.toString())
                     );
-                return allTeamData;
-            })
-            .then((allTeamData) => {
-                const normalizedConfig = createNormalizeConfiguration(allTeamData);
-                return normalizedConfig;
-            })
-            .catch(() => {
-                                // Could fail because storage hasn't been setup yet
-                return {};
-            })
-            .then(({ fields, ...baseNormalizeOptions }) => {
-                return { fields, baseNormalizeOptions };
-            });
+                    return allTeamData;
+                })
+                .then((allTeamData) => {
+                    const normalizedConfig = createNormalizeConfiguration(allTeamData);
+                    return normalizedConfig;
+                })
+                .catch(() => {
+                    // Could fail because storage hasn't been setup yet
+                    return {};
+                })
+                .then(({ fields, ...baseNormalizeOptions }) => {
+                    return { fields, baseNormalizeOptions };
+                });
         },
 
         get baseNormalizeOptionsPromise() {
             return this.baseNormalizeOptionsAndFieldsToRequestPromise.then(
                 ({ baseNormalizeOptions }) => baseNormalizeOptions
-                );
+            );
         },
         get fieldsToRequestPromise() {
             return this.baseNormalizeOptionsAndFieldsToRequestPromise.then(({ fields }) => fields);
@@ -244,11 +244,11 @@ class RouteData extends ObservableObject {
         derivedIssuesRequestData: {
             value({ listenTo, resolve }) {
                 return derivedIssuesRequestData(
-                {
-                    rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
-                    configurationPromise: value.from(this, "normalizeOptionsPromise"),
-                },
-                { listenTo, resolve }
+                    {
+                        rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
+                        configurationPromise: value.from(this, "normalizeOptionsPromise"),
+                    },
+                    { listenTo, resolve }
                 );
             },
         },
@@ -305,8 +305,8 @@ class RouteData extends ObservableObject {
                 }
                 function stringify(obj) {
                     return Object.keys(obj)
-                    .map((key) => key + ":" + obj[key])
-                    .join(",");
+                        .map((key) => key + ":" + obj[key])
+                        .join(",");
                 }
             },
         },
@@ -317,146 +317,141 @@ class RouteData extends ObservableObject {
                 } else {
                     return "start-due";
                 }
-            }, 
+            },
             stringify: (x) => "" + x,
         }),
         reports: {
             get default() {
                 return REPORTS;
             },
-            simplifiedIssueHierarchy: {
-                async(){
-                    return this.simplifiedIssueHierarchyPromise;
-                }
-            },
+        },
 
-            get issueHierarchy() {
-                return this.derivedIssues && this.derivedIssues.length
+        get issueHierarchy() {
+            return this.derivedIssues && this.derivedIssues.length
                 ? issueHierarchyFromNormalizedIssues(this.derivedIssues)
                 : this.simplifiedIssueHierarchy;
-            },
-            selectedIssueType: {
-                value({ resolve, lastSet, listenTo }) {
-                    function getParamValue() {
-                        return new URL(window.location).searchParams.get("selectedIssueType") || "";
-                    }
-                    let timers = [];
-                    function clearTimers() {
-                        timers.forEach((value) => clearTimeout(value));
-                        timers = [];
-                    }
+        },
+        selectedIssueType: {
+            value({ resolve, lastSet, listenTo }) {
+                function getParamValue() {
+                    return new URL(window.location).searchParams.get("selectedIssueType") || "";
+                }
+                let timers = [];
+                function clearTimers() {
+                    timers.forEach((value) => clearTimeout(value));
+                    timers = [];
+                }
 
-                    // anything happens in state, update the route 
-                    // the route updates, update the state (or the route if it's wrong)
-                    const resolveCurrentValue = () => {
-                        clearTimers();
+                // anything happens in state, update the route
+                // the route updates, update the state (or the route if it's wrong)
+                const resolveCurrentValue = () => {
+                    clearTimers();
+                    const curParamValue = getParamValue();
+
+                    // we wait to resolve to a defined value until we can check it's right
+                    if (this.issueHierarchy && this.issueHierarchy.length) {
                         const curParamValue = getParamValue();
 
-                        // we wait to resolve to a defined value until we can check it's right
-                        if (this.issueHierarchy && this.issueHierarchy.length) {
-                            const curParamValue = getParamValue();
+                        // helps with legacy support to pick the first type
+                        if (curParamValue === "Release") {
+                            resolve("Release-" + this.issueHierarchy[0].name);
+                        } else {
+                            const curSelectedParts = toSelectedParts(curParamValue);
+                            //const lastSelectedParts = toSelectedParts(lastSelectedValue);
 
-                            // helps with legacy support to pick the first type
-                            if (curParamValue === "Release") {
-                                resolve("Release-" + this.issueHierarchy[0].name);
-                            } else {
-                                const curSelectedParts = toSelectedParts(curParamValue);
-                                                        //const lastSelectedParts = toSelectedParts(lastSelectedValue);
+                            if (curSelectedParts) {
+                                // check it's ok
+                                let typeToCheck = curSelectedParts.secondary ?? curSelectedParts.primary;
 
-                                if (curSelectedParts) {
-                                    // check it's ok
-                                    let typeToCheck = curSelectedParts.secondary ?? curSelectedParts.primary;
-
-                                    if (this.issueHierarchy.some((issue) => issue.name === typeToCheck)) {
-                                        // make sure we actually need to update
-                                        resolve(curParamValue);
-                                    } 
-                                    // set back to default
-                                    else {
-                                        timers.push(
-                                            setTimeout(() => {
-                                                updateUrlParam("selectedIssueType", "", "");
-                                            }, 20)
-                                            );
-                                    }
-                                } else {
-                                    // default to the first type
-                                    resolve(this.issueHierarchy[0].name);
+                                if (this.issueHierarchy.some((issue) => issue.name === typeToCheck)) {
+                                    // make sure we actually need to update
+                                    resolve(curParamValue);
                                 }
+                                // set back to default
+                                else {
+                                    timers.push(
+                                        setTimeout(() => {
+                                            updateUrlParam("selectedIssueType", "", "");
+                                        }, 20)
+                                    );
+                                }
+                            } else {
+                                // default to the first type
+                                resolve(this.issueHierarchy[0].name);
                             }
-                        } else {
-                            resolve(undefined);
                         }
-                    };
-
-                    // when the route changes, check stuff ...
-                    listenTo(pushStateObservable, () => {
-                        resolveCurrentValue();
-                    });
-
-                    listenTo("issueHierarchy", ({ value }) => {
-                        resolveCurrentValue();
-                    });
-
-                    listenTo(lastSet, (value) => {
-                        console.log("LAST SET sit", value);
-                        updateUrlParam("selectedIssueType", value, "");
-                    });
-
-                    resolveCurrentValue();
-                },
-            },
-            get primaryIssueType() {
-                return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
-            },
-            get secondaryIssueType() {
-                return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
-            },
-
-            primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
-            secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {
-                parse: (x) => "" + x,
-                stringify: (x) => "" + x,
-            }),
-            showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
-            sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-            hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-            showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-            statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
-            statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
-            planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
-            groupBy: {
-                value({ resolve, lastSet, listenTo }) {
-                    function getFromParam() {
-                        return new URL(window.location).searchParams.get("groupBy") || "";
+                    } else {
+                        resolve(undefined);
                     }
+                };
 
-                    const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
-                        if (primaryIssueType === "Release") {
-                            updateUrlParam("groupBy", "", "");
-                        } else {
-                            updateUrlParam("groupBy", currentGroupBy, "");
-                        }
-                    };
+                // when the route changes, check stuff ...
+                listenTo(pushStateObservable, () => {
+                    resolveCurrentValue();
+                });
 
-                    listenTo("primaryIssueType", ({ value }) => {
-                        reconcileCurrentValue(value, getFromParam());
-                    });
+                listenTo("issueHierarchy", ({ value }) => {
+                    resolveCurrentValue();
+                });
 
-                    listenTo(lastSet, (value) => {
-                        updateUrlParam("groupBy", value || "", "");
-                    });
+                listenTo(lastSet, (value) => {
+                    console.log("LAST SET sit", value);
+                    updateUrlParam("selectedIssueType", value, "");
+                });
 
-                    listenTo(pushStateObservable, () => {
-                        resolve(getFromParam());
-                    });
-
-                    resolve(getFromParam());
-                },
+                resolveCurrentValue();
             },
         },
-    }
-};
+        get primaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
+        },
+        get secondaryIssueType() {
+            return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
+        },
+
+        primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
+        secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {
+            parse: (x) => "" + x,
+            stringify: (x) => "" + x,
+        }),
+        showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
+        sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
+        hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
+        showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
+        statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
+        statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
+        planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
+        groupBy: {
+            value({ resolve, lastSet, listenTo }) {
+                function getFromParam() {
+                    return new URL(window.location).searchParams.get("groupBy") || "";
+                }
+
+                const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
+                    if (primaryIssueType === "Release") {
+                        updateUrlParam("groupBy", "", "");
+                    } else {
+                        updateUrlParam("groupBy", currentGroupBy, "");
+                    }
+                };
+
+                listenTo("primaryIssueType", ({ value }) => {
+                    reconcileCurrentValue(value, getFromParam());
+                });
+
+                listenTo(lastSet, (value) => {
+                    updateUrlParam("groupBy", value || "", "");
+                });
+
+                listenTo(pushStateObservable, () => {
+                    resolve(getFromParam());
+                });
+
+                resolve(getFromParam());
+            },
+        },
+    };
+}
 
 const routeData = new RouteData();
 console.log("routeData", routeData);
