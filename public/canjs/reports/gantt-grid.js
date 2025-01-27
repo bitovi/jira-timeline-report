@@ -582,7 +582,7 @@ function roundBasedOnIfTheBarsExtend({ startExtends, endExtends }) {
 
 function borderBasedOnIfTheBarsExtend({ startExtends, endExtends }) {
   if (!startExtends && !endExtends) {
-    return "border";
+    return ["border"];
   } else if (startExtends && endExtends) {
     return ["border-0"];
   } else if (startExtends) {
