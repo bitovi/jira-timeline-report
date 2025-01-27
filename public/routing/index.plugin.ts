@@ -60,13 +60,6 @@ export const createPluginLinkBuilder: LinkBuilderFactory = (appKey?: string) => 
     prefixedParams["project.id"] = projectId;
     prefixedParams["project.key"] = projectKey;
 
-    console.log({
-      queryParams,
-      queryParamsObject,
-      prefixedParams,
-      prefixedString: objectToQueryString(prefixedParams),
-    });
-
     return baseUrl + "?" + objectToQueryString(prefixedParams);
   };
 };
