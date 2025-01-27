@@ -6,7 +6,7 @@ import React, { useMemo } from "react";
 import { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
 import Hr from "../../../components/Hr";
 import { notEmpty } from "../../../../jira/shared/helpers";
-import { useRouting } from "../../../services/routing";
+import { Link } from "../../../services/routing";
 
 interface RecentReportsProps {
   recentReports: string[];
@@ -59,14 +59,12 @@ const RecentReports: FC<RecentReportsProps> = ({
 export default RecentReports;
 
 const ReportListItem: FC<{ report: Report }> = ({ report }) => {
-  const { linkBuilder } = useRouting();
-
   return (
     <DropdownItem
       key={report.id}
       // @ts-expect-error types for component overrides on ADS don't work
-      component="a"
-      href={linkBuilder(report.queryParams)}
+      component={Link}
+      href={"?" + report.queryParams}
     >
       {report.name}
     </DropdownItem>

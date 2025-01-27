@@ -37,12 +37,15 @@ export const createPluginLinkBuilder: LinkBuilderFactory = (appKey?: string) => 
 
     const [baseUrl, containerSearch] = AP?.history.getState("all").href.split("?");
 
+    // In order to deep link into a jira application, we need to prefix the params with ac.${appKey}.${key}
+    // since we are linking outside the iframe jira originally loaded us into.
     const prefixedParams = Object.fromEntries(
       Object.entries(queryParamsObject).map(([key, value]) => [`ac.${appKey}.${key}`, value])
     );
 
     const currentParams = new URLSearchParams(containerSearch);
 
+    // Jira adds these params when you load a jira application
     const projectId = currentParams.get("project.id");
     const projectKey = currentParams.get("project.key");
 
@@ -56,6 +59,13 @@ export const createPluginLinkBuilder: LinkBuilderFactory = (appKey?: string) => 
 
     prefixedParams["project.id"] = projectId;
     prefixedParams["project.key"] = projectKey;
+
+    console.log({
+      queryParams,
+      queryParamsObject,
+      prefixedParams,
+      prefixedString: objectToQueryString(prefixedParams),
+    });
 
     return baseUrl + "?" + objectToQueryString(prefixedParams);
   };

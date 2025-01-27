@@ -32,7 +32,6 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
   linkBuilder,
   ...viewReportProps
 }) => {
-  console.log({ linkBuilder });
   const shouldShowReports = useCanObservable(showingReportsObservable);
 
   if (!shouldShowReports) {
