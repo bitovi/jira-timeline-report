@@ -40,7 +40,7 @@ const routeData: RouteData = untypedRouteData as RouteData;
 
 import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
 
-import "../../../canjs/controls/timeline-configuration/timing-calculation/timing-calculation.js";
+import { TimingCalculation } from "../TimingCalculation";
 import { CanObservable, useCanObservable } from "../../hooks/useCanObservable/useCanObservable.js";
 import { StatusFilter } from "../../../canjs/controls/status-filter.js";
 
@@ -220,16 +220,19 @@ export const SettingsSidebar = ({
             )}
             <div className="flex justify-between mt-1">
 
-                <p className="text-xs flex">
-                    <input type='checkbox' 
+                <p className="text-xs">
+                    <input type='checkbox'
+                        name="loadChildren"
                         className='self-start align-middle h-6 mr-0.5'
                         checked={routeData.loadChildren}
                         onChange={ev => routeData.loadChildren = ev.target.checked}
                     />
                     {" "}
-                    <span className="align-middle h-6" style={{ lineHeight: "26px" }}>
+                    <label htmlFor="loadChildren" className="align-middle h-6" style={{ lineHeight: "26px" }}>
                         Load children.
                         {" "}
+                    </label>
+                    <span className="align-middle h-6">
                         {loadChildren && (
                             <>
                                 Optional children JQL filters:
@@ -243,6 +246,7 @@ export const SettingsSidebar = ({
                             </>
                         )}
                     </span>
+
                 </p>
                 <p className="text-xs" style={{ lineHeight: "26px" }}>
                     {issuesPromise?.isPending &&
@@ -279,8 +283,7 @@ export const SettingsSidebar = ({
         <div className={ showSettings === "TIMING" ? "" : "hidden"}>
             <Branding showSidebarBranding={showSidebarBranding} />
             <GoBackButton hideSettings={hideSettings} />
-            {/* @ts-expect-error */}
-            <timing-calculation />
+            <TimingCalculation />
         </div>
         
         <div className={`${showSettings === "TEAMS" ? "" : "hidden"} h-full`}>
