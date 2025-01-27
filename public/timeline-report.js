@@ -199,7 +199,8 @@ export class TimelineReport extends StacheElement {
     createRoot(document.getElementById("timeline-configuration")).render(
       createElement(SettingsSidebar, {
         isLoggedIn: this.loginComponent.isLoggedIn,
-        showSidebarBranding: this.showSidebarBranding
+        showSidebarBranding: this.showSidebarBranding,
+        jiraHelpers: this.jiraHelpers
       })
     );
   }

@@ -331,3 +331,25 @@ export function editJiraIssueWithNamedFields(config: Config) {
     ).then(responseToText);
   };
 }
+
+export function validateJQL(config: Config) {
+  return (...jqls: string[]) => {
+    const scopeIdForJira = fetchFromLocalStorage("scopeId");
+    const accessToken = fetchFromLocalStorage("accessToken");
+
+    return fetch(
+      `${config.env.JIRA_API_URL}/${scopeIdForJira}/rest/api/3/jql/parse?validation=strict`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          queries: jqls
+        }),
+      }
+    ).then(response => response.json());
+  };
+}

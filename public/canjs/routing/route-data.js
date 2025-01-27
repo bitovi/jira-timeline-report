@@ -36,7 +36,7 @@ import {
     toSelectedParts,
 } from "./data-utils.js";
 
-import { getTimingLevels } from "../controls/timeline-configuration/timing-calculation/helpers.js";
+import { getTimingLevels } from "../../react/Configure/TimingCalculation/helpers";
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
