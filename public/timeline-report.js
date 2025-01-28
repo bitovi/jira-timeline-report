@@ -105,7 +105,6 @@ export class TimelineReport extends StacheElement {
           {{/ }}
 
           <div class='p-2'>
-            <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
             <span class='color-text-and-bg-new p-2 inline-block'>New</span>
             <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
             <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>

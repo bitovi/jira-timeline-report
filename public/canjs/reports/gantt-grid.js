@@ -533,7 +533,7 @@ export class GanttGrid extends StacheElement {
         root.appendChild(team);
       }
     } else {
-      let team = makeCircleForStatus("unknown", "∅", this.lotsOfIssues);
+      let team = makeCircleForStatus("notstarted", "∅", this.lotsOfIssues);
 
       root.appendChild(team);
     }
