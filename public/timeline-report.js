@@ -25,7 +25,6 @@ import { createElement } from "react";
 import SavedReports from "./react/SaveReports";
 import { SettingsSidebar } from "./react/Configure/SettingsSidebar"
 
-import { get, set } from "react-hook-form";
 import SampleDataNotice from "./react/SampleDataNotice";
 
 export class TimelineReport extends StacheElement {

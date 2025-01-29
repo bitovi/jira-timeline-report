@@ -1,14 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Button from "@atlaskit/button";
 import {
-  StacheElement,
-  type,
   ObservableObject,
-  ObservableArray,
   value as untypedValue,
   queues,
   Observation,
-  route,
   SimpleObservable,
 } from "../../../can.js";
 
@@ -20,23 +16,17 @@ const value: Value = untypedValue as unknown as Value;
 
 import untypedRouteData, { RouteData as RouteDataClass } from "../../../canjs/routing/route-data.js";
 
-import type { JiraIssue, NormalizedIssue } from "../../../jira/shared/types.js";
+import type { JiraIssue } from "../../../jira/shared/types.js";
 import type { OidcJiraIssue } from "../../../jira-oidc-helpers/types.js";
 
 import TeamConfigure from "../../../react/Configure";
 import ViewReports from "../../../react/ViewReports";
 
-import {
-  getAllTeamData,
-  createFullyInheritedConfig,
-} from "../../../react/Configure/components/Teams/services/team-configuration";
-import { createNormalizeConfiguration } from "../../../react/Configure/components/Teams/shared/normalize";
-import { allStatusesSorted, allReleasesSorted } from "../../../jira/normalized/normalize.js";
+import { allStatusesSorted } from "../../../jira/normalized/normalize.js";
 
 import { TimingCalculation } from "../TimingCalculation";
 import { CanObservable, useCanObservable } from "../../hooks/useCanObservable/useCanObservable.js";
 import { StatusFilter } from "../../../canjs/controls/status-filter.js";
-import { useSaveTheme } from "../../services/theme/useSaveTheme.js";
 import { Jira } from "../../../jira-oidc-helpers/index.js";
 
 type RouteDataProps = typeof RouteDataClass.props;

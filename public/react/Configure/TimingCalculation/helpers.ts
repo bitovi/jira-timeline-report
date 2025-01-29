@@ -1,5 +1,3 @@
-import { JiraIssue } from "../../../jira/shared/types";
-
 type keyToNameFn = (
   parent: { type: string },
   child: { plural: string },

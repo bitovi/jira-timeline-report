@@ -3,7 +3,6 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 
-import { ObservableObject } from "../../../can";
 import routeData from "../../../canjs/routing/route-data.js";
 
 import { TimingCalculation } from "./TimingCalculation";

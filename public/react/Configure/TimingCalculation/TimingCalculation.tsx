@@ -1,4 +1,4 @@
-import { StacheElement, type, ObservableObject, ObservableArray, value } from "../../../can.js";
+import { ObservableObject, value } from "../../../can.js";
 import React, { useMemo } from 'react';
 import untypedRouteData, { RouteData as RouteDataClass } from "../../../canjs/routing/route-data.js";
 
@@ -12,7 +12,6 @@ const selectStyle = "min-w-[345px] bg-gray-50 border border-gray-300 text-gray-9
 
 import {getTimingLevels, IssueType} from "./helpers.js";
 import { CanObservable, useCanObservable } from "../../hooks/useCanObservable/useCanObservable.js";
-import { JiraIssue } from "../../../jira/shared/types.js";
 
 const DEFAULT_CALCULATION_METHOD = "widestRange";
 
