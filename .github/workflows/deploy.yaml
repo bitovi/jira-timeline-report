@@ -40,6 +40,7 @@ jobs:
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
+          echo "CLIENT_STATUS_REPORTS_ENV=staging" >> repo_env
           echo "CLIENT_JIRA_APP_KEY=bitovi.status-report.staging" >> repo_env
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
