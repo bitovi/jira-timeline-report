@@ -19,7 +19,7 @@ function fieldPriorityOrder(
     return 1;
   }
   if (b?.scope && !a?.scope) {
-    return 1;
+    return -1;
   }
 
   return 0;
