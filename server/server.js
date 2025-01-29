@@ -62,9 +62,6 @@ app.get("/access-token", async (req, res) => {
     });
   }
 });
-app.get("/debug-sentry", function mainHandler(req, res) {
-  throw new Error("My first Sentry error!");
-});
 
 // Sentry setup needs to be done before the middlewares
 Sentry.setupExpressErrorHandler(app);
