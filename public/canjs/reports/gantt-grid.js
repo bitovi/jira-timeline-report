@@ -46,7 +46,7 @@ import routeData from "../routing/route-data.js";
 // loops through and creates
 export class GanttGrid extends StacheElement {
   static view = `
-        <div style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} ; grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
+        <div on:mouseenter='this.showTitlesChildren=true' on:mouseleave='this.showTitlesChildren=false' style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} ; grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
             <div class='z-50 bg-white sticky top-0'></div><div class='z-50 bg-white sticky top-0'></div>
             {{# for(column of this.columnsToShow) }}
@@ -86,16 +86,16 @@ export class GanttGrid extends StacheElement {
                       class="pl-{{multiply(data.issue.reportingHierarchy.depth,4)}}">
 
                       {{# if(data.isShowingChildren) }}
-                        <img class="inline" src="/images/chevron-down.svg" class="hidden"/>
+                        <img class="inline" src="/images/chevron-down.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }}"/>
                       {{ else }}
                         {{# if(data.issue.reportingHierarchy.childKeys.length) }}
-                          <img class="inline" src="/images/chevron-right-new.svg" class="hidden"/>
+                          <img class="inline" src="/images/chevron-right-new.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }}"/>
                         {{/ }}
                       {{/ if}}
                       
                     </div>
                     <div on:click='this.showTooltip(scope.event,data.issue)' 
-                        class='pointer border-y-solid-1px-white text-right {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                        class='pointer border-y-solid-1px-white {{# this.showTitlesChildren}} text-left {{ else }} text-right {{/ this.showTitlesChildren}} {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                         {{data.issue.summary}}
                     </div>
 
@@ -146,6 +146,10 @@ export class GanttGrid extends StacheElement {
         return makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
       },
     },
+    showTitlesChildren: {
+      type: Boolean,
+      default: false
+    }
   };
   toggleShowingChildren(issue) {
     if (this.showChildrenByKey[issue.key]) {
