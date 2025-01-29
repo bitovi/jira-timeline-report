@@ -22,7 +22,7 @@ jobs:
         id: latest_tag
         run: |
           LATEST_TAG=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "latest_tag=" >> $GITHUB_OUTPUT
 
       - name: Ensure `dist` Folder Exists
         run: |
@@ -77,3 +77,22 @@ jobs:
       - name: Skip deployment
         if: ${{ github.ref_name != steps.latest_tag.outputs.latest_tag }}
         run: echo "This is not the latest tag. Deployment skipped."
+
+  SentryRelease:
+    needs: EC2-deploy
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ needs.EC2-deploy.outputs.latest_tag }}
