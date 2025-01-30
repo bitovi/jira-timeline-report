@@ -5,7 +5,7 @@ import type { LinkBuilderFactory } from "../../routing/common";
 
 import React, { Suspense } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
 import { FlagsProvider } from "@atlaskit/flag";
 

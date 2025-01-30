@@ -4,7 +4,7 @@ import type { CanObservable } from "../hooks/useCanObservable";
 
 import React, { Suspense } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
 
 import LinkButton from "../components/LinkButton";
