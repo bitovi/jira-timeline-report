@@ -35,6 +35,7 @@ jobs:
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
+          echo "CLIENT_STATUS_REPORTS_ENV=prod" >> repo_env
           echo "CLIENT_JIRA_APP_KEY=bitovi.status-report" >> repo_env
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
@@ -77,3 +78,22 @@ jobs:
       - name: Skip deployment
         if: ${{ github.ref_name != steps.latest_tag.outputs.latest_tag }}
         run: echo "This is not the latest tag. Deployment skipped."
+
+  SentryRelease:
+    needs: EC2-deploy
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: prod
+          version: ${{ needs.EC2-deploy.outputs.latest_tag }}

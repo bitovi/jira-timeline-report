@@ -40,6 +40,7 @@ jobs:
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
+          echo "CLIENT_STATUS_REPORTS_ENV=staging" >> repo_env
           echo "CLIENT_JIRA_APP_KEY=bitovi.status-report.staging" >> repo_env
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
@@ -75,3 +76,21 @@ jobs:
 
           repo_env: repo_env
           env_ghs: ${{ secrets.DOT_ENV_MAIN }}
+  SentryRelease:
+    needs: EC2-Deploy
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: staging
+          version: ${{ github.sha }}
