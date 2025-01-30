@@ -22,7 +22,7 @@ jobs:
         id: latest_tag
         run: |
           LATEST_TAG=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
-          echo "latest_tag=" >> $GITHUB_OUTPUT
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Ensure `dist` Folder Exists
         run: |
@@ -35,7 +35,7 @@ jobs:
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
-          echo "CLIENT_STATUS_REPORTS_ENV=production" >> repo_env
+          echo "CLIENT_STATUS_REPORTS_ENV=prod" >> repo_env
           echo "CLIENT_JIRA_APP_KEY=bitovi.status-report" >> repo_env
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
@@ -95,5 +95,5 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
-          environment: production
+          environment: prod
           version: ${{ needs.EC2-deploy.outputs.latest_tag }}
