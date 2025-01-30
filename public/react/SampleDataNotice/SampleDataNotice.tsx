@@ -51,6 +51,14 @@ const SampleDataNotice: FC<SampleDataNoticeProps> = ({
       }
       appearance="warning"
     >
+      return{" "}
+      <button
+        onClick={() => {
+          throw new Error("This is your first error!");
+        }}
+      >
+        Break the world
+      </button>
       <p>Checkout the sample reports:</p>
       <ul className="list-disc list-inside ml-2">
         {exampleReports.map((report) => (

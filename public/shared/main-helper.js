@@ -1,6 +1,7 @@
 import { TimelineReport } from "../timeline-report.js";
 
 import "../shared/select-cloud.js";
+import "./sentry.js";
 
 import JiraLogin from "../shared/jira-login.js";
 import JiraOIDCHelpers from "../jira-oidc-helpers";

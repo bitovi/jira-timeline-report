@@ -5,7 +5,7 @@ import type { LinkBuilder } from "../../routing/common";
 
 import React, { Suspense, useMemo } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
 import DynamicTable from "@atlaskit/dynamic-table";
 
