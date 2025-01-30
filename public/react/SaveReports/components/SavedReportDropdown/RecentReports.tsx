@@ -6,6 +6,7 @@ import React, { useMemo } from "react";
 import { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
 import Hr from "../../../components/Hr";
 import { notEmpty } from "../../../../jira/shared/helpers";
+import { Link } from "../../../services/routing";
 
 interface RecentReportsProps {
   recentReports: string[];
@@ -28,7 +29,7 @@ const RecentReports: FC<RecentReportsProps> = ({
         .sort((a, b) => a.name.localeCompare(b.name)),
     [recentReports, reports]
   );
-  
+
   return (
     <>
       <DropdownItemGroup>
@@ -57,13 +58,15 @@ const RecentReports: FC<RecentReportsProps> = ({
 
 export default RecentReports;
 
-const ReportListItem: FC<{ report: Report }> = ({ report }) => (
-  <DropdownItem
-    key={report.id}
-    // @ts-expect-error types for component overrides on ADS don't work
-    component="a"
-    href={"?" + report.queryParams}
-  >
-    {report.name}
-  </DropdownItem>
-);
+const ReportListItem: FC<{ report: Report }> = ({ report }) => {
+  return (
+    <DropdownItem
+      key={report.id}
+      // @ts-expect-error types for component overrides on ADS don't work
+      component={Link}
+      href={"?" + report.queryParams}
+    >
+      {report.name}
+    </DropdownItem>
+  );
+};

@@ -21,6 +21,7 @@ describe("<SaveReportsWrapper />", () => {
   it("doesn't render if not logged in", () => {
     render(
       <SaveReportsWrapper
+        linkBuilder={(query) => query}
         shouldShowReportsObservable={{
           on: vi.fn(),
           off: vi.fn(),
@@ -50,6 +51,7 @@ describe("<SaveReportsWrapper />", () => {
   it("renders without crashing", async () => {
     render(
       <SaveReportsWrapper
+        linkBuilder={(query) => query}
         shouldShowReportsObservable={loggedInObservable}
         storage={{
           get: vi.fn().mockResolvedValue({ "saved-reports": {} }),
@@ -77,6 +79,7 @@ describe("<SaveReportsWrapper />", () => {
   it("shows the create report button if jql is present", async () => {
     render(
       <SaveReportsWrapper
+        linkBuilder={(query) => query}
         shouldShowReportsObservable={loggedInObservable}
         storage={{
           get: vi.fn().mockResolvedValue({ "saved-reports": {} }),

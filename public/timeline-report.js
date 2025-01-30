@@ -29,7 +29,7 @@ import SampleDataNotice from "./react/SampleDataNotice";
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
-        <timeline-configuration
+        <timeline-configuration     
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
           style="overflow-y: auto"
           isLoggedIn:from="this.loginComponent.isLoggedIn"
@@ -39,6 +39,7 @@ export class TimelineReport extends StacheElement {
           statuses:to="this.statuses"
           goBack:to="this.goBack"
           storage:from="this.storage"
+          linkBuilder:from="this.linkBuilder"
           
           ></timeline-configuration>
     {{/if}}
@@ -150,6 +151,7 @@ export class TimelineReport extends StacheElement {
     // passed values
     timingCalculationMethods: type.Any,
     storage: null,
+    linkBuilder: null,
 
     showingDebugPanel: { type: Boolean, default: false },
 
@@ -196,6 +198,7 @@ export class TimelineReport extends StacheElement {
       createElement(SavedReports, {
         queryParamObservable: pushStateObservable,
         storage: this.storage,
+        linkBuilder: this.linkBuilder,
         shouldShowReportsObservable: this.routeData.isLoggedInObservable,
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);

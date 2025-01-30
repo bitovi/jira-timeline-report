@@ -272,6 +272,7 @@ export class TimelineConfiguration extends StacheElement {
     createRoot(document.getElementById("view-reports")).render(
       createElement(ViewReports, {
         storage: this.routeData.storage,
+        linkBuilder: this.linkBuilder,
         showingReportsObservable: value.from(this, "isShowingReports"),
         onBackButtonClicked: () => {
           this.routeData.showSettings = "";
