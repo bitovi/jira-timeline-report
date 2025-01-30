@@ -36,7 +36,7 @@ import {
     toSelectedParts,
 } from "./data-utils.js";
 
-import { getTimingLevels } from "../controls/timeline-configuration/timing-calculation/helpers.js";
+import { getTimingLevels } from "../../react/Configure/TimingCalculation/helpers";
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
@@ -66,11 +66,12 @@ const REPORTS = [
     },
 ];
 
-class RouteData extends ObservableObject {
+export class RouteData extends ObservableObject {
     static props = {
         // passed values
         jiraHelpers: null,
         isLoggedInObservable: null,
+        storage: null,
 
         // static requests
         jiraFieldsPromise: {

@@ -1,23 +1,37 @@
+type keyToNameFn = (
+  parent: { type: string },
+  child: { plural: string },
+) => string;
 
-export const calculationKeysToNames = {
+export type IssueType = {
+        avatarId: number;
+        description: string;
+        hierarchyLevel: number;
+        iconUrl: string;
+        id: number;
+        name: string;
+        subtask: boolean;
+      }
+
+export const calculationKeysToNames: Record<string, keyToNameFn> = {
     parentFirstThenChildren: function(parent, child){
-        return `From ${parent.type}, then ${child.plural}`
+        return `↑↓ From ${parent.type}, then ${child.plural}`
     },
     childrenOnly: function(parent, child){
-        return `From ${child.plural}`
+        return `↓ From ${child.plural}`
     },
     childrenFirstThenParent: function(parent, child){
-        return `From ${child.plural}, then ${parent.type}`
+        return `↓↑ From ${child.plural}, then ${parent.type}`
     },
     widestRange: function(parent, child){
-        return `From ${parent.type} or ${child.plural} (earliest to latest)`
+        return `↕︎ From ${parent.type} or ${child.plural} (earliest to latest)`
     },
-    parentOnly: function(parent, child){
-        return `From ${parent.type}`
+    parentOnly: function(parent){
+        return `↑ From ${parent.type}`
     }
 }
 
-export function createBaseLevels(issueHierarchy) {
+export function createBaseLevels(issueHierarchy: IssueType[]) {
     return issueHierarchy.map((issue)=> {
         return {
             type: issue.name,
@@ -28,7 +42,12 @@ export function createBaseLevels(issueHierarchy) {
     });
 }
 
-export function calculationsForLevel(parent, child, selected, last){
+export function calculationsForLevel(
+  parent: { type: string },
+  child: { type: string; plural: string },
+  selected: string,
+  last: boolean
+){
     if(!last) {
         return Object.keys(calculationKeysToNames).map( calculationName => {
             return {
@@ -44,7 +63,7 @@ export function calculationsForLevel(parent, child, selected, last){
             parent: parent.type,
             child: null,
             calculation: "parentOnly",
-            name:  calculationKeysToNames.parentOnly(parent),
+            name:  calculationKeysToNames.parentOnly(parent, { plural: '' }),
             selected: true
         }];
     }
@@ -65,7 +84,7 @@ return {
 * @returns 
 */
 // TODO: this is a duplicate function, any change needs to find the other one
-export function getTimingLevels(issueHierarchy, timingCalculations){
+export function getTimingLevels(issueHierarchy: IssueType[], timingCalculations: Record<string, string>){
 
 
     const baseLevels = createBaseLevels(issueHierarchy);

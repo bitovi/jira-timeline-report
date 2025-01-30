@@ -29,6 +29,7 @@ import {
   isChangelogComplete,
   fetchRemainingChangelogsForIssue,
   fetchJiraIssuesWithJQLWithNamedFields,
+  validateJQL
 } from "./jira";
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from "./fetchAllJiraIssuesWithJQLAndFetchAllChangelog";
 import { fetchJiraFields, makeFieldsRequest } from "./fields";
@@ -106,6 +107,7 @@ export default function createJiraHelpers(
     _cachedServerInfoPromise,
     getServerInfo: getServerInfo(config),
     requester: requestHelper,
+    validateJQL: validateJQL(config),
   };
 
   makeFieldsRequest(config, setFieldsRequest);
