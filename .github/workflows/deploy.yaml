@@ -76,7 +76,7 @@ jobs:
 
           repo_env: repo_env
           env_ghs: ${{ secrets.DOT_ENV_MAIN }}
-  SentryRelease:
+  Sentry-Release-Backend:
     needs: EC2-Deploy
     if: ${{ success() }}
     runs-on: ubuntu-latest
