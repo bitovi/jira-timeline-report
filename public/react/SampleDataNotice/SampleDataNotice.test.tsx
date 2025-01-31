@@ -17,6 +17,7 @@ describe("<SampleDataNotice />", () => {
           on: vi.fn(),
           off: vi.fn(),
           set: vi.fn(),
+          get: vi.fn()
         }}
       />
     );
@@ -44,6 +45,7 @@ describe("<SampleDataNotice />", () => {
           on: vi.fn(),
           off: vi.fn(),
           set: vi.fn(),
+          get: vi.fn()
         }}
       />
     );
@@ -66,6 +68,7 @@ describe("<SampleDataNotice />", () => {
           on: vi.fn(),
           off: vi.fn(),
           set: vi.fn(),
+          get: vi.fn()
         }}
       />
     );

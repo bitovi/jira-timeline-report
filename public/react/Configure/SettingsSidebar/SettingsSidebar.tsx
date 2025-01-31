@@ -2,15 +2,10 @@ import React from "react";
 import { GoBackButton, Branding, TimingCalculation, IssueSource, ReportSettings } from "./components";
 import {
     ObservableObject,
-    value as untypedValue,
+    value,
     queues,
     Observation,
 } from "../../../can";
-type Value = {
-    from: <T>(object: typeof ObservableObject | CanObservable<any>, keyPath?: string) => CanObservable<T>
-    bind: <T>(object: typeof ObservableObject | CanObservable<any>, keyPath?: string) => CanObservable<T>
-}
-const value: Value = untypedValue as unknown as Value;
 
 import untypedRouteData, { RouteData as RouteDataClass } from "../../../canjs/routing/route-data.js";
 

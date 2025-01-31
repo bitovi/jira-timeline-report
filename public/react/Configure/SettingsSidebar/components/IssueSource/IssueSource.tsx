@@ -5,6 +5,8 @@ import { CanObservable, useCanObservable, CanPromise } from "../../../../hooks/u
 import type { Jira } from "../../../../../jira-oidc-helpers/index.js";
 import type { JiraIssue } from "../../../../../jira/shared/types.js";
 import type { OidcJiraIssue } from "../../../../../jira-oidc-helpers/types.js";
+import { allStatusesSorted } from "../../../../../jira/normalized/normalize.js";
+
 import {
     ObservableObject,
     value as untypedValue,
@@ -46,7 +48,8 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
     const childJQLFromRouteData = useCanObservable<string>(value.from(routeData, "childJQL"));
     const statusesToExcludeFromRouteData = useCanObservable<string[]>(value.from(routeData, "statusesToExclude"));
     const numberOfStatuses = useCanObservable(new Observation(() => processStatuses()?.length) as unknown as CanObservable<number>);
-    
+    const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string; } }[]> = value.from(routeData, "derivedIssues");
+
     const [jqlValid, setJqlValid] = useState<boolean>(true);
     const [jql, setJql] = useState(jqlFromRouteData);
     const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
@@ -56,15 +59,13 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
     const selectedStatusFiltersObserve = useMemo<CanObservable<string[]>>(() => {
         return new SimpleObservable(
             statusesToExcludeFromRouteData,
-        ) as unknown as CanObservable<string[]>;
+        );
     }, []);
 
     const selectedStatusFilters = useCanObservable<string[]>(selectedStatusFiltersObserve);
 
     const processStatuses = () => {
-        // @ts-expect-error
         if (derivedIssuesObservable.get()) {
-            // @ts-expect-error
             return allStatusesSorted(derivedIssuesObservable.get());
         } else {
             return [];
@@ -109,7 +110,7 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
 
     useEffect(() => {
         if (statusFilterRef.current) {
-            // @ts-expect-error
+            // @ts-expect-error TS and Can doesn't get along
             const statusFilterEl = new StatusFilter().bindings({
                 statuses: value.from(processStatusesObserve),
                 selectedStatuses: selectedStatusFiltersObserve,

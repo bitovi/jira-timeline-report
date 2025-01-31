@@ -15,6 +15,7 @@ const loggedInObservable = {
   getData: vi.fn(),
   value: true,
   set: vi.fn(),
+  get: vi.fn()
 };
 
 describe("<SaveReportsWrapper />", () => {
@@ -27,6 +28,7 @@ describe("<SaveReportsWrapper />", () => {
           getData: vi.fn(),
           value: true,
           set: vi.fn(),
+          get: vi.fn()
         }}
         storage={{
           get: vi.fn().mockResolvedValue({ "saved-reports": {} }),
@@ -40,6 +42,7 @@ describe("<SaveReportsWrapper />", () => {
           getData: vi.fn(),
           value: "",
           set: vi.fn(),
+          get: vi.fn()
         }}
       />
     );
@@ -55,6 +58,7 @@ describe("<SaveReportsWrapper />", () => {
           get: vi.fn().mockResolvedValue({ "saved-reports": {} }),
           storageInitialized: async () => true,
           update: vi.fn(),
+          
         }}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
         queryParamObservable={{
@@ -63,6 +67,7 @@ describe("<SaveReportsWrapper />", () => {
           getData: vi.fn(),
           value: "",
           set: vi.fn(),
+          get: vi.fn()
         }}
       />
     );
@@ -90,6 +95,7 @@ describe("<SaveReportsWrapper />", () => {
           getData: vi.fn(),
           value: "?jql=issues-and-what-not",
           set: vi.fn(),
+          get: vi.fn()
         }}
       />
     );

@@ -6,6 +6,7 @@ export interface CanObservable<TData> {
   on(handler: () => void): void;
   off(handler: () => void): void;
   set(value: TData): void;
+  get(): TData;
 }
 
 export type CanPromise<T> = Promise<T> & {
