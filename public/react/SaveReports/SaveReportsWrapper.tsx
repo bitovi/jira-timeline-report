@@ -1,10 +1,11 @@
 import type { FC } from "react";
 import type { AppStorage } from "../../jira/storage/common";
 import type { CanObservable } from "../hooks/useCanObservable";
+import type { LinkBuilderFactory } from "../../routing/common";
 
 import React, { Suspense } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
 import { FlagsProvider } from "@atlaskit/flag";
 
@@ -13,9 +14,11 @@ import SaveReports from "./SaveReports";
 import { StorageProvider } from "../services/storage";
 import { queryClient } from "../services/query";
 import { useCanObservable } from "../hooks/useCanObservable";
+import { RoutingProvider } from "../services/routing";
 
 interface SaveReportsWrapperProps {
   storage: AppStorage;
+  linkBuilder: ReturnType<LinkBuilderFactory>;
   onViewReportsButtonClicked: () => void;
   queryParamObservable: CanObservable<string>;
   shouldShowReportsObservable: CanObservable<boolean>;
@@ -24,6 +27,7 @@ interface SaveReportsWrapperProps {
 const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({
   storage,
   shouldShowReportsObservable,
+  linkBuilder,
   ...saveReportProps
 }) => {
   const shouldShowReports = useCanObservable(shouldShowReportsObservable);
@@ -34,15 +38,17 @@ const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({
 
   return (
     <StorageProvider storage={storage}>
-      <ErrorBoundary fallback={<SaveReportError />}>
-        <FlagsProvider>
-          <Suspense fallback={<SaveReportSkeleton />}>
-            <QueryClientProvider client={queryClient}>
-              <SaveReports {...saveReportProps} />
-            </QueryClientProvider>
-          </Suspense>
-        </FlagsProvider>
-      </ErrorBoundary>
+      <RoutingProvider routing={{ linkBuilder }}>
+        <ErrorBoundary fallback={<SaveReportError />}>
+          <FlagsProvider>
+            <Suspense fallback={<SaveReportSkeleton />}>
+              <QueryClientProvider client={queryClient}>
+                <SaveReports {...saveReportProps} />
+              </QueryClientProvider>
+            </Suspense>
+          </FlagsProvider>
+        </ErrorBoundary>
+      </RoutingProvider>
     </StorageProvider>
   );
 };

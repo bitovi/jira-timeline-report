@@ -40,6 +40,9 @@ jobs:
       - name: Create repo_env file
         run: |
           echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
+          echo "CLIENT_STATUS_REPORTS_ENV=staging" >> repo_env
+          echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> repo_env
+          echo "BACKEND_SENTRY_DSN=https://26de5611d04fde803427885bdb82a7bc@o4508721931616256.ingest.us.sentry.io/4508721935351808" >> repo_env
           echo "CLIENT_JIRA_APP_KEY=bitovi.status-report.staging" >> repo_env
           echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
 
@@ -75,3 +78,40 @@ jobs:
 
           repo_env: repo_env
           env_ghs: ${{ secrets.DOT_ENV_MAIN }}
+  Sentry-Release-Backend:
+    needs: EC2-Deploy
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_BACKEND_PROJECT }}
+        with:
+          environment: staging
+          version: ${{ github.sha }}
+
+  Sentry-Release-Frontend:
+    needs: EC2-Deploy
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_FRONTEND_PROJECT }}
+        with:
+          environment: staging
+          version: ${{ github.sha }}

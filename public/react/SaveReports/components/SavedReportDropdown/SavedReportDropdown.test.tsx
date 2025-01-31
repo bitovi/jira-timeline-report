@@ -4,6 +4,7 @@ import { describe, it, vi, beforeEach } from "vitest";
 
 import SavedReportDropdown from "./SavedReportDropdown";
 import userEvent from "@testing-library/user-event";
+import { RoutingProvider } from "../../../services/routing";
 
 const mockOnViewReportsButtonClicked = vi.fn();
 

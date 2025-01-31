@@ -1,7 +1,11 @@
 import type { NormalizeIssueConfig } from "../../../../../jira/normalized/normalize";
 import type { AllTeamData, Configuration, TeamConfiguration } from "../services/team-configuration";
 
-const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel?: number): Configuration => {
+const getConfiguration = (
+  allData: AllTeamData,
+  teamKey?: string,
+  heirarchyLevel?: number
+): Configuration => {
   const key = teamKey || "";
   const level = typeof heirarchyLevel === "undefined" ? 0 : heirarchyLevel;
 
@@ -59,21 +63,28 @@ export const createNormalizeConfiguration = (
     fields: neededFields,
     getDaysPerSprint: (issue, config) => {
       return Number(
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).sprintLength
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
+          .sprintLength
       );
     },
     getVelocity: (issue, config) => {
-      
       return Number(
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).velocityPerSprint
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
+          .velocityPerSprint
       );
     },
     getParallelWorkLimit: (issue, config) => {
-      return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).tracks);
+      return Number(
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
+          .tracks
+      );
     },
     getTeamSpreadsEffortAcrossDates: (issue, config) => {
-      return !!getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
-        .spreadEffortAcrossDates;
+      return !!getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue)
+      ).spreadEffortAcrossDates;
     },
     getStartDate: (issue, config) => {
       const teamHierarchyConfiguration = getConfiguration(

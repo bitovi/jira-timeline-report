@@ -11,6 +11,7 @@ import untypedRouteData, { RouteData as RouteDataClass } from "../../../canjs/ro
 
 import TeamConfigure from "../../../react/Configure";
 import ViewReports from "../../../react/ViewReports";
+import type { LinkBuilderFactory } from "../../../routing/common";
 
 import { CanObservable, useCanObservable } from "../../hooks/useCanObservable/useCanObservable.js";
 import { Jira } from "../../../jira-oidc-helpers/index.js";
@@ -27,12 +28,14 @@ export interface SettingsSidebarProps {
     isLoggedIn: boolean;
     showSidebarBranding: boolean;
     jiraHelpers: Jira;
+    linkBuilder: ReturnType<LinkBuilderFactory>;
 }
 
 export const SettingsSidebar = ({
     isLoggedIn,
     showSidebarBranding,
     jiraHelpers,
+    linkBuilder
 }: SettingsSidebarProps) => {
     const showSettings = useCanObservable<string>(value.from(routeData, "showSettings"));
     const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string; } }[]> = value.from(routeData, "derivedIssues");
@@ -88,6 +91,7 @@ export const SettingsSidebar = ({
                         onBackButtonClicked={() => {
                             routeData.showSettings = "";
                         }}
+                        linkBuilder={linkBuilder}
                     />
                 </div>
             </div>

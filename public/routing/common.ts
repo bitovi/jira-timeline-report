@@ -33,3 +33,7 @@ declare global {
     };
   }
 }
+
+export type LinkBuilderFactory = (appKey?: string) => (queryParams: string) => string;
+
+export type LinkBuilder = ReturnType<LinkBuilderFactory>;

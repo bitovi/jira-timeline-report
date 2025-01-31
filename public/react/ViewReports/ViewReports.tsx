@@ -11,6 +11,7 @@ import { IconButton } from "@atlaskit/button/new";
 import ViewReportsLayout from "./components/ViewReportsLayout";
 import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
 import DeleteReportModal from "./components/DeleteReportModal";
+import { Link } from "../services/routing";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
@@ -49,12 +50,12 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
           {
             key: `${report.id}-report`,
             content: (
-              <a
+              <Link
                 href={"?" + report.queryParams}
                 className="flex items-center font-normal text-sm leading-5 h-10"
               >
                 {report.name}
-              </a>
+              </Link>
             ),
           },
           {
@@ -72,7 +73,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
                 )}
               >
                 <DropdownItem
-                  onClick={() => {
+                  onClick={(e) => {
                     setManagedReport(report);
                   }}
                 >

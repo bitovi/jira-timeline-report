@@ -7,7 +7,7 @@ import type { Jira } from "../../jira-oidc-helpers";
 import React, { Suspense } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { FlagsProvider } from "@atlaskit/flag";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary } from "@sentry/react";
 import Spinner from "@atlaskit/spinner";
 
 import { StorageProvider } from "../services/storage";
@@ -38,7 +38,7 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({
   }
 
   return (
-    <ErrorBoundary fallbackRender={({ error }) => error?.message || "Something went wrong"}>
+    <ErrorBoundary fallback={({ error }) => <ConfigurationPanelErrorBoundary error={error} />}>
       <Suspense
         fallback={
           <div className=" w-56 p-4 flex justify-center h-full items-center">
@@ -61,3 +61,16 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({
 };
 
 export default TeamConfigurationWrapper;
+
+const ConfigurationPanelErrorBoundary: FC<{ error: unknown }> = ({ error }) => {
+  if (
+    !!error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return <>{error?.message}</>;
+  }
+
+  return "Something went wrong";
+};

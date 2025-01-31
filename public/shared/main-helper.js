@@ -1,6 +1,7 @@
 import { TimelineReport } from "../timeline-report.js";
 
 import "../shared/select-cloud.js";
+import { initSentry } from "./sentry.js";
 
 import JiraLogin from "../shared/jira-login.js";
 import JiraOIDCHelpers from "../jira-oidc-helpers";
@@ -13,8 +14,17 @@ import routeData from "../canjs/routing/route-data.js";
 
 export default async function mainHelper(
   config,
-  { host, createStorage, configureRouting, showSidebarBranding, isAlwaysLoggedIn }
+  {
+    host,
+    createStorage,
+    configureRouting,
+    showSidebarBranding,
+    isAlwaysLoggedIn,
+    createLinkBuilder,
+  }
 ) {
+  initSentry(config);
+
   let fix = await legacyPrimaryReportingTypeRoutingFix();
   fix = await legacyPrimaryIssueTypeRoutingFix();
 
@@ -32,6 +42,7 @@ export default async function mainHelper(
   const jiraHelpers = JiraOIDCHelpers(config, requestHelper, host);
 
   const storage = createStorage(jiraHelpers);
+  const linkBuilder = createLinkBuilder(jiraHelpers.appKey);
 
   const props = isAlwaysLoggedIn
     ? {
@@ -60,9 +71,10 @@ export default async function mainHelper(
         loginComponent,
         mode: "TEAMS",
         storage,
+        linkBuilder,
         showSidebarBranding,
       });
-      report.className = "flex flex-1 overflow-hidden"
+      report.className = "flex flex-1 overflow-hidden";
       mainContent.append(report);
     }
   };

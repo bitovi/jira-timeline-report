@@ -30,9 +30,19 @@ import SampleDataNotice from "./react/SampleDataNotice";
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
-        <div id="timeline-configuration" 
+        <timeline-configuration     
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
-        ></div>
+          style="overflow-y: auto"
+          isLoggedIn:from="this.loginComponent.isLoggedIn"
+          jiraHelpers:from="this.jiraHelpers"
+          showSidebarBranding:from="this.showSidebarBranding"
+          issueTimingCalculations:to="this.issueTimingCalculations"
+          statuses:to="this.statuses"
+          goBack:to="this.goBack"
+          storage:from="this.storage"
+          linkBuilder:from="this.linkBuilder"
+          
+          ></timeline-configuration>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto" on:click="this.goBack()">
 
@@ -97,7 +107,6 @@ export class TimelineReport extends StacheElement {
           {{/ }}
 
           <div class='p-2'>
-            <span class='color-text-and-bg-unknown p-2 inline-block'>Unknown</span>
             <span class='color-text-and-bg-new p-2 inline-block'>New</span>
             <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
             <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
@@ -143,6 +152,7 @@ export class TimelineReport extends StacheElement {
     // passed values
     timingCalculationMethods: type.Any,
     storage: null,
+    linkBuilder: null,
 
     showingDebugPanel: { type: Boolean, default: false },
 
@@ -189,6 +199,7 @@ export class TimelineReport extends StacheElement {
       createElement(SavedReports, {
         queryParamObservable: pushStateObservable,
         storage: this.storage,
+        linkBuilder: this.linkBuilder,
         shouldShowReportsObservable: this.routeData.isLoggedInObservable,
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);
@@ -199,7 +210,8 @@ export class TimelineReport extends StacheElement {
       createElement(SettingsSidebar, {
         isLoggedIn: this.loginComponent.isLoggedIn,
         showSidebarBranding: this.showSidebarBranding,
-        jiraHelpers: this.jiraHelpers
+        jiraHelpers: this.jiraHelpers,
+        linkBuilder: this.linkBuilder,
       })
     );
   }

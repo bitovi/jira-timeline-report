@@ -1,10 +1,11 @@
 import type { FC } from "react";
 import type { AppStorage } from "../../jira/storage/common";
 import type { CanObservable } from "../hooks/useCanObservable";
+import type { LinkBuilder } from "../../routing/common";
 
 import React, { Suspense, useMemo } from "react";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { ErrorBoundary } from "react-error-boundary";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
 import DynamicTable from "@atlaskit/dynamic-table";
 
@@ -16,18 +17,19 @@ import { StorageProvider } from "../services/storage";
 import { useCanObservable } from "../hooks/useCanObservable";
 import { FlagsProvider } from "@atlaskit/flag";
 import { queryClient } from "../services/query";
+import { RoutingProvider } from "../services/routing";
 
 interface ViewReportsWrapperProps {
   storage: AppStorage;
   showingReportsObservable: CanObservable<boolean>;
   onBackButtonClicked: () => void;
+  linkBuilder: LinkBuilder;
 }
-
-// const queryClient = new QueryClient();
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
   storage,
   showingReportsObservable,
+  linkBuilder,
   ...viewReportProps
 }) => {
   const shouldShowReports = useCanObservable(showingReportsObservable);
@@ -41,13 +43,15 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
       <ErrorBoundary
         fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}
       >
-        <StorageProvider storage={storage}>
-          <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-            <QueryClientProvider client={queryClient}>
-              <ViewReports {...viewReportProps} />
-            </QueryClientProvider>
-          </Suspense>
-        </StorageProvider>
+        <RoutingProvider routing={{ linkBuilder }}>
+          <StorageProvider storage={storage}>
+            <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
+              <QueryClientProvider client={queryClient}>
+                <ViewReports {...viewReportProps} />
+              </QueryClientProvider>
+            </Suspense>
+          </StorageProvider>
+        </RoutingProvider>
       </ErrorBoundary>
     </FlagsProvider>
   );
