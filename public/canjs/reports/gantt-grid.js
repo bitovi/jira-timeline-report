@@ -83,19 +83,19 @@ export class GanttGrid extends StacheElement {
             {{# for(data of this.gridRowData) }}
                 {{# eq(data.type, "issue") }}
                     <div on:click='this.toggleShowingChildren(data.issue)'
-                      class="pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} flex items-center justify-center w-9 h-9">
+                      class="pointer pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} flex items-center justify-center w-9 h-9">
 
                       {{# if(data.isShowingChildren) }}
-                        <img class="inline" src="/images/chevron-down.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }} inline-block"/>
+                        <img src="/images/chevron-down.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }} inline"/>
                       {{ else }}
                         {{# if(data.issue.reportingHierarchy.childKeys.length) }}
-                          <img class="inline" src="/images/chevron-right-new.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }} inline-block"/>
-                        {{/ }}
+                          <img src="/images/chevron-right-new.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }} inline"/>
+                        {{/ if }}
                       {{/ if}}
                       
                     </div>
                     <div on:click='this.showTooltip(scope.event,data.issue)' 
-                        class='pointer border-y-solid-1px-white {{# this.alignLeft}} text-left {{ else }} text-right {{/ this.alignLeft}} {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                        class='pointer pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} border-y-solid-1px-white {{# this.alignLeft}} text-left {{ else }} text-right {{/ this.alignLeft}} {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                         {{data.issue.summary}}
                     </div>
 
