@@ -36,7 +36,7 @@ import {
     toSelectedParts,
 } from "./data-utils.js";
 
-import { getTimingLevels } from "../../react/Configure/TimingCalculation/helpers";
+import { getTimingLevels } from "../../react/Configure/SettingsSidebar/components/TimingCalculation/helpers";
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 

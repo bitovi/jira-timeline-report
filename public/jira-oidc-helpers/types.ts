@@ -13,7 +13,7 @@ export type ChangeLog = {
   maxResults: number;
   total: number;
   startAt: number;
-}
+};
 export type OidcJiraIssue = {
   id: string;
   key: string;
@@ -46,7 +46,7 @@ export type ProgressData = {
   issuesReceived: number;
   changeLogsRequested: number;
   changeLogsReceived: number;
-  keysWhoseChildrenWeAreAlreadyLoading:Set<string>
+  keysWhoseChildrenWeAreAlreadyLoading: Set<string>;
 };
 
 export type Progress = {
@@ -54,15 +54,13 @@ export type Progress = {
   (data: ProgressData): void;
 };
 export interface ResponseForFieldRequest extends RequestHelperResponse {
-  idMap: { [key: string]: string; };
-  nameMap: { [key: string]: string; };
+  idMap: { [key: string]: string };
+  nameMap: { [key: string]: string };
 }
 
-export type RequestHelper = <
-  TValues = any[],
-  TIssues = OidcJiraIssue[] | JiraIssue[]
->(urlFragment: string) =>
-  Promise<RequestHelperResponse<TValues, TIssues>>;
+export type RequestHelper = <TValues = any[], TIssues = OidcJiraIssue[] | JiraIssue[]>(
+  urlFragment: string
+) => Promise<RequestHelperResponse<TValues, TIssues>>;
 
 export type Config = {
   env: {
@@ -77,3 +75,80 @@ export type Config = {
   host: "jira" | "hosted";
 };
 
+export type ResponsesParsedJqlQueries = {
+  queries: ParsedJqlQueries[];
+};
+
+type ParsedJqlQueries = {
+  query: string;
+  structure?: {
+    orderBy?: {
+      fields: JqlQueryOrderByClauseElement[];
+    };
+    where?: CompoundClause | FieldValueClause | FieldWasClause | FieldChangeClause;
+  };
+  errors?: string[];
+};
+
+interface CompoundClause {
+  clauses: Array<CompoundClause | FieldValueClause | FieldWasClause | FieldChangeClause>;
+  operator: string;
+}
+
+interface FieldValueClause {
+  field: JqlQueryField;
+  operand: ListOperand | ValueOperand | FunctionOperand | KeywordOperand;
+  operator: string;
+}
+interface FieldWasClause {
+  field: JqlQueryField;
+  operand: ListOperand | ValueOperand | FunctionOperand | KeywordOperand;
+  operator: string;
+  predicates: JqlQueryClauseTimePredicate[];
+}
+interface FieldChangeClause {
+  field: JqlQueryField;
+  operator: string;
+  predicates: JqlQueryClauseTimePredicate[];
+}
+
+interface ListOperand {
+  encodedOperand?: string;
+  values: Array<ValueOperand | FunctionOperand | KeywordOperand>;
+}
+
+interface ValueOperand {
+  encodedValue?: string;
+  value: string;
+}
+
+interface FunctionOperand {
+  arguments: string[];
+  encodedOperand?: string;
+  function: string;
+}
+
+interface KeywordOperand {
+  keyword: string;
+}
+
+interface JqlQueryClauseTimePredicate {
+  operand: ListOperand | ValueOperand | FunctionOperand | KeywordOperand;
+  operator: string;
+}
+
+interface JqlQueryOrderByClauseElement {
+  direction: string;
+  field: JqlQueryField;
+}
+interface JqlQueryField {
+  encodedName?: string;
+  name: string;
+  property?: JqlQueryFieldEntityProperty[];
+}
+interface JqlQueryFieldEntityProperty {
+  entity: string;
+  key: string;
+  path: string;
+  type?: string;
+}

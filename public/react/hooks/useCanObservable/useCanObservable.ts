@@ -8,6 +8,16 @@ export interface CanObservable<TData> {
   set(value: TData): void;
 }
 
+export type CanPromise<T> = Promise<T> & {
+  isResolved: boolean;
+  isRejected: boolean;
+  isPending: boolean;
+  reason: {
+      errorMessages: string[];
+  };
+  value: T;
+};
+
 export const useCanObservable = <TData>(observable: CanObservable<TData>): TData => {
   const [value, setValue] = useState<TData>(observable.value);
 

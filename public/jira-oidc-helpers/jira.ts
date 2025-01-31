@@ -5,7 +5,7 @@ import chunkArray from "../utils/array/chunk-array";
 import mapIdsToNames from "../utils/object/map-ids-to-names";
 import { responseToText } from "../utils/fetch/response-to-text";
 import { FetchJiraIssuesParams } from "../jira/shared/types";
-import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from "./types";
+import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue, ResponsesParsedJqlQueries } from "./types";
 import { fetchFromLocalStorage } from "./storage";
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from "./fetchAllJiraIssuesWithJQLAndFetchAllChangelog";
 import { uniqueKeys } from "../utils/array/unique";
@@ -332,7 +332,7 @@ export function editJiraIssueWithNamedFields(config: Config) {
   };
 }
 
-export function validateJQL(config: Config) {
+export function validateJQL(config: Config): (jql: string, childJQL: string) => Promise<ResponsesParsedJqlQueries> {
   return (...jqls: string[]) => {
     const scopeIdForJira = fetchFromLocalStorage("scopeId");
     const accessToken = fetchFromLocalStorage("accessToken");
