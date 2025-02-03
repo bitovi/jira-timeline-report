@@ -10,8 +10,8 @@ import TeamConfigure from "../../../react/Configure";
 import ViewReports from "../../../react/ViewReports";
 import type { LinkBuilderFactory } from "../../../routing/common";
 
-import { CanObservable, useCanObservable } from "../../hooks/useCanObservable/useCanObservable.js";
-import { Jira } from "../../../jira-oidc-helpers/index.js";
+import { CanObservable, useCanObservable } from "../../hooks/useCanObservable/useCanObservable";
+import { Jira } from "../../../jira-oidc-helpers/index";
 import Branding from "./components/Branding";
 import ReportSettings from "./components/ReportSettings";
 import GoBackButton from "./components/GoBackButton";
@@ -25,7 +25,7 @@ type RouteData = {
   [k in keyof RouteDataProps]: any;
 } & {
   assign: (obj: Partial<RouteData>) => RouteData;
-} & typeof ObservableObject;
+};
 const routeData: RouteData = untypedRouteData as RouteData;
 
 export interface SettingsSidebarProps {

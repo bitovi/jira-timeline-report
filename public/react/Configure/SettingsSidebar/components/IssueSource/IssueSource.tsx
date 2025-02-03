@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Button from "@atlaskit/button";
+import Button from "@atlaskit/button/new";
 
 import {
   CanObservable,
