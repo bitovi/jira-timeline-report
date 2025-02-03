@@ -21,31 +21,22 @@ import Heading from "@atlaskit/heading";
 
 interface ThemeWrapper {
   storage: AppStorage;
-  showingThemeObservable: CanObservable<boolean>;
   onBackButtonClicked: () => void;
 }
 
-const ViewReportsWrapper: FC<ThemeWrapper> = ({ storage, showingThemeObservable, ...props }) => {
-  const showTheme = useCanObservable(showingThemeObservable);
-
-  if (!showTheme) {
-    return null;
-  }
-
+const ViewReportsWrapper: FC<ThemeWrapper> = ({ storage, onBackButtonClicked, ...props }) => {
   return (
-    <div className="w-80 py-4 px-6">
-      <FlagsProvider>
-        <ErrorBoundary fallback={<ThemeError onBackButtonClicked={props.onBackButtonClicked} />}>
-          <StorageProvider storage={storage}>
-            <Suspense fallback={<ThemeSkeleton {...props} />}>
-              <QueryClientProvider client={queryClient}>
-                <Theme {...props} />
-              </QueryClientProvider>
-            </Suspense>
-          </StorageProvider>
-        </ErrorBoundary>
-      </FlagsProvider>
-    </div>
+    <FlagsProvider>
+      <ErrorBoundary fallback={<ThemeError onBackButtonClicked={onBackButtonClicked} />}>
+        <StorageProvider storage={storage}>
+          <Suspense fallback={<ThemeSkeleton {...props} />}>
+            <QueryClientProvider client={queryClient}>
+              <Theme {...props} />
+            </QueryClientProvider>
+          </Suspense>
+        </StorageProvider>
+      </ErrorBoundary>
+    </FlagsProvider>
   );
 };
 
@@ -67,17 +58,11 @@ const ThemeError: FC<ThemeErrorProps> = ({ onBackButtonClicked }) => {
   );
 };
 
-interface ThemeSkeletonProps {
-  onBackButtonClicked: () => void;
-}
+interface ThemeSkeletonProps {}
 
-const ThemeSkeleton: FC<ThemeSkeletonProps> = ({ onBackButtonClicked }) => {
+const ThemeSkeleton: FC<ThemeSkeletonProps> = () => {
   return (
     <>
-      <SidebarButton onClick={onBackButtonClicked}>
-        <ArrowLeftCircleIcon label="go back" />
-        Go back
-      </SidebarButton>
       <div className="my-4">
         <Heading size="small">Theme</Heading>
       </div>

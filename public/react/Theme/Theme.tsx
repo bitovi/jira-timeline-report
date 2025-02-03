@@ -13,11 +13,9 @@ import { useDebounce } from "../hooks/useDebounce";
 import Spinner from "@atlaskit/spinner";
 import Button from "@atlaskit/button/new";
 
-interface ThemeProps {
-  onBackButtonClicked: () => void;
-}
+interface ThemeProps {}
 
-const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
+const Theme: FC<ThemeProps> = () => {
   const theme = useTheme();
   const { save, isPending } = useSaveTheme();
 
@@ -40,10 +38,6 @@ const Theme: FC<ThemeProps> = ({ onBackButtonClicked }) => {
 
   return (
     <>
-      <SidebarButton onClick={onBackButtonClicked}>
-        <ArrowLeftCircleIcon label="go back" />
-        Go back
-      </SidebarButton>
       <div className="my-4">
         <div className="flex justify-between">
           <Heading size="small">Theme</Heading>

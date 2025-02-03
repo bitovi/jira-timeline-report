@@ -21,23 +21,15 @@ import { RoutingProvider } from "../services/routing";
 
 interface ViewReportsWrapperProps {
   storage: AppStorage;
-  showingReportsObservable: CanObservable<boolean>;
   onBackButtonClicked: () => void;
   linkBuilder: LinkBuilder;
 }
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
   storage,
-  showingReportsObservable,
   linkBuilder,
   ...viewReportProps
 }) => {
-  const shouldShowReports = useCanObservable(showingReportsObservable);
-
-  if (!shouldShowReports) {
-    return null;
-  }
-
   return (
     <FlagsProvider>
       <ErrorBoundary

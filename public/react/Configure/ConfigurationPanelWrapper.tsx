@@ -17,26 +17,18 @@ import { queryClient } from "../services/query";
 
 interface TeamConfigurationWrapperProps {
   onBackButtonClicked: () => void;
-  onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
+  onUpdate?: (overrides: Partial<NormalizeIssueConfig & { fields: string[] }>) => void;
   jira: Jira;
   storage: AppStorage;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
-  showingTeamsObservable: CanObservable<boolean>;
   showSidebarBranding: boolean;
 }
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({
   jira,
   storage,
-  showingTeamsObservable,
   ...props
 }) => {
-  const isShowingTeam = useCanObservable(showingTeamsObservable);
-
-  if (!isShowingTeam) {
-    return null;
-  }
-
   return (
     <ErrorBoundary fallback={({ error }) => <ConfigurationPanelErrorBoundary error={error} />}>
       <Suspense

@@ -64,24 +64,10 @@ describe("Theme Component", () => {
   it("renders without crashing", async () => {
     renderWithWrappers({ props: { onBackButtonClicked: mockOnBackButtonClicked } });
 
-    const goBack = await screen.findByRole("button", { name: /go back/i });
-    expect(goBack).toBeInTheDocument();
-
     const themeHeading = await screen.findByText("Theme");
     expect(themeHeading).toBeInTheDocument();
 
     const reset = await screen.findByText("Reset theme");
     expect(reset).toBeInTheDocument();
-  });
-
-  it("calls go back", async () => {
-    renderWithWrappers({ props: { onBackButtonClicked: mockOnBackButtonClicked } });
-
-    const goBack = await screen.findByRole("button", { name: /go back/i });
-    expect(goBack).toBeInTheDocument();
-
-    await userEvent.click(goBack);
-
-    expect(mockOnBackButtonClicked).toHaveBeenCalled();
   });
 });

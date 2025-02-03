@@ -1,4 +1,4 @@
-import { StacheElement, type } from "./can.js";
+import { StacheElement, type, queues } from "./can.js";
 
 import routeData from "./canjs/routing/route-data.js";
 
@@ -23,7 +23,7 @@ import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
-import { SettingsSidebar } from "./react/Configure/SettingsSidebar"
+import { SettingsSidebar } from "./react/Configure/SettingsSidebar";
 
 import SampleDataNotice from "./react/SampleDataNotice";
 
@@ -202,6 +202,14 @@ export class TimelineReport extends StacheElement {
         showSidebarBranding: this.showSidebarBranding,
         jiraHelpers: this.jiraHelpers,
         linkBuilder: this.linkBuilder,
+        onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
+          queues.batch.start();
+
+          routeData.fieldsToRequest = fields;
+          routeData.normalizeOptions = configuration;
+
+          queues.batch.stop();
+        },
       })
     );
   }
