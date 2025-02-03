@@ -3,7 +3,7 @@ import type { StorageFactory } from "./common";
 import { configurationIssueTitle } from "../../shared/configurationIssue";
 
 // Todo remove. See special logic note below
-import type { AllTeamData } from "../../react/Configure/components/Teams/services/team-configuration";
+import { AllTeamData } from "../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration";
 //
 
 interface Paragraph {

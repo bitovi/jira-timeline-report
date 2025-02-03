@@ -23,7 +23,7 @@ import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
-import { SettingsSidebar } from "./react/Configure/SettingsSidebar";
+import SettingsSidebar from "./react/SettingsSidebar";
 
 import SampleDataNotice from "./react/SampleDataNotice";
 
