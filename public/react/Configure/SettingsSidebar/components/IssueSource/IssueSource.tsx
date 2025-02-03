@@ -48,7 +48,7 @@ type RouteData = {
 
 const routeData: RouteData = untypedRouteData as RouteData;
 
-const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) => {
+const useRawIssuesRequestData = () => {
   const issuesPromise = useCanObservable<CanPromise<JiraIssue[] | OidcJiraIssue[]>>(
     value.from(routeData, "rawIssuesRequestData.issuesPromise")
   );
@@ -67,12 +67,36 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
   const issuesRequested = useCanObservable<number>(
     value.from(routeData, "rawIssuesRequestData.progressData.issuesRequested")
   );
-  const loadChildren = useCanObservable<boolean>(value.from(routeData, "loadChildren"));
-  const jqlFromRouteData = useCanObservable<string>(value.from(routeData, "jql"));
-  const childJQLFromRouteData = useCanObservable<string>(value.from(routeData, "childJQL"));
-  const statusesToExcludeFromRouteData = useCanObservable<string[]>(
-    value.from(routeData, "statusesToExclude")
+
+  return {
+    issuesPromise,
+    issuesPromisePending,
+    issuesPromiseResolved,
+    issuesPromiseValueLength,
+    issuesReceived,
+    issuesRequested,
+  };
+};
+
+const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) => {
+  const {
+    issuesPromise,
+    issuesPromisePending,
+    issuesPromiseResolved,
+    issuesPromiseValueLength,
+    issuesReceived,
+    issuesRequested,
+  } = useRawIssuesRequestData();
+
+  const loadChildren = useCanObservable(value.from<boolean>(routeData, "loadChildren"));
+
+  const jqlFromRouteData = useCanObservable(value.from<string>(routeData, "jql"));
+  const childJQLFromRouteData = useCanObservable(value.from<string>(routeData, "childJQL"));
+
+  const statusesToExcludeFromRouteData = useCanObservable(
+    value.from<string[]>(routeData, "statusesToExclude")
   );
+
   const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string } }[]> =
     value.from(routeData, "derivedIssues");
 
@@ -88,13 +112,13 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
     new Observation(() => processStatuses()?.length) as unknown as CanObservable<number>
   );
 
-  const [jqlValid, setJqlValid] = useState<boolean>(true);
+  const [jqlValid, setJqlValid] = useState(true);
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
-  const [childJQLValid, setChildJQLValid] = useState<boolean>(true);
-  const [jqlValidationPending, setJqlValidationPending] = useState<boolean>(true);
+  const [childJQLValid, setChildJQLValid] = useState(true);
+  const [jqlValidationPending, setJqlValidationPending] = useState(true);
 
-  const selectedStatusFiltersObserve = useMemo<CanObservable<string[]>>(() => {
+  const selectedStatusFiltersObserve = useMemo(() => {
     return new SimpleObservable(statusesToExcludeFromRouteData);
   }, []);
 

@@ -1,6 +1,8 @@
 import type { ComponentProps, FC } from "react";
 
 import React from "react";
+import Heading from "@atlaskit/heading";
+
 import SidebarButton from "../../../../components/SidebarButton";
 
 interface ReportSettingsProps {
@@ -10,7 +12,9 @@ interface ReportSettingsProps {
 const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
   return (
     <>
-      <h3 className="font-bold uppercase text-slate-300 text-xs pt-6 pb-1">Report Settings</h3>
+      <Heading size="xsmall">
+        <span className="uppercase">Report Settings</span>
+      </Heading>
       <SidebarButton onClick={() => changeSettings("SOURCES")}>
         <img src="/images/magnifying-glass.svg" aria-hidden />
         Sources
@@ -20,7 +24,9 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
         Timing
       </SidebarButton>
 
-      <h3 className="font-bold uppercase text-slate-300 text-xs pt-4 pb-1">Global Settings</h3>
+      <Heading size="xsmall">
+        <span className="uppercase">Global Settings</span>
+      </Heading>
 
       <SidebarButton onClick={() => changeSettings("TEAMS")}>
         <img src="/images/team.svg" aria-hidden />
