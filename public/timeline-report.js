@@ -30,19 +30,9 @@ import SampleDataNotice from "./react/SampleDataNotice";
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
-        <timeline-configuration     
+        <div id="timeline-configuration" 
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
-          style="overflow-y: auto"
-          isLoggedIn:from="this.loginComponent.isLoggedIn"
-          jiraHelpers:from="this.jiraHelpers"
-          showSidebarBranding:from="this.showSidebarBranding"
-          issueTimingCalculations:to="this.issueTimingCalculations"
-          statuses:to="this.statuses"
-          goBack:to="this.goBack"
-          storage:from="this.storage"
-          linkBuilder:from="this.linkBuilder"
-          
-          ></timeline-configuration>
+        ></div>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto" on:click="this.goBack()">
 

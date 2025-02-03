@@ -47,8 +47,17 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
     const jqlFromRouteData = useCanObservable<string>(value.from(routeData, "jql"));
     const childJQLFromRouteData = useCanObservable<string>(value.from(routeData, "childJQL"));
     const statusesToExcludeFromRouteData = useCanObservable<string[]>(value.from(routeData, "statusesToExclude"));
-    const numberOfStatuses = useCanObservable(new Observation(() => processStatuses()?.length) as unknown as CanObservable<number>);
     const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string; } }[]> = value.from(routeData, "derivedIssues");
+    
+    const processStatuses = () => {
+        if (derivedIssuesObservable.get()) {
+            return allStatusesSorted(derivedIssuesObservable.get());
+        } else {
+            return [];
+        }
+    };
+    
+    const numberOfStatuses = useCanObservable(new Observation(() => processStatuses()?.length) as unknown as CanObservable<number>);
 
     const [jqlValid, setJqlValid] = useState<boolean>(true);
     const [jql, setJql] = useState(jqlFromRouteData);
@@ -63,14 +72,6 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
     }, []);
 
     const selectedStatusFilters = useCanObservable<string[]>(selectedStatusFiltersObserve);
-
-    const processStatuses = () => {
-        if (derivedIssuesObservable.get()) {
-            return allStatusesSorted(derivedIssuesObservable.get());
-        } else {
-            return [];
-        }
-    };
 
     const processStatusesObserve = new Observation(processStatuses) as unknown as CanObservable<JiraIssue[] | OidcJiraIssue[]>;
 
