@@ -7,7 +7,7 @@ import routeData from "../../../../canjs/routing/route-data/route-data.js";
 
 import TimingCalculation from "./TimingCalculation.js";
 
-vi.mock("../../../../../canjs/routing/route-data/route-data.js", async () => {
+vi.mock("../../../../canjs/routing/route-data/route-data.js", async () => {
   const mockRouteData = {
     simplifiedIssueHierarchy: [
       {
@@ -65,10 +65,9 @@ vi.mock("../../../../../canjs/routing/route-data/route-data.js", async () => {
     },
   };
   const { ObservableObject } = await import("../../../../can.js");
-
   return {
     default: new (ObservableObject as ObjectConstructor)(mockRouteData),
-    RouteData: (await vi.importActual("../../../../../canjs/routing/route-data/route-data.js"))
+    RouteData: (await vi.importActual("../../../../canjs/routing/route-data/route-data.js"))
       .RouteData,
   };
 });
