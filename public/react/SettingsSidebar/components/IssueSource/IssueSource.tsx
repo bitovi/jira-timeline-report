@@ -20,6 +20,7 @@ const useRawIssuesRequestData = () => {
   const issuesPromise = useCanObservable<CanPromise<JiraIssue[] | OidcJiraIssue[]>>(
     value.from(routeData, "rawIssuesRequestData.issuesPromise")
   );
+
   const issuesPromisePending = useCanObservable<boolean>(
     value.from(routeData, "rawIssuesRequestData.issuesPromise.isPending")
   );
