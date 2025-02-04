@@ -2,7 +2,7 @@ import { StacheElement, value } from "../../../can.js";
 import { allReleasesSorted } from "../../../jira/normalized/normalize.js";
 import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
-import routeData from "../../routing/route-data.js";
+import routeData from "../../routing/route-data";
 import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
 
 import "../status-filter.js";

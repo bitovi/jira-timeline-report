@@ -10,7 +10,7 @@ import { getConnectRequestHelper } from "../request-helpers/connect-request-help
 
 import { directlyReplaceUrlParam } from "../canjs/routing/state-storage.js";
 import { route, value } from "../can.js";
-import routeData from "../canjs/routing/route-data.js";
+import routeData from "../canjs/routing/route-data";
 
 export default async function mainHelper(
   config,

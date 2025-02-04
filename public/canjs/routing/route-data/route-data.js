@@ -1,42 +1,42 @@
-import { ObservableObject, value } from "../../can";
+import { ObservableObject, value } from "../../../can.js";
 
-import { DAY_IN_MS } from "../../utils/date/date-helpers.js";
-import { daysBetween } from "../../utils/date/days-between.js";
-import { isoToLocalDate } from "../../utils/date/local.js";
+import { DAY_IN_MS } from "../../../utils/date/date-helpers.js";
+import { daysBetween } from "../../../utils/date/days-between.js";
+import { isoToLocalDate } from "../../../utils/date/local.js";
 
 import {
   rawIssuesRequestData,
   configurationPromise,
   derivedIssuesRequestData,
   serverInfoPromise,
-} from "../controls/timeline-configuration/state-helpers.js";
+} from "../../controls/timeline-configuration/state-helpers.js";
 
 import {
   saveJSONToUrl,
   updateUrlParam,
   makeArrayOfStringsQueryParamValue,
   pushStateObservable,
-} from "./state-storage.js";
+} from "../state-storage.js";
 
-import { roundDate } from "../../utils/date/round.js";
+import { roundDate } from "../../../utils/date/round.js";
 
 const ROUND_OPTIONS = ["day", ...Object.keys(roundDate)];
 
 import {
   getAllTeamData,
   createFullyInheritedConfig,
-} from "../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration";
+} from "../../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/team-configuration";
 
-import { createNormalizeConfiguration } from "../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/shared/normalize";
+import { createNormalizeConfiguration } from "../../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/shared/normalize";
 
-import { getSimplifiedIssueHierarchy } from "../../stateful-data/jira-data-requests.js";
+import { getSimplifiedIssueHierarchy } from "../../../stateful-data/jira-data-requests.js";
 import {
   issueHierarchyFromNormalizedIssues,
   makeAsyncFromObservableButStillSettableProperty,
   toSelectedParts,
-} from "./data-utils.js";
+} from "../data-utils.js";
 
-import { getTimingLevels } from "../../react/SettingsSidebar/components/TimingCalculation/helpers";
+import { getTimingLevels } from "../../../react/SettingsSidebar/components/TimingCalculation/helpers";
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 

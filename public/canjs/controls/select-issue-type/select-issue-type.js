@@ -1,6 +1,6 @@
 import { StacheElement } from "../../../can.js";
 
-import routeData from "../../routing/route-data.js";
+import routeData from "../../routing/route-data";
 import "../status-filter.js";
 
 import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";

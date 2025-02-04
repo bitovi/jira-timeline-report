@@ -1,7 +1,7 @@
 import { StacheElement } from "../../../can.js";
 import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
 
-import routeData from "../../routing/route-data.js";
+import routeData from "../../routing/route-data";
 
 import "../status-filter.js";
 
