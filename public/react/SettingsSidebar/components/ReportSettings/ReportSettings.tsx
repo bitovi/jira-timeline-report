@@ -12,9 +12,11 @@ interface ReportSettingsProps {
 const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
   return (
     <>
-      <Heading size="xsmall">
-        <span className="uppercase">Report Settings</span>
-      </Heading>
+      <div className="pt-6 pb-1">
+        <Heading size="xsmall">
+          <span className="uppercase">Report Settings</span>
+        </Heading>
+      </div>
       <SidebarButton onClick={() => changeSettings("SOURCES")}>
         <img src="/images/magnifying-glass.svg" aria-hidden />
         Sources
@@ -24,16 +26,18 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
         Timing
       </SidebarButton>
 
-      <Heading size="xsmall">
-        <span className="uppercase">Global Settings</span>
-      </Heading>
+      <div className="pt-6 pb-1">
+        <Heading size="xsmall">
+          <span className="uppercase">Global Settings</span>
+        </Heading>
+      </div>
 
       <SidebarButton onClick={() => changeSettings("TEAMS")}>
         <img src="/images/team.svg" aria-hidden />
         Teams
       </SidebarButton>
       <SidebarButton onClick={() => changeSettings("THEME")}>
-        <img src="/images/theme.svg" aria-hidden />
+        <img src="/images/theme.svg" className="w-[18px]" aria-hidden />
         Theme
       </SidebarButton>
       <div className="fixed bottom-4 grid justify-items-center gap-2 p-1">

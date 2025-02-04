@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, FC } from "react";
 import Button from "@atlaskit/button/new";
 
 import {
@@ -6,18 +6,15 @@ import {
   useCanObservable,
   CanPromise,
 } from "../../../hooks/useCanObservable/useCanObservable.js";
-import type { Jira } from "../../../../jira-oidc-helpers/index.js";
 import type { JiraIssue } from "../../../../jira/shared/types.js";
 import type { OidcJiraIssue } from "../../../../jira-oidc-helpers/types.js";
 import { allStatusesSorted } from "../../../../jira/normalized/normalize.js";
 
 import { value, Observation, SimpleObservable } from "../../../../can.js";
 import routeData from "../../../../canjs/routing/route-data";
+import { useJira } from "../../../services/jira";
 
-interface IssueSourceProps {
-  isLoggedIn: boolean;
-  jiraHelpers: Jira;
-}
+interface IssueSourceProps {}
 
 const useRawIssuesRequestData = () => {
   const issuesPromise = useCanObservable<CanPromise<JiraIssue[] | OidcJiraIssue[]>>(
@@ -49,7 +46,9 @@ const useRawIssuesRequestData = () => {
   };
 };
 
-const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) => {
+const IssueSource: FC<IssueSourceProps> = () => {
+  const jiraHelpers = useJira();
+
   const {
     issuesPromise,
     issuesPromisePending,
@@ -170,19 +169,11 @@ const IssueSource: React.FC<IssueSourceProps> = ({ isLoggedIn, jiraHelpers }) =>
         your report.
       </p>
       <p>
-        {isLoggedIn ? (
-          <textarea
-            className={`w-full-border-box mt-2 form-border p-1 ${jqlValid ? "" : "bg-red-200"}`}
-            value={jql}
-            onChange={(ev) => setJql(ev.target.value)}
-          ></textarea>
-        ) : (
-          <input
-            className="w-full-border-box mt-2 form-border p-1 text-yellow-300"
-            value="Sample data. Connect to Jira to specify."
-            disabled
-          />
-        )}
+        <textarea
+          className={`w-full-border-box mt-2 form-border p-1 ${jqlValid ? "" : "bg-red-200"}`}
+          value={jql}
+          onChange={(ev) => setJql(ev.target.value)}
+        />
       </p>
       {issuesPromise?.isRejected && (
         <div className="border-solid-1px-slate-900 border-box block overflow-hidden color-text-and-bg-blocked p-1">

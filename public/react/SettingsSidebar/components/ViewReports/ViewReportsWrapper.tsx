@@ -1,49 +1,29 @@
 import type { FC } from "react";
-import type { AppStorage } from "../../../../jira/storage/common";
-import type { LinkBuilder } from "../../../../routing/common";
 
 import React, { Suspense, useMemo } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
+
 import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
 import DynamicTable from "@atlaskit/dynamic-table";
-import { FlagsProvider } from "@atlaskit/flag";
 
 import ViewReports from "./ViewReports";
 import LinkButton from "../../../components/LinkButton";
 import ViewReportLayout from "./components/ViewReportsLayout";
 import Skeleton from "../../../components/Skeleton";
-import { StorageProvider } from "../../../services/storage";
-import { queryClient } from "../../../services/query";
-import { RoutingProvider } from "../../../services/routing";
 
 interface ViewReportsWrapperProps {
-  storage: AppStorage;
   onBackButtonClicked: () => void;
-  linkBuilder: LinkBuilder;
 }
 
-const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({
-  storage,
-  linkBuilder,
-  ...viewReportProps
-}) => {
+const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
   return (
-    <FlagsProvider>
-      <ErrorBoundary
-        fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}
-      >
-        <RoutingProvider routing={{ linkBuilder }}>
-          <StorageProvider storage={storage}>
-            <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-              <QueryClientProvider client={queryClient}>
-                <ViewReports {...viewReportProps} />
-              </QueryClientProvider>
-            </Suspense>
-          </StorageProvider>
-        </RoutingProvider>
-      </ErrorBoundary>
-    </FlagsProvider>
+    <ErrorBoundary
+      fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}
+    >
+      <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
+        <ViewReports {...viewReportProps} />
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 

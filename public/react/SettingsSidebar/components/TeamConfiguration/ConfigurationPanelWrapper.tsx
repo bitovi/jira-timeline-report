@@ -5,30 +5,19 @@ import type { AppStorage } from "../../../../jira/storage/common";
 import type { Jira } from "../../../../jira-oidc-helpers";
 
 import React, { Suspense } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "@sentry/react";
 import Spinner from "@atlaskit/spinner";
 
-import { StorageProvider } from "../../../services/storage";
-import { JiraProvider } from "../../../services/jira";
 import ConfigurationPanel from "./ConfigurationPanel";
-import { queryClient } from "../../../services/query";
 
 interface TeamConfigurationWrapperProps {
   onBackButtonClicked: () => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig & { fields: string[] }>) => void;
-  jira: Jira;
-  storage: AppStorage;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
   showSidebarBranding: boolean;
 }
 
-const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({
-  jira,
-  storage,
-  ...props
-}) => {
+const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
   return (
     <ErrorBoundary fallback={({ error }) => <ConfigurationPanelErrorBoundary error={error} />}>
       <Suspense
@@ -38,15 +27,7 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = ({
           </div>
         }
       >
-        <StorageProvider storage={storage}>
-          <QueryClientProvider client={queryClient}>
-            <FlagsProvider>
-              <JiraProvider jira={jira}>
-                <ConfigurationPanel {...props} />
-              </JiraProvider>
-            </FlagsProvider>
-          </QueryClientProvider>
-        </StorageProvider>
+        <ConfigurationPanel {...props} />
       </Suspense>
     </ErrorBoundary>
   );

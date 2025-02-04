@@ -1,1 +1,1 @@
-export { default } from "./SettingsSidebar";
+export { default } from "./SettingsSidebarWrapper";

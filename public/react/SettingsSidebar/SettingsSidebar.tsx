@@ -6,10 +6,8 @@ import routeData from "../../canjs/routing/route-data";
 
 import TeamConfiguration from "./components/TeamConfiguration";
 import ViewReports from "./components/ViewReports";
-import type { LinkBuilderFactory } from "../../routing/common";
 
-import { CanObservable, useCanObservable } from "../hooks/useCanObservable/useCanObservable";
-import { Jira } from "../../jira-oidc-helpers/index";
+import { CanObservable, useCanObservable } from "../hooks/useCanObservable";
 import Branding from "./components/Branding";
 import ReportSettings from "./components/ReportSettings";
 import GoBackButton from "./components/GoBackButton";
@@ -18,22 +16,15 @@ import TimingCalculation from "./components/TimingCalculation";
 import { NormalizeIssueConfig } from "../../jira/normalized/normalize";
 import Theme from "./components/Theme";
 
-
 export interface SettingsSidebarProps {
-  isLoggedIn: boolean;
   showSidebarBranding: boolean;
-  jiraHelpers: Jira;
-  linkBuilder: ReturnType<LinkBuilderFactory>;
   onUpdateTeamsConfiguration: (
     overrides: Partial<NormalizeIssueConfig & { fields: string[] }>
   ) => void;
 }
 
 const SettingsSidebar: FC<SettingsSidebarProps> = ({
-  isLoggedIn,
   showSidebarBranding,
-  jiraHelpers,
-  linkBuilder,
   onUpdateTeamsConfiguration,
 }) => {
   const showSettings = useCanObservable<string>(value.from(routeData, "showSettings"));
@@ -55,15 +46,13 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
       )}
       {showSettings === "SOURCES" && (
         <div className="w-96">
-          <IssueSource isLoggedIn={isLoggedIn} jiraHelpers={jiraHelpers} />
+          <IssueSource />
         </div>
       )}
       {showSettings === "TIMING" && <TimingCalculation />}
       {showSettings === "TEAMS" && (
         <div className="h-full">
           <TeamConfiguration
-            storage={routeData.storage}
-            jira={routeData.jiraHelpers}
             derivedIssuesObservable={derivedIssuesObservable}
             showSidebarBranding={showSidebarBranding}
             onUpdate={onUpdateTeamsConfiguration}
@@ -73,16 +62,12 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
       )}
       {showSettings === "THEME" && (
         <div className="w-80 h-full">
-          <Theme storage={routeData.storage} onBackButtonClicked={changeSettings} />
+          <Theme onBackButtonClicked={changeSettings} />
         </div>
       )}
       {showSettings === "REPORTS" && (
         <div className="h-full">
-          <ViewReports
-            storage={routeData.storage}
-            onBackButtonClicked={changeSettings}
-            linkBuilder={linkBuilder}
-          />
+          <ViewReports onBackButtonClicked={changeSettings} />
         </div>
       )}
     </div>

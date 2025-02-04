@@ -1,37 +1,25 @@
 import type { FC } from "react";
-import type { AppStorage } from "../../../../jira/storage/common";
 
 import React, { Suspense } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
-import { FlagsProvider } from "@atlaskit/flag";
 import Heading from "@atlaskit/heading";
 
 import LinkButton from "../../../components/LinkButton";
 import Skeleton from "../../../components/Skeleton";
-import { StorageProvider } from "../../../services/storage";
-import { queryClient } from "../../../services/query";
 import Theme from "./Theme";
 
 interface ThemeWrapper {
-  storage: AppStorage;
   onBackButtonClicked: () => void;
 }
 
-const ViewReportsWrapper: FC<ThemeWrapper> = ({ storage, onBackButtonClicked, ...props }) => {
+const ViewReportsWrapper: FC<ThemeWrapper> = ({ onBackButtonClicked, ...props }) => {
   return (
-    <FlagsProvider>
-      <ErrorBoundary fallback={<ThemeError onBackButtonClicked={onBackButtonClicked} />}>
-        <StorageProvider storage={storage}>
-          <Suspense fallback={<ThemeSkeleton {...props} />}>
-            <QueryClientProvider client={queryClient}>
-              <Theme {...props} />
-            </QueryClientProvider>
-          </Suspense>
-        </StorageProvider>
-      </ErrorBoundary>
-    </FlagsProvider>
+    <ErrorBoundary fallback={<ThemeError onBackButtonClicked={onBackButtonClicked} />}>
+      <Suspense fallback={<ThemeSkeleton {...props} />}>
+        <Theme {...props} />
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 
