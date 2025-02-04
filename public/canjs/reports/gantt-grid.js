@@ -46,7 +46,7 @@ import routeData from "../routing/route-data.js";
 // loops through and creates
 export class GanttGrid extends StacheElement {
   static view = `
-        <div on:mouseenter='this.showTitlesChildren=true' on:mouseleave='this.showTitlesChildren=false' style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} ; grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
+        <div style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} ; grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
             class='p-2 mb-10'>
             <div class='z-50 bg-white sticky top-0'></div><div class='z-50 bg-white sticky top-0'></div>
             {{# for(column of this.columnsToShow) }}
@@ -82,25 +82,30 @@ export class GanttGrid extends StacheElement {
             <!-- Each of the issues -->
             {{# for(data of this.gridRowData) }}
                 {{# eq(data.type, "issue") }}
+                  <div style="grid-row: {{ plus(3, scope.index) }}; grid-column: 1"></div>
+                  <div style="grid-row: {{ plus(3, scope.index) }}; grid-column: 2"
+                    class="flex z-10 items-stretch {{# if(this.alignLeft) }} justify-left {{ else }} justify-between{{/}}" on:mouseenter='this.hoverEnter(data.issue)' on:mouseleave='this.hoverLeave(data.issue)'>
                     <div on:click='this.toggleShowingChildren(data.issue)'
-                      class="pointer pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} flex items-center justify-center w-9 h-9">
+                      class="pointer pt-1 pb-0.5 pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} w-4 box-content">
 
                       {{# if(data.isShowingChildren) }}
-                        <img src="/images/chevron-down.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }} inline"/>
+                        <img src="/images/chevron-down-collapse.svg" class="{{^ this.showExpandChildrenIcon(data.issue) }} invisible {{/}} inline"/>
                       {{ else }}
                         {{# if(data.issue.reportingHierarchy.childKeys.length) }}
-                          <img src="/images/chevron-right-new.svg" class="{{^ this.showTitlesChildren }} hidden {{/ this.showTitlesChildren }} inline"/>
+                          <img src="/images/chevron-right-expand.svg" class="{{^ this.showExpandChildrenIcon(data.issue) }} invisible {{/}} inline"/>
                         {{/ if }}
                       {{/ if}}
                       
                     </div>
                     <div on:click='this.showTooltip(scope.event,data.issue)' 
-                        class='pointer pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} border-y-solid-1px-white {{# this.alignLeft}} text-left {{ else }} text-right {{/ this.alignLeft}} {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
+                        class='{{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} {{this.textSize}} 
+                          pt-1 pb-0.5 px-1 border-y-solid-1px-white  truncate max-w-96 pointer'>
                         {{data.issue.summary}}
                     </div>
+                  </div>
 
                     {{# for(column of this.columnsToShow) }}
-                      <div style="grid-column: {{plus(3, scope.index)}}" class="{{this.textSize}} text-right pointer"
+                      <div style="grid-column: {{plus(3, scope.index) }}; grid-row: {{ plus(3, scope.index) }}" class="{{this.textSize}} text-right pointer"
                         on:click="column.onclick(scope.event, data.issue, this.allIssues)">{{column.getValue(data.issue)}}</div>
                     {{/ for }}
 
@@ -108,13 +113,15 @@ export class GanttGrid extends StacheElement {
                 {{/ eq }}
 
                 {{# eq(data.type, "parent") }}
-                    <div></div>
-                    <div on:click='this.showTooltip(scope.event,data.issue)' 
+                    <div style="grid-row: {{ plus(3, scope.index) }}; grid-column: 1"></div>
+                    <div 
+                        style="grid-row: {{ plus(3, scope.index) }}; grid-column: 2" 
+                        on:click='this.showTooltip(scope.event,data.issue)' 
                         class='pointer border-y-solid-1px-white text-left font-bold {{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} truncate max-w-96 {{this.textSize}}'>
                         {{data.issue.summary}}
                     </div>
                     {{# for(column of this.columnsToShow) }}
-                      <div style="grid-column: {{ plus(3, scope.index) }}"></div>
+                      <div style="grid-row: {{ plus(3, scope.index) }}; grid-column: {{ plus(3, scope.index) }}"></div>
                     {{/ for }}
                     {{ this.groupElement(data.issue, scope.index) }}
                 {{/ }}
@@ -145,10 +152,6 @@ export class GanttGrid extends StacheElement {
       get: function () {
         return makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
       },
-    },
-    showTitlesChildren: {
-      type: Boolean,
-      default: false
     }
   };
   toggleShowingChildren(issue) {
@@ -163,7 +166,7 @@ export class GanttGrid extends StacheElement {
     return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
   }
   get textSize() {
-    return this.lotsOfIssues ? "text-xs pt-1 pb-0.5 px-1" : "pt-1 pb-0.5 px-1";
+    return this.lotsOfIssues ? "text-xs" : "";
   }
   get bigBarSize() {
     return this.lotsOfIssues ? "h-2" : "h-4";
@@ -221,6 +224,15 @@ export class GanttGrid extends StacheElement {
       .join(" ");
 
     return columnCSS;
+  }
+  hoverEnter(issue) {
+    this.hoveringIssue = issue;
+  }
+  hoverLeave() {
+    this.hoveringIssue = null;
+  }
+  showExpandChildrenIcon(issue){
+    return this.hoveringIssue === issue || this.somePrimaryIssuesAreExpanded; //Object.values(this.showChildrenByKey).some(value => value === true);
   }
   getPercentComplete(issue) {
     if (this.showPercentComplete) {
@@ -397,18 +409,23 @@ export class GanttGrid extends StacheElement {
 
     // background and chart stuff have the same grid config
     const baseGridStyles = {
-      gridColumn: `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
+      
       gridRow: `${index + 3}`,
     };
 
     const background = makeElement([index % 2 ? "bg-neutral-20" : ""], {
       ...baseGridStyles,
+      // we probably want to move this to it's own element so we don't have to redraw so much
+      gridColumn: this.somePrimaryIssuesAreExpanded ? 
+        `1 / span ${this.quartersAndMonths.months.length + this.columnsToShow.length + 2}`: 
+        `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
       zIndex: 0,
     });
 
     // the root element contains the last period and current period bars
     const root = makeElement([], {
       ...baseGridStyles,
+      gridColumn: `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
       position: "relative",
       zIndex: 20,
     });
@@ -496,6 +513,7 @@ export class GanttGrid extends StacheElement {
           root.appendChild(thisPeriod);
         }
       } else {
+        
         // make the last one ...
         const currentPositions = getPositions(release.rollupStatuses.rollup);
 
@@ -526,15 +544,17 @@ export class GanttGrid extends StacheElement {
           );
         }
 
-        const behindTime = makeLastPeriodElement(
-          release.rollupStatuses.rollup.status,
-          release.rollupStatuses.rollup.lastPeriod,
-          currentPositions,
-          [this.shadowBarSize]
-        );
-
-        lastPeriodRoot.appendChild(behindTime);
-
+        if( release.rollupStatuses.rollup.lastPeriod ) {
+          const behindTime = makeLastPeriodElement(
+            release.rollupStatuses.rollup.status,
+            release.rollupStatuses.rollup.lastPeriod,
+            currentPositions,
+            [this.shadowBarSize]
+          );
+  
+          lastPeriodRoot.appendChild(behindTime);  
+        }
+        
         root.appendChild(team);
       }
     } else {
@@ -573,8 +593,16 @@ export class GanttGrid extends StacheElement {
   }
 
   get alignLeft() {
-    const hasExpanded = Object.values(this.showChildrenByKey).some(value => value === true);
-    return this.showTitlesChildren ||  hasExpanded;
+    return this.somePrimaryIssuesAreExpanded;
+    //const hasExpanded = Object.values(this.showChildrenByKey).some(value => value === true);
+    //console.log("alignLeft", hasExpanded);
+    //return hasExpanded;
+  }
+
+  get somePrimaryIssuesAreExpanded(){
+    return this.primaryIssuesOrReleases.filter((issue) => {
+      return this.showChildrenByKey[issue.key]
+    }).length > 0
   }
 }
 
