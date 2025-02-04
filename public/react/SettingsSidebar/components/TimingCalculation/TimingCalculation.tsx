@@ -1,14 +1,6 @@
 import { ObservableObject, value } from "../../../../can.js";
 import React, { useMemo } from "react";
-import untypedRouteData, {
-  RouteData as RouteDataClass,
-} from "../../../../canjs/routing/route-data.js";
-
-type RouteDataProps = typeof RouteDataClass.props;
-type RouteData = {
-  [k in keyof RouteDataProps]: any;
-} & typeof ObservableObject;
-const routeData: RouteData = untypedRouteData as RouteData;
+import routeData from "../../../../canjs/routing/route-data";
 
 const selectStyle =
   "min-w-[345px] bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
@@ -27,7 +19,7 @@ function paddingClass(depth: number) {
 
 const TimingCalculation = () => {
   const issueHierarchy = useCanObservable(
-    value.from(routeData, "simplifiedIssueHierarchy") as unknown as CanObservable<IssueType[]>
+    value.from(routeData, "simplifiedIssueHierarchy") as CanObservable<IssueType[]>
   );
 
   const selectableTimingLevels = useMemo(() => {

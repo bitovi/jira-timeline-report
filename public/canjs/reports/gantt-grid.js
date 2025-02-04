@@ -41,7 +41,7 @@ const percentCompleteTooltip = stache(`
 `);
 
 import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
-import routeData from "../routing/route-data.js";
+import routeData from "../routing/route-data";
 
 // loops through and creates
 export class GanttGrid extends StacheElement {

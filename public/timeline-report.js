@@ -1,6 +1,6 @@
 import { StacheElement, type, queues } from "./can.js";
 
-import routeData from "./canjs/routing/route-data.js";
+import routeData from "./canjs/routing/route-data";
 
 import "./canjs/controls/status-filter.js";
 import "./canjs/controls/compare-slider.js";

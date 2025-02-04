@@ -11,42 +11,13 @@ import type { JiraIssue } from "../../../../jira/shared/types.js";
 import type { OidcJiraIssue } from "../../../../jira-oidc-helpers/types.js";
 import { allStatusesSorted } from "../../../../jira/normalized/normalize.js";
 
-import {
-  ObservableObject,
-  value as untypedValue,
-  Observation,
-  SimpleObservable,
-} from "../../../../can.js";
-import untypedRouteData, {
-  RouteData as RouteDataClass,
-} from "../../../../canjs/routing/route-data.js";
+import { value, Observation, SimpleObservable } from "../../../../can.js";
+import routeData from "../../../../canjs/routing/route-data";
 
 interface IssueSourceProps {
   isLoggedIn: boolean;
   jiraHelpers: Jira;
 }
-
-type Value = {
-  from: <T>(
-    object: typeof ObservableObject | CanObservable<any>,
-    keyPath?: string
-  ) => CanObservable<T>;
-  bind: <T>(
-    object: typeof ObservableObject | CanObservable<any>,
-    keyPath?: string
-  ) => CanObservable<T>;
-};
-
-const value: Value = untypedValue as unknown as Value;
-
-type RouteDataProps = typeof RouteDataClass.props;
-type RouteData = {
-  [k in keyof RouteDataProps]: any;
-} & {
-  assign: (obj: Partial<RouteData>) => RouteData;
-} & typeof ObservableObject;
-
-const routeData: RouteData = untypedRouteData as RouteData;
 
 const useRawIssuesRequestData = () => {
   const issuesPromise = useCanObservable<CanPromise<JiraIssue[] | OidcJiraIssue[]>>(

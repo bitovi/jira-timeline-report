@@ -1,6 +1,6 @@
 import {StacheElement} from "../../can";
 
-import routeData from "../routing/route-data.js";
+import routeData from "../routing/route-data";
 
 import {createLinearMapping, createInverseMapping} from "../../utils/math/linear-mapping";
 import {DROPDOWN_LABEL} from "../../shared/style-strings";

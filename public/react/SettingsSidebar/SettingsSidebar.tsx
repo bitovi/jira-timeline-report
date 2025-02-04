@@ -2,7 +2,7 @@ import React, { FC } from "react";
 
 import { value } from "../../can";
 
-import untypedRouteData, { RouteData as RouteDataClass } from "../../canjs/routing/route-data.js";
+import routeData from "../../canjs/routing/route-data";
 
 import TeamConfiguration from "./components/TeamConfiguration";
 import ViewReports from "./components/ViewReports";
@@ -18,14 +18,6 @@ import TimingCalculation from "./components/TimingCalculation";
 import { NormalizeIssueConfig } from "../../jira/normalized/normalize";
 import Theme from "./components/Theme";
 
-type RouteDataProps = typeof RouteDataClass.props;
-
-type RouteData = {
-  [k in keyof RouteDataProps]: any;
-} & {
-  assign: (obj: Partial<RouteData>) => RouteData;
-};
-const routeData: RouteData = untypedRouteData as RouteData;
 
 export interface SettingsSidebarProps {
   isLoggedIn: boolean;
