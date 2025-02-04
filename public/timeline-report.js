@@ -43,7 +43,7 @@ export class TimelineReport extends StacheElement {
           
           ></timeline-configuration>
     {{/if}}
-    <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto" on:click="this.goBack()">
+    <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative" on:click="this.goBack()">
 
       <div id='sample-data-notice' class='pt-4'></div>
 
