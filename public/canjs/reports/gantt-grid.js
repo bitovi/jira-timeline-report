@@ -81,9 +81,11 @@ export class GanttGrid extends StacheElement {
 
             <!-- Each of the issues -->
             {{# for(data of this.gridRowData) }}
+                {{let rowIndex = scope.index}}
                 {{# eq(data.type, "issue") }}
-                  <div style="grid-row: {{ plus(3, scope.index) }}; grid-column: 1"></div>
-                  <div style="grid-row: {{ plus(3, scope.index) }}; grid-column: 2"
+                  
+                  <div style="grid-row: {{ plus(3, rowIndex) }}; grid-column: 1"></div>
+                  <div style="grid-row: {{ plus(3, rowIndex) }}; grid-column: 2"
                     class="flex z-10 items-stretch {{# if(this.alignLeft) }} justify-left {{ else }} justify-between{{/}}" on:mouseenter='this.hoverEnter(data.issue)' on:mouseleave='this.hoverLeave(data.issue)'>
                     <div on:click='this.toggleShowingChildren(data.issue)'
                       class="pointer pt-1 pb-0.5 pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} w-4 box-content">
@@ -99,17 +101,17 @@ export class GanttGrid extends StacheElement {
                     </div>
                     <div on:click='this.showTooltip(scope.event,data.issue)' 
                         class='{{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} {{this.textSize}} 
-                          pt-1 pb-0.5 px-1 border-y-solid-1px-white  truncate max-w-96 pointer'>
+                          pt-1 pb-0.5 px-1 truncate max-w-96 pointer'>
                         {{data.issue.summary}}
                     </div>
                   </div>
 
                     {{# for(column of this.columnsToShow) }}
-                      <div style="grid-column: {{plus(3, scope.index) }}; grid-row: {{ plus(3, scope.index) }}" class="{{this.textSize}} text-right pointer"
+                      <div style="grid-column: {{plus(3, scope.index) }}; grid-row: {{ plus(3, rowIndex) }}" class="{{this.textSize}} text-right pointer pt-1 pb-0.5 px-1"
                         on:click="column.onclick(scope.event, data.issue, this.allIssues)">{{column.getValue(data.issue)}}</div>
                     {{/ for }}
 
-                    {{ this.getReleaseTimeline(data.issue, scope.index) }}
+                    {{ this.getReleaseTimeline(data.issue, rowIndex) }}
                 {{/ eq }}
 
                 {{# eq(data.type, "parent") }}
