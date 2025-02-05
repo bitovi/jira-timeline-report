@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, FC } from "react";
+import React, { useCallback, useEffect, useMemo, useState, FC, useId } from "react";
 import Button from "@atlaskit/button/new";
 import {
   CanObservable,
@@ -11,10 +11,9 @@ import { allStatusesSorted } from "../../../../jira/normalized/normalize.js";
 import { value, Observation } from "../../../../can.js";
 import routeData from "../../../../canjs/routing/route-data";
 import { useJira } from "../../../services/jira";
-import StatusSelect from "./components/StatusSelect/StatusSelect.js";
 import type { MultiValue } from "react-select";
-import { StatusSelectOption } from "./components/StatusSelect/types.js";
-
+import Select from "@atlaskit/select";
+import { Label } from "@atlaskit/form";
 interface IssueSourceProps {}
 
 const useRawIssuesRequestData = () => {
@@ -50,7 +49,7 @@ const useRawIssuesRequestData = () => {
 
 const IssueSource: FC<IssueSourceProps> = () => {
   const jiraHelpers = useJira();
-
+  const statusFilterId = useId();
   const {
     issuesPromise,
     issuesPromisePending,
@@ -144,7 +143,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
   }, [jql, childJQL, loadChildren]);
 
   const handleStatusChange = useCallback(
-    (statusesToExcludeOptions: MultiValue<StatusSelectOption>) => {
+    (statusesToExcludeOptions: MultiValue<{ label: string; value: string }>) => {
       const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
       setStatusesToExclude(statusesToExclude);
     },
@@ -217,14 +216,20 @@ const IssueSource: FC<IssueSourceProps> = () => {
         </p>
       </div>
       {!!numberOfStatuses && (
-        <StatusSelect
-          label="Statuses to exclude from all issue types"
-          placeholder="Select statuses"
-          options={allStatusesOptions}
-          value={statusesToExcludeOptions}
-          onChange={handleStatusChange}
-        />
+        <>
+          <Label htmlFor={statusFilterId}>Statuses to exclude from all issue types</Label>
+          <Select
+            id={statusFilterId}
+            options={allStatusesOptions}
+            isMulti
+            isSearchable
+            placeholder="Select statuses"
+            value={statusesToExcludeOptions}
+            onChange={handleStatusChange}
+          />
+        </>
       )}
+
       <div className="flex flex-row justify-end mt-2">
         <Button appearance="primary" isDisabled={!enableApply} onClick={applyJql}>
           <span className="text-sm">Apply</span>
