@@ -27,14 +27,19 @@ test.describe("Sample reports navigation", () => {
       const reportTypeBtn = page.locator('select-report-type').locator('button');
       await expect(reportOnBtn).toHaveText('Initiatives');
       await expect(reportTypeBtn).toHaveText('Scatter Plot');
-      const initiatives = await page.locator('.release-timeline-item').count();
-      await expect(initiatives).toBeGreaterThan(0)
+      await expect(page.getByText('Track your order maps')).toBeDefined();
+      await expect(page.getByText('Favorite sharing')).toBeDefined();
+      await expect(page.getByText('Order Playback')).toBeDefined();
+      await expect(page.getByText('Social sharing')).toBeDefined();
     });
 
     test("the page has status report", async ({ page }) => {
       await expect(page.locator("status-report")).toBeVisible();
-      const items = await page.locator("status-report .release_box ul li").count();
-      await expect(items).toBeGreaterThan(1);
+      await expect(page.locator("status-report").getByText('Track your order maps')).toBeVisible();
+      await expect(page.locator("status-report").getByText('Social sharing')).toBeVisible();
+      await expect(page.locator("status-report").getByText('QA: Favorite Sharing')).toBeVisible();
+      await expect(page.locator("status-report").getByText("QA: Internationalization")).toBeVisible();
+      await expect(page.locator("status-report").getByText('Order Playback')).toBeVisible();
     });
   });
 
@@ -65,8 +70,11 @@ test.describe("Sample reports navigation", () => {
 
     test("the page has status report", async ({ page }) => {
       await expect(page.locator("status-report")).toBeVisible();
-      const items = await page.locator("status-report .release_box ul li").count();
-      await expect(items).toBeGreaterThan(1);
+      await expect(page.locator("status-report").getByText('Track your order maps')).toBeVisible();
+      await expect(page.locator("status-report").getByText('Social sharing')).toBeVisible();
+      await expect(page.locator("status-report").getByText('QA: Favorite Sharing')).toBeVisible();
+      await expect(page.locator("status-report").getByText("QA: Internationalization")).toBeVisible();
+      await expect(page.locator("status-report").getByText('Order Playback')).toBeVisible();
     })
   });
 
