@@ -68,13 +68,6 @@ export function calculationsForLevel(
   }
 }
 
-/*
-return {
-    child: issueTypeName, 
-    parent: issueType.type, 
-    calculation: calculationName, name: calculationKeysToNames[calculationName](issueType, typeToIssueType[issueTypeName]) }
-*/
-
 /**
  *
  * @param {TimingCalculationsMap} issueTypeMap

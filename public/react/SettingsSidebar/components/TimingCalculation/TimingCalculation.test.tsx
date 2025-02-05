@@ -3,11 +3,11 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 
-import routeData from "../../../../canjs/routing/route-data/route-data.js";
+import routeData from "../../../../canjs/routing/route-data/route-data";
 
-import TimingCalculation from "./TimingCalculation.js";
+import TimingCalculation from "./TimingCalculation";
 
-vi.mock("../../../../canjs/routing/route-data/route-data.js", async () => {
+vi.mock("../../../../canjs/routing/route-data/route-data", async () => {
   const mockRouteData = {
     simplifiedIssueHierarchy: [
       {
@@ -64,11 +64,10 @@ vi.mock("../../../../canjs/routing/route-data/route-data.js", async () => {
       Epic: "childrenFirstThenParent",
     },
   };
-  const { ObservableObject } = await import("../../../../can.js");
+  const { ObservableObject } = await import("../../../../can");
   return {
     default: new (ObservableObject as ObjectConstructor)(mockRouteData),
-    RouteData: (await vi.importActual("../../../../canjs/routing/route-data/route-data.js"))
-      .RouteData,
+    RouteData: (await vi.importActual("../../../../canjs/routing/route-data/route-data")).RouteData,
   };
 });
 
