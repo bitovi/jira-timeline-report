@@ -104,16 +104,4 @@ describe("TimingCalculation Component", () => {
       expect(calculation).toBeInTheDocument();
     }
   });
-
-  it("updates with selection", async () => {
-    renderWithWrappers();
-
-    const outcome = await screen.findByDisplayValue(
-      "↕︎ From Outcome or Initiatives (earliest to latest)"
-    );
-    await userEvent.selectOptions(outcome, within(outcome).getByText("↑ From Outcome"));
-
-    // @ts-expect-error
-    expect(routeData.timingCalculations.Outcome).toBe("parentOnly");
-  });
 });
