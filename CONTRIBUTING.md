@@ -30,6 +30,7 @@ Follow the steps below to get remaining environment variables:
 - Click Authorization, input the callback url, as default for this application locally, use `http://localhost:3000/oauth-callback` and save.
 - Click Settings and scroll down to copy your `CLIENT_ID` and `CLIENT_SECRET`.
 - The `CLIENT_JIRA_API_URL` is `https://api.atlassian.com`.
+- Make sure to share the app by changing the Distribution Status to `Sharing` under the `Distribution` section.
 
 Note: All environment variables that start with `CLIENT` will be sent to the client side and exposed.
 

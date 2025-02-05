@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, FC } from "react";
+import React, { useCallback, useEffect, useMemo, useState, FC } from "react";
 import Button from "@atlaskit/button/new";
-
 import {
   CanObservable,
   useCanObservable,
@@ -9,10 +8,12 @@ import {
 import type { JiraIssue } from "../../../../jira/shared/types.js";
 import type { OidcJiraIssue } from "../../../../jira-oidc-helpers/types.js";
 import { allStatusesSorted } from "../../../../jira/normalized/normalize.js";
-
-import { value, Observation, SimpleObservable } from "../../../../can.js";
+import { value, Observation } from "../../../../can.js";
 import routeData from "../../../../canjs/routing/route-data";
 import { useJira } from "../../../services/jira";
+import StatusSelect from "./components/StatusSelect/StatusSelect.js";
+import type { MultiValue } from "react-select";
+import { StatusSelectOption } from "./components/StatusSelect/types.js";
 
 interface IssueSourceProps {}
 
@@ -60,16 +61,22 @@ const IssueSource: FC<IssueSourceProps> = () => {
   } = useRawIssuesRequestData();
 
   const loadChildren = useCanObservable(value.from<boolean>(routeData, "loadChildren"));
-
   const jqlFromRouteData = useCanObservable(value.from<string>(routeData, "jql"));
   const childJQLFromRouteData = useCanObservable(value.from<string>(routeData, "childJQL"));
-
   const statusesToExcludeFromRouteData = useCanObservable(
     value.from<string[]>(routeData, "statusesToExclude")
   );
-
   const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string } }[]> =
     value.from(routeData, "derivedIssues");
+
+  const [jqlValid, setJqlValid] = useState(true);
+  const [jql, setJql] = useState(jqlFromRouteData);
+  const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
+  const [childJQLValid, setChildJQLValid] = useState(true);
+  const [jqlValidationPending, setJqlValidationPending] = useState(true);
+  const [statusesToExclude, setStatusesToExclude] = useState<string[]>(
+    statusesToExcludeFromRouteData
+  );
 
   const processStatuses = () => {
     if (derivedIssuesObservable.get()) {
@@ -79,47 +86,40 @@ const IssueSource: FC<IssueSourceProps> = () => {
     }
   };
 
+  const allStatuses = processStatuses();
   const numberOfStatuses = useCanObservable(
     new Observation(() => processStatuses()?.length) as unknown as CanObservable<number>
   );
+  const allStatusesOptions = useMemo(
+    () => allStatuses.map((status) => ({ label: status, value: status })),
+    [allStatuses]
+  );
 
-  const [jqlValid, setJqlValid] = useState(true);
-  const [jql, setJql] = useState(jqlFromRouteData);
-  const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
-  const [childJQLValid, setChildJQLValid] = useState(true);
-  const [jqlValidationPending, setJqlValidationPending] = useState(true);
-
-  const selectedStatusFiltersObserve = useMemo(() => {
-    return new SimpleObservable(statusesToExcludeFromRouteData);
-  }, []);
-
-  const selectedStatusFilters = useCanObservable<string[]>(selectedStatusFiltersObserve);
-
-  const processStatusesObserve = new Observation(processStatuses) as unknown as CanObservable<
-    JiraIssue[] | OidcJiraIssue[]
-  >;
+  const statusesToExcludeOptions = useMemo(
+    () =>
+      statusesToExclude.map((status) => ({
+        label: status,
+        value: status,
+      })),
+    [statusesToExclude]
+  );
 
   const applyJql = useCallback(() => {
     routeData.assign({
       jql,
       childJQL,
-      statusesToExclude: selectedStatusFilters,
+      statusesToExclude,
     });
-  }, [jql, childJQL, selectedStatusFilters]);
+  }, [jql, childJQL, statusesToExclude]);
 
   const enableApply = useMemo(() => {
     return (
-      !jqlValidationPending &&
-      jqlValid &&
-      (!loadChildren || childJQLValid) &&
-      (jql !== jqlFromRouteData ||
-        childJQL !== childJQLFromRouteData ||
-        (selectedStatusFilters || []).some(
-          (filter) => !statusesToExcludeFromRouteData.includes(filter)
-        ) ||
-        statusesToExcludeFromRouteData.some(
-          (filter) => !(selectedStatusFilters || []).includes(filter)
-        ))
+      (!jqlValidationPending &&
+        jqlValid &&
+        (!loadChildren || childJQLValid) &&
+        (jql !== jqlFromRouteData || childJQL !== childJQLFromRouteData)) ||
+      statusesToExclude.some((filter) => !statusesToExcludeFromRouteData.includes(filter)) ||
+      statusesToExcludeFromRouteData.some((filter) => !statusesToExclude.includes(filter))
     );
   }, [
     jqlValid,
@@ -129,28 +129,9 @@ const IssueSource: FC<IssueSourceProps> = () => {
     jqlFromRouteData,
     childJQL,
     childJQLFromRouteData,
-    selectedStatusFilters,
+    statusesToExclude,
     statusesToExcludeFromRouteData,
   ]);
-
-  const statusFilterRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (statusFilterRef.current) {
-      // @ts-expect-error TS and Can doesn't get along
-      const statusFilterEl = new StatusFilter()
-        .bindings({
-          statuses: value.from(processStatusesObserve),
-          selectedStatuses: selectedStatusFiltersObserve,
-        })
-        .initialize({
-          inputPlaceholder: "Search for statuses",
-          param: "statusesToExclude",
-          style: "max-width: 400px;",
-        });
-      statusFilterRef.current?.appendChild(statusFilterEl);
-    }
-  }, [numberOfStatuses]);
 
   useEffect(() => {
     (async () => {
@@ -161,6 +142,14 @@ const IssueSource: FC<IssueSourceProps> = () => {
       setJqlValidationPending(false);
     })();
   }, [jql, childJQL, loadChildren]);
+
+  const handleStatusChange = useCallback(
+    (statusesToExcludeOptions: MultiValue<StatusSelectOption>) => {
+      const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
+      setStatusesToExclude(statusesToExclude);
+    },
+    []
+  );
 
   return (
     <>
@@ -228,12 +217,13 @@ const IssueSource: FC<IssueSourceProps> = () => {
         </p>
       </div>
       {!!numberOfStatuses && (
-        <>
-          <h4 className="py-2 text-sm text-slate-300 font-bold">
-            Statuses to exclude from all issue types
-          </h4>
-          <div className="status-filter-container" ref={statusFilterRef} />
-        </>
+        <StatusSelect
+          label="Statuses to exclude from all issue types"
+          placeholder="Select statuses"
+          options={allStatusesOptions}
+          value={statusesToExcludeOptions}
+          onChange={handleStatusChange}
+        />
       )}
       <div className="flex flex-row justify-end mt-2">
         <Button appearance="primary" isDisabled={!enableApply} onClick={applyJql}>
