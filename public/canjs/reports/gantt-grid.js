@@ -69,7 +69,7 @@ export class GanttGrid extends StacheElement {
 
             <!-- CURRENT TIME BOX -->
             <div style="grid-column: {{plus(3,this.columnsToShow.length)}} / span {{this.quartersAndMonths.months.length}}; grid-row: 3 / span {{this.gridRowData.length}};">
-                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: orange; z-index: 45; position: relative; height: 100%;"></div>
+                <div class='today' style="margin-left: {{this.todayMarginLeft}}%; width: 1px; background-color: #cf57a0; z-index: 45; position: relative; height: 100%;"></div>
             </div>
 
 
