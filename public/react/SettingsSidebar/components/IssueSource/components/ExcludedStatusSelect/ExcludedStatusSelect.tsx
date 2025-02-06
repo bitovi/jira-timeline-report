@@ -24,14 +24,11 @@ const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({
 
   const { allStatusesOptions } = useExcludedStatusSelect();
 
-  if (allStatusesOptions.length === 0) {
-    return null;
-  }
-
   return (
-    <>
+    <div>
       <Label htmlFor={id}>{label}</Label>
       <Select
+        isDisabled={allStatusesOptions.length === 0}
         id={id}
         options={allStatusesOptions}
         value={value}
@@ -40,7 +37,7 @@ const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({
         placeholder={placeholder}
         onChange={onChange}
       />
-    </>
+    </div>
   );
 };
 

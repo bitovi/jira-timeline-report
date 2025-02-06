@@ -30,7 +30,7 @@ vi.mock("./hooks/useJQL", () => ({
   }),
 }));
 
-describe("IssueSource Component", () => {
+describe("<IssueSource />", () => {
   it("renders without crashing", () => {
     render(<IssueSource />);
 
@@ -43,7 +43,7 @@ describe("IssueSource Component", () => {
     const applyButton = screen.getByRole("button", { name: /apply/i });
     expect(applyButton).toBeInTheDocument();
 
-    const loadChildrenCheckbox = screen.getByLabelText(/Load children/);
+    const loadChildrenCheckbox = screen.getByLabelText(/Load all children of JQL specified issues/);
     expect(loadChildrenCheckbox).toBeInTheDocument();
   });
 });

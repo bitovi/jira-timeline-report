@@ -14,7 +14,7 @@ const TimingCalculation = () => {
 
   return (
     <>
-      <div className="pt-8">
+      <div className="pt-4">
         <Heading size="medium">Timing Calculation</Heading>
         <p className="text-sm pt-1">Which dates are prioritized between parent and child?</p>
       </div>
