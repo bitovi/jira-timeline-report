@@ -5,7 +5,7 @@ import chunkArray from "../utils/array/chunk-array";
 import mapIdsToNames from "../utils/object/map-ids-to-names";
 import { responseToText } from "../utils/fetch/response-to-text";
 import { FetchJiraIssuesParams } from "../jira/shared/types";
-import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue, ResponsesParsedJqlQueries } from "./types";
+import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from "./types";
 import { fetchFromLocalStorage } from "./storage";
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from "./fetchAllJiraIssuesWithJQLAndFetchAllChangelog";
 import { uniqueKeys } from "../utils/array/unique";
@@ -58,7 +58,9 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
 
     const newParams = {
       ...params,
-      fields: params.fields?.map((f) => ((fields?.nameMap && f in fields.nameMap) ? fields.nameMap[f] : f)),
+      fields: params.fields?.map((f) =>
+        fields?.nameMap && f in fields.nameMap ? fields.nameMap[f] : f
+      ),
     };
     const response = await fetchJiraIssuesWithJQL(config)(newParams);
     const uniqueIssues = uniqueKeys(response.issues as OidcJiraIssue[]);
@@ -331,5 +333,3 @@ export function editJiraIssueWithNamedFields(config: Config) {
     ).then(responseToText);
   };
 }
-
-
