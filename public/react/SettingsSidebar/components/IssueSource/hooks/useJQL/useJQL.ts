@@ -5,7 +5,7 @@ import { useCanObservable } from "../../../../../hooks/useCanObservable";
 
 export const useJQL = () => {
   const jqlFromRouteData = useCanObservable(value.from<string>(routeData, "jql"));
-  const childJqlFromRouteData = useCanObservable(value.from<string>(routeData, "childJql"));
+  const childJqlFromRouteData = useCanObservable(value.from<string>(routeData, "childJQL"));
   const statusesToExcludeFromRouteData = useCanObservable(
     value.from<string[]>(routeData, "statusesToExclude")
   );
