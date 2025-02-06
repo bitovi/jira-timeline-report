@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import React from "react";
+import React, { useId } from "react";
 import { Checkbox } from "@atlaskit/checkbox";
 import { Label } from "@atlaskit/form";
 import Textfield from "@atlaskit/textfield";
@@ -21,6 +21,9 @@ const LoadChildren: FC<LoadChildrenProps> = ({
   setChildJql,
   setLoadChildren,
 }) => {
+  const loadChildrenId = useId();
+  const childJqlId = useId();
+
   return (
     <div>
       <Hr />
@@ -32,25 +35,22 @@ const LoadChildren: FC<LoadChildrenProps> = ({
           <div className="flex flex-col gap-3 py-4">
             <div className="flex gap-1 items-center">
               <Checkbox
-                id="loadChildren"
-                name="loadChildren"
+                id={loadChildrenId}
                 className="self-start align-middle h-6 mr-0.5"
                 isChecked={loadChildren}
                 onChange={(ev) => setLoadChildren(ev.target.checked)}
               />
-              <label htmlFor="loadChildren">Load all children of JQL specified issues</label>
+              <label htmlFor={loadChildrenId}>Load all children of JQL specified issues</label>
             </div>
             {loadChildren && (
               <div className="flex flex-col gap-1">
-                <Label htmlFor="childJql">Optional children JQL filters</Label>
+                <Label htmlFor={childJqlId}>Optional children JQL filters</Label>
                 <Textfield
                   type="text"
-                  id="childJql"
+                  id={childJqlId}
                   value={childJql}
-                  onChange={(ev) => {
-                    // ADS Textfield components don't have the correct types
-                    const target = ev.target as unknown as { value: string };
-                    setChildJql(target.value);
+                  onChange={({ currentTarget }) => {
+                    setChildJql(currentTarget.value);
                   }}
                 />
               </div>
