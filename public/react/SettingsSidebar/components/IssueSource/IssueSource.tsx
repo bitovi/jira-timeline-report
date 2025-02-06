@@ -1,19 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState, FC, useId } from "react";
 import Button from "@atlaskit/button/new";
-import {
-  CanObservable,
-  useCanObservable,
-  CanPromise,
-} from "../../../hooks/useCanObservable/useCanObservable.js";
-import type { JiraIssue } from "../../../../jira/shared/types.js";
-import type { OidcJiraIssue } from "../../../../jira-oidc-helpers/types.js";
-import { allStatusesSorted } from "../../../../jira/normalized/normalize.js";
-import { value, Observation } from "../../../../can.js";
+import { useCanObservable, CanPromise } from "../../../hooks/useCanObservable/useCanObservable";
+import type { JiraIssue } from "../../../../jira/shared/types";
+import type { OidcJiraIssue } from "../../../../jira-oidc-helpers/types";
+import { value } from "../../../../can";
 import routeData from "../../../../canjs/routing/route-data";
 import { useJira } from "../../../services/jira";
 import type { MultiValue } from "react-select";
-import Select from "@atlaskit/select";
-import { Label } from "@atlaskit/form";
+import ExcludedStatusSelect from "./components/StatusSelect/ExcludedStatusSelect";
+import { ExcludedStatusSelectOption } from "./components/StatusSelect/types";
 interface IssueSourceProps {}
 
 const useRawIssuesRequestData = () => {
@@ -65,8 +60,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
   const statusesToExcludeFromRouteData = useCanObservable(
     value.from<string[]>(routeData, "statusesToExclude")
   );
-  const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string } }[]> =
-    value.from(routeData, "derivedIssues");
 
   const [jqlValid, setJqlValid] = useState(true);
   const [jql, setJql] = useState(jqlFromRouteData);
@@ -75,32 +68,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
   const [jqlValidationPending, setJqlValidationPending] = useState(true);
   const [statusesToExclude, setStatusesToExclude] = useState<string[]>(
     statusesToExcludeFromRouteData
-  );
-
-  const processStatuses = () => {
-    if (derivedIssuesObservable.get()) {
-      return allStatusesSorted(derivedIssuesObservable.get());
-    } else {
-      return [];
-    }
-  };
-
-  const allStatuses = processStatuses();
-  const numberOfStatuses = useCanObservable(
-    new Observation(() => processStatuses()?.length) as unknown as CanObservable<number>
-  );
-  const allStatusesOptions = useMemo(
-    () => allStatuses.map((status) => ({ label: status, value: status })),
-    [allStatuses]
-  );
-
-  const statusesToExcludeOptions = useMemo(
-    () =>
-      statusesToExclude.map((status) => ({
-        label: status,
-        value: status,
-      })),
-    [statusesToExclude]
   );
 
   const applyJql = useCallback(() => {
@@ -142,14 +109,13 @@ const IssueSource: FC<IssueSourceProps> = () => {
     })();
   }, [jql, childJQL, loadChildren]);
 
-  const handleStatusChange = useCallback(
-    (statusesToExcludeOptions: MultiValue<{ label: string; value: string }>) => {
+  const handleExcludedStatusChange = useCallback(
+    (statusesToExcludeOptions: MultiValue<ExcludedStatusSelectOption>) => {
       const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
       setStatusesToExclude(statusesToExclude);
     },
     []
   );
-
   return (
     <>
       <h3 className="h3">Issue Source</h3>
@@ -215,20 +181,11 @@ const IssueSource: FC<IssueSourceProps> = () => {
           {issuesPromiseResolved && <>Loaded {issuesPromiseValueLength} issues</>}
         </p>
       </div>
-      {!!numberOfStatuses && (
-        <>
-          <Label htmlFor={statusFilterId}>Statuses to exclude from all issue types</Label>
-          <Select
-            id={statusFilterId}
-            options={allStatusesOptions}
-            isMulti
-            isSearchable
-            placeholder="Select statuses"
-            value={statusesToExcludeOptions}
-            onChange={handleStatusChange}
-          />
-        </>
-      )}
+      <ExcludedStatusSelect
+        label="Statuses to exclude from all issue types"
+        placeholder="Select statuses"
+        onChange={handleExcludedStatusChange}
+      />
 
       <div className="flex flex-row justify-end mt-2">
         <Button appearance="primary" isDisabled={!enableApply} onClick={applyJql}>
