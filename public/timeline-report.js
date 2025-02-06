@@ -25,6 +25,7 @@ import { createElement } from "react";
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
 import SampleDataNotice from "./react/SampleDataNotice";
+import Controls from "./react/Controls";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
@@ -40,6 +41,7 @@ export class TimelineReport extends StacheElement {
       <div id='sample-data-notice' class='pt-4'></div>
 
       <div id="saved-reports" class='py-4'></div>
+      <div id="controls"></div>
       <div class="flex gap-1">
         <select-issue-type 
           derivedIssues:from="this.routeData.derivedIssues"
@@ -177,6 +179,13 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
+    createRoot(document.getElementById("controls")).render(
+      createElement(Controls, {
+        jiraHelpers: this.jiraHelpers,
+        linkBuilder: this.linkBuilder,
+      })
+    );
+
     createRoot(document.getElementById("sample-data-notice")).render(
       createElement(SampleDataNotice, {
         shouldHideNoticeObservable: this.routeData.isLoggedInObservable,
