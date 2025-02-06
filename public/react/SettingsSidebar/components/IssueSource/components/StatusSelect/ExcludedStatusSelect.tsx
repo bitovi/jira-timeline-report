@@ -4,7 +4,12 @@ import { Label } from "@atlaskit/form";
 import { ExcludedStatusSelectProps } from "./types";
 import useExcludedStatusSelect from "./hooks/useExcludedStatusSelect";
 
-const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({ label, placeholder, onChange }) => {
+const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({
+  label,
+  placeholder,
+  value,
+  onChange,
+}) => {
   const id = useId();
 
   const { allStatusesOptions } = useExcludedStatusSelect();
@@ -15,6 +20,7 @@ const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({ label, placeholde
       <Select
         id={id}
         options={allStatusesOptions}
+        value={value}
         isMulti
         isSearchable
         placeholder={placeholder}

@@ -8,5 +8,6 @@ export interface ExcludedStatusSelectOption {
 export interface ExcludedStatusSelectProps {
   label: string;
   placeholder: string;
+  value: MultiValue<ExcludedStatusSelectOption>;
   onChange?: (value: MultiValue<ExcludedStatusSelectOption>) => void;
 }

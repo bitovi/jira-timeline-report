@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, FC, useId } from "react";
+import React, { useCallback, useEffect, useMemo, useState, FC } from "react";
 import Button from "@atlaskit/button/new";
 import { useCanObservable, CanPromise } from "../../../hooks/useCanObservable/useCanObservable";
 import type { JiraIssue } from "../../../../jira/shared/types";
@@ -44,7 +44,6 @@ const useRawIssuesRequestData = () => {
 
 const IssueSource: FC<IssueSourceProps> = () => {
   const jiraHelpers = useJira();
-  const statusFilterId = useId();
   const {
     issuesPromise,
     issuesPromisePending,
@@ -70,6 +69,20 @@ const IssueSource: FC<IssueSourceProps> = () => {
     statusesToExcludeFromRouteData
   );
 
+  const statusesToExcludeOptions = useMemo(
+    () =>
+      statusesToExclude.map((status) => ({
+        label: status,
+        value: status,
+      })),
+    [statusesToExclude]
+  );
+  console.log(
+    "statusesToExclude: ",
+    statusesToExclude,
+    "statusesToExcludeFromRouteData: ",
+    statusesToExcludeFromRouteData
+  );
   const applyJql = useCallback(() => {
     routeData.assign({
       jql,
@@ -184,6 +197,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
       <ExcludedStatusSelect
         label="Statuses to exclude from all issue types"
         placeholder="Select statuses"
+        value={statusesToExcludeOptions}
         onChange={handleExcludedStatusChange}
       />
 
