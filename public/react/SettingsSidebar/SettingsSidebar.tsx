@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 
 import { value } from "../../can";
 
@@ -22,7 +22,12 @@ export interface SettingsSidebarProps {
     overrides: Partial<NormalizeIssueConfig & { fields: string[] }>
   ) => void;
 }
-
+const SETTINGS_WIDTH: Record<string, string> = {
+  SOURCES: "w-96",
+  THEME: "w-80",
+  TIMING: "w-80",
+  TEAMS: "w-[600px]",
+};
 const SettingsSidebar: FC<SettingsSidebarProps> = ({
   showSidebarBranding,
   onUpdateTeamsConfiguration,
@@ -31,12 +36,13 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
   const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string } }[]> =
     value.from(routeData, "derivedIssues");
 
+  const [settingVisible, setSettingVisible] = useState(false);
+  const settingsWidth = showSettings ? SETTINGS_WIDTH[showSettings] : "w-0";
+
   const changeSettings = (settings = "") => {
     routeData.showSettings = settings;
   };
-
   const returnToSettings = () => changeSettings("");
-
   return (
     <div className="px-6 py-2 h-full min-w-40">
       {showSidebarBranding && <Branding />}
@@ -44,32 +50,29 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
       {!!showSettings && showSettings !== "TEAMS" && (
         <GoBackButton hideSettings={returnToSettings} />
       )}
-      {showSettings === "SOURCES" && (
-        <div className="w-96">
-          <IssueSource />
-        </div>
-      )}
-      {showSettings === "TIMING" && <TimingCalculation />}
-      {showSettings === "TEAMS" && (
-        <div className="h-full">
-          <TeamConfiguration
-            derivedIssuesObservable={derivedIssuesObservable}
-            showSidebarBranding={showSidebarBranding}
-            onUpdate={onUpdateTeamsConfiguration}
-            onBackButtonClicked={() => returnToSettings()}
-          />
-        </div>
-      )}
-      {showSettings === "THEME" && (
-        <div className="w-80 h-full">
-          <Theme onBackButtonClicked={changeSettings} />
-        </div>
-      )}
-      {showSettings === "REPORTS" && (
-        <div className="h-full">
-          <ViewReports onBackButtonClicked={changeSettings} />
-        </div>
-      )}
+      <div
+        className={`overflow-hidden h-full transition-[width] duration-500 ease-in-out ${settingsWidth}`}
+        onTransitionEnd={() => {
+          setSettingVisible(!!showSettings);
+        }}
+      >
+        {settingVisible && (
+          <>
+            {showSettings === "SOURCES" && <IssueSource />}
+            {showSettings === "TIMING" && <TimingCalculation />}
+            {showSettings === "TEAMS" && (
+              <TeamConfiguration
+                derivedIssuesObservable={derivedIssuesObservable}
+                showSidebarBranding={showSidebarBranding}
+                onUpdate={onUpdateTeamsConfiguration}
+                onBackButtonClicked={() => returnToSettings()}
+              />
+            )}
+            {showSettings === "THEME" && <Theme onBackButtonClicked={changeSettings} />}
+            {showSettings === "REPORTS" && <ViewReports onBackButtonClicked={changeSettings} />}
+          </>
+        )}
+      </div>
     </div>
   );
 };
