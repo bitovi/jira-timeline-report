@@ -25,6 +25,9 @@ const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({
 
   const { allStatusesOptions } = useExcludedStatusSelect();
 
+  if (allStatusesOptions.length === 0) {
+    return null;
+  }
   return (
     <>
       <Label htmlFor={id}>{label}</Label>
