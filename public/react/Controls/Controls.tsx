@@ -32,13 +32,20 @@ const useIssueHierarchy = () => {
   return issueHierarchy;
 };
 
+const formatTitle = (rawTitle: string) => {
+  return rawTitle
+    .split("-")
+    .map((part) => part + "s")
+    .join(" / ");
+};
+
 const Controls: FC<ControlsProps> = () => {
   const issueHierarchy = useIssueHierarchy();
   const { queryParams } = useQueryParams(pushStateObservable);
   const selectedIssueType = queryParams.get("selectedIssueType");
 
   const rawTitle = selectedIssueType ?? issueHierarchy?.[0].name ?? "Loading";
-  const title = rawTitle.replace("-", " / ");
+  const title = formatTitle(rawTitle);
 
   if (!issueHierarchy) {
     return <DropdownMenu trigger={title} isLoading />;
