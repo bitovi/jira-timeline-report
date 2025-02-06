@@ -17,8 +17,6 @@ export const useJQL = () => {
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
 
-  console.log({ jql, loadChildren, childJQL, statusesToExclude });
-
   const applyJql = () => {
     routeData.assign({
       jql,
@@ -41,7 +39,6 @@ export const useJQL = () => {
     statusesToExclude,
     setStatusesToExclude,
     applyButtonEnabled:
-      !loadChildren &&
-      (jql !== jqlFromRouteData || childJQL !== childJQLFromRouteData || statusesDiffer),
+      jql !== jqlFromRouteData || childJQL !== childJQLFromRouteData || statusesDiffer,
   };
 };

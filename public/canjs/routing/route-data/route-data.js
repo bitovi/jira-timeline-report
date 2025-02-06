@@ -35,25 +35,8 @@ import {
   makeAsyncFromObservableButStillSettableProperty,
   toSelectedParts,
 } from "../data-utils.js";
-import {
-  calculationsForLevel,
-  createBaseLevels,
-} from "../../../react/SettingsSidebar/components/TimingCalculation/hooks/useTimingCalculations/helpers.js";
+import { getTimingLevels } from "../../../utils/timing/helpers";
 
-export function getTimingLevels(issueHierarchy, timingCalculations) {
-  const baseLevels = createBaseLevels(issueHierarchy);
-
-  return baseLevels.map((level, i) => {
-    const child = baseLevels[i + 1];
-    const isLast = i === baseLevels.length - 1;
-
-    return {
-      ...level,
-      childType: child ? child.type : null,
-      calculations: calculationsForLevel(level, child, timingCalculations[level.type], isLast),
-    };
-  });
-}
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
 const booleanParsing = {
@@ -116,6 +99,7 @@ export class RouteData extends ObservableObject {
         return [];
       } else {
         const allLevels = getTimingLevels(this.simplifiedIssueHierarchy, this.timingCalculations);
+
         return allLevels.map((level) => {
           return {
             type: level.type,
