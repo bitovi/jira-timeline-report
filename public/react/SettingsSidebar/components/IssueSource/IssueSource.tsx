@@ -61,6 +61,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
           <span>
             <input
               type="checkbox"
+              id="loadChildren"
               name="loadChildren"
               className="self-start align-middle h-6 mr-0.5"
               checked={routeData.loadChildren}
