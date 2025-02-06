@@ -5,22 +5,25 @@ import { useCanObservable } from "../../../../../hooks/useCanObservable";
 
 export const useJQL = () => {
   const jqlFromRouteData = useCanObservable(value.from<string>(routeData, "jql"));
-  const childJQLFromRouteData = useCanObservable(value.from<string>(routeData, "childJQL"));
-  const loadChildren = useCanObservable(value.from<boolean>(routeData, "loadChildren"));
+  const childJqlFromRouteData = useCanObservable(value.from<string>(routeData, "childJql"));
   const statusesToExcludeFromRouteData = useCanObservable(
     value.from<string[]>(routeData, "statusesToExclude")
   );
+  const loadChildren = useCanObservable(value.from<boolean>(routeData, "loadChildren"));
+  const setLoadChildren = (newLoad: boolean) => {
+    routeData.loadChildren = newLoad;
+  };
 
   const [statusesToExclude, setStatusesToExclude] = useState<string[]>(
     statusesToExcludeFromRouteData
   );
   const [jql, setJql] = useState(jqlFromRouteData);
-  const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
+  const [childJql, setChildJql] = useState(childJqlFromRouteData);
 
   const applyJql = () => {
     routeData.assign({
       jql,
-      childJQL,
+      childJQL: childJql,
       statusesToExclude,
     });
   };
@@ -33,12 +36,13 @@ export const useJQL = () => {
     loadChildren,
     jql,
     setJql,
-    childJQL,
-    setChildJQL,
+    childJql,
+    setChildJql,
     applyJql,
     statusesToExclude,
     setStatusesToExclude,
+    setLoadChildren,
     applyButtonEnabled:
-      !jql || jql !== jqlFromRouteData || childJQL !== childJQLFromRouteData || statusesDiffer,
+      !jql || jql !== jqlFromRouteData || childJql !== childJqlFromRouteData || statusesDiffer,
   };
 };
