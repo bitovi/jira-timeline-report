@@ -1,6 +1,6 @@
-import { StacheElement, type } from "./can.js";
+import { StacheElement, type, queues } from "./can.js";
 
-import routeData from "./canjs/routing/route-data.js";
+import routeData from "./canjs/routing/route-data";
 
 import "./canjs/controls/status-filter.js";
 import "./canjs/controls/compare-slider.js";
@@ -9,7 +9,6 @@ import "./canjs/reports/table-grid.js";
 import "./canjs/reports/scatter-timeline.js";
 import "./canjs/reports/status-report.js";
 import "./canjs/reports/group-grid/group-grid.js";
-import "./canjs/controls/timeline-configuration/timeline-configuration.js";
 
 import "./canjs/controls/select-issue-type/select-issue-type.js";
 import "./canjs/controls/select-report-type/select-report-type.js";
@@ -24,24 +23,17 @@ import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
+import SettingsSidebar from "./react/SettingsSidebar";
 import SampleDataNotice from "./react/SampleDataNotice";
+
+import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
-        <timeline-configuration     
+        <div id="timeline-configuration" 
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
-          style="overflow-y: auto"
-          isLoggedIn:from="this.loginComponent.isLoggedIn"
-          jiraHelpers:from="this.jiraHelpers"
-          showSidebarBranding:from="this.showSidebarBranding"
-          issueTimingCalculations:to="this.issueTimingCalculations"
-          statuses:to="this.statuses"
-          goBack:to="this.goBack"
-          storage:from="this.storage"
-          linkBuilder:from="this.linkBuilder"
-          
-          ></timeline-configuration>
+        ></div>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative" on:click="this.goBack()">
 
@@ -202,6 +194,27 @@ export class TimelineReport extends StacheElement {
         shouldShowReportsObservable: this.routeData.isLoggedInObservable,
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);
+        },
+      })
+    );
+
+    getTheme(this.routeData.storage)
+      .then(applyThemeToCssVars)
+      .catch((error) => console.error("Something went wrong getting the theme", error));
+
+    createRoot(document.getElementById("timeline-configuration")).render(
+      createElement(SettingsSidebar, {
+        isLoggedIn: this.loginComponent.isLoggedIn,
+        showSidebarBranding: this.showSidebarBranding,
+        jiraHelpers: this.jiraHelpers,
+        linkBuilder: this.linkBuilder,
+        onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
+          queues.batch.start();
+
+          routeData.fieldsToRequest = fields;
+          routeData.normalizeOptions = configuration;
+
+          queues.batch.stop();
         },
       })
     );

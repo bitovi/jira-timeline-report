@@ -58,7 +58,9 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
 
     const newParams = {
       ...params,
-      fields: params.fields?.map((f) => ((fields?.nameMap && f in fields.nameMap) ? fields.nameMap[f] : f)),
+      fields: params.fields?.map((f) =>
+        fields?.nameMap && f in fields.nameMap ? fields.nameMap[f] : f
+      ),
     };
     const response = await fetchJiraIssuesWithJQL(config)(newParams);
     const uniqueIssues = uniqueKeys(response.issues as OidcJiraIssue[]);

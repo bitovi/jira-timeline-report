@@ -13,7 +13,7 @@ export type ChangeLog = {
   maxResults: number;
   total: number;
   startAt: number;
-}
+};
 export type OidcJiraIssue = {
   id: string;
   key: string;
@@ -46,7 +46,7 @@ export type ProgressData = {
   issuesReceived: number;
   changeLogsRequested: number;
   changeLogsReceived: number;
-  keysWhoseChildrenWeAreAlreadyLoading:Set<string>
+  keysWhoseChildrenWeAreAlreadyLoading: Set<string>;
 };
 
 export type Progress = {
@@ -54,15 +54,13 @@ export type Progress = {
   (data: ProgressData): void;
 };
 export interface ResponseForFieldRequest extends RequestHelperResponse {
-  idMap: { [key: string]: string; };
-  nameMap: { [key: string]: string; };
+  idMap: { [key: string]: string };
+  nameMap: { [key: string]: string };
 }
 
-export type RequestHelper = <
-  TValues = any[],
-  TIssues = OidcJiraIssue[] | JiraIssue[]
->(urlFragment: string) =>
-  Promise<RequestHelperResponse<TValues, TIssues>>;
+export type RequestHelper = <TValues = any[], TIssues = OidcJiraIssue[] | JiraIssue[]>(
+  urlFragment: string
+) => Promise<RequestHelperResponse<TValues, TIssues>>;
 
 export type Config = {
   env: {
@@ -76,4 +74,3 @@ export type Config = {
   fieldsRequest: () => FieldsRequest;
   host: "jira" | "hosted";
 };
-

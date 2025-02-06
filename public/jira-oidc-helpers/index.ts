@@ -3,7 +3,11 @@
  */
 import { Config, FieldsRequest, RequestHelper } from "./types";
 import { RequestHelperResponse, JtrEnv } from "../shared/types";
-import { saveInformationToLocalStorage, clearAuthFromLocalStorage, fetchFromLocalStorage } from "./storage";
+import {
+  saveInformationToLocalStorage,
+  clearAuthFromLocalStorage,
+  fetchFromLocalStorage,
+} from "./storage";
 import {
   fetchAuthorizationCode,
   refreshAccessToken,
@@ -89,13 +93,16 @@ export default function createJiraHelpers(
     isChangelogComplete,
     fetchRemainingChangelogsForIssues: fetchRemainingChangelogsForIssues(config),
     fetchRemainingChangelogsForIssue: fetchRemainingChangelogsForIssue(config),
-    fetchAllJiraIssuesWithJQLAndFetchAllChangelog: fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config),
+    fetchAllJiraIssuesWithJQLAndFetchAllChangelog:
+      fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config),
     fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields:
       fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config),
     fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: makeDeep(
       fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)
     ),
-    fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields: makeDeep(fetchAllJiraIssuesWithJQL(config)),
+    fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields: makeDeep(
+      fetchAllJiraIssuesWithJQL(config)
+    ),
     fetchChildrenResponses: fetchChildrenResponses(config),
     fetchDeepChildren: fetchDeepChildren(config),
     fetchJiraFields: fetchJiraFields(config),
@@ -114,9 +121,8 @@ export default function createJiraHelpers(
     jiraHelpers.fetchAllJiraIssuesWithJQL.bind(jiraHelpers)
   );
 
-  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields = makeDeep(
-    jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers)
-  );
+  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields =
+    makeDeep(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers));
 
   return jiraHelpers;
 }
