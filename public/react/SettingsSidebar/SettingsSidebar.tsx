@@ -26,7 +26,7 @@ const SETTINGS_WIDTH: Record<string, string> = {
   SOURCES: "w-96",
   THEME: "w-80",
   TIMING: "w-80",
-  TEAMS: "w-[600px]",
+  TEAMS: "w-150",
 };
 const SettingsSidebar: FC<SettingsSidebarProps> = ({
   showSidebarBranding,

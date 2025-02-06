@@ -11,10 +11,10 @@ module.exports = {
     },
     extend: {
       blur: {
-        xs: '2px',
+        xs: "2px",
       },
       fontSize: {
-        'xxs': ["0.5rem", "0.75rem"]
+        xxs: ["0.5rem", "0.75rem"],
       },
       colors: {
         blue: {
@@ -52,14 +52,12 @@ module.exports = {
           80: "#091E4224", // was "#97A0AF" ... now is 14% alpha of Nuetral300
           50: "#C1C7D0",
           40: "#DFE1E6", // secondary buttton color
-          41: '#DCDFE4', // accent.gray.subtler
+          41: "#DCDFE4", // accent.gray.subtler
           30: "#EBECF0",
           20: "#091E4208", // stripe color
           10: "#FAFBFC", //
           301: "#091E4224",
           201: "#091E420F", // NEW nuetral 6% opacity
-
-          
         },
         orange: {
           400: "#F5532D", // Bitovi color
@@ -75,6 +73,7 @@ module.exports = {
       },
       width: {
         128: "28rem",
+        150: "37.5rem",
       },
     },
   },
