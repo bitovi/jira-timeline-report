@@ -1,10 +1,10 @@
-import type { ExcludedStatusSelectOption } from "./components/StatusSelect";
+import type { ExcludedStatusSelectOption } from "./components/ExcludedStatusSelect";
 
 import React, { useMemo, FC } from "react";
 import Button from "@atlaskit/button/new";
 
 import routeData from "../../../../canjs/routing/route-data";
-import ExcludedStatusSelect from "./components/StatusSelect";
+import ExcludedStatusSelect from "./components/ExcludedStatusSelect";
 import { useRawIssuesRequestData } from "./hooks/useRawIssueRequestData";
 import { useJQL } from "./hooks/useJQL";
 
@@ -26,7 +26,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
     applyButtonEnabled,
   } = useJQL();
 
-  const statusesToExcludeOptions = useMemo(() => toOptions(statusesToExclude), []);
+  const statusesToExcludeOptions = useMemo(() => toOptions(statusesToExclude), [statusesToExclude]);
 
   const handleExcludedStatusChange = (
     statusesToExcludeOptions: Readonly<ExcludedStatusSelectOption[]>
