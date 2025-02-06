@@ -7,8 +7,9 @@ import { value } from "../../../../can";
 import routeData from "../../../../canjs/routing/route-data";
 import { useJira } from "../../../services/jira";
 import type { MultiValue } from "react-select";
-import ExcludedStatusSelect from "./components/StatusSelect/ExcludedStatusSelect";
-import { ExcludedStatusSelectOption } from "./components/StatusSelect/types";
+import ExcludedStatusSelect, {
+  ExcludedStatusSelectOption,
+} from "./components/StatusSelect/ExcludedStatusSelect";
 interface IssueSourceProps {}
 
 const useRawIssuesRequestData = () => {
@@ -76,12 +77,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
         value: status,
       })),
     [statusesToExclude]
-  );
-  console.log(
-    "statusesToExclude: ",
-    statusesToExclude,
-    "statusesToExcludeFromRouteData: ",
-    statusesToExcludeFromRouteData
   );
   const applyJql = useCallback(() => {
     routeData.assign({
