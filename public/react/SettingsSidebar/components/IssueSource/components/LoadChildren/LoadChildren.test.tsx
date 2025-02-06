@@ -38,9 +38,6 @@ describe("<LoadChildren />", () => {
       />
     );
 
-    const childJqlLabel = screen.getByLabelText(/optional children jql filters/i);
-    expect(childJqlLabel).toBeInTheDocument();
-
     const childJqlInput = screen.getByLabelText(/optional children jql filters/i);
     expect(childJqlInput).toBeInTheDocument();
   });
