@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState, FC } from "react";
+import React, { useCallback, useMemo, useState, FC } from "react";
 import Button from "@atlaskit/button/new";
 import { useCanObservable, CanPromise } from "../../../hooks/useCanObservable/useCanObservable";
 import type { JiraIssue } from "../../../../jira/shared/types";
 import type { OidcJiraIssue } from "../../../../jira-oidc-helpers/types";
 import { value } from "../../../../can";
 import routeData from "../../../../canjs/routing/route-data";
-import { useJira } from "../../../services/jira";
 import type { MultiValue } from "react-select";
 import ExcludedStatusSelect, {
   ExcludedStatusSelectOption,
@@ -44,7 +43,6 @@ const useRawIssuesRequestData = () => {
 };
 
 const IssueSource: FC<IssueSourceProps> = () => {
-  const jiraHelpers = useJira();
   const {
     issuesPromise,
     issuesPromisePending,
@@ -61,11 +59,8 @@ const IssueSource: FC<IssueSourceProps> = () => {
     value.from<string[]>(routeData, "statusesToExclude")
   );
 
-  const [jqlValid, setJqlValid] = useState(true);
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
-  const [childJQLValid, setChildJQLValid] = useState(true);
-  const [jqlValidationPending, setJqlValidationPending] = useState(true);
   const [statusesToExclude, setStatusesToExclude] = useState<string[]>(
     statusesToExcludeFromRouteData
   );
@@ -88,17 +83,14 @@ const IssueSource: FC<IssueSourceProps> = () => {
 
   const enableApply = useMemo(() => {
     return (
-      (!jqlValidationPending &&
-        jqlValid &&
-        (!loadChildren || childJQLValid) &&
-        (jql !== jqlFromRouteData || childJQL !== childJQLFromRouteData)) ||
-      statusesToExclude.some((filter) => !statusesToExcludeFromRouteData.includes(filter)) ||
-      statusesToExcludeFromRouteData.some((filter) => !statusesToExclude.includes(filter))
+      !loadChildren &&
+      (jql !== jqlFromRouteData ||
+        childJQL !== childJQLFromRouteData ||
+        statusesToExclude.some((filter) => !statusesToExcludeFromRouteData.includes(filter)) ||
+        statusesToExcludeFromRouteData.some((filter) => !statusesToExclude.includes(filter)))
     );
   }, [
-    jqlValid,
     loadChildren,
-    childJQLValid,
     jql,
     jqlFromRouteData,
     childJQL,
@@ -107,16 +99,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
     statusesToExcludeFromRouteData,
   ]);
 
-  useEffect(() => {
-    (async () => {
-      setJqlValidationPending(true);
-      const response = await jiraHelpers.validateJQL(jql, loadChildren ? childJQL : "");
-      setJqlValid(!response.queries[0].errors);
-      setChildJQLValid(!response.queries[1].errors);
-      setJqlValidationPending(false);
-    })();
-  }, [jql, childJQL, loadChildren]);
-
   const handleExcludedStatusChange = useCallback(
     (statusesToExcludeOptions: MultiValue<ExcludedStatusSelectOption>) => {
       const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
@@ -124,6 +106,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
     },
     []
   );
+
   return (
     <>
       <h3 className="h3">Issue Source</h3>
@@ -133,7 +116,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
       </p>
       <p>
         <textarea
-          className={`w-full-border-box mt-2 form-border p-1 ${jqlValid ? "" : "bg-red-200"}`}
+          className="w-full-border-box mt-2 form-border p-1"
           value={jql}
           onChange={(ev) => setJql(ev.target.value)}
         />
@@ -169,7 +152,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
                 Optional children JQL filters:{" "}
                 <input
                   type="text"
-                  className={`form-border p-1 h-5 ${childJQLValid ? "" : "bg-red-200"}`}
+                  className="form-border p-1 h-5"
                   value={childJQL}
                   onChange={(ev) => setChildJQL(ev.target.value)}
                 />
