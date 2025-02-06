@@ -43,6 +43,6 @@ export const useJQL = () => {
     setStatusesToExclude,
     setLoadChildren,
     applyButtonEnabled:
-      !jql || jql !== jqlFromRouteData || childJql !== childJqlFromRouteData || statusesDiffer,
+      !!jql && (jql !== jqlFromRouteData || childJql !== childJqlFromRouteData || statusesDiffer),
   };
 };
