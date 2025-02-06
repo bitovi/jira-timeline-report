@@ -2,7 +2,6 @@ import React, { FC, useId } from "react";
 import Select from "@atlaskit/select";
 import { Label } from "@atlaskit/form";
 import useExcludedStatusSelect from "./hooks/useExcludedStatusSelect";
-import type { MultiValue } from "react-select";
 
 export interface ExcludedStatusSelectOption {
   label: string;
@@ -12,8 +11,8 @@ export interface ExcludedStatusSelectOption {
 export interface ExcludedStatusSelectProps {
   label: string;
   placeholder: string;
-  value: MultiValue<ExcludedStatusSelectOption>;
-  onChange?: (value: MultiValue<ExcludedStatusSelectOption>) => void;
+  value: ExcludedStatusSelectOption[];
+  onChange?: (value: Readonly<ExcludedStatusSelectOption[]>) => void;
 }
 const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({
   label,
@@ -28,6 +27,7 @@ const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({
   if (allStatusesOptions.length === 0) {
     return null;
   }
+
   return (
     <>
       <Label htmlFor={id}>{label}</Label>

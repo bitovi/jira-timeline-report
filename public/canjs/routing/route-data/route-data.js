@@ -35,6 +35,10 @@ import {
   makeAsyncFromObservableButStillSettableProperty,
   toSelectedParts,
 } from "../data-utils.js";
+import {
+  calculationsForLevel,
+  createBaseLevels,
+} from "../../../react/SettingsSidebar/components/TimingCalculation/hooks/useTimingCalculations/helpers.js";
 
 export function getTimingLevels(issueHierarchy, timingCalculations) {
   const baseLevels = createBaseLevels(issueHierarchy);

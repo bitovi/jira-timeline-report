@@ -26,7 +26,7 @@ import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
 import SampleDataNotice from "./react/SampleDataNotice";
 
-import { getTheme } from "./jira/theme";
+import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
 export class TimelineReport extends StacheElement {
   static view = `

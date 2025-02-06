@@ -1,111 +1,39 @@
-import React, { useCallback, useMemo, useState, FC } from "react";
+import type { ExcludedStatusSelectOption } from "./components/StatusSelect";
+
+import React, { useMemo, FC } from "react";
 import Button from "@atlaskit/button/new";
-import { useCanObservable, CanPromise } from "../../../hooks/useCanObservable/useCanObservable";
-import type { JiraIssue } from "../../../../jira/shared/types";
-import type { OidcJiraIssue } from "../../../../jira-oidc-helpers/types";
-import { value } from "../../../../can";
+
 import routeData from "../../../../canjs/routing/route-data";
-import type { MultiValue } from "react-select";
-import ExcludedStatusSelect, {
-  ExcludedStatusSelectOption,
-} from "./components/StatusSelect/ExcludedStatusSelect";
+import ExcludedStatusSelect from "./components/StatusSelect";
+import { useRawIssuesRequestData } from "./hooks/useRawIssueRequestData";
+import { useJQL } from "./hooks/useJQL";
+
 interface IssueSourceProps {}
 
-const useRawIssuesRequestData = () => {
-  const issuesPromise = useCanObservable<CanPromise<JiraIssue[] | OidcJiraIssue[]>>(
-    value.from(routeData, "rawIssuesRequestData.issuesPromise")
-  );
-
-  const issuesPromisePending = useCanObservable<boolean>(
-    value.from(routeData, "rawIssuesRequestData.issuesPromise.isPending")
-  );
-  const issuesPromiseResolved = useCanObservable<boolean>(
-    value.from(routeData, "rawIssuesRequestData.issuesPromise.isResolved")
-  );
-  const issuesPromiseValueLength = useCanObservable<number>(
-    value.from(routeData, "rawIssuesRequestData.issuesPromise.value.length")
-  );
-  const issuesReceived = useCanObservable<number>(
-    value.from(routeData, "rawIssuesRequestData.progressData.issuesReceived")
-  );
-  const issuesRequested = useCanObservable<number>(
-    value.from(routeData, "rawIssuesRequestData.progressData.issuesRequested")
-  );
-
-  return {
-    issuesPromise,
-    issuesPromisePending,
-    issuesPromiseResolved,
-    issuesPromiseValueLength,
-    issuesReceived,
-    issuesRequested,
-  };
-};
-
 const IssueSource: FC<IssueSourceProps> = () => {
+  const { issuesPromise, isLoading, isSuccess, numberOfIssues, receivedChunks, totalChunks } =
+    useRawIssuesRequestData();
+
   const {
-    issuesPromise,
-    issuesPromisePending,
-    issuesPromiseResolved,
-    issuesPromiseValueLength,
-    issuesReceived,
-    issuesRequested,
-  } = useRawIssuesRequestData();
-
-  const loadChildren = useCanObservable(value.from<boolean>(routeData, "loadChildren"));
-  const jqlFromRouteData = useCanObservable(value.from<string>(routeData, "jql"));
-  const childJQLFromRouteData = useCanObservable(value.from<string>(routeData, "childJQL"));
-  const statusesToExcludeFromRouteData = useCanObservable(
-    value.from<string[]>(routeData, "statusesToExclude")
-  );
-
-  const [jql, setJql] = useState(jqlFromRouteData);
-  const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
-  const [statusesToExclude, setStatusesToExclude] = useState<string[]>(
-    statusesToExcludeFromRouteData
-  );
-
-  const statusesToExcludeOptions = useMemo(
-    () =>
-      statusesToExclude.map((status) => ({
-        label: status,
-        value: status,
-      })),
-    [statusesToExclude]
-  );
-  const applyJql = useCallback(() => {
-    routeData.assign({
-      jql,
-      childJQL,
-      statusesToExclude,
-    });
-  }, [jql, childJQL, statusesToExclude]);
-
-  const enableApply = useMemo(() => {
-    return (
-      !loadChildren &&
-      (jql !== jqlFromRouteData ||
-        childJQL !== childJQLFromRouteData ||
-        statusesToExclude.some((filter) => !statusesToExcludeFromRouteData.includes(filter)) ||
-        statusesToExcludeFromRouteData.some((filter) => !statusesToExclude.includes(filter)))
-    );
-  }, [
-    loadChildren,
     jql,
-    jqlFromRouteData,
+    setJql,
     childJQL,
-    childJQLFromRouteData,
+    setChildJQL,
+    applyJql,
     statusesToExclude,
-    statusesToExcludeFromRouteData,
-  ]);
+    loadChildren,
+    setStatusesToExclude,
+    applyButtonEnabled,
+  } = useJQL();
 
-  const handleExcludedStatusChange = useCallback(
-    (statusesToExcludeOptions: MultiValue<ExcludedStatusSelectOption>) => {
-      const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
-      setStatusesToExclude(statusesToExclude);
-    },
-    []
-  );
+  const statusesToExcludeOptions = useMemo(() => toOptions(statusesToExclude), []);
+
+  const handleExcludedStatusChange = (
+    statusesToExcludeOptions: Readonly<ExcludedStatusSelectOption[]>
+  ) => {
+    const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
+    setStatusesToExclude(statusesToExclude);
+  };
 
   return (
     <>
@@ -161,15 +89,15 @@ const IssueSource: FC<IssueSourceProps> = () => {
           </span>
         </p>
         <p className="text-xs" style={{ lineHeight: "26px" }}>
-          {issuesPromisePending &&
-            (issuesRequested ? (
+          {isLoading &&
+            (totalChunks ? (
               <>
-                Loaded {issuesReceived} of {issuesRequested} issues
+                Loaded {receivedChunks} of {totalChunks} issues
               </>
             ) : (
               <>Loading issues ...</>
             ))}
-          {issuesPromiseResolved && <>Loaded {issuesPromiseValueLength} issues</>}
+          {isSuccess && <>Loaded {numberOfIssues} issues</>}
         </p>
       </div>
       <ExcludedStatusSelect
@@ -180,7 +108,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
       />
 
       <div className="flex flex-row justify-end mt-2">
-        <Button appearance="primary" isDisabled={!enableApply} onClick={applyJql}>
+        <Button appearance="primary" isDisabled={!applyButtonEnabled} onClick={applyJql}>
           <span className="text-sm">Apply</span>
         </Button>
       </div>
@@ -189,3 +117,10 @@ const IssueSource: FC<IssueSourceProps> = () => {
 };
 
 export default IssueSource;
+
+const toOptions = (statuses: string[]) => {
+  return statuses.map((status) => ({
+    label: status,
+    value: status,
+  }));
+};
