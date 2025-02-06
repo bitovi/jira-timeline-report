@@ -12,7 +12,6 @@ import { allStatusesSorted } from "../../../../jira/normalized/normalize.js";
 
 import { value, Observation, SimpleObservable } from "../../../../can.js";
 import routeData from "../../../../canjs/routing/route-data";
-import { useJira } from "../../../services/jira";
 
 interface IssueSourceProps {}
 
@@ -48,8 +47,6 @@ const useRawIssuesRequestData = () => {
 };
 
 const IssueSource: FC<IssueSourceProps> = () => {
-  const jiraHelpers = useJira();
-
   const {
     issuesPromise,
     issuesPromisePending,
@@ -83,11 +80,8 @@ const IssueSource: FC<IssueSourceProps> = () => {
     new Observation(() => processStatuses()?.length) as unknown as CanObservable<number>
   );
 
-  const [jqlValid, setJqlValid] = useState(true);
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJQL, setChildJQL] = useState(childJQLFromRouteData);
-  const [childJQLValid, setChildJQLValid] = useState(true);
-  const [jqlValidationPending, setJqlValidationPending] = useState(true);
 
   const selectedStatusFiltersObserve = useMemo(() => {
     return new SimpleObservable(statusesToExcludeFromRouteData);
@@ -109,9 +103,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
 
   const enableApply = useMemo(() => {
     return (
-      !jqlValidationPending &&
-      jqlValid &&
-      (!loadChildren || childJQLValid) &&
+      !loadChildren &&
       (jql !== jqlFromRouteData ||
         childJQL !== childJQLFromRouteData ||
         (selectedStatusFilters || []).some(
@@ -122,9 +114,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
         ))
     );
   }, [
-    jqlValid,
     loadChildren,
-    childJQLValid,
     jql,
     jqlFromRouteData,
     childJQL,
@@ -152,16 +142,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
     }
   }, [numberOfStatuses]);
 
-  useEffect(() => {
-    (async () => {
-      setJqlValidationPending(true);
-      const response = await jiraHelpers.validateJQL(jql, loadChildren ? childJQL : "");
-      setJqlValid(!response.queries[0].errors);
-      setChildJQLValid(!response.queries[1].errors);
-      setJqlValidationPending(false);
-    })();
-  }, [jql, childJQL, loadChildren]);
-
   return (
     <>
       <h3 className="h3">Issue Source</h3>
@@ -171,7 +151,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
       </p>
       <p>
         <textarea
-          className={`w-full-border-box mt-2 form-border p-1 ${jqlValid ? "" : "bg-red-200"}`}
+          className="w-full-border-box mt-2 form-border p-1"
           value={jql}
           onChange={(ev) => setJql(ev.target.value)}
         />
@@ -207,7 +187,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
                 Optional children JQL filters:{" "}
                 <input
                   type="text"
-                  className={`form-border p-1 h-5 ${childJQLValid ? "" : "bg-red-200"}`}
+                  className="form-border p-1 h-5"
                   value={childJQL}
                   onChange={(ev) => setChildJQL(ev.target.value)}
                 />

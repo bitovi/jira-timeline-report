@@ -24,8 +24,9 @@ import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
-
 import SampleDataNotice from "./react/SampleDataNotice";
+
+import { getTheme } from "./jira/theme";
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -196,6 +197,11 @@ export class TimelineReport extends StacheElement {
         },
       })
     );
+
+    getTheme(this.routeData.storage)
+      .then(applyThemeToCssVars)
+      .catch((error) => console.error("Something went wrong getting the theme", error));
+
     createRoot(document.getElementById("timeline-configuration")).render(
       createElement(SettingsSidebar, {
         isLoggedIn: this.loginComponent.isLoggedIn,
