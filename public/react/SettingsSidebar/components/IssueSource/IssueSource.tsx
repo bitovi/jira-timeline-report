@@ -53,18 +53,19 @@ const IssueSource: FC<IssueSourceProps> = () => {
         about JQL.
       </SectionMessage>
       <JQLTextArea jql={jql} setJql={setJql} {...issueRequestData} />
-      <ExcludedStatusSelect
-        label="Exclude statuses"
-        placeholder="Select statuses"
-        value={statusesToExcludeOptions}
-        onChange={handleExcludedStatusChange}
-      />
       <LoadChildren
         loadChildren={loadChildren}
         setLoadChildren={setLoadChildren}
         childJql={childJql}
         setChildJql={setChildJql}
       />
+      <ExcludedStatusSelect
+        label="Exclude statuses"
+        placeholder="Select statuses"
+        value={statusesToExcludeOptions}
+        onChange={handleExcludedStatusChange}
+      />
+
       <div className="flex flex-row justify-end mt-2">
         <Button appearance="primary" isDisabled={!applyButtonEnabled} onClick={applyJql}>
           Apply
