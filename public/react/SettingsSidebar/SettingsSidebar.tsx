@@ -38,7 +38,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
   const returnToSettings = () => changeSettings("");
 
   return (
-    <div className="px-6 py-2 h-full min-w-40">
+    <div className="px-6 py-2 h-full min-w-40 overflow-y-auto">
       {showSidebarBranding && <Branding />}
       {!showSettings && <ReportSettings changeSettings={changeSettings} />}
       {!!showSettings && showSettings !== "TEAMS" && (

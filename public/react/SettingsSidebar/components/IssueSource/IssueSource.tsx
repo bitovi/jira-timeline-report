@@ -45,10 +45,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
       <div className="pt-4">
         <Heading size="medium">Issue Source</Heading>
       </div>
-      <p>
-        Specify a JQL that loads all issues you want to report on and help determine the timeline of
-        your report.
-      </p>
+      <p>Specify a JQL that loads all the issues needed for your report.</p>
       <SectionMessage appearance="discovery">
         <Link href="https://support.atlassian.com/jira-work-management/docs/use-advanced-search-with-jira-query-language-jql/">
           Learn more
