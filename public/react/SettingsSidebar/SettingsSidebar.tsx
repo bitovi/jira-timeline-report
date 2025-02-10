@@ -15,6 +15,7 @@ import IssueSource from "./components/IssueSource";
 import TimingCalculation from "./components/TimingCalculation";
 import { NormalizeIssueConfig } from "../../jira/normalized/normalize";
 import Theme from "./components/Theme";
+import Features from "./components/Features";
 
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
@@ -58,6 +59,11 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
             onUpdate={onUpdateTeamsConfiguration}
             onBackButtonClicked={() => returnToSettings()}
           />
+        </div>
+      )}
+      {showSettings === "FEATURES" && (
+        <div className="h-full">
+          <Features />
         </div>
       )}
       {showSettings === "THEME" && (
