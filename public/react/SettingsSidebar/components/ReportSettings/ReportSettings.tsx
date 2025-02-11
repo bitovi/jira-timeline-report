@@ -37,7 +37,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
         Teams
       </SidebarButton>
       <SidebarButton onClick={() => changeSettings("FEATURES")}>
-        <img src="/images/team.svg" aria-hidden />
+        <img src="/images/features.svg" aria-hidden />
         Features
       </SidebarButton>
       <SidebarButton onClick={() => changeSettings("THEME")}>

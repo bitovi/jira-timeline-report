@@ -61,11 +61,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
           />
         </div>
       )}
-      {showSettings === "FEATURES" && (
-        <div className="h-full">
-          <Features />
-        </div>
-      )}
+      {showSettings === "FEATURES" && <Features />}
       {showSettings === "THEME" && (
         <div className="w-80 h-full">
           <Theme onBackButtonClicked={changeSettings} />
