@@ -25,6 +25,7 @@ import { createElement } from "react";
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
 import SampleDataNotice from "./react/SampleDataNotice";
+import StatusKey from "./react/StatusKey";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
@@ -98,18 +99,19 @@ export class TimelineReport extends StacheElement {
           {{/ }}
 
           <div class='p-2'>
-            <span class='color-text-and-bg-new p-2 inline-block'>New</span>
-            <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
-            <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
-            <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
-            <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
-            <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
-            <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
-            <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
+          <span class='color-text-and-bg-new p-2 inline-block'>New</span>
+          <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
+          <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
+          <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
+          <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
+          <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
+          <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
+          <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
           </div>
-
-        </div>
-      {{/ and }}
+          
+          </div>
+          {{/ and }}
+          <div class='p-2' id='status-key'></div>
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
         <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
           <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.routeData.primaryIssueType}}.</p>
@@ -218,6 +220,8 @@ export class TimelineReport extends StacheElement {
         },
       })
     );
+
+    createRoot(document.getElementById("status-key")).render(createElement(StatusKey, {}));
   }
 
   showReports(event) {
