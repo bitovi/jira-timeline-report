@@ -26,4 +26,5 @@ const useExcludedStatusSelect = () => {
     allStatusesOptions,
   };
 };
+
 export default useExcludedStatusSelect;
