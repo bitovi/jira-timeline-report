@@ -28,6 +28,7 @@ import SampleDataNotice from "./react/SampleDataNotice";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
+
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
