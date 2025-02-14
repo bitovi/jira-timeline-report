@@ -35,7 +35,7 @@ export class TimelineReport extends StacheElement {
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
         ></div>
     {{/if}}
-    <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative" on:click="this.goBack()">
+    <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
 
       <div id='sample-data-notice' class='pt-4'></div>
 
@@ -53,9 +53,7 @@ export class TimelineReport extends StacheElement {
 
         <select-view-settings
           jiraHelpers:from="this.jiraHelpers"
-          
           releasesToShow:to="this.releasesToShow"
-          statuses:from="this.statuses"
           derivedIssues:from="this.routeData.derivedIssues"
           ></select-view-settings>
       </div>

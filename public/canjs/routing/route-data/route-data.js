@@ -4,6 +4,8 @@ import { DAY_IN_MS } from "../../../utils/date/date-helpers.js";
 import { daysBetween } from "../../../utils/date/days-between.js";
 import { isoToLocalDate } from "../../../utils/date/local.js";
 
+import { allStatusesSorted } from "../../../jira/normalized/normalize.ts";
+
 import {
   rawIssuesRequestData,
   configurationPromise,
@@ -268,6 +270,13 @@ export class RouteData extends ObservableObject {
         listenTo("derivedIssuesRequestData", resolveValueFromPromise);
         resolveValueFromPromise();
       },
+    },
+    get allStatusesSorted(){
+      if (this.derivedIssues) {
+        return allStatusesSorted(this.derivedIssues);
+      } else {
+        return [];
+      }
     },
     timingCalculations: {
       value({ resolve, lastSet, listenTo }) {
