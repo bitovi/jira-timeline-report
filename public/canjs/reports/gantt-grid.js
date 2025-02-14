@@ -308,13 +308,16 @@ export class GanttGrid extends StacheElement {
     const totalTime = lastDay - firstDay;
     return ((new Date() - firstDay - 1000 * 60 * 60 * 24 * 2) / totalTime) * 100;
   }
+
   get gridRowData() {
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
     if (this.routeData.groupBy === "parent" && this.routeData.primaryIssueType !== "Release") {
       // get all the parents ...
 
-      let obj = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.parentKey);
-      let keyToAllIssues = Object.groupBy(this.routeData.derivedIssues, (issue) => issue.key);
+      let obj = Object.groupBy(this.primaryIssuesOrReleases || [], (issue) => issue.parentKey);
+
+      // it's possible these are temporarily undefined or missing as route data changes
+      let keyToAllIssues = Object.groupBy(this.routeData.derivedIssues || [], (issue) => issue.key);
 
       let parentKeys = Object.keys(obj);
       let parents = parentKeys
@@ -363,9 +366,10 @@ export class GanttGrid extends StacheElement {
       return teams
         .map((team) => {
           return [
-            { type: "parent", issue: team },
+            { type: "parent", issue: team, isShowingChildren: false, rollupStatuses: {rollup: {status: null}} },
             ...issuesByTeam[team.name].map((issue) => {
-              return { type: "issue", issue };
+              const isShowingChildren = this.showChildrenByKey[issue.key];
+              return { type: "issue", issue, isShowingChildren: isShowingChildren };
             }),
           ];
         })
