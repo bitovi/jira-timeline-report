@@ -1,7 +1,9 @@
 import type { FC } from "react";
 
 import React, { Suspense, useMemo } from "react";
-//@ts-ignore
+
+// @ts-expect-error we need to do something about all these conflicting react
+// types
 import { createPortal } from "react-dom";
 
 import { ErrorBoundary } from "@sentry/react";
