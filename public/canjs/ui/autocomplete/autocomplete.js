@@ -93,7 +93,8 @@ class AutoComplete extends StacheElement {
         this.TOOLTIP.showingSuggestions = false;
     }
     disconnected(){
-        this.TOOLTIP && document.body.removeChild(this.TOOLTIP);
+        // The tooltip's parent node can be moved around
+        this?.TOOLTIP?.parentNode && this.TOOLTIP.parentNode.removeChild(this.TOOLTIP);
     }
 }
 
