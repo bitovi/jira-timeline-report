@@ -88,7 +88,7 @@ export class GanttGrid extends StacheElement {
                   <div style="grid-row: {{ plus(3, rowIndex) }}; grid-column: 2"
                     class="flex z-10 items-stretch {{# if(this.alignLeft) }} justify-left {{ else }} justify-between{{/}}" on:mouseenter='this.hoverEnter(data.issue)' on:mouseleave='this.hoverLeave(data.issue)'>
                     <div on:click='this.toggleShowingChildren(data.issue)'
-                      class="pointer pt-1 pb-0.5 pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} w-4 box-content">
+                      class="pointer {{this.expandPadding}} pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} w-4 box-content">
 
                       {{# if(data.isShowingChildren) }}
                         <img src="/images/chevron-down-collapse.svg" class="{{^ this.showExpandChildrenIcon(data.issue) }} invisible {{/}} inline"/>
@@ -175,6 +175,9 @@ export class GanttGrid extends StacheElement {
   }
   get shadowBarSize() {
     return this.lotsOfIssues ? "h-4" : "h-6";
+  }
+  get expandPadding(){
+    return this.lotsOfIssues ? "": "pt-1 pb-0.5"
   }
   get columnsToShow() {
     if (this.showPercentComplete) {
