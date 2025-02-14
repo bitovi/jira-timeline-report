@@ -124,10 +124,15 @@ class SimpleTooltip extends HTMLElement {
     }
     
     let leftFromContainer = elementRect.left - containerRect.left;
+    // if the element would go past the page to the right
     if(elementRect.left  + tooltipRect.width > window.innerWidth) {
-      leftFromContainer = elementRect.right - containerRect.left - tooltipRect.width;
+      //leftFromContainer = elementRect.right - containerRect.left - tooltipRect.width;
+      this.style.right = (containerRect.right - elementRect.right) + "px";
+      this.style.left = "";
+    } else {
+      this.style.left = leftFromContainer +"px";
     }
-    this.style.left = leftFromContainer +"px";
+    
   }
   rightOfElementInScrollingContainer(element, DOM) {
     // find if there's a scrolling container and move ourselves to that 

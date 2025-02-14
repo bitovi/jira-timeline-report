@@ -26,12 +26,6 @@ const LoadChildren: FC<LoadChildrenProps> = ({
 
   return (
     <div>
-      <Hr />
-      <Accordion startsOpen>
-        <AccordionTitle>
-          <p className="font-semibold">Load children</p>
-        </AccordionTitle>
-        <AccordionContent>
           <div className="flex flex-col gap-3 py-4">
             <div className="flex gap-1 items-center">
               <Checkbox
@@ -56,8 +50,6 @@ const LoadChildren: FC<LoadChildrenProps> = ({
               </div>
             )}
           </div>
-        </AccordionContent>
-      </Accordion>
       <Hr />
     </div>
   );

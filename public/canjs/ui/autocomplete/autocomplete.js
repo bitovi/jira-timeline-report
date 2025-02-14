@@ -3,9 +3,7 @@ import SimpleTooltip from "../simple-tooltip/simple-tooltip.js";
 
 // create global tooltip reference
 
-const TOOLTIP = new SimpleTooltip();
 
-document.body.append(TOOLTIP);
 
 class AutoCompleteSuggestions extends StacheElement {
     static view = `
@@ -58,7 +56,11 @@ class AutoComplete extends StacheElement {
         const matches = this.data.filter( item => {
             return item.toLowerCase().includes(searchTerm.toLowerCase()) && !this.selected.includes(item)
         })
-        this.showingSuggestions = true;
+        const TOOLTIP = new SimpleTooltip();
+
+        document.body.append(TOOLTIP);
+        TOOLTIP.showingSuggestions = true;
+        this.TOOLTIP = TOOLTIP;
         // this could be made more efficient, but is probably ok
         TOOLTIP.belowElementInScrollingContainer(this, 
             new AutoCompleteSuggestions().initialize({
@@ -72,7 +74,7 @@ class AutoComplete extends StacheElement {
         // handle when someone clicks off the element
         this.listenTo(window, "click", (event)=>{
             // if we aren't showing, don't worry about it
-            if(!this.showingSuggestions) {
+            if(!this?.TOOLTIP?.showingSuggestions) {
                 return;
             }
             // do nothing if the input was clicked on
@@ -80,15 +82,18 @@ class AutoComplete extends StacheElement {
                 return
             }
             // do nothing if the TOOLTIP was clicked
-            if(TOOLTIP.contains(event.target)) {
+            if(this.TOOLTIP && this.TOOLTIP.contains(event.target)) {
                 return;
             }
             this.stopShowingSuggestions()
         })
     }
     stopShowingSuggestions(){
-        TOOLTIP.leftElement();
-        this.showingSuggestions = false;
+        this.TOOLTIP.leftElement();
+        this.TOOLTIP.showingSuggestions = false;
+    }
+    disconnected(){
+        this.TOOLTIP && document.body.removeChild(this.TOOLTIP);
     }
 }
 

@@ -102,7 +102,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <label>Show only {{this.firstIssueTypeWithStatuses}} statuses:</label>
                 
                     <status-filter 
-                        statuses:from="this.statuses"
+                        statuses:from="this.routeData.allStatusesSorted"
                         param:raw="statusesToShow"
                         selectedStatuses:bind="this.routeData.statusesToShow"
                         inputPlaceholder:raw="Search for statuses"
@@ -112,7 +112,7 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <label>Hide {{this.firstIssueTypeWithStatuses}} statuses:</label>
 
                     <status-filter 
-                        statuses:from="this.statuses" 
+                        statuses:from="this.routeData.allStatusesSorted" 
                         param:raw="statusesToRemove"
                         selectedStatuses:bind="this.routeData.statusesToRemove"
                         inputPlaceholder:raw="Search for statuses"
@@ -209,7 +209,7 @@ class SelectViewSettingsDropdown extends StacheElement {
             <div class="flex gap-2 mt-1">
                 <label>{{this.firstIssueTypeWithStatuses}} statuses to show as planning:</label>
                 <status-filter 
-                    statuses:from="this.statuses" 
+                    statuses:from="this.routeData.allStatusesSorted" 
                     param:raw="planningStatuses"
                     selectedStatuses:bind="this.routeData.planningStatuses"
                     inputPlaceholder:raw="Search for statuses"
@@ -281,9 +281,6 @@ export class SelectViewSettings extends StacheElement {
         let dropdown = new SelectViewSettingsDropdown().bindings({
             canGroup: value.from(this,"canGroup"),
             firstIssueTypeWithStatuses: value.from(this,"firstIssueTypeWithStatuses"),
-
-            // this could probably be calculated by itself
-            statuses: value.from(this,"statuses"),
             releases: value.from(this,"releases")
             // onSelection: this.onSelection.bind(this)
         })
