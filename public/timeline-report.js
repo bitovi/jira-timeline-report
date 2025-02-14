@@ -53,9 +53,7 @@ export class TimelineReport extends StacheElement {
 
         <select-view-settings
           jiraHelpers:from="this.jiraHelpers"
-          
           releasesToShow:to="this.releasesToShow"
-          statuses:from="this.statuses"
           derivedIssues:from="this.routeData.derivedIssues"
           ></select-view-settings>
       </div>
