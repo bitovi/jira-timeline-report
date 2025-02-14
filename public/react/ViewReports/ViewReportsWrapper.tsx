@@ -5,10 +5,11 @@ import React, { Suspense, useMemo } from "react";
 // @ts-expect-error we need to do something about all these conflicting react
 // types
 import { createPortal } from "react-dom";
-
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "@sentry/react";
 import SectionMessage from "@atlaskit/section-message";
 import DynamicTable from "@atlaskit/dynamic-table";
+import { FlagsProvider } from "@atlaskit/flag";
 
 import ViewReports from "./ViewReports";
 import LinkButton from "../components/LinkButton";
@@ -17,9 +18,7 @@ import Skeleton from "../components/Skeleton";
 import { useCanObservable } from "../hooks/useCanObservable";
 import { value } from "../../can";
 import routeData from "../../canjs/routing/route-data";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../services/query";
-import { FlagsProvider } from "@atlaskit/flag";
 import { StorageProvider } from "../services/storage";
 
 interface ViewReportsWrapperProps {
