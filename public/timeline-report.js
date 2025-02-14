@@ -27,6 +27,7 @@ import SettingsSidebar from "./react/SettingsSidebar";
 import SampleDataNotice from "./react/SampleDataNotice";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
+import ViewReports from "./react/ViewReports";
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -36,9 +37,8 @@ export class TimelineReport extends StacheElement {
         ></div>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative" on:click="this.goBack()">
-
-      <div id='sample-data-notice' class='pt-4'></div>
-
+    <div id="view-reports"></div>  
+    <div id='sample-data-notice' class='pt-4'></div>
       <div id="saved-reports" class='py-4'></div>
       <div class="flex gap-1">
         <select-issue-type 
@@ -177,6 +177,14 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
+    createRoot(document.getElementById("view-reports")).render(
+      createElement(ViewReports, {
+        onBackButtonClicked: () => {
+          this.routeData.showSettings = "";
+        },
+      })
+    );
+
     createRoot(document.getElementById("sample-data-notice")).render(
       createElement(SampleDataNotice, {
         shouldHideNoticeObservable: this.routeData.isLoggedInObservable,

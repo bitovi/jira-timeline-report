@@ -1,4 +1,4 @@
-import type { AppStorage } from "../../../../jira/storage/common";
+import type { AppStorage } from "../../jira/storage/common";
 import type { ComponentProps } from "react";
 
 import React, { Suspense } from "react";
@@ -9,7 +9,7 @@ import { FlagsProvider } from "@atlaskit/flag";
 import userEvent from "@testing-library/user-event";
 
 import ViewReports from "./ViewReports";
-import { StorageProvider } from "../../../services/storage";
+import { StorageProvider } from "../services/storage";
 
 type OverrideStorage = Omit<AppStorage, "get"> & {
   get: (key: string) => any;

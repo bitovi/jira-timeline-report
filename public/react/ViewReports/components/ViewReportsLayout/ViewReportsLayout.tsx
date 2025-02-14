@@ -2,7 +2,7 @@ import type { FC, ReactNode } from "react";
 
 import React from "react";
 
-import SidebarButton from "../../../../../components/SidebarButton";
+import SidebarButton from "../../../components/SidebarButton";
 import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
 import Heading from "@atlaskit/heading";
 

@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { Report } from "../../../../jira/reports";
+import type { Report } from "../../jira/reports";
 
 import React, { useMemo, useState } from "react";
 import DynamicTable from "@atlaskit/dynamic-table";
@@ -9,9 +9,9 @@ import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
 import { IconButton } from "@atlaskit/button/new";
 
 import ViewReportsLayout from "./components/ViewReportsLayout";
-import { useAllReports, useDeleteReport, useRecentReports } from "../../../services/reports";
+import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
 import DeleteReportModal from "./components/DeleteReportModal";
-import { Link } from "../../../services/routing";
+import { Link } from "../services/routing";
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
