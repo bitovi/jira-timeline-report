@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { Report } from "../../../../../../jira/reports";
+import type { Report } from "../../../../jira/reports";
 
 import React from "react";
 import Modal, {

@@ -5,7 +5,6 @@ import { value } from "../../can";
 import routeData from "../../canjs/routing/route-data";
 
 import TeamConfiguration from "./components/TeamConfiguration";
-import ViewReports from "./components/ViewReports";
 
 import { CanObservable, useCanObservable } from "../hooks/useCanObservable";
 import Branding from "./components/Branding";
@@ -63,11 +62,6 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
       {showSettings === "THEME" && (
         <div className="w-80 h-full">
           <Theme onBackButtonClicked={changeSettings} />
-        </div>
-      )}
-      {showSettings === "REPORTS" && (
-        <div className="h-full">
-          <ViewReports onBackButtonClicked={changeSettings} />
         </div>
       )}
     </div>
