@@ -310,47 +310,32 @@ export class GanttGrid extends StacheElement {
   }
 
   get gridRowData() {
+
+    const getRows = makeGetRows((key)=>{
+      return this.showChildrenByKey[key]
+    },this.getChildren.bind(this));
+
+
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
     if (this.routeData.groupBy === "parent" && this.routeData.primaryIssueType !== "Release") {
-      // get all the parents ...
+      
+      // get all the parents of the primary releases
+      const {parents, parentToChildren} = getSortedParents(this.primaryIssuesOrReleases, this.routeData.derivedIssues);
 
-      let obj = Object.groupBy(this.primaryIssuesOrReleases || [], (issue) => issue.parentKey);
-
-      // it's possible these are temporarily undefined or missing as route data changes
-      let keyToAllIssues = Object.groupBy(this.routeData.derivedIssues || [], (issue) => issue.key);
-
-      let parentKeys = Object.keys(obj);
-      let parents = parentKeys
-        .map((parentKey) => {
-          if (keyToAllIssues[parentKey]) {
-            return keyToAllIssues[parentKey][0];
-          } else if (obj[parentKey][0].issue.fields.Parent) {
-            return normalizeParent(obj[parentKey][0].issue.fields.Parent);
-          } else {
-            return { key: parentKey, summary: "No Parent" };
-          }
-        })
-        .filter(Boolean);
-
-      if (parents.length && parents[0].rank) {
-        parents.sort((p1, p2) => {
-          return p1.rank > p2.rank ? 1 : -1;
-        });
-      }
-
+      // for each parent, find its children
       let parentsAndChildren = parents
         .map((parent) => {
           return [
-            { type: "parent", issue: parent },
-            ...obj[parent.key].map((issue) => {
-              return { type: "issue", issue };
-            }),
+            { type: "parent", issue: parent, isShowingChildren: false },
+            ...parentToChildren[parent.key].map(getRows).flat(1),
           ];
         })
         .flat(1);
 
       return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
-    } else if (this.routeData.groupBy === "team" && this.routeData.primaryIssueType !== "Release") {
+    } 
+    
+    else if (this.routeData.groupBy === "team" && this.routeData.primaryIssueType !== "Release") {
       let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.team.name);
 
       const teams = Object.keys(issuesByTeam).map((teamName) => {
@@ -366,32 +351,13 @@ export class GanttGrid extends StacheElement {
       return teams
         .map((team) => {
           return [
-            { type: "parent", issue: team, isShowingChildren: false, rollupStatuses: {rollup: {status: null}} },
-            ...issuesByTeam[team.name].map((issue) => {
-              const isShowingChildren = this.showChildrenByKey[issue.key];
-              return { type: "issue", issue, isShowingChildren: isShowingChildren };
-            }),
+            { type: "parent", issue: team, isShowingChildren: false },
+            ...issuesByTeam[team.name].map(getRows).flat(1),
           ];
         })
         .flat(1);
     } else {
-      const getRow = (issue, depth = 0) => {
-        const isShowingChildren = this.showChildrenByKey[issue.key];
-
-        const row = { type: "issue", issue, isShowingChildren, depth };
-        if (isShowingChildren) {
-          return [
-            row,
-            ...this.getChildren(issue)
-              .map((issue) => getRow(issue, depth + 1))
-              .flat(1),
-          ];
-        } else {
-          return [row];
-        }
-      };
-
-      return this.primaryIssuesOrReleases.map((issue) => getRow(issue)).flat(1);
+      return this.primaryIssuesOrReleases.map((issue) => getRows(issue)).flat(1);
     }
   }
   groupElement(issue, index) {
@@ -712,5 +678,67 @@ function makeCircleForStatus(status, innerHTML, lotsOfIssues) {
 
   return team;
 }
+
+
+//  this.showChildrenByKey[issue.key];
+// this.getChildren()
+
+function makeGetRows(getIfKeyIsShowingChildren, getChildrenForIssue) {
+  return function getRows(issue, depth = 0) {
+    const isShowingChildren = getIfKeyIsShowingChildren(issue.key);
+    const row = { type: "issue", issue, isShowingChildren, depth };
+    if (isShowingChildren) {
+      return [
+        row,
+        ...getChildrenForIssue(issue)
+          .map((issue) => getRows(issue, depth + 1))
+          .flat(1),
+      ];
+    } else {
+      return [row];
+    }
+  };
+}
+
+
+function getSortedParents(primaryIssues, allIssues) {
+
+  // once we know a parent key, be able to get all of its children
+  let parentToChildren = Object.groupBy(primaryIssues || [], (issue) => issue.parentKey);
+
+  // it's possible these are temporarily undefined or missing as route data changes
+  let keyToAllIssues = Object.groupBy(allIssues || [], (issue) => issue.key);
+
+  // get the parent keys
+  let parentKeys = Object.keys(parentToChildren);
+
+  // loop through and try to get as much information as possible about the parent
+  let parents = parentKeys
+    .map((parentKey) => {
+      // if we loaded the issue itself ...
+      if (keyToAllIssues[parentKey]) {
+        return keyToAllIssues[parentKey][0];
+      } 
+      // if the issue has some parent data with it
+      else if (parentToChildren[parentKey][0].issue.fields.Parent) {
+        return normalizeParent(parentToChildren[parentKey][0].issue.fields.Parent);
+      } 
+      // else it doesnt' have a parent, create something for things with no parent
+      else {
+        return { key: parentKey, summary: "No Parent", rollupStatuses: {rollup: {status: null}} };
+      }
+    })
+    // not sure what case this is filtering .. we should look at it
+    .filter(Boolean);
+
+  // sort them
+  if (parents.length && parents[0].rank) {
+    parents.sort((p1, p2) => {
+      return p1.rank > p2.rank ? 1 : -1;
+    });
+  } 
+  return {parents, parentToChildren }
+}
+
 
 customElements.define("gantt-grid", GanttGrid);
