@@ -5,9 +5,8 @@ import Heading from "@atlaskit/heading";
 import Spinner from "@atlaskit/spinner";
 
 import FeatureToggle from "./components/FeatureToggle";
-import { useFeatures } from "../../../services/features/useFeatures";
+import { useFeatures, useUpdateFeatures } from "../../../services/features";
 import { Features } from "../../../../jira/features";
-import { useUpdateFeatures } from "../../../services/features/useUpdateFeatures";
 
 const keyToTitle = {
   scatterPlot: "Scatter Timeline Plot",

@@ -1,12 +1,12 @@
 import React from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Features, updateFeatures } from "../../../jira/features";
-import { useStorage } from "../storage";
 import { useFlags } from "@atlaskit/flag";
-
 import ErrorIcon from "@atlaskit/icon/core/error";
 import { Text } from "@atlaskit/primitives";
 import { token } from "@atlaskit/tokens";
+
+import { Features, updateFeatures } from "../../../jira/features";
+import { useStorage } from "../storage";
 
 export const useUpdateFeatures = () => {
   const storage = useStorage();

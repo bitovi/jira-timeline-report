@@ -4,13 +4,13 @@ import React, { Suspense } from "react";
 import { FlagsProvider } from "@atlaskit/flag";
 import { ErrorBoundary } from "@sentry/react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import Heading from "@atlaskit/heading";
 
 import { StorageProvider } from "../../../services/storage";
 import routeData from "../../../../canjs/routing/route-data";
 import { queryClient } from "../../../services/query";
-import Features from "./Features";
-import Heading from "@atlaskit/heading";
 import Skeleton from "../../../components/Skeleton";
+import Features from "./Features";
 
 interface FeaturesWrapperProps {}
 
@@ -34,7 +34,7 @@ const FeaturesWrapper: FC<FeaturesWrapperProps> = () => {
 
 export default FeaturesWrapper;
 
-const FeaturesSkeleton = () => {
+const FeaturesSkeleton: FC = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <div className="pt-4">
