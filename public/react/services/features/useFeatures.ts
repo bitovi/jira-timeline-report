@@ -7,7 +7,7 @@ export const useFeatures = () => {
   const storage = useStorage();
 
   const { data } = useSuspenseQuery({
-    queryKey: featuresKeyFactory.features,
+    queryKey: featuresKeyFactory.features(),
     queryFn: () => getFeatures(storage),
   });
 
