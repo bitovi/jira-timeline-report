@@ -11,6 +11,9 @@ import { getConnectRequestHelper } from "../request-helpers/connect-request-help
 import { directlyReplaceUrlParam } from "../canjs/routing/state-storage.js";
 import { route, value } from "../can.js";
 import routeData from "../canjs/routing/route-data";
+import { getFeatures } from "../jira/features/fetcher";
+import { featuresKeyFactory } from "../react/services/features/key-factory";
+import { queryClient } from "../react/services/query/queryClient";
 
 export default async function mainHelper(
   config,
@@ -73,6 +76,11 @@ export default async function mainHelper(
         storage,
         linkBuilder,
         showSidebarBranding,
+        featuresPromise: getFeatures(storage).then((features) => {
+          queryClient.setQueryData(featuresKeyFactory.features(), features);
+
+          return features;
+        }),
       });
       report.className = "flex flex-1 overflow-hidden";
       mainContent.append(report);
