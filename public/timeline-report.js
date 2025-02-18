@@ -37,88 +37,90 @@ export class TimelineReport extends StacheElement {
           class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
         ></div>
     {{/if}}
-    <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative" on:click="this.goBack()">
-    <div id="view-reports"></div>  
-    <div id='sample-data-notice' class='pt-4'></div>
-      <div id="saved-reports" class='py-4'></div>
-      <div class="flex gap-1">
-        <select-issue-type 
-          derivedIssues:from="this.routeData.derivedIssues"
-          jiraHelpers:from="this.jiraHelpers"></select-issue-type>
+    <div class="flex flex-1 flex-col">
+      <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative" on:click="this.goBack()">
+        <div id="view-reports"></div>  
+        <div id='sample-data-notice' class='pt-4'></div>
+        <div id="saved-reports" class='py-4'></div>
+        <div class="flex gap-1">
+          <select-issue-type 
+            derivedIssues:from="this.routeData.derivedIssues"
+            jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
-        <select-report-type 
-          jiraHelpers:from="this.jiraHelpers"></select-report-type>
-    
-        <compare-slider class='flex-grow px-2'
-          compareToTime:to="compareToTime"></compare-slider>
+          <select-report-type 
+            jiraHelpers:from="this.jiraHelpers"></select-report-type>
+      
+          <compare-slider class='flex-grow px-2'
+            compareToTime:to="compareToTime"></compare-slider>
 
-        <select-view-settings
-          jiraHelpers:from="this.jiraHelpers"
-          releasesToShow:to="this.releasesToShow"
-          derivedIssues:from="this.routeData.derivedIssues"
-          ></select-view-settings>
+          <select-view-settings
+            jiraHelpers:from="this.jiraHelpers"
+            releasesToShow:to="this.releasesToShow"
+            derivedIssues:from="this.routeData.derivedIssues"
+            ></select-view-settings>
+        </div>
+
+        {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
+          <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
+        {{ /and }}
+
+        {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
+          <div class="my-2 border-box color-bg-white flex-1">
+                  
+            {{# eq(this.routeData.primaryReportType, "start-due")  }}
+              <gantt-grid 
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
+                  ></gantt-grid>
+            {{/ eq }}
+            {{# eq(this.routeData.primaryReportType, "due") }}
+              <scatter-timeline 
+                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></scatter-timeline>
+            {{/ eq }}
+            {{# eq(this.routeData.primaryReportType, "table") }}
+              <table-grid
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
+            {{/ eq }}
+            {{# eq(this.routeData.primaryReportType, "group-grid") }}
+              <group-grid
+                  primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                  allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
+            {{/ eq }}
+
+            {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
+              <status-report 
+                breakdown:from="eq(this.routeData.secondaryReportType, 'breakdown')"
+                planningIssues:from="this.planningIssues"
+                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
+                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
+            {{/ }}
+            
+          </div>
+        {{/ and }}
+        {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
+          <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
+            <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.routeData.primaryIssueType}}.</p>
+            <p>Please check your JQL and the View Settings.</p>
+          </div>
+        {{/}}
+        {{# and(this.routeData.jql, this.routeData.derivedIssuesRequestData.issuesPromise.isPending) }}
+          <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
+            <p>Loading ...<p>
+            {{# if(this.routeData.derivedIssuesRequestData.progressData.issuesRequested)}}
+              <p>Loaded {{this.routeData.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.routeData.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
+            {{/ }}
+          </div>
+        {{/ and }}
+        {{# if(this.routeData.derivedIssuesRequestData.issuesPromise.isRejected) }}
+          <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
+            <p>There was an error loading from Jira!</p>
+            <p>Error message: {{this.routeData.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
+                <p>Please check your JQL is correct!</p>
+          </div>
+        {{/ if }}
       </div>
-
-      {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
-        <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
-      {{ /and }}
-
-      {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
-        <div class="my-2 border-box color-bg-white flex-1">
-                
-          {{# eq(this.routeData.primaryReportType, "start-due")  }}
-            <gantt-grid 
-                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                ></gantt-grid>
-          {{/ eq }}
-          {{# eq(this.routeData.primaryReportType, "due") }}
-            <scatter-timeline 
-              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></scatter-timeline>
-          {{/ eq }}
-          {{# eq(this.routeData.primaryReportType, "table") }}
-            <table-grid
-                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
-          {{/ eq }}
-          {{# eq(this.routeData.primaryReportType, "group-grid") }}
-            <group-grid
-                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
-          {{/ eq }}
-
-          {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
-            <status-report 
-              breakdown:from="eq(this.routeData.secondaryReportType, 'breakdown')"
-              planningIssues:from="this.planningIssues"
-              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
-          {{/ }}
-          
-        </div>
-      {{/ and }}
-      {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
-        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-warning">
-          <p>{{this.primaryIssuesOrReleases.length}} issues of type {{this.routeData.primaryIssueType}}.</p>
-          <p>Please check your JQL and the View Settings.</p>
-        </div>
-      {{/}}
-      {{# and(this.routeData.jql, this.routeData.derivedIssuesRequestData.issuesPromise.isPending) }}
-        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-bg-white">
-          <p>Loading ...<p>
-          {{# if(this.routeData.derivedIssuesRequestData.progressData.issuesRequested)}}
-            <p>Loaded {{this.routeData.derivedIssuesRequestData.progressData.issuesReceived}} of {{this.routeData.derivedIssuesRequestData.progressData.issuesRequested}} issues.</p>
-          {{/ }}
-        </div>
-      {{/ and }}
-      {{# if(this.routeData.derivedIssuesRequestData.issuesPromise.isRejected) }}
-        <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
-          <p>There was an error loading from Jira!</p>
-          <p>Error message: {{this.routeData.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
-              <p>Please check your JQL is correct!</p>
-        </div>
-      {{/ if }}
 
       <div id='status-key' class="{{# if(not(and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length))) }}invisible{{/ if }}"></div>
     </div>
