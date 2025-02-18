@@ -2,30 +2,58 @@ import type { FC } from "react";
 
 import React from "react";
 import Heading from "@atlaskit/heading";
+import Spinner from "@atlaskit/spinner";
 
 import FeatureToggle from "./components/FeatureToggle";
+import { useFeatures } from "../../../services/features/useFeatures";
+import { Features } from "../../../../jira/features";
+import { useUpdateFeatures } from "../../../services/features/useUpdateFeatures";
 
-interface FeaturesProps {}
+const keyToTitle = {
+  scatterPlot: "Scatter Timeline Plot",
+  estimationTable: "Estimation Table",
+  secondaryReport: "Secondary Report",
+  workBreakdowns: "Work Breakdowns",
+};
 
-const features = [
-  { title: "Scatter Timeline Plot", subtitle: "Report due dates in a condensed scatter plot" },
-  { title: "Estimation Table", subtitle: "" },
-  { title: "Secondary Report", subtitle: "" },
-  { title: "Work Breakdowns", subtitle: "" },
-];
+const keyToSubtitle = {
+  scatterPlot: "Report due dates in a condensed scatter plot",
+  estimationTable: "",
+  secondaryReport: "",
+  workBreakdowns: "",
+};
 
-const Features: FC<FeaturesProps> = () => {
+const toList = (features: Features) => {
+  return Object.entries(features).map(([key, value]) => ({
+    title: keyToTitle[key as keyof Features],
+    subtitle: keyToSubtitle[key as keyof Features],
+    value,
+    key,
+  }));
+};
+
+const Features: FC = () => {
+  const features = useFeatures();
+  const { update, isUpdating } = useUpdateFeatures();
+
   return (
     <div className="flex flex-col gap-y-4">
       <div className="pt-4">
-        <Heading size="medium">Features</Heading>
+        <Heading size="medium">Features {isUpdating && <Spinner size="small" />}</Heading>
       </div>
       <div className="flex flex-col gap-y-8">
         <p className="text-sm">Turn on new features under active development.</p>
         <ul className="flex flex-col gap-y-8">
-          {features.map((feature) => (
+          {toList(features).map((feature) => (
             <li key={feature.title}>
-              <FeatureToggle {...feature} />
+              <FeatureToggle
+                {...feature}
+                disabled={isUpdating}
+                checked={feature.value}
+                onChange={(newValue) => {
+                  update({ ...features, [feature.key]: newValue });
+                }}
+              />
             </li>
           ))}
         </ul>
