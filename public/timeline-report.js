@@ -24,6 +24,7 @@ import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
+import Filters from "./react/Filters";
 import SampleDataNotice from "./react/SampleDataNotice";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
@@ -50,7 +51,7 @@ export class TimelineReport extends StacheElement {
     
         <compare-slider class='flex-grow px-2'
           compareToTime:to="compareToTime"></compare-slider>
-
+        <div id="filters"></div>
         <select-view-settings
           jiraHelpers:from="this.jiraHelpers"
           releasesToShow:to="this.releasesToShow"
@@ -203,6 +204,8 @@ export class TimelineReport extends StacheElement {
         },
       })
     );
+
+    createRoot(document.getElementById("filters")).render(createElement(Filters));
 
     getTheme(this.routeData.storage)
       .then(applyThemeToCssVars)

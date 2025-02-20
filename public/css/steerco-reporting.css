@@ -358,3 +358,7 @@ details.rounded-lg-gray-100-on-white summary {
     -moz-appearance: textfield; /* firefox */
   }
 }
+
+#filters-nested-modal-visibility-override [role="menu"] {
+  overflow: visible;
+}
