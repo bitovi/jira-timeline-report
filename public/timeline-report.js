@@ -51,7 +51,7 @@ export class TimelineReport extends StacheElement {
     
         <compare-slider class='flex-grow px-2'
           compareToTime:to="compareToTime"></compare-slider>
-        <div id="filters"></div>
+        <div id="filters" class="self-end pb-1"></div>
         <select-view-settings
           jiraHelpers:from="this.jiraHelpers"
           releasesToShow:to="this.releasesToShow"
