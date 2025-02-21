@@ -11,8 +11,8 @@ interface ReportSettingsProps {
 
 const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
   return (
-    <>
-      <div className="pt-6 pb-1">
+    <div className="px-6 pt-6 pb-2">
+      <div className="pb-1">
         <Heading size="xsmall">
           <span className="uppercase">Report Settings</span>
         </Heading>
@@ -52,7 +52,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
           Connect with Bitovi
         </SmallLink>
       </div>
-    </>
+    </div>
   );
 };
 
