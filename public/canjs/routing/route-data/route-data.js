@@ -214,13 +214,12 @@ export class RouteData extends ObservableObject {
           return allTeamData;
         })
         .then((allTeamData) => {
-          debugger;
           const normalizedConfig = createNormalizeConfiguration(allTeamData);
           return normalizedConfig;
         })
         .catch((e) => {
           // Could fail because storage hasn't been setup yet
-          console.warn("could not have team data", e)
+          console.warn("could not have team data", e);
           return {};
         })
         .then(({ fields, ...baseNormalizeOptions }) => {
@@ -235,8 +234,8 @@ export class RouteData extends ObservableObject {
     },
     baseNormalizeOptions: {
       async() {
-        return this.baseNormalizeOptionsPromise
-      }
+        return this.baseNormalizeOptionsPromise;
+      },
     },
     get fieldsToRequestPromise() {
       return this.baseNormalizeOptionsAndFieldsToRequestPromise.then(({ fields }) => fields);
@@ -250,10 +249,9 @@ export class RouteData extends ObservableObject {
 
     // THESE are settable by react
     fieldsToRequest: makeAsyncFromObservableButStillSettableProperty("fieldsToRequestPromise"),
-    
+
     // This can get set, but needs some base loaded normalize option
     normalizeOptions: makeAsyncFromObservableButStillSettableProperty("normalizeOptionsPromise"),
-
 
     derivedIssuesRequestData: {
       value({ listenTo, resolve }) {
@@ -282,7 +280,7 @@ export class RouteData extends ObservableObject {
         resolveValueFromPromise();
       },
     },
-    get allStatusesSorted(){
+    get allStatusesSorted() {
       if (this.derivedIssues) {
         return allStatusesSorted(this.derivedIssues);
       } else {
