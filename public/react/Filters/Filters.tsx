@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import routeData from "../../canjs/routing/route-data";
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
 import { useQueryParams } from "../hooks/useQueryParams";
@@ -48,11 +48,29 @@ const useStatuses = () => {
   return formatStatuses(statuses || []);
 };
 
-const useSelectedStatuses = () => {
+const useSelectedStatuses = (mode: "show" | "hide") => {
+  const statuses = useStatuses();
   const statusesToShow = useCanObservable<string>(value.from(routeData, "statusesToShow"));
   const statusesToRemove = useCanObservable<string>(value.from(routeData, "statusesToRemove"));
 
-  return { statusesToShow, statusesToRemove };
+  const selectedStatuses = mode === "show" ? statusesToShow : statusesToRemove;
+  const setSelectedStatus = (newStatuses: Readonly<{ value: string }[]> | { value: string }[]) => {
+    const url = new URL(window.location.toString());
+
+    // TODO: handle empty newStatues
+    url.searchParams.set(
+      mode === "show" ? "statusesToShow" : "statusesToRemove",
+      newStatuses.map(({ value }) => value).join(",")
+    );
+
+    pushStateObservable.set(url.search);
+  };
+
+  return {
+    statuses,
+    selectedStatuses: convertToSelectValue(statuses, selectedStatuses),
+    setSelectedStatus,
+  };
 };
 
 const convertToSelectValue = (
@@ -65,7 +83,6 @@ const convertToSelectValue = (
   const decoded = decodeURIComponent(selectedStatuses);
   const members = decoded.split(",").filter(Boolean);
 
-  console.log({ members });
   if (!members.length) {
     return undefined;
   }
@@ -76,29 +93,61 @@ const convertToSelectValue = (
   }));
 };
 
+const useUnknownInitiatives = () => {
+  const hideUnknownInitiatives = useCanObservable<boolean>(
+    value.from(routeData, "hideUnknownInitiatives")
+  );
+
+  const setHideUnknownInitiatives = (newHideUnknownInitiatives: boolean) => {
+    const url = new URL(window.location.toString());
+
+    url.searchParams.delete("hideUnknownInitiatives");
+
+    if (newHideUnknownInitiatives) {
+      url.searchParams.set("hideUnknownInitiatives", "true");
+    }
+
+    pushStateObservable.set(url.search);
+  };
+
+  return [hideUnknownInitiatives, setHideUnknownInitiatives] as const;
+};
+
+const useShowOnlySemverReleases = () => {
+  const showOnlySemverReleases = useCanObservable<boolean>(
+    value.from(routeData, "showOnlySemverReleases")
+  );
+
+  const setShowOnlySemverReleases = (newShowOnlySemverReleases: boolean) => {
+    const url = new URL(window.location.toString());
+
+    url.searchParams.delete("showOnlySemverReleases");
+
+    if (newShowOnlySemverReleases) {
+      url.searchParams.set("showOnlySemverReleases", "true");
+    }
+
+    pushStateObservable.set(url.search);
+  };
+
+  return [showOnlySemverReleases, setShowOnlySemverReleases] as const;
+};
+
 const Filters: FC = () => {
   const { primaryIssueType, secondaryIssueType } = useSelectedIssueType();
   const selectedIssueType = primaryIssueType === "Release" ? secondaryIssueType : primaryIssueType;
   const shouldShowReleaseFilters = primaryIssueType === "Release";
 
   const [statusFilterType, setStatusFilterType] = useState<"show" | "hide">("show");
-
-  const statuses = useStatuses();
-  const { statusesToShow, statusesToRemove } = useSelectedStatuses();
-  const selectedStatuses = statusFilterType === "show" ? statusesToShow : statusesToRemove;
-
-  console.log({
-    statusesToShow,
-    statusesToRemove,
-    selectedStatuses,
-    convert: convertToSelectValue(statuses, selectedStatuses),
-    statuses,
-  });
+  const { statuses, selectedStatuses, setSelectedStatus } = useSelectedStatuses(statusFilterType);
 
   const handleStatusFilterChange = (newStatus: "show" | "hide") => {
+    // TODO: move hide to show and show to hide
     setStatusFilterType(newStatus);
   };
 
+  const [hideUnknownInitiatives, setHideUnknownInitiatives] = useUnknownInitiatives();
+  const [showOnlySemverReleases, setShowOnlySemverReleases] = useShowOnlySemverReleases();
   const releases: { label: string; value: string }[] = [];
 
   return (
@@ -123,13 +172,8 @@ const Filters: FC = () => {
               isSearchable
               className="flex-1"
               options={statuses}
-              value={convertToSelectValue(statuses, selectedStatuses)}
-              onChange={(value) => {
-                const url = new URL(window.location.toString());
-
-                url.searchParams.set("statusesToShow", value.map(({ value }) => value).join(","));
-                pushStateObservable.set(url.search);
-              }}
+              value={selectedStatuses}
+              onChange={setSelectedStatus}
             />
           </FiltersGrid>
           <Hr className="my-6" />
@@ -145,12 +189,22 @@ const Filters: FC = () => {
             <p className="uppercase text-sm font-semibold text-zinc-800">Filter Options</p>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Toggle onChange={() => {}} />
+                <Toggle
+                  isChecked={hideUnknownInitiatives}
+                  onChange={({ target }) => {
+                    setHideUnknownInitiatives(!target.checked);
+                  }}
+                />
                 <label className="text-sm">Hide {selectedIssueType} without dates</label>
               </div>
               {shouldShowReleaseFilters && (
                 <div className="flex items-center gap-2">
-                  <Toggle onChange={() => {}} />
+                  <Toggle
+                    isChecked={showOnlySemverReleases}
+                    onChange={({ target }) => {
+                      setShowOnlySemverReleases(target.checked);
+                    }}
+                  />
                   <label className="text-sm">Limit to SemVer releases only</label>
                 </div>
               )}
