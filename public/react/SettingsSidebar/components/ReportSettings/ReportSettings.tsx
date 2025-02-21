@@ -42,8 +42,8 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
       </SidebarButton>
       <div className="fixed bottom-4 grid justify-items-center gap-2 p-1">
         <img className="pb-2" width="24px" src="./images/_QuestionCircleIcon_.svg" aria-hidden />
-        <SmallLink href="https://github.com/bitovi/jira-timeline-report/tree/main?tab=readme-ov-file#getting-started">
-          Read the guide
+        <SmallLink href="https://bitovi.atlassian.net/wiki/spaces/StatusReportsForJira/overview">
+          Read the guides
         </SmallLink>
         <SmallLink href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira.html">
           APM Training
