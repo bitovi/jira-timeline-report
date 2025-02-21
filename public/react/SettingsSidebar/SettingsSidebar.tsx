@@ -38,8 +38,9 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
 
   return (
     <div className="h-full min-w-40">
-      {showSidebarBranding && <Branding />}
-      {!showSettings && <ReportSettings changeSettings={changeSettings} />}
+      {!showSettings && (
+        <ReportSettings showSidebarBranding={showSidebarBranding} changeSettings={changeSettings} />
+      )}
       {showSettings === "SOURCES" && (
         <SidebarLayout onGoBack={returnToSettings} className="w-96">
           <IssueSource />
@@ -55,7 +56,6 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
         <div className="h-full">
           <TeamConfiguration
             derivedIssuesObservable={derivedIssuesObservable}
-            showSidebarBranding={showSidebarBranding}
             onUpdate={onUpdateTeamsConfiguration}
             onBackButtonClicked={() => returnToSettings()}
           />

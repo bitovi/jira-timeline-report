@@ -4,14 +4,17 @@ import React from "react";
 import Heading from "@atlaskit/heading";
 
 import SidebarButton from "../../../components/SidebarButton";
+import Branding from "../Branding";
 
 interface ReportSettingsProps {
   changeSettings: (setting: string) => void;
+  showSidebarBranding: boolean;
 }
 
-const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings }) => {
+const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBranding }) => {
   return (
     <div className="px-6 pt-6 pb-2">
+      {showSidebarBranding && <Branding />}
       <div className="pb-1">
         <Heading size="xsmall">
           <span className="uppercase">Report Settings</span>
