@@ -8,6 +8,7 @@ import {
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
   isDerivedRelease,
+  isDerivedIssue
 } from "../rollup";
 
 export type WithWarningIssues<T = unknown> = { warningIssues: IssueOrRelease<T>[] };
@@ -39,12 +40,15 @@ export function rollupWarningIssuesForGroupedHierarchy<T>(groupedHierarchy: Issu
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(issueOrRelease, children: IssueOrRelease<T>[][]) {
       if (isDerivedRelease(issueOrRelease)) return [...children.flat(1)];
-
+      
       const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
-      const addParent = lowerCaseLabels.some((label) => label === "warning")
-        ? [issueOrRelease]
-        : [];
+      const hasBlockedLabel = lowerCaseLabels.some((label) => label === "warning");
+      const hasBlockedStatus = isDerivedIssue(issueOrRelease) && issueOrRelease?.status === "warning";
 
+      const addParent =
+      hasBlockedLabel || hasBlockedStatus
+          ? [issueOrRelease]
+          : [];
       return [...children.flat(1), ...addParent];
     },
   });
