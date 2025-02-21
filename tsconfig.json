@@ -30,7 +30,7 @@
   "include": [
     "public/**/*.ts",
     "public/**/*.tsx"
-, "public/react/Filters/hooks/useSelectedIssueType"  ],
+  ],
   "exclude": [
     "node_modules",
     "public/dist",
