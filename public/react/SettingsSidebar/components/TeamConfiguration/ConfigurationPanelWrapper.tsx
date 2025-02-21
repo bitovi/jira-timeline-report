@@ -1,8 +1,6 @@
 import type { FC } from "react";
 import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
 import type { CanObservable } from "../../../hooks/useCanObservable";
-import type { AppStorage } from "../../../../jira/storage/common";
-import type { Jira } from "../../../../jira-oidc-helpers";
 
 import React, { Suspense } from "react";
 import { ErrorBoundary } from "@sentry/react";
@@ -14,7 +12,6 @@ interface TeamConfigurationWrapperProps {
   onBackButtonClicked: () => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig & { fields: string[] }>) => void;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
-  showSidebarBranding: boolean;
 }
 
 const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {

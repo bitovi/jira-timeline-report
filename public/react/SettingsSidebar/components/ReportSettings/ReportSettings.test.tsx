@@ -7,7 +7,7 @@ import ReportSettings from "./ReportSettings";
 
 describe("ReportSettings Component", () => {
   it("renders without crashing", () => {
-    render(<ReportSettings changeSettings={vi.fn()} />);
+    render(<ReportSettings showSidebarBranding changeSettings={vi.fn()} />);
 
     const reportSettingsHeading = screen.getByText(/report settings/i);
     expect(reportSettingsHeading).toBeInTheDocument();
