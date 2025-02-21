@@ -23,10 +23,10 @@ const useSelectedIssueType = () => {
   return { primaryIssueType, secondaryIssueType };
 };
 
-const formatStatuses = (statuses: { status: string; team: { name: string } }[]) => {
+const getStatusesFromDerivedIssues = (derivedIssues: MinimalDerivedIssue[]) => {
   const statusCount: Record<string, number> = {};
 
-  for (const { status } of statuses) {
+  for (const { status } of derivedIssues) {
     if (!statusCount[status]) {
       statusCount[status] = 0;
     }
@@ -34,18 +34,58 @@ const formatStatuses = (statuses: { status: string; team: { name: string } }[]) 
     statusCount[status]++;
   }
 
-  return [...new Set(statuses.map(({ status }) => status))].map((status) => ({
+  return [...new Set(derivedIssues.map(({ status }) => status))].map((status) => ({
     label: `${status} (${statusCount[status]})`,
     value: status,
   }));
 };
 
-const useStatuses = () => {
-  const statuses = useCanObservable<{ status: string; team: { name: string } }[] | undefined>(
+type MinimalDerivedIssue = {
+  status: string;
+  team: { name: string };
+  releases: Array<{ name: string }>;
+};
+
+const useDerivedIssues = () => {
+  const derivedIssues = useCanObservable<MinimalDerivedIssue[] | undefined>(
     value.from(routeData, "derivedIssues")
   );
 
-  return formatStatuses(statuses || []);
+  return derivedIssues;
+};
+
+const useStatuses = () => {
+  const derivedIssues = useDerivedIssues();
+
+  return getStatusesFromDerivedIssues(derivedIssues || []);
+};
+
+const getReleasesFromDerivedIssues = (derivedIssues: MinimalDerivedIssue[]) => {
+  const releases = derivedIssues.map(({ releases }) => releases.map(({ name }) => name)).flat(1);
+
+  return releases.map((release) => ({
+    label: release,
+    value: release,
+  }));
+};
+
+const useReleases = () => {
+  const derivedIssues = useDerivedIssues();
+
+  return getReleasesFromDerivedIssues(derivedIssues || []);
+};
+
+const useSelectedReleases = () => {
+  const releases = useReleases();
+
+  const setSelectedReleases = (
+    newReleases: Readonly<{ value: string }[]> | { value: string }[]
+  ) => {
+    //@ts-expect-error
+    routeData.releasesToShow = newReleases.map(({ value }) => value).join(",");
+  };
+
+  return [releases, setSelectedReleases] as const;
 };
 
 const useSelectedStatuses = (mode: "show" | "hide") => {
@@ -55,21 +95,35 @@ const useSelectedStatuses = (mode: "show" | "hide") => {
 
   const selectedStatuses = mode === "show" ? statusesToShow : statusesToRemove;
   const setSelectedStatus = (newStatuses: Readonly<{ value: string }[]> | { value: string }[]) => {
-    const url = new URL(window.location.toString());
+    //@ts-expect-error
+    routeData[mode === "show" ? "statusesToShow" : "statusesToRemove"] = newStatuses
+      .map(({ value }) => value)
+      .join(",");
+  };
 
-    // TODO: handle empty newStatues
-    url.searchParams.set(
-      mode === "show" ? "statusesToShow" : "statusesToRemove",
-      newStatuses.map(({ value }) => value).join(",")
-    );
-
-    pushStateObservable.set(url.search);
+  const swapShowHideStatusesIfNeeded = (newMode: "show" | "hide") => {
+    if (newMode === "show") {
+      if (statusesToRemove.length) {
+        // @ts-expect-error
+        routeData.statusesToShow = statusesToRemove;
+      }
+      // @ts-expect-error
+      routeData.statusesToRemove = "";
+    } else {
+      if (statusesToShow.length) {
+        // @ts-expect-error
+        routeData.statusesToRemove = statusesToShow;
+      }
+      // @ts-expect-error
+      routeData.statusesToShow = "";
+    }
   };
 
   return {
     statuses,
     selectedStatuses: convertToSelectValue(statuses, selectedStatuses),
     setSelectedStatus,
+    swapShowHideStatusesIfNeeded,
   };
 };
 
@@ -99,15 +153,8 @@ const useUnknownInitiatives = () => {
   );
 
   const setHideUnknownInitiatives = (newHideUnknownInitiatives: boolean) => {
-    const url = new URL(window.location.toString());
-
-    url.searchParams.delete("hideUnknownInitiatives");
-
-    if (newHideUnknownInitiatives) {
-      url.searchParams.set("hideUnknownInitiatives", "true");
-    }
-
-    pushStateObservable.set(url.search);
+    // @ts-expect-error
+    routeData.hideUnknownInitiatives = newHideUnknownInitiatives;
   };
 
   return [hideUnknownInitiatives, setHideUnknownInitiatives] as const;
@@ -119,15 +166,8 @@ const useShowOnlySemverReleases = () => {
   );
 
   const setShowOnlySemverReleases = (newShowOnlySemverReleases: boolean) => {
-    const url = new URL(window.location.toString());
-
-    url.searchParams.delete("showOnlySemverReleases");
-
-    if (newShowOnlySemverReleases) {
-      url.searchParams.set("showOnlySemverReleases", "true");
-    }
-
-    pushStateObservable.set(url.search);
+    // @ts-expect-error
+    routeData.showOnlySemverReleases = newShowOnlySemverReleases;
   };
 
   return [showOnlySemverReleases, setShowOnlySemverReleases] as const;
@@ -139,16 +179,18 @@ const Filters: FC = () => {
   const shouldShowReleaseFilters = primaryIssueType === "Release";
 
   const [statusFilterType, setStatusFilterType] = useState<"show" | "hide">("show");
-  const { statuses, selectedStatuses, setSelectedStatus } = useSelectedStatuses(statusFilterType);
+  const { statuses, selectedStatuses, setSelectedStatus, swapShowHideStatusesIfNeeded } =
+    useSelectedStatuses(statusFilterType);
 
   const handleStatusFilterChange = (newStatus: "show" | "hide") => {
     // TODO: move hide to show and show to hide
     setStatusFilterType(newStatus);
+    swapShowHideStatusesIfNeeded(newStatus);
   };
 
   const [hideUnknownInitiatives, setHideUnknownInitiatives] = useUnknownInitiatives();
   const [showOnlySemverReleases, setShowOnlySemverReleases] = useShowOnlySemverReleases();
-  const releases: { label: string; value: string }[] = [];
+  const [releases, setSelectedReleases] = useSelectedReleases();
 
   return (
     // Don't touch this id, its a hack to change the overflow of the dropdown menu
@@ -192,10 +234,13 @@ const Filters: FC = () => {
                 <Toggle
                   isChecked={hideUnknownInitiatives}
                   onChange={({ target }) => {
-                    setHideUnknownInitiatives(!target.checked);
+                    setHideUnknownInitiatives(target.checked);
                   }}
                 />
-                <label className="text-sm">Hide {selectedIssueType} without dates</label>
+                <label className="text-sm">
+                  Hide {shouldShowReleaseFilters ? "Releases" : selectedIssueType + "s"} without
+                  dates
+                </label>
               </div>
               {shouldShowReleaseFilters && (
                 <div className="flex items-center gap-2">
