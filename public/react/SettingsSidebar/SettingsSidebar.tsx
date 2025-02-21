@@ -9,12 +9,11 @@ import TeamConfiguration from "./components/TeamConfiguration";
 import { CanObservable, useCanObservable } from "../hooks/useCanObservable";
 import Branding from "./components/Branding";
 import ReportSettings from "./components/ReportSettings";
-import GoBackButton from "./components/GoBackButton";
 import IssueSource from "./components/IssueSource";
 import TimingCalculation from "./components/TimingCalculation";
 import { NormalizeIssueConfig } from "../../jira/normalized/normalize";
 import Theme from "./components/Theme";
-import SidebarLayout from "./components/SidebarLayout/SidebarLayout";
+import SidebarLayout from "./components/SidebarLayout";
 
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
