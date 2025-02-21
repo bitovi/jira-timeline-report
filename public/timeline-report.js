@@ -54,7 +54,6 @@ export class TimelineReport extends StacheElement {
         <div id="filters" class="self-end pb-1"></div>
         <select-view-settings
           jiraHelpers:from="this.jiraHelpers"
-          releasesToShow:to="this.releasesToShow"
           derivedIssues:from="this.routeData.derivedIssues"
           ></select-view-settings>
       </div>
@@ -338,10 +337,12 @@ export class TimelineReport extends StacheElement {
         return false;
       }
 
-      if (this?.releasesToShow?.length) {
+      if (this?.routeData.releasesToShow?.length) {
         // O(n^2)
         const releases = issueOrRelease.releases.map((r) => r.name);
-        if (releases.filter((release) => this.releasesToShow.includes(release)).length === 0) {
+        if (
+          releases.filter((release) => this.routeData.releasesToShow.includes(release)).length === 0
+        ) {
           return false;
         }
       }

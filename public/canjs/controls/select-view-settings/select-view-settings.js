@@ -96,33 +96,6 @@ class SelectViewSettingsDropdown extends StacheElement {
 
         {{# if(this.routeData.primaryIssueType) }}
             <div class="my-4">
-                <div class="font-bold uppercase text-slate-300 text-xs">Status Filters:</div>
-
-                <div class="grid gap-2" style="grid-template-columns: max-content max-content">
-                    <label>Show only {{this.firstIssueTypeWithStatuses}} statuses:</label>
-                
-                    <status-filter 
-                        statuses:from="this.routeData.allStatusesSorted"
-                        param:raw="statusesToShow"
-                        selectedStatuses:bind="this.routeData.statusesToShow"
-                        inputPlaceholder:raw="Search for statuses"
-                        style="max-width: 400px;">
-                    </status-filter>
-
-                    <label>Hide {{this.firstIssueTypeWithStatuses}} statuses:</label>
-
-                    <status-filter 
-                        statuses:from="this.routeData.allStatusesSorted" 
-                        param:raw="statusesToRemove"
-                        selectedStatuses:bind="this.routeData.statusesToRemove"
-                        inputPlaceholder:raw="Search for statuses"
-                        style="max-width: 400px;">
-                        </status-filter>
-
-                    
-                </div>
-            </div>
-            <div class="my-4">
                 <div class="font-bold uppercase text-slate-300 text-xs">Release Filters:</div>
 
                 <div class="grid gap-2" style="grid-template-columns: max-content max-content">
@@ -131,28 +104,12 @@ class SelectViewSettingsDropdown extends StacheElement {
                     <status-filter 
                         statuses:from="this.releases"
                         param:raw="releasesToShow"
-                        selectedStatuses:to="this.releasesToShow"
+                        selectedStatuses:to="this.routeData.releasesToShow"
                         inputPlaceholder:raw="Search for releases"
                         style="max-width: 400px;"></status-filter>
 
                     
                 </div>
-
-                {{# eq(this.routeData.primaryIssueType, "Release") }}
-                        <label class=''>Show only Semver-like releases</label>
-                        <input type='checkbox' 
-                            class='self-start mt-1.5'  checked:bind='this.routeData.P'/>
-                        <p class="m-0">Format: <code>[NAME]_[D.D.D]</code>. Examples:
-                        <code>ACME_1.2.3</code>, <code>ACME_CHECKOUT_1</code>, <code>1.2</code>.
-                        </p>
-                {{/ }}
-            </div>
-
-            <div class="my-4">
-                <div class="font-bold uppercase text-slate-300 text-xs">Timing Filters:</div>
-
-                <input type='checkbox' 
-                    class='self-start mt-1.5' checked:bind='this.routeData.hideUnknownInitiatives'/> Hide {{this.routeData.primaryIssueType}}s without dates 
             </div>
         {{/ if }}
 

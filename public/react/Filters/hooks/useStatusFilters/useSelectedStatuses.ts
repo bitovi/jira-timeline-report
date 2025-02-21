@@ -10,10 +10,10 @@ export const useSelectedStatuses = (mode: "show" | "hide") => {
 
   const selectedStatuses = mode === "show" ? statusesToShow : statusesToRemove;
   const setSelectedStatus = (newStatuses: Readonly<{ value: string }[]> | { value: string }[]) => {
+    const param = mode === "show" ? "statusesToShow" : "statusesToRemove";
+
     //@ts-expect-error
-    routeData[mode === "show" ? "statusesToShow" : "statusesToRemove"] = newStatuses
-      .map(({ value }) => value)
-      .join(",");
+    routeData[param] = newStatuses.map(({ value }) => value);
   };
 
   const swapShowHideStatusesIfNeeded = (newMode: "show" | "hide") => {

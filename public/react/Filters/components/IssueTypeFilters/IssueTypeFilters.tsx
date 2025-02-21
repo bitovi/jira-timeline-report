@@ -9,6 +9,7 @@ import Toggle from "@atlaskit/toggle";
 interface IssueTypeFiltersProps {
   isRelease: boolean;
   releases: { label: string; value: string }[];
+  selectedReleases: { label: string; value: string }[];
   setSelectedReleases: (releases: Readonly<{ value: string }[]> | { value: string }[]) => void;
   hideUnknownInitiatives: boolean;
   setHideUnknownInitiatives: (hideUnknownInitiatives: boolean) => void;
@@ -21,6 +22,7 @@ const IssueTypeFilters: FC<IssueTypeFiltersProps> = ({
   isRelease,
   selectedIssueType,
   releases,
+  selectedReleases,
   setSelectedReleases,
   hideUnknownInitiatives,
   setHideUnknownInitiatives,
@@ -37,6 +39,7 @@ const IssueTypeFilters: FC<IssueTypeFiltersProps> = ({
             isMulti
             isSearchable
             options={releases}
+            value={selectedReleases}
             onChange={setSelectedReleases}
           />
         </>
