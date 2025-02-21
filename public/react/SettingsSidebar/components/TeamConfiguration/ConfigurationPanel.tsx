@@ -17,7 +17,6 @@ export interface ConfigurationPanelProps {
   onBackButtonClicked: () => void;
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
-  showSidebarBranding: boolean;
 }
 
 type TeamName = "global" | (string & {});
@@ -25,7 +24,6 @@ type TeamName = "global" | (string & {});
 const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
   onBackButtonClicked,
   derivedIssuesObservable,
-  showSidebarBranding,
   ...configurationProps
 }) => {
   const jiraFields = useJiraIssueFields();
@@ -35,8 +33,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
 
   return (
     <div className="w-full h-full flex">
-      <div className="w-56 border-r border-neutral-30 pr-4 flex flex-col">
-        {showSidebarBranding && <Branding />}
+      <div className="w-60 border-r border-neutral-30 px-6 py-2 flex flex-col">
         <SidebarButton onClick={onBackButtonClicked}>
           <ArrowLeftCircleIcon label="go back" />
           Go back
@@ -65,32 +62,6 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
           </div>
         )}
       </StorageCheck>
-    </div>
-  );
-};
-
-// TODO: consolidate this with the branding from timeline-configuration
-const Branding: FC<{}> = () => {
-  return (
-    <div className="flex gap-2 pt-4">
-      <div className="flex-none pt-1">
-        <img alt="Bitovi" src="./images/eggbert-light-minimum.svg" />
-      </div>
-      <div className="flex-auto grow items-baseline leading-4">
-        <div className="color-gray-900 underline-on-hover bitovi-font-poppins font-bold">
-          <a href="https://github.com/bitovi/jira-timeline-report" target="_blank">
-            Status Reports
-          </a>
-        </div>
-        <div className="bitovi-poppins text-neutral-100 text-sm">
-          <a
-            href="https://www.bitovi.com/services/agile-project-management-consulting"
-            target="_blank"
-          >
-            by Bitovi
-          </a>
-        </div>
-      </div>
     </div>
   );
 };

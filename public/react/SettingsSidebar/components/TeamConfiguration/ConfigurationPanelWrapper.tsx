@@ -22,7 +22,7 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
     <ErrorBoundary fallback={({ error }) => <ConfigurationPanelErrorBoundary error={error} />}>
       <Suspense
         fallback={
-          <div className=" w-56 p-4 flex justify-center h-full items-center">
+          <div className="w-60 p-4 flex justify-center h-full items-center">
             <Spinner size="large" label="loading" />
           </div>
         }
