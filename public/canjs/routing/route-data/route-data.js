@@ -214,11 +214,13 @@ export class RouteData extends ObservableObject {
           return allTeamData;
         })
         .then((allTeamData) => {
+          debugger;
           const normalizedConfig = createNormalizeConfiguration(allTeamData);
           return normalizedConfig;
         })
-        .catch(() => {
+        .catch((e) => {
           // Could fail because storage hasn't been setup yet
+          console.warn("could not have team data", e)
           return {};
         })
         .then(({ fields, ...baseNormalizeOptions }) => {
@@ -231,25 +233,34 @@ export class RouteData extends ObservableObject {
         ({ baseNormalizeOptions }) => baseNormalizeOptions
       );
     },
+    baseNormalizeOptions: {
+      async() {
+        return this.baseNormalizeOptionsPromise
+      }
+    },
     get fieldsToRequestPromise() {
       return this.baseNormalizeOptionsAndFieldsToRequestPromise.then(({ fields }) => fields);
     },
     get normalizeOptionsPromise() {
       return configurationPromise({
         serverInfoPromise: this.serverInfoPromise,
-        normalizeObservable: value.from(this, "baseNormalizeOptionsPromise"),
+        normalizeObservable: value.from(this, "baseNormalizeOptions"),
       });
     },
 
     // THESE are settable by react
     fieldsToRequest: makeAsyncFromObservableButStillSettableProperty("fieldsToRequestPromise"),
+    
+    // This can get set, but needs some base loaded normalize option
     normalizeOptions: makeAsyncFromObservableButStillSettableProperty("normalizeOptionsPromise"),
+
+
     derivedIssuesRequestData: {
       value({ listenTo, resolve }) {
         return derivedIssuesRequestData(
           {
             rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
-            configurationPromise: value.from(this, "normalizeOptionsPromise"),
+            configurationPromise: value.from(this, "normalizeOptions"),
           },
           { listenTo, resolve }
         );

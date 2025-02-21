@@ -215,6 +215,7 @@ export class TimelineReport extends StacheElement {
         jiraHelpers: this.jiraHelpers,
         linkBuilder: this.linkBuilder,
         onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
+          
           queues.batch.start();
 
           routeData.fieldsToRequest = fields;
