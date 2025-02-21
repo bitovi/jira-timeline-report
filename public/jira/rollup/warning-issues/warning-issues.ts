@@ -42,11 +42,11 @@ export function rollupWarningIssuesForGroupedHierarchy<T>(groupedHierarchy: Issu
       if (isDerivedRelease(issueOrRelease)) return [...children.flat(1)];
       
       const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
-      const hasBlockedLabel = lowerCaseLabels.some((label) => label === "warning");
-      const hasBlockedStatus = isDerivedIssue(issueOrRelease) && issueOrRelease?.status === "warning";
+      const hasWarningLabel = lowerCaseLabels.some((label) => label === "warning");
+      const hasWarningStatus = isDerivedIssue(issueOrRelease) && issueOrRelease?.status === "warning";
 
       const addParent =
-      hasBlockedLabel || hasBlockedStatus
+      hasWarningLabel || hasWarningStatus
           ? [issueOrRelease]
           : [];
       return [...children.flat(1), ...addParent];
