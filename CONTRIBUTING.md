@@ -76,7 +76,7 @@ ngrok http 3000
 
 2. After the tunnel starts, you need to create the `atlassian-connect.json` file by running the following command, replacing`--name` with your name and `--url` with the fully qualified url from ngrok.
 
-```
+```sh
 npm run create:atlassian-connect -- --environment=local --name=<your-name-here> --url=<fully-qualified-ngrok-url>
 ```
 
