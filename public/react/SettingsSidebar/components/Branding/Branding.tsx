@@ -6,7 +6,7 @@ interface BrandingProps {}
 
 const Branding: FC<BrandingProps> = () => {
   return (
-    <div className="flex gap-2 pt-4">
+    <div className="flex gap-2 px-6 pt-4">
       <div className="flex-none pt-1">
         <img src="./images/eggbert-light-minimum.svg" />
       </div>
