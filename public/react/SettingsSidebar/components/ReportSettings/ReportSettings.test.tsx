@@ -19,7 +19,7 @@ describe("ReportSettings Component", () => {
       expect(button).toBeInTheDocument();
     });
 
-    const links = [/read the guide/i, /apm training/i, /connect with bitovi/i];
+    const links = [/read the guides/i, /apm training/i, /connect with bitovi/i];
 
     links.forEach((name) => {
       const link = screen.getByRole("link", { name });
