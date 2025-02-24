@@ -5,7 +5,7 @@ import Select from "@atlaskit/select";
 
 import FilterGrid from "../../shared/components/FilterGrid";
 import ToggleButton from "../../../components/ToggleButton";
-import VisuallyHidden from "@atlaskit/visually-hidden/dist/types/visually-hidden";
+import VisuallyHidden from "@atlaskit/visually-hidden";
 
 interface StatusFilterProps {
   statusFilterType: "hide" | "show";
