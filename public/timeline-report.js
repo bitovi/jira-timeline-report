@@ -24,6 +24,7 @@ import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
+import Filters from "./react/Filters";
 import SampleDataNotice from "./react/SampleDataNotice";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
@@ -50,10 +51,9 @@ export class TimelineReport extends StacheElement {
     
         <compare-slider class='flex-grow px-2'
           compareToTime:to="compareToTime"></compare-slider>
-
+        <div id="filters" class="self-end pb-1"></div>
         <select-view-settings
           jiraHelpers:from="this.jiraHelpers"
-          releasesToShow:to="this.releasesToShow"
           derivedIssues:from="this.routeData.derivedIssues"
           ></select-view-settings>
       </div>
@@ -204,6 +204,8 @@ export class TimelineReport extends StacheElement {
       })
     );
 
+    createRoot(document.getElementById("filters")).render(createElement(Filters));
+
     getTheme(this.routeData.storage)
       .then(applyThemeToCssVars)
       .catch((error) => console.error("Something went wrong getting the theme", error));
@@ -336,10 +338,8 @@ export class TimelineReport extends StacheElement {
         return false;
       }
 
-      if (this?.releasesToShow?.length) {
-        // O(n^2)
-        const releases = issueOrRelease.releases.map((r) => r.name);
-        if (releases.filter((release) => this.releasesToShow.includes(release)).length === 0) {
+      if (this?.routeData.releasesToShow?.length) {
+        if (!this.routeData.releasesToShow.includes(issueOrRelease.name)) {
           return false;
         }
       }

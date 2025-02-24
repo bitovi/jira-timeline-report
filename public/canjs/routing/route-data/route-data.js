@@ -440,6 +440,7 @@ export class RouteData extends ObservableObject {
     statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
     statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
     planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
+    releasesToShow: makeArrayOfStringsQueryParamValue("releasesToShow"),
     groupBy: {
       value({ resolve, lastSet, listenTo }) {
         function getFromParam() {
