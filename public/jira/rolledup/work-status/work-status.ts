@@ -72,7 +72,7 @@ function calculateStatuses<
   const childKeys = getAllWorkTypeRollupChildIssueKeys();
 
   // do the rollup
-  if (isIssue && issueWithPriorTiming.statusCategory === "done") {
+  if (isIssue && issueWithPriorTiming.statusCategory === "Done") {
     timingData.rollup.status = "complete";
     timingData.rollup.statusFrom = { message: "Own status" };
   } else if (
@@ -80,7 +80,7 @@ function calculateStatuses<
     isIssue &&
     childKeys.length &&
     getIssuesByKeys(childKeys).every(
-      (issue) => isDerivedIssue(issue) && issue.statusCategory === "done"
+      (issue) => isDerivedIssue(issue) && issue.statusCategory === "Done"
     )
   ) {
     timingData.rollup.status = "complete";
@@ -88,10 +88,10 @@ function calculateStatuses<
       message: "Children are all done, but the parent is not",
       warning: true,
     };
-  } else if (isIssue && issueWithPriorTiming.blockedStatusIssues.length) {
+  } else if (isIssue && issueWithPriorTiming?.blockedStatusIssues?.length) {
     timingData.rollup.status = "blocked";
     timingData.rollup.statusFrom = { message: "This or a child is in a blocked status" };
-  } else if (isIssue && issueWithPriorTiming.warningIssues.length) {
+  } else if (isIssue && issueWithPriorTiming?.warningIssues?.length) {
     timingData.rollup.status = "warning";
     timingData.rollup.statusFrom = { message: "This or a child is in a warning status" };
   } else {
@@ -154,14 +154,14 @@ function setWorkTypeStatus<T extends IssueOrRelease & WithBlockedStatuses>(
   if (
     timingData?.issueKeys?.length &&
     getIssuesByKeys(timingData.issueKeys).every(
-      (issue) => isDerivedIssue(issue) && issue.statusCategory === "done"
+      (issue) => isDerivedIssue(issue) && issue.statusCategory === "Done"
     )
   ) {
     timingData.status = "complete";
     timingData.statusFrom = { message: "Everything is done" };
   } else if (
     timingData.issueKeys &&
-    getIssuesByKeys(timingData.issueKeys).some((issue) => issue.blockedStatusIssues.length)
+    getIssuesByKeys(timingData.issueKeys).some((issue) => issue?.blockedStatusIssues?.length)
   ) {
     timingData.status = "blocked";
     timingData.statusFrom = { message: "This or a child is in a blocked status" };
