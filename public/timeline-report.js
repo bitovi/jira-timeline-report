@@ -25,10 +25,11 @@ import { createElement } from "react";
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
 import Filters from "./react/Filters";
+import ViewSettings from "./react/ViewSettings";
 import SampleDataNotice from "./react/SampleDataNotice";
+import ViewReports from "./react/ViewReports";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
-import ViewReports from "./react/ViewReports";
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -52,6 +53,7 @@ export class TimelineReport extends StacheElement {
         <compare-slider class='flex-grow px-2'
           compareToTime:to="compareToTime"></compare-slider>
         <div id="filters" class="self-end pb-1"></div>
+        <div id="view-settings" class="self-end pb-1"></div>
         <select-view-settings
           jiraHelpers:from="this.jiraHelpers"
           derivedIssues:from="this.routeData.derivedIssues"
@@ -205,6 +207,7 @@ export class TimelineReport extends StacheElement {
     );
 
     createRoot(document.getElementById("filters")).render(createElement(Filters));
+    createRoot(document.getElementById("view-settings")).render(createElement(ViewSettings));
 
     getTheme(this.routeData.storage)
       .then(applyThemeToCssVars)
@@ -217,7 +220,6 @@ export class TimelineReport extends StacheElement {
         jiraHelpers: this.jiraHelpers,
         linkBuilder: this.linkBuilder,
         onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
-          
           queues.batch.start();
 
           routeData.fieldsToRequest = fields;

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import React from "react";
+import React, { useId } from "react";
 
 import FilterGrid from "../../shared/components/FilterGrid";
 import Select from "@atlaskit/select";
@@ -29,6 +29,9 @@ const IssueTypeFilters: FC<IssueTypeFiltersProps> = ({
   showOnlySemverReleases,
   setShowOnlySemverReleases,
 }) => {
+  const unknownIssueTypeId = useId();
+  const semVerId = useId();
+
   return (
     <FilterGrid>
       {isRelease && (
@@ -48,24 +51,28 @@ const IssueTypeFilters: FC<IssueTypeFiltersProps> = ({
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <Toggle
+            id={unknownIssueTypeId}
             isChecked={hideUnknownInitiatives}
             onChange={({ target }) => {
               setHideUnknownInitiatives(target.checked);
             }}
           />
-          <label className="text-sm">
+          <label className="text-sm" htmlFor={unknownIssueTypeId}>
             Hide {isRelease ? "Releases" : selectedIssueType + "s"} without dates
           </label>
         </div>
         {isRelease && (
           <div className="flex items-center gap-2">
             <Toggle
+              id={semVerId}
               isChecked={showOnlySemverReleases}
               onChange={({ target }) => {
                 setShowOnlySemverReleases(target.checked);
               }}
             />
-            <label className="text-sm">Limit to SemVer releases only</label>
+            <label htmlFor={semVerId} className="text-sm">
+              Limit to SemVer releases only
+            </label>
           </div>
         )}
       </div>
