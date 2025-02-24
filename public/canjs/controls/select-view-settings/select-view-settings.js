@@ -94,27 +94,6 @@ class SelectViewSettingsDropdown extends StacheElement {
         </div>
 
 
-        {{# if(this.routeData.primaryIssueType) }}
-            <div class="my-4">
-                <div class="font-bold uppercase text-slate-300 text-xs">Release Filters:</div>
-
-                <div class="grid gap-2" style="grid-template-columns: max-content max-content">
-                    <label>Show only {{this.firstIssueTypeWithStatuses}}s with releases:</label>
-                
-                    <status-filter 
-                        statuses:from="this.releases"
-                        param:raw="releasesToShow"
-                        selectedStatuses:to="this.routeData.releasesToShow"
-                        inputPlaceholder:raw="Search for releases"
-                        style="max-width: 400px;"></status-filter>
-
-                    
-                </div>
-            </div>
-        {{/ if }}
-
-
-
         <div class="my-4">
             <div class="font-bold uppercase text-slate-300 text-xs">View Options</div>
             <div class="flex mt-2 gap-2 flex-wrap">
