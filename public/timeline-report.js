@@ -338,11 +338,7 @@ export class TimelineReport extends StacheElement {
       }
 
       if (this?.routeData.releasesToShow?.length) {
-        // O(n^2)
-        const releases = issueOrRelease.releases.map((r) => r.name);
-        if (
-          releases.filter((release) => this.routeData.releasesToShow.includes(release)).length === 0
-        ) {
+        if (!this.routeData.releasesToShow.includes(issueOrRelease.name)) {
           return false;
         }
       }
