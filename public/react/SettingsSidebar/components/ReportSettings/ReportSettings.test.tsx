@@ -7,7 +7,7 @@ import ReportSettings from "./ReportSettings";
 
 describe("ReportSettings Component", () => {
   it("renders without crashing", () => {
-    render(<ReportSettings changeSettings={vi.fn()} />);
+    render(<ReportSettings showSidebarBranding changeSettings={vi.fn()} />);
 
     const reportSettingsHeading = screen.getByText(/report settings/i);
     expect(reportSettingsHeading).toBeInTheDocument();
@@ -19,7 +19,7 @@ describe("ReportSettings Component", () => {
       expect(button).toBeInTheDocument();
     });
 
-    const links = [/read the guide/i, /apm training/i, /connect with bitovi/i];
+    const links = [/read the guides/i, /apm training/i, /connect with bitovi/i];
 
     links.forEach((name) => {
       const link = screen.getByRole("link", { name });

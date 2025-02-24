@@ -65,6 +65,7 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
   const totalPointsPerDay = velocity / daysPerSprint;
   const pointsPerDayPerTrack = totalPointsPerDay / parallelWorkLimit;
 
+  const spread = optionsWithDefaults.getTeamSpreadsEffortAcrossDates(issue, optionsWithDefaults);
   return {
     // .summary can come from a "parent"'s fields
     // TODO check what this was supposed to be flag^v
@@ -86,7 +87,7 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
       parallelWorkLimit,
       totalPointsPerDay,
       pointsPerDayPerTrack,
-      spreadEffortAcrossDates: optionsWithDefaults.getTeamSpreadsEffortAcrossDates(issue, optionsWithDefaults),
+      spreadEffortAcrossDates: spread,
     },
     url: optionsWithDefaults.getUrl(issue),
     status: optionsWithDefaults.getStatus(issue),
