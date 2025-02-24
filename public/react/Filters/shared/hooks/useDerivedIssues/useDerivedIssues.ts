@@ -4,6 +4,7 @@ import { useCanObservable } from "../../../../hooks/useCanObservable";
 
 export type MinimalDerivedIssue = {
   status: string;
+  type: string;
   team: { name: string };
   releases: Array<{ name: string }>;
 };
