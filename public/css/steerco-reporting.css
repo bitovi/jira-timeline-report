@@ -359,6 +359,7 @@ details.rounded-lg-gray-100-on-white summary {
   }
 }
 
+#view-settings-nested-modal-visibility-override [role="menu"],
 #filters-nested-modal-visibility-override [role="menu"] {
   overflow: visible;
 }

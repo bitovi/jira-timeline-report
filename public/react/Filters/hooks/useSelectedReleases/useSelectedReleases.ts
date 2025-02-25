@@ -1,9 +1,9 @@
+import type { MinimalDerivedIssue } from "../../../services/issues";
+
 import { value } from "../../../../can";
 import routeData from "../../../../canjs/routing/route-data";
 import { useCanObservable } from "../../../hooks/useCanObservable";
-import type { MinimalDerivedIssue } from "../../shared/hooks/useDerivedIssues";
-
-import { useDerivedIssues } from "../../shared/hooks/useDerivedIssues";
+import { useDerivedIssues } from "../../../services/issues";
 
 export const useSelectedReleases = () => {
   const releases = useSelectableReleases();
