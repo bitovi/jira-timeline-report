@@ -149,8 +149,10 @@ export class TimelineReport extends StacheElement {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
     },
 
-    get features() {
-      return Reflect.getValue(this.featuresPromise);
+    features: {
+      async() {
+        return this.featuresPromise;
+      },
     },
 
     get filteredDerivedIssues() {
