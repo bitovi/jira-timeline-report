@@ -156,15 +156,6 @@ export class TimelineReport extends StacheElement {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
     },
 
-<<<<<<< Updated upstream
-=======
-    features: {
-      async() {
-        return this.featuresPromise;
-      },
-    },
-
->>>>>>> Stashed changes
     get filteredDerivedIssues() {
       if (this.routeData.derivedIssues) {
         if (this.routeData.statusesToExclude?.length) {
@@ -226,7 +217,6 @@ export class TimelineReport extends StacheElement {
         jiraHelpers: this.jiraHelpers,
         linkBuilder: this.linkBuilder,
         onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
-          
           queues.batch.start();
 
           routeData.fieldsToRequest = fields;
