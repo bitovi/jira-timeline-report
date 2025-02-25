@@ -39,6 +39,10 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <img src="/images/team.svg" aria-hidden />
         Teams
       </SidebarButton>
+      <SidebarButton onClick={() => changeSettings("FEATURES")}>
+        <img src="/images/features.svg" aria-hidden />
+        Features
+      </SidebarButton>
       <SidebarButton onClick={() => changeSettings("THEME")}>
         <img src="/images/theme.svg" className="w-[18px]" aria-hidden />
         Theme

@@ -1,4 +1,4 @@
-import { StacheElement, type, queues } from "./can.js";
+import { StacheElement, type, queues, Reflect } from "./can.js";
 
 import routeData from "./canjs/routing/route-data";
 
@@ -12,7 +12,6 @@ import "./canjs/reports/group-grid/group-grid.js";
 
 import "./canjs/controls/select-issue-type/select-issue-type.js";
 import "./canjs/controls/select-report-type/select-report-type.js";
-import "./canjs/controls/select-view-settings/select-view-settings.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
 import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
@@ -25,10 +24,12 @@ import { createElement } from "react";
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
 import Filters from "./react/Filters";
+import ViewSettings from "./react/ViewSettings";
 import SampleDataNotice from "./react/SampleDataNotice";
+import ViewReports from "./react/ViewReports";
+import StatusKeys from "./react/StatusKey";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
-import ViewReports from "./react/ViewReports";
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -47,15 +48,13 @@ export class TimelineReport extends StacheElement {
           jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
         <select-report-type 
-          jiraHelpers:from="this.jiraHelpers"></select-report-type>
-    
+          jiraHelpers:from="this.jiraHelpers"
+          features:from="this.features"></select-report-type>
+          
         <compare-slider class='flex-grow px-2'
           compareToTime:to="compareToTime"></compare-slider>
         <div id="filters" class="self-end pb-1"></div>
-        <select-view-settings
-          jiraHelpers:from="this.jiraHelpers"
-          derivedIssues:from="this.routeData.derivedIssues"
-          ></select-view-settings>
+        <div id="view-settings" class="self-end pb-1"></div>
       </div>
 
       {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
@@ -95,15 +94,8 @@ export class TimelineReport extends StacheElement {
               allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
           {{/ }}
 
-          <div class='p-2'>
-            <span class='color-text-and-bg-new p-2 inline-block'>New</span>
-            <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
-            <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
-            <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
-            <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
-            <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
-            <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
-            <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
+          <div class='p-2 sticky bottom-0 bg-white z-[99]'>
+            <div id='status-keys' on:inserted='this.attachStatusKeys()'></div>
           </div>
 
         </div>
@@ -142,6 +134,7 @@ export class TimelineReport extends StacheElement {
     timingCalculationMethods: type.Any,
     storage: null,
     linkBuilder: null,
+    featuresPromise: null,
 
     showingDebugPanel: { type: Boolean, default: false },
 
@@ -180,6 +173,10 @@ export class TimelineReport extends StacheElement {
     updateFullishHeightSection();
   }
 
+  attachStatusKeys() {
+    createRoot(document.getElementById("status-keys")).render(createElement(StatusKeys, {}));
+  }
+
   async connected() {
     createRoot(document.getElementById("view-reports")).render(
       createElement(ViewReports, {
@@ -211,6 +208,7 @@ export class TimelineReport extends StacheElement {
     );
 
     createRoot(document.getElementById("filters")).render(createElement(Filters));
+    createRoot(document.getElementById("view-settings")).render(createElement(ViewSettings));
 
     getTheme(this.routeData.storage)
       .then(applyThemeToCssVars)

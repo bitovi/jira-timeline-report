@@ -1,10 +1,11 @@
-import type { FC, ComponentProps } from "react";
+import type { FC } from "react";
 
-import React from "react";
+import React, { useId } from "react";
 import Select from "@atlaskit/select";
 
 import FilterGrid from "../../shared/components/FilterGrid";
 import ToggleButton from "../../../components/ToggleButton";
+import VisuallyHidden from "@atlaskit/visually-hidden";
 
 interface StatusFilterProps {
   statusFilterType: "hide" | "show";
@@ -21,6 +22,8 @@ const StatusFilter: FC<StatusFilterProps> = ({
   selectedStatuses,
   setSelectedStatus,
 }) => {
+  const id = useId();
+
   return (
     <FilterGrid>
       <ToggleButton
@@ -31,9 +34,13 @@ const StatusFilter: FC<StatusFilterProps> = ({
         inactiveLabel="Show only"
         activeLabel="Hide"
       />
+      <VisuallyHidden>
+        <label htmlFor={id}>Select statuses to {statusFilterType}</label>
+      </VisuallyHidden>
       <Select
         isMulti
         isSearchable
+        id={id}
         className="flex-1"
         options={statuses}
         value={selectedStatuses}

@@ -6,11 +6,11 @@ import DropdownMenu from "@atlaskit/dropdown-menu";
 import Hr from "../components/Hr";
 import StatusFilter from "./components/StatusFilter";
 import IssueTypeFilters from "./components/IssueTypeFilters";
-import { useSelectedIssueType } from "./hooks/useSelectedIssueType";
 import { useStatusFilters } from "./hooks/useStatusFilters";
 import { useSelectedReleases } from "./hooks/useSelectedReleases";
 import { useShowOnlySemverReleases } from "./hooks/useOnlySemverReleases";
 import { useUnknownInitiatives } from "./hooks/useUnknownInitiatives";
+import { useSelectedIssueType } from "../services/issues/useSelectedIssueType";
 
 const Filters: FC = () => {
   const { selectedIssueType, isRelease } = useSelectedIssueType();
