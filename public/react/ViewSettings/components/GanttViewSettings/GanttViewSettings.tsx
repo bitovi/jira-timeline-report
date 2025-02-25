@@ -16,14 +16,14 @@ import { useSelectedIssueType } from "../../../services/issues";
 const GanttViewSettings: FC = () => {
   const { isRelease } = useSelectedIssueType();
 
-  const isGroupable = !isRelease;
+  const canGroup = !isRelease;
 
   return (
     <div>
       <SettingsSection title="sort by" centered>
         <SortBy />
       </SettingsSection>
-      {isGroupable && (
+      {canGroup && (
         <SettingsSection title="group by" centered>
           <GroupBy />
         </SettingsSection>
