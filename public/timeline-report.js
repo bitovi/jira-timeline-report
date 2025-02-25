@@ -12,7 +12,6 @@ import "./canjs/reports/group-grid/group-grid.js";
 
 import "./canjs/controls/select-issue-type/select-issue-type.js";
 import "./canjs/controls/select-report-type/select-report-type.js";
-import "./canjs/controls/select-view-settings/select-view-settings.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
 import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
@@ -54,10 +53,6 @@ export class TimelineReport extends StacheElement {
           compareToTime:to="compareToTime"></compare-slider>
         <div id="filters" class="self-end pb-1"></div>
         <div id="view-settings" class="self-end pb-1"></div>
-        <select-view-settings
-          jiraHelpers:from="this.jiraHelpers"
-          derivedIssues:from="this.routeData.derivedIssues"
-          ></select-view-settings>
       </div>
 
       {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
