@@ -7,13 +7,13 @@ import routeData from "../../canjs/routing/route-data";
 import TeamConfiguration from "./components/TeamConfiguration";
 
 import { CanObservable, useCanObservable } from "../hooks/useCanObservable";
-import Branding from "./components/Branding";
 import ReportSettings from "./components/ReportSettings";
-import GoBackButton from "./components/GoBackButton";
 import IssueSource from "./components/IssueSource";
 import TimingCalculation from "./components/TimingCalculation";
 import { NormalizeIssueConfig } from "../../jira/normalized/normalize";
 import Theme from "./components/Theme";
+import SidebarLayout from "./components/SidebarLayout";
+import Features from "./components/Features";
 
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
@@ -37,32 +37,39 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
   const returnToSettings = () => changeSettings("");
 
   return (
-    <div className="px-6 py-2 h-full min-w-40 overflow-y-auto">
-      {showSidebarBranding && <Branding />}
-      {!showSettings && <ReportSettings changeSettings={changeSettings} />}
-      {!!showSettings && showSettings !== "TEAMS" && (
-        <GoBackButton hideSettings={returnToSettings} />
+    <div className="h-full min-w-40">
+      {!showSettings && (
+        <ReportSettings showSidebarBranding={showSidebarBranding} changeSettings={changeSettings} />
       )}
       {showSettings === "SOURCES" && (
-        <div className="w-96">
+        <SidebarLayout onGoBack={returnToSettings} className="w-96">
           <IssueSource />
-        </div>
+        </SidebarLayout>
       )}
-      {showSettings === "TIMING" && <TimingCalculation />}
+      {showSettings === "TIMING" && (
+        <SidebarLayout onGoBack={returnToSettings}>
+          <TimingCalculation />
+        </SidebarLayout>
+      )}
       {showSettings === "TEAMS" && (
+        // Special case
         <div className="h-full">
           <TeamConfiguration
             derivedIssuesObservable={derivedIssuesObservable}
-            showSidebarBranding={showSidebarBranding}
             onUpdate={onUpdateTeamsConfiguration}
             onBackButtonClicked={() => returnToSettings()}
           />
         </div>
       )}
+      {showSettings === "FEATURES" && (
+        <SidebarLayout onGoBack={returnToSettings}>
+          <Features />
+        </SidebarLayout>
+      )}
       {showSettings === "THEME" && (
-        <div className="w-80 h-full">
+        <SidebarLayout onGoBack={returnToSettings} className="w-80">
           <Theme onBackButtonClicked={changeSettings} />
-        </div>
+        </SidebarLayout>
       )}
     </div>
   );

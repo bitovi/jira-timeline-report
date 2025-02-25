@@ -30,7 +30,7 @@ describe("calculateReportStatuses", () => {
     const input = [
       {
         key: "abc-123",
-        statusCategory: "done",
+        statusCategory: "Done",
         issueLastPeriod: {
           rollupDates: {},
           workTypeRollups: {
@@ -63,7 +63,7 @@ describe("calculateReportStatuses", () => {
       },
       {
         key: "abc-68947",
-        statusCategory: "done",
+        statusCategory: "Done",
         workTypeRollups: {
           children: {
             dev: {},
@@ -75,7 +75,7 @@ describe("calculateReportStatuses", () => {
     const expected = [
       {
         key: "abc-123",
-        statusCategory: "done",
+        statusCategory: "Done",
         issueLastPeriod: {
           rollupDates: {},
           workTypeRollups: {
@@ -227,7 +227,7 @@ describe("calculateReportStatuses", () => {
             },
           },
         },
-        statusCategory: "done",
+        statusCategory: "Done",
         workTypeRollups: {
           children: {
             dev: {},

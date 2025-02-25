@@ -4,11 +4,11 @@ import React from "react";
 import SidebarButton from "../../../components/SidebarButton";
 
 interface GoBackButtonProps {
-  hideSettings: () => void;
+  onGoBack: () => void;
 }
 
-export const GoBackButton: FC<GoBackButtonProps> = ({ hideSettings }) => (
-  <SidebarButton onClick={hideSettings}>
+export const GoBackButton: FC<GoBackButtonProps> = ({ onGoBack }) => (
+  <SidebarButton onClick={onGoBack}>
     <img src="/images/go-back.svg" aria-hidden /> Go back
   </SidebarButton>
 );

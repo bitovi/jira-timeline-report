@@ -15,7 +15,7 @@ const StatusKey: FC = () => {
   const theme = useTheme();
 
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-3 p-2">
+    <div className="flex flex-wrap gap-x-4 gap-y-3 p-2 justify-between">
       <div className="flex gap-x-8">
         <StatusKeyItem icon={<img className="m-0.5" src="/images/empty-set.svg" />}>
           Unknown dates
