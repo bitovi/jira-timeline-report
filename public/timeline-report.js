@@ -172,7 +172,6 @@ export class TimelineReport extends StacheElement {
   }
 
   attachStatusKeys() {
-    console.log("here");
     createRoot(document.getElementById("status-keys")).render(createElement(StatusKeys, {}));
   }
 
