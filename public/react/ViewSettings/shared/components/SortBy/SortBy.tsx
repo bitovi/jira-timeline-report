@@ -14,12 +14,12 @@ const booleanParsing = {
   stringify: (x: boolean) => "" + x,
 };
 
-const useSortBy = () => {
-  const sortBy = [
-    { label: "JQL Order", value: "false" },
-    { label: "Due Date", value: "true" },
-  ];
+const sortBy = [
+  { label: "JQL Order", value: "false" },
+  { label: "Due Date", value: "true" },
+];
 
+const useSortBy = () => {
   const selectedSortBy = useCanObservable<boolean>(value.from(routeData, "sortByDueDate"));
 
   const setSelectedSortBy = (value: string) => {

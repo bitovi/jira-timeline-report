@@ -7,15 +7,15 @@ import { useCanObservable } from "../../../../hooks/useCanObservable";
 import routeData from "../../../../../canjs/routing/route-data";
 import { value } from "../../../../../can";
 
-const useRoundDatesTo = () => {
-  const roundDatesTo = [
-    { value: "day", label: "Day" },
-    { value: "week", label: "Week" },
-    { value: "month", label: "Month" },
-    { value: "halfQuarter", label: "Half Quarter" },
-    { value: "quarter", label: "Quarter" },
-  ];
+const roundDatesTo = [
+  { value: "day", label: "Day" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
+  { value: "halfQuarter", label: "Half Quarter" },
+  { value: "quarter", label: "Quarter" },
+];
 
+const useRoundDatesTo = () => {
   const selectedRoundDatesTo = useCanObservable<string>(value.from(routeData, "roundTo"));
 
   const setSelectedRoundDatesTo = (value: string) => {

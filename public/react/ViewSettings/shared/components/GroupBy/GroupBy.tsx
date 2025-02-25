@@ -7,13 +7,13 @@ import { useCanObservable } from "../../../../hooks/useCanObservable";
 import { value } from "../../../../../can";
 import routeData from "../../../../../canjs/routing/route-data";
 
-const useGroupBy = () => {
-  const groupBy = [
-    { label: "None", value: "" },
-    { label: "Parent", value: "parent" },
-    { label: "Team", value: "team" },
-  ];
+const groupBy = [
+  { label: "None", value: "" },
+  { label: "Parent", value: "parent" },
+  { label: "Team", value: "team" },
+];
 
+const useGroupBy = () => {
   const selectedGroupBy = useCanObservable<string>(value.from(routeData, "groupBy"));
 
   const setSelectedGroupBy = (value: string) => {

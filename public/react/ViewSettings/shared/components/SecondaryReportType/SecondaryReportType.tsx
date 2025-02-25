@@ -7,13 +7,13 @@ import { useCanObservable } from "../../../../hooks/useCanObservable";
 import { value } from "../../../../../can";
 import routeData from "../../../../../canjs/routing/route-data";
 
-const useSecondaryReportType = () => {
-  const secondaryReportTypes = [
-    { label: "None", value: "none" },
-    { label: "Status", value: "status" },
-    { label: "Work Breakdown", value: "breakdown" },
-  ];
+const secondaryReportTypes = [
+  { label: "None", value: "none" },
+  { label: "Status", value: "status" },
+  { label: "Work Breakdown", value: "breakdown" },
+];
 
+const useSecondaryReportType = () => {
   const selectedSecondaryReportType = useCanObservable<string>(
     value.from(routeData, "secondaryReportType")
   );
