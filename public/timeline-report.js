@@ -27,6 +27,7 @@ import Filters from "./react/Filters";
 import ViewSettings from "./react/ViewSettings";
 import SampleDataNotice from "./react/SampleDataNotice";
 import ViewReports from "./react/ViewReports";
+import StatusKeys from "./react/StatusKey";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
@@ -93,15 +94,8 @@ export class TimelineReport extends StacheElement {
               allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
           {{/ }}
 
-          <div class='p-2'>
-            <span class='color-text-and-bg-new p-2 inline-block'>New</span>
-            <span class='color-text-and-bg-notstarted p-2 inline-block'>Not Started</span>
-            <span class='color-text-and-bg-ontrack p-2 inline-block'>On Track</span>
-            <span class='color-text-and-bg-ahead p-2 inline-block'>Ahead</span>
-            <span class='color-text-and-bg-behind p-2 inline-block'>Behind</span>
-            <span class='color-text-and-bg-warning p-2 inline-block'>Warning</span>
-            <span class='color-text-and-bg-blocked p-2 inline-block'>Blocked</span>
-            <span class='color-text-and-bg-complete p-2 inline-block'>Complete</span>
+          <div class='p-2 sticky bottom-0 bg-white z-[99]'>
+            <div id='status-keys' on:inserted='this.attachStatusKeys()'></div>
           </div>
 
         </div>
@@ -175,6 +169,10 @@ export class TimelineReport extends StacheElement {
   // hooks
   rendered() {
     updateFullishHeightSection();
+  }
+
+  attachStatusKeys() {
+    createRoot(document.getElementById("status-keys")).render(createElement(StatusKeys, {}));
   }
 
   async connected() {

@@ -9,11 +9,13 @@ import { getHostedRequestHelper } from "../request-helpers/hosted-request-helper
 import { getConnectRequestHelper } from "../request-helpers/connect-request-helper.js";
 
 import { directlyReplaceUrlParam } from "../canjs/routing/state-storage.js";
-import { route, value } from "../can.js";
+import { route, value, domMutateDomEvents, domEvents } from "../can.js";
 import routeData from "../canjs/routing/route-data";
 import { getFeatures } from "../jira/features/fetcher";
 import { featuresKeyFactory } from "../react/services/features/key-factory";
 import { queryClient } from "../react/services/query/queryClient";
+
+domEvents.addEvent(domMutateDomEvents.inserted);
 
 export default async function mainHelper(
   config,
