@@ -40,13 +40,15 @@ const GanttViewSettings: FC = () => {
         {workBreakdowns && <ShowWorkBreakdown />}
       </SettingsSection>
       {secondaryReport && (
-        <SettingsSection title="secondary report type" centered>
-          <SecondaryReportType />
-        </SettingsSection>
+        <>
+          <SettingsSection title="secondary report type" centered>
+            <SecondaryReportType />
+          </SettingsSection>
+          <SettingsSection title="statuses shown as planning" centered>
+            <StatusesShownAsPlanning />
+          </SettingsSection>
+        </>
       )}
-      <SettingsSection title="statuses shown as planning" centered>
-        <StatusesShownAsPlanning />
-      </SettingsSection>
     </div>
   );
 };
