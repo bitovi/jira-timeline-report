@@ -3,6 +3,7 @@ import type { FC } from "react";
 import React, { useId } from "react";
 import Select from "@atlaskit/select";
 import VisuallyHidden from "@atlaskit/visually-hidden";
+
 import { useSelectableStatuses } from "../../../../services/issues";
 import { useCanObservable } from "../../../../hooks/useCanObservable";
 import { value } from "../../../../../can";

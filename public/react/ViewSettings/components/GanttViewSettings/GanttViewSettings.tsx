@@ -11,16 +11,23 @@ import Hr from "../../../components/Hr";
 import RoundDatesTo from "../../shared/components/RoundDatesTo";
 import SecondaryReportType from "../../shared/components/SecondaryReportType";
 import StatusesShownAsPlanning from "../../shared/components/StatusesShownAsPlanning";
+import { useSelectedIssueType } from "../../../services/issues";
 
 const GanttViewSettings: FC = () => {
+  const { isRelease } = useSelectedIssueType();
+
+  const isGroupable = !isRelease;
+
   return (
     <div>
       <SettingsSection title="sort by" centered>
         <SortBy />
       </SettingsSection>
-      <SettingsSection title="group by" centered>
-        <GroupBy />
-      </SettingsSection>
+      {isGroupable && (
+        <SettingsSection title="group by" centered>
+          <GroupBy />
+        </SettingsSection>
+      )}
       <Hr />
       <SettingsSection title="round dates to" centered>
         <RoundDatesTo />
