@@ -1,7 +1,7 @@
-import type { MinimalDerivedIssue } from "../../shared/hooks/useDerivedIssues";
+import type { MinimalDerivedIssue } from "./useDerivedIssues";
 
-import { useDerivedIssues } from "../../shared/hooks/useDerivedIssues";
-import { useSelectedIssueType } from "../useSelectedIssueType";
+import { useDerivedIssues } from "./useDerivedIssues";
+import { useSelectedIssueType } from "./useSelectedIssueType";
 
 export const useSelectableStatuses = () => {
   const derivedIssues = useDerivedIssues();

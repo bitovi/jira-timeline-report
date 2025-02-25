@@ -1,7 +1,7 @@
 import { value } from "../../../../can";
 import routeData from "../../../../canjs/routing/route-data";
 import { useCanObservable } from "../../../hooks/useCanObservable";
-import { useSelectableStatuses } from "./useSelectableStatuses";
+import { useSelectableStatuses } from "../../../services/issues/useSelectableStatuses";
 
 export const useSelectedStatuses = (mode: "show" | "hide") => {
   const statuses = useSelectableStatuses();
