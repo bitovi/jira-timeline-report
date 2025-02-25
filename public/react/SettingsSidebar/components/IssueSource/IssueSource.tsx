@@ -65,7 +65,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
         value={statusesToExcludeOptions}
         onChange={handleExcludedStatusChange}
       />
-
       <div className="flex flex-row justify-end mt-2">
         <Button appearance="primary" isDisabled={!applyButtonEnabled} onClick={applyJql}>
           Apply

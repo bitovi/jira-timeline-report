@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import React from "react";
+import React, { Suspense } from "react";
 
 import SettingsSection from "../../shared/components/SettingsSection";
 import ShowCompletionPercentage from "../../shared/components/ShowCompletionPercentage";
@@ -12,9 +12,11 @@ import RoundDatesTo from "../../shared/components/RoundDatesTo";
 import SecondaryReportType from "../../shared/components/SecondaryReportType";
 import StatusesShownAsPlanning from "../../shared/components/StatusesShownAsPlanning";
 import { useSelectedIssueType } from "../../../services/issues";
+import { useFeatures } from "../../../services/features";
 
 const GanttViewSettings: FC = () => {
   const { isRelease } = useSelectedIssueType();
+  const { workBreakdowns, secondaryReport } = useFeatures();
 
   const canGroup = !isRelease;
 
@@ -35,11 +37,13 @@ const GanttViewSettings: FC = () => {
       <Hr />
       <SettingsSection title="view options">
         <ShowCompletionPercentage />
-        <ShowWorkBreakdown />
+        {workBreakdowns && <ShowWorkBreakdown />}
       </SettingsSection>
-      <SettingsSection title="secondary report type" centered>
-        <SecondaryReportType />
-      </SettingsSection>
+      {secondaryReport && (
+        <SettingsSection title="secondary report type" centered>
+          <SecondaryReportType />
+        </SettingsSection>
+      )}
       <SettingsSection title="statuses shown as planning" centered>
         <StatusesShownAsPlanning />
       </SettingsSection>

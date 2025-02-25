@@ -1,4 +1,4 @@
-import { StacheElement, type, queues } from "./can.js";
+import { StacheElement, type, queues, Reflect } from "./can.js";
 
 import routeData from "./canjs/routing/route-data";
 
@@ -47,8 +47,9 @@ export class TimelineReport extends StacheElement {
           jiraHelpers:from="this.jiraHelpers"></select-issue-type>
 
         <select-report-type 
-          jiraHelpers:from="this.jiraHelpers"></select-report-type>
-    
+          jiraHelpers:from="this.jiraHelpers"
+          features:from="this.features"></select-report-type>
+          
         <compare-slider class='flex-grow px-2'
           compareToTime:to="compareToTime"></compare-slider>
         <div id="filters" class="self-end pb-1"></div>
@@ -139,6 +140,7 @@ export class TimelineReport extends StacheElement {
     timingCalculationMethods: type.Any,
     storage: null,
     linkBuilder: null,
+    featuresPromise: null,
 
     showingDebugPanel: { type: Boolean, default: false },
 
@@ -151,6 +153,10 @@ export class TimelineReport extends StacheElement {
 
     get issuesPromise() {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
+    },
+
+    get features() {
+      return Reflect.getValue(this.featuresPromise);
     },
 
     get filteredDerivedIssues() {

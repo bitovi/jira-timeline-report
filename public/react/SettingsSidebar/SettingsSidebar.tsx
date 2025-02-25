@@ -7,13 +7,13 @@ import routeData from "../../canjs/routing/route-data";
 import TeamConfiguration from "./components/TeamConfiguration";
 
 import { CanObservable, useCanObservable } from "../hooks/useCanObservable";
-import Branding from "./components/Branding";
 import ReportSettings from "./components/ReportSettings";
 import IssueSource from "./components/IssueSource";
 import TimingCalculation from "./components/TimingCalculation";
 import { NormalizeIssueConfig } from "../../jira/normalized/normalize";
 import Theme from "./components/Theme";
 import SidebarLayout from "./components/SidebarLayout";
+import Features from "./components/Features";
 
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
@@ -60,6 +60,11 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
             onBackButtonClicked={() => returnToSettings()}
           />
         </div>
+      )}
+      {showSettings === "FEATURES" && (
+        <SidebarLayout onGoBack={returnToSettings}>
+          <Features />
+        </SidebarLayout>
       )}
       {showSettings === "THEME" && (
         <SidebarLayout onGoBack={returnToSettings} className="w-80">
