@@ -47,7 +47,7 @@ import routeData from "../routing/route-data";
 export class GanttGrid extends StacheElement {
   static view = `
         <div style="display: grid; grid-template-columns: auto auto {{this.gridColumnsCSS}} ; grid-template-rows: repeat({{this.gridRowData.length}}, auto)"
-            class='p-2 mb-10'>
+            class='p-2'>
             <div class='z-50 bg-white sticky top-0'></div><div class='z-50 bg-white sticky top-0'></div>
             {{# for(column of this.columnsToShow) }}
             <div class='z-50 bg-white sticky top-0'></div>
@@ -154,7 +154,7 @@ export class GanttGrid extends StacheElement {
       get: function () {
         return makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
       },
-    }
+    },
   };
   toggleShowingChildren(issue) {
     if (this.showChildrenByKey[issue.key]) {
@@ -162,7 +162,6 @@ export class GanttGrid extends StacheElement {
     } else {
       this.showChildrenByKey[issue.key] = true;
     }
-
   }
   get lotsOfIssues() {
     return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
@@ -176,8 +175,8 @@ export class GanttGrid extends StacheElement {
   get shadowBarSize() {
     return this.lotsOfIssues ? "h-4" : "h-6";
   }
-  get expandPadding(){
-    return this.lotsOfIssues ? "": "pt-1 pb-0.5"
+  get expandPadding() {
+    return this.lotsOfIssues ? "" : "pt-1 pb-0.5";
   }
   get columnsToShow() {
     if (this.showPercentComplete) {
@@ -236,7 +235,7 @@ export class GanttGrid extends StacheElement {
   hoverLeave() {
     this.hoveringIssue = null;
   }
-  showExpandChildrenIcon(issue){
+  showExpandChildrenIcon(issue) {
     return this.hoveringIssue === issue || this.somePrimaryIssuesAreExpanded; //Object.values(this.showChildrenByKey).some(value => value === true);
   }
   getPercentComplete(issue) {
@@ -310,17 +309,17 @@ export class GanttGrid extends StacheElement {
   }
 
   get gridRowData() {
-
-    const getRows = makeGetRows((key)=>{
-      return this.showChildrenByKey[key]
-    },this.getChildren.bind(this));
-
+    const getRows = makeGetRows((key) => {
+      return this.showChildrenByKey[key];
+    }, this.getChildren.bind(this));
 
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
     if (this.routeData.groupBy === "parent" && this.routeData.primaryIssueType !== "Release") {
-      
       // get all the parents of the primary releases
-      const {parents, parentToChildren} = getSortedParents(this.primaryIssuesOrReleases, this.routeData.derivedIssues);
+      const { parents, parentToChildren } = getSortedParents(
+        this.primaryIssuesOrReleases,
+        this.routeData.derivedIssues
+      );
 
       // for each parent, find its children
       let parentsAndChildren = parents
@@ -333,9 +332,7 @@ export class GanttGrid extends StacheElement {
         .flat(1);
 
       return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
-    } 
-    
-    else if (this.routeData.groupBy === "team" && this.routeData.primaryIssueType !== "Release") {
+    } else if (this.routeData.groupBy === "team" && this.routeData.primaryIssueType !== "Release") {
       let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.team.name);
 
       const teams = Object.keys(issuesByTeam).map((teamName) => {
@@ -384,16 +381,15 @@ export class GanttGrid extends StacheElement {
 
     // background and chart stuff have the same grid config
     const baseGridStyles = {
-      
       gridRow: `${index + 3}`,
     };
 
     const background = makeElement([index % 2 ? "bg-neutral-20" : ""], {
       ...baseGridStyles,
       // we probably want to move this to it's own element so we don't have to redraw so much
-      gridColumn: this.somePrimaryIssuesAreExpanded ? 
-        `1 / span ${this.quartersAndMonths.months.length + this.columnsToShow.length + 2}`: 
-        `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
+      gridColumn: this.somePrimaryIssuesAreExpanded
+        ? `1 / span ${this.quartersAndMonths.months.length + this.columnsToShow.length + 2}`
+        : `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
       zIndex: 0,
     });
 
@@ -488,7 +484,6 @@ export class GanttGrid extends StacheElement {
           root.appendChild(thisPeriod);
         }
       } else {
-        
         // make the last one ...
         const currentPositions = getPositions(release.rollupStatuses.rollup);
 
@@ -519,21 +514,25 @@ export class GanttGrid extends StacheElement {
           );
         }
 
-        if( release.rollupStatuses.rollup.lastPeriod ) {
+        if (release.rollupStatuses.rollup.lastPeriod) {
           const behindTime = makeLastPeriodElement(
             release.rollupStatuses.rollup.status,
             release.rollupStatuses.rollup.lastPeriod,
             currentPositions,
             [this.shadowBarSize]
           );
-  
-          lastPeriodRoot.appendChild(behindTime);  
+
+          lastPeriodRoot.appendChild(behindTime);
         }
-        
+
         root.appendChild(team);
       }
     } else {
-      let team = makeCircleForStatus("notstarted", '<img src="/images/empty-set.svg" />', this.lotsOfIssues);
+      let team = makeCircleForStatus(
+        "notstarted",
+        '<img src="/images/empty-set.svg" />',
+        this.lotsOfIssues
+      );
 
       root.appendChild(team);
     }
@@ -574,10 +573,12 @@ export class GanttGrid extends StacheElement {
     //return hasExpanded;
   }
 
-  get somePrimaryIssuesAreExpanded(){
-    return this.primaryIssuesOrReleases.filter((issue) => {
-      return this.showChildrenByKey[issue.key]
-    }).length > 0
+  get somePrimaryIssuesAreExpanded() {
+    return (
+      this.primaryIssuesOrReleases.filter((issue) => {
+        return this.showChildrenByKey[issue.key];
+      }).length > 0
+    );
   }
 }
 
@@ -679,7 +680,6 @@ function makeCircleForStatus(status, innerHTML, lotsOfIssues) {
   return team;
 }
 
-
 //  this.showChildrenByKey[issue.key];
 // this.getChildren()
 
@@ -700,9 +700,7 @@ function makeGetRows(getIfKeyIsShowingChildren, getChildrenForIssue) {
   };
 }
 
-
 function getSortedParents(primaryIssues, allIssues) {
-
   // once we know a parent key, be able to get all of its children
   let parentToChildren = Object.groupBy(primaryIssues || [], (issue) => issue.parentKey);
 
@@ -718,14 +716,18 @@ function getSortedParents(primaryIssues, allIssues) {
       // if we loaded the issue itself ...
       if (keyToAllIssues[parentKey]) {
         return keyToAllIssues[parentKey][0];
-      } 
+      }
       // if the issue has some parent data with it
       else if (parentToChildren[parentKey][0].issue.fields.Parent) {
         return normalizeParent(parentToChildren[parentKey][0].issue.fields.Parent);
-      } 
+      }
       // else it doesnt' have a parent, create something for things with no parent
       else {
-        return { key: parentKey, summary: "No Parent", rollupStatuses: {rollup: {status: null}} };
+        return {
+          key: parentKey,
+          summary: "No Parent",
+          rollupStatuses: { rollup: { status: null } },
+        };
       }
     })
     // not sure what case this is filtering .. we should look at it
@@ -736,9 +738,8 @@ function getSortedParents(primaryIssues, allIssues) {
     parents.sort((p1, p2) => {
       return p1.rank > p2.rank ? 1 : -1;
     });
-  } 
-  return {parents, parentToChildren }
+  }
+  return { parents, parentToChildren };
 }
-
 
 customElements.define("gantt-grid", GanttGrid);
