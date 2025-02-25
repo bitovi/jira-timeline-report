@@ -7,7 +7,6 @@ import routeData from "../../canjs/routing/route-data";
 import TeamConfiguration from "./components/TeamConfiguration";
 
 import { CanObservable, useCanObservable } from "../hooks/useCanObservable";
-import Branding from "./components/Branding";
 import ReportSettings from "./components/ReportSettings";
 import IssueSource from "./components/IssueSource";
 import TimingCalculation from "./components/TimingCalculation";
