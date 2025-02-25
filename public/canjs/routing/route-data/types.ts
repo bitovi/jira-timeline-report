@@ -14,6 +14,8 @@ type Overrides = {
   childJQL: string;
   jql: string;
   statusesToExclude: string[];
+  primaryIssueType: string;
+  secondaryIssueType: string;
 };
 
 type RouteDataProps = typeof RouteDataClass.props;

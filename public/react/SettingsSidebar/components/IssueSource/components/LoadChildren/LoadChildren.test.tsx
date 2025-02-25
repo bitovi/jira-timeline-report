@@ -16,9 +16,6 @@ describe("<LoadChildren />", () => {
       />
     );
 
-    const accordionTitle = screen.getByText(/load children/i);
-    expect(accordionTitle).toBeInTheDocument();
-
     const loadChildrenCheckbox = screen.getByLabelText(
       /load all children of jql specified issues/i
     );

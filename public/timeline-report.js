@@ -12,7 +12,6 @@ import "./canjs/reports/group-grid/group-grid.js";
 
 import "./canjs/controls/select-issue-type/select-issue-type.js";
 import "./canjs/controls/select-report-type/select-report-type.js";
-import "./canjs/controls/select-view-settings/select-view-settings.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
 import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
@@ -24,7 +23,10 @@ import { createElement } from "react";
 
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
+import Filters from "./react/Filters";
+import ViewSettings from "./react/ViewSettings";
 import SampleDataNotice from "./react/SampleDataNotice";
+import ViewReports from "./react/ViewReports";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
@@ -36,9 +38,8 @@ export class TimelineReport extends StacheElement {
         ></div>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative" on:click="this.goBack()">
-
-      <div id='sample-data-notice' class='pt-4'></div>
-
+    <div id="view-reports"></div>  
+    <div id='sample-data-notice' class='pt-4'></div>
       <div id="saved-reports" class='py-4'></div>
       <div class="flex gap-1">
         <select-issue-type 
@@ -50,14 +51,8 @@ export class TimelineReport extends StacheElement {
     
         <compare-slider class='flex-grow px-2'
           compareToTime:to="compareToTime"></compare-slider>
-
-        <select-view-settings
-          jiraHelpers:from="this.jiraHelpers"
-          
-          releasesToShow:to="this.releasesToShow"
-          statuses:from="this.statuses"
-          derivedIssues:from="this.routeData.derivedIssues"
-          ></select-view-settings>
+        <div id="filters" class="self-end pb-1"></div>
+        <div id="view-settings" class="self-end pb-1"></div>
       </div>
 
       {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
@@ -177,6 +172,14 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
+    createRoot(document.getElementById("view-reports")).render(
+      createElement(ViewReports, {
+        onBackButtonClicked: () => {
+          this.routeData.showSettings = "";
+        },
+      })
+    );
+
     createRoot(document.getElementById("sample-data-notice")).render(
       createElement(SampleDataNotice, {
         shouldHideNoticeObservable: this.routeData.isLoggedInObservable,
@@ -197,6 +200,9 @@ export class TimelineReport extends StacheElement {
         },
       })
     );
+
+    createRoot(document.getElementById("filters")).render(createElement(Filters));
+    createRoot(document.getElementById("view-settings")).render(createElement(ViewSettings));
 
     getTheme(this.routeData.storage)
       .then(applyThemeToCssVars)
@@ -329,10 +335,8 @@ export class TimelineReport extends StacheElement {
         return false;
       }
 
-      if (this?.releasesToShow?.length) {
-        // O(n^2)
-        const releases = issueOrRelease.releases.map((r) => r.name);
-        if (releases.filter((release) => this.releasesToShow.includes(release)).length === 0) {
+      if (this?.routeData.releasesToShow?.length) {
+        if (!this.routeData.releasesToShow.includes(issueOrRelease.name)) {
           return false;
         }
       }

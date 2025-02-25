@@ -76,6 +76,7 @@ export function deriveWorkTiming(
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
 ): DerivedWorkTiming {
+  
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
 
   const usedConfidence = isConfidenceValid
@@ -132,12 +133,20 @@ export function deriveWorkTiming(
     startData && dueData ? getBusinessDatesCount(startData.start, dueData.due) : null;
 
   let totalDaysOfWork = null;
+
+  // if we aren't spreading, use dates if we have them
   if (!normalizedIssue.team.spreadEffortAcrossDates && datesDaysOfWork != null) {
     totalDaysOfWork = datesDaysOfWork;
-  } else if (isStoryPointsMedianValid) {
+  } 
+  // else look for estimate
+  else if (isStoryPointsMedianValid) {
     totalDaysOfWork = deterministicTotalDaysOfWork;
   } else if (isStoryPointsValid) {
     totalDaysOfWork = storyPointsDaysOfWork;
+  } 
+  // if no estimate, look back at dates
+  else if(datesDaysOfWork != null) {
+    totalDaysOfWork = datesDaysOfWork;
   }
 
   // defaultOrTotalDaysOfWork - will be 50% confidence of 1 sprint of work
