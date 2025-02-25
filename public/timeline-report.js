@@ -156,6 +156,12 @@ export class TimelineReport extends StacheElement {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
     },
 
+    features: {
+      async() {
+        return this.featuresPromise;
+      },
+    },
+
     get filteredDerivedIssues() {
       if (this.routeData.derivedIssues) {
         if (this.routeData.statusesToExclude?.length) {
