@@ -13,12 +13,20 @@ import SecondaryReportType from "../../shared/components/SecondaryReportType";
 import StatusesShownAsPlanning from "../../shared/components/StatusesShownAsPlanning";
 import { useSelectedIssueType } from "../../../services/issues";
 import { useFeatures } from "../../../services/features";
+import { useCanObservable } from "../../../hooks/useCanObservable";
+import { value } from "../../../../can";
+import routeData from "../../../../canjs/routing/route-data";
+
+const useReportType = () => {
+  return useCanObservable<string>(value.from(routeData, "primaryReportType"));
+};
 
 const GanttViewSettings: FC = () => {
   const { isRelease } = useSelectedIssueType();
   const { workBreakdowns, secondaryReport } = useFeatures();
+  const reportType = useReportType();
 
-  const canGroup = !isRelease;
+  const canGroup = !isRelease && reportType === "start-due";
 
   return (
     <div>
