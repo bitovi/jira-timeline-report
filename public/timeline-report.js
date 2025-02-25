@@ -156,6 +156,15 @@ export class TimelineReport extends StacheElement {
       return this.routeData.derivedIssuesRequestData?.issuesPromise;
     },
 
+<<<<<<< Updated upstream
+=======
+    features: {
+      async() {
+        return this.featuresPromise;
+      },
+    },
+
+>>>>>>> Stashed changes
     get filteredDerivedIssues() {
       if (this.routeData.derivedIssues) {
         if (this.routeData.statusesToExclude?.length) {
