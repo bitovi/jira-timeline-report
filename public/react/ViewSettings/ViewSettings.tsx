@@ -9,16 +9,48 @@ import { queryClient } from "../services/query";
 import { StorageProvider } from "../services/storage";
 import routeData from "../../canjs/routing/route-data";
 import { ErrorBoundary } from "@sentry/react";
+import { useCanObservable } from "../hooks/useCanObservable";
+import { value } from "../../can";
+import ScatterPlotViewSettings from "./components/ScatterPlotViewSettings";
 
-const viewSettingsMap = {
-  gantt: GanttViewSettings,
+const reports = [
+  {
+    key: "start-due",
+    name: "Gantt Chart",
+  },
+  {
+    key: "due",
+    name: "Scatter Plot",
+  },
+  {
+    key: "table",
+    name: "Estimation Table",
+  },
+  {
+    key: "group-grid",
+    name: "Group Grid",
+  },
+] as const;
+
+type ReportTypes = (typeof reports)[number]["key"];
+
+const viewSettingsMap: Record<Exclude<ReportTypes, "group-grid" | "table">, FC> = {
+  "start-due": GanttViewSettings,
+  due: ScatterPlotViewSettings,
 };
 
-// TODO: make dynamic once other views are required
-const currentView: keyof typeof viewSettingsMap = "gantt";
+const useReportType = () => {
+  return useCanObservable<ReportTypes>(value.from(routeData, "primaryReportType"));
+};
 
 const ViewSettings: FC = () => {
-  const Settings = viewSettingsMap[currentView];
+  const currentReportType = useReportType();
+
+  if (currentReportType === "group-grid" || currentReportType === "table") {
+    return null;
+  }
+
+  const Settings = viewSettingsMap[currentReportType];
 
   return (
     // Don't touch this id, its a hack to change the overflow of the dropdown menu

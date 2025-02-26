@@ -1,10 +1,10 @@
 import { AppStorage } from "../storage/common";
 
 export const defaultFeatures = {
-  scatterPlot: false,
   estimationTable: false,
   secondaryReport: false,
   workBreakdowns: false,
+  groupGrid: false,
 };
 
 export type Features = typeof defaultFeatures;

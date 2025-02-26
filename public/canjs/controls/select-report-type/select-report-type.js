@@ -42,7 +42,7 @@ class ReportSelectionDropdown extends StacheElement {
     get reportTypes() {
       return this.routeData.reports.filter((report) => {
         return (
-          (this.features?.scatterPlot || report.key !== "due") &&
+          (this.features?.groupGrid || report.key !== "group-grid") &&
           (this.features?.estimationTable || report.key !== "table")
         );
       });
