@@ -71,7 +71,11 @@ const Features: FC = () => {
         </ul>
         <p className="text-sm">
           Got feedback?{" "}
-          <a href="#" className="link" target="_blank">
+          <a
+            href="https://github.com/bitovi/jira-timeline-report/issues/new"
+            className="link"
+            target="_blank"
+          >
             Let us know on github.
           </a>
         </p>
