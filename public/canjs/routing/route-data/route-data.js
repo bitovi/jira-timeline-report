@@ -48,7 +48,7 @@ const booleanParsing = {
   stringify: (x) => "" + x,
 };
 
-const REPORTS = [
+export const REPORTS = [
   {
     key: "start-due",
     name: "Gantt Chart",
