@@ -38,6 +38,9 @@ import {
   toSelectedParts,
 } from "../data-utils.js";
 import { getTimingLevels } from "../../../utils/timing/helpers";
+import { getAllReports } from "../../../jira/reports/fetcher";
+import { reportKeys } from "../../../react/services/reports";
+import { queryClient } from "../../../react/services/query/queryClient";
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
@@ -80,7 +83,25 @@ export class RouteData extends ObservableObject {
         return this.jiraHelpers.fetchJiraFields();
       },
     },
+    report: saveJSONToUrl("report", "", String, {
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+    }),
+    allReportsPromise: {
+      async() {
+        const cached = queryClient.getQueryData(reportKeys.allReports);
 
+        if (cached) {
+          return cached;
+        }
+
+        return getAllReports(storage).then((reports) => {
+          queryClient.setQueryData(reportKeys.allReports, reports);
+
+          return reports;
+        });
+      },
+    },
     get allTeamDataPromise() {
       return getAllTeamData(this.storage);
     },
