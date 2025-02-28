@@ -63,6 +63,7 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
         <Select
           name="confidenceField"
           label="Confidence field"
+          optional
           jiraFields={[
             {
               label: "",

@@ -13,6 +13,7 @@ interface SelectProps {
   control: Control<Configuration>;
   name: keyof Configuration;
   label: string;
+  optional?: boolean;
   jiraFields:
     | Array<{ label: string; value: string }>
     | Array<{ label: string; options: Array<{ label: string; value: string }> }>;
