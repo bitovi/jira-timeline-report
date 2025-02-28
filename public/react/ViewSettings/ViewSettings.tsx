@@ -26,15 +26,11 @@ const reports = [
     key: "table",
     name: "Estimation Table",
   },
-  {
-    key: "group-grid",
-    name: "Group Grid",
-  },
 ] as const;
 
 type ReportTypes = (typeof reports)[number]["key"];
 
-const viewSettingsMap: Record<Exclude<ReportTypes, "group-grid" | "table">, FC> = {
+const viewSettingsMap: Record<Exclude<ReportTypes, "table">, FC> = {
   "start-due": GanttViewSettings,
   due: ScatterPlotViewSettings,
 };
@@ -46,7 +42,7 @@ const useReportType = () => {
 const ViewSettings: FC = () => {
   const currentReportType = useReportType();
 
-  if (currentReportType === "group-grid" || currentReportType === "table") {
+  if (currentReportType === "table") {
     return null;
   }
 
