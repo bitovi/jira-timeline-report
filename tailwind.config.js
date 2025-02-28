@@ -10,6 +10,9 @@ module.exports = {
         'Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
     },
     extend: {
+      borderRadius: {
+        jirasm: '3px'
+      },
       blur: {
         xs: '2px',
       },
@@ -54,7 +57,7 @@ module.exports = {
           40: "#DFE1E6", // secondary buttton color
           41: '#DCDFE4', // accent.gray.subtler
           30: "#EBECF0",
-          20: "#091E4208", // stripe color
+          20: "#F1F2F4", // stripe color
           10: "#FAFBFC", //
           301: "#091E4224",
           201: "#091E420F", // NEW nuetral 6% opacity
