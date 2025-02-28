@@ -34,6 +34,7 @@ export type DerivedWorkTiming = {
   totalDaysOfWork: number | null;
   defaultOrTotalDaysOfWork: number | null;
   completedDaysOfWork: number;
+  datesCompletedDaysOfWork: number;
   datesDaysOfWork: number | null;
 } & Partial<StartData> &
   Partial<DueData>;
@@ -154,6 +155,10 @@ export function deriveWorkTiming(
   const defaultOrTotalDaysOfWork =
     totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
 
+  const datesCompletedDaysOfWork = getSelfDatesCompletedDaysOfWork( startData,
+    dueData,
+    totalDaysOfWork || 0 );
+
   const completedDaysOfWork = getSelfCompletedDays(
     startData,
     dueData,
@@ -196,6 +201,7 @@ export function deriveWorkTiming(
     ...dueData,
 
     datesDaysOfWork,
+    datesCompletedDaysOfWork,
     totalDaysOfWork,
     defaultOrTotalDaysOfWork,
     completedDaysOfWork,
@@ -208,6 +214,32 @@ export function isConfidenceValueValid(value: number | null): value is number {
 
 export function isStoryPointsValueValid(value: number | null): value is number {
   return value !== null && value >= 0;
+}
+
+
+function getSelfDatesCompletedDaysOfWork(
+  startData: StartData | null,
+  dueData: DueData | null,
+  daysOfWork: number){
+
+  if (startData && startData.start < new Date() && dueData && dueData.due > new Date()) {
+    return getBusinessDatesCount(startData.start, new Date());
+  }
+
+  else if (startData && startData.start >= new Date()) {
+    return 0;
+  }
+  else if (dueData && dueData.due <= new Date()) {
+    if(startData) {
+      return getBusinessDatesCount(startData.start, dueData.due);
+    } 
+    // due in the past, we are going to be 100% done ... but how many days of work is that?
+    else {
+      return daysOfWork;
+    }
+  } else {
+    return 0;
+  }
 }
 
 /**
