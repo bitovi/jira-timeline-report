@@ -185,6 +185,13 @@ const percentCompleteTooltip = stache(`
         {{/ for }}
    </div>
    {{/ if }}
+
+   {{# and(eq(this.issueTimingMethod, "unknown"), eq(this.children.length, 0)) }}
+      ${ container( {
+        title: "Default Working Days", 
+        currentValue: "{{ round( this.issue.completionRollup.totalWorkingDays) }}", 
+        addedClasses: "border-[#94C748] bg-[#EFFFD6]"} )}
+   {{/ }}
 </div>`);
 
 const datesTooltipStache = stache(`<div class='flex gap-0.5 p-1'>
