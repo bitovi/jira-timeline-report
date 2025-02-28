@@ -9,6 +9,15 @@ import { normalizeIssue, normalizeParent } from "../../jira/normalized/normalize
 
 import { roundDateByRoundToParam } from "../routing/utils/round.js";
 import { getDaysInMonth } from "../../utils/date/days-in-month.js";
+import {getBusinessDatesCount} from "../../utils/date/business-days.js"
+
+import {daysBetween} from "../../utils/date/days-between.js"
+import {timeRangeShorthand} from "../../utils/date/time-range-shorthand.js"
+
+import SimpleTooltip from "../ui/simple-tooltip/simple-tooltip.js";
+const DATES_TOOLTIP = new SimpleTooltip();
+DATES_TOOLTIP.classList.add("reset","pointer-events-none")
+document.body.append(DATES_TOOLTIP);
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
@@ -40,8 +49,22 @@ const percentCompleteTooltip = stache(`
    </div>
 `);
 
+const datesTooltipStache = stache(`<div class='flex gap-0.5 p-1'>
+  {{# if(this.startDate)}}
+  <div class="text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5">{{this.startDate}}</div>
+  {{/ }}
+  {{# if(this.businessDays) }}
+    <div class="text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5">{{this.businessDays}}</div>
+  {{/ }}
+  {{# if(this.endDate) }}
+  <div class="text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5">{{this.endDate}}</div>
+  {{/ }}
+</div>`)
+
 import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
 import routeData from "../routing/route-data";
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', {weekday: "short", day: "numeric", month: "short", year: "numeric" })
 
 // loops through and creates
 export class GanttGrid extends StacheElement {
@@ -270,6 +293,25 @@ export class GanttGrid extends StacheElement {
       })
     );
   }
+  showDatesTooltip(issueOrRelease, index, event) {
+    const currentTime = event.currentTarget.querySelector(".identifier-current-time");
+    let reference
+    if(currentTime) {
+      reference = currentTime;
+    } else {
+      reference = event.currentTarget;
+    }
+
+    DATES_TOOLTIP.belowElementInScrollingContainer(reference, datesTooltipStache({
+      startDate: makeDateAndDiff(issueOrRelease.rollupDates.start, issueOrRelease?.issueLastPeriod?.rollupDates?.start),
+      endDate: makeDateAndDiff(issueOrRelease.rollupDates.due, issueOrRelease?.issueLastPeriod?.rollupDates?.due),
+      businessDays: issueOrRelease.rollupDates.start && issueOrRelease.rollupDates.due ?
+      timeRangeShorthand( daysBetween( issueOrRelease.rollupDates.due, issueOrRelease.rollupDates.start) ) : null
+    }).firstElementChild);
+  }
+  hideDatesTooltip(issueOrRelease, index, event) {
+    DATES_TOOLTIP.leftElement(event);
+  }
   classForSpecialStatus(status, issue) {
     if (status === "complete" || status === "blocked" || status === "warning") {
       return "color-text-" + status;
@@ -393,6 +435,13 @@ export class GanttGrid extends StacheElement {
       zIndex: 0,
     });
 
+    background.addEventListener("click", function(){
+      console.log("enter")
+    });
+    background.onmouseleave = function(){
+      console.log("leave")
+    }
+
     // the root element contains the last period and current period bars
     const root = makeElement([], {
       ...baseGridStyles,
@@ -400,6 +449,9 @@ export class GanttGrid extends StacheElement {
       position: "relative",
       zIndex: 20,
     });
+    
+    root.addEventListener("mouseenter",this.showDatesTooltip.bind(this, release, index));
+    root.addEventListener("mouseleave",this.hideDatesTooltip.bind(this, release, index));
 
     // this has the last period stuff ... it's absolutely stretched to match the same space
     // we probably could have put this in the grid, but it's nice to have this stuff w/i an element
@@ -504,6 +556,7 @@ export class GanttGrid extends StacheElement {
               this.bigBarSize,
               "color-text-and-bg-" + release.rollupStatuses.rollup.status,
               roundBasedOnIfTheBarsExtend(currentPositions),
+              "identifier-current-time"
             ],
             {
               /*opacity: "0.9",*/
@@ -611,6 +664,21 @@ function makeElement(classNames, styles) {
   div.classList.add(...classNames.filter((x) => x));
   Object.assign(div.style, styles);
   return div;
+}
+
+
+function makeDateAndDiff(dateNow, dateThen) {
+  let endDate = "";
+  if(dateNow) {
+    endDate += dateFormatter.format(dateNow)
+    if(dateThen) {
+      let days = daysBetween( dateNow, dateThen );
+      if(days != 0) {
+        endDate += " "+(days >= 0 ? "+" : "-") +timeRangeShorthand( (days >= 0 ? 1 : -1) * days )
+      }
+    }
+  }
+  return endDate;
 }
 
 function getPositionsFromWork({ firstDay, lastDay }, work) {
