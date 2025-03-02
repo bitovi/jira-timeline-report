@@ -57,24 +57,28 @@ describe("percentComplete", () => {
               remainingWorkingDays: 5,
               totalWorkingDays: 8,
               userSpecifiedValues: true,
+              source: "self",
             },
             {
               completedWorkingDays: 12,
               remainingWorkingDays: 4,
               totalWorkingDays: 16,
               userSpecifiedValues: true,
+              source: "self",
             },
             {
               completedWorkingDays: 19,
               remainingWorkingDays: 13,
               totalWorkingDays: 32,
               userSpecifiedValues: true,
+              source: "self",
             },
             {
               completedWorkingDays: 31,
               remainingWorkingDays: 33,
               totalWorkingDays: 64,
               userSpecifiedValues: true,
+              source: "self",
             },
           ],
         },
@@ -85,12 +89,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 9,
               totalWorkingDays: 24,
               userSpecifiedValues: true,
+              source: "children",
             },
             {
               completedWorkingDays: 50,
               remainingWorkingDays: 46,
               totalWorkingDays: 96,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -101,6 +107,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 55,
               totalWorkingDays: 120,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -114,7 +121,7 @@ describe("percentComplete", () => {
       }
     });
 
-    it("should use average estimates if no estimate provided for stories", () => {
+    it("should use average estimates if no estimate provided for stories (completed zero)", () => {
       const issuesAndReleases = [
         [
           {
@@ -159,6 +166,7 @@ describe("percentComplete", () => {
         ],
       ] as IssueOrRelease[][];
 
+      // only uses children if they are actually specified ... but will take it
       const expected = [
         {
           rollupData: [
@@ -166,24 +174,28 @@ describe("percentComplete", () => {
               completedWorkingDays: 0,
               remainingWorkingDays: 15,
               totalWorkingDays: 15,
+              source: "average",
               userSpecifiedValues: false,
             },
             {
               completedWorkingDays: 0,
               remainingWorkingDays: 15,
               totalWorkingDays: 15,
+              source: "average",
               userSpecifiedValues: false,
             },
             {
               completedWorkingDays: 0,
               remainingWorkingDays: 10,
               totalWorkingDays: 10,
+              source: "self",
               userSpecifiedValues: true,
             },
             {
               completedWorkingDays: 0,
               remainingWorkingDays: 20,
               totalWorkingDays: 20,
+              source: "self",
               userSpecifiedValues: true,
             },
           ],
@@ -195,12 +207,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: false,
+              source: "children"
             },
             {
               completedWorkingDays: 0,
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: true,
+              source: "children"
             },
           ],
         },
@@ -211,6 +225,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 1,
               totalWorkingDays: 1,
               userSpecifiedValues: true,
+              source: "self"
             },
           ],
         },
@@ -276,24 +291,28 @@ describe("percentComplete", () => {
               remainingWorkingDays: 15,
               totalWorkingDays: 17,
               userSpecifiedValues: false,
+              source: "average",
             },
             {
               completedWorkingDays: 4,
               remainingWorkingDays: 15,
               totalWorkingDays: 19,
               userSpecifiedValues: false,
+              source: "average",
             },
             {
               completedWorkingDays: 8,
               remainingWorkingDays: 2,
               totalWorkingDays: 10,
               userSpecifiedValues: true,
+              source: "self",
             },
             {
               completedWorkingDays: 16,
               remainingWorkingDays: 4,
               totalWorkingDays: 20,
               userSpecifiedValues: true,
+              source: "self",
             },
           ],
         },
@@ -304,12 +323,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 36,
               userSpecifiedValues: false,
+              source: "children",
             },
             {
               completedWorkingDays: 24,
               remainingWorkingDays: 6,
               totalWorkingDays: 30,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -320,6 +341,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 1,
               totalWorkingDays: 1,
               userSpecifiedValues: true,
+              source: "self",
             },
           ],
         },
@@ -333,7 +355,7 @@ describe("percentComplete", () => {
       }
     });
 
-    it("should use default estimate if no estimates on stories, and fall back to epic estimates for epics and initiatives", () => {
+    it("should use default estimate if no estimates on stories, and fall back to epic estimates for epics and initiatives (no completed days)", () => {
       const issuesAndReleases = [
         [
           {
@@ -371,12 +393,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: false,
+              source: "average",
             },
             {
               completedWorkingDays: 0,
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: false,
+              source: "average",
             },
           ],
         },
@@ -387,6 +411,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 2000,
               totalWorkingDays: 2000,
               userSpecifiedValues: true,
+              source: "self",
             },
           ],
         },
@@ -397,6 +422,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 2000,
               totalWorkingDays: 2000,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -447,12 +473,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 40,
               userSpecifiedValues: false,
+              "source": "average",
             },
             {
               completedWorkingDays: 20,
               remainingWorkingDays: 30,
               totalWorkingDays: 50,
               userSpecifiedValues: false,
+              "source": "average",
             },
           ],
         },
@@ -463,6 +491,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 1900,
               totalWorkingDays: 2000,
               userSpecifiedValues: true,
+              source: "self"
             },
           ],
         },
@@ -473,6 +502,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 1900,
               totalWorkingDays: 2000,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -524,12 +554,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: false,
+              source: "average",
             },
             {
               completedWorkingDays: 0,
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: false,
+              source: "average",
             },
           ],
         },
@@ -540,6 +572,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 60,
               totalWorkingDays: 60,
               userSpecifiedValues: false,
+              source: "children",
             },
           ],
         },
@@ -550,6 +583,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 1,
               totalWorkingDays: 1,
               userSpecifiedValues: true,
+              source: "self",
             },
           ],
         },
@@ -562,7 +596,7 @@ describe("percentComplete", () => {
         expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
       }
     });
-    it("should use default estimate if no estimates on stories or epics, and fall back to initiative estimates", () => {
+    it("should use default estimate if no estimates on stories or epics, and fall back to initiative estimates (with completed days of work)", () => {
       const issuesAndReleases = [
         [
           {
@@ -600,12 +634,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 40,
               userSpecifiedValues: false,
+              source: "average",
             },
             {
               completedWorkingDays: 20,
               remainingWorkingDays: 30,
               totalWorkingDays: 50,
               userSpecifiedValues: false,
+              source: "average",
             },
           ],
         },
@@ -616,6 +652,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 60,
               totalWorkingDays: 90,
               userSpecifiedValues: false,
+              source: "children",
             },
           ],
         },
@@ -626,6 +663,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 50,
               userSpecifiedValues: true,
+              source: "self"
             },
           ],
         },
@@ -677,12 +715,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 10,
               totalWorkingDays: 10,
               userSpecifiedValues: true,
+              source: "self",
             },
             {
               completedWorkingDays: 0,
               remainingWorkingDays: 20,
               totalWorkingDays: 20,
               userSpecifiedValues: true,
+              source: "self",
             },
           ],
         },
@@ -693,6 +733,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -703,6 +744,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 30,
               totalWorkingDays: 30,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -753,12 +795,14 @@ describe("percentComplete", () => {
               remainingWorkingDays: 8,
               totalWorkingDays: 12,
               userSpecifiedValues: true,
+              source: "self",
             },
             {
               completedWorkingDays: 16,
               remainingWorkingDays: 8,
               totalWorkingDays: 24,
               userSpecifiedValues: true,
+              source: "self",
             },
           ],
         },
@@ -769,6 +813,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 16,
               totalWorkingDays: 36,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },
@@ -779,6 +824,7 @@ describe("percentComplete", () => {
               remainingWorkingDays: 16,
               totalWorkingDays: 36,
               userSpecifiedValues: true,
+              source: "children",
             },
           ],
         },

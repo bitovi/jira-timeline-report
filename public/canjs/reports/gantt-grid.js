@@ -15,6 +15,13 @@ import {daysBetween} from "../../utils/date/days-between.js"
 import {timeRangeShorthand} from "../../utils/date/time-range-shorthand.js"
 
 import SimpleTooltip from "../ui/simple-tooltip/simple-tooltip.js";
+import PercentComplete from "../../react/reports/GanttReport/PercentComplete";
+
+
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+
+
 const DATES_TOOLTIP = new SimpleTooltip();
 DATES_TOOLTIP.classList.add("reset","pointer-events-none")
 document.body.append(DATES_TOOLTIP);
@@ -34,165 +41,6 @@ function container({addedClasses, currentValue, oldValue, title}){
     </div>`
 }
 
-const percentCompleteTooltip = stache(`
-<div class="p-2">
-    <button class="remove-button">❌</button>
-    
-    {{# not(eq(this.issueTimingMethod, "unknown")) }}
-
-    <div class="grid gap-2" style="grid-template-columns: repeat(5, auto);">
-
-      ${ container( {
-        title: "Completed working days", 
-        currentValue: "{{round(this.issue.derivedTiming.completedDaysOfWork}}", 
-        //oldValue: "{{this.issue.issueLastPeriod.derivedTiming.completedDaysOfWork}}", 
-        addedClasses: ""} )}
-      <div class="self-center justify-self-center">=</div>
-      ${ container( {
-        title: "Completed percent", 
-        currentValue: "{{ percent(this.issue.derivedTiming.completedDaysOfWork, this.issue.derivedTiming.totalDaysOfWork) }} ", 
-        addedClasses: "border-[#F5CD47] bg-[#FFF7D6]"} )}
-      <div class="self-center justify-self-center">x</div>
-      ${ container( {
-        title: "Total working days", 
-        currentValue: "{{ round( this.issue.derivedTiming.totalDaysOfWork) }}", 
-        addedClasses: "border-[#94C748] bg-[#EFFFD6]"} )}
-
-
-      ${ container( {
-        title: "Completed percent", 
-        currentValue: "{{ percent(this.issue.derivedTiming.completedDaysOfWork, this.issue.derivedTiming.totalDaysOfWork) }} ", 
-        addedClasses: "border-[#F5CD47] bg-[#FFF7D6]"} )}
-      <div class="self-center justify-self-center">=</div>
-      {{# if(this.issue.derivedTiming.datesDaysOfWork) }}
-      ${ container( {
-        title: "Start date – Now", 
-        currentValue: "{{this.issue.derivedTiming.datesCompletedDaysOfWork}} days", 
-        addedClasses: ""} )}
-      <div class="self-center justify-self-center">÷</div>
-      ${ container( {
-        title: "Start date – End date", 
-        currentValue: "{{ this.issue.derivedTiming.datesDaysOfWork }} days", 
-        addedClasses: ""} )}
-      {{ else }}
-        <div style="grid-column: 3 / span 3">
-          ${ container( {
-            title: "No Dates", 
-            currentValue: "0", 
-            addedClasses: ""} )}
-        </div>
-      {{/ if }}
-      
-
-      ${ container( {
-        title: "Total working days", 
-        currentValue: "{{ round( this.issue.derivedTiming.totalDaysOfWork) }}", 
-        addedClasses: "border-[#94C748] bg-[#EFFFD6]"} )}
-      <div class="self-center">=</div>
-      
-      {{# switch(this.issueTimingMethod) }}
-        {{#case("points-and-confidence")}}
-          ${ container( {
-            title: "Adjusted estimate", 
-            currentValue: "{{round( this.issue.derivedTiming.deterministicTotalPoints)}}", 
-            addedClasses: "border-[#6CC3E0] bg-[#E7F9FF]"} )}
-          <div class="self-center justify-self-center">÷</div>
-          ${ container( {
-            title: "Points per day per parallel track", 
-            currentValue: "{{this.issue.team.pointsPerDayPerTrack}}", 
-            addedClasses: "border-[#9F8FEF] bg-[#F3F0FF]"} )}
-        {{/ case }}
-        {{# case("dates") }}
-        ${ container( {
-          title: "Start date – End date", 
-          currentValue: "{{ this.issue.derivedTiming.datesDaysOfWork }} days", 
-          addedClasses: ""} )}
-          <div style="grid-column: 4 / span 2"></div>
-        {{/case}}
-        {{#default}}
-          <div style="grid-column: 3 / span 3">TBD</div>
-        {{/default}}
-      {{/ switch }}
-
-      {{# eq(timingMethod(this.issue), "points-and-confidence") }}
-        ${ container( {
-          title: "Adjusted estimate", 
-          currentValue: "{{round( this.issue.derivedTiming.deterministicTotalPoints) }}", 
-          addedClasses: "border-[#6CC3E0] bg-[#E7F9FF]"} )}
-        <div class="self-center justify-self-center">=</div>
-        ${ container( {
-          title: "Median estimate", 
-          currentValue: "{{this.issue.derivedTiming.defaultOrStoryPointsMedian}}", 
-          addedClasses: ""} )}
-        <div class="self-center justify-self-center">*</div>
-        ${ container( {
-          title: "LOGNORMINV × Confidence", 
-          currentValue: "{{this.issue.derivedTiming.usedConfidence}}%", 
-          addedClasses: ""} )}
-      {{/ eq }}
-
-      {{# eq(timingMethod(this.issue), "points-and-confidence") }}
-        ${ container( {
-          title: "Points per day per parallel track", 
-          currentValue: "{{this.issue.team.pointsPerDayPerTrack}}", 
-          addedClasses: "border-[#9F8FEF] bg-[#F3F0FF]"} )}
-        <div class="self-center justify-self-center">=</div>
-
-        <div class="flex justify-evenly" style="grid-column: 3 / span 3">
-          ${ container( {
-            title: "Velocity per sprint", 
-            currentValue: "{{this.issue.team.velocity}}", 
-            addedClasses: ""} )}
-          <div class="self-center justify-self-center">÷</div>
-          ${ container( {
-            title: "Parallel work tracks", 
-            currentValue: "{{this.issue.team.parallelWorkLimit}}", 
-            addedClasses: ""} )}
-          <div class="self-center justify-self-center">÷</div>
-          ${ container( {
-            title: "Days per sprint", 
-            currentValue: "{{this.issue.team.daysPerSprint}}", 
-            addedClasses: ""} )}
-        </div>
-      {{/eq}}
-    </div>
-    {{/ not }}
-
-
-    {{# if(this.children.length)}}
-    <div class="grid gap-2" style="grid-template-columns: auto repeat(4, auto);">
-
-            <div class="font-bold">Summary</div>
-            <div class="font-bold">Percent Complete</div>
-            <div class="font-bold">Completed Working Days</div>
-            <div class="font-bold">Remaining Working Days</div>
-            <div class="font-bold">Total Working Days</div>
-        
-            <div class="truncate max-w-96">{{this.issue.summary}}</div>
-            <div class="text-right">{{this.getPercentComplete(this.issue)}}</div>
-            <div class="text-right">{{this.round( this.issue.completionRollup.completedWorkingDays) }}</div>
-            <div class="text-right">{{this.round(this.issue.completionRollup.remainingWorkingDays)}}</div>
-            <div class="text-right">{{this.round(this.issue.completionRollup.totalWorkingDays)}}</div>
-        
-        {{# for(child of this.children) }}
-       
-            <div class="pl-4 truncate max-w-96"><a href="{{child.url}}" class="link">{{child.summary}}</a></div>
-            <div class="text-right">{{this.getPercentComplete(child)}}</div>
-            <div class="text-right">{{this.round(child.completionRollup.completedWorkingDays)}}</div>
-            <div class="text-right">{{this.round(child.completionRollup.remainingWorkingDays)}}</div>
-            <div class="text-right">{{this.round(child.completionRollup.totalWorkingDays)}}</div>
-       
-        {{/ for }}
-   </div>
-   {{/ if }}
-
-   {{# and(eq(this.issueTimingMethod, "unknown"), eq(this.children.length, 0)) }}
-      ${ container( {
-        title: "Default Working Days", 
-        currentValue: "{{ round( this.issue.completionRollup.totalWorkingDays) }}", 
-        addedClasses: "border-[#94C748] bg-[#EFFFD6]"} )}
-   {{/ }}
-</div>`);
 
 const datesTooltipStache = stache(`<div class='flex gap-0.5 p-1'>
   {{# if(this.startDate)}}
@@ -256,12 +104,12 @@ export class GanttGrid extends StacheElement {
                   <div style="grid-row: {{ plus(3, rowIndex) }}; grid-column: 2"
                     class="flex z-10 items-stretch {{# if(this.alignLeft) }} justify-left {{ else }} justify-between{{/}}" on:mouseenter='this.hoverEnter(data.issue)' on:mouseleave='this.hoverLeave(data.issue)'>
                     <div on:click='this.toggleShowingChildren(data.issue)'
-                      class="pointer {{this.expandPadding}} pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} w-4 box-content">
+                      class="{{# if(this.hasChildren(data.issue)) }}pointer hover:bg-neutral-41{{/}} {{this.expandPadding}} pl-{{multiply(data.issue.reportingHierarchy.depth,4)}} w-4 box-content">
 
                       {{# if(data.isShowingChildren) }}
                         <img src="/images/chevron-down-collapse.svg" class="{{^ this.showExpandChildrenIcon(data.issue) }} invisible {{/}} inline"/>
                       {{ else }}
-                        {{# if(data.issue.reportingHierarchy.childKeys.length) }}
+                        {{# if(this.hasChildren( data.issue) ) }}
                           <img src="/images/chevron-right-expand.svg" class="{{^ this.showExpandChildrenIcon(data.issue) }} invisible {{/}} inline"/>
                         {{/ if }}
                       {{/ if}}
@@ -275,7 +123,8 @@ export class GanttGrid extends StacheElement {
                   </div>
 
                     {{# for(column of this.columnsToShow) }}
-                      <div style="grid-column: {{plus(3, scope.index) }}; grid-row: {{ plus(3, rowIndex) }}; z-index: 25" class="{{this.textSize}} text-right pointer pt-1 pb-0.5 px-1"
+                      <div style="grid-column: {{plus(3, scope.index) }}; grid-row: {{ plus(3, rowIndex) }}; z-index: 25" 
+                        class="{{this.textSize}} text-right pointer pt-1 pb-0.5 px-1 hover:bg-neutral-41"
                         on:click="column.onclick(scope.event, data.issue, this.allIssues)">{{column.getValue(data.issue)}}</div>
                     {{/ for }}
 
@@ -297,6 +146,7 @@ export class GanttGrid extends StacheElement {
                 {{/ }}
             {{/ for }}
         </div>
+        <div class="react-modal"></div>
     `;
   static props = {
     routeData: {
@@ -324,11 +174,17 @@ export class GanttGrid extends StacheElement {
       },
     },
   };
+  hasChildren(issue) {
+    return issue.reportingHierarchy.childKeys.length > 0;
+  }
   toggleShowingChildren(issue) {
-    if (this.showChildrenByKey[issue.key]) {
-      this.showChildrenByKey[issue.key] = false;
-    } else {
-      this.showChildrenByKey[issue.key] = true;
+    // make sure we have children
+    if(this.hasChildren( issue )) {
+      if (this.showChildrenByKey[issue.key]) {
+        this.showChildrenByKey[issue.key] = false;
+      } else {
+        this.showChildrenByKey[issue.key] = true;
+      }
     }
   }
   get lotsOfIssues() {
@@ -352,12 +208,12 @@ export class GanttGrid extends StacheElement {
         {
           name: "percentComplete",
           getValue(issue) {
-            return (
-              Math.round(
+            return stache.safeString(`
+              ${Math.round(
                 (issue.completionRollup.completedWorkingDays * 100) /
                   issue.completionRollup.totalWorkingDays
-              ) + "%"
-            );
+              )}%
+            `);
           },
           onclick: (event, issue, allIssues) => {
             const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
@@ -365,43 +221,12 @@ export class GanttGrid extends StacheElement {
             // we should get all the children ...
             const children = getChildren(issue);
 
-            function timingMethod(issue){
-              const derivedTiming = issue.derivedTiming;
-              if (!issue.team.spreadEffortAcrossDates && derivedTiming.datesDaysOfWork != null) {
-                return "dates"
-              } 
-              // else look for estimate
-              else if (derivedTiming.isStoryPointsMedianValid) {
-                return "points-and-confidence"
-              } else if (derivedTiming.isStoryPointsValid) {
-                return "points"
-              } 
-              // if no estimate, look back at dates
-              else if(derivedTiming.datesDaysOfWork != null) {
-                return "dates"
-              } else {
-                return "unknown"
-              }
-            }
-
-            showTooltipContent(
-              event.currentTarget,
-              percentCompleteTooltip({
-                issue,
-                children,
-                getPercentComplete: this.getPercentComplete.bind(this),
-                round: Math.round,
-                percent(numerator, denominator){
-                  return (
-                    Math.round(
-                      (numerator * 100) /
-                      denominator
-                    ) + "%" );
-                },
-                timingMethod,
-                issueTimingMethod: timingMethod(issue)
-              })
-            );
+            this.root.render(createElement(PercentComplete, {
+              allIssuesOrReleases: this.allIssuesOrReleases,
+              issue: issue,
+              isOpen: true,
+              children
+            }))
           },
         },
       ];
@@ -449,22 +274,6 @@ export class GanttGrid extends StacheElement {
   showTooltip(event, issue) {
     const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
     showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
-  }
-  showPercentCompleteTooltip(event, issue) {
-    const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
-
-    // we should get all the children ...
-    const children = getChildren(issue);
-
-    showTooltipContent(
-      event.currentTarget,
-      percentCompleteTooltip({
-        issue,
-        children,
-        getPercentComplete: this.getPercentComplete.bind(this),
-        round: Math.round,
-      })
-    );
   }
   showDatesTooltip(issueOrRelease, index, event) {
     const currentTime = event.currentTarget.querySelector(".identifier-current-time");
@@ -616,8 +425,7 @@ export class GanttGrid extends StacheElement {
       zIndex: 20,
     });
     
-    root.addEventListener("mouseenter",this.showDatesTooltip.bind(this, release, index));
-    root.addEventListener("mouseleave",this.hideDatesTooltip.bind(this, release, index));
+    
 
     // this has the last period stuff ... it's absolutely stretched to match the same space
     // we probably could have put this in the grid, but it's nice to have this stuff w/i an element
@@ -702,18 +510,15 @@ export class GanttGrid extends StacheElement {
           root.appendChild(thisPeriod);
         }
       } else {
+        root.addEventListener("mouseenter",this.showDatesTooltip.bind(this, release, index));
+        root.addEventListener("mouseleave",this.hideDatesTooltip.bind(this, release, index));
+        
         // make the last one ...
         const currentPositions = getPositions(release.rollupStatuses.rollup);
 
         let team;
 
         if (currentPositions.endIsBeforeFirstDay) {
-          /*
-          team = makeElement(["p-2"],{});
-          team.appendChild(
-            makeCircle("←",["color-text-and-bg-" + release.rollupStatuses.rollup.status, "w-4","h-4","text-xs"],
-              {zIndex: 30, position: "relative"})
-          );*/
           team = makeCircleForStatus(release.rollupStatuses.rollup.status, "←", this.lotsOfIssues);
         } else {
           team = makeElement(
@@ -798,6 +603,10 @@ export class GanttGrid extends StacheElement {
         return this.showChildrenByKey[issue.key];
       }).length > 0
     );
+  }
+
+  connected(){
+    this.root = createRoot(this.querySelector(".react-modal"));
   }
 }
 
