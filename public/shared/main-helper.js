@@ -36,6 +36,14 @@ export default async function mainHelper(
   configureRouting(route);
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
+  setTimeout(function(){
+    console.log("trying to access allReportsPromise")
+    route.on("allReportsPromise", ({value})=>{
+      console.log("allReportsPromise", value);
+    });
+    console.log("allReportsPromise", routeData.allReportsPromise);
+  }, 13);
+
 
   let requestHelper;
   if (host === "jira") {

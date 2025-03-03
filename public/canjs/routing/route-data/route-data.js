@@ -102,7 +102,6 @@ export class RouteData extends ObservableObject {
       return getAllTeamData(this.storage);
     },
     get simplifiedIssueHierarchyPromise() {
-      console.log("getSimplifiedIssueHierarchy", this.isLoggedInObservable.value);
       return getSimplifiedIssueHierarchy({
         jiraHelpers: this.jiraHelpers,
         isLoggedIn: this.isLoggedInObservable.value,
@@ -306,6 +305,12 @@ export class RouteData extends ObservableObject {
     },
     timingCalculations: {
       value({ resolve, lastSet, listenTo }) {
+        /*
+        listenTo("allReportsPromise",({value})=> {
+          console.log("allReportsPromise",value)
+        });
+        console.log("initial allReportsPromise",this.allReportsPromise)*/
+
         let currentValue;
         updateValue(new URL(window.location).searchParams.get("timingCalculations"));
 
