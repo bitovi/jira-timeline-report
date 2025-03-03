@@ -52,7 +52,7 @@ export interface BaseFields {
 }
 
 export interface IssueFields extends BaseFields {
-  "Issue Type": { hierarchyLevel: number; name: string };
+  "Issue Type": { hierarchyLevel: number; name: string, iconUrl?: string };
   "Parent Link"?: { data: { key: string } };
   Status: Status;
   "Fix versions": Array<FixVersion>;
