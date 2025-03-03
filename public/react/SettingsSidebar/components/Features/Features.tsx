@@ -9,14 +9,12 @@ import { useFeatures, useUpdateFeatures } from "../../../services/features";
 import { Features } from "../../../../jira/features";
 
 const keyToTitle = {
-  groupGrid: "Group Grid",
   estimationTable: "Estimation Table",
   secondaryReport: "Secondary Report",
   workBreakdowns: "Work Breakdowns",
 };
 
 const keyToSubtitle = {
-  groupGrid: "",
   estimationTable: "",
   secondaryReport: "",
   workBreakdowns: "",

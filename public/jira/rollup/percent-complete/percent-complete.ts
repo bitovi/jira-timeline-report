@@ -20,10 +20,13 @@ export type PercentCompleteMeta = {
   averageChildCount: number;
 };
 
+type RollupSourceValues = "self" | "children" | "average";
+
 export type PercentCompleteRollup = {
   userSpecifiedValues: boolean;
   totalWorkingDays: number;
   completedWorkingDays: number;
+  source: RollupSourceValues;
   readonly remainingWorkingDays: number;
 };
 
@@ -96,9 +99,9 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       metadata
     ) {
       // TODO remove commented code - DBrandon 2024/11/26
-      const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
-      const method = methods[methodName];
-      return method(issueOrRelease, children, hierarchyLevel, metadata);
+      //const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
+      //const method = methods[methodName];
+      return methods.childrenFirstThenParent(issueOrRelease, children, hierarchyLevel, metadata);
     },
     finalizeMetadataForHierarchyLevel(metadata) {
       let ave = average(metadata.totalDaysOfWorkForAverage) || 30;
@@ -109,6 +112,7 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       // set average on children that need it
       metadata.needsAverageSet.forEach((data) => {
         data.totalWorkingDays += ave;
+        data.source = "average";
       });
     },
   });
@@ -122,6 +126,7 @@ function emptyRollup() {
     get remainingWorkingDays() {
       return this.totalWorkingDays - this.completedWorkingDays;
     },
+    source: "self" as "self"
   };
 }
 
@@ -148,6 +153,7 @@ export function widestRange<T>(
         get remainingWorkingDays() {
           return this.totalWorkingDays - this.completedWorkingDays;
         },
+        source: "self" as "self"
       };
   }
 
@@ -202,6 +208,7 @@ export function childrenFirstThenParent<T>(
       get remainingWorkingDays() {
         return this.totalWorkingDays - this.completedWorkingDays;
       },
+      source: "self" as "self"
     };
     // make sure we can build an average from it
     metadata.totalDaysOfWorkForAverage.push(data.totalWorkingDays);
@@ -250,5 +257,6 @@ export function sumChildRollups(children: PercentCompleteRollup[]) {
     get remainingWorkingDays() {
       return this.totalWorkingDays - this.completedWorkingDays;
     },
+    source: "children" as "children"
   };
 }

@@ -7,7 +7,6 @@ import { render, screen } from "@testing-library/react";
 import Features from "./Features";
 
 const features = [
-  { title: "Group Grid", subtitle: "" },
   { title: "Estimation Table", subtitle: "" },
   { title: "Secondary Report", subtitle: "" },
   { title: "Work Breakdowns", subtitle: "" },

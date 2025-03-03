@@ -8,7 +8,6 @@ import "./canjs/reports/gantt-grid.js";
 import "./canjs/reports/table-grid.js";
 import "./canjs/reports/scatter-timeline.js";
 import "./canjs/reports/status-report.js";
-import "./canjs/reports/group-grid/group-grid.js";
 
 import "./canjs/controls/select-issue-type/select-issue-type.js";
 import "./canjs/controls/select-report-type/select-report-type.js";
@@ -79,11 +78,6 @@ export class TimelineReport extends StacheElement {
             <table-grid
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                 allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
-          {{/ eq }}
-          {{# eq(this.routeData.primaryReportType, "group-grid") }}
-            <group-grid
-                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></group-grid>
           {{/ eq }}
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}

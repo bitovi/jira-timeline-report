@@ -108,6 +108,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           onSave={update}
         />
         <InheritanceSelect
+          optional
           isInheriting={!savedUserData.confidenceField}
           onInheritanceChange={(shouldCustomize) =>
             toggleInheritance("confidenceField", shouldCustomize)
