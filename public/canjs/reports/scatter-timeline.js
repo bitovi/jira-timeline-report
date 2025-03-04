@@ -130,6 +130,7 @@ export class ScatterTimeline extends StacheElement {
                     position: "absolute",
                     //transform: "translate(-100%, 0)",
                     padding: "2px 2px 2px 6px",
+                    //backgroundColor: "gray",
                     zIndex: "100",
                     top: "4px",
                     background: "rgba(255,255,255, 0.6)"
@@ -239,9 +240,10 @@ function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, t
             width = getWidth(element),
             widthInPercent = width  * 100 / widthOfArea,
             // from the left boundary to the right of the issue
-            rightPercentEnd = Math.ceil( (roundedDueDate - firstDay) / totalTime * 100),
+            rightPercentEnd =  (roundedDueDate - firstDay) / totalTime * 100,
             // from the right boundary to the right of the issue
             endPercentFromRight = ( (totalTime - (roundedDueDate- firstDay)) / totalTime * 100),
+            
             leftPercentStart = rightPercentEnd - widthInPercent;
 
         element.setAttribute("measured-width", width);
