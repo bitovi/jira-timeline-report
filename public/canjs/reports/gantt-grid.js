@@ -690,6 +690,8 @@ function getPositionsFromWork({ firstDay, lastDay }, work) {
     startExtends, // is the start before the first day
     endExtends, // is the end after the last day
     style: {
+      // we make the day a full day wider, but this doesn't account for time zone shifts 
+      // to handle this, we might want to use dates or move to integers
       width: Math.max(((end + DAY_IN_MS - start) / totalTime) * 100, 0) + "%",
       marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
     },
