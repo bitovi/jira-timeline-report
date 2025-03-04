@@ -88,7 +88,7 @@ export class TimelineReport extends StacheElement {
               allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
           {{/ }}
 
-          <div class='p-2 sticky bottom-0 bg-white z-[99]'>
+          <div class='p-2 sticky bottom-0 bg-white z-[200]'>
             <div id='status-keys' on:inserted='this.attachStatusKeys()'></div>
           </div>
 

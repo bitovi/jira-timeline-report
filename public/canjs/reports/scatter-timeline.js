@@ -6,11 +6,13 @@ import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup.js"
 import {mergeStartAndDueData} from "../../jira/rollup/dates/dates";
 
 import {roundDateByRoundToParam} from "../routing/utils/round.js";
+import { getDaysInMonth } from "../../utils/date/days-in-month.js";
+import { oneDayLater } from "../../utils/date/date-helpers.js";
 
 const DAY = 1000*60*60*24;
 export class ScatterTimeline extends StacheElement {
     static view = `
-        <div style="display: grid; grid-template-columns: repeat({{this.quartersAndMonths.months.length}}, auto); grid-template-rows: auto auto repeat({{this.rows.length}}, auto)"
+        <div style="display: grid; grid-template-columns: {{this.gridColumnsCSS}}; grid-template-rows: auto auto repeat({{this.rows.length}}, auto)"
         class='p-2 mb-10'>
 
             {{# for(quarter of this.quartersAndMonths.quarters) }}
@@ -80,6 +82,18 @@ export class ScatterTimeline extends StacheElement {
         
         return getQuartersAndMonths(firstEndDate, due || new Date( new Date().getTime() + DAY*30));
     }
+    get gridColumnsCSS() {
+        let columnCSS = "";
+        // repeat({{this.quartersAndMonths.months.length}}, [col] 1fr)
+
+        columnCSS += this.quartersAndMonths.months
+            .map(({ date }) => {
+                return getDaysInMonth(date.getYear(), date.getMonth() + 1) + "fr";
+            })
+            .join(" ");
+
+        return columnCSS;
+    }
     get todayMarginLeft() {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
@@ -103,7 +117,7 @@ export class ScatterTimeline extends StacheElement {
         const { firstDay, lastDay } = this.quartersAndMonths;
         const totalTime = (lastDay - firstDay);
         const issuesWithDates = this.primaryIssuesOrReleases.filter( issue => issue.rollupDates.due );
-
+        console.log({firstDay, lastDay, totalTime});
         const rows = calculate({
             widthOfArea: this.visibleWidth,
             issues: issuesWithDates,
@@ -115,7 +129,7 @@ export class ScatterTimeline extends StacheElement {
                 Object.assign(div.style, {
                     position: "absolute",
                     //transform: "translate(-100%, 0)",
-                    padding: "2px 4px 2px 4px",
+                    padding: "2px 2px 2px 6px",
                     zIndex: "100",
                     top: "4px",
                     background: "rgba(255,255,255, 0.6)"
@@ -218,18 +232,22 @@ function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, t
     
     const issueUIData = issues.map( issue => {
 
-        const roundedDueDate = roundDateByRoundToParam.end(issue.rollupStatuses.rollup.due);
+        // end dates need to be shifted one day later (see miro)
+        const roundedDueDate = oneDayLater( roundDateByRoundToParam.end(issue.rollupStatuses.rollup.due) );
 
         const element = makeElementForIssue(issue),
             width = getWidth(element),
             widthInPercent = width  * 100 / widthOfArea,
+            // from the left boundary to the right of the issue
             rightPercentEnd = Math.ceil( (roundedDueDate - firstDay) / totalTime * 100),
+            // from the right boundary to the right of the issue
             endPercentFromRight = ( (totalTime - (roundedDueDate- firstDay)) / totalTime * 100),
             leftPercentStart = rightPercentEnd - widthInPercent;
 
         element.setAttribute("measured-width", width);
+        element.setAttribute("width-p", widthInPercent);
         element.setAttribute("left-p", leftPercentStart);
-        element.setAttribute("right-p", leftPercentStart);
+        element.setAttribute("right-p", rightPercentEnd);
         return {
             roundedDueDate,
             issue,
