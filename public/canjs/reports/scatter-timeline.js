@@ -38,7 +38,7 @@ export class ScatterTimeline extends StacheElement {
 
             
             {{# for(row of this.rows) }}
-                <div class="h-10 relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
+                <div class="{{# if(this.lotsOfIssues)}}h-8{{else}}h-10{{/}} relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
                     {{# for(item of row.items) }}
                         {{{item.element}}}
                     {{/ for }}
@@ -108,7 +108,12 @@ export class ScatterTimeline extends StacheElement {
         return stache.safeString(this.calendarData.html);
     }
     */
-    
+    get lotsOfIssues() {
+        return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
+    }
+    get textSize() {
+        return this.lotsOfIssues ? "text-xs" : "";
+    }
     get rows() {
         // if we don't know our space, wait until we know it
         if(!this.visibleWidth) {
@@ -123,36 +128,37 @@ export class ScatterTimeline extends StacheElement {
             issues: issuesWithDates,
             firstDay,
             totalTime,
-            makeElementForIssue: function(release){
+            makeElementForIssue: (release) => {
                 const div = document.createElement("div");
-                div.className = " release-timeline-item flex items-center gap-1";
+                div.className = " release-timeline-item flex items-center gap-1 ";
                 Object.assign(div.style, {
                     position: "absolute",
                     //transform: "translate(-100%, 0)",
-                    padding: "2px 2px 2px 6px",
+                    padding: "2px 3px 2px 6px",
                     //backgroundColor: "gray",
                     zIndex: "100",
                     top: "4px",
-                    background: "rgba(255,255,255, 0.6)"
+                    //background: "rgba(255,255,255, 0.6)"
                 })
+                div.classList.add("bg-neutral-41", "rounded")
 
                 
                 const text = document.createElement("div");
-                text.className = "truncate";
+                text.className = "truncate "+this.textSize;
                 Object.assign( text.style, {
                     position: "relative",
                     zIndex: "10",
-                    maxWidth: "300px"
+                    maxWidth: this.lotsOfIssues ? "260px" : "300px"
                 })
                 text.appendChild(document.createTextNode(release?.names?.shortVersion || release.summary))
                 div.appendChild(text);
 
                 const tick = document.createElement("div");
-                tick.className = "color-text-and-bg-" + release.rollupStatuses.rollup.status
+                tick.className = "color-text-and-bg-" + release.rollupStatuses.rollup.status+" rounded-full"
                 Object.assign( tick.style, {
-                    height: "10px",
-                    width: "10px",
-                    transform: "rotate(45deg)",
+                    height: this.lotsOfIssues ? "10px": "14px",
+                    width: this.lotsOfIssues ? "10px" : "14px",
+                   // transform: "rotate(45deg)",
                 })
                 div.appendChild(tick);
                 
@@ -237,7 +243,7 @@ function calculate({widthOfArea = 1230, issues, makeElementForIssue, firstDay, t
         const roundedDueDate = oneDayLater( roundDateByRoundToParam.end(issue.rollupStatuses.rollup.due) );
 
         const element = makeElementForIssue(issue),
-            width = getWidth(element),
+            width = getWidth(element)+3, // 2 pixels of margin
             widthInPercent = width  * 100 / widthOfArea,
             // from the left boundary to the right of the issue
             rightPercentEnd =  (roundedDueDate - firstDay) / totalTime * 100,
