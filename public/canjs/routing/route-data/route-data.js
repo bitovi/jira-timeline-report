@@ -95,7 +95,7 @@ export class RouteData extends ObservableObject {
           return cached;
         }
 
-        return getAllReports(storage).then((reports) => {
+        return getAllReports(this.props.storage).then((reports) => {
           queryClient.setQueryData(reportKeys.allReports, reports);
 
           return reports;
