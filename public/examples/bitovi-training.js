@@ -41,6 +41,14 @@ export function bitoviTrainingIssueData(){
     return TRAINING_DATA_PROMISE;
 }
 
+export function bitoviTrainingFields(){
+    if(isNode) {
+        return Promise.resolve([{}])
+    } else {
+        return nativeFetchJSON("./examples/bitovi-training-fields.json")
+    }
+}
+
 
 
 function adjustDateStrings(obj, days) {
