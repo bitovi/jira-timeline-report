@@ -208,22 +208,27 @@ export class TimelineReport extends StacheElement {
       .then(applyThemeToCssVars)
       .catch((error) => console.error("Something went wrong getting the theme", error));
 
-    createRoot(document.getElementById("timeline-configuration")).render(
-      createElement(SettingsSidebar, {
-        isLoggedIn: this.loginComponent.isLoggedIn,
-        showSidebarBranding: this.showSidebarBranding,
-        jiraHelpers: this.jiraHelpers,
-        linkBuilder: this.linkBuilder,
-        onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
-          queues.batch.start();
 
-          routeData.fieldsToRequest = fields;
-          routeData.normalizeOptions = configuration;
-
-          queues.batch.stop();
-        },
-      })
-    );
+    const timelineConfiguration = document.getElementById("timeline-configuration");
+    if(timelineConfiguration) {
+      createRoot(timelineConfiguration).render(
+        createElement(SettingsSidebar, {
+          isLoggedIn: this.loginComponent.isLoggedIn,
+          showSidebarBranding: this.showSidebarBranding,
+          jiraHelpers: this.jiraHelpers,
+          linkBuilder: this.linkBuilder,
+          onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
+            queues.batch.start();
+  
+            routeData.fieldsToRequest = fields;
+            routeData.normalizeOptions = configuration;
+  
+            queues.batch.stop();
+          },
+        })
+      );
+    }
+    
   }
 
   showReports(event) {
