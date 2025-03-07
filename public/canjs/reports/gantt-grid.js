@@ -168,7 +168,7 @@ export class GanttGrid extends StacheElement {
       },
     },
     getChildren: {
-      type: Function,
+      // type: Function,
       get: function () {
         return makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
       },

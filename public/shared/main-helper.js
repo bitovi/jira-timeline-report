@@ -14,6 +14,8 @@ import routeData from "../canjs/routing/route-data";
 import { getFeatures } from "../jira/features/fetcher";
 import { featuresKeyFactory } from "../react/services/features/key-factory";
 import { queryClient } from "../react/services/query/queryClient";
+import { getAllReports } from "../jira/reports/fetcher.js";
+import { reportKeys } from "../react/services/reports/key-factory.js";
 
 domEvents.addEvent(domMutateDomEvents.inserted);
 
@@ -36,13 +38,6 @@ export default async function mainHelper(
   configureRouting(route);
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
-  setTimeout(function(){
-    console.log("trying to access allReportsPromise")
-    route.on("allReportsPromise", ({value})=>{
-      console.log("allReportsPromise", value);
-    });
-    console.log("allReportsPromise", routeData.allReportsPromise);
-  }, 13);
 
 
   let requestHelper;
@@ -68,6 +63,26 @@ export default async function mainHelper(
   routeData.jiraHelpers = jiraHelpers;
   routeData.storage = storage;
 
+  const timelineReportNeedsMet = {
+    loginResolved: false
+  }
+
+  // if we have a report, we need to wait for reportData
+  // otherwise, _every_ routeData property will suddenly have a "waiting" state ...
+  // instead, we can just wait here while we are checking logged in
+  const report = new URL(window.location).searchParams.get("report");
+  if(report) {
+    console.log("Loading report data ... ");
+    timelineReportNeedsMet.reportData = false;
+    getAllReports(storage).then((reports) => {
+      queryClient.setQueryData(reportKeys.allReports, reports);
+
+      routeData.reportsData =  reports;
+      timelineReportNeedsMet.reportData = true;
+      checkForNeedsAndInsertTimelineReport();
+    })
+  }
+
   const selectCloud = document.querySelector("select-cloud");
   if (selectCloud) {
     selectCloud.loginComponent = loginComponent;
@@ -78,24 +93,32 @@ export default async function mainHelper(
     if (value) {
       loginComponent.off("isResolved", listener);
       loadingJira.style.display = "none";
-
-      const report = new TimelineReport().initialize({
-        jiraHelpers,
-        loginComponent,
-        mode: "TEAMS",
-        storage,
-        linkBuilder,
-        showSidebarBranding,
-        featuresPromise: getFeatures(storage).then((features) => {
-          queryClient.setQueryData(featuresKeyFactory.features(), features);
-
-          return features;
-        }),
-      });
-      report.className = "flex flex-1 overflow-hidden";
-      mainContent.append(report);
+      timelineReportNeedsMet.loginResolved = true;
+      checkForNeedsAndInsertTimelineReport();
     }
   };
+
+  function checkForNeedsAndInsertTimelineReport(){
+      // if every need met, initialize
+      if(Object.values(timelineReportNeedsMet).every( value => value)) {
+        const report = new TimelineReport().initialize({
+          jiraHelpers,
+          loginComponent,
+          mode: "TEAMS",
+          storage,
+          linkBuilder,
+          showSidebarBranding,
+          featuresPromise: getFeatures(storage).then((features) => {
+            queryClient.setQueryData(featuresKeyFactory.features(), features);
+  
+            return features;
+          }),
+        });
+        report.className = "flex flex-1 overflow-hidden";
+        mainContent.append(report);
+      }
+  }
+
   loginComponent.on("isResolved", listener);
   login.appendChild(loginComponent);
   if (host === "jira") {

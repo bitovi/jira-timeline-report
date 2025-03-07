@@ -17,7 +17,9 @@ import {
   saveJSONToUrl,
   updateUrlParam,
   makeArrayOfStringsQueryParamValue,
+  makeArrayOfStringsQueryParamValueButAlsoLookAtReportData,
   pushStateObservable,
+  saveJSONToUrlButAlsoLookAtReportData
 } from "../state-storage.js";
 
 import { roundDate } from "../../../utils/date/round.js";
@@ -69,34 +71,42 @@ export const REPORTS = [
 export class RouteData extends ObservableObject {
   static props = {
     // passed values
-    jiraHelpers: null,
-    isLoggedInObservable: null,
-    storage: null,
+    jiraHelpers: {
+      enumerable: false,
+      default: null
+    },
+    isLoggedInObservable: {
+      enumerable: false,
+      default: null
+    },
+    storage: {
+      enumerable: false,
+      default: null
+    },
 
     // static requests
     jiraFieldsPromise: {
       get default() {
         return this.jiraHelpers.fetchJiraFields();
       },
+      enumerable: false
     },
     report: saveJSONToUrl("report", "", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
-    allReportsPromise: {
-      async() {
-        const cached = queryClient.getQueryData(reportKeys.allReports);
-
-        if (cached) {
-          return cached;
-        }
-
-        return getAllReports(storage).then((reports) => {
-          queryClient.setQueryData(reportKeys.allReports, reports);
-
-          return reports;
-        });
+    reportsData: {
+      type: Object,
+      set(value) {
+        console.log("Got new reports data", value);
+        return value;
       },
+      enumerable: false
+    },
+    get reportData() {
+      if(this.report && this.reportsData) {
+        return this.reportsData[this.report];
+      }
     },
     get allTeamDataPromise() {
       return getAllTeamData(this.storage);
@@ -113,7 +123,7 @@ export class RouteData extends ObservableObject {
       },
     },
     get issueTimingCalculations() {
-      if (!this.simplifiedIssueHierarchy) {
+      if (!this.simplifiedIssueHierarchy || !this.timingCalculations) {
         return [];
       } else {
         const allLevels = getTimingLevels(this.simplifiedIssueHierarchy, this.timingCalculations);
@@ -129,18 +139,18 @@ export class RouteData extends ObservableObject {
     },
 
     // PURE ROUTES
-    showSettings: saveJSONToUrl("settings", "", String, {
+    showSettings: saveJSONToUrlButAlsoLookAtReportData("settings", "", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
-    jql: saveJSONToUrl("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
-    loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
-    childJQL: saveJSONToUrl("childJQL", "", String, {
+    jql: saveJSONToUrlButAlsoLookAtReportData("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    loadChildren: saveJSONToUrlButAlsoLookAtReportData("loadChildren", false, Boolean, booleanParsing),
+    childJQL: saveJSONToUrlButAlsoLookAtReportData("childJQL", "", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
 
-    roundTo: saveJSONToUrl("roundTo", "day", String, {
+    roundTo: saveJSONToUrlButAlsoLookAtReportData("roundTo", "day", String, {
       parse: function (x) {
         if (ROUND_OPTIONS.find((key) => key === x)) {
           return x;
@@ -151,10 +161,10 @@ export class RouteData extends ObservableObject {
       stringify: (x) => "" + x,
     }),
 
-    statusesToExclude: makeArrayOfStringsQueryParamValue("statusesToExclude"),
+    statusesToExclude: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("statusesToExclude"),
 
     // this is always in seconds
-    compareTo: saveJSONToUrl("compareTo", _15DAYS_IN_S, undefined, {
+    compareTo: saveJSONToUrlButAlsoLookAtReportData("compareTo", _15DAYS_IN_S, undefined, {
       parse(string) {
         const parsedAsDate = isoToLocalDate(string);
         if (/^\d+$/.test(string)) {
@@ -304,13 +314,8 @@ export class RouteData extends ObservableObject {
       }
     },
     timingCalculations: {
+      enumerable: true,
       value({ resolve, lastSet, listenTo }) {
-        /*
-        listenTo("allReportsPromise",({value})=> {
-          console.log("allReportsPromise",value)
-        });
-        console.log("initial allReportsPromise",this.allReportsPromise)*/
-
         let currentValue;
         updateValue(new URL(window.location).searchParams.get("timingCalculations"));
 
@@ -351,7 +356,108 @@ export class RouteData extends ObservableObject {
         }
       },
     },
-    primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
+    /*
+    timingCalculations: {
+      value({ resolve, lastSet, listenTo }) {
+        // handle determining the value from sources
+        let state = {
+          reportData: {loading: false, value: undefined},
+          urlValue: undefined
+        };
+
+        listenTo("reportDataPromise",({value})=> reportDataPromiseChanged(value));
+        reportDataPromiseChanged(this.reportDataPromise);
+        function reportDataPromiseChanged(value){
+          if(!value) {
+            resolveValueFromState(state, "reportData", {loading: false, value: undefined, resolved: false, rejected: false, hasReport: false})
+          } else {
+            resolveValueFromState(state, "reportData", {loading: true, value: undefined, resolved: false, rejected: false, hasReport: true});
+            value.then((reportData) => {
+              let paramValue = new URLSearchParams(reportData.queryParams).get("timingCalculations")
+              resolveValueFromState(state, "reportData", {loading: false, value: paramValue, resolved: true, rejected: false, hasReport: true})
+            }, function(){
+              // we are ignoring
+              resolveValueFromState(state, "reportData", {loading: false, value: undefined, resolved: false, rejected: true, hasReport: false})
+            })
+          }
+        }
+
+        listenTo(pushStateObservable, routeChanged);
+        routeChanged();
+        function routeChanged() {
+          resolveValueFromState(state, "urlValue", new URL(window.location).searchParams.get("timingCalculations"));
+        }
+
+        function _resolveValueFromState(state, event, data){
+          const newState = {
+            ...state,
+            [event]: data
+          }
+          // while loading, do nothing, keep as undefined
+          if(newState.reportData.loading) {
+            resolve(undefined);
+            return newState;
+          } 
+          if(event === "reportData") {
+            if(!newState.reportData.hasReport) {
+              resolve(extract(newState.reportData.urlValue));
+            } else if(newState.reportData.resolved) {
+              // if there is nothing in the URL, but we have a value in report data, use it
+              if(newState.reportData.value && !state.urlValue) {
+                resolve(extract(newState.reportData.value))
+              } 
+              // use the URL value
+              else {
+                resolve(extract(newState.reportData.urlValue))
+              }
+              
+            }
+            return newState;
+          }
+          else if(event === "urlValue") {
+            return resolve(extract(newState.reportData.urlValue))
+          }
+        }
+        function resolveValueFromState() {
+          state = _resolveValueFromState.apply(this, arguments);
+        }
+
+        // handle setting a new value ... don't worry about a report set at the exact same time
+        listenTo(lastSet, (value) => {
+          updateUrlParam("timingCalculations", stringify(value), stringify([]));
+        });
+
+        function parse(value) {
+          let phrases = value.split(",");
+          const data = {};
+          for (let phrase of phrases) {
+            const parts = phrase.split(":");
+            data[parts[0]] = parts[1];
+          }
+          return data;
+        }
+
+        function extract(paramValue){
+          let value;
+          if (typeof paramValue === "string") {
+            try {
+              value = parse(paramValue);
+            } catch (e) {
+              value = [];
+            }
+          } else if (!value) {
+            value = [];
+          }
+          return value;
+        }
+        function stringify(obj) {
+          return Object.keys(obj)
+            .map((key) => key + ":" + obj[key])
+            .join(",");
+        }
+      },
+    },*/
+    primaryReportType: saveJSONToUrlButAlsoLookAtReportData("primaryReportType", "start-due", String, {
       parse: function (x) {
         if (REPORTS.find((report) => report.key === x)) {
           return x;
@@ -365,6 +471,7 @@ export class RouteData extends ObservableObject {
       get default() {
         return REPORTS;
       },
+      enumerable: false
     },
 
     get issueHierarchy() {
@@ -373,6 +480,7 @@ export class RouteData extends ObservableObject {
         : this.simplifiedIssueHierarchy;
     },
     selectedIssueType: {
+      enumerable: true,
       value({ resolve, lastSet, listenTo }) {
         function getParamValue() {
           return new URL(window.location).searchParams.get("selectedIssueType") || "";
@@ -450,20 +558,21 @@ export class RouteData extends ObservableObject {
       return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
     },
 
-    primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
-    secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {
+    primaryReportBreakdown: saveJSONToUrlButAlsoLookAtReportData("primaryReportBreakdown", false, Boolean, booleanParsing),
+    secondaryReportType: saveJSONToUrlButAlsoLookAtReportData("secondaryReportType", "none", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
-    showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
-    sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-    hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-    showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-    statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
-    statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
-    planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
-    releasesToShow: makeArrayOfStringsQueryParamValue("releasesToShow"),
+    showPercentComplete: saveJSONToUrlButAlsoLookAtReportData("showPercentComplete", false, Boolean, booleanParsing),
+    sortByDueDate: saveJSONToUrlButAlsoLookAtReportData("sortByDueDate", false, Boolean, booleanParsing),
+    hideUnknownInitiatives: saveJSONToUrlButAlsoLookAtReportData("hideUnknownInitiatives", false, Boolean, booleanParsing),
+    showOnlySemverReleases: saveJSONToUrlButAlsoLookAtReportData("showOnlySemverReleases", false, Boolean, booleanParsing),
+    statusesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("statusesToShow"),
+    statusesToRemove: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("statusesToRemove"),
+    planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("planningStatuses"),
+    releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("releasesToShow"),
     groupBy: {
+      enumerable: true,
       value({ resolve, lastSet, listenTo }) {
         function getFromParam() {
           return new URL(window.location).searchParams.get("groupBy") || "";
