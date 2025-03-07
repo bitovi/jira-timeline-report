@@ -26,7 +26,7 @@ const RELEASES_TOOLTIP = new SimpleTooltip();
 document.body.append(RELEASES_TOOLTIP);
 
 class TypeSelectionDropdown extends StacheElement {
-    static view = `
+  static view = `
         {{# for(issueType of this.routeData.issueHierarchy) }}
         <label class="px-4 py-2 block {{#eq(this.routeData.primaryIssueType, issueType.name)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
             type="radio" 
@@ -39,25 +39,27 @@ class TypeSelectionDropdown extends StacheElement {
             Releases <img class="inline" src="/images/chevron-right-new.svg"/> 
         </label>
     `;
-    static props = {
-        routeData: {
-            get default() { return routeData; }
-        },
-        onSelection: Function,
-    };
+  static props = {
+    routeData: {
+      get default() {
+        return routeData;
+      },
+    },
+    onSelection: Function,
+  };
 
-    showReleases(label) {
-        let dropdown = new ReleasesTypeSelectionDropdown().initialize({
-            onSelection: this.onSelection
-        })
+  showReleases(label) {
+    let dropdown = new ReleasesTypeSelectionDropdown().initialize({
+      onSelection: this.onSelection,
+    });
 
-        RELEASES_TOOLTIP.rightOfElementInScrollingContainer(label, dropdown);
-    }
+    RELEASES_TOOLTIP.rightOfElementInScrollingContainer(label, dropdown);
+  }
 }
 customElements.define("select-type-dropdown", TypeSelectionDropdown);
 
 class ReleasesTypeSelectionDropdown extends StacheElement {
-    static view = `
+  static view = `
         {{# for(issueType of this.routeData.issueHierarchy) }}
         <label class="px-4 py-2 block {{#eq(this.routeData.secondaryIssueType, issueType.name)}}bg-blue-101{{else}}${hoverEffect}{{/eq}}"><input 
             type="radio" 
@@ -66,20 +68,25 @@ class ReleasesTypeSelectionDropdown extends StacheElement {
             on:change="this.onSelection('Release', issueType.name)"/> {{issueType.name}}s </label>
         {{/ }}
     `;
-    static props = {
-        routeData: {
-            get default() { return routeData; }
-        },
-        onSelection: Function,
-    }
+  static props = {
+    routeData: {
+      get default() {
+        return routeData;
+      },
+    },
+    onSelection: Function,
+  };
 }
 customElements.define("select-release-type-dropdown", ReleasesTypeSelectionDropdown);
+
+const jiraButton =
+  "rounded bg-neutral-201 pl-3 pr-2 py-[6px] h-8 text-slate-600 font-medium text-sm";
 
 export class SelectIssueType extends StacheElement {
   static view = `
         <label for="reportOn" class="${DROPDOWN_LABEL}">Report on</label>
         {{# if(this.routeData.primaryIssueType) }}
-            <button class="rounded bg-neutral-201 px-3 py-1 ${hoverEffect}" 
+            <button class="${jiraButton} ${hoverEffect}" 
                 on:click="this.showChildOptions()" 
                 id="reportOn">
                 {{this.routeData.primaryIssueType}}s
@@ -87,38 +94,40 @@ export class SelectIssueType extends StacheElement {
                 <img class="inline" src="/images/chevron-down.svg"/>
             </button>
         {{ else }}
-            <button class="rounded bg-neutral-201 px-3 py-1" id="reportOn">Loading ... </button>
+            <button class="${jiraButton}" id="reportOn">Loading ... </button>
         {{/ }}
     `;
-    static props ={     
-        routeData: {
-          get default() { return routeData; }
-        }
-    };
-    onSelection(primaryType, secondaryType){
-        if(secondaryType) {
-            this.routeData.selectedIssueType = "Release-"+secondaryType;
-        } else {
-            this.routeData.selectedIssueType = primaryType;
-        }
+  static props = {
+    routeData: {
+      get default() {
+        return routeData;
+      },
+    },
+  };
+  onSelection(primaryType, secondaryType) {
+    if (secondaryType) {
+      this.routeData.selectedIssueType = "Release-" + secondaryType;
+    } else {
+      this.routeData.selectedIssueType = primaryType;
+    }
+    TOOLTIP.leftElement();
+    RELEASES_TOOLTIP.leftElement();
+  }
+  showChildOptions() {
+    let dropdown = new TypeSelectionDropdown().initialize({
+      onSelection: this.onSelection.bind(this),
+    });
+
+    TOOLTIP.belowElementInScrollingContainer(this, dropdown);
+  }
+  connected() {
+    this.listenTo(window, "click", (event) => {
+      if (!TOOLTIP.contains(event.target)) {
         TOOLTIP.leftElement();
         RELEASES_TOOLTIP.leftElement();
-    }
-    showChildOptions(){
-        let dropdown = new TypeSelectionDropdown().initialize({
-            onSelection: this.onSelection.bind(this)
-        })
-
-        TOOLTIP.belowElementInScrollingContainer(this, dropdown);
-    }
-    connected(){
-        this.listenTo(window, "click", (event)=>{
-          if(!TOOLTIP.contains(event.target))   {
-            TOOLTIP.leftElement();
-            RELEASES_TOOLTIP.leftElement();
-          }
-        })
-    }
+      }
+    });
+  }
 }
 
 customElements.define("select-issue-type", SelectIssueType);
