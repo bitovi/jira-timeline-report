@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, ReactNode, useLayoutEffect, useRef, useState } from "react";
 
 import { value } from "../../can";
 
@@ -14,6 +14,7 @@ import { NormalizeIssueConfig } from "../../jira/normalized/normalize";
 import Theme from "./components/Theme";
 import SidebarLayout from "./components/SidebarLayout";
 import Features from "./components/Features";
+import AnimatedSidebar from "./components/AnimatedSidebar";
 
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
@@ -37,7 +38,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
   const returnToSettings = () => changeSettings("");
 
   return (
-    <div className="h-full min-w-40">
+    <AnimatedSidebar>
       {!showSettings && (
         <ReportSettings showSidebarBranding={showSidebarBranding} changeSettings={changeSettings} />
       )}
@@ -71,7 +72,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
           <Theme onBackButtonClicked={changeSettings} />
         </SidebarLayout>
       )}
-    </div>
+    </AnimatedSidebar>
   );
 };
 
