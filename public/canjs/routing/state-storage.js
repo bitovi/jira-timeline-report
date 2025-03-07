@@ -204,11 +204,11 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
       });
 
       function resolveFromState() {
-        if(state.urlParamValue) {
+        if(state.urlParamValue != null) {
           parseAndResolve(state.urlParamValue)
         } 
         // then see if we have report data
-        else if(state.reportParamValue){
+        else if(state.reportParamValue != null){
           parseAndResolve(state.reportParamValue)
         }
         // then use the default
