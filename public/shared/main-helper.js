@@ -101,6 +101,10 @@ export default async function mainHelper(
   function checkForNeedsAndInsertTimelineReport(){
       // if every need met, initialize
       if(Object.values(timelineReportNeedsMet).every( value => value)) {
+      
+        // TODO: this is just to make sure things are bound so react can be cool
+        routeData.on("timingCalculations",()=>{});
+
         const report = new TimelineReport().initialize({
           jiraHelpers,
           loginComponent,

@@ -58,7 +58,7 @@ export function saveJSONToUrl(key, defaultValue, Type, converter = JSON) {
   };
 }
 
-export function saveJSONToUrlButAlsoLookAtReportData(key, defaultValue, Type, converter = JSON) {
+export function saveJSONToUrlButAlsoLookAtReport_DataWrapper(key, defaultValue, Type, converter = JSON) {
   const { stringify, parse } = converter;
 
   function parseThatHandlesDates(value) {
@@ -84,8 +84,10 @@ export function saveJSONToUrlButAlsoLookAtReportData(key, defaultValue, Type, co
   });
 }
 
-/*
-export function saveJSONToUrlButAlsoLookAtReportData1(key, defaultValue, Type, converter = JSON) {
+
+export function saveJSONToUrlButAlsoLookAtReportData_LongForm(key, defaultValue, Type, converter = JSON) {
+  //return saveJSONToUrl(key, defaultValue, Type, converter);
+
   const { stringify, parse } = converter;
 
   return {
@@ -99,7 +101,7 @@ export function saveJSONToUrlButAlsoLookAtReportData1(key, defaultValue, Type, c
         urlValue: undefined,
         reportData: undefined
       }
-
+      // TODO: BRING BACK
       listenTo("reportData",({value})=> reportDataChanged(value));
       reportDataChanged(this.reportData);
       function reportDataChanged(reportData){
@@ -115,6 +117,7 @@ export function saveJSONToUrlButAlsoLookAtReportData1(key, defaultValue, Type, c
       });
 
       function _resolveValueFromState(state, event, data){
+
         const newState = {
           ...state,
           [event]: data
@@ -177,8 +180,8 @@ export function saveJSONToUrlButAlsoLookAtReportData1(key, defaultValue, Type, c
       return stringify(currentValue);
     }
   };
-}*/
-/*
+}
+
 export function makeArrayOfStringsQueryParamValue(queryParam) {
   return {
     value: function ({ resolve, lastSet, listenTo }) {
@@ -210,7 +213,7 @@ export function makeArrayOfStringsQueryParamValue(queryParam) {
       return stringify(currentValue);
     }
   };
-}*/
+}
 
 // a base helper function
 export function makeParamAndReportDataReducer({
@@ -304,6 +307,7 @@ export function makeParamAndReportDataReducer({
   };
 }
 export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
+  //return makeArrayOfStringsQueryParamValue(key);
   return makeParamAndReportDataReducer({
     // what key you are listening to
     key,
@@ -333,8 +337,8 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
     defaultValue: ""
   })
 }
-/*
-export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
+
+export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportDataLongForm(key) {
   return {
     value: function ({ resolve, lastSet, listenTo }) {
       let state = {
@@ -397,7 +401,7 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
     }
   };
 }
-*/
+
 export function directlyReplaceUrlParam(key, valueJSON, defaultJSON) {
   const newUrl = new URL(window.location);
   if (valueJSON !== defaultJSON) {
@@ -434,6 +438,10 @@ export function listenToReportDataChanged(routeData, key, listenTo, onReportData
       onReportDataChanged(paramValue(reportData, key));
     }
   }
+}
+
+export function getUrlParamValue(key){
+  return new URL(window.location).searchParams.get(key)
 }
 
 export function listenToUrlChange(key, listenTo, onUrlChange) {
