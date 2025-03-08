@@ -178,3 +178,20 @@ export function getFirstDateFrom(initiatives, property) {
     .map((init) => parseDateISOString(init[property][START_DATE_KEY]));
   return values.length ? new Date(Math.min(...values)) : undefined;
 }
+
+
+export function oneDayEarlier(date) {
+  const newDate = new Date(date);
+
+  // Subtract one day from the date.
+  newDate.setDate(newDate.getDate() - 1);
+  return newDate;
+}
+
+export function oneDayLater(date) {
+  const newDate = new Date(date);
+
+  // Subtract one day from the date.
+  newDate.setDate(newDate.getDate() + 1);
+  return newDate;
+}

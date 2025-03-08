@@ -1,3 +1,6 @@
+
+
+// how many months apart
 function monthDiff(dateFromSring, dateToString) {
     const dateFrom = new Date(dateFromSring);
     const dateTo = new Date(dateToString);

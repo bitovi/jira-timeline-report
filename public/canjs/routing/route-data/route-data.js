@@ -5,6 +5,7 @@ import { daysBetween } from "../../../utils/date/days-between.js";
 import { isoToLocalDate } from "../../../utils/date/local.js";
 
 import { allStatusesSorted } from "../../../jira/normalized/normalize.ts";
+import { bitoviTrainingFields } from "../../../examples/bitovi-training.js";
 
 import {
   rawIssuesRequestData,
@@ -91,7 +92,12 @@ export class RouteData extends ObservableObject {
     // static requests
     jiraFieldsPromise: {
       get default() {
-        return this.jiraHelpers.fetchJiraFields();
+        if( this.isLoggedInObservable.value ) {
+          return this.jiraHelpers.fetchJiraFields();
+        } else {
+          return bitoviTrainingFields();
+        }
+        
       },
       enumerable: false
     },
