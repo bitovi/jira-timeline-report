@@ -61,6 +61,33 @@ export function saveJSONToUrl(key, defaultValue, Type, converter = JSON) {
 export function saveJSONToUrlButAlsoLookAtReportData(key, defaultValue, Type, converter = JSON) {
   const { stringify, parse } = converter;
 
+  function parseThatHandlesDates(value) {
+    const parsed = parse(value);
+    if (parsed && dateMatch.test(parsed)) {
+      return new Date(parsed);
+    } else {
+      return parsed;
+    }
+  }
+
+  return makeParamAndReportDataReducer({
+    // what key you are listening to
+    key,
+    
+    // given a raw value, what is the "JS" value 
+    parse: parseThatHandlesDates,
+  
+    // given a value, what's a string
+    stringify,
+    Type,
+    defaultValue
+  });
+}
+
+/*
+export function saveJSONToUrlButAlsoLookAtReportData1(key, defaultValue, Type, converter = JSON) {
+  const { stringify, parse } = converter;
+
   return {
     type: Type,
     enumerable: true,
@@ -137,7 +164,7 @@ export function saveJSONToUrlButAlsoLookAtReportData(key, defaultValue, Type, co
         const valueJSON = stringify(value);
         const param = this.reportData && paramValue(this.reportData, key);
         if(param) {
-          console.log("ROUTE",key,"set, but using", param,"from reportData as a default value");
+          // console.log("ROUTE",key,"set, but using", param,"from reportData as a default value");
           updateUrlParam(key, valueJSON, param);
         } else {
           updateUrlParam(key, valueJSON, defaultJSON);
@@ -150,8 +177,8 @@ export function saveJSONToUrlButAlsoLookAtReportData(key, defaultValue, Type, co
       return stringify(currentValue);
     }
   };
-}
-
+}*/
+/*
 export function makeArrayOfStringsQueryParamValue(queryParam) {
   return {
     value: function ({ resolve, lastSet, listenTo }) {
@@ -183,8 +210,130 @@ export function makeArrayOfStringsQueryParamValue(queryParam) {
       return stringify(currentValue);
     }
   };
-}
+}*/
 
+// a base helper function
+export function makeParamAndReportDataReducer({
+  // what key you are listening to
+  key,
+  
+  // given a raw value, what is the "JS" value 
+  parse,
+
+  // given a value
+  stringify,
+
+  // by default looks at the url data first, then report data, then the default value
+  proposeValueFromState = function proposeValueFromState(state, proposeNewSerializedValue, change) {
+    if(state.urlParamValue != null) {
+      proposeNewSerializedValue(state.urlParamValue)
+    } 
+    // then see if we have report data
+    else if(state.reportParamValue != null){
+      proposeNewSerializedValue(state.reportParamValue)
+    }
+    // then use the default
+    else {
+      proposeNewSerializedValue(state.defaultValue)
+    }
+  },
+
+  // what you should listen to other than yourself ...
+  listeners,
+
+
+  checkIfChanged,
+  Type,
+  defaultValue
+}) {
+  return {
+    Type: Type,
+    value: function ({ resolve, lastSet, listenTo }) {
+      const defaultJSON = stringify(typeof defaultValue === "function" ? defaultValue.call(this) : defaultValue);
+
+      let state = {reportParamValue: undefined, urlParamValue: undefined, defaultValue: defaultJSON};
+      let currentValue = undefined;
+
+      function proposeNewSerializedValue(newValue){
+        const parsed = parse(newValue);
+        // if there's a change and onValueChange optionally tells us it's ok to change
+        if( parsed !== currentValue && (checkIfChanged ? checkIfChanged(parsed, currentValue) : true ))  {
+          currentValue = parsed;
+          resolve(parsed)
+        }
+      }
+
+      listenToReportDataChanged(this, key, listenTo, (reportParamValue)=>{
+        state.reportParamValue = reportParamValue;
+        proposeValueFromState(state, proposeNewSerializedValue, "reportParamValue");
+      })
+      listenToUrlChange(key, listenTo, (urlParamValue)=> {
+        state.urlParamValue = urlParamValue;
+        proposeValueFromState(state, proposeNewSerializedValue, "urlParamValue");
+      });
+
+      /*
+      for(const [name, handler] of Object.entries(listeners || {})) {
+        listenTo(name, (...args)=>{
+          handler.apply(this, {resolveFromState, state, parse, resolve, ...args)
+        })
+      }*/
+
+
+
+      function parseAndResolve(value){
+        const newValue = !value ? [] : value.split(",");
+        // current value won't be an array the first change, so we should always resolve
+        if(!Array.isArray(currentValue)) {
+          resolve(currentValue = newValue)
+        } else if (diff.list(newValue, currentValue).length) {
+          resolve((currentValue = newValue));
+        }
+      }
+      
+      listenTo(lastSet, (value) => {
+        const serialized = stringify(value);
+        const reportParam = this.reportData && paramValue(this.reportData, key);
+        updateUrlParam(key, serialized, reportParam || "");
+      });
+    },
+    enumerable: true,
+    serialize( currentValue ) {
+      return stringify(currentValue);
+    }
+  };
+}
+export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
+  return makeParamAndReportDataReducer({
+    // what key you are listening to
+    key,
+    
+    // given a raw value, what is the "JS" value 
+    parse(value){
+      return !value ? [] : value.split(",")
+    },
+    // given a value
+    stringify(value){
+      if (!value) {
+        return "";
+      } else if (Array.isArray(value)) {
+        return value.join(","); // we probably need to escape things with `,`
+      } else {
+        return JSON.stringify(value);
+      }
+    },
+
+    checkIfChanged(newValue, currentValue) {
+      if(!Array.isArray(currentValue)) {
+        return true;
+      } else if (diff.list(newValue, currentValue).length) {
+        return true;
+      }
+    },
+    defaultValue: ""
+  })
+}
+/*
 export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
   return {
     value: function ({ resolve, lastSet, listenTo }) {
@@ -248,7 +397,7 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
     }
   };
 }
-
+*/
 export function directlyReplaceUrlParam(key, valueJSON, defaultJSON) {
   const newUrl = new URL(window.location);
   if (valueJSON !== defaultJSON) {
@@ -271,11 +420,11 @@ export function updateUrlParam(key, valueJSON, defaultJSON) {
   //history.pushState({}, '', );
 }
 
-function paramValue(reportData, key){
+export function paramValue(reportData, key){
   return new URLSearchParams(reportData.queryParams).get(key);
 }
 
-function listenToReportDataChanged(routeData, key, listenTo, onReportDataChanged){
+export function listenToReportDataChanged(routeData, key, listenTo, onReportDataChanged){
   listenTo("reportData",({value})=> reportDataChanged(value));
   reportDataChanged(routeData.reportData);
   function reportDataChanged(reportData){
@@ -287,7 +436,7 @@ function listenToReportDataChanged(routeData, key, listenTo, onReportDataChanged
   }
 }
 
-function listenToUrlChange(key, listenTo, onUrlChange) {
+export function listenToUrlChange(key, listenTo, onUrlChange) {
   listenTo(pushStateObservable, routeChanged);
   routeChanged();
   function routeChanged() {

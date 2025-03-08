@@ -1,4 +1,4 @@
-import { ObservableObject, value } from "../../../can.js";
+import { ObservableObject, value, diff } from "../../../can.js";
 
 import { DAY_IN_MS } from "../../../utils/date/date-helpers.js";
 import { daysBetween } from "../../../utils/date/days-between.js";
@@ -16,10 +16,14 @@ import {
 import {
   saveJSONToUrl,
   updateUrlParam,
-  makeArrayOfStringsQueryParamValue,
   makeArrayOfStringsQueryParamValueButAlsoLookAtReportData,
   pushStateObservable,
-  saveJSONToUrlButAlsoLookAtReportData
+  saveJSONToUrlButAlsoLookAtReportData,
+  makeParamAndReportDataReducer,
+  listenToReportDataChanged,
+  listenToUrlChange,
+  paramValue
+  // saveJSONToUrlButAlsoLookAtReportData2
 } from "../state-storage.js";
 
 import { roundDate } from "../../../utils/date/round.js";
@@ -313,7 +317,32 @@ export class RouteData extends ObservableObject {
         return [];
       }
     },
-    timingCalculations: {
+    timingCalculations: makeParamAndReportDataReducer({
+      key: "timingCalculations",
+      parse(value){
+        let phrases = value.split(",");
+        const data = {};
+        for (let phrase of phrases) {
+          const parts = phrase.split(":");
+          data[parts[0]] = parts[1];
+        }
+        return data;
+      },
+      stringify(obj) {
+        return Object.keys(obj || {})
+            .map((key) => key + ":" + obj[key])
+            .join(",");
+      },
+      checkIfChanged(newValue, currentValue) {
+        if(!Array.isArray(currentValue)) {
+          return true;
+        } else if (diff.map(newValue, currentValue).length) {
+          return true;
+        }
+      }
+    }),
+    
+    /*{
       enumerable: true,
       value({ resolve, lastSet, listenTo }) {
         let currentValue;
@@ -355,7 +384,7 @@ export class RouteData extends ObservableObject {
             .join(",");
         }
       },
-    },
+    },*/
     /*
     timingCalculations: {
       value({ resolve, lastSet, listenTo }) {
@@ -482,9 +511,36 @@ export class RouteData extends ObservableObject {
     selectedIssueType: {
       enumerable: true,
       value({ resolve, lastSet, listenTo }) {
-        function getParamValue() {
-          return new URL(window.location).searchParams.get("selectedIssueType") || "";
+        let reportDataParam;
+        let urlParam;
+        let resolveCurrentValue;
+
+        // bind to stuff ... but we don't want to respond to change just yet
+        listenToReportDataChanged(this,"selectedIssueType",listenTo, (param)=>{
+          reportDataParam = param;
+          resolveCurrentValue && resolveCurrentValue();
+        })
+
+        listenToUrlChange("selectedIssueType", listenTo, (param) => {
+          urlParam = param;
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        listenTo("issueHierarchy", ({ value }) => {
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        function getParamValue(){
+          if(urlParam != null) {
+            return urlParam;
+          }
+          else if(reportDataParam != null) {
+            return reportDataParam;
+          } else {
+            return "";
+          }
         }
+
         let timers = [];
         function clearTimers() {
           timers.forEach((value) => clearTimeout(value));
@@ -493,9 +549,8 @@ export class RouteData extends ObservableObject {
 
         // anything happens in state, update the route
         // the route updates, update the state (or the route if it's wrong)
-        const resolveCurrentValue = () => {
+        resolveCurrentValue = () => {
           clearTimers();
-          const curParamValue = getParamValue();
 
           // we wait to resolve to a defined value until we can check it's right
           if (this.issueHierarchy && this.issueHierarchy.length) {
@@ -534,18 +589,9 @@ export class RouteData extends ObservableObject {
           }
         };
 
-        // when the route changes, check stuff ...
-        listenTo(pushStateObservable, () => {
-          resolveCurrentValue();
-        });
-
-        listenTo("issueHierarchy", ({ value }) => {
-          resolveCurrentValue();
-        });
-
         listenTo(lastSet, (value) => {
-          console.log("LAST SET sit", value);
-          updateUrlParam("selectedIssueType", value, "");
+          const param = this.reportData && paramValue(this.reportData, "selectedIssueType");
+          updateUrlParam("selectedIssueType", value, param || "");
         });
 
         resolveCurrentValue();
@@ -563,7 +609,8 @@ export class RouteData extends ObservableObject {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
-    showPercentComplete: saveJSONToUrlButAlsoLookAtReportData("showPercentComplete", false, Boolean, booleanParsing),
+    // TEST
+    showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
     sortByDueDate: saveJSONToUrlButAlsoLookAtReportData("sortByDueDate", false, Boolean, booleanParsing),
     hideUnknownInitiatives: saveJSONToUrlButAlsoLookAtReportData("hideUnknownInitiatives", false, Boolean, booleanParsing),
     showOnlySemverReleases: saveJSONToUrlButAlsoLookAtReportData("showOnlySemverReleases", false, Boolean, booleanParsing),
@@ -571,7 +618,30 @@ export class RouteData extends ObservableObject {
     statusesToRemove: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("statusesToRemove"),
     planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("planningStatuses"),
     releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("releasesToShow"),
-    groupBy: {
+
+    // GroupBy is not available for release ... so if a release primaryIssueType is set
+    // then we need to remove it
+    groupBy: makeParamAndReportDataReducer({
+      key: "groupBy",
+      defaultValue: "",
+
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+
+      listeners: {
+        primaryIssueType({state, updateUrlParam}, {value}){
+          const primaryIssueType = value;
+          if (primaryIssueType === "Release") {
+            updateUrlParam("", "");
+          } else {
+            // if it changes to something else .... keep it ... not sure why this is even needed
+            updateUrlParam(state.urlParamValue,state.reportParamValue || "");
+          }
+        }
+      }
+    })
+    
+    /*{
       enumerable: true,
       value({ resolve, lastSet, listenTo }) {
         function getFromParam() {
@@ -600,11 +670,10 @@ export class RouteData extends ObservableObject {
 
         resolve(getFromParam());
       },
-    },
+    },*/
   };
 }
 
 const routeData = new RouteData();
-console.log("routeData", routeData);
 
 export default routeData;
