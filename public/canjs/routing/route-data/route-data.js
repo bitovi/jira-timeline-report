@@ -16,17 +16,13 @@ import {
 
 import {
   saveJSONToUrl,
-  saveJSONToUrlButAlsoLookAtReportData_LongForm,
+  // saveJSONToUrlButAlsoLookAtReportData_LongForm,
   saveJSONToUrlButAlsoLookAtReport_DataWrapper,
   updateUrlParam,
   makeArrayOfStringsQueryParamValueButAlsoLookAtReportData,
   pushStateObservable,
-  makeParamAndReportDataReducer,
-  listenToReportDataChanged,
-  listenToUrlChange,
   paramValue,
   getUrlParamValue
-  // saveJSONToUrlButAlsoLookAtReportData2
 } from "../state-storage.js";
 
 import { roundDate } from "../../../utils/date/round.js";
@@ -155,7 +151,7 @@ export class RouteData extends ObservableObject {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
-    jql: saveJSONToUrlButAlsoLookAtReportData_LongForm("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    jql: saveJSONToUrlButAlsoLookAtReport_DataWrapper("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
     loadChildren: saveJSONToUrlButAlsoLookAtReport_DataWrapper("loadChildren", false, Boolean, booleanParsing),
     childJQL: saveJSONToUrlButAlsoLookAtReport_DataWrapper("childJQL", "", String, {
       parse: (x) => "" + x,
@@ -350,6 +346,9 @@ export class RouteData extends ObservableObject {
       }
     }),*/
     
+    
+    // the following was an alternative timing calculation implementation
+    // we might want this if we see a bug toggling percentages completion
     {
       enumerable: true,
       value({ resolve, lastSet, listenTo }) {
@@ -421,107 +420,7 @@ export class RouteData extends ObservableObject {
 
       },
     },
-    /*
-    timingCalculations: {
-      value({ resolve, lastSet, listenTo }) {
-        // handle determining the value from sources
-        let state = {
-          reportData: {loading: false, value: undefined},
-          urlValue: undefined
-        };
-
-        listenTo("reportDataPromise",({value})=> reportDataPromiseChanged(value));
-        reportDataPromiseChanged(this.reportDataPromise);
-        function reportDataPromiseChanged(value){
-          if(!value) {
-            resolveValueFromState(state, "reportData", {loading: false, value: undefined, resolved: false, rejected: false, hasReport: false})
-          } else {
-            resolveValueFromState(state, "reportData", {loading: true, value: undefined, resolved: false, rejected: false, hasReport: true});
-            value.then((reportData) => {
-              let paramValue = new URLSearchParams(reportData.queryParams).get("timingCalculations")
-              resolveValueFromState(state, "reportData", {loading: false, value: paramValue, resolved: true, rejected: false, hasReport: true})
-            }, function(){
-              // we are ignoring
-              resolveValueFromState(state, "reportData", {loading: false, value: undefined, resolved: false, rejected: true, hasReport: false})
-            })
-          }
-        }
-
-        listenTo(pushStateObservable, routeChanged);
-        routeChanged();
-        function routeChanged() {
-          resolveValueFromState(state, "urlValue", new URL(window.location).searchParams.get("timingCalculations"));
-        }
-
-        function _resolveValueFromState(state, event, data){
-          const newState = {
-            ...state,
-            [event]: data
-          }
-          // while loading, do nothing, keep as undefined
-          if(newState.reportData.loading) {
-            resolve(undefined);
-            return newState;
-          } 
-          if(event === "reportData") {
-            if(!newState.reportData.hasReport) {
-              resolve(extract(newState.reportData.urlValue));
-            } else if(newState.reportData.resolved) {
-              // if there is nothing in the URL, but we have a value in report data, use it
-              if(newState.reportData.value && !state.urlValue) {
-                resolve(extract(newState.reportData.value))
-              } 
-              // use the URL value
-              else {
-                resolve(extract(newState.reportData.urlValue))
-              }
-              
-            }
-            return newState;
-          }
-          else if(event === "urlValue") {
-            return resolve(extract(newState.reportData.urlValue))
-          }
-        }
-        function resolveValueFromState() {
-          state = _resolveValueFromState.apply(this, arguments);
-        }
-
-        // handle setting a new value ... don't worry about a report set at the exact same time
-        listenTo(lastSet, (value) => {
-          updateUrlParam("timingCalculations", stringify(value), stringify([]));
-        });
-
-        function parse(value) {
-          let phrases = value.split(",");
-          const data = {};
-          for (let phrase of phrases) {
-            const parts = phrase.split(":");
-            data[parts[0]] = parts[1];
-          }
-          return data;
-        }
-
-        function extract(paramValue){
-          let value;
-          if (typeof paramValue === "string") {
-            try {
-              value = parse(paramValue);
-            } catch (e) {
-              value = [];
-            }
-          } else if (!value) {
-            value = [];
-          }
-          return value;
-        }
-        function stringify(obj) {
-          return Object.keys(obj)
-            .map((key) => key + ":" + obj[key])
-            .join(",");
-        }
-      },
-    },*/
+    
     primaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper("primaryReportType", "start-due", String, {
       parse: function (x) {
         if (REPORTS.find((report) => report.key === x)) {

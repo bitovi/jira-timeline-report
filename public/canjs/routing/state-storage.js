@@ -84,7 +84,8 @@ export function saveJSONToUrlButAlsoLookAtReport_DataWrapper(key, defaultValue, 
   });
 }
 
-
+// this was an older (and longer) alternative version
+/*
 export function saveJSONToUrlButAlsoLookAtReportData_LongForm(key, defaultValue, Type, converter = JSON) {
   //return saveJSONToUrl(key, defaultValue, Type, converter);
 
@@ -180,8 +181,8 @@ export function saveJSONToUrlButAlsoLookAtReportData_LongForm(key, defaultValue,
       return stringify(currentValue);
     }
   };
-}
-
+}*/
+/*
 export function makeArrayOfStringsQueryParamValue(queryParam) {
   return {
     value: function ({ resolve, lastSet, listenTo }) {
@@ -213,7 +214,7 @@ export function makeArrayOfStringsQueryParamValue(queryParam) {
       return stringify(currentValue);
     }
   };
-}
+}*/
 
 // a base helper function
 export function makeParamAndReportDataReducer({
@@ -337,7 +338,7 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
     defaultValue: ""
   })
 }
-
+/*
 export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportDataLongForm(key) {
   return {
     value: function ({ resolve, lastSet, listenTo }) {
@@ -401,7 +402,7 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportDataLongForm
     }
   };
 }
-
+*/
 export function directlyReplaceUrlParam(key, valueJSON, defaultJSON) {
   const newUrl = new URL(window.location);
   if (valueJSON !== defaultJSON) {
