@@ -25,4 +25,4 @@ export type RouteData = {
 } & {
   assign: (obj: Partial<RouteData>) => RouteData;
 } & ObservableObject &
-  Overrides;
+  Overrides & { serialize: () => Record<string, string> };

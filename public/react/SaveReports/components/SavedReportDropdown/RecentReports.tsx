@@ -64,7 +64,7 @@ const ReportListItem: FC<{ report: Report }> = ({ report }) => {
       key={report.id}
       // @ts-expect-error types for component overrides on ADS don't work
       component={Link}
-      href={"?" + report.queryParams}
+      href={"?report=" + report.id}
     >
       {report.name}
     </DropdownItem>

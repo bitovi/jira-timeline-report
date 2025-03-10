@@ -39,7 +39,6 @@ export default async function mainHelper(
 
   console.log("Loaded version of the Timeline Reporter: " + config?.COMMIT_SHA);
 
-
   let requestHelper;
   if (host === "jira") {
     requestHelper = getConnectRequestHelper();
@@ -64,23 +63,22 @@ export default async function mainHelper(
   routeData.storage = storage;
 
   const timelineReportNeedsMet = {
-    loginResolved: false
-  }
+    loginResolved: false,
+  };
 
   // if we have a report, we need to wait for reportData
   // otherwise, _every_ routeData property will suddenly have a "waiting" state ...
   // instead, we can just wait here while we are checking logged in
   const report = new URL(window.location).searchParams.get("report");
-  if(report) {
+  if (report) {
     console.log("Loading report data ... ");
     timelineReportNeedsMet.reportData = false;
     getAllReports(storage).then((reports) => {
       queryClient.setQueryData(reportKeys.allReports, reports);
 
-      routeData.reportsData =  reports;
       timelineReportNeedsMet.reportData = true;
       checkForNeedsAndInsertTimelineReport();
-    })
+    });
   }
 
   const selectCloud = document.querySelector("select-cloud");
@@ -98,29 +96,28 @@ export default async function mainHelper(
     }
   };
 
-  function checkForNeedsAndInsertTimelineReport(){
-      // if every need met, initialize
-      if(Object.values(timelineReportNeedsMet).every( value => value)) {
-      
-        // TODO: this is just to make sure things are bound so react can be cool
-        routeData.on("timingCalculations",()=>{});
+  function checkForNeedsAndInsertTimelineReport() {
+    // if every need met, initialize
+    if (Object.values(timelineReportNeedsMet).every((value) => value)) {
+      // TODO: this is just to make sure things are bound so react can be cool
+      routeData.on("timingCalculations", () => {});
 
-        const report = new TimelineReport().initialize({
-          jiraHelpers,
-          loginComponent,
-          mode: "TEAMS",
-          storage,
-          linkBuilder,
-          showSidebarBranding,
-          featuresPromise: getFeatures(storage).then((features) => {
-            queryClient.setQueryData(featuresKeyFactory.features(), features);
-  
-            return features;
-          }),
-        });
-        report.className = "flex flex-1 overflow-hidden";
-        mainContent.append(report);
-      }
+      const report = new TimelineReport().initialize({
+        jiraHelpers,
+        loginComponent,
+        mode: "TEAMS",
+        storage,
+        linkBuilder,
+        showSidebarBranding,
+        featuresPromise: getFeatures(storage).then((features) => {
+          queryClient.setQueryData(featuresKeyFactory.features(), features);
+
+          return features;
+        }),
+      });
+      report.className = "flex flex-1 overflow-hidden";
+      mainContent.append(report);
+    }
   }
 
   loginComponent.on("isResolved", listener);

@@ -5,6 +5,7 @@ import { useQueryParams } from "../../../hooks/useQueryParams";
 import { CanObservable } from "../../../hooks/useCanObservable";
 import { useUpdateReport } from "../../../services/reports";
 import { getReportFromParams, paramsMatchReport } from "./utilities";
+import routeData from "../../../../canjs/routing/route-data";
 
 export const useSelectedReport = ({
   reports,
@@ -42,14 +43,18 @@ export const useSelectedReport = ({
         return;
       }
 
-      const queryParams = new URLSearchParams(window.location.search);
-
-      queryParams.delete("settings");
+      const queryParams = new URLSearchParams(routeData.serialize());
 
       updateReport(
         selectedReport.id,
         { queryParams: queryParams.toString() },
-        { onSuccess: () => setIsDirty(false) }
+        {
+          onSuccess: () => {
+            setIsDirty(false);
+
+            queryParamObservable.set(`?report=${selectedReport.id}`);
+          },
+        }
       );
     },
     isDirty,

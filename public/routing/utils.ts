@@ -4,8 +4,6 @@ export function queryStringToObject(queryString: string): ParamsObject {
   const params = new URLSearchParams(queryString);
   const result: ParamsObject = {};
 
-  console.log({ params: params.get("jql") });
-
   for (const [key, value] of params.entries()) {
     // If the key already exists, convert it to an array to store multiple values
     if (result[key]) {
