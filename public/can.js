@@ -15976,6 +15976,9 @@ var contains$1 = canDomMutate_2_0_9_Util.contains;
 var mutate = {};
 var isConnected;
 function getIsConnectedFromNode(node) {
+	if(!node) {
+		debugger;
+	}
 	return node.isConnected;
 }
 function getIsConnectedFromDocument(node) {

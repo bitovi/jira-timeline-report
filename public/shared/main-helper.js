@@ -14,6 +14,8 @@ import routeData from "../canjs/routing/route-data";
 import { getFeatures } from "../jira/features/fetcher";
 import { featuresKeyFactory } from "../react/services/features/key-factory";
 import { queryClient } from "../react/services/query/queryClient";
+import { getAllReports } from "../jira/reports/fetcher.js";
+import { reportKeys } from "../react/services/reports/key-factory.js";
 
 domEvents.addEvent(domMutateDomEvents.inserted);
 
@@ -60,6 +62,25 @@ export default async function mainHelper(
   routeData.jiraHelpers = jiraHelpers;
   routeData.storage = storage;
 
+  const timelineReportNeedsMet = {
+    loginResolved: false,
+  };
+
+  // if we have a report, we need to wait for reportData
+  // otherwise, _every_ routeData property will suddenly have a "waiting" state ...
+  // instead, we can just wait here while we are checking logged in
+  const report = new URL(window.location).searchParams.get("report");
+  if (report) {
+    console.log("Loading report data ... ");
+    timelineReportNeedsMet.reportData = false;
+    getAllReports(storage).then((reports) => {
+      queryClient.setQueryData(reportKeys.allReports, reports);
+
+      timelineReportNeedsMet.reportData = true;
+      checkForNeedsAndInsertTimelineReport();
+    });
+  }
+
   const selectCloud = document.querySelector("select-cloud");
   if (selectCloud) {
     selectCloud.loginComponent = loginComponent;
@@ -70,6 +91,16 @@ export default async function mainHelper(
     if (value) {
       loginComponent.off("isResolved", listener);
       loadingJira.style.display = "none";
+      timelineReportNeedsMet.loginResolved = true;
+      checkForNeedsAndInsertTimelineReport();
+    }
+  };
+
+  function checkForNeedsAndInsertTimelineReport() {
+    // if every need met, initialize
+    if (Object.values(timelineReportNeedsMet).every((value) => value)) {
+      // TODO: this is just to make sure things are bound so react can be cool
+      routeData.on("timingCalculations", () => {});
 
       const report = new TimelineReport().initialize({
         jiraHelpers,
@@ -87,7 +118,8 @@ export default async function mainHelper(
       report.className = "flex flex-1 overflow-hidden";
       mainContent.append(report);
     }
-  };
+  }
+
   loginComponent.on("isResolved", listener);
   login.appendChild(loginComponent);
   if (host === "jira") {

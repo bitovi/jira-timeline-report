@@ -17,7 +17,6 @@ const useGroupBy = () => {
   const selectedGroupBy = useCanObservable<string>(value.from(routeData, "groupBy"));
 
   const setSelectedGroupBy = (value: string) => {
-    // @ts-expect-error
     routeData.groupBy = value;
   };
 

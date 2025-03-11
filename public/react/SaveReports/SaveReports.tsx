@@ -12,6 +12,8 @@ import ReportControls from "./components/ReportControls";
 import EditableTitle from "./components/EditableTitle";
 import { useQueryParams } from "../hooks/useQueryParams";
 import { useSelectedReport } from "./hooks/useSelectedReports";
+import routeData from "../../canjs/routing/route-data";
+import { queryStringToObject } from "../../routing/utils";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
@@ -67,8 +69,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const handleCreate = (name: string) => {
     const id = uuidv4();
-    const params = new URLSearchParams(window.location.search);
-    params.set("report", id);
+    const params = new URLSearchParams({ ...routeData.serialize(), report: id });
 
     createReport(
       { id, name, queryParams: params.toString() },
@@ -77,7 +78,8 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
           closeModal();
           addReportToRecents(id);
 
-          const url = new URL(window.location.toString());
+          const url = new URL(window.location.href);
+          url.search = "";
           url.searchParams.set("report", id);
           queryParamObservable.set(url.search);
         },
@@ -90,7 +92,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       return;
     }
 
-    queryParamObservable.set(`?${selectedReport.queryParams}`);
+    queryParamObservable.set(`?report=${selectedReport.id}`);
   };
 
   return (

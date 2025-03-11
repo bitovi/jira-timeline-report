@@ -32,7 +32,7 @@ export const getReportFromParams = (reports: Reports): Report | undefined => {
 export const paramsMatchReport = (
   params: URLSearchParams,
   reports: Reports,
-  paramsToOmit: string[] = ["settings"]
+  paramsToOmit: string[] = ["settings", "report"]
 ) => {
   const report = getReportFromParams(reports);
 
@@ -47,5 +47,6 @@ export const paramsMatchReport = (
     params.delete(param);
   }
 
-  return paramsEqual(reportParams, params);
+  return [...params.entries()].length === 0;
+  // return paramsEqual(reportParams, params);
 };

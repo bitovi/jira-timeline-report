@@ -267,9 +267,9 @@ describe("calculateReportStatuses", () => {
         "Story points": null,
         "Story points confidence": null,
         Labels: [],
-        "Start date": "2025-02-09",
+        "Start date": "2125-02-09",
         Rank: "0|i001qr:",
-        "Due date": "2025-03-08",
+        "Due date": "2125-03-08",
         Status: {
           self: "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/status/10003",
           description: "",

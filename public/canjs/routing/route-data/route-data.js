@@ -1,4 +1,4 @@
-import { ObservableObject, value } from "../../../can.js";
+import { ObservableObject, value, diff } from "../../../can.js";
 
 import { DAY_IN_MS } from "../../../utils/date/date-helpers.js";
 import { daysBetween } from "../../../utils/date/days-between.js";
@@ -16,9 +16,16 @@ import {
 
 import {
   saveJSONToUrl,
+  // saveJSONToUrlButAlsoLookAtReportData_LongForm,
+  saveJSONToUrlButAlsoLookAtReport_DataWrapper,
   updateUrlParam,
-  makeArrayOfStringsQueryParamValue,
+  makeArrayOfStringsQueryParamValueButAlsoLookAtReportData,
   pushStateObservable,
+  paramValue,
+  getUrlParamValue,
+  makeParamAndReportDataReducer,
+  listenToReportDataChanged,
+  listenToUrlChange
 } from "../state-storage.js";
 
 import { roundDate } from "../../../utils/date/round.js";
@@ -39,6 +46,9 @@ import {
   toSelectedParts,
 } from "../data-utils.js";
 import { getTimingLevels } from "../../../utils/timing/helpers";
+import { getAllReports } from "../../../jira/reports/fetcher";
+import { reportKeys } from "../../../react/services/reports";
+import { queryClient } from "../../../react/services/query/queryClient";
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
@@ -67,9 +77,18 @@ export const REPORTS = [
 export class RouteData extends ObservableObject {
   static props = {
     // passed values
-    jiraHelpers: null,
-    isLoggedInObservable: null,
-    storage: null,
+    jiraHelpers: {
+      enumerable: false,
+      default: null
+    },
+    isLoggedInObservable: {
+      enumerable: false,
+      default: null
+    },
+    storage: {
+      enumerable: false,
+      default: null
+    },
 
     // static requests
     jiraFieldsPromise: {
@@ -81,8 +100,25 @@ export class RouteData extends ObservableObject {
         }
         
       },
+      enumerable: false
     },
-
+    report: saveJSONToUrl("report", "", String, {
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+    }),
+    reportsData: {
+      type: Object,
+      set(value) {
+        console.log("Got new reports data", value);
+        return value;
+      },
+      enumerable: false
+    },
+    get reportData() {
+      if(this.report && this.reportsData) {
+        return this.reportsData[this.report];
+      }
+    },
     get allTeamDataPromise() {
       return getAllTeamData(this.storage);
     },
@@ -98,7 +134,7 @@ export class RouteData extends ObservableObject {
       },
     },
     get issueTimingCalculations() {
-      if (!this.simplifiedIssueHierarchy) {
+      if (!this.simplifiedIssueHierarchy || !this.timingCalculations) {
         return [];
       } else {
         const allLevels = getTimingLevels(this.simplifiedIssueHierarchy, this.timingCalculations);
@@ -114,18 +150,18 @@ export class RouteData extends ObservableObject {
     },
 
     // PURE ROUTES
-    showSettings: saveJSONToUrl("settings", "", String, {
+    showSettings: saveJSONToUrlButAlsoLookAtReport_DataWrapper("settings", "", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
-    jql: saveJSONToUrl("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
-    loadChildren: saveJSONToUrl("loadChildren", false, Boolean, booleanParsing),
-    childJQL: saveJSONToUrl("childJQL", "", String, {
+    jql: saveJSONToUrlButAlsoLookAtReport_DataWrapper("jql", "", String, { parse: (x) => "" + x, stringify: (x) => "" + x }),
+    loadChildren: saveJSONToUrlButAlsoLookAtReport_DataWrapper("loadChildren", false, Boolean, booleanParsing),
+    childJQL: saveJSONToUrlButAlsoLookAtReport_DataWrapper("childJQL", "", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
 
-    roundTo: saveJSONToUrl("roundTo", "day", String, {
+    roundTo: saveJSONToUrlButAlsoLookAtReport_DataWrapper("roundTo", "day", String, {
       parse: function (x) {
         if (ROUND_OPTIONS.find((key) => key === x)) {
           return x;
@@ -136,10 +172,10 @@ export class RouteData extends ObservableObject {
       stringify: (x) => "" + x,
     }),
 
-    statusesToExclude: makeArrayOfStringsQueryParamValue("statusesToExclude"),
+    statusesToExclude: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("statusesToExclude"),
 
     // this is always in seconds
-    compareTo: saveJSONToUrl("compareTo", _15DAYS_IN_S, undefined, {
+    compareTo: saveJSONToUrlButAlsoLookAtReport_DataWrapper("compareTo", _15DAYS_IN_S, undefined, {
       parse(string) {
         const parsedAsDate = isoToLocalDate(string);
         if (/^\d+$/.test(string)) {
@@ -288,32 +324,39 @@ export class RouteData extends ObservableObject {
         return [];
       }
     },
-    timingCalculations: {
-      value({ resolve, lastSet, listenTo }) {
-        let currentValue;
-        updateValue(new URL(window.location).searchParams.get("timingCalculations"));
-
-        listenTo(lastSet, (value) => {
-          updateValue(value);
-        });
-
-        function updateValue(value) {
-          if (typeof value === "string") {
-            try {
-              value = parse(value);
-            } catch (e) {
-              value = [];
-            }
-          } else if (!value) {
-            value = [];
-          }
-
-          updateUrlParam("timingCalculations", stringify(value), stringify([]));
-
-          currentValue = value;
-          resolve(currentValue);
+    timingCalculations: /*makeParamAndReportDataReducer({
+      key: "timingCalculations",
+      parse(value){
+        let phrases = value.split(",");
+        const data = {};
+        for (let phrase of phrases) {
+          const parts = phrase.split(":");
+          data[parts[0]] = parts[1];
         }
-
+        return data;
+      },
+      stringify(obj) {
+        return Object.keys(obj || {})
+            .map((key) => key + ":" + obj[key])
+            .join(",");
+      },
+      checkIfChanged(newValue, currentValue) {
+        if(!Array.isArray(currentValue)) {
+          return true;
+        } else if (diff.map(newValue, currentValue).length) {
+          return true;
+        }
+      }
+    }),*/
+    
+    
+    // the following was an alternative timing calculation implementation
+    // we might want this if we see a bug toggling percentages completion
+    {
+      enumerable: true,
+      value({ resolve, lastSet, listenTo }) {
+        //console.log("timingCalculations value init")
+        var currentValue = undefined;
         function parse(value) {
           let phrases = value.split(",");
           const data = {};
@@ -328,9 +371,60 @@ export class RouteData extends ObservableObject {
             .map((key) => key + ":" + obj[key])
             .join(",");
         }
+
+        const resolveValue = () => {
+          const urlParamValue = getUrlParamValue("timingCalculations");;
+          const reportParamValue = this.reportData && paramValue(this.reportData, "timingCalculations");
+
+          if(urlParamValue != null) {
+            parseAndResolve(urlParamValue)
+          } else if(reportParamValue != null){
+            parseAndResolve(reportParamValue)
+          } else {
+            parseAndResolve({});
+          }
+        }
+        // breaks if both are active
+        // seeming works if just reportData
+        listenTo("reportData",resolveValue);
+        listenTo(pushStateObservable, resolveValue); 
+        resolveValue();
+
+        listenTo(lastSet, (value) => {
+          let defaultValue = this.reportData ? paramValue(this.reportData, "timingCalculations") : stringify([]);
+          updateUrlParam("timingCalculations", stringify(value), defaultValue);
+        });
+
+        
+        function parseAndResolve(value) {
+          if (typeof value === "string") {
+            try {
+              value = parse(value);
+            } catch (e) {
+              value = {};
+            }
+          } else {
+            value = {};
+          }
+          if(typeof currentValue !== typeof value) {
+            //console.log("timingCalculations resolve", value, currentValue)
+            currentValue = value;
+            resolve(currentValue);
+          }
+          else if(diff.map(value, currentValue).length) {
+            //console.log("timingCalculations resolve", value, currentValue)
+            currentValue = value;
+            resolve(currentValue);
+          } 
+          else {
+            //console.log("timingCalculations no-resolve")
+          }
+        }
+
       },
     },
-    primaryReportType: saveJSONToUrl("primaryReportType", "start-due", String, {
+    
+    primaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper("primaryReportType", "start-due", String, {
       parse: function (x) {
         if (REPORTS.find((report) => report.key === x)) {
           return x;
@@ -344,6 +438,7 @@ export class RouteData extends ObservableObject {
       get default() {
         return REPORTS;
       },
+      enumerable: false
     },
 
     get issueHierarchy() {
@@ -352,6 +447,94 @@ export class RouteData extends ObservableObject {
         : this.simplifiedIssueHierarchy;
     },
     selectedIssueType: {
+      enumerable: true,
+      value({ resolve, lastSet, listenTo }) {
+        let reportDataParam;
+        let urlParam;
+        let resolveCurrentValue;
+
+        // bind to stuff ... but we don't want to respond to change just yet
+        listenToReportDataChanged(this,"selectedIssueType",listenTo, (param)=>{
+          reportDataParam = param;
+          resolveCurrentValue && resolveCurrentValue();
+        })
+
+        listenToUrlChange("selectedIssueType", listenTo, (param) => {
+          urlParam = param;
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        listenTo("issueHierarchy", ({ value }) => {
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        function getParamValue(){
+          if(urlParam != null) {
+            return urlParam;
+          }
+          else if(reportDataParam != null) {
+            return reportDataParam;
+          } else {
+            return "";
+          }
+        }
+
+        let timers = [];
+        function clearTimers() {
+          timers.forEach((value) => clearTimeout(value));
+          timers = [];
+        }
+
+        // anything happens in state, update the route
+        // the route updates, update the state (or the route if it's wrong)
+        resolveCurrentValue = () => {
+          clearTimers();
+
+          // we wait to resolve to a defined value until we can check it's right
+          if (this.issueHierarchy && this.issueHierarchy.length) {
+            const curParamValue = getParamValue();
+
+            // helps with legacy support to pick the first type
+            if (curParamValue === "Release") {
+              resolve("Release-" + this.issueHierarchy[0].name);
+            } else {
+              const curSelectedParts = toSelectedParts(curParamValue);
+              //const lastSelectedParts = toSelectedParts(lastSelectedValue);
+
+              if (curSelectedParts) {
+                // check it's ok
+                let typeToCheck = curSelectedParts.secondary ?? curSelectedParts.primary;
+
+                if (this.issueHierarchy.some((issue) => issue.name === typeToCheck)) {
+                  // make sure we actually need to update
+                  resolve(curParamValue);
+                }
+                // set back to default
+                else {
+                  timers.push(
+                    setTimeout(() => {
+                      updateUrlParam("selectedIssueType", "", "");
+                    }, 20)
+                  );
+                }
+              } else {
+                // default to the first type
+                resolve(this.issueHierarchy[0].name);
+              }
+            }
+          } else {
+            resolve(undefined);
+          }
+        };
+
+        listenTo(lastSet, (value) => {
+          const param = this.reportData && paramValue(this.reportData, "selectedIssueType");
+          updateUrlParam("selectedIssueType", value, param || "");
+        });
+
+        resolveCurrentValue();
+      },
+      /*
       value({ resolve, lastSet, listenTo }) {
         function getParamValue() {
           return new URL(window.location).searchParams.get("selectedIssueType") || "";
@@ -420,7 +603,7 @@ export class RouteData extends ObservableObject {
         });
 
         resolveCurrentValue();
-      },
+      },*/
     },
     get primaryIssueType() {
       return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
@@ -429,52 +612,45 @@ export class RouteData extends ObservableObject {
       return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
     },
 
-    primaryReportBreakdown: saveJSONToUrl("primaryReportBreakdown", false, Boolean, booleanParsing),
-    secondaryReportType: saveJSONToUrl("secondaryReportType", "none", String, {
+    primaryReportBreakdown: saveJSONToUrlButAlsoLookAtReport_DataWrapper("primaryReportBreakdown", false, Boolean, booleanParsing),
+    secondaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper("secondaryReportType", "none", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,
     }),
+    // TEST
     showPercentComplete: saveJSONToUrl("showPercentComplete", false, Boolean, booleanParsing),
-    sortByDueDate: saveJSONToUrl("sortByDueDate", false, Boolean, booleanParsing),
-    hideUnknownInitiatives: saveJSONToUrl("hideUnknownInitiatives", false, Boolean, booleanParsing),
-    showOnlySemverReleases: saveJSONToUrl("showOnlySemverReleases", false, Boolean, booleanParsing),
-    statusesToShow: makeArrayOfStringsQueryParamValue("statusesToShow"),
-    statusesToRemove: makeArrayOfStringsQueryParamValue("statusesToRemove"),
-    planningStatuses: makeArrayOfStringsQueryParamValue("planningStatuses"),
-    releasesToShow: makeArrayOfStringsQueryParamValue("releasesToShow"),
-    groupBy: {
-      value({ resolve, lastSet, listenTo }) {
-        function getFromParam() {
-          return new URL(window.location).searchParams.get("groupBy") || "";
-        }
+    sortByDueDate: saveJSONToUrlButAlsoLookAtReport_DataWrapper("sortByDueDate", false, Boolean, booleanParsing),
+    hideUnknownInitiatives: saveJSONToUrlButAlsoLookAtReport_DataWrapper("hideUnknownInitiatives", false, Boolean, booleanParsing),
+    showOnlySemverReleases: saveJSONToUrlButAlsoLookAtReport_DataWrapper("showOnlySemverReleases", false, Boolean, booleanParsing),
+    statusesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("statusesToShow"),
+    statusesToRemove: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("statusesToRemove"),
+    planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("planningStatuses"),
+    releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData("releasesToShow"),
 
-        const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
+    // GroupBy is not available for release ... so if a release primaryIssueType is set
+    // then we need to remove it
+    groupBy: makeParamAndReportDataReducer({
+      key: "groupBy",
+      defaultValue: "",
+
+      parse: (x) => "" + x,
+      stringify: (x) => "" + x,
+
+      listeners: {
+        primaryIssueType({state, updateUrlParam}, {value}){
+          const primaryIssueType = value;
           if (primaryIssueType === "Release") {
-            updateUrlParam("groupBy", "", "");
+            updateUrlParam("", "");
           } else {
-            updateUrlParam("groupBy", currentGroupBy, "");
+            // if it changes to something else .... keep it ... not sure why this is even needed
+            updateUrlParam(state.urlParamValue,state.reportParamValue || "");
           }
-        };
-
-        listenTo("primaryIssueType", ({ value }) => {
-          reconcileCurrentValue(value, getFromParam());
-        });
-
-        listenTo(lastSet, (value) => {
-          updateUrlParam("groupBy", value || "", "");
-        });
-
-        listenTo(pushStateObservable, () => {
-          resolve(getFromParam());
-        });
-
-        resolve(getFromParam());
-      },
-    },
+        }
+      }
+    })
   };
 }
 
 const routeData = new RouteData();
-console.log("routeData", routeData);
 
 export default routeData;

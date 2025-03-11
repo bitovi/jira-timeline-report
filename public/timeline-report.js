@@ -172,6 +172,11 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
+    
+    window.addEventListener("load", updateFullishHeightSection);
+    window.addEventListener("resize", updateFullishHeightSection);
+
+
     createRoot(document.getElementById("view-reports")).render(
       createElement(ViewReports, {
         onBackButtonClicked: () => {
@@ -437,10 +442,9 @@ function getElementPosition(el) {
   return { x: rect.left + scrollLeft, y: rect.top + scrollTop };
 }
 
+
+
 function updateFullishHeightSection() {
   const position = getElementPosition(document.querySelector(".fullish-vh"));
   document.documentElement.style.setProperty("--fullish-document-top", `${position.y}px`);
 }
-
-window.addEventListener("load", updateFullishHeightSection);
-window.addEventListener("resize", updateFullishHeightSection);

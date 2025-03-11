@@ -51,7 +51,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
             key: `${report.id}-report`,
             content: (
               <Link
-                href={"?" + report.queryParams}
+                href={"?report=" + report.id}
                 className="flex items-center font-normal text-sm leading-5 h-10"
               >
                 {report.name}

@@ -80,7 +80,7 @@ describe("useSelectedReports > utilities", () => {
   describe("paramsMatchReport", () => {
     it("returns true when params match the report's queryParams", () => {
       window.location.search = "?report=1";
-      const params = new URLSearchParams("param1=value1&param2=value2");
+      const params = new URLSearchParams("?report=1&settings=1");
 
       expect(paramsMatchReport(params, mockReports)).toBe(true);
     });
@@ -94,9 +94,9 @@ describe("useSelectedReports > utilities", () => {
 
     it("ignores params specified in paramsToOmit", () => {
       window.location.search = "?report=1";
-      const params = new URLSearchParams("param1=value1&param2=value2&settings=value3");
+      const params = new URLSearchParams("?report=1&settings=1");
 
-      expect(paramsMatchReport(params, mockReports, ["settings"])).toBe(true);
+      expect(paramsMatchReport(params, mockReports, ["settings", "report"])).toBe(true);
     });
 
     it("returns false if no matching report is found", () => {
