@@ -22,7 +22,10 @@ import {
   makeArrayOfStringsQueryParamValueButAlsoLookAtReportData,
   pushStateObservable,
   paramValue,
-  getUrlParamValue
+  getUrlParamValue,
+  makeParamAndReportDataReducer,
+  listenToReportDataChanged,
+  listenToUrlChange
 } from "../state-storage.js";
 
 import { roundDate } from "../../../utils/date/round.js";
@@ -372,7 +375,7 @@ export class RouteData extends ObservableObject {
         const resolveValue = () => {
           const urlParamValue = getUrlParamValue("timingCalculations");;
           const reportParamValue = this.reportData && paramValue(this.reportData, "timingCalculations");
-          //console.log("timingCalculations", {urlParamValue, reportParamValue});
+
           if(urlParamValue != null) {
             parseAndResolve(urlParamValue)
           } else if(reportParamValue != null){
@@ -445,7 +448,6 @@ export class RouteData extends ObservableObject {
     },
     selectedIssueType: {
       enumerable: true,
-      /*
       value({ resolve, lastSet, listenTo }) {
         let reportDataParam;
         let urlParam;
@@ -531,7 +533,8 @@ export class RouteData extends ObservableObject {
         });
 
         resolveCurrentValue();
-      },*/
+      },
+      /*
       value({ resolve, lastSet, listenTo }) {
         function getParamValue() {
           return new URL(window.location).searchParams.get("selectedIssueType") || "";
@@ -600,7 +603,7 @@ export class RouteData extends ObservableObject {
         });
 
         resolveCurrentValue();
-      },
+      },*/
     },
     get primaryIssueType() {
       return this.selectedIssueType && toSelectedParts(this.selectedIssueType).primary;
@@ -626,7 +629,7 @@ export class RouteData extends ObservableObject {
 
     // GroupBy is not available for release ... so if a release primaryIssueType is set
     // then we need to remove it
-    groupBy: /*makeParamAndReportDataReducer({
+    groupBy: makeParamAndReportDataReducer({
       key: "groupBy",
       defaultValue: "",
 
@@ -644,38 +647,7 @@ export class RouteData extends ObservableObject {
           }
         }
       }
-    })*/
-    
-    {
-      enumerable: true,
-      value({ resolve, lastSet, listenTo }) {
-        function getFromParam() {
-          return new URL(window.location).searchParams.get("groupBy") || "";
-        }
-
-        const reconcileCurrentValue = (primaryIssueType, currentGroupBy) => {
-          if (primaryIssueType === "Release") {
-            updateUrlParam("groupBy", "", "");
-          } else {
-            updateUrlParam("groupBy", currentGroupBy, "");
-          }
-        };
-
-        listenTo("primaryIssueType", ({ value }) => {
-          reconcileCurrentValue(value, getFromParam());
-        });
-
-        listenTo(lastSet, (value) => {
-          updateUrlParam("groupBy", value || "", "");
-        });
-
-        listenTo(pushStateObservable, () => {
-          resolve(getFromParam());
-        });
-
-        resolve(getFromParam());
-      },
-    },
+    })
   };
 }
 

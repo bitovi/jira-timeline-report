@@ -16,6 +16,7 @@ type Overrides = {
   statusesToExclude: string[];
   primaryIssueType: string;
   secondaryIssueType: string;
+  groupBy: string;
 };
 
 type RouteDataProps = typeof RouteDataClass.props;
