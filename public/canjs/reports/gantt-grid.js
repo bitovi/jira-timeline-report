@@ -231,7 +231,6 @@ export class GanttGrid extends StacheElement {
               createElement(PercentComplete, {
                 allIssuesOrReleases: this.allIssuesOrReleases,
                 issue: issue,
-                isOpen: true,
                 childIssues: children,
               })
             );

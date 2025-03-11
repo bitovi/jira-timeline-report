@@ -1,10 +1,19 @@
-import React, { FC, useEffect, useRef } from "react";
+import React, { FC, useState } from "react";
 
 import { calculateReportStatuses } from "../../../../jira/rolledup/work-status/work-status";
 
 import type { DerivedIssue } from "../../../../jira/derived/derive";
 import type { WithPercentComplete } from "../../../../jira/rollup/percent-complete/percent-complete";
 import cn from "classnames";
+import Modal, {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ModalTransition,
+} from "@atlaskit/modal-dialog";
+import CrossIcon from "@atlaskit/icon/glyph/cross";
+import { IconButton } from "@atlaskit/button/new";
 
 type EverythingIssue = ReturnType<typeof calculateReportStatuses>[number] &
   DerivedIssue &
@@ -278,74 +287,61 @@ interface PercentCompleteModalProps {
   allIssuesOrReleases: Array<EverythingIssue>;
 }
 
-const PercentCompleteModal: FC<PercentCompleteModalProps> = ({
-  isOpen,
-  onClose,
-  issue,
-  childIssues,
-}) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  /*
-  useEffect(() => {
-    const dialogNode = dialogRef.current;
-    if (!dialogNode) return;
+const PercentCompleteModal: FC<PercentCompleteModalProps> = ({ onClose, issue, childIssues }) => {
+  const [isOpen, setIsOpen] = useState(true);
 
-    if (isOpen) {
-      dialogNode.showModal();
-    } else if (dialogNode.open) {
-      dialogNode.close();
-    }
-  }, [isOpen]);*/
-
-  /** Called when the native `close` event fires, e.g. ESC or programmatic close() */
-  const handleCloseEvent = () => {
+  const handleClose = () => {
     onClose?.();
+    setIsOpen(false);
   };
 
-  const issueTimingMethod = timingMethod(issue);
-
   return (
-    <dialog
-      ref={(element) => {
-        // @ts-ignore
-        dialogRef.current = element;
-        element?.showModal();
-      }}
-      onClose={handleCloseEvent}
-      className="p-4"
-    >
-      <div className="flex justify-between gap-2 pb-2">
-        <div className="text-xl font-medium">Remaining Work Calculation Summary</div>
-        <button className="px-2" type="button" onClick={() => dialogRef.current?.close()}>
-          X
-        </button>
-      </div>
-      <p className="py-2 flex gap-1">
-        {issue.issue.fields["Issue Type"]?.iconUrl ? (
-          <img src={issue.issue.fields["Issue Type"]?.iconUrl} />
-        ) : (
-          issue.type
-        )}{" "}
-        {issue.summary}
-      </p>
-      <p className="py-2">Calculation Source: {issue.completionRollup.source}</p>
-
-      {issue.completionRollup.source === "self" && (
-        <SelfCalculationBox issue={issue}></SelfCalculationBox>
+    <ModalTransition>
+      {isOpen && (
+        <Modal onClose={handleClose} width="x-large">
+          <ModalHeader>
+            <div className="w-full flex justify-between">
+              <div>
+                <p className="py-2 flex gap-1 text-xs">
+                  {issue.issue.fields["Issue Type"]?.iconUrl ? (
+                    <img src={issue.issue.fields["Issue Type"]?.iconUrl} />
+                  ) : (
+                    issue.type
+                  )}
+                  <a href={issue.url} className="hover:underline" target="_blank">
+                    {issue.key}
+                  </a>
+                </p>
+                <ModalTitle>Remaining Work Calculation Summary</ModalTitle>
+              </div>
+              <IconButton
+                appearance="subtle"
+                icon={CrossIcon}
+                label="Close Modal"
+                onClick={handleClose}
+              />
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <p className="py-2">Calculation Source: {issue.completionRollup.source}</p>
+            {issue.completionRollup.source === "self" && (
+              <SelfCalculationBox issue={issue}></SelfCalculationBox>
+            )}
+            {issue.completionRollup.source === "average" && (
+              <CalculationBox
+                title={issue.type + " average days"}
+                currentValue={Math.round(issue.completionRollup.totalWorkingDays)}
+                className="border-[#94C748] bg-[#EFFFD6]"
+              />
+            )}
+            {issue.completionRollup.source === "children" && (
+              <SelfAndChildrenValues issue={issue} childIssues={childIssues} />
+            )}
+          </ModalBody>
+          <ModalFooter />
+        </Modal>
       )}
-
-      {issue.completionRollup.source === "average" && (
-        <CalculationBox
-          title={issue.type + " average days"}
-          currentValue={Math.round(issue.completionRollup.totalWorkingDays)}
-          className="border-[#94C748] bg-[#EFFFD6]"
-        />
-      )}
-
-      {issue.completionRollup.source === "children" && (
-        <SelfAndChildrenValues issue={issue} childIssues={childIssues}></SelfAndChildrenValues>
-      )}
-    </dialog>
+    </ModalTransition>
   );
 };
 
