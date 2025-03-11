@@ -9,38 +9,39 @@ import { normalizeIssue, normalizeParent } from "../../jira/normalized/normalize
 
 import { roundDateByRoundToParam } from "../routing/utils/round.js";
 import { getDaysInMonth } from "../../utils/date/days-in-month.js";
-import {getBusinessDatesCount} from "../../utils/date/business-days.js"
+import { getBusinessDatesCount } from "../../utils/date/business-days.js";
 
-import {daysBetween} from "../../utils/date/days-between.js"
-import {timeRangeShorthand} from "../../utils/date/time-range-shorthand.js"
+import { daysBetween } from "../../utils/date/days-between.js";
+import { timeRangeShorthand } from "../../utils/date/time-range-shorthand.js";
 
 import SimpleTooltip from "../ui/simple-tooltip/simple-tooltip.js";
 import PercentComplete from "../../react/reports/GanttReport/PercentComplete";
 
-
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
-
 const DATES_TOOLTIP = new SimpleTooltip();
-DATES_TOOLTIP.classList.add("reset","pointer-events-none")
+DATES_TOOLTIP.classList.add("reset", "pointer-events-none");
 document.body.append(DATES_TOOLTIP);
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
-function container({addedClasses, currentValue, oldValue, title}){
-  return `<div class="flex-col justify-items-center px-1 py-3 rounded-md border ${addedClasses || ""}">
+function container({ addedClasses, currentValue, oldValue, title }) {
+  return `<div class="flex-col justify-items-center px-1 py-3 rounded-md border ${
+    addedClasses || ""
+  }">
       <div class="text-sm font-semibold">${title}</div>
       <div class="flex justify-center gap-1 items-baseline">
         <div>${currentValue}</div>
-        ${oldValue !== undefined ? 
-          `<div class="bg-neutral-801 rounded-sm text-xs text-white px-1">${oldValue}</div>` : ``
+        ${
+          oldValue !== undefined
+            ? `<div class="bg-neutral-801 rounded-sm text-xs text-white px-1">${oldValue}</div>`
+            : ``
         }
         
       </div>
-    </div>`
+    </div>`;
 }
-
 
 const datesTooltipStache = stache(`<div class='flex gap-0.5 p-1'>
   {{# if(this.startDate)}}
@@ -52,12 +53,17 @@ const datesTooltipStache = stache(`<div class='flex gap-0.5 p-1'>
   {{# if(this.endDate) }}
   <div class="text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5">{{this.endDate}}</div>
   {{/ }}
-</div>`)
+</div>`);
 
 import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
 import routeData from "../routing/route-data";
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', {weekday: "short", day: "numeric", month: "short", year: "numeric" })
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
 
 // loops through and creates
 export class GanttGrid extends StacheElement {
@@ -179,7 +185,7 @@ export class GanttGrid extends StacheElement {
   }
   toggleShowingChildren(issue) {
     // make sure we have children
-    if(this.hasChildren( issue )) {
+    if (this.hasChildren(issue)) {
       if (this.showChildrenByKey[issue.key]) {
         this.showChildrenByKey[issue.key] = false;
       } else {
@@ -221,12 +227,14 @@ export class GanttGrid extends StacheElement {
             // we should get all the children ...
             const children = getChildren(issue);
 
-            this.root.render(createElement(PercentComplete, {
-              allIssuesOrReleases: this.allIssuesOrReleases,
-              issue: issue,
-              isOpen: true,
-              children
-            }))
+            this.root.render(
+              createElement(PercentComplete, {
+                allIssuesOrReleases: this.allIssuesOrReleases,
+                issue: issue,
+                isOpen: true,
+                childIssues: children,
+              })
+            );
           },
         },
       ];
@@ -277,19 +285,32 @@ export class GanttGrid extends StacheElement {
   }
   showDatesTooltip(issueOrRelease, index, event) {
     const currentTime = event.currentTarget.querySelector(".identifier-current-time");
-    let reference
-    if(currentTime) {
+    let reference;
+    if (currentTime) {
       reference = currentTime;
     } else {
       reference = event.currentTarget;
     }
 
-    DATES_TOOLTIP.belowElementInScrollingContainer(reference, datesTooltipStache({
-      startDate: makeDateAndDiff(issueOrRelease.rollupDates.start, issueOrRelease?.issueLastPeriod?.rollupDates?.start),
-      endDate: makeDateAndDiff(issueOrRelease.rollupDates.due, issueOrRelease?.issueLastPeriod?.rollupDates?.due),
-      businessDays: issueOrRelease.rollupDates.start && issueOrRelease.rollupDates.due ?
-      timeRangeShorthand( daysBetween( issueOrRelease.rollupDates.due, issueOrRelease.rollupDates.start) ) : null
-    }).firstElementChild);
+    DATES_TOOLTIP.belowElementInScrollingContainer(
+      reference,
+      datesTooltipStache({
+        startDate: makeDateAndDiff(
+          issueOrRelease.rollupDates.start,
+          issueOrRelease?.issueLastPeriod?.rollupDates?.start
+        ),
+        endDate: makeDateAndDiff(
+          issueOrRelease.rollupDates.due,
+          issueOrRelease?.issueLastPeriod?.rollupDates?.due
+        ),
+        businessDays:
+          issueOrRelease.rollupDates.start && issueOrRelease.rollupDates.due
+            ? timeRangeShorthand(
+                daysBetween(issueOrRelease.rollupDates.due, issueOrRelease.rollupDates.start)
+              )
+            : null,
+      }).firstElementChild
+    );
   }
   hideDatesTooltip(issueOrRelease, index, event) {
     DATES_TOOLTIP.leftElement(event);
@@ -424,8 +445,6 @@ export class GanttGrid extends StacheElement {
       position: "relative",
       zIndex: 20,
     });
-    
-    
 
     // this has the last period stuff ... it's absolutely stretched to match the same space
     // we probably could have put this in the grid, but it's nice to have this stuff w/i an element
@@ -510,9 +529,9 @@ export class GanttGrid extends StacheElement {
           root.appendChild(thisPeriod);
         }
       } else {
-        root.addEventListener("mouseenter",this.showDatesTooltip.bind(this, release, index));
-        root.addEventListener("mouseleave",this.hideDatesTooltip.bind(this, release, index));
-        
+        root.addEventListener("mouseenter", this.showDatesTooltip.bind(this, release, index));
+        root.addEventListener("mouseleave", this.hideDatesTooltip.bind(this, release, index));
+
         // make the last one ...
         const currentPositions = getPositions(release.rollupStatuses.rollup);
 
@@ -527,7 +546,7 @@ export class GanttGrid extends StacheElement {
               this.bigBarSize,
               "color-text-and-bg-" + release.rollupStatuses.rollup.status,
               roundBasedOnIfTheBarsExtend(currentPositions),
-              "identifier-current-time"
+              "identifier-current-time",
             ],
             {
               /*opacity: "0.9",*/
@@ -605,7 +624,7 @@ export class GanttGrid extends StacheElement {
     );
   }
 
-  connected(){
+  connected() {
     this.root = createRoot(this.querySelector(".react-modal"));
   }
 }
@@ -641,15 +660,14 @@ function makeElement(classNames, styles) {
   return div;
 }
 
-
 function makeDateAndDiff(dateNow, dateThen) {
   let endDate = "";
-  if(dateNow) {
-    endDate += dateFormatter.format(dateNow)
-    if(dateThen) {
-      let days = daysBetween( dateNow, dateThen );
-      if(days != 0) {
-        endDate += " "+(days >= 0 ? "+" : "-") +timeRangeShorthand( (days >= 0 ? 1 : -1) * days )
+  if (dateNow) {
+    endDate += dateFormatter.format(dateNow);
+    if (dateThen) {
+      let days = daysBetween(dateNow, dateThen);
+      if (days != 0) {
+        endDate += " " + (days >= 0 ? "+" : "-") + timeRangeShorthand((days >= 0 ? 1 : -1) * days);
       }
     }
   }
@@ -690,7 +708,7 @@ function getPositionsFromWork({ firstDay, lastDay }, work) {
     startExtends, // is the start before the first day
     endExtends, // is the end after the last day
     style: {
-      // we make the day a full day wider, but this doesn't account for time zone shifts 
+      // we make the day a full day wider, but this doesn't account for time zone shifts
       // to handle this, we might want to use dates or move to integers
       width: Math.max(((end + DAY_IN_MS - start) / totalTime) * 100, 0) + "%",
       marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
