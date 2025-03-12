@@ -88,7 +88,7 @@ export class TimelineReport extends StacheElement {
               allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
           {{/ }}
 
-          <div class='p-2 sticky bottom-0 bg-white z-[200]'>
+          <div class='p-2 sticky bottom-0 bg-white z-[50]'>
             <div id='status-keys' on:inserted='this.attachStatusKeys()'></div>
           </div>
 
@@ -172,10 +172,8 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
-    
     window.addEventListener("load", updateFullishHeightSection);
     window.addEventListener("resize", updateFullishHeightSection);
-
 
     createRoot(document.getElementById("view-reports")).render(
       createElement(ViewReports, {
@@ -213,9 +211,8 @@ export class TimelineReport extends StacheElement {
       .then(applyThemeToCssVars)
       .catch((error) => console.error("Something went wrong getting the theme", error));
 
-
     const timelineConfiguration = document.getElementById("timeline-configuration");
-    if(timelineConfiguration) {
+    if (timelineConfiguration) {
       createRoot(timelineConfiguration).render(
         createElement(SettingsSidebar, {
           isLoggedIn: this.loginComponent.isLoggedIn,
@@ -224,16 +221,15 @@ export class TimelineReport extends StacheElement {
           linkBuilder: this.linkBuilder,
           onUpdateTeamsConfiguration: ({ fields, ...configuration }) => {
             queues.batch.start();
-  
+
             routeData.fieldsToRequest = fields;
             routeData.normalizeOptions = configuration;
-  
+
             queues.batch.stop();
           },
         })
       );
     }
-    
   }
 
   showReports(event) {
@@ -441,8 +437,6 @@ function getElementPosition(el) {
   var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
   return { x: rect.left + scrollLeft, y: rect.top + scrollTop };
 }
-
-
 
 function updateFullishHeightSection() {
   const position = getElementPosition(document.querySelector(".fullish-vh"));
