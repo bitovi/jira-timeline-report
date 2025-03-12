@@ -23,6 +23,8 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
   const { deleteReport, isDeleting } = useDeleteReport();
   const [managedReport, setManagedReport] = useState<Report>();
 
+  console.log({ managedReport });
+
   const { removeFromRecentReports } = useRecentReports();
 
   const selectedReport = useMemo(() => {
@@ -74,6 +76,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
               >
                 <DropdownItem
                   onClick={(e) => {
+                    console.log("should delete", report);
                     setManagedReport(report);
                   }}
                 >

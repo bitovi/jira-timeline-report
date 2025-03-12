@@ -42,7 +42,7 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
             }
           >
             <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-              <div className="absolute top-0 left-0 right-0 bottom-0 bg-white z-[1000]">
+              <div className="absolute top-0 left-0 right-0 bottom-0 bg-white z-[50]">
                 <ViewReports {...viewReportProps} />
               </div>
             </Suspense>
