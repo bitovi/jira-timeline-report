@@ -20,18 +20,6 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test
-  build-env:
-      name: build .env
-      run: |
-        echo "CLIENT_JIRA_CLIENT_ID=${{ secrets.CLIENT_JIRA_CLIENT_ID }}" > .env
-        echo "JIRA_CLIENT_SECRET=${{ secrets.JIRA_CLIENT_SECRET }}" >> .env
-        echo "JIRA_TOTP_SECRET=${{ secrets.JIRA_TOTP_SECRET }}" >> .env
-        echo "CLIENT_JIRA_API_URL=${{ vars.CLIENT_JIRA_API_URL }}" >> .env
-        echo "CLIENT_JIRA_CALLBACK_URL=${{ vars.CLIENT_JIRA_CALLBACK_URL }}" >> .env
-        echo "CLIENT_JIRA_SCOPE=${{ vars.CLIENT_JIRA_SCOPE }}" >> .env
-        echo "PORT=${{ vars.PORT }}" >> .env
-        echo ".env file created"
-        cat .env
   e2e-test:
     name: Run E2E Tests
     runs-on: ubuntu-latest
