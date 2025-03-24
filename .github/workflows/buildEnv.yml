@@ -6,6 +6,6 @@
           echo "CLIENT_JIRA_API_URL=${{ vars.CLIENT_JIRA_API_URL }}" >> .env
           echo "CLIENT_JIRA_CALLBACK_URL=${{ vars.CLIENT_JIRA_CALLBACK_URL }}" >> .env
           echo "CLIENT_JIRA_SCOPE=${{ vars.CLIENT_JIRA_SCOPE }}" >> .env
-          echo "PORT=${{ vars.PORT }}"
+          echo "PORT=${{ vars.PORT }}" >> .env
           echo ".env file created"
           cat .env
