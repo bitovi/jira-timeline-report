@@ -21,7 +21,7 @@ jobs:
       - run: npm run build
       - run: npm run test
   build-env:
-    - name: build .env
+      name: build .env
       run: |
         echo "CLIENT_JIRA_CLIENT_ID=${{ secrets.CLIENT_JIRA_CLIENT_ID }}" > .env
         echo "JIRA_CLIENT_SECRET=${{ secrets.JIRA_CLIENT_SECRET }}" >> .env
