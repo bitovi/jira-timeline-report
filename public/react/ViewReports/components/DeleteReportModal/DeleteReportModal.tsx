@@ -33,7 +33,7 @@ const DeleteReportModal: FC<DeleteReportModalProps> = ({
 
   return (
     <ModalTransition>
-      <Modal>
+      <Modal onClose={() => closeModal()}>
         <ModalHeader>
           <ModalTitle>{report?.name} to be deleted</ModalTitle>
         </ModalHeader>
