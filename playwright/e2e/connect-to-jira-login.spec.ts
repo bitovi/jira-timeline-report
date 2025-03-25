@@ -15,29 +15,6 @@ let totp = new OTPAuth.TOTP({
 test.describe("Connect to Jira", () => {
   test('Login test', async ({ page }) => {
     await page.goto("/");
-
-    const loginButton = page.getByRole('button', { name: 'Connect to Jira' })
-    await loginButton.waitFor({ state: 'visible' });
-    await loginButton.click();
-
-    const inputUsername =await page.locator('input[name="username"]');
-    await inputUsername.click();
-    await inputUsername.fill('testuser@bitovi.com');
-    await page.getByRole('button', { name: 'Continue' }).click();
-
-    const inputPassword = await page.locator('input[name="password"]');
-    await inputPassword.click();
-    await inputPassword.fill('Bitovi1234!');
-    await page.getByRole('button', { name: 'Log in' }).click();
-
-    const totpInput = page.getByPlaceholder('6-digit verification code').first()
-    const totpValue = totp.generate()
-    await totpInput.fill(totpValue)
-    await page.locator('#react-select-2-input').click();
-    await page.getByText('bitovi-training.atlassian.net', { exact: true }).click();
-    await page.getByRole('button', { name: 'Accept' }).click();
-
-
     
     await page.getByRole('button', { name: 'Sources' }).click();
     const jqlTextarea = page.locator('textarea[placeholder="issueType in (Epic, Story) order by Rank"]').nth(1)

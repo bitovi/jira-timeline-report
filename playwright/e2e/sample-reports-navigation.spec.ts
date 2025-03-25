@@ -1,5 +1,7 @@
 import test, { expect } from "@playwright/test";
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("Sample reports navigation", () => {
   test.describe("On 'Release end dates with initiative status' click", () => {
     test.beforeEach(async ({ page }) => {
