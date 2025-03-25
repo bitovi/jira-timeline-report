@@ -35,7 +35,6 @@ const JQLTextArea: FC<JQLTextAreaProps> = ({
         id={textAreaId}
         resize="none"
         className="!min-h-48"
-        data-testid="JQL-textarea"
         placeholder="issueType in (Epic, Story) order by Rank"
         value={jql}
         onChange={({ target }) => setJql(target.value)}

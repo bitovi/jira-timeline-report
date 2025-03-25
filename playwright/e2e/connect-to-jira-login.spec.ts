@@ -16,28 +16,31 @@ test.describe("Connect to Jira", () => {
   test('Login test', async ({ page }) => {
     await page.goto("/");
 
-    const loginButton = page.getByTestId('login-button')
+    const loginButton = page.getByRole('button', { name: 'Connect to Jira' })
     await loginButton.waitFor({ state: 'visible' });
     await loginButton.click();
-    await page.getByTestId('username').click();
-    // await page.getByTestId('username').fill('dtran@bitovi.com');
-    await page.getByTestId('username').fill('testuser@bitovi.com');
 
+    const inputUsername =await page.locator('input[name="username"]');
+    await inputUsername.click();
+    await inputUsername.fill('testuser@bitovi.com');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByTestId('password').click();
-    // await page.getByTestId('password').fill('Dt@121989');
-    await page.getByTestId('password').fill('Bitovi1234!');
+
+    const inputPassword = await page.locator('input[name="password"]');
+    await inputPassword.click();
+    await inputPassword.fill('Bitovi1234!');
     await page.getByRole('button', { name: 'Log in' }).click();
 
     const totpInput = page.getByPlaceholder('6-digit verification code').first()
-
     const totpValue = totp.generate()
     await totpInput.fill(totpValue)
-    await page.locator('div').filter({ hasText: /^Choose a site$/ }).nth(2).click();
+    await page.locator('#react-select-2-input').click();
     await page.getByText('bitovi-training.atlassian.net', { exact: true }).click();
     await page.getByRole('button', { name: 'Accept' }).click();
+
+
+    
     await page.getByRole('button', { name: 'Sources' }).click();
-    const jqlTextarea = await page.getByTestId('JQL-textarea').nth(1)
+    const jqlTextarea = page.locator('textarea[placeholder="issueType in (Epic, Story) order by Rank"]').nth(1)
     jqlTextarea.click();
     jqlTextarea.fill('type = outcome');
     await page.getByRole('button', { name: 'Apply' }).click();

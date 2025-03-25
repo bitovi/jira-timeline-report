@@ -15,6 +15,14 @@ Before running your tests, you need to build your application to ensure everythi
 
 End-to-end tests are managed by **Playwright**. Use these commands to run your browser-based tests:
 
+- **env config**
+
+[Setup 2SV](https://confluence.atlassian.com/cloudkb/emailed-otp-marketplace-partners-automation-guide-for-e2e-end-to-end-testing-using-two-step-verification-2sv-mfa-2fa-1456346710.html), in the **TOTP** section is the way to get the TOTP key.
+
+```
+JIRA_TOTP_SECRET=<TOTP key>
+```
+
 - **Run Playwright E2E tests:**
 
   ```bash
