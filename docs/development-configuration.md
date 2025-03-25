@@ -1,6 +1,6 @@
 # Development Configuration
 
-The Timeline Reporter uses a configuration Jira issue to store its data and a feature flag to determine whether to use the production or development issue.
+The Status Reports uses a configuration Jira issue to store its data and a feature flag to determine whether to use the production or development issue.
 
 ## Creating a Development Issue:
 
