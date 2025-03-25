@@ -11,7 +11,7 @@ let totp = new OTPAuth.TOTP({
   secret: process.env.JIRA_TOTP_SECRET,
 });
 
-const authFile = path.join(__dirname, '.auth/');
+const authFile = path.join(__dirname, '../playwright/.auth/authenticated.json');
 
 setup('authenticate', async ({ page }) => {
   await page.goto("/");
@@ -20,7 +20,7 @@ setup('authenticate', async ({ page }) => {
   await loginButton.waitFor({ state: 'visible' });
   await loginButton.click();
 
-  const inputUsername =await page.locator('input[name="username"]');
+  const inputUsername = await page.locator('input[name="username"]');
   await inputUsername.click();
   await inputUsername.fill(process.env.JIRA_TEST_USERNAME || '');
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -39,5 +39,5 @@ setup('authenticate', async ({ page }) => {
 
   await expect(page.getByRole('button', { name: 'Log Out' })).toBeVisible();
 
-  await page.context().storageState({ path: `${authFile}authenticated.json` });
+  await page.context().storageState({ path: authFile });
 });
