@@ -32,7 +32,7 @@ const Theme: FC<ThemeProps> = () => {
       return;
     }
 
-    save(debouncedTheme);
+    save(debouncedTheme, { onError: () => setLocalTheme(theme) });
   }, [debouncedTheme, save]);
 
   return (

@@ -24,6 +24,13 @@ export const useUpdateFeatures = () => {
         description = "Something went wrong";
       }
 
+      console.error(
+        ["useUpdateFeatures", "Something went wrong updating the app features", description].join(
+          "\n"
+        ),
+        error
+      );
+
       showFlag({
         title: <Text color="color.text.danger">Uh Oh!</Text>,
         description,

@@ -40,6 +40,11 @@ export const useSaveTheme = () => {
         description = "Something went wrong";
       }
 
+      console.error(
+        ["useSaveTheme", "Something went wrong updating the theme", description].join("\n"),
+        error
+      );
+
       showFlag({
         title: <Text color="color.text.danger">Uh Oh!</Text>,
         description,
