@@ -1,15 +1,19 @@
 import { defineFeatureFlag } from "./feature-flag";
 
-const devConfigurationIsse = defineFeatureFlag(
+const devConfigurationIssue = defineFeatureFlag(
   "devConfigurationIssue",
-  "Toggles the application's configuration issue between prod and dev",
-  false
+  "Changes the configuration issue",
+  (value: string) => value,
+  "Jira Timeline Report Configuration (Development)"
 );
 
 export const configurationIssueTitle = () => {
-  if (devConfigurationIsse()) {
+  const issue = devConfigurationIssue();
+
+  // Shorthand for dev if manually updating it a bunch of times
+  if (issue === "dev") {
     return "Jira Timeline Report Configuration (Development)";
   }
 
-  return "Jira Auto Scheduler Configuration";
+  return issue ?? "Jira Auto Scheduler Configuration";
 };

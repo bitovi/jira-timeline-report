@@ -8,7 +8,7 @@ import { AllTeamData } from "../../react/SettingsSidebar/components/TeamConfigur
 
 interface Paragraph {
   type: "paragraph";
-  content: Array<TextContent>;
+  content?: Array<TextContent>;
 }
 
 type TextContent = {
@@ -344,7 +344,7 @@ export function getTextFromWithinCell(cell: TableCell) {
 }
 
 function getTextFromParagraph(p: Paragraph) {
-  return p.content.filter((text) => text.type === "text").map((text) => text.text);
+  return p.content?.filter((text) => text.type === "text").map((text) => text.text);
 }
 
 export function matchTeamTable(fragment: StorageIssueContent) {
