@@ -50,11 +50,6 @@ export function makeFieldsRequest(config: Config, setFieldsRequest: (req: Fields
         nameMap[fieldName] = idToFields[fieldName][0].id;
       }
 
-      fields.forEach((f) => {
-        idMap[f.id] = f.name;
-        nameMap[f.name] = f.id;
-      });
-
       return {
         list: fields,
         nameMap: nameMap,
