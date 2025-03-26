@@ -10,6 +10,7 @@ const devConfigurationIssue = defineFeatureFlag(
 export const configurationIssueTitle = () => {
   const issue = devConfigurationIssue();
 
+  // Shorthand for dev if manually updating it a bunch of times
   if (issue === "dev") {
     return "Jira Timeline Report Configuration (Development)";
   }
