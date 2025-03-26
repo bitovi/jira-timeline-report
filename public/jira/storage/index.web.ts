@@ -49,8 +49,6 @@ const getConfigurationIssue = async (
       fields: ["summary", "Description"],
     });
 
-  console.log({ title: configurationIssueTitle(), configurationIssues });
-
   if (!configurationIssues.length) {
     return null;
   }
