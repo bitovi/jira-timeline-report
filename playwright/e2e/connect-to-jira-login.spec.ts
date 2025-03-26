@@ -17,9 +17,11 @@ test.describe("Connect to Jira", () => {
     await page.goto("/");
     
     await page.getByRole('button', { name: 'Sources' }).click();
-    const jqlTextarea = page.locator('textarea[placeholder="issueType in (Epic, Story) order by Rank"]').nth(1)
-    jqlTextarea.click();
-    jqlTextarea.fill('type = outcome');
+
+    const jqlTextarea = await page.getByLabel('Add your JQL').filter({ visible: true })
+    await jqlTextarea.click();
+    await jqlTextarea.fill('type = outcome');
+
     await page.getByRole('button', { name: 'Apply' }).click();
 
     await expect(page.locator('gantt-grid')).toBeVisible()

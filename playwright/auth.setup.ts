@@ -20,12 +20,12 @@ setup('authenticate', async ({ page }) => {
   await loginButton.waitFor({ state: 'visible' });
   await loginButton.click();
 
-  const inputUsername = await page.locator('input[name="username"]');
+  const inputUsername = await page.getByPlaceholder('Enter your email');
   await inputUsername.click();
   await inputUsername.fill(process.env.JIRA_TEST_USERNAME || '');
   await page.getByRole('button', { name: 'Continue' }).click();
 
-  const inputPassword = await page.locator('input[name="password"]');
+  const inputPassword = await page.getByPlaceholder('Enter password');
   await inputPassword.click();
   await inputPassword.fill(process.env.JIRA_TEST_PASSWORD || '');
   await page.getByRole('button', { name: 'Log in' }).click();
