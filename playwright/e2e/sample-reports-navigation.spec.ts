@@ -1,5 +1,8 @@
 import test, { expect } from "@playwright/test";
 
+// since we are authorized during setup, this clears the storage out so we can test the unauthorized state
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("Sample reports navigation", () => {
   test.describe("On 'Release end dates with initiative status' click", () => {
     test.beforeEach(async ({ page }) => {

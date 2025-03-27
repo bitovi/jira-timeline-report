@@ -15,6 +15,20 @@ Before running your tests, you need to build your application to ensure everythi
 
 End-to-end tests are managed by **Playwright**. Use these commands to run your browser-based tests:
 
+- **Config Setup**
+
+Atlassian has a security causing automated testing to not run smoothly. They're a few workarounds to get E2E testing to use 2SV (two-step verification) suggested by the Atlassian team. ***keep in mind these workarounds may stop working in the future as Atlassian continues to evolve and change.***
+
+To [setup 2SV](https://confluence.atlassian.com/cloudkb/emailed-otp-marketplace-partners-automation-guide-for-e2e-end-to-end-testing-using-two-step-verification-2sv-mfa-2fa-1456346710.html). Navigate to the link and in the **TOTP** section to setup 2SV and get the TOTP key. 
+
+Once you have the key, copy the following code into your `.env`
+
+```
+JIRA_TEST_USERNAME=<UserName>
+JIRA_TEST_PASSWORD=<Password>
+JIRA_TOTP_SECRET=<TOTP key>
+```
+
 - **Run Playwright E2E tests:**
 
   ```bash

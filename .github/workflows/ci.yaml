@@ -23,17 +23,34 @@ jobs:
   e2e-test:
     name: Run E2E Tests
     runs-on: ubuntu-latest
+    environment:
+      name: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+        
+      - name: build .env
+        run: |
+          echo "CLIENT_JIRA_CLIENT_ID=${{ secrets.CLIENT_JIRA_CLIENT_ID }}" > .env
+          echo "JIRA_CLIENT_SECRET=${{ secrets.JIRA_CLIENT_SECRET }}" >> .env
+          echo "JIRA_TOTP_SECRET=${{ secrets.JIRA_TOTP_SECRET }}" >> .env
+          echo "JIRA_TEST_USERNAME=${{ vars.JIRA_TEST_USERNAME }}" >> .env
+          echo "JIRA_TEST_PASSWORD=${{ secrets.JIRA_TEST_PASSWORD }}" >> .env
+          echo "CLIENT_JIRA_API_URL=${{ vars.CLIENT_JIRA_API_URL }}" >> .env
+          echo "CLIENT_JIRA_CALLBACK_URL=${{ vars.CLIENT_JIRA_CALLBACK_URL }}" >> .env
+          echo "CLIENT_JIRA_SCOPE=${{ vars.CLIENT_JIRA_SCOPE }}" >> .env
+          echo "PORT=${{ vars.PORT }}"
+          echo ".env file created"
+
       - name: Install Dependencies
         run: |
           npm ci
           npx playwright install
           sudo npx playwright install-deps
           npm run build
+
       - name: Run E2E Tests
         run: npm run test:e2e
       - name: Save Artifacts
