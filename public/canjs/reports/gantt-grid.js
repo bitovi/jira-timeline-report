@@ -121,11 +121,11 @@ export class GanttGrid extends StacheElement {
                       {{/ if}}
                       
                     </div>
-                    <div on:click='this.showTooltip(scope.event,data.issue)' 
+                    <a href="{{data.issue.url}}" target="_blank"
                         class='{{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} {{this.textSize}} 
-                          pt-1 pb-0.5 px-1 truncate max-w-96 pointer'>
+                          pt-1 pb-0.5 px-1 truncate max-w-96 pointer hover:underline'>
                         {{data.issue.summary}}
-                    </div>
+                    </a>
                   </div>
 
                     {{# for(column of this.columnsToShow) }}
