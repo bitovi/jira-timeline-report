@@ -131,7 +131,7 @@ export class GanttGrid extends StacheElement {
                     {{# for(column of this.columnsToShow) }}
                       <div style="grid-column: {{plus(3, scope.index) }}; grid-row: {{ plus(3, rowIndex) }}; z-index: 25" 
                         class="{{this.textSize}} text-right pointer pt-1 pb-0.5 px-1 hover:bg-neutral-41"
-                        on:click="column.onclick(scope.event, data.issue, this.allIssues)">{{column.getValue(data.issue)}}</div>
+                        on:click="column.onclick(scope.event, data.issue, this.allIssuesOrReleases)">{{column.getValue(data.issue)}}</div>
                     {{/ for }}
 
                     {{ this.getReleaseTimeline(data.issue, rowIndex) }}
@@ -222,16 +222,19 @@ export class GanttGrid extends StacheElement {
             `);
           },
           onclick: (event, issue, allIssues) => {
-            const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+            const getChildren = makeGetChildrenFromReportingIssues(allIssues);
 
             // we should get all the children ...
             const children = getChildren(issue);
 
-            this.root.render(
+            const root = createRoot(this.querySelector(".react-modal"));
+
+            root.render(
               createElement(PercentComplete, {
-                allIssuesOrReleases: this.allIssuesOrReleases,
+                allIssuesOrReleases: allIssues,
                 issue: issue,
                 childIssues: children,
+                onClose: () => root.unmount(),
               })
             );
           },
@@ -621,10 +624,6 @@ export class GanttGrid extends StacheElement {
         return this.showChildrenByKey[issue.key];
       }).length > 0
     );
-  }
-
-  connected() {
-    this.root = createRoot(this.querySelector(".react-modal"));
   }
 }
 
