@@ -27,6 +27,7 @@ import ViewSettings from "./react/ViewSettings";
 import SampleDataNotice from "./react/SampleDataNotice";
 import ViewReports from "./react/ViewReports";
 import StatusKeys from "./react/StatusKey";
+import GroupReport from "./react/reports/GroupReport";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 
@@ -78,6 +79,11 @@ export class TimelineReport extends StacheElement {
             <table-grid
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                 allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
+          {{/ eq }}
+
+          {{# eq(this.routeData.primaryReportType, "groupReport") }}
+            <div on:inserted='this.mountGroupReport(scope.element)'
+               on:removed='this.unmountGroupReport(scope.element)'></div>
           {{/ eq }}
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
@@ -169,6 +175,17 @@ export class TimelineReport extends StacheElement {
 
   attachStatusKeys() {
     createRoot(document.getElementById("status-keys")).render(createElement(StatusKeys, {}));
+  }
+  mountGroupReport(element) {
+    this.groupReportRoot = createRoot(element);
+    this.groupReportRoot.render(createElement(GroupReport, {
+      primaryIssues: this.primaryIssuesOrReleases,
+      allIssues: this.allIssuesOrReleases,
+      baselineDateTime: this.compareToTime.timePrior
+    }));
+  }
+  unmountGroupReport(element) {
+    this.groupReportRoot.unmount();
   }
 
   async connected() {

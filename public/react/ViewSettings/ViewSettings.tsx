@@ -26,6 +26,10 @@ const reports = [
     key: "table",
     name: "Estimation Table",
   },
+  {
+    key: "groupReport",
+    name: "Group Report"
+  }
 ] as const;
 
 type ReportTypes = (typeof reports)[number]["key"];
@@ -33,6 +37,7 @@ type ReportTypes = (typeof reports)[number]["key"];
 const viewSettingsMap: Record<Exclude<ReportTypes, "table">, FC> = {
   "start-due": GanttViewSettings,
   due: ScatterPlotViewSettings,
+  groupReport: () =>{ return <></>}
 };
 
 const useReportType = () => {

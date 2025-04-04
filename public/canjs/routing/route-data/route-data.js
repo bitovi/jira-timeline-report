@@ -72,6 +72,10 @@ export const REPORTS = [
     key: "table",
     name: "Estimation Table",
   },
+  {
+    key: "groupReport",
+    name: "Group Report"
+  }
 ];
 
 export class RouteData extends ObservableObject {

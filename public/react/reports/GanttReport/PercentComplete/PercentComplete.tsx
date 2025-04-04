@@ -4,6 +4,13 @@ import { calculateReportStatuses } from "../../../../jira/rolledup/work-status/w
 
 import type { DerivedIssue } from "../../../../jira/derived/derive";
 import type { WithPercentComplete } from "../../../../jira/rollup/percent-complete/percent-complete";
+
+type EverythingIssue = ReturnType<typeof calculateReportStatuses>[number] &
+  DerivedIssue &
+  WithPercentComplete;
+
+
+
 import cn from "classnames";
 import Modal, {
   ModalBody,
@@ -15,9 +22,6 @@ import Modal, {
 import CrossIcon from "@atlaskit/icon/glyph/cross";
 import { IconButton } from "@atlaskit/button/new";
 
-type EverythingIssue = ReturnType<typeof calculateReportStatuses>[number] &
-  DerivedIssue &
-  WithPercentComplete;
 
 function timingMethod(issue: EverythingIssue) {
   const derivedTiming = issue.derivedTiming;

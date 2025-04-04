@@ -4,6 +4,7 @@ export const defaultFeatures = {
   estimationTable: false,
   secondaryReport: false,
   workBreakdowns: false,
+  groupReport: false
 };
 
 export type Features = typeof defaultFeatures;

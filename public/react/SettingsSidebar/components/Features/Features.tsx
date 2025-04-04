@@ -12,12 +12,14 @@ const keyToTitle = {
   estimationTable: "Estimation Table",
   secondaryReport: "Secondary Report",
   workBreakdowns: "Work Breakdowns",
+  groupReport: "Group Report"
 };
 
 const keyToSubtitle = {
   estimationTable: "",
   secondaryReport: "",
   workBreakdowns: "",
+  groupReport: ""
 };
 
 const toList = (features: Features) => {

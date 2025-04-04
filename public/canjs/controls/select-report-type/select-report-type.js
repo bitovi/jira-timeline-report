@@ -44,7 +44,15 @@ class ReportSelectionDropdown extends StacheElement {
     onSelection: Function,
     get reportTypes() {
       return this.routeData.reports.filter((report) => {
-        return this.features?.estimationTable || report.key !== "table";
+        if(report.key === "table") {
+          return this.features?.estimationTable
+        } 
+        else if(report.key == "groupReport") {
+          return this.features?.groupReport;
+        }
+        else {
+          return true;
+        }
       });
     },
   };
