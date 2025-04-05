@@ -38,7 +38,7 @@ export class ScatterTimeline extends StacheElement {
 
             
             {{# for(row of this.rows) }}
-                <div class="{{# if(this.lotsOfIssues)}}h-8{{else}}h-10{{/}} relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
+                <div class="{{# if(this.lotsOfIssues)}}h-7{{else}}h-10{{/}} relative" style="grid-column: 1 / span {{this.quartersAndMonths.months.length}}; grid-row: {{plus(scope.index, 3)}} / span 1;">
                     {{# for(item of row.items) }}
                         {{{item.element}}}
                     {{/ for }}
@@ -129,18 +129,21 @@ export class ScatterTimeline extends StacheElement {
             firstDay,
             totalTime,
             makeElementForIssue: (release) => {
+                const radius = this.lotsOfIssues ? 6 : 8;
+
                 const div = document.createElement("div");
-                div.className = " release-timeline-item flex items-center gap-1 ";
+                div.className = " release-timeline-item gap-1 ";
                 Object.assign(div.style, {
                     position: "absolute",
                     //transform: "translate(-100%, 0)",
-                    padding: "2px 3px 2px 6px",
+                    //padding: "2px 3px 2px 6px",
                     //backgroundColor: "gray",
+                    paddingRight: radius+"px",
                     zIndex: "100",
                     top: "4px",
                     //background: "rgba(255,255,255, 0.6)"
                 })
-                div.classList.add("bg-neutral-41", "rounded")
+                //div.classList.add("bg-neutral-41", "rounded")
 
                 
                 const text = document.createElement("div");
@@ -148,16 +151,23 @@ export class ScatterTimeline extends StacheElement {
                 Object.assign( text.style, {
                     position: "relative",
                     zIndex: "10",
-                    maxWidth: this.lotsOfIssues ? "260px" : "300px"
+                    maxWidth: this.lotsOfIssues ? "260px" : "300px",
+                    paddingLeft: radius+"px",
+                    paddingRight: (radius*1.5)+"px"
                 })
+                text.classList.add("bg-neutral-41", "rounded","px-0.5")
                 text.appendChild(document.createTextNode(release?.names?.shortVersion || release.summary))
                 div.appendChild(text);
 
                 const tick = document.createElement("div");
-                tick.className = "color-text-and-bg-" + release.rollupStatuses.rollup.status+" rounded-full"
+                tick.className = "color-text-and-bg-" + release.rollupStatuses.rollup.status+" rounded-full border border-white absolute"
                 Object.assign( tick.style, {
-                    height: this.lotsOfIssues ? "10px": "14px",
-                    width: this.lotsOfIssues ? "10px" : "14px",
+                    height: `${radius*2}px`,
+                    width: `${radius*2}px`,
+                    right: 0,
+                    top: "50%",
+                    marginTop: `-${radius}px`,
+                    zIndex: "101",
                    // transform: "rotate(45deg)",
                 })
                 div.appendChild(tick);
