@@ -531,6 +531,7 @@ export class GanttGrid extends StacheElement {
           root.appendChild(thisPeriod);
         }
       } else {
+        
         root.addEventListener("mouseenter", this.showDatesTooltip.bind(this, release, index));
         root.addEventListener("mouseleave", this.hideDatesTooltip.bind(this, release, index));
 
@@ -558,27 +559,29 @@ export class GanttGrid extends StacheElement {
             }
           );
         }
-
-        if (release.rollupStatuses.rollup.lastPeriod) {
-          const behindTime = makeLastPeriodElement(
-            release.rollupStatuses.rollup.status,
-            release.rollupStatuses.rollup.lastPeriod,
-            currentPositions,
-            [this.shadowBarSize]
-          );
-
-          lastPeriodRoot.appendChild(behindTime);
+        const rollupLastPeriod = release.rollupStatuses.rollup.lastPeriod;
+        if (rollupLastPeriod) {
+          if(rollupLastPeriod.start && rollupLastPeriod.due) {
+            const behindTime = makeLastPeriodElement(
+              release.rollupStatuses.rollup.status,
+              release.rollupStatuses.rollup.lastPeriod,
+              currentPositions,
+              [this.shadowBarSize]
+            );
+  
+            lastPeriodRoot.appendChild(behindTime);
+          } else {
+            const emptySet = makeEmptySetInThePast(this.lotsOfIssues)
+            console.log(release, emptySet);
+            lastPeriodRoot.appendChild(emptySet);
+          }
+          
         }
 
         root.appendChild(team);
       }
     } else {
-      let team = makeCircleForStatus(
-        "notstarted",
-        '<img src="/images/empty-set.svg" />',
-        this.lotsOfIssues
-      );
-
+      let team = makeEmptySetCurrent(this.lotsOfIssues);
       root.appendChild(team);
     }
 
@@ -740,6 +743,30 @@ function makeCircleForStatus(status, innerHTML, lotsOfIssues) {
 
   return team;
 }
+
+function makeEmptySetCurrent(lotsOfIssues) {
+  return makeCircleForStatus(
+    "notstarted",
+    '<img src="/images/empty-set.svg" />',
+    lotsOfIssues
+  );
+}
+
+function makeEmptySetInThePast(lotsOfIssues){
+  let team = makeElement([(lotsOfIssues ? "pl-1" : "pl-2"),"flex","content-center","h-full","flex-wrap"], {});
+  team.appendChild(
+    makeCircle(
+      '∅',
+      ["color-text-notstarted", ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
+      { zIndex: 30, position: "relative" }
+    )
+  );
+
+  return team;
+}
+
+
+
 
 //  this.showChildrenByKey[issue.key];
 // this.getChildren()
