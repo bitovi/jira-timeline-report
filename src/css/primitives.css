@@ -1,0 +1,110 @@
+:root {
+  --complete-color: #22a06b;
+  --complete-text-color: #fff;
+
+  --ontrack-color: #388bff;
+  --ontrack-text-color: "#fff";
+
+  --behind-color: #f5cd47;
+  --behind-text-color: #000;
+
+  --last-period-behind-color: #ffe380; /*Y100 - Cowbell*/
+
+  --warning-color: #ff8e09;
+  --warning-text-color: #000;
+
+  --last-period-warning-color: #c78a27;
+
+  --unknown-color: #dab092;
+
+  --notstarted-color: #8590a2;
+  --notstarted-text-color: #fff;
+
+  --blocked-color: #e2483d;
+  --blocked-text-color: #fff;
+
+  --last-period-blocked-color: #b0282f;
+
+  --ahead-color: #2898bd;
+  --ahead-text-color: #fff;
+
+  --ahead-dark-color: #00a3bf;
+
+  --new-color: #8f7ee7;
+  --new-text-color: #fff;
+
+  --white-color: rgb(255 255 255);
+  --black-color: rgb(0 0 0);
+  --slate-900-color: rgb(17 24 39);
+  --slate-400-color: #505f79;
+  --slate-300-color: #e7e7e7;
+  --gray-200-color: #e5e7eb;
+  --gray-100-color: #ebecf0; /* N30 - Northeast snow */
+  --gray-20-color: #f4f5f7; /* N20 - Gram's hair */
+  --gray-10-color: #f4f5f7; /* N20 - Gram's hair */
+  --sky-100-color: rgb(224 242 254);
+
+  --bitovi-red-orange: #f5532d;
+
+  /* design system, for Atlassian */
+  --ds-icon-success: var(--complete-color);
+  --ds-icon-warning: var(--warning-color);
+  --ds-icon-danger: var(--blocked-color);
+  --ds-text-success: #36885e;
+  --ds-text-warning: var(--last-period-warning-color);
+  --ds-text-danger: var(--last-period-blocked-color);
+
+  --space-0px: 0px;
+  --space-1px: 1px;
+  --space-2px: 2px;
+  --space-half: 0.125rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem; /*16*/
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-10: 2.5rem;
+
+  --font-mono: "SFMono-Medium", "SF Mono", "Segoe UI Mono", "Roboto Mono", "Ubuntu Mono", Menlo,
+    Consolas, Courier, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+menu,
+body,
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+.list-disc {
+  list-style-type: disc;
+}
+.underline-on-hover {
+  text-decoration: none;
+}
+.underline-on-hover:hover {
+  text-decoration: underline;
+}
+.pointer {
+  cursor: pointer;
+}
+
+h1 {
+  padding: 0px;
+  margin: 0px;
+}
+
+timeline-use code {
+  background-color: var(--gray-100-color);
+  padding: var(--space-2px);
+  border-radius: 2px;
+}

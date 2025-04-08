@@ -1,6 +1,6 @@
 module.exports = {
-  content: ["./public/**/*.{html,js,tsx,ts}", "./pages/**/*.{html,js}"],
-  safelist: ["pl-2", "pl-4", "pl-6", "pl-8"],
+  content: ["./src/**/*.{js,tsx,ts}", "./**.html"],
+  safelist: ["pl-2", "pl-4", "pl-6", "pl-8", "border-neutral-301"],
   theme: {
     fontFamily: {
       sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
