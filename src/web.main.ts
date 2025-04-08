@@ -14,7 +14,7 @@ async function main() {
     {
       host: "hosted",
       createStorage: createWebAppStorage,
-      configureRouting: (route) => {
+      configureRouting: (route: { start: () => void }) => {
         route.start();
       },
       createLinkBuilder: createWebLinkBuilder,
