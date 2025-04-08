@@ -9,8 +9,6 @@ export default function oauthCallback() {
     JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
   };
 
-  console.log({ environment });
-
   //@ts-expect-error
   const jiraHelpers = jiraOIDCHelpers(environment);
 
