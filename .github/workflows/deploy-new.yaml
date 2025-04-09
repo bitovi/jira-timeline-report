@@ -1,0 +1,113 @@
+name: Deploy Staging (CDN)
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Build-Status-Reports:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Create Environment
+        run: |
+          echo "VITE_COMMIT_SHA=${{ github.sha }}" > repo_env
+          # echo "CLIENT_STATUS_REPORTS_ENV=new-staging" >> repo_env
+          # echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> repo_env
+          # echo "BACKEND_SENTRY_DSN=https://26de5611d04fde803427885bdb82a7bc@o4508721931616256.ingest.us.sentry.io/4508721935351808" >> repo_env
+          echo "VITE_JIRA_APP_KEY=bitovi.status-report.local.new.staging" >> repo_env
+
+      - name: Build
+        run: |
+          npm ci
+          npm run create:atlassian-connect -- --environment=local --name=new.staging --url=https://new-status-reports-staging.bitovi.tools
+          npm run build
+
+      - name: Build to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          if-no-files-found: error
+          include-hidden-files: true
+          path: ./dist
+
+  Deploy-Auth-Server:
+    needs: Build-Status-Reports
+    runs-on: ubuntu-latest
+    environment:
+      name: new-deployment
+      url: ${{ steps.deploy.outputs.vm_url}}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: dist
+
+      - id: deploy
+        name: Deploy
+        uses: bitovi/github-actions-deploy-docker-to-ec2@v1
+        with:
+          checkout: false
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
+          aws_default_region: us-east-1
+
+          tf_state_bucket_destroy: true
+
+          aws_r53_enable: true
+          aws_r53_create_sub_cert: true
+          aws_r53_sub_domain_name: new-api-status-reports-staging
+          aws_r53_domain_name: bitovi.tools
+          aws_elb_app_port: 3000
+
+          docker_full_cleanup: true
+
+          aws_ec2_instance_type: t3.small
+          aws_ec2_instance_root_vol_size: 16
+
+          repo_env: repo_env
+          env_ghs: ${{ secrets.DOT_ENV_STAGING_NEW }}
+
+  Deploy-Static-Content:
+    needs: Build-Status-Reports
+    runs-on: ubuntu-latest
+    environment:
+      name: new-deployment
+      url: ${{ steps.deploy.outputs.vm_url}}
+    steps:
+      - name: Download Build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: dist
+      - id: deploy
+        name: Deploy static assets to S3
+        uses: bitovi/github-actions-deploy-static-site-to-aws@v0.2.4
+        with:
+          checkout: false
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
+          aws_default_region: us-east-1
+          aws_site_source_folder: ./dist
+
+          aws_r53_sub_domain_name: new-status-reports-staging
+          aws_r53_domain_name: bitovi.tools
+
+          tf_action: "apply"
+          tf_state_bucket_destroy: true
+          aws_site_cdn_enabled: true

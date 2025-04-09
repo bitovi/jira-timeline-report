@@ -12,5 +12,4 @@ window.matchMedia = vi.fn().mockImplementation((query) => ({
   dispatchEvent: vi.fn(),
 }));
 
-// @ts-expect-error AP is a const and this is a test
 global.AP = {};
