@@ -6,21 +6,8 @@ import { defineConfig } from "vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function getClientEnvVariables() {
-  const clientEnv: Record<string, string> = {};
-
-  for (const key in process.env) {
-    if (key.startsWith("CLIENT")) {
-      clientEnv[`import.meta.env.${key}`] = JSON.stringify(process.env[key]);
-    }
-  }
-
-  return clientEnv;
-}
-
 export default defineConfig({
   plugins: [react()],
-  // define: getClientEnvVariables(),
   build: {
     rollupOptions: {
       input: {

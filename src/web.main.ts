@@ -10,6 +10,7 @@ async function main() {
       JIRA_CALLBACK_URL: import.meta.env.VITE_JIRA_CALLBACK_URL,
       JIRA_API_URL: import.meta.env.VITE_JIRA_API_URL,
       JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
+      COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA,
     },
     {
       host: "hosted",
