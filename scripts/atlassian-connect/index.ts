@@ -2,6 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { Command } from "commander";
 
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const deploymentConnectMetadata = {
   staging: {
     name: "Status Reports for Jira (Staging)",
