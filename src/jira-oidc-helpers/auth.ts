@@ -49,7 +49,7 @@ export const refreshAccessToken =
 export async function fetchAccessTokenWithAuthCode(authCode: string): Promise<void> {
   try {
     const { accessToken, expiryTimestamp, refreshToken, scopeId } = await fetchJSON(
-      `http://localhost:3000/access-token?code=${authCode}`
+      `${import.meta.env.VITE_AUTH_SERVER_URL}/access-token?code=${authCode}`
     );
 
     saveInformationToLocalStorage({
