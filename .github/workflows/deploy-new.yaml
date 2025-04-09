@@ -31,6 +31,18 @@ jobs:
           # echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> .env
           # echo "BACKEND_SENTRY_DSN=https://26de5611d04fde803427885bdb82a7bc@o4508721931616256.ingest.us.sentry.io/4508721935351808" >> .env
           echo "VITE_JIRA_APP_KEY=bitovi.status-report.local.new.staging" >> .env
+          echo ".env file created at $(pwd)"
+          cat .env
+
+      - name: Create repo_env file
+        run: |
+          echo "VITE_COMMIT_SHA=${{ github.sha }}" > repo_env
+          # echo "CLIENT_STATUS_REPORTS_ENV=new-staging" >> repo_env
+          # echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> repo_env
+          # echo "BACKEND_SENTRY_DSN=https://26de5611d04fde803427885bdb82a7bc@o4508721931616256.ingest.us.sentry.io/4508721935351808" >> repo_env
+          echo "VITE_JIRA_APP_KEY=bitovi.status-report.local.new.staging" >> repo_env
+          echo "repo_env file created at $(pwd)"
+          cat repo_env
 
       - name: Build
         run: |
