@@ -23,7 +23,7 @@ jobs:
       - name: Create Environment
         run: |
           echo "VITE_COMMIT_SHA=${{ github.sha }}" > .env
-          VITE_JIRA_CLIENT_ID=aQr54KsDa6xkbWRLWhsm7B9FxcbRgcRY
+          echo "VITE_JIRA_CLIENT_ID=aQr54KsDa6xkbWRLWhsm7B9FxcbRgcRY" >> .env
           echo "VITE_JIRA_SCOPE="read:jira-work write:jira-work"" >> .env
           echo "VITE_JIRA_CALLBACK_URL=https://new-status-reports-staging.bitovi.tools/oauth-callback" >> .env
           echo "VITE_JIRA_API_URL=https://api.atlassian.com/ex/jira" >> .env
