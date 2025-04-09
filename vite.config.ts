@@ -12,8 +12,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "/index.html"),
-        oauth: resolve(__dirname, "/oauth-callback/index.html"),
-        connect: resolve(__dirname, "/connect/index.html"),
+        oauth: resolve(__dirname, "/oauth-callback.html"),
+        connect: resolve(__dirname, "/connect.html"),
         // dev: resolve(__dirname, "/dev.html"),
       },
     },
