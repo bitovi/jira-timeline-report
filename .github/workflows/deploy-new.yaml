@@ -25,7 +25,7 @@ jobs:
           echo "VITE_COMMIT_SHA=${{ github.sha }}" > .env
           echo "VITE_JIRA_CLIENT_ID=aQr54KsDa6xkbWRLWhsm7B9FxcbRgcRY" >> .env
           echo "VITE_JIRA_SCOPE="read:jira-work write:jira-work"" >> .env
-          echo "VITE_JIRA_CALLBACK_URL=https://new-status-reports-staging.bitovi.tools/oauth-callback" >> .env
+          echo "VITE_JIRA_CALLBACK_URL=https://new-status-reports-staging.bitovi.tools/oauth-callback.html" >> .env
           echo "VITE_JIRA_API_URL=https://api.atlassian.com/ex/jira" >> .env
           # echo "CLIENT_STATUS_REPORTS_ENV=new-staging" >> .env
           # echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> .env
