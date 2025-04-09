@@ -134,6 +134,7 @@ jobs:
 
           aws_r53_sub_domain_name: new-status-reports-staging
           aws_r53_domain_name: bitovi.tools
+          aws_site_root_object: ""
 
           tf_action: "apply"
           tf_state_bucket_destroy: true
