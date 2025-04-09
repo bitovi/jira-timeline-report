@@ -117,10 +117,10 @@ jobs:
           name: build
           path: dist
 
-      - name: Strip HTML
-        run: |
-          # Prepares a file for cloudfront. God help us all. 
-          for file in ./dist/*.html; do mv "$file" "${file%.html}"; done
+      # - name: Strip HTML
+      #   run: |
+      #     # Prepares a file for cloudfront. God help us all.
+      #     # for file in ./dist/*.html; do mv "$file" "${file%.html}"; done
 
       - id: deploy
         name: Deploy static assets to S3
