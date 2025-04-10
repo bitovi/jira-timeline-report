@@ -90,7 +90,7 @@ function createModules({ name, key }: Metadata) {
     modules: {
       generalPages: [
         {
-          url: "/connect/",
+          url: "/connect.html",
           key: "main",
           location: "system.top.navigation.bar",
           name: {
@@ -98,7 +98,7 @@ function createModules({ name, key }: Metadata) {
           },
         },
         {
-          url: `/connect/?primaryIssueType={ac.${key}.primaryIssueType}&hideUnknownInitiatives={ac.${key}.hideUnknownInitiatives}&jql={ac.${key}.jql}&loadChildren={ac.${key}.loadChildren}&primaryReportType={ac.${key}.primaryReportType}&secondaryReportType={ac.${key}.secondaryReportType}&showPercentComplete={ac.${key}.showPercentComplete}&showOnlySemverReleases={ac.${key}.showOnlySemverReleases}&settings={ac.${key}.settings}`,
+          url: `/connect.html?primaryIssueType={ac.${key}.primaryIssueType}&hideUnknownInitiatives={ac.${key}.hideUnknownInitiatives}&jql={ac.${key}.jql}&loadChildren={ac.${key}.loadChildren}&primaryReportType={ac.${key}.primaryReportType}&secondaryReportType={ac.${key}.secondaryReportType}&showPercentComplete={ac.${key}.showPercentComplete}&showOnlySemverReleases={ac.${key}.showOnlySemverReleases}&settings={ac.${key}.settings}`,
           key: "deeplink",
           location: "none",
           name: {
@@ -112,7 +112,7 @@ function createModules({ name, key }: Metadata) {
           name: {
             value: name,
           },
-          url: "/connect/?jql=project%3D'${project.key}'&primaryIssueType%3DInitiative",
+          url: "/connect.html?jql=project%3D'${project.key}'&primaryIssueType%3DInitiative",
           weight: 1,
         },
       ],
