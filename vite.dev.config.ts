@@ -14,7 +14,7 @@ export default defineConfig({
     sourcemap: "inline",
     rollupOptions: {
       input: {
-        dev: resolve(__dirname, "/dev.html"),
+        dev: resolve(__dirname, "/dev/index.html"),
       },
     },
   },
