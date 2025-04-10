@@ -1,11 +1,12 @@
 name: Test
 
+# on:
+#   pull_request:
+#     branches: [main, update/build-system]
+#   workflow_dispatch:
 on:
-  pull_request:
-    branches: [main, update/build-system]
-  workflow_dispatch:
   push:
-    branches: ["*"]
+    branches: ["update/build-system"]
 
 jobs:
   unit-test:
