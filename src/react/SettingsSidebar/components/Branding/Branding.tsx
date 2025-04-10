@@ -8,7 +8,7 @@ const Branding: FC<BrandingProps> = () => {
   return (
     <div className="flex gap-2 pb-6">
       <div className="flex-none pt-1">
-        <img src="./images/eggbert-light-minimum.svg" />
+        <img src="/images/eggbert-light-minimum.svg" />
       </div>
       <div className="flex-auto grow items-baseline leading-4">
         <div className="color-gray-900 underline-on-hover bitovi-font-poppins font-bold">
