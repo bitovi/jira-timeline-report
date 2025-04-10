@@ -20,34 +20,16 @@ jobs:
         with:
           node-version: 22
 
-      - name: Create Environment
-        run: |
-          echo "VITE_COMMIT_SHA=${{ github.sha }}" > .env
-          echo "VITE_AUTH_SERVER_URL=https://new-api-status-reports-staging.bitovi.tools" >>.env
-          echo "VITE_JIRA_CLIENT_ID=T2M8rmEYwd1CXRM4YQYONJb7gmFT0VZI" >> .env
-          echo "VITE_JIRA_SCOPE="read:jira-work write:jira-work"" >> .env
-          echo "VITE_JIRA_CALLBACK_URL=https://new-status-reports-staging.bitovi.tools/oauth-callback.html" >> .env
-          echo "VITE_JIRA_API_URL=https://api.atlassian.com/ex/jira" >> .env
-          # echo "CLIENT_STATUS_REPORTS_ENV=new-staging" >> .env
-          # echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> .env
-          # echo "BACKEND_SENTRY_DSN=https://26de5611d04fde803427885bdb82a7bc@o4508721931616256.ingest.us.sentry.io/4508721935351808" >> .env
-          echo "VITE_JIRA_APP_KEY=bitovi.status-report.local.new.staging" >> .env
-          echo ".env file created at $(pwd)"
-          cat .env
-
-      - name: Create repo_env file
-        run: |
-          echo "VITE_COMMIT_SHA=${{ github.sha }}" > repo_env
-          echo "VITE_JIRA_CLIENT_ID=T2M8rmEYwd1CXRM4YQYONJb7gmFT0VZI" >> repo_env
-          echo "VITE_JIRA_SCOPE="read:jira-work write:jira-work"" >> repo_env
-          echo "VITE_JIRA_CALLBACK_URL=https://new-status-reports-staging.bitovi.tools/oauth-callback.html" >> repo_env
-          echo "VITE_JIRA_API_URL=https://api.atlassian.com/ex/jira" >> repo_env
-          # echo "CLIENT_STATUS_REPORTS_ENV=new-staging" >> repo_env
-          # echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> repo_env
-          # echo "BACKEND_SENTRY_DSN=https://26de5611d04fde803427885bdb82a7bc@o4508721931616256.ingest.us.sentry.io/4508721935351808" >> repo_env
-          echo "VITE_JIRA_APP_KEY=bitovi.status-report.local.new.staging" >> repo_env
-          echo "repo_env file created at $(pwd)"
-          cat repo_env
+      - name: Generate .env and repo_env
+        run: ./scripts/generate-build-env.sh
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+          VITE_AUTH_SERVER_URL: ${{ vars.VITE_AUTH_SERVER_URL }}
+          VITE_JIRA_CLIENT_ID: ${{ vars.VITE_JIRA_CLIENT_ID }}
+          VITE_JIRA_SCOPE: ${{ vars.VITE_JIRA_SCOPE }}
+          VITE_JIRA_CALLBACK_URL: ${{ vars.VITE_JIRA_CALLBACK_URL }}
+          VITE_JIRA_API_URL: ${{ vars.VITE_JIRA_API_URL }}
+          VITE_JIRA_APP_KEY: bitovi.status-report.local.new.staging
 
       - name: Build
         run: |
