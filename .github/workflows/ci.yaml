@@ -33,15 +33,15 @@ jobs:
 
       - name: Generate .env and repo_env
         run: |
-            chmod +x scripts/generate-build-env.sh
-            ./scripts/generate-build-env.sh
-          env:
-            VITE_COMMIT_SHA: ${{ github.sha }}
-            VITE_AUTH_SERVER_URL: ${{ vars.VITE_AUTH_SERVER_URL }}
-            VITE_JIRA_CLIENT_ID: ${{ vars.VITE_JIRA_CLIENT_ID }}
-            VITE_JIRA_SCOPE: ${{ vars.VITE_JIRA_SCOPE }}
-            VITE_JIRA_CALLBACK_URL: ${{ vars.VITE_JIRA_CALLBACK_URL }}
-            VITE_JIRA_API_URL: ${{ vars.VITE_JIRA_API_URL }}
+          chmod +x scripts/generate-build-env.sh
+          ./scripts/generate-build-env.sh
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+          VITE_AUTH_SERVER_URL: ${{ vars.VITE_AUTH_SERVER_URL }}
+          VITE_JIRA_CLIENT_ID: ${{ vars.VITE_JIRA_CLIENT_ID }}
+          VITE_JIRA_SCOPE: ${{ vars.VITE_JIRA_SCOPE }}
+          VITE_JIRA_CALLBACK_URL: ${{ vars.VITE_JIRA_CALLBACK_URL }}
+          VITE_JIRA_API_URL: ${{ vars.VITE_JIRA_API_URL }}
 
       - name: Add Test User .env
         run: |
