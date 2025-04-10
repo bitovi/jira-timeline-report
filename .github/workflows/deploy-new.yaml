@@ -21,7 +21,9 @@ jobs:
           node-version: 22
 
       - name: Generate .env and repo_env
-        run: ./scripts/generate-build-env.sh
+        run: |
+          chmod +x scripts/generate-build-env.sh
+          ./scripts/generate-build-env.sh
         env:
           VITE_COMMIT_SHA: ${{ github.sha }}
           VITE_AUTH_SERVER_URL: ${{ vars.VITE_AUTH_SERVER_URL }}
