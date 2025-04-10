@@ -10,6 +10,7 @@ public/dist/
 
 public/rollback/base-issues.json
 public/atlassian-connect.json
+/playwright/servers.json
 /playwright/report/
 /playwright/test-results/
 /playwright/.auth/

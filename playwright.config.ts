@@ -17,6 +17,8 @@ dotenv.config({ path: path.resolve(__dirname, ".env") });
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+  globalSetup: "./playwright/global-setup",
+  globalTeardown: "./playwright/global-teardown",
   testDir: "./playwright/",
   outputDir: "./playwright/test-results",
   /* Run tests in files in parallel */
@@ -32,7 +34,7 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     // command: BASE_URL=https://timeline-report.bitovi-jira.com npx playwright test
-    baseURL: process.env.BASE_URL || "http://localhost:3000",
+    baseURL: process.env.BASE_URL || "http://localhost:8080",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -82,10 +84,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: "npm run start-local",
-    url: "http://localhost:3000",
-    reuseExistingServer: false,
-  },
+  // webServer: {
+  //   command: "npx http-server ./dist",
+  //   url: "http://localhost:8080",
+  //   reuseExistingServer: true,
+  // },
   reportSlowTests: null,
 });
