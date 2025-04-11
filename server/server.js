@@ -1,12 +1,11 @@
-require("./instruments.js");
+import "./instruments.js";
 
-const Sentry = require("@sentry/node");
+import * as Sentry from "@sentry/node";
 
-const express = require("express");
-const dotenv = require("dotenv");
-const { fetchTokenWithAccessCode } = require("./helper");
-const cors = require("cors");
-const path = require("path");
+import express from "express";
+import dotenv from "dotenv";
+import { fetchTokenWithAccessCode } from "./helper.js";
+import cors from "cors";
 
 // configurations
 dotenv.config();
@@ -15,30 +14,26 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Application routes
-const makeIndex = require("../pages/index.html");
-const makeOAuthCallback = require("../pages/oauth-callback.html");
-app.get("/", (req, res) => {
-  res.send(makeIndex(req, "./dist/hosted-main.min.js", { showHeader: true }));
-});
+// Sentry setup needs to be done before the middlewares
+Sentry.setupExpressErrorHandler(app);
 
-app.get("/dev", (req, res) => {
-  res.send(makeIndex(req, "./dist/hosted-main.js", { showHeader: true }));
-});
+app.use(cors());
 
-// Atlassian Connect specific endpoints
-app.get("/connect", (req, res) => {
-  res.send(makeIndex(req, "./dist/connect-main.min.js", { showHeader: false }));
-});
+// middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-app.get("/oauth-callback", (req, res) => {
-  res.send(makeOAuthCallback(req));
+app.use(function onError(err, req, res, next) {
+  // Todo: do we want a page for this?
+  res.statusCode = 500;
+  res.end(res.sentry + "\n");
 });
 
 app.get("/access-token", async (req, res) => {
   try {
     const code = req.query.code;
     const refresh = req.query.refresh;
+    let data = {};
     if (!code) throw new Error("No Access code provided");
     const { error, data: accessData, message } = await fetchTokenWithAccessCode(code, refresh);
     if (error) {
@@ -61,21 +56,6 @@ app.get("/access-token", async (req, res) => {
       message: `${error.message}`,
     });
   }
-});
-
-// Sentry setup needs to be done before the middlewares
-Sentry.setupExpressErrorHandler(app);
-
-// middlewares
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, "..", "public")));
-
-app.use(function onError(err, req, res, next) {
-  // Todo: do we want a page for this?
-  res.statusCode = 500;
-  res.end(res.sentry + "\n");
 });
 
 // Start server

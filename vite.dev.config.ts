@@ -9,18 +9,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react()],
   build: {
+    emptyOutDir: false,
+    minify: false,
+    sourcemap: "inline",
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "/index.html"),
-        oauth: resolve(__dirname, "/oauth-callback.html"),
-        connect: resolve(__dirname, "/connect.html"),
+        dev: resolve(__dirname, "/dev.html"),
       },
     },
-  },
-  test: {
-    environment: "jsdom",
-    globalSetup: "./vitest-global.ts",
-    setupFiles: "./vitest.setup.ts",
-    globals: true,
   },
 });

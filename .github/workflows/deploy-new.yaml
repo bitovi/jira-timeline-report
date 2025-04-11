@@ -1,4 +1,4 @@
-name: Deploy Staging
+name: Deploy Staging (CDN)
 
 on:
   push:
@@ -25,21 +25,18 @@ jobs:
           chmod +x scripts/generate-build-env.sh
           ./scripts/generate-build-env.sh
         env:
-          BACKEND_SENTRY_DSN: ${{ vars.BACKEND_SENTRY_DSN }}
           VITE_COMMIT_SHA: ${{ github.sha }}
           VITE_AUTH_SERVER_URL: ${{ vars.VITE_AUTH_SERVER_URL }}
           VITE_JIRA_CLIENT_ID: ${{ vars.VITE_JIRA_CLIENT_ID }}
           VITE_JIRA_SCOPE: ${{ vars.VITE_JIRA_SCOPE }}
           VITE_JIRA_CALLBACK_URL: ${{ vars.VITE_JIRA_CALLBACK_URL }}
           VITE_JIRA_API_URL: ${{ vars.VITE_JIRA_API_URL }}
-          VITE_FRONTEND_SENTRY_DSN: ${{ vars.VITE_FRONTEND_SENTRY_DSN }}
-          VITE_STATUS_REPORTS_ENV: staging
           VITE_JIRA_APP_KEY: bitovi.status-report.local.new.staging
 
       - name: Build
         run: |
           npm ci
-          npm run create:atlassian-connect -- --environment=staging
+          npm run create:atlassian-connect -- --environment=local --name=new.staging --url=https://new-status-reports-staging.bitovi.tools
           npm run build
 
       - name: Build to Artifacts
@@ -54,7 +51,7 @@ jobs:
     needs: Build-Status-Reports
     runs-on: ubuntu-latest
     environment:
-      name: staging
+      name: new-deployment
       url: ${{ steps.deploy.outputs.vm_url}}
     steps:
       - name: Checkout Code
@@ -79,7 +76,7 @@ jobs:
 
           aws_r53_enable: true
           aws_r53_create_sub_cert: true
-          aws_r53_sub_domain_name: api-status-reports-staging
+          aws_r53_sub_domain_name: new-api-status-reports-staging
           aws_r53_domain_name: bitovi.tools
           aws_elb_app_port: 3000
 
@@ -91,11 +88,11 @@ jobs:
           repo_env: repo_env
           env_ghs: ${{ secrets.DOT_ENV_STAGING_NEW }}
 
-  Deploy-Static-Assets:
+  Deploy-Static-Content:
     needs: Build-Status-Reports
     runs-on: ubuntu-latest
     environment:
-      name: staging
+      name: new-deployment
       url: ${{ steps.deploy.outputs.vm_url}}
     steps:
       - name: Download Build
@@ -114,47 +111,10 @@ jobs:
           aws_default_region: us-east-1
           aws_site_source_folder: ./dist
 
-          aws_r53_sub_domain_name: status-reports-staging
+          aws_r53_sub_domain_name: new-status-reports-staging
           aws_r53_domain_name: bitovi.tools
+          aws_site_root_object: ""
 
           tf_action: "apply"
           tf_state_bucket_destroy: true
           aws_site_cdn_enabled: true
-
-  Sentry-Release-Backend:
-    needs: Deploy-Auth-Server
-    if: ${{ success() }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create Sentry release
-        uses: getsentry/action-release@v1
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_BACKEND_PROJECT }}
-        with:
-          environment: staging
-          version: ${{ github.sha }}
-
-  Sentry-Release-Frontend:
-    needs: Deploy-Static-Assets
-    if: ${{ success() }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create Sentry release
-        uses: getsentry/action-release@v1
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_FRONTEND_PROJECT }}
-        with:
-          environment: staging
-          version: ${{ github.sha }}
