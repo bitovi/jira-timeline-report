@@ -14,7 +14,6 @@ export default defineConfig({
         main: resolve(__dirname, "/index.html"),
         oauth: resolve(__dirname, "/oauth-callback.html"),
         connect: resolve(__dirname, "/connect.html"),
-        // dev: resolve(__dirname, "/dev.html"),
       },
     },
   },

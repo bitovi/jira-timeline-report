@@ -1,12 +1,11 @@
 name: Test
 
-# on:
-#   pull_request:
-#     branches: [main, update/build-system]
-#   workflow_dispatch:
 on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
   push:
-    branches: ["update/build-system"]
+    branches: ["*"]
 
 jobs:
   unit-test:
@@ -44,6 +43,9 @@ jobs:
           VITE_JIRA_CALLBACK_URL: ${{ vars.VITE_JIRA_CALLBACK_URL }}
           VITE_JIRA_API_URL: ${{ vars.VITE_JIRA_API_URL }}
           VITE_JIRA_APP_KEY: ""
+          BACKEND_SENTRY_DSN: ""
+          VITE_FRONTEND_SENTRY_DSN: ""
+          VITE_STATUS_REPORTS_ENV: ""
 
       - name: Add Test User .env
         run: |
@@ -62,7 +64,7 @@ jobs:
           npm run build
 
       - name: Run E2E Tests
-        run: npm run test:e2e -- --trace on
+        run: npm run test:e2e
       - name: Save Artifacts
         if: always()
         uses: actions/upload-artifact@v4

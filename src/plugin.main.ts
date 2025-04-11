@@ -12,6 +12,8 @@ export default async function main() {
       JIRA_API_URL: import.meta.env.VITE_JIRA_API_URL,
       JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
       COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA,
+      STATUS_REPORTS_ENV: import.meta.env.VITE_STATUS_REPORTS_ENV,
+      FRONTEND_SENTRY_DSN: import.meta.env.VITE_FRONTEND_SENTRY_DSN,
     },
     {
       host: "jira",
