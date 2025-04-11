@@ -59,7 +59,7 @@ export default defineConfig({
     // },
     {
       name: "auth",
-      testMatch: 'authenticated/*.spec.ts',
+      testMatch: "authenticated/*.spec.ts",
       use: { 
         ...devices["Desktop Chrome"],
         storageState: `playwright/.auth/${authenticatedFileName}`,
@@ -68,7 +68,7 @@ export default defineConfig({
     },
     {
       name: "unauth",
-      testMatch: 'unauthenticated/*.spec.ts',
+      testMatch: "unauthenticated/*.spec.ts",
       use: { 
         ...devices["Desktop Chrome"],
       },
