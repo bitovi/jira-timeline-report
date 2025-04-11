@@ -34,7 +34,7 @@ jobs:
           VITE_JIRA_API_URL: ${{ vars.VITE_JIRA_API_URL }}
           VITE_FRONTEND_SENTRY_DSN: ${{ vars.VITE_FRONTEND_SENTRY_DSN }}
           VITE_STATUS_REPORTS_ENV: staging
-          VITE_JIRA_APP_KEY: bitovi.status-report.local.new.staging
+          VITE_JIRA_APP_KEY: bitovi.status-report.staging
 
       - name: Build
         run: |
