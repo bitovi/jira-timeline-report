@@ -1,6 +1,7 @@
 import { test as setup, expect } from '@playwright/test';
 import * as OTPAuth from "otpauth";
 import path from 'path';
+import { authenticatedFileName } from '../playwright.config';
 
 let totp = new OTPAuth.TOTP({
   issuer: "Jira",
@@ -11,9 +12,9 @@ let totp = new OTPAuth.TOTP({
   secret: process.env.JIRA_TOTP_SECRET,
 });
 
-const authFile = path.join(__dirname, '../playwright/.auth/authenticated.json');
-
 setup('authenticate', async ({ page }) => {
+  const authFile = path.join(__dirname, `../playwright/.auth/${authenticatedFileName}`);
+
   await page.goto("/");
 
   const loginButton = page.getByRole('button', { name: 'Connect to Jira' })

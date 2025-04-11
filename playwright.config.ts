@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+export const authenticatedFileName = 'authenticated.json'
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -41,13 +43,27 @@ export default defineConfig({
     //   name: "firefox",
     //   use: { ...devices["Desktop Firefox"] },
     // },
+    // {
+    //   name: "chromium",
+    //   use: { 
+    //     ...devices["Desktop Chrome"] },
+    //   dependencies: ['setup'],
+    // },
     {
-      name: "chromium",
+      name: "auth",
+      testMatch: 'authenticated/*.spec.ts',
       use: { 
         ...devices["Desktop Chrome"],
-        storageState: `playwright/.auth/authenticated.json`,
+        storageState: `playwright/.auth/${authenticatedFileName}`,
       },
       dependencies: ['setup'],
+    },
+    {
+      name: "unauth",
+      testMatch: 'unauthenticated/*.spec.ts',
+      use: { 
+        ...devices["Desktop Chrome"],
+      },
     },
     // {
     //   name: 'webkit',
