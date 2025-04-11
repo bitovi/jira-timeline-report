@@ -1,4 +1,4 @@
-name: Destroy main (Manual)
+name: Destroy staging (Manual)
 
 on:
   workflow_dispatch:
