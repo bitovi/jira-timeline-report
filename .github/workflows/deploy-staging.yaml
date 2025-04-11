@@ -1,58 +1,70 @@
 name: Deploy Staging
 
 on:
-  workflow_run:
-    workflows: ["Feature Build"]
-    types:
-      - completed
-    branches:
-      - main
+  push:
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  EC2-Deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  Build-Status-Reports:
     runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: ${{ steps.deploy.outputs.vm_url }}
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          ref: staging
 
-      - name: Ensure `dist` Folder Exists
-        run: |
-          if [ ! -d "public/dist" ]; then
-            echo "Dist folder not found. Aborting deployment."
-            exit 1
-          fi
-
-      - name: Set up Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Create repo_env file
+      - name: Generate .env and repo_env
         run: |
-          echo "CLIENT_COMMIT_SHA=${{ github.sha }}" > repo_env
-          echo "CLIENT_STATUS_REPORTS_ENV=staging" >> repo_env
-          echo "CLIENT_FRONTEND_SENTRY_DSN=https://c8f8aad7cbf776a99570cd163a5c86b1@o4508721931616256.ingest.us.sentry.io/4508733956947968" >> repo_env
-          echo "BACKEND_SENTRY_DSN=https://26de5611d04fde803427885bdb82a7bc@o4508721931616256.ingest.us.sentry.io/4508721935351808" >> repo_env
-          echo "CLIENT_JIRA_APP_KEY=bitovi.status-report.staging" >> repo_env
-          echo "repo_env file created with CLIENT_COMMIT_SHA=${{ github.sha }} at $(pwd)"
+          chmod +x scripts/generate-build-env.sh
+          ./scripts/generate-build-env.sh
+        env:
+          BACKEND_SENTRY_DSN: ${{ vars.BACKEND_SENTRY_DSN }}
+          VITE_COMMIT_SHA: ${{ github.sha }}
+          VITE_AUTH_SERVER_URL: ${{ vars.VITE_AUTH_SERVER_URL }}
+          VITE_JIRA_CLIENT_ID: ${{ vars.VITE_JIRA_CLIENT_ID }}
+          VITE_JIRA_SCOPE: ${{ vars.VITE_JIRA_SCOPE }}
+          VITE_JIRA_CALLBACK_URL: ${{ vars.VITE_JIRA_CALLBACK_URL }}
+          VITE_JIRA_API_URL: ${{ vars.VITE_JIRA_API_URL }}
+          VITE_FRONTEND_SENTRY_DSN: ${{ vars.VITE_FRONTEND_SENTRY_DSN }}
+          VITE_STATUS_REPORTS_ENV: staging
+          VITE_JIRA_APP_KEY: bitovi.status-report.local.new.staging
 
-      - name: Create Jira Connect
+      - name: Build
         run: |
           npm ci
           npm run create:atlassian-connect -- --environment=staging
+          npm run build
 
-      - name: Cleanup for Deploy
-        run: rm -rf node_modules
+      - name: Build to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          if-no-files-found: error
+          include-hidden-files: true
+          path: ./dist
+
+  Deploy-Auth-Server:
+    needs: Build-Status-Reports
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.vm_url}}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: dist
 
       - id: deploy
         name: Deploy
@@ -67,7 +79,7 @@ jobs:
 
           aws_r53_enable: true
           aws_r53_create_sub_cert: true
-          aws_r53_sub_domain_name: status-reports-staging
+          aws_r53_sub_domain_name: api-status-reports-staging
           aws_r53_domain_name: bitovi.tools
           aws_elb_app_port: 3000
 
@@ -77,9 +89,40 @@ jobs:
           aws_ec2_instance_root_vol_size: 16
 
           repo_env: repo_env
-          env_ghs: ${{ secrets.DOT_ENV_MAIN }}
+          env_ghs: ${{ secrets.DOT_ENV_STAGING_NEW }}
+
+  Deploy-Static-Assets:
+    needs: Build-Status-Reports
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.vm_url}}
+    steps:
+      - name: Download Build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: dist
+
+      - id: deploy
+        name: Deploy static assets to S3
+        uses: bitovi/github-actions-deploy-static-site-to-aws@v0.2.4
+        with:
+          checkout: false
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
+          aws_default_region: us-east-1
+          aws_site_source_folder: ./dist
+
+          aws_r53_sub_domain_name: status-reports-staging
+          aws_r53_domain_name: bitovi.tools
+
+          tf_action: "apply"
+          tf_state_bucket_destroy: true
+          aws_site_cdn_enabled: true
+
   Sentry-Release-Backend:
-    needs: EC2-Deploy
+    needs: Deploy-Auth-Server
     if: ${{ success() }}
     runs-on: ubuntu-latest
     steps:
@@ -98,7 +141,7 @@ jobs:
           version: ${{ github.sha }}
 
   Sentry-Release-Frontend:
-    needs: EC2-Deploy
+    needs: Deploy-Static-Assets
     if: ${{ success() }}
     runs-on: ubuntu-latest
     steps:
