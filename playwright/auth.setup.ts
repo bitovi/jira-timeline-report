@@ -1,7 +1,7 @@
 import { test as setup, expect } from "@playwright/test";
 import * as OTPAuth from "otpauth";
-import path from 'path';
-import { authenticatedFileName } from '../playwright.config';
+import path from "path";
+import { authenticatedFileName } from "../playwright.config";
 
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -19,7 +19,7 @@ const totp = new OTPAuth.TOTP({
 });
 
 setup('authenticate', async ({ page }) => {
-  const authFile = path.join(__dirname, `../playwright/.auth/${authenticatedFileName}`);
+  const authFile = path.join(__dirname, "../playwright/.auth/${authenticatedFileName}");
 
   await page.goto("/");
 

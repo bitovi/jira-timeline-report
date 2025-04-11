@@ -1,7 +1,7 @@
 import test, { expect } from "@playwright/test";
 
 test.describe("Authenticated User", () => {
-  test('Display graph', async ({ page }) => {
+  test("Display graph", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: "Sources" }).click();
