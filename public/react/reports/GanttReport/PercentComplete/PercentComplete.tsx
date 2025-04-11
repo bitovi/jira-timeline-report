@@ -291,8 +291,8 @@ const PercentCompleteModal: FC<PercentCompleteModalProps> = ({ onClose, issue, c
   const [isOpen, setIsOpen] = useState(true);
 
   const handleClose = () => {
-    onClose?.();
     setIsOpen(false);
+    onClose?.();
   };
 
   return (

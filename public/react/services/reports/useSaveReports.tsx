@@ -40,6 +40,11 @@ const useSaveReport = () => {
         description = "Something went wrong";
       }
 
+      console.error(
+        ["useSaveReports", "Something went wrong saving the report", description].join("\n"),
+        error
+      );
+
       showFlag({
         title: <Text color="color.text.danger">Uh Oh!</Text>,
         description,

@@ -121,17 +121,17 @@ export class GanttGrid extends StacheElement {
                       {{/ if}}
                       
                     </div>
-                    <div on:click='this.showTooltip(scope.event,data.issue)' 
+                    <a href="{{data.issue.url}}" target="_blank"
                         class='{{this.classForSpecialStatus(data.issue.rollupStatuses.rollup.status)}} {{this.textSize}} 
-                          pt-1 pb-0.5 px-1 truncate max-w-96 pointer'>
+                          pt-1 pb-0.5 px-1 truncate max-w-96 pointer hover:underline'>
                         {{data.issue.summary}}
-                    </div>
+                    </a>
                   </div>
 
                     {{# for(column of this.columnsToShow) }}
                       <div style="grid-column: {{plus(3, scope.index) }}; grid-row: {{ plus(3, rowIndex) }}; z-index: 25" 
                         class="{{this.textSize}} text-right pointer pt-1 pb-0.5 px-1 hover:bg-neutral-41"
-                        on:click="column.onclick(scope.event, data.issue, this.allIssues)">{{column.getValue(data.issue)}}</div>
+                        on:click="column.onclick(scope.event, data.issue, this.allIssuesOrReleases)">{{column.getValue(data.issue)}}</div>
                     {{/ for }}
 
                     {{ this.getReleaseTimeline(data.issue, rowIndex) }}
@@ -222,16 +222,19 @@ export class GanttGrid extends StacheElement {
             `);
           },
           onclick: (event, issue, allIssues) => {
-            const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
+            const getChildren = makeGetChildrenFromReportingIssues(allIssues);
 
             // we should get all the children ...
             const children = getChildren(issue);
 
-            this.root.render(
+            const root = createRoot(this.querySelector(".react-modal"));
+
+            root.render(
               createElement(PercentComplete, {
-                allIssuesOrReleases: this.allIssuesOrReleases,
+                allIssuesOrReleases: allIssues,
                 issue: issue,
                 childIssues: children,
+                onClose: () => root.unmount(),
               })
             );
           },
@@ -528,6 +531,7 @@ export class GanttGrid extends StacheElement {
           root.appendChild(thisPeriod);
         }
       } else {
+        
         root.addEventListener("mouseenter", this.showDatesTooltip.bind(this, release, index));
         root.addEventListener("mouseleave", this.hideDatesTooltip.bind(this, release, index));
 
@@ -555,27 +559,29 @@ export class GanttGrid extends StacheElement {
             }
           );
         }
-
-        if (release.rollupStatuses.rollup.lastPeriod) {
-          const behindTime = makeLastPeriodElement(
-            release.rollupStatuses.rollup.status,
-            release.rollupStatuses.rollup.lastPeriod,
-            currentPositions,
-            [this.shadowBarSize]
-          );
-
-          lastPeriodRoot.appendChild(behindTime);
+        const rollupLastPeriod = release.rollupStatuses.rollup.lastPeriod;
+        if (rollupLastPeriod) {
+          if(rollupLastPeriod.start && rollupLastPeriod.due) {
+            const behindTime = makeLastPeriodElement(
+              release.rollupStatuses.rollup.status,
+              release.rollupStatuses.rollup.lastPeriod,
+              currentPositions,
+              [this.shadowBarSize]
+            );
+  
+            lastPeriodRoot.appendChild(behindTime);
+          } else {
+            const emptySet = makeEmptySetInThePast(this.lotsOfIssues)
+            console.log(release, emptySet);
+            lastPeriodRoot.appendChild(emptySet);
+          }
+          
         }
 
         root.appendChild(team);
       }
     } else {
-      let team = makeCircleForStatus(
-        "notstarted",
-        '<img src="/images/empty-set.svg" />',
-        this.lotsOfIssues
-      );
-
+      let team = makeEmptySetCurrent(this.lotsOfIssues);
       root.appendChild(team);
     }
 
@@ -621,10 +627,6 @@ export class GanttGrid extends StacheElement {
         return this.showChildrenByKey[issue.key];
       }).length > 0
     );
-  }
-
-  connected() {
-    this.root = createRoot(this.querySelector(".react-modal"));
   }
 }
 
@@ -741,6 +743,30 @@ function makeCircleForStatus(status, innerHTML, lotsOfIssues) {
 
   return team;
 }
+
+function makeEmptySetCurrent(lotsOfIssues) {
+  return makeCircleForStatus(
+    "notstarted",
+    '<img src="/images/empty-set.svg" />',
+    lotsOfIssues
+  );
+}
+
+function makeEmptySetInThePast(lotsOfIssues){
+  let team = makeElement([(lotsOfIssues ? "pl-1" : "pl-2"),"flex","content-center","h-full","flex-wrap"], {});
+  team.appendChild(
+    makeCircle(
+      '∅',
+      ["color-text-notstarted", ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
+      { zIndex: 30, position: "relative" }
+    )
+  );
+
+  return team;
+}
+
+
+
 
 //  this.showChildrenByKey[issue.key];
 // this.getChildren()

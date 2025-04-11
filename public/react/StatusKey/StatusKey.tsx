@@ -41,7 +41,7 @@ interface ItemStatusProps {
 const ItemStatus: FC<ItemStatusProps> = ({ icon, children }) => {
   return (
     <div className="flex space-x-2 content-center">
-      <div className="color-text-and-bg-notstarted text-xs w-4 h-4 relative flex content-center justify-center rounded-full">
+      <div className="color-text-and-bg-notstarted text-xs w-4 h-4 shrink-0 relative flex content-center justify-center rounded-full">
         {icon}
       </div>
       <div className="color-text-notstarted text-xs">{children}</div>
