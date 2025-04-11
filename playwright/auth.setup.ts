@@ -19,7 +19,7 @@ const totp = new OTPAuth.TOTP({
 });
 
 setup('authenticate', async ({ page }) => {
-  const authFile = path.join(__dirname, "../playwright/.auth/${authenticatedFileName}");
+  const authFile = path.join(__dirname, `../playwright/.auth/${authenticatedFileName}`);
 
   await page.goto("/");
 
