@@ -89,7 +89,7 @@ jobs:
           aws_ec2_instance_root_vol_size: 16
 
           repo_env: repo_env
-          env_ghs: ${{ secrets.DOT_ENV_STAGING_NEW }}
+          env_ghs: ${{ secrets.DOT_ENV_STAGING }}
 
   Deploy-Static-Assets:
     needs: Build-Status-Reports
