@@ -28,11 +28,11 @@ Follow the steps below to get remaining environment variables:
     - `read:app-data:confluence`
     - `write:app-data:confluence`
 - Click Authorization, input the callback url, as default for this application locally, use `http://localhost:3000/oauth-callback` and save.
-- Click Settings and scroll down to copy your `CLIENT_ID` and `CLIENT_SECRET`.
-- The `CLIENT_JIRA_API_URL` is `https://api.atlassian.com`.
+- Click Settings and scroll down to copy your `CLIENT_ID` to `VITE_JIRA_CLIENT_ID` and `CLIENT_SECRET` to `JIRA_CLIENT_SECRET` in the `.env` file.
+- The `VITE_JIRA_API_URL` is `https://api.atlassian.com`.
 - Make sure to share the app by changing the Distribution Status to `Sharing` under the `Distribution` section.
 
-Note: All environment variables that start with `CLIENT` will be sent to the client side and exposed.
+Note: All environment variables that start with `VITE` will be sent to the client side and exposed.
 
 ### Running the project locally
 
@@ -42,13 +42,11 @@ Open the terminal and run
 npm run dev
 ```
 
-Open your browser and navigate to http://localhost:3000/ to view the minified version of the app.
-
-Navigate to http://localhost:3000/dev to view the unminified version of the app.
+Open your browser and navigate to http://localhost:5173
 
 ### Developing Locally in Jira
 
-The Timeline Report is a Jira Application that also works as a standalone web app. The following steps will allow you to deploy your app to Jira through Atlassian Connect.
+The Status Reports is a Jira Application that also works as a standalone web app. The following steps will allow you to deploy your app to Jira through Atlassian Connect.
 
 1. [Create an Atlassian dev
    environment](https://developer.atlassian.com/cloud/jira/platform/getting-started-with-connect/#step-2--get-a-cloud-development-site)
@@ -71,7 +69,7 @@ The following steps are repeatable as many times as needed to re-deploy and re-t
 1. Start ngrok and point it to the local service port
 
 ```sh
-ngrok http 3000
+ngrok http 5173
 ```
 
 2. After the tunnel starts, you need to create the `atlassian-connect.json` file by running the following command, replacing`--name` with your name and `--url` with the fully qualified url from ngrok.
@@ -80,21 +78,25 @@ ngrok http 3000
 npm run create:atlassian-connect -- --environment=local --name=<your-name-here> --url=<fully-qualified-ngrok-url>
 ```
 
-3. Add a `CLIENT_JIRA_APP_KEY` environment variable and set it equal to the `key` in the newly created `atlassian-connect.json` file.
-   - ex: `CLIENT_JIRA_APP_KEY=bitovi.timeline-report.local.david`
+3. Add a `VITE_JIRA_APP_KEY` environment variable and set it equal to the `key` in the newly created `atlassian-connect.json` file.
+   - ex: `VITE_JIRA_APP_KEY=bitovi.timeline-report.local.david`
 4. Open your Jira dev environment and click Apps from the top nav, then `Manage Your Apps`. If you have enabled development mode, you should see an `Upload app` option next to `Build a new app`. Click `Upload app`.
 5. Paste the secure domain into the text box, and add `/atlassian-connect.json` to the end (e.g. `https://46f7-8-47-99-200.ngrok-free.app/atlassian-connect.json`). Click `Upload`.
-6. The apps list should refresh and show `Timeline Report (Local <Your Name>)` as a User-installed app. From here, click `Apps` in the top nav and you should see a `Your Apps` heading with `Timeline Report (Local <Your Name>)` as an option underneath. Click `Timeline Report (Local <Your Name>)` and you should see the Timeline Report app load in the window!
+6. The apps list should refresh and show `Status Reports (Local <Your Name>)` as a User-installed app. From here, click `Apps` in the top nav and you should see a `Your Apps` heading with `Status Reports (Local <Your Name>)` as an option underneath. Click `Status Reports (Local <Your Name>)` and you should see the Status Reports app load in the window!
 
 ## Dev Notes
 
 ### Navigating the Files
 
-- The server folder contains a `server.js` which bootstraps an express application that renders the application
-- It has an endpoint that fetches the access token from Jira and refreshes the access token when expired.
-- The `pages` folder contains the html files that are rendered.
-- The `public` folder contains the javascript files that are included in the html files.
-- The `jira-oidc-helpers` is a collection of modules with all the helpers required to interact with Jira and save your access and refresh tokens to `localStorage`.
+- The server folder contains a `server.js` which bootstraps an express application that handles auth at `http://localhost:3000`
+- The application in dev mode is server at `http://localhost:5173`and the entry point is `index.html`
+- All application logic lives in `/src`
+- The `dev/`, `oauth-callback/`, `connect/` all contain additional html files that are "secondary pages" when developing
+  - `dev/` when deployed is unminified for easy debugging
+  - `oauth-callback/` is the redirect url for the application during its auth flow
+  - `connect/` is the entry point for the plugin inside of jira
+- The `public` folder contains static assets for the project
+- The `src/jira-oidc-helpers` is a collection of modules with all the helpers required to interact with Jira and save your access and refresh tokens to `localStorage`.
 - You will make changes to the `main-helper.js` files based on your use case. Everything you need to make your request has been layered in `jira-oidc-helpers`.
 - Call the `jiraFetch` helper with the url path you want from your main and handle the data how you see fit. e.g
 
