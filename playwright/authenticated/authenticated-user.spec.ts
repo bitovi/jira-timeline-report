@@ -1,10 +1,7 @@
 import test, { expect } from "@playwright/test";
-import * as OTPAuth from "otpauth";
-import dotenv from "dotenv";
-dotenv.config();
 
-test.describe("Connect to Jira", () => {
-  test("Login test", async ({ page }) => {
+test.describe("Authenticated User", () => {
+  test("Display graph", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: "Sources" }).click();
