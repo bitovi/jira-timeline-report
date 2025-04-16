@@ -119,6 +119,7 @@ jobs:
           aws_r53_sub_domain_name: status-reports-staging
           aws_r53_domain_name: bitovi.tools
           aws_r53_create_sub_cert: true
+          aws_r53_cert_arn: ${{ vars.AWS_CERT_ARN }}
 
           tf_action: "apply"
           tf_state_bucket_destroy: true
