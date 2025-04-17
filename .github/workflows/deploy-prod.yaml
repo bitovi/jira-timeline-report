@@ -163,7 +163,7 @@ jobs:
           version: ${{ needs.Build-Status-Reports.outputs.latest_tag }}
 
   Sentry-Release-Frontend:
-    needs: Deploy-Auth-Server
+    needs: Deploy-Static-Assets
     if: ${{ success() }}
     runs-on: ubuntu-latest
     steps:
