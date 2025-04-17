@@ -108,7 +108,7 @@ jobs:
 
       - id: deploy
         name: Deploy static assets to S3
-        uses: bitovi/github-actions-deploy-static-site-to-aws@user_defined_aliases
+        uses: bitovi/github-actions-deploy-static-site-to-aws@v0.2.6
         with:
           checkout: false
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
