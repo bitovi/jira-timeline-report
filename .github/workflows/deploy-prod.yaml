@@ -13,9 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: prod
+    outputs:
+      latest_tag: ${{ steps.latest_tag.outputs.latest_tag }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Get Latest Release Tag
+        id: latest_tag
+        run: |
+          LATEST_TAG=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -55,6 +63,7 @@ jobs:
   Deploy-Auth-Server:
     needs: Build-Status-Reports
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == needs.Build-Status-Reports.outputs.latest_tag }}
     environment:
       name: prod
       url: ${{ steps.deploy.outputs.vm_url}}
@@ -93,9 +102,14 @@ jobs:
           repo_env: repo_env
           env_ghs: ${{ secrets.DOT_ENV_STAGING }}
 
+      - name: Skip deployment
+        if: ${{ github.ref_name != steps.latest_tag.outputs.latest_tag }}
+        run: echo "This is not the latest tag. Deployment skipped."
+
   Deploy-Static-Assets:
     needs: Build-Status-Reports
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == needs.Build-Status-Reports.outputs.latest_tag }}
     environment:
       name: prod
       url: ${{ steps.deploy.outputs.vm_url}}
@@ -125,6 +139,10 @@ jobs:
           tf_state_bucket_destroy: true
           aws_site_cdn_enabled: true
 
+      - name: Skip deployment
+        if: ${{ github.ref_name != steps.latest_tag.outputs.latest_tag }}
+        run: echo "This is not the latest tag. Deployment skipped."
+
   Sentry-Release-Backend:
     needs: Deploy-Auth-Server
     if: ${{ success() }}
@@ -142,7 +160,7 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_BACKEND_PROJECT }}
         with:
           environment: prod
-          version: ${{ needs.EC2-deploy.outputs.latest_tag }}
+          version: ${{ needs.Build-Status-Reports.outputs.latest_tag }}
 
   Sentry-Release-Frontend:
     needs: Deploy-Auth-Server
@@ -161,6 +179,6 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_FRONTEND_PROJECT }}
         with:
           environment: prod
-          version: ${{ needs.EC2-deploy.outputs.latest_tag }}
+          version: ${{ needs.Build-Status-Reports.outputs.latest_tag }}
 # https://api-status-reports.bitovi.tools
 # https://statusreports.bitovi.com/oauth-callback.html
