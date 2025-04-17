@@ -17,7 +17,7 @@ jobs:
         name: Destroy instance
         uses: bitovi/github-actions-deploy-docker-to-ec2@v1
         with:
-          aws_acstatus-reports-staging.bitovi.tools,statusreports-staging.bitovi.comcess_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
           aws_default_region: us-east-1
           aws_resource_identifier: bitovi-jira-status-reports-prod
