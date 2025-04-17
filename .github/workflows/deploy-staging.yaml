@@ -118,7 +118,7 @@ jobs:
 
           aws_r53_sub_domain_name: status-reports-staging
           aws_r53_domain_name: bitovi.tools
-          aws_site_cdn_aliases: '"status-reports-staging.bitovi.tools", "statusreports-staging.bitovi.com"'
+          aws_site_cdn_aliases: status-reports-staging.bitovi.tools,statusreports-staging.bitovi.com
           aws_r53_cert_arn: ${{ vars.AWS_CERT_ARN }}
 
           tf_action: "apply"
