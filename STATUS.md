@@ -1,5 +1,5 @@
 # System Status for Status Reports
 
-PROD: All systems up and running
+PROD: Migrating to a new build system
 
-Staging: Migrating to new build system
+Staging: All systems up and running
