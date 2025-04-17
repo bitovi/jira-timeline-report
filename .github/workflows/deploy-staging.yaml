@@ -108,7 +108,7 @@ jobs:
 
       - id: deploy
         name: Deploy static assets to S3
-        uses: bitovi/github-actions-deploy-static-site-to-aws@v0.2.4
+        uses: bitovi/github-actions-deploy-static-site-to-aws@user_defined_aliases
         with:
           checkout: false
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_JIRA_INTEGRATIONS}}
@@ -118,6 +118,7 @@ jobs:
 
           aws_r53_sub_domain_name: status-reports-staging
           aws_r53_domain_name: bitovi.tools
+          aws_site_cdn_aliases: status-reports-staging.bitovi.tools, statusreports-staging.bitovi.com
           aws_r53_cert_arn: ${{ vars.AWS_CERT_ARN }}
 
           tf_action: "apply"
