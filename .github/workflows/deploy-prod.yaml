@@ -180,5 +180,3 @@ jobs:
         with:
           environment: prod
           version: ${{ needs.Build-Status-Reports.outputs.latest_tag }}
-# https://api-status-reports.bitovi.tools
-# https://statusreports.bitovi.com/oauth-callback.html
