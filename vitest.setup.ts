@@ -13,3 +13,5 @@ window.matchMedia = vi.fn().mockImplementation((query) => ({
 }));
 
 global.AP = {};
+
+global.URL.createObjectURL = vi.fn();
