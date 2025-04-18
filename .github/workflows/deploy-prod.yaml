@@ -132,6 +132,9 @@ jobs:
           aws_default_region: us-east-1
           aws_site_source_folder: ./dist
 
+          aws_resource_identifier: bitovi-jira-status-reports-prod-static
+          tf_state_bucket: bitovi-jira-status-reports-prod-static-tf-state
+
           aws_r53_sub_domain_name: status-reports
           aws_r53_domain_name: bitovi.tools
           aws_site_cdn_aliases: status-reports.bitovi.tools,statusreports.bitovi.com
