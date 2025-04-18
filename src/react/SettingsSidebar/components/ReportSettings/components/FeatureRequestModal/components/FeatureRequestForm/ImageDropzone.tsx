@@ -1,6 +1,6 @@
 import type { Dispatch, FC, SetStateAction } from "react";
 
-import React, { useCallback, useId, useState } from "react";
+import React, { useId, useState } from "react";
 import { Label } from "@atlaskit/form";
 
 interface ImageDropzoneProps {
@@ -12,13 +12,13 @@ const ImageDropzone: FC<ImageDropzoneProps> = ({ files, setFiles }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileId = useId();
 
-  const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
 
     const droppedFiles = Array.from(event.dataTransfer.files);
     setFiles((prev) => [...prev, ...droppedFiles]);
-  }, []);
+  };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();

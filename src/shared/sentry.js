@@ -9,7 +9,5 @@ export const initSentry = ({ FRONTEND_SENTRY_DSN, STATUS_REPORTS_ENV }) => {
     environment: STATUS_REPORTS_ENV,
   });
 
-  console.log({ enabled: !!FRONTEND_SENTRY_DSN });
-
   window.addEventListener("error", (error) => Sentry.captureException(error));
 };
