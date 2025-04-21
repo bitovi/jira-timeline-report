@@ -25,7 +25,7 @@ const createUnsupportedReportFeedback = async ({
     })
   );
 
-  captureFeedback(
+  return captureFeedback(
     {
       email,
       message: description,
