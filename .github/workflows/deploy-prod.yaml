@@ -86,7 +86,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_JIRA_INTEGRATIONS}}
           aws_default_region: us-east-1
 
-          aws_resource_identifier: bitovi-jira-status-reports-prod
+          aws_resource_identifier: bitovi-jira-status-reports-prod-new
           tf_state_bucket: bitovi-jira-status-reports-prod-tf-state
           tf_state_bucket_destroy: true
 
@@ -132,7 +132,7 @@ jobs:
           aws_default_region: us-east-1
           aws_site_source_folder: ./dist
 
-          aws_resource_identifier: bitovi-jira-status-reports-prod-static
+          aws_resource_identifier: bitovi-jira-status-reports-prod-static-new
           tf_state_bucket: bitovi-jira-status-reports-prod-static-tf-state
 
           aws_r53_sub_domain_name: status-reports
