@@ -3,7 +3,10 @@ import { deriveIssue } from "../../../jira/derived/derive.ts";
 import { normalizeIssue } from "../../../jira/normalized/normalize.ts";
 
 import { getServerInfo, getRawIssues } from "../../../stateful-data/jira-data-requests.js";
-import { getVelocityDefault, getParallelWorkLimitDefault } from "../../../jira/normalized/defaults.ts";
+import {
+  getVelocityDefault,
+  getParallelWorkLimitDefault,
+} from "../../../jira/normalized/defaults.ts";
 
 const typesToHierarchyLevel = { Epic: 1, Story: 0, Initiative: 2 };
 export function csvToRawIssues(csvIssues) {
@@ -13,7 +16,10 @@ export function csvToRawIssues(csvIssues) {
       fields: {
         ...issue,
         "Parent Link": { data: issue["Parent Link"] },
-        "Issue Type": { name: issue["Issue Type"], hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]] },
+        "Issue Type": {
+          name: issue["Issue Type"],
+          hierarchyLevel: typesToHierarchyLevel[issue["Issue Type"]],
+        },
         Status: { name: issue.Status },
       },
       key: issue["Issue key"],
@@ -26,7 +32,6 @@ export function rawIssuesRequestData(
   { jql, childJQL, isLoggedIn, loadChildren, jiraHelpers, fields },
   { listenTo, resolve }
 ) {
-  
   const progressData = value.with(null);
 
   const promise = value.returnedBy(function rawIssuesPromise() {
@@ -90,14 +95,13 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
      * @returns
      */
     ([serverInfo]) => {
-      
       const { getVelocity, getParallelWorkLimit, ...otherNormalizeParams } = normalizeOptions ?? {};
       return {
         getUrl({ key }) {
           return serverInfo.baseUrl + "/browse/" + key;
         },
         getVelocity(team, config) {
-          const methodsToTry = [ getVelocity, getVelocityDefault];
+          const methodsToTry = [getVelocity, getVelocityDefault];
           for (let method of methodsToTry) {
             let value;
             if (method) {
@@ -109,10 +113,7 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
           }
         },
         getParallelWorkLimit(team, config) {
-          const methodsToTry = [
-            getParallelWorkLimit,
-            getParallelWorkLimitDefault,
-          ];
+          const methodsToTry = [getParallelWorkLimit, getParallelWorkLimitDefault];
           for (let method of methodsToTry) {
             let value;
             if (method) {
@@ -130,18 +131,31 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
   );
 }
 
-export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPromise }, { listenTo, resolve }) {
+export function derivedIssuesRequestData(
+  { rawIssuesRequestData, configurationPromise, licensingPromise },
+  { listenTo, resolve }
+) {
   const promise = value.returnedBy(function derivedIssuesPromise() {
     if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
-      return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
-        ([rawIssues, configuration]) => {
-          return rawIssues.map((issue) => {
-            const normalized = normalizeIssue(issue, configuration);
-            const derived = deriveIssue(normalized, configuration);
-            return derived;
-          });
+      return Promise.all([
+        rawIssuesRequestData.value.issuesPromise,
+        configurationPromise.value,
+        licensingPromise.value,
+      ]).then(([rawIssues, configuration, licensing]) => {
+        console.log({ licensing });
+        if (!licensing.active) {
+          const error = new Error("no licensing");
+          error.type = "no-licensing";
+
+          throw error;
         }
-      );
+
+        return rawIssues.map((issue) => {
+          const normalized = normalizeIssue(issue, configuration);
+          const derived = deriveIssue(normalized, configuration);
+          return derived;
+        });
+      });
     } else {
       // make a pending promise ...
       const promise = new Promise(() => {});

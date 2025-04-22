@@ -3,6 +3,16 @@ import { createJiraPluginStorage } from "./jira/storage/index.plugin";
 import routing from "./routing/index.plugin";
 import { createPluginLinkBuilder } from "./routing/index.plugin";
 
+interface LicensingInformation {
+  active: boolean;
+  evaluation: boolean;
+}
+
+const defaultLicensing = {
+  active: false,
+  evaluation: false,
+};
+
 export default async function main() {
   return mainHelper(
     {
@@ -31,6 +41,19 @@ export default async function main() {
       createLinkBuilder: createPluginLinkBuilder,
       showSidebarBranding: true,
       isAlwaysLoggedIn: true,
+      licensingPromise: AP?.request<{ body: string }>(
+        "/rest/atlassian-connect/1/addons/" + import.meta.env.VITE_JIRA_APP_KEY
+      )
+        .then(({ body }) => {
+          return (
+            (JSON.parse(body) as { license?: LicensingInformation })?.license ?? defaultLicensing
+          );
+        })
+        .catch((err) => {
+          console.error(`Error parsing licensing information`, err);
+
+          return defaultLicensing;
+        }),
     }
   );
 }

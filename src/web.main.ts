@@ -23,6 +23,10 @@ async function main() {
       createLinkBuilder: createWebLinkBuilder,
       showSidebarBranding: false,
       isAlwaysLoggedIn: false,
+      licensingPromise: Promise.resolve({
+        active: true,
+        evaluation: false,
+      }),
     }
   );
 }
