@@ -142,7 +142,6 @@ export function derivedIssuesRequestData(
         configurationPromise.value,
         licensingPromise.value,
       ]).then(([rawIssues, configuration, licensing]) => {
-        console.log({ licensing });
         if (!licensing.active) {
           const error = new Error("no licensing");
           error.type = "no-licensing";
