@@ -28,6 +28,7 @@ export default async function mainHelper(
     showSidebarBranding,
     isAlwaysLoggedIn,
     createLinkBuilder,
+    licensingPromise,
   }
 ) {
   initSentry(config);
@@ -61,6 +62,7 @@ export default async function mainHelper(
   routeData.isLoggedInObservable = value.from(loginComponent, "isLoggedIn");
   routeData.jiraHelpers = jiraHelpers;
   routeData.storage = storage;
+  routeData.licensingPromise = licensingPromise;
 
   const timelineReportNeedsMet = {
     loginResolved: false,

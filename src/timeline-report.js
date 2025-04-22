@@ -110,9 +110,15 @@ export class TimelineReport extends StacheElement {
       {{/ and }}
       {{# if(this.routeData.derivedIssuesRequestData.issuesPromise.isRejected) }}
         <div class="my-2 p-2 h-780  border-box block overflow-hidden color-text-and-bg-blocked">
-          <p>There was an error loading from Jira!</p>
-          <p>Error message: {{this.routeData.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
-              <p>Please check your JQL is correct!</p>
+          {{# eq(this.routeData.derivedIssuesRequestData.issuesPromise.reason.type, 'no-licensing')}}
+            <h2>No license</h2>
+            <p>You must have a license to use this application</p>
+          {{else}}
+            <p>There was an error loading from Jira!</p>
+            <p>Error message: {{this.routeData.derivedIssuesRequestData.issuesPromise.reason.errorMessages[0]}}</p>
+            <p>Please check your JQL is correct!</p>
+          {{/}}
+          
         </div>
       {{/ if }}
     </div>
@@ -125,6 +131,7 @@ export class TimelineReport extends StacheElement {
     },
 
     // passed values
+    licensing: null,
     timingCalculationMethods: type.Any,
     storage: null,
     linkBuilder: null,

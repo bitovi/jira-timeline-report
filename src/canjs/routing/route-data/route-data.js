@@ -77,6 +77,10 @@ export const REPORTS = [
 export class RouteData extends ObservableObject {
   static props = {
     // passed values
+    licensingPromise: {
+      enumerable: false,
+      default: null,
+    },
     jiraHelpers: {
       enumerable: false,
       default: null,
@@ -304,6 +308,7 @@ export class RouteData extends ObservableObject {
           {
             rawIssuesRequestData: value.from(this, "rawIssuesRequestData"),
             configurationPromise: value.from(this, "normalizeOptions"),
+            licensingPromise: value.from(this, "licensingPromise"),
           },
           { listenTo, resolve }
         );
