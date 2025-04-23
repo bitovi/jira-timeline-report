@@ -1,9 +1,27 @@
+import { defineFeatureFlag } from "../shared/feature-flag";
 import type { LinkBuilderFactory, RoutingConfiguration } from "./common";
 import { objectToQueryString, queryStringToObject } from "./utils";
+
+const logRouting = defineFeatureFlag(
+  "logPluginRouting",
+  "enables logging within router reconciliation"
+);
 
 const routingConfig: RoutingConfiguration = {
   reconcileRoutingState: () => {
     const jiraRoutingQueryParams = AP?.history.getState("all")?.query ?? {};
+
+    if (logRouting()) {
+      console.log("jira routing info", {
+        AP,
+        state: AP?.history.getState("all"),
+        jiraRoutingQueryParams,
+      });
+      console.log(
+        "status reports routing (replace state with)",
+        objectToQueryString(jiraRoutingQueryParams)
+      );
+    }
 
     history.replaceState(null, "", "?" + objectToQueryString(jiraRoutingQueryParams));
   },
