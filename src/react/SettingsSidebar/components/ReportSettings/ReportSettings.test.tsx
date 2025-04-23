@@ -4,10 +4,13 @@ import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
 import ReportSettings from "./ReportSettings";
+import { FlagsProvider } from "@atlaskit/flag";
 
 describe("ReportSettings Component", () => {
   it("renders without crashing", () => {
-    render(<ReportSettings showSidebarBranding changeSettings={vi.fn()} />);
+    render(<ReportSettings showSidebarBranding changeSettings={vi.fn()} />, {
+      wrapper: ({ children }) => <FlagsProvider>{children}</FlagsProvider>,
+    });
 
     const reportSettingsHeading = screen.getByText(/report settings/i);
     expect(reportSettingsHeading).toBeInTheDocument();

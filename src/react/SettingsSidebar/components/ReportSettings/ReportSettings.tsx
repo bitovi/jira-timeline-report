@@ -2,10 +2,40 @@ import type { ComponentProps, FC } from "react";
 
 import React, { useState } from "react";
 import Heading from "@atlaskit/heading";
+import { useFlags } from "@atlaskit/flag";
+import { getFeedback } from "@sentry/react";
+import ErrorIcon from "@atlaskit/icon/core/error";
+import { Text } from "@atlaskit/primitives";
+import { token } from "@atlaskit/tokens";
 
 import SidebarButton from "../../../components/SidebarButton";
 import Branding from "../Branding";
 import FeatureRequestModal from "./components/FeatureRequestModal";
+
+const useBugForm = () => {
+  const { showFlag } = useFlags();
+
+  return async () => {
+    try {
+      const form = await getFeedback()?.createForm();
+
+      if (!form) {
+        console.error(["useBugForm", "Could not create form"].join("\n"));
+        throw new Error("Could not create form");
+      }
+
+      form.appendToDom();
+      form.open();
+    } catch {
+      showFlag({
+        title: <Text color="color.text.danger">Uh Oh!</Text>,
+        description: "Something went wrong, please try again later.",
+        isAutoDismiss: true,
+        icon: <ErrorIcon color={token("color.icon.danger")} label="error" />,
+      });
+    }
+  };
+};
 
 interface ReportSettingsProps {
   changeSettings: (setting: string) => void;
@@ -14,6 +44,7 @@ interface ReportSettingsProps {
 
 const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBranding }) => {
   const [isFeedbackFormOpen, setIsFeedbackFormOpen] = useState(false);
+  const showBugForm = useBugForm();
 
   return (
     <div className="px-6 pt-6 pb-2">
@@ -61,8 +92,11 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <SmallLink href="https://www.bitovi.com/services/agile-project-management-consulting">
           Connect with Bitovi
         </SmallLink>
+        <button className="link text-slate-300 text-sm" onClick={showBugForm}>
+          Report a bug
+        </button>
         <button className="link text-slate-300 text-sm" onClick={() => setIsFeedbackFormOpen(true)}>
-          Request a Feature
+          Request a feature
         </button>
         <FeatureRequestModal
           isOpen={isFeedbackFormOpen}
