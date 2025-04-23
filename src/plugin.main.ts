@@ -13,6 +13,27 @@ const defaultLicensing = {
   evaluation: false,
 };
 
+const getLicensing = async (appKey: string): Promise<LicensingInformation> => {
+  if (appKey.includes("staging") || appKey.includes("local")) {
+    // we don't require licensing for staging or local development
+    return { active: true, evaluation: true };
+  }
+
+  return (
+    AP?.request<{ body: string }>("/rest/atlassian-connect/1/addons/" + appKey)
+      .then(({ body }) => {
+        return (
+          (JSON.parse(body) as { license?: LicensingInformation })?.license ?? defaultLicensing
+        );
+      })
+      .catch((err) => {
+        console.error(`Error parsing licensing information`, err);
+
+        return defaultLicensing;
+      }) ?? defaultLicensing
+  );
+};
+
 export default async function main() {
   return mainHelper(
     {
@@ -41,19 +62,7 @@ export default async function main() {
       createLinkBuilder: createPluginLinkBuilder,
       showSidebarBranding: true,
       isAlwaysLoggedIn: true,
-      licensingPromise: AP?.request<{ body: string }>(
-        "/rest/atlassian-connect/1/addons/" + import.meta.env.VITE_JIRA_APP_KEY
-      )
-        .then(({ body }) => {
-          return (
-            (JSON.parse(body) as { license?: LicensingInformation })?.license ?? defaultLicensing
-          );
-        })
-        .catch((err) => {
-          console.error(`Error parsing licensing information`, err);
-
-          return defaultLicensing;
-        }),
+      licensingPromise: getLicensing(import.meta.env.VITE_JIRA_APP_KEY),
     }
   );
 }
