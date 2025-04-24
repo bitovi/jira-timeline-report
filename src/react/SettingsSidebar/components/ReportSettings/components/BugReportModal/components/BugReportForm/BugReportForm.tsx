@@ -83,7 +83,6 @@ const BugReportForm: FC<BugReportFormProps> = ({ onCancel, onSubmit }) => {
             onChange={({ target }) => setDescription(target.value)}
             rows={8}
             resize="auto"
-            placeholder="I want a weekly breakdown of dev vs QA time across all epics..."
           />
         </div>
         <ImageDropzone files={files} setFiles={setFiles} />
