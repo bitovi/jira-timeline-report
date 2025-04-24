@@ -12,12 +12,12 @@ import Modal, {
 import BugReportForm from "./components/BugReportForm";
 import BugReportModalHeader from "./components/BugReportModalHeader";
 
-interface FeatureRequestModalProps {
+interface BugReportModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const BugReportModal: FC<FeatureRequestModalProps> = ({ isOpen, onClose }) => {
+const BugReportModal: FC<BugReportModalProps> = ({ isOpen, onClose }) => {
   return (
     <ModalTransition>
       {isOpen && (
