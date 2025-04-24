@@ -4,11 +4,12 @@ import React, { useId, useState } from "react";
 import { Label } from "@atlaskit/form";
 
 interface ImageDropzoneProps {
+  name?: string;
   files: File[];
   setFiles: Dispatch<SetStateAction<File[]>>;
 }
 
-const ImageDropzone: FC<ImageDropzoneProps> = ({ files, setFiles }) => {
+const ImageDropzone: FC<ImageDropzoneProps> = ({ name = "images", files, setFiles }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileId = useId();
 
@@ -69,7 +70,7 @@ const ImageDropzone: FC<ImageDropzoneProps> = ({ files, setFiles }) => {
       >
         <input
           id={fileId}
-          name="files"
+          name={name}
           type="file"
           accept="image/*"
           multiple

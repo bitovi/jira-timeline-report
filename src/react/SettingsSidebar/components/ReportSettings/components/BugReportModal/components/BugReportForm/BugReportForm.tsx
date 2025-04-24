@@ -8,19 +8,22 @@ import SectionMessage from "@atlaskit/section-message";
 import Textfield from "@atlaskit/textfield";
 import { Label } from "@atlaskit/form";
 
-import { useFeedback } from "../../../../shared/hooks";
 import ImageDropzone from "../../../../shared/components/ImageDropzone/ImageDropzone";
+import { useFeedback } from "../../../../shared/hooks";
 
-interface FeatureRequestFormProps {
+interface BugReportFormProps {
   onCancel: () => void;
   onSubmit?: () => void;
 }
 
-const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit }) => {
+const BugReportForm: FC<BugReportFormProps> = ({ onCancel, onSubmit }) => {
   const [files, setFiles] = useState<File[]>([]);
 
   const descriptionId = useId();
   const [description, setDescription] = useState("");
+
+  const nameId = useId();
+  const [name, setName] = useState("");
 
   const emailId = useId();
   const [email, setEmail] = useState("");
@@ -36,12 +39,12 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
         setFormError("");
 
         if (!description) {
-          setFormError("You need to add a feature description.");
+          setFormError("You need to add a description.");
           return;
         }
 
         submitFeatureRequest(
-          { files, email, description, tags: { type: "feature-request" } },
+          { name, files, email, description, tags: { type: "bug" } },
           { onSuccess: () => onSubmit?.(), onError: (error) => setFormError(error.message) }
         );
       }}
@@ -49,7 +52,16 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
       <div>
         {formError && <SectionMessage appearance="error">{formError}</SectionMessage>}
         <div>
-          <Label htmlFor={emailId}>If you're open to follow-up questions, what's your email?</Label>
+          <Label htmlFor={nameId}>Name</Label>
+          <Textfield
+            name="name"
+            id={nameId}
+            value={name}
+            onChange={({ currentTarget }) => setName(currentTarget.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor={emailId}>Email</Label>
           <Textfield
             name="email"
             id={emailId}
@@ -59,7 +71,7 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
         </div>
         <div className="pt-4">
           <Label htmlFor={descriptionId}>
-            What are you trying to report on?{" "}
+            Description{" "}
             <span className="text-rose-600" aria-hidden="true" title="required">
               *
             </span>
@@ -88,4 +100,4 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
   );
 };
 
-export default FeatureRequestForm;
+export default BugReportForm;

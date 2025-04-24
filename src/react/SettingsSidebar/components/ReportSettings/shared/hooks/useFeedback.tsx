@@ -6,15 +6,15 @@ import SuccessIcon from "@atlaskit/icon/core/success";
 import { Text } from "@atlaskit/primitives";
 import { token } from "@atlaskit/tokens";
 
-const createUnsupportedReportFeedback = async ({
-  files,
-  email,
-  description,
-}: {
+type Feedback = {
+  name?: string;
   files: File[];
   email: string;
   description: string;
-}) => {
+  tags: Record<string, string>;
+};
+
+const createFeedbackReport = async ({ files, email, description, tags }: Feedback) => {
   const formattedFiles = await Promise.all(
     files.map(async (file) => {
       const buffer = await file.arrayBuffer();
@@ -32,14 +32,14 @@ const createUnsupportedReportFeedback = async ({
     },
     {
       captureContext: {
-        tags: { type: "feature-request" },
+        tags,
       },
       attachments: formattedFiles,
     }
   );
 };
 
-export const useFeatureRequest = () => {
+export const useFeedback = () => {
   const { showFlag } = useFlags();
 
   const {
@@ -47,11 +47,11 @@ export const useFeatureRequest = () => {
     isPending: isSubmitting,
     error,
   } = useMutation({
-    mutationFn: createUnsupportedReportFeedback,
+    mutationFn: createFeedbackReport,
     onSuccess: () => {
       showFlag({
         title: <Text color="color.text.success">Success</Text>,
-        description: `Thanks for the feature request!`,
+        description: `Thanks for the feedback!`,
         isAutoDismiss: true,
         icon: <SuccessIcon color={token("color.icon.success")} label="success" />,
       });
