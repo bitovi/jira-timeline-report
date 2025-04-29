@@ -12,9 +12,9 @@ type IssueHierarchy = {
   hierarchyLevel: number;
 };
 
-const formatTitle = (rawTitle: string) => {
+const formatTitle = (rawTitle?: string) => {
   return rawTitle
-    .split("-")
+    ?.split("-")
     .map((part) => part + "s")
     .join(" / ");
 };
@@ -45,7 +45,12 @@ const SelectedIssueType: FC = () => {
   const title = formatTitle(selectedIssueType);
 
   if (!issueHierarchy) {
-    return <DropdownMenu trigger="Loading..." isLoading />;
+    return (
+      <div className="flex flex-col items-start">
+        <Label htmlFor="">Report on</Label>
+        <DropdownMenu trigger="Loading..." isLoading />
+      </div>
+    );
   }
 
   return (

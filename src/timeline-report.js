@@ -20,6 +20,7 @@ import { pushStateObservable } from "./canjs/routing/state-storage.js";
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 
+import SelectIssueType from "./react/SelectIssueType";
 import SavedReports from "./react/SaveReports";
 import SettingsSidebar from "./react/SettingsSidebar";
 import Filters from "./react/Filters";
@@ -42,6 +43,7 @@ export class TimelineReport extends StacheElement {
     <div id='sample-data-notice' class='pt-4'></div>
       <div id="saved-reports" class='py-4'></div>
       <div class="flex gap-1">
+        <div id='select-issue-type' class='pt-1'></div>
         <select-issue-type 
           derivedIssues:from="this.routeData.derivedIssues"
           jiraHelpers:from="this.jiraHelpers"></select-issue-type>
@@ -181,6 +183,10 @@ export class TimelineReport extends StacheElement {
   async connected() {
     window.addEventListener("load", updateFullishHeightSection);
     window.addEventListener("resize", updateFullishHeightSection);
+
+    createRoot(document.getElementById("select-issue-type")).render(
+      createElement(SelectIssueType, {})
+    );
 
     createRoot(document.getElementById("view-reports")).render(
       createElement(ViewReports, {
