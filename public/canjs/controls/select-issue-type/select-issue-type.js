@@ -80,7 +80,7 @@ class ReleasesTypeSelectionDropdown extends StacheElement {
 customElements.define("select-release-type-dropdown", ReleasesTypeSelectionDropdown);
 
 const jiraButton =
-  "rounded bg-neutral-201 pl-3 pr-2 py-[6px] h-8 text-slate-600 font-medium text-sm";
+  "rounded bg-neutral-201 pl-3 pr-2 py-[6px] h-8 text-slate-600 font-medium text-sm whitespace-nowrap";
 
 export class SelectIssueType extends StacheElement {
   static view = `
