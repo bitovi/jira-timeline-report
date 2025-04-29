@@ -27,7 +27,7 @@ Follow the steps below to get remaining environment variables:
   - Confluence
     - `read:app-data:confluence`
     - `write:app-data:confluence`
-- Click Authorization, input the callback url, as default for this application locally, use `http://localhost:3000/oauth-callback` and save.
+- Click Authorization, input the callback url, as default for this application locally, use `http://localhost:5173/oauth-callback` and save.
 - Click Settings and scroll down to copy your `CLIENT_ID` to `VITE_JIRA_CLIENT_ID` and `CLIENT_SECRET` to `JIRA_CLIENT_SECRET` in the `.env` file.
 - The `VITE_JIRA_API_URL` is `https://api.atlassian.com`.
 - Make sure to share the app by changing the Distribution Status to `Sharing` under the `Distribution` section.

@@ -22,6 +22,26 @@ export const fetchAuthorizationCode = (config: Config) => () => {
   window.location.href = url;
 };
 
+export const timeRemainingBeforeAccessTokenExpiresInSeconds = () => {
+  const storageTimeStamp = localStorage.getItem("expiryTimestamp");
+
+  if (!storageTimeStamp) {
+    return 0;
+  }
+
+  const expiryTimestamp = parseInt(storageTimeStamp, 10);
+
+  if (isNaN(expiryTimestamp)) {
+    return 0;
+  }
+
+  // Atlassian time stamps are time since unix epoch
+  // so we need to match that format
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+
+  return -1 * (currentTimestamp - expiryTimestamp);
+};
+
 export const refreshAccessToken =
   (config: Config) =>
   async (accessCode?: string): Promise<string | undefined> => {
