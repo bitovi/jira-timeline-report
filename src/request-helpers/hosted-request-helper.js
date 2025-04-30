@@ -30,7 +30,7 @@ export function getHostedRequestHelper(config) {
               "Your access token needs to be refreshed. Taking you to Atlassian to reauthorize"
             );
             fetchAuthorizationCode(config);
-            return;
+            return new Promise(function () {});
           }
         }
 
