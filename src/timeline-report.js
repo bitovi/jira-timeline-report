@@ -9,7 +9,6 @@ import "./canjs/reports/table-grid.js";
 import "./canjs/reports/scatter-timeline.js";
 import "./canjs/reports/status-report.js";
 
-import "./canjs/controls/select-issue-type/select-issue-type.js";
 import "./canjs/controls/select-report-type/select-report-type.js";
 
 import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
@@ -44,10 +43,7 @@ export class TimelineReport extends StacheElement {
       <div id="saved-reports" class='py-4'></div>
       <div class="flex gap-1">
         <div id='select-issue-type' class='pt-1'></div>
-        <select-issue-type 
-          derivedIssues:from="this.routeData.derivedIssues"
-          jiraHelpers:from="this.jiraHelpers"></select-issue-type>
-
+        
         <select-report-type 
           jiraHelpers:from="this.jiraHelpers"
           features:from="this.features"></select-report-type>
