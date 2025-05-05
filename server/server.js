@@ -6,6 +6,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { fetchTokenWithAccessCode } from "./helper.js";
 import cors from "cors";
+import { logger } from "./logger.js";
 
 // configurations
 dotenv.config();
@@ -56,6 +57,12 @@ app.get("/access-token", async (req, res) => {
       message: `${error.message}`,
     });
   }
+});
+
+app.post("/domain", async (req, res) => {
+  logger.info(`[domain] - ${req.body.domain}`);
+
+  res.status(204).send();
 });
 
 // Start server
