@@ -11,8 +11,8 @@ set -e
 : "${VITE_JIRA_APP_KEY?Need to set VITE_JIRA_APP_KEY}"
 : "${VITE_STATUS_REPORTS_ENV?Need to set VITE_STATUS_REPORTS_ENV}"
 : "${BACKEND_SENTRY_DSN?Need to set BACKEND_SENTRY_DSN}"
-: "${$AWS_SECRET_ACCESS_KEY?Need to set $AWS_SECRET_ACCESS_KEY}"
-: "${$AWS_ACCESS_KEY_ID?Need to set $AWS_ACCESS_KEY_ID}"
+: "${AWS_SECRET_ACCESS_KEY?Need to set AWS_SECRET_ACCESS_KEY}"
+: "${AWS_ACCESS_KEY_ID?Need to set AWS_ACCESS_KEY_ID}"
 
 cat <<EOF > .env
 AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
@@ -33,4 +33,3 @@ EOF
 cp .env repo_env
 
 echo ".env and repo_env created at $(pwd)"
-cat .env
