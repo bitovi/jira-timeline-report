@@ -12,5 +12,8 @@ const cloudWatchConfig = {
 };
 
 export const logger = winston.createLogger({
-  transports: [new winston.transports.Console(), new WinstonCloudWatch(cloudWatchConfig)],
+  transports: [
+    new winston.transports.Console(),
+    process.env.AWS_ACCESS_KEY_ID && new WinstonCloudWatch(cloudWatchConfig),
+  ].filter(Boolean),
 });
