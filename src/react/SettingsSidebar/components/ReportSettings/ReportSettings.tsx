@@ -70,6 +70,9 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <button className="link text-slate-300 text-sm" onClick={() => setIsFeedbackFormOpen(true)}>
           Request a feature
         </button>
+        <SmallLink href="https://marketplace.atlassian.com/apps/1236390/status-reports-for-jira?hosting=cloud&tab=reviews">
+          Write a review
+        </SmallLink>
         <FeatureRequestModal
           isOpen={isFeedbackFormOpen}
           onClose={() => setIsFeedbackFormOpen(false)}
