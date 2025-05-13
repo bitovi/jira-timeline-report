@@ -12,6 +12,8 @@ async function fetchJSON(url, options) {
   return fetch(url, options).then(responseToJSON);
 }
 
+let hasShownPopUp = false;
+
 export function getHostedRequestHelper(config) {
   const { JIRA_API_URL } = config;
 
@@ -26,13 +28,18 @@ export function getHostedRequestHelper(config) {
           const FIVE_SECONDS = 5;
 
           if (timeLeft < FIVE_SECONDS) {
-            alert(
-              "Your access token needs to be refreshed. Taking you to Atlassian to reauthorize"
-            );
+            if (!hasShownPopUp) {
+              hasShownPopUp = true;
+              alert(
+                "Your access token needs to be refreshed. Taking you to Atlassian to reauthorize"
+              );
+            }
             fetchAuthorizationCode(config);
             return new Promise(function () {});
           }
         }
+
+        hasShownPopUp = false;
 
         let requestUrl;
         if (urlFragment.startsWith("https://")) {

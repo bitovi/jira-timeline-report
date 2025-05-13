@@ -63,6 +63,9 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <SmallLink href="https://www.bitovi.com/services/agile-project-management-consulting">
           Connect with Bitovi
         </SmallLink>
+        <SmallLink href="https://www.bitovi.com/status-reports-for-jira">
+          Join the Mailing List
+        </SmallLink>
         <button className="link text-slate-300 text-sm" onClick={() => setIsBugFormOpen(true)}>
           Report a bug
         </button>
