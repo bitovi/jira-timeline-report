@@ -37,7 +37,9 @@ setup('authenticate', async ({ page }) => {
   await inputPassword.fill(process.env.JIRA_TEST_PASSWORD || "");
   await page.getByRole("button", { name: "Log in" }).click();
 
-  const totpInput = page.getByPlaceholder("6-digit verification code").first();
+  const totpInput = page.getByLabel("6-digit verification code");
+  await totpInput.waitFor({ state: "visible" });
+
   const totpValue = totp.generate();
   await totpInput.fill(totpValue);
   await page.locator("#react-select-2-input").click();
