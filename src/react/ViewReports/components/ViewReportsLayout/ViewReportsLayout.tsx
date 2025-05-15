@@ -18,7 +18,7 @@ const ViewReportsLayout: FC<ViewReportsLayoutProps> = ({
   children,
 }) => {
   return (
-    <div className="p-6">
+    <div className="p-6 flex flex-col h-screen">
       <SidebarButton className="flex items-center" onClick={onBackButtonClicked}>
         <ArrowLeftCircleIcon label="go back" />
         <div className="flex-col gap-1">
