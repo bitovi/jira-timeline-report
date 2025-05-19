@@ -2,6 +2,16 @@
 
 Clone the application into your local machine and install node modules.
 
+Supported node/npm versions are:
+
+```sh
+node -v # v22.9.0
+```
+
+```sh
+npm -v # 10.8.3
+```
+
 ```sh
 git clone https://github.com/bitovi/jira-timeline-report.git
 cd jira-timeline-report
@@ -19,20 +29,18 @@ cp .env.example .env
 Follow the steps below to get remaining environment variables:
 
 - Open Jira developer console. https://developer.atlassian.com/console/myapps/
-- Create your app and choose OAuth2.0, put in the app name and accept the terms.
-- Click Permissions, add the Jira API scope then configure it to the following scopes:
-  - Jira
-    - `read:jira-work`
-    - `write:jira-work`
-  - Confluence
-    - `read:app-data:confluence`
-    - `write:app-data:confluence`
-- Click Authorization, input the callback url, as default for this application locally, use `http://localhost:5173/oauth-callback` and save.
-- Click Settings and scroll down to copy your `CLIENT_ID` to `VITE_JIRA_CLIENT_ID` and `CLIENT_SECRET` to `JIRA_CLIENT_SECRET` in the `.env` file.
-- The `VITE_JIRA_API_URL` is `https://api.atlassian.com`.
-- Make sure to share the app by changing the Distribution Status to `Sharing` under the `Distribution` section.
+- Create your app and choose `OAuth 2.0 integration`, put in the app name `status-report-local` and accept the terms.
+- Click the Permissions tab in the left sidenav, add the Jira API scope then configure it to the following scopes:
+   - `read:jira-work`
+   - `write:jira-work`
+- Do the same for Confluence API scope. You will have to select `Granular` scopes:
+   - `read:app-data:confluence`
+   - `write:app-data:confluence`
+- Click the Authorization tab in the left sidenav, input the callback url, as default for this application locally, use `http://localhost:5173/oauth-callback` and save.
+- Click the Settings tab in the left sidenav and scroll down to copy your `CLIENT_ID` to `VITE_JIRA_CLIENT_ID` and `CLIENT_SECRET` to `JIRA_CLIENT_SECRET` in the `.env` file.
+- Click the Distribution tab in the left sidenav. Update Distribution Status to `Sharing`, add the vender name `Bitovi`, and add the Privacy Policy url, `https://bitovi.atlassian.net/wiki/spaces/StatusReportsForJira/pages/1273528366/Privacy+Policy`.
 
-Note: All environment variables that start with `VITE` will be sent to the client side and exposed.
+> Note: All environment variables that start with `VITE` will be sent to the client side and exposed.
 
 ### Running the project locally
 
