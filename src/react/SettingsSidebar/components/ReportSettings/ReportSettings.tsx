@@ -63,6 +63,9 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <SmallLink href="https://www.bitovi.com/services/agile-project-management-consulting">
           Connect with Bitovi
         </SmallLink>
+        <SmallLink href="https://www.bitovi.com/status-reports-for-jira">
+          Join the Mailing List
+        </SmallLink>
         <button className="link text-slate-300 text-sm" onClick={() => setIsBugFormOpen(true)}>
           Report a bug
         </button>
@@ -70,6 +73,9 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <button className="link text-slate-300 text-sm" onClick={() => setIsFeedbackFormOpen(true)}>
           Request a feature
         </button>
+        <SmallLink href="https://marketplace.atlassian.com/apps/1236390/status-reports-for-jira?hosting=cloud&tab=reviews">
+          Write a review
+        </SmallLink>
         <FeatureRequestModal
           isOpen={isFeedbackFormOpen}
           onClose={() => setIsFeedbackFormOpen(false)}

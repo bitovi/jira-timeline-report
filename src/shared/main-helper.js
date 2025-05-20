@@ -49,6 +49,22 @@ export default async function mainHelper(
 
   const jiraHelpers = JiraOIDCHelpers(config, requestHelper, host);
 
+  // Temporary will be removed in two weeks
+  if (host === "hosted") {
+    requestHelper("https://api.atlassian.com/oauth/token/accessible-resources")
+      .then(([request]) => {
+        return fetch(`${import.meta.env.VITE_AUTH_SERVER_URL}/domain`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({ domain: request.url }),
+        });
+      })
+      .catch(console.warn);
+  }
+  //
+
   const storage = createStorage(jiraHelpers);
   const linkBuilder = createLinkBuilder(jiraHelpers.appKey);
 

@@ -23,23 +23,25 @@ test.describe("Sample reports navigation", () => {
     });
 
     test("the page contains existing initiatives", async ({ page }) => {
-      const reportOnBtn = page.locator('select-issue-type').locator('button');
-      const reportTypeBtn = page.locator('select-report-type').locator('button');
-      await expect(reportOnBtn).toHaveText('Initiatives');
-      await expect(reportTypeBtn).toHaveText('Scatter Plot');
-      await expect(page.getByText('Track your order maps')).toBeDefined();
-      await expect(page.getByText('Favorite sharing')).toBeDefined();
-      await expect(page.getByText('Order Playback')).toBeDefined();
-      await expect(page.getByText('Social sharing')).toBeDefined();
+      const reportOnBtn = page.locator("#select-issue-type").locator("button");
+      const reportTypeBtn = page.locator("select-report-type").locator("button");
+      await expect(reportOnBtn).toHaveText("Initiatives");
+      await expect(reportTypeBtn).toHaveText("Scatter Plot");
+      await expect(page.getByText("Track your order maps")).toBeDefined();
+      await expect(page.getByText("Favorite sharing")).toBeDefined();
+      await expect(page.getByText("Order Playback")).toBeDefined();
+      await expect(page.getByText("Social sharing")).toBeDefined();
     });
 
     test("the page has status report", async ({ page }) => {
       await expect(page.locator("status-report")).toBeVisible();
-      await expect(page.locator("status-report").getByText('Track your order maps')).toBeVisible();
-      await expect(page.locator("status-report").getByText('Social sharing')).toBeVisible();
-      await expect(page.locator("status-report").getByText('QA: Favorite Sharing')).toBeVisible();
-      await expect(page.locator("status-report").getByText("QA: Internationalization")).toBeVisible();
-      await expect(page.locator("status-report").getByText('Order Playback')).toBeVisible();
+      await expect(page.locator("status-report").getByText("Track your order maps")).toBeVisible();
+      await expect(page.locator("status-report").getByText("Social sharing")).toBeVisible();
+      await expect(page.locator("status-report").getByText("QA: Favorite Sharing")).toBeVisible();
+      await expect(
+        page.locator("status-report").getByText("QA: Internationalization")
+      ).toBeVisible();
+      await expect(page.locator("status-report").getByText("Order Playback")).toBeVisible();
     });
   });
 
@@ -61,21 +63,23 @@ test.describe("Sample reports navigation", () => {
     });
 
     test("the page contains existing initiatives", async ({ page }) => {
-      const reportOnBtn = page.locator('select-issue-type').locator('button');
-      const reportTypeBtn = page.locator('select-report-type').locator('button');
-      await expect(reportOnBtn).toHaveText('Initiatives');
-      await expect(reportTypeBtn).toHaveText('Gantt Chart');
-      await expect(page.locator('gantt-grid')).toBeVisible()
+      const reportOnBtn = page.locator("#select-issue-type").locator("button");
+      const reportTypeBtn = page.locator("select-report-type").locator("button");
+      await expect(reportOnBtn).toHaveText("Initiatives");
+      await expect(reportTypeBtn).toHaveText("Gantt Chart");
+      await expect(page.locator("gantt-grid")).toBeVisible();
     });
 
     test("the page has status report", async ({ page }) => {
       await expect(page.locator("status-report")).toBeVisible();
-      await expect(page.locator("status-report").getByText('Track your order maps')).toBeVisible();
-      await expect(page.locator("status-report").getByText('Social sharing')).toBeVisible();
-      await expect(page.locator("status-report").getByText('QA: Favorite Sharing')).toBeVisible();
-      await expect(page.locator("status-report").getByText("QA: Internationalization")).toBeVisible();
-      await expect(page.locator("status-report").getByText('Order Playback')).toBeVisible();
-    })
+      await expect(page.locator("status-report").getByText("Track your order maps")).toBeVisible();
+      await expect(page.locator("status-report").getByText("Social sharing")).toBeVisible();
+      await expect(page.locator("status-report").getByText("QA: Favorite Sharing")).toBeVisible();
+      await expect(
+        page.locator("status-report").getByText("QA: Internationalization")
+      ).toBeVisible();
+      await expect(page.locator("status-report").getByText("Order Playback")).toBeVisible();
+    });
   });
 
   test.describe("On 'Ready and in-development initiative work breakdown' click", () => {
@@ -100,12 +104,11 @@ test.describe("Sample reports navigation", () => {
     });
 
     test("the page contains existing initiatives", async ({ page }) => {
-      const reportOnBtn = page.locator('select-issue-type').locator('button');
-      const reportTypeBtn = page.locator('select-report-type').locator('button');
-      await expect(reportOnBtn).toHaveText('Initiatives');
-      await expect(reportTypeBtn).toHaveText('Gantt Chart');
-      await expect(page.locator('gantt-grid')).toBeVisible()
+      const reportOnBtn = page.locator("#select-issue-type").locator("button");
+      const reportTypeBtn = page.locator("select-report-type").locator("button");
+      await expect(reportOnBtn).toHaveText("Initiatives");
+      await expect(reportTypeBtn).toHaveText("Gantt Chart");
+      await expect(page.locator("gantt-grid")).toBeVisible();
     });
-
   });
 });

@@ -95,15 +95,17 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
         onBackButtonClicked={onBackButtonClicked}
         reportInfo={selectedReport ? <p>{selectedReport}</p> : null}
       >
-        <DynamicTable
-          head={{
-            cells: [
-              { key: "report-heading", content: "Report" },
-              { key: " manage-reports", content: "Manage" },
-            ],
-          }}
-          rows={reportRows}
-        />
+        <div className="flex-1 overflow-auto">
+          <DynamicTable
+            head={{
+              cells: [
+                { key: "report-heading", content: "Report" },
+                { key: " manage-reports", content: "Manage" },
+              ],
+            }}
+            rows={reportRows}
+          />
+        </div>
       </ViewReportsLayout>
       <DeleteReportModal
         isOpen={!!managedReport}

@@ -15,6 +15,7 @@ import {
   getAccessToken,
   hasAccessToken,
   hasValidAccessToken,
+  timeRemainingBeforeAccessTokenExpiresInSeconds,
 } from "./auth";
 import {
   fetchAccessibleResources,
@@ -81,6 +82,7 @@ export default function createJiraHelpers(
     fetchAuthorizationCode: fetchAuthorizationCode(config),
     refreshAccessToken: refreshAccessToken(config),
     fetchAccessTokenWithAuthCode,
+    timeRemainingBeforeAccessTokenExpiresInSeconds,
     fetchAccessibleResources: fetchAccessibleResources(config),
     fetchJiraSprint: fetchJiraSprint(config),
     fetchJiraIssue: fetchJiraIssue(config),
