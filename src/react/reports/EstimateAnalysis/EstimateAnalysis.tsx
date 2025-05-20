@@ -105,13 +105,12 @@ export const EstimateAnalysis: FC<{
         dataColumnsCount + dayColumnsCount;
 
 
-    console.log({historicalAdjustedData, effortData, ranges});
-
     return (
         <div className="">
 
         <h2>Estimates vs Actuals</h2>
-        <EpicEstimatesScatter issues={primary} team={selectedTeam}></EpicEstimatesScatter>
+        <EpicEstimatesScatter issues={primary} team={selectedTeam}
+            setTeam ={setSelectedTeam}></EpicEstimatesScatter>
 
         <h2 className="text-xl font-bold">Estimated Points Per Day</h2>
         <p className="text-sm">How many points on average does each team complete.
@@ -141,6 +140,9 @@ export const EstimateAnalysis: FC<{
 
             {/* Data Rows */}
             {effortData.workGrid.map(({ team, values }, index) => {
+                if(selectedTeam !== null && team !== selectedTeam) {
+                    return <React.Fragment></React.Fragment>
+                }
                 const data = historicalAdjustedData[team];
                 return (
                     <React.Fragment key={team}>

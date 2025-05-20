@@ -12,6 +12,7 @@ import {
   type Props = {
     issues: DerivedIssue[];
     team: string | null;
+    setTeam: React.Dispatch<React.SetStateAction<string|null>>;
   };
   
 
@@ -43,7 +44,7 @@ import {
   }
 
   
-  export function EpicEstimatesScatter({ issues, team }: Props) {
+  export function EpicEstimatesScatter({ issues, team, setTeam }: Props) {
     const baseIssues = team === null ? issues : issues.filter( issue => issue.team.name === team)
 
     const data = getComputedActualAndEstimatedEffort(baseIssues);
@@ -60,7 +61,6 @@ import {
       
     const maxValue = Math.min(maxEstimates, maxActuals);
 
-    console.log(minValue, maxValue)
     const teams = Array.from(new Set(data.historic.map(d => d.issue.team.name)));
   
     return (
@@ -71,7 +71,9 @@ import {
             <YAxis type="number" dataKey="deterministicTotalDaysOfWork" name="Estimated" scale="log" domain={[0.5, 'auto']}  ticks={[.3, 1, 3, 10, 30, 100]} />
             
             <Tooltip cursor={{ strokeDasharray: '3 3' }}  content={<CustomTooltip />} />
-            <Legend />
+            <Legend onClick={({value: clickedTeam}) => {
+                setTeam(team === clickedTeam ? null : clickedTeam)
+            }}/>
             <ReferenceLine
                 segment={[
                     { x: minValue, y: minValue }, // x = actual, y = estimated
