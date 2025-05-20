@@ -12,6 +12,7 @@ import { ErrorBoundary } from "@sentry/react";
 import { useCanObservable } from "../hooks/useCanObservable";
 import { value } from "../../can";
 import ScatterPlotViewSettings from "./components/ScatterPlotViewSettings";
+import {EstimateAnalysisViewSettings} from "../reports/EstimateAnalysis/EstimateAnalysisViewSettings";
 
 const reports = [
   {
@@ -26,6 +27,10 @@ const reports = [
     key: "table",
     name: "Estimation Table",
   },
+  {
+    key: "estimate-analysis",
+    name: "Estimation Analysis"
+  }
 ] as const;
 
 type ReportTypes = (typeof reports)[number]["key"];
@@ -33,8 +38,9 @@ type ReportTypes = (typeof reports)[number]["key"];
 const viewSettingsMap: Record<Exclude<ReportTypes, "table">, FC> = {
   "start-due": GanttViewSettings,
   due: ScatterPlotViewSettings,
+  "estimate-analysis": EstimateAnalysisViewSettings
 };
-
+console.log(viewSettingsMap);
 const useReportType = () => {
   return useCanObservable<ReportTypes>(value.from(routeData, "primaryReportType"));
 };

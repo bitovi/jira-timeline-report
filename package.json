@@ -94,6 +94,7 @@
     "jstat": "^1.9.6",
     "live-server": "^1.2.2",
     "postcss": "^8.5.3",
+    "recharts": "^2.15.3",
     "rollup": "npm:@rollup/wasm-node@^4.2.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.6.3",

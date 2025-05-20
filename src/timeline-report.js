@@ -1,4 +1,4 @@
-import { StacheElement, type, queues, Reflect } from "./can.js";
+import { StacheElement, type, queues, Reflect, value } from "./can.js";
 
 import routeData from "./canjs/routing/route-data";
 
@@ -29,6 +29,7 @@ import ViewReports from "./react/ViewReports";
 import StatusKeys from "./react/StatusKey";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
+import { EstimateAnalysis } from "./react/reports/EstimateAnalysis/EstimateAnalysis";
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -79,6 +80,11 @@ export class TimelineReport extends StacheElement {
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                 allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
           {{/ eq }}
+          {{# eq(this.routeData.primaryReportType, "estimate-analysis") }}
+            <div id='estimate-analysis' 
+              on:inserted='this.attachEstimateAnalysis()'
+              on:removed='this.detatchEstimateAnalysis()'>Loading Estimate Analysis</div>
+          {{/ eq}}
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
             <status-report 
@@ -176,6 +182,22 @@ export class TimelineReport extends StacheElement {
 
   attachStatusKeys() {
     createRoot(document.getElementById("status-keys")).render(createElement(StatusKeys, {}));
+  }
+  attachEstimateAnalysis(){
+    const element = document.getElementById("estimate-analysis");
+    this.estimateAnalysisRoot = createRoot(element)
+    
+    this.estimateAnalysisRoot.render(createElement(EstimateAnalysis, {
+      primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
+      allIssuesOrReleasesObs: value.from(this, "rolledupAndRolledBackIssuesAndReleases"),
+      rollupTimingLevelsAndCalculationsObs: value.from(this, "rollupTimingLevelsAndCalculations")
+    }));
+  }
+  detatchEstimateAnalysis(){
+    if(this.estimateAnalysisRoot) {
+      this.estimateAnalysisRoot.unmount();
+      this.estimateAnalysisRoot = null;
+    }
   }
 
   async connected() {
