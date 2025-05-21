@@ -1,5 +1,5 @@
 import {getBusinessDatesCount} from "../../../utils/date/business-days"
-import { estimateExtraPoints, sampleExtraPoints } from "../../../shared/confidence";
+import { estimateExtraPoints, sampleExtraPoints } from "../../../utils/math/confidence";
 import {
   DueData,
   getStartDateAndDueDataFromFieldsOrSprints,

@@ -1,6 +1,6 @@
 module.exports = {
   content: ["./src/**/*.{js,tsx,ts}", "./**.html"],
-  safelist: ["pl-2", "pl-4", "pl-6", "pl-8", "border-neutral-301"],
+  safelist: ["pl-2", "pl-4", "pl-6", "pl-8", "border-neutral-301","grid-cols-5"],
   theme: {
     fontFamily: {
       sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",

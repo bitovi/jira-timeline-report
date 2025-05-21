@@ -12,6 +12,18 @@ function toStandardDeviations({
 	return  (uncertainty * slope);
 }
 
+export function toConfidenceFromStandardDeviations({
+	standardDeviations,
+	highConfidenceStds = 0,
+	highConfidence = 100,
+	lowConfidenceStds = 1.3,
+	lowConfidence = 10
+}) {
+	const slope = -1 * (highConfidenceStds - lowConfidenceStds) / (highConfidence - lowConfidence);
+	const uncertainty = standardDeviations / slope;
+	return 100 - uncertainty;
+}
+
 /**
  * Given an estimate, a confidence, and an uncertainty, return the extra amount of time.
  * @param {number} estimate 
