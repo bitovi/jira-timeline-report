@@ -79,46 +79,19 @@ export const EstimateAnalysis: FC<{
 
     const teamTimings = getTeamTimingData(primary)
 
-    /*
-    let historicalAdjustedData = getTeamHistoricalEpicData(
-        primary
-      ) as HistoricalEpicData;
-
-    const allTeamNames = Object.keys(historicalAdjustedData);
-
-    
-
-    const teamEffort = {} as TeamEffortMap;
-    for(const team of allTeamNames) {
-        teamEffort[team] = historicalAdjustedData[team].pointsPerDay;
-    }
-    const effortData = transformEffortData(teamEffort);
-
-    
-
-    
-    
-    const ranges = bestFitRanges(effortData.startDate, effortData.endDate, 10) as 
-        Array<{startDay: number, days: number, prettyStart: String}>;
-
-    
-    const dataColumnsCount = 4;
-    const dayColumnsCount = effortData.sortedDates.length;
-    const columnCount =
-        dataColumnsCount + dayColumnsCount;
-
-    const baseIssues = selectedTeam === null ? primary : primary.filter( issue => issue.team.name === selectedTeam)
-    const historicComputedIssueData = getComputedActualAndEstimatedEffort(baseIssues);*/
-
 
     return (
         <div className="pb-8">
-        <h2 className="text-xl font-bold mb-2">Team Estimate Accuracy and Precision</h2>
+        <h2 className="text-xl font-bold mb-2">Team Estimation Table</h2>
+        <p className="py-1">The following table shows how many estimated "team days" per day each team completed.</p>
         <TeamEstimateAccuracyVariance
             teamTimings={teamTimings}
             team={selectedTeam}
             setTeam ={setSelectedTeam}></TeamEstimateAccuracyVariance>
         
+        <h2 className="text-xl font-bold mb-2">Team Accuracy and Precision</h2>
+        <p>Compare team estimation accuracy vs precision.  Teams in green are both accurate and precise. 
+            Teams in yellow are precise but not accurate. Teams in blue are accurate but not precise. </p>
         <TeamMeanVsVarianceScatter
             teamTimings={teamTimings}
             team={selectedTeam}

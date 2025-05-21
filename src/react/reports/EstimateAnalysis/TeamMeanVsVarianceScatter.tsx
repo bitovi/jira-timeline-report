@@ -5,7 +5,7 @@ import type { DerivedIssue } from "../../../jira/derived/derive";
 import type { ComputedIssueTiming, TeamTimings } from "../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated";
 
 import {
-    ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer, TooltipProps
+    ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer, TooltipProps, ReferenceArea
   } from 'recharts';
   
   
@@ -112,24 +112,37 @@ import {
                     setTeam(team === clickedTeam ? null : clickedTeam)
                 }}/>
 
-            <ReferenceLine
-                segment={[
-                    { x: 0.3, y: 0 }, // x = actual, y = estimated
-                    { x: 0.3, y:niceMaxMean  },
-                ]}
-                stroke="gray"
-                strokeDasharray="3 3"
-                strokeWidth={3}
-                />
-            <ReferenceLine
-                segment={[
-                    { x: niceMinVariance, y: 1 }, // x = actual, y = estimated
-                    { x: niceMaxVariance, y: 1 },
-                ]}
-                stroke="gray"
-                strokeDasharray="3 3"
-                strokeWidth={3}
-                />
+  
+
+            <ReferenceArea
+                x1={niceMinVariance}
+                x2={0.3}
+                y1={0.8}
+                y2={1.25}
+ 
+                fill="green"
+                fillOpacity={0.15}
+            />
+            <ReferenceArea
+                x1={niceMinVariance}
+                x2={0.3}
+                y1={0}
+                y2={niceMaxMean}
+ 
+                fill="yellow"
+                fillOpacity={0.05}
+            />
+            <ReferenceArea
+                x1={0.3}
+                x2={niceMaxVariance}
+                y1={0.8}
+                y2={1.25}
+
+                fill="#0000ff"
+                fillOpacity={0.1}
+            />
+            
+            
 
 
             {sortedAlphaTeamTimings.map((teamTiming) => (

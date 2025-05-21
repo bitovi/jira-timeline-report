@@ -119,9 +119,9 @@ export const TeamEstimateAccuracyHistogram: React.FC<Props> =
   ({ teamTimings, team, setTeam }) => {
 
     const allIssueTimings = teamTimings.map( teamTiming => teamTiming.computedIssueTimings ).flat(1);
-
-    const data = buildTeamCountHistogramWithIssues(allIssueTimings);
-    const teams = Array.from(new Set(allIssueTimings.map(i => i.issue.team.name))).sort();
+    const filteredTimings = team === null ? allIssueTimings : allIssueTimings.filter( it => it.issue.team.name === team)
+    const data = buildTeamCountHistogramWithIssues(filteredTimings);
+    const teams = Array.from(new Set(filteredTimings.map(i => i.issue.team.name))).sort();
 
 
   return (
