@@ -211,6 +211,7 @@ function toISODateString(date) {
 function estimatePointsPerDay(ranges) {
   const businessDays = new Map(); // Use a Set to ensure unique business days
 
+  
   ranges.forEach(({ startDate, dueDate, deterministicTotalDaysOfWork, totalDaysOfWork }) => {
     if (!startDate || !dueDate) {
       return;

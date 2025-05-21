@@ -9,13 +9,9 @@ import type { DerivedIssue } from "../../../jira/derived/derive";
 import {bestFitRanges} from "../../../utils/date/best-fit-ranges.js";
 import { EpicEstimatesScatter } from "./EstimateVsActualScatter.js";
 
-import {
-    addHistoricalAdjustedEstimatedTime,
-    FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES,
-    getTeamHistoricalEpicData
-  } from "../../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
-
-
+import { getTeamTimingData } from "../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated";
+import { TeamEstimateAccuracyHistogram } from "./TeamEstimateAccuracyHistogram.js";
+import { TeamEstimateAccuracyVariance } from "./TeamEstimateAccuracyVariance.js";
 type RolledUpIssue = DerivedIssue & {
     completionRollup: {totalWorkingDays: number},
     historicalAdjustedEstimatedTime: Array<{historicalAdjustedEstimatedTime: number, teamName: String}>
@@ -75,6 +71,13 @@ export const EstimateAnalysis: FC<{
     const rollupTimingLevelsAndCalculations = useCanObservable(rollupTimingLevelsAndCalculationsObs);
 
     
+    if(!allIssues?.length) {
+        return <div>Loading ...</div>
+    }
+
+    const teamTimings = getTeamTimingData(primary)
+
+    /*
     let historicalAdjustedData = getTeamHistoricalEpicData(
         primary
       ) as HistoricalEpicData;
@@ -91,9 +94,7 @@ export const EstimateAnalysis: FC<{
 
     
 
-    if(!allIssues?.length) {
-        return <div>Loading ...</div>
-    }
+    
     
     const ranges = bestFitRanges(effortData.startDate, effortData.endDate, 10) as 
         Array<{startDay: number, days: number, prettyStart: String}>;
@@ -104,14 +105,37 @@ export const EstimateAnalysis: FC<{
     const columnCount =
         dataColumnsCount + dayColumnsCount;
 
+    const baseIssues = selectedTeam === null ? primary : primary.filter( issue => issue.team.name === selectedTeam)
+    const historicComputedIssueData = getComputedActualAndEstimatedEffort(baseIssues);*/
+
 
     return (
-        <div className="">
+        <div className="pb-8">
 
-        <h2>Estimates vs Actuals</h2>
-        <EpicEstimatesScatter issues={primary} team={selectedTeam}
+        <TeamEstimateAccuracyVariance
+            teamTimings={teamTimings}
+            team={selectedTeam}
+            setTeam ={setSelectedTeam}></TeamEstimateAccuracyVariance>
+        
+        <h2 className="text-xl font-bold pt-2">Estimate vs Actual Scatterplot</h2>
+        <p>Estimated amount of total team work compared to actual amount of team work. 
+            Issues on the top left took less team-time than estimated, issues on the bottom 
+            right took more team time than estimated.
+        </p>
+        
+        <EpicEstimatesScatter teamTimings={teamTimings} team={selectedTeam}
             setTeam ={setSelectedTeam}></EpicEstimatesScatter>
 
+        <h2 className="text-xl font-bold">Actual / Estimate Histogram</h2>
+        <p>A grouping of issues by their <code>Actual / Estimate</code> ratio presented 
+        exponentially. If this looks like a bell curve, it means the underlying distribution is log-normal.
+        </p>
+        <TeamEstimateAccuracyHistogram 
+            teamTimings={teamTimings}
+            team={selectedTeam}
+            setTeam ={setSelectedTeam}></TeamEstimateAccuracyHistogram>
+        
+        {/*
         <h2 className="text-xl font-bold">Estimated Points Per Day</h2>
         <p className="text-sm">How many points on average does each team complete.
             This can help you identify if a team over or under estimates. 
@@ -123,7 +147,7 @@ export const EstimateAnalysis: FC<{
             gridTemplateColumns: `repeat(${columnCount}, minmax(0, auto))`,
             }}
         >
-            {/* Header Row */}
+
             <div className={headerClassNames}>Team</div>
             <div className={headerClassNames}>Average</div>
             <div className={headerClassNames}>Included</div>
@@ -138,7 +162,7 @@ export const EstimateAnalysis: FC<{
             })}
 
 
-            {/* Data Rows */}
+
             {effortData.workGrid.map(({ team, values }, index) => {
                 if(selectedTeam !== null && team !== selectedTeam) {
                     return <React.Fragment></React.Fragment>
@@ -183,7 +207,7 @@ export const EstimateAnalysis: FC<{
                             
                         </div>
                     ))}
-                    {/* Pad with empty cells if values are shorter than max length */}
+
                     {Array.from({ length: columnCount - dataColumnsCount - values.length }).map(
                         (_, i) => (
                         <div key={`${team}-pad-${i}`} />
@@ -192,44 +216,12 @@ export const EstimateAnalysis: FC<{
                     </React.Fragment>
                 );
             })}
-        </div>
+        </div>*/}
         </div>
   );
-
-    
-    
-    /*return (
-        <div className="">
-            <div>{primary.length} items</div>
-            <table className="w-full">
-                <thead>
-                <tr>
-                    <th>Team</th>
-                    <th>Average</th>
-                    <th>Included</th>
-                    <th>Excluded</th>
-                </tr>
-                </thead>
-                <tbody>
-            {effortData.workGrid.map( ({team, values}) => {
-                return <tr className="my-3 text-lg" key={team}>
-                    <td>{team}</td>
-                    <td>{roundTo(historicalAdjustedData[team].theoreticalMean,1)}</td>
-                    <td>{historicalAdjustedData[team].historicIssues.length}</td>
-                    <td>{historicalAdjustedData[team].ignoredIssues.length}</td>
-                    {values.map( (value, index)=>{
-                        return <td key={team+"/"+index}>{value}</td>
-                    } )}
-                </tr>
-            })}
-                </tbody>
-            </table>
-        </div>
-    );
-
-
-    return (<div>Primary Issues: {primary.length}, All Issues {allIssues.length}</div>);*/
 };
+
+
 
 
 type TeamEffortMap = Record<string, Map<string, number>>;
@@ -242,68 +234,7 @@ interface WorkGridResult {
   sortedDates: Date[];
 }
 
-function transformEffortData(data: TeamEffortMap): WorkGridResult {
-  // Step 1: Collect all unique dates from all teams
-  let minDate: Date | null = null;
-  let maxDate: Date | null = null;
 
-  for (const teamMap of Object.values(data)) {
-    for (const dateStr of teamMap.keys()) {
-      const date = new Date(dateStr);
-      if (!minDate || date < minDate) minDate = date;
-      if (!maxDate || date > maxDate) maxDate = date;
-    }
-  }
-
-  // Step 2: Sort dates chronologically
-  const sortedDates = makeSortedDates(minDate, maxDate);
-  const sortedDateStrings = sortedDates.map(d => d.toISOString().slice(0, 10))
-
-  // Step 3: Build workGrid and find the highest effort
-  const workGrid: { team: string; values: number[] }[] = [];
-  let highest = 0;
-
-  for (const [team, dateEffortMap] of Object.entries(data)) {
-    const values: number[] = [];
-    for (const date of sortedDateStrings) {
-      const effort = dateEffortMap.get(date) || 0;
-      values.push(effort);
-      if (effort > highest) highest = effort;
-    }
-    workGrid.push({ team, values });
-  }
-
-  return {
-    highest,
-    startDate: new Date(sortedDates[0]),
-    endDate: new Date(sortedDates[sortedDates.length - 1]),
-    workGrid: workGrid.sort((gridA, gridB) => {
-        if(gridA.team > gridB.team) {
-            return 1;
-        } else {
-            return -1;
-        }
-    }),
-    sortedDates
-  };
-}
-
-
-function makeSortedDates(minDate: Date | null, maxDate: Date | null){
-    if(minDate == null || maxDate == null ) {
-        return []
-    }
-    const sortedDates: Date[] = [];
-    const current = minDate;
-    while (current <= maxDate) {
-      const day = current.getDay();
-      if (day !== 0 && day !== 6) {
-        sortedDates.push(new Date(current)); // "YYYY-MM-DD"
-      }
-      current.setDate(current.getDate() + 1);
-    }
-    return sortedDates;
-}
 
 type JiraIssue = DerivedIssue["issue"];
 
