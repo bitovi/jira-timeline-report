@@ -10,8 +10,10 @@ import {bestFitRanges} from "../../../utils/date/best-fit-ranges.js";
 import { EpicEstimatesScatter } from "./EstimateVsActualScatter.js";
 
 import { getTeamTimingData } from "../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated";
-import { TeamEstimateAccuracyHistogram } from "./TeamEstimateAccuracyHistogram.js";
-import { TeamEstimateAccuracyVariance } from "./TeamEstimateAccuracyVariance.js";
+import { TeamEstimateAccuracyHistogram } from "./TeamEstimateAccuracyHistogram";
+import { TeamEstimateAccuracyVariance } from "./TeamEstimateAccuracyVariance";
+import { TeamMeanVsVarianceScatter } from "./TeamMeanVsVarianceScatter";
+
 type RolledUpIssue = DerivedIssue & {
     completionRollup: {totalWorkingDays: number},
     historicalAdjustedEstimatedTime: Array<{historicalAdjustedEstimatedTime: number, teamName: String}>
@@ -111,12 +113,17 @@ export const EstimateAnalysis: FC<{
 
     return (
         <div className="pb-8">
-
+        <h2 className="text-xl font-bold mb-2">Team Estimate Accuracy and Precision</h2>
         <TeamEstimateAccuracyVariance
             teamTimings={teamTimings}
             team={selectedTeam}
             setTeam ={setSelectedTeam}></TeamEstimateAccuracyVariance>
         
+        <TeamMeanVsVarianceScatter
+            teamTimings={teamTimings}
+            team={selectedTeam}
+            setTeam ={setSelectedTeam}></TeamMeanVsVarianceScatter>
+
         <h2 className="text-xl font-bold pt-2">Estimate vs Actual Scatterplot</h2>
         <p>Estimated amount of total team work compared to actual amount of team work. 
             Issues on the top left took less team-time than estimated, issues on the bottom 
@@ -125,6 +132,7 @@ export const EstimateAnalysis: FC<{
         
         <EpicEstimatesScatter teamTimings={teamTimings} team={selectedTeam}
             setTeam ={setSelectedTeam}></EpicEstimatesScatter>
+            
 
         <h2 className="text-xl font-bold">Actual / Estimate Histogram</h2>
         <p>A grouping of issues by their <code>Actual / Estimate</code> ratio presented 

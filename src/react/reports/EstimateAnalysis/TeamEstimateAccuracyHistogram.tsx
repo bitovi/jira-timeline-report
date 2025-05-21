@@ -123,7 +123,6 @@ export const TeamEstimateAccuracyHistogram: React.FC<Props> =
     const data = buildTeamCountHistogramWithIssues(allIssueTimings);
     const teams = Array.from(new Set(allIssueTimings.map(i => i.issue.team.name))).sort();
 
-  debugger;
 
   return (
     <ResponsiveContainer width="100%" height={500}>

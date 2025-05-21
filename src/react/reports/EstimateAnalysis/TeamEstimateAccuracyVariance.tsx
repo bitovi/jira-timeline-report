@@ -91,9 +91,10 @@ export const TeamEstimateAccuracyVariance: React.FC<Props> = ({ teamTimings, tea
         dataColumnsCount + dayColumnsCount;
 
     
+    
     return (
         <div className="mb-4">
-          <h2 className="text-xl font-bold mb-2">Team Estimate Accuracy and Precision</h2>
+          
     
           {/* One grid for entire table */}
           <div className="grid text-sm"
@@ -153,7 +154,14 @@ export const TeamEstimateAccuracyVariance: React.FC<Props> = ({ teamTimings, tea
                                 gridColumn: `${6+index} / span 1`
                             }}
                             onClick={ ()=> {
-                                console.log({value, date: effortData.sortedDates[index]})
+                                const teamTiming = teamTimings.find( tt => tt.team === row.team)?.businessDaysToIssueTimings;
+                                if(teamTiming) {
+                                    const issueTimings = teamTiming.get(effortData.sortedDateStrings[index]) || []
+                                    console.log({value, issueTimings: issueTimings, summaries: issueTimings.map( (issueTiming)=>{
+                                        return issueTiming.issue.summary;
+                                    })})
+                                }
+                                
                             }}
                             >
                             
@@ -205,6 +213,7 @@ interface WorkGridResult {
     workGrid: { team: string; values: number[] }[];
     workForTeam: Record<string, number[]>;
     sortedDates: Date[];
+    sortedDateStrings: string[];
 }
   
   function transformEffortData(data: TeamEffortMap): WorkGridResult {
@@ -250,7 +259,8 @@ interface WorkGridResult {
       endDate: new Date(sortedDates[sortedDates.length - 1]),
       workGrid: workGrid,
       workForTeam,
-      sortedDates
+      sortedDates,
+      sortedDateStrings
     };
   }
   
