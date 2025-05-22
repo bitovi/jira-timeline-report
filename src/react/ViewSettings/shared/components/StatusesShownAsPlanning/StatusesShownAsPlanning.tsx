@@ -1,18 +1,18 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useId } from "react";
-import Select from "@atlaskit/select";
-import VisuallyHidden from "@atlaskit/visually-hidden";
+import React, { useId } from 'react';
+import Select from '@atlaskit/select';
+import VisuallyHidden from '@atlaskit/visually-hidden';
 
-import { useSelectableStatuses } from "../../../../services/issues";
-import { useCanObservable } from "../../../../hooks/useCanObservable";
-import { value } from "../../../../../can";
-import routeData from "../../../../../canjs/routing/route-data";
+import { useSelectableStatuses } from '../../../../services/issues';
+import { useCanObservable } from '../../../../hooks/useCanObservable';
+import { value } from '../../../../../can';
+import routeData from '../../../../../canjs/routing/route-data';
 
 const useSelectedStatuses = () => {
   const statuses = useSelectableStatuses();
 
-  const selectedStatuses = useCanObservable<string[]>(value.from(routeData, "planningStatuses"));
+  const selectedStatuses = useCanObservable<string[]>(value.from(routeData, 'planningStatuses'));
 
   const setSelectedStatuses = (newValue: string[]) => {
     // @ts-expect-error

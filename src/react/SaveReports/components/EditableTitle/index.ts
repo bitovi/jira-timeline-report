@@ -1,1 +1,1 @@
-export { default } from "./EditableTitle";
+export { default } from './EditableTitle';

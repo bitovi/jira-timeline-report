@@ -1,4 +1,4 @@
-import jiraOIDCHelpers from "./jira-oidc-helpers";
+import jiraOIDCHelpers from './jira-oidc-helpers';
 
 export default function oauthCallback() {
   const environment = {
@@ -13,7 +13,7 @@ export default function oauthCallback() {
   const jiraHelpers = jiraOIDCHelpers(environment);
 
   const queryParams = new URLSearchParams(window.location.search);
-  const queryCode = queryParams.get("code");
+  const queryCode = queryParams.get('code');
   if (!queryCode) {
     // @ts-expect-error
     //handle error properly to ensure good feedback

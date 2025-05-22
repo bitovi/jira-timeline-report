@@ -123,7 +123,7 @@ jobs:
           aws_site_cdn_aliases: status-reports-staging.bitovi.tools,statusreports-staging.bitovi.com
           aws_r53_cert_arn: ${{ vars.AWS_CERT_ARN }}
 
-          tf_action: "apply"
+          tf_action: 'apply'
           tf_state_bucket_destroy: true
           aws_site_cdn_enabled: true
 

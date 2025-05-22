@@ -1,1 +1,1 @@
-export * from "./useOnlySemverReleases";
+export * from './useOnlySemverReleases';

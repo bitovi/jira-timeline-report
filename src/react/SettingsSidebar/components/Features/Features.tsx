@@ -1,23 +1,23 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
-import Heading from "@atlaskit/heading";
-import Spinner from "@atlaskit/spinner";
+import React from 'react';
+import Heading from '@atlaskit/heading';
+import Spinner from '@atlaskit/spinner';
 
-import FeatureToggle from "./components/FeatureToggle";
-import { useFeatures, useUpdateFeatures } from "../../../services/features";
-import { Features } from "../../../../jira/features";
+import FeatureToggle from './components/FeatureToggle';
+import { useFeatures, useUpdateFeatures } from '../../../services/features';
+import { Features } from '../../../../jira/features';
 
 const keyToTitle = {
-  estimationTable: "Estimation Table",
-  secondaryReport: "Secondary Report",
-  workBreakdowns: "Work Breakdowns",
+  estimationTable: 'Estimation Table',
+  secondaryReport: 'Secondary Report',
+  workBreakdowns: 'Work Breakdowns',
 };
 
 const keyToSubtitle = {
-  estimationTable: "",
-  secondaryReport: "",
-  workBreakdowns: "",
+  estimationTable: '',
+  secondaryReport: '',
+  workBreakdowns: '',
 };
 
 const toList = (features: Features) => {
@@ -68,12 +68,8 @@ const FeaturesView: FC = () => {
           ))}
         </ul>
         <p className="text-sm">
-          Got feedback?{" "}
-          <a
-            href="https://github.com/bitovi/jira-timeline-report/issues/new"
-            className="link"
-            target="_blank"
-          >
+          Got feedback?{' '}
+          <a href="https://github.com/bitovi/jira-timeline-report/issues/new" className="link" target="_blank">
             Let us know on github.
           </a>
         </p>

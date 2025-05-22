@@ -1,22 +1,22 @@
-import { expect, describe, it } from "vitest";
-import { AllTeamData, Configuration, createEmptyConfiguration } from "../team-configuration/shared";
-import { sanitizeAllTeamData } from "./sanitizeAllTeamData";
+import { expect, describe, it } from 'vitest';
+import { AllTeamData, Configuration, createEmptyConfiguration } from '../team-configuration/shared';
+import { sanitizeAllTeamData } from './sanitizeAllTeamData';
 
-describe("updateAllTeamData", () => {
-  it("should remove null team config values", () => {
+describe('updateAllTeamData', () => {
+  it('should remove null team config values', () => {
     const allTeamData: AllTeamData = {
       __GLOBAL__: {
         defaults: { ...createEmptyConfiguration(), sprintLength: 1 },
-        ["0"]: { ...createEmptyConfiguration(), sprintLength: 2 },
+        ['0']: { ...createEmptyConfiguration(), sprintLength: 2 },
       },
       bazbat: {
         defaults: { ...createEmptyConfiguration(), sprintLength: 3 },
-        ["0"]: { ...createEmptyConfiguration(), sprintLength: 4 },
-        ["1"]: { ...createEmptyConfiguration() },
+        ['0']: { ...createEmptyConfiguration(), sprintLength: 4 },
+        ['1']: { ...createEmptyConfiguration() },
       },
       ohhyah: {
         defaults: { ...createEmptyConfiguration() },
-        ["0"]: { ...createEmptyConfiguration() },
+        ['0']: { ...createEmptyConfiguration() },
       },
     };
     const expected = {
@@ -25,7 +25,7 @@ describe("updateAllTeamData", () => {
           sprintLength: 1,
           velocityPerSprint: 2,
         },
-        ["0"]: {
+        ['0']: {
           sprintLength: 2,
         },
       },
@@ -33,18 +33,18 @@ describe("updateAllTeamData", () => {
         defaults: {
           sprintLength: 3,
         },
-        ["0"]: {
+        ['0']: {
           sprintLength: 4,
           velocityPerSprint: 2,
         },
       },
     };
 
-    const tmp = sanitizeAllTeamData(allTeamData, "__GLOBAL__", "defaults", {
+    const tmp = sanitizeAllTeamData(allTeamData, '__GLOBAL__', 'defaults', {
       sprintLength: 1,
       velocityPerSprint: 2,
     } as Configuration);
-    const actual = sanitizeAllTeamData(tmp, "bazbat", "0", {
+    const actual = sanitizeAllTeamData(tmp, 'bazbat', '0', {
       sprintLength: 4,
       velocityPerSprint: 2,
     } as Configuration);

@@ -1,1 +1,1 @@
-export { default } from "./useExcludedStatusSelect";
+export { default } from './useExcludedStatusSelect';

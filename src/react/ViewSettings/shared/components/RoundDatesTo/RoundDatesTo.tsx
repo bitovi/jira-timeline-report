@@ -1,22 +1,22 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useId } from "react";
-import Select from "@atlaskit/select";
-import VisuallyHidden from "@atlaskit/visually-hidden";
-import { useCanObservable } from "../../../../hooks/useCanObservable";
-import routeData from "../../../../../canjs/routing/route-data";
-import { value } from "../../../../../can";
+import React, { useId } from 'react';
+import Select from '@atlaskit/select';
+import VisuallyHidden from '@atlaskit/visually-hidden';
+import { useCanObservable } from '../../../../hooks/useCanObservable';
+import routeData from '../../../../../canjs/routing/route-data';
+import { value } from '../../../../../can';
 
 const roundDatesTo = [
-  { value: "day", label: "Day" },
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "halfQuarter", label: "Half Quarter" },
-  { value: "quarter", label: "Quarter" },
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'halfQuarter', label: 'Half Quarter' },
+  { value: 'quarter', label: 'Quarter' },
 ];
 
 const useRoundDatesTo = () => {
-  const selectedRoundDatesTo = useCanObservable<string>(value.from(routeData, "roundTo"));
+  const selectedRoundDatesTo = useCanObservable<string>(value.from(routeData, 'roundTo'));
 
   const setSelectedRoundDatesTo = (value: string) => {
     // @ts-expect-error
@@ -44,7 +44,7 @@ const RoundDatesTo: FC = () => {
         className="flex-1"
         options={roundDatesTo}
         value={selectedRoundDatesTo}
-        onChange={(option) => setSelectedRoundDatesTo(option?.value ?? "")}
+        onChange={(option) => setSelectedRoundDatesTo(option?.value ?? '')}
       />
     </div>
   );

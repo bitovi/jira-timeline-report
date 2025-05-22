@@ -1,1 +1,1 @@
-export { default } from "./StatusesShownAsPlanning";
+export { default } from './StatusesShownAsPlanning';

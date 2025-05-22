@@ -1,10 +1,10 @@
-import winston from "winston";
-import WinstonCloudWatch from "winston-cloudwatch";
+import winston from 'winston';
+import WinstonCloudWatch from 'winston-cloudwatch';
 
 const cloudWatchConfig = {
-  logGroupName: "status-reports-for-jira",
-  logStreamName: "domain-logging",
-  awsRegion: "us-east-1",
+  logGroupName: 'status-reports-for-jira',
+  logStreamName: 'domain-logging',
+  awsRegion: 'us-east-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,

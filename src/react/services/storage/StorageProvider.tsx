@@ -1,7 +1,7 @@
-import type { FC, ReactNode } from "react";
+import type { FC, ReactNode } from 'react';
 
-import React, { createContext, useContext } from "react";
-import { AppStorage } from "../../../jira/storage/common";
+import React, { createContext, useContext } from 'react';
+import { AppStorage } from '../../../jira/storage/common';
 
 type StorageContextValues = AppStorage | null;
 
@@ -11,7 +11,7 @@ export const useStorage = () => {
   const storage = useContext(StorageContext);
 
   if (!storage) {
-    throw new Error("Cannot use useStorage outside of its provider");
+    throw new Error('Cannot use useStorage outside of its provider');
   }
 
   return storage;

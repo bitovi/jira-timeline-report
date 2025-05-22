@@ -1,1 +1,1 @@
-export { default } from "./BugReportForm";
+export { default } from './BugReportForm';

@@ -1,13 +1,13 @@
-import React from "react";
+import React from 'react';
 
-import { render, screen } from "@testing-library/react";
-import { vi } from "vitest";
+import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
-import ReportSettings from "./ReportSettings";
-import { FlagsProvider } from "@atlaskit/flag";
+import ReportSettings from './ReportSettings';
+import { FlagsProvider } from '@atlaskit/flag';
 
-describe("ReportSettings Component", () => {
-  it("renders without crashing", () => {
+describe('ReportSettings Component', () => {
+  it('renders without crashing', () => {
     render(<ReportSettings showSidebarBranding changeSettings={vi.fn()} />, {
       wrapper: ({ children }) => <FlagsProvider>{children}</FlagsProvider>,
     });
@@ -18,14 +18,14 @@ describe("ReportSettings Component", () => {
     const buttons = [/sources/i, /timing/i, /teams/i, /theme/i];
 
     buttons.forEach((name) => {
-      const button = screen.getByRole("button", { name });
+      const button = screen.getByRole('button', { name });
       expect(button).toBeInTheDocument();
     });
 
     const links = [/read the guides/i, /apm training/i, /connect with bitovi/i];
 
     links.forEach((name) => {
-      const link = screen.getByRole("link", { name });
+      const link = screen.getByRole('link', { name });
       expect(link).toBeInTheDocument();
     });
   });

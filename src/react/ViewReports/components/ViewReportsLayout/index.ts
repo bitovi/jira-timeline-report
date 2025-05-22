@@ -1,1 +1,1 @@
-export { default } from "./ViewReportsLayout";
+export { default } from './ViewReportsLayout';

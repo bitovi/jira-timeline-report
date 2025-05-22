@@ -1,1 +1,1 @@
-export { default } from "./ConfigurationPanelWrapper";
+export { default } from './ConfigurationPanelWrapper';

@@ -1,8 +1,8 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from '@tanstack/react-query';
 
-import { featuresKeyFactory } from "./key-factory";
-import { getFeatures } from "../../../jira/features";
-import { useStorage } from "../storage";
+import { featuresKeyFactory } from './key-factory';
+import { getFeatures } from '../../../jira/features';
+import { useStorage } from '../storage';
 
 export const useFeatures = () => {
   const storage = useStorage();

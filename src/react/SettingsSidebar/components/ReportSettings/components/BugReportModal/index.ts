@@ -1,1 +1,1 @@
-export { default } from "./BugReportModal";
+export { default } from './BugReportModal';

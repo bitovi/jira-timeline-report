@@ -1,1 +1,1 @@
-export { default } from "./IssueTypeFilters";
+export { default } from './IssueTypeFilters';

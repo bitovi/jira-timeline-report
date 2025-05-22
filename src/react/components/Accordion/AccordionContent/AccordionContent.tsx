@@ -1,8 +1,8 @@
-import type { ReactNode, FC } from "react";
+import type { ReactNode, FC } from 'react';
 
-import React from "react";
+import React from 'react';
 
-import { useAccordion } from "../Accordion";
+import { useAccordion } from '../Accordion';
 
 interface AccordionContentProps {
   children: ReactNode;

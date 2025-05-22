@@ -1,26 +1,26 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useId } from "react";
-import Select from "@atlaskit/select";
-import VisuallyHidden from "@atlaskit/visually-hidden";
-import { useCanObservable } from "../../../../hooks/useCanObservable";
-import { value } from "../../../../../can";
-import routeData from "../../../../../canjs/routing/route-data";
+import React, { useId } from 'react';
+import Select from '@atlaskit/select';
+import VisuallyHidden from '@atlaskit/visually-hidden';
+import { useCanObservable } from '../../../../hooks/useCanObservable';
+import { value } from '../../../../../can';
+import routeData from '../../../../../canjs/routing/route-data';
 
 const booleanParsing = {
   parse: (x: string) => {
-    return { "": true, true: true, false: false }[x];
+    return { '': true, true: true, false: false }[x];
   },
-  stringify: (x: boolean) => "" + x,
+  stringify: (x: boolean) => '' + x,
 };
 
 const sortBy = [
-  { label: "JQL Order", value: "false" },
-  { label: "Due Date", value: "true" },
+  { label: 'JQL Order', value: 'false' },
+  { label: 'Due Date', value: 'true' },
 ];
 
 const useSortBy = () => {
-  const selectedSortBy = useCanObservable<boolean>(value.from(routeData, "sortByDueDate"));
+  const selectedSortBy = useCanObservable<boolean>(value.from(routeData, 'sortByDueDate'));
 
   const setSelectedSortBy = (value: string) => {
     // @ts-expect-error
@@ -48,7 +48,7 @@ const SortBy: FC = () => {
         className="flex-1"
         options={sortBy}
         value={selectedSortBy}
-        onChange={(option) => setSelectedSortBy(option?.value ?? "false")}
+        onChange={(option) => setSelectedSortBy(option?.value ?? 'false')}
       />
     </div>
   );

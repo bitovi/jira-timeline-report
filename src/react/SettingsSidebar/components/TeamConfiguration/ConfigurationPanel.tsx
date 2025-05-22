@@ -1,17 +1,17 @@
-import type { FC } from "react";
-import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
-import type { CanObservable } from "../../../hooks/useCanObservable";
+import type { FC } from 'react';
+import type { NormalizeIssueConfig } from '../../../../jira/normalized/normalize';
+import type { CanObservable } from '../../../hooks/useCanObservable';
 
-import React, { useState } from "react";
-import ArrowLeftCircleIcon from "@atlaskit/icon/glyph/arrow-left-circle";
+import React, { useState } from 'react';
+import ArrowLeftCircleIcon from '@atlaskit/icon/glyph/arrow-left-circle';
 
-import ConfigureTeams from "./components/Teams";
-import TeamSelector from "./components/TeamSelector";
-import SidebarButton from "../../../components/SidebarButton";
-import ConfigureAllTeams from "./components/Teams/ConfigureAllTeams";
-import { useJiraIssueFields } from "../../../services/jira";
-import { useAllTeamData } from "./components/Teams/services/team-configuration";
-import { StorageCheck } from "../../../services/storage";
+import ConfigureTeams from './components/Teams';
+import TeamSelector from './components/TeamSelector';
+import SidebarButton from '../../../components/SidebarButton';
+import ConfigureAllTeams from './components/Teams/ConfigureAllTeams';
+import { useJiraIssueFields } from '../../../services/jira';
+import { useAllTeamData } from './components/Teams/services/team-configuration';
+import { StorageCheck } from '../../../services/storage';
 
 export interface ConfigurationPanelProps {
   onBackButtonClicked: () => void;
@@ -19,7 +19,7 @@ export interface ConfigurationPanelProps {
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
 }
 
-type TeamName = "global" | (string & {});
+type TeamName = 'global' | (string & {});
 
 const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
   onBackButtonClicked,
@@ -29,7 +29,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
   const jiraFields = useJiraIssueFields();
   const { savedUserAllTeamData } = useAllTeamData(jiraFields);
 
-  const [selectedTeam, setSelectedTeam] = useState<TeamName>("global");
+  const [selectedTeam, setSelectedTeam] = useState<TeamName>('global');
 
   return (
     <div className="w-full h-full flex">
@@ -47,18 +47,14 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
       </div>
       {/* checks that configuration issue exists */}
       <StorageCheck>
-        {selectedTeam === "global" && (
+        {selectedTeam === 'global' && (
           <div className="w-128 overflow-auto">
             <ConfigureAllTeams jiraFields={jiraFields} {...configurationProps} />
           </div>
         )}
-        {!!selectedTeam && selectedTeam !== "global" && (
+        {!!selectedTeam && selectedTeam !== 'global' && (
           <div key={selectedTeam} className="w-128 overflow-auto">
-            <ConfigureTeams
-              teamName={selectedTeam}
-              jiraFields={jiraFields}
-              {...configurationProps}
-            />
+            <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
           </div>
         )}
       </StorageCheck>
