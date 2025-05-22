@@ -3,6 +3,7 @@ import routeData from "../../../canjs/routing/route-data"
 import { useCanObservable } from "../useCanObservable"
 
 export const useRouteData = <Value, SetValueArgument = Value>(keyPath: string) => {
+  // TODO: these can all be set on a global scope, that way there's only one observable
   const observableValue = useCanObservable<Value>(value.from(routeData, keyPath));
 
   const setObservableValue = (value: SetValueArgument) => {

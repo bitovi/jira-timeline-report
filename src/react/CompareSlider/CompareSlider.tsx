@@ -111,10 +111,8 @@ const CompareSlider: FC = () => {
   const [compareTo, setCompareTo] = useCompareTo();
   const [compareToType] = useCompareToType();
   const [value, setValue] = useTimeSliderValue(compareTo, setCompareTo);
-  const { timeText, unitText } = getLabelText(compareTo);
 
-  const compareToTypeIsDate = compareToType === "date";
-  const compareToTypeIsSeconds = compareToType === "seconds";
+  const { timeText, unitText } = getLabelText(compareTo);
   const isoString = getISOString(compareTo);
 
   return (
@@ -131,7 +129,7 @@ const CompareSlider: FC = () => {
             type="date"
             className={cn(
               "text-xs rounded bg-neutral-201 py-1 px-2 leading-3 hover:bg-neutral-301 cursor-pointer",
-              { "font-semibold": compareToTypeIsDate }
+              { "font-semibold": compareToType === "date" }
             )}
             value={isoString}
             onChange={(event) => setCompareTo(event.target.value)}
@@ -140,7 +138,7 @@ const CompareSlider: FC = () => {
         <label htmlFor="compare-value" className="pt-1">
           <span
             className={cn({
-              "font-semibold": compareToTypeIsSeconds,
+              "font-semibold": compareToType === "seconds",
             })}
           >
             {timeText ? timeText + " " : null}
@@ -150,8 +148,9 @@ const CompareSlider: FC = () => {
       </div>
 
       {/*
-      Range component doesn't have a way to override its styles.
-      32px height is set here to match the other dropdowns.
+        Range component doesn't have a way to override its styles.
+        32px height is set here to match the other dropdowns.
+        source: https://bitbucket.org/atlassian/atlassian-frontend-mirror/src/b1818b1030b96cb3c2996636d9f58413b5bcd3d3/design-system/range/src/styled.tsx#lines-167
       */}
       <div className="h-8">
         <Range
