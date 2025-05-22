@@ -19,10 +19,10 @@ This module categorizes the status of a Jira issue based on its current status f
 #### Key Components:
 
 - **`workType`**: An array of the main types of work: `["design", "dev", "qa", "uat"]`.
-  
 - **`workflowHappyPath`**: A list of workflow statuses considered part of the "happy path," such as `["todo", "design", "dev", "qa", "uat", "done"]`.
 
 - **`getStatusCategoryDefault(issue)`**:
+
   - **Purpose**: Maps a given status to a higher-level category (e.g., "Blocked", "QA", "Dev").
   - **Returns**: The status category based on a predefined mapping (e.g., a status of "Blocked" would be categorized under `blockedStatus`).
 

@@ -1,26 +1,26 @@
-import { StacheElement, type, ObservableObject, stache } from "../../can.js";
+import { StacheElement, type, ObservableObject, stache } from '../../can.js';
 
-import { dateFormatter } from "../controls/issue-tooltip.js";
+import { dateFormatter } from '../controls/issue-tooltip.js';
 
-import { DAY_IN_MS } from "../../utils/date/date-helpers.js";
+import { DAY_IN_MS } from '../../utils/date/date-helpers.js';
 
-import { showTooltip } from "../controls/issue-tooltip.js";
-import { workTypes } from "../../jira/derived/work-status/work-status";
+import { showTooltip } from '../controls/issue-tooltip.js';
+import { workTypes } from '../../jira/derived/work-status/work-status';
 
-const workTypesToSymbols = {"design": "d", "qa": "Q", uat: "U", dev: "D"};
+const workTypesToSymbols = { design: 'd', qa: 'Q', uat: 'U', dev: 'D' };
 
-function workTypeToSymbol(type){
-    if(workTypesToSymbols[type]) {
-        return workTypesToSymbols[type];
-    } else {
-       return  type.substring(0,1).toUpperCase()
-    }
+function workTypeToSymbol(type) {
+  if (workTypesToSymbols[type]) {
+    return workTypesToSymbols[type];
+  } else {
+    return type.substring(0, 1).toUpperCase();
+  }
 }
 
-const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`
+const release_box_subtitle_wrapper = `flex gap-2 text-neutral-800 text-sm`;
 
 export class StatusReport extends StacheElement {
-    static view = `
+  static view = `
     <div class='release_wrapper {{# if(this.breakdown) }}extra-timings{{else}}simple-timings{{/ if}} px-2 flex flex-wrap gap-2'>
         {{# for(primaryIssue of this.primaryIssuesOrReleases) }}
             <div class='release_box grow'>
@@ -88,95 +88,91 @@ export class StatusReport extends StacheElement {
         
     </div>
     `;
-    get columnDensity(){
-        
-        if(this.primaryIssuesOrReleases.length > 20) {
-            return "absurd"
-        } else if(this.primaryIssuesOrReleases.length > 10) {
-            return "high"
-        } else if(this.primaryIssuesOrReleases.length > 4) {
-            return "medium"
-        } else {
-            return "light"
-        }
+  get columnDensity() {
+    if (this.primaryIssuesOrReleases.length > 20) {
+      return 'absurd';
+    } else if (this.primaryIssuesOrReleases.length > 10) {
+      return 'high';
+    } else if (this.primaryIssuesOrReleases.length > 4) {
+      return 'medium';
+    } else {
+      return 'light';
     }
-    prettyDate(date) {
-        return date ? dateFormatter.format(date) : "";
+  }
+  prettyDate(date) {
+    return date ? dateFormatter.format(date) : '';
+  }
+  get getIssues() {
+    const map = new Map();
+    for (let issue of this.allIssuesOrReleases || []) {
+      map.set(issue.key, issue);
     }
-    get getIssues() {
-        const map = new Map();
-        for(let issue of this.allIssuesOrReleases || []) {
-            map.set(issue.key, issue);
-        }
-        const getIssue = map.get.bind(map);
+    const getIssue = map.get.bind(map);
 
-        return window.getIssuesByKey = function(issueKeys){
-            // O(n^2)
-            return issueKeys.map(getIssue).filter( issue => {
-                return !this.planningIssues.some( planningIssue => issue === planningIssue)
-            });
-        }
-    }
-    wasReleaseDate(release) {
+    return (window.getIssuesByKey = function (issueKeys) {
+      // O(n^2)
+      return issueKeys.map(getIssue).filter((issue) => {
+        return !this.planningIssues.some((planningIssue) => issue === planningIssue);
+      });
+    });
+  }
+  wasReleaseDate(release) {
+    const current = release.due;
+    const was = release.lastPeriod && release.lastPeriod.due;
 
-            const current = release.due;
-            const was = release.lastPeriod && release.lastPeriod.due;
-            
-            if (was && current - DAY_IN_MS > was) {
-                    return " (" + this.prettyDate(was) + ")";
-            } else {
-                    return ""
-            }
+    if (was && current - DAY_IN_MS > was) {
+      return ' (' + this.prettyDate(was) + ')';
+    } else {
+      return '';
     }
-    wasStartDate(release) {
+  }
+  wasStartDate(release) {
+    const current = release.start;
+    const was = release.lastPeriod && release.lastPeriod.start;
 
-        const current = release.start;
-        const was = release.lastPeriod && release.lastPeriod.start;
-        
-        if (was && (current - DAY_IN_MS > was)) {
-                return " (" + this.prettyDate(was) + ")";
-        } else {
-                return ""
-        }
+    if (was && current - DAY_IN_MS > was) {
+      return ' (' + this.prettyDate(was) + ')';
+    } else {
+      return '';
     }
-    showTooltip(event, isssue) {
-        showTooltip(event.currentTarget, isssue);
+  }
+  showTooltip(event, isssue) {
+    showTooltip(event.currentTarget, isssue);
+  }
+  fontSize(count) {
+    if (['high', 'absurd'].includes(this.columnDensity)) {
+      return 'text-xs';
     }
-    fontSize(count){
-        if(["high","absurd"].includes(this.columnDensity)) {
-            return "text-xs"
-        }
-        if(count >= 7 && this.columnDensity === "medium") {
-            return "text-sm";
-        } else if(count <= 4) {
-            return "text-base";
-        }
-        
+    if (count >= 7 && this.columnDensity === 'medium') {
+      return 'text-sm';
+    } else if (count <= 4) {
+      return 'text-base';
     }
-    get hasWorkTypes(){
-        const map = {};
-        const list = workTypes.map((type)=>{
-            let hasWork = this.primaryIssuesOrReleases ? 
-                this.primaryIssuesOrReleases.some( (issue)=> issue.rollupStatuses[type].issueKeys.length ) : false;
-            return map[type] = {type, hasWork}
-        })
-        return {map, list, hasWorkList: list.filter( wt => wt.hasWork)};
-    }
-    breakdownIcons(secondaryIssue) {
-        const frag = document.createDocumentFragment();
-        
-        const workTypes = this.hasWorkTypes.list.filter( wt => wt.hasWork );
-        for(const {type} of workTypes) {
-            const span = document.createElement("span");
-            span.className = 'text-xs font-mono px-px py-0 color-text-and-bg-'+secondaryIssue.rollupStatuses[type].status;
-            span.innerText = workTypeToSymbol(type);
-            
-            frag.appendChild(span);
-        }
+  }
+  get hasWorkTypes() {
+    const map = {};
+    const list = workTypes.map((type) => {
+      let hasWork = this.primaryIssuesOrReleases
+        ? this.primaryIssuesOrReleases.some((issue) => issue.rollupStatuses[type].issueKeys.length)
+        : false;
+      return (map[type] = { type, hasWork });
+    });
+    return { map, list, hasWorkList: list.filter((wt) => wt.hasWork) };
+  }
+  breakdownIcons(secondaryIssue) {
+    const frag = document.createDocumentFragment();
 
-        return stache.safeString(frag);
+    const workTypes = this.hasWorkTypes.list.filter((wt) => wt.hasWork);
+    for (const { type } of workTypes) {
+      const span = document.createElement('span');
+      span.className = 'text-xs font-mono px-px py-0 color-text-and-bg-' + secondaryIssue.rollupStatuses[type].status;
+      span.innerText = workTypeToSymbol(type);
+
+      frag.appendChild(span);
     }
+
+    return stache.safeString(frag);
+  }
 }
 
-
-customElements.define("status-report",StatusReport);
+customElements.define('status-report', StatusReport);

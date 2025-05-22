@@ -1,6 +1,7 @@
 # SLA
 
 ## 1. Introduction
+
 This Service Level Agreement (SLA) defines the support commitment provided by **Bitovi** for **Status Reports for Jira**, including response times, resolution expectations, and support channels.
 
 ## 2. Scope of Service
@@ -39,6 +40,7 @@ We strive to resolve minor issues within **1-2 business days**. More complex pro
 - Live Chat: Join the [Bitovi Community Discord Server](https://discord.com/invite/tw2kTV3vtQ) for discussions and real-time assistance.
 
 ### Prioritization Process:
+
 We prioritize support requests based on the following factors:
 
 - Impact on the customer’s operations
@@ -50,9 +52,11 @@ We prioritize support requests based on the following factors:
 Critical issues affecting multiple users will take precedence over non-urgent feature requests.
 
 ## 5. Maintenance & Updates
+
 We will notify users in advance of any planned maintenance or updates. Our goal is to minimize disruptions and ensure a seamless user experience.
 
 ## 6. Exclusions
+
 This SLA does not cover issues arising from:
 
 - Force Majeure (e.g., natural disasters, widespread outages)
@@ -60,7 +64,5 @@ This SLA does not cover issues arising from:
 - Third-Party Service Interruptions (e.g., Jira outages, third-party integrations)
 
 ## 7. Agreement Review & Changes
+
 Bitovi reserves the right to modify this SLA as needed. Updates will be communicated through official channels.
-
-
-

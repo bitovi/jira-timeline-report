@@ -1,14 +1,14 @@
 /**
  * this module is contains helpers for working with jira.
  */
-import chunkArray from "../utils/array/chunk-array";
-import mapIdsToNames from "../utils/object/map-ids-to-names";
-import { responseToText } from "../utils/fetch/response-to-text";
-import { FetchJiraIssuesParams } from "../jira/shared/types";
-import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from "./types";
-import { fetchFromLocalStorage } from "./storage";
-import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from "./fetchAllJiraIssuesWithJQLAndFetchAllChangelog";
-import { uniqueKeys } from "../utils/array/unique";
+import chunkArray from '../utils/array/chunk-array';
+import mapIdsToNames from '../utils/object/map-ids-to-names';
+import { responseToText } from '../utils/fetch/response-to-text';
+import { FetchJiraIssuesParams } from '../jira/shared/types';
+import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from './types';
+import { fetchFromLocalStorage } from './storage';
+import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from './fetchAllJiraIssuesWithJQLAndFetchAllChangelog';
+import { uniqueKeys } from '../utils/array/unique';
 
 export function fetchAccessibleResources(config: Config) {
   return () => {
@@ -25,10 +25,7 @@ export function fetchJiraIssue(config: Config) {
     return config.requestHelper(`/api/3/issue/${issueId}`);
   };
 }
-export const fieldsToEditBody = (
-  obj: Record<string, any>,
-  fieldMapping: { nameMap: Record<string, string> }
-) => {
+export const fieldsToEditBody = (obj: Record<string, any>, fieldMapping: { nameMap: Record<string, string> }) => {
   const editBody: {
     fields: Record<string, any>;
     update: Record<string, { set: any }[]>;
@@ -58,9 +55,7 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
 
     const newParams = {
       ...params,
-      fields: params.fields?.map((f) =>
-        fields?.nameMap && f in fields.nameMap ? fields.nameMap[f] : f
-      ),
+      fields: params.fields?.map((f) => (fields?.nameMap && f in fields.nameMap ? fields.nameMap[f] : f)),
     };
     const response = await fetchJiraIssuesWithJQL(config)(newParams);
     const uniqueIssues = uniqueKeys(response.issues as OidcJiraIssue[]);
@@ -76,9 +71,7 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
 export function fetchJiraIssuesWithJQL(config: Config) {
   return (params: FetchJiraIssuesParams) => {
     // TODO - investigate this and convert params to proper type
-    return config.requestHelper(
-      `/api/3/search?` + new URLSearchParams(params as Record<string, string>)
-    );
+    return config.requestHelper(`/api/3/search?` + new URLSearchParams(params as Record<string, string>));
   };
 }
 // TODO ... we probably can remove this.  It's also not working right.
@@ -87,7 +80,7 @@ export function JiraIssueParamsToParams(params: FetchJiraIssuesParams): Record<s
   if (params.jql) formattedParams.jql = params.jql;
   if (params.startAt) formattedParams.startAt = params.startAt.toString();
   if (params.maxResults) formattedParams.maxResults = params.maxResults.toString();
-  if (params.fields) formattedParams.fields = params.fields.join(",");
+  if (params.fields) formattedParams.fields = params.fields.join(',');
   return formattedParams;
 }
 export function fetchIssueTypes(config: Config) {
@@ -124,7 +117,7 @@ export function fetchAllJiraIssuesWithJQL(config: Config) {
           maxResults: maxResults,
           startAt: i,
           ...apiParams,
-        })
+        }),
       );
     }
     return Promise.all(requests).then((responses) => {
@@ -154,8 +147,7 @@ export function fetchJiraChangelog(config: Config) {
   return (issueIdOrKey: string, params: FetchJiraIssuesParams) => {
     // TODO investigate this - convert params to proper type
     return config.requestHelper(
-      `/api/3/issue/${issueIdOrKey}/changelog?` +
-        new URLSearchParams(JiraIssueParamsToParams(params))
+      `/api/3/issue/${issueIdOrKey}/changelog?` + new URLSearchParams(JiraIssueParamsToParams(params)),
     );
   };
 }
@@ -169,7 +161,7 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
     progress: {
       data?: ProgressData;
       (data: ProgressData): void;
-    } = () => {}
+    } = () => {},
   ) => {
     const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
 
@@ -191,7 +183,7 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
             } as InterimJiraIssue;
           });
         }
-      })
+      }),
     );
   };
 }
@@ -212,7 +204,7 @@ export function fetchRemainingChangelogsForIssue(config: Config) {
         }).then((response) => {
           // the query above reverses the sort order, we fix that here
           return { ...response, values: response.values.reverse() };
-        })
+        }),
       );
     }
     // server sends back as "values", we match that
@@ -224,20 +216,14 @@ export function fetchRemainingChangelogsForIssue(config: Config) {
 // this could do each response incrementally, but I'm being lazy
 export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields =
   (config: Config) =>
-  async (
-    params: { fields: string[]; [key: string]: any },
-    progress: (data: ProgressData) => void = () => {}
-  ) => {
+  async (params: { fields: string[]; [key: string]: any }, progress: (data: ProgressData) => void = () => {}) => {
     const fields = await config.fieldsRequest();
 
     const newParams = {
       ...params,
       fields: params.fields.map((f) => fields?.nameMap[f] || f),
     };
-    const response = await fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(
-      newParams,
-      progress
-    );
+    const response = await fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(newParams, progress);
 
     return response.map((issue) => {
       return {
@@ -252,18 +238,18 @@ export function fetchChildrenResponses(config: Config) {
   return (
     params: { fields: string[]; [key: string]: any },
     parentIssues: Issue[],
-    progress: (data: ProgressData) => void = () => {}
+    progress: (data: ProgressData) => void = () => {},
   ) => {
     const issuesToQuery = chunkArray(parentIssues, 40);
     const batchedResponses = issuesToQuery.map((issues) => {
       const keys = issues.map((issue) => issue.key);
-      const jql = `parent in (${keys.join(", ")})`;
+      const jql = `parent in (${keys.join(', ')})`;
       return fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(
         {
           ...params,
           jql,
         },
-        progress
+        progress,
       );
     });
     // this needs to be flattened
@@ -278,21 +264,15 @@ export function fetchDeepChildren(config: Config) {
   return (
     params: { fields: string[]; [key: string]: any },
     sourceParentIssues: Issue[],
-    progress: (data: ProgressData) => void = () => {}
+    progress: (data: ProgressData) => void = () => {},
   ): Promise<Issue[]> => {
-    const batchedFirstResponses = fetchChildrenResponses(config)(
-      params,
-      sourceParentIssues,
-      progress
-    );
+    const batchedFirstResponses = fetchChildrenResponses(config)(params, sourceParentIssues, progress);
 
     const getChildren = (parentIssues: Issue[]) => {
       if (parentIssues.length) {
-        return fetchDeepChildren(config)(params, parentIssues, progress).then(
-          (deepChildrenIssues) => {
-            return parentIssues.concat(deepChildrenIssues);
-          }
-        );
+        return fetchDeepChildren(config)(params, parentIssues, progress).then((deepChildrenIssues) => {
+          return parentIssues.concat(deepChildrenIssues);
+        });
       } else {
         return parentIssues;
       }
@@ -310,8 +290,8 @@ export function fetchDeepChildren(config: Config) {
 
 export function editJiraIssueWithNamedFields(config: Config) {
   return async (issueId: string, fields: Record<string, any>) => {
-    const scopeIdForJira = fetchFromLocalStorage("scopeId");
-    const accessToken = fetchFromLocalStorage("accessToken");
+    const scopeIdForJira = fetchFromLocalStorage('scopeId');
+    const accessToken = fetchFromLocalStorage('accessToken');
 
     const fieldMapping = await config.fieldsRequest();
 
@@ -320,16 +300,16 @@ export function editJiraIssueWithNamedFields(config: Config) {
     //	updateWithIds = mapNamesToIds(update || {}, fieldMapping);
     return fetch(
       `${config.env.JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issue/${issueId}?returnIssue=true` +
-        "" /*new URLSearchParams(params)*/,
+        '' /*new URLSearchParams(params)*/,
       {
-        method: "PUT",
+        method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(editBody),
-      }
+      },
     ).then(responseToText);
   };
 }

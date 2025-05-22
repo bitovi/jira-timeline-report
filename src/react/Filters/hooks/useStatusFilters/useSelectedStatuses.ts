@@ -1,36 +1,36 @@
-import { value } from "../../../../can";
-import routeData from "../../../../canjs/routing/route-data";
-import { useCanObservable } from "../../../hooks/useCanObservable";
-import { useSelectableStatuses } from "../../../services/issues/useSelectableStatuses";
+import { value } from '../../../../can';
+import routeData from '../../../../canjs/routing/route-data';
+import { useCanObservable } from '../../../hooks/useCanObservable';
+import { useSelectableStatuses } from '../../../services/issues/useSelectableStatuses';
 
-export const useSelectedStatuses = (mode: "show" | "hide") => {
+export const useSelectedStatuses = (mode: 'show' | 'hide') => {
   const statuses = useSelectableStatuses();
-  const statusesToShow = useCanObservable<string>(value.from(routeData, "statusesToShow"));
-  const statusesToRemove = useCanObservable<string>(value.from(routeData, "statusesToRemove"));
+  const statusesToShow = useCanObservable<string>(value.from(routeData, 'statusesToShow'));
+  const statusesToRemove = useCanObservable<string>(value.from(routeData, 'statusesToRemove'));
 
-  const selectedStatuses = mode === "show" ? statusesToShow : statusesToRemove;
+  const selectedStatuses = mode === 'show' ? statusesToShow : statusesToRemove;
   const setSelectedStatus = (newStatuses: Readonly<{ value: string }[]> | { value: string }[]) => {
-    const param = mode === "show" ? "statusesToShow" : "statusesToRemove";
+    const param = mode === 'show' ? 'statusesToShow' : 'statusesToRemove';
 
     //@ts-expect-error
     routeData[param] = newStatuses.map(({ value }) => value);
   };
 
-  const swapShowHideStatusesIfNeeded = (newMode: "show" | "hide") => {
-    if (newMode === "show") {
+  const swapShowHideStatusesIfNeeded = (newMode: 'show' | 'hide') => {
+    if (newMode === 'show') {
       if (statusesToRemove.length) {
         // @ts-expect-error
         routeData.statusesToShow = statusesToRemove;
       }
       // @ts-expect-error
-      routeData.statusesToRemove = "";
+      routeData.statusesToRemove = '';
     } else {
       if (statusesToShow.length) {
         // @ts-expect-error
         routeData.statusesToRemove = statusesToShow;
       }
       // @ts-expect-error
-      routeData.statusesToShow = "";
+      routeData.statusesToShow = '';
     }
   };
 
@@ -47,17 +47,17 @@ const convertToSelectValue = (
     label: string;
     value: string;
   }[],
-  selectedStatuses: string
+  selectedStatuses: string,
 ) => {
   const decoded = decodeURIComponent(selectedStatuses);
-  const members = decoded.split(",").filter(Boolean);
+  const members = decoded.split(',').filter(Boolean);
 
   if (!members.length) {
     return undefined;
   }
 
   return members.map((member) => ({
-    label: allStatuses.find(({ value }) => value === member)?.label ?? "",
+    label: allStatuses.find(({ value }) => value === member)?.label ?? '',
     value: member,
   }));
 };

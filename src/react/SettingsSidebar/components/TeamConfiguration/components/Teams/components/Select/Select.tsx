@@ -1,18 +1,16 @@
-import type { FC } from "react";
-import type { Control } from "react-hook-form";
-import type { Configuration } from "../../services/team-configuration";
-import type { FieldUpdates } from "../../ConfigureTeamsForm";
+import type { FC } from 'react';
+import type { Control } from 'react-hook-form';
+import type { Configuration } from '../../services/team-configuration';
+import type { FieldUpdates } from '../../ConfigureTeamsForm';
 
-import React, { useId } from "react";
-import { Controller } from "react-hook-form";
-import AtlasSelect from "@atlaskit/select";
+import React, { useId } from 'react';
+import { Controller } from 'react-hook-form';
+import AtlasSelect from '@atlaskit/select';
 
-import Label from "../Label";
+import Label from '../Label';
 
-const isSingle = (
-  obj: SelectProps["jiraFields"]
-): obj is Array<{ label: string; value: string }> => {
-  return "value" in obj[0];
+const isSingle = (obj: SelectProps['jiraFields']): obj is Array<{ label: string; value: string }> => {
+  return 'value' in obj[0];
 };
 
 type SelectField = { label: string; value: string };
@@ -27,15 +25,7 @@ interface SelectProps {
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
-const Select: FC<SelectProps> = ({
-  name,
-  control,
-  label,
-  jiraFields,
-  onSave,
-  disabled = false,
-  optional = false,
-}) => {
+const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave, disabled = false, optional = false }) => {
   const id = useId();
 
   return (
@@ -44,9 +34,7 @@ const Select: FC<SelectProps> = ({
       control={control}
       disabled={disabled}
       render={({ field }) => {
-        const allFields = isSingle(jiraFields)
-          ? jiraFields
-          : jiraFields.flatMap((group) => group.options);
+        const allFields = isSingle(jiraFields) ? jiraFields : jiraFields.flatMap((group) => group.options);
 
         const selectedOption = allFields.find((option) => {
           return option.value === field.value;

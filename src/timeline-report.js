@@ -1,34 +1,34 @@
-import { StacheElement, type, queues, Reflect } from "./can.js";
+import { StacheElement, type, queues, Reflect } from './can.js';
 
-import routeData from "./canjs/routing/route-data";
+import routeData from './canjs/routing/route-data';
 
-import "./canjs/controls/status-filter.js";
-import "./canjs/controls/compare-slider.js";
-import "./canjs/reports/gantt-grid.js";
-import "./canjs/reports/table-grid.js";
-import "./canjs/reports/scatter-timeline.js";
-import "./canjs/reports/status-report.js";
+import './canjs/controls/status-filter.js';
+import './canjs/controls/compare-slider.js';
+import './canjs/reports/gantt-grid.js';
+import './canjs/reports/table-grid.js';
+import './canjs/reports/scatter-timeline.js';
+import './canjs/reports/status-report.js';
 
-import "./canjs/controls/select-report-type/select-report-type.js";
+import './canjs/controls/select-report-type/select-report-type.js';
 
-import { rollupAndRollback } from "./jira/rolledup-and-rolledback/rollup-and-rollback";
-import { calculateReportStatuses } from "./jira/rolledup/work-status/work-status";
-import { groupIssuesByHierarchyLevelOrType } from "./jira/rollup/rollup";
-import { pushStateObservable } from "./canjs/routing/state-storage.js";
+import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
+import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
+import { groupIssuesByHierarchyLevelOrType } from './jira/rollup/rollup';
+import { pushStateObservable } from './canjs/routing/state-storage.js';
 
-import { createRoot } from "react-dom/client";
-import { createElement } from "react";
+import { createRoot } from 'react-dom/client';
+import { createElement } from 'react';
 
-import SelectIssueType from "./react/SelectIssueType";
-import SavedReports from "./react/SaveReports";
-import SettingsSidebar from "./react/SettingsSidebar";
-import Filters from "./react/Filters";
-import ViewSettings from "./react/ViewSettings";
-import SampleDataNotice from "./react/SampleDataNotice";
-import ViewReports from "./react/ViewReports";
-import StatusKeys from "./react/StatusKey";
+import SelectIssueType from './react/SelectIssueType';
+import SavedReports from './react/SaveReports';
+import SettingsSidebar from './react/SettingsSidebar';
+import Filters from './react/Filters';
+import ViewSettings from './react/ViewSettings';
+import SampleDataNotice from './react/SampleDataNotice';
+import ViewReports from './react/ViewReports';
+import StatusKeys from './react/StatusKey';
 
-import { getTheme, applyThemeToCssVars } from "./jira/theme";
+import { getTheme, applyThemeToCssVars } from './jira/theme';
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -158,7 +158,7 @@ export class TimelineReport extends StacheElement {
       if (this.routeData.derivedIssues) {
         if (this.routeData.statusesToExclude?.length) {
           return this.routeData.derivedIssues.filter(
-            ({ status }) => !this.routeData.statusesToExclude.includes(status)
+            ({ status }) => !this.routeData.statusesToExclude.includes(status),
           );
         } else {
           return this.routeData.derivedIssues;
@@ -173,35 +173,33 @@ export class TimelineReport extends StacheElement {
   }
 
   attachStatusKeys() {
-    createRoot(document.getElementById("status-keys")).render(createElement(StatusKeys, {}));
+    createRoot(document.getElementById('status-keys')).render(createElement(StatusKeys, {}));
   }
 
   async connected() {
-    window.addEventListener("load", updateFullishHeightSection);
-    window.addEventListener("resize", updateFullishHeightSection);
+    window.addEventListener('load', updateFullishHeightSection);
+    window.addEventListener('resize', updateFullishHeightSection);
 
-    createRoot(document.getElementById("select-issue-type")).render(
-      createElement(SelectIssueType, {})
-    );
+    createRoot(document.getElementById('select-issue-type')).render(createElement(SelectIssueType, {}));
 
-    createRoot(document.getElementById("view-reports")).render(
+    createRoot(document.getElementById('view-reports')).render(
       createElement(ViewReports, {
         onBackButtonClicked: () => {
-          this.routeData.showSettings = "";
+          this.routeData.showSettings = '';
         },
-      })
+      }),
     );
 
-    createRoot(document.getElementById("sample-data-notice")).render(
+    createRoot(document.getElementById('sample-data-notice')).render(
       createElement(SampleDataNotice, {
         shouldHideNoticeObservable: this.routeData.isLoggedInObservable,
         onLoginClicked: () => {
           this.loginComponent.login();
         },
-      })
+      }),
     );
 
-    createRoot(document.getElementById("saved-reports")).render(
+    createRoot(document.getElementById('saved-reports')).render(
       createElement(SavedReports, {
         queryParamObservable: pushStateObservable,
         storage: this.storage,
@@ -210,17 +208,17 @@ export class TimelineReport extends StacheElement {
         onViewReportsButtonClicked: (event) => {
           this.showReports(event);
         },
-      })
+      }),
     );
 
-    createRoot(document.getElementById("filters")).render(createElement(Filters));
-    createRoot(document.getElementById("view-settings")).render(createElement(ViewSettings));
+    createRoot(document.getElementById('filters')).render(createElement(Filters));
+    createRoot(document.getElementById('view-settings')).render(createElement(ViewSettings));
 
     getTheme(this.routeData.storage)
       .then(applyThemeToCssVars)
-      .catch((error) => console.error("Something went wrong getting the theme", error));
+      .catch((error) => console.error('Something went wrong getting the theme', error));
 
-    const timelineConfiguration = document.getElementById("timeline-configuration");
+    const timelineConfiguration = document.getElementById('timeline-configuration');
     if (timelineConfiguration) {
       createRoot(timelineConfiguration).render(
         createElement(SettingsSidebar, {
@@ -236,14 +234,14 @@ export class TimelineReport extends StacheElement {
 
             queues.batch.stop();
           },
-        })
+        }),
       );
     }
   }
 
   showReports(event) {
     event?.stopPropagation?.();
-    routeData.showSettings = "REPORTS";
+    routeData.showSettings = 'REPORTS';
   }
 
   get rollupTimingLevelsAndCalculations() {
@@ -258,32 +256,22 @@ export class TimelineReport extends StacheElement {
       return timingCalculations.slice(index);
     }
 
-    if (this.routeData.primaryIssueType === "Release") {
+    if (this.routeData.primaryIssueType === 'Release') {
       if (this.routeData.secondaryIssueType) {
         const secondary = getIssueHierarchyUnderType(
           this.routeData.issueTimingCalculations,
-          this.routeData.secondaryIssueType
+          this.routeData.secondaryIssueType,
         );
-        return [
-          { type: "Release", hierarchyLevel: Infinity, calculation: "childrenOnly" },
-          ...secondary,
-        ];
+        return [{ type: 'Release', hierarchyLevel: Infinity, calculation: 'childrenOnly' }, ...secondary];
       }
     } else {
-      return getIssueHierarchyUnderType(
-        this.routeData.issueTimingCalculations,
-        this.routeData.primaryIssueType
-      );
+      return getIssueHierarchyUnderType(this.routeData.issueTimingCalculations, this.routeData.primaryIssueType);
     }
   }
 
   // this all the data pre-compiled
   get rolledupAndRolledBackIssuesAndReleases() {
-    if (
-      !this.filteredDerivedIssues ||
-      !this.rollupTimingLevelsAndCalculations ||
-      !this.routeData.normalizeOptions
-    ) {
+    if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.routeData.normalizeOptions) {
       return [];
     }
 
@@ -291,7 +279,7 @@ export class TimelineReport extends StacheElement {
       this.filteredDerivedIssues,
       this.routeData.normalizeOptions,
       this.rollupTimingLevelsAndCalculations,
-      new Date(new Date().getTime() - this.compareToTime.timePrior)
+      new Date(new Date().getTime() - this.compareToTime.timePrior),
     );
 
     const statuses = calculateReportStatuses(rolledUp);
@@ -308,7 +296,7 @@ export class TimelineReport extends StacheElement {
     }
     const groupedHierarchy = groupIssuesByHierarchyLevelOrType(
       this.rolledupAndRolledBackIssuesAndReleases,
-      this.rollupTimingLevelsAndCalculations
+      this.rollupTimingLevelsAndCalculations,
     );
     return groupedHierarchy.reverse();
   }
@@ -317,7 +305,7 @@ export class TimelineReport extends StacheElement {
       return [];
     }
     const planningSourceIssues =
-      this.routeData.primaryIssueType === "Release"
+      this.routeData.primaryIssueType === 'Release'
         ? this.groupedParentDownHierarchy[1]
         : this.groupedParentDownHierarchy[0];
     return planningSourceIssues.filter((normalizedIssue) => {
@@ -344,7 +332,7 @@ export class TimelineReport extends StacheElement {
       // check if it's a planning issues
       if (
         this?.routeData?.planningStatuses?.length &&
-        this.routeData.primaryIssueType !== "Release" &&
+        this.routeData.primaryIssueType !== 'Release' &&
         this.routeData.planningStatuses.includes(issueOrRelease.status)
       ) {
         return false;
@@ -358,7 +346,7 @@ export class TimelineReport extends StacheElement {
 
       if (
         this.routeData.showOnlySemverReleases &&
-        this.routeData.primaryIssueType === "Release" &&
+        this.routeData.primaryIssueType === 'Release' &&
         !issueOrRelease.names.semver
       ) {
         return false;
@@ -367,25 +355,17 @@ export class TimelineReport extends StacheElement {
       if (hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
         return false;
       }
-      if (this.routeData.primaryIssueType === "Release") {
+      if (this.routeData.primaryIssueType === 'Release') {
         // releases don't have statuses, so we look at their children
         if (statusesToRemove && statusesToRemove.length) {
-          if (
-            issueOrRelease.childStatuses.children.every(({ status }) =>
-              statusesToRemove.includes(status)
-            )
-          ) {
+          if (issueOrRelease.childStatuses.children.every(({ status }) => statusesToRemove.includes(status))) {
             return false;
           }
         }
 
         if (statusesToShow && statusesToShow.length) {
           // Keep if any valeue has a status to show
-          if (
-            !issueOrRelease.childStatuses.children.some(({ status }) =>
-              statusesToShow.includes(status)
-            )
-          ) {
+          if (!issueOrRelease.childStatuses.children.some(({ status }) => statusesToShow.includes(status))) {
             return false;
           }
         }
@@ -406,9 +386,7 @@ export class TimelineReport extends StacheElement {
     });
 
     if (this.routeData.sortByDueDate) {
-      return filtered.toSorted(
-        (i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due
-      );
+      return filtered.toSorted((i1, i2) => i1.rollupStatuses.rollup.due - i2.rollupStatuses.rollup.due);
     } else {
       return filtered;
     }
@@ -419,11 +397,11 @@ export class TimelineReport extends StacheElement {
   }
 }
 
-customElements.define("timeline-report", TimelineReport);
+customElements.define('timeline-report', TimelineReport);
 
 function sortReadyFirst(initiatives) {
   return initiatives.sort((a, b) => {
-    if (a.Status === "Ready") {
+    if (a.Status === 'Ready') {
       return -1;
     }
     return 1;
@@ -448,6 +426,6 @@ function getElementPosition(el) {
 }
 
 function updateFullishHeightSection() {
-  const position = getElementPosition(document.querySelector(".fullish-vh"));
-  document.documentElement.style.setProperty("--fullish-document-top", `${position.y}px`);
+  const position = getElementPosition(document.querySelector('.fullish-vh'));
+  document.documentElement.style.setProperty('--fullish-document-top', `${position.y}px`);
 }

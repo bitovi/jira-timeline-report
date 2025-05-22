@@ -1,28 +1,27 @@
-import { StacheElement } from "../../../can.js";
-import { DROPDOWN_LABEL } from "../../../shared/style-strings.js";
+import { StacheElement } from '../../../can.js';
+import { DROPDOWN_LABEL } from '../../../shared/style-strings.js';
 
-import routeData from "../../routing/route-data";
+import routeData from '../../routing/route-data';
 
-import "../status-filter.js";
+import '../status-filter.js';
 
 const booleanParsing = {
   parse: (x) => {
-    return { "": true, true: true, false: false }[x];
+    return { '': true, true: true, false: false }[x];
   },
-  stringify: (x) => "" + x,
+  stringify: (x) => '' + x,
 };
 
 const selectStyle =
-  "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
+  'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500';
 
-const jiraButton =
-  "rounded bg-neutral-201 pl-3 pr-2 py-[6px] h-8 text-slate-600 font-medium text-sm";
+const jiraButton = 'rounded bg-neutral-201 pl-3 pr-2 py-[6px] h-8 text-slate-600 font-medium text-sm';
 
-import SimpleTooltip from "../../ui/simple-tooltip/simple-tooltip";
+import SimpleTooltip from '../../ui/simple-tooltip/simple-tooltip';
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
-const hoverEffect = "hover:bg-neutral-301 cursor-pointer";
+const hoverEffect = 'hover:bg-neutral-301 cursor-pointer';
 
 class ReportSelectionDropdown extends StacheElement {
   static view = `
@@ -44,14 +43,14 @@ class ReportSelectionDropdown extends StacheElement {
     onSelection: Function,
     get reportTypes() {
       return this.routeData.reports.filter((report) => {
-        return this.features?.estimationTable || report.key !== "table";
+        return this.features?.estimationTable || report.key !== 'table';
       });
     },
   };
 }
 // 6 8 6 12
 
-customElements.define("report-selection-dropdown", ReportSelectionDropdown);
+customElements.define('report-selection-dropdown', ReportSelectionDropdown);
 
 export class SelectReportType extends StacheElement {
   static view = `
@@ -73,9 +72,7 @@ export class SelectReportType extends StacheElement {
       },
     },
     get primaryReportName() {
-      return this.routeData.reports.find(
-        (report) => report.key === this.routeData.primaryReportType
-      ).name;
+      return this.routeData.reports.find((report) => report.key === this.routeData.primaryReportType).name;
     },
   };
 
@@ -92,7 +89,7 @@ export class SelectReportType extends StacheElement {
     TOOLTIP.leftElement();
   }
   connected() {
-    this.listenTo(window, "click", (event) => {
+    this.listenTo(window, 'click', (event) => {
       if (!TOOLTIP.contains(event.target)) {
         TOOLTIP.leftElement();
       }
@@ -100,4 +97,4 @@ export class SelectReportType extends StacheElement {
   }
 }
 
-customElements.define("select-report-type", SelectReportType);
+customElements.define('select-report-type', SelectReportType);

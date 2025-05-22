@@ -1,22 +1,18 @@
 {
-    "baseUrl": "https://bitovi-training.atlassian.net",
-    "displayUrl": "https://bitovi-training.atlassian.net",
-    "displayUrlServicedeskHelpCenter": "https://bitovi-training.atlassian.net",
-    "displayUrlConfluence": "https://bitovi-training.atlassian.net",
-    "version": "1001.0.0-SNAPSHOT",
-    "versionNumbers": [
-        1001,
-        0,
-        0
-    ],
-    "deploymentType": "Cloud",
-    "buildNumber": 100262,
-    "buildDate": "2024-08-20T15:15:39.000-0500",
-    "serverTime": "2024-08-20T20:52:00.710-0500",
-    "scmInfo": "d16652750ceb0a72ec3cbf6ed9643015d2cf7cf8",
-    "serverTitle": "Jira",
-    "defaultLocale": {
-        "locale": "en_US"
-    },
-    "serverTimeZone": "Etc/UTC"
+  "baseUrl": "https://bitovi-training.atlassian.net",
+  "displayUrl": "https://bitovi-training.atlassian.net",
+  "displayUrlServicedeskHelpCenter": "https://bitovi-training.atlassian.net",
+  "displayUrlConfluence": "https://bitovi-training.atlassian.net",
+  "version": "1001.0.0-SNAPSHOT",
+  "versionNumbers": [1001, 0, 0],
+  "deploymentType": "Cloud",
+  "buildNumber": 100262,
+  "buildDate": "2024-08-20T15:15:39.000-0500",
+  "serverTime": "2024-08-20T20:52:00.710-0500",
+  "scmInfo": "d16652750ceb0a72ec3cbf6ed9643015d2cf7cf8",
+  "serverTitle": "Jira",
+  "defaultLocale": {
+    "locale": "en_US"
+  },
+  "serverTimeZone": "Etc/UTC"
 }

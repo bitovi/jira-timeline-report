@@ -1,5 +1,5 @@
-import { OidcJiraIssue } from "../jira-oidc-helpers/types";
-import { JiraIssue } from "../jira/shared/types";
+import { OidcJiraIssue } from '../jira-oidc-helpers/types';
+import { JiraIssue } from '../jira/shared/types';
 
 export type JsonResponse<TData = object> = {
   accessToken: string;
@@ -24,4 +24,3 @@ export interface RequestHelperResponse<TValues = any[], TIssues = OidcJiraIssue[
   startAt: number;
   values: TValues;
 }
-

@@ -1,12 +1,12 @@
-import { StacheElement, type, ObservableObject, stache } from "../../can";
+import { StacheElement, type, ObservableObject, stache } from '../../can';
 
-import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
-import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup";
-import { mergeStartAndDueData } from "../../jira/rollup/dates/dates";
+import { getQuartersAndMonths } from '../../utils/date/quarters-and-months';
+import { makeGetChildrenFromReportingIssues } from '../../jira/rollup/rollup';
+import { mergeStartAndDueData } from '../../jira/rollup/dates/dates';
 
-import { roundDateByRoundToParam } from "../routing/utils/round";
-import { getDaysInMonth } from "../../utils/date/days-in-month";
-import { oneDayLater } from "../../utils/date/date-helpers";
+import { roundDateByRoundToParam } from '../routing/utils/round';
+import { getDaysInMonth } from '../../utils/date/days-in-month';
+import { oneDayLater } from '../../utils/date/date-helpers';
 
 const DAY = 1000 * 60 * 60 * 24;
 export class ScatterTimeline extends StacheElement {
@@ -51,8 +51,8 @@ export class ScatterTimeline extends StacheElement {
     // how wide we can show the scatter changes with the window resize
     visibleWidth: {
       value({ listenTo, resolve }) {
-        listenTo(window, "resize", () => resolve(this.offsetWidth));
-        listenTo(this, "isElementConnected", () => {
+        listenTo(window, 'resize', () => resolve(this.offsetWidth));
+        listenTo(this, 'isElementConnected', () => {
           resolve(this.offsetWidth);
         });
         if (this.offsetWidth && this.offsetWidth > 0) {
@@ -81,14 +81,14 @@ export class ScatterTimeline extends StacheElement {
     return getQuartersAndMonths(firstEndDate, due || new Date(new Date().getTime() + DAY * 30));
   }
   get gridColumnsCSS() {
-    let columnCSS = "";
+    let columnCSS = '';
     // repeat({{this.quartersAndMonths.months.length}}, [col] 1fr)
 
     columnCSS += this.quartersAndMonths.months
       .map(({ date }) => {
-        return getDaysInMonth(date.getYear(), date.getMonth() + 1) + "fr";
+        return getDaysInMonth(date.getYear(), date.getMonth() + 1) + 'fr';
       })
-      .join(" ");
+      .join(' ');
 
     return columnCSS;
   }
@@ -110,7 +110,7 @@ export class ScatterTimeline extends StacheElement {
     return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
   }
   get textSize() {
-    return this.lotsOfIssues ? "text-xs" : "";
+    return this.lotsOfIssues ? 'text-xs' : '';
   }
   get rows() {
     // if we don't know our space, wait until we know it
@@ -129,45 +129,43 @@ export class ScatterTimeline extends StacheElement {
       makeElementForIssue: (release) => {
         const radius = this.lotsOfIssues ? 6 : 8;
 
-        const div = document.createElement("div");
-        div.className = " release-timeline-item gap-1 ";
+        const div = document.createElement('div');
+        div.className = ' release-timeline-item gap-1 ';
         Object.assign(div.style, {
-          position: "absolute",
+          position: 'absolute',
           //transform: "translate(-100%, 0)",
           //padding: "2px 3px 2px 6px",
           //backgroundColor: "gray",
-          paddingRight: radius + "px",
-          zIndex: "100",
-          top: "4px",
+          paddingRight: radius + 'px',
+          zIndex: '100',
+          top: '4px',
           //background: "rgba(255,255,255, 0.6)"
         });
         //div.classList.add("bg-neutral-41", "rounded")
 
-        const text = document.createElement("div");
-        text.className = "truncate " + this.textSize;
+        const text = document.createElement('div');
+        text.className = 'truncate ' + this.textSize;
         Object.assign(text.style, {
-          position: "relative",
-          zIndex: "10",
-          maxWidth: this.lotsOfIssues ? "260px" : "300px",
-          paddingLeft: radius + "px",
-          paddingRight: radius * 1.5 + "px",
+          position: 'relative',
+          zIndex: '10',
+          maxWidth: this.lotsOfIssues ? '260px' : '300px',
+          paddingLeft: radius + 'px',
+          paddingRight: radius * 1.5 + 'px',
         });
-        text.classList.add("bg-neutral-41", "rounded", "px-0.5");
+        text.classList.add('bg-neutral-41', 'rounded', 'px-0.5');
         text.appendChild(document.createTextNode(release?.names?.shortVersion || release.summary));
         div.appendChild(text);
 
-        const tick = document.createElement("div");
+        const tick = document.createElement('div');
         tick.className =
-          "color-text-and-bg-" +
-          release.rollupStatuses.rollup.status +
-          " rounded-full border border-white absolute";
+          'color-text-and-bg-' + release.rollupStatuses.rollup.status + ' rounded-full border border-white absolute';
         Object.assign(tick.style, {
           height: `${radius * 2}px`,
           width: `${radius * 2}px`,
           right: 0,
-          top: "50%",
+          top: '50%',
           marginTop: `-${radius}px`,
-          zIndex: "101",
+          zIndex: '101',
           // transform: "rotate(45deg)",
         });
         div.appendChild(tick);
@@ -178,7 +176,7 @@ export class ScatterTimeline extends StacheElement {
 
     for (let row of rows) {
       for (let item of row.items) {
-        item.element.style.right = item.endPercentFromRight + "%";
+        item.element.style.right = item.endPercentFromRight + '%';
       }
     }
 
@@ -189,25 +187,14 @@ export class ScatterTimeline extends StacheElement {
     return first + second;
   }
   lastRowBorder(index) {
-    return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : "";
+    return index === this.quartersAndMonths.months.length - 1 ? 'border-r-solid-1px-slate-900' : '';
   }
   miroData() {
     miroData(this.primaryIssuesOrReleases, this.allIssuesOrReleases);
   }
 }
 
-function toMiroData({
-  summary,
-  rollupDates,
-  status,
-  team,
-  url,
-  type,
-  key,
-  parent,
-  issue,
-  releases,
-}) {
+function toMiroData({ summary, rollupDates, status, team, url, type, key, parent, issue, releases }) {
   return {
     summary,
     due: rollupDates.due,
@@ -236,14 +223,14 @@ function miroData(primaryIssuesOrReleases, allIssuesOrReleases) {
 
 function defaultGetWidth(element) {
   const clone = element.cloneNode(true);
-  const outer = document.createElement("div");
+  const outer = document.createElement('div');
   outer.appendChild(clone);
   Object.assign(outer.style, {
-    position: "absolute",
-    top: "-1000px",
-    left: "-1000px",
-    width: "700px",
-    visibility: "hidden",
+    position: 'absolute',
+    top: '-1000px',
+    left: '-1000px',
+    width: '700px',
+    visibility: 'hidden',
   });
   document.body.appendChild(outer);
   const width = clone.getBoundingClientRect().width;
@@ -263,9 +250,7 @@ function calculate({
 
   const issueUIData = issues.map((issue) => {
     // end dates need to be shifted one day later (see miro)
-    const roundedDueDate = oneDayLater(
-      roundDateByRoundToParam.end(issue.rollupStatuses.rollup.due)
-    );
+    const roundedDueDate = oneDayLater(roundDateByRoundToParam.end(issue.rollupStatuses.rollup.due));
 
     const element = makeElementForIssue(issue),
       width = getWidth(element) + 3, // 2 pixels of margin
@@ -276,10 +261,10 @@ function calculate({
       endPercentFromRight = ((totalTime - (roundedDueDate - firstDay)) / totalTime) * 100,
       leftPercentStart = rightPercentEnd - widthInPercent;
 
-    element.setAttribute("measured-width", width);
-    element.setAttribute("width-p", widthInPercent);
-    element.setAttribute("left-p", leftPercentStart);
-    element.setAttribute("right-p", rightPercentEnd);
+    element.setAttribute('measured-width', width);
+    element.setAttribute('width-p', widthInPercent);
+    element.setAttribute('left-p', leftPercentStart);
+    element.setAttribute('right-p', rightPercentEnd);
     return {
       roundedDueDate,
       issue,
@@ -302,7 +287,7 @@ function calculate({
       const intersected = row.items.some((item) => {
         return intersect(
           { start: item.leftPercentStart, end: item.rightPercentEnd },
-          { start: issueUIDatum.leftPercentStart, end: issueUIDatum.rightPercentEnd }
+          { start: issueUIDatum.leftPercentStart, end: issueUIDatum.rightPercentEnd },
         );
       });
       if (!intersected) {
@@ -324,4 +309,4 @@ function intersect(range1, range2) {
   return range1.start < range2.end && range2.start < range1.end;
 }
 
-customElements.define("scatter-timeline", ScatterTimeline);
+customElements.define('scatter-timeline', ScatterTimeline);

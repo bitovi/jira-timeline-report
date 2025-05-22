@@ -21,6 +21,9 @@
     "prepare": "husky",
     "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts"
   },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -97,6 +100,7 @@
     "jstat": "^1.9.6",
     "live-server": "^1.2.2",
     "postcss": "^8.5.3",
+    "prettier": "3.5.3",
     "rollup": "npm:@rollup/wasm-node@^4.2.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.6.3",

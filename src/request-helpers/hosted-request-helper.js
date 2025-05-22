@@ -1,8 +1,5 @@
-import {
-  fetchAuthorizationCode,
-  timeRemainingBeforeAccessTokenExpiresInSeconds,
-} from "../jira-oidc-helpers/auth";
-import { responseToJSON } from "../utils/fetch/response-to-json";
+import { fetchAuthorizationCode, timeRemainingBeforeAccessTokenExpiresInSeconds } from '../jira-oidc-helpers/auth';
+import { responseToJSON } from '../utils/fetch/response-to-json';
 
 function fetchFromLocalStorage(key) {
   return window.localStorage.getItem(key);
@@ -20,8 +17,8 @@ export function getHostedRequestHelper(config) {
   return function (urlFragment) {
     return new Promise(async (resolve, reject) => {
       try {
-        const scopeIdForJira = fetchFromLocalStorage("scopeId");
-        const accessToken = fetchFromLocalStorage("accessToken");
+        const scopeIdForJira = fetchFromLocalStorage('scopeId');
+        const accessToken = fetchFromLocalStorage('accessToken');
 
         if (accessToken) {
           const timeLeft = timeRemainingBeforeAccessTokenExpiresInSeconds();
@@ -30,9 +27,7 @@ export function getHostedRequestHelper(config) {
           if (timeLeft < FIVE_SECONDS) {
             if (!hasShownPopUp) {
               hasShownPopUp = true;
-              alert(
-                "Your access token needs to be refreshed. Taking you to Atlassian to reauthorize"
-              );
+              alert('Your access token needs to be refreshed. Taking you to Atlassian to reauthorize');
             }
             fetchAuthorizationCode(config);
             return new Promise(function () {});
@@ -42,7 +37,7 @@ export function getHostedRequestHelper(config) {
         hasShownPopUp = false;
 
         let requestUrl;
-        if (urlFragment.startsWith("https://")) {
+        if (urlFragment.startsWith('https://')) {
           requestUrl = urlFragment;
         } else {
           requestUrl = `${JIRA_API_URL}/${scopeIdForJira}/rest/${urlFragment}`;
