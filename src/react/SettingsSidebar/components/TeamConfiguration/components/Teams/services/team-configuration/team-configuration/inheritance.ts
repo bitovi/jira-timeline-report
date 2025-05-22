@@ -103,3 +103,17 @@ export const createFullyInheritedConfig = (
     };
   }, {} as AllTeamData);
 };
+
+export const createTeamFieldLookup = (allTeamData: AllTeamData) => {
+  return {
+    getFieldFor: (team: string, issueLevel: string, field: keyof Configuration) => {
+      const matchedField = allTeamData?.[team]?.[issueLevel]?.[field];
+
+      if (!matchedField) {
+        console.warn(`Could not find allTeamData[${team}][${issueLevel}][${field}]`);
+      }
+
+      return matchedField;
+    },
+  };
+};
