@@ -3,7 +3,7 @@ import type { ReactNode, FC } from 'react';
 import React from 'react';
 
 import { useAccordion } from '../Accordion';
-// temp
+
 interface AccordionContentProps {
   children: ReactNode;
 }
