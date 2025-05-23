@@ -1,15 +1,15 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useId } from "react";
-import Select from "@atlaskit/select";
+import React, { useId } from 'react';
+import Select from '@atlaskit/select';
 
-import FilterGrid from "../../shared/components/FilterGrid";
-import ToggleButton from "../../../components/ToggleButton";
-import VisuallyHidden from "@atlaskit/visually-hidden";
+import FilterGrid from '../../shared/components/FilterGrid';
+import ToggleButton from '../../../components/ToggleButton';
+import VisuallyHidden from '@atlaskit/visually-hidden';
 
 interface StatusFilterProps {
-  statusFilterType: "hide" | "show";
-  setStatusFilterType: (newActive: "hide" | "show") => void;
+  statusFilterType: 'hide' | 'show';
+  setStatusFilterType: (newActive: 'hide' | 'show') => void;
   statuses: { label: string; value: string }[] | undefined;
   selectedStatuses: { label: string; value: string }[] | undefined;
   setSelectedStatus: (newStatuses: Readonly<{ value: string }[]> | { value: string }[]) => void;
@@ -27,9 +27,9 @@ const StatusFilter: FC<StatusFilterProps> = ({
   return (
     <FilterGrid>
       <ToggleButton
-        active={statusFilterType === "hide"}
+        active={statusFilterType === 'hide'}
         onActiveChange={(newActive) => {
-          setStatusFilterType(newActive ? "hide" : "show");
+          setStatusFilterType(newActive ? 'hide' : 'show');
         }}
         inactiveLabel="Show only"
         activeLabel="Hide"

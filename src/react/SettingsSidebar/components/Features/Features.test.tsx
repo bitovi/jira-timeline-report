@@ -1,22 +1,22 @@
-import type { AppStorage } from "../../../../jira/storage/common";
-import type { ComponentProps } from "react";
+import type { AppStorage } from '../../../../jira/storage/common';
+import type { ComponentProps } from 'react';
 
-import React, { Suspense } from "react";
-import { render, screen } from "@testing-library/react";
+import React, { Suspense } from 'react';
+import { render, screen } from '@testing-library/react';
 
-import Features from "./Features";
+import Features from './Features';
 
 const features = [
-  { title: "Estimation Table", subtitle: "" },
-  { title: "Secondary Report", subtitle: "" },
-  { title: "Work Breakdowns", subtitle: "" },
+  { title: 'Estimation Table', subtitle: '' },
+  { title: 'Secondary Report', subtitle: '' },
+  { title: 'Work Breakdowns', subtitle: '' },
 ];
 
-import { StorageProvider } from "../../../services/storage";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { FlagsProvider } from "@atlaskit/flag";
+import { StorageProvider } from '../../../services/storage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { FlagsProvider } from '@atlaskit/flag';
 
-type OverrideStorage = Omit<AppStorage, "get"> & {
+type OverrideStorage = Omit<AppStorage, 'get'> & {
   get: (key: string) => any;
 };
 
@@ -53,21 +53,21 @@ const renderWithWrappers = (config?: Partial<RenderConfig>) => {
   return render(
     <Suspense fallback="loading">
       <FlagsProvider>
-        <StorageProvider storage={storage as ComponentProps<typeof StorageProvider>["storage"]}>
+        <StorageProvider storage={storage as ComponentProps<typeof StorageProvider>['storage']}>
           <QueryClientProvider client={queryClient}>
             <Features {...props} />
           </QueryClientProvider>
         </StorageProvider>
       </FlagsProvider>
-    </Suspense>
+    </Suspense>,
   );
 };
 
-describe("<Features />", () => {
-  it("renders without crashing", async () => {
+describe('<Features />', () => {
+  it('renders without crashing', async () => {
     renderWithWrappers(<Features />);
 
-    const heading = await screen.findByText("Features");
+    const heading = await screen.findByText('Features');
     expect(heading).toBeInTheDocument();
 
     const description = screen.getByText(/turn on new features under active development/i);
@@ -82,7 +82,7 @@ describe("<Features />", () => {
     const feedbackText = screen.getByText(/got feedback\?/i);
     expect(feedbackText).toBeInTheDocument();
 
-    const feedbackLink = screen.getByRole("link", { name: /let us know on github/i });
+    const feedbackLink = screen.getByRole('link', { name: /let us know on github/i });
     expect(feedbackLink).toBeInTheDocument();
   });
 });

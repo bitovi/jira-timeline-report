@@ -1,1 +1,1 @@
-export { default } from "./SettingsSection";
+export { default } from './SettingsSection';

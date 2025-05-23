@@ -1,15 +1,15 @@
-import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "../rollup";
-import { jStat } from "jstat";
-import { defineFeatureFlag } from "../../../shared/feature-flag";
+import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from '../rollup';
+import { jStat } from 'jstat';
+import { defineFeatureFlag } from '../../../shared/feature-flag';
 
 export const FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES = defineFeatureFlag(
-  "historicallyAdjustedEstimates",
+  'historicallyAdjustedEstimates',
   `
 
     Log historically adjusted estimates and other data
     
 `,
-  false
+  false,
 );
 
 export function addHistoricalAdjustedEstimatedTime(issuesOrReleases, rollupTimingLevelsAndCalculations) {
@@ -19,7 +19,7 @@ export function addHistoricalAdjustedEstimatedTime(issuesOrReleases, rollupTimin
   const zipped = zipRollupDataOntoGroupedData(
     groupedIssues,
     rolledUpHistoricalAdjustedEstimates,
-    "historicalAdjustedEstimatedTime"
+    'historicalAdjustedEstimatedTime',
   );
   return zipped.flat();
 }
@@ -57,7 +57,7 @@ export function rollupHistoricalAdjustedEstimatedTime(groupedHierarchy, methodNa
         hierarchyLevel,
         metadata,
         teamAverageEstimatedPointsPerDay,
-        totalDaysPerTeam
+        totalDaysPerTeam,
       );
     },
   });
@@ -108,7 +108,7 @@ export function childrenFirstThenParentTeamAdjustment(
   hierarchyLevel,
   metadata,
   teamAverageEstimatedPointsPerDay,
-  totalDaysPerTeam
+  totalDaysPerTeam,
 ) {
   let data = [];
   if (hierarchyLevel === 0) {
@@ -156,7 +156,7 @@ function issueWasEstimatedDatedAndCompleted(parentIssueOrRelease) {
   const hasDates = startDate && dueDate;
   const startedInThePast = startDate && startDate < new Date();
   const isDone =
-    parentIssueOrRelease.statusCategory === "Done" || parentIssueOrRelease.statusCategory === "In Progress";
+    parentIssueOrRelease.statusCategory === 'Done' || parentIssueOrRelease.statusCategory === 'In Progress';
   const storyPointsIsNotZero = parentIssueOrRelease.derivedTiming.deterministicTotalDaysOfWork > 0;
   return hasSomeEstimates && hasDates && isDone & storyPointsIsNotZero && startedInThePast;
 }
@@ -203,7 +203,7 @@ function estimatePointsPerDay(ranges) {
 
         businessDays.set(
           dateString,
-          typeof currentPoints === "number" ? currentPoints + estimatePointsPerDay : estimatePointsPerDay
+          typeof currentPoints === 'number' ? currentPoints + estimatePointsPerDay : estimatePointsPerDay,
         );
       }
 

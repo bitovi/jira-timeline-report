@@ -1,8 +1,8 @@
 /**
- * this module contains helper functions for requesting json over http. 
+ * this module contains helper functions for requesting json over http.
  */
-import {responseToJSON} from "../utils/fetch/response-to-json";
-import { JsonResponse } from "../shared/types";
+import { responseToJSON } from '../utils/fetch/response-to-json';
+import { JsonResponse } from '../shared/types';
 
 export function nativeFetchJSON<T>(url: string, options?: RequestInit): Promise<JsonResponse<T>> {
   return fetch(url, options).then(responseToJSON<T>);
@@ -24,7 +24,7 @@ export default async function fetchJSON<T extends object>(
   const response = await fetch(url, options);
   if (!response.ok) {
     const payload = await response.json();
-    const err = new Error("HTTP status code: " + response.status);
+    const err = new Error('HTTP status code: ' + response.status);
     Object.assign(err, payload);
     Object.assign(err, response as any);
     throw err;

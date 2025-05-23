@@ -1,54 +1,50 @@
-import { expect, describe, it } from "vitest";
-import {
-  rollupWarningIssuesForGroupedHierarchy,
-  rollupWarningIssues,
-  WithWarningIssues,
-} from "./warning-issues";
-import { IssueOrRelease } from "../rollup";
+import { expect, describe, it } from 'vitest';
+import { rollupWarningIssuesForGroupedHierarchy, rollupWarningIssues, WithWarningIssues } from './warning-issues';
+import { IssueOrRelease } from '../rollup';
 
-describe("rollupWarningIssuesForGroupedHierarchy", () => {
-  it("should correctly roll up warning issues in grouped hierarchy", () => {
+describe('rollupWarningIssuesForGroupedHierarchy', () => {
+  it('should correctly roll up warning issues in grouped hierarchy', () => {
     const i7 = {
-      key: "i-7",
-      parentKey: "m-3",
-      labels: ["Warning"],
+      key: 'i-7',
+      parentKey: 'm-3',
+      labels: ['Warning'],
     };
     const groupedHierarchy = (
       [
         [
           {
-            key: "o-1",
+            key: 'o-1',
             parentKey: null,
-            labels: ["foo"],
+            labels: ['foo'],
           },
         ],
         [
           {
-            key: "m-2",
-            parentKey: "o-1",
-            labels: ["foo"],
+            key: 'm-2',
+            parentKey: 'o-1',
+            labels: ['foo'],
           },
           {
-            key: "m-3",
-            parentKey: "o-1",
-            labels: ["foo"],
+            key: 'm-3',
+            parentKey: 'o-1',
+            labels: ['foo'],
           },
         ],
         [
           {
-            key: "i-4",
-            parentKey: "m-2",
-            labels: ["foo"],
+            key: 'i-4',
+            parentKey: 'm-2',
+            labels: ['foo'],
           },
           {
-            key: "i-5",
-            parentKey: "m-2",
-            labels: ["foo"],
+            key: 'i-5',
+            parentKey: 'm-2',
+            labels: ['foo'],
           },
           {
-            key: "i-6",
-            parentKey: "m-3",
-            labels: ["foo"],
+            key: 'i-6',
+            parentKey: 'm-3',
+            labels: ['foo'],
           },
           i7,
         ],
@@ -59,7 +55,7 @@ describe("rollupWarningIssuesForGroupedHierarchy", () => {
       reportingHierarchy: {
         childKeys: [],
         depth: 2,
-        parentKeys: ["m-3"],
+        parentKeys: ['m-3'],
       },
     };
 
@@ -108,91 +104,94 @@ describe("rollupWarningIssuesForGroupedHierarchy", () => {
   });
 });
 
-describe("rollupWarningIssues", () => {
-  it("should correctly roll up warning issues", () => {
+describe('rollupWarningIssues', () => {
+  it('should correctly roll up warning issues', () => {
     const i7 = {
-      key: "i-7",
-      type: "Story",
+      key: 'i-7',
+      type: 'Story',
       hierarchyLevel: 0,
-      parentKey: "m-3",
-      labels: ["Warning"],
+      parentKey: 'm-3',
+      labels: ['Warning'],
     };
 
     const i8 = {
-      key: "i-8",
-      type: "Story",
+      key: 'i-8',
+      type: 'Story',
       hierarchyLevel: 0,
-      parentKey: "m-3",
-      labels: ["Warning"],
+      parentKey: 'm-3',
+      labels: ['Warning'],
     };
 
     const issuesAndReleases = [
       {
-        key: "o-1",
-        type: "Initiative",
+        key: 'o-1',
+        type: 'Initiative',
         hierarchyLevel: 2,
         parentKey: null,
-        labels: ["foo"],
+        labels: ['foo'],
       },
       {
-        key: "m-2",
-        type: "Epic",
+        key: 'm-2',
+        type: 'Epic',
         hierarchyLevel: 1,
-        parentKey: "o-1",
-        labels: ["foo"],
+        parentKey: 'o-1',
+        labels: ['foo'],
       },
       {
-        key: "m-3",
-        type: "Epic",
+        key: 'm-3',
+        type: 'Epic',
         hierarchyLevel: 1,
-        parentKey: "o-1",
-        labels: ["foo"],
+        parentKey: 'o-1',
+        labels: ['foo'],
       },
       {
-        key: "i-4",
-        type: "Story",
+        key: 'i-4',
+        type: 'Story',
         hierarchyLevel: 0,
-        parentKey: "m-2",
-        labels: ["foo"],
+        parentKey: 'm-2',
+        labels: ['foo'],
       },
       {
-        key: "i-5",
-        type: "Story",
+        key: 'i-5',
+        type: 'Story',
         hierarchyLevel: 0,
-        parentKey: "m-2",
-        labels: ["foo"],
+        parentKey: 'm-2',
+        labels: ['foo'],
       },
       {
-        key: "i-6",
-        type: "Story",
+        key: 'i-6',
+        type: 'Story',
         hierarchyLevel: 0,
-        parentKey: "m-3",
-        labels: ["foo"],
+        parentKey: 'm-3',
+        labels: ['foo'],
       },
       i7,
       i8,
     ] as IssueOrRelease[];
 
     const rollupTimingLevelsAndCalculations = [
-      { type: "Initiative", hierarchyLevel: 2 },
-      { type: "Epic", hierarchyLevel: 1 },
-      { type: "Story", hierarchyLevel: 0 },
+      { type: 'Initiative', hierarchyLevel: 2 },
+      { type: 'Epic', hierarchyLevel: 1 },
+      { type: 'Story', hierarchyLevel: 0 },
     ];
     const result = rollupWarningIssues(issuesAndReleases, rollupTimingLevelsAndCalculations);
 
-    const issueMap = result.reduce((map, issue) => {
-      map[issue.key] = issue;
-      return map;
-    }, {} as { [key: string]: IssueOrRelease<WithWarningIssues> });
+    const issueMap = result.reduce(
+      (map, issue) => {
+        map[issue.key] = issue;
+        return map;
+      },
+      {} as { [key: string]: IssueOrRelease<WithWarningIssues> },
+    );
 
-    const o1 = issueMap["o-1"];
-    const m2 = issueMap["m-2"];
-    const m3 = issueMap["m-3"];
-    const i4 = issueMap["i-4"];
-    const i5 = issueMap["i-5"];
-    const i6 = issueMap["i-6"];
-    const _i7 = issueMap["i-7"];
-    const _i8 = issueMap["i-8"];
+    const o1 = issueMap['o-1'];
+    const m2 = issueMap['m-2'];
+    const m3 = issueMap['m-3'];
+    const i4 = issueMap['i-4'];
+    const i5 = issueMap['i-5'];
+    const i6 = issueMap['i-6'];
+    const _i7 = issueMap['i-7'];
+    const _i8 = issueMap['i-8'];
 
     const i7WarningIssues = [
       {
@@ -200,7 +199,7 @@ describe("rollupWarningIssues", () => {
         reportingHierarchy: {
           childKeys: [],
           depth: 2,
-          parentKeys: ["m-3"],
+          parentKeys: ['m-3'],
         },
       },
     ];
@@ -210,7 +209,7 @@ describe("rollupWarningIssues", () => {
         reportingHierarchy: {
           childKeys: [],
           depth: 2,
-          parentKeys: ["m-3"],
+          parentKeys: ['m-3'],
         },
       },
     ];

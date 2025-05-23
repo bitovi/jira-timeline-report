@@ -1,1 +1,1 @@
-export * from "./useSelectedReleases";
+export * from './useSelectedReleases';

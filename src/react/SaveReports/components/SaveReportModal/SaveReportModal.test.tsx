@@ -1,18 +1,18 @@
-import React from "react";
-import { act, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, it, vi, beforeEach } from "vitest";
+import React from 'react';
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, vi, beforeEach } from 'vitest';
 
-import SaveReportModal from "./SaveReportModal";
+import SaveReportModal from './SaveReportModal';
 
 const mockValidate = vi.fn();
 const mockOnCreate = vi.fn();
 const mockCloseModal = vi.fn();
 
-describe("<SaveReportModal />", () => {
+describe('<SaveReportModal />', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockValidate.mockReturnValue({ isValid: true, message: "" });
+    mockValidate.mockReturnValue({ isValid: true, message: '' });
   });
 
   beforeAll(() => {
@@ -33,7 +33,7 @@ describe("<SaveReportModal />", () => {
     }));
   });
 
-  it("renders without crashing", async () => {
+  it('renders without crashing', async () => {
     await act(async () => {
       render(
         <SaveReportModal
@@ -44,16 +44,16 @@ describe("<SaveReportModal />", () => {
           validate={mockValidate}
           isCreating={false}
           setName={vi.fn()}
-        />
+        />,
       );
     });
 
-    expect(screen.getByText("Save Report")).toBeInTheDocument();
-    expect(screen.getByText("Name")).toBeInTheDocument();
+    expect(screen.getByText('Save Report')).toBeInTheDocument();
+    expect(screen.getByText('Name')).toBeInTheDocument();
   });
 
-  it("validates the name and shows an error if invalid", async () => {
-    mockValidate.mockReturnValueOnce({ isValid: false, message: "Invalid name" });
+  it('validates the name and shows an error if invalid', async () => {
+    mockValidate.mockReturnValueOnce({ isValid: false, message: 'Invalid name' });
 
     await act(async () => {
       render(
@@ -66,18 +66,18 @@ describe("<SaveReportModal />", () => {
           isCreating={false}
           setName={vi.fn()}
           autoFocus={false}
-        />
+        />,
       );
     });
 
-    const input = screen.getByText("Name");
-    await userEvent.type(input, "1");
+    const input = screen.getByText('Name');
+    await userEvent.type(input, '1');
 
-    expect(mockValidate).toHaveBeenCalledWith("1");
-    expect(screen.getByText("Invalid name")).toBeInTheDocument();
+    expect(mockValidate).toHaveBeenCalledWith('1');
+    expect(screen.getByText('Invalid name')).toBeInTheDocument();
   });
 
-  it("closes the modal when cancel is clicked", async () => {
+  it('closes the modal when cancel is clicked', async () => {
     await act(async () => {
       render(
         <SaveReportModal
@@ -88,11 +88,11 @@ describe("<SaveReportModal />", () => {
           validate={mockValidate}
           isCreating={false}
           setName={vi.fn()}
-        />
+        />,
       );
     });
 
-    const cancelButton = screen.getByRole("button", { name: "Cancel" });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     await userEvent.click(cancelButton);
 
     expect(mockCloseModal).toHaveBeenCalled();

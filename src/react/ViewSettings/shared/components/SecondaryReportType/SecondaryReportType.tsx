@@ -1,22 +1,20 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useId } from "react";
-import Select from "@atlaskit/select";
-import VisuallyHidden from "@atlaskit/visually-hidden";
-import { useCanObservable } from "../../../../hooks/useCanObservable";
-import { value } from "../../../../../can";
-import routeData from "../../../../../canjs/routing/route-data";
+import React, { useId } from 'react';
+import Select from '@atlaskit/select';
+import VisuallyHidden from '@atlaskit/visually-hidden';
+import { useCanObservable } from '../../../../hooks/useCanObservable';
+import { value } from '../../../../../can';
+import routeData from '../../../../../canjs/routing/route-data';
 
 const secondaryReportTypes = [
-  { label: "None", value: "none" },
-  { label: "Status", value: "status" },
-  { label: "Work Breakdown", value: "breakdown" },
+  { label: 'None', value: 'none' },
+  { label: 'Status', value: 'status' },
+  { label: 'Work Breakdown', value: 'breakdown' },
 ];
 
 const useSecondaryReportType = () => {
-  const selectedSecondaryReportType = useCanObservable<string>(
-    value.from(routeData, "secondaryReportType")
-  );
+  const selectedSecondaryReportType = useCanObservable<string>(value.from(routeData, 'secondaryReportType'));
 
   const setSelectedSecondaryReportType = (value: string) => {
     // @ts-expect-error
@@ -25,9 +23,7 @@ const useSecondaryReportType = () => {
 
   return {
     secondaryReportTypes,
-    selectedSecondaryReportType: secondaryReportTypes.find(
-      ({ value }) => value === selectedSecondaryReportType
-    ),
+    selectedSecondaryReportType: secondaryReportTypes.find(({ value }) => value === selectedSecondaryReportType),
     setSelectedSecondaryReportType,
   };
 };
@@ -47,7 +43,7 @@ const SecondaryReportType: FC = () => {
         className="flex-1"
         options={secondaryReportTypes}
         value={selectedSecondaryReportType}
-        onChange={(option) => setSelectedSecondaryReportType(option?.value ?? "")}
+        onChange={(option) => setSelectedSecondaryReportType(option?.value ?? '')}
       />
     </div>
   );

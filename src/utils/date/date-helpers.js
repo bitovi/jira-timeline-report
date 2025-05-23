@@ -1,5 +1,5 @@
-const START_DATE_KEY = "Start date";
-const DUE_DATE_KEY = "Due date";
+const START_DATE_KEY = 'Start date';
+const DUE_DATE_KEY = 'Due date';
 
 // ! I'm not sure why changelog has both Start Date and duedate.
 export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) {
@@ -9,7 +9,7 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
   // find the due date at "date"
   for (let changelog of [...epic.changelog].reverse()) {
     const createdDate = new Date(changelog.created);
-    const dueDateSetItem = changelog.items.find((item) => item.field === "duedate");
+    const dueDateSetItem = changelog.items.find((item) => item.field === 'duedate');
     if (dueDateSetItem) {
       const fromDate = dueDateSetItem.from && new Date(dueDateSetItem.from);
       const toDate = dueDateSetItem.to && new Date(dueDateSetItem.to);
@@ -24,7 +24,7 @@ export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) 
     }
   }
   if (!currentDate) {
-    currentDate = new Date(epic["Due date"]);
+    currentDate = new Date(epic['Due date']);
   }
   if (!dueDateWasPriorToTheFirstChangeAfterTheCheckpoint) {
     dueDateWasPriorToTheFirstChangeAfterTheCheckpoint = currentDate;
@@ -52,7 +52,7 @@ export function parseDateISOString(s) {
     return new Date(s.getTime() + s.getTimezoneOffset() * 60 * 1000);
   }
   if (s.split(/\D/).length === 3) {
-    throw new Error("Unable to parse " + s);
+    throw new Error('Unable to parse ' + s);
   }
 
   return new Date(s);
@@ -114,7 +114,7 @@ export function getDateFromLastPeriod(initiatives, lowercasePhase, checkpoint) {
       if (initiative[lowercasePhase]) {
         const { dueDateWasPriorToTheFirstChangeAfterTheCheckpoint } = howMuchHasDueDateMovedForwardChangedSince(
           initiative[lowercasePhase],
-          checkpoint
+          checkpoint,
         );
         return dueDateWasPriorToTheFirstChangeAfterTheCheckpoint;
       }
@@ -178,7 +178,6 @@ export function getFirstDateFrom(initiatives, property) {
     .map((init) => parseDateISOString(init[property][START_DATE_KEY]));
   return values.length ? new Date(Math.min(...values)) : undefined;
 }
-
 
 export function oneDayEarlier(date) {
   const newDate = new Date(date);

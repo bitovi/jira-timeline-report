@@ -1,1 +1,1 @@
-export { default } from "./ScatterPlotViewSettings";
+export { default } from './ScatterPlotViewSettings';

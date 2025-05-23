@@ -4,17 +4,13 @@ import {
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
   isDerivedRelease,
-} from "../../rollup/rollup";
-import { getStartAndDueData, mergeStartAndDueData } from "../../rollup/dates/dates";
-import {
-  workType as workTypes,
-  WorkType,
-  DerivedWorkStatus,
-} from "../../derived/work-status/work-status";
-import { RollupLevelAndCalculation } from "../../shared/types";
-import { StartData, DueData } from "../../../shared/issue-data/date-data";
-import { DerivedWorkTiming } from "../../derived/work-timing/work-timing";
-import { notEmpty } from "../../shared/helpers";
+} from '../../rollup/rollup';
+import { getStartAndDueData, mergeStartAndDueData } from '../../rollup/dates/dates';
+import { workType as workTypes, WorkType, DerivedWorkStatus } from '../../derived/work-status/work-status';
+import { RollupLevelAndCalculation } from '../../shared/types';
+import { StartData, DueData } from '../../../shared/issue-data/date-data';
+import { DerivedWorkTiming } from '../../derived/work-timing/work-timing';
+import { notEmpty } from '../../shared/helpers';
 
 // TODO:
 
@@ -35,7 +31,7 @@ export type WorkTypeRollups = {
 };
 
 export type WithChildren = {
-  children: {[key in WorkType]?: Partial<DateAndIssueKeys>};
+  children: { [key in WorkType]?: Partial<DateAndIssueKeys> };
 };
 
 export type WithWorkTypeRollups = {
@@ -50,12 +46,9 @@ export type WorkTypeChildRollups = {
 
 export function addWorkTypeDates<T>(
   issuesOrReleases: IssueOrRelease<T>[],
-  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
 ): IssueOrRelease<T & WithWorkTypeRollups>[] {
-  const groupedIssues = groupIssuesByHierarchyLevelOrType(
-    issuesOrReleases,
-    rollupTimingLevelsAndCalculations
-  );
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
   // TODO remove commented code - DBrandon 2024/11/26
   // const rollupMethods = rollupTimingLevelsAndCalculations
   //   .map((rollupData) => rollupData.calculation)
@@ -127,7 +120,7 @@ function getSelf({
 
 export function mergeParentAndChildIfTheyHaveDates<T>(
   parentIssueOrRelease: IssueOrRelease<T>,
-  childRollups: WorkTypeChildRollups[]
+  childRollups: WorkTypeChildRollups[],
 ) {
   const parent = parentInfo(parentIssueOrRelease);
   const self = getSelf(parent);
@@ -141,9 +134,7 @@ export function mergeParentAndChildIfTheyHaveDates<T>(
 
   for (let workType of workTypes) {
     // combine for children
-    const rollupForWorkType = childRollups
-      .map((childRollup) => childRollup.combined?.[workType])
-      .filter(notEmpty);
+    const rollupForWorkType = childRollups.map((childRollup) => childRollup.combined?.[workType]).filter(notEmpty);
 
     // if the children have something for this type
     if (rollupForWorkType.length) {
@@ -151,7 +142,7 @@ export function mergeParentAndChildIfTheyHaveDates<T>(
         rollupForWorkType
           .map((r) => r.issueKeys)
           .flat(1)
-          .filter(notEmpty)
+          .filter(notEmpty),
       );
 
       const workTypeDates = {

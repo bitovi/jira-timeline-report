@@ -51,11 +51,10 @@ export const createEmptyTeamConfiguration = (issueHierarchy: string[]): TeamConf
     (config, level) => {
       return { ...config, [level]: createEmptyConfiguration() };
     },
-    { defaults: createEmptyConfiguration() }
+    { defaults: createEmptyConfiguration() },
   );
 };
 
 export const createEmptyAllTeamsData = (issueHierarchy: string[] = []): AllTeamData => {
   return { __GLOBAL__: createEmptyTeamConfiguration(issueHierarchy) };
 };
-

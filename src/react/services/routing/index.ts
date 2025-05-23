@@ -1,2 +1,2 @@
-export * from "./RoutingProvider";
-export { default as Link } from "./Link";
+export * from './RoutingProvider';
+export { default as Link } from './Link';

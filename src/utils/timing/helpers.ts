@@ -33,7 +33,7 @@ export function createBaseLevels(issueHierarchy: IssueType[]) {
     return {
       type: issue.name,
       source: issue,
-      plural: issue.name + "s",
+      plural: issue.name + 's',
       hierarchyLevel: issue.hierarchyLevel,
     };
   });
@@ -43,7 +43,7 @@ export function calculationsForLevel(
   parent: { type: string },
   child: { type: string; plural: string },
   selected: string,
-  last: boolean
+  last: boolean,
 ) {
   if (!last) {
     return Object.keys(calculationKeysToNames).map((calculationName) => {
@@ -52,7 +52,7 @@ export function calculationsForLevel(
         child: child.type,
         calculation: calculationName,
         name: calculationKeysToNames[calculationName](parent, child),
-        selected: selected ? selected === calculationName : "widestRange" === calculationName,
+        selected: selected ? selected === calculationName : 'widestRange' === calculationName,
       };
     });
   } else {
@@ -60,8 +60,8 @@ export function calculationsForLevel(
       {
         parent: parent.type,
         child: null,
-        calculation: "parentOnly",
-        name: calculationKeysToNames.parentOnly(parent, { plural: "" }),
+        calculation: 'parentOnly',
+        name: calculationKeysToNames.parentOnly(parent, { plural: '' }),
         selected: true,
       },
     ];
@@ -76,10 +76,7 @@ export function calculationsForLevel(
  * @returns
  */
 // TODO: this is a duplicate function, any change needs to find the other one
-export function getTimingLevels(
-  issueHierarchy: IssueType[],
-  timingCalculations: Record<string, string>
-) {
+export function getTimingLevels(issueHierarchy: IssueType[], timingCalculations: Record<string, string>) {
   const baseLevels = createBaseLevels(issueHierarchy);
 
   return baseLevels.map((level, i) => {

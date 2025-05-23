@@ -1,12 +1,12 @@
-import type { FC } from "react";
-import type { Configuration } from "../../services/team-configuration";
-import type { Control } from "react-hook-form";
-import type { FieldUpdates } from "../../ConfigureTeamsForm";
+import type { FC } from 'react';
+import type { Configuration } from '../../services/team-configuration';
+import type { Control } from 'react-hook-form';
+import type { FieldUpdates } from '../../ConfigureTeamsForm';
 
-import React from "react";
+import React from 'react';
 
-import ToggleButton from "../../../../../../../components/ToggleButton";
-import { FormToggle } from "../Toggle";
+import ToggleButton from '../../../../../../../components/ToggleButton';
+import { FormToggle } from '../Toggle';
 
 interface InheritanceToggleFieldProps {
   isInheriting: boolean;
@@ -29,8 +29,8 @@ const InheritanceToggleField: FC<InheritanceToggleFieldProps> = ({
       <ToggleButton
         active={!isInheriting}
         onActiveChange={onInheritanceChange}
-        inactiveLabel={isInheriting ? "inheriting" : "inherit"}
-        activeLabel={isInheriting ? "customize" : "customized"}
+        inactiveLabel={isInheriting ? 'inheriting' : 'inherit'}
+        activeLabel={isInheriting ? 'customize' : 'customized'}
       />
     </div>
   );

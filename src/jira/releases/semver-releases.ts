@@ -3,8 +3,8 @@
  * sorting them using semantic versioning, and generating unique short names for each release.
  */
 
-import semver from "semver";
-import uniqueTrailingNames from "./unique-trailing-names";
+import semver from 'semver';
+import uniqueTrailingNames from './unique-trailing-names';
 
 interface UnsortedRelease {
   release: string;
@@ -20,7 +20,7 @@ interface SemverRelease {
 function partialReleaseName(release: string): string | undefined {
   let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
   if (match) {
-    return match[0].replace(".X", ".0");
+    return match[0].replace('.X', '.0');
   }
 }
 
@@ -28,10 +28,10 @@ export function cleanedRelease(release: string): string | undefined {
   let clean = partialReleaseName(release);
   if (clean) {
     if (clean.length === 1) {
-      clean = clean + ".0.0";
+      clean = clean + '.0.0';
     }
     if (clean.length === 3) {
-      clean = clean + ".0";
+      clean = clean + '.0';
     }
     if (semver.clean(clean)) {
       return clean;
@@ -53,17 +53,13 @@ export function semverSort(values: string[]): string[] {
   return cleanSorted.map((clean: string) => cleanMap[clean]);
 }
 
-export default function deriveReleases(
-  unsortedReleases: UnsortedRelease[]
-): SemverRelease[] {
+export default function deriveReleases(unsortedReleases: UnsortedRelease[]): SemverRelease[] {
   const releaseToReleaseObject: Record<string, UnsortedRelease> = {};
   for (let releaseObject of unsortedReleases) {
     releaseToReleaseObject[releaseObject.release] = releaseObject;
   }
 
-  const semverReleases: string[] = semverSort(
-    Object.keys(releaseToReleaseObject)
-  );
+  const semverReleases: string[] = semverSort(Object.keys(releaseToReleaseObject));
 
   const shortReleaseNames: string[] = uniqueTrailingNames(semverReleases);
 

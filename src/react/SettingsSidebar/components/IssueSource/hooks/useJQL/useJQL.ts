@@ -1,21 +1,15 @@
-import { useState } from "react";
-import { value } from "../../../../../../can";
-import routeData from "../../../../../../canjs/routing/route-data";
-import { useCanObservable } from "../../../../../hooks/useCanObservable";
+import { useState } from 'react';
+import { value } from '../../../../../../can';
+import routeData from '../../../../../../canjs/routing/route-data';
+import { useCanObservable } from '../../../../../hooks/useCanObservable';
 
 export const useJQL = () => {
-  const jqlFromRouteData = useCanObservable(value.from<string>(routeData, "jql"));
-  const childJqlFromRouteData = useCanObservable(value.from<string>(routeData, "childJQL"));
-  const statusesToExcludeFromRouteData = useCanObservable(
-    value.from<string[]>(routeData, "statusesToExclude")
-  );
-  const loadChildrenFromRouteData = useCanObservable(
-    value.from<boolean>(routeData, "loadChildren")
-  );
+  const jqlFromRouteData = useCanObservable(value.from<string>(routeData, 'jql'));
+  const childJqlFromRouteData = useCanObservable(value.from<string>(routeData, 'childJQL'));
+  const statusesToExcludeFromRouteData = useCanObservable(value.from<string[]>(routeData, 'statusesToExclude'));
+  const loadChildrenFromRouteData = useCanObservable(value.from<boolean>(routeData, 'loadChildren'));
 
-  const [statusesToExclude, setStatusesToExclude] = useState<string[]>(
-    statusesToExcludeFromRouteData
-  );
+  const [statusesToExclude, setStatusesToExclude] = useState<string[]>(statusesToExcludeFromRouteData);
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJql, setChildJql] = useState(childJqlFromRouteData);
   const [loadChildren, setLoadChildren] = useState(loadChildrenFromRouteData);
@@ -44,8 +38,7 @@ export const useJQL = () => {
     setStatusesToExclude,
     setLoadChildren,
     applyButtonEnabled:
-      (!!jql &&
-        (jql !== jqlFromRouteData || childJql !== childJqlFromRouteData || statusesDiffer)) ||
+      (!!jql && (jql !== jqlFromRouteData || childJql !== childJqlFromRouteData || statusesDiffer)) ||
       loadChildren !== loadChildrenFromRouteData,
   };
 };

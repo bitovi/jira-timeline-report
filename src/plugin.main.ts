@@ -1,7 +1,7 @@
-import mainHelper from "./shared/main-helper.js";
-import { createJiraPluginStorage } from "./jira/storage/index.plugin";
-import routing from "./routing/index.plugin";
-import { createPluginLinkBuilder } from "./routing/index.plugin";
+import mainHelper from './shared/main-helper.js';
+import { createJiraPluginStorage } from './jira/storage/index.plugin';
+import routing from './routing/index.plugin';
+import { createPluginLinkBuilder } from './routing/index.plugin';
 
 interface LicensingInformation {
   active: boolean;
@@ -14,17 +14,15 @@ const defaultLicensing = {
 };
 
 const getLicensing = async (appKey: string): Promise<LicensingInformation> => {
-  if (appKey.includes("staging") || appKey.includes("local")) {
+  if (appKey.includes('staging') || appKey.includes('local')) {
     // we don't require licensing for staging or local development
     return { active: true, evaluation: true };
   }
 
   return (
-    AP?.request<{ body: string }>("/rest/atlassian-connect/1/addons/" + appKey)
+    AP?.request<{ body: string }>('/rest/atlassian-connect/1/addons/' + appKey)
       .then(({ body }) => {
-        return (
-          (JSON.parse(body) as { license?: LicensingInformation })?.license ?? defaultLicensing
-        );
+        return (JSON.parse(body) as { license?: LicensingInformation })?.license ?? defaultLicensing;
       })
       .catch((err) => {
         console.error(`Error parsing licensing information`, err);
@@ -47,7 +45,7 @@ export default async function main() {
       FRONTEND_SENTRY_DSN: import.meta.env.VITE_FRONTEND_SENTRY_DSN,
     },
     {
-      host: "jira",
+      host: 'jira',
       createStorage: createJiraPluginStorage,
       configureRouting: (route: {
         reconcileRoutingState: () => void;
@@ -63,7 +61,7 @@ export default async function main() {
       showSidebarBranding: true,
       isAlwaysLoggedIn: true,
       licensingPromise: getLicensing(import.meta.env.VITE_JIRA_APP_KEY),
-    }
+    },
   );
 }
 

@@ -8,8 +8,8 @@ import {
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
   isDerivedRelease,
-  isDerivedIssue
-} from "../rollup";
+  isDerivedIssue,
+} from '../rollup';
 
 export type WithWarningIssues<T = unknown> = { warningIssues: IssueOrRelease<T>[] };
 
@@ -19,12 +19,9 @@ export function rollupWarningIssues<T>(
   rollupTimingLevelsAndCalculations: Array<{
     type: string;
     hierarchyLevel?: number;
-  }>
+  }>,
 ): IssueOrRelease<T & WithWarningIssues<T>>[] {
-  const groupedIssues = groupIssuesByHierarchyLevelOrType(
-    issuesOrReleases,
-    rollupTimingLevelsAndCalculations
-  );
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
 
   const rolledUpWarnings = rollupWarningIssuesForGroupedHierarchy(groupedIssues);
 
@@ -40,15 +37,12 @@ export function rollupWarningIssuesForGroupedHierarchy<T>(groupedHierarchy: Issu
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(issueOrRelease, children: IssueOrRelease<T>[][]) {
       if (isDerivedRelease(issueOrRelease)) return [...children.flat(1)];
-      
-      const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
-      const hasWarningLabel = lowerCaseLabels.some((label) => label === "warning");
-      const hasWarningStatus = isDerivedIssue(issueOrRelease) && issueOrRelease?.status === "warning";
 
-      const addParent =
-      hasWarningLabel || hasWarningStatus
-          ? [issueOrRelease]
-          : [];
+      const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
+      const hasWarningLabel = lowerCaseLabels.some((label) => label === 'warning');
+      const hasWarningStatus = isDerivedIssue(issueOrRelease) && issueOrRelease?.status === 'warning';
+
+      const addParent = hasWarningLabel || hasWarningStatus ? [issueOrRelease] : [];
       return [...children.flat(1), ...addParent];
     },
   });

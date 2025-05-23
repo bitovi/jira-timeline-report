@@ -1,11 +1,11 @@
-import type { FC } from "react";
-import type { Report, Reports } from "../../../../jira/reports";
+import type { FC } from 'react';
+import type { Report, Reports } from '../../../../jira/reports';
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from 'react';
 
-import DropdownMenu from "@atlaskit/dropdown-menu";
-import EmptyView from "./EmptyView";
-import RecentReports from "./RecentReports";
+import DropdownMenu from '@atlaskit/dropdown-menu';
+import EmptyView from './EmptyView';
+import RecentReports from './RecentReports';
 
 interface SavedReportDropdownProps {
   onViewReportsButtonClicked: () => void;

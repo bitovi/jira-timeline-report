@@ -1,7 +1,7 @@
-import { parseDateIntoLocalTimezone } from "../../utils/date/date-helpers";
-import { JiraIssue, NormalizedIssue, ParentIssue } from "../shared/types";
+import { parseDateIntoLocalTimezone } from '../../utils/date/date-helpers';
+import { JiraIssue, NormalizedIssue, ParentIssue } from '../shared/types';
 
-import * as defaults from "./defaults";
+import * as defaults from './defaults';
 
 type DefaultsToConfig<T> = {
   [K in keyof T as K extends `${infer FnName}Default` ? FnName : never]: T[K];
@@ -9,7 +9,7 @@ type DefaultsToConfig<T> = {
 
 export type NormalizeIssueConfig = DefaultsToConfig<typeof defaults>;
 export type NormalizeParentConfig = DefaultsToConfig<
-  Pick<typeof defaults, "getSummaryDefault" | "getHierarchyLevelDefault" | "getTypeDefault" | "getIssueKeyDefault">
+  Pick<typeof defaults, 'getSummaryDefault' | 'getHierarchyLevelDefault' | 'getTypeDefault' | 'getIssueKeyDefault'>
 >;
 
 export function normalizeParent(
@@ -19,7 +19,7 @@ export function normalizeParent(
     getHierarchyLevel = defaults.getHierarchyLevelDefault,
     getType = defaults.getTypeDefault,
     getIssueKey = defaults.getIssueKeyDefault,
-  }: Partial<NormalizeParentConfig> = {}
+  }: Partial<NormalizeParentConfig> = {},
 ) {
   return {
     summary: getSummary(issue),

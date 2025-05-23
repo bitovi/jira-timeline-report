@@ -1,9 +1,9 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
-import CrossIcon from "@atlaskit/icon/glyph/cross";
-import { IconButton } from "@atlaskit/button/new";
-import { ModalTitle } from "@atlaskit/modal-dialog";
+import React from 'react';
+import CrossIcon from '@atlaskit/icon/glyph/cross';
+import { IconButton } from '@atlaskit/button/new';
+import { ModalTitle } from '@atlaskit/modal-dialog';
 
 interface BugReportModalHeaderProps {
   onClose: () => void;

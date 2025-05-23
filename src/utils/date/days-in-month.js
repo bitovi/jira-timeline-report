@@ -6,11 +6,8 @@
   console.log(getDaysInMonth(2025, 12)); // December 2025 → 31 days
  */
 
-
-
 export function getDaysInMonth(year, month) {
-    // Create a date for the first day of the next month
-    const date = new Date(year, month, 0); // Month is 1-based for day 0
-    return date.getDate(); // Returns the number of days in the month
-  }
-  
+  // Create a date for the first day of the next month
+  const date = new Date(year, month, 0); // Month is 1-based for day 0
+  return date.getDate(); // Returns the number of days in the month
+}

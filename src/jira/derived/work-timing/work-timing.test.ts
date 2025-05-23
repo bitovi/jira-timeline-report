@@ -1,19 +1,19 @@
-import { beforeEach, describe, expect, Mock, test, vi } from "vitest";
-import { deriveWorkTiming, DerivedWorkTiming } from "./work-timing";
-import { NormalizedIssue, NormalizedTeam } from "../../shared/types";
-import { estimateExtraPoints, sampleExtraPoints } from "../../../shared/confidence";
+import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
+import { deriveWorkTiming, DerivedWorkTiming } from './work-timing';
+import { NormalizedIssue, NormalizedTeam } from '../../shared/types';
+import { estimateExtraPoints, sampleExtraPoints } from '../../../shared/confidence';
 
-vi.mock("../../../shared/confidence", () => ({
+vi.mock('../../../shared/confidence', () => ({
   estimateExtraPoints: vi.fn(),
   sampleExtraPoints: vi.fn(),
 }));
 
-describe("work-timing", () => {
+describe('work-timing', () => {
   const mockEstimateExtraPoints = estimateExtraPoints as Mock;
   const mockSampleExtraPoints = sampleExtraPoints as Mock;
 
   const defaultTeam: NormalizedTeam = {
-    name: "Team 1",
+    name: 'Team 1',
     daysPerSprint: 10,
     totalPointsPerDay: 50,
     velocity: 100,
@@ -32,19 +32,19 @@ describe("work-timing", () => {
     vi.resetAllMocks();
   });
 
-  test("should correctly derive work timing with valid confidence and story points", () => {
+  test('should correctly derive work timing with valid confidence and story points', () => {
     const normalizedIssue = {
       confidence: 70,
       storyPoints: 40,
       storyPointsMedian: 35,
       team: defaultTeam,
-      startDate: new Date("2023-01-01"),
-      dueDate: new Date("2023-01-10"),
+      startDate: new Date('2023-01-01'),
+      dueDate: new Date('2023-01-10'),
       sprints: [
         {
-          name: "Sprint 1",
-          startDate: new Date("2023-01-02"),
-          endDate: new Date("2023-01-09"),
+          name: 'Sprint 1',
+          startDate: new Date('2023-01-02'),
+          endDate: new Date('2023-01-09'),
         },
       ],
     } as NormalizedIssue;
@@ -78,23 +78,23 @@ describe("work-timing", () => {
     expect(result.hasSprintStartAndEndDate).toBe(true);
     expect(result.sprintDaysOfWork).toBe(6);
 
-    expect(result.start).toEqual(new Date("2023-01-01"));
+    expect(result.start).toEqual(new Date('2023-01-01'));
     expect(result.startFrom).toEqual({
-      message: "start date",
+      message: 'start date',
       reference: normalizedIssue,
     });
-    expect(result.due).toEqual(new Date("2023-01-10"));
+    expect(result.due).toEqual(new Date('2023-01-10'));
     expect(result.dueTo).toEqual({
-      message: "due date",
+      message: 'due date',
       reference: normalizedIssue,
     });
     expect(result.sprintStartData).toEqual({
-      start: new Date("2023-01-02"),
-      startFrom: { message: "Sprint 1", reference: normalizedIssue },
+      start: new Date('2023-01-02'),
+      startFrom: { message: 'Sprint 1', reference: normalizedIssue },
     });
     expect(result.endSprintData).toEqual({
-      due: new Date("2023-01-09"),
-      dueTo: { message: "Sprint 1", reference: normalizedIssue },
+      due: new Date('2023-01-09'),
+      dueTo: { message: 'Sprint 1', reference: normalizedIssue },
     });
 
     expect(result.totalDaysOfWork).toBe(7);
@@ -102,19 +102,19 @@ describe("work-timing", () => {
     expect(result.completedDaysOfWork).toBe(7);
   });
 
-  test("should use default confidence and story points when invalid", () => {
+  test('should use default confidence and story points when invalid', () => {
     const normalizedIssue = {
       confidence: null,
       storyPoints: null,
       storyPointsMedian: null,
       team: defaultTeam,
-      startDate: new Date("2023-01-01"),
-      dueDate: new Date("2023-01-10"),
+      startDate: new Date('2023-01-01'),
+      dueDate: new Date('2023-01-10'),
       sprints: [
         {
-          name: "Sprint 1",
-          startDate: new Date("2023-01-02"),
-          endDate: new Date("2023-01-09"),
+          name: 'Sprint 1',
+          startDate: new Date('2023-01-02'),
+          endDate: new Date('2023-01-09'),
         },
       ],
     } as NormalizedIssue;
@@ -149,23 +149,23 @@ describe("work-timing", () => {
     expect(result.hasSprintStartAndEndDate).toBe(true);
     expect(result.sprintDaysOfWork).toBe(6);
 
-    expect(result.start).toEqual(new Date("2023-01-01"));
+    expect(result.start).toEqual(new Date('2023-01-01'));
     expect(result.startFrom).toEqual({
-      message: "start date",
+      message: 'start date',
       reference: normalizedIssue,
     });
-    expect(result.due).toEqual(new Date("2023-01-10"));
+    expect(result.due).toEqual(new Date('2023-01-10'));
     expect(result.dueTo).toEqual({
-      message: "due date",
+      message: 'due date',
       reference: normalizedIssue,
     });
     expect(result.sprintStartData).toEqual({
-      start: new Date("2023-01-02"),
-      startFrom: { message: "Sprint 1", reference: normalizedIssue },
+      start: new Date('2023-01-02'),
+      startFrom: { message: 'Sprint 1', reference: normalizedIssue },
     });
     expect(result.endSprintData).toEqual({
-      due: new Date("2023-01-09"),
-      dueTo: { message: "Sprint 1", reference: normalizedIssue },
+      due: new Date('2023-01-09'),
+      dueTo: { message: 'Sprint 1', reference: normalizedIssue },
     });
 
     expect(result.totalDaysOfWork).toBe(7);
@@ -173,7 +173,7 @@ describe("work-timing", () => {
     expect(result.completedDaysOfWork).toBe(7);
   });
 
-  test("should handle missing start and due dates by using defaults", () => {
+  test('should handle missing start and due dates by using defaults', () => {
     const normalizedIssue = {
       confidence: 90,
       storyPoints: 50,

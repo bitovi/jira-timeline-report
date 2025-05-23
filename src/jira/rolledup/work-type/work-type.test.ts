@@ -1,10 +1,10 @@
 // sum.test.js
-import { expect, test } from "vitest";
-import { rollupWorkTypeDates } from "./work-type";
-import { IssueOrRelease } from "../../rollup/rollup";
-import { WithDateRollup } from "../../rollup/dates/dates";
+import { expect, test } from 'vitest';
+import { rollupWorkTypeDates } from './work-type';
+import { IssueOrRelease } from '../../rollup/rollup';
+import { WithDateRollup } from '../../rollup/dates/dates';
 
-test("rollupWorkTypeDates all with dates", () => {
+test('rollupWorkTypeDates all with dates', () => {
   const _2000 = new Date(2000, 0),
     _2001 = new Date(2001, 0),
     _2002 = new Date(2002, 0),
@@ -16,57 +16,57 @@ test("rollupWorkTypeDates all with dates", () => {
   const input = [
     [
       {
-        key: "o-1",
+        key: 'o-1',
         parentKey: null,
         derivedTiming: { start: _2000, due: _2007 },
-        derivedStatus: { workType: "dev" },
-        type: "outcome",
+        derivedStatus: { workType: 'dev' },
+        type: 'outcome',
       },
     ],
     [
       {
-        key: "m-2",
-        parentKey: "o-1",
+        key: 'm-2',
+        parentKey: 'o-1',
         derivedTiming: { start: _2001, due: _2004 },
-        derivedStatus: { workType: "dev" },
-        type: "milestone",
+        derivedStatus: { workType: 'dev' },
+        type: 'milestone',
       },
       {
-        key: "m-3",
-        parentKey: "o-1",
+        key: 'm-3',
+        parentKey: 'o-1',
         derivedTiming: { start: _2003, due: _2007 },
-        derivedStatus: { workType: "qa" },
-        type: "milestone",
+        derivedStatus: { workType: 'qa' },
+        type: 'milestone',
       },
     ],
     [
       {
-        key: "i-4",
-        parentKey: "m-2",
+        key: 'i-4',
+        parentKey: 'm-2',
         derivedTiming: { start: _2000, due: _2002 },
-        derivedStatus: { workType: "design" },
-        type: "initiative",
+        derivedStatus: { workType: 'design' },
+        type: 'initiative',
       },
       {
-        key: "i-5",
-        parentKey: "m-2",
+        key: 'i-5',
+        parentKey: 'm-2',
         derivedTiming: { start: _2002, due: _2004 },
-        derivedStatus: { workType: "design" },
-        type: "initiative",
+        derivedStatus: { workType: 'design' },
+        type: 'initiative',
       },
       {
-        key: "i-6",
-        parentKey: "m-3",
+        key: 'i-6',
+        parentKey: 'm-3',
         derivedTiming: { start: _2003, due: _2004 },
-        derivedStatus: { workType: "qa" },
-        type: "initiative",
+        derivedStatus: { workType: 'qa' },
+        type: 'initiative',
       },
       {
-        key: "i-7",
-        parentKey: "m-3",
+        key: 'i-7',
+        parentKey: 'm-3',
         derivedTiming: { start: _2004, due: _2007 },
-        derivedStatus: { workType: "qa" },
-        type: "initiative",
+        derivedStatus: { workType: 'qa' },
+        type: 'initiative',
       },
     ],
   ].reverse() as IssueOrRelease<WithDateRollup>[][];
@@ -80,7 +80,7 @@ test("rollupWorkTypeDates all with dates", () => {
   // test an initiative
   expect(combinedRollupData[2][0]).toStrictEqual({
     design: {
-      issueKeys: ["i-4"],
+      issueKeys: ['i-4'],
       start: _2000,
       due: _2002,
     },
@@ -90,19 +90,19 @@ test("rollupWorkTypeDates all with dates", () => {
 
   expect(combinedRollupData[1][0]).toStrictEqual({
     design: {
-      issueKeys: ["i-4", "i-5"],
+      issueKeys: ['i-4', 'i-5'],
       start: _2000,
       due: _2004,
     },
     dev: {
-      issueKeys: ["m-2"],
+      issueKeys: ['m-2'],
       start: _2001,
       due: _2004,
     },
   });
 });
 
-test("rollupWorkTypeDates only leaf dates", () => {
+test('rollupWorkTypeDates only leaf dates', () => {
   const _2000 = new Date(2000, 0),
     _2001 = new Date(2001, 0),
     _2002 = new Date(2002, 0),
@@ -114,57 +114,57 @@ test("rollupWorkTypeDates only leaf dates", () => {
   const input = [
     [
       {
-        key: "o-1",
+        key: 'o-1',
         parentKey: null,
         derivedTiming: {},
-        derivedStatus: { workType: "dev" },
-        type: "outcome",
+        derivedStatus: { workType: 'dev' },
+        type: 'outcome',
       },
     ],
     [
       {
-        key: "m-2",
-        parentKey: "o-1",
+        key: 'm-2',
+        parentKey: 'o-1',
         derivedTiming: {},
-        derivedStatus: { workType: "dev" },
-        type: "milestone",
+        derivedStatus: { workType: 'dev' },
+        type: 'milestone',
       },
       {
-        key: "m-3",
-        parentKey: "o-1",
+        key: 'm-3',
+        parentKey: 'o-1',
         derivedTiming: {},
-        derivedStatus: { workType: "qa" },
-        type: "milestone",
+        derivedStatus: { workType: 'qa' },
+        type: 'milestone',
       },
     ],
     [
       {
-        key: "i-4",
-        parentKey: "m-2",
+        key: 'i-4',
+        parentKey: 'm-2',
         derivedTiming: { start: _2000, due: _2002 },
-        derivedStatus: { workType: "design" },
-        type: "initiative",
+        derivedStatus: { workType: 'design' },
+        type: 'initiative',
       },
       {
-        key: "i-5",
-        parentKey: "m-2",
+        key: 'i-5',
+        parentKey: 'm-2',
         derivedTiming: { start: _2002, due: _2004 },
-        derivedStatus: { workType: "design" },
-        type: "initiative",
+        derivedStatus: { workType: 'design' },
+        type: 'initiative',
       },
       {
-        key: "i-6",
-        parentKey: "m-3",
+        key: 'i-6',
+        parentKey: 'm-3',
         derivedTiming: { start: _2003, due: _2004 },
-        derivedStatus: { workType: "qa" },
-        type: "initiative",
+        derivedStatus: { workType: 'qa' },
+        type: 'initiative',
       },
       {
-        key: "i-7",
-        parentKey: "m-3",
+        key: 'i-7',
+        parentKey: 'm-3',
         derivedTiming: { start: _2004, due: _2007 },
-        derivedStatus: { workType: "qa" },
-        type: "initiative",
+        derivedStatus: { workType: 'qa' },
+        type: 'initiative',
       },
     ],
   ].reverse() as IssueOrRelease<WithDateRollup>[][];
@@ -178,7 +178,7 @@ test("rollupWorkTypeDates only leaf dates", () => {
   // test an initiative
   expect(combinedRollupData[2][0]).toStrictEqual({
     design: {
-      issueKeys: ["i-4"],
+      issueKeys: ['i-4'],
       start: _2000,
       due: _2002,
     },
@@ -188,7 +188,7 @@ test("rollupWorkTypeDates only leaf dates", () => {
 
   expect(combinedRollupData[1][0]).toStrictEqual({
     design: {
-      issueKeys: ["i-4", "i-5"],
+      issueKeys: ['i-4', 'i-5'],
       start: _2000,
       due: _2004,
     },
@@ -196,12 +196,12 @@ test("rollupWorkTypeDates only leaf dates", () => {
 
   expect(combinedRollupData[0][0]).toStrictEqual({
     design: {
-      issueKeys: ["i-4", "i-5"],
+      issueKeys: ['i-4', 'i-5'],
       start: _2000,
       due: _2004,
     },
     qa: {
-      issueKeys: ["i-6", "i-7"],
+      issueKeys: ['i-6', 'i-7'],
       start: _2003,
       due: _2007,
     },

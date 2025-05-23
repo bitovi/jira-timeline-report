@@ -1,7 +1,7 @@
-@import "./primitives.css";
-@import "./colors.css";
-@import "./fonts.css";
-@import "./spacing.css";
+@import './primitives.css';
+@import './colors.css';
+@import './fonts.css';
+@import './spacing.css';
 
 @tailwind base;
 @tailwind components;
@@ -35,7 +35,7 @@
 
 /* Bitov special design system */
 .bitovi-font-poppins {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 .color-text-bitovi-red-orange {
   color: var(--bitovi-red-orange);
@@ -47,7 +47,9 @@
 simple-tooltip {
   background-color: #ffffff;
   border-radius: 3px;
-  box-shadow: 0px 0px 1px 0px rgba(9, 30, 66, 0.31), 0px 8px 12px 0px rgba(9, 30, 66, 0.15);
+  box-shadow:
+    0px 0px 1px 0px rgba(9, 30, 66, 0.31),
+    0px 8px 12px 0px rgba(9, 30, 66, 0.15);
   z-index: 1000;
 }
 simple-tooltip.reset {
@@ -297,7 +299,9 @@ simple-tooltip span {
   border: solid 1px #ddeeee;
   border-collapse: collapse;
   border-spacing: 0;
-  font: normal 13px Arial, sans-serif;
+  font:
+    normal 13px Arial,
+    sans-serif;
 }
 
 .basic-table thead th {
@@ -351,18 +355,18 @@ details.rounded-lg-gray-100-on-white summary {
 }
 
 @layer utilities {
-  .no-spin-container > input[type="number"]::-webkit-outer-spin-button,
-  .no-spin-container > input[type="number"]::-webkit-inner-spin-button {
+  .no-spin-container > input[type='number']::-webkit-outer-spin-button,
+  .no-spin-container > input[type='number']::-webkit-inner-spin-button {
     @apply appearance-none;
   }
 
-  .no-spin-container > input[type="number"] {
+  .no-spin-container > input[type='number'] {
     @apply appearance-none;
     -moz-appearance: textfield; /* firefox */
   }
 }
 
-#view-settings-nested-modal-visibility-override [role="menu"],
-#filters-nested-modal-visibility-override [role="menu"] {
+#view-settings-nested-modal-visibility-override [role='menu'],
+#filters-nested-modal-visibility-override [role='menu'] {
   overflow: visible;
 }

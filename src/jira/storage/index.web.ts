@@ -1,30 +1,30 @@
-import type { StorageFactory } from "./common";
+import type { StorageFactory } from './common';
 
-import { configurationIssueTitle } from "../../shared/configurationIssue";
+import { configurationIssueTitle } from '../../shared/configurationIssue';
 
 // Todo remove. See special logic note below
-import { AllTeamData } from "../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration";
+import { AllTeamData } from '../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 //
 
 interface Paragraph {
-  type: "paragraph";
+  type: 'paragraph';
   content?: Array<TextContent>;
 }
 
 type TextContent = {
-  type: "text";
+  type: 'text';
   text: string;
   marks?: Mark[];
 };
 
 type Mark = {
-  type: "strong";
+  type: 'strong';
 };
 
 interface CodeBlock {
-  type: "codeBlock";
+  type: 'codeBlock';
   attrs: { language: string };
-  content: Array<{ type: "text"; text: string }>;
+  content: Array<{ type: 'text'; text: string }>;
 }
 
 type StorageIssueContent = Table | Paragraph | CodeBlock;
@@ -37,17 +37,14 @@ interface StorageIssue {
   };
 }
 
-const getConfigurationIssue = async (
-  jiraHelpers: Parameters<StorageFactory>[number]
-): Promise<StorageIssue | null> => {
-  const configurationIssues: StorageIssue[] =
-    await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
-      Summary: string;
-      Description: { content: Array<StorageIssueContent> };
-    }>({
-      jql: `summary ~ "${configurationIssueTitle()}"`,
-      fields: ["summary", "Description"],
-    });
+const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
+  const configurationIssues: StorageIssue[] = await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
+    Summary: string;
+    Description: { content: Array<StorageIssueContent> };
+  }>({
+    jql: `summary ~ "${configurationIssueTitle()}"`,
+    fields: ['summary', 'Description'],
+  });
 
   if (!configurationIssues.length) {
     return null;
@@ -58,24 +55,20 @@ const getConfigurationIssue = async (
 
 const createCodeBlock = (using?: string): CodeBlock => {
   return {
-    type: "codeBlock",
-    attrs: { language: "json" },
-    content: [{ type: "text", text: using ?? `{}` }],
+    type: 'codeBlock',
+    attrs: { language: 'json' },
+    content: [{ type: 'text', text: using ?? `{}` }],
   };
 };
 
-function findTeamTable(
-  document: any
-): Array<Record<"team" | "velocity" | "tracks" | "sprint length", string>> | null {
+function findTeamTable(document: any): Array<Record<'team' | 'velocity' | 'tracks' | 'sprint length', string>> | null {
   return (
     searchDocument(document, (fragment: any) => {
-      if (fragment.type === "table") {
+      if (fragment.type === 'table') {
         const headerRow = fragment.content?.[0];
         if (
-          headerRow?.type === "tableRow" &&
-          headerRow.content?.some(
-            (header: any) => getTextFromWithinCell(header).toLowerCase() === "team"
-          )
+          headerRow?.type === 'tableRow' &&
+          headerRow.content?.some((header: any) => getTextFromWithinCell(header).toLowerCase() === 'team')
         ) {
           return matchTeamTable(fragment);
         }
@@ -98,9 +91,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
         return null;
       }
 
-      let storeContent = configurationIssue.fields.Description.content.find(
-        (content) => content.type === "codeBlock"
-      );
+      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === 'codeBlock');
 
       if (!storeContent) {
         storeContent = createCodeBlock(JSON.stringify({ [key]: defaultShape }));
@@ -115,12 +106,10 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const configurationIssue = await getConfigurationIssue(jiraHelpers);
 
       if (!configurationIssue) {
-        throw new Error("[Storage Error]: update (web-app) needs a configuration issue");
+        throw new Error('[Storage Error]: update (web-app) needs a configuration issue');
       }
 
-      let storeContent = configurationIssue.fields.Description.content.find(
-        (content) => content.type === "codeBlock"
-      );
+      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === 'codeBlock');
 
       if (!storeContent) {
         storeContent = createCodeBlock();
@@ -133,7 +122,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
 
       let newTeamsTable: Table | undefined;
 
-      if (!!teamTable && key === "all-team-data") {
+      if (!!teamTable && key === 'all-team-data') {
         newTeamsTable = getUpdatedTeamTable(value as AllTeamData, teamTable);
       }
       /**
@@ -143,9 +132,7 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
       const [stringifiedStore] = storeContent.content;
       const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-      const newContent: Array<StorageIssueContent> = [
-        createCodeBlock(JSON.stringify({ ...store, [key]: value })),
-      ];
+      const newContent: Array<StorageIssueContent> = [createCodeBlock(JSON.stringify({ ...store, [key]: value }))];
 
       /**
        * Temporary special logic, see below
@@ -167,13 +154,13 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
                  * Temporary special logic, see below
                  */
                 if (!!newTeamsTable) {
-                  return content.type !== "codeBlock" && content.type !== "table";
+                  return content.type !== 'codeBlock' && content.type !== 'table';
                 }
                 /**
                  * End special logic
                  */
 
-                return content.type !== "codeBlock";
+                return content.type !== 'codeBlock';
               }),
               ...newContent,
             ],
@@ -194,42 +181,48 @@ export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
 
 const getUpdatedTeamTable = (
   { __GLOBAL__, ...teams }: AllTeamData,
-  unformattedTeamTable: NonNullable<ReturnType<typeof findTeamTable>>
+  unformattedTeamTable: NonNullable<ReturnType<typeof findTeamTable>>,
 ): Table | undefined => {
   const teamTable = unformattedTeamTable?.map((team) => ({
     team: team.team,
     velocity: team.velocity,
     tracks: team.tracks,
-    sprintLength: team["sprint length"],
+    sprintLength: team['sprint length'],
   }));
 
   const teamsToSaveInTable = Object.keys(teams)
     .map((teamName) => {
       // Check if the team has some custom configuration in their defaults or epic level configuration for
       // velocity, tracks, and sprintLength
-      const epicHierarchyLevel = "1";
+      const epicHierarchyLevel = '1';
 
-      const formattedData = ["defaults", epicHierarchyLevel].reduce((teamInfo, level) => {
-        const config = teams?.[teamName]?.[level];
-        const data: Partial<Record<"sprintLength" | "velocity" | "tracks", number>> = {};
+      const formattedData = ['defaults', epicHierarchyLevel].reduce(
+        (teamInfo, level) => {
+          const config = teams?.[teamName]?.[level];
+          const data: Partial<Record<'sprintLength' | 'velocity' | 'tracks', number>> = {};
 
-        if (config?.sprintLength) {
-          data.sprintLength = config?.sprintLength;
-        }
+          if (config?.sprintLength) {
+            data.sprintLength = config?.sprintLength;
+          }
 
-        if (config?.tracks) {
-          data.tracks = config.tracks;
-        }
+          if (config?.tracks) {
+            data.tracks = config.tracks;
+          }
 
-        if (config?.velocityPerSprint) {
-          data.velocity = config.velocityPerSprint;
-        }
+          if (config?.velocityPerSprint) {
+            data.velocity = config.velocityPerSprint;
+          }
 
-        return {
-          ...teamInfo,
-          [level]: data,
-        };
-      }, {} as Record<"defaults" | typeof epicHierarchyLevel, Partial<Record<"sprintLength" | "velocity" | "tracks", number>>>);
+          return {
+            ...teamInfo,
+            [level]: data,
+          };
+        },
+        {} as Record<
+          'defaults' | typeof epicHierarchyLevel,
+          Partial<Record<'sprintLength' | 'velocity' | 'tracks', number>>
+        >,
+      );
 
       const updates = {
         ...formattedData.defaults,
@@ -267,13 +260,13 @@ const getUpdatedTeamTable = (
     }
 
     return createTable(
-      ["Team", "Velocity", "Tracks", "Sprint Length"],
+      ['Team', 'Velocity', 'Tracks', 'Sprint Length'],
       Object.keys(teamMap).map((key) => [
         teamMap[key].team,
-        (teamMap[key].velocity || "")?.toString(),
-        (teamMap[key].tracks || "")?.toString(),
-        (teamMap[key].sprintLength || "")?.toString(),
-      ])
+        (teamMap[key].velocity || '')?.toString(),
+        (teamMap[key].tracks || '')?.toString(),
+        (teamMap[key].sprintLength || '')?.toString(),
+      ]),
     );
   }
 };
@@ -281,18 +274,18 @@ const getUpdatedTeamTable = (
 //
 
 interface Table {
-  type: "table";
+  type: 'table';
   attrs: Record<string, string>;
   content: Array<TableRow>;
 }
 
 type TableRow = {
-  type: "tableRow";
+  type: 'tableRow';
   content: TableCell[];
 };
 
 type TableCell = {
-  type: "tableHeader" | "tableCell";
+  type: 'tableHeader' | 'tableCell';
   attrs: Record<string, unknown>;
   content: Paragraph[];
 };
@@ -300,11 +293,9 @@ type TableCell = {
 const createHead = (head: string[]): TableCell[] => {
   return head.map((name) => {
     return {
-      type: "tableHeader",
+      type: 'tableHeader',
       attrs: {},
-      content: [
-        { type: "paragraph", content: [{ type: "text", text: name, marks: [{ type: "strong" }] }] },
-      ],
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: name, marks: [{ type: 'strong' }] }] }],
     };
   });
 };
@@ -312,22 +303,22 @@ const createHead = (head: string[]): TableCell[] => {
 const createRowCells = (cells: string[]): TableCell[] => {
   return cells.map((value) => {
     return {
-      type: "tableCell",
+      type: 'tableCell',
       attrs: {},
-      content: [{ type: "paragraph", content: [{ type: "text", text: value }] }],
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: value }] }],
     };
   });
 };
 
 const createTable = (tableHead: string[], rows: string[][]): Table => {
   return {
-    type: "table",
+    type: 'table',
     attrs: {},
     content: [
-      { type: "tableRow", content: createHead(tableHead) },
+      { type: 'tableRow', content: createHead(tableHead) },
       ...rows.map((row) => {
         return {
-          type: "tableRow" as const,
+          type: 'tableRow' as const,
           content: createRowCells(row),
         };
       }),
@@ -337,21 +328,21 @@ const createTable = (tableHead: string[], rows: string[][]): Table => {
 
 export function getTextFromWithinCell(cell: TableCell) {
   return cell.content
-    .filter(({ type }) => type === "paragraph")
+    .filter(({ type }) => type === 'paragraph')
     .map(getTextFromParagraph)
     .flat()
-    .join(" ");
+    .join(' ');
 }
 
 function getTextFromParagraph(p: Paragraph) {
-  return p.content?.filter((text) => text.type === "text").map((text) => text.text);
+  return p.content?.filter((text) => text.type === 'text').map((text) => text.text);
 }
 
 export function matchTeamTable(fragment: StorageIssueContent) {
-  if (fragment.type !== "table") {
+  if (fragment.type !== 'table') {
     return false;
   }
-  if (fragment.content[0].type !== "tableRow") {
+  if (fragment.content[0].type !== 'tableRow') {
     return false;
   }
   const headerRow = fragment.content[0];
@@ -360,7 +351,7 @@ export function matchTeamTable(fragment: StorageIssueContent) {
     return getTextFromWithinCell(header).toLowerCase();
   });
 
-  if (!headerTitles.includes("team")) {
+  if (!headerTitles.includes('team')) {
     return false;
   }
 
@@ -381,10 +372,7 @@ export function matchTeamTable(fragment: StorageIssueContent) {
   return records;
 }
 
-export function searchDocument<T extends object = object, U = any>(
-  document: T,
-  matcher: (doc: {}) => U
-) {
+export function searchDocument<T extends object = object, U = any>(document: T, matcher: (doc: {}) => U) {
   let matches: Array<U> = [];
 
   // Helper function to recursively search for matches
@@ -393,7 +381,7 @@ export function searchDocument<T extends object = object, U = any>(
       for (const item of doc) {
         recurse(item);
       }
-    } else if (typeof doc === "object" && doc !== null) {
+    } else if (typeof doc === 'object' && doc !== null) {
       const result = matcher(doc);
       if (result) {
         matches.push(result); // Collect matching substructure

@@ -29,12 +29,11 @@ End-to-end tests are managed by **Playwright**. Use these commands to run your b
   ```
   This command will run Playwright E2E tests in watch mode, opening a UI for easier test management and debugging.
 
-
 ## Config Setup
 
 Due to Atlassian's security restrictions, automated end-to-end (E2E) testing—especially when using tools like Playwright—can run into issues caused by two-step verification (2SV). Fortunately, Atlassian provides a few workarounds to enable testing with 2SV enabled.
 
-***Note: These workarounds are subject to change as Atlassian evolves its security mechanisms.***
+**_Note: These workarounds are subject to change as Atlassian evolves its security mechanisms._**
 
 ### Step 1: Set Up Two-Step Verification (2SV)
 
@@ -54,7 +53,7 @@ JIRA_TOTP_SECRET=<TOTP Secret Key>
 
 These credentials are used for simulating an authenticated session during test runs.
 
-***Important: `CLIENT_JIRA_CLIENT_ID` must correspond to the Atlassian client that your Jira test user is linked to.***
+**_Important: `CLIENT_JIRA_CLIENT_ID` must correspond to the Atlassian client that your Jira test user is linked to._**
 
 ## For Contributors
 

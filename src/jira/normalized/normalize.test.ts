@@ -1,96 +1,96 @@
-import { expect, test } from "vitest";
+import { expect, test } from 'vitest';
 
-import { NormalizeIssueConfig, normalizeIssue, normalizeParent } from "./normalize";
-import { parseDateIntoLocalTimezone } from "../../utils/date/date-helpers";
-import { JiraIssue, ParentIssue } from "../shared/types";
+import { NormalizeIssueConfig, normalizeIssue, normalizeParent } from './normalize';
+import { parseDateIntoLocalTimezone } from '../../utils/date/date-helpers';
+import { JiraIssue, ParentIssue } from '../shared/types';
 
 const parent: ParentIssue = {
-  key: "test-parent",
-  id: "23",
+  key: 'test-parent',
+  id: '23',
   fields: {
-    summary: "parent summary",
-    issuetype: { name: "bug", hierarchyLevel: 8 },
-    status: { name: "in progress" },
+    summary: 'parent summary',
+    issuetype: { name: 'bug', hierarchyLevel: 8 },
+    status: { name: 'in progress' },
   },
 };
 
 const issue: JiraIssue = {
-  id: "1",
-  key: "test-key",
+  id: '1',
+  key: 'test-key',
   fields: {
     Team: null,
     Parent: parent,
-    Summary: "language packs",
-    "Issue Type": { hierarchyLevel: 1, name: "Epic" },
-    Created: "2023-02-03T10:58:38.994-0600",
+    Summary: 'language packs',
+    'Issue Type': { hierarchyLevel: 1, name: 'Epic' },
+    Created: '2023-02-03T10:58:38.994-0600',
     Sprint: null,
-    "Fix versions": [
+    'Fix versions': [
       {
-        id: "10006",
-        name: "SHARE_R1",
+        id: '10006',
+        name: 'SHARE_R1',
         archived: false,
-        description: "description",
+        description: 'description',
         released: false,
-        self: "self-string",
+        self: 'self-string',
       },
     ],
-    "Epic Link": null,
-    Labels: ["JTR-Testing"],
-    "Start date": "20220715",
-    "Parent Link": { data: { key: "IMP-5" } },
-    Rank: "0|hzzzzn:",
-    "Due date": "20220716",
-    Status: { id: "1", name: "Done", statusCategory: { name: "Done" } },
-    "Project key": "ORDER",
-    "Issue key": "ORDER-15",
-    url: "https://bitovi-training.atlassian.net/browse/ORDER-15",
-    workType: "dev",
+    'Epic Link': null,
+    Labels: ['JTR-Testing'],
+    'Start date': '20220715',
+    'Parent Link': { data: { key: 'IMP-5' } },
+    Rank: '0|hzzzzn:',
+    'Due date': '20220716',
+    Status: { id: '1', name: 'Done', statusCategory: { name: 'Done' } },
+    'Project key': 'ORDER',
+    'Issue key': 'ORDER-15',
+    url: 'https://bitovi-training.atlassian.net/browse/ORDER-15',
+    workType: 'dev',
     workingBusinessDays: 27,
     weightedEstimate: null,
   },
 };
 
-const startDate = new Date("20220715");
-const dueDate = new Date("20220716");
+const startDate = new Date('20220715');
+const dueDate = new Date('20220716');
 
-test("normalizeParent", () => {
+test('normalizeParent', () => {
   expect(normalizeParent(parent)).toEqual({
-    summary: "parent summary",
+    summary: 'parent summary',
     hierarchyLevel: 8,
-    type: "bug",
-    key: "test-parent"
+    type: 'bug',
+    key: 'test-parent',
   });
 });
 
-test("normalizeParent with overrides", () => {
+test('normalizeParent with overrides', () => {
   expect(
     normalizeParent(parent, {
-      getSummary: () => "hello",
+      getSummary: () => 'hello',
       getHierarchyLevel: () => 21,
-    })
+    }),
   ).toEqual({
-    summary: "hello",
+    summary: 'hello',
     hierarchyLevel: 21,
-    type: "bug",
-    key: "test-parent"
+    type: 'bug',
+    key: 'test-parent',
   });
 });
 
-test("normalizeIssue", () => {
+test('normalizeIssue', () => {
   expect(normalizeIssue(issue, {})).toEqual({
-    summary: "language packs",
-    key: "test-key",
-    parentKey: "test-parent",
+    summary: 'language packs',
+    key: 'test-key',
+    parentKey: 'test-parent',
     confidence: null,
     dueDate,
     hierarchyLevel: 1,
     startDate,
     storyPoints: null,
     storyPointsMedian: null,
-    type: "Epic",
+    type: 'Epic',
     sprints: null,
     team: {
-      name: "test",
+      name: 'test',
       velocity: 21,
       daysPerSprint: 10,
       parallelWorkLimit: 1,
@@ -98,94 +98,94 @@ test("normalizeIssue", () => {
       pointsPerDayPerTrack: 2.1,
       spreadEffortAcrossDates: false,
     },
-    url: "javascript://",
-    status: "Done",
-    statusCategory: "Done",
-    labels: ["JTR-Testing"],
+    url: 'javascript://',
+    status: 'Done',
+    statusCategory: 'Done',
+    labels: ['JTR-Testing'],
     releases: [
       {
-        name: "SHARE_R1",
-        id: "10006",
-        type: "Release",
-        key: "SPECIAL:release-SHARE_R1",
-        summary: "SHARE_R1",
+        name: 'SHARE_R1',
+        id: '10006',
+        type: 'Release',
+        key: 'SPECIAL:release-SHARE_R1',
+        summary: 'SHARE_R1',
       },
     ],
-    rank: "0|hzzzzn:",
+    rank: '0|hzzzzn:',
     issue,
   });
 });
 
-test("normalizeIssue with custom getters", () => {
+test('normalizeIssue with custom getters', () => {
   const modifiedIssue = {
     ...issue,
     fields: {
       ...issue.fields,
-      mockParentKey: "mock",
+      mockParentKey: 'mock',
       mockConfidence: 10,
       mockLevel: 1,
       newMedian: 9,
-      mockStatus: "nice",
+      mockStatus: 'nice',
     },
   };
 
   const overrides: NormalizeIssueConfig = {
     getTeamSpreadsEffortAcrossDates: () => false,
     getSummary: () => {
-      return "summary";
+      return 'summary';
     },
     getIssueKey: ({ key }) => {
-      return key + "1";
+      return key + '1';
     },
     getParentKey: ({ fields }) => {
-      if (typeof fields.mockParentKey === "string") {
+      if (typeof fields.mockParentKey === 'string') {
         return fields.mockParentKey;
       }
 
       return null;
     },
     getConfidence: ({ fields }) => {
-      if (typeof fields.mockConfidence === "number") {
+      if (typeof fields.mockConfidence === 'number') {
         return fields.mockConfidence;
       }
 
       return null;
     },
     getDueDate: ({ fields }) => {
-      return "2023-02-17T16:58:00.000Z";
+      return '2023-02-17T16:58:00.000Z';
     },
     getHierarchyLevel: ({ fields }) => {
-      if ("mockLevel" in fields && typeof fields.mockLevel === "number") {
+      if ('mockLevel' in fields && typeof fields.mockLevel === 'number') {
         return fields.mockLevel;
       }
 
-      throw new Error("Level must be provided");
+      throw new Error('Level must be provided');
     },
     getStartDate: ({ fields }) => {
-      return "2023-02-17T16:58:00.000Z";
+      return '2023-02-17T16:58:00.000Z';
     },
     getStoryPoints: ({ fields }) => {
-      if (typeof fields.shouldNotBeInIssue === "number") {
+      if (typeof fields.shouldNotBeInIssue === 'number') {
         return fields.shouldNotBeInIssue;
       }
 
       return null;
     },
     getStoryPointsMedian: ({ fields }) => {
-      if (typeof fields.newMedian === "number") {
+      if (typeof fields.newMedian === 'number') {
         return fields.newMedian;
       }
 
       return null;
     },
     getType: ({ fields }) => {
-      return "bug";
+      return 'bug';
     },
     getTeamKey: ({ key }) => {
-      return "new fake team key";
+      return 'new fake team key';
     },
     getUrl: ({ key }) => {
-      return "fake url";
+      return 'fake url';
     },
     getVelocity: () => {
       return 1;
@@ -200,7 +200,7 @@ test("normalizeIssue with custom getters", () => {
       return [];
     },
     getStatus: ({ fields }) => {
-      if (typeof fields.mockStatus === "string") {
+      if (typeof fields.mockStatus === 'string') {
         return fields.mockStatus;
       }
 
@@ -210,16 +210,16 @@ test("normalizeIssue with custom getters", () => {
       return null;
     },
     getLabels: ({ fields }) => {
-      return ["label1"];
+      return ['label1'];
     },
     getReleases: () => {
       return [
         {
-          id: "release-1",
-          key: "17",
-          name: "mock release",
-          summary: "its a release",
-          type: "Release",
+          id: 'release-1',
+          key: '17',
+          name: 'mock release',
+          summary: 'its a release',
+          type: 'Release',
         },
       ];
     },
@@ -229,19 +229,19 @@ test("normalizeIssue with custom getters", () => {
   };
 
   expect(normalizeIssue(modifiedIssue, overrides)).toEqual({
-    summary: "summary",
-    key: "test-key1",
-    parentKey: "mock",
+    summary: 'summary',
+    key: 'test-key1',
+    parentKey: 'mock',
     confidence: 10,
-    dueDate: parseDateIntoLocalTimezone("2023-02-17T16:58:00.000Z"),
+    dueDate: parseDateIntoLocalTimezone('2023-02-17T16:58:00.000Z'),
     hierarchyLevel: 1,
-    startDate: parseDateIntoLocalTimezone("2023-02-17T16:58:00.000Z"),
+    startDate: parseDateIntoLocalTimezone('2023-02-17T16:58:00.000Z'),
     storyPoints: null,
     storyPointsMedian: 9,
-    type: "bug",
+    type: 'bug',
     sprints: [],
     team: {
-      name: "new fake team key",
+      name: 'new fake team key',
       velocity: 1,
       daysPerSprint: 20,
       parallelWorkLimit: 1,
@@ -249,17 +249,17 @@ test("normalizeIssue with custom getters", () => {
       pointsPerDayPerTrack: 0.05,
       spreadEffortAcrossDates: false,
     },
-    url: "fake url",
-    status: "nice",
+    url: 'fake url',
+    status: 'nice',
     statusCategory: null,
-    labels: ["label1"],
+    labels: ['label1'],
     releases: [
       {
-        id: "release-1",
-        key: "17",
-        name: "mock release",
-        summary: "its a release",
-        type: "Release",
+        id: 'release-1',
+        key: '17',
+        name: 'mock release',
+        summary: 'its a release',
+        type: 'Release',
       },
     ],
     rank: null,
@@ -267,6 +267,6 @@ test("normalizeIssue with custom getters", () => {
   });
 });
 
-test.todo("allStatusSorted");
+test.todo('allStatusSorted');
 
-test.todo("allReleasesSorted");
+test.todo('allReleasesSorted');

@@ -2,16 +2,13 @@
  * Handles data retrieval and updating from storage
  */
 
-import type { AppStorage } from "../../../../../../../../../jira/storage/common";
-import type { AllTeamData, IssueFields, TeamConfiguration } from "./shared";
+import type { AppStorage } from '../../../../../../../../../jira/storage/common';
+import type { AllTeamData, IssueFields, TeamConfiguration } from './shared';
 
-import { allTeamDataKey } from "../key-factory";
-import { createEmptyAllTeamsData, createEmptyTeamConfiguration } from "./shared";
+import { allTeamDataKey } from '../key-factory';
+import { createEmptyAllTeamsData, createEmptyTeamConfiguration } from './shared';
 
-export const getAllTeamData = async (
-  storage: AppStorage,
-  issueTypes: string[] = []
-): Promise<AllTeamData> => {
+export const getAllTeamData = async (storage: AppStorage, issueTypes: string[] = []): Promise<AllTeamData> => {
   const data = await storage.get<AllTeamData>(allTeamDataKey);
 
   if (!data) {
@@ -35,10 +32,7 @@ export const getTeamData = (teamName: string, allTeamData: AllTeamData): TeamCon
   return teamData;
 };
 
-export const updateAllTeamData = async (
-  storage: AppStorage,
-  updates: AllTeamData
-): Promise<void> => {
+export const updateAllTeamData = async (storage: AppStorage, updates: AllTeamData): Promise<void> => {
   await storage.update(allTeamDataKey, updates);
 };
 
@@ -51,13 +45,9 @@ export const updateAllTeamData = async (
  * The results of this request are ultimately ignore since we are returning the
  * normalized data to the UI already and if it fails we will retry on next request.
  */
-export const fixAnyNonExistingFields = (
-  storage: AppStorage,
-  userData: AllTeamData,
-  jiraIssues: IssueFields
-) => {
+export const fixAnyNonExistingFields = (storage: AppStorage, userData: AllTeamData, jiraIssues: IssueFields) => {
   const fieldExistMap: Record<string, boolean> = {
-    "confidence-not-used": true,
+    'confidence-not-used': true,
   };
 
   let normalizedTeamData = structuredClone(userData);
@@ -72,12 +62,7 @@ export const fixAnyNonExistingFields = (
         continue;
       }
 
-      for (const fieldName of [
-        "confidenceField",
-        "estimateField",
-        "startDateField",
-        "dueDateField",
-      ] as const) {
+      for (const fieldName of ['confidenceField', 'estimateField', 'startDateField', 'dueDateField'] as const) {
         const field = configuration[fieldName];
 
         if (!field) {
@@ -95,9 +80,7 @@ export const fixAnyNonExistingFields = (
         if (matched) {
           fieldExistMap[field] = true;
         } else {
-          console.log(
-            `Detected a discrepancy between jiraFields and userData field "${field}" does not exist`
-          );
+          console.log(`Detected a discrepancy between jiraFields and userData field "${field}" does not exist`);
 
           delete normalizedTeamData?.[teamKey]?.[issueHierarchyKey]?.[fieldName];
         }
@@ -107,15 +90,15 @@ export const fixAnyNonExistingFields = (
 
   if (JSON.stringify(userData) !== JSON.stringify(normalizedTeamData)) {
     updateAllTeamData(storage, normalizedTeamData)
-      .then(() => console.log("Resolved discrepancies with the data source"))
+      .then(() => console.log('Resolved discrepancies with the data source'))
       .catch((error) =>
         console.log(
           [
-            "Could not update the data source",
-            "users will not be impacted",
-            `error: ${error?.message || "could not parse error"}`,
-          ].join("\n")
-        )
+            'Could not update the data source',
+            'users will not be impacted',
+            `error: ${error?.message || 'could not parse error'}`,
+          ].join('\n'),
+        ),
       );
   }
 

@@ -1,12 +1,12 @@
-import "./instruments.js";
+import './instruments.js';
 
-import * as Sentry from "@sentry/node";
+import * as Sentry from '@sentry/node';
 
-import express from "express";
-import dotenv from "dotenv";
-import { fetchTokenWithAccessCode } from "./helper.js";
-import cors from "cors";
-import { logger } from "./logger.js";
+import express from 'express';
+import dotenv from 'dotenv';
+import { fetchTokenWithAccessCode } from './helper.js';
+import cors from 'cors';
+import { logger } from './logger.js';
 
 // configurations
 dotenv.config();
@@ -27,15 +27,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use(function onError(err, req, res, next) {
   // Todo: do we want a page for this?
   res.statusCode = 500;
-  res.end(res.sentry + "\n");
+  res.end(res.sentry + '\n');
 });
 
-app.get("/access-token", async (req, res) => {
+app.get('/access-token', async (req, res) => {
   try {
     const code = req.query.code;
     const refresh = req.query.refresh;
     let data = {};
-    if (!code) throw new Error("No Access code provided");
+    if (!code) throw new Error('No Access code provided');
     const { error, data: accessData, message } = await fetchTokenWithAccessCode(code, refresh);
     if (error) {
       //handle properly
@@ -59,7 +59,7 @@ app.get("/access-token", async (req, res) => {
   }
 });
 
-app.post("/domain", async (req, res) => {
+app.post('/domain', async (req, res) => {
   logger.info(`[domain] - ${req.body.domain}`);
 
   res.status(204).send();
@@ -69,12 +69,12 @@ app.post("/domain", async (req, res) => {
 app.listen(port, () => console.log(`Server is listening on port ${port}!`));
 
 // Handle unhandled promise rejections and exceptions
-process.on("unhandledRejection", (err) => {
+process.on('unhandledRejection', (err) => {
   console.log(err);
   Sentry.captureException(err);
 });
 
-process.on("uncaughtException", (err) => {
+process.on('uncaughtException', (err) => {
   console.log(err.message);
   Sentry.captureException(err);
 });

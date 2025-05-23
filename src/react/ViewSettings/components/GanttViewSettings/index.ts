@@ -1,1 +1,1 @@
-export { default } from "./GanttViewSettings";
+export { default } from './GanttViewSettings';

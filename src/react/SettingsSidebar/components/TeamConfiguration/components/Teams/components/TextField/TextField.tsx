@@ -1,12 +1,12 @@
-import type { FC } from "react";
-import type { FieldUpdates } from "../../ConfigureTeamsForm";
-import type { Configuration } from "../../services/team-configuration";
+import type { FC } from 'react';
+import type { FieldUpdates } from '../../ConfigureTeamsForm';
+import type { Configuration } from '../../services/team-configuration';
 
-import React from "react";
+import React from 'react';
 
-import AtlasTextField from "@atlaskit/textfield";
-import { UseFormReturn } from "react-hook-form";
-import { Field } from "@atlaskit/form";
+import AtlasTextField from '@atlaskit/textfield';
+import { UseFormReturn } from 'react-hook-form';
+import { Field } from '@atlaskit/form';
 
 interface TextFieldProps {
   disabled?: boolean;
@@ -15,20 +15,20 @@ interface TextFieldProps {
   label: string;
   min?: number;
   unit?: string;
-  register: UseFormReturn<Configuration>["register"];
+  register: UseFormReturn<Configuration>['register'];
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
 export function isFieldUpdate(event: { name: string }): event is { name: keyof Configuration } {
   return [
-    "sprintLength",
-    "velocityPerSprint",
-    "tracks",
-    "estimateField",
-    "confidenceField",
-    "startDateField",
-    "dueDateField",
-    "spreadEffortAcrossDates",
+    'sprintLength',
+    'velocityPerSprint',
+    'tracks',
+    'estimateField',
+    'confidenceField',
+    'startDateField',
+    'dueDateField',
+    'spreadEffortAcrossDates',
   ].includes(event.name);
 }
 

@@ -4,9 +4,9 @@
  * and generates unique short names for each release.
  */
 
-import { NormalizedRelease } from "../shared/types";
-import uniqueTrailingNames from "./unique-trailing-names";
-import semver from "semver";
+import { NormalizedRelease } from '../shared/types';
+import uniqueTrailingNames from './unique-trailing-names';
+import semver from 'semver';
 
 export type DerivedRelease = NormalizedRelease & {
   names: {
@@ -25,7 +25,7 @@ export type DerivedRelease = NormalizedRelease & {
 function partialReleaseName(release: string): string | undefined {
   let match = release.match(/(?:\d+\.\d+\.[\dX]+)|(?:\d+\.[\dX]+)|(?:\d+)$/);
   if (match) {
-    return match[0].replace(".X", ".0");
+    return match[0].replace('.X', '.0');
   }
 }
 
@@ -33,10 +33,10 @@ export function cleanedRelease(release: string): string | undefined {
   let clean = partialReleaseName(release);
   if (clean) {
     if (clean.length === 1) {
-      clean = clean + ".0.0";
+      clean = clean + '.0.0';
     }
     if (clean.length === 3) {
-      clean = clean + ".0";
+      clean = clean + '.0';
     }
     if (semver.clean(clean)) {
       return clean;
@@ -72,15 +72,11 @@ export function semverSort(values: string[]): string[] {
  * @returns {DerivedRelease[]}
  */
 
-export function deriveReleases(
-  normalizedReleases: Array<NormalizedRelease>
-): Array<DerivedRelease> {
+export function deriveReleases(normalizedReleases: Array<NormalizedRelease>): Array<DerivedRelease> {
   const semverNames = normalizedReleases.map((normalizedRelease) => {
     const semverReleaseName = cleanedRelease(normalizedRelease.name) || null;
     const version = semverReleaseName ? semver.clean(semverReleaseName) : null;
-    const shortVersion = semverReleaseName
-      ? partialReleaseName(normalizedRelease.name) ?? null
-      : null;
+    const shortVersion = semverReleaseName ? (partialReleaseName(normalizedRelease.name) ?? null) : null;
 
     return {
       semver: !!semverReleaseName,

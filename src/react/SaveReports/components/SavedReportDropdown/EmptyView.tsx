@@ -1,7 +1,7 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
-import { DropdownItemGroup } from "@atlaskit/dropdown-menu";
+import React from 'react';
+import { DropdownItemGroup } from '@atlaskit/dropdown-menu';
 
 const EmptyView: FC = () => {
   return (

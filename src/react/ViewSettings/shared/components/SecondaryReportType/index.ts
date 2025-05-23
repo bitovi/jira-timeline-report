@@ -1,1 +1,1 @@
-export { default } from "./SecondaryReportType";
+export { default } from './SecondaryReportType';
