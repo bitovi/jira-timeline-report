@@ -13,7 +13,6 @@ import EditableTitle from "./components/EditableTitle";
 import { useQueryParams } from "../hooks/useQueryParams";
 import { useSelectedReport } from "./hooks/useSelectedReports";
 import routeData from "../../canjs/routing/route-data";
-import { queryStringToObject } from "../../routing/utils";
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;

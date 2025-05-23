@@ -1,8 +1,8 @@
 import React, { type FC } from "react";
 
 import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
-import LinkButton from "../../../components/LinkButton";
 import ChevronDown from "@atlaskit/icon/glyph/chevron-down";
+import LinkButton from "../../../components/LinkButton";
 
 const defaultPrimaryButtonClasses = "ps-4 pe-2 py-2 rounded-md";
 
