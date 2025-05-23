@@ -96,7 +96,7 @@ export const fixAnyNonExistingFields = (
           fieldExistMap[field] = true;
         } else {
           console.log(
-            `Detected a descrepancy between jiraFields and userData field "${field}" does not exist`
+            `Detected a discrepancy between jiraFields and userData field "${field}" does not exist`
           );
 
           delete normalizedTeamData?.[teamKey]?.[issueHierarchyKey]?.[fieldName];
