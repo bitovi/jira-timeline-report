@@ -58,3 +58,4 @@ export const createEmptyTeamConfiguration = (issueHierarchy: string[]): TeamConf
 export const createEmptyAllTeamsData = (issueHierarchy: string[] = []): AllTeamData => {
   return { __GLOBAL__: createEmptyTeamConfiguration(issueHierarchy) };
 };
+
