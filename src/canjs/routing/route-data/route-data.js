@@ -260,8 +260,6 @@ export class RouteData extends ObservableObject {
           hierarchyLevels.map((type) => type.hierarchyLevel.toString())
         );
 
-        console.log({ allTeamData });
-
         return allTeamData;
       });
     },
@@ -279,8 +277,6 @@ export class RouteData extends ObservableObject {
       return this.fullyInheritedTeamConfigPromise
         .then((allTeamData) => {
           const normalizedConfig = createNormalizeConfiguration(allTeamData);
-
-          console.log({ normalizedConfig });
 
           return normalizedConfig;
         })

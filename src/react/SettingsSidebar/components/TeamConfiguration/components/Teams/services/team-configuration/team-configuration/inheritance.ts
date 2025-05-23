@@ -113,15 +113,11 @@ export const createTeamFieldLookup = (allTeamData: AllTeamData) => {
     }: {
       team?: string;
       issueLevel?: string;
-      field: keyof Configuration;
+      field: Extract<keyof Configuration, `${string}Field`>;
     }) => {
       const teamData = allTeamData?.[team] ?? allTeamData.__GLOBAL__;
       const configuration = teamData?.[issueLevel] ?? teamData.defaults;
       const matchedField = configuration[field];
-
-      if (!matchedField) {
-        console.warn(`Could not find allTeamData[${team}][${issueLevel}][${field}]`);
-      }
 
       return matchedField;
     },
