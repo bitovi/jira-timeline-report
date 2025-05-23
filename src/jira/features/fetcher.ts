@@ -1,4 +1,4 @@
-import { AppStorage } from "../storage/common";
+import { AppStorage } from '../storage/common';
 
 export const defaultFeatures = {
   estimationTable: false,
@@ -8,7 +8,7 @@ export const defaultFeatures = {
 
 export type Features = typeof defaultFeatures;
 
-const featuresKey = "features";
+const featuresKey = 'features';
 
 export const getFeatures = (storage: AppStorage): Promise<Features> => {
   return storage.get<Features>(featuresKey, []).then((saved) => {

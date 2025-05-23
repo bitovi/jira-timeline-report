@@ -1,22 +1,22 @@
 /**
  * Implements the inheritance logic and computes the final configurations
  */
-import type { AllTeamData, Configuration, TeamConfiguration, IssueFields } from "./shared";
+import type { AllTeamData, Configuration, TeamConfiguration, IssueFields } from './shared';
 
-import { createEmptyConfiguration, createEmptyTeamConfiguration } from "./shared";
+import { createEmptyConfiguration, createEmptyTeamConfiguration } from './shared';
 
-import { getTeamData } from "./fetcher";
-import { applyGlobalDefaultData } from "./allTeamDefault";
+import { getTeamData } from './fetcher';
+import { applyGlobalDefaultData } from './allTeamDefault';
 
 export const getInheritedData = (
   teamData: TeamConfiguration,
   allTeamData: AllTeamData,
-  hierarchyLevels: string[]
+  hierarchyLevels: string[],
 ): TeamConfiguration => {
   // Inheritance logic
   const getInheritance = (
     heirarchyLevel: (typeof hierarchyLevels)[number],
-    field: keyof Configuration
+    field: keyof Configuration,
   ): Configuration[keyof Configuration] => {
     return (
       teamData?.[heirarchyLevel]?.[field] ??
@@ -26,7 +26,7 @@ export const getInheritedData = (
     );
   };
 
-  const inheritedConfig = [...hierarchyLevels, "defaults"].reduce((config, level) => {
+  const inheritedConfig = [...hierarchyLevels, 'defaults'].reduce((config, level) => {
     const levelConfig = { ...createEmptyConfiguration(), ...(teamData?.[level] ?? {}) };
 
     const levelFields = Object.keys(levelConfig).reduce((fieldsAcc, field) => {
@@ -43,11 +43,7 @@ export const getInheritedData = (
   return inheritedConfig;
 };
 
-export const applyInheritance = (
-  teamName: keyof AllTeamData,
-  allTeamData: AllTeamData,
-  hierarchyLevels: string[]
-) => {
+export const applyInheritance = (teamName: keyof AllTeamData, allTeamData: AllTeamData, hierarchyLevels: string[]) => {
   const teamData = getTeamData(teamName, allTeamData);
 
   return {
@@ -62,11 +58,10 @@ export const createUpdatedTeamData = (
     teamName: keyof AllTeamData;
     hierarchyLevel: keyof TeamConfiguration;
     configuration: Configuration;
-  }
+  },
 ): AllTeamData => {
   const teamData =
-    allTeamData[config.teamName] ??
-    createEmptyTeamConfiguration(Object.keys(allTeamData?.__GLOBAL__ ?? {}));
+    allTeamData[config.teamName] ?? createEmptyTeamConfiguration(Object.keys(allTeamData?.__GLOBAL__ ?? {}));
 
   return {
     ...allTeamData,
@@ -80,18 +75,18 @@ export const createUpdatedTeamData = (
 export const createFullyInheritedConfig = (
   userAllTeamData: AllTeamData,
   jiraFields: IssueFields,
-  hierarchyLevels: string[]
+  hierarchyLevels: string[],
 ) => {
   // global settings need to be setup before the rest of the teams
   const inheritedAllTeamData = applyInheritance(
-    "__GLOBAL__",
+    '__GLOBAL__',
     applyGlobalDefaultData(userAllTeamData, jiraFields),
-    hierarchyLevels
+    hierarchyLevels,
   );
 
   return Object.keys(inheritedAllTeamData).reduce((augmented, team) => {
     // already setup the global config
-    if (team === "__GLOBAL__") {
+    if (team === '__GLOBAL__') {
       return { ...augmented, [team]: inheritedAllTeamData[team] };
     }
 
@@ -107,8 +102,8 @@ export const createFullyInheritedConfig = (
 export const createTeamFieldLookup = (allTeamData: AllTeamData) => {
   return {
     getFieldFor: ({
-      team = "__GLOBAL__",
-      issueLevel = "defaults",
+      team = '__GLOBAL__',
+      issueLevel = 'defaults',
       field,
     }: {
       team?: string;

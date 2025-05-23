@@ -1,180 +1,180 @@
 [
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10006",
-        "id": "10006",
-        "description": "A small piece of work that's part of a larger task.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium",
-        "name": "Sub-task",
-        "untranslatedName": "Sub-task",
-        "subtask": true,
-        "avatarId": 10316,
-        "hierarchyLevel": -1
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10075",
-        "id": "10075",
-        "description": "A small piece of work that's part of a larger task.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium",
-        "name": "Sub-task",
-        "untranslatedName": "Sub-task",
-        "subtask": true,
-        "avatarId": 10316,
-        "hierarchyLevel": -1,
-        "scope": {
-            "type": "PROJECT",
-            "project": {
-                "id": "10108"
-            }
-        }
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10005",
-        "id": "10005",
-        "description": "A small, distinct piece of work.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium",
-        "name": "Task",
-        "untranslatedName": "Task",
-        "subtask": false,
-        "avatarId": 10318,
-        "hierarchyLevel": 0
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10007",
-        "id": "10007",
-        "description": "A problem or error.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
-        "name": "Bug",
-        "untranslatedName": "Bug",
-        "subtask": false,
-        "avatarId": 10303,
-        "hierarchyLevel": 0
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10080",
-        "id": "10080",
-        "description": "",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10321?size=medium",
-        "name": "Initiative",
-        "untranslatedName": "Initiative",
-        "subtask": false,
-        "avatarId": 10321,
-        "hierarchyLevel": 0,
-        "scope": {
-            "type": "PROJECT",
-            "project": {
-                "id": "10108"
-            }
-        }
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10004",
-        "id": "10004",
-        "description": "Functionality or a feature expressed as a user goal.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
-        "name": "Story",
-        "untranslatedName": "Story",
-        "subtask": false,
-        "avatarId": 10315,
-        "hierarchyLevel": 0
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10074",
-        "id": "10074",
-        "description": "A small, distinct piece of work.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium",
-        "name": "Task",
-        "untranslatedName": "Task",
-        "subtask": false,
-        "avatarId": 10318,
-        "hierarchyLevel": 0,
-        "scope": {
-            "type": "PROJECT",
-            "project": {
-                "id": "10108"
-            }
-        }
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10078",
-        "id": "10078",
-        "description": "Stories track functionality or features expressed as user goals.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
-        "name": "Story",
-        "untranslatedName": "Story",
-        "subtask": false,
-        "avatarId": 10315,
-        "hierarchyLevel": 0,
-        "scope": {
-            "type": "PROJECT",
-            "project": {
-                "id": "10108"
-            }
-        }
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10082",
-        "id": "10082",
-        "description": "Discovery idea",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10322?size=medium",
-        "name": "Idea",
-        "untranslatedName": "Idea",
-        "subtask": false,
-        "avatarId": 10322,
-        "hierarchyLevel": 0,
-        "scope": {
-            "type": "PROJECT",
-            "project": {
-                "id": "10114"
-            }
-        }
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10000",
-        "id": "10000",
-        "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
-        "iconUrl": "https://bitovi-training.atlassian.net/images/icons/issuetypes/epic.svg",
-        "name": "Epic",
-        "untranslatedName": "Epic",
-        "subtask": false,
-        "hierarchyLevel": 1
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10076",
-        "id": "10076",
-        "description": "Epics track large pieces of work.",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium",
-        "name": "Epic",
-        "untranslatedName": "Epic",
-        "subtask": false,
-        "avatarId": 10307,
-        "hierarchyLevel": 1,
-        "scope": {
-            "type": "PROJECT",
-            "project": {
-                "id": "10108"
-            }
-        }
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10041",
-        "id": "10041",
-        "description": "",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10314?size=medium",
-        "name": "Initiative",
-        "untranslatedName": "Initiative",
-        "subtask": false,
-        "avatarId": 10314,
-        "hierarchyLevel": 2
-    },
-    {
-        "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10081",
-        "id": "10081",
-        "description": "",
-        "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10313?size=medium",
-        "name": "Milestone",
-        "untranslatedName": "Milestone",
-        "subtask": false,
-        "avatarId": 10313,
-        "hierarchyLevel": 3
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10006",
+    "id": "10006",
+    "description": "A small piece of work that's part of a larger task.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium",
+    "name": "Sub-task",
+    "untranslatedName": "Sub-task",
+    "subtask": true,
+    "avatarId": 10316,
+    "hierarchyLevel": -1
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10075",
+    "id": "10075",
+    "description": "A small piece of work that's part of a larger task.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium",
+    "name": "Sub-task",
+    "untranslatedName": "Sub-task",
+    "subtask": true,
+    "avatarId": 10316,
+    "hierarchyLevel": -1,
+    "scope": {
+      "type": "PROJECT",
+      "project": {
+        "id": "10108"
+      }
     }
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10005",
+    "id": "10005",
+    "description": "A small, distinct piece of work.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium",
+    "name": "Task",
+    "untranslatedName": "Task",
+    "subtask": false,
+    "avatarId": 10318,
+    "hierarchyLevel": 0
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10007",
+    "id": "10007",
+    "description": "A problem or error.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+    "name": "Bug",
+    "untranslatedName": "Bug",
+    "subtask": false,
+    "avatarId": 10303,
+    "hierarchyLevel": 0
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10080",
+    "id": "10080",
+    "description": "",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10321?size=medium",
+    "name": "Initiative",
+    "untranslatedName": "Initiative",
+    "subtask": false,
+    "avatarId": 10321,
+    "hierarchyLevel": 0,
+    "scope": {
+      "type": "PROJECT",
+      "project": {
+        "id": "10108"
+      }
+    }
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10004",
+    "id": "10004",
+    "description": "Functionality or a feature expressed as a user goal.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+    "name": "Story",
+    "untranslatedName": "Story",
+    "subtask": false,
+    "avatarId": 10315,
+    "hierarchyLevel": 0
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10074",
+    "id": "10074",
+    "description": "A small, distinct piece of work.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium",
+    "name": "Task",
+    "untranslatedName": "Task",
+    "subtask": false,
+    "avatarId": 10318,
+    "hierarchyLevel": 0,
+    "scope": {
+      "type": "PROJECT",
+      "project": {
+        "id": "10108"
+      }
+    }
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10078",
+    "id": "10078",
+    "description": "Stories track functionality or features expressed as user goals.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+    "name": "Story",
+    "untranslatedName": "Story",
+    "subtask": false,
+    "avatarId": 10315,
+    "hierarchyLevel": 0,
+    "scope": {
+      "type": "PROJECT",
+      "project": {
+        "id": "10108"
+      }
+    }
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10082",
+    "id": "10082",
+    "description": "Discovery idea",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10322?size=medium",
+    "name": "Idea",
+    "untranslatedName": "Idea",
+    "subtask": false,
+    "avatarId": 10322,
+    "hierarchyLevel": 0,
+    "scope": {
+      "type": "PROJECT",
+      "project": {
+        "id": "10114"
+      }
+    }
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10000",
+    "id": "10000",
+    "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
+    "iconUrl": "https://bitovi-training.atlassian.net/images/icons/issuetypes/epic.svg",
+    "name": "Epic",
+    "untranslatedName": "Epic",
+    "subtask": false,
+    "hierarchyLevel": 1
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10076",
+    "id": "10076",
+    "description": "Epics track large pieces of work.",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium",
+    "name": "Epic",
+    "untranslatedName": "Epic",
+    "subtask": false,
+    "avatarId": 10307,
+    "hierarchyLevel": 1,
+    "scope": {
+      "type": "PROJECT",
+      "project": {
+        "id": "10108"
+      }
+    }
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10041",
+    "id": "10041",
+    "description": "",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10314?size=medium",
+    "name": "Initiative",
+    "untranslatedName": "Initiative",
+    "subtask": false,
+    "avatarId": 10314,
+    "hierarchyLevel": 2
+  },
+  {
+    "self": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/3/issuetype/10081",
+    "id": "10081",
+    "description": "",
+    "iconUrl": "https://api.atlassian.com/ex/jira/74eb923a-a968-44b2-8b4c-5b69e7266b8c/rest/api/2/universal_avatar/view/type/issuetype/avatar/10313?size=medium",
+    "name": "Milestone",
+    "untranslatedName": "Milestone",
+    "subtask": false,
+    "avatarId": 10313,
+    "hierarchyLevel": 3
+  }
 ]

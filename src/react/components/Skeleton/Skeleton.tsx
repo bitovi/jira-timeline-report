@@ -1,6 +1,6 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
+import React from 'react';
 
 type SkeletonProps = {
   className?: string;
@@ -9,7 +9,7 @@ type SkeletonProps = {
   rounded?: string;
 };
 
-const Skeleton: FC<SkeletonProps> = ({ className = "", width = "100%", height = "1rem", rounded = "sm" }) => {
+const Skeleton: FC<SkeletonProps> = ({ className = '', width = '100%', height = '1rem', rounded = 'sm' }) => {
   return <div className={`bg-gray-200 animate-pulse rounded-${rounded} ${className} `} style={{ width, height }} />;
 };
 

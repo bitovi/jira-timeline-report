@@ -1,1 +1,1 @@
-export { default } from "./DeleteReportModal";
+export { default } from './DeleteReportModal';

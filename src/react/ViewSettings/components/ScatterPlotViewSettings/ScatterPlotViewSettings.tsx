@@ -1,14 +1,14 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
+import React from 'react';
 
-import SettingsSection from "../../shared/components/SettingsSection";
-import SortBy from "../../shared/components/SortBy";
-import Hr from "../../../components/Hr";
-import RoundDatesTo from "../../shared/components/RoundDatesTo";
-import SecondaryReportType from "../../shared/components/SecondaryReportType";
-import StatusesShownAsPlanning from "../../shared/components/StatusesShownAsPlanning";
-import { useFeatures } from "../../../services/features";
+import SettingsSection from '../../shared/components/SettingsSection';
+import SortBy from '../../shared/components/SortBy';
+import Hr from '../../../components/Hr';
+import RoundDatesTo from '../../shared/components/RoundDatesTo';
+import SecondaryReportType from '../../shared/components/SecondaryReportType';
+import StatusesShownAsPlanning from '../../shared/components/StatusesShownAsPlanning';
+import { useFeatures } from '../../../services/features';
 
 const ScatterPlotViewSettings: FC = () => {
   const { secondaryReport } = useFeatures();

@@ -1,23 +1,16 @@
-import React from "react";
-import { render, screen } from "@testing-library/react";
+import React from 'react';
+import { render, screen } from '@testing-library/react';
 
-import FeatureToggle from "./FeatureToggle";
+import FeatureToggle from './FeatureToggle';
 
-describe("<FeatureToggle />", () => {
-  it("renders without crashing", () => {
-    render(
-      <FeatureToggle
-        title="Test Feature"
-        subtitle="Description of the feature"
-        checked
-        onChange={vi.fn()}
-      />
-    );
+describe('<FeatureToggle />', () => {
+  it('renders without crashing', () => {
+    render(<FeatureToggle title="Test Feature" subtitle="Description of the feature" checked onChange={vi.fn()} />);
 
-    const title = screen.getByText("Test Feature");
+    const title = screen.getByText('Test Feature');
     expect(title).toBeInTheDocument();
 
-    const subtitle = screen.getByText("Description of the feature");
+    const subtitle = screen.getByText('Description of the feature');
     expect(subtitle).toBeInTheDocument();
   });
 });

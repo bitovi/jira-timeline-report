@@ -1,6 +1,6 @@
-import type { Theme } from "./fetcher";
+import type { Theme } from './fetcher';
 
-import { getTextColorUsingAPCA } from "../../utils/color";
+import { getTextColorUsingAPCA } from '../../utils/color';
 
 export const applyThemeToCssVars = (theme?: Theme) => {
   if (!theme) {

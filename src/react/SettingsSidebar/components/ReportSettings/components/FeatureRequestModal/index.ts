@@ -1,1 +1,1 @@
-export { default } from "./FeatureRequestModal";
+export { default } from './FeatureRequestModal';

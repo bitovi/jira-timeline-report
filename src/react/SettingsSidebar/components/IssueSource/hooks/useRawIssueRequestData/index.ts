@@ -1,1 +1,1 @@
-export * from "./useRawIssueRequestData";
+export * from './useRawIssueRequestData';

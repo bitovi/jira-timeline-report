@@ -1,4 +1,4 @@
-import { LinkBuilderFactory } from "./common";
+import { LinkBuilderFactory } from './common';
 
 export const createWebLinkBuilder: LinkBuilderFactory = () => {
   return (queryParams) => queryParams;

@@ -1,14 +1,14 @@
 /**
  * Hooks to fetch and manage team data with Jira issue hierarchy
  */
-import type { AllTeamData, IssueFields, TeamConfiguration } from "../team-configuration";
-import type { Jira } from "../../../../../../../../../jira-oidc-helpers";
-import type { AppStorage } from "../../../../../../../../../jira/storage/common";
+import type { AllTeamData, IssueFields, TeamConfiguration } from '../team-configuration';
+import type { Jira } from '../../../../../../../../../jira-oidc-helpers';
+import type { AppStorage } from '../../../../../../../../../jira/storage/common';
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from '@tanstack/react-query';
 
-import { useStorage } from "../../../../../../../../services/storage";
-import { updateTeamConfigurationKeys } from "../key-factory";
+import { useStorage } from '../../../../../../../../services/storage';
+import { updateTeamConfigurationKeys } from '../key-factory';
 import {
   applyGlobalDefaultData,
   applyInheritance,
@@ -16,9 +16,9 @@ import {
   fixAnyNonExistingFields,
   getAllTeamData,
   getInheritedData,
-} from "../../team-configuration";
-import { getSimplifiedIssueHierarchy } from "../../../../../../../../../stateful-data/jira-data-requests";
-import { useJira } from "../../../../../../../../services/jira";
+} from '../../team-configuration';
+import { getSimplifiedIssueHierarchy } from '../../../../../../../../../stateful-data/jira-data-requests';
+import { useJira } from '../../../../../../../../services/jira';
 
 type IssueHierarchy = {
   name: string;
@@ -27,7 +27,7 @@ type IssueHierarchy = {
 
 const getTeamDataWithIssueHierarchys = async (
   jiraHelpers: Jira,
-  storage: AppStorage
+  storage: AppStorage,
 ): Promise<{ savedUserData: AllTeamData; issueHeirarchy: IssueHierarchy[] }> => {
   const [issueHeirarchy, jiraIssues] = await Promise.all([
     getSimplifiedIssueHierarchy({
@@ -39,7 +39,7 @@ const getTeamDataWithIssueHierarchys = async (
 
   const savedUserData = await getAllTeamData(
     storage,
-    issueHeirarchy.map((type) => type.hierarchyLevel.toString())
+    issueHeirarchy.map((type) => type.hierarchyLevel.toString()),
   );
 
   const normalizedTeamData = fixAnyNonExistingFields(storage, savedUserData, jiraIssues);
@@ -79,16 +79,16 @@ export const useAllTeamData: UseAllTeamData = (jiraFields) => {
     issueHeirarchy: data.issueHeirarchy,
     savedUserAllTeamData: data.savedUserData,
     inheritedAllTeamData: applyInheritance(
-      "__GLOBAL__",
+      '__GLOBAL__',
       applyGlobalDefaultData(data.savedUserData, jiraFields),
-      data.issueHeirarchy.map((level) => level.hierarchyLevel.toString())
+      data.issueHeirarchy.map((level) => level.hierarchyLevel.toString()),
     ),
   };
 };
 
 export type UseTeamData = (
   teamName: string,
-  jiraFields: IssueFields
+  jiraFields: IssueFields,
 ) => {
   savedUserTeamData: TeamConfiguration;
   inheritedTeamData: TeamConfiguration;
@@ -109,46 +109,43 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
   const inherited = applyInheritance(
     teamName,
     inheritedAllTeamData,
-    issueHeirarchy.map((level) => level.hierarchyLevel.toString())
+    issueHeirarchy.map((level) => level.hierarchyLevel.toString()),
   )[teamName]!;
 
   return {
     savedUserTeamData: savedUserData,
     inheritedTeamData: inherited,
     getHierarchyLevelName: (unformattedLevel: number | string) => {
-      const level =
-        typeof unformattedLevel === "number" ? unformattedLevel : parseInt(unformattedLevel, 10);
+      const level = typeof unformattedLevel === 'number' ? unformattedLevel : parseInt(unformattedLevel, 10);
       const issueHeirarchyLevel = issueHeirarchy.find((issue) => issue.hierarchyLevel === level);
 
       if (!issueHeirarchyLevel) {
         console.warn(
           [
-            "Could not determine the issue hierarchy name",
+            'Could not determine the issue hierarchy name',
             `getHeirarchyLevelName was given "${level}" when the only available are [${issueHeirarchy
               .map(({ hierarchyLevel }) => hierarchyLevel)
-              .join(", ")}]`,
-            "Returning a default - Story",
-          ].join("\n")
+              .join(', ')}]`,
+            'Returning a default - Story',
+          ].join('\n'),
         );
 
-        return "Story";
+        return 'Story';
       }
 
       return issueHeirarchyLevel.name;
     },
     getInheritance: (issueType) => {
-      let empty = createEmptyTeamConfiguration(
-        issueHeirarchy.map((type) => type.hierarchyLevel.toString())
-      );
+      let empty = createEmptyTeamConfiguration(issueHeirarchy.map((type) => type.hierarchyLevel.toString()));
 
-      if (issueType !== "defaults") {
+      if (issueType !== 'defaults') {
         empty = { ...empty, defaults: { ...inherited.defaults } };
       }
 
       return getInheritedData(
         empty,
         inheritedAllTeamData,
-        issueHeirarchy.map((level) => level.hierarchyLevel.toString())
+        issueHeirarchy.map((level) => level.hierarchyLevel.toString()),
       );
     },
   };

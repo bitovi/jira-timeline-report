@@ -1,18 +1,18 @@
-import type { FC } from "react";
-import type { CanObservable } from "../hooks/useCanObservable";
+import type { FC } from 'react';
+import type { CanObservable } from '../hooks/useCanObservable';
 
-import React, { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-import Button from "@atlaskit/button/new";
+import React, { useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import Button from '@atlaskit/button/new';
 
-import { useAllReports, useCreateReport, useRecentReports } from "../services/reports";
-import SaveReportModal from "./components/SaveReportModal";
-import SavedReportDropdown from "./components/SavedReportDropdown";
-import ReportControls from "./components/ReportControls";
-import EditableTitle from "./components/EditableTitle";
-import { useQueryParams } from "../hooks/useQueryParams";
-import { useSelectedReport } from "./hooks/useSelectedReports";
-import routeData from "../../canjs/routing/route-data";
+import { useAllReports, useCreateReport, useRecentReports } from '../services/reports';
+import SaveReportModal from './components/SaveReportModal';
+import SavedReportDropdown from './components/SavedReportDropdown';
+import ReportControls from './components/ReportControls';
+import EditableTitle from './components/EditableTitle';
+import { useQueryParams } from '../hooks/useQueryParams';
+import { useSelectedReport } from './hooks/useSelectedReports';
+import routeData from '../../canjs/routing/route-data';
 
 interface SaveReportProps {
   onViewReportsButtonClicked: () => void;
@@ -32,7 +32,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     queryParamObservable,
   });
 
-  const [name, setName] = useState(selectedReport?.name ?? "Untitled Report");
+  const [name, setName] = useState(selectedReport?.name ?? 'Untitled Report');
 
   useEffect(() => {
     if (!selectedReport) {
@@ -46,7 +46,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const { queryParams } = useQueryParams(queryParamObservable, {
     onChange: (params) => {
-      const report = params.get("report");
+      const report = params.get('report');
 
       // TODO: If confirm `report` exists in `reports` before adding
       // TODO: Reconcile deleted reports with whats there
@@ -62,7 +62,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
     return {
       isValid: !match,
-      message: !match ? "" : "That name already exists. Please input a unique report name.",
+      message: !match ? '' : 'That name already exists. Please input a unique report name.',
     };
   };
 
@@ -78,11 +78,11 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
           addReportToRecents(id);
 
           const url = new URL(window.location.href);
-          url.search = "";
-          url.searchParams.set("report", id);
+          url.search = '';
+          url.searchParams.set('report', id);
           queryParamObservable.set(url.search);
         },
-      }
+      },
     );
   };
 
@@ -115,7 +115,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
         />
       </div>
       <div className="flex gap-4">
-        {!selectedReport && !!queryParams.get("jql") && (
+        {!selectedReport && !!queryParams.get('jql') && (
           <Button appearance="primary" onClick={openModal}>
             Create new report
           </Button>

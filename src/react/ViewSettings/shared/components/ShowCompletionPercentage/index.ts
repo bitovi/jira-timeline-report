@@ -1,1 +1,1 @@
-export { default } from "./ShowCompletionPercentage";
+export { default } from './ShowCompletionPercentage';

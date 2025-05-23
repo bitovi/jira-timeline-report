@@ -1,14 +1,14 @@
-import { beforeEach, describe, expect, Mock, test, vi } from "vitest";
-import { deriveIssue, DerivedIssue } from "./derive";
-import { NormalizedIssue } from "../shared/types";
-import { deriveWorkTiming, DerivedWorkTiming } from "./work-timing/work-timing";
-import { getWorkStatus, DerivedWorkStatus } from "./work-status/work-status";
+import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
+import { deriveIssue, DerivedIssue } from './derive';
+import { NormalizedIssue } from '../shared/types';
+import { deriveWorkTiming, DerivedWorkTiming } from './work-timing/work-timing';
+import { getWorkStatus, DerivedWorkStatus } from './work-status/work-status';
 
-vi.mock("./work-timing/work-timing", () => ({
+vi.mock('./work-timing/work-timing', () => ({
   deriveWorkTiming: vi.fn(),
 }));
 
-vi.mock("./work-status/work-status", () => ({
+vi.mock('./work-status/work-status', () => ({
   getWorkStatus: vi.fn(),
 }));
 
@@ -16,8 +16,8 @@ const sampleNormalizedIssue = {
   confidence: 80,
   storyPoints: 40,
   storyPointsMedian: 35,
-  startDate: new Date("2023-01-01"),
-  dueDate: new Date("2023-01-10"),
+  startDate: new Date('2023-01-01'),
+  dueDate: new Date('2023-01-10'),
 } as NormalizedIssue;
 
 const sampleDerivedWorkTiming = {
@@ -42,33 +42,33 @@ const sampleDerivedWorkTiming = {
   hasSprintStartAndEndDate: true,
   sprintDaysOfWork: 7,
   sprintStartData: {
-    start: new Date("2023-01-02"),
-    startFrom: { message: "Sprint 1", reference: sampleNormalizedIssue },
+    start: new Date('2023-01-02'),
+    startFrom: { message: 'Sprint 1', reference: sampleNormalizedIssue },
   },
   endSprintData: {
-    due: new Date("2023-01-09"),
-    dueTo: { message: "Sprint 1", reference: sampleNormalizedIssue },
+    due: new Date('2023-01-09'),
+    dueTo: { message: 'Sprint 1', reference: sampleNormalizedIssue },
   },
-  start: new Date("2023-01-01"),
-  startFrom: { message: "start from", reference: sampleNormalizedIssue },
-  due: new Date("2023-01-10"),
-  dueTo: { message: "due to", reference: sampleNormalizedIssue },
+  start: new Date('2023-01-01'),
+  startFrom: { message: 'start from', reference: sampleNormalizedIssue },
+  due: new Date('2023-01-10'),
+  dueTo: { message: 'due to', reference: sampleNormalizedIssue },
   totalDaysOfWork: 9,
   defaultOrTotalDaysOfWork: 9,
   completedDaysOfWork: 9,
 } as DerivedWorkTiming;
 
 const sampleDerivedWorkStatus: DerivedWorkStatus = {
-  statusType: "qa",
-  workType: "qa",
+  statusType: 'qa',
+  workType: 'qa',
 };
 
-describe("derive", () => {
+describe('derive', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  test("should correctly derive issue with valid data", () => {
+  test('should correctly derive issue with valid data', () => {
     (deriveWorkTiming as Mock).mockReturnValue(sampleDerivedWorkTiming);
 
     (getWorkStatus as Mock).mockReturnValue(sampleDerivedWorkStatus);

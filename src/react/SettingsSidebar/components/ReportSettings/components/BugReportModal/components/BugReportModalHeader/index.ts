@@ -1,1 +1,1 @@
-export { default } from "./BugReportModalHeader";
+export { default } from './BugReportModalHeader';

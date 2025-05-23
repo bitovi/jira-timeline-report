@@ -1,1 +1,1 @@
-export { default } from "./TimingCalculation";
+export { default } from './TimingCalculation';

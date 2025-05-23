@@ -1,14 +1,14 @@
-import { applyThemeToCssVars, updateTheme, type Theme } from "../../../jira/theme";
+import { applyThemeToCssVars, updateTheme, type Theme } from '../../../jira/theme';
 
-import React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useFlags } from "@atlaskit/flag";
-import ErrorIcon from "@atlaskit/icon/core/error";
-import { Text } from "@atlaskit/primitives";
-import { token } from "@atlaskit/tokens";
+import React from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useFlags } from '@atlaskit/flag';
+import ErrorIcon from '@atlaskit/icon/core/error';
+import { Text } from '@atlaskit/primitives';
+import { token } from '@atlaskit/tokens';
 
-import { useStorage } from "../../services/storage";
-import { themeKeys } from "./key-factory";
+import { useStorage } from '../../services/storage';
+import { themeKeys } from './key-factory';
 
 export const useSaveTheme = () => {
   const storage = useStorage();
@@ -37,19 +37,16 @@ export const useSaveTheme = () => {
       let description = error?.message;
 
       if (!description) {
-        description = "Something went wrong";
+        description = 'Something went wrong';
       }
 
-      console.error(
-        ["useSaveTheme", "Something went wrong updating the theme", description].join("\n"),
-        error
-      );
+      console.error(['useSaveTheme', 'Something went wrong updating the theme', description].join('\n'), error);
 
       showFlag({
         title: <Text color="color.text.danger">Uh Oh!</Text>,
         description,
         isAutoDismiss: true,
-        icon: <ErrorIcon color={token("color.icon.danger")} label="error" />,
+        icon: <ErrorIcon color={token('color.icon.danger')} label="error" />,
       });
     },
   });

@@ -1,17 +1,17 @@
-import type { FC } from "react";
-import type { Report } from "../../jira/reports";
+import type { FC } from 'react';
+import type { Report } from '../../jira/reports';
 
-import React, { useMemo, useState } from "react";
-import DynamicTable from "@atlaskit/dynamic-table";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import React, { useMemo, useState } from 'react';
+import DynamicTable from '@atlaskit/dynamic-table';
+import ShowMoreHorizontalIcon from '@atlaskit/icon/core/show-more-horizontal';
 
-import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
-import { IconButton } from "@atlaskit/button/new";
+import DropdownMenu, { DropdownItem } from '@atlaskit/dropdown-menu';
+import { IconButton } from '@atlaskit/button/new';
 
-import ViewReportsLayout from "./components/ViewReportsLayout";
-import { useAllReports, useDeleteReport, useRecentReports } from "../services/reports";
-import DeleteReportModal from "./components/DeleteReportModal";
-import { Link } from "../services/routing";
+import ViewReportsLayout from './components/ViewReportsLayout';
+import { useAllReports, useDeleteReport, useRecentReports } from '../services/reports';
+import DeleteReportModal from './components/DeleteReportModal';
+import { Link } from '../services/routing';
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
@@ -29,16 +29,16 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
 
   const selectedReport = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
-    const selectedReport = params.get("report");
+    const selectedReport = params.get('report');
 
     if (!selectedReport) {
-      return "";
+      return '';
     }
 
     return (
       Object.values(reports)
         .filter((report) => !!report)
-        .find(({ id }) => id === selectedReport)?.name || ""
+        .find(({ id }) => id === selectedReport)?.name || ''
     );
   }, [reports]);
 
@@ -52,10 +52,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
           {
             key: `${report.id}-report`,
             content: (
-              <Link
-                href={"?report=" + report.id}
-                className="flex items-center font-normal text-sm leading-5 h-10"
-              >
+              <Link href={'?report=' + report.id} className="flex items-center font-normal text-sm leading-5 h-10">
                 {report.name}
               </Link>
             ),
@@ -76,7 +73,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
               >
                 <DropdownItem
                   onClick={(e) => {
-                    console.log("should delete", report);
+                    console.log('should delete', report);
                     setManagedReport(report);
                   }}
                 >
@@ -99,8 +96,8 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
           <DynamicTable
             head={{
               cells: [
-                { key: "report-heading", content: "Report" },
-                { key: " manage-reports", content: "Manage" },
+                { key: 'report-heading', content: 'Report' },
+                { key: ' manage-reports', content: 'Manage' },
               ],
             }}
             rows={reportRows}

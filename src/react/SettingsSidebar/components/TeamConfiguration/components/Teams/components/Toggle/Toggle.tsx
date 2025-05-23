@@ -1,14 +1,14 @@
-import type { ComponentProps, FC } from "react";
-import type { Configuration } from "../../services/team-configuration";
+import type { ComponentProps, FC } from 'react';
+import type { Configuration } from '../../services/team-configuration';
 
-import React, { useId } from "react";
-import AtlasToggle from "@atlaskit/toggle";
+import React, { useId } from 'react';
+import AtlasToggle from '@atlaskit/toggle';
 
-import Label from "../Label";
-import { Control, Controller } from "react-hook-form";
-import { FieldUpdates } from "../../ConfigureTeamsForm";
+import Label from '../Label';
+import { Control, Controller } from 'react-hook-form';
+import { FieldUpdates } from '../../ConfigureTeamsForm';
 
-interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, "onChange" | "isChecked" | "isDisabled"> {
+interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, 'onChange' | 'isChecked' | 'isDisabled'> {
   label: string;
   description: string;
 }

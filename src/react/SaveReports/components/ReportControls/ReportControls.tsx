@@ -1,10 +1,10 @@
-import React, { type FC } from "react";
+import React, { type FC } from 'react';
 
-import DropdownMenu, { DropdownItem } from "@atlaskit/dropdown-menu";
-import ChevronDown from "@atlaskit/icon/glyph/chevron-down";
-import LinkButton from "../../../components/LinkButton";
+import DropdownMenu, { DropdownItem } from '@atlaskit/dropdown-menu';
+import LinkButton from '../../../components/LinkButton';
+import ChevronDown from '@atlaskit/icon/glyph/chevron-down';
 
-const defaultPrimaryButtonClasses = "ps-4 pe-2 py-2 rounded-md";
+const defaultPrimaryButtonClasses = 'ps-4 pe-2 py-2 rounded-md';
 
 interface ReportControlProps {
   hasSelectedReport?: boolean;
@@ -30,9 +30,7 @@ const ReportControls: FC<ReportControlProps> = ({
           trigger={({ triggerRef, isSelected, ...props }) => (
             <LinkButton
               ref={triggerRef}
-              className={`flex items-center ${defaultPrimaryButtonClasses} ${
-                isSelected ? "bg-blue-100" : ""
-              }`}
+              className={`flex items-center ${defaultPrimaryButtonClasses} ${isSelected ? 'bg-blue-100' : ''}`}
               {...props}
             >
               Save report <ChevronDown label="open save report options" />

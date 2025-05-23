@@ -1,25 +1,21 @@
-import type { NormalizeIssueConfig } from "../../../../../../../jira/normalized/normalize";
-import type { AllTeamData, Configuration } from "../services/team-configuration";
+import type { NormalizeIssueConfig } from '../../../../../../../jira/normalized/normalize';
+import type { AllTeamData, Configuration } from '../services/team-configuration';
 
-const getConfiguration = (
-  allData: AllTeamData,
-  teamKey?: string,
-  heirarchyLevel?: number
-): Configuration => {
-  const key = teamKey || "";
-  const level = typeof heirarchyLevel === "undefined" ? 0 : heirarchyLevel;
+const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel?: number): Configuration => {
+  const key = teamKey || '';
+  const level = typeof heirarchyLevel === 'undefined' ? 0 : heirarchyLevel;
 
   return allData[key]?.[level] || allData.__GLOBAL__.defaults;
 };
 
 const defaults = [
-  "Start date",
-  "Due date",
-  "Story points",
-  "Story points median",
-  "Confidence",
-  "Story points confidence",
-  "Days estimate",
+  'Start date',
+  'Due date',
+  'Story points',
+  'Story points median',
+  'Confidence',
+  'Story points confidence',
+  'Days estimate',
 ];
 
 const getAllFields = (allData?: AllTeamData): string[] => {
@@ -31,10 +27,10 @@ const getAllFields = (allData?: AllTeamData): string[] => {
 
       allFields = [
         ...allFields,
-        config?.estimateField ?? "",
-        config?.confidenceField ?? "",
-        config?.startDateField ?? "",
-        config?.dueDateField ?? "",
+        config?.estimateField ?? '',
+        config?.confidenceField ?? '',
+        config?.startDateField ?? '',
+        config?.dueDateField ?? '',
       ];
     }
   }
@@ -43,17 +39,17 @@ const getAllFields = (allData?: AllTeamData): string[] => {
 };
 
 export const createNormalizeConfiguration = (
-  allData?: AllTeamData | undefined
+  allData?: AllTeamData | undefined,
 ): Partial<NormalizeIssueConfig> & { fields: string[] } => {
   const neededFields = getAllFields(allData);
 
   if (!allData) {
     console.warn(
       [
-        "`createNormalizedConfiguration (react/normalize.ts):",
-        "Tried to create an override config for normalize without allTeamData.",
-        "An empty override was returned",
-      ].join("\n")
+        '`createNormalizedConfiguration (react/normalize.ts):',
+        'Tried to create an override config for normalize without allTeamData.',
+        'An empty override was returned',
+      ].join('\n'),
     );
 
     return { fields: neededFields };
@@ -63,34 +59,26 @@ export const createNormalizeConfiguration = (
     fields: neededFields,
     getDaysPerSprint: (issue, config) => {
       return Number(
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
-          .sprintLength
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).sprintLength,
       );
     },
     getVelocity: (issue, config) => {
       return Number(
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
-          .velocityPerSprint
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).velocityPerSprint,
       );
     },
     getParallelWorkLimit: (issue, config) => {
-      return Number(
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
-          .tracks
-      );
+      return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).tracks);
     },
     getTeamSpreadsEffortAcrossDates: (issue, config) => {
-      return !!getConfiguration(
-        allData,
-        config?.getTeamKey(issue),
-        config?.getHierarchyLevel(issue)
-      ).spreadEffortAcrossDates;
+      return !!getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue))
+        .spreadEffortAcrossDates;
     },
     getStartDate: (issue, config) => {
       const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
-        config?.getHierarchyLevel(issue)
+        config?.getHierarchyLevel(issue),
       );
 
       if (!teamHierarchyConfiguration.startDateField) {
@@ -99,7 +87,7 @@ export const createNormalizeConfiguration = (
 
       const value = issue.fields[teamHierarchyConfiguration.startDateField];
 
-      if (!value || typeof value !== "string") {
+      if (!value || typeof value !== 'string') {
         return null;
       }
 
@@ -109,7 +97,7 @@ export const createNormalizeConfiguration = (
       const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
-        config?.getHierarchyLevel(issue)
+        config?.getHierarchyLevel(issue),
       );
 
       if (!teamHierarchyConfiguration.confidenceField) {
@@ -117,8 +105,8 @@ export const createNormalizeConfiguration = (
       }
 
       if (
-        typeof teamHierarchyConfiguration.confidenceField === "string" &&
-        teamHierarchyConfiguration.confidenceField === "confidence-not-used"
+        typeof teamHierarchyConfiguration.confidenceField === 'string' &&
+        teamHierarchyConfiguration.confidenceField === 'confidence-not-used'
       ) {
         return 100;
       }
@@ -141,7 +129,7 @@ export const createNormalizeConfiguration = (
       const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
-        config?.getHierarchyLevel(issue)
+        config?.getHierarchyLevel(issue),
       );
 
       if (!teamHierarchyConfiguration.dueDateField) {
@@ -150,7 +138,7 @@ export const createNormalizeConfiguration = (
 
       const value = issue.fields[teamHierarchyConfiguration.dueDateField];
 
-      if (!value || typeof value !== "string") {
+      if (!value || typeof value !== 'string') {
         return null;
       }
 
@@ -160,7 +148,7 @@ export const createNormalizeConfiguration = (
       const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
-        config?.getHierarchyLevel(issue)
+        config?.getHierarchyLevel(issue),
       );
 
       if (!teamHierarchyConfiguration.estimateField) {
@@ -185,7 +173,7 @@ export const createNormalizeConfiguration = (
       const teamHierarchyConfiguration = getConfiguration(
         allData,
         config?.getTeamKey(issue),
-        config?.getHierarchyLevel(issue)
+        config?.getHierarchyLevel(issue),
       );
 
       if (!teamHierarchyConfiguration.estimateField) {

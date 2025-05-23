@@ -1,12 +1,12 @@
-import type { ComponentProps, FC } from "react";
+import type { ComponentProps, FC } from 'react';
 
-import React, { useState } from "react";
-import Heading from "@atlaskit/heading";
+import React, { useState } from 'react';
+import Heading from '@atlaskit/heading';
 
-import SidebarButton from "../../../components/SidebarButton";
-import Branding from "../Branding";
-import FeatureRequestModal from "./components/FeatureRequestModal";
-import BugReportModal from "./components/BugReportModal";
+import SidebarButton from '../../../components/SidebarButton';
+import Branding from '../Branding';
+import FeatureRequestModal from './components/FeatureRequestModal';
+import BugReportModal from './components/BugReportModal';
 
 interface ReportSettingsProps {
   changeSettings: (setting: string) => void;
@@ -25,11 +25,11 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
           <span className="uppercase">Report Settings</span>
         </Heading>
       </div>
-      <SidebarButton onClick={() => changeSettings("SOURCES")}>
+      <SidebarButton onClick={() => changeSettings('SOURCES')}>
         <img src="/images/magnifying-glass.svg" aria-hidden />
         Sources
       </SidebarButton>
-      <SidebarButton onClick={() => changeSettings("TIMING")}>
+      <SidebarButton onClick={() => changeSettings('TIMING')}>
         <img src="/images/calendar.svg" aria-hidden />
         Timing
       </SidebarButton>
@@ -40,15 +40,15 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         </Heading>
       </div>
 
-      <SidebarButton onClick={() => changeSettings("TEAMS")}>
+      <SidebarButton onClick={() => changeSettings('TEAMS')}>
         <img src="/images/team.svg" aria-hidden />
         Teams
       </SidebarButton>
-      <SidebarButton onClick={() => changeSettings("FEATURES")}>
+      <SidebarButton onClick={() => changeSettings('FEATURES')}>
         <img src="/images/features.svg" aria-hidden />
         Features
       </SidebarButton>
-      <SidebarButton onClick={() => changeSettings("THEME")}>
+      <SidebarButton onClick={() => changeSettings('THEME')}>
         <img src="/images/theme.svg" className="w-[18px]" aria-hidden />
         Theme
       </SidebarButton>
@@ -63,9 +63,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <SmallLink href="https://www.bitovi.com/services/agile-project-management-consulting">
           Connect with Bitovi
         </SmallLink>
-        <SmallLink href="https://www.bitovi.com/status-reports-for-jira">
-          Join the Mailing List
-        </SmallLink>
+        <SmallLink href="https://www.bitovi.com/status-reports-for-jira">Join the Mailing List</SmallLink>
         <button className="link text-slate-300 text-sm" onClick={() => setIsBugFormOpen(true)}>
           Report a bug
         </button>
@@ -76,10 +74,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         <SmallLink href="https://marketplace.atlassian.com/apps/1236390/status-reports-for-jira?hosting=cloud&tab=reviews">
           Write a review
         </SmallLink>
-        <FeatureRequestModal
-          isOpen={isFeedbackFormOpen}
-          onClose={() => setIsFeedbackFormOpen(false)}
-        />
+        <FeatureRequestModal isOpen={isFeedbackFormOpen} onClose={() => setIsFeedbackFormOpen(false)} />
       </div>
     </div>
   );
@@ -87,11 +82,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
 
 export default ReportSettings;
 
-const SmallLink: FC<Omit<ComponentProps<"a">, "className" | "target">> = ({
-  href,
-  children,
-  ...rest
-}) => {
+const SmallLink: FC<Omit<ComponentProps<'a'>, 'className' | 'target'>> = ({ href, children, ...rest }) => {
   return (
     <a className="link text-slate-300 text-sm" target="_blank" href={href} {...rest}>
       {children}

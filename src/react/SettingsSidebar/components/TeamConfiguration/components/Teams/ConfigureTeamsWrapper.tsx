@@ -1,11 +1,11 @@
-import type { FC } from "react";
-import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
-import type { IssueFields } from "./services/team-configuration";
+import type { FC } from 'react';
+import type { NormalizeIssueConfig } from '../../../../../../jira/normalized/normalize';
+import type { IssueFields } from './services/team-configuration';
 
-import React from "react";
-import { withProfiler, ErrorBoundary } from "@sentry/react";
+import React from 'react';
+import { withProfiler, ErrorBoundary } from '@sentry/react';
 
-import ConfigureTeams from "./ConfigureTeams";
+import ConfigureTeams from './ConfigureTeams';
 
 export interface TeamConfigurationWrapperProps {
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
@@ -21,17 +21,12 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
   );
 };
 
-export default withProfiler(TeamConfigurationWrapper, { name: "Teams Configuration Panel" });
+export default withProfiler(TeamConfigurationWrapper, { name: 'Teams Configuration Panel' });
 
 const TeamConfigurationErrorBoundary: FC<{ error: unknown }> = ({ error }) => {
-  if (
-    !!error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
+  if (!!error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return <>{error?.message}</>;
   }
 
-  return "Something went wrong";
+  return 'Something went wrong';
 };

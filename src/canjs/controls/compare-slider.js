@@ -1,9 +1,9 @@
-import { StacheElement } from "../../can";
+import { StacheElement } from '../../can';
 
-import routeData from "../routing/route-data";
+import routeData from '../routing/route-data';
 
-import { createLinearMapping, createInverseMapping } from "../../utils/math/linear-mapping";
-import { DROPDOWN_LABEL } from "../../shared/style-strings";
+import { createLinearMapping, createInverseMapping } from '../../utils/math/linear-mapping';
+import { DROPDOWN_LABEL } from '../../shared/style-strings';
 
 const MINUTE_IN_S = 60;
 const HOUR_IN_S = MINUTE_IN_S * 60;
@@ -80,23 +80,23 @@ export class ComapreSlider extends StacheElement {
       let timeText, unitText;
 
       if (compareTo === 0) {
-        timeText = "now";
-        unitText = "";
+        timeText = 'now';
+        unitText = '';
       } else if (compareTo < MINUTE_IN_S) {
-        timeText = "" + compareTo;
-        unitText = "seconds ago";
+        timeText = '' + compareTo;
+        unitText = 'seconds ago';
       } else if (compareTo < HOUR_IN_S) {
         timeText = Math.round(compareTo / MINUTE_IN_S);
-        unitText = " minutes ago";
+        unitText = ' minutes ago';
       } else if (compareTo < DAY_IN_S) {
         timeText = Math.round(compareTo / HOUR_IN_S);
-        unitText = " hours ago";
+        unitText = ' hours ago';
       } else if (compareTo == DAY_IN_S) {
         timeText = Math.round(compareTo / DAY_IN_S);
-        unitText = " day ago";
+        unitText = ' day ago';
       } else {
         timeText = Math.round(compareTo / DAY_IN_S);
-        unitText = " days ago";
+        unitText = ' days ago';
       }
 
       return {
@@ -115,13 +115,13 @@ export class ComapreSlider extends StacheElement {
       }
     },
     get dateSelectedClassName() {
-      if (this.routeData.compareToType === "date") {
-        return " font-semibold ";
+      if (this.routeData.compareToType === 'date') {
+        return ' font-semibold ';
       }
     },
     get timeAgoClassName() {
-      if (this.routeData.compareToType === "seconds") {
-        return " font-semibold ";
+      if (this.routeData.compareToType === 'seconds') {
+        return ' font-semibold ';
       }
     },
   };
@@ -137,7 +137,7 @@ function getDateDaysAgoLocal(daysAgo) {
   const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo);
 
   // Format the date as ISO 8601 (yyyy-mm-dd)
-  return localDate.toISOString().split("T")[0];
+  return localDate.toISOString().split('T')[0];
 }
 
-customElements.define("compare-slider", ComapreSlider);
+customElements.define('compare-slider', ComapreSlider);

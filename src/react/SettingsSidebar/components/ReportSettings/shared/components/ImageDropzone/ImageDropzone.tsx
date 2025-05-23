@@ -1,7 +1,7 @@
-import type { Dispatch, FC, SetStateAction } from "react";
+import type { Dispatch, FC, SetStateAction } from 'react';
 
-import React, { useId, useState } from "react";
-import { Label } from "@atlaskit/form";
+import React, { useId, useState } from 'react';
+import { Label } from '@atlaskit/form';
 
 interface ImageDropzoneProps {
   name?: string;
@@ -9,7 +9,7 @@ interface ImageDropzoneProps {
   setFiles: Dispatch<SetStateAction<File[]>>;
 }
 
-const ImageDropzone: FC<ImageDropzoneProps> = ({ name = "images", files, setFiles }) => {
+const ImageDropzone: FC<ImageDropzoneProps> = ({ name = 'images', files, setFiles }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileId = useId();
 
@@ -40,11 +40,7 @@ const ImageDropzone: FC<ImageDropzoneProps> = ({ name = "images", files, setFile
           {files.map((file, i) => (
             <li key={file.name} className="flex justify-between">
               <div className="flex items-center gap-4 ">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  className="w-8 h-8 object-cover rounded border"
-                />
+                <img src={URL.createObjectURL(file)} alt={file.name} className="w-8 h-8 object-cover rounded border" />
                 <div>
                   <p className="text-sm font-medium">{file.name}</p>
                   <p className="text-xs text-gray-500">{Math.round(file.size / 1024)} KB</p>
@@ -62,7 +58,7 @@ const ImageDropzone: FC<ImageDropzoneProps> = ({ name = "images", files, setFile
       )}
       <div
         className={`border border-dashed rounded mt-4 p-6 text-center  ${
-          isDragging ? "border-blue-400 bg-blue-50" : "border-gray-300"
+          isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
         }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -79,7 +75,7 @@ const ImageDropzone: FC<ImageDropzoneProps> = ({ name = "images", files, setFile
         />
         <Label htmlFor={fileId}>
           <p className="text-blue-600 underline cursor-pointer">
-            {isDragging ? "Drop files here" : "Drag and drop files or click to upload"}
+            {isDragging ? 'Drop files here' : 'Drag and drop files or click to upload'}
           </p>
           <p className="text-sm text-gray-400">Images only</p>
         </Label>

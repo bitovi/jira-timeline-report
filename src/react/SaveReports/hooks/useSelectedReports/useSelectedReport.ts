@@ -1,11 +1,11 @@
-import type { Report, Reports } from "../../../../jira/reports";
+import type { Report, Reports } from '../../../../jira/reports';
 
-import { useMemo, useState } from "react";
-import { useQueryParams } from "../../../hooks/useQueryParams";
-import { CanObservable } from "../../../hooks/useCanObservable";
-import { useUpdateReport } from "../../../services/reports";
-import { getReportFromParams, paramsMatchReport } from "./utilities";
-import routeData from "../../../../canjs/routing/route-data";
+import { useMemo, useState } from 'react';
+import { useQueryParams } from '../../../hooks/useQueryParams';
+import { CanObservable } from '../../../hooks/useCanObservable';
+import { useUpdateReport } from '../../../services/reports';
+import { getReportFromParams, paramsMatchReport } from './utilities';
+import routeData from '../../../../canjs/routing/route-data';
 
 export const useSelectedReport = ({
   reports,
@@ -15,12 +15,10 @@ export const useSelectedReport = ({
   reports: Reports;
 }) => {
   const { updateReport } = useUpdateReport();
-  const [selectedReport, setSelectedReport] = useState<Report | undefined>(() =>
-    getReportFromParams(reports)
-  );
+  const [selectedReport, setSelectedReport] = useState<Report | undefined>(() => getReportFromParams(reports));
 
   const [isDirty, setIsDirty] = useState(
-    () => !paramsMatchReport(new URLSearchParams(window.location.search), reports)
+    () => !paramsMatchReport(new URLSearchParams(window.location.search), reports),
   );
 
   useQueryParams(queryParamObservable, {
@@ -39,7 +37,7 @@ export const useSelectedReport = ({
     selectedReport,
     updateSelectedReport: () => {
       if (!selectedReport) {
-        console.warn("Tried to update the selectedReport without it being set");
+        console.warn('Tried to update the selectedReport without it being set');
         return;
       }
 
@@ -54,7 +52,7 @@ export const useSelectedReport = ({
 
             queryParamObservable.set(`?report=${selectedReport.id}`);
           },
-        }
+        },
       );
     },
     isDirty,

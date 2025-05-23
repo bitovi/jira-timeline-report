@@ -1,10 +1,10 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useId } from "react";
+import React, { useId } from 'react';
 
-import FilterGrid from "../../shared/components/FilterGrid";
-import Select from "@atlaskit/select";
-import Toggle from "@atlaskit/toggle";
+import FilterGrid from '../../shared/components/FilterGrid';
+import Select from '@atlaskit/select';
+import Toggle from '@atlaskit/toggle';
 
 interface IssueTypeFiltersProps {
   isRelease: boolean;
@@ -58,7 +58,7 @@ const IssueTypeFilters: FC<IssueTypeFiltersProps> = ({
             }}
           />
           <label className="text-sm" htmlFor={unknownIssueTypeId}>
-            Hide {isRelease ? "Releases" : selectedIssueType + "s"} without dates
+            Hide {isRelease ? 'Releases' : selectedIssueType + 's'} without dates
           </label>
         </div>
         {isRelease && (

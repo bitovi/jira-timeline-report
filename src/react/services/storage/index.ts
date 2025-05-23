@@ -1,3 +1,3 @@
-export * from "./StorageProvider";
-export { default as StorageNeedsConfigured } from "./StorageNeedsConfigured";
-export * from "./StorageNeedsConfigured";
+export * from './StorageProvider';
+export { default as StorageNeedsConfigured } from './StorageNeedsConfigured';
+export * from './StorageNeedsConfigured';

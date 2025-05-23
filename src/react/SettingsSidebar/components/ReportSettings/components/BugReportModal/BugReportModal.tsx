@@ -1,16 +1,11 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
+import React from 'react';
 
-import Modal, {
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTransition,
-} from "@atlaskit/modal-dialog";
+import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTransition } from '@atlaskit/modal-dialog';
 
-import BugReportForm from "./components/BugReportForm";
-import BugReportModalHeader from "./components/BugReportModalHeader";
+import BugReportForm from './components/BugReportForm';
+import BugReportModalHeader from './components/BugReportModalHeader';
 
 interface BugReportModalProps {
   isOpen: boolean;
