@@ -1,14 +1,7 @@
-import { value } from '../../../../can';
-import routeData from '../../../../canjs/routing/route-data';
-import { useCanObservable } from '../../../hooks/useCanObservable';
+import { useRouteData } from "../../../hooks/useRouteData";
 
 export const useShowOnlySemverReleases = () => {
-  const showOnlySemverReleases = useCanObservable<boolean>(value.from(routeData, 'showOnlySemverReleases'));
-
-  const setShowOnlySemverReleases = (newShowOnlySemverReleases: boolean) => {
-    // @ts-expect-error
-    routeData.showOnlySemverReleases = newShowOnlySemverReleases;
-  };
+  const [showOnlySemverReleases, setShowOnlySemverReleases] = useRouteData<boolean>("showOnlySemverReleases")
 
   return { showOnlySemverReleases, setShowOnlySemverReleases };
 };

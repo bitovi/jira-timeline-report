@@ -34,6 +34,9 @@ const dateFormatter = new Intl.DateTimeFormat(navigator.language).format(new Dat
 const valueToSeconds = createLinearMapping(MAPPING_POINTS),
   secondsToValue = createInverseMapping(MAPPING_POINTS);
 
+/*
+@Deprecated - Use the CompareSlider in react instead. This file will be deleted.
+*/
 export class ComapreSlider extends StacheElement {
   static view = `
         <div class="flex justify-between text-neutral-801 text-xs">

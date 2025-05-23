@@ -44,6 +44,7 @@
     "@atlaskit/lozenge": "^11.12.7",
     "@atlaskit/modal-dialog": "^12.17.10",
     "@atlaskit/primitives": "^12.2.2",
+    "@atlaskit/range": "^9.0.3",
     "@atlaskit/section-message": "^6.7.0",
     "@atlaskit/select": "^17.19.3",
     "@atlaskit/spinner": "^16.3.2",
