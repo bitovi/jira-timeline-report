@@ -98,3 +98,23 @@ export const createFullyInheritedConfig = (
     };
   }, {} as AllTeamData);
 };
+
+export const createTeamFieldLookup = (allTeamData: AllTeamData) => {
+  return {
+    getFieldFor: ({
+      team = '__GLOBAL__',
+      issueLevel = 'defaults',
+      field,
+    }: {
+      team?: string;
+      issueLevel?: string;
+      field: Extract<keyof Configuration, `${string}Field`>;
+    }) => {
+      const teamData = allTeamData?.[team] ?? allTeamData.__GLOBAL__;
+      const configuration = teamData?.[issueLevel] ?? teamData.defaults;
+      const matchedField = configuration[field];
+
+      return matchedField;
+    },
+  };
+};

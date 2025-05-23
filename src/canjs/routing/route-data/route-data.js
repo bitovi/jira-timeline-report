@@ -35,6 +35,7 @@ const ROUND_OPTIONS = ['day', ...Object.keys(roundDate)];
 import {
   getAllTeamData,
   createFullyInheritedConfig,
+  createTeamFieldLookup,
 } from '../../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/team-configuration';
 
 import { createNormalizeConfiguration } from '../../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/shared/normalize';
@@ -241,19 +242,34 @@ export class RouteData extends ObservableObject {
         isLoggedIn: this.isLoggedInObservable,
       });
     },
-    // normalize options without the server info
-    get baseNormalizeOptionsAndFieldsToRequestPromise() {
-      return Promise.all([this.jiraFieldsPromise, this.allTeamDataPromise, this.simplifiedIssueHierarchyPromise])
-        .then(([jiraFields, teamData, hierarchyLevels]) => {
+    get fullyInheritedTeamConfigPromise() {
+      return Promise.all([this.jiraFieldsPromise, this.allTeamDataPromise, this.simplifiedIssueHierarchyPromise]).then(
+        ([jiraFields, teamData, hierarchyLevels]) => {
           const allTeamData = createFullyInheritedConfig(
             teamData,
             jiraFields,
             hierarchyLevels.map((type) => type.hierarchyLevel.toString()),
           );
+
           return allTeamData;
-        })
+        },
+      );
+    },
+    get teamFieldLookUp() {
+      return this.fullyInheritedTeamConfigPromise.then((allTeamData) => {
+        const fieldLookup = createTeamFieldLookup(allTeamData);
+
+        window.fieldLookup = fieldLookup;
+
+        return fieldLookup;
+      });
+    },
+    // normalize options without the server info
+    get baseNormalizeOptionsAndFieldsToRequestPromise() {
+      return this.fullyInheritedTeamConfigPromise
         .then((allTeamData) => {
           const normalizedConfig = createNormalizeConfiguration(allTeamData);
+
           return normalizedConfig;
         })
         .catch((e) => {
