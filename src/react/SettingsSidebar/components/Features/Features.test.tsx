@@ -10,6 +10,8 @@ const features = [
   { title: "Estimation Table", subtitle: "" },
   { title: "Secondary Report", subtitle: "" },
   { title: "Work Breakdowns", subtitle: "" },
+  { title: "Estimation Analysis", subtitle: "" },
+  { title: "Auto-Scheduler", subtitle: "" },
 ];
 
 import { StorageProvider } from "../../../services/storage";

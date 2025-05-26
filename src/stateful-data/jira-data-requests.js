@@ -91,6 +91,7 @@ const CORE_FIELDS = [
   "Created",
   "Parent",
   "Team",
+  "Linked Issues"
 ];
 
 export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL }, { progressUpdate }) {

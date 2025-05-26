@@ -63,6 +63,74 @@ const defaults = {
 
 export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
 
+// this is pulled out b/c the autoscheduler uses it
+export function getEstimationData(normalizedIssue: NormalizedIssue,
+  {
+    getDefaultConfidence = getDefaultConfidenceDefault,
+    getDefaultStoryPoints = getDefaultStoryPointsDefault,
+    uncertaintyWeight = 80,
+  }){
+
+    const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
+
+    const usedConfidence = isConfidenceValid
+      ? normalizedIssue.confidence as number
+      : getDefaultConfidence(normalizedIssue.team);
+  
+    const isStoryPointsValid = isStoryPointsValueValid(normalizedIssue.storyPoints);
+    const defaultOrStoryPoints = isStoryPointsValid
+      ? normalizedIssue.storyPoints as number
+      : getDefaultStoryPoints(normalizedIssue.team);
+  
+    const storyPointsDaysOfWork = defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  
+    const isStoryPointsMedianValid = isStoryPointsValueValid(normalizedIssue.storyPointsMedian);
+  
+    const defaultOrStoryPointsMedian = isStoryPointsMedianValid
+      ? normalizedIssue.storyPointsMedian as number
+      : getDefaultStoryPoints(normalizedIssue.team);
+  
+    const storyPointsMedianDaysOfWork =
+      defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
+    const deterministicExtraPoints = estimateExtraPoints(
+      defaultOrStoryPointsMedian,
+      usedConfidence,
+      uncertaintyWeight
+    );
+    const deterministicExtraDaysOfWork =
+      deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+    const deterministicTotalPoints = defaultOrStoryPointsMedian + deterministicExtraPoints;
+    const deterministicTotalDaysOfWork =
+      deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  
+    const probablisticExtraPoints = sampleExtraPoints(defaultOrStoryPointsMedian, usedConfidence);
+    const probablisticExtraDaysOfWork =
+      probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+    const probablisticTotalPoints = defaultOrStoryPointsMedian + probablisticExtraPoints;
+    const probablisticTotalDaysOfWork =
+      probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+
+    
+      return {
+        isConfidenceValid,
+        usedConfidence,
+        isStoryPointsValid,
+        defaultOrStoryPoints,
+        storyPointsDaysOfWork,
+        isStoryPointsMedianValid,
+        defaultOrStoryPointsMedian,
+        storyPointsMedianDaysOfWork,
+        deterministicExtraPoints,
+        deterministicExtraDaysOfWork,
+        deterministicTotalPoints,
+        deterministicTotalDaysOfWork,
+        probablisticExtraPoints,
+        probablisticExtraDaysOfWork,
+        probablisticTotalPoints,
+        probablisticTotalDaysOfWork
+      };
+}
+
 /**
  *
  * @param {import("../../shared/types.js").NormalizedIssue} normalizedIssue
@@ -77,45 +145,30 @@ export function deriveWorkTiming(
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
 ): DerivedWorkTiming {
-  
-  const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
 
-  const usedConfidence = isConfidenceValid
-    ? normalizedIssue.confidence as number
-    : getDefaultConfidence(normalizedIssue.team);
-
-  const isStoryPointsValid = isStoryPointsValueValid(normalizedIssue.storyPoints);
-  const defaultOrStoryPoints = isStoryPointsValid
-    ? normalizedIssue.storyPoints as number
-    : getDefaultStoryPoints(normalizedIssue.team);
-
-  const storyPointsDaysOfWork = defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
-
-  const isStoryPointsMedianValid = isStoryPointsValueValid(normalizedIssue.storyPointsMedian);
-
-  const defaultOrStoryPointsMedian = isStoryPointsMedianValid
-    ? normalizedIssue.storyPointsMedian as number
-    : getDefaultStoryPoints(normalizedIssue.team);
-
-  const storyPointsMedianDaysOfWork =
-    defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
-  const deterministicExtraPoints = estimateExtraPoints(
-    defaultOrStoryPointsMedian,
+  const {
+    isConfidenceValid,
     usedConfidence,
-    uncertaintyWeight
-  );
-  const deterministicExtraDaysOfWork =
-    deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
-  const deterministicTotalPoints = defaultOrStoryPointsMedian + deterministicExtraPoints;
-  const deterministicTotalDaysOfWork =
-    deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+    isStoryPointsValid,
+    defaultOrStoryPoints,
+    storyPointsDaysOfWork,
+    isStoryPointsMedianValid,
+    defaultOrStoryPointsMedian,
+    storyPointsMedianDaysOfWork,
+    deterministicExtraPoints,
+    deterministicExtraDaysOfWork,
+    deterministicTotalPoints,
+    deterministicTotalDaysOfWork,
+    probablisticExtraPoints,
+    probablisticExtraDaysOfWork,
+    probablisticTotalPoints,
+    probablisticTotalDaysOfWork
+  } = getEstimationData(normalizedIssue, {
+    getDefaultConfidence,
+    getDefaultStoryPoints,
+    uncertaintyWeight,
+  });
 
-  const probablisticExtraPoints = sampleExtraPoints(defaultOrStoryPointsMedian, usedConfidence);
-  const probablisticExtraDaysOfWork =
-    probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
-  const probablisticTotalPoints = defaultOrStoryPointsMedian + probablisticExtraPoints;
-  const probablisticTotalDaysOfWork =
-    probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const hasStartAndDueDate = Boolean(normalizedIssue.dueDate && normalizedIssue.startDate);
   const startAndDueDateDaysOfWork = hasStartAndDueDate
     ? getBusinessDatesCount(normalizedIssue.startDate, normalizedIssue.dueDate)

@@ -75,6 +75,10 @@ export const REPORTS = [
   {
     key: "estimate-analysis",
     name: "Estimation Analysis"
+  },
+  {
+    key: "auto-scheduler",
+    name: "Auto-Scheduler"
   }
 ];
 

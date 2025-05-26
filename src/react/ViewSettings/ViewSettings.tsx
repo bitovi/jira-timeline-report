@@ -30,6 +30,10 @@ const reports = [
   {
     key: "estimate-analysis",
     name: "Estimation Analysis"
+  },
+  {
+    key: "auto-scheduler",
+    name: "Auto-Scheduler"
   }
 ] as const;
 
@@ -38,7 +42,8 @@ type ReportTypes = (typeof reports)[number]["key"];
 const viewSettingsMap: Record<Exclude<ReportTypes, "table">, FC> = {
   "start-due": GanttViewSettings,
   due: ScatterPlotViewSettings,
-  "estimate-analysis": EstimateAnalysisViewSettings
+  "estimate-analysis": EstimateAnalysisViewSettings,
+  "auto-scheduler": EstimateAnalysisViewSettings
 };
 console.log(viewSettingsMap);
 const useReportType = () => {

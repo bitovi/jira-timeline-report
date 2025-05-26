@@ -30,6 +30,7 @@ import StatusKeys from "./react/StatusKey";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 import { EstimateAnalysis } from "./react/reports/EstimateAnalysis/EstimateAnalysis";
+import { AutoScheduler } from "./react/reports/AutoScheduler/AutoScheduler";
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -82,6 +83,11 @@ export class TimelineReport extends StacheElement {
             <div id='estimate-analysis' 
               on:inserted='this.attachEstimateAnalysis()'
               on:removed='this.detatchEstimateAnalysis()'>Loading Estimate Analysis</div>
+          {{/ eq}}
+          {{# eq(this.routeData.primaryReportType, "auto-scheduler") }}
+            <div id='auto-scheduler' 
+              on:inserted='this.attachAutoScheduler()'
+              on:removed='this.detatchAutoScheduler()'>Loading Auto Scheduler</div>
           {{/ eq}}
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
@@ -195,6 +201,22 @@ export class TimelineReport extends StacheElement {
     if(this.estimateAnalysisRoot) {
       this.estimateAnalysisRoot.unmount();
       this.estimateAnalysisRoot = null;
+    }
+  }
+  attachAutoScheduler(){
+    const element = document.getElementById("auto-scheduler");
+    this.autoSchedulerRoot = createRoot(element)
+    
+    this.autoSchedulerRoot.render(createElement(AutoScheduler, {
+      primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
+      allIssuesOrReleasesObs: value.from(this, "rolledupAndRolledBackIssuesAndReleases"),
+      rollupTimingLevelsAndCalculationsObs: value.from(this, "rollupTimingLevelsAndCalculations")
+    }));
+  }
+  detatchAutoScheduler(){
+    if(this.autoSchedulerRoot) {
+      this.autoSchedulerRoot.unmount();
+      this.autoSchedulerRoot = null;
     }
   }
 
