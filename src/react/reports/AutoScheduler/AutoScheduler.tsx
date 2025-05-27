@@ -43,8 +43,9 @@ export const AutoScheduler: FC<{
     const rollupTimingLevelsAndCalculations = useCanObservable(rollupTimingLevelsAndCalculationsObs);
 
     // for a date picker
-    const [selectedStartDate, setSelectedStartDate] = useState<Date>(new Date());
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [selectedStartDate, setSelectedStartDate] = useState<Date>(nowUTC());
+    const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      console.log("Date changed", e.target.valueAsDate);
       setSelectedStartDate(e.target.valueAsDate ?? new Date());
     };
 
@@ -106,7 +107,7 @@ export const AutoScheduler: FC<{
     }
 
     // converts the stats into data for a grid
-    const gridData = gridUIData(uiData, new Date());
+    const gridData = gridUIData(uiData, selectedStartDate);
 
 
     return <div className="relative">
@@ -129,7 +130,7 @@ export const AutoScheduler: FC<{
         className="border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:bg-white/10 dark:text-white"
         type="date"
         value={selectedStartDate.toISOString().split("T")[0]} // format for input
-        onChange={handleChange}
+        onChange={handleDatePickerChange}
       />
     </div>
    
@@ -528,3 +529,16 @@ function makeCurveBetweenPoints(start: {x: number, y: number}, end: {x: number, 
             p.setAttribute("stroke-width", "2");
             return p;
         }*/
+
+
+
+function nowUTC(){
+  let now = new Date();
+
+  let year = now.getUTCFullYear();
+  let month = now.getUTCMonth();
+  let day = now.getUTCDate();
+
+  // Create a new Date object using UTC components
+  return new Date(Date.UTC(year, month, day));
+}

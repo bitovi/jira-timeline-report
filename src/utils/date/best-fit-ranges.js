@@ -126,12 +126,6 @@ const makeDateRanges = function(startDate, endDate) {
         // sometimes the start and end would be the same day. 
         if(endDay - startDay !== 0 ) {
             ranges.push({
-                get start(){
-                    throw "nope";
-                },
-                get end(){
-                    throw "nope";
-                },
                 startBusinessDay: startBusinessDayOfRange,
                 prettyStart: this.prettyDate(startBusinessDayOfRange),
 
@@ -172,7 +166,7 @@ const ranges = [
 
             // Calculate how many days to add to get to the next Monday
             // Day of the week is represented as 0 (Sunday) to 6 (Saturday)
-            var daysToAdd = (8 - nextMonday.getDay()) % 7;
+            var daysToAdd = (8 - nextMonday.getUTCDay()) % 7;
             if (daysToAdd === 0) {
                 daysToAdd = 7; // If today is Monday, move to the next Monday
             }
