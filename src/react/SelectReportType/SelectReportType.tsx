@@ -45,8 +45,12 @@ const SelectReportType: FC<SelectReportTypeProps> = ({ features: featuresProp })
     );
   }
 
+  // Find selected Report from all reports and not just the visible options.
+  // Although some options are hidden behind a feature flag, these options can
+  // still function if the url defaults to that value.
+  const selectedReportOption = reports.find((reportTypeOption) => reportTypeOption.key === primaryReportType);
+
   const reportTypeOptions = getReportTypeOptions(reports, features.estimationTable);
-  const selectedReportOption = reportTypeOptions.find((reportTypeOption) => reportTypeOption.key === primaryReportType);
 
   return (
     <SelectReportTypeWrapper>
