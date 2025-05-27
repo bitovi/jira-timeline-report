@@ -21,8 +21,8 @@ describe('<SelectReportType />', () => {
     const label = screen.getByText('Report type');
     expect(label).toBeInTheDocument();
 
-    const loadingDropdown = screen.getByText('Loading...');
-    expect(loadingDropdown).toBeInTheDocument();
+    const dropdownTrigger = screen.getByRole('button', { name: /Gantt Chart/ });
+    expect(dropdownTrigger).toBeInTheDocument();
   });
 
   it('renders with data', async () => {
