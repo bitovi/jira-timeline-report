@@ -1,4 +1,4 @@
-import React, { FC, ReactNode, useEffect, useId, useState } from 'react';
+import React, { FC, ReactNode, useEffect, useState } from 'react';
 import { Label } from '@atlaskit/form';
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 
