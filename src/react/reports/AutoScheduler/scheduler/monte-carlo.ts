@@ -1,54 +1,55 @@
 import type { DerivedIssue } from "../../../../jira/derived/derive";
 
-import {partition, indexByKey, groupBy} from "../../../../utils/array/array-helpers"
+import { partition, indexByKey, groupBy } from "../../../../utils/array/array-helpers";
 
-import type {LinkedIssue} from "./link-issues";
-import {resetLinkedIssue, linkIssues} from "./link-issues";
-import {WorkPlans} from "./workplan";
+import type { LinkedIssue } from "./link-issues";
+import { resetLinkedIssue, linkIssues } from "./link-issues";
+import { WorkPlans } from "./workplan";
 
+import { scheduleIssues } from "./schedule";
 
-import {scheduleIssues} from "./schedule";
+export function runMonteCarlo(
+  issues: DerivedIssue[],
+  {
+    onBatch,
+    onComplete,
+    batchSize = 20,
+    batches = 500,
+    timeBetweenBatches = 1,
+    probablisticallySelectIssueTiming = true,
+  }: {
+    onBatch(BatchResults: { batchData: BatchDatas; percentComplete: number }): void;
+    onComplete(): void;
+    batchSize?: number;
+    batches?: number;
+    timeBetweenBatches?: number;
+    probablisticallySelectIssueTiming?: boolean;
+  }
+) {
+  // we are going to track the start/due date of each work item in the simulation
+  // something else can deal with composing the stats
 
+  // make the issues we will work with
+  const linkedIssues = linkIssues(issues, probablisticallySelectIssueTiming);
 
-export function runMonteCarlo(issues: DerivedIssue[], 
-    {
-        onBatch, onComplete, batchSize = 20, batches = 500, timeBetweenBatches = 1, probablisticallySelectIssueTiming = true
-    }: {
-    onBatch(BatchResults:{batchData: BatchDatas, percentComplete: number}):void,
-    onComplete():void,
-    batchSize?: number,
-    batches?: number,
-    timeBetweenBatches?: number,
-    probablisticallySelectIssueTiming?: boolean
-}) {
+  let batchesRemaining = batches;
+  const totalSimulations = batchSize * batches;
+  function percentComplete() {
+    return ((batches - batchesRemaining) / batches) * 100;
+  }
 
-    // we are going to track the start/due date of each work item in the simulation
-    // something else can deal with composing the stats
-
-    // make the issues we will work with
-    const linkedIssues = linkIssues(issues, probablisticallySelectIssueTiming);
-    
-
-    let batchesRemaining = batches;
-    const totalSimulations = batchSize * batches;
-    function percentComplete(){
-        return (batches-batchesRemaining) / batches * 100;
+  function runBatchAndLoop() {
+    const batchData = runBatch(linkedIssues, { batchSize });
+    batchesRemaining--;
+    onBatch({ batchData, percentComplete: percentComplete() });
+    if (batchesRemaining > 0) {
+      setTimeout(runBatchAndLoop, timeBetweenBatches);
+    } else {
+      onComplete();
     }
+  }
 
-    function runBatchAndLoop(){
-        const batchData = runBatch(linkedIssues, {batchSize});
-        batchesRemaining--;
-        onBatch({batchData, percentComplete: percentComplete() });
-        if(batchesRemaining > 0) {
-            setTimeout(runBatchAndLoop, timeBetweenBatches);
-        } else {
-            onComplete();
-        }
-    }
-
-
-
-    return {linkedIssues, runBatchAndLoop};
+  return { linkedIssues, runBatchAndLoop };
 }
 
 export type BatchIssueData = {
@@ -64,10 +65,7 @@ export type BatchDatas = {
   lastDays: number[];
 };
 
-function runBatch(
-  linkedIssues: LinkedIssue[],
-  { batchSize }: { batchSize: number }
-): BatchDatas {
+function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: number }): BatchDatas {
   const items: BatchIssueData[] = linkedIssues.map((linkedIssue) => ({
     linkedIssue,
     startDays: [],
