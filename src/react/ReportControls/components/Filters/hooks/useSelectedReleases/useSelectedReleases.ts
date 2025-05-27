@@ -1,18 +1,14 @@
 import type { MinimalDerivedIssue } from '../../../../../services/issues';
-
-import { value } from '../../../../../../can';
-import routeData from '../../../../../../canjs/routing/route-data';
-import { useCanObservable } from '../../../../../hooks/useCanObservable';
 import { useDerivedIssues } from '../../../../../services/issues';
+import { useRouteData } from '../../../../../hooks/useRouteData';
 
 export const useSelectedReleases = () => {
   const releases = useSelectableReleases();
 
-  const selectedReleases = useCanObservable<string>(value.from(routeData, 'releasesToShow'));
+  const [selectedReleases, _setSelectedReleases] = useRouteData<string, string[]>('releasesToShow');
 
   const setSelectedReleases = (newReleases: Readonly<{ value: string }[]> | { value: string }[]) => {
-    //@ts-expect-error
-    routeData.releasesToShow = newReleases.map(({ value }) => value);
+    _setSelectedReleases(newReleases.map(({ value }) => value));
   };
 
   return {

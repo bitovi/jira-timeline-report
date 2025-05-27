@@ -1,11 +1,9 @@
 import type { FC } from 'react';
-
 import React, { useId } from 'react';
 import Select from '@atlaskit/select';
 import VisuallyHidden from '@atlaskit/visually-hidden';
-import { useCanObservable } from '../../../../../../hooks/useCanObservable';
-import { value } from '../../../../../../../can';
-import routeData from '../../../../../../../canjs/routing/route-data';
+
+import { useRouteData } from '../../../../../../hooks/useRouteData';
 
 const secondaryReportTypes = [
   { label: 'None', value: 'none' },
@@ -14,12 +12,7 @@ const secondaryReportTypes = [
 ];
 
 const useSecondaryReportType = () => {
-  const selectedSecondaryReportType = useCanObservable<string>(value.from(routeData, 'secondaryReportType'));
-
-  const setSelectedSecondaryReportType = (value: string) => {
-    // @ts-expect-error
-    routeData.secondaryReportType = value;
-  };
+  const [selectedSecondaryReportType, setSelectedSecondaryReportType] = useRouteData<string>('secondaryReportType');
 
   return {
     secondaryReportTypes,

@@ -1,14 +1,7 @@
-import { value } from '../../../../../../can';
-import routeData from '../../../../../../canjs/routing/route-data';
-import { useCanObservable } from '../../../../../hooks/useCanObservable';
+import { useRouteData } from '../../../../../hooks/useRouteData';
 
 export const useUnknownInitiatives = () => {
-  const hideUnknownInitiatives = useCanObservable<boolean>(value.from(routeData, 'hideUnknownInitiatives'));
-
-  const setHideUnknownInitiatives = (newHideUnknownInitiatives: boolean) => {
-    // @ts-expect-error
-    routeData.hideUnknownInitiatives = newHideUnknownInitiatives;
-  };
+  const [hideUnknownInitiatives, setHideUnknownInitiatives] = useRouteData<boolean>('hideUnknownInitiatives');
 
   return { hideUnknownInitiatives, setHideUnknownInitiatives };
 };

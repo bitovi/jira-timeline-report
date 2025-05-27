@@ -3,9 +3,7 @@ import type { FC } from 'react';
 import React, { useId } from 'react';
 import Select from '@atlaskit/select';
 import VisuallyHidden from '@atlaskit/visually-hidden';
-import { useCanObservable } from '../../../../../../hooks/useCanObservable';
-import routeData from '../../../../../../../canjs/routing/route-data';
-import { value } from '../../../../../../../can';
+import { useRouteData } from '../../../../../../hooks/useRouteData';
 
 const roundDatesTo = [
   { value: 'day', label: 'Day' },
@@ -13,15 +11,10 @@ const roundDatesTo = [
   { value: 'month', label: 'Month' },
   { value: 'halfQuarter', label: 'Half Quarter' },
   { value: 'quarter', label: 'Quarter' },
-];
+] as const;
 
 const useRoundDatesTo = () => {
-  const selectedRoundDatesTo = useCanObservable<string>(value.from(routeData, 'roundTo'));
-
-  const setSelectedRoundDatesTo = (value: string) => {
-    // @ts-expect-error
-    routeData.roundTo = value;
-  };
+  const [selectedRoundDatesTo, setSelectedRoundDatesTo] = useRouteData<string>('roundTo');
 
   return {
     roundDatesTo,

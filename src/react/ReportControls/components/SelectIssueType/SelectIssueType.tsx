@@ -1,11 +1,9 @@
 import React, { FC, ReactNode } from 'react';
-import { useCanObservable } from '../../../hooks/useCanObservable';
-import { value } from '../../../../can';
-import routeData from '../../../../canjs/routing/route-data';
 
 import { Label } from '@atlaskit/form';
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 import ChevronRightIcon from '@atlaskit/icon/utility/chevron-right';
+import { useRouteData } from '../../../hooks/useRouteData';
 
 type IssueHierarchy = {
   name: string;
@@ -20,14 +18,12 @@ const formatTitle = (rawTitle?: string) => {
 };
 
 const useSelectedIssueType = () => {
-  const selectedIssueType = useCanObservable<string>(value.from(routeData, 'selectedIssueType'));
-  const issueHierarchy = useCanObservable<IssueHierarchy[] | null>(value.from(routeData, 'issueHierarchy'));
+  const [selectedIssueType, _setSelectedIssueType] = useRouteData<string>('selectedIssueType');
+  const [issueHierarchy] = useRouteData<IssueHierarchy[] | null>('issueHierarchy');
 
   const setSelectedIssueType = (primaryType: string, secondaryType?: string) => {
     const newIssue = secondaryType ? 'Release-' + secondaryType : primaryType;
-
-    // @ts-expect-error
-    routeData.selectedIssueType = newIssue;
+    _setSelectedIssueType(newIssue);
   };
 
   return {

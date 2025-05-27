@@ -2,16 +2,10 @@ import type { FC } from 'react';
 
 import React, { useId } from 'react';
 import Toggle from '@atlaskit/toggle';
-import { useCanObservable } from '../../../../../../hooks/useCanObservable';
-import routeData from '../../../../../../../canjs/routing/route-data';
-import { value } from '../../../../../../../can';
+import { useRouteData } from '../../../../../../hooks/useRouteData';
 
 const useWorkBreakdown = () => {
-  const workBreakdown = useCanObservable<boolean>(value.from(routeData, 'primaryReportBreakdown'));
-  const setWorkBreakdown = (newValue: boolean) => {
-    // @ts-expect-error
-    routeData.primaryReportBreakdown = newValue;
-  };
+  const [workBreakdown, setWorkBreakdown] = useRouteData<boolean>('primaryReportBreakdown');
 
   return [workBreakdown, setWorkBreakdown] as const;
 };

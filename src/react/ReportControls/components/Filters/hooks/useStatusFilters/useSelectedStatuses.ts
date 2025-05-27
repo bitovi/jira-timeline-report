@@ -1,36 +1,35 @@
-import { value } from '../../../../../../can';
-import routeData from '../../../../../../canjs/routing/route-data';
-import { useCanObservable } from '../../../../../hooks/useCanObservable';
+import { useRouteData } from '../../../../../hooks/useRouteData';
 import { useSelectableStatuses } from '../../../../../services/issues/useSelectableStatuses';
 
 export const useSelectedStatuses = (mode: 'show' | 'hide') => {
   const statuses = useSelectableStatuses();
-  const statusesToShow = useCanObservable<string>(value.from(routeData, 'statusesToShow'));
-  const statusesToRemove = useCanObservable<string>(value.from(routeData, 'statusesToRemove'));
+  const [statusesToShow, setStatusesToShow] = useRouteData<string, string | string[]>('statusesToShow');
+  const [statusesToRemove, setStatusesToRemove] = useRouteData<string, string | string[]>('statusesToRemove');
 
   const selectedStatuses = mode === 'show' ? statusesToShow : statusesToRemove;
   const setSelectedStatus = (newStatuses: Readonly<{ value: string }[]> | { value: string }[]) => {
-    const param = mode === 'show' ? 'statusesToShow' : 'statusesToRemove';
+    const update = newStatuses.map(({ value }) => value);
 
-    //@ts-expect-error
-    routeData[param] = newStatuses.map(({ value }) => value);
+    if (mode === 'show') {
+      setStatusesToShow(update);
+    } else {
+      setStatusesToRemove(update);
+    }
   };
 
   const swapShowHideStatusesIfNeeded = (newMode: 'show' | 'hide') => {
     if (newMode === 'show') {
       if (statusesToRemove.length) {
-        // @ts-expect-error
-        routeData.statusesToShow = statusesToRemove;
+        setStatusesToShow(statusesToRemove);
       }
-      // @ts-expect-error
-      routeData.statusesToRemove = '';
+
+      setStatusesToRemove('');
     } else {
       if (statusesToShow.length) {
-        // @ts-expect-error
-        routeData.statusesToRemove = statusesToShow;
+        setStatusesToRemove(statusesToShow);
       }
-      // @ts-expect-error
-      routeData.statusesToShow = '';
+
+      setStatusesToShow('');
     }
   };
 

@@ -1,11 +1,9 @@
 import type { FC } from 'react';
-
 import React, { useId } from 'react';
 import Select from '@atlaskit/select';
 import VisuallyHidden from '@atlaskit/visually-hidden';
-import { useCanObservable } from '../../../../../../hooks/useCanObservable';
-import { value } from '../../../../../../../can';
-import routeData from '../../../../../../../canjs/routing/route-data';
+
+import { useRouteData } from '../../../../../../hooks/useRouteData';
 
 const booleanParsing = {
   parse: (x: string) => {
@@ -20,11 +18,10 @@ const sortBy = [
 ];
 
 const useSortBy = () => {
-  const selectedSortBy = useCanObservable<boolean>(value.from(routeData, 'sortByDueDate'));
+  const [selectedSortBy, _setSelectedSortBy] = useRouteData<boolean, boolean | undefined>('sortByDueDate');
 
   const setSelectedSortBy = (value: string) => {
-    // @ts-expect-error
-    routeData.sortByDueDate = booleanParsing.parse(value);
+    _setSelectedSortBy(booleanParsing.parse(value));
   };
 
   return {

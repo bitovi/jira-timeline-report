@@ -2,16 +2,11 @@ import type { FC } from 'react';
 
 import React, { useId } from 'react';
 import Toggle from '@atlaskit/toggle';
-import { useCanObservable } from '../../../../../../hooks/useCanObservable';
-import { value } from '../../../../../../../can';
-import routeData from '../../../../../../../canjs/routing/route-data';
+
+import { useRouteData } from '../../../../../../hooks/useRouteData';
 
 const useShowPercentComplete = () => {
-  const showPercentComplete = useCanObservable<boolean>(value.from(routeData, 'showPercentComplete'));
-  const setShowPercentComplete = (newValue: boolean) => {
-    // @ts-expect-error
-    routeData.showPercentComplete = newValue;
-  };
+  const [showPercentComplete, setShowPercentComplete] = useRouteData<boolean>('showPercentComplete');
 
   return [showPercentComplete, setShowPercentComplete] as const;
 };

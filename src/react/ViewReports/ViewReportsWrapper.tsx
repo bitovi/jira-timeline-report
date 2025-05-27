@@ -12,28 +12,28 @@ import DynamicTable from '@atlaskit/dynamic-table';
 import { FlagsProvider } from '@atlaskit/flag';
 
 import ViewReports from './ViewReports';
-import LinkButton from '../components/LinkButton';
 import ViewReportLayout from './components/ViewReportsLayout';
+import LinkButton from '../components/LinkButton';
 import Skeleton from '../components/Skeleton';
-import { useCanObservable } from '../hooks/useCanObservable';
-import { value } from '../../can';
-import routeData from '../../canjs/routing/route-data';
 import { queryClient } from '../services/query';
 import { StorageProvider } from '../services/storage';
+import { useRouteData } from '../hooks/useRouteData';
+import { AppStorage } from '../../jira/storage/common';
 
 interface ViewReportsWrapperProps {
   onBackButtonClicked: () => void;
 }
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
-  const showSettings = useCanObservable<string>(value.from(routeData, 'showSettings'));
+  const [showSettings] = useRouteData<string>('showSettings');
+  const [storage] = useRouteData<AppStorage>('storage');
 
   if (showSettings !== 'REPORTS') {
     return null;
   }
 
   return createPortal(
-    <StorageProvider storage={routeData.storage}>
+    <StorageProvider storage={storage}>
       <FlagsProvider>
         <QueryClientProvider client={queryClient}>
           <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>

@@ -5,19 +5,11 @@ import Select from '@atlaskit/select';
 import VisuallyHidden from '@atlaskit/visually-hidden';
 
 import { useSelectableStatuses } from '../../../../../../services/issues';
-import { useCanObservable } from '../../../../../../hooks/useCanObservable';
-import { value } from '../../../../../../../can';
-import routeData from '../../../../../../../canjs/routing/route-data';
+import { useRouteData } from '../../../../../../hooks/useRouteData';
 
 const useSelectedStatuses = () => {
   const statuses = useSelectableStatuses();
-
-  const selectedStatuses = useCanObservable<string[]>(value.from(routeData, 'planningStatuses'));
-
-  const setSelectedStatuses = (newValue: string[]) => {
-    // @ts-expect-error
-    routeData.planningStatuses = newValue;
-  };
+  const [selectedStatuses, setSelectedStatuses] = useRouteData<string[]>('planningStatuses');
 
   return {
     statuses,

@@ -1,11 +1,9 @@
 import type { FC } from 'react';
-
 import React, { useId } from 'react';
 import Select from '@atlaskit/select';
 import VisuallyHidden from '@atlaskit/visually-hidden';
-import { useCanObservable } from '../../../../../../hooks/useCanObservable';
-import { value } from '../../../../../../../can';
-import routeData from '../../../../../../../canjs/routing/route-data';
+
+import { useRouteData } from '../../../../../../hooks/useRouteData';
 
 const groupBy = [
   { label: 'None', value: '' },
@@ -14,11 +12,7 @@ const groupBy = [
 ];
 
 const useGroupBy = () => {
-  const selectedGroupBy = useCanObservable<string>(value.from(routeData, 'groupBy'));
-
-  const setSelectedGroupBy = (value: string) => {
-    routeData.groupBy = value;
-  };
+  const [selectedGroupBy, setSelectedGroupBy] = useRouteData<string>('groupBy');
 
   return {
     groupBy,
