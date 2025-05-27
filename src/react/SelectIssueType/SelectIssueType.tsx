@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { useCanObservable } from '../hooks/useCanObservable';
 import { value } from '../../can';
 import routeData from '../../canjs/routing/route-data';
@@ -37,23 +37,30 @@ const useSelectedIssueType = () => {
   };
 };
 
-const SelectedIssueType: FC = () => {
+const SelectIssueTypeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
+  return (
+    <div className="flex flex-col items-start">
+      <Label htmlFor="">Report on</Label>
+      {children}
+    </div>
+  );
+};
+
+const SelectIssueType: FC = () => {
   const { issueHierarchy, selectedIssueType, setSelectedIssueType } = useSelectedIssueType();
 
   const title = formatTitle(selectedIssueType);
 
   if (!issueHierarchy) {
     return (
-      <div className="flex flex-col items-start">
-        <Label htmlFor="">Report on</Label>
+      <SelectIssueTypeWrapper>
         <DropdownMenu trigger="Loading..." isLoading />
-      </div>
+      </SelectIssueTypeWrapper>
     );
   }
 
   return (
-    <div className="flex flex-col items-start">
-      <Label htmlFor="">Report on</Label>
+    <SelectIssueTypeWrapper>
       <DropdownMenu trigger={title}>
         <DropdownItemGroup>
           {issueHierarchy.map((item) => (
@@ -79,8 +86,8 @@ const SelectedIssueType: FC = () => {
           </DropdownMenu>
         </DropdownItemGroup>
       </DropdownMenu>
-    </div>
+    </SelectIssueTypeWrapper>
   );
 };
 
-export default SelectedIssueType;
+export default SelectIssueType;

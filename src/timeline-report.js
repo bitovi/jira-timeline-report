@@ -8,8 +8,6 @@ import './canjs/reports/table-grid.js';
 import './canjs/reports/scatter-timeline.js';
 import './canjs/reports/status-report.js';
 
-import './canjs/controls/select-report-type/select-report-type.js';
-
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
 import { groupIssuesByHierarchyLevelOrType } from './jira/rollup/rollup';
@@ -19,6 +17,7 @@ import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 
 import CompareSlider from './react/CompareSlider';
+import SelectReportType from './react/SelectReportType';
 import Filters from './react/Filters';
 import SavedReports from './react/SaveReports';
 import SampleDataNotice from './react/SampleDataNotice';
@@ -42,12 +41,8 @@ export class TimelineReport extends StacheElement {
     <div id='sample-data-notice' class='pt-4'></div>
       <div id="saved-reports" class='py-4'></div>
       <div class="flex gap-1">
+        <div id='select-report-type' class='pt-1'></div>
         <div id='select-issue-type' class='pt-1'></div>
-        
-        <select-report-type 
-        jiraHelpers:from="this.jiraHelpers"
-        features:from="this.features"></select-report-type>
-        
         <div id='compare-slider' class='flex-grow px-2'></div>
         <div id="filters" class="self-end pb-1"></div>
         <div id="view-settings" class="self-end pb-1"></div>
@@ -178,6 +173,12 @@ export class TimelineReport extends StacheElement {
   async connected() {
     window.addEventListener('load', updateFullishHeightSection);
     window.addEventListener('resize', updateFullishHeightSection);
+
+    createRoot(document.getElementById('select-report-type')).render(
+      createElement(SelectReportType, {
+        features: this.featuresPromise,
+      }),
+    );
 
     createRoot(document.getElementById('select-issue-type')).render(createElement(SelectIssueType, {}));
 
