@@ -29,24 +29,16 @@ const SelectReportType: FC<SelectReportTypeProps> = ({ features }) => {
   const [reports] = useReports();
   const [primaryReportType, setPrimaryReportType] = usePrimaryReportType();
 
-  if (!features) {
-    return (
-      <SelectReportTypeWrapper>
-        <DropdownMenu trigger="Loading..." isLoading />
-      </SelectReportTypeWrapper>
-    );
-  }
-
   // Find selected Report from all reports and not just the visible options.
   // Although some options are hidden behind a feature flag, these options can
   // still function if the url defaults to that value.
   const selectedReportOption = reports.find((reportTypeOption) => reportTypeOption.key === primaryReportType);
 
-  const reportTypeOptions = getReportTypeOptions(reports, features.estimationTable);
+  const reportTypeOptions = features ? getReportTypeOptions(reports, features.estimationTable) : [];
 
   return (
     <SelectReportTypeWrapper>
-      <DropdownMenu trigger={selectedReportOption?.name ?? ''}>
+      <DropdownMenu trigger={selectedReportOption?.name ?? ''} isLoading={!features}>
         <DropdownItemGroup>
           {reportTypeOptions.map((reportTypeOption) => (
             <DropdownItem
