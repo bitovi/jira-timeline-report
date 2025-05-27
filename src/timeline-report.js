@@ -3,7 +3,6 @@ import { StacheElement, type, queues, Reflect } from './can.js';
 import routeData from './canjs/routing/route-data';
 
 import './canjs/controls/status-filter.js';
-import './canjs/controls/compare-slider.js';
 import './canjs/reports/gantt-grid.js';
 import './canjs/reports/table-grid.js';
 import './canjs/reports/scatter-timeline.js';
@@ -19,14 +18,15 @@ import { pushStateObservable } from './canjs/routing/state-storage.js';
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 
-import SelectIssueType from './react/SelectIssueType';
-import SavedReports from './react/SaveReports';
-import SettingsSidebar from './react/SettingsSidebar';
+import CompareSlider from './react/CompareSlider';
 import Filters from './react/Filters';
-import ViewSettings from './react/ViewSettings';
+import SavedReports from './react/SaveReports';
 import SampleDataNotice from './react/SampleDataNotice';
-import ViewReports from './react/ViewReports';
+import SelectIssueType from './react/SelectIssueType';
+import SettingsSidebar from './react/SettingsSidebar';
 import StatusKeys from './react/StatusKey';
+import ViewSettings from './react/ViewSettings';
+import ViewReports from './react/ViewReports';
 
 import { getTheme, applyThemeToCssVars } from './jira/theme';
 
@@ -45,11 +45,10 @@ export class TimelineReport extends StacheElement {
         <div id='select-issue-type' class='pt-1'></div>
         
         <select-report-type 
-          jiraHelpers:from="this.jiraHelpers"
-          features:from="this.features"></select-report-type>
-          
-        <compare-slider class='flex-grow px-2'
-          compareToTime:to="compareToTime"></compare-slider>
+        jiraHelpers:from="this.jiraHelpers"
+        features:from="this.features"></select-report-type>
+        
+        <div id='compare-slider' class='flex-grow px-2'></div>
         <div id="filters" class="self-end pb-1"></div>
         <div id="view-settings" class="self-end pb-1"></div>
       </div>
@@ -182,6 +181,8 @@ export class TimelineReport extends StacheElement {
 
     createRoot(document.getElementById('select-issue-type')).render(createElement(SelectIssueType, {}));
 
+    createRoot(document.getElementById('compare-slider')).render(createElement(CompareSlider, {}));
+
     createRoot(document.getElementById('view-reports')).render(
       createElement(ViewReports, {
         onBackButtonClicked: () => {
@@ -279,7 +280,7 @@ export class TimelineReport extends StacheElement {
       this.filteredDerivedIssues,
       this.routeData.normalizeOptions,
       this.rollupTimingLevelsAndCalculations,
-      new Date(new Date().getTime() - this.compareToTime.timePrior),
+      new Date(new Date().getTime() - this.routeData.compareTo * 1000),
     );
 
     const statuses = calculateReportStatuses(rolledUp);

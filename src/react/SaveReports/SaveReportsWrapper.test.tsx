@@ -2,10 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, vi } from 'vitest';
 
-import { value } from '../../can';
-
 import SaveReportsWrapper from './SaveReportsWrapper';
-import { CanObservable } from '../hooks/useCanObservable';
 
 const mockOnViewReportsButtonClicked = vi.fn();
 
