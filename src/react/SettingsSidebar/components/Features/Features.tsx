@@ -54,18 +54,23 @@ const FeaturesView: FC = () => {
       <div className="flex flex-col gap-y-8">
         <p className="text-sm">Turn on new features under active development.</p>
         <ul className="flex flex-col gap-y-8">
-          {toList(cleansedFeatures).map((feature) => (
-            <li key={feature.title}>
-              <FeatureToggle
-                {...feature}
-                disabled={isUpdating}
-                checked={feature.value}
-                onChange={(newValue) => {
-                  update({ ...cleansedFeatures, [feature.key]: newValue });
-                }}
-              />
-            </li>
-          ))}
+          {toList(cleansedFeatures).map((cleansedFeature) => {
+            // Separate key prop since you cannot spread a key prop in React
+            const { key, ...feature } = cleansedFeature;
+
+            return (
+              <li key={feature.title}>
+                <FeatureToggle
+                  {...feature}
+                  disabled={isUpdating}
+                  checked={feature.value}
+                  onChange={(newValue) => {
+                    update({ ...cleansedFeatures, [key]: newValue });
+                  }}
+                />
+              </li>
+            );
+          })}
         </ul>
         <p className="text-sm">
           Got feedback?{' '}
