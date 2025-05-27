@@ -123,7 +123,9 @@ function linkDirectBlocks(issues: LinkedIssueBuilder[], issueByKey: LinkedIssueB
       })
       .map( (blockKey)=> {
           return issueByKey[blockKey];
-      });
+      })
+      // we might want to warn about missing blocked issues
+      .filter( (blockedIssue) => blockedIssue );
   
       issue.linkedBlocks = issueBlocks;
   

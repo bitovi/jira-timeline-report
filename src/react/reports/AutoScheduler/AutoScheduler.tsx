@@ -237,7 +237,7 @@ export const AutoScheduler: FC<{
                   gridColumnStart: "what",
                 }}
               >
-                <div className="text-xs grow">Track {trackIdx}</div>
+                <div className="text-xs grow">Track {trackIdx+1}</div>
               </div>
   
               {gridifiedTrack.issues.map((issue, issueIdx) => (
