@@ -1,6 +1,6 @@
-import { CompareTo, SetCompareTo } from "../useCompareTo";
-import { DAY_IN_S, HOUR_IN_S, MINUTE_IN_S } from "../../utilities";
-import { createInverseMapping, createLinearMapping } from "../../../../utils/math/linear-mapping";
+import { CompareTo, SetCompareTo } from '../useCompareTo';
+import { DAY_IN_S, HOUR_IN_S, MINUTE_IN_S } from '../../utilities';
+import { createInverseMapping, createLinearMapping } from '../../../../utils/math/linear-mapping';
 
 export const MAPPING_POINTS = [
   [0, 0],
@@ -15,7 +15,7 @@ export const MAPPING_POINTS = [
   [10, DAY_IN_S],
   [69, 60 * DAY_IN_S],
   [100, 365 * DAY_IN_S],
-];
+] as const;
 
 const valueToSeconds = createLinearMapping(MAPPING_POINTS);
 const secondsToValue = createInverseMapping(MAPPING_POINTS);
