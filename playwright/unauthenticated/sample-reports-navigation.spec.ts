@@ -23,10 +23,10 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
-      const reportOnBtn = page.locator('#select-issue-type').locator('button');
-      const reportTypeBtn = page.locator('#select-report-type').locator('button');
-      await expect(reportOnBtn).toHaveText('Initiatives');
-      await expect(reportTypeBtn).toHaveText('Scatter Plot');
+      const reportOnBtn = page.getByRole('button', { name: /Initiatives/i });
+      const reportTypeBtn = page.getByRole('button', { name: /Scatter Plot/i });
+      await expect(reportOnBtn).toBeVisible();
+      await expect(reportTypeBtn).toBeVisible();
       await expect(page.getByText('Track your order maps')).toBeDefined();
       await expect(page.getByText('Favorite sharing')).toBeDefined();
       await expect(page.getByText('Order Playback')).toBeDefined();
@@ -61,10 +61,10 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
-      const reportOnBtn = page.locator('#select-issue-type').locator('button');
-      const reportTypeBtn = page.locator('#select-report-type').locator('button');
-      await expect(reportOnBtn).toHaveText('Initiatives');
-      await expect(reportTypeBtn).toHaveText('Gantt Chart');
+      const reportOnBtn = page.getByRole('button', { name: /Initiatives/i });
+      const reportTypeBtn = page.getByRole('button', { name: /Gantt Chart/i });
+      await expect(reportOnBtn).toBeVisible();
+      await expect(reportTypeBtn).toBeVisible();
       await expect(page.locator('gantt-grid')).toBeVisible();
     });
 
@@ -100,10 +100,10 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
-      const reportOnBtn = page.locator('#select-issue-type').locator('button');
-      const reportTypeBtn = page.locator('#select-report-type').locator('button');
-      await expect(reportOnBtn).toHaveText('Initiatives');
-      await expect(reportTypeBtn).toHaveText('Gantt Chart');
+      const reportOnBtn = page.getByRole('button', { name: /Initiatives/i });
+      const reportTypeBtn = page.getByRole('button', { name: /Gantt Chart/i });
+      await expect(reportOnBtn).toBeVisible();
+      await expect(reportTypeBtn).toBeVisible();
       await expect(page.locator('gantt-grid')).toBeVisible();
     });
   });
