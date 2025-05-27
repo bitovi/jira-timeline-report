@@ -4,5 +4,5 @@ export type CompareToType = 'date' | 'seconds';
 export type SetCompareToType = SetRouteData<CompareToType>;
 
 export const useCompareToType = (): readonly [CompareToType, SetCompareToType] => {
-  return useRouteData<'date' | 'seconds'>('compareToType');
+  return useRouteData<CompareToType>('compareToType');
 };

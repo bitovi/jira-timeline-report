@@ -20,7 +20,6 @@ export type CanPromise<T> = Promise<T> & {
 };
 
 export const useCanObservable = <TData>(observable: CanObservable<TData>): TData => {
-  console.log(observable);
   const [value, setValue] = useState<TData>(observable.value);
 
   useEffect(() => {
