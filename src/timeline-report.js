@@ -3,7 +3,6 @@ import { StacheElement, type, queues, Reflect } from './can.js';
 import routeData from './canjs/routing/route-data';
 
 import './canjs/controls/status-filter.js';
-import './canjs/controls/compare-slider.js';
 import './canjs/reports/gantt-grid.js';
 import './canjs/reports/table-grid.js';
 import './canjs/reports/scatter-timeline.js';
@@ -50,9 +49,6 @@ export class TimelineReport extends StacheElement {
         features:from="this.features"></select-report-type>
         
         <div id='compare-slider' class='flex-grow px-2'></div>
-        <!-- TODO: how should I go about removing the previous canjs slider?
-        <compare-slider class='flex-grow px-2'
-          compareToTime:to="compareToTime"></compare-slider> -->
         <div id="filters" class="self-end pb-1"></div>
         <div id="view-settings" class="self-end pb-1"></div>
       </div>

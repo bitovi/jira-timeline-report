@@ -1,8 +1,17 @@
-import { useRouteData } from "../../../hooks/useRouteData";
+import { useState } from 'react';
+import { SetRouteData, useRouteData } from '../../../hooks/useRouteData';
 
-export const useCompareTo = () => {
-  return useRouteData<number, number | string>("compareTo");
+export type CompareTo = number;
+export type SetCompareToArg = number | string;
+export type SetCompareTo = SetRouteData<SetCompareToArg>;
+
+export const useCompareTo = (): readonly [CompareTo, SetCompareTo] => {
+  return useRouteData<CompareTo, SetCompareToArg>('compareTo');
+
+  // TODO: delete this temp code
+  // const [value, setValue] = useState(0);
+
+  // return [value, (value: number | string) => {
+  //   return +value;
+  // }];
 };
-
-export type CompareTo = ReturnType<typeof useCompareTo>[0];
-export type SetCompareTo = ReturnType<typeof useCompareTo>[1];

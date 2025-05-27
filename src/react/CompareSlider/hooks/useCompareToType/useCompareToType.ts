@@ -1,5 +1,8 @@
-import { useRouteData } from "../../../hooks/useRouteData";
+import { SetRouteData, useRouteData } from '../../../hooks/useRouteData';
 
-export const useCompareToType = () => {
-  return useRouteData<"date" | "seconds">("compareToType");
+export type CompareToType = 'date' | 'seconds';
+export type SetCompareToType = SetRouteData<CompareToType>;
+
+export const useCompareToType = (): readonly [CompareToType, SetCompareToType] => {
+  return useRouteData<'date' | 'seconds'>('compareToType');
 };

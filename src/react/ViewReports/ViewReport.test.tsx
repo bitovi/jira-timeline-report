@@ -2,7 +2,7 @@ import type { AppStorage } from '../../jira/storage/common';
 import type { ComponentProps } from 'react';
 
 import React, { Suspense } from 'react';
-import { render, screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';

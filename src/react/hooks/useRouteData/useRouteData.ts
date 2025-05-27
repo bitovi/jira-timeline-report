@@ -1,15 +1,17 @@
-import { value } from "../../../can"
-import routeData from "../../../canjs/routing/route-data"
-import { useCanObservable } from "../useCanObservable"
+import { value } from '../../../can';
+import routeData from '../../../canjs/routing/route-data';
+import { useCanObservable } from '../useCanObservable';
+
+export type SetRouteData<T> = (value: T) => void;
 
 export const useRouteData = <Value, SetValueArgument = Value>(keyPath: string) => {
   // TODO: these can all be set on a global scope, that way there's only one observable
   const observableValue = useCanObservable<Value>(value.from(routeData, keyPath));
 
-  const setObservableValue = (value: SetValueArgument) => {
+  const setObservableValue: SetRouteData<SetValueArgument> = (value: SetValueArgument) => {
     // @ts-expect-error
     routeData[keyPath] = value;
   };
 
   return [observableValue, setObservableValue] as const;
-}
+};
