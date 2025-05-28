@@ -1,6 +1,4 @@
-import { value } from '../../../can';
-import routeData from '../../../canjs/routing/route-data';
-import { useCanObservable } from '../../hooks/useCanObservable';
+import { useRouteData } from '../../hooks/useRouteData';
 
 export type MinimalDerivedIssue = {
   status: string;
@@ -9,8 +7,8 @@ export type MinimalDerivedIssue = {
   releases: Array<{ name: string }>;
 };
 
-export const useDerivedIssues = () => {
-  const derivedIssues = useCanObservable<MinimalDerivedIssue[] | undefined>(value.from(routeData, 'derivedIssues'));
+export const useDerivedIssues = (): MinimalDerivedIssue[] | undefined => {
+  const [derivedIssues] = useRouteData<MinimalDerivedIssue[] | undefined>('derivedIssues');
 
   return derivedIssues;
 };

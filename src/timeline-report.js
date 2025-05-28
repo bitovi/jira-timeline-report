@@ -1,4 +1,4 @@
-import { StacheElement, type, queues, Reflect } from './can.js';
+import { StacheElement, type, queues } from './can.js';
 
 import routeData from './canjs/routing/route-data';
 
@@ -8,8 +8,6 @@ import './canjs/reports/table-grid.js';
 import './canjs/reports/scatter-timeline.js';
 import './canjs/reports/status-report.js';
 
-import './canjs/controls/select-report-type/select-report-type.js';
-
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
 import { groupIssuesByHierarchyLevelOrType } from './jira/rollup/rollup';
@@ -18,14 +16,11 @@ import { pushStateObservable } from './canjs/routing/state-storage.js';
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 
-import CompareSlider from './react/CompareSlider';
-import Filters from './react/Filters';
+import ReportControls from './react/ReportControls';
 import SavedReports from './react/SaveReports';
 import SampleDataNotice from './react/SampleDataNotice';
-import SelectIssueType from './react/SelectIssueType';
 import SettingsSidebar from './react/SettingsSidebar';
 import StatusKeys from './react/StatusKey';
-import ViewSettings from './react/ViewSettings';
 import ViewReports from './react/ViewReports';
 
 import { getTheme, applyThemeToCssVars } from './jira/theme';
@@ -41,17 +36,7 @@ export class TimelineReport extends StacheElement {
     <div id="view-reports"></div>  
     <div id='sample-data-notice' class='pt-4'></div>
       <div id="saved-reports" class='py-4'></div>
-      <div class="flex gap-1">
-        <div id='select-issue-type' class='pt-1'></div>
-        
-        <select-report-type 
-        jiraHelpers:from="this.jiraHelpers"
-        features:from="this.features"></select-report-type>
-        
-        <div id='compare-slider' class='flex-grow px-2'></div>
-        <div id="filters" class="self-end pb-1"></div>
-        <div id="view-settings" class="self-end pb-1"></div>
-      </div>
+      <div id="report-controls" class="flex gap-1"></div>
 
       {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
         <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
@@ -179,10 +164,6 @@ export class TimelineReport extends StacheElement {
     window.addEventListener('load', updateFullishHeightSection);
     window.addEventListener('resize', updateFullishHeightSection);
 
-    createRoot(document.getElementById('select-issue-type')).render(createElement(SelectIssueType, {}));
-
-    createRoot(document.getElementById('compare-slider')).render(createElement(CompareSlider, {}));
-
     createRoot(document.getElementById('view-reports')).render(
       createElement(ViewReports, {
         onBackButtonClicked: () => {
@@ -190,6 +171,8 @@ export class TimelineReport extends StacheElement {
         },
       }),
     );
+
+    createRoot(document.getElementById('report-controls')).render(createElement(ReportControls));
 
     createRoot(document.getElementById('sample-data-notice')).render(
       createElement(SampleDataNotice, {
@@ -211,9 +194,6 @@ export class TimelineReport extends StacheElement {
         },
       }),
     );
-
-    createRoot(document.getElementById('filters')).render(createElement(Filters));
-    createRoot(document.getElementById('view-settings')).render(createElement(ViewSettings));
 
     getTheme(this.routeData.storage)
       .then(applyThemeToCssVars)

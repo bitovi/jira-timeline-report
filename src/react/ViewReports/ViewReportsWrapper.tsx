@@ -12,21 +12,20 @@ import DynamicTable from '@atlaskit/dynamic-table';
 import { FlagsProvider } from '@atlaskit/flag';
 
 import ViewReports from './ViewReports';
-import LinkButton from '../components/LinkButton';
 import ViewReportLayout from './components/ViewReportsLayout';
+import LinkButton from '../components/LinkButton';
 import Skeleton from '../components/Skeleton';
-import { useCanObservable } from '../hooks/useCanObservable';
-import { value } from '../../can';
-import routeData from '../../canjs/routing/route-data';
 import { queryClient } from '../services/query';
 import { StorageProvider } from '../services/storage';
+import { useRouteData } from '../hooks/useRouteData';
+import routeData from '../../canjs/routing/route-data';
 
 interface ViewReportsWrapperProps {
   onBackButtonClicked: () => void;
 }
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
-  const showSettings = useCanObservable<string>(value.from(routeData, 'showSettings'));
+  const [showSettings] = useRouteData<string>('showSettings');
 
   if (showSettings !== 'REPORTS') {
     return null;

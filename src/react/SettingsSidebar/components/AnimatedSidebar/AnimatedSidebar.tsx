@@ -1,10 +1,7 @@
 import type { FC, ReactNode } from 'react';
-
 import React, { useState, useLayoutEffect, useRef, useEffect } from 'react';
 
-import { value } from '../../../../can';
-import routeData from '../../../../canjs/routing/route-data';
-import { useCanObservable } from '../../../hooks/useCanObservable';
+import { useRouteData } from '../../../hooks/useRouteData';
 
 const duration = 300;
 
@@ -13,7 +10,7 @@ interface AnimatedSidebarProps {
 }
 
 const AnimatedSidebar: FC<AnimatedSidebarProps> = ({ children }) => {
-  const showSettings = useCanObservable<string>(value.from(routeData, 'showSettings'));
+  const [showSettings] = useRouteData<string>('showSettings');
   const [visible, setVisible] = useState(true);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);

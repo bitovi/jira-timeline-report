@@ -1,20 +1,18 @@
-import React, { FC, ReactNode, useLayoutEffect, useRef, useState } from 'react';
-
-import { value } from '../../can';
-
-import routeData from '../../canjs/routing/route-data';
+import React, { FC } from 'react';
 
 import TeamConfiguration from './components/TeamConfiguration';
-
-import { CanObservable, useCanObservable } from '../hooks/useCanObservable';
 import ReportSettings from './components/ReportSettings';
 import IssueSource from './components/IssueSource';
 import TimingCalculation from './components/TimingCalculation';
-import { NormalizeIssueConfig } from '../../jira/normalized/normalize';
 import Theme from './components/Theme';
 import SidebarLayout from './components/SidebarLayout';
 import Features from './components/Features';
 import AnimatedSidebar from './components/AnimatedSidebar';
+import { value } from '../../can';
+import routeData from '../../canjs/routing/route-data';
+import { CanObservable } from '../hooks/useCanObservable';
+import { useRouteData } from '../hooks/useRouteData';
+import { NormalizeIssueConfig } from '../../jira/normalized/normalize';
 
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
@@ -22,7 +20,7 @@ export interface SettingsSidebarProps {
 }
 
 const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpdateTeamsConfiguration }) => {
-  const showSettings = useCanObservable<string>(value.from(routeData, 'showSettings'));
+  const [showSettings] = useRouteData<string>('showSettings');
   const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string } }[]> = value.from(
     routeData,
     'derivedIssues',

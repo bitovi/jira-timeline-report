@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 
 import { featuresKeyFactory } from './key-factory';
 import { getFeatures } from '../../../jira/features';
@@ -13,4 +13,15 @@ export const useFeatures = () => {
   });
 
   return data;
+};
+
+export const useAsyncFeatures = () => {
+  const storage = useStorage();
+
+  const { data: features, isLoading } = useQuery({
+    queryKey: featuresKeyFactory.features(),
+    queryFn: () => getFeatures(storage),
+  });
+
+  return { features, isLoading };
 };

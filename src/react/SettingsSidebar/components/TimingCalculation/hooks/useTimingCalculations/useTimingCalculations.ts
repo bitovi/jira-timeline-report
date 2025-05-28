@@ -1,17 +1,14 @@
-import type { IssueType } from '../../../../../../utils/timing/helpers';
-
 import { useMemo } from 'react';
 
-import { value } from '../../../../../../can';
-import routeData from '../../../../../../canjs/routing/route-data';
-import { useCanObservable } from '../../../../../hooks/useCanObservable';
+import { useRouteData } from '../../../../../hooks/useRouteData';
+import type { IssueType } from '../../../../../../utils/timing/helpers';
 import { getTimingLevels } from '../../../../../../utils/timing/helpers';
 
 const DEFAULT_CALCULATION_METHOD = 'widestRange';
 
 export const useTimingCalculations = () => {
-  const issueHierarchy = useCanObservable<IssueType[]>(value.from(routeData, 'simplifiedIssueHierarchy'));
-  const timingCalculations = useCanObservable<Record<string, string>>(value.from(routeData, 'timingCalculations'));
+  const [issueHierarchy] = useRouteData<IssueType[]>('simplifiedIssueHierarchy');
+  const [timingCalculations, setTimingCalculations] = useRouteData<Record<string, string>>('timingCalculations');
 
   const selectableTimingLevels = useMemo(() => {
     if (!issueHierarchy) {
@@ -23,14 +20,14 @@ export const useTimingCalculations = () => {
   }, [issueHierarchy]);
 
   const updateCalculation = (type: string, value: string) => {
-    let current = { ...routeData.timingCalculations };
+    const current = { ...timingCalculations };
     if (value === DEFAULT_CALCULATION_METHOD) {
       delete current[type];
     } else {
       current[type] = value;
     }
 
-    routeData.timingCalculations = current;
+    setTimingCalculations(current);
   };
 
   return {
