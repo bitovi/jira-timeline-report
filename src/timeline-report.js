@@ -1,4 +1,4 @@
-import { StacheElement, type, queues, Reflect } from './can.js';
+import { StacheElement, type, queues } from './can.js';
 
 import routeData from './canjs/routing/route-data';
 
@@ -16,16 +16,11 @@ import { pushStateObservable } from './canjs/routing/state-storage.js';
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 
-// import CompareSlider from './react/CompareSlider';
-// import SelectReportType from './react/SelectReportType';
-// import Filters from './react/Filters';
 import ReportControls from './react/ReportControls';
 import SavedReports from './react/SaveReports';
 import SampleDataNotice from './react/SampleDataNotice';
-// import SelectIssueType from './react/SelectIssueType';
 import SettingsSidebar from './react/SettingsSidebar';
 import StatusKeys from './react/StatusKey';
-// import ViewSettings from './react/ViewSettings';
 import ViewReports from './react/ViewReports';
 
 import { getTheme, applyThemeToCssVars } from './jira/theme';
@@ -182,19 +177,6 @@ export class TimelineReport extends StacheElement {
         features: this.featuresPromise,
       }),
     );
-
-    // createRoot(document.getElementById('select-report-type')).render(
-    //   createElement(SelectReportType, {
-    //     features: this.featuresPromise,
-    //   }),
-    // );
-
-    // createRoot(document.getElementById('select-issue-type')).render(createElement(SelectIssueType, {}));
-
-    // createRoot(document.getElementById('compare-slider')).render(createElement(CompareSlider, {}));
-
-    // createRoot(document.getElementById('filters')).render(createElement(Filters));
-    // createRoot(document.getElementById('view-settings')).render(createElement(ViewSettings));
 
     createRoot(document.getElementById('sample-data-notice')).render(
       createElement(SampleDataNotice, {
