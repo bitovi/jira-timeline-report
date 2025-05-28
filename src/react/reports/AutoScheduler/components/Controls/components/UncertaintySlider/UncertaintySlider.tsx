@@ -1,19 +1,21 @@
 import React from "react";
 
-import type { UncertaintyWeight } from "./scheduler/stats-analyzer";
+type UncertaintyWeight = number | "average";
 
 type Props = {
   uncertaintyWeight: UncertaintyWeight;
   onChange: (value: UncertaintyWeight) => void;
 };
 
-export const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => {
+const AVERAGE = 55;
+
+const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => {
   // Convert display value (55 for "average") to actual uncertaintyWeight and back
-  const value = uncertaintyWeight === "average" ? 55 : uncertaintyWeight;
+  const value = uncertaintyWeight === "average" ? AVERAGE : uncertaintyWeight;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const num = parseInt(e.target.value, 10);
-    onChange(num === 55 ? "average" : num);
+    onChange(num === AVERAGE ? "average" : num);
   };
 
   return (
@@ -69,3 +71,5 @@ export const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange
     </div>
   );
 };
+
+export default UncertaintySlider;

@@ -18,9 +18,11 @@ import { bestFitRanges } from "../../../utils/date/best-fit-ranges.js";
 import { getUTCEndDateFromStartDateAndBusinessDays } from "../../../utils/date/business-days.js";
 
 import { IssueSimulationRow } from "./IssueSimulationRow";
-import { UncertaintySlider } from "./UncertaintySlider";
+import Controls from "./components/Controls";
 
 import type { SimulationData } from "./scheduler/stats-analyzer";
+import { useUncertaintyWeight } from "./hooks/useUncertaintyWeight/useUncertaintyWeight.js";
+import { useSelectedStartDate } from "./hooks/useSelectedStartDate/useSelectedStartDate.js";
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -32,27 +34,12 @@ export type GridUIData = ReturnType<typeof gridUIData>;
 export const AutoScheduler: FC<{
   primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>;
   allIssuesOrReleasesObs: ObservableOfIssues;
-  rollupTimingLevelsAndCalculationsObs: CanObservable<any[]>;
-}> = ({
-  primaryIssuesOrReleasesObs,
-  allIssuesOrReleasesObs,
-  rollupTimingLevelsAndCalculationsObs,
-}) => {
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
-
+}> = ({ primaryIssuesOrReleasesObs, allIssuesOrReleasesObs }) => {
   const primary = useCanObservable(primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(allIssuesOrReleasesObs);
-  const rollupTimingLevelsAndCalculations = useCanObservable(rollupTimingLevelsAndCalculationsObs);
 
-  // for a date picker
-  const [selectedStartDate, setSelectedStartDate] = useState<Date>(nowUTC());
-  const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("Date changed", e.target.valueAsDate);
-    setSelectedStartDate(e.target.valueAsDate ?? new Date());
-  };
-
-  // for the uncertainty slider
-  const [uncertaintyWeight, setUncertaintyWeight] = useState<UncertaintyWeight>("average");
+  const [selectedStartDate] = useSelectedStartDate();
+  const [uncertaintyWeight] = useUncertaintyWeight();
 
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
@@ -62,7 +49,6 @@ export const AutoScheduler: FC<{
       issues: primary,
       uncertaintyWeight: uncertaintyWeight,
       setUIState: (newUIData) => {
-        //@ts-ignore
         setUIData(newUIData);
       },
     });
@@ -97,6 +83,7 @@ export const AutoScheduler: FC<{
   if (!allIssues?.length) {
     return <div>Loading ...</div>;
   }
+
   if (!uiData) {
     return <div>Starting ....</div>;
   }
@@ -117,16 +104,7 @@ export const AutoScheduler: FC<{
       </div>
 
       {/* Temp Controls */}
-      <div className="flex">
-        <UncertaintySlider uncertaintyWeight={uncertaintyWeight} onChange={setUncertaintyWeight} />
-        <label htmlFor="date-picker">Start Date:</label>
-        <input
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:bg-white/10 dark:text-white"
-          type="date"
-          value={selectedStartDate.toISOString().split("T")[0]} // format for input
-          onChange={handleDatePickerChange}
-        />
-      </div>
+      <Controls />
 
       {/* Simulation Grid */}
       <div
@@ -167,7 +145,7 @@ export const AutoScheduler: FC<{
                 gridRow: `1 / span 1`,
                 gridColumn: `${1 + range.startDay} / span ${range.days}`,
               }}
-              className="border-neutral-30 border-solid border-x px-1 text-xs truncatea"
+              className="border-neutral-30 border-solid border-x px-1 text-xs truncate"
             >
               {range.prettyStart}
             </div>

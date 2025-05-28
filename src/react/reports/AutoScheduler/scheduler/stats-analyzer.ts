@@ -19,13 +19,6 @@ export type StatsUIData = ReturnType<StatsAnalyzer["dataForUI"]>;
 export type MinimalSimulationIssueResult = StatsUIData["endDaySimulationResult"];
 export type SimulationIssueResult = StatsUIData["simulationIssueResults"][number];
 
-type SetStateAction<T> = T | ((prevState: T) => T);
-type StateSetter<T> = (action: SetStateAction<T>) => void;
-// All of this is to not have to import react ... this module can be free from it ...
-
-// React.Dispatch<React.SetStateAction<ReturnType<StatsAnalyzer['dataForUI']>>>;
-type SetUIState = StateSetter<StatsUIData>;
-
 export type SimulationData = BatchIssueData & {
   sourceIssue: DerivedIssue;
   linkedIssue: LinkedIssue;
@@ -47,7 +40,7 @@ export class StatsAnalyzer {
   lastDays: number[];
   percentComplete: number;
   uncertaintyWeight: number | "average";
-  setUIState: SetUIState;
+  setUIState: (data: StatsUIData) => void;
 
   constructor({
     issues,
@@ -56,7 +49,7 @@ export class StatsAnalyzer {
   }: {
     issues: DerivedIssue[];
     uncertaintyWeight: number | "average";
-    setUIState: SetUIState;
+    setUIState: (data: StatsUIData) => void;
   }) {
     const { linkedIssues, runBatchAndLoop } = runMonteCarlo(issues, {
       onBatch: this.onBatch.bind(this),
