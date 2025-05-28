@@ -1,1 +1,1 @@
-export { default } from './SelectReportType';
+export { default } from './SelectReportTypeWrapper';

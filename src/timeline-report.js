@@ -172,11 +172,7 @@ export class TimelineReport extends StacheElement {
       }),
     );
 
-    createRoot(document.getElementById('report-controls')).render(
-      createElement(ReportControls, {
-        features: this.featuresPromise,
-      }),
-    );
+    createRoot(document.getElementById('report-controls')).render(createElement(ReportControls));
 
     createRoot(document.getElementById('sample-data-notice')).render(
       createElement(SampleDataNotice, {

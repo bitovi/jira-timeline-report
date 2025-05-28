@@ -1,33 +1,16 @@
-import React, { FC, ReactNode } from 'react';
+import React, { FC } from 'react';
 import { Label } from '@atlaskit/form';
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 
 import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
 import { useReports } from './hooks/useReports';
 import { getReportTypeOptions } from './utilities';
+import { useAsyncFeatures } from '../../../services/features';
 
-interface Features {
-  estimationTable: boolean;
-  secondaryReport: boolean;
-  workBreakdowns: boolean;
-}
-
-export interface SelectReportTypeProps {
-  features: Features | null;
-}
-
-const SelectReportTypeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
-  return (
-    <div className="flex flex-col items-start">
-      <Label htmlFor="">Report type</Label>
-      {children}
-    </div>
-  );
-};
-
-const SelectReportType: FC<SelectReportTypeProps> = ({ features }) => {
+const SelectReportType: FC = () => {
   const [reports] = useReports();
   const [primaryReportType, setPrimaryReportType] = usePrimaryReportType();
+  const { features, isLoading } = useAsyncFeatures();
 
   // Find selected Report from all reports and not just the visible options.
   // Although some options are hidden behind a feature flag, these options can
@@ -37,8 +20,9 @@ const SelectReportType: FC<SelectReportTypeProps> = ({ features }) => {
   const reportTypeOptions = features ? getReportTypeOptions(reports, features.estimationTable) : [];
 
   return (
-    <SelectReportTypeWrapper>
-      <DropdownMenu trigger={selectedReportOption?.name ?? ''} isLoading={!features}>
+    <div className="flex flex-col items-start">
+      <Label htmlFor="">Report type</Label>
+      <DropdownMenu trigger={selectedReportOption?.name ?? ''} isLoading={isLoading}>
         <DropdownItemGroup>
           {reportTypeOptions.map((reportTypeOption) => (
             <DropdownItem
@@ -51,7 +35,7 @@ const SelectReportType: FC<SelectReportTypeProps> = ({ features }) => {
           ))}
         </DropdownItemGroup>
       </DropdownMenu>
-    </SelectReportTypeWrapper>
+    </div>
   );
 };
 

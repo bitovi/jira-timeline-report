@@ -5,16 +5,16 @@ import { useRouteData } from '../../../../../hooks/useRouteData';
 export const useSelectedReleases = () => {
   const releases = useSelectableReleases();
 
-  const [selectedReleases, _setSelectedReleases] = useRouteData<string, string[]>('releasesToShow');
+  const [selectedReleases, setSelectedReleases] = useRouteData<string, string[]>('releasesToShow');
 
-  const setSelectedReleases = (newReleases: Readonly<{ value: string }[]> | { value: string }[]) => {
-    _setSelectedReleases(newReleases.map(({ value }) => value));
+  const handleSelectedReleasesChange = (newReleases: Readonly<{ value: string }[]> | { value: string }[]) => {
+    setSelectedReleases(newReleases.map(({ value }) => value));
   };
 
   return {
     releases,
     selectedReleases: convertToSelectValue(selectedReleases) ?? [],
-    setSelectedReleases,
+    setSelectedReleases: handleSelectedReleasesChange,
   };
 };
 

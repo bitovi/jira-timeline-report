@@ -18,22 +18,22 @@ const sortBy = [
 ];
 
 const useSortBy = () => {
-  const [selectedSortBy, _setSelectedSortBy] = useRouteData<boolean, boolean | undefined>('sortByDueDate');
+  const [selectedSortBy, setSelectedSortBy] = useRouteData<boolean, boolean | undefined>('sortByDueDate');
 
-  const setSelectedSortBy = (value: string) => {
-    _setSelectedSortBy(booleanParsing.parse(value));
+  const handleSelectedSortByChange = (value: string) => {
+    setSelectedSortBy(booleanParsing.parse(value));
   };
 
   return {
     sortBy,
     selectedSortBy: sortBy.find(({ value }) => value === booleanParsing.stringify(selectedSortBy)),
-    setSelectedSortBy,
+    handleSelectedSortByChange,
   };
 };
 
 const SortBy: FC = () => {
   const id = useId();
-  const { sortBy, selectedSortBy, setSelectedSortBy } = useSortBy();
+  const { sortBy, selectedSortBy, handleSelectedSortByChange } = useSortBy();
 
   return (
     <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ const SortBy: FC = () => {
         className="flex-1"
         options={sortBy}
         value={selectedSortBy}
-        onChange={(option) => setSelectedSortBy(option?.value ?? 'false')}
+        onChange={(option) => handleSelectedSortByChange(option?.value ?? 'false')}
       />
     </div>
   );

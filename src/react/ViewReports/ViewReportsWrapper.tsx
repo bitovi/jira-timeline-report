@@ -18,7 +18,7 @@ import Skeleton from '../components/Skeleton';
 import { queryClient } from '../services/query';
 import { StorageProvider } from '../services/storage';
 import { useRouteData } from '../hooks/useRouteData';
-import { AppStorage } from '../../jira/storage/common';
+import routeData from '../../canjs/routing/route-data';
 
 interface ViewReportsWrapperProps {
   onBackButtonClicked: () => void;
@@ -26,14 +26,13 @@ interface ViewReportsWrapperProps {
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
   const [showSettings] = useRouteData<string>('showSettings');
-  const [storage] = useRouteData<AppStorage>('storage');
 
   if (showSettings !== 'REPORTS') {
     return null;
   }
 
   return createPortal(
-    <StorageProvider storage={storage}>
+    <StorageProvider storage={routeData.storage}>
       <FlagsProvider>
         <QueryClientProvider client={queryClient}>
           <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>

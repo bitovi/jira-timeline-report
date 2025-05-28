@@ -18,18 +18,18 @@ const formatTitle = (rawTitle?: string) => {
 };
 
 const useSelectedIssueType = () => {
-  const [selectedIssueType, _setSelectedIssueType] = useRouteData<string>('selectedIssueType');
+  const [selectedIssueType, setSelectedIssueType] = useRouteData<string>('selectedIssueType');
   const [issueHierarchy] = useRouteData<IssueHierarchy[] | null>('issueHierarchy');
 
-  const setSelectedIssueType = (primaryType: string, secondaryType?: string) => {
+  const handleSelectedIssueTypeChange = (primaryType: string, secondaryType?: string) => {
     const newIssue = secondaryType ? 'Release-' + secondaryType : primaryType;
-    _setSelectedIssueType(newIssue);
+    setSelectedIssueType(newIssue);
   };
 
   return {
     selectedIssueType,
     issueHierarchy,
-    setSelectedIssueType,
+    handleSelectedIssueTypeChange,
   };
 };
 
@@ -43,7 +43,7 @@ const SelectIssueTypeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 };
 
 const SelectIssueType: FC = () => {
-  const { issueHierarchy, selectedIssueType, setSelectedIssueType } = useSelectedIssueType();
+  const { issueHierarchy, selectedIssueType, handleSelectedIssueTypeChange } = useSelectedIssueType();
 
   const title = formatTitle(selectedIssueType);
 
@@ -60,7 +60,7 @@ const SelectIssueType: FC = () => {
       <DropdownMenu trigger={title}>
         <DropdownItemGroup>
           {issueHierarchy.map((item) => (
-            <DropdownItem key={item.name} onClick={() => setSelectedIssueType(item.name)}>
+            <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange(item.name)}>
               {item.name + 's'}
             </DropdownItem>
           ))}
@@ -75,7 +75,7 @@ const SelectIssueType: FC = () => {
             )}
           >
             {issueHierarchy.map((item) => (
-              <DropdownItem key={item.name} onClick={() => setSelectedIssueType('Release', item.name)}>
+              <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange('Release', item.name)}>
                 {item.name + 's'}
               </DropdownItem>
             ))}

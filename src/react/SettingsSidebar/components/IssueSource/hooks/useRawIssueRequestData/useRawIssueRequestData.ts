@@ -12,7 +12,6 @@ export const useRawIssuesRequestData = (): {
   totalChunks: number;
 } => {
   const [issuesPromise] = useRouteData<CanPromise<JiraIssue[] | OidcJiraIssue[]>>('rawIssuesRequestData.issuesPromise');
-
   const [issuesPromisePending] = useRouteData<boolean>('rawIssuesRequestData.issuesPromise.isPending');
   const [issuesPromiseResolved] = useRouteData<boolean>('rawIssuesRequestData.issuesPromise.isResolved');
   const [issuesPromiseValueLength] = useRouteData<number>('rawIssuesRequestData.issuesPromise.value.length');

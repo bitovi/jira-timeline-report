@@ -4,7 +4,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useStorage } from '../../services/storage';
 import { themeKeys } from './key-factory';
-import { applyThemeToCssVars, getTheme } from '../../../jira/theme';
+import { getTheme } from '../../../jira/theme';
 
 export type UseTheme = () => Theme;
 
