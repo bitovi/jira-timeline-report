@@ -1,4 +1,4 @@
-import { ObservableObject, value, diff } from "../../../can.js";
+import { ObservableObject, value, diff, type } from "../../../can.js";
 
 import { DAY_IN_MS } from "../../../utils/date/date-helpers.js";
 import { daysBetween } from "../../../utils/date/days-between.js";
@@ -163,9 +163,32 @@ export class RouteData extends ObservableObject {
     },
 
     // PURE ROUTES
+    uncertaintyWeight: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      "uncertaintyWeight",
+      "average",
+      type.Any,
+      {
+        parse: (param) => {
+          if (param === "average") {
+            return param;
+          }
+
+          const parsed = +param;
+
+          if (isNaN(parsed)) {
+            return "average";
+          }
+
+          return parsed;
+        },
+        stringify: (value) => {
+          return value.toString();
+        },
+      }
+    ),
     selectedStartDate: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
       "selectedStartDate",
-      "",
+      nowUTC(),
       String,
       {
         parse: (dateString) => {

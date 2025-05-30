@@ -54,8 +54,6 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({
 
   const [isOpen, setIsOpen] = useState(false);
 
-  console.log(selectedStartDate);
-
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
   const [uiData, setUIData] = useState<StatsUIData | null>(null);

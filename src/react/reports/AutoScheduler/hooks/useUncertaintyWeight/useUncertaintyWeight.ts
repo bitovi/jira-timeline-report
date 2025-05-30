@@ -1,21 +1,21 @@
+import { value } from "../../../../../can";
+import routeData from "../../../../../canjs/routing/route-data";
 import { pushStateObservable } from "../../../../../canjs/routing/state-storage";
+import { useCanObservable } from "../../../../hooks/useCanObservable";
 import { useQueryParams } from "../../../../hooks/useQueryParams";
 
 export type UncertaintyWeight = number | "average";
 
 export const useUncertaintyWeight = () => {
-  const { queryParamString, queryParams } = useQueryParams(pushStateObservable);
-
-  const uncertaintyWeight = queryParams.get("uncertaintyWeight") as UncertaintyWeight;
+  const uncertaintyWeight = useCanObservable<UncertaintyWeight>(
+    value.from(routeData, "uncertaintyWeight")
+  );
 
   const setUncertaintyWeight = (weight: UncertaintyWeight | null) => {
     const value = weight || "average";
 
-    const updated = new URLSearchParams(queryParamString);
-    updated.delete("uncertaintyWeight");
-    updated.set("uncertaintyWeight", value.toString());
-
-    pushStateObservable.set(updated.toString());
+    // @ts-expect-error
+    routeData.uncertaintyWeight = value;
   };
 
   return [uncertaintyWeight, setUncertaintyWeight] as const;

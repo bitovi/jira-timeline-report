@@ -7,7 +7,7 @@ export const useSelectedStartDate = () => {
 
   const setSelectedStartDate = (date: Date | null) => {
     // @ts-expect-error
-    selectedStartDate = date;
+    routeData.selectedStartDate = date;
   };
 
   return [selectedStartDate, setSelectedStartDate] as const;

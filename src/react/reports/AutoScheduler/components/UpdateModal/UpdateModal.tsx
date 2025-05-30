@@ -37,7 +37,10 @@ const jiraDataFormatter = new Intl.DateTimeFormat("en-CA", {
 });
 
 class AutoSchedulerSyncError extends Error {
-  constructor(public screenErrorMessages: string[], public errors: string[]) {
+  constructor(
+    public screenErrorMessages: { url: string; summary: string; missingKeys: string[] }[],
+    public errors: string[]
+  ) {
     super([...screenErrorMessages, ...errors].join("\n"));
     this.name = "AutoSchedulerSyncError";
 
@@ -78,34 +81,45 @@ const updateFromSimulation = async (
     };
   });
 
-  console.log(allWork);
-
   const results = await Promise.allSettled(
     allWork.map(({ updates, ...workItem }) => {
       return jiraHelpers.editJiraIssueWithNamedFields(workItem.issue.key, updates);
     })
   );
 
-  const errors = results.filter(
-    (outcome): outcome is PromiseRejectedResult => outcome.status === "rejected"
-  );
+  const errors = results
+    .map((result, index) => {
+      return {
+        result,
+        workItem: allWork[index],
+      };
+    })
+    .filter(
+      (outcome): outcome is { result: PromiseRejectedResult; workItem: (typeof allWork)[number] } =>
+        outcome.result.status === "rejected"
+    );
 
   if (errors.length) {
     const error = new AutoSchedulerSyncError([], []);
 
-    for (const { reason } of errors) {
+    for (const erroredOutput of errors) {
+      const { reason } = erroredOutput.result;
+      const { workItem } = erroredOutput;
+
       if (Array.isArray(reason.errorMessages) && reason.errorMessages.length) {
         error.errors.push(reason.errorMessages[0]);
         continue;
       }
 
-      if ("errors" in reason && typeof reason.error === "object") {
+      if ("errors" in reason) {
         const [message] = Object.values(reason.errors as Record<string, string>);
 
         if (message.includes("It is not on the appropriate screen, or unknown")) {
-          error.screenErrorMessages.push(
-            "screen error occurred. we need to handle this at some point"
-          );
+          error.screenErrorMessages.push({
+            summary: workItem.summary,
+            url: workItem.url,
+            missingKeys: Object.keys(reason.errors),
+          });
         } else {
           error.errors.push(message);
         }
@@ -218,19 +232,19 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         // },
         {
           key: `${key}-current-start-date`,
-          content: issue.linkedIssue.startDate?.toDateString() ?? "",
+          content: jiraDataFormatter.format(issue.linkedIssue.startDate),
         },
         {
           key: `${key}-new-start-date`,
-          content: dates.startDateWithTimeEnoughToFinish.toDateString(),
+          content: jiraDataFormatter.format(dates.startDateWithTimeEnoughToFinish),
         },
         {
           key: `${key}-current-due-date`,
-          content: issue.linkedIssue.dueDate?.toDateString() ?? "",
+          content: jiraDataFormatter.format(issue.linkedIssue.dueDate),
         },
         {
           key: `${key}-new-due-date`,
-          content: dates.dueDateTop.toDateString(),
+          content: jiraDataFormatter.format(dates.dueDateTop),
         },
       ],
     };
@@ -242,24 +256,6 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         <h1>save</h1>
       </ModalHeader>
       <ModalBody>
-        {error && (
-          <>
-            <div>
-              {error.errors.map((err, i) => (
-                <p key={i} className="text-red-500">
-                  {err}
-                </p>
-              ))}
-            </div>
-            <div>
-              {error.screenErrorMessages.map((err, i) => (
-                <p key={i} className="text-red-500">
-                  {err}
-                </p>
-              ))}
-            </div>
-          </>
-        )}
         <DynamicTable
           head={{
             cells: [
@@ -285,6 +281,24 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
           }}
           rows={rows}
         />
+        {error && (
+          <>
+            <div>
+              {error.errors.map((err, i) => (
+                <p key={i} className="text-red-500">
+                  {err}
+                </p>
+              ))}
+            </div>
+            <div>
+              {error.screenErrorMessages.map(({ missingKeys, url, summary }, i) => (
+                <a href={url} target="_blank" className="text-red-500">
+                  {summary} is missing {missingKeys.join(",")}
+                </a>
+              ))}
+            </div>
+          </>
+        )}
       </ModalBody>
       <ModalFooter>
         <Button onClick={onClose}>Cancel</Button>
