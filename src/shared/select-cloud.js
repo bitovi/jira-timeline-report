@@ -1,18 +1,16 @@
-import { StacheElement, type, stache } from "../can.js";
-import SimpleTooltip from "../canjs/ui/simple-tooltip/simple-tooltip.js";
-
+import { StacheElement, type, stache } from '../can.js';
+import SimpleTooltip from '../canjs/ui/simple-tooltip/simple-tooltip.js';
 
 const resourceSelection = stache(`<div class="p-2">
     {{# for(resource of this.resources) }}
         <button class="link block" on:click="this.setResource(resource)">{{resource.name}}</button>
     {{/ for }}
-</div>`)
+</div>`);
 
-
-const pillClass = `text-center inline-flex items-center bg-neutral-201 hover:bg-neutral-301 rounded px-3 py-1`
+const pillClass = `text-center inline-flex items-center bg-neutral-201 hover:bg-neutral-301 rounded px-3 py-1`;
 
 export default class SelectCloud extends StacheElement {
-    static view = `
+  static view = `
         {{# if(this.alternateResources.isPending) }}
             <div class="${pillClass}"> ... </div>
         {{/ if }}
@@ -32,75 +30,69 @@ export default class SelectCloud extends StacheElement {
         {{/and}}
 
     `;
-    static props = {
-        jiraHelpers: type.Any,
-        loginComponent: type.Any,
-        get canQuery(){
-            return this.jiraHelpers && this.loginComponent?.isLoggedIn;
-        },
-        get accessibleResources() {
-            if(this.canQuery) {
-                return this.jiraHelpers.fetchAccessibleResources().then((resources)=>{
-                    const currentCloudId = localStorage.getItem("scopeId")
-                    return resources.map((resource)=>{
-                        return {
-                            ...resource,
-                            isCurrent: resource.id === currentCloudId
-                        }
-                    })
-                });
-            } else {
-                return Promise.resolve([])
-            }
-        },
-        get currentResource(){
-            return this.accessibleResources.then( resources => {
-                return resources.find( r => r.isCurrent )
-            })
-        },
-        get alternateResources(){
-            return this.accessibleResources.then( resources => {
-                return resources.filter( r => !r.isCurrent )
-            })
-        }
-    };
-    showResources(){
-        const div = document.createElement("div");
-        this.alternateResources.then((resources) => {
-            // come back acround and fix this
-            
-            this.simpleTooltip.belowElementInScrollingContainer(this, resourceSelection({
-                resources,
-                setResource(resource) {
-                    localStorage.setItem("scopeId", resource.id);
-                    window.location.reload();
-                }
-            }) );
-            // wait for this click event to clear the event queue
-            
-            setTimeout(()=>{
-                const handler = () => {
-                    this.simpleTooltip.leftElement();
-                    window.removeEventListener("click", handler);
-                }
-                window.addEventListener("click", handler);
-            }, 13)
-            
-        })
-        
-        
-        
-    }
-    connected(){
-        
-        const simpleTooltip = new SimpleTooltip();
-        this.parentNode.append(simpleTooltip);
-        this.simpleTooltip = simpleTooltip;
+  static props = {
+    jiraHelpers: type.Any,
+    loginComponent: type.Any,
+    get canQuery() {
+      return this.jiraHelpers && this.loginComponent?.isLoggedIn;
+    },
+    get accessibleResources() {
+      if (this.canQuery) {
+        return this.jiraHelpers.fetchAccessibleResources().then((resources) => {
+          const currentCloudId = localStorage.getItem('scopeId');
+          return resources.map((resource) => {
+            return {
+              ...resource,
+              isCurrent: resource.id === currentCloudId,
+            };
+          });
+        });
+      } else {
+        return Promise.resolve([]);
+      }
+    },
+    get currentResource() {
+      return this.accessibleResources.then((resources) => {
+        return resources.find((r) => r.isCurrent);
+      });
+    },
+    get alternateResources() {
+      return this.accessibleResources.then((resources) => {
+        return resources.filter((r) => !r.isCurrent);
+      });
+    },
+  };
+  showResources() {
+    const div = document.createElement('div');
+    this.alternateResources.then((resources) => {
+      // come back acround and fix this
 
-    }
+      this.simpleTooltip.belowElementInScrollingContainer(
+        this,
+        resourceSelection({
+          resources,
+          setResource(resource) {
+            localStorage.setItem('scopeId', resource.id);
+            window.location.reload();
+          },
+        }),
+      );
+      // wait for this click event to clear the event queue
+
+      setTimeout(() => {
+        const handler = () => {
+          this.simpleTooltip.leftElement();
+          window.removeEventListener('click', handler);
+        };
+        window.addEventListener('click', handler);
+      }, 13);
+    });
+  }
+  connected() {
+    const simpleTooltip = new SimpleTooltip();
+    this.parentNode.append(simpleTooltip);
+    this.simpleTooltip = simpleTooltip;
+  }
 }
 
-
-customElements.define("select-cloud", SelectCloud);
-
-
+customElements.define('select-cloud', SelectCloud);

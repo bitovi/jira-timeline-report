@@ -1,1 +1,1 @@
-export { default } from "./InheritanceSelect";
+export { default } from './InheritanceSelect';

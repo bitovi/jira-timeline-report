@@ -1,2 +1,2 @@
-export { default } from "./ExcludedStatusSelect";
-export * from "./ExcludedStatusSelect";
+export { default } from './ExcludedStatusSelect';
+export * from './ExcludedStatusSelect';

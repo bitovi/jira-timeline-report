@@ -1,4 +1,4 @@
-import { NormalizedIssue, NormalizedRelease } from "../shared/types";
+import { NormalizedIssue, NormalizedRelease } from '../shared/types';
 
 /**
  * Returns all releases from all issues
@@ -8,11 +8,9 @@ import { NormalizedIssue, NormalizedRelease } from "../shared/types";
  */
 export function normalizeReleases(
   normalizedIssues: Array<NormalizedIssue>,
-  rollupTimingLevelsAndCalculations: Array<{ type: string }>
+  rollupTimingLevelsAndCalculations: Array<{ type: string }>,
 ): Array<NormalizedRelease> {
-  const releaseIndex = rollupTimingLevelsAndCalculations.findIndex(
-    (calc) => calc.type === "Release"
-  );
+  const releaseIndex = rollupTimingLevelsAndCalculations.findIndex((calc) => calc.type === 'Release');
   if (releaseIndex === -1) {
     return [];
   }

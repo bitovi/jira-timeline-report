@@ -1,16 +1,16 @@
-import type { ComponentProps } from "react";
-import type { AppStorage } from "../../../../jira/storage/common";
+import type { ComponentProps } from 'react';
+import type { AppStorage } from '../../../../jira/storage/common';
 
-import React, { Suspense } from "react";
-import { render, screen } from "@testing-library/react";
-import { vi } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { FlagsProvider } from "@atlaskit/flag";
+import React, { Suspense } from 'react';
+import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { FlagsProvider } from '@atlaskit/flag';
 
-import Theme from "./Theme";
-import { StorageProvider } from "../../../services/storage";
+import Theme from './Theme';
+import { StorageProvider } from '../../../services/storage';
 
-type OverrideStorage = Omit<AppStorage, "get"> & {
+type OverrideStorage = Omit<AppStorage, 'get'> & {
   get: (key: string) => any;
 };
 
@@ -47,26 +47,26 @@ const renderWithWrappers = (config?: Partial<RenderConfig>) => {
   return render(
     <Suspense fallback="loading">
       <FlagsProvider>
-        <StorageProvider storage={storage as ComponentProps<typeof StorageProvider>["storage"]}>
+        <StorageProvider storage={storage as ComponentProps<typeof StorageProvider>['storage']}>
           <QueryClientProvider client={queryClient}>
             <Theme {...props} />
           </QueryClientProvider>
         </StorageProvider>
       </FlagsProvider>
-    </Suspense>
+    </Suspense>,
   );
 };
 
-describe("Theme Component", () => {
+describe('Theme Component', () => {
   const mockOnBackButtonClicked = vi.fn();
 
-  it("renders without crashing", async () => {
+  it('renders without crashing', async () => {
     renderWithWrappers({ props: { onBackButtonClicked: mockOnBackButtonClicked } });
 
-    const themeHeading = await screen.findByText("Theme");
+    const themeHeading = await screen.findByText('Theme');
     expect(themeHeading).toBeInTheDocument();
 
-    const reset = await screen.findByText("Reset theme");
+    const reset = await screen.findByText('Reset theme');
     expect(reset).toBeInTheDocument();
   });
 });

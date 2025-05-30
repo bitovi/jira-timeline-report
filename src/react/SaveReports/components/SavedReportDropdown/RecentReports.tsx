@@ -1,12 +1,12 @@
-import type { FC } from "react";
-import type { Report, Reports } from "../../../../jira/reports";
+import type { FC } from 'react';
+import type { Report, Reports } from '../../../../jira/reports';
 
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 
-import { DropdownItem, DropdownItemGroup } from "@atlaskit/dropdown-menu";
-import Hr from "../../../components/Hr";
-import { notEmpty } from "../../../../jira/shared/helpers";
-import { Link } from "../../../services/routing";
+import { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
+import Hr from '../../../components/Hr';
+import { notEmpty } from '../../../../jira/shared/helpers';
+import { Link } from '../../../services/routing';
 
 interface RecentReportsProps {
   recentReports: string[];
@@ -15,19 +15,14 @@ interface RecentReportsProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-const RecentReports: FC<RecentReportsProps> = ({
-  recentReports,
-  reports,
-  onViewReportsButtonClicked,
-  setIsOpen,
-}) => {
+const RecentReports: FC<RecentReportsProps> = ({ recentReports, reports, onViewReportsButtonClicked, setIsOpen }) => {
   const reportsToShow = useMemo(
     () =>
       recentReports
         .map((id) => reports[id])
         .filter(notEmpty)
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [recentReports, reports]
+    [recentReports, reports],
   );
 
   return (
@@ -64,7 +59,7 @@ const ReportListItem: FC<{ report: Report }> = ({ report }) => {
       key={report.id}
       // @ts-expect-error types for component overrides on ADS don't work
       component={Link}
-      href={"?report=" + report.id}
+      href={'?report=' + report.id}
     >
       {report.name}
     </DropdownItem>

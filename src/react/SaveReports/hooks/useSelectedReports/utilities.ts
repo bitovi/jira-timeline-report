@@ -1,4 +1,4 @@
-import type { Reports, Report } from "../../../../jira/reports";
+import type { Reports, Report } from '../../../../jira/reports';
 
 export const paramsEqual = (lhs: URLSearchParams, rhs: URLSearchParams): boolean => {
   const lhsEntries = [...lhs.entries()];
@@ -9,16 +9,13 @@ export const paramsEqual = (lhs: URLSearchParams, rhs: URLSearchParams): boolean
   }
 
   return lhsEntries.reduce((isEqual, [lhsName, lhsValue]) => {
-    return (
-      isEqual &&
-      rhsEntries.some(([rhsName, rhsValue]) => lhsName === rhsName && lhsValue === rhsValue)
-    );
+    return isEqual && rhsEntries.some(([rhsName, rhsValue]) => lhsName === rhsName && lhsValue === rhsValue);
   }, true);
 };
 
 export const getReportFromParams = (reports: Reports): Report | undefined => {
   const params = new URLSearchParams(window.location.search);
-  const selectedReport = params.get("report");
+  const selectedReport = params.get('report');
 
   if (!selectedReport) {
     return;
@@ -32,7 +29,7 @@ export const getReportFromParams = (reports: Reports): Report | undefined => {
 export const paramsMatchReport = (
   params: URLSearchParams,
   reports: Reports,
-  paramsToOmit: string[] = ["settings", "report"]
+  paramsToOmit: string[] = ['settings', 'report'],
 ) => {
   const report = getReportFromParams(reports);
 

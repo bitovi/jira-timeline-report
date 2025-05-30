@@ -1,12 +1,12 @@
-import React from "react";
+import React from 'react';
 
-import Heading from "@atlaskit/heading";
-import Select from "@atlaskit/select";
+import Heading from '@atlaskit/heading';
+import Select from '@atlaskit/select';
 
-import { useTimingCalculations } from "./hooks/useTimingCalculations";
+import { useTimingCalculations } from './hooks/useTimingCalculations';
 
 function getPadding(depth: number) {
-  return ["pl-0", "pl-8", "pl-16", "pl-24", "pl-32"][depth] ?? "pl-40";
+  return ['pl-0', 'pl-8', 'pl-16', 'pl-24', 'pl-32'][depth] ?? 'pl-40';
 }
 
 const TimingCalculation = () => {

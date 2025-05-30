@@ -1,2 +1,2 @@
-export { default } from "./TeamSelector";
-export * from "./TeamSelector";
+export { default } from './TeamSelector';
+export * from './TeamSelector';

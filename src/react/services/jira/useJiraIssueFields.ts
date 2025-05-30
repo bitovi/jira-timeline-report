@@ -1,7 +1,7 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from '@tanstack/react-query';
 
-import { useJira } from "./JiraProvider";
-import { jiraKeys } from "./key-factory";
+import { useJira } from './JiraProvider';
+import { jiraKeys } from './key-factory';
 
 type IssueFields = Array<{
   name: string;

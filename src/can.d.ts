@@ -1,14 +1,8 @@
-import { CanObservable } from "./react/hooks/useCanObservable/useCanObservable.js";
+import { CanObservable } from './react/hooks/useCanObservable/useCanObservable.js';
 
 type Value = {
-  from: <T>(
-    object: typeof ObservableObject | CanObservable<any>,
-    keyPath?: string
-  ) => CanObservable<T>;
-  bind: <T>(
-    object: typeof ObservableObject | CanObservable<any>,
-    keyPath?: string
-  ) => CanObservable<T>;
+  from: <T>(object: typeof ObservableObject | CanObservable<any>, keyPath?: string) => CanObservable<T>;
+  bind: <T>(object: typeof ObservableObject | CanObservable<any>, keyPath?: string) => CanObservable<T>;
 };
 
 type ObservableObject = Function;

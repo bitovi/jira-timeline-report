@@ -1,1 +1,1 @@
-export { default } from "./AnimatedSidebar";
+export { default } from './AnimatedSidebar';

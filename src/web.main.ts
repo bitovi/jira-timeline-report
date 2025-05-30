@@ -1,6 +1,6 @@
-import mainHelper from "./shared/main-helper.js";
-import { createWebAppStorage } from "./jira/storage/index.web";
-import { createWebLinkBuilder } from "./routing/index.web";
+import mainHelper from './shared/main-helper.js';
+import { createWebAppStorage } from './jira/storage/index.web';
+import { createWebLinkBuilder } from './routing/index.web';
 
 async function main() {
   return mainHelper(
@@ -15,7 +15,7 @@ async function main() {
       FRONTEND_SENTRY_DSN: import.meta.env.VITE_FRONTEND_SENTRY_DSN,
     },
     {
-      host: "hosted",
+      host: 'hosted',
       createStorage: createWebAppStorage,
       configureRouting: (route: { start: () => void }) => {
         route.start();
@@ -27,7 +27,7 @@ async function main() {
         active: true,
         evaluation: false,
       }),
-    }
+    },
   );
 }
 

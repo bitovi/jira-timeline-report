@@ -1,32 +1,26 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useState } from "react";
-import Button, { IconButton } from "@atlaskit/button/new";
-import Modal, {
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  ModalTransition,
-} from "@atlaskit/modal-dialog";
-import { Flex, Grid, xcss } from "@atlaskit/primitives";
-import { ErrorMessage, Field } from "@atlaskit/form";
-import Textfield from "@atlaskit/textfield";
-import Spinner from "@atlaskit/spinner";
-import CrossIcon from "@atlaskit/icon/glyph/cross";
+import React, { useState } from 'react';
+import Button, { IconButton } from '@atlaskit/button/new';
+import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
+import { Flex, Grid, xcss } from '@atlaskit/primitives';
+import { ErrorMessage, Field } from '@atlaskit/form';
+import Textfield from '@atlaskit/textfield';
+import Spinner from '@atlaskit/spinner';
+import CrossIcon from '@atlaskit/icon/glyph/cross';
 
-import { isValidChange, isValidSubmit } from "./utilities";
+import { isValidChange, isValidSubmit } from './utilities';
 
 const gridStyles = xcss({
-  width: "100%",
+  width: '100%',
 });
 
 const closeContainerStyles = xcss({
-  gridArea: "close",
+  gridArea: 'close',
 });
 
 const titleContainerStyles = xcss({
-  gridArea: "title",
+  gridArea: 'title',
 });
 
 interface SaveReportModalProps {
@@ -49,7 +43,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
   isCreating,
   autoFocus = true,
 }) => {
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
   const handleSubmit = (name: string) => {
     onCreate(name);
   };
@@ -68,14 +62,9 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
             }}
           >
             <ModalHeader>
-              <Grid gap="space.200" templateAreas={["title close"]} xcss={gridStyles}>
+              <Grid gap="space.200" templateAreas={['title close']} xcss={gridStyles}>
                 <Flex xcss={closeContainerStyles} justifyContent="end">
-                  <IconButton
-                    appearance="subtle"
-                    icon={CrossIcon}
-                    label="Close Modal"
-                    onClick={closeModal}
-                  />
+                  <IconButton appearance="subtle" icon={CrossIcon} label="Close Modal" onClick={closeModal} />
                 </Flex>
                 <Flex xcss={titleContainerStyles} justifyContent="start">
                   <ModalTitle>Save Report</ModalTitle>
@@ -93,7 +82,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
                   };
 
                   const handleBlur = (value: string) => {
-                    setErrorMessage("");
+                    setErrorMessage('');
 
                     const { isValid, message } = validate(value);
 
@@ -133,7 +122,7 @@ const SaveReportModal: FC<SaveReportModalProps> = ({
                 Cancel
               </Button>
               <Button isDisabled={!!errorMessage || isCreating} type="submit" appearance="primary">
-                {isCreating ? <Spinner /> : "Confirm"}
+                {isCreating ? <Spinner /> : 'Confirm'}
               </Button>
             </ModalFooter>
           </form>

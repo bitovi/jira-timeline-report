@@ -1,16 +1,16 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import type { Configuration, IssueFields } from "./services/team-configuration";
+import type { Configuration, IssueFields } from './services/team-configuration';
 
-import React from "react";
-import { useForm } from "react-hook-form";
-import { Flex } from "@atlaskit/primitives";
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { Flex } from '@atlaskit/primitives';
 
-import TextField from "./components/TextField";
-import Select from "./components/Select";
-import Hr from "../../../../../components/Hr";
-import { FormToggle } from "./components/Toggle";
-import { RequiredAsterisk } from "./components/Label";
+import TextField from './components/TextField';
+import Select from './components/Select';
+import Hr from '../../../../../components/Hr';
+import { FormToggle } from './components/Toggle';
+import { RequiredAsterisk } from './components/Label';
 
 export interface AllTeamsDefaultFormProps {
   save: (newConfiguration: Configuration) => void;
@@ -24,12 +24,7 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
   value: Configuration[TProperty];
 }
 
-const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
-  save,
-  savedUserData,
-  inheritedData,
-  jiraFields,
-}) => {
+const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData, inheritedData, jiraFields }) => {
   const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
 
   const { register, handleSubmit, control } = useForm<Configuration>({
@@ -66,10 +61,10 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
           optional
           jiraFields={[
             {
-              label: "",
-              options: [{ value: "confidence-not-used", label: "Don't use confidence" }],
+              label: '',
+              options: [{ value: 'confidence-not-used', label: "Don't use confidence" }],
             },
-            { label: "Fields", options: selectableFields },
+            { label: 'Fields', options: selectableFields },
           ]}
           control={control}
           onSave={update}
@@ -107,14 +102,7 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
           register={register}
           onSave={update}
         />
-        <TextField
-          name="tracks"
-          type="number"
-          label="Tracks"
-          min={1}
-          register={register}
-          onSave={update}
-        />
+        <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
         <FormToggle
           name="spreadEffortAcrossDates"
           control={control}

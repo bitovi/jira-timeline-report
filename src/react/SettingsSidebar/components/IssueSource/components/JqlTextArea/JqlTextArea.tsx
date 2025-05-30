@@ -1,9 +1,9 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import { Label } from "@atlaskit/form";
-import VisuallyHidden from "@atlaskit/visually-hidden";
-import React, { useId } from "react";
-import TextArea from "@atlaskit/textarea";
+import { Label } from '@atlaskit/form';
+import VisuallyHidden from '@atlaskit/visually-hidden';
+import React, { useId } from 'react';
+import TextArea from '@atlaskit/textarea';
 
 interface JQLTextAreaProps {
   jql: string;

@@ -1,12 +1,12 @@
-import {getBusinessDatesCount} from "../../../utils/date/business-days"
-import { estimateExtraPoints, sampleExtraPoints } from "../../../utils/math/confidence";
+import { getBusinessDatesCount } from '../../../utils/date/business-days';
+import { estimateExtraPoints, sampleExtraPoints } from '../../../utils/math/confidence';
 import {
   DueData,
   getStartDateAndDueDataFromFieldsOrSprints,
   getStartDateAndDueDataFromSprints,
   StartData,
-} from "../../../shared/issue-data/date-data";
-import { DefaultsToConfig, NormalizedIssue, NormalizedTeam } from "../../shared/types";
+} from '../../../shared/issue-data/date-data';
+import { DefaultsToConfig, NormalizedIssue, NormalizedTeam } from '../../shared/types';
 
 export type DerivedWorkTiming = {
   isConfidenceValid: boolean;
@@ -75,18 +75,17 @@ export function deriveWorkTiming(
     getDefaultConfidence = getDefaultConfidenceDefault,
     getDefaultStoryPoints = getDefaultStoryPointsDefault,
     uncertaintyWeight = 80,
-  }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {}
+  }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {},
 ): DerivedWorkTiming {
-  
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
 
   const usedConfidence = isConfidenceValid
-    ? normalizedIssue.confidence as number
+    ? (normalizedIssue.confidence as number)
     : getDefaultConfidence(normalizedIssue.team);
 
   const isStoryPointsValid = isStoryPointsValueValid(normalizedIssue.storyPoints);
   const defaultOrStoryPoints = isStoryPointsValid
-    ? normalizedIssue.storyPoints as number
+    ? (normalizedIssue.storyPoints as number)
     : getDefaultStoryPoints(normalizedIssue.team);
 
   const storyPointsDaysOfWork = defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
@@ -94,35 +93,25 @@ export function deriveWorkTiming(
   const isStoryPointsMedianValid = isStoryPointsValueValid(normalizedIssue.storyPointsMedian);
 
   const defaultOrStoryPointsMedian = isStoryPointsMedianValid
-    ? normalizedIssue.storyPointsMedian as number
+    ? (normalizedIssue.storyPointsMedian as number)
     : getDefaultStoryPoints(normalizedIssue.team);
 
-  const storyPointsMedianDaysOfWork =
-    defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
-  const deterministicExtraPoints = estimateExtraPoints(
-    defaultOrStoryPointsMedian,
-    usedConfidence,
-    uncertaintyWeight
-  );
-  const deterministicExtraDaysOfWork =
-    deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const storyPointsMedianDaysOfWork = defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
+  const deterministicExtraPoints = estimateExtraPoints(defaultOrStoryPointsMedian, usedConfidence, uncertaintyWeight);
+  const deterministicExtraDaysOfWork = deterministicExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const deterministicTotalPoints = defaultOrStoryPointsMedian + deterministicExtraPoints;
-  const deterministicTotalDaysOfWork =
-    deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const deterministicTotalDaysOfWork = deterministicTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
 
   const probablisticExtraPoints = sampleExtraPoints(defaultOrStoryPointsMedian, usedConfidence);
-  const probablisticExtraDaysOfWork =
-    probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const probablisticExtraDaysOfWork = probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const probablisticTotalPoints = defaultOrStoryPointsMedian + probablisticExtraPoints;
-  const probablisticTotalDaysOfWork =
-    probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+  const probablisticTotalDaysOfWork = probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const hasStartAndDueDate = Boolean(normalizedIssue.dueDate && normalizedIssue.startDate);
   const startAndDueDateDaysOfWork = hasStartAndDueDate
     ? getBusinessDatesCount(normalizedIssue.startDate, normalizedIssue.dueDate)
     : null;
 
-  const { startData: sprintStartData, dueData: endSprintData } =
-    getStartDateAndDueDataFromSprints(normalizedIssue);
+  const { startData: sprintStartData, dueData: endSprintData } = getStartDateAndDueDataFromSprints(normalizedIssue);
   const hasSprintStartAndEndDate = Boolean(sprintStartData && endSprintData);
   let sprintDaysOfWork = hasSprintStartAndEndDate
     ? getBusinessDatesCount(sprintStartData?.start, endSprintData?.due)
@@ -130,40 +119,36 @@ export function deriveWorkTiming(
 
   const { startData, dueData } = getStartDateAndDueDataFromFieldsOrSprints(normalizedIssue);
 
-  const datesDaysOfWork =
-    startData && dueData ? getBusinessDatesCount(startData.start, dueData.due) : null;
+  const datesDaysOfWork = startData && dueData ? getBusinessDatesCount(startData.start, dueData.due) : null;
 
   let totalDaysOfWork = null;
 
   // if we aren't spreading, use dates if we have them
   if (!normalizedIssue.team.spreadEffortAcrossDates && datesDaysOfWork != null) {
     totalDaysOfWork = datesDaysOfWork;
-  } 
+  }
   // else look for estimate
   else if (isStoryPointsMedianValid) {
     totalDaysOfWork = deterministicTotalDaysOfWork;
   } else if (isStoryPointsValid) {
     totalDaysOfWork = storyPointsDaysOfWork;
-  } 
+  }
   // if no estimate, look back at dates
-  else if(datesDaysOfWork != null) {
+  else if (datesDaysOfWork != null) {
     totalDaysOfWork = datesDaysOfWork;
   }
 
   // defaultOrTotalDaysOfWork - will be 50% confidence of 1 sprint of work
   // Used if there is no estimate.  I don't think we need or should use this value.
-  const defaultOrTotalDaysOfWork =
-    totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
+  const defaultOrTotalDaysOfWork = totalDaysOfWork !== null ? totalDaysOfWork : deterministicTotalDaysOfWork;
 
-  const datesCompletedDaysOfWork = getSelfDatesCompletedDaysOfWork( startData,
-    dueData,
-    totalDaysOfWork || 0 );
+  const datesCompletedDaysOfWork = getSelfDatesCompletedDaysOfWork(startData, dueData, totalDaysOfWork || 0);
 
   const completedDaysOfWork = getSelfCompletedDays(
     startData,
     dueData,
     totalDaysOfWork || 0,
-    normalizedIssue.team.spreadEffortAcrossDates
+    normalizedIssue.team.spreadEffortAcrossDates,
   );
 
   return {
@@ -216,23 +201,15 @@ export function isStoryPointsValueValid(value: number | null): value is number {
   return value !== null && value >= 0;
 }
 
-
-function getSelfDatesCompletedDaysOfWork(
-  startData: StartData | null,
-  dueData: DueData | null,
-  daysOfWork: number){
-
+function getSelfDatesCompletedDaysOfWork(startData: StartData | null, dueData: DueData | null, daysOfWork: number) {
   if (startData && startData.start < new Date() && dueData && dueData.due > new Date()) {
     return getBusinessDatesCount(startData.start, new Date());
-  }
-
-  else if (startData && startData.start >= new Date()) {
+  } else if (startData && startData.start >= new Date()) {
     return 0;
-  }
-  else if (dueData && dueData.due <= new Date()) {
-    if(startData) {
+  } else if (dueData && dueData.due <= new Date()) {
+    if (startData) {
       return getBusinessDatesCount(startData.start, dueData.due);
-    } 
+    }
     // due in the past, we are going to be 100% done ... but how many days of work is that?
     else {
       return daysOfWork;
@@ -252,7 +229,7 @@ function getSelfCompletedDays(
   startData: StartData | null,
   dueData: DueData | null,
   daysOfWork: number,
-  isSpreading: boolean
+  isSpreading: boolean,
 ): number {
   // These are cases where the child issue (Epic) has a valid estimation
   // starting in the future
@@ -265,7 +242,7 @@ function getSelfCompletedDays(
     if (!isSpreading && startData && startData.start) {
       const completedDays = getBusinessDatesCount(startData.start, dueData.due);
       if (completedDays !== daysOfWork) {
-        console.warn("completed days should match days of work");
+        console.warn('completed days should match days of work');
       }
     }
     return daysOfWork;
@@ -294,7 +271,7 @@ function getSelfCompletedDays(
       return getBusinessDatesCount(startData.start, new Date());
     }
   } else {
-    console.warn("we should never get here");
+    console.warn('we should never get here');
     return 0;
   }
 }

@@ -1,18 +1,18 @@
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 
-import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const tmpPidFile = path.resolve(__dirname, "./servers.json");
+const tmpPidFile = path.resolve(__dirname, './servers.json');
 
 export default async function globalTeardown() {
   if (!fs.existsSync(tmpPidFile)) return;
 
-  const { authPid, appPid } = JSON.parse(fs.readFileSync(tmpPidFile, "utf-8"));
+  const { authPid, appPid } = JSON.parse(fs.readFileSync(tmpPidFile, 'utf-8'));
 
   for (const pid of [authPid, appPid]) {
     try {

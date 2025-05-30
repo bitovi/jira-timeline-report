@@ -1,17 +1,17 @@
-import type { FC } from "react";
-import type { ExcludedStatusSelectOption } from "./components/ExcludedStatusSelect";
+import type { FC } from 'react';
+import type { ExcludedStatusSelectOption } from './components/ExcludedStatusSelect';
 
-import React, { useMemo } from "react";
-import Button from "@atlaskit/button/new";
-import Heading from "@atlaskit/heading";
-import SectionMessage from "@atlaskit/section-message";
-import Link from "@atlaskit/link";
+import React, { useMemo } from 'react';
+import Button from '@atlaskit/button/new';
+import Heading from '@atlaskit/heading';
+import SectionMessage from '@atlaskit/section-message';
+import Link from '@atlaskit/link';
 
-import { useJQL } from "./hooks/useJQL";
-import { useRawIssuesRequestData } from "./hooks/useRawIssueRequestData";
-import JQLTextArea from "./components/JqlTextArea";
-import LoadChildren from "./components/LoadChildren";
-import ExcludedStatusSelect from "./components/ExcludedStatusSelect";
+import { useJQL } from './hooks/useJQL';
+import { useRawIssuesRequestData } from './hooks/useRawIssueRequestData';
+import JQLTextArea from './components/JqlTextArea';
+import LoadChildren from './components/LoadChildren';
+import ExcludedStatusSelect from './components/ExcludedStatusSelect';
 
 interface IssueSourceProps {}
 
@@ -33,9 +33,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
 
   const statusesToExcludeOptions = useMemo(() => toOptions(statusesToExclude), [statusesToExclude]);
 
-  const handleExcludedStatusChange = (
-    statusesToExcludeOptions: Readonly<ExcludedStatusSelectOption[]>
-  ) => {
+  const handleExcludedStatusChange = (statusesToExcludeOptions: Readonly<ExcludedStatusSelectOption[]>) => {
     const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
     setStatusesToExclude(statusesToExclude);
   };
@@ -49,7 +47,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
       <SectionMessage appearance="discovery">
         <Link href="https://support.atlassian.com/jira-work-management/docs/use-advanced-search-with-jira-query-language-jql/">
           Learn more
-        </Link>{" "}
+        </Link>{' '}
         about JQL.
       </SectionMessage>
       <JQLTextArea jql={jql} setJql={setJql} {...issueRequestData} />

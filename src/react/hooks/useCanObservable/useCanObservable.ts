@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export interface CanObservable<TData> {
   value: TData;
@@ -14,7 +14,7 @@ export type CanPromise<T> = Promise<T> & {
   isRejected: boolean;
   isPending: boolean;
   reason: {
-      errorMessages: string[];
+    errorMessages: string[];
   };
   value: T;
 };

@@ -1,1 +1,1 @@
-export { default } from "./ReportSettings";
+export { default } from './ReportSettings';

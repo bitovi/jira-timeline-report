@@ -1,12 +1,10 @@
-import { value } from "../../../can";
-import routeData from "../../../canjs/routing/route-data";
-import { useCanObservable } from "../../hooks/useCanObservable";
+import { useRouteData } from '../../hooks/useRouteData';
 
 export const useSelectedIssueType = () => {
-  const primaryIssueType = useCanObservable<string>(value.from(routeData, "primaryIssueType"));
-  const secondaryIssueType = useCanObservable<string>(value.from(routeData, "secondaryIssueType"));
+  const [primaryIssueType] = useRouteData<string>('primaryIssueType');
+  const [secondaryIssueType] = useRouteData<string>('secondaryIssueType');
 
-  const selectedIssueType = primaryIssueType === "Release" ? secondaryIssueType : primaryIssueType;
+  const selectedIssueType = primaryIssueType === 'Release' ? secondaryIssueType : primaryIssueType;
 
-  return { selectedIssueType, isRelease: primaryIssueType === "Release" };
+  return { selectedIssueType, isRelease: primaryIssueType === 'Release' };
 };

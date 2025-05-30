@@ -1,16 +1,16 @@
-import type { FC } from "react";
-import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
-import type { IssueFields } from "./services/team-configuration";
+import type { FC } from 'react';
+import type { NormalizeIssueConfig } from '../../../../../../jira/normalized/normalize';
+import type { IssueFields } from './services/team-configuration';
 
-import React from "react";
-import Heading from "@atlaskit/heading";
-import Spinner from "@atlaskit/spinner";
+import React from 'react';
+import Heading from '@atlaskit/heading';
+import Spinner from '@atlaskit/spinner';
 
-import { Accordion, AccordionContent, AccordionTitle } from "../../../../../components/Accordion";
-import { useSaveTeamData, useTeamData } from "./services/team-configuration";
+import { Accordion, AccordionContent, AccordionTitle } from '../../../../../components/Accordion';
+import { useSaveTeamData, useTeamData } from './services/team-configuration';
 
-import AllTeamsDefaultForm from "./AllTeamsDefaultsForm";
-import ConfigureTeams from "./ConfigureTeams";
+import AllTeamsDefaultForm from './AllTeamsDefaultsForm';
+import ConfigureTeams from './ConfigureTeams';
 
 export interface ConfigureAllTeamsProps {
   onUpdate?: (overrides: Partial<NormalizeIssueConfig>) => void;
@@ -18,11 +18,11 @@ export interface ConfigureAllTeamsProps {
 }
 
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
-  const { savedUserTeamData, inheritedTeamData } = useTeamData("__GLOBAL__", jiraFields);
+  const { savedUserTeamData, inheritedTeamData } = useTeamData('__GLOBAL__', jiraFields);
 
   const { save, isSaving } = useSaveTeamData({
-    teamName: "__GLOBAL__",
-    hierarchyLevel: "defaults",
+    teamName: '__GLOBAL__',
+    hierarchyLevel: 'defaults',
     onUpdate,
   });
 

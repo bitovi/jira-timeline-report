@@ -1,4 +1,4 @@
-import { StacheElement, type } from "../can.js";
+import { StacheElement, type } from '../can.js';
 
 export default class JiraLogin extends StacheElement {
   static view = `
@@ -83,4 +83,4 @@ export default class JiraLogin extends StacheElement {
   }
 }
 
-customElements.define("jira-login", JiraLogin);
+customElements.define('jira-login', JiraLogin);

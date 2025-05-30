@@ -26,5 +26,5 @@ const data = await getAllTeamData(storage);
 const jiraFields = await getAllTeamData();
 
 const configurationsWithGlobalDefaults = applyGlobalDefaultData(data, jiraFields);
-const withInheritance = applyInheritance("__GLOBAL__", configurationsWithGlobalDefaults);
+const withInheritance = applyInheritance('__GLOBAL__', configurationsWithGlobalDefaults);
 ```

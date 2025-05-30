@@ -1,7 +1,7 @@
-import type { LinkBuilder } from "../../../routing/common";
-import type { FC, ReactNode } from "react";
+import type { LinkBuilder } from '../../../routing/common';
+import type { FC, ReactNode } from 'react';
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext } from 'react';
 
 type RoutingContext = { linkBuilder: LinkBuilder } | null;
 

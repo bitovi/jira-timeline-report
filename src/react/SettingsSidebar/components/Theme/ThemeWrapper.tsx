@@ -1,13 +1,13 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { Suspense } from "react";
-import { ErrorBoundary } from "@sentry/react";
-import SectionMessage from "@atlaskit/section-message";
-import Heading from "@atlaskit/heading";
+import React, { Suspense } from 'react';
+import { ErrorBoundary } from '@sentry/react';
+import SectionMessage from '@atlaskit/section-message';
+import Heading from '@atlaskit/heading';
 
-import LinkButton from "../../../components/LinkButton";
-import Skeleton from "../../../components/Skeleton";
-import Theme from "./Theme";
+import LinkButton from '../../../components/LinkButton';
+import Skeleton from '../../../components/Skeleton';
+import Theme from './Theme';
 
 interface ThemeWrapper {
   onBackButtonClicked: () => void;
@@ -32,7 +32,7 @@ interface ThemeErrorProps {
 const ThemeError: FC<ThemeErrorProps> = ({ onBackButtonClicked }) => {
   return (
     <SectionMessage appearance="error" title="Unable to load theme">
-      We're having trouble connecting to Jira. Please try again later. Click here to{" "}
+      We're having trouble connecting to Jira. Please try again later. Click here to{' '}
       <LinkButton underlined onClick={() => onBackButtonClicked()}>
         return to create reports
       </LinkButton>

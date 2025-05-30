@@ -1,1 +1,1 @@
-export { default } from "./JqlTextArea";
+export { default } from './JqlTextArea';

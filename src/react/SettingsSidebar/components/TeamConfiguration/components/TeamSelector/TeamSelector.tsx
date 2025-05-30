@@ -1,19 +1,19 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
-import Heading from "@atlaskit/heading";
-import SettingsIcon from "@atlaskit/icon/glyph/settings";
-import ArrowRightCircleIcon from "@atlaskit/icon/glyph/arrow-right-circle";
-import { Label } from "@atlaskit/form";
+import React from 'react';
+import Heading from '@atlaskit/heading';
+import SettingsIcon from '@atlaskit/icon/glyph/settings';
+import ArrowRightCircleIcon from '@atlaskit/icon/glyph/arrow-right-circle';
+import { Label } from '@atlaskit/form';
 
-import SidebarButton from "../../../../../components/SidebarButton";
-import { CanObservable, useCanObservable } from "../../../../../hooks/useCanObservable";
-import Hr from "../../../../../components/Hr";
-import TeamListItem from "./components/TeamListItem";
+import SidebarButton from '../../../../../components/SidebarButton';
+import { CanObservable, useCanObservable } from '../../../../../hooks/useCanObservable';
+import Hr from '../../../../../components/Hr';
+import TeamListItem from './components/TeamListItem';
 
 export interface TeamSelectorProps {
   teamsFromStorage: string[];
-  selectedTeam: "global" | (string & {});
+  selectedTeam: 'global' | (string & {});
   setSelectedTeam: (team: string) => void;
   derivedIssuesObservable: CanObservable<Array<{ team: { name: string } }> | undefined>;
 }
@@ -28,7 +28,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
   const derivedTeams = getDerivedTeams(derivedIssues);
 
   const teams = mergeTeams(derivedTeams, teamsFromStorage)
-    .filter(({ name }) => name !== "__GLOBAL__")
+    .filter(({ name }) => name !== '__GLOBAL__')
     .sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
 
   const groups = Object.groupBy(teams, ({ status }) => status);
@@ -39,14 +39,10 @@ const TeamSelector: FC<TeamSelectorProps> = ({
         <Heading size="small">Team Configuration</Heading>
       </div>
       <Label htmlFor="default-settings">DEFAULT</Label>
-      <SidebarButton
-        className="mt-2"
-        isActive={selectedTeam === "global"}
-        onClick={() => setSelectedTeam("global")}
-      >
+      <SidebarButton className="mt-2" isActive={selectedTeam === 'global'} onClick={() => setSelectedTeam('global')}>
         <SettingsIcon label="default settings" />
         <p className="flex-1">Default Settings</p>
-        {selectedTeam === "global" && <ArrowRightCircleIcon label="default settings selected" />}
+        {selectedTeam === 'global' && <ArrowRightCircleIcon label="default settings selected" />}
       </SidebarButton>
       <Hr />
       {derivedTeams.length === 0 && (
@@ -103,9 +99,7 @@ const TeamSelector: FC<TeamSelectorProps> = ({
 
 export default TeamSelector;
 
-const getDerivedTeams = (
-  derivedIssue: TeamSelectorProps["derivedIssuesObservable"]["value"]
-): string[] => {
+const getDerivedTeams = (derivedIssue: TeamSelectorProps['derivedIssuesObservable']['value']): string[] => {
   if (!derivedIssue) {
     return [];
   }
@@ -115,8 +109,8 @@ const getDerivedTeams = (
 
 const mergeTeams = (
   derivedTeams: string[],
-  teamsFromStorage: string[]
-): Array<{ name: string; status: "reportOnly" | "storageOnly" | "storageAndReport" }> => {
+  teamsFromStorage: string[],
+): Array<{ name: string; status: 'reportOnly' | 'storageOnly' | 'storageAndReport' }> => {
   const allNames = [...new Set([...derivedTeams, ...teamsFromStorage])];
 
   return allNames.map((name) => {
@@ -124,13 +118,13 @@ const mergeTeams = (
     const inStorage = teamsFromStorage.includes(name);
 
     if (inDerived && inStorage) {
-      return { name, status: "storageAndReport" };
+      return { name, status: 'storageAndReport' };
     }
 
     if (inDerived) {
-      return { name, status: "reportOnly" };
+      return { name, status: 'reportOnly' };
     }
 
-    return { name, status: "storageOnly" };
+    return { name, status: 'storageOnly' };
   });
 };

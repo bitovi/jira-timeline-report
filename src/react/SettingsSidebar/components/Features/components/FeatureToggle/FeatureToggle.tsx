@@ -1,7 +1,7 @@
-import AtlasToggle from "@atlaskit/toggle";
-import type { FC } from "react";
+import AtlasToggle from '@atlaskit/toggle';
+import type { FC } from 'react';
 
-import React, { useId } from "react";
+import React, { useId } from 'react';
 
 interface FeatureToggleProps {
   title: string;
@@ -11,13 +11,7 @@ interface FeatureToggleProps {
   disabled?: boolean;
 }
 
-export const FeatureToggle: FC<FeatureToggleProps> = ({
-  title,
-  subtitle,
-  checked,
-  onChange,
-  disabled,
-}) => {
+export const FeatureToggle: FC<FeatureToggleProps> = ({ title, subtitle, checked, onChange, disabled }) => {
   const id = useId();
 
   return (

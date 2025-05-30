@@ -1,6 +1,6 @@
 // GET DATA FROM PLACES DIRECTLY RELATED TO ISSUE
 
-import { NormalizedIssue } from "../../jira/shared/types";
+import { NormalizedIssue } from '../../jira/shared/types';
 
 export type StartData = {
   start: Date;
@@ -85,7 +85,7 @@ export function getStartDateAndDueDataFromSprints(story: NormalizedIssue): Start
 }
 
 /**
- * I think we have 2 of these functions ... 
+ * I think we have 2 of these functions ...
  * @param {Array<StartAndDueData>} records
  * @returns {StartAndDueData}
  */
@@ -93,21 +93,21 @@ export function mergeStartAndDueData(records: Array<StartAndDueData>): StartAndD
   const startData = records
     .filter(
       (
-        record
+        record,
       ): record is {
         startData: NonNullable<StartData>;
         dueData: DueData;
-      } => record.startData !== null
+      } => record.startData !== null,
     )
     .map((record) => record.startData);
   const dueData = records
     .filter(
       (
-        record
+        record,
       ): record is {
         startData: StartData;
         dueData: NonNullable<DueData>;
-      } => record.dueData !== null
+      } => record.dueData !== null,
     )
     .map((record) => record.dueData);
 
@@ -123,8 +123,5 @@ export function mergeStartAndDueData(records: Array<StartAndDueData>): StartAndD
  * @returns {StartAndDueData}
  */
 export function getStartDateAndDueDataFromFieldsOrSprints(issue: NormalizedIssue): StartAndDueData {
-  return mergeStartAndDueData([
-    getStartDateAndDueDataFromFields(issue),
-    getStartDateAndDueDataFromSprints(issue),
-  ]);
+  return mergeStartAndDueData([getStartDateAndDueDataFromFields(issue), getStartDateAndDueDataFromSprints(issue)]);
 }

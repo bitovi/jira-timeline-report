@@ -1,1 +1,1 @@
-export * from "./useFeedback";
+export * from './useFeedback';

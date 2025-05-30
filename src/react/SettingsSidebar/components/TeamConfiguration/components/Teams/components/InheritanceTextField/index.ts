@@ -1,1 +1,1 @@
-export { default } from "./InheritanceTextField";
+export { default } from './InheritanceTextField';

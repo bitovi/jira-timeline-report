@@ -1,23 +1,23 @@
-import fs from "node:fs";
-import path from "node:path";
-import { Command } from "commander";
+import fs from 'node:fs';
+import path from 'node:path';
+import { Command } from 'commander';
 
-import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const deploymentConnectMetadata = {
   staging: {
-    name: "Status Reports for Jira (Staging)",
-    baseUrl: "https://statusreports-staging.bitovi.com",
-    key: "bitovi.status-report.staging",
+    name: 'Status Reports for Jira (Staging)',
+    baseUrl: 'https://statusreports-staging.bitovi.com',
+    key: 'bitovi.status-report.staging',
   },
   production: {
-    name: "Status Reports for Jira",
-    baseUrl: "https://statusreports.bitovi.com",
-    key: "bitovi.status-report",
+    name: 'Status Reports for Jira',
+    baseUrl: 'https://statusreports.bitovi.com',
+    key: 'bitovi.status-report',
   },
 } as const;
 
@@ -41,9 +41,9 @@ type Metadata = (typeof connectMetadata)[keyof typeof connectMetadata];
 const program = new Command();
 
 program
-  .option("-e, --environment <env>", "specify the environment", "production")
-  .option("-n, --name <developer-name>", "your name", "<your-name-here>")
-  .option("-u, --url <url>", "your fully qualified url", "<ngrok-url-here>")
+  .option('-e, --environment <env>', 'specify the environment', 'production')
+  .option('-n, --name <developer-name>', 'your name', '<your-name-here>')
+  .option('-u, --url <url>', 'your fully qualified url', '<ngrok-url-here>')
   .parse(process.argv);
 
 const { environment, ...localOptions } = program.opts<{
@@ -60,7 +60,7 @@ function main() {
       [
         `Specified environment "${environment}" does not exist.`,
         "The only allowed environments are 'local', 'staging', or 'production'.",
-      ].join("\n")
+      ].join('\n'),
     );
     process.exit(1);
   }
@@ -68,17 +68,17 @@ function main() {
   const metadata: Metadata = connectMetadata[environment];
 
   try {
-    const rawConnect = fs.readFileSync(path.resolve(__dirname, "base-connect.json"), "utf-8");
+    const rawConnect = fs.readFileSync(path.resolve(__dirname, 'base-connect.json'), 'utf-8');
     const baseConnect = JSON.parse(rawConnect);
 
     fs.writeFileSync(
-      path.resolve(__dirname, "../../", "public/atlassian-connect.json"),
-      JSON.stringify({ ...baseConnect, ...metadata, ...createModules(metadata) })
+      path.resolve(__dirname, '../../', 'public/atlassian-connect.json'),
+      JSON.stringify({ ...baseConnect, ...metadata, ...createModules(metadata) }),
     );
 
-    console.log("Created atlassian-connect.json");
+    console.log('Created atlassian-connect.json');
   } catch (error) {
-    console.error("Something went wrong creating atlassian-connect.json");
+    console.error('Something went wrong creating atlassian-connect.json');
     console.error(error);
   }
 }
@@ -90,17 +90,17 @@ function createModules({ name, key }: Metadata) {
     modules: {
       generalPages: [
         {
-          url: "/connect.html",
-          key: "main",
-          location: "system.top.navigation.bar",
+          url: '/connect.html',
+          key: 'main',
+          location: 'system.top.navigation.bar',
           name: {
             value: name,
           },
         },
         {
           url: `/connect.html?primaryIssueType={ac.${key}.primaryIssueType}&hideUnknownInitiatives={ac.${key}.hideUnknownInitiatives}&jql={ac.${key}.jql}&loadChildren={ac.${key}.loadChildren}&primaryReportType={ac.${key}.primaryReportType}&secondaryReportType={ac.${key}.secondaryReportType}&showPercentComplete={ac.${key}.showPercentComplete}&showOnlySemverReleases={ac.${key}.showOnlySemverReleases}&settings={ac.${key}.settings}`,
-          key: "deeplink",
-          location: "none",
+          key: 'deeplink',
+          location: 'none',
           name: {
             value: `${name} (Deep Link)`,
           },
@@ -108,7 +108,7 @@ function createModules({ name, key }: Metadata) {
       ],
       jiraProjectPages: [
         {
-          key: "project",
+          key: 'project',
           name: {
             value: name,
           },

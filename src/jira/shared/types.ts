@@ -38,12 +38,12 @@ export interface Changelog {
 export interface BaseFields {
   Parent: ParentIssue;
   Confidence?: number;
-  "Due date"?: string | null;
-  "Project Key"?: string;
-  "Start date"?: string | null;
-  "Story points"?: number | null;
-  "Story points median"?: number;
-  "Story points confidence"?: number | null;
+  'Due date'?: string | null;
+  'Project Key'?: string;
+  'Start date'?: string | null;
+  'Story points'?: number | null;
+  'Story points median'?: number;
+  'Story points confidence'?: number | null;
   Summary: string;
   Sprint: Sprints;
   Labels: Array<string>;
@@ -52,10 +52,10 @@ export interface BaseFields {
 }
 
 export interface IssueFields extends BaseFields {
-  "Issue Type": { hierarchyLevel: number; name: string, iconUrl?: string };
-  "Parent Link"?: { data: { key: string } };
+  'Issue Type': { hierarchyLevel: number; name: string; iconUrl?: string };
+  'Parent Link'?: { data: { key: string } };
   Status: Status;
-  "Fix versions": Array<FixVersion>;
+  'Fix versions': Array<FixVersion>;
   Team: null | { name: string; id: string; avatarUrl?: string };
 }
 
@@ -90,7 +90,7 @@ export type FetchJiraIssuesParams = {
 
 export interface NormalizedRelease {
   key: string;
-  type: "Release";
+  type: 'Release';
   summary: string;
 
   name: string;
@@ -141,12 +141,12 @@ export type DefaultsToConfig<T> = {
 };
 
 export type CalculationType =
-  | "parentFirstThenChildren"
-  | "childrenOnly"
-  | "childrenFirstThenParent"
-  | "widestRange"
-  | "parentOnly";
-  
+  | 'parentFirstThenChildren'
+  | 'childrenOnly'
+  | 'childrenFirstThenParent'
+  | 'widestRange'
+  | 'parentOnly';
+
 export type RollupLevelAndCalculation = {
   type: string;
   hierarchyLevel: number;

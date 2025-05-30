@@ -1,10 +1,10 @@
 /**
  * this module recursively fetches jira issues.
  */
-import chunkArray from "../utils/array/chunk-array";
-import mapIdsToNames from "../utils/object/map-ids-to-names";
-import { uniqueKeys } from "../utils/array/unique";
-import { Config, Issue, Params, Progress } from "./types";
+import chunkArray from '../utils/array/chunk-array';
+import mapIdsToNames from '../utils/object/map-ids-to-names';
+import { uniqueKeys } from '../utils/array/unique';
+import { Config, Issue, Params, Progress } from './types';
 
 type RootMethod = (params: Params, progress: Progress) => Promise<Issue[]>;
 
@@ -22,26 +22,22 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
     //
     // params - base params
     // sourceParentIssues - the source of parent issues
-    function fetchChildrenResponses(
-      params: Params,
-      parentIssues: Issue[],
-      progress: Progress
-    ): Promise<Issue[]>[] {
+    function fetchChildrenResponses(params: Params, parentIssues: Issue[], progress: Progress): Promise<Issue[]>[] {
       const issuesThatNeedToBeLoaded = getIssuesThatHaventBeenLoaded(
         parentIssues,
-        progress?.data?.keysWhoseChildrenWeAreAlreadyLoading ?? new Set<string>()
+        progress?.data?.keysWhoseChildrenWeAreAlreadyLoading ?? new Set<string>(),
       );
       const issuesToQuery = chunkArray(issuesThatNeedToBeLoaded, 40);
 
       const batchedResponses = issuesToQuery.map((issues) => {
         const keys = issues.map((issue) => issue.key);
-        const jql = `parent in (${keys.join(", ")}) ${params.childJQL || ""}`;
+        const jql = `parent in (${keys.join(', ')}) ${params.childJQL || ''}`;
         return rootMethod(
           {
             ...params,
             jql,
           },
-          progress
+          progress,
         );
       });
       // this needs to be flattened
@@ -51,7 +47,7 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
     async function fetchDeepChildren(
       params: Params,
       sourceParentIssues: Issue[],
-      progress: Progress
+      progress: Progress,
     ): Promise<Issue[]> {
       const batchedFirstResponses = fetchChildrenResponses(params, sourceParentIssues, progress);
 
@@ -71,10 +67,7 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
       return allChildren.flat();
     }
 
-    return async function fetchAllDeepChildren(
-      params: Params,
-      progress: Progress = (() => {}) as any
-    ) {
+    return async function fetchAllDeepChildren(params: Params, progress: Progress = (() => {}) as any) {
       const fields = await config.fieldsRequest();
 
       const newParams = {

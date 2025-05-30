@@ -9,11 +9,12 @@ Proposed short-term folder organization:
 
 - react - All react code
 - canjs - All CanJS code (minus the main component)
-  - reports - the main reports you can select in the reports dropdown 
+
+  - reports - the main reports you can select in the reports dropdown
   - controls - controls that are aware of the specifics of the baseline report
   - ui - controls that are pure UI
   - routing - routing helpers
 
 - main - main functions and the CanJS main component, other items that are injected into builds
 
-- utils - Pure JS utilities unaware of Jira data 
+- utils - Pure JS utilities unaware of Jira data

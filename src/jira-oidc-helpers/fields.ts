@@ -2,8 +2,8 @@
  * this module gets available jira fields.
  */
 
-import { hasValidAccessToken } from "./auth";
-import { Config, FieldsRequest } from "./types";
+import { hasValidAccessToken } from './auth';
+import { Config, FieldsRequest } from './types';
 
 export function fetchJiraFields(config: Config) {
   return () => {
@@ -13,7 +13,7 @@ export function fetchJiraFields(config: Config) {
 
 function fieldPriorityOrder(
   a: { name: string; id: string; scope?: string },
-  b: { name: string; id: string; scope?: string }
+  b: { name: string; id: string; scope?: string },
 ) {
   if (a?.scope && !b?.scope) {
     return 1;
@@ -26,7 +26,7 @@ function fieldPriorityOrder(
 }
 
 export function makeFieldsRequest(config: Config, setFieldsRequest: (req: FieldsRequest) => void) {
-  if (config.host === "jira" || hasValidAccessToken()) {
+  if (config.host === 'jira' || hasValidAccessToken()) {
     const req = fetchJiraFields(config)().then((fieldsPassed) => {
       const fields = fieldsPassed as unknown as Array<{ name: string; id: string }>;
 

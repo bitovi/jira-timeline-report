@@ -1,5 +1,5 @@
-import routeData from "../../canjs/routing/route-data";
-import { AppStorage } from "../storage/common";
+import routeData from '../../canjs/routing/route-data';
+import { AppStorage } from '../storage/common';
 
 export type Report = {
   id: string;
@@ -9,7 +9,7 @@ export type Report = {
 
 export type Reports = Partial<Record<string, Report>>;
 
-const reportsKey = "saved-reports";
+const reportsKey = 'saved-reports';
 
 export const getAllReports = async (storage: AppStorage): Promise<Reports> => {
   const reports = await storage.get<Reports>(reportsKey).then((reports) => reports || {});

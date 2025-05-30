@@ -1,10 +1,10 @@
-import React from "react";
-import { captureFeedback } from "@sentry/react";
-import { useMutation } from "@tanstack/react-query";
-import { useFlags } from "@atlaskit/flag";
-import SuccessIcon from "@atlaskit/icon/core/success";
-import { Text } from "@atlaskit/primitives";
-import { token } from "@atlaskit/tokens";
+import React from 'react';
+import { captureFeedback } from '@sentry/react';
+import { useMutation } from '@tanstack/react-query';
+import { useFlags } from '@atlaskit/flag';
+import SuccessIcon from '@atlaskit/icon/core/success';
+import { Text } from '@atlaskit/primitives';
+import { token } from '@atlaskit/tokens';
 
 type Feedback = {
   name?: string;
@@ -22,7 +22,7 @@ const createFeedbackReport = async ({ files, email, description, tags }: Feedbac
         data: new Uint8Array(buffer),
         filename: file.name,
       };
-    })
+    }),
   );
 
   return captureFeedback(
@@ -35,7 +35,7 @@ const createFeedbackReport = async ({ files, email, description, tags }: Feedbac
         tags,
       },
       attachments: formattedFiles,
-    }
+    },
   );
 };
 
@@ -53,7 +53,7 @@ export const useFeedback = () => {
         title: <Text color="color.text.success">Success</Text>,
         description: `Thanks for the feedback!`,
         isAutoDismiss: true,
-        icon: <SuccessIcon color={token("color.icon.success")} label="success" />,
+        icon: <SuccessIcon color={token('color.icon.success')} label="success" />,
       });
     },
   });

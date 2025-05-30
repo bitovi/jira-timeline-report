@@ -8,8 +8,8 @@ import {
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
   isDerivedIssue,
-  isDerivedRelease
-} from "../rollup";
+  isDerivedRelease,
+} from '../rollup';
 
 export type WithBlockedStatuses<T = unknown> = { blockedStatusIssues: IssueOrRelease<T>[] };
 
@@ -24,12 +24,9 @@ export function rollupBlockedStatusIssues<T>(
   rollupTimingLevelsAndCalculations: Array<{
     type: string;
     hierarchyLevel?: number;
-  }>
+  }>,
 ): IssueOrRelease<T & WithBlockedStatuses<T>>[] {
-  const groupedIssues = groupIssuesByHierarchyLevelOrType(
-    issuesOrReleases,
-    rollupTimingLevelsAndCalculations
-  );
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
   const rolledUpBlockers = rollupBlockedIssuesForGroupedHierarchy(groupedIssues);
 
   const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpBlockers, (item, values) => ({
@@ -47,15 +44,13 @@ export function rollupBlockedIssuesForGroupedHierarchy<T>(groupedHierarchy: Issu
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(issueOrRelease, children: IssueOrRelease<T>[][]) {
       if (isDerivedRelease(issueOrRelease)) return [...children.flat(1)];
-      
-      const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
-      const hasBlockedLabel = lowerCaseLabels.some((label) => label === "blocked");
-      const hasBlockedStatus = isDerivedIssue(issueOrRelease) && issueOrRelease?.derivedStatus?.statusType === "blocked"
 
-      const addParent =
-      hasBlockedLabel || hasBlockedStatus
-          ? [issueOrRelease]
-          : [];
+      const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
+      const hasBlockedLabel = lowerCaseLabels.some((label) => label === 'blocked');
+      const hasBlockedStatus =
+        isDerivedIssue(issueOrRelease) && issueOrRelease?.derivedStatus?.statusType === 'blocked';
+
+      const addParent = hasBlockedLabel || hasBlockedStatus ? [issueOrRelease] : [];
       return [...children.flat(1), ...addParent];
     },
   });
