@@ -49,6 +49,7 @@ import { getTimingLevels } from "../../../utils/timing/helpers";
 import { getAllReports } from "../../../jira/reports/fetcher";
 import { reportKeys } from "../../../react/services/reports";
 import { queryClient } from "../../../react/services/query/queryClient";
+import { nowUTC } from "../../../utils/date/utc";
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
@@ -74,12 +75,12 @@ export const REPORTS = [
   },
   {
     key: "estimate-analysis",
-    name: "Estimation Analysis"
+    name: "Estimation Analysis",
   },
   {
     key: "auto-scheduler",
-    name: "Auto-Scheduler"
-  }
+    name: "Auto-Scheduler",
+  },
 ];
 
 export class RouteData extends ObservableObject {
@@ -161,6 +162,27 @@ export class RouteData extends ObservableObject {
     },
 
     // PURE ROUTES
+    selectedStartDate: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      "selectedStartDate",
+      "",
+      String,
+      {
+        parse: (dateString) => {
+          if (!dateString) {
+            return nowUTC();
+          }
+
+          return new Date(dateString);
+        },
+        stringify: (date) => {
+          if (!date) {
+            return nowUTC().toISOString();
+          }
+
+          return date.toISOString();
+        },
+      }
+    ),
     showSettings: saveJSONToUrlButAlsoLookAtReport_DataWrapper("settings", "", String, {
       parse: (x) => "" + x,
       stringify: (x) => "" + x,

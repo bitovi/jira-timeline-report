@@ -72,7 +72,7 @@ export const IssueSimulationRow: React.FC<{
         onMouseEnter={() => {
           console.log({
             issue,
-            ...getDatesFromSimulationIssue(issue, selectedStartDate, gridData),
+            ...getDatesFromSimulationIssue(issue, selectedStartDate),
           });
         }}
         style={{
@@ -144,8 +144,7 @@ const monthDateFormatter = new Intl.DateTimeFormat("en-US", {
 
 export function getDatesFromSimulationIssue(
   issue: SimulationIssueResult | MinimalSimulationIssueResult,
-  startDate: Date,
-  gridData: GridUIData
+  startDate: Date
 ) {
   const isMinimal = !hasUrl(issue);
 

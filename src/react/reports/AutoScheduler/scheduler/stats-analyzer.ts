@@ -150,7 +150,7 @@ type MinimalSimulationIssueFields = {
   trackNumbers: number[];
 };
 
-function getUncertaintyThresholdData<T extends MinimalSimulationIssueFields>(
+export function getUncertaintyThresholdData<T extends MinimalSimulationIssueFields>(
   simulationIssue: T,
   uncertaintyWeight: UncertaintyWeight
 ): T & {

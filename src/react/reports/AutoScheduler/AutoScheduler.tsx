@@ -23,6 +23,7 @@ import Controls from "./components/Controls";
 import type { SimulationData } from "./scheduler/stats-analyzer";
 import { useUncertaintyWeight } from "./hooks/useUncertaintyWeight/useUncertaintyWeight.js";
 import { useSelectedStartDate } from "./hooks/useSelectedStartDate/useSelectedStartDate.js";
+import UpdateModal from "./components/UpdateModal/UpdateModal";
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -40,6 +41,10 @@ export const AutoScheduler: FC<{
 
   const [selectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight] = useUncertaintyWeight();
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  console.log(selectedStartDate);
 
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
@@ -104,7 +109,13 @@ export const AutoScheduler: FC<{
       </div>
 
       {/* Temp Controls */}
-      <Controls />
+      <Controls toggle={() => setIsOpen((prev) => !prev)} />
+      <UpdateModal
+        startDate={selectedStartDate}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        issues={uiData}
+      />
 
       {/* Simulation Grid */}
       <div
@@ -130,7 +141,7 @@ export const AutoScheduler: FC<{
             width="100%"
             height="100%"
             preserveAspectRatio="none"
-          ></svg>
+          />
         </div>
 
         {/* Placeholder for row height */}
@@ -158,14 +169,14 @@ export const AutoScheduler: FC<{
             gridRow: `2 / span 1`,
             gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
           }}
-        ></div>
+        />
         <div
           className="bg-neutral-20 pt-2 pb-1 "
           style={{
             gridRow: `2 / span 1`,
             gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
           }}
-        ></div>
+        />
 
         <div className="pl-2 pt-2 pb-1 pr-1 flex " style={{ gridRow: 2, gridColumnStart: "what" }}>
           <div className="text-base grow font-semibold">Summary</div>
@@ -188,7 +199,7 @@ export const AutoScheduler: FC<{
                 gridRow: `${team.style.gridRowStart} / span 1`,
                 gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
               }}
-            ></div>
+            />
 
             <div
               className="pl-2 pt-2 pb-1 pr-1 flex "

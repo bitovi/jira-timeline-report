@@ -10,7 +10,7 @@ import { useSelectedIssueType } from "../../../../services/issues";
 
 export type UncertaintyWeight = number | "average";
 
-const Controls: FC = () => {
+const Controls: FC<{ toggle: () => void }> = ({ toggle }) => {
   const [selectedStartDate, setSelectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight, setUncertaintyWeight] = useUncertaintyWeight();
   const { selectedIssueType } = useSelectedIssueType();
@@ -26,7 +26,9 @@ const Controls: FC = () => {
         value={selectedStartDate.toISOString().split("T")[0]}
         onChange={(e) => setSelectedStartDate(e.target.valueAsDate)}
       />
-      <Button appearance="primary">Update {selectedIssueType} Dates</Button>
+      <Button appearance="primary" onClick={toggle}>
+        Update {selectedIssueType} Dates
+      </Button>
     </div>
   );
 };
