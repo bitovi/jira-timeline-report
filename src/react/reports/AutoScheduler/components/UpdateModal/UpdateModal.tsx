@@ -16,6 +16,34 @@ import { getDatesFromSimulationIssue } from "../../IssueSimulationRow";
 import Button from "@atlaskit/button/new";
 import { useSelectedIssueType } from "../../../../services/issues";
 
+type LinkedIssue = StatsUIData["simulationIssueResults"][number]["linkedIssue"];
+
+const jiraDataFormatter = new Intl.DateTimeFormat("en-CA", {
+  // 'en-CA' uses the YYYY-MM-DD format
+  year: "numeric",
+  month: "2-digit", // '2-digit' will ensure month is always represented with two digits
+  day: "2-digit", // '2-digit' will ensure day is always represented with two digits
+  calendar: "iso8601", // This specifies usage of the ISO 8601 calendar
+  timeZone: "UTC",
+});
+
+const save = (
+  issues: Array<LinkedIssue & { dates: ReturnType<typeof getDatesFromSimulationIssue> }>
+) => {
+  const fieldMap = {};
+  const allWork = issues.map((workItem) => {
+    return {
+      ...workItem,
+      updates: {
+        ["this.startDateField"]: jiraDataFormatter.format(
+          workItem.dates.startDateWithTimeEnoughToFinish
+        ),
+        ["this.dueDateField"]: jiraDataFormatter.format(workItem.dates.dueDateTop),
+      },
+    };
+  });
+};
+
 interface UpdateModalProps {
   onClose: () => void;
   issues: StatsUIData;
