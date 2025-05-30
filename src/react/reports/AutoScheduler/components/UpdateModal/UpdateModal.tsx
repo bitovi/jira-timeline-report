@@ -15,6 +15,15 @@ import { Checkbox } from "@atlaskit/checkbox";
 import { getDatesFromSimulationIssue } from "../../IssueSimulationRow";
 import Button from "@atlaskit/button/new";
 import { useSelectedIssueType } from "../../../../services/issues";
+import routeData from "../../../../../canjs/routing/route-data";
+import { Jira } from "../../../../../jira-oidc-helpers";
+import { useMutation } from "@tanstack/react-query";
+import { useJira } from "../../../../services/jira";
+import Spinner from "@atlaskit/spinner";
+import { useFlags } from "@atlaskit/flag";
+import { Text } from "@atlaskit/primitives";
+import { token } from "@atlaskit/tokens";
+import SuccessIcon from "@atlaskit/icon/core/success";
 
 type LinkedIssue = StatsUIData["simulationIssueResults"][number]["linkedIssue"];
 
@@ -27,21 +36,116 @@ const jiraDataFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: "UTC",
 });
 
-const save = (
+class AutoSchedulerSyncError extends Error {
+  constructor(public screenErrorMessages: string[], public errors: string[]) {
+    super([...screenErrorMessages, ...errors].join("\n"));
+    this.name = "AutoSchedulerSyncError";
+
+    this.screenErrorMessages = screenErrorMessages;
+    this.errors = errors;
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, AutoSchedulerSyncError);
+    }
+  }
+}
+
+const updateFromSimulation = async (
+  jiraHelpers: Jira,
   issues: Array<LinkedIssue & { dates: ReturnType<typeof getDatesFromSimulationIssue> }>
 ) => {
-  const fieldMap = {};
+  const { getFieldFor } = await routeData.teamFieldLookUp;
+
   const allWork = issues.map((workItem) => {
+    const startDateField = getFieldFor({
+      team: workItem.team.name,
+      issueLevel: workItem.hierarchyLevel.toString(),
+      field: "startDateField",
+    });
+
+    const dueDateField = getFieldFor({
+      team: workItem.team.name,
+      issueLevel: workItem.hierarchyLevel.toString(),
+      field: "dueDateField",
+    });
+
     return {
       ...workItem,
       updates: {
-        ["this.startDateField"]: jiraDataFormatter.format(
-          workItem.dates.startDateWithTimeEnoughToFinish
-        ),
-        ["this.dueDateField"]: jiraDataFormatter.format(workItem.dates.dueDateTop),
+        [startDateField]: jiraDataFormatter.format(workItem.dates.startDateWithTimeEnoughToFinish),
+        [dueDateField]: jiraDataFormatter.format(workItem.dates.dueDateTop),
       },
     };
   });
+
+  console.log(allWork);
+
+  const results = await Promise.allSettled(
+    allWork.map(({ updates, ...workItem }) => {
+      return jiraHelpers.editJiraIssueWithNamedFields(workItem.issue.key, updates);
+    })
+  );
+
+  const errors = results.filter(
+    (outcome): outcome is PromiseRejectedResult => outcome.status === "rejected"
+  );
+
+  if (errors.length) {
+    const error = new AutoSchedulerSyncError([], []);
+
+    for (const { reason } of errors) {
+      if (Array.isArray(reason.errorMessages) && reason.errorMessages.length) {
+        error.errors.push(reason.errorMessages[0]);
+        continue;
+      }
+
+      if ("errors" in reason && typeof reason.error === "object") {
+        const [message] = Object.values(reason.errors as Record<string, string>);
+
+        if (message.includes("It is not on the appropriate screen, or unknown")) {
+          error.screenErrorMessages.push(
+            "screen error occurred. we need to handle this at some point"
+          );
+        } else {
+          error.errors.push(message);
+        }
+        continue;
+      }
+
+      error.errors.push("something went wrong");
+    }
+
+    throw error;
+  }
+
+  return results;
+};
+
+const useUpdateIssuesWithSimulationData = () => {
+  const jira = useJira();
+  const { showFlag } = useFlags();
+
+  const { mutate, isPending, error } = useMutation<
+    unknown,
+    AutoSchedulerSyncError,
+    Parameters<typeof updateFromSimulation>[1]
+  >({
+    mutationFn: (issues) => updateFromSimulation(jira, issues),
+    onSuccess: () => {
+      showFlag({
+        title: <Text color="color.text.success">Success</Text>,
+        description: `Successfully updated`,
+        isAutoDismiss: true,
+        icon: <SuccessIcon color={token("color.icon.success")} label="success" />,
+      });
+    },
+  });
+
+  return {
+    saveIssues: mutate,
+    isPending,
+    error,
+  };
 };
 
 interface UpdateModalProps {
@@ -53,6 +157,21 @@ interface UpdateModalProps {
 const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   const { selectedIssueType } = useSelectedIssueType();
   const [selectedIssueMap, setSelectedIssueMap] = useState<Record<string, boolean>>({});
+
+  const { saveIssues, isPending, error } = useUpdateIssuesWithSimulationData();
+
+  const save = () => {
+    const issuesToSave = issues.simulationIssueResults
+      .filter(({ linkedIssue }) => selectedIssueMap[linkedIssue.key])
+      .map((issue) => {
+        return {
+          ...issue.linkedIssue,
+          dates: getDatesFromSimulationIssue(issue, startDate),
+        };
+      });
+
+    saveIssues(issuesToSave, { onSuccess: () => onClose() });
+  };
 
   const selectAll = (newValue: boolean) => {
     const newMapping = issues.simulationIssueResults.reduce(
@@ -123,6 +242,24 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         <h1>save</h1>
       </ModalHeader>
       <ModalBody>
+        {error && (
+          <>
+            <div>
+              {error.errors.map((err, i) => (
+                <p key={i} className="text-red-500">
+                  {err}
+                </p>
+              ))}
+            </div>
+            <div>
+              {error.screenErrorMessages.map((err, i) => (
+                <p key={i} className="text-red-500">
+                  {err}
+                </p>
+              ))}
+            </div>
+          </>
+        )}
         <DynamicTable
           head={{
             cells: [
@@ -151,7 +288,8 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
       </ModalBody>
       <ModalFooter>
         <Button onClick={onClose}>Cancel</Button>
-        <Button appearance="primary" isDisabled={selectedCount === 0}>
+        <Button appearance="primary" isDisabled={selectedCount === 0 || isPending} onClick={save}>
+          {isPending && <Spinner size="small" />}
           {selectedCount === 0
             ? `Select a ${selectedIssueType} to save`
             : `Update ${selectedCount} ${selectedIssueType}${selectedCount > 1 ? "s" : ""}`}

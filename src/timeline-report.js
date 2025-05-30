@@ -30,7 +30,7 @@ import StatusKeys from "./react/StatusKey";
 
 import { getTheme, applyThemeToCssVars } from "./jira/theme";
 import { EstimateAnalysis } from "./react/reports/EstimateAnalysis/EstimateAnalysis";
-import { AutoScheduler } from "./react/reports/AutoScheduler/AutoScheduler";
+import AutoScheduler from "./react/reports/AutoScheduler/AutoScheduler";
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -187,34 +187,38 @@ export class TimelineReport extends StacheElement {
   attachStatusKeys() {
     createRoot(document.getElementById("status-keys")).render(createElement(StatusKeys, {}));
   }
-  attachEstimateAnalysis(){
+  attachEstimateAnalysis() {
     const element = document.getElementById("estimate-analysis");
-    this.estimateAnalysisRoot = createRoot(element)
-    
-    this.estimateAnalysisRoot.render(createElement(EstimateAnalysis, {
-      primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
-      allIssuesOrReleasesObs: value.from(this, "rolledupAndRolledBackIssuesAndReleases"),
-      rollupTimingLevelsAndCalculationsObs: value.from(this, "rollupTimingLevelsAndCalculations")
-    }));
+    this.estimateAnalysisRoot = createRoot(element);
+
+    this.estimateAnalysisRoot.render(
+      createElement(EstimateAnalysis, {
+        primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
+        allIssuesOrReleasesObs: value.from(this, "rolledupAndRolledBackIssuesAndReleases"),
+        rollupTimingLevelsAndCalculationsObs: value.from(this, "rollupTimingLevelsAndCalculations"),
+      })
+    );
   }
-  detatchEstimateAnalysis(){
-    if(this.estimateAnalysisRoot) {
+  detatchEstimateAnalysis() {
+    if (this.estimateAnalysisRoot) {
       this.estimateAnalysisRoot.unmount();
       this.estimateAnalysisRoot = null;
     }
   }
-  attachAutoScheduler(){
+  attachAutoScheduler() {
     const element = document.getElementById("auto-scheduler");
-    this.autoSchedulerRoot = createRoot(element)
-    
-    this.autoSchedulerRoot.render(createElement(AutoScheduler, {
-      primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
-      allIssuesOrReleasesObs: value.from(this, "rolledupAndRolledBackIssuesAndReleases"),
-      rollupTimingLevelsAndCalculationsObs: value.from(this, "rollupTimingLevelsAndCalculations")
-    }));
+    this.autoSchedulerRoot = createRoot(element);
+
+    this.autoSchedulerRoot.render(
+      createElement(AutoScheduler, {
+        primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
+        allIssuesOrReleasesObs: value.from(this, "rolledupAndRolledBackIssuesAndReleases"),
+        rollupTimingLevelsAndCalculationsObs: value.from(this, "rollupTimingLevelsAndCalculations"),
+      })
+    );
   }
-  detatchAutoScheduler(){
-    if(this.autoSchedulerRoot) {
+  detatchAutoScheduler() {
+    if (this.autoSchedulerRoot) {
       this.autoSchedulerRoot.unmount();
       this.autoSchedulerRoot = null;
     }

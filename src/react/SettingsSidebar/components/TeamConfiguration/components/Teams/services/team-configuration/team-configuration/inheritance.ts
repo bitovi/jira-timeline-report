@@ -119,6 +119,10 @@ export const createTeamFieldLookup = (allTeamData: AllTeamData) => {
       const configuration = teamData?.[issueLevel] ?? teamData.defaults;
       const matchedField = configuration[field];
 
+      if (!matchedField) {
+        throw new Error(`How'd you get here?`);
+      }
+
       return matchedField;
     },
   };

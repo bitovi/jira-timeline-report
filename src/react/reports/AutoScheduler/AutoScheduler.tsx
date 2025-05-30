@@ -21,9 +21,14 @@ import { IssueSimulationRow } from "./IssueSimulationRow";
 import Controls from "./components/Controls";
 
 import type { SimulationData } from "./scheduler/stats-analyzer";
-import { useUncertaintyWeight } from "./hooks/useUncertaintyWeight/useUncertaintyWeight.js";
-import { useSelectedStartDate } from "./hooks/useSelectedStartDate/useSelectedStartDate.js";
+import { useUncertaintyWeight } from "./hooks/useUncertaintyWeight/useUncertaintyWeight";
+import { useSelectedStartDate } from "./hooks/useSelectedStartDate/useSelectedStartDate";
 import UpdateModal from "./components/UpdateModal/UpdateModal";
+import { FlagsProvider } from "@atlaskit/flag";
+import { JiraProvider } from "../../services/jira/JiraProvider";
+import routeData from "../../../canjs/routing/route-data/index";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../../services/query/queryClient";
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -32,10 +37,15 @@ type RolledUpIssue = DerivedIssue & {
 type ObservableOfIssues = CanObservable<Array<RolledUpIssue>>;
 export type GridUIData = ReturnType<typeof gridUIData>;
 
-export const AutoScheduler: FC<{
+interface AutoSchedulerProps {
   primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>;
   allIssuesOrReleasesObs: ObservableOfIssues;
-}> = ({ primaryIssuesOrReleasesObs, allIssuesOrReleasesObs }) => {
+}
+
+const AutoScheduler: FC<AutoSchedulerProps> = ({
+  primaryIssuesOrReleasesObs,
+  allIssuesOrReleasesObs,
+}) => {
   const primary = useCanObservable(primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(allIssuesOrReleasesObs);
 
@@ -237,6 +247,18 @@ export const AutoScheduler: FC<{
     </div>
   );
 };
+
+export default function AutoSchedulerWrapper(props: AutoSchedulerProps) {
+  return (
+    <FlagsProvider>
+      <JiraProvider jira={routeData.jiraHelpers}>
+        <QueryClientProvider client={queryClient}>
+          <AutoScheduler {...props} />
+        </QueryClientProvider>
+      </JiraProvider>
+    </FlagsProvider>
+  );
+}
 
 function hasUrl(
   issue: MinimalSimulationIssueResult | SimulationIssueResult
