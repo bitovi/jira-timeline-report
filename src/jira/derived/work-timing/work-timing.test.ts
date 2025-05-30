@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { deriveWorkTiming, DerivedWorkTiming } from './work-timing';
 import { NormalizedIssue, NormalizedTeam } from '../../shared/types';
-import { estimateExtraPoints, sampleExtraPoints } from '../../../shared/confidence';
+import { estimateExtraPoints, sampleExtraPoints } from '../../../utils/math/confidence';
 
-vi.mock('../../../shared/confidence', () => ({
+vi.mock('../../../utils/math/confidence', () => ({
   estimateExtraPoints: vi.fn(),
   sampleExtraPoints: vi.fn(),
 }));

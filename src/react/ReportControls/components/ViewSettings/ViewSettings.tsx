@@ -11,6 +11,7 @@ import routeData from '../../../../canjs/routing/route-data';
 import { ErrorBoundary } from '@sentry/react';
 import ScatterPlotViewSettings from './components/ScatterPlotViewSettings';
 import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
+import { EstimateAnalysisViewSettings } from '../../../reports/EstimateAnalysis/EstimateAnalysisViewSettings';
 
 const reports = [
   {
@@ -25,6 +26,10 @@ const reports = [
     key: 'table',
     name: 'Estimation Table',
   },
+  {
+    key: 'estimate-analysis',
+    name: 'Estimation Analysis',
+  },
 ] as const;
 
 type ReportTypes = (typeof reports)[number]['key'];
@@ -32,6 +37,7 @@ type ReportTypes = (typeof reports)[number]['key'];
 const viewSettingsMap: Record<Exclude<ReportTypes, 'table'>, FC> = {
   'start-due': GanttViewSettings,
   due: ScatterPlotViewSettings,
+  'estimate-analysis': EstimateAnalysisViewSettings,
 };
 
 const ViewSettings: FC = () => {
