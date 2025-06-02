@@ -1,1 +1,1 @@
-export { default } from "./InheritanceToggleField";
+export { default } from './InheritanceToggleField';

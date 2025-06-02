@@ -1,10 +1,10 @@
 /**
  * this module is for requesting all jira issues and changelogs.
  */
-import { fetchRemainingChangelogsForIssues, fetchJiraIssuesWithJQL } from "./jira";
-import { Config, ProgressData, Issue, OidcJiraIssue } from "./types";
-import { RequestHelperResponse } from "../shared/types";
-import { uniqueKeys } from "../utils/array/unique";
+import { fetchRemainingChangelogsForIssues, fetchJiraIssuesWithJQL } from './jira';
+import { Config, ProgressData, Issue, OidcJiraIssue } from './types';
+import { RequestHelperResponse } from '../shared/types';
+import { uniqueKeys } from '../utils/array/unique';
 
 export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
   return (
@@ -18,7 +18,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
     progress: {
       data?: ProgressData;
       (data: ProgressData): void;
-    } = () => {}
+    } = () => {},
   ): Promise<Issue[]> => {
     const { limit, ...apiParams } = params;
 
@@ -43,7 +43,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
 
     const firstRequest = fetchJiraIssuesWithJQL(config)({
       maxResults: 100,
-      expand: ["changelog"],
+      expand: ['changelog'],
       ...apiParams,
     });
 
@@ -66,7 +66,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
             maxResults: maxResults,
             startAt: i,
             ...apiParams,
-          }).then(getRemainingChangeLogsForIssues)
+          }).then(getRemainingChangeLogsForIssues),
         );
       }
       return Promise.all(requests).then((responses) => {

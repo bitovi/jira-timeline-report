@@ -1,1 +1,1 @@
-export { default } from "./FeaturesWrapper";
+export { default } from './FeaturesWrapper';

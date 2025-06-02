@@ -1,7 +1,7 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
-import SidebarButton from "../../../components/SidebarButton";
+import React from 'react';
+import SidebarButton from '../../../components/SidebarButton';
 
 interface GoBackButtonProps {
   onGoBack: () => void;

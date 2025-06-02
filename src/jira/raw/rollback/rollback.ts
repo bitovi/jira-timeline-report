@@ -3,14 +3,8 @@
  * It processes changes to fields such as Sprint, Fix Versions, Parent associations, and Status,
  * ensuring that issues are accurately reverted to their historical configurations.
  */
-import { parseDateISOString } from "../../../utils/date/date-helpers";
-import {
-  Change,
-  FixVersion,
-  JiraIssue,
-  Sprint,
-  Status,
-} from "../../shared/types";
+import { parseDateISOString } from '../../../utils/date/date-helpers';
+import { Change, FixVersion, JiraIssue, Sprint, Status } from '../../shared/types';
 
 interface RolledBackMetadata {
   rolledbackTo: Date;
@@ -33,21 +27,21 @@ interface RollbackLookupData {
 }
 
 function getSprintNumbers(value: string): number[] | null {
-  if (value === "") {
+  if (value === '') {
     return null;
   } else {
     return value
-      .split(",")
+      .split(',')
       .map((num) => +num)
       .filter((num) => !isNaN(num));
   }
 }
 
 function getSprintNames(value: string): string[] | null {
-  if (value === "") {
+  if (value === '') {
     return null;
   } else {
-    return value.split(",").map((name) => name.trim());
+    return value.split(',').map((name) => name.trim());
   }
 }
 
@@ -55,7 +49,7 @@ type FieldRollbackFunction<LastReturnValue = unknown, ReturnValue = unknown> = (
   lastReturnValue: LastReturnValue,
   change: Change,
   fieldName: string,
-  data: RollbackLookupData
+  data: RollbackLookupData,
 ) => Record<string, ReturnValue>;
 
 type FieldRollbackFunctionMap = Record<string, FieldRollbackFunction>;
@@ -65,8 +59,8 @@ export const fields: FieldRollbackFunctionMap = {
   // we need to update `lastReturnValue` to have
   // only the right sprints
   Sprint: function (lastReturnValue, change, fieldName, { sprints }) {
-    const sprintNumbers = getSprintNumbers(change.from || "");
-    const sprintNames = getSprintNames(change.fromString || "");
+    const sprintNumbers = getSprintNumbers(change.from || '');
+    const sprintNames = getSprintNames(change.fromString || '');
 
     if (sprintNumbers === null) {
       return { [fieldName]: null };
@@ -89,25 +83,21 @@ export const fields: FieldRollbackFunctionMap = {
       };
     }
   },
-  Labels : function(lastReturnValue, change, fieldName){
-    if(change.fromString) {
-      return { [fieldName]: change.fromString.split(" ")}
+  Labels: function (lastReturnValue, change, fieldName) {
+    if (change.fromString) {
+      return { [fieldName]: change.fromString.split(' ') };
     } else {
-      return { [fieldName]: []}
+      return { [fieldName]: [] };
     }
   },
-  "Fix versions": function (lastReturnValue, change, fieldName, { versions }) {
+  'Fix versions': function (lastReturnValue, change, fieldName, { versions }) {
     if (change.from) {
       if (versions.ids.has(change.from)) {
         return { [fieldName]: [versions.ids.get(change.from)] };
-      } else if (versions.names.has(change.fromString || "")) {
-        return { [fieldName]: [versions.names.get(change.fromString || "")] };
+      } else if (versions.names.has(change.fromString || '')) {
+        return { [fieldName]: [versions.names.get(change.fromString || '')] };
       } else {
-        console.warn(
-          "Can't find release version ",
-          change.from,
-          change.fromString
-        );
+        console.warn("Can't find release version ", change.from, change.fromString);
         return { [fieldName]: lastReturnValue };
       }
     } else {
@@ -116,33 +106,33 @@ export const fields: FieldRollbackFunctionMap = {
   },
   // Parent Link, Epic Link,
   IssueParentAssociation: function (lastReturnValue, change) {
-    return { Parent: { key: change.fromString || "", id: change.from || "" } };
+    return { Parent: { key: change.fromString || '', id: change.from || '' } };
   },
-  "Parent Link": function (lastReturnValue: unknown, change: Change) {
-    return { Parent: { key: change.fromString || "" } };
+  'Parent Link': function (lastReturnValue: unknown, change: Change) {
+    return { Parent: { key: change.fromString || '' } };
   },
-  "Epic Link": function (lastReturnValue: unknown, change: Change) {
-    return { Parent: { key: change.fromString || "" } };
+  'Epic Link': function (lastReturnValue: unknown, change: Change) {
+    return { Parent: { key: change.fromString || '' } };
   },
   Status: function (lastReturnValue, change, fieldName, { statuses }) {
-    if (statuses.ids.has(change.from || "")) {
-      return { [fieldName]: statuses.ids.get(change.from || "") };
-    } else if (statuses.names.has(change.fromString || "")) {
-      return { [fieldName]: statuses.names.get(change.fromString || "") };
+    if (statuses.ids.has(change.from || '')) {
+      return { [fieldName]: statuses.ids.get(change.from || '') };
+    } else if (statuses.names.has(change.fromString || '')) {
+      return { [fieldName]: statuses.names.get(change.fromString || '') };
     } else {
       console.warn("Can't find status", change.from, change.fromString);
-      return { [fieldName]: { name: change.fromString || "" } };
+      return { [fieldName]: { name: change.fromString || '' } };
     }
   },
 };
 
 const fieldAlias = {
-  duedate: "Due date",
-  status: "Status",
-  labels: "Labels",
-  issuetype: "Issue Type",
+  duedate: 'Due date',
+  status: 'Status',
+  labels: 'Labels',
+  issuetype: 'Issue Type',
   // "summary": "Summary" // we don't want to change summary
-  "Fix Version": "Fix versions",
+  'Fix Version': 'Fix versions',
 };
 
 function getSprintsMapsFromIssues(issues: JiraIssue[]): FieldLookup<Sprint> {
@@ -161,7 +151,7 @@ function getVersionsFromIssues(issues: JiraIssue[]): FieldLookup<FixVersion> {
   const ids = new Map<string, FixVersion>();
   const names = new Map<string, FixVersion>();
   for (const issue of issues) {
-    for (const version of issue.fields["Fix versions"]) {
+    for (const version of issue.fields['Fix versions']) {
       ids.set(version.id, version);
       names.set(version.name, version);
     }
@@ -179,10 +169,7 @@ function getStatusesFromIssues(issues: JiraIssue[]): FieldLookup<Status> {
   return { ids, names };
 }
 
-export function rollbackIssues(
-  issues: JiraIssue[],
-  rollbackTime: Date = oneHourAgo
-): RolledBackJiraIssue[] {
+export function rollbackIssues(issues: JiraIssue[], rollbackTime: Date = oneHourAgo): RolledBackJiraIssue[] {
   const sprints = getSprintsMapsFromIssues(issues);
   const versions = getVersionsFromIssues(issues);
   const statuses = getStatusesFromIssues(issues);
@@ -196,7 +183,7 @@ const oneHourAgo = new Date(Date.now() - 1000 * 60 * 60);
 export function rollbackIssue(
   issue: JiraIssue,
   data: RollbackLookupData,
-  rollbackTime: Date = oneHourAgo
+  rollbackTime: Date = oneHourAgo,
 ): RolledBackJiraIssue | undefined {
   const { changelog, ...rest } = issue;
   const rolledBackIssue: RolledBackJiraIssue = {
@@ -228,25 +215,19 @@ export function rollbackIssue(
       if (fields[fieldName]) {
         Object.assign(
           rolledBackIssue.fields,
-          fields[fieldName](
-            rolledBackIssue.fields[fieldName],
-            change,
-            fieldName,
-            data
-          )
+          fields[fieldName](rolledBackIssue.fields[fieldName], change, fieldName, data),
         );
       } else {
-        rolledBackIssue.fields[fieldName] = getRollbackValue( change );
+        rolledBackIssue.fields[fieldName] = getRollbackValue(change);
       }
     });
   }
   return rolledBackIssue;
 }
 
-
 function getRollbackValue(change: Change) {
-  if(change.from === null && change.fromString != null) {
-    return change.fromString
+  if (change.from === null && change.fromString != null) {
+    return change.fromString;
   } else {
     return change.from;
   }

@@ -1,12 +1,12 @@
-import type { FC } from "react";
-import type { FieldUpdates } from "../../ConfigureTeamsForm";
-import type { Configuration } from "../../services/team-configuration";
-import type { UseFormReturn } from "react-hook-form";
+import type { FC } from 'react';
+import type { FieldUpdates } from '../../ConfigureTeamsForm';
+import type { Configuration } from '../../services/team-configuration';
+import type { UseFormReturn } from 'react-hook-form';
 
-import React from "react";
+import React from 'react';
 
-import TextField from "../TextField";
-import ToggleButton from "../../../../../../../components/ToggleButton";
+import TextField from '../TextField';
+import ToggleButton from '../../../../../../../components/ToggleButton';
 
 interface InheritanceTextFieldProps {
   isInheriting: boolean;
@@ -16,7 +16,7 @@ interface InheritanceTextFieldProps {
   label: string;
   min?: number;
   unit?: string;
-  register: UseFormReturn<Configuration>["register"];
+  register: UseFormReturn<Configuration>['register'];
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
@@ -31,8 +31,8 @@ const InheritanceTextField: FC<InheritanceTextFieldProps> = ({
       <ToggleButton
         active={!isInheriting}
         onActiveChange={onInheritanceChange}
-        inactiveLabel={isInheriting ? "inheriting" : "inherit"}
-        activeLabel={isInheriting ? "customize" : "customized"}
+        inactiveLabel={isInheriting ? 'inheriting' : 'inherit'}
+        activeLabel={isInheriting ? 'customize' : 'customized'}
       />
     </div>
   );

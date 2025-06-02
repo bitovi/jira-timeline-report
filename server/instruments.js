@@ -1,5 +1,5 @@
-import * as Sentry from "@sentry/node";
-import { nodeProfilingIntegration } from "@sentry/profiling-node";
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 Sentry.init({
   dsn: process.env.BACKEND_SENTRY_DSN,

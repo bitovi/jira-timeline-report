@@ -1,1 +1,1 @@
-export * from "./useTimingCalculations";
+export * from './useTimingCalculations';

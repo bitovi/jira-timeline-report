@@ -1,13 +1,13 @@
-import type { FC } from "react";
-import type { Configuration } from "../../services/team-configuration";
+import type { FC } from 'react';
+import type { Configuration } from '../../services/team-configuration';
 
-import React, { useState } from "react";
-import { HelperMessage } from "@atlaskit/form";
-import { UseFormReturn } from "react-hook-form";
+import React, { useState } from 'react';
+import { HelperMessage } from '@atlaskit/form';
+import { UseFormReturn } from 'react-hook-form';
 
-import Toggle from "../Toggle";
-import TextField from "../TextField";
-import { FieldUpdates } from "../../ConfigureTeamsForm";
+import Toggle from '../Toggle';
+import TextField from '../TextField';
+import { FieldUpdates } from '../../ConfigureTeamsForm';
 
 interface EnableableTextFieldProps {
   min?: number;
@@ -16,7 +16,7 @@ interface EnableableTextFieldProps {
   type: string;
   name: keyof Configuration;
   textFieldLabel: string;
-  register: UseFormReturn<Configuration>["register"];
+  register: UseFormReturn<Configuration>['register'];
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
   message?: string;
 }

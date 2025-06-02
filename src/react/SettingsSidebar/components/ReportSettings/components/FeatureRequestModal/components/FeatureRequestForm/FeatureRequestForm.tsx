@@ -1,15 +1,15 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useState, useId } from "react";
-import TextArea from "@atlaskit/textarea";
-import Spinner from "@atlaskit/spinner";
-import Button from "@atlaskit/button/new";
-import SectionMessage from "@atlaskit/section-message";
-import Textfield from "@atlaskit/textfield";
-import { Label } from "@atlaskit/form";
+import React, { useState, useId } from 'react';
+import TextArea from '@atlaskit/textarea';
+import Spinner from '@atlaskit/spinner';
+import Button from '@atlaskit/button/new';
+import SectionMessage from '@atlaskit/section-message';
+import Textfield from '@atlaskit/textfield';
+import { Label } from '@atlaskit/form';
 
-import { useFeedback } from "../../../../shared/hooks";
-import ImageDropzone from "../../../../shared/components/ImageDropzone/ImageDropzone";
+import { useFeedback } from '../../../../shared/hooks';
+import ImageDropzone from '../../../../shared/components/ImageDropzone/ImageDropzone';
 
 interface FeatureRequestFormProps {
   onCancel: () => void;
@@ -20,10 +20,10 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
   const [files, setFiles] = useState<File[]>([]);
 
   const descriptionId = useId();
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
 
   const emailId = useId();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
 
   const [formError, setFormError] = useState<string>();
 
@@ -33,16 +33,16 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        setFormError("");
+        setFormError('');
 
         if (!description) {
-          setFormError("You need to add a feature description.");
+          setFormError('You need to add a feature description.');
           return;
         }
 
         submitFeatureRequest(
-          { files, email, description, tags: { type: "feature-request" } },
-          { onSuccess: () => onSubmit?.(), onError: (error) => setFormError(error.message) }
+          { files, email, description, tags: { type: 'feature-request' } },
+          { onSuccess: () => onSubmit?.(), onError: (error) => setFormError(error.message) },
         );
       }}
     >
@@ -59,7 +59,7 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
         </div>
         <div className="pt-4">
           <Label htmlFor={descriptionId}>
-            What are you trying to report on?{" "}
+            What are you trying to report on?{' '}
             <span className="text-rose-600" aria-hidden="true" title="required">
               *
             </span>
@@ -81,7 +81,7 @@ const FeatureRequestForm: FC<FeatureRequestFormProps> = ({ onCancel, onSubmit })
           Cancel
         </Button>
         <Button type="submit" appearance="primary" isDisabled={isSubmitting}>
-          {isSubmitting ? <Spinner /> : "Submit"}
+          {isSubmitting ? <Spinner /> : 'Submit'}
         </Button>
       </div>
     </form>

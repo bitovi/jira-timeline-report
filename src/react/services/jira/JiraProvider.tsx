@@ -1,7 +1,7 @@
-import type { FC, ReactNode } from "react";
-import type { Jira } from "../../../jira-oidc-helpers";
+import type { FC, ReactNode } from 'react';
+import type { Jira } from '../../../jira-oidc-helpers';
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext } from 'react';
 
 type JiraContextValues = Jira | null;
 
@@ -11,7 +11,7 @@ export const useJira = () => {
   const jira = useContext(JiraContext);
 
   if (!jira) {
-    throw new Error("Cannot use useJira outside of its provider");
+    throw new Error('Cannot use useJira outside of its provider');
   }
 
   return jira;

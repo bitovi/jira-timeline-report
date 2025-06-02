@@ -1,16 +1,16 @@
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, it, vi, beforeEach } from "vitest";
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, vi, beforeEach } from 'vitest';
 
-import TeamListItem from "./TeamListItem";
+import TeamListItem from './TeamListItem';
 
-describe("<TeamListItem />", () => {
+describe('<TeamListItem />', () => {
   const mockSetSelectedTeam = vi.fn();
 
   const defaultProps = {
-    team: { name: "Team Alpha", status: "reportOnly" as const },
-    selectedTeam: "global",
+    team: { name: 'Team Alpha', status: 'reportOnly' as const },
+    selectedTeam: 'global',
     setSelectedTeam: mockSetSelectedTeam,
   };
 
@@ -18,14 +18,14 @@ describe("<TeamListItem />", () => {
     vi.resetAllMocks();
   });
 
-  it("renders without crashing", () => {
+  it('renders without crashing', () => {
     render(<TeamListItem {...defaultProps} />);
 
     expect(screen.getByText(defaultProps.team.name)).toBeInTheDocument();
-    expect(screen.getByText("using defaults")).toBeInTheDocument();
+    expect(screen.getByText('using defaults')).toBeInTheDocument();
   });
 
-  it("calls setSelectedTeam when the item is clicked", async () => {
+  it('calls setSelectedTeam when the item is clicked', async () => {
     render(<TeamListItem {...defaultProps} />);
 
     const button = screen.getByText(defaultProps.team.name);

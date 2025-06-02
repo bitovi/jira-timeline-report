@@ -1,12 +1,10 @@
-import { StacheElement, type, ObservableObject, fromAttribute } from "../../../can.js";
-import SimpleTooltip from "../simple-tooltip/simple-tooltip.js";
+import { StacheElement, type, ObservableObject, fromAttribute } from '../../../can.js';
+import SimpleTooltip from '../simple-tooltip/simple-tooltip.js';
 
 // create global tooltip reference
 
-
-
 class AutoCompleteSuggestions extends StacheElement {
-    static view = `
+  static view = `
         
         <ul class="max-h-80 overflow-y-auto">
             {{# if(this.data.length) }}
@@ -19,10 +17,10 @@ class AutoCompleteSuggestions extends StacheElement {
         </ul>
     `;
 }
-customElements.define("auto-complete-suggestions", AutoCompleteSuggestions);
+customElements.define('auto-complete-suggestions', AutoCompleteSuggestions);
 
 class AutoComplete extends StacheElement {
-    static view = `
+  static view = `
         <div class="flex gap-2 align-middle flex-wrap">
             {{# for(item of this.selected) }}
                 <div class="border-neutral-800 border-solid border rounded-md whitespace-nowrap">
@@ -36,69 +34,69 @@ class AutoComplete extends StacheElement {
                 on:input="this.suggestItems(scope.element.value)">
         </div>
     `;
-    static props = {
-        data:  {type: type.Any},
-        selected: {type: type.Any},
-        showingSuggestions: {type: Boolean, default: false}
-    };
-    remove(item, event) {
-        event.preventDefault();
-        this.selected = this.selected.filter( (selectedItem)=> {
-            return selectedItem != item;
-        });
-    }
-    add(item) {
-        this.selected = [...this.selected, item ];
-        this.querySelector("input").value = "";
-        this.stopShowingSuggestions();
-    }
-    suggestItems(searchTerm){
-        const matches = this.data.filter( item => {
-            return item.toLowerCase().includes(searchTerm.toLowerCase()) && !this.selected.includes(item)
-        })
-        const TOOLTIP = new SimpleTooltip();
+  static props = {
+    data: { type: type.Any },
+    selected: { type: type.Any },
+    showingSuggestions: { type: Boolean, default: false },
+  };
+  remove(item, event) {
+    event.preventDefault();
+    this.selected = this.selected.filter((selectedItem) => {
+      return selectedItem != item;
+    });
+  }
+  add(item) {
+    this.selected = [...this.selected, item];
+    this.querySelector('input').value = '';
+    this.stopShowingSuggestions();
+  }
+  suggestItems(searchTerm) {
+    const matches = this.data.filter((item) => {
+      return item.toLowerCase().includes(searchTerm.toLowerCase()) && !this.selected.includes(item);
+    });
+    const TOOLTIP = new SimpleTooltip();
 
-        document.body.append(TOOLTIP);
-        TOOLTIP.showingSuggestions = true;
-        this.TOOLTIP = TOOLTIP;
-        // this could be made more efficient, but is probably ok
-        TOOLTIP.belowElementInScrollingContainer(this, 
-            new AutoCompleteSuggestions().initialize({
-                searchTerm,
-                data: matches,
-                add: this.add.bind(this)
-            })
-        );
-    }
-    connected() {
-        // handle when someone clicks off the element
-        this.listenTo(window, "click", (event)=>{
-            // if we aren't showing, don't worry about it
-            if(!this?.TOOLTIP?.showingSuggestions) {
-                return;
-            }
-            // do nothing if the input was clicked on
-            if(this.querySelector("input") === event.target) {
-                return
-            }
-            // do nothing if the TOOLTIP was clicked
-            if(this.TOOLTIP && this.TOOLTIP.contains(event.target)) {
-                return;
-            }
-            this.stopShowingSuggestions()
-        })
-    }
-    stopShowingSuggestions(){
-        this.TOOLTIP.leftElement();
-        this.TOOLTIP.showingSuggestions = false;
-    }
-    disconnected(){
-        // The tooltip's parent node can be moved around
-        this?.TOOLTIP?.parentNode && this.TOOLTIP.parentNode.removeChild(this.TOOLTIP);
-    }
+    document.body.append(TOOLTIP);
+    TOOLTIP.showingSuggestions = true;
+    this.TOOLTIP = TOOLTIP;
+    // this could be made more efficient, but is probably ok
+    TOOLTIP.belowElementInScrollingContainer(
+      this,
+      new AutoCompleteSuggestions().initialize({
+        searchTerm,
+        data: matches,
+        add: this.add.bind(this),
+      }),
+    );
+  }
+  connected() {
+    // handle when someone clicks off the element
+    this.listenTo(window, 'click', (event) => {
+      // if we aren't showing, don't worry about it
+      if (!this?.TOOLTIP?.showingSuggestions) {
+        return;
+      }
+      // do nothing if the input was clicked on
+      if (this.querySelector('input') === event.target) {
+        return;
+      }
+      // do nothing if the TOOLTIP was clicked
+      if (this.TOOLTIP && this.TOOLTIP.contains(event.target)) {
+        return;
+      }
+      this.stopShowingSuggestions();
+    });
+  }
+  stopShowingSuggestions() {
+    this.TOOLTIP.leftElement();
+    this.TOOLTIP.showingSuggestions = false;
+  }
+  disconnected() {
+    // The tooltip's parent node can be moved around
+    this?.TOOLTIP?.parentNode && this.TOOLTIP.parentNode.removeChild(this.TOOLTIP);
+  }
 }
 
-
-customElements.define("auto-complete", AutoComplete);
+customElements.define('auto-complete', AutoComplete);
 
 export default AutoComplete;

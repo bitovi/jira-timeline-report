@@ -1,16 +1,10 @@
-import type { FC } from "react";
-import type { Report } from "../../../../jira/reports";
+import type { FC } from 'react';
+import type { Report } from '../../../../jira/reports';
 
-import React from "react";
-import Modal, {
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  ModalTransition,
-} from "@atlaskit/modal-dialog";
-import Button from "@atlaskit/button/new";
-import Spinner from "@atlaskit/spinner";
+import React from 'react';
+import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
+import Button from '@atlaskit/button/new';
+import Spinner from '@atlaskit/spinner';
 
 interface DeleteReportModalProps {
   isOpen: boolean;
@@ -20,13 +14,7 @@ interface DeleteReportModalProps {
   report?: Report;
 }
 
-const DeleteReportModal: FC<DeleteReportModalProps> = ({
-  isOpen,
-  closeModal,
-  deleteReport,
-  isDeleting,
-  report,
-}) => {
+const DeleteReportModal: FC<DeleteReportModalProps> = ({ isOpen, closeModal, deleteReport, isDeleting, report }) => {
   if (!isOpen) {
     return;
   }

@@ -1,7 +1,7 @@
-import React, { FC, useId } from "react";
-import Select from "@atlaskit/select";
-import { Label } from "@atlaskit/form";
-import useExcludedStatusSelect from "./hooks/useExcludedStatusSelect";
+import React, { FC, useId } from 'react';
+import Select from '@atlaskit/select';
+import { Label } from '@atlaskit/form';
+import useExcludedStatusSelect from './hooks/useExcludedStatusSelect';
 
 export interface ExcludedStatusSelectOption {
   label: string;
@@ -14,12 +14,7 @@ export interface ExcludedStatusSelectProps {
   value: ExcludedStatusSelectOption[];
   onChange?: (value: Readonly<ExcludedStatusSelectOption[]>) => void;
 }
-const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({
-  label,
-  placeholder,
-  value,
-  onChange,
-}) => {
+const ExcludedStatusSelect: FC<ExcludedStatusSelectProps> = ({ label, placeholder, value, onChange }) => {
   const id = useId();
 
   const { allStatusesOptions } = useExcludedStatusSelect();

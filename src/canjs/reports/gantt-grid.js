@@ -1,35 +1,33 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
-import { StacheElement, type, ObservableObject, stache } from "../../can";
-import { showTooltip, showTooltipContent } from "../controls/issue-tooltip";
-import { mergeStartAndDueData } from "../../jira/rollup/dates/dates";
+import { StacheElement, type, ObservableObject, stache } from '../../can';
+import { showTooltip, showTooltipContent } from '../controls/issue-tooltip';
+import { mergeStartAndDueData } from '../../jira/rollup/dates/dates';
 
-import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup";
-import { workTypes } from "../../jira/derived/work-status/work-status";
-import { normalizeIssue, normalizeParent } from "../../jira/normalized/normalize";
+import { makeGetChildrenFromReportingIssues } from '../../jira/rollup/rollup';
+import { workTypes } from '../../jira/derived/work-status/work-status';
+import { normalizeIssue, normalizeParent } from '../../jira/normalized/normalize';
 
-import { roundDateByRoundToParam } from "../routing/utils/round";
-import { getDaysInMonth } from "../../utils/date/days-in-month";
-import { getBusinessDatesCount } from "../../utils/date/business-days";
+import { roundDateByRoundToParam } from '../routing/utils/round';
+import { getDaysInMonth } from '../../utils/date/days-in-month';
+import { getBusinessDatesCount } from '../../utils/date/business-days';
 
-import { daysBetween } from "../../utils/date/days-between";
-import { timeRangeShorthand } from "../../utils/date/time-range-shorthand";
+import { daysBetween } from '../../utils/date/days-between';
+import { timeRangeShorthand } from '../../utils/date/time-range-shorthand';
 
-import SimpleTooltip from "../ui/simple-tooltip/simple-tooltip";
-import PercentComplete from "../../react/reports/GanttReport/PercentComplete";
+import SimpleTooltip from '../ui/simple-tooltip/simple-tooltip';
+import PercentComplete from '../../react/reports/GanttReport/PercentComplete';
 
-import { createRoot } from "react-dom/client";
-import { createElement } from "react";
+import { createRoot } from 'react-dom/client';
+import { createElement } from 'react';
 
 const DATES_TOOLTIP = new SimpleTooltip();
-DATES_TOOLTIP.classList.add("reset", "pointer-events-none");
+DATES_TOOLTIP.classList.add('reset', 'pointer-events-none');
 document.body.append(DATES_TOOLTIP);
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 function container({ addedClasses, currentValue, oldValue, title }) {
-  return `<div class="flex-col justify-items-center px-1 py-3 rounded-md border ${
-    addedClasses || ""
-  }">
+  return `<div class="flex-col justify-items-center px-1 py-3 rounded-md border ${addedClasses || ''}">
       <div class="text-sm font-semibold">${title}</div>
       <div class="flex justify-center gap-1 items-baseline">
         <div>${currentValue}</div>
@@ -55,14 +53,14 @@ const datesTooltipStache = stache(`<div class='flex gap-0.5 p-1'>
   {{/ }}
 </div>`);
 
-import { getQuartersAndMonths } from "../../utils/date/quarters-and-months";
-import routeData from "../routing/route-data";
+import { getQuartersAndMonths } from '../../utils/date/quarters-and-months';
+import routeData from '../routing/route-data';
 
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
 });
 
 // loops through and creates
@@ -165,7 +163,7 @@ export class GanttGrid extends StacheElement {
     },
     showPercentComplete: {
       get() {
-        return this.routeData.showPercentComplete ?? !!localStorage.getItem("showPercentComplete");
+        return this.routeData.showPercentComplete ?? !!localStorage.getItem('showPercentComplete');
       },
     },
     showChildrenByKey: {
@@ -197,27 +195,26 @@ export class GanttGrid extends StacheElement {
     return this.primaryIssuesOrReleases.length > 20 && !this.breakdown;
   }
   get textSize() {
-    return this.lotsOfIssues ? "text-xs" : "";
+    return this.lotsOfIssues ? 'text-xs' : '';
   }
   get bigBarSize() {
-    return this.lotsOfIssues ? "h-2" : "h-4";
+    return this.lotsOfIssues ? 'h-2' : 'h-4';
   }
   get shadowBarSize() {
-    return this.lotsOfIssues ? "h-4" : "h-6";
+    return this.lotsOfIssues ? 'h-4' : 'h-6';
   }
   get expandPadding() {
-    return this.lotsOfIssues ? "" : "pt-1 pb-0.5";
+    return this.lotsOfIssues ? '' : 'pt-1 pb-0.5';
   }
   get columnsToShow() {
     if (this.showPercentComplete) {
       return [
         {
-          name: "percentComplete",
+          name: 'percentComplete',
           getValue(issue) {
             return stache.safeString(`
               ${Math.round(
-                (issue.completionRollup.completedWorkingDays * 100) /
-                  issue.completionRollup.totalWorkingDays
+                (issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays,
               )}%
             `);
           },
@@ -227,7 +224,7 @@ export class GanttGrid extends StacheElement {
             // we should get all the children ...
             const children = getChildren(issue);
 
-            const root = createRoot(this.querySelector(".react-modal"));
+            const root = createRoot(this.querySelector('.react-modal'));
 
             root.render(
               createElement(PercentComplete, {
@@ -235,7 +232,7 @@ export class GanttGrid extends StacheElement {
                 issue: issue,
                 childIssues: children,
                 onClose: () => root.unmount(),
-              })
+              }),
             );
           },
         },
@@ -245,18 +242,18 @@ export class GanttGrid extends StacheElement {
     }
   }
   get gridColumnsCSS() {
-    let columnCSS = "";
+    let columnCSS = '';
     // repeat({{this.quartersAndMonths.months.length}}, [col] 1fr)
 
     if (this.columnsToShow.length) {
-      columnCSS += "repeat(" + this.columnsToShow.length + ", auto)";
+      columnCSS += 'repeat(' + this.columnsToShow.length + ', auto)';
     }
 
     columnCSS += this.quartersAndMonths.months
       .map(({ date }) => {
-        return getDaysInMonth(date.getYear(), date.getMonth() + 1) + "fr";
+        return getDaysInMonth(date.getYear(), date.getMonth() + 1) + 'fr';
       })
-      .join(" ");
+      .join(' ');
 
     return columnCSS;
   }
@@ -272,13 +269,10 @@ export class GanttGrid extends StacheElement {
   getPercentComplete(issue) {
     if (this.showPercentComplete) {
       return (
-        Math.round(
-          (issue.completionRollup.completedWorkingDays * 100) /
-            issue.completionRollup.totalWorkingDays
-        ) + "%"
+        Math.round((issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays) + '%'
       );
     } else {
-      return "";
+      return '';
     }
   }
   showTooltip(event, issue) {
@@ -286,7 +280,7 @@ export class GanttGrid extends StacheElement {
     showTooltip(event.currentTarget, issue, this.allIssuesOrReleases);
   }
   showDatesTooltip(issueOrRelease, index, event) {
-    const currentTime = event.currentTarget.querySelector(".identifier-current-time");
+    const currentTime = event.currentTarget.querySelector('.identifier-current-time');
     let reference;
     if (currentTime) {
       reference = currentTime;
@@ -299,29 +293,24 @@ export class GanttGrid extends StacheElement {
       datesTooltipStache({
         startDate: makeDateAndDiff(
           issueOrRelease.rollupDates.start,
-          issueOrRelease?.issueLastPeriod?.rollupDates?.start
+          issueOrRelease?.issueLastPeriod?.rollupDates?.start,
         ),
-        endDate: makeDateAndDiff(
-          issueOrRelease.rollupDates.due,
-          issueOrRelease?.issueLastPeriod?.rollupDates?.due
-        ),
+        endDate: makeDateAndDiff(issueOrRelease.rollupDates.due, issueOrRelease?.issueLastPeriod?.rollupDates?.due),
         businessDays:
           issueOrRelease.rollupDates.start && issueOrRelease.rollupDates.due
-            ? timeRangeShorthand(
-                daysBetween(issueOrRelease.rollupDates.due, issueOrRelease.rollupDates.start)
-              )
+            ? timeRangeShorthand(daysBetween(issueOrRelease.rollupDates.due, issueOrRelease.rollupDates.start))
             : null,
-      }).firstElementChild
+      }).firstElementChild,
     );
   }
   hideDatesTooltip(issueOrRelease, index, event) {
     DATES_TOOLTIP.leftElement(event);
   }
   classForSpecialStatus(status, issue) {
-    if (status === "complete" || status === "blocked" || status === "warning") {
-      return "color-text-" + status;
+    if (status === 'complete' || status === 'blocked' || status === 'warning') {
+      return 'color-text-' + status;
     } else {
-      return "";
+      return '';
     }
   }
   plus(first, second, third) {
@@ -331,7 +320,7 @@ export class GanttGrid extends StacheElement {
     return first * second;
   }
   lastRowBorder(index) {
-    return index === this.quartersAndMonths.months.length - 1 ? "border-r-solid-1px-slate-900" : "";
+    return index === this.quartersAndMonths.months.length - 1 ? 'border-r-solid-1px-slate-900' : '';
   }
   get quartersAndMonths() {
     const rollupDates = this.primaryIssuesOrReleases.map((issue) => issue.rollupStatuses.rollup);
@@ -361,25 +350,25 @@ export class GanttGrid extends StacheElement {
     }, this.getChildren.bind(this));
 
     // we need to check here b/c primaryIssueType and groupBy can't be made atomic easily
-    if (this.routeData.groupBy === "parent" && this.routeData.primaryIssueType !== "Release") {
+    if (this.routeData.groupBy === 'parent' && this.routeData.primaryIssueType !== 'Release') {
       // get all the parents of the primary releases
       const { parents, parentToChildren } = getSortedParents(
         this.primaryIssuesOrReleases,
-        this.routeData.derivedIssues
+        this.routeData.derivedIssues,
       );
 
       // for each parent, find its children
       let parentsAndChildren = parents
         .map((parent) => {
           return [
-            { type: "parent", issue: parent, isShowingChildren: false },
+            { type: 'parent', issue: parent, isShowingChildren: false },
             ...parentToChildren[parent.key].map(getRows).flat(1),
           ];
         })
         .flat(1);
 
       return parentsAndChildren.length ? parentsAndChildren : this.primaryIssuesOrReleases;
-    } else if (this.routeData.groupBy === "team" && this.routeData.primaryIssueType !== "Release") {
+    } else if (this.routeData.groupBy === 'team' && this.routeData.primaryIssueType !== 'Release') {
       let issuesByTeam = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.team.name);
 
       const teams = Object.keys(issuesByTeam).map((teamName) => {
@@ -395,7 +384,7 @@ export class GanttGrid extends StacheElement {
       return teams
         .map((team) => {
           return [
-            { type: "parent", issue: team, isShowingChildren: false },
+            { type: 'parent', issue: team, isShowingChildren: false },
             ...issuesByTeam[team.name].map(getRows).flat(1),
           ];
         })
@@ -410,7 +399,7 @@ export class GanttGrid extends StacheElement {
       gridRow: `${index + 3}`,
     };
 
-    const background = makeElement([index % 2 ? "bg-neutral-20" : ""], {
+    const background = makeElement([index % 2 ? 'bg-neutral-20' : ''], {
       ...baseGridStyles,
       zIndex: 0,
     });
@@ -431,7 +420,7 @@ export class GanttGrid extends StacheElement {
       gridRow: `${index + 3}`,
     };
 
-    const background = makeElement([index % 2 ? "bg-neutral-20" : ""], {
+    const background = makeElement([index % 2 ? 'bg-neutral-20' : ''], {
       ...baseGridStyles,
       // we probably want to move this to it's own element so we don't have to redraw so much
       gridColumn: this.somePrimaryIssuesAreExpanded
@@ -444,18 +433,18 @@ export class GanttGrid extends StacheElement {
     const root = makeElement([], {
       ...baseGridStyles,
       gridColumn: `${this.columnsToShow.length + 3} / span ${this.quartersAndMonths.months.length}`,
-      position: "relative",
+      position: 'relative',
       zIndex: 20,
     });
 
     // this has the last period stuff ... it's absolutely stretched to match the same space
     // we probably could have put this in the grid, but it's nice to have this stuff w/i an element
-    const lastPeriodRoot = makeElement([this.breakdown ? "" : "py-1"], {
-      position: "absolute",
-      top: "0",
-      left: "0",
-      right: "0",
-      bottom: "0",
+    const lastPeriodRoot = makeElement([this.breakdown ? '' : 'py-1'], {
+      position: 'absolute',
+      top: '0',
+      left: '0',
+      right: '0',
+      bottom: '0',
     });
 
     frag.appendChild(background);
@@ -484,17 +473,17 @@ export class GanttGrid extends StacheElement {
             /*"bg-neutral-41","blur-xs", roundBasedOnIfTheBarsExtend(positions) */
 
             /* "color-border-"+status, ...borderBasedOnIfTheBarsExtend(positions), roundBasedOnIfTheBarsExtend(positions)*/
-            "border-black",
-            "blur-xs",
+            'border-black',
+            'blur-xs',
             ...borderBasedOnIfTheBarsExtend(positions),
             roundBasedOnIfTheBarsExtend(positions),
             ...extraClasses,
           ],
           {
-            backgroundClip: "content-box",
-            position: "relative",
+            backgroundClip: 'content-box',
+            position: 'relative',
             ...positions.style,
-          }
+          },
         );
 
         return behindTime;
@@ -509,30 +498,30 @@ export class GanttGrid extends StacheElement {
             release.rollupStatuses[type].status,
             release.rollupStatuses[type].lastPeriod,
             thisPeriodPositions,
-            ["h-2" /*, "py-[2px]"*/]
+            ['h-2' /*, "py-[2px]"*/],
           );
 
           lastPeriodRoot.appendChild(lastPeriod);
 
           const thisPeriod = makeElement(
             [
-              type + "_time",
-              "h-[6px]",
-              "my-[1px]",
-              "rounded-sm",
-              "color-text-and-bg-" + release.rollupStatuses[type].status,
+              type + '_time',
+              'h-[6px]',
+              'my-[1px]',
+              'rounded-sm',
+              'color-text-and-bg-' + release.rollupStatuses[type].status,
             ],
             {
               ...thisPeriodPositions.style,
-              position: "relative", // for some reason needed to bring this ahead of `lastPeriod`
-            }
+              position: 'relative', // for some reason needed to bring this ahead of `lastPeriod`
+            },
           );
 
           root.appendChild(thisPeriod);
         }
       } else {
-        root.addEventListener("mouseenter", this.showDatesTooltip.bind(this, release, index));
-        root.addEventListener("mouseleave", this.hideDatesTooltip.bind(this, release, index));
+        root.addEventListener('mouseenter', this.showDatesTooltip.bind(this, release, index));
+        root.addEventListener('mouseleave', this.hideDatesTooltip.bind(this, release, index));
 
         // make the last one ...
         const currentPositions = getPositions(release.rollupStatuses.rollup);
@@ -540,22 +529,22 @@ export class GanttGrid extends StacheElement {
         let team;
 
         if (currentPositions.endIsBeforeFirstDay) {
-          team = makeCircleForStatus(release.rollupStatuses.rollup.status, "←", this.lotsOfIssues);
+          team = makeCircleForStatus(release.rollupStatuses.rollup.status, '←', this.lotsOfIssues);
         } else {
           team = makeElement(
             [
-              "my-2",
+              'my-2',
               this.bigBarSize,
-              "color-text-and-bg-" + release.rollupStatuses.rollup.status,
+              'color-text-and-bg-' + release.rollupStatuses.rollup.status,
               roundBasedOnIfTheBarsExtend(currentPositions),
-              "identifier-current-time",
+              'identifier-current-time',
             ],
             {
               /*opacity: "0.9",*/
               ...currentPositions.style,
               zIndex: 30,
-              position: "relative",
-            }
+              position: 'relative',
+            },
           );
         }
         const rollupLastPeriod = release.rollupStatuses.rollup.lastPeriod;
@@ -565,7 +554,7 @@ export class GanttGrid extends StacheElement {
               release.rollupStatuses.rollup.status,
               release.rollupStatuses.rollup.lastPeriod,
               currentPositions,
-              [this.shadowBarSize]
+              [this.shadowBarSize],
             );
 
             lastPeriodRoot.appendChild(behindTime);
@@ -604,9 +593,7 @@ export class GanttGrid extends StacheElement {
   }
   get hasUATWork() {
     if (this.primaryIssuesOrReleases) {
-      return this.primaryIssuesOrReleases.some(
-        (issue) => issue.rollupStatuses.uat.issueKeys.length
-      );
+      return this.primaryIssuesOrReleases.some((issue) => issue.rollupStatuses.uat.issueKeys.length);
     } else {
       return true;
     }
@@ -630,43 +617,43 @@ export class GanttGrid extends StacheElement {
 
 function roundBasedOnIfTheBarsExtend({ startExtends, endExtends }) {
   if (!startExtends && !endExtends) {
-    return "rounded";
+    return 'rounded';
   } else if (startExtends && endExtends) {
-    return "rounded-none";
+    return 'rounded-none';
   } else if (startExtends) {
-    return "rounded-r";
+    return 'rounded-r';
   } else {
-    return "rounded-l";
+    return 'rounded-l';
   }
 }
 
 function borderBasedOnIfTheBarsExtend({ startExtends, endExtends }) {
   if (!startExtends && !endExtends) {
-    return ["border"];
+    return ['border'];
   } else if (startExtends && endExtends) {
-    return ["border-0"];
+    return ['border-0'];
   } else if (startExtends) {
-    return ["border-r", "border-y"];
+    return ['border-r', 'border-y'];
   } else {
-    return ["border-l", "border-y"];
+    return ['border-l', 'border-y'];
   }
 }
 
 function makeElement(classNames, styles) {
-  const div = document.createElement("div");
+  const div = document.createElement('div');
   div.classList.add(...classNames.filter((x) => x));
   Object.assign(div.style, styles);
   return div;
 }
 
 function makeDateAndDiff(dateNow, dateThen) {
-  let endDate = "";
+  let endDate = '';
   if (dateNow) {
     endDate += dateFormatter.format(dateNow);
     if (dateThen) {
       let days = daysBetween(dateNow, dateThen);
       if (days != 0) {
-        endDate += " " + (days >= 0 ? "+" : "-") + timeRangeShorthand((days >= 0 ? 1 : -1) * days);
+        endDate += ' ' + (days >= 0 ? '+' : '-') + timeRangeShorthand((days >= 0 ? 1 : -1) * days);
       }
     }
   }
@@ -688,8 +675,8 @@ function getPositionsFromWork({ firstDay, lastDay }, work) {
       startExtends: false,
       endExtends: false,
       style: {
-        marginLeft: "1px",
-        marginRight: "1px",
+        marginLeft: '1px',
+        marginRight: '1px',
       },
     };
   }
@@ -709,8 +696,8 @@ function getPositionsFromWork({ firstDay, lastDay }, work) {
     style: {
       // we make the day a full day wider, but this doesn't account for time zone shifts
       // to handle this, we might want to use dates or move to integers
-      width: Math.max(((end + DAY_IN_MS - start) / totalTime) * 100, 0) + "%",
-      marginLeft: "max(" + ((start - firstDay) / totalTime) * 100 + "%, 1px)",
+      width: Math.max(((end + DAY_IN_MS - start) / totalTime) * 100, 0) + '%',
+      marginLeft: 'max(' + ((start - firstDay) / totalTime) * 100 + '%, 1px)',
     },
   };
 }
@@ -718,45 +705,41 @@ function getPositionsFromWork({ firstDay, lastDay }, work) {
 function makeCircle(innerHTML, styles, css) {
   const element = makeElement(styles, {
     ...css,
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   });
   element.innerHTML = innerHTML;
   return element;
 }
 
-const fewerIssuesClasses = ["w-4", "h-4", "text-xs"];
-const lotsOfIssueClasses = ["w-4", "h-4", "text-xs"];
+const fewerIssuesClasses = ['w-4', 'h-4', 'text-xs'];
+const lotsOfIssueClasses = ['w-4', 'h-4', 'text-xs'];
 function makeCircleForStatus(status, innerHTML, lotsOfIssues) {
-  let team = makeElement([lotsOfIssues ? "p-1" : "p-2"], {});
+  let team = makeElement([lotsOfIssues ? 'p-1' : 'p-2'], {});
   team.appendChild(
     makeCircle(
       innerHTML,
-      ["color-text-and-bg-" + status, ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
-      { zIndex: 30, position: "relative" }
-    )
+      ['color-text-and-bg-' + status, ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
+      { zIndex: 30, position: 'relative' },
+    ),
   );
 
   return team;
 }
 
 function makeEmptySetCurrent(lotsOfIssues) {
-  return makeCircleForStatus("notstarted", '<img src="/images/empty-set.svg" />', lotsOfIssues);
+  return makeCircleForStatus('notstarted', '<img src="/images/empty-set.svg" />', lotsOfIssues);
 }
 
 function makeEmptySetInThePast(lotsOfIssues) {
-  let team = makeElement(
-    [lotsOfIssues ? "pl-1" : "pl-2", "flex", "content-center", "h-full", "flex-wrap"],
-    {}
-  );
+  let team = makeElement([lotsOfIssues ? 'pl-1' : 'pl-2', 'flex', 'content-center', 'h-full', 'flex-wrap'], {});
   team.appendChild(
-    makeCircle(
-      "∅",
-      ["color-text-notstarted", ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)],
-      { zIndex: 30, position: "relative" }
-    )
+    makeCircle('∅', ['color-text-notstarted', ...(lotsOfIssues ? lotsOfIssueClasses : fewerIssuesClasses)], {
+      zIndex: 30,
+      position: 'relative',
+    }),
   );
 
   return team;
@@ -768,7 +751,7 @@ function makeEmptySetInThePast(lotsOfIssues) {
 function makeGetRows(getIfKeyIsShowingChildren, getChildrenForIssue) {
   return function getRows(issue, depth = 0) {
     const isShowingChildren = getIfKeyIsShowingChildren(issue.key);
-    const row = { type: "issue", issue, isShowingChildren, depth };
+    const row = { type: 'issue', issue, isShowingChildren, depth };
     if (isShowingChildren) {
       return [
         row,
@@ -807,7 +790,7 @@ function getSortedParents(primaryIssues, allIssues) {
       else {
         return {
           key: parentKey,
-          summary: "No Parent",
+          summary: 'No Parent',
           rollupStatuses: { rollup: { status: null } },
         };
       }
@@ -824,4 +807,4 @@ function getSortedParents(primaryIssues, allIssues) {
   return { parents, parentToChildren };
 }
 
-customElements.define("gantt-grid", GanttGrid);
+customElements.define('gantt-grid', GanttGrid);

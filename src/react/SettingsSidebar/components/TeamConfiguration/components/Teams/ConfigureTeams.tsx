@@ -1,17 +1,17 @@
-import type { FC } from "react";
-import type { IssueFields, TeamConfiguration } from "./services/team-configuration";
-import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
+import type { FC } from 'react';
+import type { IssueFields, TeamConfiguration } from './services/team-configuration';
+import type { NormalizeIssueConfig } from '../../../../../../jira/normalized/normalize';
 
-import React, { Fragment } from "react";
-import Heading from "@atlaskit/heading";
-import Spinner from "@atlaskit/spinner";
+import React, { Fragment } from 'react';
+import Heading from '@atlaskit/heading';
+import Spinner from '@atlaskit/spinner';
 
-import { Accordion, AccordionContent, AccordionTitle } from "../../../../../components/Accordion";
+import { Accordion, AccordionContent, AccordionTitle } from '../../../../../components/Accordion';
 
-import { useTeamData } from "./services/team-configuration";
-import ConfigureTeamsForm from "./ConfigureTeamsForm";
-import { useTeamForm } from "./useTeamForm";
-import Hr from "../../../../../components/Hr";
+import { useTeamData } from './services/team-configuration';
+import ConfigureTeamsForm from './ConfigureTeamsForm';
+import { useTeamForm } from './useTeamForm';
+import Hr from '../../../../../components/Hr';
 
 interface IssueAccordionProps {
   teamName: string;
@@ -36,10 +36,10 @@ const IssueAccordion: FC<IssueAccordionProps> = ({
   });
 
   return (
-    <Accordion startsOpen={hierarchyLevel === "defaults"}>
+    <Accordion startsOpen={hierarchyLevel === 'defaults'}>
       <AccordionTitle>
         <Heading size="small">
-          {hierarchyLevel === "defaults"
+          {hierarchyLevel === 'defaults'
             ? `Team defaults (${formData.teamName})`
             : getHierarchyLevelName(hierarchyLevel)}
         </Heading>
@@ -68,13 +68,13 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
   const hierarchyLevels = Object.keys(inheritedTeamData)
     // hierarchyLevels should be defaults first then highest level to lowest
     .sort((lhs, rhs) => {
-      if (lhs === "defaults") return -1;
-      if (rhs === "defaults") return 1;
+      if (lhs === 'defaults') return -1;
+      if (rhs === 'defaults') return 1;
 
       return parseInt(rhs) - parseInt(lhs);
     })
     .filter((issueType): issueType is keyof TeamConfiguration => {
-      if (teamName === "__GLOBAL__") {
+      if (teamName === '__GLOBAL__') {
         // Remove return false and return line 82 once ready to integrate issue types
         return false;
         // return issueType !== "defaults";

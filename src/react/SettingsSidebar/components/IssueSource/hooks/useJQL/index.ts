@@ -1,1 +1,1 @@
-export * from "./useJQL";
+export * from './useJQL';

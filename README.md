@@ -1,9 +1,8 @@
 # Status Reports for Jira
 
-__Status Reports for Jira__ creates stunning, branded status reports for your Jira projects. It offers customizable designs to showcase progress and timelines.
+**Status Reports for Jira** creates stunning, branded status reports for your Jira projects. It offers customizable designs to showcase progress and timelines.
 
 ![Banner](https://github.com/user-attachments/assets/58e0f507-8a39-49e8-9a30-a6122ac76719)
-
 
 For guides and comprehensive documentation, checkout the [project's official wiki](https://bitovi.atlassian.net/wiki/spaces/StatusReportsForJira/overview).
 

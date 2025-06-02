@@ -1,12 +1,12 @@
-import type { FC } from "react";
-import type { NormalizeIssueConfig } from "../../../../jira/normalized/normalize";
-import type { CanObservable } from "../../../hooks/useCanObservable";
+import type { FC } from 'react';
+import type { NormalizeIssueConfig } from '../../../../jira/normalized/normalize';
+import type { CanObservable } from '../../../hooks/useCanObservable';
 
-import React, { Suspense } from "react";
-import { ErrorBoundary } from "@sentry/react";
-import Spinner from "@atlaskit/spinner";
+import React, { Suspense } from 'react';
+import { ErrorBoundary } from '@sentry/react';
+import Spinner from '@atlaskit/spinner';
 
-import ConfigurationPanel from "./ConfigurationPanel";
+import ConfigurationPanel from './ConfigurationPanel';
 
 interface TeamConfigurationWrapperProps {
   onBackButtonClicked: () => void;
@@ -33,14 +33,9 @@ const TeamConfigurationWrapper: FC<TeamConfigurationWrapperProps> = (props) => {
 export default TeamConfigurationWrapper;
 
 const ConfigurationPanelErrorBoundary: FC<{ error: unknown }> = ({ error }) => {
-  if (
-    !!error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
+  if (!!error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return <>{error?.message}</>;
   }
 
-  return "Something went wrong";
+  return 'Something went wrong';
 };

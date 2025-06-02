@@ -1,13 +1,13 @@
-import React from "react";
+import React from 'react';
 
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, it, vi } from "vitest";
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, vi } from 'vitest';
 
-import SampleDataNotice from "./SampleDataNotice";
+import SampleDataNotice from './SampleDataNotice';
 
-describe("<SampleDataNotice />", () => {
-  it("renders without crashing", () => {
+describe('<SampleDataNotice />', () => {
+  it('renders without crashing', () => {
     render(
       <SampleDataNotice
         onLoginClicked={vi.fn()}
@@ -17,25 +17,19 @@ describe("<SampleDataNotice />", () => {
           on: vi.fn(),
           off: vi.fn(),
           set: vi.fn(),
-          get: vi.fn()
+          get: vi.fn(),
         }}
-      />
+      />,
     );
 
-    expect(
-      screen.getByText(/Welcome! You're currently viewing a sample report/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Welcome! You're currently viewing a sample report/i)).toBeInTheDocument();
 
     expect(screen.getByText(/Release end dates with initiative status/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Release timeline with initiative work breakdown/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Ready and in-development initiative work breakdown/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Release timeline with initiative work breakdown/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ready and in-development initiative work breakdown/i)).toBeInTheDocument();
   });
 
-  it("does not render when shouldHideNotice is true", () => {
+  it('does not render when shouldHideNotice is true', () => {
     render(
       <SampleDataNotice
         onLoginClicked={vi.fn()}
@@ -45,14 +39,12 @@ describe("<SampleDataNotice />", () => {
           on: vi.fn(),
           off: vi.fn(),
           set: vi.fn(),
-          get: vi.fn()
+          get: vi.fn(),
         }}
-      />
+      />,
     );
 
-    expect(
-      screen.queryByText(/Welcome! You're currently viewing a sample report/i)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Welcome! You're currently viewing a sample report/i)).not.toBeInTheDocument();
   });
 
   it("calls onLoginClicked when 'Connect to Jira' is clicked", async () => {
@@ -68,9 +60,9 @@ describe("<SampleDataNotice />", () => {
           on: vi.fn(),
           off: vi.fn(),
           set: vi.fn(),
-          get: vi.fn()
+          get: vi.fn(),
         }}
-      />
+      />,
     );
 
     const connectToJiraLink = screen.getByText(/Connect to Jira/i);

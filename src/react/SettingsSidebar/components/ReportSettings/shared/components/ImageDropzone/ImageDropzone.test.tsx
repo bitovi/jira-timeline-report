@@ -1,12 +1,12 @@
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi, describe, it, expect } from "vitest";
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect } from 'vitest';
 
-import ImageDropzone from "./ImageDropzone";
-import userEvent from "@testing-library/user-event";
+import ImageDropzone from './ImageDropzone';
+import userEvent from '@testing-library/user-event';
 
-describe("<ImageDropzone /> Component", () => {
-  it("renders", () => {
+describe('<ImageDropzone /> Component', () => {
+  it('renders', () => {
     const mockSetFiles = vi.fn();
 
     render(<ImageDropzone files={[]} setFiles={mockSetFiles} />);
@@ -18,9 +18,9 @@ describe("<ImageDropzone /> Component", () => {
     expect(fileInput).toBeInTheDocument();
   });
 
-  it("handles file selection correctly", async () => {
+  it('handles file selection correctly', async () => {
     const mockSetFiles = vi.fn();
-    const mockFile = new File(["file content"], "example.jpg", { type: "image/jpeg" });
+    const mockFile = new File(['file content'], 'example.jpg', { type: 'image/jpeg' });
 
     render(<ImageDropzone files={[]} setFiles={mockSetFiles} />);
 
@@ -34,11 +34,11 @@ describe("<ImageDropzone /> Component", () => {
 
   it('removes the file from the list when "Remove" is clicked', async () => {
     const mockSetFiles = vi.fn();
-    const mockFile = new File(["file content"], "example.jpg", { type: "image/jpeg" });
+    const mockFile = new File(['file content'], 'example.jpg', { type: 'image/jpeg' });
 
     render(<ImageDropzone files={[mockFile]} setFiles={mockSetFiles} />);
 
-    const fileName = screen.getByText("example.jpg");
+    const fileName = screen.getByText('example.jpg');
     expect(fileName).toBeInTheDocument();
 
     const removeButton = screen.getByText(/remove/i);
@@ -49,9 +49,9 @@ describe("<ImageDropzone /> Component", () => {
     });
   });
 
-  it("drags and drops", async () => {
+  it('drags and drops', async () => {
     const mockSetFiles = vi.fn();
-    const mockFile = new File(["file content"], "example.jpg", { type: "image/jpeg" });
+    const mockFile = new File(['file content'], 'example.jpg', { type: 'image/jpeg' });
 
     render(<ImageDropzone files={[]} setFiles={mockSetFiles} />);
 

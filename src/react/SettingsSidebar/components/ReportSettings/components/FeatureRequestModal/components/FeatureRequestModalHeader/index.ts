@@ -1,1 +1,1 @@
-export { default } from "./FeatureRequestModalHeader";
+export { default } from './FeatureRequestModalHeader';

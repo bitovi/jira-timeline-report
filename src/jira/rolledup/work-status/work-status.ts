@@ -1,16 +1,16 @@
-import { workType as workTypes } from "../../derived/work-status/work-status"; // ["design","dev","qa","uat"]
-import { WithIssueLastPeriod } from "../../rolledup-and-rolledback/rollup-and-rollback";
-import { WithBlockedStatuses } from "../../rollup/blocked-status-issues/blocked-status-issues";
-import { WithDateRollup } from "../../rollup/dates/dates";
-import { isDerivedIssue, IssueOrRelease } from "../../rollup/rollup";
-import { WithWarningIssues } from "../../rollup/warning-issues/warning-issues";
-import { notEmpty } from "../../shared/helpers";
-import { DateAndIssueKeys, WithWorkTypeRollups } from "../work-type/work-type";
+import { workType as workTypes } from '../../derived/work-status/work-status'; // ["design","dev","qa","uat"]
+import { WithIssueLastPeriod } from '../../rolledup-and-rolledback/rollup-and-rollback';
+import { WithBlockedStatuses } from '../../rollup/blocked-status-issues/blocked-status-issues';
+import { WithDateRollup } from '../../rollup/dates/dates';
+import { isDerivedIssue, IssueOrRelease } from '../../rollup/rollup';
+import { WithWarningIssues } from '../../rollup/warning-issues/warning-issues';
+import { notEmpty } from '../../shared/helpers';
+import { DateAndIssueKeys, WithWorkTypeRollups } from '../work-type/work-type';
 
 //!! This breaks the "clean" jira folder.  We should probably give these as arguments.
-import {roundDateByRoundToParam} from "../../../canjs/routing/utils/round.js";
+import { roundDateByRoundToParam } from '../../../canjs/routing/utils/round.js';
 
-const workTypeWithChildren = ["children", ...workTypes] as const;
+const workTypeWithChildren = ['children', ...workTypes] as const;
 const WIGGLE_ROOM = 0;
 
 type PeriodStatus = {
@@ -36,7 +36,7 @@ export function calculateReportStatuses<
     WithWorkTypeRollups &
     WithBlockedStatuses &
     WithWarningIssues &
-    WithIssueLastPeriod<WithDateRollup & WithWorkTypeRollups>
+    WithIssueLastPeriod<WithDateRollup & WithWorkTypeRollups>,
 >(issues: IssueOrRelease<T>[]): IssueOrRelease<T & WithRollupStatus>[] {
   const getIssuesByKeys = makeGetIssuesByKeys(issues);
 
@@ -64,7 +64,7 @@ function calculateStatuses<
     WithBlockedStatuses &
     WithWarningIssues &
     WithIssueLastPeriod<WithDateRollup & WithWorkTypeRollups>,
-  U extends IssueOrRelease & WithBlockedStatuses
+  U extends IssueOrRelease & WithBlockedStatuses,
 >(issueWithPriorTiming: IssueOrRelease<T>, getIssuesByKeys: (keys: string[]) => U[]) {
   const timingData = prepareTimingData(issueWithPriorTiming);
 
@@ -72,28 +72,26 @@ function calculateStatuses<
   const childKeys = getAllWorkTypeRollupChildIssueKeys();
 
   // do the rollup
-  if (isIssue && issueWithPriorTiming.statusCategory === "Done") {
-    timingData.rollup.status = "complete";
-    timingData.rollup.statusFrom = { message: "Own status" };
+  if (isIssue && issueWithPriorTiming.statusCategory === 'Done') {
+    timingData.rollup.status = 'complete';
+    timingData.rollup.statusFrom = { message: 'Own status' };
   } else if (
     // we should check all the children ...
     isIssue &&
     childKeys.length &&
-    getIssuesByKeys(childKeys).every(
-      (issue) => isDerivedIssue(issue) && issue.statusCategory === "Done"
-    )
+    getIssuesByKeys(childKeys).every((issue) => isDerivedIssue(issue) && issue.statusCategory === 'Done')
   ) {
-    timingData.rollup.status = "complete";
+    timingData.rollup.status = 'complete';
     timingData.rollup.statusFrom = {
-      message: "Children are all done, but the parent is not",
+      message: 'Children are all done, but the parent is not',
       warning: true,
     };
   } else if (isIssue && issueWithPriorTiming?.blockedStatusIssues?.length) {
-    timingData.rollup.status = "blocked";
-    timingData.rollup.statusFrom = { message: "This or a child is in a blocked status" };
+    timingData.rollup.status = 'blocked';
+    timingData.rollup.statusFrom = { message: 'This or a child is in a blocked status' };
   } else if (isIssue && issueWithPriorTiming?.warningIssues?.length) {
-    timingData.rollup.status = "warning";
-    timingData.rollup.statusFrom = { message: "This or a child is in a warning status" };
+    timingData.rollup.status = 'warning';
+    timingData.rollup.statusFrom = { message: 'This or a child is in a warning status' };
   } else {
     Object.assign(timingData.rollup, timedStatus(timingData.rollup));
   }
@@ -107,16 +105,12 @@ function calculateStatuses<
   return timingData;
 
   function getAllWorkTypeRollupChildIssueKeys(): string[] {
-    return workTypes.flatMap(
-      (workType) => issueWithPriorTiming.workTypeRollups.children[workType]?.issueKeys ?? []
-    );
+    return workTypes.flatMap((workType) => issueWithPriorTiming.workTypeRollups.children[workType]?.issueKeys ?? []);
   }
 }
 
 function prepareTimingData<
-  T extends WithDateRollup &
-    WithWorkTypeRollups &
-    WithIssueLastPeriod<WithDateRollup & WithWorkTypeRollups>
+  T extends WithDateRollup & WithWorkTypeRollups & WithIssueLastPeriod<WithDateRollup & WithWorkTypeRollups>,
 >(issueWithPriorTiming: IssueOrRelease<T>): TimingData {
   const isIssue = isDerivedIssue(issueWithPriorTiming);
   const issueLastPeriod = isIssue && issueWithPriorTiming.issueLastPeriod;
@@ -144,7 +138,7 @@ function prepareTimingData<
 
 function setWorkTypeStatus<T extends IssueOrRelease & WithBlockedStatuses>(
   timingData: DatesIssueKeysLastPeriodAndStatus,
-  getIssuesByKeys: (keys: string[]) => T[]
+  getIssuesByKeys: (keys: string[]) => T[],
 ) {
   // compare the parent status ... could be before design, after UAT and we should warn
   // what about blocked on any child?
@@ -153,18 +147,16 @@ function setWorkTypeStatus<T extends IssueOrRelease & WithBlockedStatuses>(
 
   if (
     timingData?.issueKeys?.length &&
-    getIssuesByKeys(timingData.issueKeys).every(
-      (issue) => isDerivedIssue(issue) && issue.statusCategory === "Done"
-    )
+    getIssuesByKeys(timingData.issueKeys).every((issue) => isDerivedIssue(issue) && issue.statusCategory === 'Done')
   ) {
-    timingData.status = "complete";
-    timingData.statusFrom = { message: "Everything is done" };
+    timingData.status = 'complete';
+    timingData.statusFrom = { message: 'Everything is done' };
   } else if (
     timingData.issueKeys &&
     getIssuesByKeys(timingData.issueKeys).some((issue) => issue?.blockedStatusIssues?.length)
   ) {
-    timingData.status = "blocked";
-    timingData.statusFrom = { message: "This or a child is in a blocked status" };
+    timingData.status = 'blocked';
+    timingData.statusFrom = { message: 'This or a child is in a blocked status' };
   } else {
     Object.assign(timingData, timedStatus(timingData));
   }
@@ -172,36 +164,36 @@ function setWorkTypeStatus<T extends IssueOrRelease & WithBlockedStatuses>(
 
 function timedStatus(timedRecord: DatesIssueKeysLastPeriodAndStatus): PeriodStatus {
   if (timedRecord.due == null) {
-    return { status: "unknown", statusFrom: { message: "there is no timing data" } };
+    return { status: 'unknown', statusFrom: { message: 'there is no timing data' } };
   }
   // if now is after the complete date
   // we force complete ... however, we probably want to warn if this isn't in the
   // completed state
   else if (roundDateByRoundToParam.end(timedRecord.due) < new Date()) {
     return {
-      status: "complete",
-      statusFrom: { message: "Issue is in the past, but not marked as done", warning: true },
+      status: 'complete',
+      statusFrom: { message: 'Issue is in the past, but not marked as done', warning: true },
     };
   } else if (
     timedRecord.lastPeriod?.due &&
-    roundDateByRoundToParam.end( timedRecord.due ) > roundDateByRoundToParam.end(timedRecord.lastPeriod.due)
+    roundDateByRoundToParam.end(timedRecord.due) > roundDateByRoundToParam.end(timedRecord.lastPeriod.due)
   ) {
     return {
-      status: "behind",
-      statusFrom: { message: "This was due earlier last period", warning: true },
+      status: 'behind',
+      statusFrom: { message: 'This was due earlier last period', warning: true },
     };
   } else if (
     timedRecord.lastPeriod?.due &&
-    roundDateByRoundToParam.end( timedRecord.due ) < roundDateByRoundToParam.end(timedRecord.lastPeriod.due)
+    roundDateByRoundToParam.end(timedRecord.due) < roundDateByRoundToParam.end(timedRecord.lastPeriod.due)
   ) {
-    return { status: "ahead", statusFrom: { message: "Ahead of schedule compared to last time" } };
+    return { status: 'ahead', statusFrom: { message: 'Ahead of schedule compared to last time' } };
   } else if (!timedRecord.lastPeriod) {
-    return { status: "new", statusFrom: { message: "Unable to find this last period" } };
+    return { status: 'new', statusFrom: { message: 'Unable to find this last period' } };
   }
 
   if (timedRecord.start && timedRecord.start > new Date()) {
-    return { status: "notstarted", statusFrom: { message: "This has not started yet" } };
+    return { status: 'notstarted', statusFrom: { message: 'This has not started yet' } };
   } else {
-    return { status: "ontrack", statusFrom: { message: "This hasn't changed time yet" } };
+    return { status: 'ontrack', statusFrom: { message: "This hasn't changed time yet" } };
   }
 }

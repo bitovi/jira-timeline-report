@@ -1,4 +1,4 @@
-export const featuresKey = "features";
+export const featuresKey = 'features';
 
 export const featuresKeyFactory = {
   features: () => [featuresKey],

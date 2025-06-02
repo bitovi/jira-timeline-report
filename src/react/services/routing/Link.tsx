@@ -1,9 +1,9 @@
-import type { FC, ComponentProps } from "react";
+import type { FC, ComponentProps } from 'react';
 
-import React, { forwardRef } from "react";
-import { useRouting } from "./RoutingProvider";
+import React, { forwardRef } from 'react';
+import { useRouting } from './RoutingProvider';
 
-interface LinkProps extends ComponentProps<"a"> {}
+interface LinkProps extends ComponentProps<'a'> {}
 
 const isIFrame = !!(AP?.history?.getState ?? false);
 
@@ -16,32 +16,30 @@ const isIFrame = !!(AP?.history?.getState ?? false);
  * in the `onClick` prop and tap in to can's routing system just like we would with any other link.
  */
 
-const Link: FC<LinkProps> = forwardRef<HTMLAnchorElement, LinkProps>(
-  ({ href, children, onClick, ...rest }, ref) => {
-    const { linkBuilder } = useRouting();
+const Link: FC<LinkProps> = forwardRef<HTMLAnchorElement, LinkProps>(({ href, children, onClick, ...rest }, ref) => {
+  const { linkBuilder } = useRouting();
 
-    return (
-      <a
-        ref={ref}
-        href={linkBuilder(href || "")}
-        onClick={(event) => {
-          if (isIFrame) {
-            event.preventDefault();
-            event.stopPropagation();
+  return (
+    <a
+      ref={ref}
+      href={linkBuilder(href || '')}
+      onClick={(event) => {
+        if (isIFrame) {
+          event.preventDefault();
+          event.stopPropagation();
 
-            window.history.pushState(null, "", href);
+          window.history.pushState(null, '', href);
 
-            onClick?.(event);
-          } else {
-            onClick?.(event);
-          }
-        }}
-        {...rest}
-      >
-        {children}
-      </a>
-    );
-  }
-);
+          onClick?.(event);
+        } else {
+          onClick?.(event);
+        }
+      }}
+      {...rest}
+    >
+      {children}
+    </a>
+  );
+});
 
 export default Link;

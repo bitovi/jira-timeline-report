@@ -8,7 +8,7 @@ import {
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
   isDerivedIssue,
-} from "../rollup";
+} from '../rollup';
 
 export interface ChildStatuses {
   self: { key: string; status: string | null };
@@ -22,20 +22,16 @@ export function rollupChildStatuses<T>(
   rollupTimingLevelsAndCalculations: Array<{
     type: string;
     hierarchyLevel?: number;
-  }>
+  }>,
 ): IssueOrRelease<T & WithChildStatuses>[] {
-  const groupedIssues = groupIssuesByHierarchyLevelOrType(
-    issuesOrReleases,
-    rollupTimingLevelsAndCalculations
-  );
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
 
   const rolledUpChildStatuses = rollupChildStatusesForGroupedHierarchy(groupedIssues);
 
-  const zipped = zipRollupDataOntoGroupedData(
-    groupedIssues,
-    rolledUpChildStatuses,
-    (item, values) => ({ ...item, childStatuses: values })
-  );
+  const zipped = zipRollupDataOntoGroupedData(groupedIssues, rolledUpChildStatuses, (item, values) => ({
+    ...item,
+    childStatuses: values,
+  }));
 
   return zipped.flat();
 }
@@ -44,9 +40,7 @@ export function rollupChildStatuses<T>(
  * @param groupedHierarchy - The grouped hierarchy of issues or releases, from low to high levels.
  * @returns - The rolled-up child statuses for each hierarchy level.
  */
-export function rollupChildStatusesForGroupedHierarchy(
-  groupedHierarchy: IssueOrRelease<WithChildStatuses>[][]
-) {
+export function rollupChildStatusesForGroupedHierarchy(groupedHierarchy: IssueOrRelease<WithChildStatuses>[][]) {
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(issueOrRelease, children: ChildStatuses[]) {
       const key = issueOrRelease.key;

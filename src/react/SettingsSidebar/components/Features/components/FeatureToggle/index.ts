@@ -1,1 +1,1 @@
-export { default } from "./FeatureToggle";
+export { default } from './FeatureToggle';

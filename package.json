@@ -21,6 +21,9 @@
     "prepare": "husky",
     "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts"
   },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -41,6 +44,7 @@
     "@atlaskit/lozenge": "^11.12.7",
     "@atlaskit/modal-dialog": "^12.17.10",
     "@atlaskit/primitives": "^12.2.2",
+    "@atlaskit/range": "^9.0.3",
     "@atlaskit/section-message": "^6.7.0",
     "@atlaskit/select": "^17.19.3",
     "@atlaskit/spinner": "^16.3.2",
@@ -97,6 +101,7 @@
     "jstat": "^1.9.6",
     "live-server": "^1.2.2",
     "postcss": "^8.5.3",
+    "prettier": "3.5.3",
     "recharts": "^2.15.3",
     "rollup": "npm:@rollup/wasm-node@^4.2.0",
     "rollup-plugin-delete": "^2.0.0",
