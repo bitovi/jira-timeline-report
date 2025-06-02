@@ -208,11 +208,7 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         {
           key: `${key}-select`,
           content: (
-            <Checkbox
-              label={`Select ${key}`}
-              isChecked={selectedIssueMap[key]}
-              onChange={({ target }) => setIssue(key, target.checked)}
-            />
+            <Checkbox isChecked={selectedIssueMap[key]} onChange={({ target }) => setIssue(key, target.checked)} />
           ),
         },
         { key: `${key}-key`, content: key },
@@ -248,7 +244,7 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   return (
     <Modal onClose={onClose} width="xlarge">
       <ModalHeader>
-        <h1>save</h1>
+        <h1>Update {selectedIssueType} Dates</h1>
       </ModalHeader>
       <ModalBody>
         <DynamicTable
@@ -256,22 +252,16 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
             cells: [
               {
                 key: 'select-all',
-                content: (
-                  <Checkbox
-                    label="Select all"
-                    isChecked={allSelected}
-                    onChange={({ target }) => selectAll(target.checked)}
-                  />
-                ),
+                content: <Checkbox isChecked={allSelected} onChange={({ target }) => selectAll(target.checked)} />,
               },
               { key: 'key', content: 'Key' },
               { key: 'summary', content: 'Summary' },
               // { key: "current-story-points", content: "Current Story Points" },
               // { key: "new-story-points", content: "New Story Points" },
-              { key: 'current-start-date', content: 'Current Start Date' },
-              { key: 'new-start-date', content: 'New Start Date' },
-              { key: 'current-due-date', content: 'Current Due Date' },
-              { key: 'new-due-date', content: 'New Due Date' },
+              { key: 'current-start-date', content: 'Start Date (Current)' },
+              { key: 'new-start-date', content: 'Start Date (New)' },
+              { key: 'current-due-date', content: 'Due Date (Current)' },
+              { key: 'new-due-date', content: 'Due Date (New)' },
             ],
           }}
           rows={rows}
@@ -301,7 +291,7 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
           {isPending && <Spinner size="small" />}
           {selectedCount === 0
             ? `Select a ${selectedIssueType} to save`
-            : `Update ${selectedCount} ${selectedIssueType}${selectedCount > 1 ? 's' : ''}`}
+            : `${isPending ? 'Updating' : 'Update'} ${selectedCount} ${selectedIssueType}${selectedCount > 1 ? 's' : ''}`}
         </Button>
       </ModalFooter>
     </Modal>

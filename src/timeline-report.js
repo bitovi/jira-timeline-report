@@ -25,7 +25,7 @@ import ViewReports from './react/ViewReports';
 
 import { getTheme, applyThemeToCssVars } from './jira/theme';
 import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnalysis';
-import { AutoScheduler } from './react/reports/AutoScheduler/AutoScheduler';
+import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
 
 export class TimelineReport extends StacheElement {
   static view = `
