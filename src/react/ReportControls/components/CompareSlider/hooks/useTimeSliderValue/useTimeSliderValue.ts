@@ -1,5 +1,5 @@
 import { CompareTo, SetCompareTo } from '../useCompareTo';
-import { DAY_IN_S, HOUR_IN_S, MINUTE_IN_S } from '../../utilities';
+import { MINUTE_IN_S, HOUR_IN_S, DAY_IN_S } from '../../../../../../utils/date/get-date-days-ago';
 import { createInverseMapping, createLinearMapping } from '../../../../../../utils/math/linear-mapping';
 
 export const MAPPING_POINTS = [
