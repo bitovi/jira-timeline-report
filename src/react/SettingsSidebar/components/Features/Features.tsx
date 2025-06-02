@@ -13,6 +13,7 @@ const keyToTitle = {
   secondaryReport: 'Secondary Report',
   workBreakdowns: 'Work Breakdowns',
   estimationAnalysis: 'Estimation Analysis',
+  autoScheduler: 'Auto-Scheduler',
 };
 
 const keyToSubtitle = {
@@ -20,6 +21,7 @@ const keyToSubtitle = {
   secondaryReport: '',
   workBreakdowns: '',
   estimationAnalysis: '',
+  autoScheduler: '',
 };
 
 const toList = (features: Features) => {

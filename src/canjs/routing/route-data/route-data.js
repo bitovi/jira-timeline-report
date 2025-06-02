@@ -1,4 +1,4 @@
-import { ObservableObject, value, diff } from '../../../can.js';
+import { ObservableObject, value, diff, type } from '../../../can.js';
 
 import { DAY_IN_MS } from '../../../utils/date/date-helpers.js';
 import { daysBetween } from '../../../utils/date/days-between.js';
@@ -50,6 +50,7 @@ import { getTimingLevels } from '../../../utils/timing/helpers';
 import { getAllReports } from '../../../jira/reports/fetcher';
 import { reportKeys } from '../../../react/services/reports';
 import { queryClient } from '../../../react/services/query/queryClient';
+import { nowUTC } from '../../../utils/date/utc';
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
@@ -76,6 +77,10 @@ export const REPORTS = [
   {
     key: 'estimate-analysis',
     name: 'Estimation Analysis',
+  },
+  {
+    key: 'auto-scheduler',
+    name: 'Auto-Scheduler',
   },
 ];
 
@@ -158,6 +163,40 @@ export class RouteData extends ObservableObject {
     },
 
     // PURE ROUTES
+    uncertaintyWeight: saveJSONToUrlButAlsoLookAtReport_DataWrapper('uncertaintyWeight', 'average', type.Any, {
+      parse: (param) => {
+        if (param === 'average') {
+          return param;
+        }
+
+        const parsed = +param;
+
+        if (isNaN(parsed)) {
+          return 'average';
+        }
+
+        return parsed;
+      },
+      stringify: (value) => {
+        return value.toString();
+      },
+    }),
+    selectedStartDate: saveJSONToUrlButAlsoLookAtReport_DataWrapper('selectedStartDate', nowUTC(), String, {
+      parse: (dateString) => {
+        if (!dateString) {
+          return nowUTC();
+        }
+
+        return new Date(dateString);
+      },
+      stringify: (date) => {
+        if (!date) {
+          return nowUTC().toISOString();
+        }
+
+        return date.toISOString();
+      },
+    }),
     showSettings: saveJSONToUrlButAlsoLookAtReport_DataWrapper('settings', '', String, {
       parse: (x) => '' + x,
       stringify: (x) => '' + x,
