@@ -346,7 +346,32 @@ export class RouteData extends ObservableObject {
     },
 
     // THESE are settable by react
-    fieldsToRequest: makeAsyncFromObservableButStillSettableProperty('fieldsToRequestPromise'),
+    // This was using
+    //
+    // but we don't want the fields to change until they REALLY changed
+    fieldsToRequest:
+      // makeAsyncFromObservableButStillSettableProperty('fieldsToRequestPromise'),
+
+      {
+        value({ resolve, listenTo, lastSet }) {
+          let current = [];
+          function resolveIfChanges(newValue) {
+            if (diff.list(newValue, current).length) {
+              current = newValue;
+              resolve(current);
+            }
+          }
+          listenTo('fieldsToRequestPromise', ({ value }) => {
+            value.then(resolveIfChanges);
+          });
+          if (this.fieldsToRequestPromise) {
+            this.fieldsToRequestPromise.then(resolveIfChanges);
+          }
+          listenTo(lastSet, (value) => {
+            resolveIfChanges(value);
+          });
+        },
+      },
 
     // This can get set, but needs some base loaded normalize option
     normalizeOptions: makeAsyncFromObservableButStillSettableProperty('normalizeOptionsPromise'),

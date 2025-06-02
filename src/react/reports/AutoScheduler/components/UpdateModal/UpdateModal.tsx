@@ -1,48 +1,43 @@
-import type { FC } from "react";
-import type { StatsUIData } from "../../scheduler/stats-analyzer";
+import type { FC } from 'react';
+import type { StatsUIData } from '../../scheduler/stats-analyzer';
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
-import Modal, {
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTransition,
-} from "@atlaskit/modal-dialog";
-import DynamicTable from "@atlaskit/dynamic-table";
-import { Checkbox } from "@atlaskit/checkbox";
+import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTransition } from '@atlaskit/modal-dialog';
+import DynamicTable from '@atlaskit/dynamic-table';
+import { Checkbox } from '@atlaskit/checkbox';
 
-import { getDatesFromSimulationIssue } from "../../IssueSimulationRow";
-import Button from "@atlaskit/button/new";
-import { useSelectedIssueType } from "../../../../services/issues";
-import routeData from "../../../../../canjs/routing/route-data";
-import { Jira } from "../../../../../jira-oidc-helpers";
-import { useMutation } from "@tanstack/react-query";
-import { useJira } from "../../../../services/jira";
-import Spinner from "@atlaskit/spinner";
-import { useFlags } from "@atlaskit/flag";
-import { Text } from "@atlaskit/primitives";
-import { token } from "@atlaskit/tokens";
-import SuccessIcon from "@atlaskit/icon/core/success";
+import { getDatesFromSimulationIssue } from '../../IssueSimulationRow';
+import Button from '@atlaskit/button/new';
+import { useSelectedIssueType } from '../../../../services/issues';
+import routeData from '../../../../../canjs/routing/route-data';
+import { Jira } from '../../../../../jira-oidc-helpers';
+import { useMutation } from '@tanstack/react-query';
+import { useJira } from '../../../../services/jira';
+import Spinner from '@atlaskit/spinner';
+import { useFlags } from '@atlaskit/flag';
+import { Text } from '@atlaskit/primitives';
+import { token } from '@atlaskit/tokens';
+import SuccessIcon from '@atlaskit/icon/core/success';
 
-type LinkedIssue = StatsUIData["simulationIssueResults"][number]["linkedIssue"];
+type LinkedIssue = StatsUIData['simulationIssueResults'][number]['linkedIssue'];
 
-const jiraDataFormatter = new Intl.DateTimeFormat("en-CA", {
+const jiraDataFormatter = new Intl.DateTimeFormat('en-CA', {
   // 'en-CA' uses the YYYY-MM-DD format
-  year: "numeric",
-  month: "2-digit", // '2-digit' will ensure month is always represented with two digits
-  day: "2-digit", // '2-digit' will ensure day is always represented with two digits
-  calendar: "iso8601", // This specifies usage of the ISO 8601 calendar
-  timeZone: "UTC",
+  year: 'numeric',
+  month: '2-digit', // '2-digit' will ensure month is always represented with two digits
+  day: '2-digit', // '2-digit' will ensure day is always represented with two digits
+  calendar: 'iso8601', // This specifies usage of the ISO 8601 calendar
+  timeZone: 'UTC',
 });
 
 class AutoSchedulerSyncError extends Error {
   constructor(
     public screenErrorMessages: { url: string; summary: string; missingKeys: string[] }[],
-    public errors: string[]
+    public errors: string[],
   ) {
-    super([...screenErrorMessages, ...errors].join("\n"));
-    this.name = "AutoSchedulerSyncError";
+    super([...screenErrorMessages, ...errors].join('\n'));
+    this.name = 'AutoSchedulerSyncError';
 
     this.screenErrorMessages = screenErrorMessages;
     this.errors = errors;
@@ -55,7 +50,7 @@ class AutoSchedulerSyncError extends Error {
 
 const updateFromSimulation = async (
   jiraHelpers: Jira,
-  issues: Array<LinkedIssue & { dates: ReturnType<typeof getDatesFromSimulationIssue> }>
+  issues: Array<LinkedIssue & { dates: ReturnType<typeof getDatesFromSimulationIssue> }>,
 ) => {
   const { getFieldFor } = await routeData.teamFieldLookUp;
 
@@ -63,13 +58,13 @@ const updateFromSimulation = async (
     const startDateField = getFieldFor({
       team: workItem.team.name,
       issueLevel: workItem.hierarchyLevel.toString(),
-      field: "startDateField",
+      field: 'startDateField',
     });
 
     const dueDateField = getFieldFor({
       team: workItem.team.name,
       issueLevel: workItem.hierarchyLevel.toString(),
-      field: "dueDateField",
+      field: 'dueDateField',
     });
 
     return {
@@ -84,7 +79,7 @@ const updateFromSimulation = async (
   const results = await Promise.allSettled(
     allWork.map(({ updates, ...workItem }) => {
       return jiraHelpers.editJiraIssueWithNamedFields(workItem.issue.key, updates);
-    })
+    }),
   );
 
   const errors = results
@@ -96,7 +91,7 @@ const updateFromSimulation = async (
     })
     .filter(
       (outcome): outcome is { result: PromiseRejectedResult; workItem: (typeof allWork)[number] } =>
-        outcome.result.status === "rejected"
+        outcome.result.status === 'rejected',
     );
 
   if (errors.length) {
@@ -111,10 +106,10 @@ const updateFromSimulation = async (
         continue;
       }
 
-      if ("errors" in reason) {
+      if ('errors' in reason) {
         const [message] = Object.values(reason.errors as Record<string, string>);
 
-        if (message.includes("It is not on the appropriate screen, or unknown")) {
+        if (message.includes('It is not on the appropriate screen, or unknown')) {
           error.screenErrorMessages.push({
             summary: workItem.summary,
             url: workItem.url,
@@ -126,7 +121,7 @@ const updateFromSimulation = async (
         continue;
       }
 
-      error.errors.push("something went wrong");
+      error.errors.push('something went wrong');
     }
 
     throw error;
@@ -150,7 +145,7 @@ const useUpdateIssuesWithSimulationData = () => {
         title: <Text color="color.text.success">Success</Text>,
         description: `Successfully updated`,
         isAutoDismiss: true,
-        icon: <SuccessIcon color={token("color.icon.success")} label="success" />,
+        icon: <SuccessIcon color={token('color.icon.success')} label="success" />,
       });
     },
   });
@@ -190,7 +185,7 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   const selectAll = (newValue: boolean) => {
     const newMapping = issues.simulationIssueResults.reduce(
       (map, { linkedIssue }) => ({ ...map, [linkedIssue.key]: newValue }),
-      {} as typeof selectedIssueMap
+      {} as typeof selectedIssueMap,
     );
 
     setSelectedIssueMap(newMapping);
@@ -213,11 +208,7 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         {
           key: `${key}-select`,
           content: (
-            <Checkbox
-              label={`Select ${key}`}
-              isChecked={selectedIssueMap[key]}
-              onChange={({ target }) => setIssue(key, target.checked)}
-            />
+            <Checkbox isChecked={selectedIssueMap[key]} onChange={({ target }) => setIssue(key, target.checked)} />
           ),
         },
         { key: `${key}-key`, content: key },
@@ -253,30 +244,24 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   return (
     <Modal onClose={onClose} width="xlarge">
       <ModalHeader>
-        <h1>save</h1>
+        <h1>Update {selectedIssueType} Dates</h1>
       </ModalHeader>
       <ModalBody>
         <DynamicTable
           head={{
             cells: [
               {
-                key: "select-all",
-                content: (
-                  <Checkbox
-                    label="Select all"
-                    isChecked={allSelected}
-                    onChange={({ target }) => selectAll(target.checked)}
-                  />
-                ),
+                key: 'select-all',
+                content: <Checkbox isChecked={allSelected} onChange={({ target }) => selectAll(target.checked)} />,
               },
-              { key: "key", content: "Key" },
-              { key: "summary", content: "Summary" },
+              { key: 'key', content: 'Key' },
+              { key: 'summary', content: 'Summary' },
               // { key: "current-story-points", content: "Current Story Points" },
               // { key: "new-story-points", content: "New Story Points" },
-              { key: "current-start-date", content: "Current Start Date" },
-              { key: "new-start-date", content: "New Start Date" },
-              { key: "current-due-date", content: "Current Due Date" },
-              { key: "new-due-date", content: "New Due Date" },
+              { key: 'current-start-date', content: 'Start Date (Current)' },
+              { key: 'new-start-date', content: 'Start Date (New)' },
+              { key: 'current-due-date', content: 'Due Date (Current)' },
+              { key: 'new-due-date', content: 'Due Date (New)' },
             ],
           }}
           rows={rows}
@@ -293,7 +278,7 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
             <div>
               {error.screenErrorMessages.map(({ missingKeys, url, summary }, i) => (
                 <a href={url} target="_blank" className="text-red-500">
-                  {summary} is missing {missingKeys.join(",")}
+                  {summary} is missing {missingKeys.join(',')}
                 </a>
               ))}
             </div>
@@ -306,16 +291,13 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
           {isPending && <Spinner size="small" />}
           {selectedCount === 0
             ? `Select a ${selectedIssueType} to save`
-            : `Update ${selectedCount} ${selectedIssueType}${selectedCount > 1 ? "s" : ""}`}
+            : `${isPending ? 'Updating' : 'Update'} ${selectedCount} ${selectedIssueType}${selectedCount > 1 ? 's' : ''}`}
         </Button>
       </ModalFooter>
     </Modal>
   );
 };
 
-export default function UpdateModalWrapper({
-  isOpen,
-  ...rest
-}: UpdateModalProps & { isOpen: boolean }) {
+export default function UpdateModalWrapper({ isOpen, ...rest }: UpdateModalProps & { isOpen: boolean }) {
   return <ModalTransition>{isOpen && <UpdateModal {...rest} />}</ModalTransition>;
 }
