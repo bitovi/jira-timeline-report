@@ -1,7 +1,7 @@
 // https://yumbrands.atlassian.net/issues/?filter=10897
-import { StacheElement, type, ObservableObject, stache, key, value } from "../../can";
-import { makeGetChildrenFromReportingIssues } from "../../jira/rollup/rollup";
-import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from "../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time";
+import { StacheElement, type, ObservableObject, stache, key, value } from '../../can';
+import { makeGetChildrenFromReportingIssues } from '../../jira/rollup/rollup';
+import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from '../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time';
 
 /*
 export const dateFormatter = new Intl.DateTimeFormat('en-US', { 
@@ -10,20 +10,20 @@ export const dateFormatter = new Intl.DateTimeFormat('en-US', {
     year: 'numeric'  // Full year (e.g., "1982") 
 });*/
 
-export const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "2-digit", // Abbreviated month (e.g., "Oct")
-  day: "2-digit", // Numeric day (e.g., "20")
-  year: "2-digit", // Full year (e.g., "1982")
+export const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: '2-digit', // Abbreviated month (e.g., "Oct")
+  day: '2-digit', // Numeric day (e.g., "20")
+  year: '2-digit', // Full year (e.g., "1982")
 });
 
-import SimpleTooltip from "../ui/simple-tooltip/simple-tooltip";
+import SimpleTooltip from '../ui/simple-tooltip/simple-tooltip';
 
 const TOOLTIP = new SimpleTooltip();
 document.body.append(TOOLTIP);
 
-import { createRoot } from "react-dom/client";
-import { createElement } from "react";
-import Stats from "../../react/Stats/Stats";
+import { createRoot } from 'react-dom/client';
+import { createElement } from 'react';
+import Stats from '../../react/Stats/Stats';
 
 export class EstimateBreakdown extends StacheElement {
   static view = `<div class="text-right"><button class="remove-button text-red-500 p-2 text-lg">X</button></div>
@@ -164,62 +164,56 @@ export class EstimateBreakdown extends StacheElement {
   }
   makeCurrentAndPreviousHTML(valueKey, validKey, format = (x) => x) {
     const currentValue = key.get(this.issue, valueKey);
-    const lastValue = this.issue.issueLastPeriod
-      ? key.get(this.issue.issueLastPeriod, valueKey)
-      : undefined;
+    const lastValue = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, valueKey) : undefined;
 
     let isCurrentValueValid = true,
       lastValueValid = true;
     if (validKey) {
       isCurrentValueValid = key.get(this.issue, validKey);
-      lastValueValid = this.issue.issueLastPeriod
-        ? key.get(this.issue.issueLastPeriod, validKey)
-        : undefined;
+      lastValueValid = this.issue.issueLastPeriod ? key.get(this.issue.issueLastPeriod, validKey) : undefined;
     }
 
     return stache.safeString(`
             <div class="text-right ${
-              isCurrentValueValid === false ? "bg-neutral-100" : ""
+              isCurrentValueValid === false ? 'bg-neutral-100' : ''
             }">${format(this.round(currentValue, 1))}</div>
-            <div class="text-right text-xs ${lastValueValid === false ? "bg-neutral-100" : ""}">
-                ${this.issue.issueLastPeriod ? format(this.round(lastValue, 1)) : "🚫"}
+            <div class="text-right text-xs ${lastValueValid === false ? 'bg-neutral-100' : ''}">
+                ${this.issue.issueLastPeriod ? format(this.round(lastValue, 1)) : '🚫'}
             </div>    
         `);
   }
   formatPercent(value) {
-    return value + "%";
+    return value + '%';
   }
   usedStoryPointsMedian(issue) {
-    return (
-      issue?.derivedTiming?.isStoryPointsMedianValid && issue?.derivedTiming?.usedConfidence !== 100
-    );
+    return issue?.derivedTiming?.isStoryPointsMedianValid && issue?.derivedTiming?.usedConfidence !== 100;
   }
   confidenceValue(issue) {
     return issue?.derivedTiming?.usedConfidence;
   }
   confidenceClass(issue) {
-    return issue?.derivedTiming?.isConfidenceValid ? "" : "bg-neutral-100";
+    return issue?.derivedTiming?.isConfidenceValid ? '' : 'bg-neutral-100';
   }
   timingEquation(issue) {
     if (issue?.derivedTiming?.isStoryPointsMedianValid) {
       return (
         Math.round(issue.derivedTiming.deterministicTotalPoints) +
-        " / " +
+        ' / ' +
         issue.team.velocity +
-        " / " +
+        ' / ' +
         issue.team.parallelWorkLimit +
-        " * " +
+        ' * ' +
         issue.team.daysPerSprint +
-        " = " +
+        ' = ' +
         Math.round(issue.derivedTiming.deterministicTotalDaysOfWork)
       );
     }
   }
   round(number, decimals = 0) {
-    return typeof number === "number" ? parseFloat(number.toFixed(decimals)) : "∅";
+    return typeof number === 'number' ? parseFloat(number.toFixed(decimals)) : '∅';
   }
 }
-customElements.define("estimate-breakdown", EstimateBreakdown);
+customElements.define('estimate-breakdown', EstimateBreakdown);
 
 // <td>{{this.estimate(tableRow.issue)}}</td>
 // <td>{{this.startDate( tableRow.issue ) }}</td>
@@ -264,16 +258,16 @@ export class TableGrid extends StacheElement {
       get default() {
         return [
           {
-            path: "summary",
-            name: "Summary",
+            path: 'summary',
+            name: 'Summary',
           },
           {
-            path: "rollupDates.start",
-            name: "Rollup Start",
+            path: 'rollupDates.start',
+            name: 'Rollup Start',
           },
           {
-            path: "rollupDates.start",
-            name: "Rollup Due",
+            path: 'rollupDates.start',
+            name: 'Rollup Due',
           },
         ];
       },
@@ -284,10 +278,7 @@ export class TableGrid extends StacheElement {
     const getChildren = makeGetChildrenFromReportingIssues(this.allIssuesOrReleases);
 
     function childrenRecursive(issue, depth = 0) {
-      return [
-        { depth: depth, issue },
-        ...getChildren(issue).map((issue) => childrenRecursive(issue, depth + 1)),
-      ];
+      return [{ depth: depth, issue }, ...getChildren(issue).map((issue) => childrenRecursive(issue, depth + 1))];
     }
 
     let allChildren = this.primaryIssuesOrReleases.map((i) => childrenRecursive(i)).flat(Infinity);
@@ -295,13 +286,13 @@ export class TableGrid extends StacheElement {
     return allChildren;
   }
   padding(row) {
-    return "padding-left: " + row.depth * 20 + "px";
+    return 'padding-left: ' + row.depth * 20 + 'px';
   }
   iconUrl(row) {
-    return row.issue?.issue?.fields["Issue Type"]?.iconUrl;
+    return row.issue?.issue?.fields['Issue Type']?.iconUrl;
   }
   shortDate(date) {
-    return date ? dateFormatter.format(date) : "";
+    return date ? dateFormatter.format(date) : '';
   }
   startDate(issue) {
     return compareToLast(issue, (issue) => issue?.rollupDates?.start, formatDate);
@@ -324,12 +315,12 @@ export class TableGrid extends StacheElement {
         }
       },
       (value) => {
-        if (typeof value === "number") {
+        if (typeof value === 'number') {
           return Math.round(value);
         } else {
           return value;
         }
-      }
+      },
     );
   }
   timedDays(issue) {
@@ -342,12 +333,12 @@ export class TableGrid extends StacheElement {
         }
       },
       (value) => {
-        if (typeof value === "number") {
+        if (typeof value === 'number') {
           return Math.round(value);
         } else {
           return value;
         }
-      }
+      },
     );
   }
   rolledUpDays(issue) {
@@ -360,25 +351,25 @@ export class TableGrid extends StacheElement {
         }
       },
       (value) => {
-        if (typeof value === "number") {
+        if (typeof value === 'number') {
           return Math.round(value);
         } else {
           return value;
         }
-      }
+      },
     );
   }
   timingEquation(issue) {
     if (issue?.derivedTiming?.isStoryPointsMedianValid) {
       return (
         Math.round(issue.derivedTiming.deterministicTotalPoints) +
-        " / " +
+        ' / ' +
         issue.team.velocity +
-        " / " +
+        ' / ' +
         issue.team.parallelWorkLimit +
-        " * " +
+        ' * ' +
         issue.team.daysPerSprint +
-        " = " +
+        ' = ' +
         Math.round(issue.derivedTiming.deterministicTotalDaysOfWork)
       );
     }
@@ -388,29 +379,29 @@ export class TableGrid extends StacheElement {
       element,
       new EstimateBreakdown().initialize({
         issue,
-      })
+      }),
     );
 
-    TOOLTIP.querySelector(".remove-button").onclick = () => {
+    TOOLTIP.querySelector('.remove-button').onclick = () => {
       TOOLTIP.leftElement();
     };
   }
   connected() {
     if (FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
-      createRoot(document.getElementById("stats")).render(
+      createRoot(document.getElementById('stats')).render(
         createElement(Stats, {
-          primaryIssuesOrReleasesObs: value.from(this, "primaryIssuesOrReleases"),
-        })
+          primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
+        }),
       );
     }
   }
 }
 
-customElements.define("table-grid", TableGrid);
+customElements.define('table-grid', TableGrid);
 
 function getEstimate(issue) {
   if (issue?.derivedTiming?.isStoryPointsMedianValid) {
-    return issue.storyPointsMedian + " " + issue.confidence + "%";
+    return issue.storyPointsMedian + ' ' + issue.confidence + '%';
   } else if (issue?.storyPoints != null) {
     return issue.storyPoints;
   } else {
@@ -419,21 +410,21 @@ function getEstimate(issue) {
 }
 
 function anythingToString(value) {
-  return value == null ? "∅" : "" + value;
+  return value == null ? '∅' : '' + value;
 }
 
 function compareToLast(issue, getValue, formatValue) {
   const currentValue = anythingToString(formatValue(getValue(issue)));
 
   if (!issue.issueLastPeriod) {
-    return "🚫 ➡ " + currentValue;
+    return '🚫 ➡ ' + currentValue;
   }
   const lastValue = anythingToString(formatValue(getValue(issue.issueLastPeriod)));
 
   if (currentValue !== lastValue) {
-    return lastValue + " ➡ " + currentValue;
+    return lastValue + ' ➡ ' + currentValue;
   } else {
-    return currentValue === "∅" ? "" : currentValue;
+    return currentValue === '∅' ? '' : currentValue;
   }
 }
 

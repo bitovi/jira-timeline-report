@@ -1,14 +1,8 @@
 // tests/rollback.test.ts
 
-import { expect, test } from "vitest";
-import { rollbackIssue } from "./rollback";
-import {
-  JiraIssue,
-  Changelog,
-  Sprint,
-  FixVersion,
-  Status,
-} from "../../shared/types";
+import { expect, test } from 'vitest';
+import { rollbackIssue } from './rollback';
+import { JiraIssue, Changelog, Sprint, FixVersion, Status } from '../../shared/types';
 
 export const Time: Record<string, Date> = {
   _2000: new Date(2000, 0),
@@ -24,25 +18,21 @@ export const Time: Record<string, Date> = {
 
 // I'm not sure this is always going to do what's expected for everyone in every timezone
 export function toYY_MM_DD(date: Date): string {
-  return date.toLocaleDateString("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
+  return date.toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
 }
 
-export function makeStartDateChangelog(
-  from: Date,
-  to: Date,
-  when: Date = new Date()
-): Changelog {
+export function makeStartDateChangelog(from: Date, to: Date, when: Date = new Date()): Changelog {
   const fromStr = toYY_MM_DD(from);
   const toStr = toYY_MM_DD(to);
   return {
     created: when.toISOString(),
     items: [
       {
-        field: "Start date",
+        field: 'Start date',
         from: fromStr,
         fromString: fromStr,
         to: toStr,
@@ -70,81 +60,73 @@ const defaultRollbackLookupData = {
   },
 };
 
-test("start date rollback", () => {
+test('start date rollback', () => {
   const exampleRawIssue = {
-    key: "STORE-8",
+    key: 'STORE-8',
     changelog: [makeStartDateChangelog(Time._2001, Time._2007)],
     fields: {
-      "Start date": toYY_MM_DD(Time._2007),
+      'Start date': toYY_MM_DD(Time._2007),
     },
   } as JiraIssue;
 
-  const result = rollbackIssue(
-    exampleRawIssue,
-    defaultRollbackLookupData,
-    Time.oneHourAgo
-  );
+  const result = rollbackIssue(exampleRawIssue, defaultRollbackLookupData, Time.oneHourAgo);
   expect(result).toStrictEqual({
-    key: "STORE-8",
+    key: 'STORE-8',
     fields: {
-      "Start date": toYY_MM_DD(Time._2001),
+      'Start date': toYY_MM_DD(Time._2001),
     },
     rollbackMetadata: { rolledbackTo: Time.oneHourAgo },
   });
 });
 
-test("IssueParentAssociation rollback", () => {
+test('IssueParentAssociation rollback', () => {
   const exampleRawIssue = {
-    key: "STORE-8",
+    key: 'STORE-8',
     changelog: [
       {
         created: new Date().toISOString(),
         items: [
           {
-            field: "IssueParentAssociation",
-            from: "10276",
-            fromString: "IMP-1",
-            to: "10277",
-            toString: "IMP-143",
+            field: 'IssueParentAssociation',
+            from: '10276',
+            fromString: 'IMP-1',
+            to: '10277',
+            toString: 'IMP-143',
           },
         ],
       },
     ],
     fields: {
       Parent: {
-        key: "IMP-143",
-        id: "10277",
+        key: 'IMP-143',
+        id: '10277',
       },
     },
   } as JiraIssue;
 
-  const result = rollbackIssue(
-    exampleRawIssue,
-    defaultRollbackLookupData,
-    Time.oneHourAgo
-  );
+  const result = rollbackIssue(exampleRawIssue, defaultRollbackLookupData, Time.oneHourAgo);
   expect(result).toStrictEqual({
-    key: "STORE-8",
+    key: 'STORE-8',
     fields: {
-      Parent: { key: "IMP-1", id: "10276" },
+      Parent: { key: 'IMP-1', id: '10276' },
     },
     rollbackMetadata: { rolledbackTo: Time.oneHourAgo },
   });
 });
 
-test("sprint rollback", () => {
+test('sprint rollback', () => {
   const exampleRawIssue = {
-    key: "STORE-8",
+    key: 'STORE-8',
     changelog: [
       {
         created: new Date().toISOString(),
         items: [
           {
-            field: "Sprint",
-            from: "75",
-            fromString: "Dev Sprint 1",
-            to: "76",
-            toString: "Dev Sprint 2",
+            field: 'Sprint',
+            from: '75',
+            fromString: 'Dev Sprint 1',
+            to: '76',
+            toString: 'Dev Sprint 2',
           },
         ],
       },
@@ -152,10 +134,10 @@ test("sprint rollback", () => {
     fields: {
       Sprint: [
         {
-          id: "76",
-          name: "Dev Sprint 2",
-          startDate: "2024-10-09T05:00:00.000Z",
-          endDate: "2024-10-23T05:00:00.000Z",
+          id: '76',
+          name: 'Dev Sprint 2',
+          startDate: '2024-10-09T05:00:00.000Z',
+          endDate: '2024-10-23T05:00:00.000Z',
         },
       ],
     },
@@ -166,41 +148,41 @@ test("sprint rollback", () => {
     sprints: {
       ids: new Map<string, Sprint>([
         [
-          "75",
+          '75',
           {
-            id: "75",
-            name: "Dev Sprint 1",
-            startDate: "2024-10-09T05:00:00.000Z",
-            endDate: "2024-10-23T05:00:00.000Z",
+            id: '75',
+            name: 'Dev Sprint 1',
+            startDate: '2024-10-09T05:00:00.000Z',
+            endDate: '2024-10-23T05:00:00.000Z',
           },
         ],
         [
-          "76",
+          '76',
           {
-            id: "76",
-            name: "Dev Sprint 2",
-            startDate: "2024-10-09T05:00:00.000Z",
-            endDate: "2024-10-23T05:00:00.000Z",
+            id: '76',
+            name: 'Dev Sprint 2',
+            startDate: '2024-10-09T05:00:00.000Z',
+            endDate: '2024-10-23T05:00:00.000Z',
           },
         ],
       ]),
       names: new Map<string, Sprint>([
         [
-          "Dev Sprint 1",
+          'Dev Sprint 1',
           {
-            id: "75",
-            name: "Dev Sprint 1",
-            startDate: "2024-10-09T05:00:00.000Z",
-            endDate: "2024-10-23T05:00:00.000Z",
+            id: '75',
+            name: 'Dev Sprint 1',
+            startDate: '2024-10-09T05:00:00.000Z',
+            endDate: '2024-10-23T05:00:00.000Z',
           },
         ],
         [
-          "Dev Sprint 2",
+          'Dev Sprint 2',
           {
-            id: "76",
-            name: "Dev Sprint 2",
-            startDate: "2024-10-09T05:00:00.000Z",
-            endDate: "2024-10-23T05:00:00.000Z",
+            id: '76',
+            name: 'Dev Sprint 2',
+            startDate: '2024-10-09T05:00:00.000Z',
+            endDate: '2024-10-23T05:00:00.000Z',
           },
         ],
       ]),
@@ -217,14 +199,14 @@ test("sprint rollback", () => {
 
   const result = rollbackIssue(exampleRawIssue, sprintsData, Time.oneHourAgo);
   expect(result).toStrictEqual({
-    key: "STORE-8",
+    key: 'STORE-8',
     fields: {
       Sprint: [
         {
-          id: "75",
-          name: "Dev Sprint 1",
-          startDate: "2024-10-09T05:00:00.000Z",
-          endDate: "2024-10-23T05:00:00.000Z",
+          id: '75',
+          name: 'Dev Sprint 1',
+          startDate: '2024-10-09T05:00:00.000Z',
+          endDate: '2024-10-23T05:00:00.000Z',
         },
       ],
     },

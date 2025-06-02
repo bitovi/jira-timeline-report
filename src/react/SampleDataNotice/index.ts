@@ -1,1 +1,1 @@
-export { default } from "./SampleDataNotice";
+export { default } from './SampleDataNotice';

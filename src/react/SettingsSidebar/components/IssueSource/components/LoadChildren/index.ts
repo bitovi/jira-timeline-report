@@ -1,1 +1,1 @@
-export { default } from "./LoadChildren";
+export { default } from './LoadChildren';

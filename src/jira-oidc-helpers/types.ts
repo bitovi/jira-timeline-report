@@ -1,8 +1,8 @@
 /**
  * this module contains the types needed by the jira oidc helpers.
  */
-import { JiraIssue } from "../jira/shared/types";
-import { RequestHelperResponse } from "../shared/types";
+import { JiraIssue } from '../jira/shared/types';
+import { RequestHelperResponse } from '../shared/types';
 
 export type History = {
   id: string;
@@ -59,7 +59,7 @@ export interface ResponseForFieldRequest extends RequestHelperResponse {
 }
 
 export type RequestHelper = <TValues = any[], TIssues = OidcJiraIssue[] | JiraIssue[]>(
-  urlFragment: string
+  urlFragment: string,
 ) => Promise<RequestHelperResponse<TValues, TIssues>>;
 
 export type Config = {
@@ -72,5 +72,5 @@ export type Config = {
   };
   requestHelper: RequestHelper;
   fieldsRequest: () => FieldsRequest;
-  host: "jira" | "hosted";
+  host: 'jira' | 'hosted';
 };

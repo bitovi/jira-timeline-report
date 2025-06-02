@@ -14,7 +14,7 @@ interface JiraLocationState {
   href: string;
 }
 
-type HistoryStateType = "all" | "hash";
+type HistoryStateType = 'all' | 'hash';
 
 type HistoryStateMap = {
   all: JiraLocationState;
@@ -26,7 +26,7 @@ declare global {
     history: {
       getState: <TStateType extends HistoryStateType>(
         type?: TStateType,
-        callback?: (state: JiraLocationState) => void
+        callback?: (state: JiraLocationState) => void,
       ) => HistoryStateMap[TStateType];
       replaceState: (state: Partial<JiraLocationState>) => void;
       subscribeState: (type: string, callback: (state: JiraLocationState) => void) => void;

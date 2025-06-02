@@ -2,9 +2,9 @@
  * This module makes requests, either to sample data, or to data from Jira
  */
 
-import { bitoviTrainingIssueData } from "../examples/bitovi-training";
-import bitoviTrainingData from "../examples/bitovi-training";
-import { nativeFetchJSON } from "../jira-oidc-helpers";
+import { bitoviTrainingIssueData } from '../examples/bitovi-training';
+import bitoviTrainingData from '../examples/bitovi-training';
+import { nativeFetchJSON } from '../jira-oidc-helpers';
 
 //import { getFormData } from "../react/Configure/components/Teams/services/team-configuration";
 //import { createNormalizeConfiguration } from "../react/Configure/components/Teams/shared/normalize";
@@ -38,7 +38,7 @@ export const getServerInfo = makeCacheable(({ jiraHelpers, isLoggedIn }) => {
   if (isLoggedIn) {
     return jiraHelpers.getServerInfo();
   } else {
-    return nativeFetchJSON("./examples/bitovi-training-server-info.json");
+    return nativeFetchJSON('./examples/bitovi-training-server-info.json');
   }
 });
 
@@ -66,7 +66,7 @@ function simplifyIssueHierarchy(types) {
   return levelsToTypes
     .map((types, i) => {
       // might need to do this by level
-      const popularHierarchyNames = ["Story", "Epic", "Sub-Task"];
+      const popularHierarchyNames = ['Story', 'Epic', 'Sub-Task'];
 
       for (const popularName of popularHierarchyNames) {
         const match = types.find(({ name }) => name === popularName);
@@ -81,17 +81,17 @@ function simplifyIssueHierarchy(types) {
 }
 
 const CORE_FIELDS = [
-  "summary",
-  "Rank",
-  "Issue Type",
-  "Fix versions",
-  "Labels",
-  "Status",
-  "Sprint",
-  "Created",
-  "Parent",
-  "Team",
-  "Linked Issues"
+  'summary',
+  'Rank',
+  'Issue Type',
+  'Fix versions',
+  'Labels',
+  'Status',
+  'Sprint',
+  'Created',
+  'Parent',
+  'Team',
+  'Linked Issues',
 ];
 
 export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL }, { progressUpdate }) {
@@ -111,7 +111,7 @@ export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, field
   if (!jql) {
     return undefined;
   }
-  
+
   const loadIssues = loadChildren
     ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
     : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
@@ -119,10 +119,10 @@ export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, field
   return loadIssues(
     {
       jql: jql,
-      childJQL: childJQL ? " and " + childJQL : "",
+      childJQL: childJQL ? ' and ' + childJQL : '',
       fields: fieldsToLoad,
-      expand: ["changelog"],
+      expand: ['changelog'],
     },
-    progressUpdate
+    progressUpdate,
   );
 }

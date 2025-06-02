@@ -1,11 +1,11 @@
-import { RollupLevelAndCalculation } from "../../shared/types";
+import { RollupLevelAndCalculation } from '../../shared/types';
 import {
   rollupGroupedHierarchy,
   groupIssuesByHierarchyLevelOrType,
   zipRollupDataOntoGroupedData,
   IssueOrRelease,
   isDerivedIssue,
-} from "../rollup";
+} from '../rollup';
 
 export type PercentCompleteMeta = {
   /** how many children on average */
@@ -20,7 +20,7 @@ export type PercentCompleteMeta = {
   averageChildCount: number;
 };
 
-type RollupSourceValues = "self" | "children" | "average";
+type RollupSourceValues = 'self' | 'children' | 'average';
 
 export type PercentCompleteRollup = {
   userSpecifiedValues: boolean;
@@ -35,7 +35,7 @@ export type WithPercentComplete = {
 };
 
 const methods = {
-  childrenFirstThenParent// ,
+  childrenFirstThenParent, // ,
   //widestRange
 };
 export type PercentCompleteCalculations = keyof typeof methods;
@@ -49,12 +49,9 @@ function average(arr: number[]) {
 
 export function addPercentComplete<T>(
   issuesOrReleases: IssueOrRelease<T>[],
-  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
 ): IssueOrRelease<T & WithPercentComplete>[] {
-  const groupedIssues = groupIssuesByHierarchyLevelOrType(
-    issuesOrReleases,
-    rollupTimingLevelsAndCalculations
-  );
+  const groupedIssues = groupIssuesByHierarchyLevelOrType(issuesOrReleases, rollupTimingLevelsAndCalculations);
 
   // TODO remove commented code - DBrandon 2024/11/26
   // const rollupMethods = rollupTimingLevelsAndCalculations
@@ -67,7 +64,6 @@ export function addPercentComplete<T>(
   }));
   return zipped.flat();
 }
-
 
 /**
  *
@@ -92,12 +88,7 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
         averageChildCount: 0,
       };
     },
-    createRollupDataFromParentAndChild(
-      issueOrRelease,
-      children: PercentCompleteRollup[],
-      hierarchyLevel,
-      metadata
-    ) {
+    createRollupDataFromParentAndChild(issueOrRelease, children: PercentCompleteRollup[], hierarchyLevel, metadata) {
       // TODO remove commented code - DBrandon 2024/11/26
       //const methodName = /*methodNames[hierarchyLevel] ||*/ "childrenFirstThenParent";
       //const method = methods[methodName];
@@ -112,7 +103,7 @@ export function rollupPercentComplete<T>(groupedHierarchy: IssueOrRelease<T>[][]
       // set average on children that need it
       metadata.needsAverageSet.forEach((data) => {
         data.totalWorkingDays += ave;
-        data.source = "average";
+        data.source = 'average';
       });
     },
   });
@@ -126,7 +117,7 @@ function emptyRollup() {
     get remainingWorkingDays() {
       return this.totalWorkingDays - this.completedWorkingDays;
     },
-    source: "self" as "self"
+    source: 'self' as 'self',
   };
 }
 
@@ -134,48 +125,46 @@ export function widestRange<T>(
   parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: PercentCompleteRollup[],
   _hierarchyLevel: number,
-  metadata: PercentCompleteMeta
+  metadata: PercentCompleteMeta,
 ) {
-  const  childRollup = sumChildRollups(childrenRollups);
+  const childRollup = sumChildRollups(childrenRollups);
   const hasHardChildData = childrenRollups.length && childRollup.userSpecifiedValues;
 
   let hasHardParentData = false,
     parentRollup,
     parentTotalDaysOfWork = 0;
-  if(isDerivedIssue(parentIssueOrRelease) &&
-    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
+  if (isDerivedIssue(parentIssueOrRelease) && parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
     hasHardParentData = true;
     parentTotalDaysOfWork = parentIssueOrRelease?.derivedTiming.totalDaysOfWork || 0;
     parentRollup = {
-        completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
-        totalWorkingDays: parentTotalDaysOfWork,
-        userSpecifiedValues: true,
-        get remainingWorkingDays() {
-          return this.totalWorkingDays - this.completedWorkingDays;
-        },
-        source: "self" as "self"
-      };
-  }
-
-
-  if(hasHardChildData && hasHardParentData) {
-    if(childRollup.totalWorkingDays > (parentTotalDaysOfWork)) {
-      return childRollup;
-    } else {
-      return parentRollup
+      completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
+      totalWorkingDays: parentTotalDaysOfWork,
+      userSpecifiedValues: true,
+      get remainingWorkingDays() {
+        return this.totalWorkingDays - this.completedWorkingDays;
+      },
+      source: 'self' as 'self',
     };
   }
-  if(hasHardChildData) {
+
+  if (hasHardChildData && hasHardParentData) {
+    if (childRollup.totalWorkingDays > parentTotalDaysOfWork) {
+      return childRollup;
+    } else {
+      return parentRollup;
+    }
+  }
+  if (hasHardChildData) {
     return childRollup;
   }
-  if(hasHardParentData) {
+  if (hasHardParentData) {
     return parentRollup;
   }
 
   // now we have no hard parent, do we have soft data?
   if (childrenRollups.length) {
     return sumChildRollups(childrenRollups);
-  } 
+  }
 
   // no data ... lets get an average and do our best ...
   const data = emptyRollup();
@@ -187,7 +176,7 @@ export function childrenFirstThenParent<T>(
   parentIssueOrRelease: IssueOrRelease<T>,
   childrenRollups: PercentCompleteRollup[],
   _hierarchyLevel: number,
-  metadata: PercentCompleteMeta
+  metadata: PercentCompleteMeta,
 ) {
   let data;
   // if there is hard child data, use it
@@ -197,10 +186,7 @@ export function childrenFirstThenParent<T>(
     return data;
   }
   // if there is hard parent data, use it
-  else if (
-    isDerivedIssue(parentIssueOrRelease) &&
-    parentIssueOrRelease?.derivedTiming?.totalDaysOfWork
-  ) {
+  else if (isDerivedIssue(parentIssueOrRelease) && parentIssueOrRelease?.derivedTiming?.totalDaysOfWork) {
     data = {
       completedWorkingDays: parentIssueOrRelease?.derivedTiming.completedDaysOfWork,
       totalWorkingDays: parentIssueOrRelease?.derivedTiming.totalDaysOfWork,
@@ -208,7 +194,7 @@ export function childrenFirstThenParent<T>(
       get remainingWorkingDays() {
         return this.totalWorkingDays - this.completedWorkingDays;
       },
-      source: "self" as "self"
+      source: 'self' as 'self',
     };
     // make sure we can build an average from it
     metadata.totalDaysOfWorkForAverage.push(data.totalWorkingDays);
@@ -225,22 +211,20 @@ export function childrenFirstThenParent<T>(
     data = emptyRollup();
     if (isDerivedIssue(parentIssueOrRelease)) {
       // Is there any situation that completedDaysOfWork will not be 0?
-      data.completedWorkingDays = data.totalWorkingDays =
-        parentIssueOrRelease?.derivedTiming.completedDaysOfWork || 0;
+      data.completedWorkingDays = data.totalWorkingDays = parentIssueOrRelease?.derivedTiming.completedDaysOfWork || 0;
 
-      if(parentIssueOrRelease.statusCategory === "Done") {
-        // This make it take on the average amount of work, but will 
+      if (parentIssueOrRelease.statusCategory === 'Done') {
+        // This make it take on the average amount of work, but will
         // have it as completed work.
-        Object.defineProperty(data, "completedWorkingDays",{
-          get(){
+        Object.defineProperty(data, 'completedWorkingDays', {
+          get() {
             return this.totalWorkingDays;
-          }
-        })
+          },
+        });
       }
       metadata.needsAverageSet.push(data);
-
     }
-    
+
     return data;
   }
 }
@@ -257,6 +241,6 @@ export function sumChildRollups(children: PercentCompleteRollup[]) {
     get remainingWorkingDays() {
       return this.totalWorkingDays - this.completedWorkingDays;
     },
-    source: "children" as "children"
+    source: 'children' as 'children',
   };
 }

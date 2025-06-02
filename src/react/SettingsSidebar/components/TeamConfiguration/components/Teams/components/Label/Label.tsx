@@ -1,7 +1,7 @@
-import type { FC, ReactNode } from "react";
+import type { FC, ReactNode } from 'react';
 
-import React from "react";
-import { Label as AtlasLabel } from "@atlaskit/form";
+import React from 'react';
+import { Label as AtlasLabel } from '@atlaskit/form';
 
 export const RequiredAsterisk: FC = () => {
   return (

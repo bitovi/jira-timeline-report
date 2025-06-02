@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test } from 'vitest';
 
 import {
   getConfidenceDefault,
@@ -20,196 +20,196 @@ import {
   getTypeDefault,
   getUrlDefault,
   getVelocityDefault,
-} from "./defaults";
-import { IssueFields, JiraIssue, ParentIssue } from "../shared/types";
+} from './defaults';
+import { IssueFields, JiraIssue, ParentIssue } from '../shared/types';
 
-const createFields = (overrides: Partial<IssueFields> = {}, key: string = ""): Pick<JiraIssue, "fields" | "key"> => {
+const createFields = (overrides: Partial<IssueFields> = {}, key: string = ''): Pick<JiraIssue, 'fields' | 'key'> => {
   return {
     key,
     fields: {
       Parent: {} as ParentIssue,
-      Summary: "summary",
+      Summary: 'summary',
       Sprint: null,
       Labels: [],
-      "Issue Type": { hierarchyLevel: 1, name: "test" },
-      Status: { id: "1", name: "status", statusCategory: { name: "category" } },
-      "Fix versions": [],
+      'Issue Type': { hierarchyLevel: 1, name: 'test' },
+      Status: { id: '1', name: 'status', statusCategory: { name: 'category' } },
+      'Fix versions': [],
       Team: null,
       ...overrides,
     },
   };
 };
 
-test("getConfidenceDefault", () => {
+test('getConfidenceDefault', () => {
   expect(getConfidenceDefault({ ...createFields({ Confidence: 20 }) })).toBe(20);
-  expect(getConfidenceDefault({ ...createFields({ "Story points confidence": 10 }) })).toBe(10);
+  expect(getConfidenceDefault({ ...createFields({ 'Story points confidence': 10 }) })).toBe(10);
   expect(getConfidenceDefault({ ...createFields() })).toBeNull();
 
   expect(
     getConfidenceDefault({
-      ...createFields({ "Story points confidence": 10, Confidence: 20 }),
-    })
+      ...createFields({ 'Story points confidence': 10, Confidence: 20 }),
+    }),
   ).toBe(10);
 });
 
-test("getDueDataDefault", () => {
+test('getDueDataDefault', () => {
   const date = new Date().toString();
 
-  expect(getDueDateDefault({ ...createFields({ "Due date": date }) })).toBe(date);
+  expect(getDueDateDefault({ ...createFields({ 'Due date': date }) })).toBe(date);
   expect(getDueDateDefault({ ...createFields() })).toBeNull();
 });
 
-test("getHierarchyLevelDefault", () => {
+test('getHierarchyLevelDefault', () => {
   expect(
     getHierarchyLevelDefault({
-      ...createFields({ "Issue Type": { name: "", hierarchyLevel: 7 } }),
-    })
+      ...createFields({ 'Issue Type': { name: '', hierarchyLevel: 7 } }),
+    }),
   ).toBe(7);
 });
 
-test("getParentKeyDefault", () => {
+test('getParentKeyDefault', () => {
   expect(
     getParentKeyDefault({
       ...createFields({
         Parent: {
-          key: "parent",
-          id: "",
+          key: 'parent',
+          id: '',
           fields: {
-            issuetype: { name: "", hierarchyLevel: 8 },
-            summary: "",
-            status: { name: "" },
+            issuetype: { name: '', hierarchyLevel: 8 },
+            summary: '',
+            status: { name: '' },
           },
         },
       }),
-    })
-  ).toBe("parent");
+    }),
+  ).toBe('parent');
   expect(
     getParentKeyDefault({
-      ...createFields({ "Parent Link": { data: { key: "link" } } }),
-    })
-  ).toBe("link");
+      ...createFields({ 'Parent Link': { data: { key: 'link' } } }),
+    }),
+  ).toBe('link');
 });
 
-test("getDaysPerSprintDefault", () => {
+test('getDaysPerSprintDefault', () => {
   expect(getDaysPerSprintDefault(createFields())).toBe(10);
 });
 
-test("getStartDateDefault", () => {
+test('getStartDateDefault', () => {
   const date = new Date().toString();
 
-  expect(getStartDateDefault({ ...createFields({ "Start date": date }) })).toBe(date);
+  expect(getStartDateDefault({ ...createFields({ 'Start date': date }) })).toBe(date);
   expect(getStartDateDefault({ ...createFields() })).toBeNull();
 });
 
-test("getStoryPointsDefault", () => {
-  expect(getStoryPointsDefault({ ...createFields({ "Story points": 3 }) })).toBe(3);
+test('getStoryPointsDefault', () => {
+  expect(getStoryPointsDefault({ ...createFields({ 'Story points': 3 }) })).toBe(3);
   expect(getStoryPointsDefault({ ...createFields() })).toBeNull();
 });
 
-test("getStoryPointsMedianDefault", () => {
+test('getStoryPointsMedianDefault', () => {
   expect(
     getStoryPointsMedianDefault({
-      ...createFields({ "Story points median": 3 }),
-    })
+      ...createFields({ 'Story points median': 3 }),
+    }),
   ).toBe(3);
   expect(getStoryPointsMedianDefault({ ...createFields() })).toBeNull();
 });
 
-test("getUrlDefault", () => {
-  expect(getUrlDefault({ key: "" })).toBe("javascript://");
+test('getUrlDefault', () => {
+  expect(getUrlDefault({ key: '' })).toBe('javascript://');
 });
 
-test("getTeamKeyDefault", () => {
-  expect(getTeamKeyDefault({ ...createFields({}, "a-b-c") })).toBe("a");
+test('getTeamKeyDefault', () => {
+  expect(getTeamKeyDefault({ ...createFields({}, 'a-b-c') })).toBe('a');
 });
 
-test("getTypeDefault", () => {
+test('getTypeDefault', () => {
   expect(
     getTypeDefault({
       ...createFields({
-        "Issue Type": { hierarchyLevel: 7, name: "issue type" },
+        'Issue Type': { hierarchyLevel: 7, name: 'issue type' },
       }),
-    })
-  ).toBe("issue type");
+    }),
+  ).toBe('issue type');
 });
 
-test("getVelocityDefault", () => {
+test('getVelocityDefault', () => {
   expect(getVelocityDefault(createFields())).toBe(21);
 });
 
-test("getParallelWorkLimitDefault", () => {
+test('getParallelWorkLimitDefault', () => {
   expect(getParallelWorkLimitDefault(createFields())).toBe(1);
 });
 
-test("getSprintsDefault", () => {
-  const sprints = [{ id: "1", name: "hello", startDate: "20220715", endDate: "20220716" }];
+test('getSprintsDefault', () => {
+  const sprints = [{ id: '1', name: 'hello', startDate: '20220715', endDate: '20220716' }];
 
-  const startDate = new Date("20220715");
-  const endDate = new Date("20220716");
+  const startDate = new Date('20220715');
+  const endDate = new Date('20220716');
 
-  expect(getSprintsDefault({ ...createFields({ Sprint: sprints }) })).toEqual([{ name: "hello", startDate, endDate }]);
+  expect(getSprintsDefault({ ...createFields({ Sprint: sprints }) })).toEqual([{ name: 'hello', startDate, endDate }]);
   expect(getSprintsDefault({ ...createFields() })).toBeNull();
 });
 
-test("getStatusDefault", () => {
+test('getStatusDefault', () => {
   expect(
     getStatusDefault({
       ...createFields({
-        Status: { id: "1", name: "issue type", statusCategory: { name: "" } },
+        Status: { id: '1', name: 'issue type', statusCategory: { name: '' } },
       }),
-    })
-  ).toBe("issue type");
+    }),
+  ).toBe('issue type');
 });
 
-test("getLabelsDefault", () => {
-  expect(getLabelsDefault({ ...createFields({ Labels: ["label"] }) })).toEqual(["label"]);
+test('getLabelsDefault', () => {
+  expect(getLabelsDefault({ ...createFields({ Labels: ['label'] }) })).toEqual(['label']);
   expect(getLabelsDefault({ ...createFields() })).toEqual([]);
 });
 
-test("getStatusCategoryDefault", () => {
+test('getStatusCategoryDefault', () => {
   expect(
     getStatusCategoryDefault({
       ...createFields({
         Status: {
-          id: "1",
-          name: "issue type",
-          statusCategory: { name: "category" },
+          id: '1',
+          name: 'issue type',
+          statusCategory: { name: 'category' },
         },
       }),
-    })
-  ).toBe("category");
+    }),
+  ).toBe('category');
 });
 
-test("getRankDefault", () => {
-  expect(getRankDefault({ ...createFields({ Rank: "1" }) })).toBe("1");
+test('getRankDefault', () => {
+  expect(getRankDefault({ ...createFields({ Rank: '1' }) })).toBe('1');
   expect(getRankDefault({ ...createFields() })).toBeNull();
 });
 
-test("getReleaseDefault", () => {
-  expect(getReleasesDefault({ ...createFields({ "Fix versions": undefined }) })).toEqual([]);
-  expect(getReleasesDefault({ ...createFields({ "Fix versions": [] }) })).toEqual([]);
+test('getReleaseDefault', () => {
+  expect(getReleasesDefault({ ...createFields({ 'Fix versions': undefined }) })).toEqual([]);
+  expect(getReleasesDefault({ ...createFields({ 'Fix versions': [] }) })).toEqual([]);
   expect(
     getReleasesDefault({
       ...createFields({
-        "Fix versions": [
+        'Fix versions': [
           {
-            id: "1",
-            name: "release",
+            id: '1',
+            name: 'release',
             archived: false,
-            description: "description",
+            description: 'description',
             released: false,
-            self: "self-string",
+            self: 'self-string',
           },
         ],
       }),
-    })
+    }),
   ).toEqual([
     {
-      name: "release",
-      id: "1",
-      type: "Release",
-      key: "SPECIAL:release-release",
-      summary: "release",
+      name: 'release',
+      id: '1',
+      type: 'Release',
+      key: 'SPECIAL:release-release',
+      summary: 'release',
     },
   ]);
 });

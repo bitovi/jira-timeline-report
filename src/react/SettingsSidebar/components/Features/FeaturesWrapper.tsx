@@ -1,16 +1,16 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { Suspense } from "react";
-import { FlagsProvider } from "@atlaskit/flag";
-import { ErrorBoundary } from "@sentry/react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import Heading from "@atlaskit/heading";
+import React, { Suspense } from 'react';
+import { FlagsProvider } from '@atlaskit/flag';
+import { ErrorBoundary } from '@sentry/react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import Heading from '@atlaskit/heading';
 
-import { StorageProvider } from "../../../services/storage";
-import routeData from "../../../../canjs/routing/route-data";
-import { queryClient } from "../../../services/query";
-import Skeleton from "../../../components/Skeleton";
-import Features from "./Features";
+import { StorageProvider } from '../../../services/storage';
+import routeData from '../../../../canjs/routing/route-data';
+import { queryClient } from '../../../services/query';
+import Skeleton from '../../../components/Skeleton';
+import Features from './Features';
 
 interface FeaturesWrapperProps {}
 
@@ -48,7 +48,7 @@ const FeaturesSkeleton: FC = () => {
           ))}
         </ul>
         <p className="text-sm">
-          Got feedback?{" "}
+          Got feedback?{' '}
           <a href="#" className="link" target="_blank">
             Let us know on github.
           </a>
@@ -59,14 +59,9 @@ const FeaturesSkeleton: FC = () => {
 };
 
 const FeaturesErrorBoundary: FC<{ error: unknown }> = ({ error }) => {
-  if (
-    !!error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
+  if (!!error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return <>{error?.message}</>;
   }
 
-  return "Something went wrong, we are unable to load features";
+  return 'Something went wrong, we are unable to load features';
 };

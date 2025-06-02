@@ -1,15 +1,15 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React, { useState, useId } from "react";
-import TextArea from "@atlaskit/textarea";
-import Spinner from "@atlaskit/spinner";
-import Button from "@atlaskit/button/new";
-import SectionMessage from "@atlaskit/section-message";
-import Textfield from "@atlaskit/textfield";
-import { Label } from "@atlaskit/form";
+import React, { useState, useId } from 'react';
+import TextArea from '@atlaskit/textarea';
+import Spinner from '@atlaskit/spinner';
+import Button from '@atlaskit/button/new';
+import SectionMessage from '@atlaskit/section-message';
+import Textfield from '@atlaskit/textfield';
+import { Label } from '@atlaskit/form';
 
-import ImageDropzone from "../../../../shared/components/ImageDropzone/ImageDropzone";
-import { useFeedback } from "../../../../shared/hooks";
+import ImageDropzone from '../../../../shared/components/ImageDropzone/ImageDropzone';
+import { useFeedback } from '../../../../shared/hooks';
 
 interface BugReportFormProps {
   onCancel: () => void;
@@ -20,13 +20,13 @@ const BugReportForm: FC<BugReportFormProps> = ({ onCancel, onSubmit }) => {
   const [files, setFiles] = useState<File[]>([]);
 
   const descriptionId = useId();
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
 
   const nameId = useId();
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
 
   const emailId = useId();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
 
   const [formError, setFormError] = useState<string>();
 
@@ -36,16 +36,16 @@ const BugReportForm: FC<BugReportFormProps> = ({ onCancel, onSubmit }) => {
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        setFormError("");
+        setFormError('');
 
         if (!description) {
-          setFormError("You need to add a description.");
+          setFormError('You need to add a description.');
           return;
         }
 
         submitFeatureRequest(
-          { name, files, email, description, tags: { type: "bug" } },
-          { onSuccess: () => onSubmit?.(), onError: (error) => setFormError(error.message) }
+          { name, files, email, description, tags: { type: 'bug' } },
+          { onSuccess: () => onSubmit?.(), onError: (error) => setFormError(error.message) },
         );
       }}
     >
@@ -71,7 +71,7 @@ const BugReportForm: FC<BugReportFormProps> = ({ onCancel, onSubmit }) => {
         </div>
         <div className="pt-4">
           <Label htmlFor={descriptionId}>
-            Description{" "}
+            Description{' '}
             <span className="text-rose-600" aria-hidden="true" title="required">
               *
             </span>
@@ -92,7 +92,7 @@ const BugReportForm: FC<BugReportFormProps> = ({ onCancel, onSubmit }) => {
           Cancel
         </Button>
         <Button type="submit" appearance="primary" isDisabled={isSubmitting}>
-          {isSubmitting ? <Spinner /> : "Submit"}
+          {isSubmitting ? <Spinner /> : 'Submit'}
         </Button>
       </div>
     </form>

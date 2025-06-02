@@ -1,8 +1,8 @@
-import { ObservableObject } from "../../../can";
-import { Jira } from "../../../jira-oidc-helpers";
-import { NormalizeIssueConfig } from "../../../jira/normalized/normalize";
-import { AppStorage } from "../../../jira/storage/common";
-import { RouteData as RouteDataClass } from "./route-data";
+import { ObservableObject } from '../../../can';
+import { Jira } from '../../../jira-oidc-helpers';
+import { NormalizeIssueConfig } from '../../../jira/normalized/normalize';
+import { AppStorage } from '../../../jira/storage/common';
+import { RouteData as RouteDataClass } from './route-data';
 
 type Overrides = {
   showSettings: string;

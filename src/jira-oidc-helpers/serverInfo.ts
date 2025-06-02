@@ -1,11 +1,11 @@
 /**
  * this module recursively gets jira server info.
  */
-import { Config } from "./types";
-import { RequestHelperResponse } from "../shared/types";
+import { Config } from './types';
+import { RequestHelperResponse } from '../shared/types';
 
 export const _cachedServerInfoPromise = (config: Config) => () => {
-  return config.requestHelper("/api/3/serverInfo");
+  return config.requestHelper('/api/3/serverInfo');
 };
 
 export const getServerInfo = (config: Config) => (): Promise<RequestHelperResponse> => {

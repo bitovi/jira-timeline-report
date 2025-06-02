@@ -1,15 +1,15 @@
-import { useLocalStorage } from "../../hooks/useLocalStorage";
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 
 const maxRecentSize = 5;
 
 const getReportKey = () => {
-  const base = "local-reports";
+  const base = 'local-reports';
 
   if (window.env?.JIRA_APP_KEY) {
-    return window.env.JIRA_APP_KEY + "-" + base;
+    return window.env.JIRA_APP_KEY + '-' + base;
   }
 
-  return window.localStorage.getItem("scopeId") + "-" + base;
+  return window.localStorage.getItem('scopeId') + '-' + base;
 };
 
 export const useRecentReports = () => {
@@ -21,7 +21,7 @@ export const useRecentReports = () => {
       const parsed = JSON.parse(value);
 
       if (!Array.isArray(parsed)) {
-        console.warn("Ran into an unexpected value deserializing local-reports", parsed);
+        console.warn('Ran into an unexpected value deserializing local-reports', parsed);
         return [];
       }
 

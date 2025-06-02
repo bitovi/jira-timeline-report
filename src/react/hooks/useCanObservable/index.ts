@@ -1,1 +1,1 @@
-export * from "./useCanObservable";
+export * from './useCanObservable';

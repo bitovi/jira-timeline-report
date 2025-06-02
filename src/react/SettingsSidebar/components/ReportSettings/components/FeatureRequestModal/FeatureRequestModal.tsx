@@ -1,16 +1,11 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
+import React from 'react';
 
-import Modal, {
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTransition,
-} from "@atlaskit/modal-dialog";
+import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTransition } from '@atlaskit/modal-dialog';
 
-import FeatureRequestForm from "./components/FeatureRequestForm";
-import FeatureRequestModalHeader from "./components/FeatureRequestModalHeader";
+import FeatureRequestForm from './components/FeatureRequestForm';
+import FeatureRequestModalHeader from './components/FeatureRequestModalHeader';
 
 interface FeatureRequestModalProps {
   isOpen: boolean;

@@ -1,40 +1,32 @@
-import React, { FC, useState } from "react";
+import React, { FC, useState } from 'react';
 
-import { calculateReportStatuses } from "../../../../jira/rolledup/work-status/work-status";
+import { calculateReportStatuses } from '../../../../jira/rolledup/work-status/work-status';
 
-import type { DerivedIssue } from "../../../../jira/derived/derive";
-import type { WithPercentComplete } from "../../../../jira/rollup/percent-complete/percent-complete";
-import cn from "classnames";
-import Modal, {
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  ModalTransition,
-} from "@atlaskit/modal-dialog";
-import CrossIcon from "@atlaskit/icon/glyph/cross";
-import { IconButton } from "@atlaskit/button/new";
+import type { DerivedIssue } from '../../../../jira/derived/derive';
+import type { WithPercentComplete } from '../../../../jira/rollup/percent-complete/percent-complete';
+import cn from 'classnames';
+import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
+import CrossIcon from '@atlaskit/icon/glyph/cross';
+import { IconButton } from '@atlaskit/button/new';
 
-type EverythingIssue = ReturnType<typeof calculateReportStatuses>[number] &
-  DerivedIssue &
-  WithPercentComplete;
+type EverythingIssue = ReturnType<typeof calculateReportStatuses>[number] & DerivedIssue & WithPercentComplete;
 
 function timingMethod(issue: EverythingIssue) {
   const derivedTiming = issue.derivedTiming;
   if (!issue.team.spreadEffortAcrossDates && derivedTiming.datesDaysOfWork != null) {
-    return "dates";
+    return 'dates';
   }
   // else look for estimate
   else if (derivedTiming.isStoryPointsMedianValid) {
-    return "points-and-confidence";
+    return 'points-and-confidence';
   } else if (derivedTiming.isStoryPointsValid) {
-    return "points";
+    return 'points';
   }
   // if no estimate, look back at dates
   else if (derivedTiming.datesDaysOfWork != null) {
-    return "dates";
+    return 'dates';
   } else {
-    return "unknown";
+    return 'unknown';
   }
 }
 
@@ -47,20 +39,18 @@ interface CalculationBoxProps {
 
 const CalculationBox: FC<CalculationBoxProps> = ({ className, currentValue, oldValue, title }) => {
   return (
-    <div className={cn("flex-col justify-items-center px-1 py-3 rounded-md border", className)}>
+    <div className={cn('flex-col justify-items-center px-1 py-3 rounded-md border', className)}>
       <div className="text-sm font-semibold">{title}</div>
       <div className="flex justify-center gap-1 items-baseline">
         <div>{currentValue}</div>
-        {oldValue && (
-          <div className="bg-neutral-801 rounded-sm text-xs text-white px-1">${oldValue}</div>
-        )}
+        {oldValue && <div className="bg-neutral-801 rounded-sm text-xs text-white px-1">${oldValue}</div>}
       </div>
     </div>
   );
 };
 
 function percent(numerator: number, denominator: number): string {
-  return Math.round((numerator * 100) / denominator) + "%";
+  return Math.round((numerator * 100) / denominator) + '%';
 }
 
 interface EquationMathProps {
@@ -85,7 +75,7 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
   return (
     <>
       <p className="py-2">Calculation method: {issueTimingMethod}</p>
-      <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(5, auto)" }}>
+      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(5, auto)' }}>
         <CalculationBox
           title="Completed working days"
           currentValue={Math.round(issue.derivedTiming.completedDaysOfWork)}
@@ -94,10 +84,7 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
         <CalculationBox
           title="Completed percent"
           className="border-[#F5CD47] bg-[#FFF7D6]"
-          currentValue={percent(
-            issue.derivedTiming.completedDaysOfWork,
-            issue.derivedTiming.totalDaysOfWork || 0
-          )}
+          currentValue={percent(issue.derivedTiming.completedDaysOfWork, issue.derivedTiming.totalDaysOfWork || 0)}
         />
         <div className="self-center justify-self-center">x</div>
         <CalculationBox
@@ -108,26 +95,23 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
         <CalculationBox
           title="Completed percent"
           className="border-[#F5CD47] bg-[#FFF7D6]"
-          currentValue={percent(
-            issue.derivedTiming.completedDaysOfWork,
-            issue.derivedTiming.totalDaysOfWork || 0
-          )}
+          currentValue={percent(issue.derivedTiming.completedDaysOfWork, issue.derivedTiming.totalDaysOfWork || 0)}
         />
         <EquationEqual />
         {issue.derivedTiming.datesDaysOfWork ? (
           <>
             <CalculationBox
               title="Start date – Now"
-              currentValue={issue.derivedTiming.datesCompletedDaysOfWork + " days"}
+              currentValue={issue.derivedTiming.datesCompletedDaysOfWork + ' days'}
             />
             <div className="self-center justify-self-center">÷</div>
             <CalculationBox
               title="Start date – End date"
-              currentValue={issue.derivedTiming.datesDaysOfWork + " days"}
+              currentValue={issue.derivedTiming.datesDaysOfWork + ' days'}
             />
           </>
         ) : (
-          <div style={{ gridColumn: "3 / span 3" }}>
+          <div style={{ gridColumn: '3 / span 3' }}>
             <CalculationBox title="No Dates" currentValue="0" />
           </div>
         )}
@@ -139,7 +123,7 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
         <div className="self-center">=</div>
         {(() => {
           switch (issueTimingMethod) {
-            case "points-and-confidence":
+            case 'points-and-confidence':
               return (
                 <>
                   <CalculationBox
@@ -155,22 +139,22 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
                   />
                 </>
               );
-            case "dates":
+            case 'dates':
               return (
                 <>
                   <CalculationBox
                     title="Start date – End date"
-                    currentValue={issue.derivedTiming.datesDaysOfWork + " days"}
+                    currentValue={issue.derivedTiming.datesDaysOfWork + ' days'}
                   />
-                  <div style={{ gridColumn: "4 / span 2" }}></div>
+                  <div style={{ gridColumn: '4 / span 2' }}></div>
                 </>
               );
             default:
-              return <div style={{ gridColumn: "3 / span 3" }}>TBD</div>;
+              return <div style={{ gridColumn: '3 / span 3' }}>TBD</div>;
           }
         })()}
 
-        {issueTimingMethod === "points-and-confidence" && (
+        {issueTimingMethod === 'points-and-confidence' && (
           <>
             <CalculationBox
               title="Adjusted estimate"
@@ -178,18 +162,12 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
               className="border-[#6CC3E0] bg-[#E7F9FF]"
             />
             <div className="self-center justify-self-center">=</div>
-            <CalculationBox
-              title="Median estimate"
-              currentValue={issue.derivedTiming.defaultOrStoryPointsMedian}
-            />
+            <CalculationBox title="Median estimate" currentValue={issue.derivedTiming.defaultOrStoryPointsMedian} />
             <div className="self-center justify-self-center">*</div>
-            <CalculationBox
-              title="LOGNORMINV × Confidence"
-              currentValue={issue.derivedTiming.usedConfidence + "%"}
-            />
+            <CalculationBox title="LOGNORMINV × Confidence" currentValue={issue.derivedTiming.usedConfidence + '%'} />
           </>
         )}
-        {issueTimingMethod === "points-and-confidence" && (
+        {issueTimingMethod === 'points-and-confidence' && (
           <>
             <CalculationBox
               title="Points per day per parallel track"
@@ -197,13 +175,10 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
               className="border-[#9F8FEF] bg-[#F3F0FF]"
             />
             <div className="self-center justify-self-center">=</div>
-            <div className="flex justify-evenly" style={{ gridColumn: "3 / span 3" }}>
+            <div className="flex justify-evenly" style={{ gridColumn: '3 / span 3' }}>
               <CalculationBox title="Velocity per sprint" currentValue={issue.team.velocity} />
               <div className="self-center justify-self-center">÷</div>
-              <CalculationBox
-                title="Parallel work tracks"
-                currentValue={issue.team.parallelWorkLimit}
-              />
+              <CalculationBox title="Parallel work tracks" currentValue={issue.team.parallelWorkLimit} />
               <div className="self-center justify-self-center">÷</div>
               <CalculationBox title="Days per sprint" currentValue={issue.team.daysPerSprint} />
             </div>
@@ -216,9 +191,7 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
 
 function getPercentComplete(issue: EverythingIssue): string {
   return (
-    Math.round(
-      (issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays
-    ) + "%"
+    Math.round((issue.completionRollup.completedWorkingDays * 100) / issue.completionRollup.totalWorkingDays) + '%'
   );
 }
 
@@ -229,7 +202,7 @@ interface SelfAndChildrenValuesProps {
 
 const SelfAndChildrenValues: FC<SelfAndChildrenValuesProps> = ({ issue, childIssues }) => {
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: "auto repeat(4, auto)" }}>
+    <div className="grid gap-2" style={{ gridTemplateColumns: 'auto repeat(4, auto)' }}>
       <div className="font-bold">Summary</div>
       <div className="font-bold">Percent Complete</div>
       <div className="font-bold">Completed Working Days</div>
@@ -303,8 +276,8 @@ const PercentCompleteModal: FC<PercentCompleteModalProps> = ({ onClose, issue, c
             <div className="w-full flex justify-between">
               <div>
                 <p className="py-2 flex gap-1 text-xs">
-                  {issue.issue.fields["Issue Type"]?.iconUrl ? (
-                    <img src={issue.issue.fields["Issue Type"]?.iconUrl} />
+                  {issue.issue.fields['Issue Type']?.iconUrl ? (
+                    <img src={issue.issue.fields['Issue Type']?.iconUrl} />
                   ) : (
                     issue.type
                   )}
@@ -314,27 +287,20 @@ const PercentCompleteModal: FC<PercentCompleteModalProps> = ({ onClose, issue, c
                 </p>
                 <ModalTitle>Remaining Work Calculation Summary</ModalTitle>
               </div>
-              <IconButton
-                appearance="subtle"
-                icon={CrossIcon}
-                label="Close Modal"
-                onClick={handleClose}
-              />
+              <IconButton appearance="subtle" icon={CrossIcon} label="Close Modal" onClick={handleClose} />
             </div>
           </ModalHeader>
           <ModalBody>
             <p className="py-2">Calculation Source: {issue.completionRollup.source}</p>
-            {issue.completionRollup.source === "self" && (
-              <SelfCalculationBox issue={issue}></SelfCalculationBox>
-            )}
-            {issue.completionRollup.source === "average" && (
+            {issue.completionRollup.source === 'self' && <SelfCalculationBox issue={issue}></SelfCalculationBox>}
+            {issue.completionRollup.source === 'average' && (
               <CalculationBox
-                title={issue.type + " average days"}
+                title={issue.type + ' average days'}
                 currentValue={Math.round(issue.completionRollup.totalWorkingDays)}
                 className="border-[#94C748] bg-[#EFFFD6]"
               />
             )}
-            {issue.completionRollup.source === "children" && (
+            {issue.completionRollup.source === 'children' && (
               <SelfAndChildrenValues issue={issue} childIssues={childIssues} />
             )}
           </ModalBody>

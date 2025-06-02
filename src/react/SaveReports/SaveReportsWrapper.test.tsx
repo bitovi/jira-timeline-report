@@ -1,11 +1,8 @@
-import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, vi } from "vitest";
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, vi } from 'vitest';
 
-import { value } from "../../can";
-
-import SaveReportsWrapper from "./SaveReportsWrapper";
-import { CanObservable } from "../hooks/useCanObservable";
+import SaveReportsWrapper from './SaveReportsWrapper';
 
 const mockOnViewReportsButtonClicked = vi.fn();
 
@@ -15,10 +12,10 @@ const loggedInObservable = {
   getData: vi.fn(),
   value: true,
   set: vi.fn(),
-  get: vi.fn()
+  get: vi.fn(),
 };
 
-describe("<SaveReportsWrapper />", () => {
+describe('<SaveReportsWrapper />', () => {
   it("doesn't render if not logged in", () => {
     render(
       <SaveReportsWrapper
@@ -29,10 +26,10 @@ describe("<SaveReportsWrapper />", () => {
           getData: vi.fn(),
           value: true,
           set: vi.fn(),
-          get: vi.fn()
+          get: vi.fn(),
         }}
         storage={{
-          get: vi.fn().mockResolvedValue({ "saved-reports": {} }),
+          get: vi.fn().mockResolvedValue({ 'saved-reports': {} }),
           storageInitialized: async () => true,
           update: vi.fn(),
         }}
@@ -41,53 +38,52 @@ describe("<SaveReportsWrapper />", () => {
           on: vi.fn(),
           off: vi.fn(),
           getData: vi.fn(),
-          value: "",
+          value: '',
           set: vi.fn(),
-          get: vi.fn()
+          get: vi.fn(),
         }}
-      />
+      />,
     );
 
-    expect(screen.queryByText("Saved reports")).not.toBeInTheDocument();
+    expect(screen.queryByText('Saved reports')).not.toBeInTheDocument();
   });
 
-  it("renders without crashing", async () => {
+  it('renders without crashing', async () => {
     render(
       <SaveReportsWrapper
         linkBuilder={(query) => query}
         shouldShowReportsObservable={loggedInObservable}
         storage={{
-          get: vi.fn().mockResolvedValue({ "saved-reports": {} }),
+          get: vi.fn().mockResolvedValue({ 'saved-reports': {} }),
           storageInitialized: async () => true,
           update: vi.fn(),
-          
         }}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
         queryParamObservable={{
           on: vi.fn(),
           off: vi.fn(),
           getData: vi.fn(),
-          value: "",
+          value: '',
           set: vi.fn(),
-          get: vi.fn()
+          get: vi.fn(),
         }}
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Saved reports")).toBeInTheDocument();
+      expect(screen.getByText('Saved reports')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText("Create new report")).not.toBeInTheDocument();
+    expect(screen.queryByText('Create new report')).not.toBeInTheDocument();
   });
 
-  it("shows the create report button if jql is present", async () => {
+  it('shows the create report button if jql is present', async () => {
     render(
       <SaveReportsWrapper
         linkBuilder={(query) => query}
         shouldShowReportsObservable={loggedInObservable}
         storage={{
-          get: vi.fn().mockResolvedValue({ "saved-reports": {} }),
+          get: vi.fn().mockResolvedValue({ 'saved-reports': {} }),
           storageInitialized: async () => true,
           update: vi.fn(),
         }}
@@ -96,16 +92,16 @@ describe("<SaveReportsWrapper />", () => {
           on: vi.fn(),
           off: vi.fn(),
           getData: vi.fn(),
-          value: "?jql=issues-and-what-not",
+          value: '?jql=issues-and-what-not',
           set: vi.fn(),
-          get: vi.fn()
+          get: vi.fn(),
         }}
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Saved reports")).toBeInTheDocument();
-      expect(screen.getByText("Create new report")).toBeInTheDocument();
+      expect(screen.getByText('Saved reports')).toBeInTheDocument();
+      expect(screen.getByText('Create new report')).toBeInTheDocument();
     });
   });
 });

@@ -1,14 +1,14 @@
-import type { DerivedIssue } from "../../../../jira/derived/derive";
+import type { DerivedIssue } from '../../../../jira/derived/derive';
 
-import { partition, indexByKey, groupBy } from "../../../../utils/array/array-helpers";
-import { getEstimationData } from "../../../../jira/derived/work-timing/work-timing";
+import { partition, indexByKey, groupBy } from '../../../../utils/array/array-helpers';
+import { getEstimationData } from '../../../../jira/derived/work-timing/work-timing';
 
 type Mutable<T> = {
   -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer U>
     ? MutableArray<U>
     : T[P] extends object
-    ? Mutable<T[P]>
-    : T[P];
+      ? Mutable<T[P]>
+      : T[P];
 };
 type MutableArray<T> = Array<Mutable<T>>;
 
@@ -30,10 +30,7 @@ export type LinkedIssue = DerivedIssue & {
 type LinkedIssueBuilderIndex = Record<string, LinkedIssueBuilder>;
 type LinkedIssueIndex = Record<string, LinkedIssue>;
 
-export function linkIssues(
-  issues: DerivedIssue[],
-  probablisticallySelectIssueTiming: boolean
-): LinkedIssue[] {
+export function linkIssues(issues: DerivedIssue[], probablisticallySelectIssueTiming: boolean): LinkedIssue[] {
   const clones = issues.map((issue) => {
     return {
       linkedChildren: [],
@@ -50,7 +47,7 @@ export function linkIssues(
     };
   }) as LinkedIssueBuilder[];
 
-  const issueByKey = indexByKey(clones, "key");
+  const issueByKey = indexByKey(clones, 'key');
 
   linkParentAndChildren(clones, issueByKey);
   linkDirectBlocks(clones, issueByKey);
@@ -83,7 +80,7 @@ function setBlocksWorkDepthDeterministically(issue: LinkedIssueBuilder): number 
 }
 
 function linkParentAndChildren(issues: LinkedIssueBuilder[], issueByKey: LinkedIssueBuilderIndex) {
-  const issuesByParentKey = groupBy(issues, (issue) => issue.parentKey || "");
+  const issuesByParentKey = groupBy(issues, (issue) => issue.parentKey || '');
 
   for (let parentKey in issuesByParentKey) {
     if (parentKey) {
@@ -101,10 +98,10 @@ function linkParentAndChildren(issues: LinkedIssueBuilder[], issueByKey: LinkedI
 }
 
 function getBlockingKeys(issue: LinkedIssueBuilder) {
-  const linkedIssues = issue.issue.fields["Linked Issues"];
+  const linkedIssues = issue.issue.fields['Linked Issues'];
   if (linkedIssues) {
     return linkedIssues
-      .filter((link) => link.type.name === "Blocks" && link.outwardIssue)
+      .filter((link) => link.type.name === 'Blocks' && link.outwardIssue)
       .map((link) => link.outwardIssue.key);
   } else {
     return [];
@@ -117,14 +114,7 @@ function linkDirectBlocks(issues: LinkedIssueBuilder[], issueByKey: LinkedIssueB
       .filter((blockedKey) => {
         const blocked = issueByKey[blockedKey];
         if (blocked && blocked.type !== issue.type) {
-          console.log(
-            issue.type,
-            issue.summary,
-            "is blocking",
-            blocked.type,
-            blocked.summary,
-            ". This is ignored"
-          );
+          console.log(issue.type, issue.summary, 'is blocking', blocked.type, blocked.summary, '. This is ignored');
           return false;
         } else {
           return true;
@@ -132,7 +122,9 @@ function linkDirectBlocks(issues: LinkedIssueBuilder[], issueByKey: LinkedIssueB
       })
       .map((blockKey) => {
         return issueByKey[blockKey];
-      });
+      })
+      // we might want to warn about missing blocked issues
+      .filter((blockedIssue) => blockedIssue);
 
     issue.linkedBlocks = issueBlocks;
 

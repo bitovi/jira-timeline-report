@@ -1,10 +1,10 @@
-import type { FC } from "react";
-import type { CanObservable } from "../hooks/useCanObservable";
+import type { FC } from 'react';
+import type { CanObservable } from '../hooks/useCanObservable';
 
-import React from "react";
-import SectionMessage from "@atlaskit/section-message";
+import React from 'react';
+import SectionMessage from '@atlaskit/section-message';
 
-import { useCanObservable } from "../hooks/useCanObservable";
+import { useCanObservable } from '../hooks/useCanObservable';
 
 interface SampleDataNoticeProps {
   shouldHideNoticeObservable: CanObservable<boolean>;
@@ -13,23 +13,20 @@ interface SampleDataNoticeProps {
 
 const exampleReports = [
   {
-    title: "Release end dates with initiative status",
-    href: "?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status",
+    title: 'Release end dates with initiative status',
+    href: '?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status',
   },
   {
-    title: "Release timeline with initiative work breakdown",
-    href: "?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown",
+    title: 'Release timeline with initiative work breakdown',
+    href: '?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown',
   },
   {
-    title: "Ready and in-development initiative work breakdown",
-    href: "?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true",
+    title: 'Ready and in-development initiative work breakdown',
+    href: '?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true',
   },
 ];
 
-const SampleDataNotice: FC<SampleDataNoticeProps> = ({
-  onLoginClicked,
-  shouldHideNoticeObservable,
-}) => {
+const SampleDataNotice: FC<SampleDataNoticeProps> = ({ onLoginClicked, shouldHideNoticeObservable }) => {
   const shouldHideNotice = useCanObservable(shouldHideNoticeObservable);
 
   if (shouldHideNotice) {
@@ -42,8 +39,7 @@ const SampleDataNotice: FC<SampleDataNoticeProps> = ({
       // @ts-expect-error
       title={
         <>
-          Welcome! You're currently viewing a sample report. To generate a custom status report,
-          click{" "}
+          Welcome! You're currently viewing a sample report. To generate a custom status report, click{' '}
           <a className="text-blue-400 cursor-pointer" onClick={onLoginClicked}>
             Connect to Jira
           </a>

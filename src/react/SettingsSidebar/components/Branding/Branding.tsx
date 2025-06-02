@@ -1,6 +1,6 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
-import React from "react";
+import React from 'react';
 
 interface BrandingProps {}
 
@@ -17,10 +17,7 @@ const Branding: FC<BrandingProps> = () => {
           </a>
         </div>
         <div className="bitovi-poppins text-neutral-100 text-sm">
-          <a
-            href="https://www.bitovi.com/services/agile-project-management-consulting"
-            target="_blank"
-          >
+          <a href="https://www.bitovi.com/services/agile-project-management-consulting" target="_blank">
             by Bitovi
           </a>
         </div>

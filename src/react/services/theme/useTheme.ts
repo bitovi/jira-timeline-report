@@ -1,10 +1,10 @@
-import type { Theme } from "../../../jira/theme";
+import type { Theme } from '../../../jira/theme';
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from '@tanstack/react-query';
 
-import { useStorage } from "../../services/storage";
-import { themeKeys } from "./key-factory";
-import { applyThemeToCssVars, getTheme } from "../../../jira/theme";
+import { useStorage } from '../../services/storage';
+import { themeKeys } from './key-factory';
+import { getTheme } from '../../../jira/theme';
 
 export type UseTheme = () => Theme;
 

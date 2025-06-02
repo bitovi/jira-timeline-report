@@ -1,15 +1,15 @@
-import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from "../rollup";
-import { jStat } from "jstat";
-import { defineFeatureFlag } from "../../../shared/feature-flag";
+import { rollupGroupedHierarchy, groupIssuesByHierarchyLevelOrType, zipRollupDataOntoGroupedData } from '../rollup';
+import { jStat } from 'jstat';
+import { defineFeatureFlag } from '../../../shared/feature-flag';
 
 export const FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES = defineFeatureFlag(
-  "historicallyAdjustedEstimates",
+  'historicallyAdjustedEstimates',
   `
 
     Log historically adjusted estimates and other data
     
 `,
-  false
+  false,
 );
 
 export function addHistoricalAdjustedEstimatedTime(issuesOrReleases, rollupTimingLevelsAndCalculations) {
@@ -19,7 +19,7 @@ export function addHistoricalAdjustedEstimatedTime(issuesOrReleases, rollupTimin
   const zipped = zipRollupDataOntoGroupedData(
     groupedIssues,
     rolledUpHistoricalAdjustedEstimates,
-    "historicalAdjustedEstimatedTime"
+    'historicalAdjustedEstimatedTime',
   );
   return zipped.flat();
 }
@@ -31,7 +31,6 @@ export function addHistoricalAdjustedEstimatedTime(issuesOrReleases, rollupTimin
  * @return {Array<Object>}
  */
 export function rollupHistoricalAdjustedEstimatedTime(groupedHierarchy, methodNames, { getChildren } = {}) {
-
   // get the average estimated work per day per team
   const teamAverageEstimatedPointsPerDay = getTeamAverageEstimatedPointPerDay(groupedHierarchy[1]);
   const totalDaysPerTeam = {};
@@ -60,7 +59,7 @@ export function rollupHistoricalAdjustedEstimatedTime(groupedHierarchy, methodNa
         hierarchyLevel,
         metadata,
         teamAverageEstimatedPointsPerDay,
-        totalDaysPerTeam
+        totalDaysPerTeam,
       );
     },
   });
@@ -111,7 +110,7 @@ export function childrenFirstThenParentTeamAdjustment(
   hierarchyLevel,
   metadata,
   teamAverageEstimatedPointsPerDay,
-  totalDaysPerTeam
+  totalDaysPerTeam,
 ) {
   let data = [];
   if (hierarchyLevel === 0) {
@@ -159,7 +158,6 @@ function issueWasEstimatedDatedAndCompleted(parentIssueOrRelease) {
   const hasDates = startDate && dueDate;
   const startedInThePast = startDate && startDate < new Date();
   const isDone = dueDate && dueDate < new Date();
-
   //const isDone = parentIssueOrRelease.statusCategory === "Done" || parentIssueOrRelease.statusCategory === "In Progress";
   const storyPointsIsNotZero = parentIssueOrRelease.derivedTiming.deterministicTotalDaysOfWork > 0;
   return hasSomeEstimates && hasDates && isDone && storyPointsIsNotZero && startedInThePast;
@@ -183,7 +181,6 @@ function addEstimatedAndActualOnTeam(teamData, parentIssueOrRelease) {
   });
 }
 
-
 function addEstimatedAndActualForTeam(metadata, parentIssueOrRelease) {
   if (!metadata.completedEstimatedVSActualForTeam[parentIssueOrRelease.team.name]) {
     metadata.completedEstimatedVSActualForTeam[parentIssueOrRelease.team.name] = [];
@@ -206,12 +203,11 @@ function toISODateString(date) {
   return date.toISOString().slice(0, 10);
 }
 
-// Returns a map of "dateStrings" to total amount of estimated work for that day 
+// Returns a map of "dateStrings" to total amount of estimated work for that day
 // { "2025-05-02": 0.3, "2025-05-02": 0.5 }
 function estimatePointsPerDay(ranges) {
   const businessDays = new Map(); // Use a Set to ensure unique business days
 
-  
   ranges.forEach(({ startDate, dueDate, deterministicTotalDaysOfWork, totalDaysOfWork }) => {
     if (!startDate || !dueDate) {
       return;
@@ -229,7 +225,7 @@ function estimatePointsPerDay(ranges) {
 
         businessDays.set(
           dateString,
-          typeof currentPoints === "number" ? currentPoints + estimatePointsPerDay : estimatePointsPerDay
+          typeof currentPoints === 'number' ? currentPoints + estimatePointsPerDay : estimatePointsPerDay,
         );
       }
 
@@ -299,10 +295,9 @@ function logNormalAverageConfidenceInterval(values) {
   };
 }
 
-
 export function actualVSEstimated(issues) {
   const historicIssues = issues.filter(issueWasEstimatedDatedAndCompleted);
-  historicIssues.map( issue => {
+  historicIssues.map((issue) => {
     return {
       startDate: issue.startDate,
       dueDate: epic.dueDate,
@@ -310,32 +305,31 @@ export function actualVSEstimated(issues) {
       deterministicTotalDaysOfWork: issue.derivedTiming.deterministicTotalDaysOfWork,
       key: issue.key,
       issue: issue,
-      density: issue.derivedTiming.deterministicTotalDaysOfWork/ issue.derivedTiming.totalDaysOfWork
-    }
+      density: issue.derivedTiming.deterministicTotalDaysOfWork / issue.derivedTiming.totalDaysOfWork,
+    };
   });
   // to determine actual amount of work for each epic ...
-  // we need to lay out every epic for that team ... and then consume work for that epic based on 
+  // we need to lay out every epic for that team ... and then consume work for that epic based on
   // its density
 }
 
 // this returns the amount of estimated points a team gets done per day
 export function getTeamHistoricalEpicData(epics) {
-  
   const teamsData = {};
-  for(const epic of epics) {
+  for (const epic of epics) {
     let teamData;
-    if(!teamsData[epic.team.name]) {
+    if (!teamsData[epic.team.name]) {
       teamData = teamsData[epic.team.name] = {
         historicIssues: [],
         compareData: [],
         ignoredIssues: [],
         theoreticalMean: undefined,
         pointsPerDay: new Map(),
-      }
+      };
     } else {
       teamData = teamsData[epic.team.name];
     }
-    if(issueWasEstimatedDatedAndCompleted(epic)) {
+    if (issueWasEstimatedDatedAndCompleted(epic)) {
       teamData.historicIssues.push(epic);
       teamData.compareData.push({
         startDate: epic.startDate,
@@ -349,7 +343,6 @@ export function getTeamHistoricalEpicData(epics) {
       teamData.ignoredIssues.push(epic);
     }
   }
-
 
   Object.keys(teamsData).forEach((teamName) => {
     const data = teamsData[teamName].compareData;
@@ -369,12 +362,9 @@ export function getTeamHistoricalEpicData(epics) {
     let value = epic.derivedTiming.deterministicTotalDaysOfWork / teamAverageEstimatedPointsPerDay[epic.team.name];
     return value;
   });*/
-  
+
   return teamsData;
 }
-
-
-
 
 function getTeamAverageEstimatedPointPerDay(epics) {
   // get only completed, estimated and dated work
@@ -382,17 +372,14 @@ function getTeamAverageEstimatedPointPerDay(epics) {
 
   // will be a mapping of team name to an array of each epic's:
   // startDate, dueDate, totalDaysOfWork, deterministicTotalDaysOfWork, key and issue
-  const metadata = { 
-    completedEstimatedVSActualForTeam: {} 
+  const metadata = {
+    completedEstimatedVSActualForTeam: {},
   };
 
   epicsToUseAsBaseline.forEach((epic) => {
     addEstimatedAndActualForTeam(metadata, epic);
   });
 
-  
-  
-  
   // a mapping of average mount of estimated work per day for each team
   // {"TEAMFOO": 1.2}
   // we could do this for different types ...
@@ -422,22 +409,20 @@ function getTeamAverageEstimatedPointPerDay(epics) {
   // across all epics, how much time on average "should" it take to get done
   // I don't understand why I'm calculating this
   const averageEpicDaysOfTeamCapacity = jStat.mean(values);
-  console.log("estiamted baseline data",{
+  console.log('estiamted baseline data', {
     baselineEpics: epicsToUseAsBaseline,
     baselineEpicsCapacities: values,
     averageEpicDaysOfTeamCapacity,
     teamAverageEstimatedPointsPerDay,
-    teamDailyValues
+    teamDailyValues,
   });
 
-  /// for some default team, we can know how much 
+  /// for some default team, we can know how much
   teamAverageEstimatedPointsPerDay.DEFAULT = averageEpicDaysOfTeamCapacity;
   // calculate the average amount of work for an epic ...
   // When all teams estimate, how much of total team time does the average epic take?
   return teamAverageEstimatedPointsPerDay;
 }
-
-
 
 /**
  *

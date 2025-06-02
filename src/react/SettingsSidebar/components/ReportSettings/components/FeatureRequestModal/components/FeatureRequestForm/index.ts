@@ -1,1 +1,1 @@
-export { default } from "./FeatureRequestForm";
+export { default } from './FeatureRequestForm';

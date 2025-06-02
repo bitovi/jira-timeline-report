@@ -1,11 +1,11 @@
-import React from "react";
+import React from 'react';
 
-import { render, screen } from "@testing-library/react";
-import { vi } from "vitest";
+import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
-import IssueSource from "./IssueSource";
+import IssueSource from './IssueSource';
 
-vi.mock("./hooks/useRawIssueRequestData", () => ({
+vi.mock('./hooks/useRawIssueRequestData', () => ({
   useRawIssuesRequestData: vi.fn().mockReturnValue({
     issuesPromise: { isPending: false, isResolved: true, value: [] }, // mock resolved promise
     isLoading: false,
@@ -16,12 +16,12 @@ vi.mock("./hooks/useRawIssueRequestData", () => ({
   }),
 }));
 
-vi.mock("./hooks/useJQL", () => ({
+vi.mock('./hooks/useJQL', () => ({
   useJQL: vi.fn().mockReturnValue({
     loadChildren: false,
-    jql: "",
+    jql: '',
     setJql: vi.fn(),
-    childJQL: "",
+    childJQL: '',
     setChildJQL: vi.fn(),
     applyJql: vi.fn(),
     statusesToExclude: [],
@@ -30,17 +30,17 @@ vi.mock("./hooks/useJQL", () => ({
   }),
 }));
 
-describe("<IssueSource />", () => {
-  it("renders without crashing", () => {
+describe('<IssueSource />', () => {
+  it('renders without crashing', () => {
     render(<IssueSource />);
 
-    const heading = screen.getByText("Issue Source");
+    const heading = screen.getByText('Issue Source');
     expect(heading).toBeInTheDocument();
 
-    const jqlTextarea = screen.getByRole("textbox");
+    const jqlTextarea = screen.getByRole('textbox');
     expect(jqlTextarea).toBeInTheDocument();
 
-    const applyButton = screen.getByRole("button", { name: /apply/i });
+    const applyButton = screen.getByRole('button', { name: /apply/i });
     expect(applyButton).toBeInTheDocument();
 
     const loadChildrenCheckbox = screen.getByLabelText(/Load all children of JQL specified issues/);

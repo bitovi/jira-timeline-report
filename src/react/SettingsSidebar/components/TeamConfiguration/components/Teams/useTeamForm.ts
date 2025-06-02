@@ -1,11 +1,11 @@
-import type { NormalizeIssueConfig } from "../../../../../../jira/normalized/normalize";
-import type { Configuration, TeamConfiguration } from "./services/team-configuration";
+import type { NormalizeIssueConfig } from '../../../../../../jira/normalized/normalize';
+import type { Configuration, TeamConfiguration } from './services/team-configuration';
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 
-import { createEmptyConfiguration, useSaveTeamData } from "./services/team-configuration";
-import { FieldUpdates } from "./ConfigureTeamsForm";
+import { createEmptyConfiguration, useSaveTeamData } from './services/team-configuration';
+import { FieldUpdates } from './ConfigureTeamsForm';
 
 type UseTeamFormConfig = {
   teamName: string;

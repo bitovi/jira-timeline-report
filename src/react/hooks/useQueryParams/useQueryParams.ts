@@ -1,11 +1,11 @@
-import type { CanObservable } from "../useCanObservable";
+import type { CanObservable } from '../useCanObservable';
 
-import { useEffect } from "react";
-import { useCanObservable } from "../useCanObservable";
+import { useEffect } from 'react';
+import { useCanObservable } from '../useCanObservable';
 
 export const useQueryParams = (
   queryParamObservable: CanObservable<string>,
-  config?: { onChange: (params: URLSearchParams) => void }
+  config?: { onChange: (params: URLSearchParams) => void },
 ) => {
   const queryParamString = useCanObservable(queryParamObservable);
 

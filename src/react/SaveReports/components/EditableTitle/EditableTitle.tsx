@@ -1,15 +1,15 @@
-import type { Report } from "../../../../jira/reports";
-import type { FC } from "react";
+import type { Report } from '../../../../jira/reports';
+import type { FC } from 'react';
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState } from 'react';
 
-import Heading from "@atlaskit/heading";
-import InlineEdit from "@atlaskit/inline-edit";
-import Textfield from "@atlaskit/textfield";
-import { ErrorMessage } from "@atlaskit/form";
-import Spinner from "@atlaskit/spinner";
+import Heading from '@atlaskit/heading';
+import InlineEdit from '@atlaskit/inline-edit';
+import Textfield from '@atlaskit/textfield';
+import { ErrorMessage } from '@atlaskit/form';
+import Spinner from '@atlaskit/spinner';
 
-import { useUpdateReport } from "../../../services/reports";
+import { useUpdateReport } from '../../../services/reports';
 
 interface EditableTitleProps {
   validate: (name: string) => { isValid: boolean; message: string };
@@ -42,10 +42,10 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
           onError: () => {
             setName(name); // rollback to old name
           },
-        }
+        },
       );
     },
-    [selectedReport, name, setName]
+    [selectedReport, name, setName],
   );
 
   return (
@@ -55,7 +55,7 @@ const EditableTitle: FC<EditableTitleProps> = ({ validate, selectedReport, name,
         isEditing={!!selectedReport && editing}
         onEdit={() => setEditing((prev) => !prev)}
         defaultValue={name}
-        validate={(value) => (value === selectedReport?.name ? "" : validate(value).message)}
+        validate={(value) => (value === selectedReport?.name ? '' : validate(value).message)}
         onConfirm={(value) => {
           setEditing(false);
           edit(value);

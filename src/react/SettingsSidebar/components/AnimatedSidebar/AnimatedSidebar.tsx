@@ -1,10 +1,7 @@
-import type { FC, ReactNode } from "react";
+import type { FC, ReactNode } from 'react';
+import React, { useState, useLayoutEffect, useRef, useEffect } from 'react';
 
-import React, { useState, useLayoutEffect, useRef, useEffect } from "react";
-
-import { value } from "../../../../can";
-import routeData from "../../../../canjs/routing/route-data";
-import { useCanObservable } from "../../../hooks/useCanObservable";
+import { useRouteData } from '../../../hooks/useRouteData';
 
 const duration = 300;
 
@@ -13,7 +10,7 @@ interface AnimatedSidebarProps {
 }
 
 const AnimatedSidebar: FC<AnimatedSidebarProps> = ({ children }) => {
-  const showSettings = useCanObservable<string>(value.from(routeData, "showSettings"));
+  const [showSettings] = useRouteData<string>('showSettings');
   const [visible, setVisible] = useState(true);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,10 +21,10 @@ const AnimatedSidebar: FC<AnimatedSidebarProps> = ({ children }) => {
 
     const clone = hiddenRef.current.cloneNode(true) as HTMLDivElement;
 
-    clone.style.display = "block";
-    clone.style.position = "absolute";
-    clone.style.visibility = "hidden";
-    clone.setAttribute("aria-hidden", "true");
+    clone.style.display = 'block';
+    clone.style.position = 'absolute';
+    clone.style.visibility = 'hidden';
+    clone.setAttribute('aria-hidden', 'true');
 
     document.body.appendChild(clone);
 
@@ -53,7 +50,7 @@ const AnimatedSidebar: FC<AnimatedSidebarProps> = ({ children }) => {
       className={`h-full min-w-40 transition-[width] duration-${duration} overflow-hidden`}
       ref={containerRef}
       style={{
-        width: size?.width ?? "auto",
+        width: size?.width ?? 'auto',
         opacity: visible ? 1 : 0,
       }}
     >

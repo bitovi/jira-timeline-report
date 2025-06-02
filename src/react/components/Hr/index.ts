@@ -1,1 +1,1 @@
-export { default } from "./Hr";
+export { default } from './Hr';

@@ -1,34 +1,34 @@
-import { FC, useEffect } from "react";
-import React, { useState, useRef, useCallback } from "react";
+import { FC, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
-import { CanObservable } from "../../hooks/useCanObservable/useCanObservable.js";
-import { useCanObservable } from "../../hooks/useCanObservable";
+import { CanObservable } from '../../hooks/useCanObservable/useCanObservable.js';
+import { useCanObservable } from '../../hooks/useCanObservable';
 
-import type { DerivedIssue } from "../../../jira/derived/derive";
+import type { DerivedIssue } from '../../../jira/derived/derive';
 
-import { StatsAnalyzer } from "./scheduler/stats-analyzer";
+import { StatsAnalyzer } from './scheduler/stats-analyzer';
 import type {
   StatsUIData,
   SimulationIssueResult,
   MinimalSimulationIssueResult,
   UncertaintyWeight,
-} from "./scheduler/stats-analyzer";
+} from './scheduler/stats-analyzer';
 
-import { bestFitRanges } from "../../../utils/date/best-fit-ranges.js";
-import { getUTCEndDateFromStartDateAndBusinessDays } from "../../../utils/date/business-days.js";
+import { bestFitRanges } from '../../../utils/date/best-fit-ranges.js';
+import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 
-import { IssueSimulationRow } from "./IssueSimulationRow";
-import Controls from "./components/Controls";
+import { IssueSimulationRow } from './IssueSimulationRow';
+import Controls from './components/Controls';
 
-import type { SimulationData } from "./scheduler/stats-analyzer";
-import { useUncertaintyWeight } from "./hooks/useUncertaintyWeight/useUncertaintyWeight";
-import { useSelectedStartDate } from "./hooks/useSelectedStartDate/useSelectedStartDate";
-import UpdateModal from "./components/UpdateModal/UpdateModal";
-import { FlagsProvider } from "@atlaskit/flag";
-import { JiraProvider } from "../../services/jira/JiraProvider";
-import routeData from "../../../canjs/routing/route-data/index";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "../../services/query/queryClient";
+import type { SimulationData } from './scheduler/stats-analyzer';
+import { useUncertaintyWeight } from './hooks/useUncertaintyWeight/useUncertaintyWeight';
+import { useSelectedStartDate } from './hooks/useSelectedStartDate/useSelectedStartDate';
+import UpdateModal from './components/UpdateModal/UpdateModal';
+import { FlagsProvider } from '@atlaskit/flag';
+import { JiraProvider } from '../../services/jira/JiraProvider';
+import routeData from '../../../canjs/routing/route-data/index';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../../services/query/queryClient';
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -42,10 +42,7 @@ interface AutoSchedulerProps {
   allIssuesOrReleasesObs: ObservableOfIssues;
 }
 
-const AutoScheduler: FC<AutoSchedulerProps> = ({
-  primaryIssuesOrReleasesObs,
-  allIssuesOrReleasesObs,
-}) => {
+export const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, allIssuesOrReleasesObs }) => {
   const primary = useCanObservable(primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(allIssuesOrReleasesObs);
 
@@ -84,12 +81,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({
     const container = svgRef.current;
     if (container) observer.observe(container);
 
-    window.addEventListener("resize", updateBlockers);
+    window.addEventListener('resize', updateBlockers);
     updateBlockers(); // initial draw
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("resize", updateBlockers);
+      window.removeEventListener('resize', updateBlockers);
     };
   }, [updateBlockers]);
 
@@ -109,28 +106,23 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({
       {/* Progress Bar */}
       <div
         className={` h-1 bg-orange-400 transition-opacity duration-500 ${
-          uiData.percentComplete === 100 ? "opacity-0" : ""
+          uiData.percentComplete === 100 ? 'opacity-0' : ''
         }`}
-        style={{ width: `${uiData.percentComplete}%`, top: "" }}
+        style={{ width: `${uiData.percentComplete}%`, top: '' }}
       >
         &nbsp;
       </div>
 
       {/* Temp Controls */}
       <Controls toggle={() => setIsOpen((prev) => !prev)} />
-      <UpdateModal
-        startDate={selectedStartDate}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        issues={uiData}
-      />
+      <UpdateModal startDate={selectedStartDate} isOpen={isOpen} onClose={() => setIsOpen(false)} issues={uiData} />
 
       {/* Simulation Grid */}
       <div
         className="grid bg-white relative"
         style={{
           gridTemplateColumns: `[what] auto repeat(${gridData.gridNumberOfDays}, 1fr)`,
-          gridTemplateRows: "auto",
+          gridTemplateRows: 'auto',
         }}
       >
         {/* Background SVG Layer */}
@@ -153,7 +145,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({
         </div>
 
         {/* Placeholder for row height */}
-        <div className="text-xs" style={{ gridRow: "1 / span 1", gridColumn: "1 / span 1" }}>
+        <div className="text-xs" style={{ gridRow: '1 / span 1', gridColumn: '1 / span 1' }}>
           &nbsp;
         </div>
 
@@ -186,7 +178,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({
           }}
         />
 
-        <div className="pl-2 pt-2 pb-1 pr-1 flex " style={{ gridRow: 2, gridColumnStart: "what" }}>
+        <div className="pl-2 pt-2 pb-1 pr-1 flex " style={{ gridRow: 2, gridColumnStart: 'what' }}>
           <div className="text-base grow font-semibold">Summary</div>
         </div>
 
@@ -211,7 +203,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({
 
             <div
               className="pl-2 pt-2 pb-1 pr-1 flex "
-              style={{ gridRow: team.style.gridRowStart, gridColumnStart: "what" }}
+              style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
             >
               <div className="text-base grow font-semibold">{team.team}</div>
             </div>
@@ -222,10 +214,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({
                   className="pl-4 flex pt-0.5 pr-1"
                   style={{
                     gridRow: `${gridifiedTrack.style.gridRowStart} / span 1`,
-                    gridColumnStart: "what",
+                    gridColumnStart: 'what',
                   }}
                 >
-                  <div className="text-xs grow">Track {trackIdx}</div>
+                  <div className="text-xs grow">Track {trackIdx + 1}</div>
                 </div>
 
                 {gridifiedTrack.issues.map((issue, issueIdx) => (
@@ -258,10 +250,8 @@ export default function AutoSchedulerWrapper(props: AutoSchedulerProps) {
   );
 }
 
-function hasUrl(
-  issue: MinimalSimulationIssueResult | SimulationIssueResult
-): issue is SimulationIssueResult {
-  return "url" in issue.linkedIssue && typeof issue.linkedIssue.url === "string";
+function hasUrl(issue: MinimalSimulationIssueResult | SimulationIssueResult): issue is SimulationIssueResult {
+  return 'url' in issue.linkedIssue && typeof issue.linkedIssue.url === 'string';
 }
 
 const SimulationData: React.FC<{
@@ -270,18 +260,18 @@ const SimulationData: React.FC<{
   gridData: GridUIData;
 }> = ({ issue, gridRowStart, gridData }) => {
   function percent(value: number) {
-    return (value / gridData.gridNumberOfDays) * 100 + "%";
+    return (value / gridData.gridNumberOfDays) * 100 + '%';
   }
   function percentWidth(start: number, end: number) {
-    return ((end - start) / gridData.gridNumberOfDays) * 100 + "%";
+    return ((end - start) / gridData.gridNumberOfDays) * 100 + '%';
   }
 
   function rangeBorderClasses() {
     if (!hasUrl(issue)) {
       if (issue.dueDayBottom === issue.dueDayTop) {
-        return "border-solid border border-x-4 border-green-200";
+        return 'border-solid border border-x-4 border-green-200';
       } else {
-        return "border-solid border border-[6px] border-white";
+        return 'border-solid border border-[6px] border-white';
       }
     } else {
       if (
@@ -289,9 +279,9 @@ const SimulationData: React.FC<{
         (!issue.linkedIssue.derivedTiming.isStoryPointsValid &&
           !issue.linkedIssue.derivedTiming.isStoryPointsMedianValid)
       ) {
-        return "border-solid border-2 border-yellow-500";
+        return 'border-solid border-2 border-yellow-500';
       } else {
-        return "border-solid border";
+        return 'border-solid border';
       }
     }
   }
@@ -300,7 +290,7 @@ const SimulationData: React.FC<{
     <>
       <div
         className="pl-5 self-center pr-2 truncate max-w-sm"
-        style={{ gridRow: gridRowStart, gridColumnStart: "what" }}
+        style={{ gridRow: gridRowStart, gridColumnStart: 'what' }}
       >
         <div className="text-gray-600">
           {hasUrl(issue) ? (
@@ -366,14 +356,14 @@ function gridUIData(statsUIData: StatsUIData, startDate: Date) {
   };
 }
 
-type StatsTeam = StatsUIData["teams"][0];
+type StatsTeam = StatsUIData['teams'][0];
 type GridifiedStatsTeam = StatsTeam & {
   style: { gridRowStart: number };
   gridRowSpan: number;
   gridifiedTracks: GridifiedStatsTrack[];
 };
 
-type StatsIssue = StatsUIData["teams"][0]["tracks"][0][0];
+type StatsIssue = StatsUIData['teams'][0]['tracks'][0][0];
 type GridifiedStatsTrack = {
   style: { gridRowStart: number };
   gridRowSpan: number;
@@ -399,9 +389,7 @@ function gridifyStatsUIData(statsUIData: StatsUIData, startingRows: number) {
       return (previousTrack = {
         issues: issues,
         style: {
-          gridRowStart: previousTrack
-            ? previousTrack.style.gridRowStart + previousTrack.gridRowSpan
-            : start + 1,
+          gridRowStart: previousTrack ? previousTrack.style.gridRowStart + previousTrack.gridRowSpan : start + 1,
         },
         gridRowSpan: issues.length + 1,
       });
@@ -421,15 +409,13 @@ function gridifyStatsUIData(statsUIData: StatsUIData, startingRows: number) {
 function makeInsertBlockers(statsUIData: StatsUIData | null) {
   return () => {
     // Draw blockers after DOM is rendered
-    const svg = document
-      .getElementById("dependencies")
-      ?.querySelector("svg") as SVGSVGElement | null;
+    const svg = document.getElementById('dependencies')?.querySelector('svg') as SVGSVGElement | null;
     if (!svg || !statsUIData) return;
 
     // Remove previous blockers
-    svg.querySelectorAll(".path-blocker").forEach((el) => el.remove());
+    svg.querySelectorAll('.path-blocker').forEach((el) => el.remove());
     const svgRect = svg.getBoundingClientRect();
-    svg.setAttribute("viewBox", `0 0 ${svgRect.width} ${svgRect.height}`);
+    svg.setAttribute('viewBox', `0 0 ${svgRect.width} ${svgRect.height}`);
     function getTopLeft(el: Element) {
       const rect = el.getBoundingClientRect();
       return { x: rect.left, y: rect.top };
@@ -441,11 +427,9 @@ function makeInsertBlockers(statsUIData: StatsUIData | null) {
 
     // Map work-item elements by id
     const elementsAndWorkMap: Record<string, { element: HTMLElement; work: SimulationData }> = {};
-    document.querySelectorAll<HTMLElement>(".work-item").forEach((element) => {
+    document.querySelectorAll<HTMLElement>('.work-item').forEach((element) => {
       if (element.id && (element as HTMLElement).offsetParent) {
-        const work = statsUIData.simulationIssueResults.find(
-          (i) => i.linkedIssue.key === element.id
-        );
+        const work = statsUIData.simulationIssueResults.find((i) => i.linkedIssue.key === element.id);
         if (work) {
           elementsAndWorkMap[element.id] = { element: element as HTMLElement, work };
         }
@@ -470,8 +454,8 @@ function makeInsertBlockers(statsUIData: StatsUIData | null) {
           d: makeCurveBetweenPoints(blockerPoint, blockedPoint),
           //C x1 y1, x2 y2, x y
         });
-        blockingPath.classList.add("path-blocker");
-        blockingPath.id = work.linkedIssue.key + "-" + blocking.key;
+        blockingPath.classList.add('path-blocker');
+        blockingPath.id = work.linkedIssue.key + '-' + blocking.key;
 
         svg.appendChild(blockingPath);
       }
@@ -489,9 +473,9 @@ function getCenterLeft(el: HTMLElement) {
 }
 
 export function path(attributes: Record<string, string>): SVGPathElement {
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "#97a0af");
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#97a0af');
   for (const attr in attributes) {
     path.setAttributeNS(null, attr, attributes[attr]);
   }
@@ -502,12 +486,12 @@ export function path(attributes: Record<string, string>): SVGPathElement {
 function makeCurveBetweenPoints(
   start: { x: number; y: number },
   end: { x: number; y: number },
-  controlDistance: number = 30
+  controlDistance: number = 30,
 ) {
   return `M ${start.x} ${start.y} 
     c ${controlDistance} 0, ${end.x - start.x - controlDistance} ${end.y - start.y}, ${
-    end.x - start.x
-  } ${end.y - start.y}`;
+      end.x - start.x
+    } ${end.y - start.y}`;
 }
 /*
   function makeCurveBetweenPoints(p1: {x: number, y: number}, p2: {x: number, y: number}) {

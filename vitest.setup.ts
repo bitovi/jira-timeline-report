@@ -1,5 +1,5 @@
-import "@testing-library/jest-dom";
-import { vi } from "vitest";
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 window.matchMedia = vi.fn().mockImplementation((query) => ({
   matches: vi.fn(),

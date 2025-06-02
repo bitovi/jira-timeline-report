@@ -1,14 +1,14 @@
-import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
-import { vi, describe, expect, it } from "vitest";
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { vi, describe, expect, it } from 'vitest';
 
-import FeatureRequestForm from "./FeatureRequestForm";
-import { FlagsProvider } from "@atlaskit/flag";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import userEvent from "@testing-library/user-event";
+import FeatureRequestForm from './FeatureRequestForm';
+import { FlagsProvider } from '@atlaskit/flag';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
 
-describe("<FeatureRequestForm />", () => {
-  it("renders", () => {
+describe('<FeatureRequestForm />', () => {
+  it('renders', () => {
     const mockOnCancel = vi.fn();
     const mockOnSubmit = vi.fn();
     const client = new QueryClient();
@@ -21,9 +21,7 @@ describe("<FeatureRequestForm />", () => {
       ),
     });
 
-    const emailLabel = screen.getByLabelText(
-      /if you're open to follow-up questions, what's your email\?/i
-    );
+    const emailLabel = screen.getByLabelText(/if you're open to follow-up questions, what's your email\?/i);
     expect(emailLabel).toBeInTheDocument();
 
     const descriptionLabel = screen.getByLabelText(/what are you trying to report on\?/i);
@@ -32,15 +30,15 @@ describe("<FeatureRequestForm />", () => {
     const dropzoneLabel = screen.getByLabelText(/Drag and drop files or click to upload/i);
     expect(dropzoneLabel).toBeInTheDocument();
 
-    const submitButton = screen.getByRole("button", { name: /submit/i });
+    const submitButton = screen.getByRole('button', { name: /submit/i });
     expect(submitButton).toBeInTheDocument();
 
-    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
     expect(cancelButton).toBeInTheDocument();
   });
 
-  describe("FeatureRequestForm Component", () => {
-    it("calls onCancel when the Cancel button is clicked", async () => {
+  describe('FeatureRequestForm Component', () => {
+    it('calls onCancel when the Cancel button is clicked', async () => {
       const mockOnCancel = vi.fn();
       const mockOnSubmit = vi.fn();
       const client = new QueryClient();
@@ -53,14 +51,14 @@ describe("<FeatureRequestForm />", () => {
         ),
       });
 
-      const cancelButton = screen.getByRole("button", { name: /cancel/i });
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
       await userEvent.click(cancelButton);
 
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("shows validation error when the description is empty", async () => {
+  it('shows validation error when the description is empty', async () => {
     const mockOnCancel = vi.fn();
     const mockOnSubmit = vi.fn();
     const client = new QueryClient();
@@ -73,14 +71,14 @@ describe("<FeatureRequestForm />", () => {
       ),
     });
 
-    const submitButton = screen.getByRole("button", { name: /submit/i });
+    const submitButton = screen.getByRole('button', { name: /submit/i });
     await userEvent.click(submitButton);
 
     const errorMessage = await screen.findByText(/you need to add a feature description/i);
     expect(errorMessage).toBeInTheDocument();
   });
 
-  it("submits the form with description and email", async () => {
+  it('submits the form with description and email', async () => {
     const mockOnCancel = vi.fn();
     const mockOnSubmit = vi.fn();
     const client = new QueryClient();
@@ -93,16 +91,14 @@ describe("<FeatureRequestForm />", () => {
       ),
     });
 
-    const emailInput = screen.getByLabelText(
-      /if you're open to follow-up questions, what's your email\?/i
-    );
+    const emailInput = screen.getByLabelText(/if you're open to follow-up questions, what's your email\?/i);
 
-    await userEvent.type(emailInput, "test@example.com");
+    await userEvent.type(emailInput, 'test@example.com');
 
     const descriptionTextArea = screen.getByLabelText(/what are you trying to report on\?/i);
-    await userEvent.type(descriptionTextArea, "I want a weekly breakdown");
+    await userEvent.type(descriptionTextArea, 'I want a weekly breakdown');
 
-    const submitButton = screen.getByRole("button", { name: /submit/i });
+    const submitButton = screen.getByRole('button', { name: /submit/i });
     await userEvent.click(submitButton);
 
     await waitFor(() => {
