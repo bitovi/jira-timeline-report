@@ -10,7 +10,7 @@ import { useRouteData } from '../../../hooks/useRouteData';
 
 export type UncertaintyWeight = number | 'average';
 
-const Controls: FC<{ toggle: () => void }> = ({ toggle }) => {
+const Controls: FC = () => {
   const [selectedStartDate, setSelectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight, setUncertaintyWeight] = useUncertaintyWeight();
   const { selectedIssueType } = useSelectedIssueType();
