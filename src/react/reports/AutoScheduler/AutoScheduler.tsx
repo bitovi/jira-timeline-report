@@ -18,7 +18,7 @@ import { bestFitRanges } from '../../../utils/date/best-fit-ranges.js';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 
 import { IssueSimulationRow } from './IssueSimulationRow';
-import Controls from './components/Controls';
+// import Controls from '../../ReportControls/components/Controls/index.js';
 
 import type { SimulationData } from './scheduler/stats-analyzer';
 import { useUncertaintyWeight } from './hooks/useUncertaintyWeight/useUncertaintyWeight';
@@ -29,6 +29,7 @@ import { JiraProvider } from '../../services/jira/JiraProvider';
 import routeData from '../../../canjs/routing/route-data/index';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../../services/query/queryClient';
+import { useRouteData } from '../../hooks/useRouteData/useRouteData';
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -48,8 +49,6 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   const [selectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight] = useUncertaintyWeight();
-
-  const [isOpen, setIsOpen] = useState(false);
 
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
@@ -113,9 +112,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
         &nbsp;
       </div>
 
-      {/* Temp Controls */}
-      <Controls toggle={() => setIsOpen((prev) => !prev)} />
-      <UpdateModal startDate={selectedStartDate} isOpen={isOpen} onClose={() => setIsOpen(false)} issues={uiData} />
+      <UpdateModal startDate={selectedStartDate} issues={uiData} />
 
       {/* Simulation Grid */}
       <div

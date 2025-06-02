@@ -700,6 +700,12 @@ export class RouteData extends ObservableObject {
       Boolean,
       booleanParsing,
     ),
+    openAutoSchedulerModal: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      'openAutoSchedulerModal',
+      false,
+      Boolean,
+      booleanParsing,
+    ),
     secondaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryReportType', 'none', String, {
       parse: (x) => '' + x,
       stringify: (x) => '' + x,

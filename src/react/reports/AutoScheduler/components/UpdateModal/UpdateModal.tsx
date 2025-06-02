@@ -19,6 +19,7 @@ import { useFlags } from '@atlaskit/flag';
 import { Text } from '@atlaskit/primitives';
 import { token } from '@atlaskit/tokens';
 import SuccessIcon from '@atlaskit/icon/core/success';
+import { useRouteData } from '../../../../hooks/useRouteData';
 
 type LinkedIssue = StatsUIData['simulationIssueResults'][number]['linkedIssue'];
 
@@ -298,6 +299,18 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   );
 };
 
-export default function UpdateModalWrapper({ isOpen, ...rest }: UpdateModalProps & { isOpen: boolean }) {
-  return <ModalTransition>{isOpen && <UpdateModal {...rest} />}</ModalTransition>;
+type OptionalProp<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+export default function UpdateModalWrapper({
+  onClose: onCloseProp,
+  ...rest
+}: OptionalProp<UpdateModalProps, 'onClose'>) {
+  const [isOpen, setIsOpen] = useRouteData<boolean>('openAutoSchedulerModal');
+  const onClose = () => {
+    console.log('close time?"');
+    onCloseProp?.();
+    setIsOpen(false);
+  };
+
+  return <ModalTransition>{isOpen && <UpdateModal {...rest} onClose={onClose} />}</ModalTransition>;
 }

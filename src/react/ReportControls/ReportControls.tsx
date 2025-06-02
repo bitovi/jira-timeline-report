@@ -5,6 +5,7 @@ import CompareSlider from './components/CompareSlider';
 import Filters from './components/Filters';
 import ViewSettings from './components/ViewSettings';
 import { usePrimaryReportType } from './hooks/usePrimaryReportType';
+import UncertaintyControls from './components/UncertaintyControls';
 
 export const ReportControls: FC = () => {
   const [primaryReportType] = usePrimaryReportType();
@@ -17,7 +18,13 @@ export const ReportControls: FC = () => {
       <div className="pt-1">
         <SelectIssueType />
       </div>
-      <div className="flex-grow px-2">
+      <UncertaintyControls
+        toggle={() => {
+          console.log('toggle');
+        }}
+      />
+
+      {/* <div className="flex-grow px-2">
         <CompareSlider />
       </div>
       <div className="self-end pb-1">
@@ -27,7 +34,7 @@ export const ReportControls: FC = () => {
         <div className="self-end pb-1">
           <ViewSettings />
         </div>
-      ) : null}
+      ) : null} */}
     </>
   );
 };
