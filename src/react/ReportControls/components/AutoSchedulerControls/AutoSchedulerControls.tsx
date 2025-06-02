@@ -3,14 +3,12 @@ import React from 'react';
 import Button from '@atlaskit/button/new';
 
 import UncertaintySlider from './components/UncertaintySlider';
-import { useUncertaintyWeight } from '../../../reports/AutoScheduler/hooks/useUncertaintyWeight';
-import { useSelectedStartDate } from '../../../reports/AutoScheduler/hooks/useSelectedStartDate/useSelectedStartDate';
+import { useUncertaintyWeight } from '../../../hooks/useUncertaintyWeight';
+import { useSelectedStartDate } from '../../../hooks/useSelectedStartDate/useSelectedStartDate';
 import { useSelectedIssueType } from '../../../services/issues';
 import { useRouteData } from '../../../hooks/useRouteData';
 
-export type UncertaintyWeight = number | 'average';
-
-const Controls: FC = () => {
+const AutoSchedulerControls: FC = () => {
   const [selectedStartDate, setSelectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight, setUncertaintyWeight] = useUncertaintyWeight();
   const { selectedIssueType } = useSelectedIssueType();
@@ -34,4 +32,4 @@ const Controls: FC = () => {
   );
 };
 
-export default Controls;
+export default AutoSchedulerControls;

@@ -2,16 +2,16 @@ import type { FC } from 'react';
 
 import React, { Suspense } from 'react';
 import DropdownMenu from '@atlaskit/dropdown-menu';
-
-import GanttViewSettings from './components/GanttViewSettings';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from '@sentry/react';
+
+import ScatterPlotViewSettings from './components/ScatterPlotViewSettings';
+import GanttViewSettings from './components/GanttViewSettings';
+import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
 import { queryClient } from '../../../services/query';
 import { StorageProvider } from '../../../services/storage';
-import routeData from '../../../../canjs/routing/route-data';
-import { ErrorBoundary } from '@sentry/react';
-import ScatterPlotViewSettings from './components/ScatterPlotViewSettings';
-import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
 import { EstimateAnalysisViewSettings } from '../../../reports/EstimateAnalysis/EstimateAnalysisViewSettings';
+import routeData from '../../../../canjs/routing/route-data';
 
 const reports = [
   {

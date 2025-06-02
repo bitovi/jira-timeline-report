@@ -1,12 +1,9 @@
-import type { DerivedIssue } from "../../../../jira/derived/derive";
+import type { DerivedIssue } from '../../../../jira/derived/derive';
 
-import { partition, indexByKey, groupBy } from "../../../../utils/array/array-helpers";
+import type { LinkedIssue } from './link-issues';
+import { resetLinkedIssue, linkIssues } from './link-issues';
 
-import type { LinkedIssue } from "./link-issues";
-import { resetLinkedIssue, linkIssues } from "./link-issues";
-import { WorkPlans } from "./workplan";
-
-import { scheduleIssues } from "./schedule";
+import { scheduleIssues } from './schedule';
 
 export function runMonteCarlo(
   issues: DerivedIssue[],
@@ -24,7 +21,7 @@ export function runMonteCarlo(
     batches?: number;
     timeBetweenBatches?: number;
     probablisticallySelectIssueTiming?: boolean;
-  }
+  },
 ) {
   // we are going to track the start/due date of each work item in the simulation
   // something else can deal with composing the stats

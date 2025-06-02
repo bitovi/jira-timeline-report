@@ -1,6 +1,6 @@
 import React from 'react';
 
-type UncertaintyWeight = number | 'average';
+import { UncertaintyWeight } from '../../../../../reports/AutoScheduler/scheduler/stats-analyzer';
 
 type Props = {
   uncertaintyWeight: UncertaintyWeight;

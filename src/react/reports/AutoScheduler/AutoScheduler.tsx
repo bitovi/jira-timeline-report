@@ -1,35 +1,26 @@
-import { FC, useEffect } from 'react';
-import React, { useState, useRef, useCallback } from 'react';
-
-import { CanObservable } from '../../hooks/useCanObservable/useCanObservable.js';
-import { useCanObservable } from '../../hooks/useCanObservable';
-
-import type { DerivedIssue } from '../../../jira/derived/derive';
-
-import { StatsAnalyzer } from './scheduler/stats-analyzer';
 import type {
+  SimulationData,
   StatsUIData,
   SimulationIssueResult,
   MinimalSimulationIssueResult,
-  UncertaintyWeight,
 } from './scheduler/stats-analyzer';
+import type { DerivedIssue } from '../../../jira/derived/derive';
 
-import { bestFitRanges } from '../../../utils/date/best-fit-ranges.js';
-import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
-
-import { IssueSimulationRow } from './IssueSimulationRow';
-// import Controls from '../../ReportControls/components/Controls/index.js';
-
-import type { SimulationData } from './scheduler/stats-analyzer';
-import { useUncertaintyWeight } from './hooks/useUncertaintyWeight/useUncertaintyWeight';
-import { useSelectedStartDate } from './hooks/useSelectedStartDate/useSelectedStartDate';
-import UpdateModal from './components/UpdateModal/UpdateModal';
-import { FlagsProvider } from '@atlaskit/flag';
-import { JiraProvider } from '../../services/jira/JiraProvider';
-import routeData from '../../../canjs/routing/route-data/index';
+import React, { FC, useEffect, useState, useRef, useCallback } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { FlagsProvider } from '@atlaskit/flag';
+import { IssueSimulationRow } from './IssueSimulationRow';
+import UpdateModal from './components/UpdateModal/UpdateModal';
+import { StatsAnalyzer } from './scheduler/stats-analyzer';
+import { CanObservable } from '../../hooks/useCanObservable/useCanObservable.js';
+import { useCanObservable } from '../../hooks/useCanObservable';
+import { useUncertaintyWeight } from '../../hooks/useUncertaintyWeight/useUncertaintyWeight.js';
+import { useSelectedStartDate } from '../../hooks/useSelectedStartDate/useSelectedStartDate.js';
+import { JiraProvider } from '../../services/jira/JiraProvider';
 import { queryClient } from '../../services/query/queryClient';
-import { useRouteData } from '../../hooks/useRouteData/useRouteData';
+import { bestFitRanges } from '../../../utils/date/best-fit-ranges.js';
+import routeData from '../../../canjs/routing/route-data/index';
+import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };

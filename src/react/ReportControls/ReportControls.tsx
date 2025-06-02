@@ -5,7 +5,7 @@ import CompareSlider from './components/CompareSlider';
 import Filters from './components/Filters';
 import ViewSettings from './components/ViewSettings';
 import { usePrimaryReportType } from './hooks/usePrimaryReportType';
-import UncertaintyControls from './components/UncertaintyControls';
+import AutoSchedulerControls from './components/AutoSchedulerControls';
 
 export const ReportControlsWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   return (
@@ -27,7 +27,7 @@ export const ReportControls: FC = () => {
   if (primaryReportType === 'auto-scheduler') {
     return (
       <ReportControlsWrapper>
-        <UncertaintyControls />
+        <AutoSchedulerControls />
       </ReportControlsWrapper>
     );
   }
