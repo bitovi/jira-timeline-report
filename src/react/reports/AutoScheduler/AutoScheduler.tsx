@@ -18,7 +18,7 @@ import { useUncertaintyWeight } from '../../hooks/useUncertaintyWeight/useUncert
 import { useSelectedStartDate } from '../../hooks/useSelectedStartDate/useSelectedStartDate.js';
 import { JiraProvider } from '../../services/jira/JiraProvider';
 import { queryClient } from '../../services/query/queryClient';
-import { bestFitRanges } from '../../../utils/date/best-fit-ranges.js';
+import { bestFitRanges } from '../../../utils/date/best-fit-ranges';
 import routeData from '../../../canjs/routing/route-data/index';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 

@@ -6,7 +6,6 @@ import { useCanObservable } from '../../hooks/useCanObservable';
 
 import type { DerivedIssue } from '../../../jira/derived/derive';
 
-import { bestFitRanges } from '../../../utils/date/best-fit-ranges.js';
 import { EpicEstimatesScatter } from './EstimateVsActualScatter.js';
 
 import { getTeamTimingData } from '../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated';
