@@ -57,6 +57,13 @@ export interface IssueFields extends BaseFields {
   Status: Status;
   'Fix versions': Array<FixVersion>;
   Team: null | { name: string; id: string; avatarUrl?: string };
+  'Linked Issues'?: IssueLink[];
+}
+
+export interface IssueLink {
+  id: string;
+  outwardIssue: { id: string; key: string };
+  type: { id: string; inward: string; name: string; outward: string };
 }
 
 interface BaseIssue {

@@ -4,7 +4,7 @@ export const monthDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'sho
 
 export const yearDateFormatter = new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone: 'UTC' });
 
-// these helpers could probably exist elsehwere
+// these helpers could probably exist elsewhere
 
 function getQuarter(date) {
   const month = date.getMonth();
@@ -125,12 +125,6 @@ const makeDateRanges = function (startDate, endDate) {
     // sometimes the start and end would be the same day.
     if (endDay - startDay !== 0) {
       ranges.push({
-        get start() {
-          throw 'nope';
-        },
-        get end() {
-          throw 'nope';
-        },
         startBusinessDay: startBusinessDayOfRange,
         prettyStart: this.prettyDate(startBusinessDayOfRange),
 
@@ -170,7 +164,7 @@ const ranges = [
 
       // Calculate how many days to add to get to the next Monday
       // Day of the week is represented as 0 (Sunday) to 6 (Saturday)
-      var daysToAdd = (8 - nextMonday.getDay()) % 7;
+      var daysToAdd = (8 - nextMonday.getUTCDay()) % 7;
       if (daysToAdd === 0) {
         daysToAdd = 7; // If today is Monday, move to the next Monday
       }

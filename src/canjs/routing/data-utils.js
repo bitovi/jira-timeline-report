@@ -1,4 +1,4 @@
-import { mostCommonElement } from '../../utils/array/array-helpers.js';
+import { mostCommonElement } from '../../utils/array/array-helpers';
 
 /**
  *

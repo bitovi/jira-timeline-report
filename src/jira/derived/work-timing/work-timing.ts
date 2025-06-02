@@ -63,20 +63,15 @@ const defaults = {
 
 export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
 
-/**
- *
- * @param {import("../../shared/types.js").NormalizedIssue} normalizedIssue
- * @param {Partial<WorkTimingConfig> & { uncertaintyWeight?: number }} options
- * @returns {DerivedWorkTiming}
- */
-export function deriveWorkTiming(
+// this is pulled out b/c the autoscheduler uses it
+export function getEstimationData(
   normalizedIssue: NormalizedIssue,
   {
     getDefaultConfidence = getDefaultConfidenceDefault,
     getDefaultStoryPoints = getDefaultStoryPointsDefault,
     uncertaintyWeight = 80,
-  }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {},
-): DerivedWorkTiming {
+  },
+) {
   const isConfidenceValid = isConfidenceValueValid(normalizedIssue.confidence);
 
   const usedConfidence = isConfidenceValid
@@ -106,6 +101,64 @@ export function deriveWorkTiming(
   const probablisticExtraDaysOfWork = probablisticExtraPoints / normalizedIssue.team.pointsPerDayPerTrack;
   const probablisticTotalPoints = defaultOrStoryPointsMedian + probablisticExtraPoints;
   const probablisticTotalDaysOfWork = probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
+
+  return {
+    isConfidenceValid,
+    usedConfidence,
+    isStoryPointsValid,
+    defaultOrStoryPoints,
+    storyPointsDaysOfWork,
+    isStoryPointsMedianValid,
+    defaultOrStoryPointsMedian,
+    storyPointsMedianDaysOfWork,
+    deterministicExtraPoints,
+    deterministicExtraDaysOfWork,
+    deterministicTotalPoints,
+    deterministicTotalDaysOfWork,
+    probablisticExtraPoints,
+    probablisticExtraDaysOfWork,
+    probablisticTotalPoints,
+    probablisticTotalDaysOfWork,
+  };
+}
+
+/**
+ *
+ * @param {import("../../shared/types.js").NormalizedIssue} normalizedIssue
+ * @param {Partial<WorkTimingConfig> & { uncertaintyWeight?: number }} options
+ * @returns {DerivedWorkTiming}
+ */
+export function deriveWorkTiming(
+  normalizedIssue: NormalizedIssue,
+  {
+    getDefaultConfidence = getDefaultConfidenceDefault,
+    getDefaultStoryPoints = getDefaultStoryPointsDefault,
+    uncertaintyWeight = 80,
+  }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {},
+): DerivedWorkTiming {
+  const {
+    isConfidenceValid,
+    usedConfidence,
+    isStoryPointsValid,
+    defaultOrStoryPoints,
+    storyPointsDaysOfWork,
+    isStoryPointsMedianValid,
+    defaultOrStoryPointsMedian,
+    storyPointsMedianDaysOfWork,
+    deterministicExtraPoints,
+    deterministicExtraDaysOfWork,
+    deterministicTotalPoints,
+    deterministicTotalDaysOfWork,
+    probablisticExtraPoints,
+    probablisticExtraDaysOfWork,
+    probablisticTotalPoints,
+    probablisticTotalDaysOfWork,
+  } = getEstimationData(normalizedIssue, {
+    getDefaultConfidence,
+    getDefaultStoryPoints,
+    uncertaintyWeight,
+  });
+
   const hasStartAndDueDate = Boolean(normalizedIssue.dueDate && normalizedIssue.startDate);
   const startAndDueDateDaysOfWork = hasStartAndDueDate
     ? getBusinessDatesCount(normalizedIssue.startDate, normalizedIssue.dueDate)
