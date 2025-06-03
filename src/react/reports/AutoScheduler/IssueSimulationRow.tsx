@@ -7,9 +7,19 @@ import type { GridUIData } from './AutoScheduler';
 import { IssueSimulationDays } from './IssueSimulationDays';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days';
 
-function hasUrl(issue: MinimalSimulationIssueResult | SimulationIssueResult): issue is SimulationIssueResult {
+function isFullSimulationResult(
+  issue: MinimalSimulationIssueResult | SimulationIssueResult,
+): issue is SimulationIssueResult {
   return 'url' in issue.linkedIssue && typeof issue.linkedIssue.url === 'string';
 }
+import { TotalWorkingDays } from '../GanttReport/PercentComplete/PercentComplete';
+import { Popper } from '@atlaskit/popper';
+
+const monthDateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
 
 export const IssueSimulationRow: React.FC<{
   issue: SimulationIssueResult | MinimalSimulationIssueResult;
@@ -17,7 +27,13 @@ export const IssueSimulationRow: React.FC<{
   gridData: GridUIData;
   selectedStartDate: Date;
 }> = ({ issue, gridRowStart, gridData, selectedStartDate }) => {
+  // STATE ==============
   const [showDetails, setShowDetails] = useState(false);
+
+  const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // UI HELPERS ==============
 
   function percent(value: number) {
     return (value / gridData.gridNumberOfDays) * 100 + '%';
@@ -27,7 +43,7 @@ export const IssueSimulationRow: React.FC<{
   }
 
   function rangeBorderClasses() {
-    if (!hasUrl(issue)) {
+    if (!isFullSimulationResult(issue)) {
       if (issue.dueDayBottom === issue.dueDayTop) {
         return 'border-solid border border-x-4 border-green-200';
       } else {
@@ -53,7 +69,7 @@ export const IssueSimulationRow: React.FC<{
         style={{ gridRow: gridRowStart, gridColumnStart: 'what' }}
       >
         <div className="text-gray-600">
-          {hasUrl(issue) ? (
+          {isFullSimulationResult(issue) ? (
             <a href={issue.linkedIssue.url}>{issue.linkedIssue.summary}</a>
           ) : (
             <div>{issue.linkedIssue.summary}</div>
@@ -74,7 +90,7 @@ export const IssueSimulationRow: React.FC<{
           gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
         }}
       >
-        {hasUrl(issue) && showDetails && (
+        {isFullSimulationResult(issue) && showDetails && (
           <IssueSimulationDays
             gridNumberOfDays={gridData.gridNumberOfDays}
             issue={issue}
@@ -83,8 +99,8 @@ export const IssueSimulationRow: React.FC<{
           />
         )}
 
-        <div className="relative block py-0.5 z-50">
-          {!hasUrl(issue) ? (
+        <div className="relative block py-0.5 z-30">
+          {!isFullSimulationResult(issue) ? (
             <div
               id={issue.linkedIssue.key}
               className={`transition-all duration-100 work-item cursor-pointer ${rangeBorderClasses()} relative bg-gradient-to-r from-blue-200 to-green-400 from-45% to-55% h-4 border-box rounded`}
@@ -92,6 +108,11 @@ export const IssueSimulationRow: React.FC<{
                 left: percent(issue.dueDayBottom),
                 width: percentWidth(issue.dueDayBottom, issue.dueDayTop),
               }}
+              onMouseEnter={(e) => {
+                setAnchorElement(e.currentTarget);
+                setShowTooltip(true);
+              }}
+              onMouseLeave={() => setShowTooltip(false)}
               onClick={() => setShowDetails((v) => !v)}
             ></div>
           ) : (
@@ -113,6 +134,11 @@ export const IssueSimulationRow: React.FC<{
                   width: percentWidth(issue.startDateWithTimeEnoughToFinish, issue.dueDayTop),
                 }}
                 onClick={() => setShowDetails((v) => !v)}
+                onMouseEnter={(e) => {
+                  setAnchorElement(e.currentTarget);
+                  setShowTooltip(true);
+                }}
+                onMouseLeave={() => setShowTooltip(false)}
               ></div>
             </>
           )}
@@ -126,21 +152,95 @@ export const IssueSimulationRow: React.FC<{
           />
         )}
       </div>
+      {showTooltip && anchorElement && isFullSimulationResult(issue) && (
+        <>
+          <Popper referenceElement={anchorElement} placement="left">
+            {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
+              const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
+              return (
+                <div
+                  ref={ref}
+                  style={style}
+                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
+                >
+                  {monthDateFormatter.format(issueDates.startDateWithTimeEnoughToFinish)}
+                </div>
+              );
+            }}
+          </Popper>
+          <Popper referenceElement={anchorElement} placement="right">
+            {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
+              const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
+              return (
+                <div
+                  ref={ref}
+                  style={style}
+                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
+                >
+                  {monthDateFormatter.format(issueDates.dueDateTop)}
+                </div>
+              );
+            }}
+          </Popper>
+          {
+            <Popper referenceElement={anchorElement} placement="bottom">
+              {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
+                const fullIssue = issue as SimulationIssueResult;
+                return (
+                  <div
+                    ref={ref}
+                    style={style}
+                    className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
+                  >
+                    <div>{Math.round(issue.linkedIssue.derivedTiming.deterministicTotalDaysOfWork)} days</div>
+                    <div>
+                      {Math.round(fullIssue.linkedIssue.derivedTiming.deterministicTotalPoints)} adjusted points
+                    </div>
+                    <div>{fullIssue.linkedIssue.storyPointsMedian} estimated points</div>
+                    <div>{fullIssue.linkedIssue.confidence} confidence</div>
+                  </div>
+                );
+                /*return (
+              <div ref={ref} style={style} 
+                className="z-50 text-xs rounded-[3px] bg-white py-0.5 px-1.5 border border-black">
+                  <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(5, auto)' }}>
+                    <TotalWorkingDays issue={issue.linkedIssue}></TotalWorkingDays>
+                  </div>
+              </div>
+            )*/
+              }}
+            </Popper>
+          }
+        </>
+      )}
+
+      {showTooltip && anchorElement && !isFullSimulationResult(issue) && (
+        <>
+          <Popper referenceElement={anchorElement} placement="bottom">
+            {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
+              const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
+              return (
+                <div
+                  ref={ref}
+                  style={style}
+                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
+                >
+                  {monthDateFormatter.format(issueDates.dueDateTop)}
+                </div>
+              );
+            }}
+          </Popper>
+        </>
+      )}
     </>
   );
 };
-
-const monthDateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
 
 export function getDatesFromSimulationIssue(
   issue: SimulationIssueResult | MinimalSimulationIssueResult,
   startDate: Date,
 ) {
-  const isMinimal = !hasUrl(issue);
+  const isMinimal = !isFullSimulationResult(issue);
 
   const rangeStartDate = isMinimal
     ? startDate
