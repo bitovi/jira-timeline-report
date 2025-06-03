@@ -289,7 +289,7 @@ const SimulationData: React.FC<{
         </div>
       </div>
       <div
-        className="relative block py-1 z-50"
+        className="relative block py-1 z-30"
         onMouseEnter={() => {
           console.log(issue);
         }}

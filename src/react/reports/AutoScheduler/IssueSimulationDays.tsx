@@ -48,7 +48,7 @@ export const IssueSimulationDays: React.FC<Props> = ({ issue, gridNumberOfDays, 
           onMouseLeave={(e) => {
             console.log('HIDE TOOLTIP');
           }}
-          className="flex h-full group hover:bg-neutral-30 transition-colors z-50"
+          className="flex h-full group hover:bg-neutral-30 transition-colors z-30"
         >
           <div
             className={`${
