@@ -104,9 +104,10 @@ export const TeamEstimateAccuracyVariance: React.FC<Props> = ({ teamTimings, tea
         <div className={headerBase} onClick={() => toggleSort('variance')}>
           Variance
         </div>
-        {ranges.map((range) => {
+        {ranges.map((range, i) => {
           return (
             <div
+              key={i}
               style={{
                 gridRow: `1 / span 1`,
                 gridColumn: `${dataColumnsCount + range.startDay} / span ${range.days}`,

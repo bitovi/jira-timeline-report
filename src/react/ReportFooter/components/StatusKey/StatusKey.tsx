@@ -1,6 +1,6 @@
 import React, { FC, ReactNode } from 'react';
 import Lozenge from '@atlaskit/lozenge';
-import { useTheme } from '../services/theme';
+import { useTheme } from '../../../services/theme';
 
 const StatusKey: FC = () => {
   const theme = useTheme();

@@ -10,6 +10,8 @@ import './canjs/reports/status-report.js';
 
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
+import { getTheme, applyThemeToCssVars } from './jira/theme';
+
 import { groupIssuesByHierarchyLevelOrType } from './jira/rollup/rollup';
 import { pushStateObservable } from './canjs/routing/state-storage.js';
 
@@ -20,13 +22,11 @@ import ReportControls from './react/ReportControls';
 import SavedReports from './react/SaveReports';
 import SampleDataNotice from './react/SampleDataNotice';
 import SettingsSidebar from './react/SettingsSidebar';
-import StatusKeys from './react/StatusKey';
 import ViewReports from './react/ViewReports';
+import ReportFooter from './react/ReportFooter/ReportFooter';
 
-import { getTheme, applyThemeToCssVars } from './jira/theme';
 import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnalysis';
 import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
-
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
@@ -35,8 +35,8 @@ export class TimelineReport extends StacheElement {
         ></div>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
-    <div id="view-reports"></div>  
-    <div id='sample-data-notice' class='pt-4'></div>
+      <div id="view-reports"></div>  
+      <div id='sample-data-notice' class='pt-4'></div>
       <div id="saved-reports" class='py-4'></div>
       <div id="report-controls" class="flex gap-1"></div>
 
@@ -46,7 +46,6 @@ export class TimelineReport extends StacheElement {
 
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
         <div class="my-2 border-box color-bg-white flex-1">
-                
           {{# eq(this.routeData.primaryReportType, "start-due")  }}
             <gantt-grid 
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
@@ -66,12 +65,14 @@ export class TimelineReport extends StacheElement {
           {{# eq(this.routeData.primaryReportType, "estimate-analysis") }}
             <div id='estimate-analysis' 
               on:inserted='this.attachEstimateAnalysis()'
-              on:removed='this.detatchEstimateAnalysis()'>Loading Estimate Analysis</div>
+              on:removed='this.detachEstimateAnalysis()'>Loading Estimate Analysis</div>
           {{/ eq}}
           {{# eq(this.routeData.primaryReportType, "auto-scheduler") }}
             <div id='auto-scheduler' 
               on:inserted='this.attachAutoScheduler()'
-              on:removed='this.detatchAutoScheduler()'>Loading Auto Scheduler</div>
+              on:removed='this.detachAutoScheduler()'>Loading Auto Scheduler</div>
+
+
           {{/ eq}}
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
@@ -82,10 +83,9 @@ export class TimelineReport extends StacheElement {
               allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
           {{/ }}
 
-          <div class='p-2 sticky bottom-0 bg-white z-[50]'>
-            <div id='status-keys' on:inserted='this.attachStatusKeys()'></div>
-          </div>
-
+          <div id="report-footer" class="sticky bottom-0 z-50"
+            on:inserted='this.attachReportFooter()'
+            on:removed='this.detachReportFooter()'></div>
         </div>
       {{/ and }}
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, not(this.primaryIssuesOrReleases.length) ) }}
@@ -168,9 +168,6 @@ export class TimelineReport extends StacheElement {
     updateFullishHeightSection();
   }
 
-  attachStatusKeys() {
-    createRoot(document.getElementById('status-keys')).render(createElement(StatusKeys, {}));
-  }
   attachEstimateAnalysis() {
     const element = document.getElementById('estimate-analysis');
     this.estimateAnalysisRoot = createRoot(element);
@@ -183,7 +180,7 @@ export class TimelineReport extends StacheElement {
       }),
     );
   }
-  detatchEstimateAnalysis() {
+  detachEstimateAnalysis() {
     if (this.estimateAnalysisRoot) {
       this.estimateAnalysisRoot.unmount();
       this.estimateAnalysisRoot = null;
@@ -201,12 +198,29 @@ export class TimelineReport extends StacheElement {
       }),
     );
   }
-  detatchAutoScheduler() {
+  detachAutoScheduler() {
     if (this.autoSchedulerRoot) {
       this.autoSchedulerRoot.unmount();
       this.autoSchedulerRoot = null;
     }
   }
+
+  attachReportFooter() {
+    const element = document.getElementById('report-footer');
+    this.reportFooterRoot = createRoot(element);
+
+    this.reportFooterRoot.render(createElement(ReportFooter));
+  }
+
+  detachReportFooter() {
+    if (!this.reportFooterRoot) {
+      return;
+    }
+
+    this.reportFooterRoot.unmount();
+    this.reportFooterRoot = null;
+  }
+
   async connected() {
     window.addEventListener('load', updateFullishHeightSection);
     window.addEventListener('resize', updateFullishHeightSection);

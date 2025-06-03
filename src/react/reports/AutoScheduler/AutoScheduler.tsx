@@ -137,9 +137,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
           &nbsp;
         </div>
 
-        {gridData.timeRanges.map((range) => {
+        {gridData.timeRanges.map((range, i) => {
           return (
             <div
+              key={i}
               style={{
                 gridRow: `1 / span 1`,
                 gridColumn: `${1 + range.startDay} / span ${range.days}`,
