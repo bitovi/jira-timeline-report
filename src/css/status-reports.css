@@ -7,6 +7,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Stops the reset on SVG to enable Atlassian to work */
+svg {
+  display: inline;
+  vertical-align: baseline;
+}
+
 :root {
   /* this should be set to what it typically is */
   --fullish-document-top: calc(40px + 20px);

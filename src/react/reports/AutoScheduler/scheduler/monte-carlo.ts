@@ -14,7 +14,7 @@ export function runMonteCarlo(
     onBatch,
     onComplete,
     batchSize = 20,
-    batches = 500,
+    batches = 50,
     timeBetweenBatches = 1,
     probablisticallySelectIssueTiming = true,
   }: {

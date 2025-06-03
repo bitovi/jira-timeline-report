@@ -10,7 +10,7 @@ const getButtonClasses = (isActive: boolean, className: ComponentProps<'button'>
   return [
     'p-2',
     'flex',
-    'align-center',
+    'items-center',
     'gap-2',
     'text-sm',
     'text-slate-300',

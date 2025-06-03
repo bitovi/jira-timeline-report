@@ -26,11 +26,12 @@ export type InterimJiraIssue = {
   fields: Record<string, any>;
   changelog?: History[];
 };
-export type FieldsRequest = Promise<{
+export type FieldsData = {
   list: RequestHelperResponse;
   nameMap: Record<string, any>;
   idMap: Record<string, any>;
-}>;
+};
+export type FieldsRequest = Promise<FieldsData>;
 export type Issue = {
   key: string;
   fields: Record<string, any>; // Adjust based on the actual structure of fields
