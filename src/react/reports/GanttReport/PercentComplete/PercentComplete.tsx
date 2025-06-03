@@ -11,7 +11,7 @@ import { IconButton } from '@atlaskit/button/new';
 
 type EverythingIssue = ReturnType<typeof calculateReportStatuses>[number] & DerivedIssue & WithPercentComplete;
 
-function timingMethod(issue: EverythingIssue) {
+function timingMethod(issue: DerivedIssue) {
   const derivedTiming = issue.derivedTiming;
   if (!issue.team.spreadEffortAcrossDates && derivedTiming.datesDaysOfWork != null) {
     return 'dates';
@@ -66,10 +66,10 @@ const EquationEqual: FC = () => {
 };
 
 interface SelfCalculationBoxProps {
-  issue: EverythingIssue;
+  issue: DerivedIssue;
 }
 
-const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
+export const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
   const issueTimingMethod = timingMethod(issue);
 
   return (
@@ -115,79 +115,84 @@ const SelfCalculationBox: FC<SelfCalculationBoxProps> = ({ issue }) => {
             <CalculationBox title="No Dates" currentValue="0" />
           </div>
         )}
-
-        <CalculationBox
-          title="Total working days"
-          currentValue={Math.round(issue.derivedTiming.totalDaysOfWork || 0)}
-        />
-        <div className="self-center">=</div>
-        {(() => {
-          switch (issueTimingMethod) {
-            case 'points-and-confidence':
-              return (
-                <>
-                  <CalculationBox
-                    title="Adjusted estimate"
-                    currentValue={Math.round(issue.derivedTiming.deterministicTotalPoints)}
-                    className="border-[#6CC3E0] bg-[#E7F9FF]"
-                  />
-                  <div className="self-center justify-self-center">÷</div>
-                  <CalculationBox
-                    title="Points per day per parallel track"
-                    currentValue={issue.team.pointsPerDayPerTrack}
-                    className="border-[#9F8FEF] bg-[#F3F0FF]"
-                  />
-                </>
-              );
-            case 'dates':
-              return (
-                <>
-                  <CalculationBox
-                    title="Start date – End date"
-                    currentValue={issue.derivedTiming.datesDaysOfWork + ' days'}
-                  />
-                  <div style={{ gridColumn: '4 / span 2' }}></div>
-                </>
-              );
-            default:
-              return <div style={{ gridColumn: '3 / span 3' }}>TBD</div>;
-          }
-        })()}
-
-        {issueTimingMethod === 'points-and-confidence' && (
-          <>
-            <CalculationBox
-              title="Adjusted estimate"
-              currentValue={Math.round(issue.derivedTiming.deterministicTotalPoints)}
-              className="border-[#6CC3E0] bg-[#E7F9FF]"
-            />
-            <div className="self-center justify-self-center">=</div>
-            <CalculationBox title="Median estimate" currentValue={issue.derivedTiming.defaultOrStoryPointsMedian} />
-            <div className="self-center justify-self-center">*</div>
-            <CalculationBox title="LOGNORMINV × Confidence" currentValue={issue.derivedTiming.usedConfidence + '%'} />
-          </>
-        )}
-        {issueTimingMethod === 'points-and-confidence' && (
-          <>
-            <CalculationBox
-              title="Points per day per parallel track"
-              currentValue={issue.team.pointsPerDayPerTrack}
-              className="border-[#9F8FEF] bg-[#F3F0FF]"
-            />
-            <div className="self-center justify-self-center">=</div>
-            <div className="flex justify-evenly" style={{ gridColumn: '3 / span 3' }}>
-              <CalculationBox title="Velocity per sprint" currentValue={issue.team.velocity} />
-              <div className="self-center justify-self-center">÷</div>
-              <CalculationBox title="Parallel work tracks" currentValue={issue.team.parallelWorkLimit} />
-              <div className="self-center justify-self-center">÷</div>
-              <CalculationBox title="Days per sprint" currentValue={issue.team.daysPerSprint} />
-            </div>
-          </>
-        )}
+        <TotalWorkingDays issue={issue} />
       </div>
     </>
   );
 };
+
+export function TotalWorkingDays({ issue }: { issue: DerivedIssue }) {
+  const issueTimingMethod = timingMethod(issue);
+  return (
+    <>
+      <CalculationBox title="Total working days" currentValue={Math.round(issue.derivedTiming.totalDaysOfWork || 0)} />
+      <div className="self-center">=</div>
+      {(() => {
+        switch (issueTimingMethod) {
+          case 'points-and-confidence':
+            return (
+              <>
+                <CalculationBox
+                  title="Adjusted estimate"
+                  currentValue={Math.round(issue.derivedTiming.deterministicTotalPoints)}
+                  className="border-[#6CC3E0] bg-[#E7F9FF]"
+                />
+                <div className="self-center justify-self-center">÷</div>
+                <CalculationBox
+                  title="Points per day per parallel track"
+                  currentValue={issue.team.pointsPerDayPerTrack}
+                  className="border-[#9F8FEF] bg-[#F3F0FF]"
+                />
+              </>
+            );
+          case 'dates':
+            return (
+              <>
+                <CalculationBox
+                  title="Start date – End date"
+                  currentValue={issue.derivedTiming.datesDaysOfWork + ' days'}
+                />
+                <div style={{ gridColumn: '4 / span 2' }}></div>
+              </>
+            );
+          default:
+            return <div style={{ gridColumn: '3 / span 3' }}>TBD</div>;
+        }
+      })()}
+
+      {issueTimingMethod === 'points-and-confidence' && (
+        <>
+          <CalculationBox
+            title="Adjusted estimate"
+            currentValue={Math.round(issue.derivedTiming.deterministicTotalPoints)}
+            className="border-[#6CC3E0] bg-[#E7F9FF]"
+          />
+          <div className="self-center justify-self-center">=</div>
+          <CalculationBox title="Median estimate" currentValue={issue.derivedTiming.defaultOrStoryPointsMedian} />
+          <div className="self-center justify-self-center">*</div>
+          <CalculationBox title="LOGNORMINV × Confidence" currentValue={issue.derivedTiming.usedConfidence + '%'} />
+        </>
+      )}
+      {issueTimingMethod === 'points-and-confidence' && (
+        <>
+          <CalculationBox
+            title="Points per day per parallel track"
+            currentValue={issue.team.pointsPerDayPerTrack}
+            className="border-[#9F8FEF] bg-[#F3F0FF]"
+          />
+          <div className="self-center justify-self-center">=</div>
+          <div className="flex justify-evenly" style={{ gridColumn: '3 / span 3' }}>
+            <CalculationBox title="Velocity per sprint" currentValue={issue.team.velocity} />
+            <div className="self-center justify-self-center">÷</div>
+            <CalculationBox title="Parallel work tracks" currentValue={issue.team.parallelWorkLimit} />
+            <div className="self-center justify-self-center">÷</div>
+            <CalculationBox title="Days per sprint" currentValue={issue.team.daysPerSprint} />
+          </div>
+        </>
+      )}
+    </>
+  );
+}
 
 function getPercentComplete(issue: EverythingIssue): string {
   return (
