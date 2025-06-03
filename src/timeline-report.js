@@ -83,7 +83,7 @@ export class TimelineReport extends StacheElement {
               allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
           {{/ }}
 
-          <div id="report-footer" class="sticky bottom-0 z-50"
+          <div id="report-footer" class="sticky bottom-0 z-40"
             on:inserted='this.attachReportFooter()'
             on:removed='this.detachReportFooter()'></div>
         </div>
