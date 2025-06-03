@@ -1,15 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { jStat } from 'jstat';
 
-import { logNormalStats } from '../../../utils/math/log-normal';
-
-import type {
-  ComputedIssueTiming,
-  TeamTimings,
-} from '../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated';
+import type { TeamTimings } from '../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated';
 import { businessDaysInclusive } from '../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated';
 
-import { bestFitRanges } from '../../../utils/date/best-fit-ranges.js';
+import { bestFitRanges } from '../../../utils/date/best-fit-ranges';
 
 import { parseDateIntoLocalTimezone } from '../../../utils/date/date-helpers';
 

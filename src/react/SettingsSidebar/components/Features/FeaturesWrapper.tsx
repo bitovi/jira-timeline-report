@@ -5,7 +5,6 @@ import { FlagsProvider } from '@atlaskit/flag';
 import { ErrorBoundary } from '@sentry/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import Heading from '@atlaskit/heading';
-
 import { StorageProvider } from '../../../services/storage';
 import routeData from '../../../../canjs/routing/route-data';
 import { queryClient } from '../../../services/query';

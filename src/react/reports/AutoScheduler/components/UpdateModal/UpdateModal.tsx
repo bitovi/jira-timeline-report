@@ -1,27 +1,26 @@
 import type { FC } from 'react';
-import type { StatsUIData } from '../../scheduler/stats-analyzer';
-import type { FieldsData } from '../../../../../jira-oidc-helpers/types';
 
 import React, { useState } from 'react';
-
 import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTransition } from '@atlaskit/modal-dialog';
 import DynamicTable from '@atlaskit/dynamic-table';
 import { Checkbox } from '@atlaskit/checkbox';
-
-import { getDatesFromSimulationIssue } from '../../IssueSimulationRow';
 import Button from '@atlaskit/button/new';
-import { useSelectedIssueType } from '../../../../services/issues';
-import routeData from '../../../../../canjs/routing/route-data';
-import { Jira } from '../../../../../jira-oidc-helpers';
 import { useMutation } from '@tanstack/react-query';
-import { useJira } from '../../../../services/jira';
-import Spinner from '@atlaskit/spinner';
 import { useFlags } from '@atlaskit/flag';
+import Spinner from '@atlaskit/spinner';
 import { Text } from '@atlaskit/primitives';
 import { token } from '@atlaskit/tokens';
 import SuccessIcon from '@atlaskit/icon/core/success';
 import SectionMessage from '@atlaskit/section-message';
 import Link from '@atlaskit/link';
+import { getDatesFromSimulationIssue } from '../../IssueSimulationRow';
+import type { StatsUIData } from '../../scheduler/stats-analyzer';
+import { useSelectedIssueType } from '../../../../services/issues';
+import { useJira } from '../../../../services/jira';
+import { useRouteData } from '../../../../hooks/useRouteData';
+import routeData from '../../../../../canjs/routing/route-data';
+import { Jira } from '../../../../../jira-oidc-helpers';
+import type { FieldsData } from '../../../../../jira-oidc-helpers/types';
 
 type LinkedIssue = StatsUIData['simulationIssueResults'][number]['linkedIssue'];
 
@@ -327,6 +326,17 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   );
 };
 
-export default function UpdateModalWrapper({ isOpen, ...rest }: UpdateModalProps & { isOpen: boolean }) {
-  return <ModalTransition>{isOpen && <UpdateModal {...rest} />}</ModalTransition>;
+type OptionalProp<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+export default function UpdateModalWrapper({
+  onClose: onCloseProp,
+  ...rest
+}: OptionalProp<UpdateModalProps, 'onClose'>) {
+  const [isOpen, setIsOpen] = useRouteData<boolean>('openAutoSchedulerModal');
+  const onClose = () => {
+    onCloseProp?.();
+    setIsOpen(false);
+  };
+
+  return <ModalTransition>{isOpen && <UpdateModal {...rest} onClose={onClose} />}</ModalTransition>;
 }

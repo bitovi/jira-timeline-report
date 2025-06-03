@@ -1,14 +1,13 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, ReactNode } from 'react';
 import SelectReportType from './components/SelectReportType';
 import SelectIssueType from './components/SelectIssueType';
 import CompareSlider from './components/CompareSlider';
 import Filters from './components/Filters';
 import ViewSettings from './components/ViewSettings';
 import { usePrimaryReportType } from './hooks/usePrimaryReportType';
+import AutoSchedulerControls from './components/AutoSchedulerControls';
 
-export const ReportControls: FC = () => {
-  const [primaryReportType] = usePrimaryReportType();
-
+export const ReportControlsWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <>
       <div className="pt-1">
@@ -17,18 +16,37 @@ export const ReportControls: FC = () => {
       <div className="pt-1">
         <SelectIssueType />
       </div>
+      {children}
+    </>
+  );
+};
+
+export const ReportControls: FC = () => {
+  const [primaryReportType] = usePrimaryReportType();
+
+  if (primaryReportType === 'auto-scheduler') {
+    return (
+      <ReportControlsWrapper>
+        <AutoSchedulerControls />
+      </ReportControlsWrapper>
+    );
+  }
+
+  return (
+    <ReportControlsWrapper>
       <div className="flex-grow px-2">
         <CompareSlider />
       </div>
       <div className="self-end pb-1">
         <Filters />
       </div>
+
       {primaryReportType !== 'table' ? (
         <div className="self-end pb-1">
           <ViewSettings />
         </div>
       ) : null}
-    </>
+    </ReportControlsWrapper>
   );
 };
 

@@ -54,7 +54,7 @@ module.exports = {
           100: '#7A869A',
           80: '#091E4224', // was "#97A0AF" ... now is 14% alpha of Nuetral300
           50: '#C1C7D0',
-          40: '#DFE1E6', // secondary buttton color
+          40: '#DFE1E6', // secondary button color
           41: '#DCDFE4', // accent.gray.subtler
           30: '#EBECF0',
           20: '#F1F2F4', // stripe color

@@ -1,11 +1,7 @@
 import type { DerivedIssue } from '../../../../jira/derived/derive';
-
-import { partition, indexByKey, groupBy } from '../../../../utils/array/array-helpers';
-
 import type { LinkedIssue } from './link-issues';
-import { resetLinkedIssue, linkIssues } from './link-issues';
-import { WorkPlans } from './workplan';
 
+import { resetLinkedIssue, linkIssues } from './link-issues';
 import { scheduleIssues } from './schedule';
 
 export function runMonteCarlo(
@@ -14,23 +10,23 @@ export function runMonteCarlo(
     onBatch,
     onComplete,
     batchSize = 20,
-    batches = 50,
+    batches = 500,
     timeBetweenBatches = 1,
-    probablisticallySelectIssueTiming = true,
+    probabilisticallySelectIssueTiming = true,
   }: {
     onBatch(BatchResults: { batchData: BatchDatas; percentComplete: number }): void;
     onComplete(): void;
     batchSize?: number;
     batches?: number;
     timeBetweenBatches?: number;
-    probablisticallySelectIssueTiming?: boolean;
+    probabilisticallySelectIssueTiming?: boolean;
   },
 ) {
   // we are going to track the start/due date of each work item in the simulation
   // something else can deal with composing the stats
 
   // make the issues we will work with
-  const linkedIssues = linkIssues(issues, probablisticallySelectIssueTiming);
+  const linkedIssues = linkIssues(issues, probabilisticallySelectIssueTiming);
 
   let batchesRemaining = batches;
   const totalSimulations = batchSize * batches;

@@ -1,6 +1,6 @@
 import React from 'react';
 
-type UncertaintyWeight = number | 'average';
+import { UncertaintyWeight } from '../../../../../reports/AutoScheduler/scheduler/stats-analyzer';
 
 type Props = {
   uncertaintyWeight: UncertaintyWeight;
@@ -19,9 +19,9 @@ const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => 
   };
 
   return (
-    <div className="relative flex-grow px-2">
+    <div className="relative flex flex-grow px-2 items-end">
       <input
-        className="w-full"
+        className="w-full mb-4"
         type="range"
         min={50}
         max={90}
@@ -38,7 +38,7 @@ const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => 
           gridTemplateColumns: 'repeat(9, 1fr)',
           gridTemplateRows: 'auto',
         }}
-        className="grid absolute top-6"
+        className="grid absolute bottom-0"
       >
         <option value="50" className="text-center text-xs relative left-3">
           Median
