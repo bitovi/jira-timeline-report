@@ -133,6 +133,10 @@ const updateFromSimulation = async (
   return results;
 };
 
+function formatDateOrNull(date: Date | null) {
+  return date ? jiraDataFormatter.format(date) : null;
+}
+
 const useUpdateIssuesWithSimulationData = () => {
   const jira = useJira();
   const { showFlag } = useFlags();
@@ -230,19 +234,19 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         // },
         {
           key: `${key}-current-start-date`,
-          content: jiraDataFormatter.format(issue.linkedIssue.startDate),
+          content: formatDateOrNull(issue.linkedIssue.startDate),
         },
         {
           key: `${key}-new-start-date`,
-          content: jiraDataFormatter.format(dates.startDateWithTimeEnoughToFinish),
+          content: formatDateOrNull(dates.startDateWithTimeEnoughToFinish),
         },
         {
           key: `${key}-current-due-date`,
-          content: jiraDataFormatter.format(issue.linkedIssue.dueDate),
+          content: formatDateOrNull(issue.linkedIssue.dueDate),
         },
         {
           key: `${key}-new-due-date`,
-          content: jiraDataFormatter.format(dates.dueDateTop),
+          content: formatDateOrNull(dates.dueDateTop),
         },
       ],
     };
