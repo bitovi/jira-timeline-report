@@ -87,7 +87,7 @@ export const IssueSimulationRow: React.FC<{
           {!hasUrl(issue) ? (
             <div
               id={issue.linkedIssue.key}
-              className={`work-item cursor-pointer ${rangeBorderClasses()} relative bg-gradient-to-r from-blue-200 to-green-400 from-45% to-55% h-4 border-box rounded`}
+              className={`transition-all duration-100 work-item cursor-pointer ${rangeBorderClasses()} relative bg-gradient-to-r from-blue-200 to-green-400 from-45% to-55% h-4 border-box rounded`}
               style={{
                 left: percent(issue.dueDayBottom),
                 width: percentWidth(issue.dueDayBottom, issue.dueDayTop),
@@ -98,7 +98,7 @@ export const IssueSimulationRow: React.FC<{
             <>
               {/* The Little Line */}
               <div
-                className="absolute bg-gradient-to-r from-blue-200 to-green-200 from-85% to-95% h-1 top-2.5 border-box"
+                className="transition-all duration-100 absolute bg-gradient-to-r from-blue-200 to-green-200 from-85% to-95% h-1 top-2.5 border-box"
                 style={{
                   left: percent(issue.startDayBottom),
                   width: percentWidth(issue.startDayBottom, issue.dueDayTop),
@@ -107,7 +107,7 @@ export const IssueSimulationRow: React.FC<{
               {/* The BIG Line */}
               <div
                 id={issue.linkedIssue.key}
-                className={`work-item cursor-pointer ${rangeBorderClasses()} relative bg-gradient-to-r from-blue-500 to-green-400 from-45% to-55% h-4 border-box rounded`}
+                className={`transition-all duration-100 work-item cursor-pointer ${rangeBorderClasses()} relative bg-gradient-to-r from-blue-500 to-green-400 from-45% to-55% h-4 border-box rounded`}
                 style={{
                   left: percent(issue.startDateWithTimeEnoughToFinish),
                   width: percentWidth(issue.startDateWithTimeEnoughToFinish, issue.dueDayTop),
