@@ -114,7 +114,7 @@ export const IssueSimulationRow: React.FC<{
               }}
               onMouseLeave={() => setShowTooltip(false)}
               onClick={() => setShowDetails((v) => !v)}
-            ></div>
+            />
           ) : (
             <>
               {/* The Little Line */}
@@ -139,7 +139,7 @@ export const IssueSimulationRow: React.FC<{
                   setShowTooltip(true);
                 }}
                 onMouseLeave={() => setShowTooltip(false)}
-              ></div>
+              />
             </>
           )}
         </div>

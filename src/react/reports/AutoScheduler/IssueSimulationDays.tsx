@@ -57,7 +57,7 @@ export const IssueSimulationDays: React.FC<Props> = ({ issue, gridNumberOfDays, 
                 : 'self-start bg-green-100 group-hover:bg-green-300'
             } w-full  transition-colors`}
             style={{ height: `${column.percentValue}%` }}
-          ></div>
+          />
         </div>
       ))}
     </div>
