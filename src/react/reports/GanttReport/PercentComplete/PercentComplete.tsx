@@ -152,7 +152,7 @@ export function TotalWorkingDays({ issue }: { issue: DerivedIssue }) {
                   title="Start date – End date"
                   currentValue={issue.derivedTiming.datesDaysOfWork + ' days'}
                 />
-                <div style={{ gridColumn: '4 / span 2' }}></div>
+                <div style={{ gridColumn: '4 / span 2' }} />
               </>
             );
           default:

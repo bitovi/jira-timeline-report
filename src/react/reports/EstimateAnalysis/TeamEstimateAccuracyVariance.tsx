@@ -192,7 +192,7 @@ export const TeamEstimateAccuracyVariance: React.FC<Props> = ({ teamTimings, tea
                     });
                   }
                 }}
-              ></div>
+              />
             ))}
           </React.Fragment>
         ))}

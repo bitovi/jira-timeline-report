@@ -8,8 +8,8 @@ export const AutoSchedulerFooter: FC = () => {
 
       <div className="flex justify-center">
         <div className="relative w-1/2">
-          <div className="absolute bg-gradient-to-r from-blue-200 to-green-200 from-85% to-95% h-1 top-1.5 border-box w-full"></div>
-          <div className="work-item border-solid border relative bg-gradient-to-r from-blue-500 to-green-400 from-45% to-55% h-4 border-box rounded w-1/2 left-1/2"></div>
+          <div className="absolute bg-gradient-to-r from-blue-200 to-green-200 from-85% to-95% h-1 top-1.5 border-box w-full" />
+          <div className="work-item border-solid border relative bg-gradient-to-r from-blue-500 to-green-400 from-45% to-55% h-4 border-box rounded w-1/2 left-1/2" />
           <div className="flex justify-between pt-2">
             <AutoSchedulerFooterKey position="left" dotColor="lightBlue">
               Earliest development might start within risk parameters

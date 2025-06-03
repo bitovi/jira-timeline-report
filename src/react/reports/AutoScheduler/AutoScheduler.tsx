@@ -314,7 +314,7 @@ const SimulationData: React.FC<{
             left: percent(issue.startDateWithTimeEnoughToFinish),
             width: percentWidth(issue.startDateWithTimeEnoughToFinish, issue.dueDayTop),
           }}
-        ></div>
+        />
       </div>
     </>
   );
