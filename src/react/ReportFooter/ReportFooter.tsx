@@ -8,11 +8,7 @@ const Footer: FC = () => {
   const [primaryReportType] = usePrimaryReportType();
 
   if (primaryReportType === 'start-due') {
-    return (
-      <div className="p-2 bg-white z-[50]">
-        <StatusKey />
-      </div>
-    );
+    return <StatusKey />;
   }
 
   if (primaryReportType === 'auto-scheduler') {
