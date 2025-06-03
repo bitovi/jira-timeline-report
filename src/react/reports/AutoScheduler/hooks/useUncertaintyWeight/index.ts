@@ -1,1 +1,1 @@
-export * from "./useUncertaintyWeight";
+export * from './useUncertaintyWeight';

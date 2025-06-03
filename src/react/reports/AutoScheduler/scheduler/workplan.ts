@@ -27,17 +27,13 @@ class ScheduledWorkNode {
 
   isPrependPossible(
     work: WorkItem,
-    firstDayWorkCouldStartOn: number
+    firstDayWorkCouldStartOn: number,
   ): { isPossible: boolean; possibleStartDay: number } {
     let firstDayToStartWorkAfterExistingWork = 0;
     if (this.previous !== null) {
-      firstDayToStartWorkAfterExistingWork =
-        this.previous.work.startDay + this.previous.work.daysOfWork;
+      firstDayToStartWorkAfterExistingWork = this.previous.work.startDay + this.previous.work.daysOfWork;
     }
-    const possibleStartDay = Math.max(
-      firstDayWorkCouldStartOn,
-      firstDayToStartWorkAfterExistingWork
-    );
+    const possibleStartDay = Math.max(firstDayWorkCouldStartOn, firstDayToStartWorkAfterExistingWork);
     return {
       isPossible: possibleStartDay + work.daysOfWork <= this.work.startDay,
       possibleStartDay,
@@ -76,13 +72,10 @@ class WorkPlan {
 
   earliestStartDay(
     work: WorkItem,
-    firstDayWorkCouldStartOn: number
+    firstDayWorkCouldStartOn: number,
   ): { possibleStartDay: number; updatePlan: () => void } {
     for (const workNode of this) {
-      const { isPossible, possibleStartDay } = workNode.isPrependPossible(
-        work,
-        firstDayWorkCouldStartOn
-      );
+      const { isPossible, possibleStartDay } = workNode.isPrependPossible(work, firstDayWorkCouldStartOn);
       if (isPossible) {
         return {
           possibleStartDay,
@@ -100,12 +93,7 @@ class WorkPlan {
     };
   }
 
-  prepend(
-    workNode: ScheduledWorkNode,
-    work: WorkItem,
-    startDay: number,
-    firstDayWorkCouldStartOn: number
-  ): void {
+  prepend(workNode: ScheduledWorkNode, work: WorkItem, startDay: number, firstDayWorkCouldStartOn: number): void {
     work.startDay = startDay;
     const scheduledWorkItem = work as ScheduledWorkItem;
     if (scheduledWorkItem.startDay > firstDayWorkCouldStartOn) {

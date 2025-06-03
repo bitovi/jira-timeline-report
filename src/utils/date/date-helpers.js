@@ -1,10 +1,8 @@
 const START_DATE_KEY = 'Start date';
-const DUE_DATE_KEY = 'Due date';
 
 // ! I'm not sure why changelog has both Start Date and duedate.
 export function howMuchHasDueDateMovedForwardChangedSince(epic, checkpointDate) {
   let dueDateWasPriorToTheFirstChangeAfterTheCheckpoint;
-  let dueDateNow;
   let currentDate;
   // find the due date at "date"
   for (let changelog of [...epic.changelog].reverse()) {

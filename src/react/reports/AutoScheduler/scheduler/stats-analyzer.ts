@@ -1,9 +1,9 @@
-import type { DerivedIssue } from "../../../../jira/derived/derive";
-import { runMonteCarlo } from "./monte-carlo";
+import type { DerivedIssue } from '../../../../jira/derived/derive';
+import { runMonteCarlo } from './monte-carlo';
 
-import type { BatchDatas, BatchIssueData } from "./monte-carlo";
+import type { BatchDatas, BatchIssueData } from './monte-carlo';
 
-import type { LinkedIssue } from "./link-issues";
+import type { LinkedIssue } from './link-issues';
 
 import {
   insertSortedArrayInPlace,
@@ -11,13 +11,13 @@ import {
   mostCommonNumber,
   last,
   groupBy,
-} from "../../../../utils/array/array-helpers";
+} from '../../../../utils/array/array-helpers';
 
 // TODO: could this be some simple interface?
-export type UncertaintyWeight = number | "average";
-export type StatsUIData = ReturnType<StatsAnalyzer["dataForUI"]>;
-export type MinimalSimulationIssueResult = StatsUIData["endDaySimulationResult"];
-export type SimulationIssueResult = StatsUIData["simulationIssueResults"][number];
+export type UncertaintyWeight = number | 'average';
+export type StatsUIData = ReturnType<StatsAnalyzer['dataForUI']>;
+export type MinimalSimulationIssueResult = StatsUIData['endDaySimulationResult'];
+export type SimulationIssueResult = StatsUIData['simulationIssueResults'][number];
 
 export type SimulationData = BatchIssueData & {
   sourceIssue: DerivedIssue;
@@ -39,7 +39,7 @@ export class StatsAnalyzer {
   simulationIssues: SimulationData[];
   lastDays: number[];
   percentComplete: number;
-  uncertaintyWeight: number | "average";
+  uncertaintyWeight: number | 'average';
   setUIState: (data: StatsUIData) => void;
 
   constructor({
@@ -48,7 +48,7 @@ export class StatsAnalyzer {
     setUIState,
   }: {
     issues: DerivedIssue[];
-    uncertaintyWeight: number | "average";
+    uncertaintyWeight: number | 'average';
     setUIState: (data: StatsUIData) => void;
   }) {
     const { linkedIssues, runBatchAndLoop } = runMonteCarlo(issues, {
@@ -72,7 +72,7 @@ export class StatsAnalyzer {
     this.setUIState = setUIState;
     runBatchAndLoop();
   }
-  updateUncertaintyWeight(uncertaintyWeight: number | "average") {
+  updateUncertaintyWeight(uncertaintyWeight: number | 'average') {
     if (this.uncertaintyWeight !== uncertaintyWeight) {
       this.uncertaintyWeight = uncertaintyWeight;
       this.setUIState(this.dataForUI());
@@ -101,8 +101,8 @@ export class StatsAnalyzer {
   dataForUI() {
     const endDaySimulation: MinimalSimulationIssue = {
       linkedIssue: {
-        summary: "Due Date",
-        key: "[~DUE DATE~]",
+        summary: 'Due Date',
+        key: '[~DUE DATE~]',
       },
       startDays: [0],
       dueDays: this.lastDays,
@@ -116,15 +116,12 @@ export class StatsAnalyzer {
       return getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight);
     });
 
-    const endDaySimulationResult = getUncertaintyThresholdData(
-      endDaySimulation,
-      this.uncertaintyWeight
-    );
+    const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
 
     // lets get it ready for teams ...
     const teamGroups = groupBy(
       simulationIssueResults,
-      (simulationIssueResult) => simulationIssueResult.linkedIssue.team.name
+      (simulationIssueResult) => simulationIssueResult.linkedIssue.team.name,
     );
     const teams = Object.entries(teamGroups).map(([teamName, simulationIssueResults]) => {
       const tracks = groupByTrack(simulationIssueResults);
@@ -152,7 +149,7 @@ type MinimalSimulationIssueFields = {
 
 export function getUncertaintyThresholdData<T extends MinimalSimulationIssueFields>(
   simulationIssue: T,
-  uncertaintyWeight: UncertaintyWeight
+  uncertaintyWeight: UncertaintyWeight,
 ): T & {
   startDayBottom: number;
   dueDayBottom: number;
@@ -167,7 +164,7 @@ export function getUncertaintyThresholdData<T extends MinimalSimulationIssueFiel
 
   let startDayBottom: number, dueDayBottom: number, dueDayTop: number, adjustedDaysOfWork: number;
 
-  if (typeof uncertaintyWeight === "number") {
+  if (typeof uncertaintyWeight === 'number') {
     const uncertaintyIndex = Math.min(Math.round((length * uncertaintyWeight) / 100), length - 1);
     const confidenceIndex = Math.max(length - 1 - uncertaintyIndex, 0);
 

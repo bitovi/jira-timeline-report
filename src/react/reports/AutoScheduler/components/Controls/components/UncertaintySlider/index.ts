@@ -1,1 +1,1 @@
-export { default } from "./UncertaintySlider";
+export { default } from './UncertaintySlider';

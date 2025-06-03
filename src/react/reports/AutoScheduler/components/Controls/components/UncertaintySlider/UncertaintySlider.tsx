@@ -1,6 +1,6 @@
-import React from "react";
+import React from 'react';
 
-type UncertaintyWeight = number | "average";
+type UncertaintyWeight = number | 'average';
 
 type Props = {
   uncertaintyWeight: UncertaintyWeight;
@@ -11,11 +11,11 @@ const AVERAGE = 55;
 
 const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => {
   // Convert display value (55 for "average") to actual uncertaintyWeight and back
-  const value = uncertaintyWeight === "average" ? AVERAGE : uncertaintyWeight;
+  const value = uncertaintyWeight === 'average' ? AVERAGE : uncertaintyWeight;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const num = parseInt(e.target.value, 10);
-    onChange(num === AVERAGE ? "average" : num);
+    onChange(num === AVERAGE ? 'average' : num);
   };
 
   return (
@@ -33,10 +33,10 @@ const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => 
       <datalist
         id="range-values"
         style={{
-          width: "calc((100% - 15px) * 10.115 / 9)",
-          left: "calc(7.5px - (100% - 15px) * 10.115 / 9 / 18)",
-          gridTemplateColumns: "repeat(9, 1fr)",
-          gridTemplateRows: "auto",
+          width: 'calc((100% - 15px) * 10.115 / 9)',
+          left: 'calc(7.5px - (100% - 15px) * 10.115 / 9 / 18)',
+          gridTemplateColumns: 'repeat(9, 1fr)',
+          gridTemplateRows: 'auto',
         }}
         className="grid absolute top-6"
       >

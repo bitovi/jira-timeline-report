@@ -1,9 +1,9 @@
-import { value } from "../../../../../can";
-import routeData from "../../../../../canjs/routing/route-data";
-import { useCanObservable } from "../../../../hooks/useCanObservable";
+import { value } from '../../../../../can';
+import routeData from '../../../../../canjs/routing/route-data';
+import { useCanObservable } from '../../../../hooks/useCanObservable';
 
 export const useSelectedStartDate = () => {
-  const selectedStartDate = useCanObservable<Date>(value.from(routeData, "selectedStartDate"));
+  const selectedStartDate = useCanObservable<Date>(value.from(routeData, 'selectedStartDate'));
 
   const setSelectedStartDate = (date: Date | null) => {
     // @ts-expect-error
