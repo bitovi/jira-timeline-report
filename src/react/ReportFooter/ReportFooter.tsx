@@ -4,19 +4,19 @@ import StatusKey from './components/StatusKey';
 import AutoSchedulerFooter from './components/AutoSchedulerFooter';
 import { PrimaryReportType, usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportType';
 
-const reportFooterMap = {
+const reportFooterMap: Partial<Record<PrimaryReportType, FC>> = {
   'auto-scheduler': AutoSchedulerFooter,
   'start-due': StatusKey,
-} as const satisfies Partial<Record<PrimaryReportType, FC>>;
+};
 
 const ReportFooter: FC = () => {
   const [primaryReportType] = usePrimaryReportType();
 
-  if (primaryReportType !== 'auto-scheduler' && primaryReportType !== 'start-due') {
+  const Footer = reportFooterMap[primaryReportType];
+
+  if (!Footer) {
     return null;
   }
-
-  const Footer = reportFooterMap[primaryReportType];
 
   return <Footer />;
 };
