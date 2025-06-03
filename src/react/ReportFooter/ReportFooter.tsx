@@ -2,20 +2,23 @@ import React, { FC } from 'react';
 
 import StatusKey from './components/StatusKey';
 import AutoSchedulerFooter from './components/AutoSchedulerFooter';
-import { usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportType';
+import { PrimaryReportType, usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportType';
 
-const Footer: FC = () => {
+const reportFooterMap = {
+  'auto-scheduler': AutoSchedulerFooter,
+  'start-due': StatusKey,
+} as const satisfies Partial<Record<PrimaryReportType, FC>>;
+
+const ReportFooter: FC = () => {
   const [primaryReportType] = usePrimaryReportType();
 
-  if (primaryReportType === 'start-due') {
-    return <StatusKey />;
+  if (primaryReportType !== 'auto-scheduler' && primaryReportType !== 'start-due') {
+    return null;
   }
 
-  if (primaryReportType === 'auto-scheduler') {
-    return <AutoSchedulerFooter />;
-  }
+  const Footer = reportFooterMap[primaryReportType];
 
-  return null;
+  return <Footer />;
 };
 
-export default Footer;
+export default ReportFooter;
