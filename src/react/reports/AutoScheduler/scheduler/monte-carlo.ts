@@ -1,8 +1,7 @@
 import type { DerivedIssue } from '../../../../jira/derived/derive';
-
 import type { LinkedIssue } from './link-issues';
-import { resetLinkedIssue, linkIssues } from './link-issues';
 
+import { resetLinkedIssue, linkIssues } from './link-issues';
 import { scheduleIssues } from './schedule';
 
 export function runMonteCarlo(

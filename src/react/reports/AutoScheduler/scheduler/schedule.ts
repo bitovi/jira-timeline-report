@@ -1,10 +1,10 @@
-import type { DerivedIssue } from "../../../../jira/derived/derive";
+import type { DerivedIssue } from '../../../../jira/derived/derive';
 
-import { partition, indexByKey, groupBy } from "../../../../utils/array/array-helpers";
+import { partition, indexByKey, groupBy } from '../../../../utils/array/array-helpers';
 
-import type { LinkedIssue } from "./link-issues";
-import { resetLinkedIssue } from "./link-issues";
-import { WorkPlans } from "./workplan";
+import type { LinkedIssue } from './link-issues';
+import { resetLinkedIssue } from './link-issues';
+import { WorkPlans } from './workplan';
 
 type WorkIssue = {
   linkedIssue: LinkedIssue;
@@ -13,10 +13,7 @@ type WorkIssue = {
   artificiallyDelayed?: boolean;
 };
 
-export function makeWorkIssues(
-  linkedIssues: LinkedIssue[],
-  probablisticallySelectIssueTiming: boolean
-): WorkIssue[] {
+export function makeWorkIssues(linkedIssues: LinkedIssue[], probablisticallySelectIssueTiming: boolean): WorkIssue[] {
   return linkedIssues.map((issue) => {
     return {
       linkedIssue: issue,
@@ -38,14 +35,12 @@ export function makeTeamWork(linkedIssues: LinkedIssue[]) {
       velocity: issue.team.velocity,
     };
   });
-  return indexByKey(teamWork, "teamKey");
+  return indexByKey(teamWork, 'teamKey');
 }
 
 type TeamWorkIndex = ReturnType<typeof makeTeamWork>;
 
-export function scheduleIssues(
-  sortedLinkedIssues: LinkedIssue[] /*, probablisticallySelectIssueTiming: boolean*/
-) {
+export function scheduleIssues(sortedLinkedIssues: LinkedIssue[] /*, probablisticallySelectIssueTiming: boolean*/) {
   // reset linked isues
   sortedLinkedIssues.forEach(resetLinkedIssue);
 
@@ -94,11 +89,7 @@ function planIssue(issue: LinkedIssue, workByTeams: TeamWorkIndex) {
 }
 
 // Try to find the first available time  the work could be scheduled for this team.
-function scheduleIssue(
-  linkedIssue: LinkedIssue,
-  firstDayWorkCouldStartOn: number,
-  teamWorkIndex: TeamWorkIndex
-) {
+function scheduleIssue(linkedIssue: LinkedIssue, firstDayWorkCouldStartOn: number, teamWorkIndex: TeamWorkIndex) {
   var team = teamWorkIndex[linkedIssue.team.name];
   //if(work.issue["Issue key"] === "YUMPOS-4131") {
   //	debugger;
@@ -116,7 +107,7 @@ function areAllBlockersScheduled(linkedIssue: LinkedIssue) {
 function earliestStartTimeFromBlockers(issue: LinkedIssue) {
   return issue.linkedBlockedBy.reduce((prev, blocker) => {
     if (blocker.mutableWorkItem.startDay == null) {
-      const error = new Error("Unable to calculate, no startDay");
+      const error = new Error('Unable to calculate, no startDay');
       //@ts-ignore
       error.data = { issue, blocker };
       throw error;

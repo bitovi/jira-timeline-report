@@ -1,7 +1,7 @@
 /**
  * this module creates the jira oidc helpers object from all the helper functions in the jira-oidc-helpers folder.
  */
-import { Config, FieldsRequest, RequestHelper } from './types';
+import { Config, FieldsRequest, RequestHelper, FieldsData } from './types';
 import { RequestHelperResponse, JtrEnv } from '../shared/types';
 import { saveInformationToLocalStorage, clearAuthFromLocalStorage, fetchFromLocalStorage } from './storage';
 import {
@@ -59,7 +59,14 @@ export default function createJiraHelpers(
   // assigned, feels like there should be a better way to do it than this, but a setter function
   // was quickest solution i could come up with. Should revisit at some point.
   let fieldsRequest: FieldsRequest;
-  const setFieldsRequest = (req: FieldsRequest) => (fieldsRequest = req);
+  const setFieldsRequest = (req: FieldsRequest) => {
+    fieldsRequest = req;
+    fieldsRequest.then((fieldsData: FieldsData) => {
+      if (jiraHelpers) {
+        jiraHelpers.fields = fieldsData;
+      }
+    });
+  };
 
   const config: Config = {
     env: { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY },
@@ -108,6 +115,7 @@ export default function createJiraHelpers(
     _cachedServerInfoPromise,
     getServerInfo: getServerInfo(config),
     requester: requestHelper,
+    fields: undefined as unknown as FieldsData | undefined, // This will be set later
   };
 
   makeFieldsRequest(config, setFieldsRequest);

@@ -1,10 +1,12 @@
 import React, { FC } from 'react';
 import Range from '@atlaskit/range';
 import cn from 'classnames';
+
 import { useCompareTo } from './hooks/useCompareTo';
 import { useCompareToType } from './hooks/useCompareToType';
 import { useTimeSliderValue } from './hooks/useTimeSliderValue/useTimeSliderValue';
-import { getISOString, getLabelText } from './utilities';
+import { getLabelText } from './utilities';
+import { getISOString } from '../../../../utils/date/get-date-days-ago';
 
 const CompareSlider: FC = () => {
   const [compareTo, setCompareTo] = useCompareTo();
@@ -23,7 +25,7 @@ const CompareSlider: FC = () => {
       <div className="h-[62px]">
         <div className="flex justify-between text-neutral-801 text-xs">
           <div>
-            {'Compare to '}
+            Compare to{' '}
             <input
               type="date"
               className={cn('text-xs rounded bg-neutral-201 py-1 px-2 leading-3 hover:bg-neutral-301 cursor-pointer', {
@@ -50,7 +52,7 @@ const CompareSlider: FC = () => {
         32px height is set here to match the other dropdowns.
         source: https://bitbucket.org/atlassian/atlassian-frontend-mirror/src/b1818b1030b96cb3c2996636d9f58413b5bcd3d3/design-system/range/src/styled.tsx#lines-167
       */}
-        <div className="h-8">
+        <div className="h-8 flex items-center">
           <Range id="compare-value" min={0} max={100} value={value} onChange={setValue} />
         </div>
       </div>

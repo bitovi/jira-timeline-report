@@ -1,25 +1,26 @@
 import type { FC } from 'react';
-import type { StatsUIData } from '../../scheduler/stats-analyzer';
 
 import React, { useState } from 'react';
-
 import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTransition } from '@atlaskit/modal-dialog';
 import DynamicTable from '@atlaskit/dynamic-table';
 import { Checkbox } from '@atlaskit/checkbox';
-
-import { getDatesFromSimulationIssue } from '../../IssueSimulationRow';
 import Button from '@atlaskit/button/new';
-import { useSelectedIssueType } from '../../../../services/issues';
-import routeData from '../../../../../canjs/routing/route-data';
-import { Jira } from '../../../../../jira-oidc-helpers';
 import { useMutation } from '@tanstack/react-query';
-import { useJira } from '../../../../services/jira';
-import Spinner from '@atlaskit/spinner';
 import { useFlags } from '@atlaskit/flag';
+import Spinner from '@atlaskit/spinner';
 import { Text } from '@atlaskit/primitives';
 import { token } from '@atlaskit/tokens';
 import SuccessIcon from '@atlaskit/icon/core/success';
+import SectionMessage from '@atlaskit/section-message';
+import Link from '@atlaskit/link';
+import { getDatesFromSimulationIssue } from '../../IssueSimulationRow';
+import type { StatsUIData } from '../../scheduler/stats-analyzer';
+import { useSelectedIssueType } from '../../../../services/issues';
+import { useJira } from '../../../../services/jira';
 import { useRouteData } from '../../../../hooks/useRouteData';
+import routeData from '../../../../../canjs/routing/route-data';
+import { Jira } from '../../../../../jira-oidc-helpers';
+import type { FieldsData } from '../../../../../jira-oidc-helpers/types';
 
 type LinkedIssue = StatsUIData['simulationIssueResults'][number]['linkedIssue'];
 
@@ -168,6 +169,10 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   const { selectedIssueType } = useSelectedIssueType();
   const [selectedIssueMap, setSelectedIssueMap] = useState<Record<string, boolean>>({});
 
+  const jira = useJira();
+
+  const fields = jira.fields as FieldsData; // This must exist by this point for the modal to even be shown.
+
   const { saveIssues, isPending, error } = useUpdateIssuesWithSimulationData();
 
   const save = () => {
@@ -269,20 +274,38 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         />
         {error && (
           <>
-            <div>
-              {error.errors.map((err, i) => (
-                <p key={i} className="text-red-500">
-                  {err}
-                </p>
-              ))}
-            </div>
-            <div>
-              {error.screenErrorMessages.map(({ missingKeys, url, summary }, i) => (
-                <a href={url} target="_blank" className="text-red-500">
-                  {summary} is missing {missingKeys.join(',')}
-                </a>
-              ))}
-            </div>
+            <SectionMessage title="Error" appearance="error">
+              <div>
+                {error.errors.map((err, i) => (
+                  <p key={i}>{err}</p>
+                ))}
+              </div>
+              <div>
+                {error.screenErrorMessages.map(({ missingKeys, url, summary }, i) => (
+                  <p key={i}>
+                    The field{missingKeys.length > 1 ? 's' : ''} (
+                    {missingKeys
+                      .map((missingKey) => {
+                        const field = fields.idMap[missingKey];
+                        return field ? field : missingKey;
+                      })
+                      .join(', ')}
+                    ) {missingKeys.length > 1 ? 'are' : 'is'} not on the screen associated with the{' '}
+                    <Link href={url} target="_blank">
+                      {summary}
+                    </Link>{' '}
+                    {selectedIssueType}.{' '}
+                    <Link
+                      target="_blank"
+                      href="https://github.com/bitovi/jira-auto-scheduler/wiki/Troubleshooting#a-field-is-not-on-the-appropriate-screen"
+                    >
+                      Read how to fix it here
+                    </Link>
+                    .
+                  </p>
+                ))}
+              </div>
+            </SectionMessage>
           </>
         )}
       </ModalBody>

@@ -40,6 +40,7 @@ export const ReportControls: FC = () => {
       <div className="self-end pb-1">
         <Filters />
       </div>
+
       {primaryReportType !== 'table' ? (
         <div className="self-end pb-1">
           <ViewSettings />
