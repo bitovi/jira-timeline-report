@@ -330,7 +330,6 @@ export default function UpdateModalWrapper({
 }: OptionalProp<UpdateModalProps, 'onClose'>) {
   const [isOpen, setIsOpen] = useRouteData<boolean>('openAutoSchedulerModal');
   const onClose = () => {
-    console.log('close time?"');
     onCloseProp?.();
     setIsOpen(false);
   };
