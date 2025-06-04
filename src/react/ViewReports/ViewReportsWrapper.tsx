@@ -37,7 +37,7 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
         <QueryClientProvider client={queryClient}>
           <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>
             <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-              <div className="absolute top-0 left-0 right-0 bottom-0 bg-white z-[50]">
+              <div className="absolute top-0 left-0 right-0 bottom-0 bg-white z-50">
                 <ViewReports {...viewReportProps} />
               </div>
             </Suspense>
