@@ -3,9 +3,7 @@ import AutoSchedulerFooterKey from './components/AutoSchedulerFooterKey';
 
 export const AutoSchedulerFooter: FC = () => {
   return (
-    <div className="p-2 rounded-lg bg-white m-2 mb-10">
-      <div className="text-base font-semibold shrink">KEY</div>
-
+    <div className="p-2 border-t border-neutral-41 mb-10 bg-white">
       <div className="flex justify-center">
         <div className="relative w-1/2">
           <div className="absolute bg-gradient-to-r from-blue-200 to-green-200 from-85% to-95% h-1 top-1.5 border-box w-full" />

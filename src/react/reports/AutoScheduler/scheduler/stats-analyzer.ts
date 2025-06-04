@@ -41,7 +41,7 @@ export class StatsAnalyzer {
   percentComplete: number;
   uncertaintyWeight: number | 'average';
   setUIState: (data: StatsUIData) => void;
-
+  _teardown: () => void;
   constructor({
     issues,
     uncertaintyWeight,
@@ -51,10 +51,11 @@ export class StatsAnalyzer {
     uncertaintyWeight: number | 'average';
     setUIState: (data: StatsUIData) => void;
   }) {
-    const { linkedIssues, runBatchAndLoop } = runMonteCarlo(issues, {
+    const { linkedIssues, runBatchAndLoop, teardown } = runMonteCarlo(issues, {
       onBatch: this.onBatch.bind(this),
       onComplete: this.onComplete.bind(this),
     });
+    this._teardown = teardown;
     // initialize data for each linkedIssue
     this.simulationIssues = linkedIssues.map((linkedIssue, i) => {
       return {
@@ -125,8 +126,10 @@ export class StatsAnalyzer {
     );
     const teams = Object.entries(teamGroups).map(([teamName, simulationIssueResults]) => {
       const tracks = groupByTrack(simulationIssueResults);
+      const firstIssue = last(tracks[0]);
       return {
         team: teamName,
+        teamData: firstIssue.linkedIssue.team,
         tracks: tracks,
       };
     });
@@ -138,6 +141,9 @@ export class StatsAnalyzer {
       simulationIssueResults,
       teams,
     };
+  }
+  teardown() {
+    this._teardown();
   }
 }
 type MinimalSimulationIssueFields = {

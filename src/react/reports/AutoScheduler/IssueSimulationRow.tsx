@@ -37,7 +37,7 @@ export const IssueSimulationRow: React.FC<{
   // STATE ==============
   const [showDetails, setShowDetails] = useState(false);
 
-  const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(null);
+  const [bigLineElement, setBigLineElement] = useState<HTMLElement | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
 
   // UI HELPERS ==============
@@ -75,9 +75,11 @@ export const IssueSimulationRow: React.FC<{
         className="pl-5 self-center pr-2 truncate max-w-sm"
         style={{ gridRow: gridRowStart, gridColumnStart: 'what' }}
       >
-        <div className="text-gray-600">
+        <div className="text-gray-600 pointer hover:underline">
           {isFullSimulationResult(issue) ? (
-            <a href={issue.linkedIssue.url}>{issue.linkedIssue.summary}</a>
+            <a href={issue.linkedIssue.url} target="_blank">
+              {issue.linkedIssue.summary}
+            </a>
           ) : (
             <div>{issue.linkedIssue.summary}</div>
           )}
@@ -116,7 +118,7 @@ export const IssueSimulationRow: React.FC<{
                 width: percentWidth(issue.dueDayBottom, issue.dueDayTop),
               }}
               onMouseEnter={(e) => {
-                setAnchorElement(e.currentTarget);
+                setBigLineElement(e.currentTarget);
                 setShowTooltip(true);
               }}
               onMouseLeave={() => setShowTooltip(false)}
@@ -142,7 +144,7 @@ export const IssueSimulationRow: React.FC<{
                 }}
                 onClick={() => setShowDetails((v) => !v)}
                 onMouseEnter={(e) => {
-                  setAnchorElement(e.currentTarget);
+                  setBigLineElement(e.currentTarget);
                   setShowTooltip(true);
                 }}
                 onMouseLeave={() => setShowTooltip(false)}
@@ -159,59 +161,47 @@ export const IssueSimulationRow: React.FC<{
           />
         )}
       </div>
-      {showTooltip && anchorElement && isFullSimulationResult(issue) && (
+      {showTooltip && bigLineElement && isFullSimulationResult(issue) && (
         <>
-          <Popper referenceElement={anchorElement} placement="left">
-            {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
-              const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
-              return (
-                <div
-                  ref={ref}
-                  style={style}
-                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
-                >
-                  {monthDateFormatter.format(issueDates.startDateWithTimeEnoughToFinish)}
-                </div>
-              );
-            }}
-          </Popper>
-          <Popper referenceElement={anchorElement} placement="right">
-            {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
-              const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
-              return (
-                <div
-                  ref={ref}
-                  style={style}
-                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
-                >
-                  {monthDateFormatter.format(issueDates.dueDateTop)}
-                </div>
-              );
-            }}
-          </Popper>
           {
-            <Popper referenceElement={anchorElement} placement="bottom">
+            <Popper referenceElement={bigLineElement} placement="bottom">
               {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
                 const fullIssue = issue as SimulationIssueResult;
+                const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
+                const velocity = fullIssue.linkedIssue.team.totalPointsPerDay;
                 return (
-                  <div
-                    ref={ref}
-                    style={style}
-                    className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
-                  >
-                    <div>{Math.round(issue.linkedIssue.derivedTiming.deterministicTotalDaysOfWork)} days</div>
-                    <div>
-                      {Math.round(fullIssue.linkedIssue.derivedTiming.deterministicTotalPoints)} adjusted points
+                  <div className="flex gap-2 items-start z-50" ref={ref} style={style}>
+                    <div className="z-50 text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
+                      <div>Must start: {monthDateFormatter.format(issueDates.startDateWithTimeEnoughToFinish)}</div>
+                      <div>Might start: {monthDateFormatter.format(issueDates.startDateBottom)}</div>
                     </div>
-                    <div>
-                      <span className={fullIssue.linkedIssue.storyPointsMedian == null ? `text-orange-400` : ''}>
-                        {fullIssue.linkedIssue.storyPointsMedian == null
-                          ? 'missing '
-                          : fullIssue.linkedIssue.storyPointsMedian}
-                      </span>
-                      estimated points
+
+                    <div className=" text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
+                      <div>{Math.round(issue.adjustedDaysOfWork)} days</div>
+                      <div>{Math.round(issue.adjustedDaysOfWork * velocity)} adjusted points</div>
+                      <div>
+                        {issue.linkedIssue.team.pointsPerDayPerTrack}
+                        {issue.linkedIssue.team.parallelWorkLimit === 1
+                          ? ` points per day`
+                          : ` points per day per track`}
+                      </div>
+                      <div>
+                        <span className={fullIssue.linkedIssue.storyPointsMedian == null ? `text-orange-400` : ''}>
+                          {fullIssue.linkedIssue.storyPointsMedian == null ? 'defaulted ' : ' '}
+                        </span>
+                        {fullIssue.linkedIssue.derivedTiming.defaultOrStoryPointsMedian} estimated points
+                      </div>
+                      <div>
+                        <span className={fullIssue.linkedIssue.confidence == null ? `text-orange-400` : ''}>
+                          {fullIssue.linkedIssue.confidence == null ? 'defaulted ' + ' ' : ' '}
+                        </span>
+                        {fullIssue.linkedIssue.derivedTiming.usedConfidence} confidence
+                      </div>
                     </div>
-                    <div>{fullIssue.linkedIssue.confidence} confidence</div>
+
+                    <div className="z-50 text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
+                      Must end: {monthDateFormatter.format(issueDates.dueDateTop)}
+                    </div>
                   </div>
                 );
                 /*return (
@@ -228,31 +218,27 @@ export const IssueSimulationRow: React.FC<{
         </>
       )}
 
-      {showTooltip && anchorElement && !isFullSimulationResult(issue) && (
+      {showTooltip && bigLineElement && !isFullSimulationResult(issue) && (
         <>
-          <Popper referenceElement={anchorElement} placement="bottom">
+          <Popper referenceElement={bigLineElement} placement="bottom">
             {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
               const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
               return (
-                <div
-                  ref={ref}
-                  style={style}
-                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white flex gap-2"
-                >
+                <div ref={ref} style={style} className="z-50 text-sm rounded-[3px] text-white flex gap-2">
                   {uncertaintyWeight === 'average' ? (
-                    <div>
+                    <div className="bg-neutral-801 py-0.5 px-1.5 border border-white">
                       <div>On average</div>
                       <div>work ends after </div>
                       <div>{monthDateFormatter.format(issueDates.dueDateBottom)}</div>
                     </div>
                   ) : (
                     <>
-                      <div>
+                      <div className="bg-neutral-801 py-0.5 px-1.5 border border-white">
                         <div>{uncertaintyWeight}% chance</div>
                         <div>work ends after </div>
                         <div>{monthDateFormatter.format(issueDates.dueDateBottom)}</div>
                       </div>
-                      <div>
+                      <div className="bg-neutral-801 py-0.5 px-1.5 border border-white">
                         <div>{uncertaintyWeight}% chance</div>
                         <div>work ends before </div>
                         <div>{monthDateFormatter.format(issueDates.dueDateTop)}</div>

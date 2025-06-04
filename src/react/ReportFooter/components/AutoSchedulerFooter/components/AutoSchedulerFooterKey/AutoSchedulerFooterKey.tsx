@@ -18,7 +18,12 @@ const AutoSchedulerFooterKey: FC<{
   children: ReactNode;
 }> = ({ position, dotColor, children }) => {
   return (
-    <div className={cn('text-center flex items-center flex-col w-[30%]', position ? positionVariants[position] : null)}>
+    <div
+      className={cn(
+        'text-center flex items-center flex-col w-[30%] text-xs',
+        position ? positionVariants[position] : null,
+      )}
+    >
       <div className={cn('w-3 h-3  rounded-full mb-2 mt-1', dotColorVariants[dotColor])} />
       {children}
     </div>

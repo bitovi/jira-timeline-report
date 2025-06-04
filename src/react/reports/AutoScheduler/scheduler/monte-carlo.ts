@@ -34,18 +34,26 @@ export function runMonteCarlo(
     return ((batches - batchesRemaining) / batches) * 100;
   }
 
+  let timer: ReturnType<typeof setTimeout>;
+  let torndown = false;
+
   function runBatchAndLoop() {
     const batchData = runBatch(linkedIssues, { batchSize });
     batchesRemaining--;
     onBatch({ batchData, percentComplete: percentComplete() });
     if (batchesRemaining > 0) {
-      setTimeout(runBatchAndLoop, timeBetweenBatches);
+      timer = setTimeout(runBatchAndLoop, timeBetweenBatches);
     } else {
       onComplete();
     }
   }
 
-  return { linkedIssues, runBatchAndLoop };
+  function teardown() {
+    torndown = true;
+    clearTimeout(timer);
+  }
+
+  return { linkedIssues, runBatchAndLoop, teardown };
 }
 
 export type BatchIssueData = {

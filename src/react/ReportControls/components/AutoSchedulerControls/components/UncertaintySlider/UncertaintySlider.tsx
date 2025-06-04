@@ -38,7 +38,7 @@ const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => 
           gridTemplateColumns: 'repeat(9, 1fr)',
           gridTemplateRows: 'auto',
         }}
-        className="grid absolute bottom-0"
+        className="grid absolute bottom-0 pointer-events-none"
       >
         <option value="50" className="text-center text-xs relative left-3">
           Median

@@ -53,6 +53,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
       },
     });
     statsAnalyzerRef.current = statsAnalyzer;
+
+    return () => {
+      statsAnalyzer.teardown;
+    };
   }, [primary]);
 
   useEffect(() => {
@@ -140,15 +144,27 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
         {gridData.timeRanges.map((range, i) => {
           return (
             <div
-              key={i}
+              key={'time' + i}
               style={{
                 gridRow: `1 / span 1`,
                 gridColumn: `${1 + range.startDay} / span ${range.days}`,
               }}
-              className="border-neutral-30 border-solid border-x px-1 text-xs truncate"
+              className="border-neutral-30 border-solid border-x px-1 text-xs truncate sticky top-0 bg-white z-40"
             >
               {range.prettyStart}
             </div>
+          );
+        })}
+        {gridData.timeRanges.map((range, i) => {
+          return (
+            <div
+              key={'time' + i}
+              style={{
+                gridRow: `2 / span ${gridData.rowsCount - 1}`,
+                gridColumn: `${1 + range.startDay} / span ${range.days}`,
+              }}
+              className="border-neutral-30 border-solid border-x px-1"
+            ></div>
           );
         })}
 
@@ -192,10 +208,20 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
             />
 
             <div
-              className="pl-2 pt-2 pb-1 pr-1 flex "
+              className="pl-2 pt-2 pb-1 pr-1 flex sticky top-0 bg-neutral-20"
               style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
             >
               <div className="text-base grow font-semibold">{team.team}</div>
+            </div>
+            <div
+              className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
+              style={{
+                gridRow: `${team.style.gridRowStart} / span 1`,
+                gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
+              }}
+            >
+              <div>Points / Day / Track: {team.teamData.pointsPerDayPerTrack}</div>
+              <div>Total Working Days: {Math.round(totalWorkingDays(team) / team.teamData.parallelWorkLimit)},</div>
             </div>
 
             {team.gridifiedTracks.map((gridifiedTrack, trackIdx) => (
@@ -243,6 +269,12 @@ export default function AutoSchedulerWrapper(props: AutoSchedulerProps) {
 
 function hasUrl(issue: MinimalSimulationIssueResult | SimulationIssueResult): issue is SimulationIssueResult {
   return 'url' in issue.linkedIssue && typeof issue.linkedIssue.url === 'string';
+}
+
+function totalWorkingDays(team: GridifiedStatsTeam) {
+  return team.gridifiedTracks.reduce((total, track) => {
+    return total + track.issues.reduce((sum, issue) => sum + issue.adjustedDaysOfWork, 0);
+  }, 0);
 }
 
 const SimulationData: React.FC<{
@@ -365,33 +397,35 @@ function gridifyStatsTeam(team: StatsTeam) {}
 
 function gridifyStatsUIData(statsUIData: StatsUIData, startingRows: number) {
   let previousGridifiedTeam: GridifiedStatsTeam | null = null;
-  const plans = statsUIData.teams.map((team, i) => {
-    // first row of this plan
-    const start = previousGridifiedTeam
-      ? previousGridifiedTeam.style.gridRowStart + previousGridifiedTeam.gridRowSpan + 1
-      : startingRows;
-    // how much it spans ... one for each track and all the rows
-    const span = team.tracks.length + team.tracks.reduce((a, t) => a + t.length, 0);
+  const plans = statsUIData.teams
+    .sort((a, b) => a.team.localeCompare(b.team))
+    .map((team, i) => {
+      // first row of this plan
+      const start = previousGridifiedTeam
+        ? previousGridifiedTeam.style.gridRowStart + previousGridifiedTeam.gridRowSpan + 1
+        : startingRows;
+      // how much it spans ... one for each track and all the rows
+      const span = team.tracks.length + team.tracks.reduce((a, t) => a + t.length, 0);
 
-    let previousTrack: GridifiedStatsTrack | null = null;
+      let previousTrack: GridifiedStatsTrack | null = null;
 
-    // where is each track
-    const gridifiedTracks = team.tracks.map((issues, i) => {
-      return (previousTrack = {
-        issues: issues,
-        style: {
-          gridRowStart: previousTrack ? previousTrack.style.gridRowStart + previousTrack.gridRowSpan : start + 1,
-        },
-        gridRowSpan: issues.length + 1,
+      // where is each track
+      const gridifiedTracks = team.tracks.map((issues, i) => {
+        return (previousTrack = {
+          issues: issues,
+          style: {
+            gridRowStart: previousTrack ? previousTrack.style.gridRowStart + previousTrack.gridRowSpan : start + 1,
+          },
+          gridRowSpan: issues.length + 1,
+        });
+      }) as GridifiedStatsTrack[];
+      return (previousGridifiedTeam = {
+        ...team,
+        style: { gridRowStart: start },
+        gridRowSpan: span,
+        gridifiedTracks,
       });
-    }) as GridifiedStatsTrack[];
-    return (previousGridifiedTeam = {
-      ...team,
-      style: { gridRowStart: start },
-      gridRowSpan: span,
-      gridifiedTracks,
     });
-  });
   const lastPlan = plans[plans.length - 1];
   //plans.gridRowSpan = lastPlan.style.gridRowStart + lastPlan.gridRowSpan;
   return plans;
