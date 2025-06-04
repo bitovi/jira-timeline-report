@@ -1,7 +1,12 @@
 import { FC, useEffect } from 'react';
 import React, { useState, useRef } from 'react';
 
-import type { StatsUIData, SimulationIssueResult, MinimalSimulationIssueResult } from './scheduler/stats-analyzer';
+import type {
+  StatsUIData,
+  SimulationIssueResult,
+  MinimalSimulationIssueResult,
+  UncertaintyWeight,
+} from './scheduler/stats-analyzer';
 import type { GridUIData } from './AutoScheduler';
 
 import { IssueSimulationDays } from './IssueSimulationDays';
@@ -18,6 +23,7 @@ import { Popper } from '@atlaskit/popper';
 const monthDateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
+  year: 'numeric',
   timeZone: 'UTC',
 });
 
@@ -26,7 +32,8 @@ export const IssueSimulationRow: React.FC<{
   gridRowStart: number;
   gridData: GridUIData;
   selectedStartDate: Date;
-}> = ({ issue, gridRowStart, gridData, selectedStartDate }) => {
+  uncertaintyWeight: UncertaintyWeight;
+}> = ({ issue, gridRowStart, gridData, selectedStartDate, uncertaintyWeight }) => {
   // STATE ==============
   const [showDetails, setShowDetails] = useState(false);
 
@@ -103,7 +110,7 @@ export const IssueSimulationRow: React.FC<{
           {!isFullSimulationResult(issue) ? (
             <div
               id={issue.linkedIssue.key}
-              className={`transition-all duration-100 work-item cursor-pointer ${rangeBorderClasses()} relative bg-gradient-to-r from-blue-200 to-green-400 from-45% to-55% h-4 border-box rounded`}
+              className={`transition-all duration-100 work-item cursor-pointer ${rangeBorderClasses()} relative bg-gradient-to-r from-green-200 to-green-400 from-45% to-55% h-4 border-box rounded`}
               style={{
                 left: percent(issue.dueDayBottom),
                 width: percentWidth(issue.dueDayBottom, issue.dueDayTop),
@@ -196,7 +203,14 @@ export const IssueSimulationRow: React.FC<{
                     <div>
                       {Math.round(fullIssue.linkedIssue.derivedTiming.deterministicTotalPoints)} adjusted points
                     </div>
-                    <div>{fullIssue.linkedIssue.storyPointsMedian} estimated points</div>
+                    <div>
+                      <span className={fullIssue.linkedIssue.storyPointsMedian == null ? `text-orange-400` : ''}>
+                        {fullIssue.linkedIssue.storyPointsMedian == null
+                          ? 'missing '
+                          : fullIssue.linkedIssue.storyPointsMedian}
+                      </span>
+                      estimated points
+                    </div>
                     <div>{fullIssue.linkedIssue.confidence} confidence</div>
                   </div>
                 );
@@ -223,9 +237,28 @@ export const IssueSimulationRow: React.FC<{
                 <div
                   ref={ref}
                   style={style}
-                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white"
+                  className="z-50 text-xs rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white flex gap-2"
                 >
-                  {monthDateFormatter.format(issueDates.dueDateTop)}
+                  {uncertaintyWeight === 'average' ? (
+                    <div>
+                      <div>On average</div>
+                      <div>work ends after </div>
+                      <div>{monthDateFormatter.format(issueDates.dueDateBottom)}</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <div>{uncertaintyWeight}% chance</div>
+                        <div>work ends after </div>
+                        <div>{monthDateFormatter.format(issueDates.dueDateBottom)}</div>
+                      </div>
+                      <div>
+                        <div>{uncertaintyWeight}% chance</div>
+                        <div>work ends before </div>
+                        <div>{monthDateFormatter.format(issueDates.dueDateTop)}</div>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             }}
@@ -260,6 +293,7 @@ export function getDatesFromSimulationIssue(
       issue.startDateWithTimeEnoughToFinish,
     ),
     dueDateTop: rangeEndDate,
+    dueDateBottom: getUTCEndDateFromStartDateAndBusinessDays(startDate, issue.dueDayBottom),
     dueDateStr: monthDateFormatter.format(rangeEndDate),
   };
 }

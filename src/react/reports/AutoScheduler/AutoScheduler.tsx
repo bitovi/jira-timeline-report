@@ -92,7 +92,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   const gridData = gridUIData(uiData, selectedStartDate);
 
   return (
-    <div className="relative">
+    <div className="relative py-2">
       {/* Progress Bar */}
       <div
         className={` h-1 bg-orange-400 transition-opacity duration-500 ${
@@ -175,6 +175,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
           gridRowStart={3}
           gridData={gridData}
           selectedStartDate={selectedStartDate}
+          uncertaintyWeight={uncertaintyWeight}
         />
 
         {/* Team Tracks */}
@@ -215,6 +216,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                     gridRowStart={gridifiedTrack.style.gridRowStart + issueIdx + 1}
                     gridData={gridData}
                     selectedStartDate={selectedStartDate}
+                    uncertaintyWeight={uncertaintyWeight}
                   />
                 ))}
               </React.Fragment>
@@ -395,7 +397,7 @@ function gridifyStatsUIData(statsUIData: StatsUIData, startingRows: number) {
 }
 
 function makeInsertBlockers(statsUIData: StatsUIData | null) {
-  return () => {
+  const insertTheBlockers = () => {
     // Draw blockers after DOM is rendered
     const svg = document.getElementById('dependencies')?.querySelector('svg') as SVGSVGElement | null;
     if (!svg || !statsUIData) return;
@@ -448,6 +450,13 @@ function makeInsertBlockers(statsUIData: StatsUIData | null) {
         svg.appendChild(blockingPath);
       }
     });
+  };
+
+  return () => {
+    if (!statsUIData) return;
+    setTimeout(() => {
+      insertTheBlockers();
+    }, 100); // delay to enable the animation to complete
   };
 }
 
