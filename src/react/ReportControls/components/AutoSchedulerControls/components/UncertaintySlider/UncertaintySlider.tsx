@@ -7,6 +7,7 @@ type Props = {
   onChange: (value: UncertaintyWeight) => void;
 };
 
+// Average position
 const AVERAGE = 55;
 
 const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => {
