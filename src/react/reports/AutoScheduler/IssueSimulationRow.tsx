@@ -88,12 +88,6 @@ export const IssueSimulationRow: React.FC<{
 
       {/* The Chart */}
       <div
-        onMouseEnter={() => {
-          console.log({
-            issue,
-            ...getDatesFromSimulationIssue(issue, selectedStartDate),
-          });
-        }}
         style={{
           gridRow: `${gridRowStart} / span 1`,
           gridColumn: `2 / span ${gridData.gridNumberOfDays}`,

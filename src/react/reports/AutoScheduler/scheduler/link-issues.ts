@@ -37,7 +37,7 @@ export function linkIssues(issues: DerivedIssue[], probablisticallySelectIssueTi
       linkedParent: null,
       linkedBlocks: [],
       linkedBlockedBy: [],
-      blocksWorkDepth: 0,
+      blocksWorkDepth: -1,
       mutableWorkItem: {
         daysOfWork: issue.derivedTiming.deterministicTotalDaysOfWork,
         startDay: null,
@@ -65,7 +65,7 @@ export function resetLinkedIssue(issue: LinkedIssue) {
 }
 
 function setBlocksWorkDepthDeterministically(issue: LinkedIssueBuilder): number {
-  if (issue.blocksWorkDepth !== undefined) {
+  if (issue.blocksWorkDepth !== -1) {
     return issue.blocksWorkDepth;
   }
   if (!issue.linkedBlocks.length) {
