@@ -116,7 +116,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
       {/* Simulation Grid */}
       <div
-        className="grid bg-white relative"
+        className="grid bg-white relative border border-neutral-30 rounded shadow-sm"
         style={{
           gridTemplateColumns: `[what] auto repeat(${gridData.gridNumberOfDays}, 1fr)`,
           gridTemplateRows: 'auto',
