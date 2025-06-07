@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 import { UncertaintyWeight } from '../../../../../reports/AutoScheduler/scheduler/stats-analyzer';
 
@@ -18,8 +18,22 @@ const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => 
     onChange(num === AVERAGE ? 'average' : num);
   };
 
+  const [compactLabels, setCompactLabels] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      setCompactLabels(entry.contentRect.width < 400);
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="relative flex flex-grow px-2 items-end">
+    <div ref={wrapperRef} className="relative flex flex-grow px-2 items-end">
       <input
         className="w-full mb-4"
         type="range"
@@ -41,10 +55,10 @@ const UncertaintySlider: React.FC<Props> = ({ uncertaintyWeight, onChange }) => 
         className="grid absolute bottom-0 pointer-events-none"
       >
         <option value="50" className="text-center text-xs relative left-3">
-          Median
+          {compactLabels ? '50%' : 'Median'}
         </option>
         <option value="55" className="text-center text-xs">
-          Average
+          {compactLabels ? 'avg' : 'Average'}
         </option>
         <option value="60" className="text-center text-xs">
           60%

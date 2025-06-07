@@ -21,6 +21,7 @@ import { queryClient } from '../../services/query/queryClient';
 import { bestFitRanges } from '../../../utils/date/best-fit-ranges';
 import routeData from '../../../canjs/routing/route-data/index';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
+import { CriticalPath } from './CriticalPath';
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -41,6 +42,9 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   const [selectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight] = useUncertaintyWeight();
 
+  // state for which work items to highlight
+  const [workItemsToHighlight, setWorkItemsToHighlight] = useState<Set<string> | null>(null);
+
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
   const [uiData, setUIData] = useState<StatsUIData | null>(null);
@@ -49,6 +53,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
       issues: primary,
       uncertaintyWeight: uncertaintyWeight,
       setUIState: (newUIData) => {
+        console.log('New UI Data:', newUIData);
         setUIData(newUIData);
       },
     });
@@ -93,7 +98,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   }
 
   // converts the stats into data for a grid
-  const gridData = gridUIData(uiData, selectedStartDate);
+  const gridData = gridUIData(uiData, selectedStartDate, workItemsToHighlight);
 
   return (
     <div className="relative py-2">
@@ -111,7 +116,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
       {/* Simulation Grid */}
       <div
-        className="grid bg-white relative"
+        className="grid bg-white relative border border-neutral-30 rounded shadow-sm"
         style={{
           gridTemplateColumns: `[what] auto repeat(${gridData.gridNumberOfDays}, 1fr)`,
           gridTemplateRows: 'auto',
@@ -198,59 +203,73 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
         {/* Team Tracks */}
         {gridData.gridifiedTeams.map((team, teamIdx) => (
           <React.Fragment key={`team-${teamIdx}`}>
-            {/* The stripe background for the team*/}
-            <div
-              className="bg-neutral-20 pt-2 pb-1 "
-              style={{
-                gridRow: `${team.style.gridRowStart} / span 1`,
-                gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
-              }}
-            />
-
-            <div
-              className="pl-2 pt-2 pb-1 pr-1 flex sticky top-0 bg-neutral-20"
-              style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
-            >
-              <div className="text-base grow font-semibold">{team.team}</div>
-            </div>
-            <div
-              className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
-              style={{
-                gridRow: `${team.style.gridRowStart} / span 1`,
-                gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
-              }}
-            >
-              <div>Points / Day / Track: {team.teamData.pointsPerDayPerTrack}</div>
-              <div>Total Working Days: {Math.round(totalWorkingDays(team) / team.teamData.parallelWorkLimit)},</div>
-            </div>
-
-            {team.gridifiedTracks.map((gridifiedTrack, trackIdx) => (
-              <React.Fragment key={`track-${teamIdx}-${trackIdx}`}>
+            {/* Only show team if it has visible tracks/issues */}
+            {team.gridifiedTracks.length > 0 && (
+              <>
+                {/* The stripe background for the team*/}
                 <div
-                  className="pl-4 flex pt-0.5 pr-1"
+                  className="bg-neutral-20 pt-2 pb-1 "
                   style={{
-                    gridRow: `${gridifiedTrack.style.gridRowStart} / span 1`,
-                    gridColumnStart: 'what',
+                    gridRow: `${team.style.gridRowStart} / span 1`,
+                    gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
+                  }}
+                />
+
+                <div
+                  className="pl-2 pt-2 pb-1 pr-1 flex sticky top-0 bg-neutral-20"
+                  style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
+                >
+                  <div className="text-base grow font-semibold">{team.team}</div>
+                </div>
+                <div
+                  className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
+                  style={{
+                    gridRow: `${team.style.gridRowStart} / span 1`,
+                    gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
                   }}
                 >
-                  <div className="text-xs grow">Track {trackIdx + 1}</div>
+                  <div>Points / Day / Track: {team.teamData.pointsPerDayPerTrack}</div>
+                  <div>Total Working Days: {Math.round(totalWorkingDays(team) / team.teamData.parallelWorkLimit)},</div>
                 </div>
 
-                {gridifiedTrack.issues.map((issue, issueIdx) => (
-                  <IssueSimulationRow
-                    key={`issue-${teamIdx}-${trackIdx}-${issueIdx}`}
-                    issue={issue}
-                    gridRowStart={gridifiedTrack.style.gridRowStart + issueIdx + 1}
-                    gridData={gridData}
-                    selectedStartDate={selectedStartDate}
-                    uncertaintyWeight={uncertaintyWeight}
-                  />
-                ))}
-              </React.Fragment>
-            ))}
+                {team.gridifiedTracks.map(
+                  (gridifiedTrack, trackIdx) =>
+                    gridifiedTrack.issues.length > 0 && (
+                      <React.Fragment key={`track-${teamIdx}-${trackIdx}`}>
+                        <div
+                          className="pl-4 flex pt-0.5 pr-1"
+                          style={{
+                            gridRow: `${gridifiedTrack.style.gridRowStart} / span 1`,
+                            gridColumnStart: 'what',
+                          }}
+                        >
+                          <div className="text-xs grow">Track {trackIdx + 1}</div>
+                        </div>
+
+                        {gridifiedTrack.issues.map((issue, issueIdx) => (
+                          <IssueSimulationRow
+                            key={`issue-${teamIdx}-${trackIdx}-${issueIdx}`}
+                            issue={issue}
+                            gridRowStart={gridifiedTrack.style.gridRowStart + issueIdx + 1}
+                            gridData={gridData}
+                            selectedStartDate={selectedStartDate}
+                            uncertaintyWeight={uncertaintyWeight}
+                          />
+                        ))}
+                      </React.Fragment>
+                    ),
+                )}
+              </>
+            )}
           </React.Fragment>
         ))}
       </div>
+      {/* Critical Path Report */}
+      <CriticalPath
+        uiData={uiData}
+        workItemsToHighlight={workItemsToHighlight}
+        setWorkItemsToHighlight={setWorkItemsToHighlight}
+      />
     </div>
   );
 };
@@ -354,7 +373,7 @@ const SimulationData: React.FC<{
   );
 };
 
-function gridUIData(statsUIData: StatsUIData, startDate: Date) {
+function gridUIData(statsUIData: StatsUIData, startDate: Date, workItemsToHighlight?: Set<string> | null) {
   const gridNumberOfDays = Math.ceil(statsUIData.endDaySimulationResult.dueDayTop) + 1;
   const endDate = getUTCEndDateFromStartDateAndBusinessDays(startDate, gridNumberOfDays + 1);
   const timeRanges = bestFitRanges(startDate, endDate, 12) as Array<{
@@ -364,12 +383,12 @@ function gridUIData(statsUIData: StatsUIData, startDate: Date) {
   }>;
 
   const last = timeRanges[timeRanges.length - 1];
-
   const startingRows = 4;
-
-  const gridifiedTeams = gridifyStatsUIData(statsUIData, 4);
-
-  const lastTeam = gridifiedTeams[gridifiedTeams.length - 1];
+  const gridifiedTeams = gridifyStatsUIData(statsUIData, 4, workItemsToHighlight);
+  const lastTeam = gridifiedTeams[gridifiedTeams.length - 1] || {
+    style: { gridRowStart: startingRows },
+    gridRowSpan: 1,
+  };
   return {
     gridNumberOfDays: last.startDay + last.days,
     timeRanges,
@@ -395,7 +414,7 @@ type GridifiedStatsTrack = {
 
 function gridifyStatsTeam(team: StatsTeam) {}
 
-function gridifyStatsUIData(statsUIData: StatsUIData, startingRows: number) {
+function gridifyStatsUIData(statsUIData: StatsUIData, startingRows: number, workItemsToHighlight?: Set<string> | null) {
   let previousGridifiedTeam: GridifiedStatsTeam | null = null;
   const plans = statsUIData.teams
     .sort((a, b) => a.team.localeCompare(b.team))
@@ -405,29 +424,33 @@ function gridifyStatsUIData(statsUIData: StatsUIData, startingRows: number) {
         ? previousGridifiedTeam.style.gridRowStart + previousGridifiedTeam.gridRowSpan + 1
         : startingRows;
       // how much it spans ... one for each track and all the rows
-      const span = team.tracks.length + team.tracks.reduce((a, t) => a + t.length, 0);
-
       let previousTrack: GridifiedStatsTrack | null = null;
-
       // where is each track
-      const gridifiedTracks = team.tracks.map((issues, i) => {
-        return (previousTrack = {
-          issues: issues,
-          style: {
-            gridRowStart: previousTrack ? previousTrack.style.gridRowStart + previousTrack.gridRowSpan : start + 1,
-          },
-          gridRowSpan: issues.length + 1,
-        });
-      }) as GridifiedStatsTrack[];
+      const gridifiedTracks = team.tracks
+        .map((issues, i) => {
+          // Filter issues if highlight is set
+          const filteredIssues = workItemsToHighlight
+            ? issues.filter((issue) => workItemsToHighlight.has(issue.linkedIssue.key))
+            : issues;
+          return (previousTrack = {
+            issues: filteredIssues,
+            style: {
+              gridRowStart: previousTrack ? previousTrack.style.gridRowStart + previousTrack.gridRowSpan : start + 1,
+            },
+            gridRowSpan: filteredIssues.length + 1,
+          });
+        })
+        .filter((track) => track.issues.length > 0) as GridifiedStatsTrack[];
+      // Only include teams with visible tracks
+      const gridRowSpan = gridifiedTracks.length + gridifiedTracks.reduce((a, t) => a + t.issues.length, 0);
       return (previousGridifiedTeam = {
         ...team,
         style: { gridRowStart: start },
-        gridRowSpan: span,
+        gridRowSpan,
         gridifiedTracks,
       });
-    });
-  const lastPlan = plans[plans.length - 1];
-  //plans.gridRowSpan = lastPlan.style.gridRowStart + lastPlan.gridRowSpan;
+    })
+    .filter((team) => team.gridifiedTracks.length > 0);
   return plans;
 }
 

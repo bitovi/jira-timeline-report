@@ -6,41 +6,18 @@ import Spinner from '@atlaskit/spinner';
 
 import FeatureToggle from './components/FeatureToggle';
 import { useFeatures, useUpdateFeatures } from '../../../services/features';
-import { Features } from '../../../../jira/features';
+import { FeatureFlags } from '../../../../jira/features';
 
-const keyToTitle = {
-  estimationTable: 'Estimation Table',
-  secondaryReport: 'Secondary Report',
-  workBreakdowns: 'Work Breakdowns',
-  estimationAnalysis: 'Estimation Analysis',
-  autoScheduler: 'Auto-Scheduler',
-};
+import { featureMap, features as FEATURES } from '../../../../configuration/features';
 
-const keyToSubtitle = {
-  estimationTable: '',
-  secondaryReport: '',
-  workBreakdowns: '',
-  estimationAnalysis: '',
-  autoScheduler: '',
-};
-
-const toList = (features: Features) => {
-  return Object.entries(features).map(([key, value]) => ({
-    title: keyToTitle[key as keyof Features],
-    subtitle: keyToSubtitle[key as keyof Features],
-    value,
-    key,
-  }));
-};
-
-const removePreviousFeatures = (features: Features) => {
+const removePreviousFeatures = (features: FeatureFlags) => {
   return Object.entries(features).reduce((filtered, [key, value]) => {
-    if (!keyToTitle[key as keyof Features]) {
+    if (!featureMap[key as keyof FeatureFlags]) {
       return filtered;
     }
 
     return { ...filtered, [key]: value };
-  }, {} as Features);
+  }, {} as FeatureFlags);
 };
 
 const FeaturesView: FC = () => {
@@ -58,18 +35,17 @@ const FeaturesView: FC = () => {
       <div className="flex flex-col gap-y-8">
         <p className="text-sm">Turn on new features under active development.</p>
         <ul className="flex flex-col gap-y-8">
-          {toList(cleansedFeatures).map((cleansedFeature) => {
+          {FEATURES.map((feature) => {
             // Separate key prop since you cannot spread a key prop in React
-            const { key, ...feature } = cleansedFeature;
-
             return (
-              <li key={feature.title}>
+              <li key={feature.featureFlag}>
                 <FeatureToggle
-                  {...feature}
+                  title={feature.name}
+                  subtitle={feature.subtitle}
                   disabled={isUpdating}
-                  checked={feature.value}
+                  checked={cleansedFeatures[feature.featureFlag] ?? feature.onByDefault}
                   onChange={(newValue) => {
-                    update({ ...cleansedFeatures, [key]: newValue });
+                    update({ ...cleansedFeatures, [feature.featureFlag]: newValue });
                   }}
                 />
               </li>

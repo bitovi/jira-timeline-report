@@ -27,6 +27,7 @@ import ReportFooter from './react/ReportFooter/ReportFooter';
 
 import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnalysis';
 import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
+import EstimationProgress from './react/reports/EstimationProgress/EstimationProgress';
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
@@ -71,8 +72,9 @@ export class TimelineReport extends StacheElement {
             <div id='auto-scheduler' 
               on:inserted='this.attachAutoScheduler()'
               on:removed='this.detachAutoScheduler()'>Loading Auto Scheduler</div>
-
-
+          {{/ eq}}
+          {{# eq(this.routeData.primaryReportType, "estimation-progress") }}
+            <div id='estimation-progress' on:inserted='this.attachEstimationProgress()' on:removed='this.detachEstimationProgress()'>Loading Estimation Progress</div>
           {{/ eq}}
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
@@ -151,6 +153,7 @@ export class TimelineReport extends StacheElement {
     },
 
     get filteredDerivedIssues() {
+      console.log('derivedIssues', this.routeData.derivedIssues);
       if (this.routeData.derivedIssues) {
         if (this.routeData.statusesToExclude?.length) {
           return this.routeData.derivedIssues.filter(
@@ -202,6 +205,23 @@ export class TimelineReport extends StacheElement {
     if (this.autoSchedulerRoot) {
       this.autoSchedulerRoot.unmount();
       this.autoSchedulerRoot = null;
+    }
+  }
+  attachEstimationProgress() {
+    const container = document.getElementById('estimation-progress');
+    if (container) {
+      this._estimationProgressRoot = createRoot(container);
+      this._estimationProgressRoot.render(
+        createElement(EstimationProgress, {
+          allIssuesOrReleasesObs: value.from(this, 'filteredDerivedIssues'),
+        }),
+      );
+    }
+  }
+  detachEstimationProgress() {
+    if (this._estimationProgressRoot) {
+      this._estimationProgressRoot.unmount();
+      this._estimationProgressRoot = null;
     }
   }
 
@@ -317,12 +337,14 @@ export class TimelineReport extends StacheElement {
       return [];
     }
 
+    console.log('filteredDerivedIssues', this.filteredDerivedIssues);
     const rolledUp = rollupAndRollback(
       this.filteredDerivedIssues,
       this.routeData.normalizeOptions,
       this.rollupTimingLevelsAndCalculations,
       new Date(new Date().getTime() - this.routeData.compareTo * 1000),
     );
+    console.log('rolledUp', rolledUp);
 
     const statuses = calculateReportStatuses(rolledUp);
     return statuses;
