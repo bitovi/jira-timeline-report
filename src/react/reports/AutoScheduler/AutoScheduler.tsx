@@ -53,7 +53,6 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
       issues: primary,
       uncertaintyWeight: uncertaintyWeight,
       setUIState: (newUIData) => {
-        console.log('New UI Data:', newUIData);
         setUIData(newUIData);
       },
     });
