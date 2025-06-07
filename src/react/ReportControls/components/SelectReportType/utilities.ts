@@ -1,8 +1,7 @@
-export type StartDueReport = { key: 'start-due'; name: 'Gantt Chart' };
-export type DueReport = { key: 'due'; name: 'Scatter Plot' };
-export type TableReport = { key: 'table'; name: 'Estimation Table' };
-export type Report = StartDueReport | DueReport | TableReport;
+import type { Report } from '../../../../configuration/reports';
 
-export const getReportTypeOptions = (reports: Report[], includeTable: boolean): Report[] => {
-  return reports.filter((report) => includeTable || report.key !== 'table');
+export const getReportTypeOptions = (reports: Report[], features: Record<string, boolean>): Report[] => {
+  return reports.filter((report) => {
+    return report.onByDefault || (features[report.featureFlag] ?? false);
+  });
 };

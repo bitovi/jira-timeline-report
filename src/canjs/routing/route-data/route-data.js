@@ -61,28 +61,14 @@ const booleanParsing = {
   stringify: (x) => '' + x,
 };
 
-export const REPORTS = [
-  {
-    key: 'start-due',
-    name: 'Gantt Chart',
-  },
-  {
-    key: 'due',
-    name: 'Scatter Plot',
-  },
-  {
-    key: 'table',
-    name: 'Estimation Table',
-  },
-  {
-    key: 'estimate-analysis',
-    name: 'Estimation Analysis',
-  },
-  {
-    key: 'auto-scheduler',
-    name: 'Auto-Scheduler',
-  },
-];
+import { reports } from '../../../configuration/reports';
+
+export const REPORTS = reports.map((report) => {
+  return {
+    key: report.key,
+    name: report.name,
+  };
+});
 
 export class RouteData extends ObservableObject {
   static props = {
@@ -507,12 +493,12 @@ export class RouteData extends ObservableObject {
         },
       },
 
-    primaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper('primaryReportType', 'start-due', String, {
+    primaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper('primaryReportType', REPORTS[0].key, String, {
       parse: function (x) {
         if (REPORTS.find((report) => report.key === x)) {
           return x;
         } else {
-          return 'start-due';
+          return REPORTS[0].key; // default to the first report
         }
       },
       stringify: (x) => '' + x,

@@ -5,7 +5,7 @@ import ErrorIcon from '@atlaskit/icon/core/error';
 import { Text } from '@atlaskit/primitives';
 import { token } from '@atlaskit/tokens';
 
-import { Features, updateFeatures } from '../../../jira/features';
+import { FeatureFlags, updateFeatures } from '../../../jira/features';
 import { useStorage } from '../storage';
 
 export const useUpdateFeatures = () => {
@@ -13,7 +13,7 @@ export const useUpdateFeatures = () => {
   const { showFlag } = useFlags();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (updates: Features) => updateFeatures(storage, updates),
+    mutationFn: (updates: FeatureFlags) => updateFeatures(storage, updates),
     onSuccess: () => {
       window.location.reload();
     },

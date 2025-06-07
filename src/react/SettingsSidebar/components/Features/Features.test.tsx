@@ -7,11 +7,12 @@ import { render, screen } from '@testing-library/react';
 import Features from './Features';
 
 const features = [
+  { title: 'Estimation Progress', subtitle: '' },
+  { title: 'Auto-Scheduler', subtitle: '' },
+  { title: 'Estimation Analysis', subtitle: '' },
   { title: 'Estimation Table', subtitle: '' },
   { title: 'Secondary Report', subtitle: '' },
   { title: 'Work Breakdowns', subtitle: '' },
-  { title: 'Estimation Analysis', subtitle: '' },
-  { title: 'Auto-Scheduler', subtitle: '' },
 ];
 
 import { StorageProvider } from '../../../services/storage';
