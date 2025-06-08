@@ -28,11 +28,13 @@ import ReportFooter from './react/ReportFooter/ReportFooter';
 import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnalysis';
 import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
 import EstimationProgress from './react/reports/EstimationProgress/EstimationProgress';
+import { GroupingReport } from './react/reports/GroupingReport/GroupingReport';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
   'auto-scheduler': AutoScheduler,
   'estimation-progress': EstimationProgress,
+  grouper: GroupingReport,
 };
 
 export class TimelineReport extends StacheElement {
@@ -195,6 +197,7 @@ export class TimelineReport extends StacheElement {
         primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
         allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
         rollupTimingLevelsAndCalculationsObs: value.from(this, 'rollupTimingLevelsAndCalculations'),
+        filteredDerivedIssuesObs: value.from(this, 'filteredDerivedIssues'),
       }),
     );
   }

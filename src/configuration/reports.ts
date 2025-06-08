@@ -45,6 +45,13 @@ export const reports: Report[] = [
     onByDefault: false,
   },
   {
+    key: 'grouper',
+    name: 'Grouper',
+    featureSubtitle: 'A report that groups issues based on various criteria.',
+    featureFlag: 'grouper',
+    onByDefault: false,
+  },
+  {
     key: 'table',
     name: 'Estimation Table',
     featureSubtitle: '',

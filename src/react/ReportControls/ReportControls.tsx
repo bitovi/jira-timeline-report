@@ -24,8 +24,13 @@ export const ReportControlsWrapper: FC<{ children: ReactNode }> = ({ children })
 export const ReportControls: FC = () => {
   const [primaryReportType] = usePrimaryReportType();
 
-  if (primaryReportType === 'estimation-progress') {
-    return <SelectReportType />;
+  if (primaryReportType === 'estimation-progress' || primaryReportType === 'grouper') {
+    return (
+      <>
+        <SelectReportType />
+        <SelectIssueType />
+      </>
+    );
   }
 
   if (primaryReportType === 'estimate-analysis') {
