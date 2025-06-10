@@ -8,9 +8,7 @@ import Button from '@atlaskit/button';
 const interactableClasses = 'hover:text-blue-400 cursor-pointer text-right inline-block';
 
 interface EstimationProgressProps {
-  primaryIssuesOrReleasesObs: CanObservable<Array<DerivedIssue>>;
-  allIssuesOrReleasesObs: CanObservable<Array<DerivedIssue>>;
-  rollupTimingLevelsAndCalculationsObs: CanObservable<any>;
+  filteredDerivedIssuesObs: CanObservable<Array<DerivedIssue>>;
 }
 
 function percent(top: number, bottom: number) {
@@ -193,9 +191,9 @@ function getReportingData(issues: DerivedIssue[]) {
   return hierarchyLevels;
 }
 
-const EstimationProgress: React.FC<EstimationProgressProps> = ({ allIssuesOrReleasesObs }) => {
+const EstimationProgress: React.FC<EstimationProgressProps> = ({ filteredDerivedIssuesObs }) => {
   // Use observable hook to get issues
-  const allIssues = useCanObservable(allIssuesOrReleasesObs) || [];
+  const allIssues = useCanObservable(filteredDerivedIssuesObs) || [];
 
   // Modal state
   const [modalIssues, setModalIssues] = useState<DerivedIssue[] | null>(null);

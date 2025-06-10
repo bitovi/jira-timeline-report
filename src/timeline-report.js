@@ -28,6 +28,15 @@ import ReportFooter from './react/ReportFooter/ReportFooter';
 import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnalysis';
 import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
 import EstimationProgress from './react/reports/EstimationProgress/EstimationProgress';
+import { GroupingReport } from './react/reports/GroupingReport/GroupingReport';
+
+const urlParamValuesToReactComponents = {
+  'estimate-analysis': EstimateAnalysis,
+  'auto-scheduler': AutoScheduler,
+  'estimation-progress': EstimationProgress,
+  grouper: GroupingReport,
+};
+
 export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
@@ -63,19 +72,12 @@ export class TimelineReport extends StacheElement {
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                 allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
           {{/ eq }}
-          {{# eq(this.routeData.primaryReportType, "estimate-analysis") }}
-            <div id='estimate-analysis' 
-              on:inserted='this.attachEstimateAnalysis()'
-              on:removed='this.detachEstimateAnalysis()'>Loading Estimate Analysis</div>
-          {{/ eq}}
-          {{# eq(this.routeData.primaryReportType, "auto-scheduler") }}
-            <div id='auto-scheduler' 
-              on:inserted='this.attachAutoScheduler()'
-              on:removed='this.detachAutoScheduler()'>Loading Auto Scheduler</div>
-          {{/ eq}}
-          {{# eq(this.routeData.primaryReportType, "estimation-progress") }}
-            <div id='estimation-progress' on:inserted='this.attachEstimationProgress()' on:removed='this.detachEstimationProgress()'>Loading Estimation Progress</div>
-          {{/ eq}}
+          {{# if(this.isReactComponent(this.routeData.primaryReportType) ) }}
+            <div id='react-report-container' 
+              on:inserted='this.attachReactReport()'
+              on:removed='this.detachReactReport()'></div>
+          {{/ if}}
+          
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
             <status-report 
@@ -153,7 +155,6 @@ export class TimelineReport extends StacheElement {
     },
 
     get filteredDerivedIssues() {
-      console.log('derivedIssues', this.routeData.derivedIssues);
       if (this.routeData.derivedIssues) {
         if (this.routeData.statusesToExclude?.length) {
           return this.routeData.derivedIssues.filter(
@@ -169,6 +170,42 @@ export class TimelineReport extends StacheElement {
   // hooks
   rendered() {
     updateFullishHeightSection();
+  }
+  isReactComponent(reportType) {
+    return urlParamValuesToReactComponents.hasOwnProperty(reportType);
+  }
+
+  attachReactReport() {
+    const reportType = this.routeData.primaryReportType;
+    if (!urlParamValuesToReactComponents[reportType]) {
+      return;
+    }
+
+    const element = document.getElementById('react-report-container');
+    if (!element) {
+      console.warn('No element found for react report container');
+      return;
+    }
+    this.reactReportRoot = createRoot(element);
+
+    this.renderReactReport();
+  }
+  renderReactReport() {
+    const reportType = this.routeData.primaryReportType;
+    this.reactReportRoot.render(
+      createElement(urlParamValuesToReactComponents[reportType], {
+        primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
+        allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
+        rollupTimingLevelsAndCalculationsObs: value.from(this, 'rollupTimingLevelsAndCalculations'),
+        filteredDerivedIssuesObs: value.from(this, 'filteredDerivedIssues'),
+      }),
+    );
+  }
+  detachReactReport() {
+    if (this.reactReportRoot) {
+      this.reactReportRoot.unmount();
+      this.reactReportRoot = null;
+    }
   }
 
   attachEstimateAnalysis() {
@@ -242,6 +279,18 @@ export class TimelineReport extends StacheElement {
   }
 
   async connected() {
+    // handle changes in the React components
+    this.listenTo(this.routeData, 'primaryReportType', (ev, newValue) => {
+      if (urlParamValuesToReactComponents[newValue]) {
+        if (this.reactReportRoot) {
+          this.renderReactReport();
+        } else {
+          this.detachReactReport();
+          this.attachReactReport();
+        }
+      }
+    });
+
     window.addEventListener('load', updateFullishHeightSection);
     window.addEventListener('resize', updateFullishHeightSection);
 
@@ -337,14 +386,12 @@ export class TimelineReport extends StacheElement {
       return [];
     }
 
-    console.log('filteredDerivedIssues', this.filteredDerivedIssues);
     const rolledUp = rollupAndRollback(
       this.filteredDerivedIssues,
       this.routeData.normalizeOptions,
       this.rollupTimingLevelsAndCalculations,
       new Date(new Date().getTime() - this.routeData.compareTo * 1000),
     );
-    console.log('rolledUp', rolledUp);
 
     const statuses = calculateReportStatuses(rolledUp);
     return statuses;
