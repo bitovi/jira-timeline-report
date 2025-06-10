@@ -1,5 +1,6 @@
 import { FC, useEffect } from 'react';
 import React, { useState, useRef } from 'react';
+import { highlightUpstream, highlightDownstream } from './svg-blockers';
 
 import type {
   StatsUIData,
@@ -91,6 +92,18 @@ export const IssueSimulationRow: React.FC<{
         style={{
           gridRow: `${gridRowStart} / span 1`,
           gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
+        }}
+        onMouseEnter={() => {
+          if (isFullSimulationResult(issue)) {
+            highlightUpstream(issue.linkedIssue, true);
+            highlightDownstream(issue.linkedIssue, true);
+          }
+        }}
+        onMouseLeave={() => {
+          if (isFullSimulationResult(issue)) {
+            highlightUpstream(issue.linkedIssue, false);
+            highlightDownstream(issue.linkedIssue, false);
+          }
         }}
       >
         {isFullSimulationResult(issue) && showDetails && (
@@ -198,14 +211,6 @@ export const IssueSimulationRow: React.FC<{
                     </div>
                   </div>
                 );
-                /*return (
-              <div ref={ref} style={style} 
-                className="z-50 text-xs rounded-[3px] bg-white py-0.5 px-1.5 border border-black">
-                  <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(5, auto)' }}>
-                    <TotalWorkingDays issue={issue.linkedIssue}></TotalWorkingDays>
-                  </div>
-              </div>
-            )*/
               }}
             </Popper>
           }
