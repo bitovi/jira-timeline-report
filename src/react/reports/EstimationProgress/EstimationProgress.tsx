@@ -24,7 +24,7 @@ function makeBaseRollup<IIssue = DerivedIssue>() {
     aboveEpic: {
       total: 0,
       noEpics: 0,
-      noEpicIssues: [] as IIssue[],
+      noEpicsIssues: [] as IIssue[],
       onlyUnestimated: 0,
       onlyUnestimatedIssues: [] as IIssue[],
       someEstimated: 0,
@@ -91,7 +91,7 @@ function updateRollup(rollups: Rollup, issue: DerivedIssueWithRollup) {
 
   rollups.aboveEpic.total += issue.rollups.aboveEpic.total;
   rollups.aboveEpic.noEpics += issue.rollups.aboveEpic.noEpics;
-  rollups.aboveEpic.noEpicIssues.push(...issue.rollups.aboveEpic.noEpicIssues);
+  rollups.aboveEpic.noEpicsIssues.push(...issue.rollups.aboveEpic.noEpicsIssues);
   rollups.aboveEpic.fullyEstimated += issue.rollups.aboveEpic.fullyEstimated;
   rollups.aboveEpic.fullyEstimatedIssues.push(...issue.rollups.aboveEpic.fullyEstimatedIssues);
   rollups.aboveEpic.onlyUnestimated += issue.rollups.aboveEpic.onlyUnestimated;
@@ -172,7 +172,7 @@ function getReportingData(issues: DerivedIssue[]) {
       issue.rollups.aboveEpic.total = 1;
       if (issue.rollups.epic.total === 0) {
         issue.rollups.aboveEpic.noEpics = 1;
-        issue.rollups.aboveEpic.noEpicIssues.push(issue);
+        issue.rollups.aboveEpic.noEpicsIssues.push(issue);
       } else if (issue.rollups.epic.total === issue.rollups.epic.estimated) {
         issue.rollups.aboveEpic.fullyEstimated = 1;
         issue.rollups.aboveEpic.fullyEstimatedIssues.push(issue);
