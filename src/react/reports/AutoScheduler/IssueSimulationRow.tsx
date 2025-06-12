@@ -176,6 +176,7 @@ export const IssueSimulationRow: React.FC<{
                 const fullIssue = issue as SimulationIssueResult;
                 const issueDates = getDatesFromSimulationIssue(issue, selectedStartDate);
                 const velocity = fullIssue.linkedIssue.team.totalPointsPerDay;
+                const velocityPerTrack = fullIssue.linkedIssue.team.pointsPerDayPerTrack;
                 return (
                   <div className="flex gap-2 items-start z-50" ref={ref} style={style}>
                     <div className="z-50 text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
@@ -185,13 +186,7 @@ export const IssueSimulationRow: React.FC<{
 
                     <div className=" text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
                       <div>{Math.round(issue.adjustedDaysOfWork)} days</div>
-                      <div>{Math.round(issue.adjustedDaysOfWork * velocity)} adjusted points</div>
-                      <div>
-                        {issue.linkedIssue.team.pointsPerDayPerTrack}
-                        {issue.linkedIssue.team.parallelWorkLimit === 1
-                          ? ` points per day`
-                          : ` points per day per track`}
-                      </div>
+                      <div>{Math.round(issue.adjustedDaysOfWork * velocityPerTrack)} adjusted points</div>
                       <div>
                         <span className={fullIssue.linkedIssue.storyPointsMedian == null ? `text-orange-400` : ''}>
                           {fullIssue.linkedIssue.storyPointsMedian == null ? 'defaulted ' : ' '}

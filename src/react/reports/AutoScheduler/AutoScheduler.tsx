@@ -23,6 +23,7 @@ import routeData from '../../../canjs/routing/route-data/index';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 import { CriticalPath } from './CriticalPath';
 import { makeInsertBlockers } from './svg-blockers';
+import { roundTo } from '../../../utils/number/number';
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -228,8 +229,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                     gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
                   }}
                 >
-                  <div>Points / Day / Track: {team.teamData.pointsPerDayPerTrack}</div>
-                  <div>Total Working Days: {Math.round(totalWorkingDays(team) / team.teamData.parallelWorkLimit)},</div>
+                  <div>
+                    {team.teamData.parallelWorkLimit === 1
+                      ? `Points / Day: ${roundTo(team.teamData.pointsPerDayPerTrack, 2)}`
+                      : `Points / Day / Track ${team.teamData.pointsPerDayPerTrack}`}
+                  </div>
+                  <div>Total Working Days: {roundTo(totalWorkingDays(team) / team.teamData.parallelWorkLimit, 0)},</div>
                 </div>
 
                 {team.gridifiedTracks.map(
