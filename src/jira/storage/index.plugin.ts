@@ -7,9 +7,10 @@ declare global {
     request: <T = unknown>(
       url: string,
       config?: {
+        contentType?: string;
         type?: 'GET' | 'PUT';
-        headers: Record<string, string>;
-        data: any;
+        headers?: Record<string, string>;
+        data?: any;
       },
     ) => Promise<T>;
   }

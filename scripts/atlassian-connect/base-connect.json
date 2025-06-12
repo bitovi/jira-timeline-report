@@ -8,6 +8,6 @@
     "type": "none"
   },
   "apiVersion": 1,
-  "scopes": ["read"],
+  "scopes": ["read", "write"],
   "enableLicensing": true
 }

@@ -9,6 +9,7 @@ export function getConnectRequestHelper() {
     return new Promise(async (resolve, reject) => {
       try {
         let result;
+
         if (requestUrl.startsWith('https://')) {
           result = await fetchJSON(requestUrl, {});
         } else {
