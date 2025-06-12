@@ -290,14 +290,41 @@ export function fetchDeepChildren(config: Config) {
 
 export function editJiraIssueWithNamedFields(config: Config) {
   return async (issueId: string, fields: Record<string, any>) => {
-    const scopeIdForJira = fetchFromLocalStorage('scopeId');
-    const accessToken = fetchFromLocalStorage('accessToken');
-
     const fieldMapping = await config.fieldsRequest();
 
     const editBody = fieldsToEditBody(fields, fieldMapping);
-    //const fieldsWithIds = mapNamesToIds(fields || {}, fieldMapping),
-    //	updateWithIds = mapNamesToIds(update || {}, fieldMapping);
+
+    /**
+     * Quick and dirty fix while gwe work on getting a more robust
+     * request helper / jira client
+     */
+
+    const isPlugin = !!(AP?.history?.getState ?? false);
+
+    interface APResponse {
+      body: string;
+      xhr: { status: number; statusText: string };
+    }
+
+    if (isPlugin) {
+      return AP?.request(`/rest/api/3/issue/${issueId}?returnIssue=true` + '' /*new URLSearchParams(params)*/, {
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(editBody),
+      }).then((response) => {
+        const casted = response as APResponse;
+
+        return JSON.parse(casted.body) as unknown;
+      });
+    }
+
+    /**
+     * End quick and dirty fix below is the original logic
+     */
+
+    const scopeIdForJira = fetchFromLocalStorage('scopeId');
+    const accessToken = fetchFromLocalStorage('accessToken');
+
     return fetch(
       `${config.env.JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issue/${issueId}?returnIssue=true` +
         '' /*new URLSearchParams(params)*/,
