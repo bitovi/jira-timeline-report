@@ -6,9 +6,18 @@ import React from 'react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { groupAndAggregate } from './data/groupAndAggregate';
-import { createStableObjectKey } from './data/group';
+import { createStableObjectKey, groupByKeys } from './data/group';
 
-import { quarterGrouper, parentGrouper } from './ui/grouper';
+import type { AggregationReducer } from './data/aggregate';
+
+import {
+  quarterGrouper,
+  parentGrouper,
+  projectKeyGrouper,
+  monthGrouper,
+  groupByProjectKey,
+  YearMonthGroupValue,
+} from './ui/grouper';
 import type { Grouper } from './ui/grouper';
 
 // Define RolledUpIssue and ObservableOfIssues types for prop typing
@@ -29,18 +38,27 @@ export const GroupingReport: React.FC<GroupingReportProps> = ({
 }) => {
   const primaryIssues = useCanObservable(primaryIssuesOrReleasesObs) || [];
 
-  // Hardcoded groupers array for 2D abstraction
-  const groupers = [quarterGrouper, parentGrouper];
+  const rowGroupers = [projectKeyGrouper];
 
-  // Build groupByKeys for groupAndAggregate
-  const groupByKeys = groupers.map((g) => g.groupByKey);
-  const result = groupAndAggregate(primaryIssues, groupByKeys, [groupAllIssues]);
+  const colGroupers = [monthGrouper];
+
+  // Hardcoded groupers array for 2D abstraction
+  const groupers = [projectKeyGrouper, monthGrouper] as const;
+
+  // Now you can use projectKeyGrouper.groupByKey directly and get literal types
+  const groupingKeys = [projectKeyGrouper.groupByKey, monthGrouper.groupByKey] as const;
+
+  const groups = groupByKeys(primaryIssues, groupingKeys);
+  console.log(groups);
+
+  const result = groupAndAggregate(primaryIssues, groupingKeys, [groupAllIssues] as const);
 
   // For 2D: columns = groupers[0], rows = groupers[1]
-  const [colGrouper, rowGrouper] = groupers;
+  const colGrouper = rowGroupers[0];
+  const rowGrouper = colGroupers[0];
 
-  const { values: cols, titles: colTitles } = getAxisValues<string | null>(result, colGrouper);
-  const { values: rowObjs, titles: rowTitles } = getAxisValues<{ key: string; summary: string }>(result, rowGrouper);
+  const { values: cols, titles: colTitles } = getAxisValues<string>(result, colGrouper);
+  const { values: rowObjs, titles: rowTitles } = getAxisValues<YearMonthGroupValue>(result, rowGrouper);
 
   // Build a lookup: { [rowKey]: { [col]: issues[] } }
   const grid = buildGrid(result, colGrouper, rowGrouper);
@@ -72,40 +90,44 @@ export const GroupingReport: React.FC<GroupingReportProps> = ({
           </div>
         ))}
         {/* Row labels and cells */}
-        {rowObjs.map((rowObj, rowIdx) => (
-          <React.Fragment key={rowObj.key}>
-            {/* Row label cell */}
-            <div
-              className="font-semibold p-2 bg-gray-50 sticky left-0 z-10 border-r border-b"
-              style={{ gridRow: rowIdx + 2, gridColumn: 1 }}
-            >
-              {rowTitles[rowIdx]}
-            </div>
-            {/* Issue cells for each column */}
-            {cols.map((c, colIdx) => (
+        {rowObjs.map((rowObj, rowIdx) => {
+          const rowKey =
+            typeof rowObj === 'object' && rowObj !== null ? `${rowObj.year}-${rowObj.month}` : String(rowObj);
+          return (
+            <React.Fragment key={rowKey}>
+              {/* Row label cell */}
               <div
-                key={String(c)}
-                className="align-top p-2 min-w-[200px] border-b border-r"
-                style={{ gridRow: rowIdx + 2, gridColumn: colIdx + 2 }}
+                className="font-semibold p-2 bg-gray-50 sticky left-0 z-10 border-r border-b"
+                style={{ gridRow: rowIdx + 2, gridColumn: 1 }}
               >
-                <ul className="list-disc list-inside">
-                  {(grid[rowObj.key]?.[c as string] || []).map((issue: RolledUpIssue) => (
-                    <li key={issue.key}>
-                      <a
-                        href={issue.url}
-                        className="hover:text-blue-600 hover:underline cursor-pointer"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {issue.summary}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                {rowTitles[rowIdx]}
               </div>
-            ))}
-          </React.Fragment>
-        ))}
+              {/* Issue cells for each column */}
+              {cols.map((c, colIdx) => (
+                <div
+                  key={String(c)}
+                  className="align-top p-2 min-w-[200px] border-b border-r"
+                  style={{ gridRow: rowIdx + 2, gridColumn: colIdx + 2 }}
+                >
+                  <ul className="list-disc list-inside">
+                    {(grid[rowKey]?.[c as string] || []).map((issue: RolledUpIssue) => (
+                      <li key={issue.key}>
+                        <a
+                          href={issue.url}
+                          className="hover:text-blue-600 hover:underline cursor-pointer"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {issue.summary}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );
@@ -113,7 +135,7 @@ export const GroupingReport: React.FC<GroupingReportProps> = ({
 
 export default GroupingReport;
 
-const groupAllIssues = {
+const groupAllIssues: AggregationReducer<RolledUpIssue, RolledUpIssue[], 'issues'> = {
   name: 'issues',
   initial: () => [] as RolledUpIssue[],
   update: (acc: RolledUpIssue[], item: RolledUpIssue) => {
@@ -160,16 +182,17 @@ function getAxisValues<GroupValueType>(result: any[], grouper: Grouper) {
  * Builds a 2D grid lookup from grouped results, using the provided groupers and getGroupValue helper.
  */
 function buildGrid(
-  result: any[],
+  aggregatedResult: any[],
   colGrouper: Grouper,
   rowGrouper: Grouper,
 ): Record<string, Record<string, RolledUpIssue[]>> {
   const grid: Record<string, Record<string, RolledUpIssue[]>> = {};
-  for (const group of result) {
+  for (const group of aggregatedResult) {
     const colValue = getGroupValue(group, colGrouper);
     if (colValue === null) continue;
     const rowValue = getGroupValue(group, rowGrouper);
-    const rowKey = rowValue && typeof rowValue === 'object' ? rowValue.key : rowValue;
+    const rowKey =
+      typeof rowValue === 'object' && rowValue !== null ? `${rowValue.year}-${rowValue.month}` : String(rowValue);
     const col = colValue as string;
     if (!grid[rowKey]) grid[rowKey] = {};
     grid[rowKey][col] = group.issues as RolledUpIssue[];

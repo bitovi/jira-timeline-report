@@ -108,6 +108,7 @@ export interface NormalizedIssue {
   key: string;
   type: string;
   summary: string;
+  projectKey: string;
 
   parentKey: string | null;
   confidence: number | null;

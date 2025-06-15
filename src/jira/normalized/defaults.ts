@@ -147,6 +147,9 @@ interface MinimalTeamKeyIssue {
   key: JiraIssue['key'];
   fields: { Team: JiraIssue['fields']['Team'] };
 }
+export function getProjectKeyDefault({ key, fields }: MinimalTeamKeyIssue): NormalizedIssue['projectKey'] {
+  return key.replace(/-.*/, '');
+}
 
 export function getTeamKeyDefault({ key, fields }: MinimalTeamKeyIssue): NormalizedIssue['team']['name'] {
   if (fields.Team?.name) {
