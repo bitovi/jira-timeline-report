@@ -14,15 +14,15 @@ interface SampleDataNoticeProps {
 const exampleReports = [
   {
     title: 'Release end dates with initiative status',
-    href: '?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status',
+    href: '?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status&selectedIssueType=Initiative',
   },
   {
     title: 'Release timeline with initiative work breakdown',
-    href: '?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown',
+    href: '?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown&selectedIssueType=Initiative',
   },
   {
     title: 'Ready and in-development initiative work breakdown',
-    href: '?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true',
+    href: '?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true&selectedIssueType=Initiative',
   },
 ];
 
