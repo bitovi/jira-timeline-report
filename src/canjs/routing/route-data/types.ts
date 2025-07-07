@@ -17,6 +17,7 @@ type Overrides = {
   primaryIssueType: string;
   secondaryIssueType: string;
   groupBy: string;
+  fields: string[];
 };
 
 type RouteDataProps = typeof RouteDataClass.props;

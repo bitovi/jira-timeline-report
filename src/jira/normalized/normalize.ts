@@ -53,6 +53,7 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
     getRank: defaults.getRankDefault,
     getSummary: defaults.getSummaryDefault,
     getTeamSpreadsEffortAcrossDates: defaults.getTeamSpreadsEffortAcrossDatesDefault,
+    getProjectKeyDefault: defaults.getProjectKeyDefault,
     ...options,
   };
 
@@ -71,6 +72,7 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
     // TODO check what this was supposed to be flag^v
     summary: optionsWithDefaults.getSummary(issue),
     key: optionsWithDefaults.getIssueKey(issue),
+    projectKey: optionsWithDefaults.getProjectKeyDefault(issue),
     parentKey: optionsWithDefaults.getParentKey(issue),
     confidence: optionsWithDefaults.getConfidence(issue, optionsWithDefaults),
     dueDate: parseDateIntoLocalTimezone(optionsWithDefaults.getDueDate(issue, optionsWithDefaults)),

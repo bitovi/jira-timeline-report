@@ -108,7 +108,6 @@ export class RouteData extends ObservableObject {
     reportsData: {
       type: Object,
       set(value) {
-        console.log('Got new reports data', value);
         return value;
       },
       enumerable: false,
@@ -127,6 +126,9 @@ export class RouteData extends ObservableObject {
         isLoggedIn: this.isLoggedInObservable.value,
       });
     },
+    /**
+     * simplifiedIssueHierarchy is an array of issues that represents the hierarchy levels
+     */
     simplifiedIssueHierarchy: {
       async(resolve) {
         return this.simplifiedIssueHierarchyPromise;
@@ -259,7 +261,7 @@ export class RouteData extends ObservableObject {
             loadChildren: value.from(this, 'loadChildren'),
             isLoggedIn: this.isLoggedInObservable,
             jiraHelpers: this.jiraHelpers,
-            fields: value.from(this, 'fieldsToRequest'),
+            fields: value.from(this, 'allFieldsToRequest'),
           },
           { listenTo, resolve },
         );
@@ -359,6 +361,18 @@ export class RouteData extends ObservableObject {
         },
       },
 
+    // Computed property that combines fieldsToRequest and fields from URL parameters
+    get allFieldsToRequest() {
+      const baseFields = this.fieldsToRequest;
+      const urlFields = this.fields;
+      // Combine and deduplicate fields
+      if (baseFields && urlFields) {
+        return [...new Set([...baseFields, ...urlFields])];
+      } else {
+        return undefined;
+      }
+    },
+
     // This can get set, but needs some base loaded normalize option
     normalizeOptions: makeAsyncFromObservableButStillSettableProperty('normalizeOptionsPromise'),
 
@@ -422,6 +436,9 @@ export class RouteData extends ObservableObject {
       }
     }),*/
 
+    /**
+     * A string like "[HIERARCHY-TYPE]:[CALCULATION],[HIERARCHY-TYPE]:[CALCULATION]"
+     */
     timingCalculations:
       // the following was an alternative timing calculation implementation
       // we might want this if we see a bug toggling percentages completion
@@ -511,9 +528,14 @@ export class RouteData extends ObservableObject {
     },
 
     get issueHierarchy() {
-      return this.derivedIssues && this.derivedIssues.length
-        ? issueHierarchyFromNormalizedIssues(this.derivedIssues)
-        : this.simplifiedIssueHierarchy;
+      // temporarily removing picking the "nice" name. We will try to bring this back later.
+      return this.simplifiedIssueHierarchy;
+
+      //issueHierarchyFromNormalizedIssues(this.derivedIssues)
+      /*
+      this.derivedIssues && this.derivedIssues.length
+        ? 
+        : this.simplifiedIssueHierarchy;*/
     },
     selectedIssueType: {
       enumerable: true,
@@ -713,6 +735,18 @@ export class RouteData extends ObservableObject {
     statusesToRemove: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('statusesToRemove'),
     planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('planningStatuses'),
     releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('releasesToShow'),
+    fields: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('fields'),
+
+    // GroupingReport routing properties
+    rowGroup: saveJSONToUrlButAlsoLookAtReport_DataWrapper('rowGroup', 'projectKey', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    colGroup: saveJSONToUrlButAlsoLookAtReport_DataWrapper('colGroup', 'dueInMonth', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    aggregators: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('aggregators', () => ['issuesList']),
 
     // GroupBy is not available for release ... so if a release primaryIssueType is set
     // then we need to remove it

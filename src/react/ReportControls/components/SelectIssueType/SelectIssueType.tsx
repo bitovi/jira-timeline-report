@@ -10,11 +10,17 @@ type IssueHierarchy = {
   hierarchyLevel: number;
 };
 
-const formatTitle = (rawTitle?: string) => {
-  return rawTitle
-    ?.split('-')
-    .map((part) => part + 's')
-    .join(' / ');
+const formatTitle = (rawTitle: string, issueHierarchy: IssueHierarchy[] | null) => {
+  if (!rawTitle) {
+    return '';
+  } else if (rawTitle.startsWith('Release-')) {
+    return rawTitle
+      ?.split('-')
+      .map((part) => part + 's')
+      .join(' / ');
+  } else {
+    return rawTitle + 's';
+  }
 };
 
 const useSelectedIssueType = () => {
@@ -45,7 +51,7 @@ const SelectIssueTypeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 const SelectIssueType: FC = () => {
   const { issueHierarchy, selectedIssueType, handleSelectedIssueTypeChange } = useSelectedIssueType();
 
-  const title = formatTitle(selectedIssueType);
+  const title = formatTitle(selectedIssueType, issueHierarchy);
 
   if (!issueHierarchy) {
     return (
