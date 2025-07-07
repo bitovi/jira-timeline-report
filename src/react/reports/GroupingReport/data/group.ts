@@ -30,7 +30,7 @@ export function keysGroupByKey<Item, Key extends string>(path: Key): GroupByKey<
  * Creates a stable string key from an object by sorting its entries and stringifying.
  * Useful for deduplicating group values that are objects.
  */
-export function createStableObjectKey(obj: Record<string, any>): string {
+export function createStableObjectKey(obj: any): string {
   if (obj == null || typeof obj !== 'object') return String(obj);
   const sorted = Object.entries(obj).sort(([a], [b]) => a.localeCompare(b));
   return JSON.stringify(Object.fromEntries(sorted));

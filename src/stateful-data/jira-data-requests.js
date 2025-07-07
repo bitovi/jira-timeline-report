@@ -51,33 +51,31 @@ export const getSimplifiedIssueHierarchy = makeCacheable(({ jiraHelpers, isLogge
 });
 
 function simplifyIssueHierarchy(types) {
-  const levelsToTypes = [];
-  // ignore any level with scope
-  for (let type of types.filter((type) => !type.scope)) {
-    // ignore subtasks
-    if (type.hierarchyLevel >= 0) {
-      if (!levelsToTypes[type.hierarchyLevel]) {
-        levelsToTypes[type.hierarchyLevel] = [];
-      }
-      levelsToTypes[type.hierarchyLevel].push(type);
-    }
+  if (!types || types.length === 0) {
+    return [];
   }
 
-  return levelsToTypes
-    .map((types, i) => {
-      // might need to do this by level
-      const popularHierarchyNames = ['Story', 'Epic', 'Sub-Task'];
+  const levelsToTypes = {};
+  // ignore any level with scope
+  for (let type of types.filter((type) => !type.scope)) {
+    if (!levelsToTypes[type.hierarchyLevel]) {
+      levelsToTypes[type.hierarchyLevel] = [];
+    }
+    levelsToTypes[type.hierarchyLevel].push(type);
+  }
 
-      for (const popularName of popularHierarchyNames) {
-        const match = types.find(({ name }) => name === popularName);
-        if (match) {
-          return match;
-        }
+  const hierarchy = Object.entries(levelsToTypes).map(([level, types]) => {
+    const popularHierarchyNames = ['Story', 'Epic', 'Sub-Task'];
+
+    for (const popularName of popularHierarchyNames) {
+      const match = types.find(({ name }) => name === popularName);
+      if (match) {
+        return match;
       }
-      return types[0];
-    })
-    .filter((i) => i)
-    .reverse();
+    }
+    return types[0];
+  });
+  return hierarchy.sort((a, b) => b.hierarchyLevel - a.hierarchyLevel);
 }
 
 const CORE_FIELDS = [

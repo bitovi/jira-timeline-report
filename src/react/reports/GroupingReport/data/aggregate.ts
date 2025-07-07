@@ -1,8 +1,8 @@
-export type AggregationReducer<Item, Accumulator, Name extends string = string> = {
+export type AggregationReducer<Item, Accumulator, Name extends string = string, FinalizeResult = Accumulator> = {
   name: Name;
-  initial: () => Accumulator;
-  update: (acc: Accumulator, item: Item) => Accumulator;
-  finalize?: (acc: Accumulator) => any;
+  initial: (groupContext: Record<string, any>) => Accumulator;
+  update: (acc: Accumulator, item: Item, groupContext: Record<string, any>) => Accumulator;
+  finalize?: (acc: Accumulator, groupContext: Record<string, any>) => FinalizeResult;
 };
 
 /**
@@ -18,16 +18,12 @@ export type AggregationReducer<Item, Accumulator, Name extends string = string> 
  *    - If no, use the accumulator type as the value type
  * 3. Create an object type with the name as key and the determined type as value
  */
-export type AggregationReducerResult<Reducer extends AggregationReducer<any, any, any>> = Reducer extends {
-  name: infer Name;
-  initial: () => infer AccumulatorValue;
-} // Ensure Name and AccumulatorValue are inferred
-  ? Name extends string // Ensure Name is a string
-    ? Reducer extends { finalize: (acc: AccumulatorValue) => infer FinalValue } // Check for finalize with matching AccumulatorValue
-      ? { [K in Name]: FinalValue }
-      : { [K in Name]: AccumulatorValue }
-    : never
-  : never;
+export type AggregationReducerResult<Reducer extends AggregationReducer<any, any, any, any>> =
+  Reducer extends AggregationReducer<any, any, infer Name, infer FinalizeResult>
+    ? Name extends string
+      ? { [K in Name]: FinalizeResult }
+      : never
+    : never;
 
 /**
  * Helper type: Combines multiple reducers into a single result object type.
@@ -42,13 +38,14 @@ export type AggregationReducerResult<Reducer extends AggregationReducer<any, any
  *    - Union: `{ count: number } | { total: number }`
  *    - Intersection: `{ count: number } & { total: number }` = `{ count: number, total: number }`
  */
-export type AggregateGroupResult<Reducers extends readonly AggregationReducer<any, any, any>[]> = UnionToIntersection<
-  {
-    [Index in keyof Reducers]: Reducers[Index] extends AggregationReducer<any, any, any>
-      ? AggregationReducerResult<Reducers[Index]>
-      : never;
-  }[number]
->;
+export type AggregateGroupResult<Reducers extends readonly AggregationReducer<any, any, any, any>[]> =
+  UnionToIntersection<
+    {
+      [Index in keyof Reducers]: Reducers[Index] extends AggregationReducer<any, any, any, any>
+        ? AggregationReducerResult<Reducers[Index]>
+        : never;
+    }[number]
+  >;
 
 /**
  * Helper: Converts a union type to an intersection type.
@@ -84,54 +81,97 @@ export type UnionToIntersection<Union> = (Union extends any ? (k: Union) => void
  *   ] as const);
  *   // result: { count: number, totalValue: number }
  */
-export function aggregateGroup<Item, Reducers extends readonly AggregationReducer<Item, any, any>[]>(
+export function aggregateGroup<Item, Reducers extends readonly AggregationReducer<Item, any, any, any>[]>(
   items: Item[],
   reducers: Reducers,
+  groupContext: Record<string, any> = {},
 ): AggregateGroupResult<Reducers> {
   const result: Record<string, any> = {};
 
   // TypeScript will infer the correct type if reducers is a tuple (as const)
   for (const reducer of reducers) {
-    let acc = reducer.initial();
+    let acc = reducer.initial(groupContext);
     for (const item of items) {
-      acc = reducer.update(acc, item);
+      acc = reducer.update(acc, item, groupContext);
     }
-    result[reducer.name] = reducer.finalize ? reducer.finalize(acc) : acc;
+    result[reducer.name] = reducer.finalize ? reducer.finalize(acc, groupContext) : acc;
   }
 
   return result as AggregateGroupResult<Reducers>;
 }
 
-export function countReducer<Item, Name extends string = 'count'>(name?: Name): AggregationReducer<Item, number, Name> {
+export function countReducer<Item, Name extends string = 'count'>(
+  name?: Name,
+): AggregationReducer<Item, number, Name, number> {
   return {
     name: (name ?? 'count') as Name,
-    initial: () => 0,
-    update: (acc) => acc + 1,
+    initial: (groupContext) => 0,
+    update: (acc, item, groupContext) => acc + 1,
   };
 }
 
 export function sumReducer<Item, Name extends string>(
   name: Name,
   getter: (item: Item) => number,
-): AggregationReducer<Item, number, Name> {
+): AggregationReducer<Item, number, Name, number> {
   return {
     name,
-    initial: () => 0,
-    update: (acc, item) => acc + getter(item),
+    initial: (groupContext) => 0,
+    update: (acc, item, groupContext) => acc + getter(item),
   };
 }
 
 export function avgReducer<Item, Name extends string>(
   name: Name,
   getter: (item: Item) => number,
-): AggregationReducer<Item, { sum: number; count: number }, Name> {
+): AggregationReducer<Item, { sum: number; count: number }, Name, number | null> {
   return {
     name,
-    initial: () => ({ sum: 0, count: 0 }),
-    update: (acc, item) => {
+    initial: (groupContext) => ({ sum: 0, count: 0 }),
+    update: (acc, item, groupContext) => {
       const val = getter(item);
       return { sum: acc.sum + val, count: acc.count + 1 };
     },
-    finalize: (acc) => (acc.count === 0 ? null : acc.sum / acc.count),
+    finalize: (acc, groupContext) => (acc.count === 0 ? null : acc.sum / acc.count),
+  };
+}
+
+/**
+ * Example reducer that uses group context to include the group information in the result.
+ * This demonstrates how reducers can access the current group being processed.
+ */
+export function groupContextReducer<Item, Name extends string>(
+  name: Name,
+  formatter?: (groupContext: Record<string, any>) => string,
+): AggregationReducer<Item, string, Name, string> {
+  return {
+    name,
+    initial: (groupContext) => {
+      if (formatter) {
+        return formatter(groupContext);
+      }
+      return JSON.stringify(groupContext);
+    },
+    update: (acc, item, groupContext) => acc, // Just return the initial value, no need to update
+    finalize: (acc, groupContext) => acc,
+  };
+}
+
+/**
+ * Example reducer that counts items but also knows which month/period it's aggregating for.
+ * Useful for time-based aggregations where you need the time context.
+ */
+export function contextAwareCountReducer<Item, Name extends string>(
+  name: Name,
+  contextKey?: string,
+): AggregationReducer<Item, { count: number; context: any }, Name, { count: number; context: any }> {
+  return {
+    name,
+    initial: (groupContext) => ({
+      count: 0,
+      context: contextKey ? groupContext[contextKey] : groupContext,
+    }),
+    update: (acc, item, groupContext) => ({ ...acc, count: acc.count + 1 }),
+    finalize: (acc, groupContext) => acc,
   };
 }

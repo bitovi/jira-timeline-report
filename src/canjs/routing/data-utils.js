@@ -6,19 +6,30 @@ import { mostCommonElement } from '../../utils/array/array-helpers';
  * @returns {Array<{type: string, hierarchyLevel: number}>}
  */
 export function issueHierarchyFromNormalizedIssues(normalizedIssues) {
-  const levelsToNames = [];
+  if (!normalizedIssues || normalizedIssues.length === 0) {
+    return [];
+  }
+  // hierarchyLevel could be -1 for subtasks. We need to support those.
+
+  let minLevel = Infinity;
+  let maxLevel = -Infinity;
+
+  const levelsToNames = {};
   for (let issue of normalizedIssues) {
     if (!levelsToNames[issue.hierarchyLevel]) {
+      minLevel = Math.min(minLevel, issue.hierarchyLevel);
+      maxLevel = Math.max(maxLevel, issue.hierarchyLevel);
       levelsToNames[issue.hierarchyLevel] = [];
     }
     levelsToNames[issue.hierarchyLevel].push(issue.type);
   }
-  return levelsToNames
-    .map((names, i) => {
-      return { name: mostCommonElement(names), hierarchyLevel: i };
-    })
-    .filter((i) => i)
-    .reverse();
+  const hierarchy = [];
+  for (let i = minLevel; i <= maxLevel; i++) {
+    if (levelsToNames[i]) {
+      hierarchy.push({ name: mostCommonElement(levelsToNames[i]), hierarchyLevel: i });
+    }
+  }
+  return hierarchy.reverse();
 }
 
 export function toSelectedParts(value) {

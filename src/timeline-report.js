@@ -24,6 +24,9 @@ import SampleDataNotice from './react/SampleDataNotice';
 import SettingsSidebar from './react/SettingsSidebar';
 import ViewReports from './react/ViewReports';
 import ReportFooter from './react/ReportFooter/ReportFooter';
+import { JiraProvider } from './react/services/jira';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './react/services/query';
 
 import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnalysis';
 import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
@@ -192,73 +195,39 @@ export class TimelineReport extends StacheElement {
   }
   renderReactReport() {
     const reportType = this.routeData.primaryReportType;
+    const baseProps = {
+      primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
+      allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
+      rollupTimingLevelsAndCalculationsObs: value.from(this, 'rollupTimingLevelsAndCalculations'),
+      filteredDerivedIssuesObs: value.from(this, 'filteredDerivedIssues'),
+      extraFieldsObs: value.bind(this.routeData, 'fields'),
+      rowGroupObs: value.bind(this.routeData, 'rowGroup'),
+      colGroupObs: value.bind(this.routeData, 'colGroup'),
+      aggregatorsObs: value.bind(this.routeData, 'aggregators'),
+    };
+
+    // GroupingReport needs to be wrapped with JiraProvider and QueryClientProvider
+
     this.reactReportRoot.render(
-      createElement(urlParamValuesToReactComponents[reportType], {
-        primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
-        allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
-        rollupTimingLevelsAndCalculationsObs: value.from(this, 'rollupTimingLevelsAndCalculations'),
-        filteredDerivedIssuesObs: value.from(this, 'filteredDerivedIssues'),
-      }),
+      createElement(
+        QueryClientProvider,
+        {
+          client: queryClient,
+        },
+        createElement(
+          JiraProvider,
+          {
+            jira: this.routeData.jiraHelpers,
+          },
+          createElement(urlParamValuesToReactComponents[reportType], baseProps),
+        ),
+      ),
     );
   }
   detachReactReport() {
     if (this.reactReportRoot) {
       this.reactReportRoot.unmount();
       this.reactReportRoot = null;
-    }
-  }
-
-  attachEstimateAnalysis() {
-    const element = document.getElementById('estimate-analysis');
-    this.estimateAnalysisRoot = createRoot(element);
-
-    this.estimateAnalysisRoot.render(
-      createElement(EstimateAnalysis, {
-        primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
-        allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
-        rollupTimingLevelsAndCalculationsObs: value.from(this, 'rollupTimingLevelsAndCalculations'),
-      }),
-    );
-  }
-  detachEstimateAnalysis() {
-    if (this.estimateAnalysisRoot) {
-      this.estimateAnalysisRoot.unmount();
-      this.estimateAnalysisRoot = null;
-    }
-  }
-  attachAutoScheduler() {
-    const element = document.getElementById('auto-scheduler');
-    this.autoSchedulerRoot = createRoot(element);
-
-    this.autoSchedulerRoot.render(
-      createElement(AutoScheduler, {
-        primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
-        allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
-        rollupTimingLevelsAndCalculationsObs: value.from(this, 'rollupTimingLevelsAndCalculations'),
-      }),
-    );
-  }
-  detachAutoScheduler() {
-    if (this.autoSchedulerRoot) {
-      this.autoSchedulerRoot.unmount();
-      this.autoSchedulerRoot = null;
-    }
-  }
-  attachEstimationProgress() {
-    const container = document.getElementById('estimation-progress');
-    if (container) {
-      this._estimationProgressRoot = createRoot(container);
-      this._estimationProgressRoot.render(
-        createElement(EstimationProgress, {
-          allIssuesOrReleasesObs: value.from(this, 'filteredDerivedIssues'),
-        }),
-      );
-    }
-  }
-  detachEstimationProgress() {
-    if (this._estimationProgressRoot) {
-      this._estimationProgressRoot.unmount();
-      this._estimationProgressRoot = null;
     }
   }
 
@@ -355,6 +324,8 @@ export class TimelineReport extends StacheElement {
     routeData.showSettings = 'REPORTS';
   }
 
+  // the timing calculations for the type and below
+  // this is telling you how things roll up to you
   get rollupTimingLevelsAndCalculations() {
     /*console.log("rolledupAndRollrollupTimingLevelsAndCalculationsedBackIssuesAndReleases",{
         primaryIssueType: this.primaryIssueType, 

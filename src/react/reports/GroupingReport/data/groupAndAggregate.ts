@@ -57,7 +57,7 @@ export function groupAndAggregate<
     const group = Object.fromEntries(Object.entries(groupObj));
 
     // Use reducers as is, don't spread into an array
-    const aggregates = aggregateGroup(groupItems, reducers);
+    const aggregates = aggregateGroup(groupItems, reducers, groupObj);
 
     // Ensure both group and aggregates are objects before spreading
     if (flatten ?? true) {

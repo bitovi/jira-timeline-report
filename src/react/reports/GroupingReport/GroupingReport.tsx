@@ -2,7 +2,7 @@
  * GroupingReport is a React component that enables users to group issues and issue data by various fields such as
  * parent, dates or labels and sum or roll up data for the groups.
  */
-import React from 'react';
+import React, { useState, Suspense } from 'react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { groupAndAggregate } from './data/groupAndAggregate';
@@ -11,120 +11,239 @@ import { createStableObjectKey, groupByKeys } from './data/group';
 import type { AggregationReducer } from './data/aggregate';
 
 import {
-  quarterGrouper,
+  dueInQuarterGrouper,
+  dueInMonthGrouper,
   parentGrouper,
   projectKeyGrouper,
-  monthGrouper,
+  intersectMonthGrouper,
+  intersectQuarterGrouper,
+  greatGrandParentGrouper,
   groupByProjectKey,
   YearMonthGroupValue,
+  YearQuarterGroupValue,
 } from './ui/grouper';
 import type { Grouper } from './ui/grouper';
+import { availableAggregators } from './components/SelectAggregator';
+import { SelectMultipleAggregators } from './components/SelectMultipleAggregators';
+import { SelectGrouper, availableGroupers } from './components/SelectGrouper';
+import SelectAdditionalFields from './components/SelectAdditionalFields';
 
 // Define RolledUpIssue and ObservableOfIssues types for prop typing
-import type { RolledUpIssue } from './ui/grouper';
 
-type ObservableOfIssues = CanObservable<Array<RolledUpIssue>>;
+import { DerivedIssue } from '../../../jira/derived/derive';
+import { linkIssues } from './jira/linked-issue/linked-issue';
+import type { LinkedIssue } from './jira/linked-issue/linked-issue';
+
+//type ObservableOfIssues = CanObservable<Array<RolledUpIssue>>;
 
 interface GroupingReportProps {
-  primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>;
-  allIssuesOrReleasesObs: ObservableOfIssues;
   rollupTimingLevelsAndCalculationsObs: CanObservable<any[]>;
+  filteredDerivedIssuesObs: CanObservable<Array<DerivedIssue>>;
+  extraFieldsObs: CanObservable<string[]>;
+  rowGroupObs: CanObservable<string>;
+  colGroupObs: CanObservable<string>;
+  aggregatorsObs: CanObservable<string[]>;
 }
 
 export const GroupingReport: React.FC<GroupingReportProps> = ({
-  primaryIssuesOrReleasesObs,
-  allIssuesOrReleasesObs,
   rollupTimingLevelsAndCalculationsObs,
+  filteredDerivedIssuesObs,
+  extraFieldsObs,
+  rowGroupObs,
+  colGroupObs,
+  aggregatorsObs,
 }) => {
-  const primaryIssues = useCanObservable(primaryIssuesOrReleasesObs) || [];
+  // Read the CanJS Observables
+  const filteredDerivedIssues = useCanObservable(filteredDerivedIssuesObs) || [];
+  const extraFields = useCanObservable(extraFieldsObs) || [];
+  const rollupTimingLevelsAndCalculations = useCanObservable(rollupTimingLevelsAndCalculationsObs) || [];
 
-  const rowGroupers = [projectKeyGrouper];
+  // Read grouping and aggregator observables
+  const selectedRowGrouperKey = useCanObservable(rowGroupObs) || 'implementsLink';
+  const selectedColGrouperKey = useCanObservable(colGroupObs) || 'dueInMonth';
+  const selectedAggregatorKeys = useCanObservable(aggregatorsObs) || ['issuesList'];
 
-  const colGroupers = [monthGrouper];
+  const selectedRowGrouper = availableGroupers.find((g) => g.key === selectedRowGrouperKey) || availableGroupers[0];
+  const selectedColGrouper = availableGroupers.find((g) => g.key === selectedColGrouperKey) || availableGroupers[1];
+  const selectedAggregators = availableAggregators.filter((a) => selectedAggregatorKeys.includes(a.key));
 
-  // Hardcoded groupers array for 2D abstraction
-  const groupers = [projectKeyGrouper, monthGrouper] as const;
+  // Handler functions to update observables
+  const setSelectedRowGrouperKey = (key: string) => {
+    rowGroupObs.value = key;
+  };
 
-  // Now you can use projectKeyGrouper.groupByKey directly and get literal types
-  const groupingKeys = [projectKeyGrouper.groupByKey, monthGrouper.groupByKey] as const;
+  const setSelectedColGrouperKey = (key: string) => {
+    colGroupObs.value = key;
+  };
 
-  const groups = groupByKeys(primaryIssues, groupingKeys);
-  console.log(groups);
+  const setSelectedAggregatorKeys = (keys: string[]) => {
+    aggregatorsObs.value = keys;
+  };
 
-  const result = groupAndAggregate(primaryIssues, groupingKeys, [groupAllIssues] as const);
+  // Handler for additional fields change
+  const handleAdditionalFieldsChange = (selectedFields: Array<{ label: string; value: string }>) => {
+    // Update the observable with the field values
+    const fieldValues = selectedFields.map((field) => field.value);
+    extraFieldsObs.value = fieldValues;
+  };
 
-  // For 2D: columns = groupers[0], rows = groupers[1]
-  const colGrouper = rowGroupers[0];
-  const rowGrouper = colGroupers[0];
+  /*
+  const missingFields = [];
+  if(!extraFields.includes('Hours per week')) {
+    missingFields.push('Hours per week');
+  }
+  if(!extraFields.includes('Billing Rate')) {
+    missingFields.push('Billing Rate');
+  }
 
-  const { values: cols, titles: colTitles } = getAxisValues<string>(result, colGrouper);
-  const { values: rowObjs, titles: rowTitles } = getAxisValues<YearMonthGroupValue>(result, rowGrouper);
+  if(missingFields.length) {
+    extraFieldsObs.value = [...extraFields, ...missingFields];
+  }*/
 
-  // Build a lookup: { [rowKey]: { [col]: issues[] } }
+  // Make linkedIssues and get the "report on issues"
+  const linkedIssues = linkIssues(filteredDerivedIssues);
+
+  const reportedIsseus = linkedIssues.filter((issue) => {
+    return issue.hierarchyLevel === rollupTimingLevelsAndCalculations[0].hierarchyLevel;
+  });
+
+  const colGrouper = selectedColGrouper.grouper;
+  const rowGrouper = selectedRowGrouper.grouper;
+
+  const aggregators = selectedAggregators.map((a) => a.reducer);
+
+  // Now you can use the selected groupers directly and get literal types
+  const groupingKeys = [colGrouper.groupByKey, rowGrouper.groupByKey] as const;
+
+  const result = groupAndAggregate(reportedIsseus, groupingKeys, aggregators as any);
+
+  const { values: cols, titles: colTitles, keys: colKeys } = getAxisValues(result, colGrouper);
+  const { values: rowObjs, titles: rowTitles, keys: rowKeys } = getAxisValues(result, rowGrouper);
+
+  // Build a lookup: { [rowKey]: { [col]: aggregatedResult } }
   const grid = buildGrid(result, colGrouper, rowGrouper);
+
+  // Calculate total columns (original columns × number of aggregators)
+  const totalColumns = cols.length * aggregators.length;
 
   // CSS grid rendering for row/col matrix
   return (
     <div className="overflow-x-auto py-4">
+      {/* Selection Controls */}
+      <div className="mb-6 flex flex-wrap gap-6">
+        {/* Row Grouper Selection */}
+        <SelectGrouper
+          selectedKey={selectedRowGrouperKey}
+          onGrouperChange={setSelectedRowGrouperKey}
+          label="Row Grouping ↓"
+          otherSelectedGrouper={selectedColGrouper.grouper}
+        />
+
+        {/* Column Grouper Selection */}
+        <SelectGrouper
+          selectedKey={selectedColGrouperKey}
+          onGrouperChange={setSelectedColGrouperKey}
+          label="Column Grouping →"
+          otherSelectedGrouper={selectedRowGrouper.grouper}
+        />
+
+        {/* Aggregator Selection */}
+        <SelectMultipleAggregators
+          selectedKeys={selectedAggregatorKeys}
+          onAggregatorsChange={setSelectedAggregatorKeys}
+        />
+
+        {/* Additional Fields Selection */}
+        <Suspense
+          fallback={
+            <div className="flex flex-col">
+              <div className="text-sm text-gray-600">Loading fields...</div>
+            </div>
+          }
+        >
+          <SelectAdditionalFields
+            selectedFields={extraFields.map((field) => ({ label: field, value: field }))}
+            onFieldsChange={handleAdditionalFieldsChange}
+            label="Additional Fields to Include"
+            placeholder="Select fields to include in extraFields..."
+          />
+        </Suspense>
+      </div>
+
       <div
         className="grid border bg-white"
         style={{
-          gridTemplateColumns: `200px repeat(${cols.length}, minmax(200px, 1fr))`,
+          gridTemplateColumns: `200px repeat(${totalColumns}, auto)`,
           gridAutoRows: 'minmax(40px,auto)',
         }}
       >
         {/* Header row */}
         <div
           className="font-bold p-2 bg-gray-50 sticky left-0 z-10 border-b border-r"
-          style={{ gridRow: 1, gridColumn: 1 }}
+          style={{ gridRow: '1 / 3', gridColumn: 1 }}
         >
           {rowGrouper.label}
         </div>
-        {cols.map((c, i) => (
+
+        {/* Column group headers - spanning across aggregators */}
+        {cols.map((c, colIdx) => (
           <div
-            key={String(c)}
-            className="font-bold p-2 text-center bg-gray-50 border-b border-r"
-            style={{ gridRow: 1, gridColumn: i + 2 }}
+            key={`col-group-${colKeys[colIdx]}`}
+            className="font-bold p-2 text-center bg-gray-100 border-b border-r border-l-2 border-l-gray-400"
+            style={{
+              gridRow: 1,
+              gridColumn: `${colIdx * aggregators.length + 2} / ${(colIdx + 1) * aggregators.length + 2}`,
+            }}
           >
-            {colTitles[i]}
+            {colTitles[colIdx]}
           </div>
         ))}
+
+        {/* Aggregator headers */}
+        {cols.map((c, colIdx) =>
+          aggregators.map((aggregator, aggIdx) => {
+            const aggregatorInfo = availableAggregators.find((a) => a.reducer.name === aggregator.name);
+            const isFirstAggregator = aggIdx === 0;
+
+            return (
+              <div
+                key={`${colKeys[colIdx]}-${aggregator.name}`}
+                className={`font-medium p-2 text-center bg-gray-50 border-b border-r ${isFirstAggregator ? 'border-l-2 border-l-gray-400' : ''}`}
+                style={{ gridRow: 2, gridColumn: colIdx * aggregators.length + aggIdx + 2 }}
+              >
+                <div className="text-sm">{aggregatorInfo?.label || aggregator.name}</div>
+              </div>
+            );
+          }),
+        )}
         {/* Row labels and cells */}
         {rowObjs.map((rowObj, rowIdx) => {
-          const rowKey =
-            typeof rowObj === 'object' && rowObj !== null ? `${rowObj.year}-${rowObj.month}` : String(rowObj);
+          const rowKey = rowKeys[rowIdx];
           return (
             <React.Fragment key={rowKey}>
               {/* Row label cell */}
               <div
                 className="font-semibold p-2 bg-gray-50 sticky left-0 z-10 border-r border-b"
-                style={{ gridRow: rowIdx + 2, gridColumn: 1 }}
+                style={{ gridRow: rowIdx + 3, gridColumn: 1 }}
               >
                 {rowTitles[rowIdx]}
               </div>
-              {/* Issue cells for each column */}
-              {cols.map((c, colIdx) => (
-                <div
-                  key={String(c)}
-                  className="align-top p-2 min-w-[200px] border-b border-r"
-                  style={{ gridRow: rowIdx + 2, gridColumn: colIdx + 2 }}
-                >
-                  <ul className="list-disc list-inside">
-                    {(grid[rowKey]?.[c as string] || []).map((issue: RolledUpIssue) => (
-                      <li key={issue.key}>
-                        <a
-                          href={issue.url}
-                          className="hover:text-blue-600 hover:underline cursor-pointer"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {issue.summary}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              {/* Issue cells for each column and aggregator combination */}
+              {colKeys.map((colKey, colIdx) =>
+                aggregators.map((aggregator, aggIdx) => {
+                  const isFirstAggregator = aggIdx === 0;
+
+                  return (
+                    <div
+                      key={`${rowKey}-${colKey}-${aggregator.name}`}
+                      className={`align-top p-2 border-b border-r ${isFirstAggregator ? 'border-l-2 border-l-gray-400' : ''}`}
+                      style={{ gridRow: rowIdx + 3, gridColumn: colIdx * aggregators.length + aggIdx + 2 }}
+                    >
+                      {grid[rowKey]?.[colKey]?.[aggregator.name] as React.ReactNode}
+                    </div>
+                  );
+                }),
+              )}
             </React.Fragment>
           );
         })}
@@ -134,21 +253,6 @@ export const GroupingReport: React.FC<GroupingReportProps> = ({
 };
 
 export default GroupingReport;
-
-const groupAllIssues: AggregationReducer<RolledUpIssue, RolledUpIssue[], 'issues'> = {
-  name: 'issues',
-  initial: () => [] as RolledUpIssue[],
-  update: (acc: RolledUpIssue[], item: RolledUpIssue) => {
-    acc.push(item);
-    return acc;
-  },
-};
-
-function getYearQuarter(date: Date): string {
-  const year = date.getFullYear();
-  const quarter = Math.floor(date.getMonth() / 3) + 1;
-  return `${year}-Q${quarter}`;
-}
 
 /**
  * Returns only unique values from an array, using createStableObjectKey for objects and Set for primitives.
@@ -175,27 +279,26 @@ function getAxisValues<GroupValueType>(result: any[], grouper: Grouper) {
     values = (grouper.fillGaps as any)(values);
   }
   const titles = grouper.titles(values);
-  return { values, titles };
+  return { values, titles, keys: values.map((value) => createStableObjectKey(value)) };
 }
 
 /**
  * Builds a 2D grid lookup from grouped results, using the provided groupers and getGroupValue helper.
  */
-function buildGrid(
-  aggregatedResult: any[],
+function buildGrid<T>(
+  aggregatedResult: T[],
   colGrouper: Grouper,
   rowGrouper: Grouper,
-): Record<string, Record<string, RolledUpIssue[]>> {
-  const grid: Record<string, Record<string, RolledUpIssue[]>> = {};
+): Record<string, Record<string, T>> {
+  const grid: Record<string, Record<string, T>> = {};
   for (const group of aggregatedResult) {
     const colValue = getGroupValue(group, colGrouper);
+    const colKey = typeof colValue === 'string' ? colValue : createStableObjectKey(colValue as Record<string, any>);
     if (colValue === null) continue;
     const rowValue = getGroupValue(group, rowGrouper);
-    const rowKey =
-      typeof rowValue === 'object' && rowValue !== null ? `${rowValue.year}-${rowValue.month}` : String(rowValue);
-    const col = colValue as string;
+    const rowKey = typeof rowValue === 'string' ? rowValue : createStableObjectKey(rowValue as Record<string, any>);
     if (!grid[rowKey]) grid[rowKey] = {};
-    grid[rowKey][col] = group.issues as RolledUpIssue[];
+    grid[rowKey][colKey] = group as T;
   }
   return grid;
 }

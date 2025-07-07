@@ -32,6 +32,7 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
       const batchedResponses = issuesToQuery.map((issues) => {
         const keys = issues.map((issue) => issue.key);
         const jql = `parent in (${keys.join(', ')}) ${params.childJQL || ''}`;
+
         return rootMethod(
           {
             ...params,

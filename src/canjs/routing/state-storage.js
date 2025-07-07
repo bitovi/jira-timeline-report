@@ -308,26 +308,33 @@ export function makeParamAndReportDataReducer({
     },
   };
 }
-export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
+export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key, getDefault = () => []) {
+  function parse(value) {
+    return !value ? getDefault() : value.split(',');
+  }
+  function stringify(value) {
+    if (!value) {
+      return '';
+    } else if (Array.isArray(value)) {
+      return value.join(','); // we probably need to escape things with `,`
+    } else if (typeof value === 'string') {
+      return value;
+    } else {
+      return JSON.stringify(value);
+    }
+  }
+
+  const defaultValue = stringify(getDefault());
+
   //return makeArrayOfStringsQueryParamValue(key);
   return makeParamAndReportDataReducer({
     // what key you are listening to
     key,
 
     // given a raw value, what is the "JS" value
-    parse(value) {
-      return !value ? [] : value.split(',');
-    },
+    parse,
     // given a value
-    stringify(value) {
-      if (!value) {
-        return '';
-      } else if (Array.isArray(value)) {
-        return value.join(','); // we probably need to escape things with `,`
-      } else {
-        return JSON.stringify(value);
-      }
-    },
+    stringify,
 
     checkIfChanged(newValue, currentValue) {
       if (!Array.isArray(currentValue)) {
@@ -336,7 +343,7 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportData(key) {
         return true;
       }
     },
-    defaultValue: '',
+    defaultValue: defaultValue,
   });
 }
 /*
