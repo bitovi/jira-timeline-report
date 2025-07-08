@@ -52,12 +52,19 @@ export const dueInQuarterGrouper: Grouper<LinkedIssue, YearQuarterGroupValue, 't
   },
   fillGaps: (yearQuarters: YearQuarterGroupValue[]) => {
     if (yearQuarters.length === 0) return [];
+
+    // Check if there's a "no dates" group value
+    const hasNoDates = yearQuarters.some((q) => !q.start || !q.end);
+
     const filled: YearQuarterGroupValue[] = [];
 
     const firstValidIndex = yearQuarters.findIndex((q) => q.start && q.end);
     const lastValidIndex = yearQuarters.findLastIndex((q) => q.start && q.end);
 
-    if (firstValidIndex === -1 || lastValidIndex === -1) return [];
+    if (firstValidIndex === -1 || lastValidIndex === -1) {
+      // If no valid dates, just return the no dates group if it exists
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
 
     const startQuarter = yearQuarters[firstValidIndex];
     const endQuarter = yearQuarters[lastValidIndex];
@@ -77,6 +84,12 @@ export const dueInQuarterGrouper: Grouper<LinkedIssue, YearQuarterGroupValue, 't
         filled.push(getYearQuarterRangeFromYearQuarter(year, quarter));
       }
     }
+
+    // Add "no dates" group at the end if it was present in the original data
+    if (hasNoDates) {
+      filled.push({ start: '', end: '' });
+    }
+
     return filled;
   },
   titles: (yearQuarters: YearQuarterGroupValue[]) => {
@@ -86,7 +99,7 @@ export const dueInQuarterGrouper: Grouper<LinkedIssue, YearQuarterGroupValue, 't
 
     for (const yearQuarter of yearQuarters) {
       if (!yearQuarter.start || !yearQuarter.end) {
-        titles.push('No Dates');
+        titles.push('Missing dates');
         continue;
       }
 
@@ -142,7 +155,7 @@ export const parentGrouper: Grouper<LinkedIssue, ParentGroupValue, 'parent'> = {
 export function makeLinkGrouper(linkType: string) {
   const linkGrouper: Grouper<LinkedIssue, ParentGroupValue, 'links'> = {
     name: 'links',
-    label: 'Links',
+    label: linkType.charAt(0).toUpperCase() + linkType.slice(1) + ' Link',
     groupByKey: {
       key: 'links',
       value: (item) => {
@@ -165,8 +178,8 @@ export function makeLinkGrouper(linkType: string) {
     } as const,
     sort: (a: ParentGroupValue, b: ParentGroupValue) => {
       if (a.summary === b.summary) return 0;
-      if (a.summary === 'no-link') return 1; // Put 'No Parent' last
-      if (b.summary === 'no-link') return -1;
+      if (a.key === 'no-link') return 1; // Put 'No Parent' last
+      if (b.key === 'no-link') return -1;
       return a.summary.localeCompare(b.summary, undefined, { sensitivity: 'base' });
     },
     titles: (values) => {
@@ -240,12 +253,19 @@ export const dueInMonthGrouper: Grouper<LinkedIssue, YearMonthGroupValue, 'timeR
   },
   fillGaps: (yearMonths: YearMonthGroupValue[]) => {
     if (yearMonths.length === 0) return [];
+
+    // Check if there's a "no dates" group value
+    const hasNoDates = yearMonths.some((m) => !m.start || !m.end);
+
     const filled: YearMonthGroupValue[] = [];
 
     const firstValidIndex = yearMonths.findIndex((m) => m.start && m.end);
     const lastValidIndex = yearMonths.findLastIndex((m) => m.start && m.end);
 
-    if (firstValidIndex === -1 || lastValidIndex === -1) return [];
+    if (firstValidIndex === -1 || lastValidIndex === -1) {
+      // If no valid dates, just return the no dates group if it exists
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
 
     const startMonth = yearMonths[firstValidIndex];
     const endMonth = yearMonths[lastValidIndex];
@@ -275,13 +295,19 @@ export const dueInMonthGrouper: Grouper<LinkedIssue, YearMonthGroupValue, 'timeR
       // Move to next month
       current.setUTCMonth(current.getUTCMonth() + 1);
     }
+
+    // Add "no dates" group at the end if it was present in the original data
+    if (hasNoDates) {
+      filled.push({ start: '', end: '' });
+    }
+
     return filled;
   },
   titles: (values) => {
     return values.map((v) => {
       // returns the year and month name like "2025 Jul"
       if (!v.start || !v.end) {
-        return <span>No Due Date</span>;
+        return <span>Missing dates</span>;
       } else {
         const startDate = new Date(v.start);
         const yearMonth = new Intl.DateTimeFormat('en-US', {
@@ -353,15 +379,26 @@ export const intersectMonthGrouper: Grouper<LinkedIssue, YearMonthGroupValue, 't
   },
   fillGaps: (groupValues) => {
     if (groupValues.length === 0) return [];
+
+    // Check if there's a "no dates" group value
+    const hasNoDates = groupValues.some((v) => !v.start || !v.end);
+
     // walk backwards to find the last groupValue that isn't empty...
     const lastValidIndex = groupValues.findLastIndex((v) => v.start && v.end);
-    if (lastValidIndex === -1) return []; // No valid values to fill
+    if (lastValidIndex === -1) {
+      // If no valid dates, just return the no dates group if it exists
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
     const endValue = groupValues[lastValidIndex];
-    if (!endValue.start || !endValue.end) return []; // No valid end to fill
+    if (!endValue.start || !endValue.end) {
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
 
     const filled: YearMonthGroupValue[] = [];
     const startValue = groupValues[0];
-    if (!startValue.start || !startValue.end) return [];
+    if (!startValue.start || !startValue.end) {
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
 
     const startDate = new Date(startValue.start);
     const endDate = new Date(endValue.start);
@@ -388,13 +425,19 @@ export const intersectMonthGrouper: Grouper<LinkedIssue, YearMonthGroupValue, 't
       // Move to next month
       current.setUTCMonth(current.getUTCMonth() + 1);
     }
+
+    // Add "no dates" group at the end if it was present in the original data
+    if (hasNoDates) {
+      filled.push({ start: '', end: '' });
+    }
+
     return filled;
   },
   titles: (values) => {
     return values.map((v) => {
       // returns the year and month name like "2023 Jan"
       if (!v.start || !v.end) {
-        return <span>Unknown</span>;
+        return <span>Missing dates</span>;
       } else {
         const startDate = new Date(v.start);
         const yearMonth = new Intl.DateTimeFormat('en-US', {
@@ -433,15 +476,26 @@ export const intersectQuarterGrouper: Grouper<LinkedIssue, YearQuarterGroupValue
   },
   fillGaps: (groupValues) => {
     if (groupValues.length === 0) return [];
+
+    // Check if there's a "no dates" group value
+    const hasNoDates = groupValues.some((v) => !v.start || !v.end);
+
     // walk backwards to find the last groupValue that isn't empty...
     const lastValidIndex = groupValues.findLastIndex((v) => v.start && v.end);
-    if (lastValidIndex === -1) return []; // No valid values to fill
+    if (lastValidIndex === -1) {
+      // If no valid dates, just return the no dates group if it exists
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
     const endValue = groupValues[lastValidIndex];
-    if (!endValue.start || !endValue.end) return []; // No valid end to fill
+    if (!endValue.start || !endValue.end) {
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
 
     const filled: YearQuarterGroupValue[] = [];
     const startValue = groupValues[0];
-    if (!startValue.start || !startValue.end) return [];
+    if (!startValue.start || !startValue.end) {
+      return hasNoDates ? [{ start: '', end: '' }] : [];
+    }
 
     const startDate = new Date(startValue.start);
     const endDate = new Date(endValue.start);
@@ -466,13 +520,19 @@ export const intersectQuarterGrouper: Grouper<LinkedIssue, YearQuarterGroupValue
         }
       }
     }
+
+    // Add "no dates" group at the end if it was present in the original data
+    if (hasNoDates) {
+      filled.push({ start: '', end: '' });
+    }
+
     return filled;
   },
   titles: (values) => {
     return values.map((v) => {
       // returns the year and quarter like "2023 Q1"
       if (!v.start || !v.end) {
-        return <span>Unknown</span>;
+        return <span>Missing dates</span>;
       } else {
         const startDate = new Date(v.start);
         const year = startDate.getUTCFullYear();
