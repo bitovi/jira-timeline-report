@@ -39,7 +39,6 @@ export function oauthMetadata(req, res) {
  * Initiates the OAuth flow by redirecting to Atlassian
  */
 export function authorize(req, res) {
-  const state = randomUUID();
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
   const ATLASSIAN = getAtlassianConfig();
@@ -49,7 +48,7 @@ export function authorize(req, res) {
   const mcpRedirectUri = req.query.redirect_uri; // VS Code's redirect URI
   const mcpScope = req.query.scope;
   const responseType = req.query.response_type || 'code';
-  const mcpState = req.query.state || state;
+  const mcpState = req.query.state; // Use MCP client's state
 
   console.log('OAuth authorize request from MCP client:', {
     mcpClientId,
@@ -62,10 +61,17 @@ export function authorize(req, res) {
 
   // Store MCP client info in session for later use in callback
   req.session.codeVerifier = codeVerifier;
-  req.session.state = mcpState;
+  req.session.state = mcpState; // Store the MCP client's state
   req.session.mcpClientId = mcpClientId;
   req.session.mcpRedirectUri = mcpRedirectUri; // This is VS Code's callback URI
   req.session.mcpScope = mcpScope;
+
+  console.log('Storing in session:', {
+    state: mcpState,
+    codeVerifier: 'present',
+    mcpClientId,
+    mcpRedirectUri,
+  });
 
   const url =
     `${ATLASSIAN.authUrl}?` +
@@ -74,7 +80,7 @@ export function authorize(req, res) {
       response_type: responseType,
       redirect_uri: ATLASSIAN.redirectUri, // Use our server callback URI
       scope: ATLASSIAN.scopes, // Use our scopes for Atlassian
-      state: mcpState,
+      state: mcpState, // Use MCP client's state
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
     }).toString();
@@ -90,7 +96,29 @@ export function authorize(req, res) {
 export async function callback(req, res) {
   const { code, state } = req.query;
 
-  if (!code || state !== req.session.state) {
+  console.log('OAuth callback received:', {
+    code: code ? 'present' : 'missing',
+    state,
+    sessionState: req.session.state,
+    sessionData: {
+      codeVerifier: req.session.codeVerifier ? 'present' : 'missing',
+      mcpClientId: req.session.mcpClientId,
+      mcpRedirectUri: req.session.mcpRedirectUri,
+    },
+  });
+
+  // Handle URL encoding issue: + gets decoded as space, so we need to convert back
+  const normalizedReceivedState = state ? state.replace(/ /g, '+') : state;
+  const stateMatches = normalizedReceivedState === req.session.state;
+
+  if (!code || !stateMatches) {
+    console.error('State or code validation failed:', {
+      hasCode: !!code,
+      stateMatch: stateMatches,
+      receivedState: state,
+      normalizedReceivedState,
+      expectedState: req.session.state,
+    });
     return res.status(400).send('Invalid state or code');
   }
   const ATLASSIAN = getAtlassianConfig();
@@ -127,6 +155,7 @@ export async function callback(req, res) {
     // Get the MCP client info from session
     const mcpRedirectUri = req.session.mcpRedirectUri;
     const mcpClientId = req.session.mcpClientId;
+    const originalState = req.session.state; // Use the original stored state
 
     console.log('OAuth callback complete:', {
       mcpClientId,
@@ -143,8 +172,8 @@ export async function callback(req, res) {
 
     // If this was a VS Code MCP client request, redirect back to VS Code
     if (mcpRedirectUri /*&& mcpRedirectUri.startsWith('vscode://')*/) {
-      // Use the MCP client's redirect URI
-      const redirectUrl = `${mcpRedirectUri}?code=${encodeURIComponent(jwt)}&state=${encodeURIComponent(state)}`;
+      // Use the MCP client's redirect URI with the original state
+      const redirectUrl = `${mcpRedirectUri}?code=${encodeURIComponent(jwt)}&state=${encodeURIComponent(originalState)}`;
       console.log('Redirecting to VS Code MCP client:', redirectUrl);
       return res.redirect(redirectUrl);
     } else {
