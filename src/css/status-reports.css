@@ -7,6 +7,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Login page styles */
+@layer components {
+  .login-screen {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: 100vh;
+  }
+
+  .login-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(10px);
+  }
+
+  .login-btn {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .login-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .login-btn:active {
+    transform: translateY(0);
+  }
+}
+
 /* Stops the reset on SVG to enable Atlassian to work */
 svg {
   display: inline;

@@ -58,7 +58,76 @@
       ></iframe
     ></noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <div id="mainContent" class="flex flex-col w-screen h-screen overflow-hidden">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen flex flex-col w-screen h-screen">
+      <div class="flex-1 flex items-center justify-center">
+        <div class="login-card p-8 w-full max-w-md mx-4">
+          <div class="text-center mb-8">
+            <div class="flex justify-center mb-4">
+              <img src="./images/bitovi-logo.png" alt="Bitovi Logo" class="h-12" />
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2 font-bitovipoppins">Status Reports for Jira</h1>
+            <p class="text-gray-600 text-sm">Generate PowerPoint slides for high-level status reporting</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <button
+                id="connectToJiraBtn"
+                class="login-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 font-bitovipoppins"
+                data-testid="connect-to-jira-button"
+              >
+                Connect to Jira
+              </button>
+              <p class="text-xs text-gray-500 mt-2 text-center">Connect to your Jira instance to create real reports</p>
+            </div>
+
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-300"></div>
+              </div>
+              <div class="relative flex justify-center text-sm">
+                <span class="px-2 bg-white text-gray-500">or</span>
+              </div>
+            </div>
+
+            <div>
+              <button
+                id="continueAsGuestBtn"
+                class="login-btn w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors duration-200 font-bitovipoppins"
+                data-testid="continue-as-guest-button"
+              >
+                Continue as Guest
+              </button>
+              <p class="text-xs text-gray-500 mt-2 text-center">Explore the features with sample data</p>
+            </div>
+          </div>
+
+          <div class="mt-8 text-center">
+            <a
+              href="https://github.com/bitovi/jira-timeline-report"
+              class="text-blue-600 hover:text-blue-800 text-sm underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on GitHub
+            </a>
+            <span class="text-gray-400 mx-2">•</span>
+            <a
+              href="https://www.bitovi.com/services/agile-project-management-consulting"
+              class="text-blue-600 hover:text-blue-800 text-sm underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Bitovi Consulting
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Application (hidden initially) -->
+    <div id="mainContent" class="flex flex-col w-screen h-screen overflow-hidden" style="display: none">
       <div class="color-bg-white px-4 top-0 z-50 border-b border-neutral-301">
         <nav class="mx-auto py-2 place-center">
           <div class="flex gap-4" style="align-items: center">

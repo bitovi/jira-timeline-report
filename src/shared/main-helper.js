@@ -2,6 +2,7 @@ import { TimelineReport } from '../timeline-report';
 
 import '../shared/select-cloud';
 import { initSentry } from './sentry';
+import { initializeLoginScreen } from '../login-handler';
 
 import JiraLogin from '../shared/jira-login';
 import JiraOIDCHelpers from '../jira-oidc-helpers';
@@ -67,7 +68,6 @@ export default async function mainHelper(
     : {};
 
   const loginComponent = new JiraLogin().initialize({ jiraHelpers, ...props });
-  routeData.isLoggedInObservable = value.from(loginComponent, 'isLoggedIn');
   routeData.jiraHelpers = jiraHelpers;
   routeData.storage = storage;
   routeData.licensingPromise = licensingPromise;
@@ -75,6 +75,32 @@ export default async function mainHelper(
   const timelineReportNeedsMet = {
     loginResolved: false,
   };
+
+  // Initialize the login screen for hosted mode
+  if (host === 'hosted') {
+    initializeLoginScreen(jiraHelpers, (isLoggedIn) => {
+      // Set up the login component based on the choice
+      loginComponent.isLoggedIn = isLoggedIn;
+      loginComponent.isResolved = true;
+      loginComponent.isPending = false;
+
+      // Set up the observable for routing
+      routeData.isLoggedInObservable = value.from(loginComponent, 'isLoggedIn');
+
+      // Hide the loading indicator
+      const loadingJira = document.getElementById('loadingJira');
+      if (loadingJira) {
+        loadingJira.style.display = 'none';
+      }
+
+      // Set login as resolved
+      timelineReportNeedsMet.loginResolved = true;
+      checkForNeedsAndInsertTimelineReport();
+    });
+  } else {
+    // For Jira Connect mode, use the original flow
+    routeData.isLoggedInObservable = value.from(loginComponent, 'isLoggedIn');
+  }
 
   // if we have a report, we need to wait for reportData
   // otherwise, _every_ routeData property will suddenly have a "waiting" state ...
@@ -100,7 +126,10 @@ export default async function mainHelper(
   const listener = ({ value }) => {
     if (value) {
       loginComponent.off('isResolved', listener);
-      loadingJira.style.display = 'none';
+      const loadingJira = document.getElementById('loadingJira');
+      if (loadingJira) {
+        loadingJira.style.display = 'none';
+      }
       timelineReportNeedsMet.loginResolved = true;
       checkForNeedsAndInsertTimelineReport();
     }
@@ -126,14 +155,27 @@ export default async function mainHelper(
         }),
       });
       report.className = 'flex flex-1 overflow-hidden';
-      mainContent.append(report);
+      const mainContent = document.getElementById('mainContent');
+      if (mainContent) {
+        mainContent.append(report);
+      }
     }
   }
 
-  loginComponent.on('isResolved', listener);
-  login.appendChild(loginComponent);
+  // Only set up the listener for Connect mode
   if (host === 'jira') {
-    login.style.display = 'none';
+    loginComponent.on('isResolved', listener);
+    const login = document.getElementById('login');
+    if (login) {
+      login.appendChild(loginComponent);
+      login.style.display = 'none';
+    }
+  } else {
+    // For hosted mode, append to login div but keep it visible
+    const login = document.getElementById('login');
+    if (login) {
+      login.appendChild(loginComponent);
+    }
   }
 
   return loginComponent;
