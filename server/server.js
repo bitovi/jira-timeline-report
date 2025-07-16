@@ -55,7 +55,7 @@ app.get('/.well-known/oauth-protected-resource', (req, res) => {
     headers: req.headers,
     query: req.query,
   });
-  const baseUrl = `http://localhost:${port}`;
+  const baseUrl = process.env.VITE_AUTH_SERVER_URL;
   const metadata = {
     resource: baseUrl,
     authorization_servers: [`${baseUrl}/.well-known/oauth-authorization-server`],

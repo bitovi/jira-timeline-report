@@ -32,7 +32,7 @@ export async function handleMcpPost(req, res) {
     let authInfo = null;
     const auth = req.headers.authorization;
     const tokenFromQuery = req.query.token;
-    const port = process.env.PORT || 3000;
+    const authServerUrl = process.env.VITE_AUTH_SERVER_URL;
 
     if (auth && auth.startsWith('Bearer ')) {
       try {
@@ -48,7 +48,7 @@ export async function handleMcpPost(req, res) {
             .status(401)
             .header(
               'WWW-Authenticate',
-              `Bearer realm="mcp", resource_metadata_url="http://localhost:${port}/.well-known/oauth-protected-resource"`,
+              `Bearer realm="mcp", resource_metadata_url="${authServerUrl}/.well-known/oauth-protected-resource"`,
             )
             .json({
               jsonrpc: '2.0',
@@ -65,7 +65,7 @@ export async function handleMcpPost(req, res) {
           .status(401)
           .header(
             'WWW-Authenticate',
-            `Bearer realm="mcp", resource_metadata_url="http://localhost:${port}/.well-known/oauth-protected-resource"`,
+            `Bearer realm="mcp", resource_metadata_url="${authServerUrl}/.well-known/oauth-protected-resource"`,
           )
           .json({ error: 'Invalid token' });
       }
@@ -82,7 +82,7 @@ export async function handleMcpPost(req, res) {
             .status(401)
             .header(
               'WWW-Authenticate',
-              `Bearer realm="mcp", resource_metadata_url="http://localhost:${port}/.well-known/oauth-protected-resource"`,
+              `Bearer realm="mcp", resource_metadata_url="${authServerUrl}/.well-known/oauth-protected-resource"`,
             )
             .json({
               jsonrpc: '2.0',
@@ -99,7 +99,7 @@ export async function handleMcpPost(req, res) {
           .status(401)
           .header(
             'WWW-Authenticate',
-            `Bearer realm="mcp", resource_metadata_url="http://localhost:${port}/.well-known/oauth-protected-resource"`,
+            `Bearer realm="mcp", resource_metadata_url="${authServerUrl}/.well-known/oauth-protected-resource"`,
           )
           .json({ error: 'Invalid token' });
       }
@@ -110,7 +110,7 @@ export async function handleMcpPost(req, res) {
         .status(401)
         .header(
           'WWW-Authenticate',
-          `Bearer realm="mcp", resource_metadata_url="http://localhost:${port}/.well-known/oauth-protected-resource"`,
+          `Bearer realm="mcp", resource_metadata_url="${authServerUrl}/.well-known/oauth-protected-resource"`,
         )
         .json({
           jsonrpc: '2.0',
