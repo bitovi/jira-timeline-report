@@ -39,8 +39,6 @@ export function oauthMetadata(req, res) {
  * Initiates the OAuth flow by redirecting to Atlassian
  */
 export function authorize(req, res) {
-  const codeVerifier = generateCodeVerifier();
-  const codeChallenge = generateCodeChallenge(codeVerifier);
   const ATLASSIAN = getAtlassianConfig();
 
   // Get parameters from query (sent by MCP client)
@@ -49,6 +47,9 @@ export function authorize(req, res) {
   const mcpScope = req.query.scope;
   const responseType = req.query.response_type || 'code';
   const mcpState = req.query.state; // Use MCP client's state
+  const mcpCodeChallenge = req.query.code_challenge; // MCP client's PKCE challenge
+  const mcpCodeChallengeMethod = req.query.code_challenge_method;
+  const mcpResource = req.query.resource; // MCP resource parameter (RFC 8707)
 
   console.log('OAuth authorize request from MCP client:', {
     mcpClientId,
@@ -56,21 +57,45 @@ export function authorize(req, res) {
     mcpScope,
     responseType,
     mcpState,
+    mcpCodeChallenge,
+    mcpCodeChallengeMethod,
+    mcpResource,
     queryParams: req.query,
   });
 
+  // Use MCP client's PKCE parameters if provided, otherwise generate our own (fallback)
+  let codeChallenge, codeChallengeMethod;
+  let codeVerifier = null; // We don't store the verifier when using MCP's PKCE
+
+  if (mcpCodeChallenge && mcpCodeChallengeMethod) {
+    // Use the MCP client's PKCE parameters
+    codeChallenge = mcpCodeChallenge;
+    codeChallengeMethod = mcpCodeChallengeMethod;
+    console.log('Using MCP client PKCE parameters');
+  } else {
+    // Generate our own PKCE parameters (fallback for non-MCP clients)
+    codeVerifier = generateCodeVerifier();
+    codeChallenge = generateCodeChallenge(codeVerifier);
+    codeChallengeMethod = 'S256';
+    console.log('Generated our own PKCE parameters');
+  }
+
   // Store MCP client info in session for later use in callback
-  req.session.codeVerifier = codeVerifier;
+  req.session.codeVerifier = codeVerifier; // Will be null if using MCP client's PKCE
   req.session.state = mcpState; // Store the MCP client's state
   req.session.mcpClientId = mcpClientId;
   req.session.mcpRedirectUri = mcpRedirectUri; // This is VS Code's callback URI
   req.session.mcpScope = mcpScope;
+  req.session.mcpResource = mcpResource; // Store the resource parameter
+  req.session.usingMcpPkce = !codeVerifier; // Flag to indicate if we're using MCP's PKCE
 
   console.log('Storing in session:', {
     state: mcpState,
-    codeVerifier: 'present',
+    codeVerifier: codeVerifier ? 'present' : 'null (using MCP PKCE)',
     mcpClientId,
     mcpRedirectUri,
+    mcpResource,
+    usingMcpPkce: !codeVerifier,
   });
 
   const url =
@@ -82,7 +107,7 @@ export function authorize(req, res) {
       scope: ATLASSIAN.scopes, // Use our scopes for Atlassian
       state: mcpState, // Use MCP client's state
       code_challenge: codeChallenge,
-      code_challenge_method: 'S256',
+      code_challenge_method: codeChallengeMethod,
     }).toString();
 
   console.log('Redirecting to Atlassian:', url);
@@ -122,6 +147,33 @@ export async function callback(req, res) {
     return res.status(400).send('Invalid state or code');
   }
   const ATLASSIAN = getAtlassianConfig();
+  const mcpRedirectUri = req.session.mcpRedirectUri;
+  const mcpClientId = req.session.mcpClientId;
+  const originalState = req.session.state; // Use the original stored state
+  const usingMcpPkce = req.session.usingMcpPkce;
+
+  // If we're using MCP's PKCE, we can't do the token exchange here
+  // because we don't have the code verifier. Instead, we need to pass
+  // the authorization code back to the MCP client so it can complete the exchange.
+  if (usingMcpPkce && mcpRedirectUri) {
+    console.log('Using MCP PKCE - redirecting code back to MCP client');
+
+    // Clear session data
+    delete req.session.codeVerifier;
+    delete req.session.state;
+    delete req.session.mcpClientId;
+    delete req.session.mcpRedirectUri;
+    delete req.session.mcpScope;
+    delete req.session.mcpResource;
+    delete req.session.usingMcpPkce;
+
+    // Redirect back to MCP client with the authorization code
+    const redirectUrl = `${mcpRedirectUri}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(originalState)}`;
+    console.log('Redirecting to MCP client with auth code:', redirectUrl);
+    return res.redirect(redirectUrl);
+  }
+
+  // Otherwise, handle token exchange ourselves (legacy flow)
   try {
     const tokenRes = await fetch(ATLASSIAN.tokenUrl, {
       method: 'POST',
@@ -157,7 +209,7 @@ export async function callback(req, res) {
     const mcpClientId = req.session.mcpClientId;
     const originalState = req.session.state; // Use the original stored state
 
-    console.log('OAuth callback complete:', {
+    console.log('OAuth callback complete (legacy flow):', {
       mcpClientId,
       mcpRedirectUri,
       hasJwt: !!jwt,
@@ -166,6 +218,11 @@ export async function callback(req, res) {
     // Clear session data
     delete req.session.codeVerifier;
     delete req.session.state;
+    delete req.session.mcpClientId;
+    delete req.session.mcpRedirectUri;
+    delete req.session.mcpScope;
+    delete req.session.mcpResource;
+    delete req.session.usingMcpPkce;
     delete req.session.mcpClientId;
     delete req.session.mcpRedirectUri;
     delete req.session.mcpScope;

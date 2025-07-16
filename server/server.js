@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 import { fetchTokenWithAccessCode } from './helper.js';
 import { oauthMetadata, authorize, callback, jiraIssues, register } from './oauth.js';
 import { handleMcpPost, handleSessionRequest } from './mcp-service.js';
+import { jwtSign } from './tokens.js';
+import { randomUUID } from 'node:crypto';
 import cors from 'cors';
 import { logger } from './logger.js';
 
@@ -119,6 +121,97 @@ app.post('/domain', async (req, res) => {
   logger.info(`[domain] - ${req.body.domain}`);
 
   res.status(204).send();
+});
+
+// OAuth token endpoint for MCP clients (POST)
+app.post('/access-token', async (req, res) => {
+  console.log('OAuth token exchange request:', {
+    body: req.body,
+    contentType: req.headers['content-type'],
+  });
+
+  try {
+    const { grant_type, code, client_id, code_verifier, resource } = req.body;
+
+    if (grant_type !== 'authorization_code') {
+      return res.status(400).json({
+        error: 'unsupported_grant_type',
+        error_description: 'Only authorization_code grant type is supported',
+      });
+    }
+
+    if (!code) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing authorization code',
+      });
+    }
+
+    if (!code_verifier) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing code_verifier for PKCE',
+      });
+    }
+
+    // Exchange the authorization code for Atlassian tokens
+    const ATLASSIAN_CONFIG = {
+      authUrl: 'https://auth.atlassian.com/authorize',
+      tokenUrl: 'https://auth.atlassian.com/oauth/token',
+      clientId: process.env.VITE_JIRA_CLIENT_ID,
+      clientSecret: process.env.JIRA_CLIENT_SECRET,
+      redirectUri: process.env.VITE_AUTH_SERVER_URL + '/callback',
+      scopes: process.env.VITE_JIRA_SCOPE,
+    };
+
+    const tokenRes = await fetch(ATLASSIAN_CONFIG.tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'authorization_code',
+        client_id: ATLASSIAN_CONFIG.clientId,
+        client_secret: ATLASSIAN_CONFIG.clientSecret,
+        code,
+        redirect_uri: ATLASSIAN_CONFIG.redirectUri,
+        code_verifier: code_verifier,
+      }),
+    });
+
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      console.error('Atlassian token exchange failed:', tokenData);
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Authorization code is invalid or expired',
+      });
+    }
+
+    // Create JWT with embedded Atlassian token
+    const jwt = await jwtSign({
+      sub: 'user-' + randomUUID(),
+      iss: process.env.VITE_AUTH_SERVER_URL,
+      aud: resource || process.env.VITE_AUTH_SERVER_URL, // Use resource parameter if provided
+      scope: ATLASSIAN_CONFIG.scopes,
+      atlassian_access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+    });
+
+    console.log('OAuth token exchange successful for client:', client_id);
+
+    // Return OAuth-compliant response
+    return res.json({
+      access_token: jwt,
+      token_type: 'Bearer',
+      expires_in: 3600, // 1 hour
+      scope: ATLASSIAN_CONFIG.scopes,
+    });
+  } catch (error) {
+    console.error('OAuth token exchange error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Internal server error during token exchange',
+    });
+  }
 });
 
 // Start server
