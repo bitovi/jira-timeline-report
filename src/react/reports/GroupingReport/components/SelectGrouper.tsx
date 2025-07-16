@@ -1,16 +1,13 @@
 import React from 'react';
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 import { Label } from '@atlaskit/form';
+import { parentGrouper, projectKeyGrouper, greatGrandParentGrouper, makeLinkGrouper } from '../ui/grouper';
 import {
   dueInQuarterGrouper,
   dueInMonthGrouper,
   intersectMonthGrouper,
   intersectQuarterGrouper,
-  parentGrouper,
-  projectKeyGrouper,
-  greatGrandParentGrouper,
-  makeLinkGrouper,
-} from '../ui/grouper';
+} from '../ui/date-groupers';
 import type { Grouper } from '../ui/grouper';
 import type { LinkedIssue } from '../jira/linked-issue/linked-issue';
 
