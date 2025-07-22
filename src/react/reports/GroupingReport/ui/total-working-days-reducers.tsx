@@ -1,6 +1,8 @@
 import React from 'react';
+import { getBusinessDatesCount } from '../../../../utils/date/business-days';
 import type { AggregationReducer } from '../data/aggregate';
 import type { LinkedIssue } from '../jira/linked-issue/linked-issue';
+import type { YearMonthGroupValue, YearQuarterGroupValue } from './grouper';
 import { getPercentCompleteForLinkedIssue } from '../jira/linked-issue/percent-complete/percent-complete';
 
 const numberFormat = new Intl.NumberFormat('en-US', {
@@ -116,7 +118,6 @@ export const workingDaysBreakdownReducer: AggregationReducer<
   update: (acc, item: LinkedIssue, groupContext) => {
     const percentComplete = getPercentCompleteForLinkedIssue(item);
     const hasEstimate = percentComplete.source !== 'empty';
-
     return {
       totalWorkingDays: acc.totalWorkingDays + percentComplete.totalWorkingDays,
       completedWorkingDays: acc.completedWorkingDays + percentComplete.completedWorkingDays,
@@ -247,5 +248,113 @@ export const issuesWithoutAnyEstimatesReducer: AggregationReducer<
         </ul>
       </div>
     );
+  },
+};
+
+/**
+ * Helper function to calculate intersecting work days for an item within a time range
+ */
+function calculateIntersectingWorkDays(
+  item: LinkedIssue,
+  timeRange: YearMonthGroupValue | YearQuarterGroupValue,
+): number {
+  if (!timeRange.start || !timeRange.end) {
+    return 0;
+  }
+
+  const itemStartDate = item.derivedTiming.start;
+  const itemEndDate = item.derivedTiming.due;
+  let estimatedDaysOfWork = item.derivedTiming.estimatedDaysOfWork;
+
+  if (!itemStartDate || !itemEndDate) {
+    return 0; // No valid dates to calculate intersecting work days
+  }
+
+  // If there's no estimate, use the business days between start and end dates
+  if (!estimatedDaysOfWork) {
+    estimatedDaysOfWork = getBusinessDatesCount(itemStartDate, itemEndDate);
+  }
+
+  const timeRangeStart = new Date(timeRange.start);
+  const timeRangeEnd = new Date(timeRange.end);
+
+  // Calculate the overlap between the item's timeline and the time range
+  const overlapStart = itemStartDate > timeRangeStart ? itemStartDate : timeRangeStart;
+  const overlapEnd = itemEndDate < timeRangeEnd ? itemEndDate : timeRangeEnd;
+
+  if (overlapStart > overlapEnd) {
+    return 0; // No overlap
+  }
+
+  // Get total business days for the entire issue
+  const totalBusinessDays = getBusinessDatesCount(itemStartDate, itemEndDate);
+
+  // Get business days for the overlapping period
+  const overlapBusinessDays = getBusinessDatesCount(overlapStart, overlapEnd);
+
+  if (totalBusinessDays === 0) {
+    return 0; // Avoid division by zero
+  }
+
+  // Calculate the proportion of estimated work days that fall within the time range
+  const proportion = overlapBusinessDays / totalBusinessDays;
+  return estimatedDaysOfWork * proportion;
+}
+
+/**
+ * Aggregates intersecting working days - the proportion of estimated work that falls within a time range
+ */
+export const intersectingWorkingDays: AggregationReducer<
+  LinkedIssue,
+  number,
+  'intersectingWorkingDays',
+  React.ReactNode
+> = {
+  name: 'intersectingWorkingDays',
+  initial: (groupContext) => 0 as number,
+  update: (acc: number, item: LinkedIssue, groupContext: Record<string, any>) => {
+    if (groupContext.timeRange) {
+      const timeRange = groupContext.timeRange as YearMonthGroupValue | YearQuarterGroupValue;
+      const intersectingWorkDays = calculateIntersectingWorkDays(item, timeRange);
+      acc += intersectingWorkDays;
+    }
+
+    return acc;
+  },
+  finalize: (acc) => {
+    // Format to 2 decimal places
+    return <div className="text-right font-mono">{numberFormat.format(acc)} days</div>;
+  },
+};
+
+/**
+ * Calculates capacity need - the average number of people (FTE) required to complete work in a time period
+ */
+export const capacityNeed: AggregationReducer<LinkedIssue, number, 'capacityNeed', React.ReactNode> = {
+  name: 'capacityNeed',
+  initial: (groupContext) => 0 as number,
+  update: (acc: number, item: LinkedIssue, groupContext: Record<string, any>) => {
+    if (groupContext.timeRange) {
+      const timeRange = groupContext.timeRange as YearMonthGroupValue | YearQuarterGroupValue;
+      const intersectingWorkDays = calculateIntersectingWorkDays(item, timeRange);
+
+      if (intersectingWorkDays > 0 && timeRange.start && timeRange.end) {
+        // Calculate the business days in the time range to determine capacity need
+        const timeRangeStart = new Date(timeRange.start);
+        const timeRangeEnd = new Date(timeRange.end);
+        const timeRangeBusinessDays = getBusinessDatesCount(timeRangeStart, timeRangeEnd);
+
+        if (timeRangeBusinessDays > 0) {
+          // Capacity need = intersecting work days / business days in time range
+          const capacityForThisItem = intersectingWorkDays / timeRangeBusinessDays;
+          acc += capacityForThisItem;
+        }
+      }
+    }
+
+    return acc;
+  },
+  finalize: (acc) => {
+    return <div className="text-right font-mono">{numberFormat.format(acc)} FTE</div>;
   },
 };

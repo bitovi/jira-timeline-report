@@ -9,6 +9,9 @@ import {
 import { DefaultsToConfig, NormalizedIssue, NormalizedTeam } from '../../shared/types';
 
 export type DerivedWorkTiming = {
+  /**
+   * Indicates whether the confidence value is valid.
+   */
   isConfidenceValid: boolean;
   usedConfidence: number;
   isStoryPointsValid: boolean;
@@ -36,6 +39,8 @@ export type DerivedWorkTiming = {
   completedDaysOfWork: number;
   datesCompletedDaysOfWork: number;
   datesDaysOfWork: number | null;
+  /* The estimated days of work through story points median or story points */
+  estimatedDaysOfWork: number | null;
 } & Partial<StartData> &
   Partial<DueData>;
 
@@ -102,6 +107,13 @@ export function getEstimationData(
   const probablisticTotalPoints = defaultOrStoryPointsMedian + probablisticExtraPoints;
   const probablisticTotalDaysOfWork = probablisticTotalPoints / normalizedIssue.team.pointsPerDayPerTrack;
 
+  let estimatedDaysOfWork = null;
+  if (isStoryPointsMedianValid) {
+    estimatedDaysOfWork = deterministicTotalDaysOfWork;
+  } else if (isStoryPointsValid) {
+    estimatedDaysOfWork = storyPointsDaysOfWork;
+  }
+
   return {
     isConfidenceValid,
     usedConfidence,
@@ -119,6 +131,7 @@ export function getEstimationData(
     probablisticExtraDaysOfWork,
     probablisticTotalPoints,
     probablisticTotalDaysOfWork,
+    estimatedDaysOfWork,
   };
 }
 
@@ -153,6 +166,7 @@ export function deriveWorkTiming(
     probablisticExtraDaysOfWork,
     probablisticTotalPoints,
     probablisticTotalDaysOfWork,
+    estimatedDaysOfWork,
   } = getEstimationData(normalizedIssue, {
     getDefaultConfidence,
     getDefaultStoryPoints,
@@ -243,6 +257,7 @@ export function deriveWorkTiming(
     totalDaysOfWork,
     defaultOrTotalDaysOfWork,
     completedDaysOfWork,
+    estimatedDaysOfWork,
   };
 }
 

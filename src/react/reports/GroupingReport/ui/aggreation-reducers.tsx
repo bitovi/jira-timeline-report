@@ -88,3 +88,51 @@ export const issuesListReducer: AggregationReducer<LinkedIssue, LinkedIssue[], '
     );
   },
 };
+
+export const top5IssuesByRankReducer: AggregationReducer<
+  LinkedIssue,
+  LinkedIssue[],
+  'top5IssuesByRank',
+  React.ReactNode
+> = {
+  name: 'top5IssuesByRank',
+  initial: (groupContext) => [] as LinkedIssue[],
+  update: (acc: LinkedIssue[], item: LinkedIssue, groupContext) => {
+    acc.push(item);
+    return acc;
+  },
+  finalize: (acc) => {
+    // Sort by rank (using Jira's string-based rank format) and take top 5
+    const sortedIssues = acc
+      .filter((issue) => issue.rank !== undefined && issue.rank !== null)
+      .sort((a, b) => {
+        const rankA = String(a.rank || '');
+        const rankB = String(b.rank || '');
+        return rankA.localeCompare(rankB);
+      })
+      .slice(0, 5);
+
+    if (sortedIssues.length === 0) {
+      return <div className="text-sm text-gray-500">No ranked issues</div>;
+    }
+
+    return (
+      <div className="text-sm">
+        <ol className="list-decimal pl-4">
+          {sortedIssues.map((issue, index) => (
+            <li key={issue.issue.id}>
+              <a
+                href={issue.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-blue-800 hover:underline"
+              >
+                {issue.summary}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  },
+};

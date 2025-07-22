@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Grouper } from './grouper';
 import type { LinkedIssue } from '../jira/linked-issue/linked-issue';
+import { getDateRollupForLinkedIssue } from '../jira/linked-issue/rollup/dates';
 
 /**
  * Date range groupers for grouping issues by time periods.
@@ -15,7 +16,7 @@ export type YearMonthGroupValue = DateRangeGroupValue;
 
 /**
  * Grouper for grouping by calendar quarter (e.g., {start: '2023-01-01', end: '2023-03-31'}).
- * Expects items with a `derivedTiming.due: Date` property (e.g., LinkedIssue).
+ * Uses rollup dates to get the widest due date from the issue and its children.
  */
 export const dueInQuarterGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 'timeRange'> = {
   name: 'quarter',
@@ -23,7 +24,8 @@ export const dueInQuarterGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 'tim
   groupByKey: {
     key: 'timeRange',
     value: (item) => {
-      const due = item.derivedTiming.due;
+      const rollupDates = getDateRollupForLinkedIssue(item);
+      const due = rollupDates.due;
       return due ? getYearQuarterRange(due) : { start: '', end: '' };
     },
   } as const,
@@ -81,7 +83,8 @@ export const dueInQuarterGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 'tim
 
 /**
  * Grouper for grouping by the specific month containing the due date.
- * Expects items with a `derivedTiming.due: Date` property (e.g., LinkedIssue).
+ * Uses rollup dates to get the widest due date from the issue and its children.
+ * Expects items with rollup date functionality (LinkedIssue).
  */
 export const dueInMonthGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 'timeRange'> = {
   name: 'dueMonth',
@@ -89,7 +92,8 @@ export const dueInMonthGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 'timeR
   groupByKey: {
     key: 'timeRange',
     value: (item) => {
-      const due = item.derivedTiming.due;
+      const rollupDates = getDateRollupForLinkedIssue(item);
+      const due = rollupDates.due;
       return due ? getYearMonthRange(due) : { start: '', end: '' };
     },
   } as const,
@@ -123,7 +127,7 @@ export const dueInMonthGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 'timeR
     return values.map((v) => {
       // returns the year and month name like "2025 Jul"
       if (!v.start || !v.end) {
-        return <span>Missing dates</span>;
+        return <span>Missing end dates</span>;
       } else {
         const startDate = new Date(v.start);
         const yearMonth = new Intl.DateTimeFormat('en-US', {
@@ -142,8 +146,9 @@ export const intersectMonthGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 't
   groupByKey: {
     key: 'timeRange',
     value: (item) => {
-      const start = item.derivedTiming.start;
-      const due = item.derivedTiming.due;
+      const rollupDates = getDateRollupForLinkedIssue(item);
+      const start = rollupDates.start;
+      const due = rollupDates.due;
       if (!start || !due) {
         return { start: '', end: '' };
       } else {
@@ -208,8 +213,9 @@ export const intersectQuarterGrouper: Grouper<LinkedIssue, DateRangeGroupValue, 
   groupByKey: {
     key: 'timeRange',
     value: (item) => {
-      const start = item.derivedTiming.start;
-      const due = item.derivedTiming.due;
+      const rollupDates = getDateRollupForLinkedIssue(item);
+      const start = rollupDates.start;
+      const due = rollupDates.due;
       if (!start || !due) {
         return { start: '', end: '' };
       } else {

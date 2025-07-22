@@ -177,3 +177,31 @@ export const projectKeyGrouper: Grouper<LinkedIssue, string, 'projectKey'> = {
     });
   },
 };
+
+type IssueKeyGroupValue = { key: string; summary: string; url: string };
+export const issueKeyGrouper: Grouper<LinkedIssue, IssueKeyGroupValue, 'issueKey'> = {
+  name: 'issueKey',
+  label: 'Issue Key',
+  groupByKey: {
+    key: 'issueKey',
+    value: (item) => {
+      const key = item?.issue?.key || 'no-key';
+      const summary = item?.issue?.fields?.summary || 'No Summary';
+      return { key, summary: String(summary), url: item.url };
+    },
+  } as const,
+  sort: (a, b) => {
+    if (a.key === 'no-key') return 1; // Put 'no-key' last
+    if (b.key === 'no-key') return -1;
+    return a.key.localeCompare(b.key, undefined, { sensitivity: 'base' });
+  },
+  titles: (values) => {
+    return values.map((v) => {
+      return (
+        <a href={v.url} target="_blank" rel="noopener noreferrer">
+          {v.key}
+        </a>
+      );
+    });
+  },
+};

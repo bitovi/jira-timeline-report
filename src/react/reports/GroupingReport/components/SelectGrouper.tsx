@@ -1,7 +1,13 @@
 import React from 'react';
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 import { Label } from '@atlaskit/form';
-import { parentGrouper, projectKeyGrouper, greatGrandParentGrouper, makeLinkGrouper } from '../ui/grouper';
+import {
+  parentGrouper,
+  projectKeyGrouper,
+  greatGrandParentGrouper,
+  makeLinkGrouper,
+  issueKeyGrouper,
+} from '../ui/grouper';
 import {
   dueInQuarterGrouper,
   dueInMonthGrouper,
@@ -14,6 +20,7 @@ import type { LinkedIssue } from '../jira/linked-issue/linked-issue';
 // Define available groupers
 const availableGroupers = [
   { key: 'projectKey', grouper: projectKeyGrouper, label: 'Project Key' },
+  { key: 'issueKey', grouper: issueKeyGrouper, label: 'Issue Key' },
   { key: 'parent', grouper: parentGrouper, label: 'Parent' },
   { key: 'greatGrandParent', grouper: greatGrandParentGrouper, label: 'Great-grandparent' },
   { key: 'implementsLink', grouper: makeLinkGrouper('implements'), label: 'Implements Link' },
