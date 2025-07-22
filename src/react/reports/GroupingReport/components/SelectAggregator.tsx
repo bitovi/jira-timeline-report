@@ -2,7 +2,7 @@ import React from 'react';
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 import { Label } from '@atlaskit/form';
 import type { AggregationReducer } from '../data/aggregate';
-import { revenueReducer, issuesListReducer } from '../ui/aggreation-reducers';
+import { revenueReducer, issuesListReducer, top5IssuesByRankReducer } from '../ui/aggreation-reducers';
 import {
   totalWorkingDaysReducer,
   completedWorkingDaysReducer,
@@ -11,6 +11,8 @@ import {
   workingDaysBreakdownReducer,
   issuesWithoutEstimatesReducer,
   issuesWithoutAnyEstimatesReducer,
+  intersectingWorkingDays,
+  capacityNeed,
 } from '../ui/total-working-days-reducers';
 import type { LinkedIssue } from '../jira/linked-issue/linked-issue';
 import { countReducer } from '../data/aggregate';
@@ -19,10 +21,13 @@ import { countReducer } from '../data/aggregate';
 const availableAggregators = [
   { key: 'revenue', reducer: revenueReducer, label: 'Revenue (Hours per week x Billing Rate)' },
   { key: 'issuesList', reducer: issuesListReducer, label: 'Issues List' },
+  { key: 'top5IssuesByRank', reducer: top5IssuesByRankReducer, label: 'Top 5 Issues by Rank' },
   { key: 'count', reducer: countReducer('count'), label: 'Issue Count' },
   { key: 'totalWorkingDays', reducer: totalWorkingDaysReducer, label: 'Total Working Days' },
   { key: 'completedWorkingDays', reducer: completedWorkingDaysReducer, label: 'Completed Working Days' },
   { key: 'remainingWorkingDays', reducer: remainingWorkingDaysReducer, label: 'Remaining Working Days' },
+  { key: 'intersectingWorkingDays', reducer: intersectingWorkingDays, label: 'Intersecting Working Days' },
+  { key: 'capacityNeed', reducer: capacityNeed, label: 'Capacity Need (FTE)' },
   { key: 'completionPercentage', reducer: workingDaysCompletionPercentageReducer, label: 'Completion Percentage' },
   { key: 'workingDaysBreakdown', reducer: workingDaysBreakdownReducer, label: 'Working Days Breakdown' },
   { key: 'issuesWithoutEstimates', reducer: issuesWithoutEstimatesReducer, label: 'Issues Without Estimates' },

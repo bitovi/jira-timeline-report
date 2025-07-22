@@ -11,17 +11,19 @@ import { createStableObjectKey, groupByKeys } from './data/group';
 import type { AggregationReducer } from './data/aggregate';
 
 import {
-  dueInQuarterGrouper,
-  dueInMonthGrouper,
   parentGrouper,
   projectKeyGrouper,
-  intersectMonthGrouper,
-  intersectQuarterGrouper,
   greatGrandParentGrouper,
   groupByProjectKey,
   YearMonthGroupValue,
   YearQuarterGroupValue,
 } from './ui/grouper';
+import {
+  dueInQuarterGrouper,
+  dueInMonthGrouper,
+  intersectMonthGrouper,
+  intersectQuarterGrouper,
+} from './ui/date-groupers';
 import type { Grouper } from './ui/grouper';
 import { availableAggregators } from './components/SelectAggregator';
 import { SelectMultipleAggregators } from './components/SelectMultipleAggregators';
