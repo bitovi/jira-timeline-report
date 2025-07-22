@@ -1,0 +1,104 @@
+{
+  "ui": {
+    "required_patterns": {
+      "react-components": "use functional components with TypeScript, hooks, and Atlassian Design System (@atlaskit/*)",
+      "styling": "use TailwindCSS utility classes combined with CSS modules for custom styles",
+      "state-management": "use React hooks (useState, useEffect) and React Context for local state",
+      "canjs-legacy": "legacy CanJS StacheElement components for complex timeline visualizations"
+    },
+    "architectural_constraints": {
+      "component-structure": "components must be organized in folders with index.ts barrel exports",
+      "atlassian-design-system": "all UI components should prefer @atlaskit/* components over custom implementations",
+      "responsive-design": "components must work within Jira's iframe constraints and responsive layouts",
+      "accessibility": "components must follow Atlassian's accessibility guidelines"
+    }
+  },
+  "state-management": {
+    "required_patterns": {
+      "react-query": "use @tanstack/react-query for server state management and caching",
+      "react-context": "use React Context providers (JiraProvider, StorageProvider) for dependency injection",
+      "canjs-observables": "legacy CanJS observables for complex state synchronization",
+      "local-storage": "use custom useLocalStorage hook for persisting user preferences"
+    },
+    "architectural_constraints": {
+      "server-state": "all API calls must go through react-query with proper cache keys",
+      "context-providers": "providers must be wrapped at appropriate levels in component tree",
+      "observable-bridge": "useCanObservable hook required to bridge CanJS observables to React",
+      "storage-abstraction": "storage operations must go through AppStorage interface"
+    }
+  },
+  "data-layer": {
+    "required_patterns": {
+      "jira-api-integration": "use jira-oidc-helpers module for all Jira API interactions",
+      "oauth-authentication": "OAuth 2.0 flow with access/refresh token management",
+      "data-processing-pipeline": "raw -> normalized -> derived -> rolledup data transformation",
+      "request-helpers": "use environment-specific request helpers (hosted vs connect)"
+    },
+    "architectural_constraints": {
+      "api-abstraction": "all Jira API calls must go through jira-oidc-helpers interface",
+      "data-transformation": "data must flow through established processing pipeline stages",
+      "authentication": "all requests must use OAuth tokens managed by auth module",
+      "error-handling": "requests must handle OAuth token refresh and error scenarios"
+    }
+  },
+  "routing": {
+    "required_patterns": {
+      "canjs-routing": "primary routing handled by CanJS route-data observable",
+      "url-state-sync": "URL parameters synchronized with application state",
+      "environment-specific": "different routing behavior for web vs Jira Connect environments"
+    },
+    "architectural_constraints": {
+      "state-synchronization": "all route changes must update both URL and application state",
+      "parameter-handling": "URL parameters must be typed and validated",
+      "environment-awareness": "routing must adapt to hosted vs Jira Connect contexts"
+    }
+  },
+  "scheduling-algorithms": {
+    "required_patterns": {
+      "monte-carlo-simulation": "use Monte Carlo methods for project timeline estimation",
+      "dependency-analysis": "analyze issue dependencies for critical path calculation",
+      "statistical-modeling": "statistical analysis of historical data for predictions"
+    },
+    "architectural_constraints": {
+      "algorithm-modularity": "scheduling algorithms must be modular and testable",
+      "performance": "algorithms must handle large datasets efficiently",
+      "deterministic-output": "same inputs must produce consistent results"
+    }
+  },
+  "visualization": {
+    "required_patterns": {
+      "recharts-integration": "use Recharts library for all data visualization",
+      "timeline-rendering": "Gantt chart-style timeline visualizations",
+      "interactive-charts": "charts must support zoom, filter, and drill-down interactions"
+    },
+    "architectural_constraints": {
+      "chart-consistency": "all charts must follow consistent styling and interaction patterns",
+      "performance": "visualizations must handle large datasets without performance issues",
+      "accessibility": "charts must be accessible with proper ARIA labels and keyboard navigation"
+    }
+  },
+  "testing": {
+    "required_patterns": {
+      "unit-testing": "use Vitest for unit testing with React Testing Library",
+      "e2e-testing": "use Playwright for end-to-end testing",
+      "component-testing": "test React components in isolation with proper mocking"
+    },
+    "architectural_constraints": {
+      "test-organization": "tests must be co-located with source files using .test.{ts,tsx} naming",
+      "mock-strategy": "external dependencies must be mocked appropriately",
+      "coverage": "critical business logic must have comprehensive test coverage"
+    }
+  },
+  "deployment": {
+    "required_patterns": {
+      "atlassian-connect": "support deployment as Atlassian Connect app",
+      "hosted-deployment": "support standalone hosted deployment",
+      "environment-configuration": "use environment variables for configuration"
+    },
+    "architectural_constraints": {
+      "dual-deployment": "application must work in both Connect and hosted environments",
+      "security": "must handle OAuth securely in both deployment modes",
+      "scalability": "deployment must support multiple tenants and concurrent users"
+    }
+  }
+}
