@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 
 import type { TeamTimings } from '../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated';
-import { businessDaysInclusive } from '../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated';
+import { businessDaysInclusive } from '../../../utils/date/business-days-inclusive';
 
 import { bestFitRanges } from '../../../utils/date/best-fit-ranges';
 

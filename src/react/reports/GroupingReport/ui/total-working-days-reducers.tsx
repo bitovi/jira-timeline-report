@@ -4,6 +4,7 @@ import type { AggregationReducer } from '../data/aggregate';
 import type { LinkedIssue } from '../jira/linked-issue/linked-issue';
 import type { YearMonthGroupValue, YearQuarterGroupValue } from './grouper';
 import { getPercentCompleteForLinkedIssue } from '../jira/linked-issue/percent-complete/percent-complete';
+import { businessDaysInclusive, toISODateString } from '../../../../utils/date/business-days-inclusive';
 
 const numberFormat = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 1,
@@ -356,5 +357,79 @@ export const capacityNeed: AggregationReducer<LinkedIssue, number, 'capacityNeed
   },
   finalize: (acc) => {
     return <div className="text-right font-mono">{numberFormat.format(acc)} FTE</div>;
+  },
+};
+
+/**
+ * Calculates the maximum capacity needed for any single day in the time range
+ */
+export const maxCapacity: AggregationReducer<LinkedIssue, Map<string, number>, 'maxCapacity', React.ReactNode> = {
+  name: 'maxCapacity',
+  initial: (groupContext) => {
+    const dailyCapacity = new Map<string, number>();
+
+    if (groupContext.timeRange) {
+      const timeRange = groupContext.timeRange as YearMonthGroupValue | YearQuarterGroupValue;
+      if (timeRange.start && timeRange.end) {
+        const timeRangeStart = new Date(timeRange.start);
+        const timeRangeEnd = new Date(timeRange.end);
+
+        // Initialize each business day in the time range with 0 capacity
+        for (const current of businessDaysInclusive(timeRangeStart, timeRangeEnd)) {
+          const dateString = toISODateString(current);
+          dailyCapacity.set(dateString, 0);
+        }
+      }
+    }
+
+    return dailyCapacity;
+  },
+  update: (acc: Map<string, number>, item: LinkedIssue, groupContext: Record<string, any>) => {
+    if (groupContext.timeRange) {
+      const timeRange = groupContext.timeRange as YearMonthGroupValue | YearQuarterGroupValue;
+      const intersectingWorkDays = calculateIntersectingWorkDays(item, timeRange);
+
+      if (intersectingWorkDays > 0 && timeRange.start && timeRange.end) {
+        const itemStartDate = item.derivedTiming.start;
+        const itemEndDate = item.derivedTiming.due;
+
+        if (itemStartDate && itemEndDate) {
+          const timeRangeStart = new Date(timeRange.start);
+          const timeRangeEnd = new Date(timeRange.end);
+
+          // Find the overlap between item timeline and time range
+          const overlapStart = itemStartDate > timeRangeStart ? itemStartDate : timeRangeStart;
+          const overlapEnd = itemEndDate < timeRangeEnd ? itemEndDate : timeRangeEnd;
+
+          if (overlapStart <= overlapEnd) {
+            // Get all business days in the overlap period
+            const overlapBusinessDays = Array.from(businessDaysInclusive(overlapStart, overlapEnd));
+
+            if (overlapBusinessDays.length > 0) {
+              // Distribute work evenly across business days
+              const workPerDay = intersectingWorkDays / overlapBusinessDays.length;
+
+              overlapBusinessDays.forEach((day) => {
+                const dateString = toISODateString(day);
+                const currentCapacity = acc.get(dateString) || 0;
+                acc.set(dateString, currentCapacity + workPerDay);
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return acc;
+  },
+  finalize: (acc) => {
+    if (acc.size === 0) {
+      return <div className="text-right font-mono">0.0 FTE</div>;
+    }
+
+    // Find the maximum capacity across all days
+    const maxCapacityValue = Math.max(...Array.from(acc.values()));
+
+    return <div className="text-right font-mono">{numberFormat.format(maxCapacityValue)} FTE</div>;
   },
 };
