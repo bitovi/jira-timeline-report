@@ -1,5 +1,6 @@
 import type { DerivedIssue } from '../../derived/derive';
 import { logNormalStats } from '../../../utils/math/log-normal';
+import { businessDaysInclusive, toISODateString } from '../../../utils/date/business-days-inclusive';
 
 export function issueWasEstimatedDatedAndCompleted(parentIssueOrRelease: DerivedIssue) {
   const hasSomeEstimates =
@@ -194,18 +195,6 @@ export function groupByTeam<T extends { team: { name: string } }>(issues: T[]): 
   return grouped;
 }
 
-export function* businessDaysInclusive(startDate: Date, endDate: Date): Generator<Date> {
-  const current = new Date(startDate); // clone to avoid mutation
-
-  while (current <= endDate) {
-    const dayOfWeek = current.getDay(); // 0 = Sunday, 6 = Saturday
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      yield new Date(current); // return a new Date instance
-    }
-    current.setDate(current.getDate() + 1);
-  }
-}
-
 export function timingDataForEachBusinessDay(issues: IssueTiming[]) {
   const businessDays = new Map<string, IssueTiming[]>();
   // foo
@@ -225,8 +214,4 @@ export function timingDataForEachBusinessDay(issues: IssueTiming[]) {
   });
 
   return businessDays;
-}
-
-function toISODateString(date: Date) {
-  return date.toISOString().slice(0, 10);
 }

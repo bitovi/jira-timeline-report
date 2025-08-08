@@ -13,6 +13,7 @@ import {
   issuesWithoutAnyEstimatesReducer,
   intersectingWorkingDays,
   capacityNeed,
+  maxCapacity,
 } from '../ui/total-working-days-reducers';
 import type { LinkedIssue } from '../jira/linked-issue/linked-issue';
 import { countReducer } from '../data/aggregate';
@@ -27,7 +28,8 @@ const availableAggregators = [
   { key: 'completedWorkingDays', reducer: completedWorkingDaysReducer, label: 'Completed Working Days' },
   { key: 'remainingWorkingDays', reducer: remainingWorkingDaysReducer, label: 'Remaining Working Days' },
   { key: 'intersectingWorkingDays', reducer: intersectingWorkingDays, label: 'Intersecting Working Days' },
-  { key: 'capacityNeed', reducer: capacityNeed, label: 'Capacity Need (FTE)' },
+  { key: 'capacityNeed', reducer: capacityNeed, label: 'Average Capacity (FTE)' },
+  { key: 'maxCapacity', reducer: maxCapacity, label: 'Max Capacity (FTE)' },
   { key: 'completionPercentage', reducer: workingDaysCompletionPercentageReducer, label: 'Completion Percentage' },
   { key: 'workingDaysBreakdown', reducer: workingDaysBreakdownReducer, label: 'Working Days Breakdown' },
   { key: 'issuesWithoutEstimates', reducer: issuesWithoutEstimatesReducer, label: 'Issues Without Estimates' },
