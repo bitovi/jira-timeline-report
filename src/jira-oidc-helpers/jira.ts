@@ -297,6 +297,8 @@ export function editJiraIssueWithNamedFields(config: Config) {
     /**
      * Quick and dirty fix while gwe work on getting a more robust
      * request helper / jira client
+     *
+     * This is a one off, don't copy this pattern plz
      */
 
     const isPlugin = !!(AP?.history?.getState ?? false);
