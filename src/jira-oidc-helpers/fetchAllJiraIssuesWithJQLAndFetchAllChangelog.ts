@@ -1,13 +1,13 @@
 /**
  * this module is for requesting all jira issues and changelogs.
  */
-import { fetchRemainingChangelogsForIssues, fetchJiraIssuesWithJQL } from './jira';
+import { fetchRemainingChangelogsForIssues, searchJiraIssuesWithJQL } from './jira';
 import { Config, ProgressData, Issue, OidcJiraIssue } from './types';
-import { RequestHelperResponse } from '../shared/types';
+import { RequestHelperResponse, SearchJiraResponse } from '../shared/types';
 import { uniqueKeys } from '../utils/array/unique';
 
 export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
-  return (
+  return async (
     params: {
       limit?: number;
       maxResults?: number;
@@ -22,7 +22,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
   ): Promise<Issue[]> => {
     const { limit, ...apiParams } = params;
 
-    // a weak map would be better
+    // Initialize progress tracking
     progress.data =
       progress.data ||
       ({
@@ -31,47 +31,75 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
         changeLogsRequested: 0,
         changeLogsReceived: 0,
       } as ProgressData);
-    function getRemainingChangeLogsForIssues({ issues }: RequestHelperResponse) {
-      if (progress.data) {
-        Object.assign(progress.data, {
-          issuesReceived: progress.data.issuesReceived + issues.length,
+
+    // Use the new search function with expand support for changelog
+    const allIssues: OidcJiraIssue[] = [];
+    const MAX_RESULTS = 5000;
+    let nextPageToken: string | undefined;
+    let isLast = false;
+
+    // Get approximate count for progress tracking (if available)
+    const getApproximateCount = async () => {
+      if (!params.jql) return { count: 0 };
+
+      try {
+        // Use the requestHelper to make the POST request to approximate-count
+        const response = await config.requestHelper('api/3/search/approximate-count', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jql: params.jql }),
         });
-        progress(progress.data);
+        return response as unknown as { count: number };
+      } catch (error) {
+        console.warn('Could not get approximate count:', error);
+        return { count: 0 };
       }
-      return fetchRemainingChangelogsForIssues(config)(issues as OidcJiraIssue[], progress);
+    };
+
+    const countResponse = await getApproximateCount();
+    const estimatedTotal = (countResponse as { count: number }).count;
+
+    // Update initial progress
+    if (progress.data) {
+      Object.assign(progress.data, {
+        issuesRequested: estimatedTotal,
+      });
+      progress(progress.data);
     }
 
-    const firstRequest = fetchJiraIssuesWithJQL(config)({
-      maxResults: 100,
-      expand: ['changelog'],
-      ...apiParams,
-    });
+    // Fetch all pages with changelog data
+    do {
+      const pageSize = Math.min(limit ? limit - allIssues.length : MAX_RESULTS, MAX_RESULTS);
 
-    return firstRequest.then(({ maxResults, total, startAt }) => {
+      const response = await searchJiraIssuesWithJQL(config)({
+        ...apiParams,
+        maxResults: pageSize,
+        nextPageToken,
+        expand: ['changelog'],
+      });
+
+      const searchResponse = response as SearchJiraResponse;
+      allIssues.push(...(searchResponse.issues as OidcJiraIssue[]));
+      nextPageToken = searchResponse.nextPageToken;
+      isLast = searchResponse.isLast;
+
+      // Update progress after each page
       if (progress.data) {
         Object.assign(progress.data, {
-          issuesRequested: progress.data.issuesRequested + total,
-          changeLogsRequested: 0,
-          changeLogsReceived: 0,
+          issuesReceived: allIssues.length,
         });
         progress(progress.data);
       }
 
-      const requests = [firstRequest.then(getRemainingChangeLogsForIssues)];
-      const limitOrTotal = Math.min(total, limit ?? Infinity);
-
-      for (let i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
-        requests.push(
-          fetchJiraIssuesWithJQL(config)({
-            maxResults: maxResults,
-            startAt: i,
-            ...apiParams,
-          }).then(getRemainingChangeLogsForIssues),
-        );
+      // Check if we've reached the limit
+      if (limit && allIssues.length >= limit) {
+        break;
       }
-      return Promise.all(requests).then((responses) => {
-        return uniqueKeys(responses.flat());
-      });
-    });
+    } while (!isLast);
+
+    // Fetch remaining changelogs for all issues
+    const issuesWithCompleteChangelogs = await fetchRemainingChangelogsForIssues(config)(allIssues, progress);
+
+    return uniqueKeys(issuesWithCompleteChangelogs);
   };
 }

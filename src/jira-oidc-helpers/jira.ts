@@ -4,11 +4,23 @@
 import chunkArray from '../utils/array/chunk-array';
 import mapIdsToNames from '../utils/object/map-ids-to-names';
 import { responseToText } from '../utils/fetch/response-to-text';
+import { RequestHelperResponse, SearchJiraResponse } from '../shared/types';
 import { FetchJiraIssuesParams } from '../jira/shared/types';
 import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from './types';
 import { fetchFromLocalStorage } from './storage';
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from './fetchAllJiraIssuesWithJQLAndFetchAllChangelog';
 import { uniqueKeys } from '../utils/array/unique';
+
+// 🚨 EMERGENCY API MIGRATION FEATURE FLAG
+// Set to false for emergency rollback (old API - will fail since API is removed)
+// Set to true to use new search API (default - REQUIRED as of [current date])
+let USE_ENHANCED_SEARCH = true;
+
+// Emergency function to toggle API version (for debugging/rollback)
+export function setUseEnhancedSearch(enabled: boolean) {
+  console.warn(`🚨 EMERGENCY: Switching Jira search API to ${enabled ? 'NEW' : 'OLD (DEPRECATED)'} version`);
+  USE_ENHANCED_SEARCH = enabled;
+}
 
 export function fetchAccessibleResources(config: Config) {
   return () => {
@@ -55,7 +67,7 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
 
     const newParams = {
       ...params,
-      fields: params.fields?.map((f) => (fields?.nameMap && f in fields.nameMap ? fields.nameMap[f] : f)),
+      fields: params.fields?.map((f: string) => (fields?.nameMap && f in fields.nameMap ? fields.nameMap[f] : f)),
     };
     const response = await fetchJiraIssuesWithJQL(config)(newParams);
     const uniqueIssues = uniqueKeys(response.issues as OidcJiraIssue[]);
@@ -68,10 +80,142 @@ export function fetchJiraIssuesWithJQLWithNamedFields(config: Config) {
     });
   };
 }
+
+// 🚀 NEW SEARCH API FUNCTIONS (API v3/search/jql)
+export function searchJiraIssuesWithJQL(config: Config) {
+  return (
+    params: FetchJiraIssuesParams & { nextPageToken?: string; expand?: string[]; fieldsByKeys?: boolean },
+  ): Promise<SearchJiraResponse> => {
+    const searchParams = new URLSearchParams();
+    if (params.jql) searchParams.set('jql', params.jql);
+    if (params.maxResults) searchParams.set('maxResults', params.maxResults.toString());
+    if (params.nextPageToken) searchParams.set('nextPageToken', params.nextPageToken);
+    if (params.fields) searchParams.set('fields', params.fields.join(','));
+    if (params.expand) searchParams.set('expand', params.expand.join(','));
+    if (params.fieldsByKeys) searchParams.set('fieldsByKeys', params.fieldsByKeys.toString());
+
+    return config.requestHelper(`/api/3/search/jql?${searchParams}`) as unknown as Promise<SearchJiraResponse>;
+  };
+}
+
+export function searchAllJiraIssuesWithJQL(config: Config) {
+  return async (params: FetchJiraIssuesParams, onProgress?: (loaded: number, estimated: number) => void) => {
+    const { limit, ...apiParams } = params;
+
+    // Always use maximum page size - API will scale down automatically
+    const MAX_RESULTS = 5000;
+
+    // Run count + first page in parallel for better performance
+    const countPromise = params.jql
+      ? fetch(`${config.env.JIRA_API_URL}/rest/api/3/search/approximate-count`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jql: params.jql }),
+        })
+          .then((res) => res.json())
+          .catch((error) => {
+            console.warn('Could not get approximate count:', error);
+            return { count: 0 };
+          })
+      : Promise.resolve({ count: 0 });
+
+    const firstPageSize = Math.min(limit || MAX_RESULTS, MAX_RESULTS);
+    const firstPagePromise = searchJiraIssuesWithJQL(config)({
+      maxResults: firstPageSize,
+      ...apiParams,
+    });
+
+    // Wait for count to get estimated total, then start progress tracking
+    const countResponse = await countPromise;
+    const estimatedTotal = (countResponse as { count: number }).count;
+
+    // Call progress immediately with count estimate
+    if (onProgress) {
+      onProgress(0, estimatedTotal);
+    }
+
+    // Now wait for first page to complete
+    const firstPageResponse = await firstPagePromise;
+    const allIssues = [...(firstPageResponse as SearchJiraResponse).issues];
+    let nextPageToken = (firstPageResponse as SearchJiraResponse).nextPageToken;
+    let isLast = (firstPageResponse as SearchJiraResponse).isLast;
+
+    // Update progress after first page
+    if (onProgress) {
+      onProgress(allIssues.length, estimatedTotal);
+    }
+
+    // Continue with sequential pagination (token-based)
+    while (!isLast && (limit === undefined || allIssues.length < limit)) {
+      const remainingLimit = limit ? limit - allIssues.length : undefined;
+      const pageSize = Math.min(remainingLimit || MAX_RESULTS, MAX_RESULTS);
+
+      const response = await searchJiraIssuesWithJQL(config)({
+        maxResults: pageSize,
+        nextPageToken,
+        ...apiParams,
+      });
+
+      allIssues.push(...(response as SearchJiraResponse).issues);
+      nextPageToken = (response as SearchJiraResponse).nextPageToken;
+      isLast = (response as SearchJiraResponse).isLast;
+
+      // Update progress
+      if (onProgress) {
+        onProgress(allIssues.length, estimatedTotal);
+      }
+
+      if (limit && allIssues.length >= limit) {
+        break;
+      }
+    }
+
+    return allIssues;
+  };
+}
+
 export function fetchJiraIssuesWithJQL(config: Config) {
   return (params: FetchJiraIssuesParams) => {
-    // TODO - investigate this and convert params to proper type
+    if (USE_ENHANCED_SEARCH) {
+      return searchJiraIssuesWithJQL(config)(params);
+    }
+
+    // Fallback to old API (will fail since API is removed - for emergency rollback only)
+    console.warn('Using deprecated Jira search API - this will likely fail');
     return config.requestHelper(`/api/3/search?` + new URLSearchParams(params as Record<string, string>));
+  };
+}
+
+export function fetchAllJiraIssuesWithJQL(config: Config) {
+  return async (params: FetchJiraIssuesParams) => {
+    if (USE_ENHANCED_SEARCH) {
+      const allIssues = await searchAllJiraIssuesWithJQL(config)(params);
+      return allIssues;
+    }
+
+    // Old implementation (will fail since API is removed)
+    console.warn('Using deprecated Jira pagination API - this will likely fail');
+    const { limit, ...apiParams } = params;
+    const firstRequest = fetchJiraIssuesWithJQL(config)({
+      maxResults: 100,
+      ...apiParams,
+    });
+    const { maxResults, total, startAt } = await firstRequest;
+    const requests = [firstRequest];
+
+    const limitOrTotal = Math.min(total, limit ?? Infinity);
+    for (let i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
+      requests.push(
+        fetchJiraIssuesWithJQL(config)({
+          maxResults: maxResults,
+          startAt: i,
+          ...apiParams,
+        }),
+      );
+    }
+    return Promise.all(requests).then((responses) => {
+      return responses.map((response: any) => response.issues).flat();
+    });
   };
 }
 // TODO ... we probably can remove this.  It's also not working right.
@@ -100,42 +244,17 @@ export function fetchIssueTypes(config: Config) {
     >;
   };
 }
-export function fetchAllJiraIssuesWithJQL(config: Config) {
-  return async (params: FetchJiraIssuesParams) => {
-    const { limit, ...apiParams } = params;
-    const firstRequest = fetchJiraIssuesWithJQL(config)({
-      maxResults: 100,
-      ...apiParams,
-    });
-    const { maxResults, total, startAt } = await firstRequest;
-    const requests = [firstRequest];
-
-    const limitOrTotal = Math.min(total, limit ?? Infinity);
-    for (let i = startAt + maxResults; i < limitOrTotal; i += maxResults) {
-      requests.push(
-        fetchJiraIssuesWithJQL(config)({
-          maxResults: maxResults,
-          startAt: i,
-          ...apiParams,
-        }),
-      );
-    }
-    return Promise.all(requests).then((responses) => {
-      return responses.map((response) => response.issues).flat();
-    });
-  };
-}
 export function fetchAllJiraIssuesWithJQLUsingNamedFields(config: Config) {
   return async (params: FetchJiraIssuesParams) => {
     const fields = await config.fieldsRequest();
 
     const newParams = {
       ...params,
-      fields: params.fields?.map((f) => fields.nameMap[f] || f),
+      fields: params.fields?.map((f: string) => fields.nameMap[f] || f),
     };
     const response = await fetchAllJiraIssuesWithJQL(config)(newParams);
 
-    return response.map((issue) => {
+    return response.map((issue: any) => {
       return {
         ...issue,
         fields: mapIdsToNames(issue.fields, fields),
