@@ -27,7 +27,13 @@ export function getConnectRequestHelper() {
             headers: options.headers || {},
           };
           if (options.body) {
-            apOptions.data = options.body;
+            // AP.request expects data as an object, not stringified JSON
+            try {
+              apOptions.data = JSON.parse(options.body);
+            } catch (e) {
+              // If it's not JSON, pass as string
+              apOptions.data = options.body;
+            }
           }
           result = JSON.parse((await AP.request(`/rest/${requestUrl}`, apOptions)).body);
         }
