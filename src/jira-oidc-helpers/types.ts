@@ -61,6 +61,11 @@ export interface ResponseForFieldRequest extends RequestHelperResponse {
 
 export type RequestHelper = <TValues = any[], TIssues = OidcJiraIssue[] | JiraIssue[]>(
   urlFragment: string,
+  options?: {
+    method?: string;
+    body?: string;
+    headers?: Record<string, string>;
+  },
 ) => Promise<RequestHelperResponse<TValues, TIssues>>;
 
 export type Config = {

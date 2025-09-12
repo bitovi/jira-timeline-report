@@ -24,3 +24,13 @@ export interface RequestHelperResponse<TValues = any[], TIssues = OidcJiraIssue[
   startAt: number;
   values: TValues;
 }
+
+// New search API response type with pagination tokens
+export interface SearchJiraResponse<TIssues = OidcJiraIssue[] | JiraIssue[]> {
+  issues: TIssues;
+  maxResults: number;
+  total: number;
+  startAt: number;
+  nextPageToken?: string;
+  isLast: boolean;
+}

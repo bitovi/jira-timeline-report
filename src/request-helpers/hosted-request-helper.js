@@ -14,7 +14,7 @@ let hasShownPopUp = false;
 export function getHostedRequestHelper(config) {
   const { JIRA_API_URL } = config;
 
-  return function (urlFragment) {
+  return function (urlFragment, options = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         const scopeIdForJira = fetchFromLocalStorage('scopeId');
@@ -42,11 +42,20 @@ export function getHostedRequestHelper(config) {
         } else {
           requestUrl = `${JIRA_API_URL}/${scopeIdForJira}/rest/${urlFragment}`;
         }
-        const result = await fetchJSON(requestUrl, {
+
+        const fetchOptions = {
+          method: options.method || 'GET',
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            ...options.headers,
           },
-        });
+        };
+
+        if (options.body) {
+          fetchOptions.body = options.body;
+        }
+
+        const result = await fetchJSON(requestUrl, fetchOptions);
         resolve(result);
       } catch (ex) {
         reject(ex);
