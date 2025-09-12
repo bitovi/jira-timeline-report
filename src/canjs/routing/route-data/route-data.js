@@ -529,13 +529,11 @@ export class RouteData extends ObservableObject {
 
     get issueHierarchy() {
       // temporarily removing picking the "nice" name. We will try to bring this back later.
-      return this.simplifiedIssueHierarchy;
+      //return this.simplifiedIssueHierarchy;
 
-      //issueHierarchyFromNormalizedIssues(this.derivedIssues)
-      /*
-      this.derivedIssues && this.derivedIssues.length
-        ? 
-        : this.simplifiedIssueHierarchy;*/
+      return this.derivedIssues && this.derivedIssues.length
+        ? issueHierarchyFromNormalizedIssues(this.derivedIssues)
+        : this.simplifiedIssueHierarchy;
     },
     selectedIssueType: {
       enumerable: true,
