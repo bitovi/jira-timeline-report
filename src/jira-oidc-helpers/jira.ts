@@ -6,7 +6,6 @@ import mapIdsToNames from '../utils/object/map-ids-to-names';
 import { responseToText } from '../utils/fetch/response-to-text';
 import { RequestHelperResponse, SearchJiraResponse } from '../shared/types';
 import { FetchJiraIssuesParams } from '../jira/shared/types';
-import { defineFeatureFlag } from '../shared/feature-flag';
 import {
   Config,
   Issue,
@@ -33,21 +32,6 @@ export function setUseEnhancedSearch(enabled: boolean) {
   console.warn(`🚨 EMERGENCY: Switching Jira search API to ${enabled ? 'NEW' : 'OLD (DEPRECATED)'} version`);
   USE_ENHANCED_SEARCH = enabled;
 }
-
-// Feature flag for bulk changelog API
-export const USE_BULK_CHANGELOG_API = defineFeatureFlag(
-  'useBulkChangelogAPI',
-  `
-Enables the bulk changelog API endpoint for fetching changelogs.
-
-OFF (default): Uses individual GET /api/3/issue/{key}/changelog (1 request per issue) - LEGACY
-ON (opt-in): Uses POST /api/3/changelog/bulkfetch (batches up to 1000 issues per request) - NEW
-
-Toggle with: flags['useBulkChangelogAPI toggle value']
-  `,
-  (value: string | null) => value === 'ON', // Only ON if explicitly set to 'ON'
-  'ON',
-);
 
 export function fetchAccessibleResources(config: Config) {
   return () => {
@@ -409,36 +393,6 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
       (data: ProgressData): void;
     } = () => {},
   ) => {
-    // Check feature flag to determine which API to use
-    if (!USE_BULK_CHANGELOG_API()) {
-      console.warn('[CHANGELOG] Using LEGACY individual changelog API (feature flag disabled)');
-      const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
-
-      // Original implementation: individual requests per issue
-      return Promise.all(
-        issues.map(({ key, changelog, ...issue }) => {
-          if (!changelog || isChangelogComplete(changelog)) {
-            return {
-              key,
-              ...issue,
-              changelog: changelog?.histories,
-            } as InterimJiraIssue;
-          } else {
-            return fetchChangelogs(key, changelog).then((histories) => {
-              return {
-                key,
-                ...issue,
-                changelog: histories,
-              } as InterimJiraIssue;
-            });
-          }
-        }),
-      );
-    }
-
-    // Use bulk changelog API (new implementation)
-    console.log('[BULK] Using bulk changelog API (feature flag enabled)');
-
     // Separate issues into complete and incomplete changelogs
     const completeIssues: InterimJiraIssue[] = [];
     const incompleteIssues: OidcJiraIssue[] = [];
