@@ -6,7 +6,10 @@ import { RequestHelperResponse } from '../shared/types';
 
 export type History = {
   id: string;
-  change: string;
+  created: string | number; // ISO string from individual API, Unix timestamp from bulk API
+  author?: any;
+  items?: any[];
+  [key: string]: any; // Allow other fields
 };
 export type ChangeLog = {
   histories: History[];
@@ -80,3 +83,23 @@ export type Config = {
   fieldsRequest: () => FieldsRequest;
   host: 'jira' | 'hosted';
 };
+
+/**
+ * Bulk changelog API types
+ */
+export type BulkChangelogRequest = {
+  issueIdsOrKeys: string[];
+  fieldIds?: string[];
+  maxResults?: number;
+  nextPageToken?: string;
+};
+
+export type BulkChangelogResponse = {
+  issueChangeLogs: {
+    issueId: string;
+    changeHistories: History[];
+  }[];
+  nextPageToken?: string;
+};
+
+export type IssueChangelogMap = Map<string, History[]>;
