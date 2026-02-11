@@ -6,7 +6,19 @@ import mapIdsToNames from '../utils/object/map-ids-to-names';
 import { responseToText } from '../utils/fetch/response-to-text';
 import { RequestHelperResponse, SearchJiraResponse } from '../shared/types';
 import { FetchJiraIssuesParams } from '../jira/shared/types';
-import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from './types';
+import { defineFeatureFlag } from '../shared/feature-flag';
+import {
+  Config,
+  Issue,
+  ProgressData,
+  OidcJiraIssue,
+  ChangeLog,
+  InterimJiraIssue,
+  BulkChangelogRequest,
+  BulkChangelogResponse,
+  IssueChangelogMap,
+  History,
+} from './types';
 import { fetchFromLocalStorage } from './storage';
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from './fetchAllJiraIssuesWithJQLAndFetchAllChangelog';
 import { uniqueKeys } from '../utils/array/unique';
@@ -21,6 +33,21 @@ export function setUseEnhancedSearch(enabled: boolean) {
   console.warn(`🚨 EMERGENCY: Switching Jira search API to ${enabled ? 'NEW' : 'OLD (DEPRECATED)'} version`);
   USE_ENHANCED_SEARCH = enabled;
 }
+
+// Feature flag for bulk changelog API
+export const USE_BULK_CHANGELOG_API = defineFeatureFlag(
+  'useBulkChangelogAPI',
+  `
+Enables the bulk changelog API endpoint for fetching changelogs.
+
+OFF (default): Uses individual GET /api/3/issue/{key}/changelog (1 request per issue) - LEGACY
+ON (opt-in): Uses POST /api/3/changelog/bulkfetch (batches up to 1000 issues per request) - NEW
+
+Toggle with: flags['useBulkChangelogAPI toggle value']
+  `,
+  (value: string | null) => value === 'ON', // Only ON if explicitly set to 'ON'
+  'ON',
+);
 
 export function fetchAccessibleResources(config: Config) {
   return () => {
@@ -270,40 +297,221 @@ export function fetchJiraChangelog(config: Config) {
     );
   };
 }
+
+/**
+ * Fetches changelogs for multiple issues using the bulk changelog endpoint.
+ * Reduces API calls by fetching up to 1000 issues per request.
+ *
+ * @param config - Jira configuration
+ * @returns Function that accepts issue keys/IDs and optional field filters
+ *
+ * @example
+ * const bulkFetch = fetchBulkChangelogs(config);
+ * const changelogMap = await bulkFetch({
+ *   issueIdsOrKeys: ['PROJ-123', 'PROJ-124'],
+ *   fieldIds: ['status', 'assignee'], // Optional: max 10 fields
+ * });
+ */
+export async function fetchBulkChangelogs(config: Config, request: BulkChangelogRequest): Promise<IssueChangelogMap> {
+  const { issueIdsOrKeys, fieldIds, maxResults = 10000, nextPageToken } = request;
+
+  console.log(
+    `[BULK] fetchBulkChangelogs: ${issueIdsOrKeys.length} issues, ${fieldIds?.length || 0} fields, maxResults=${maxResults}`,
+  );
+
+  // Validate batch size
+  if (issueIdsOrKeys.length > 1000) {
+    throw new Error(`Bulk changelog API supports max 1000 issues per request. Received ${issueIdsOrKeys.length}`);
+  }
+
+  // Validate field filter count
+  if (fieldIds && fieldIds.length > 10) {
+    throw new Error(`Bulk changelog API supports max 10 field IDs. Received ${fieldIds.length}`);
+  }
+
+  const changelogMap: IssueChangelogMap = new Map();
+  let currentPageToken: string | undefined = nextPageToken;
+  let pageCount = 0;
+
+  do {
+    pageCount++;
+    console.log(`[BULK] Page ${pageCount}: Fetching changelogs${currentPageToken ? ' (continuation)' : ''}`);
+
+    // Build request body
+    const requestBody: BulkChangelogRequest = {
+      issueIdsOrKeys,
+      maxResults,
+    };
+
+    if (fieldIds && fieldIds.length > 0) {
+      requestBody.fieldIds = fieldIds;
+    }
+
+    if (currentPageToken) {
+      requestBody.nextPageToken = currentPageToken;
+    }
+
+    // Make API request
+    const response = await config.requestHelper<any, BulkChangelogResponse>(`/api/3/changelog/bulkfetch`, {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Process response - cast to get proper typing
+    const bulkResponse = response as unknown as BulkChangelogResponse;
+
+    // Map issue IDs to changelog histories
+    for (const issueChangelog of bulkResponse.issueChangeLogs) {
+      const { issueId, changeHistories } = issueChangelog;
+
+      // Normalize the date format - bulk API returns Unix timestamps (numbers)
+      // but code expects ISO date strings
+      const normalizedHistories = changeHistories.map((history) => {
+        // If created is a number (Unix timestamp), convert to ISO string
+        if (typeof history.created === 'number') {
+          // Jira API returns timestamps in milliseconds
+          // If the number is less than a reasonable year 2000 timestamp in milliseconds,
+          // it's probably in seconds, so multiply by 1000
+          const timestamp = history.created < 10000000000 ? history.created * 1000 : history.created;
+          return {
+            ...history,
+            created: new Date(timestamp).toISOString(),
+          };
+        }
+        return history;
+      });
+
+      // Append to existing histories or create new entry
+      const existingHistories = changelogMap.get(issueId) || [];
+      changelogMap.set(issueId, [...existingHistories, ...normalizedHistories]);
+    }
+
+    // Check for next page
+    currentPageToken = bulkResponse.nextPageToken;
+  } while (currentPageToken);
+
+  console.log(`[BULK] Complete: ${pageCount} page(s), ${changelogMap.size} issue(s) with changelogs`);
+  return changelogMap;
+}
+
 export function isChangelogComplete(changelog: ChangeLog): boolean {
   return changelog.histories.length === changelog.total;
 }
 
 export function fetchRemainingChangelogsForIssues(config: Config) {
-  return (
+  return async (
     issues: OidcJiraIssue[],
     progress: {
       data?: ProgressData;
       (data: ProgressData): void;
     } = () => {},
   ) => {
-    const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
+    // Check feature flag to determine which API to use
+    if (!USE_BULK_CHANGELOG_API()) {
+      console.warn('[CHANGELOG] Using LEGACY individual changelog API (feature flag disabled)');
+      const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
 
-    // check for remainings
-    return Promise.all(
-      issues.map(({ key, changelog, ...issue }) => {
-        if (!changelog || isChangelogComplete(changelog)) {
-          return {
-            key,
-            ...issue,
-            changelog: changelog?.histories,
-          } as InterimJiraIssue;
-        } else {
-          return fetchChangelogs(key, changelog).then((histories) => {
+      // Original implementation: individual requests per issue
+      return Promise.all(
+        issues.map(({ key, changelog, ...issue }) => {
+          if (!changelog || isChangelogComplete(changelog)) {
             return {
               key,
               ...issue,
-              changelog: histories,
+              changelog: changelog?.histories,
             } as InterimJiraIssue;
-          });
-        }
-      }),
+          } else {
+            return fetchChangelogs(key, changelog).then((histories) => {
+              return {
+                key,
+                ...issue,
+                changelog: histories,
+              } as InterimJiraIssue;
+            });
+          }
+        }),
+      );
+    }
+
+    // Use bulk changelog API (new implementation)
+    console.log('[BULK] Using bulk changelog API (feature flag enabled)');
+
+    // Separate issues into complete and incomplete changelogs
+    const completeIssues: InterimJiraIssue[] = [];
+    const incompleteIssues: OidcJiraIssue[] = [];
+
+    for (const issue of issues) {
+      const { key, changelog, ...rest } = issue;
+      if (!changelog || isChangelogComplete(changelog)) {
+        // Issue has complete changelog, no additional fetch needed
+        completeIssues.push({
+          key,
+          ...rest,
+          changelog: changelog?.histories,
+        } as InterimJiraIssue);
+      } else {
+        // Issue needs additional changelog data
+        incompleteIssues.push(issue);
+      }
+    }
+
+    // If no incomplete issues, return early
+    if (incompleteIssues.length === 0) {
+      console.log(`[BULK] No incomplete changelogs to fetch`);
+      return completeIssues;
+    }
+
+    console.log(
+      `[BULK] fetchRemainingChangelogsForIssues: ${completeIssues.length} complete, ${incompleteIssues.length} incomplete`,
     );
+
+    // Batch incomplete issues into groups of 1000 for bulk fetching
+    const batches = chunkArray(incompleteIssues, 1000);
+    console.log(`[BULK] Creating ${batches.length} batch(es) for ${incompleteIssues.length} issue(s)`);
+    const fetchedChangelogsPromises = batches.map(async (batch) => {
+      // Extract issue IDs for the bulk request
+      const issueIdsOrKeys = batch.map((issue) => issue.id);
+
+      // Fetch changelogs in bulk for this batch
+      const changelogMap = await fetchBulkChangelogs(config, {
+        issueIdsOrKeys,
+      });
+
+      return changelogMap;
+    });
+
+    // Wait for all batches to complete
+    const changelogMaps = await Promise.all(fetchedChangelogsPromises);
+
+    // Merge all changelog maps into one
+    const mergedChangelogMap: IssueChangelogMap = new Map();
+    for (const map of changelogMaps) {
+      for (const [issueId, histories] of map) {
+        mergedChangelogMap.set(issueId, histories);
+      }
+    }
+
+    // Map the fetched changelogs back to issues
+    const processedIncompleteIssues: InterimJiraIssue[] = incompleteIssues.map((issue) => {
+      const { key, changelog, id, ...rest } = issue;
+
+      // Get the fetched changelog histories from the map
+      const fetchedHistories = mergedChangelogMap.get(id) || [];
+
+      // The bulk API returns ALL changelog entries, not just the remaining ones
+      // So we use the fetched histories directly
+      return {
+        key,
+        ...rest,
+        changelog: fetchedHistories,
+      } as InterimJiraIssue;
+    });
+
+    // Combine complete and processed incomplete issues
+    return [...completeIssues, ...processedIncompleteIssues];
   };
 }
 // weirdly, this starts with the oldest, but we got the most recent
