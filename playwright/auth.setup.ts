@@ -43,12 +43,13 @@ setup('authenticate', async ({ page }) => {
   const totpValue = totp.generate();
   await totpInput.fill(totpValue);
 
-  // After TOTP, Atlassian may show a "Verify" button or auto-submit.
-  // Try clicking verify/submit if it appears, otherwise the form auto-submits.
-  const verifyButton = page.getByRole('button', { name: /verify|submit|continue/i });
-  if (await verifyButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await verifyButton.click();
-  }
+  // Submit the TOTP form — Atlassian's TOTP page may auto-submit after
+  // filling all 6 digits, or may require pressing Enter / clicking a button.
+  // We press Enter as a reliable way to submit regardless of the UI variant.
+  await totpInput.press('Enter');
+
+  // Wait for navigation to the consent page
+  await page.waitForURL('**/oauth2/authorize/**', { timeout: 15000 });
 
   // Atlassian's consent page has two variants:
   //   1. Multi-site: shows a combobox to "Choose a site" — must select one
