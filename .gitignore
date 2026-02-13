@@ -17,3 +17,4 @@ public/atlassian-connect.json
 /playwright/.cache/
 /blob-report/
 /dist/
+.playwright-mcp/
