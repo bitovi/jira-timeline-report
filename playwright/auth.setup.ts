@@ -42,9 +42,31 @@ setup('authenticate', async ({ page }) => {
 
   const totpValue = totp.generate();
   await totpInput.fill(totpValue);
-  await page.locator('#react-select-2-input').click();
-  await page.getByText('bitovi-training.atlassian.net', { exact: true }).click();
-  await page.getByRole('button', { name: 'Accept' }).click();
+
+  // After TOTP, Atlassian may show a "Verify" button or auto-submit.
+  // Try clicking verify/submit if it appears, otherwise the form auto-submits.
+  const verifyButton = page.getByRole('button', { name: /verify|submit|continue/i });
+  if (await verifyButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await verifyButton.click();
+  }
+
+  // Atlassian's consent page has two variants:
+  //   1. Multi-site: shows a combobox to "Choose a site" — must select one
+  //   2. Single-site: auto-selects the only site, no combobox shown
+  // Handle both by checking if the combobox exists.
+  const siteSelector = page.getByRole('combobox');
+  const hasSiteSelector = await siteSelector.isVisible({ timeout: 5000 }).catch(() => false);
+
+  if (hasSiteSelector) {
+    await siteSelector.click();
+    await page.getByText('bitovi-training.atlassian.net', { exact: true }).click();
+  }
+
+  // Wait for Accept button to become enabled (it starts disabled while loading)
+  const acceptButton = page.getByRole('button', { name: 'Accept' });
+  await acceptButton.waitFor({ state: 'visible', timeout: 15000 });
+  await expect(acceptButton).toBeEnabled({ timeout: 10000 });
+  await acceptButton.click();
 
   await expect(page.getByRole('button', { name: 'Log Out' })).toBeVisible();
 
