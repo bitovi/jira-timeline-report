@@ -48,6 +48,18 @@ setup('authenticate', async ({ page }) => {
   // We press Enter as a reliable way to submit regardless of the UI variant.
   await totpInput.press('Enter');
 
+  // Debug: log where we are after TOTP submission
+  await page.waitForTimeout(5000);
+  console.log('[AUTH DEBUG] After TOTP - URL:', page.url());
+  console.log('[AUTH DEBUG] After TOTP - Title:', await page.title());
+  console.log(
+    '[AUTH DEBUG] After TOTP - Body text:',
+    await page
+      .locator('body')
+      .innerText()
+      .catch(() => 'COULD NOT READ BODY'),
+  );
+
   // Wait for navigation to the consent page
   await page.waitForURL('**/oauth2/authorize/**', { timeout: 15000 });
 
