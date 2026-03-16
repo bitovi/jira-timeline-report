@@ -59,6 +59,62 @@ app.get('/access-token', async (req, res) => {
   }
 });
 
+app.post('/api/user-details', async (req, res) => {
+  try {
+    const { first, last } = req.body;
+
+    // Validate input
+    if (!first || !last) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both first and last name are required.',
+      });
+    }
+
+    if (typeof first !== 'string' || typeof last !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'First and last name must be strings.',
+      });
+    }
+
+    if (first.trim().length === 0 || last.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'First and last name cannot be empty.',
+      });
+    }
+
+    if (first.length > 50 || last.length > 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'First and last name must be less than 50 characters.',
+      });
+    }
+
+    logger.info(`[user-details] - ${first} ${last}`);
+
+    // Simulate potential server error for testing (10% chance)
+    if (Math.random() < 0.1) {
+      throw new Error('Simulated server error');
+    }
+
+    // In a real application, you would save this to a database
+    // For now, we just log it and return success
+    res.json({
+      success: true,
+      message: 'User details saved successfully.',
+    });
+  } catch (error) {
+    console.error('Error saving user details:', error);
+    Sentry.captureException(error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error. Please try again.',
+    });
+  }
+});
+
 app.post('/domain', async (req, res) => {
   logger.info(`[domain] - ${req.body.domain}`);
 
