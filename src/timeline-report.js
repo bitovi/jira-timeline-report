@@ -32,12 +32,14 @@ import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnaly
 import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
 import EstimationProgress from './react/reports/EstimationProgress/EstimationProgress';
 import { GroupingReport } from './react/reports/GroupingReport/GroupingReport';
+import { FlowMetrics } from './react/reports/FlowMetrics/FlowMetrics';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
   'auto-scheduler': AutoScheduler,
   'estimation-progress': EstimationProgress,
   grouper: GroupingReport,
+  'flow-metrics': FlowMetrics,
 };
 
 export class TimelineReport extends StacheElement {

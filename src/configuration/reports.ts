@@ -58,6 +58,13 @@ export const reports: Report[] = [
     featureFlag: 'estimationTable',
     onByDefault: false,
   },
+  {
+    key: 'flow-metrics',
+    name: 'Flow Metrics',
+    featureSubtitle: 'Flow metrics for cycle time, throughput, and WIP analysis.',
+    featureFlag: 'flowMetrics',
+    onByDefault: false,
+  },
 ] as const;
 
 export type ReportKeys = (typeof reports)[number]['key'];
