@@ -274,6 +274,22 @@ export function isChangelogComplete(changelog: ChangeLog): boolean {
   return changelog.histories.length === changelog.total;
 }
 
+export async function withConcurrencyLimit<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const index = nextIndex++;
+      results[index] = await tasks[index]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, worker);
+  await Promise.all(workers);
+  return results;
+}
+
 export function fetchRemainingChangelogsForIssues(config: Config) {
   return (
     issues: OidcJiraIssue[],
@@ -284,26 +300,23 @@ export function fetchRemainingChangelogsForIssues(config: Config) {
   ) => {
     const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
 
-    // check for remainings
-    return Promise.all(
-      issues.map(({ key, changelog, ...issue }) => {
-        if (!changelog || isChangelogComplete(changelog)) {
-          return {
-            key,
-            ...issue,
-            changelog: changelog?.histories,
-          } as InterimJiraIssue;
-        } else {
-          return fetchChangelogs(key, changelog).then((histories) => {
-            return {
-              key,
-              ...issue,
-              changelog: histories,
-            } as InterimJiraIssue;
-          });
-        }
-      }),
-    );
+    const tasks = issues.map(({ key, changelog, ...issue }) => async (): Promise<InterimJiraIssue> => {
+      if (!changelog || isChangelogComplete(changelog)) {
+        return {
+          key,
+          ...issue,
+          changelog: changelog?.histories,
+        } as InterimJiraIssue;
+      }
+      const histories = await fetchChangelogs(key, changelog);
+      return {
+        key,
+        ...issue,
+        changelog: histories,
+      } as InterimJiraIssue;
+    });
+
+    return withConcurrencyLimit(tasks, 20);
   };
 }
 // weirdly, this starts with the oldest, but we got the most recent

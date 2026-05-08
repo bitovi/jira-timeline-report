@@ -767,6 +767,16 @@ export class RouteData extends ObservableObject {
         },
       },
     }),
+
+    // Flow Metrics report settings
+    flowMetricsCycleTimeRange: saveJSONToUrlButAlsoLookAtReport_DataWrapper('flowMetricsCycleTimeRange', 30, Number, {
+      parse: Number,
+      stringify: (x) => '' + x,
+    }),
+    flowMetricsStatusFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsStatusFilter'),
+    flowMetricsIssueTypeFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsIssueTypeFilter'),
+    flowMetricsProjectFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsProjectFilter'),
+    flowMetricsTeamFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsTeamFilter'),
   };
 }
 
