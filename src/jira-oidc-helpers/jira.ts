@@ -6,7 +6,18 @@ import mapIdsToNames from '../utils/object/map-ids-to-names';
 import { responseToText } from '../utils/fetch/response-to-text';
 import { RequestHelperResponse, SearchJiraResponse } from '../shared/types';
 import { FetchJiraIssuesParams } from '../jira/shared/types';
-import { Config, Issue, ProgressData, OidcJiraIssue, ChangeLog, InterimJiraIssue } from './types';
+import {
+  Config,
+  Issue,
+  ProgressData,
+  OidcJiraIssue,
+  ChangeLog,
+  InterimJiraIssue,
+  BulkChangelogRequest,
+  BulkChangelogResponse,
+  IssueChangelogMap,
+  History,
+} from './types';
 import { fetchFromLocalStorage } from './storage';
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from './fetchAllJiraIssuesWithJQLAndFetchAllChangelog';
 import { uniqueKeys } from '../utils/array/unique';
@@ -270,58 +281,220 @@ export function fetchJiraChangelog(config: Config) {
     );
   };
 }
+
+/**
+ * Fetches changelogs for multiple issues using the bulk changelog endpoint.
+ * Reduces API calls by fetching up to 1000 issues per request.
+ *
+ * ✅ DEFAULT IMPLEMENTATION - This is the standard way to fetch changelogs.
+ * Replaces individual per-issue API calls to prevent rate limiting.
+ *
+ * @param config - Jira configuration
+ * @param request - Bulk changelog request parameters
+ * @returns Map of issue IDs to changelog histories
+ *
+ * @example
+ * const changelogMap = await fetchBulkChangelogs(config, {
+ *   issueIdsOrKeys: ['PROJ-123', 'PROJ-124'],
+ *   fieldIds: ['status', 'assignee'], // Optional: max 10 fields
+ * });
+ */
+export async function fetchBulkChangelogs(config: Config, request: BulkChangelogRequest): Promise<IssueChangelogMap> {
+  const { issueIdsOrKeys, fieldIds, maxResults = 10000, nextPageToken } = request;
+
+  console.log(
+    `[BULK] fetchBulkChangelogs: ${issueIdsOrKeys.length} issues, ${fieldIds?.length || 0} fields, maxResults=${maxResults}`,
+  );
+
+  // Validate batch size
+  if (issueIdsOrKeys.length > 1000) {
+    throw new Error(`Bulk changelog API supports max 1000 issues per request. Received ${issueIdsOrKeys.length}`);
+  }
+
+  // Validate field filter count
+  if (fieldIds && fieldIds.length > 10) {
+    throw new Error(`Bulk changelog API supports max 10 field IDs. Received ${fieldIds.length}`);
+  }
+
+  const changelogMap: IssueChangelogMap = new Map();
+  let currentPageToken: string | undefined = nextPageToken;
+  let pageCount = 0;
+
+  do {
+    pageCount++;
+    console.log(`[BULK] Page ${pageCount}: Fetching changelogs${currentPageToken ? ' (continuation)' : ''}`);
+
+    // Build request body
+    const requestBody: BulkChangelogRequest = {
+      issueIdsOrKeys,
+      maxResults,
+    };
+
+    if (fieldIds && fieldIds.length > 0) {
+      requestBody.fieldIds = fieldIds;
+    }
+
+    if (currentPageToken) {
+      requestBody.nextPageToken = currentPageToken;
+    }
+
+    // Make API request
+    const response = await config.requestHelper<any, BulkChangelogResponse>(`/api/3/changelog/bulkfetch`, {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Process response - cast to get proper typing
+    const bulkResponse = response as unknown as BulkChangelogResponse;
+
+    // Map issue IDs to changelog histories
+    for (const issueChangelog of bulkResponse.issueChangeLogs) {
+      const { issueId, changeHistories } = issueChangelog;
+
+      // Normalize the date format - bulk API returns Unix timestamps (numbers)
+      // but code expects ISO date strings
+      const normalizedHistories = changeHistories.map((history) => {
+        // If created is a number (Unix timestamp), convert to ISO string
+        if (typeof history.created === 'number') {
+          // Jira API returns timestamps in milliseconds
+          // If the number is less than a reasonable year 2000 timestamp in milliseconds,
+          // it's probably in seconds, so multiply by 1000
+          const timestamp = history.created < 10000000000 ? history.created * 1000 : history.created;
+          return {
+            ...history,
+            created: new Date(timestamp).toISOString(),
+          };
+        }
+        return history;
+      });
+
+      // Append to existing histories or create new entry
+      const existingHistories = changelogMap.get(issueId) || [];
+      changelogMap.set(issueId, [...existingHistories, ...normalizedHistories]);
+    }
+
+    // Check for next page
+    currentPageToken = bulkResponse.nextPageToken;
+  } while (currentPageToken);
+
+  console.log(`[BULK] Complete: ${pageCount} page(s), ${changelogMap.size} issue(s) with changelogs`);
+  return changelogMap;
+}
+
 export function isChangelogComplete(changelog: ChangeLog): boolean {
   return changelog.histories.length === changelog.total;
 }
 
-export async function withConcurrencyLimit<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
-  const results: T[] = new Array(tasks.length);
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < tasks.length) {
-      const index = nextIndex++;
-      results[index] = await tasks[index]();
-    }
-  }
-
-  const workers = Array.from({ length: Math.min(limit, tasks.length) }, worker);
-  await Promise.all(workers);
-  return results;
-}
-
+/**
+ * Fetches remaining changelog entries for issues that have incomplete changelogs.
+ *
+ * ✅ DEFAULT IMPLEMENTATION - Uses bulk changelog API (POST /api/3/changelog/bulkfetch)
+ * to batch up to 1000 issues per request, dramatically reducing API calls and preventing
+ * rate limiting (429 errors).
+ *
+ * Migration note: Previously made individual GET calls per issue, which caused rate limiting.
+ * This has been replaced with bulk fetching as the permanent default.
+ *
+ * @param config - Jira configuration
+ * @returns Function that processes issues and fetches missing changelogs in bulk
+ */
 export function fetchRemainingChangelogsForIssues(config: Config) {
-  return (
+  return async (
     issues: OidcJiraIssue[],
     progress: {
       data?: ProgressData;
       (data: ProgressData): void;
     } = () => {},
   ) => {
-    const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
+    // Separate issues into complete and incomplete changelogs
+    const completeIssues: InterimJiraIssue[] = [];
+    const incompleteIssues: OidcJiraIssue[] = [];
 
-    const tasks = issues.map(({ key, changelog, ...issue }) => async (): Promise<InterimJiraIssue> => {
+    for (const issue of issues) {
+      const { key, changelog, ...rest } = issue;
       if (!changelog || isChangelogComplete(changelog)) {
-        return {
+        // Issue has complete changelog, no additional fetch needed
+        completeIssues.push({
           key,
-          ...issue,
+          ...rest,
           changelog: changelog?.histories,
-        } as InterimJiraIssue;
+        } as InterimJiraIssue);
+      } else {
+        // Issue needs additional changelog data
+        incompleteIssues.push(issue);
       }
-      const histories = await fetchChangelogs(key, changelog);
+    }
+
+    // If no incomplete issues, return early
+    if (incompleteIssues.length === 0) {
+      console.log(`[BULK] No incomplete changelogs to fetch`);
+      return completeIssues;
+    }
+
+    console.log(
+      `[BULK] fetchRemainingChangelogsForIssues: ${completeIssues.length} complete, ${incompleteIssues.length} incomplete`,
+    );
+
+    // Batch incomplete issues into groups of 1000 for bulk fetching
+    const batches = chunkArray(incompleteIssues, 1000);
+    console.log(`[BULK] Creating ${batches.length} batch(es) for ${incompleteIssues.length} issue(s)`);
+    const fetchedChangelogsPromises = batches.map(async (batch) => {
+      // Extract issue IDs for the bulk request
+      const issueIdsOrKeys = batch.map((issue) => issue.id);
+
+      // Fetch changelogs in bulk for this batch
+      const changelogMap = await fetchBulkChangelogs(config, {
+        issueIdsOrKeys,
+      });
+
+      return changelogMap;
+    });
+
+    // Wait for all batches to complete
+    const changelogMaps = await Promise.all(fetchedChangelogsPromises);
+
+    // Merge all changelog maps into one
+    const mergedChangelogMap: IssueChangelogMap = new Map();
+    for (const map of changelogMaps) {
+      for (const [issueId, histories] of map) {
+        mergedChangelogMap.set(issueId, histories);
+      }
+    }
+
+    // Map the fetched changelogs back to issues
+    const processedIncompleteIssues: InterimJiraIssue[] = incompleteIssues.map((issue) => {
+      const { key, changelog, id, ...rest } = issue;
+
+      // Get the fetched changelog histories from the map
+      const fetchedHistories = mergedChangelogMap.get(id) || [];
+
+      // The bulk API returns ALL changelog entries, not just the remaining ones
+      // So we use the fetched histories directly
       return {
         key,
-        ...issue,
-        changelog: histories,
+        ...rest,
+        changelog: fetchedHistories,
       } as InterimJiraIssue;
     });
 
-    return withConcurrencyLimit(tasks, 20);
+    // Combine complete and processed incomplete issues
+    return [...completeIssues, ...processedIncompleteIssues];
   };
 }
-// weirdly, this starts with the oldest, but we got the most recent
-// returns an array of histories objects
 
+/**
+ * @deprecated LEGACY FUNCTION - Do not use. This function is kept for backward compatibility only.
+ *
+ * Use `fetchRemainingChangelogsForIssues` (plural) instead, which uses the bulk changelog API.
+ * This function makes individual API calls per issue and will cause rate limiting (429 errors)
+ * on large datasets.
+ *
+ * This function makes one API call per issue, which causes rate limiting.
+ * The bulk API (`fetchRemainingChangelogsForIssues`) batches up to 1000 issues per call.
+ */
 export function fetchRemainingChangelogsForIssue(config: Config) {
   return async (issueIdOrKey: string, mostRecentChangeLog: ChangeLog) => {
     const { maxResults, total } = mostRecentChangeLog;

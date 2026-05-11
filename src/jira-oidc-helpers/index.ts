@@ -97,6 +97,7 @@ export default function createJiraHelpers(
     fetchJiraChangelog: fetchJiraChangelog(config),
     isChangelogComplete,
     fetchRemainingChangelogsForIssues: fetchRemainingChangelogsForIssues(config),
+    /** @deprecated Use fetchRemainingChangelogsForIssues (plural) instead - this causes rate limiting */
     fetchRemainingChangelogsForIssue: fetchRemainingChangelogsForIssue(config),
     fetchAllJiraIssuesWithJQLAndFetchAllChangelog: fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config),
     fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields:

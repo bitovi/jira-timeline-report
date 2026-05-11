@@ -38,6 +38,16 @@ interface StorageIssue {
 }
 
 const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
+  // Check if user is logged in before making API request
+  // In preview mode (logged out), accessToken and scopeId will be null
+  const accessToken = window.localStorage.getItem('accessToken');
+  const scopeId = window.localStorage.getItem('scopeId');
+
+  if (!accessToken || !scopeId) {
+    // User is not logged in (preview mode with mock data)
+    return null;
+  }
+
   const configurationIssues: StorageIssue[] = await jiraHelpers.fetchJiraIssuesWithJQLWithNamedFields<{
     Summary: string;
     Description: { content: Array<StorageIssueContent> };

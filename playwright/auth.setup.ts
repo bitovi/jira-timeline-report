@@ -42,9 +42,44 @@ setup('authenticate', async ({ page }) => {
 
   const totpValue = totp.generate();
   await totpInput.fill(totpValue);
-  await page.locator('#react-select-2-input').click();
-  await page.getByText('bitovi-training.atlassian.net', { exact: true }).click();
-  await page.getByRole('button', { name: 'Accept' }).click();
+
+  // Submit the TOTP form — Atlassian's TOTP page may auto-submit after
+  // filling all 6 digits, or may require pressing Enter / clicking a button.
+  // We press Enter as a reliable way to submit regardless of the UI variant.
+  await totpInput.press('Enter');
+
+  // Debug: log where we are after TOTP submission
+  await page.waitForTimeout(5000);
+  console.log('[AUTH DEBUG] After TOTP - URL:', page.url());
+  console.log('[AUTH DEBUG] After TOTP - Title:', await page.title());
+  console.log(
+    '[AUTH DEBUG] After TOTP - Body text:',
+    await page
+      .locator('body')
+      .innerText()
+      .catch(() => 'COULD NOT READ BODY'),
+  );
+
+  // Wait for navigation to the consent page
+  await page.waitForURL('**/oauth2/authorize/**', { timeout: 15000 });
+
+  // Atlassian's consent page has two variants:
+  //   1. Multi-site: shows a combobox to "Choose a site" — must select one
+  //   2. Single-site: auto-selects the only site, no combobox shown
+  // Handle both by checking if the combobox exists.
+  const siteSelector = page.getByRole('combobox');
+  const hasSiteSelector = await siteSelector.isVisible({ timeout: 5000 }).catch(() => false);
+
+  if (hasSiteSelector) {
+    await siteSelector.click();
+    await page.getByText('bitovi-training.atlassian.net', { exact: true }).click();
+  }
+
+  // Wait for Accept button to become enabled (it starts disabled while loading)
+  const acceptButton = page.getByRole('button', { name: 'Accept' });
+  await acceptButton.waitFor({ state: 'visible', timeout: 15000 });
+  await expect(acceptButton).toBeEnabled({ timeout: 10000 });
+  await acceptButton.click();
 
   await expect(page.getByRole('button', { name: 'Log Out' })).toBeVisible();
 
