@@ -1,35 +1,17 @@
 /**
  * this module is for requesting all jira issues and changelogs.
  */
-import { isChangelogComplete, fetchRemainingChangelogsForIssue, searchJiraIssuesWithJQL } from './jira';
+import { fetchBulkChangelogs, fetchRemainingChangelogsForIssues, searchJiraIssuesWithJQL } from './jira';
 import { Config, ProgressData, Issue, OidcJiraIssue, InterimJiraIssue } from './types';
 import { SearchJiraResponse } from '../shared/types';
 import { uniqueKeys } from '../utils/array/unique';
+import chunkArray from '../utils/array/chunk-array';
 
-const CHANGELOG_CONCURRENCY = 20;
-
-// Semaphore that limits concurrent async operations to `limit` at a time.
-// Returns a release function; caller must invoke it when the operation finishes.
-function makeSemaphore(limit: number) {
-  let active = 0;
-  const queue: (() => void)[] = [];
-  return (): Promise<() => void> => {
-    const release = () => {
-      active--;
-      queue.shift()?.();
-    };
-    if (active < limit) {
-      active++;
-      return Promise.resolve(release);
-    }
-    return new Promise((resolve) =>
-      queue.push(() => {
-        active++;
-        resolve(release);
-      }),
-    );
-  };
-}
+// When true: search omits expand:['changelog'], then fetches all changelogs via a
+// single bulk call. Allows up to 5000 issues per search page instead of ~100.
+// When false: search uses expand:['changelog'] inline, then bulk-fetches only
+// issues whose inline changelog was incomplete (original behaviour).
+const USE_DIRECT_BULK_CHANGELOG = true;
 
 export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
   return async (
@@ -61,7 +43,6 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
     let nextPageToken: string | undefined;
     let isLast = false;
 
-    // Get approximate count for progress tracking (if available)
     const getApproximateCount = async () => {
       if (!params.jql) return { count: 0 };
       try {
@@ -85,29 +66,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
       progress(progress.data);
     }
 
-    const acquire = makeSemaphore(CHANGELOG_CONCURRENCY);
-    const fetchChangelogs = fetchRemainingChangelogsForIssue(config);
-
-    // Changelog fetches start immediately per page — they run concurrently
-    // with subsequent page fetches rather than waiting for all pages to load.
-    const changelogPromises: Promise<InterimJiraIssue>[] = [];
-
-    const enqueueIssue = ({ key, changelog, ...issue }: OidcJiraIssue): void => {
-      if (!changelog || isChangelogComplete(changelog)) {
-        changelogPromises.push(Promise.resolve({ key, ...issue, changelog: changelog?.histories } as InterimJiraIssue));
-        return;
-      }
-      changelogPromises.push(
-        acquire().then(async (release) => {
-          try {
-            const histories = await fetchChangelogs(key, changelog);
-            return { key, ...issue, changelog: histories } as InterimJiraIssue;
-          } finally {
-            release();
-          }
-        }),
-      );
-    };
+    const searchExpand = USE_DIRECT_BULK_CHANGELOG ? [] : ['changelog'];
 
     do {
       const pageSize = Math.min(limit ? limit - allIssues.length : MAX_RESULTS, MAX_RESULTS);
@@ -116,7 +75,7 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
         ...apiParams,
         maxResults: pageSize,
         nextPageToken,
-        expand: ['changelog'],
+        ...(searchExpand.length > 0 && { expand: searchExpand }),
       });
 
       const searchResponse = response as SearchJiraResponse;
@@ -124,11 +83,6 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
       allIssues.push(...pageIssues);
       nextPageToken = searchResponse.nextPageToken;
       isLast = searchResponse.isLast;
-
-      // Start changelog fetches for this page immediately.
-      for (const issue of pageIssues) {
-        enqueueIssue(issue);
-      }
 
       if (progress.data) {
         Object.assign(progress.data, { issuesReceived: allIssues.length });
@@ -138,7 +92,25 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
       if (limit && allIssues.length >= limit) break;
     } while (!isLast);
 
-    const issuesWithCompleteChangelogs = await Promise.all(changelogPromises);
+    let issuesWithCompleteChangelogs: InterimJiraIssue[];
+
+    if (USE_DIRECT_BULK_CHANGELOG) {
+      // No inline changelog data from search — fetch everything via bulk in batches of 1000.
+      const batches = chunkArray(allIssues, 1000);
+      const changelogMaps = await Promise.all(
+        batches.map((batch) => fetchBulkChangelogs(config, { issueIdsOrKeys: batch.map((i) => i.id) })),
+      );
+      const changelogMap = new Map(changelogMaps.flatMap((m) => [...m]));
+      issuesWithCompleteChangelogs = allIssues.map(({ id, key, fields }) => ({
+        id,
+        key,
+        fields,
+        changelog: changelogMap.get(id) ?? [],
+      }));
+    } else {
+      // Inline changelog came back with the search; bulk-fetch only incomplete ones.
+      issuesWithCompleteChangelogs = await fetchRemainingChangelogsForIssues(config)(allIssues, progress);
+    }
 
     return uniqueKeys(issuesWithCompleteChangelogs);
   };
