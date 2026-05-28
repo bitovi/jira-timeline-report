@@ -161,12 +161,12 @@ const SingleChart: React.FC<{
     const idx = chartStatuses.indexOf(statusName);
     return n <= 1 ? effectivePadL + PW / 2 : effectivePadL + (idx / (n - 1)) * PW;
   };
+  const stdTicks = niceTimeTicks(localMax * 1.1);
+  const yMaxMs = stdTicks[stdTicks.length - 1] || 1;
+
   const yOf = (ms: number) => PAD_T + PH - (yMaxMs > 0 ? (ms / yMaxMs) * PH : 0);
 
   const baseline = PAD_T + PH;
-
-  const stdTicks = niceTimeTicks(localMax * 1.1);
-  const yMaxMs = stdTicks[stdTicks.length - 1] || 1;
 
   const handleEnter = (e: React.MouseEvent, projectKey: string, pt: { statusName: string; avgMs: number }) => {
     const label = multiProject

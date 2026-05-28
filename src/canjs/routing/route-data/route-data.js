@@ -794,6 +794,17 @@ export class RouteData extends ObservableObject {
     flowMetricsIssueTypeFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsIssueTypeFilter'),
     flowMetricsProjectFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsProjectFilter'),
     flowMetricsTeamFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsTeamFilter'),
+
+    // Time in Status report settings
+    timeInStatusDateRange: saveJSONToUrlButAlsoLookAtReport_DataWrapper('timeInStatusDateRange', 30, Number, {
+      parse: Number,
+      stringify: (x) => '' + x,
+    }),
+    timeInStatusStatusFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusStatusFilter'),
+    timeInStatusIssueTypeFilter:
+      makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusIssueTypeFilter'),
+    timeInStatusProjectFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusProjectFilter'),
+    timeInStatusReorder: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusReorder'),
   };
 }
 

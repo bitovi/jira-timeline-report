@@ -14,20 +14,18 @@ function getStatusDurationsMap(issue: DerivedIssue): Map<string, number> {
   const durations = new Map<string, number>();
 
   const fields = issue.issue?.fields as Record<string, unknown> | undefined;
-  const rawCreated = fields?.created;
+  const rawCreated = fields?.Created;
   const issueCreatedMs = rawCreated ? new Date(rawCreated as string).getTime() : null;
 
-  // An issue is effectively complete if it has a resolution date OR its current
-  // status is in the "done" category. The category check matters because teams
-  // often move tickets to Done without setting a resolution — without this, the
-  // current-status accumulator below would keep adding "time in Done" forever.
-  const rawResolved = fields?.resolutiondate;
+  // An issue is complete when its current status is in the "done" category.
+  // resolutiondate is not fetched by the pipeline (not in CORE_FIELDS), so we
+  // rely on the status category alone — matching how FlowMetrics derives completion.
   const currentStatusCategory = issue.issue?.fields?.Status?.statusCategory;
   const currentCatKey = currentStatusCategory
     ? ((currentStatusCategory as { key?: string; name?: string }).key ??
       ((currentStatusCategory as { name?: string }).name === 'Done' ? 'done' : undefined))
     : undefined;
-  const isComplete = !!rawResolved || currentCatKey === 'done';
+  const isComplete = currentCatKey === 'done';
 
   const changelog = issue.issue?.changelog ?? [];
   const statusChanges = changelog
@@ -76,7 +74,7 @@ function getStatusEntryDatesMap(issue: DerivedIssue): Map<string, Date> {
   const entryDates = new Map<string, Date>();
 
   const fields = issue.issue?.fields as Record<string, unknown> | undefined;
-  const rawCreated = fields?.created;
+  const rawCreated = fields?.Created;
   const issueCreatedDate = rawCreated ? new Date(rawCreated as string) : null;
 
   const changelog = issue.issue?.changelog ?? [];
