@@ -101,7 +101,7 @@
     "jsdom": "^24.1.0",
     "jstat": "^1.9.6",
     "live-server": "^1.2.2",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.15",
     "prettier": "3.5.3",
     "recharts": "^2.15.3",
     "rollup": "npm:@rollup/wasm-node@^4.2.0",
