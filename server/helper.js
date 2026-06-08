@@ -29,11 +29,16 @@ export const fetchTokenWithAccessCode = async (code, refresh = false) => {
       },
     };
   } catch (error) {
-    //handle error properly.
-    console.error(error);
+    const atlassianError = error?.response?.data;
+    console.error('[OAuth token exchange failed]', {
+      status: error?.response?.status,
+      atlassianError,
+      axiosMessage: error?.message,
+    });
+    const message = atlassianError?.error_description ?? atlassianError?.error ?? error.message;
     return {
       error: true,
-      message: `${error?.response?.message}` ?? `${error.message}`,
+      message,
     };
   }
 };

@@ -32,12 +32,16 @@ import { EstimateAnalysis } from './react/reports/EstimateAnalysis/EstimateAnaly
 import AutoScheduler from './react/reports/AutoScheduler/AutoScheduler';
 import EstimationProgress from './react/reports/EstimationProgress/EstimationProgress';
 import { GroupingReport } from './react/reports/GroupingReport/GroupingReport';
+import { FlowMetrics } from './react/reports/FlowMetrics/FlowMetrics';
+import { TimeInStatus } from './react/reports/TimeInStatus/TimeInStatus';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
   'auto-scheduler': AutoScheduler,
   'estimation-progress': EstimationProgress,
   grouper: GroupingReport,
+  'flow-metrics': FlowMetrics,
+  'time-in-status': TimeInStatus,
 };
 
 export class TimelineReport extends StacheElement {
@@ -204,6 +208,16 @@ export class TimelineReport extends StacheElement {
       rowGroupObs: value.bind(this.routeData, 'rowGroup'),
       colGroupObs: value.bind(this.routeData, 'colGroup'),
       aggregatorsObs: value.bind(this.routeData, 'aggregators'),
+      flowMetricsCycleTimeRangeObs: value.bind(this.routeData, 'flowMetricsCycleTimeRange'),
+      flowMetricsStatusFilterObs: value.bind(this.routeData, 'flowMetricsStatusFilter'),
+      flowMetricsIssueTypeFilterObs: value.bind(this.routeData, 'flowMetricsIssueTypeFilter'),
+      flowMetricsProjectFilterObs: value.bind(this.routeData, 'flowMetricsProjectFilter'),
+      flowMetricsTeamFilterObs: value.bind(this.routeData, 'flowMetricsTeamFilter'),
+      timeInStatusDateRangeObs: value.bind(this.routeData, 'timeInStatusDateRange'),
+      timeInStatusStatusFilterObs: value.bind(this.routeData, 'timeInStatusStatusFilter'),
+      timeInStatusIssueTypeFilterObs: value.bind(this.routeData, 'timeInStatusIssueTypeFilter'),
+      timeInStatusProjectFilterObs: value.bind(this.routeData, 'timeInStatusProjectFilter'),
+      timeInStatusReorderObs: value.bind(this.routeData, 'timeInStatusReorder'),
     };
 
     // GroupingReport needs to be wrapped with JiraProvider and QueryClientProvider

@@ -16,14 +16,16 @@ export const FeatureToggle: FC<FeatureToggleProps> = ({ title, subtitle, checked
 
   return (
     <div className="flex gap-x-4 items-center">
-      <AtlasToggle
-        id={id}
-        size="large"
-        isDisabled={disabled}
-        isChecked={checked}
-        onChange={({ target }) => onChange(target.checked)}
-      />
-      <div className="flex-col gap-y-6">
+      <div className="flex-shrink-0">
+        <AtlasToggle
+          id={id}
+          size="large"
+          isDisabled={disabled}
+          isChecked={checked}
+          onChange={({ target }) => onChange(target.checked)}
+        />
+      </div>
+      <div className="flex flex-col gap-y-1">
         <label htmlFor={id} className="font-bold text-base text-slate-800">
           {title}
         </label>

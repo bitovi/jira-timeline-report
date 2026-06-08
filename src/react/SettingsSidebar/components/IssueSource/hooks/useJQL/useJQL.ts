@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { value } from '../../../../../../can';
 import routeData from '../../../../../../canjs/routing/route-data';
 import { useCanObservable } from '../../../../../hooks/useCanObservable';
@@ -13,6 +13,12 @@ export const useJQL = () => {
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJql, setChildJql] = useState(childJqlFromRouteData);
   const [loadChildren, setLoadChildren] = useState(loadChildrenFromRouteData);
+
+  // Keep the textarea in sync when the JQL is updated externally (e.g. by the
+  // cycle time slider expanding the date window and writing to routeData.jql).
+  useEffect(() => {
+    setJql(jqlFromRouteData);
+  }, [jqlFromRouteData]);
 
   const applyJql = () => {
     routeData.assign({

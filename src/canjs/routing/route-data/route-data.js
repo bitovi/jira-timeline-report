@@ -573,10 +573,26 @@ export class RouteData extends ObservableObject {
           timers = [];
         }
 
+        // Writes the selected type to the URL the same way a manual selection does:
+        // omits the param when it matches the saved report's value (keeps the URL clean
+        // while the report still provides it), otherwise writes it explicitly.
+        const writeUrlParam = (value) => {
+          const param = this.reportData && paramValue(this.reportData, 'selectedIssueType');
+          updateUrlParam('selectedIssueType', value, param || '');
+        };
+
         // anything happens in state, update the route
         // the route updates, update the state (or the route if it's wrong)
         resolveCurrentValue = () => {
           clearTimers();
+
+          // Don't resolve anything until derivedIssues are loaded. Both defaulting
+          // and validation must use the real issue hierarchy — not the Jira metadata
+          // hierarchy (simplifiedIssueHierarchy), which may include levels (e.g. Outcomes)
+          // that aren't present in the actual query results.
+          if (!(this.derivedIssues && this.derivedIssues.length)) {
+            return;
+          }
 
           // we wait to resolve to a defined value until we can check it's right
           if (this.issueHierarchy && this.issueHierarchy.length) {
@@ -587,27 +603,29 @@ export class RouteData extends ObservableObject {
               resolve('Release-' + this.issueHierarchy[0].name);
             } else {
               const curSelectedParts = toSelectedParts(curParamValue);
-              //const lastSelectedParts = toSelectedParts(lastSelectedValue);
 
               if (curSelectedParts) {
                 // check it's ok
                 let typeToCheck = curSelectedParts.secondary ?? curSelectedParts.primary;
 
                 if (this.issueHierarchy.some((issue) => issue.name === typeToCheck)) {
-                  // make sure we actually need to update
                   resolve(curParamValue);
                 }
-                // set back to default
+                // The stored value (URL param or saved report) names a level that isn't
+                // present in the returned results. Default to the highest available level
+                // and persist it to the URL so the selection stays consistent on reload,
+                // share, and when the hierarchy changes (e.g. switching issue sources).
                 else {
-                  timers.push(
-                    setTimeout(() => {
-                      updateUrlParam('selectedIssueType', '', '');
-                    }, 20),
-                  );
+                  const defaultType = this.issueHierarchy[0].name;
+                  resolve(defaultType);
+                  writeUrlParam(defaultType);
                 }
               } else {
-                // default to the first type
-                resolve(this.issueHierarchy[0].name);
+                // No stored value — default to the highest level present in the results
+                // and persist it to the URL.
+                const defaultType = this.issueHierarchy[0].name;
+                resolve(defaultType);
+                writeUrlParam(defaultType);
               }
             }
           } else {
@@ -616,8 +634,7 @@ export class RouteData extends ObservableObject {
         };
 
         listenTo(lastSet, (value) => {
-          const param = this.reportData && paramValue(this.reportData, 'selectedIssueType');
-          updateUrlParam('selectedIssueType', value, param || '');
+          writeUrlParam(value);
         });
 
         resolveCurrentValue();
@@ -767,6 +784,27 @@ export class RouteData extends ObservableObject {
         },
       },
     }),
+
+    // Flow Metrics report settings
+    flowMetricsCycleTimeRange: saveJSONToUrlButAlsoLookAtReport_DataWrapper('flowMetricsCycleTimeRange', 30, Number, {
+      parse: Number,
+      stringify: (x) => '' + x,
+    }),
+    flowMetricsStatusFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsStatusFilter'),
+    flowMetricsIssueTypeFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsIssueTypeFilter'),
+    flowMetricsProjectFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsProjectFilter'),
+    flowMetricsTeamFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('flowMetricsTeamFilter'),
+
+    // Time in Status report settings
+    timeInStatusDateRange: saveJSONToUrlButAlsoLookAtReport_DataWrapper('timeInStatusDateRange', 30, Number, {
+      parse: Number,
+      stringify: (x) => '' + x,
+    }),
+    timeInStatusStatusFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusStatusFilter'),
+    timeInStatusIssueTypeFilter:
+      makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusIssueTypeFilter'),
+    timeInStatusProjectFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusProjectFilter'),
+    timeInStatusReorder: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusReorder'),
   };
 }
 

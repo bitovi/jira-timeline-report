@@ -11,6 +11,8 @@ import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
 import { queryClient } from '../../../services/query';
 import { StorageProvider } from '../../../services/storage';
 import { EstimateAnalysisViewSettings } from '../../../reports/EstimateAnalysis/EstimateAnalysisViewSettings';
+import { FlowMetricsViewSettings } from '../../../reports/FlowMetrics/FlowMetricsViewSettings';
+import { TimeInStatusViewSettings } from '../../../reports/TimeInStatus/TimeInStatusViewSettings';
 import routeData from '../../../../canjs/routing/route-data';
 
 const reports = [
@@ -26,6 +28,14 @@ const reports = [
     key: 'table',
     name: 'Estimation Table',
   },
+  {
+    key: 'flow-metrics',
+    name: 'Flow Metrics',
+  },
+  {
+    key: 'time-in-status',
+    name: 'Time in Status',
+  },
 ] as const;
 
 type ReportTypes = (typeof reports)[number]['key'];
@@ -33,12 +43,19 @@ type ReportTypes = (typeof reports)[number]['key'];
 const viewSettingsMap: Record<Exclude<ReportTypes, 'table'>, FC> = {
   'start-due': GanttViewSettings,
   due: ScatterPlotViewSettings,
+  'flow-metrics': FlowMetricsViewSettings,
+  'time-in-status': TimeInStatusViewSettings,
 };
 
 const ViewSettings: FC = () => {
   const [primaryReportType] = usePrimaryReportType();
 
-  if (primaryReportType !== 'start-due' && primaryReportType !== 'due') {
+  if (
+    primaryReportType !== 'start-due' &&
+    primaryReportType !== 'due' &&
+    primaryReportType !== 'flow-metrics' &&
+    primaryReportType !== 'time-in-status'
+  ) {
     return null;
   }
 
@@ -51,7 +68,14 @@ const ViewSettings: FC = () => {
         <Suspense>
           <QueryClientProvider client={queryClient}>
             <StorageProvider storage={routeData.storage}>
-              <DropdownMenu shouldRenderToParent trigger="View settings">
+              <DropdownMenu
+                shouldRenderToParent
+                trigger={
+                  primaryReportType === 'flow-metrics' || primaryReportType === 'time-in-status'
+                    ? 'Filter Results'
+                    : 'View settings'
+                }
+              >
                 <div className="p-6 w-[475px]">
                   <Settings />
                 </div>
