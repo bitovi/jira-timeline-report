@@ -6,9 +6,14 @@ import { Config } from './types';
 import { saveInformationToLocalStorage, clearAuthFromLocalStorage, fetchFromLocalStorage } from './storage';
 
 export const fetchAuthorizationCode = (config: Config) => () => {
+  const scopeParts = config.env.JIRA_SCOPE.split(' ').filter(Boolean);
+  if (!scopeParts.includes('offline_access')) {
+    scopeParts.push('offline_access');
+  }
+  const scope = scopeParts.join(' ');
   const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${
     config.env.JIRA_CLIENT_ID
-  }&scope=${config.env.JIRA_SCOPE}&redirect_uri=${
+  }&scope=${scope}&redirect_uri=${
     config.env.JIRA_CALLBACK_URL
   }&response_type=code&prompt=consent&state=${encodeURIComponent(encodeURIComponent(window.location.search))}`;
 
@@ -36,29 +41,33 @@ export const timeRemainingBeforeAccessTokenExpiresInSeconds = () => {
   return -1 * (currentTimestamp - expiryTimestamp);
 };
 
-export const refreshAccessToken =
-  (config: Config) =>
-  async (accessCode?: string): Promise<string | undefined> => {
-    try {
-      const response = await fetchJSON(`${config.env.JIRA_API_URL}/?code=${accessCode}`);
-
-      const { accessToken, expiryTimestamp, refreshToken } = response;
-      saveInformationToLocalStorage({
-        accessToken,
-        refreshToken,
-        expiryTimestamp,
-      });
-      return accessToken;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error.message);
-      } else {
-        console.error('An unknown error occurred');
-      }
-      clearAuthFromLocalStorage();
-      fetchAuthorizationCode(config)();
+export const refreshAccessToken = (config: Config) => async (): Promise<string | undefined> => {
+  const storedRefreshToken = fetchFromLocalStorage('refreshToken');
+  if (!storedRefreshToken) {
+    fetchAuthorizationCode(config)();
+    return;
+  }
+  try {
+    const response = await fetchJSON(
+      `${import.meta.env.VITE_AUTH_SERVER_URL}/access-token?code=${storedRefreshToken}&refresh=true`,
+    );
+    const { accessToken, expiryTimestamp, refreshToken } = response;
+    saveInformationToLocalStorage({
+      accessToken,
+      refreshToken,
+      expiryTimestamp,
+    });
+    return accessToken;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(error.message);
+    } else {
+      console.error('An unknown error occurred');
     }
-  };
+    clearAuthFromLocalStorage();
+    fetchAuthorizationCode(config)();
+  }
+};
 
 export async function fetchAccessTokenWithAuthCode(authCode: string): Promise<void> {
   try {
