@@ -8,6 +8,8 @@ import {
   spacedIssues,
   collidingIssues,
   mixedMissingDueIssues,
+  undatedIssues,
+  smartLayoutIssues,
   groupableIssues,
   groupableParents,
 } from './fixtures';
@@ -35,17 +37,21 @@ interface Args {
   allIssues?: IssueOrRelease[];
   roundTo: string;
   groupBy?: string;
+  dateRangeStart?: string;
+  dateRangeEnd?: string;
 }
 
 const meta: Meta<Args> = {
   title: 'Reports/ScatterTimeline/ScatterTimeline',
   decorators: [FixedWidth],
-  render: ({ issues, allIssues, roundTo, groupBy }) => (
+  render: ({ issues, allIssues, roundTo, groupBy, dateRangeStart, dateRangeEnd }) => (
     <ScatterTimeline
       primaryIssuesOrReleasesObs={obs(issues)}
       allIssuesOrReleasesObs={obs(allIssues ?? issues)}
       roundToObs={obs(roundTo)}
       groupByObs={obs(groupBy ?? '')}
+      dateRangeStartObs={obs(dateRangeStart ?? '')}
+      dateRangeEndObs={obs(dateRangeEnd ?? '')}
     />
   ),
   args: { roundTo: 'day' },
@@ -67,11 +73,21 @@ export const SingleIssue: Story = {
 /** A small, well-spaced set (no collisions). */
 export const SpacedIssues: Story = { args: { issues: spacedIssues } };
 
-/** #2 Mix where issues without a due date are omitted. */
+/** #2 Mix where issues without a due date are omitted from the grid and surfaced in the footer key. */
 export const IssuesWithoutDueDates: Story = { args: { issues: mixedMissingDueIssues } };
+
+/** Several undated issues alongside dated ones — click the footer key to open the modal list. */
+export const ManyIssuesWithoutDates: Story = { args: { issues: [...spacedIssues, ...undatedIssues] } };
 
 /** #4 Dense collisions on the same due date → multiple packed rows. */
 export const DenseCollisions: Story = { args: { issues: collidingIssues } };
+
+/**
+ * Smart layout: labels flip to whichever side minimizes rows, and the empty leading quarter
+ * (before the isolated early "Outcome A" milestone) is trimmed. "Outcome A"'s label flows
+ * right into open space instead of left across the empty Jul–Sep quarter.
+ */
+export const SmartLayout: Story = { args: { issues: smartLayoutIssues } };
 
 /** #6 Lots of issues (> 20) → density optimizations on. */
 export const LotsOfIssues: Story = {
@@ -199,4 +215,22 @@ export const GroupedLargeBand: Story = {
     ),
     groupBy: 'team',
   },
+};
+
+/** No range set (default) — every dated issue is plotted, identical to `SpacedIssues`. */
+export const DateRangeEmpty: Story = { args: { issues: spacedIssues } };
+
+/** A bounded `from`/`to` window — only "Design review" (Feb 5) falls inside Jan 20 – Feb 20; the axis auto-fits to it. */
+export const DateRangeBounded: Story = {
+  args: { issues: spacedIssues, dateRangeStart: '2025-01-20', dateRangeEnd: '2025-02-20' },
+};
+
+/** An open-ended `from` with no `to` — excludes everything due before Feb 1, keeps the rest. */
+export const DateRangeOpenEnded: Story = {
+  args: { issues: spacedIssues, dateRangeStart: '2025-02-01' },
+};
+
+/** A window that excludes every dated issue — shows the friendly empty state instead of a blank chart. */
+export const DateRangeExcludesEverything: Story = {
+  args: { issues: spacedIssues, dateRangeStart: '2025-06-01', dateRangeEnd: '2025-06-30' },
 };

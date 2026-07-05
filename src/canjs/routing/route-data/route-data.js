@@ -54,6 +54,17 @@ import { nowUTC } from '../../../utils/date/utc';
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 
+/** True for a well-formed, real calendar `YYYY-MM-DD` string (rejects e.g. "2025-13-40"). */
+function isValidIsoDateString(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) {
+    return false;
+  }
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  return date.getFullYear() === Number(year) && date.getMonth() === Number(month) - 1 && date.getDate() === Number(day);
+}
+
 const booleanParsing = {
   parse: (x) => {
     return { '': true, true: true, false: false }[x];
@@ -783,6 +794,18 @@ export class RouteData extends ObservableObject {
           }
         },
       },
+    }),
+
+    // Scatter Plot (`due` report) — due-date range filter. Empty string means unbounded on
+    // that side. Namespaced `scatter*` because the range is scatter-only for now (see
+    // spec/004-scatter-improvements/date-range.md).
+    scatterDateRangeStart: saveJSONToUrlButAlsoLookAtReport_DataWrapper('scatterDateRangeStart', '', String, {
+      parse: (x) => (isValidIsoDateString('' + x) ? '' + x : ''),
+      stringify: (x) => '' + x,
+    }),
+    scatterDateRangeEnd: saveJSONToUrlButAlsoLookAtReport_DataWrapper('scatterDateRangeEnd', '', String, {
+      parse: (x) => (isValidIsoDateString('' + x) ? '' + x : ''),
+      stringify: (x) => '' + x,
     }),
 
     // Flow Metrics report settings

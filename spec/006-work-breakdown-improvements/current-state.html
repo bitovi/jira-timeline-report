@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Breakdown — Current state (baseline)</title>
+    <style>
+      /* Status colors pulled 1:1 from src/css/primitives.css */
+      :root {
+        --complete: #22a06b;
+        --complete-t: #fff;
+        --ontrack: #388bff;
+        --ontrack-t: #fff;
+        --behind: #f5cd47;
+        --behind-t: #000;
+        --warning: #ff8e09;
+        --warning-t: #000;
+        --blocked: #e2483d;
+        --blocked-t: #fff;
+        --unknown: #8590a2;
+        --unknown-t: #fff;
+
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --card-border: #dfe1e6;
+        --neutral-20: #f1f2f4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 32px;
+        background: #fafbfc;
+        line-height: 1.4;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 900px;
+        margin-bottom: 28px;
+        font-size: 14px;
+      }
+
+      .color-complete {
+        background: var(--complete);
+        color: var(--complete-t);
+      }
+      .color-ontrack {
+        background: var(--ontrack);
+        color: var(--ontrack-t);
+      }
+      .color-behind {
+        background: var(--behind);
+        color: var(--behind-t);
+      }
+      .color-warning {
+        background: var(--warning);
+        color: var(--warning-t);
+      }
+      .color-blocked {
+        background: var(--blocked);
+        color: var(--blocked-t);
+      }
+      .color-unknown {
+        background: var(--unknown);
+        color: var(--unknown-t);
+      }
+
+      /* ---- faithful replica of status-report.js breakdown ---- */
+      .release-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .release-box {
+        flex: 1 1 200px;
+        min-width: 190px;
+        max-width: 260px;
+      }
+      .header-bubble {
+        border-radius: 4px 4px 0 0;
+        padding: 4px 8px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .worktype-row {
+        display: flex;
+        gap: 8px;
+        color: var(--text);
+        font-size: 13px;
+        padding-top: 4px;
+        align-items: center;
+      }
+      .worktype-key {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        padding: 0 3px;
+        border-radius: 2px;
+      }
+      ul.children {
+        list-style: none;
+        margin: 6px 0 0;
+        padding: 4px;
+      }
+      ul.children li {
+        cursor: pointer;
+        font-size: 13px;
+        padding: 2px 0;
+      }
+      .bd-icon {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        padding: 0 1px;
+      }
+
+      .note {
+        margin-top: 28px;
+        padding: 14px 18px;
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--muted);
+        max-width: 900px;
+      }
+      .note b {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Work Breakdown — Current state</h1>
+    <p class="intro">
+      Faithful replica of today's breakdown view (<code>status-report.js</code>, breakdown mode). Colors = status,
+      single letters = work type (d&nbsp;design / D&nbsp;dev / Q&nbsp;qa / U&nbsp;uat). Only work types that actually
+      have work are shown per board. Use as a baseline for the option mocks.
+    </p>
+
+    <div class="release-wrapper" id="board"></div>
+
+    <div class="note">
+      <b>Reading it:</b> there is no on‑screen legend, per‑child status lives in the run of tiny colored letters, and
+      there are no counts or progress. Compare against <b>option-a/b/c</b> in this folder.
+    </div>
+
+    <script>
+      // wt status per child, in order [design, dev, qa, uat]
+      const WT = ['design', 'dev', 'qa', 'uat'];
+      const sym = { design: 'd', dev: 'D', qa: 'Q', uat: 'U' };
+      const board = [
+        {
+          title: '100 Stores',
+          status: 'ontrack',
+          rows: {
+            design: ['Feb 12', 'complete'],
+            dev: ['Mar 9', 'ontrack'],
+            qa: ['', 'behind'],
+            uat: ['', 'unknown'],
+          },
+          children: [
+            ['Digital menu board', ['complete', 'complete', 'ontrack', 'unknown']],
+            ['Digital orders', ['complete', 'complete', 'behind', 'unknown']],
+            ['Delivery aggregators', ['complete', 'ontrack', 'unknown', 'unknown']],
+            ['Promotions', ['ontrack', 'ontrack', 'unknown', 'unknown']],
+            ['National menu', ['ontrack', 'behind', 'unknown', 'unknown']],
+          ],
+        },
+        {
+          title: 'Returning customers - 3% growth',
+          status: 'complete',
+          rows: {
+            design: ['Apr 2', 'complete'],
+            dev: ['May 30', 'complete'],
+            qa: ['', 'complete'],
+            uat: ['', 'complete'],
+          },
+          children: [['Loyalty QR Codes', ['complete', 'complete', 'complete', 'complete']]],
+        },
+        {
+          title: 'Outcome A',
+          status: 'complete',
+          rows: {
+            design: ['Aug 20', 'complete'],
+            dev: ['Sep 25', 'complete'],
+            qa: ['Oct 10', 'ontrack'],
+            uat: ['Oct 22', 'ontrack'],
+          },
+          children: [
+            ['Epic Analysis', ['complete', 'complete', 'complete', 'ontrack']],
+            ['Pet Photo Sharing', ['complete', 'complete', 'ontrack', 'unknown']],
+            ['Favorite sharing', ['complete', 'ontrack', 'unknown', 'unknown']],
+            ['Pets corner', ['ontrack', 'behind', 'unknown', 'unknown']],
+            ['Internationalization', ['behind', 'blocked', 'unknown', 'unknown']],
+            ['Order Playback', ['unknown', 'unknown', 'unknown', 'unknown']],
+          ],
+        },
+        {
+          title: 'Digital Channel sales - 5% increase',
+          status: 'behind',
+          rows: {
+            design: ['Jun 5', 'complete'],
+            dev: ['Jul 24 (Jun 19)', 'behind'],
+            qa: ['', 'unknown'],
+            uat: ['', 'unknown'],
+          },
+          children: [
+            ['Shared orders (for offices)', ['complete', 'ontrack', 'unknown', 'unknown']],
+            ['Discounts for bigger carts', ['complete', 'behind', 'unknown', 'unknown']],
+            ['Tasty images', ['ontrack', 'warning', 'unknown', 'unknown']],
+            ['Upsell Recommendations', ['ontrack', 'behind', 'unknown', 'unknown']],
+          ],
+        },
+      ];
+
+      const el = document.getElementById('board');
+      for (const card of board) {
+        const box = document.createElement('div');
+        box.className = 'release-box';
+        let html = `<div class="header-bubble color-${card.status}">${card.title}</div>`;
+        for (const wt of WT) {
+          const [date, st] = card.rows[wt];
+          html += `<div class="worktype-row"><span class="worktype-key color-${st}">${wt}</span><span>${date}</span></div>`;
+        }
+        html += '<ul class="children">';
+        for (const [name, states] of card.children) {
+          const icons = WT.map((wt, i) => `<span class="bd-icon color-${states[i]}">${sym[wt]}</span>`).join('');
+          html += `<li>${icons} <span>${name}</span></li>`;
+        }
+        html += '</ul>';
+        box.innerHTML = html;
+        el.appendChild(box);
+      }
+    </script>
+  </body>
+</html>

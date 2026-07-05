@@ -13,6 +13,7 @@ import { getTheme, applyThemeToCssVars } from './jira/theme';
 
 import { groupIssuesByHierarchyLevelOrType } from './jira/rollup/rollup';
 import { pushStateObservable } from './canjs/routing/state-storage.js';
+import { defineFeatureFlag } from './shared/feature-flag';
 
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
@@ -44,6 +45,31 @@ const urlParamValuesToReactComponents = {
   'time-in-status': TimeInStatus,
   due: ScatterTimeline,
 };
+
+// Dev helper: logs the fully transformed (rolled up + rolled back) issue data that every report
+// consumes. Off by default; toggle in the browser console via `window.featureFlags` and reload.
+const logReportData = defineFeatureFlag(
+  'logReportData',
+  'Logs the fully transformed (rolled up + rolled back) issue data all reports consume.',
+  undefined,
+  'ON',
+);
+
+const toISO = (date) => (date instanceof Date && !isNaN(date) ? date.toISOString() : (date ?? null));
+
+// Compact, copy-pasteable projection of the transformed data (raw issues carry circular parent
+// refs and are too large to paste). Keeps the fields reports position/status off of.
+const projectIssueForLog = (issueOrRelease) => ({
+  key: issueOrRelease.key,
+  summary: issueOrRelease.summary,
+  type: issueOrRelease.type,
+  hierarchyLevel: issueOrRelease.hierarchyLevel,
+  status: issueOrRelease.rollupStatuses?.rollup?.status,
+  rollupStatusesDue: toISO(issueOrRelease.rollupStatuses?.rollup?.due),
+  rollupStatusesStart: toISO(issueOrRelease.rollupStatuses?.rollup?.start),
+  rollupDatesDue: toISO(issueOrRelease.rollupDates?.due),
+  rollupDatesStart: toISO(issueOrRelease.rollupDates?.start),
+});
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -216,6 +242,8 @@ export class TimelineReport extends StacheElement {
       timeInStatusReorderObs: value.bind(this.routeData, 'timeInStatusReorder'),
       roundToObs: value.bind(this.routeData, 'roundTo'),
       groupByObs: value.bind(this.routeData, 'groupBy'),
+      dateRangeStartObs: value.bind(this.routeData, 'scatterDateRangeStart'),
+      dateRangeEndObs: value.bind(this.routeData, 'scatterDateRangeEnd'),
     };
 
     // GroupingReport needs to be wrapped with JiraProvider and QueryClientProvider
@@ -377,6 +405,16 @@ export class TimelineReport extends StacheElement {
     );
 
     const statuses = calculateReportStatuses(rolledUp);
+
+    if (logReportData()) {
+      console.log('logReportData: rolledupAndRolledBackIssuesAndReleases', {
+        reportType: this.routeData.primaryReportType,
+        roundTo: this.routeData.roundTo,
+        count: statuses.length,
+        issues: statuses.map(projectIssueForLog),
+      });
+    }
+
     return statuses;
   }
 
@@ -421,6 +459,15 @@ export class TimelineReport extends StacheElement {
       return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
     }
 
+    // The Scatter Plot ('due' report) only needs a due date to plot a point, so its
+    // "no dates" definition is narrower than the legacy `startBeforeDue` rule (which also
+    // requires a start date). Gate on that when it's the primary report so a due-only issue
+    // isn't hidden by this toggle.
+    function hasNoDueDate(initiative) {
+      return initiative.rollupStatuses?.rollup?.due == null;
+    }
+    const isScatterPlot = this.routeData.primaryReportType === 'due';
+
     // lets remove stuff!
     const filtered = unfilteredPrimaryIssuesOrReleases.filter((issueOrRelease) => {
       // check if it's a planning issues
@@ -446,7 +493,7 @@ export class TimelineReport extends StacheElement {
         return false;
       }
 
-      if (hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
+      if (hideUnknownInitiatives && (isScatterPlot ? hasNoDueDate(issueOrRelease) : !startBeforeDue(issueOrRelease))) {
         return false;
       }
       if (this.routeData.primaryIssueType === 'Release') {

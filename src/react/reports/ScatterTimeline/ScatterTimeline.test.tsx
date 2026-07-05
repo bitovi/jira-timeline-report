@@ -98,6 +98,16 @@ describe('ScatterTimeline', () => {
     expect(screen.queryByText('No due date')).not.toBeInTheDocument();
   });
 
+  test('shows a footer key with the count of undated issues', () => {
+    renderScatter(mixedMissingDueIssues);
+    expect(screen.getByText('1 without dates')).toBeInTheDocument();
+  });
+
+  test('does not render the footer key when every issue has a due date', () => {
+    renderScatter(spacedIssues);
+    expect(screen.queryByText(/without dates/)).not.toBeInTheDocument();
+  });
+
   test('applies status color classes to markers', () => {
     renderScatter(spacedIssues);
     const markers = screen.getAllByTestId('status-marker');
@@ -128,6 +138,67 @@ describe('ScatterTimeline', () => {
     const marker = screen.getAllByTestId('status-marker')[0];
     // radius 6 → diameter 12px when dense (vs 16px normally).
     expect(marker.style.width).toBe('12px');
+  });
+});
+
+describe('ScatterTimeline date range filter', () => {
+  const renderWithRange = (issues: IssueOrRelease[], from?: string, to?: string) =>
+    render(
+      <Suspense fallback="loading">
+        <ScatterTimeline
+          primaryIssuesOrReleasesObs={obs(issues)}
+          allIssuesOrReleasesObs={obs(issues)}
+          roundToObs={obs('day')}
+          dateRangeStartObs={obs(from ?? '')}
+          dateRangeEndObs={obs(to ?? '')}
+        />
+      </Suspense>,
+    );
+
+  test('shows every dated issue when no range is set (default)', () => {
+    renderWithRange(spacedIssues);
+    expect(screen.getByText('Kickoff')).toBeInTheDocument();
+    expect(screen.getByText('Design review')).toBeInTheDocument();
+    expect(screen.getByText('Beta release')).toBeInTheDocument();
+  });
+
+  test('a bounded range shows only in-window markers', () => {
+    renderWithRange(spacedIssues, '2025-01-01', '2025-02-10');
+    expect(screen.getByText('Kickoff')).toBeInTheDocument();
+    expect(screen.getByText('Design review')).toBeInTheDocument();
+    expect(screen.queryByText('Beta release')).not.toBeInTheDocument();
+  });
+
+  test('an open-ended "from" excludes issues before it', () => {
+    renderWithRange(spacedIssues, '2025-02-01', undefined);
+    expect(screen.queryByText('Kickoff')).not.toBeInTheDocument();
+    expect(screen.getByText('Design review')).toBeInTheDocument();
+    expect(screen.getByText('Beta release')).toBeInTheDocument();
+  });
+
+  test('undated issues are unaffected by the range filter', () => {
+    renderWithRange(mixedMissingDueIssues, '2025-01-01', '2025-12-31');
+    expect(screen.getByText('1 without dates')).toBeInTheDocument();
+  });
+
+  test('shows a "Showing X of Y" count hint and the outside-range key when a range is active', () => {
+    renderWithRange(spacedIssues, '2025-01-01', '2025-02-10');
+    expect(screen.getByText('Showing 2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 outside date range')).toBeInTheDocument();
+  });
+
+  test('does not show the count hint or outside-range key when no range is set', () => {
+    renderWithRange(spacedIssues);
+    expect(screen.queryByText(/Showing \d+ of \d+/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/outside date range/)).not.toBeInTheDocument();
+  });
+
+  test('shows a friendly empty state when the range excludes every dated issue', () => {
+    renderWithRange(spacedIssues, '2025-06-01', '2025-06-30');
+    expect(screen.getByText('No issues are due in the selected date range.')).toBeInTheDocument();
+    expect(screen.queryByText('Kickoff')).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 0 of 3')).toBeInTheDocument();
+    expect(screen.getByText('3 outside date range')).toBeInTheDocument();
   });
 });
 

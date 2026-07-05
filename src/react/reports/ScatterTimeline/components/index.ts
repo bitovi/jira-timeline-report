@@ -3,3 +3,4 @@ export { TodayLine } from './TodayLine';
 export { GridLines } from './GridLines';
 export { IssueMarker } from './IssueMarker';
 export { GroupBand } from './GroupBand';
+export { NoDatesKey, NoDatesModal } from './NoDatesKey';

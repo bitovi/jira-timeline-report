@@ -37,6 +37,8 @@ export interface IssueOrRelease {
   projectKey?: string;
   /** Lexicographic rank (e.g. Jira's `Rank` field) — used to order `'parent'` groups. */
   rank?: string | null;
+  /** Link to the issue/release in Jira — read for the "issues without dates" modal's row links. */
+  url?: string;
 }
 
 // Canonical calendar types live with the date utility that produces them; re-export so
@@ -73,8 +75,16 @@ export interface PlottedIssue extends IssuePosition {
   markerRadius: number;
 }
 
+/** Which side of the date-anchored marker a label flows toward. */
+export type LabelSide = 'left' | 'right';
+
+/** A plotted issue after row packing has chosen which side its label flows toward. */
+export interface PlacedIssue extends PlottedIssue {
+  labelSide: LabelSide;
+}
+
 export interface Row {
-  items: PlottedIssue[];
+  items: PlacedIssue[];
 }
 
 export interface MeasureConfig {

@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Breakdown — Option A · Status matrix</title>
+    <style>
+      :root {
+        --complete: #22a06b;
+        --complete-t: #fff;
+        --ontrack: #388bff;
+        --ontrack-t: #fff;
+        --behind: #f5cd47;
+        --behind-t: #000;
+        --warning: #ff8e09;
+        --warning-t: #000;
+        --blocked: #e2483d;
+        --blocked-t: #fff;
+        --unknown: #dab092; /* tan — real "unknown": work exists but no dates */
+        --unknown-t: #000;
+        --notstarted: #8590a2; /* slate — real "notstarted" */
+        --notstarted-t: #fff;
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --card-border: #dfe1e6;
+        --neutral-20: #f1f2f4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 32px;
+        background: #fafbfc;
+        line-height: 1.4;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: var(--ontrack);
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 940px;
+        margin: 6px 0 24px;
+        font-size: 14px;
+      }
+      .color-complete {
+        background: var(--complete);
+        color: var(--complete-t);
+      }
+      .color-ontrack {
+        background: var(--ontrack);
+        color: var(--ontrack-t);
+      }
+      .color-behind {
+        background: var(--behind);
+        color: var(--behind-t);
+      }
+      .color-warning {
+        background: var(--warning);
+        color: var(--warning-t);
+      }
+      .color-blocked {
+        background: var(--blocked);
+        color: var(--blocked-t);
+      }
+      .color-unknown {
+        background: var(--unknown);
+        color: var(--unknown-t);
+        opacity: 0.8; /* matches .color-text-and-bg-unknown in the real app */
+      }
+      .color-notstarted {
+        background: var(--notstarted);
+        color: var(--notstarted-t);
+      }
+
+      .board {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .card {
+        flex: 1 1 220px;
+        min-width: 210px;
+        max-width: 280px;
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+      }
+      .card-header {
+        padding: 6px 10px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      thead th {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+        padding: 6px 1px;
+        border-bottom: 1px solid var(--card-border);
+        vertical-align: top;
+        width: 26px;
+      }
+      thead th.issue {
+        text-align: left;
+        padding-left: 10px;
+        vertical-align: bottom;
+        width: auto;
+      }
+      .wt-letter {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        text-align: center;
+      }
+      .wt-date {
+        font-size: 9px;
+        font-weight: 500;
+        color: var(--muted);
+        text-transform: none;
+        letter-spacing: 0;
+        margin-top: 2px;
+        white-space: nowrap;
+      }
+      .wt-old {
+        font-size: 9px;
+        font-weight: 500;
+        color: var(--blocked);
+        text-transform: none;
+        letter-spacing: 0;
+        white-space: nowrap;
+      }
+      tbody td {
+        padding: 2px 1px;
+        border-bottom: 1px solid var(--neutral-20);
+      }
+      tbody td.issue {
+        text-align: left;
+        padding-left: 10px;
+        padding-right: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 190px;
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .cell {
+        text-align: center;
+        line-height: 0;
+      }
+      /* rounded-square status swatch — mirrors the work-type key style */
+      .swatch-cell {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        vertical-align: middle;
+      }
+      /* work type doesn't exist for this issue → faint blank outline */
+      .swatch-cell.na {
+        background: transparent;
+        border: 1px solid var(--neutral-20);
+      }
+      /* work exists but has no dates → tan (unknown) + empty-set glyph, like the Gantt */
+      .swatch-cell.nodate {
+        position: relative;
+        background: var(--unknown);
+        opacity: 0.85;
+      }
+      .swatch-cell.nodate::after {
+        content: '∅';
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        line-height: 1;
+        color: rgba(0, 0, 0, 0.6);
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        margin: 22px 0 6px;
+        padding: 10px 14px;
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .legend .swatch {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        margin-right: 5px;
+        vertical-align: -2px;
+      }
+      .legend .swatch.nodate-key {
+        background: var(--unknown);
+        opacity: 0.85;
+        font-size: 9px;
+        line-height: 12px;
+        text-align: center;
+        color: rgba(0, 0, 0, 0.6);
+      }
+      .legend .swatch.na-key {
+        background: transparent;
+        border: 1px solid var(--neutral-20);
+      }
+
+      /* ==================================================================
+         Density variants — mirrors the current work breakdown's
+         "big" vs "tight" sizing. Toggle sets .big / .tight on .board.
+         ================================================================== */
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .controls .seg {
+        display: inline-flex;
+        border: 1px solid var(--card-border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .controls .seg button {
+        border: 0;
+        background: #fff;
+        padding: 5px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .controls .seg button.active {
+        background: var(--ontrack);
+        color: #fff;
+        font-weight: 600;
+      }
+
+      /* --- BIG --- */
+      .board.big table {
+        font-size: 14px;
+      }
+      .board.big thead th {
+        padding: 6px 3px;
+        width: 30px;
+      }
+      .board.big .wt-letter {
+        width: 18px;
+        height: 18px;
+        line-height: 18px;
+        font-size: 11px;
+      }
+      .board.big .wt-date {
+        font-size: 10px;
+      }
+      .board.big tbody td {
+        padding: 4px 2px;
+      }
+      .board.big .swatch-cell {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+      }
+      .board.big .card {
+        flex-basis: 250px;
+        min-width: 240px;
+        max-width: 320px;
+      }
+
+      /* --- TIGHT --- */
+      .board.tight table {
+        font-size: 11px;
+      }
+      .board.tight thead th {
+        padding: 4px 1px;
+        width: 18px;
+      }
+      .board.tight .card-header {
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+      .board.tight .wt-letter {
+        width: 12px;
+        height: 12px;
+        line-height: 12px;
+        font-size: 8px;
+        border-radius: 3px;
+      }
+      .board.tight .wt-date {
+        font-size: 8px;
+      }
+      .board.tight .wt-old {
+        font-size: 8px;
+      }
+      .board.tight tbody td {
+        padding: 1px 1px;
+      }
+      .board.tight td.issue {
+        padding-left: 8px;
+        padding-right: 6px;
+        max-width: 150px;
+      }
+      .board.tight .swatch-cell {
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+      }
+      .board.tight .card {
+        flex-basis: 180px;
+        min-width: 172px;
+        max-width: 230px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Work Breakdown — Option A<span class="tag">Status matrix</span></h1>
+    <p class="intro">
+      Each card's children become a compact <b>matrix</b>: rows are child issues, columns are work types. The work‑type
+      letters (d&nbsp;D&nbsp;Q&nbsp;U) and their <b>rollup target dates</b> appear once in the header (a red date below
+      means it slipped from a previous period); each row is then just a tight grid of rounded status swatches — same
+      shape as the header keys — so a glance down the <b>Q</b> column answers "who's behind on QA?" while fitting in
+      narrow horizontal space. Use the <b>Big / Tight</b> toggle (like the current work breakdown) to trade legibility
+      for density.
+    </p>
+
+    <div class="controls">
+      <span>Density:</span>
+      <span class="seg" id="density">
+        <button data-density="big">Big</button>
+        <button data-density="tight" class="active">Tight</button>
+      </span>
+    </div>
+
+    <div class="board tight" id="board"></div>
+
+    <div class="legend" id="legend"></div>
+
+    <script>
+      const WT = ['design', 'dev', 'qa', 'uat'];
+      const sym = { design: 'd', dev: 'D', qa: 'Q', uat: 'U' };
+      const statusLabel = {
+        complete: 'Complete',
+        ontrack: 'On track',
+        behind: 'Behind',
+        warning: 'Warning',
+        blocked: 'Blocked',
+        notstarted: 'Not started',
+        unknown: 'No dates',
+      };
+
+      const board = [
+        {
+          title: '100 Stores',
+          status: 'ontrack',
+          childType: 'Epic',
+          wt: {
+            design: { status: 'complete', due: 'Feb 12' },
+            dev: { status: 'ontrack', due: 'Mar 9' },
+            qa: { status: 'behind', due: null },
+            uat: { status: 'unknown', due: null },
+          },
+          children: [
+            ['Digital menu board', ['complete', 'complete', 'ontrack', null]],
+            ['Digital orders', ['complete', 'complete', 'behind', null]],
+            ['Delivery aggregators', ['complete', 'ontrack', 'nodate', null]],
+            ['Promotions', ['ontrack', 'ontrack', null, null]],
+            ['National menu', ['ontrack', 'behind', 'nodate', 'nodate']],
+          ],
+        },
+        {
+          title: 'Outcome A',
+          status: 'complete',
+          childType: 'Epic',
+          wt: {
+            design: { status: 'complete', due: 'Aug 20' },
+            dev: { status: 'complete', due: 'Sep 25' },
+            qa: { status: 'ontrack', due: 'Oct 10' },
+            uat: { status: 'ontrack', due: 'Oct 22' },
+          },
+          children: [
+            ['Epic Analysis', ['complete', 'complete', 'complete', 'ontrack']],
+            ['Pet Photo Sharing', ['complete', 'complete', 'ontrack', 'nodate']],
+            ['Favorite sharing', ['complete', 'ontrack', 'nodate', null]],
+            ['Pets corner', ['ontrack', 'behind', null, null]],
+            ['Internationalization', ['behind', 'blocked', null, null]],
+            ['Order Playback', ['nodate', 'nodate', null, null]],
+          ],
+        },
+        {
+          title: 'Digital Channel sales - 5% increase',
+          status: 'behind',
+          childType: 'Epic',
+          wt: {
+            design: { status: 'complete', due: 'Jun 5' },
+            dev: { status: 'behind', due: 'Jul 24', was: 'Jun 19' },
+            qa: { status: 'unknown', due: null },
+            uat: { status: 'unknown', due: null },
+          },
+          children: [
+            ['Shared orders (for offices)', ['complete', 'ontrack', null, null]],
+            ['Discounts for bigger carts', ['complete', 'behind', null, null]],
+            ['Tasty images', ['ontrack', 'warning', null, null]],
+            ['Upsell Recommendations', ['ontrack', 'behind', null, null]],
+          ],
+        },
+      ];
+
+      const boardEl = document.getElementById('board');
+      for (const card of board) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        let html = `<div class="card-header color-${card.status}">${card.title}</div><table><thead><tr><th class="issue">${card.childType}</th>`;
+        for (const wt of WT) {
+          const d = card.wt[wt];
+          const tip = `${wt}: ${statusLabel[d.status]}${d.due ? ' · due ' + d.due : ''}${d.was ? ' (was ' + d.was + ')' : ''}`;
+          html +=
+            `<th title="${tip}">` +
+            `<span class="wt-letter color-${d.status}">${sym[wt]}</span>` +
+            `<div class="wt-date">${d.due || '—'}</div>` +
+            (d.was ? `<div class="wt-old">${d.was}</div>` : '') +
+            `</th>`;
+        }
+        html += '</tr></thead><tbody>';
+        for (const [name, states] of card.children) {
+          html += `<tr><td class="issue" title="${name}">${name}</td>`;
+          states.forEach((st, i) => {
+            let cls, tip;
+            if (st === null) {
+              // work type doesn't exist for this issue
+              cls = 'na';
+              tip = `${WT[i]}: no ${WT[i]} work`;
+            } else if (st === 'nodate') {
+              // work exists but has no dates → unknown
+              cls = 'nodate';
+              tip = `${WT[i]}: work exists, no dates`;
+            } else {
+              cls = `color-${st}`;
+              tip = `${WT[i]}: ${statusLabel[st]}`;
+            }
+            html += `<td class="cell"><span class="swatch-cell ${cls}" title="${tip}"></span></td>`;
+          });
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        div.innerHTML = html;
+        boardEl.appendChild(div);
+      }
+
+      const legend = document.getElementById('legend');
+      const statusOrder = ['complete', 'ontrack', 'behind', 'warning', 'blocked', 'notstarted'];
+      legend.innerHTML =
+        '<div><b>Work types:</b> d = design, D = dev, Q = qa, U = uat</div>' +
+        statusOrder.map((k) => `<div><span class="swatch color-${k}"></span>${statusLabel[k]}</div>`).join('') +
+        '<div><span class="swatch nodate-key">∅</span>Has work, no dates</div>' +
+        '<div><span class="swatch na-key"></span>No work of this type</div>';
+
+      // density toggle
+      const density = document.getElementById('density');
+      density.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const mode = btn.dataset.density;
+        boardEl.classList.toggle('big', mode === 'big');
+        boardEl.classList.toggle('tight', mode === 'tight');
+        density.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
+      });
+    </script>
+  </body>
+</html>

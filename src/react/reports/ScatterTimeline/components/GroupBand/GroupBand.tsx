@@ -1,9 +1,9 @@
 import React from 'react';
-import type { PlottedIssue } from '../../types';
+import type { PlacedIssue } from '../../types';
 import { IssueMarker } from '../IssueMarker';
 
 export interface GroupBandRow {
-  items: PlottedIssue[];
+  items: PlacedIssue[];
 }
 
 export interface GroupBandProps {
@@ -80,7 +80,7 @@ export const GroupBand: React.FC<GroupBandProps> = ({
           className={`relative ${isLotsOfIssues ? 'h-7' : 'h-10'}`}
         >
           {row.items.map((item) => (
-            <IssueMarker key={item.key} item={item} labelSide={item.overflowsLeft ? 'right' : 'left'} />
+            <IssueMarker key={item.key} item={item} labelSide={item.labelSide} />
           ))}
         </div>
       ))}

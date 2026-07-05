@@ -30,21 +30,24 @@ export const IssueMarker: React.FC<IssueMarkerProps> = ({ item, labelSide = 'lef
   const anchorStyle: React.CSSProperties =
     labelSide === 'left' ? { right: `${item.endPercentFromRight}%` } : { left: `${item.rightPercentEnd}%` };
 
-  return (
-    <div
-      className="release-timeline-item gap-1"
-      style={{
-        position: 'absolute',
-        top: '4px',
-        zIndex: 100,
-        // Reserve room for the marker on whichever side it sits.
-        ...(labelSide === 'left' ? { paddingRight: `${radius}px` } : { paddingLeft: `${radius}px` }),
-        ...anchorStyle,
-      }}
-      data-label-side={labelSide}
-    >
+  const containerStyle: React.CSSProperties = {
+    position: 'absolute',
+    // Vertically center the marker within its row so there's equal space above and below
+    // (previously pinned at top: 4px, which left a larger gap below than above).
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: 100,
+    // Reserve room for the marker on whichever side it sits.
+    ...(labelSide === 'left' ? { paddingRight: `${radius}px` } : { paddingLeft: `${radius}px` }),
+    ...anchorStyle,
+  };
+
+  const url = item.issue.url;
+
+  const inner = (
+    <>
       <div
-        className={`truncate ${item.textSize} bg-neutral-41 rounded px-0.5`}
+        className={`truncate ${item.textSize} bg-white border border-neutral-80 rounded px-0.5`}
         style={{
           position: 'relative',
           zIndex: 10,
@@ -70,6 +73,29 @@ export const IssueMarker: React.FC<IssueMarkerProps> = ({ item, labelSide = 'lef
         }}
         data-testid="status-marker"
       />
+    </>
+  );
+
+  // When the issue links out to Jira, render an anchor so it opens in a new tab and supports
+  // right-click / open-in-new-window. Falls back to a plain div when there's no URL.
+  if (url) {
+    return (
+      <a
+        className="release-timeline-item gap-1 no-underline text-inherit"
+        style={containerStyle}
+        data-label-side={labelSide}
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <div className="release-timeline-item gap-1" style={containerStyle} data-label-side={labelSide}>
+      {inner}
     </div>
   );
 };

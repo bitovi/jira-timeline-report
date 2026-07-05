@@ -51,4 +51,24 @@ describe('IssueMarker', () => {
     const marker = screen.getByTestId('status-marker');
     expect(marker.style.width).toBe('12px');
   });
+
+  test('renders an anchor opening the issue in a new tab when a url is present', () => {
+    const { container } = render(
+      <IssueMarker
+        item={makePlottedIssue({ summary: 'Linked issue', url: 'https://jira.example.com/browse/PROJ-1' })}
+      />,
+    );
+    const root = container.querySelector('[data-label-side]') as HTMLElement;
+    expect(root.tagName).toBe('A');
+    expect(root.getAttribute('href')).toBe('https://jira.example.com/browse/PROJ-1');
+    expect(root.getAttribute('target')).toBe('_blank');
+    expect(root.getAttribute('rel')).toBe('noreferrer');
+  });
+
+  test('renders a plain div (no link) when there is no url', () => {
+    const { container } = render(<IssueMarker item={makePlottedIssue({ url: undefined })} />);
+    const root = container.querySelector('[data-label-side]') as HTMLElement;
+    expect(root.tagName).toBe('DIV');
+    expect(root.getAttribute('href')).toBeNull();
+  });
 });

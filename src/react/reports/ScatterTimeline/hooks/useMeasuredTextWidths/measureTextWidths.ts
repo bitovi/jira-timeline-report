@@ -50,7 +50,7 @@ export const measureTextWidths = (config: MeasureConfig): Map<string, number> =>
     });
 
     const label = document.createElement('div');
-    label.className = `truncate ${textClass} bg-neutral-41 rounded px-0.5`.trim();
+    label.className = `truncate ${textClass} bg-white border border-neutral-80 rounded px-0.5`.trim();
     Object.assign(label.style, {
       maxWidth: textClass ? '260px' : '300px',
       paddingLeft: `${radius}px`,
