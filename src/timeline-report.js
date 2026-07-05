@@ -215,6 +215,7 @@ export class TimelineReport extends StacheElement {
       timeInStatusProjectFilterObs: value.bind(this.routeData, 'timeInStatusProjectFilter'),
       timeInStatusReorderObs: value.bind(this.routeData, 'timeInStatusReorder'),
       roundToObs: value.bind(this.routeData, 'roundTo'),
+      groupByObs: value.bind(this.routeData, 'groupBy'),
     };
 
     // GroupingReport needs to be wrapped with JiraProvider and QueryClientProvider

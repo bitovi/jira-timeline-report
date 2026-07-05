@@ -3,7 +3,14 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import type { IssueOrRelease } from './types';
-import { spacedIssues, collidingIssues, mixedMissingDueIssues, makeIssue } from './fixtures';
+import {
+  spacedIssues,
+  collidingIssues,
+  mixedMissingDueIssues,
+  makeIssue,
+  groupableIssues,
+  groupableParents,
+} from './fixtures';
 
 // Mock the measurement hook so jsdom's width-0 doesn't collapse the layout. Inject a fixed
 // width per label so positioning/packing is deterministic.
@@ -40,6 +47,18 @@ const renderScatter = (issues: IssueOrRelease[], roundTo = 'day') =>
         primaryIssuesOrReleasesObs={obs(issues)}
         allIssuesOrReleasesObs={obs(issues)}
         roundToObs={obs(roundTo)}
+      />
+    </Suspense>,
+  );
+
+const renderGrouped = (issues: IssueOrRelease[], groupBy: string, allIssues: IssueOrRelease[] = issues) =>
+  render(
+    <Suspense fallback="loading">
+      <ScatterTimeline
+        primaryIssuesOrReleasesObs={obs(issues)}
+        allIssuesOrReleasesObs={obs(allIssues)}
+        roundToObs={obs('day')}
+        groupByObs={obs(groupBy)}
       />
     </Suspense>,
   );
@@ -108,6 +127,69 @@ describe('ScatterTimeline', () => {
     renderScatter(many);
     const marker = screen.getAllByTestId('status-marker')[0];
     // radius 6 → diameter 12px when dense (vs 16px normally).
+    expect(marker.style.width).toBe('12px');
+  });
+});
+
+describe('ScatterTimeline grouping', () => {
+  const allWithParents = [...groupableIssues, ...groupableParents];
+
+  test('renders one band label per parent, plus a "No Parent" band', () => {
+    renderGrouped(groupableIssues, 'parent', allWithParents);
+    const bandTitles = screen.getAllByTestId('group-band-title').map((el) => el.textContent);
+    expect(bandTitles).toEqual(['Onboarding Overhaul', 'Checkout Revamp', 'No Parent']);
+  });
+
+  test('each parent band contains its own issues', () => {
+    renderGrouped(groupableIssues, 'parent', allWithParents);
+    // Checkout Revamp (EPIC-1) children:
+    expect(screen.getByText('Redesign cart page')).toBeInTheDocument();
+    expect(screen.getByText('Add saved payment methods')).toBeInTheDocument();
+    // Onboarding Overhaul (EPIC-2) children:
+    expect(screen.getByText('Simplify signup flow')).toBeInTheDocument();
+    expect(screen.getByText('Add social login')).toBeInTheDocument();
+    // No Parent bucket:
+    expect(screen.getByText('Unowned cleanup task')).toBeInTheDocument();
+  });
+
+  test('renders one band label per team, with "No Team" last', () => {
+    renderGrouped(groupableIssues, 'team', allWithParents);
+    const bandTitles = screen.getAllByTestId('group-band-title').map((el) => el.textContent);
+    expect(bandTitles).toEqual(['Checkout Team', 'Growth Team', 'No Team']);
+  });
+
+  test('renders one band label per project', () => {
+    renderGrouped(groupableIssues, 'project', allWithParents);
+    const bandTitles = screen.getAllByTestId('group-band-title').map((el) => el.textContent);
+    expect(bandTitles).toEqual(['GROW', 'PROJ']);
+  });
+
+  test('renders a single band with no gutter label when ungrouped', () => {
+    renderGrouped(groupableIssues, '', allWithParents);
+    expect(screen.queryAllByTestId('group-band-title')).toHaveLength(0);
+  });
+
+  test('renders a single band when every issue shares the same group', () => {
+    const sameTeam = [
+      makeIssue({ key: 'S-1', summary: 'One', team: { name: 'Solo Team' }, due: new Date('2025-01-10') }),
+      makeIssue({ key: 'S-2', summary: 'Two', team: { name: 'Solo Team' }, due: new Date('2025-02-10') }),
+    ];
+    renderGrouped(sameTeam, 'team');
+    const bandTitles = screen.getAllByTestId('group-band-title').map((el) => el.textContent);
+    expect(bandTitles).toEqual(['Solo Team']);
+  });
+
+  test('applies per-band density optimizations for a large group', () => {
+    const bigTeam = Array.from({ length: 25 }, (_, i) =>
+      makeIssue({
+        key: `B-${i}`,
+        summary: `Big ${i}`,
+        team: { name: 'Mega Team' },
+        due: new Date(2025, 1, (i % 27) + 1),
+      }),
+    );
+    renderGrouped(bigTeam, 'team');
+    const marker = screen.getAllByTestId('status-marker')[0];
     expect(marker.style.width).toBe('12px');
   });
 });

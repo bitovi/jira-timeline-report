@@ -389,6 +389,21 @@ export class GanttGrid extends StacheElement {
           ];
         })
         .flat(1);
+    } else if (this.routeData.groupBy === 'project' && this.routeData.primaryIssueType !== 'Release') {
+      let issuesByProject = Object.groupBy(this.primaryIssuesOrReleases, (issue) => issue.projectKey);
+
+      const projectKeys = Object.keys(issuesByProject).sort((p1, p2) => {
+        return p1 > p2 ? 1 : -1;
+      });
+
+      return projectKeys
+        .map((projectKey) => {
+          return [
+            { type: 'parent', issue: { summary: projectKey }, isShowingChildren: false },
+            ...issuesByProject[projectKey].map(getRows).flat(1),
+          ];
+        })
+        .flat(1);
     } else {
       return this.primaryIssuesOrReleases.map((issue) => getRows(issue)).flat(1);
     }

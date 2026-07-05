@@ -28,7 +28,7 @@ describe('QuarterAndMonthHeaders', () => {
       </div>,
     );
     const q1 = screen.getByText('Q1');
-    expect(q1.style.gridColumn).toBe('span 3');
+    expect(q1.style.gridColumn).toBe('1 / span 3');
   });
 
   test('renders multiple quarters across a wider range', () => {

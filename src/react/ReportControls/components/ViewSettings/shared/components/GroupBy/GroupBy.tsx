@@ -9,6 +9,7 @@ const groupBy = [
   { label: 'None', value: '' },
   { label: 'Parent', value: 'parent' },
   { label: 'Team', value: 'team' },
+  { label: 'Project', value: 'project' },
 ];
 
 const useGroupBy = () => {

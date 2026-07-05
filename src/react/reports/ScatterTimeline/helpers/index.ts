@@ -3,3 +3,5 @@ export { intersect, packIssuesIntoRows, sortIssuesByLeftPosition, filterIssuesWi
 export { getStatusColorClass } from './status';
 export { shouldUseDensityOptimizations } from './density';
 export { computeDateRange } from './dateRange';
+export { groupIssues } from './groupIssues';
+export type { GroupByOption, IssueGroup } from './groupIssues';

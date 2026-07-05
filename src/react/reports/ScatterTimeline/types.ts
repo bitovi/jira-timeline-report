@@ -29,6 +29,14 @@ export interface IssueOrRelease {
     };
   };
   status?: string;
+  /** Team the issue belongs to — read for `'team'` grouping. */
+  team?: { name: string } | null;
+  /** Parent issue key — read for `'parent'` grouping. */
+  parentKey?: string | null;
+  /** Project key — read for `'project'` grouping. */
+  projectKey?: string;
+  /** Lexicographic rank (e.g. Jira's `Rank` field) — used to order `'parent'` groups. */
+  rank?: string | null;
 }
 
 // Canonical calendar types live with the date utility that produces them; re-export so

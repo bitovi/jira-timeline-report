@@ -3,7 +3,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import type { IssueOrRelease } from './types';
 import { ScatterTimeline } from './ScatterTimeline';
-import { makeIssue, spacedIssues, collidingIssues, mixedMissingDueIssues } from './fixtures';
+import {
+  makeIssue,
+  spacedIssues,
+  collidingIssues,
+  mixedMissingDueIssues,
+  groupableIssues,
+  groupableParents,
+} from './fixtures';
 
 /** A minimal static observable stub for stories (no reactive updates needed). */
 const obs = <T,>(value: T): CanObservable<T> =>
@@ -25,17 +32,20 @@ const FixedWidth = (Story: React.FC) => (
 
 interface Args {
   issues: IssueOrRelease[];
+  allIssues?: IssueOrRelease[];
   roundTo: string;
+  groupBy?: string;
 }
 
 const meta: Meta<Args> = {
   title: 'Reports/ScatterTimeline/ScatterTimeline',
   decorators: [FixedWidth],
-  render: ({ issues, roundTo }) => (
+  render: ({ issues, allIssues, roundTo, groupBy }) => (
     <ScatterTimeline
       primaryIssuesOrReleasesObs={obs(issues)}
-      allIssuesOrReleasesObs={obs(issues)}
+      allIssuesOrReleasesObs={obs(allIssues ?? issues)}
       roundToObs={obs(roundTo)}
+      groupByObs={obs(groupBy ?? '')}
     />
   ),
   args: { roundTo: 'day' },
@@ -122,5 +132,71 @@ export const AllStatuses: Story = {
     issues: ['complete', 'ontrack', 'behind', 'warning', 'blocked', 'unknown', 'notstarted', 'ahead', 'new'].map(
       (status, i) => makeIssue({ key: `ST-${i}`, summary: status, status, due: new Date(2025, 0, 8 + i * 8) }),
     ),
+  },
+};
+
+/** No grouping selected — unchanged single-band layout, using the groupable fixture set. */
+export const NoGrouping: Story = {
+  args: { issues: groupableIssues, allIssues: [...groupableIssues, ...groupableParents], groupBy: '' },
+};
+
+/** Grouped by parent — one band per epic (via `parentKey`), labeled with the parent's summary, plus a "No Parent" band. */
+export const GroupedByParent: Story = {
+  args: { issues: groupableIssues, allIssues: [...groupableIssues, ...groupableParents], groupBy: 'parent' },
+};
+
+/** Grouped by team — one band per `team.name`, plus a "No Team" band for issues without one. */
+export const GroupedByTeam: Story = {
+  args: { issues: groupableIssues, allIssues: [...groupableIssues, ...groupableParents], groupBy: 'team' },
+};
+
+/** Grouped by project — one band per `projectKey`. */
+export const GroupedByProject: Story = {
+  args: { issues: groupableIssues, allIssues: [...groupableIssues, ...groupableParents], groupBy: 'project' },
+};
+
+/** Edge case: every issue shares one team → a single labeled band. */
+export const GroupedSingleGroup: Story = {
+  args: {
+    issues: [
+      makeIssue({
+        key: 'S-1',
+        summary: 'First task',
+        status: 'ontrack',
+        due: new Date('2025-01-15'),
+        team: { name: 'Solo Team' },
+      }),
+      makeIssue({
+        key: 'S-2',
+        summary: 'Second task',
+        status: 'behind',
+        due: new Date('2025-02-10'),
+        team: { name: 'Solo Team' },
+      }),
+      makeIssue({
+        key: 'S-3',
+        summary: 'Third task',
+        status: 'complete',
+        due: new Date('2025-03-05'),
+        team: { name: 'Solo Team' },
+      }),
+    ],
+    groupBy: 'team',
+  },
+};
+
+/** Edge case: a large band (> 20 issues) → per-band density optimizations (smaller markers). */
+export const GroupedLargeBand: Story = {
+  args: {
+    issues: Array.from({ length: 26 }, (_, i) =>
+      makeIssue({
+        key: `MEGA-${i}`,
+        summary: `Mega item ${i}`,
+        status: ['ontrack', 'complete', 'behind', 'warning', 'blocked'][i % 5],
+        due: new Date(2025, 0, 5 + i * 3),
+        team: { name: 'Mega Team' },
+      }),
+    ),
+    groupBy: 'team',
   },
 };
