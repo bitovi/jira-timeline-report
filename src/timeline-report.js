@@ -5,7 +5,6 @@ import routeData from './canjs/routing/route-data';
 import './canjs/controls/status-filter.js';
 import './canjs/reports/gantt-grid.js';
 import './canjs/reports/table-grid.js';
-import './canjs/reports/scatter-timeline.js';
 import './canjs/reports/status-report.js';
 
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
@@ -34,6 +33,7 @@ import EstimationProgress from './react/reports/EstimationProgress/EstimationPro
 import { GroupingReport } from './react/reports/GroupingReport/GroupingReport';
 import { FlowMetrics } from './react/reports/FlowMetrics/FlowMetrics';
 import { TimeInStatus } from './react/reports/TimeInStatus/TimeInStatus';
+import { ScatterTimeline } from './react/reports/ScatterTimeline';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
@@ -42,6 +42,7 @@ const urlParamValuesToReactComponents = {
   grouper: GroupingReport,
   'flow-metrics': FlowMetrics,
   'time-in-status': TimeInStatus,
+  due: ScatterTimeline,
 };
 
 export class TimelineReport extends StacheElement {
@@ -68,11 +69,6 @@ export class TimelineReport extends StacheElement {
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
                 allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
                 ></gantt-grid>
-          {{/ eq }}
-          {{# eq(this.routeData.primaryReportType, "due") }}
-            <scatter-timeline 
-              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></scatter-timeline>
           {{/ eq }}
           {{# eq(this.routeData.primaryReportType, "table") }}
             <table-grid
@@ -218,6 +214,7 @@ export class TimelineReport extends StacheElement {
       timeInStatusIssueTypeFilterObs: value.bind(this.routeData, 'timeInStatusIssueTypeFilter'),
       timeInStatusProjectFilterObs: value.bind(this.routeData, 'timeInStatusProjectFilter'),
       timeInStatusReorderObs: value.bind(this.routeData, 'timeInStatusReorder'),
+      roundToObs: value.bind(this.routeData, 'roundTo'),
     };
 
     // GroupingReport needs to be wrapped with JiraProvider and QueryClientProvider

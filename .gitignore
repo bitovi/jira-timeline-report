@@ -18,3 +18,5 @@ public/atlassian-connect.json
 /blob-report/
 /dist/
 .playwright-mcp/
+*storybook.log
+storybook-static
