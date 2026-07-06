@@ -5,7 +5,6 @@ import routeData from './canjs/routing/route-data';
 import './canjs/controls/status-filter.js';
 import './canjs/reports/gantt-grid.js';
 import './canjs/reports/table-grid.js';
-import './canjs/reports/status-report.js';
 
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
@@ -35,6 +34,8 @@ import { GroupingReport } from './react/reports/GroupingReport/GroupingReport';
 import { FlowMetrics } from './react/reports/FlowMetrics/FlowMetrics';
 import { TimeInStatus } from './react/reports/TimeInStatus/TimeInStatus';
 import { ScatterTimeline } from './react/reports/ScatterTimeline';
+import { WorkBreakdown } from './react/reports/WorkBreakdown';
+import { showTooltip } from './canjs/controls/issue-tooltip.js';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
@@ -109,11 +110,9 @@ export class TimelineReport extends StacheElement {
           
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
-            <status-report 
-              breakdown:from="eq(this.routeData.secondaryReportType, 'breakdown')"
-              planningIssues:from="this.planningIssues"
-              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
+            <div id='react-secondary-report-container'
+              on:inserted='this.attachReactSecondaryReport()'
+              on:removed='this.detachReactSecondaryReport()'></div>
           {{/ }}
 
           <div id="report-footer" class="sticky bottom-0 z-40"
@@ -268,6 +267,31 @@ export class TimelineReport extends StacheElement {
     if (this.reactReportRoot) {
       this.reactReportRoot.unmount();
       this.reactReportRoot = null;
+    }
+  }
+
+  attachReactSecondaryReport() {
+    const element = document.getElementById('react-secondary-report-container');
+    if (!element) {
+      console.warn('No element found for react secondary report container');
+      return;
+    }
+    this.reactSecondaryReportRoot = createRoot(element);
+    this.reactSecondaryReportRoot.render(
+      createElement(WorkBreakdown, {
+        primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
+        allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
+        planningIssuesObs: value.from(this, 'planningIssues'),
+        secondaryReportTypeObs: value.bind(this.routeData, 'secondaryReportType'),
+        onIssueClick: (event, issue) => showTooltip(event.currentTarget, issue),
+      }),
+    );
+  }
+
+  detachReactSecondaryReport() {
+    if (this.reactSecondaryReportRoot) {
+      this.reactSecondaryReportRoot.unmount();
+      this.reactSecondaryReportRoot = null;
     }
   }
 

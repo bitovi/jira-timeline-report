@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Work Breakdown — Option A · Status matrix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       :root {
         --complete: #22a06b;
@@ -16,6 +17,8 @@
         --warning-t: #000;
         --blocked: #e2483d;
         --blocked-t: #fff;
+        --ahead: #2898bd; /* teal — "ahead": moved forward vs last period */
+        --ahead-t: #fff;
         --unknown: #dab092; /* tan — real "unknown": work exists but no dates */
         --unknown-t: #000;
         --notstarted: #8590a2; /* slate — real "notstarted" */
@@ -79,6 +82,10 @@
         background: var(--blocked);
         color: var(--blocked-t);
       }
+      .color-ahead {
+        background: var(--ahead);
+        color: var(--ahead-t);
+      }
       .color-unknown {
         background: var(--unknown);
         color: var(--unknown-t);
@@ -110,27 +117,64 @@
         font-size: 14px;
         font-weight: 600;
       }
-      table {
-        width: 100%;
-        border-collapse: collapse;
+      /* ---- CSS Grid matrix ----
+         name column truncates (minmax 0,1fr); each work-type column sizes to
+         its own content (auto), so dates stay readable and never collide. */
+      .matrix {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) repeat(4, auto);
+        align-items: stretch;
         font-size: 13px;
       }
-      thead th {
+      /* status secondary report: single column, swatch sits left of the name */
+      .board.status .matrix {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      /* Status mode is laid out with Tailwind utilities on the cells themselves;
+         reset the grid's default centering/borders so those utilities take over. */
+      .board.status .matrix > div {
+        justify-content: flex-start;
+        border-bottom: none;
+      }
+      .matrix > div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid var(--neutral-20);
+        padding: 2px 5px;
+      }
+      /* header cells */
+      .matrix .head {
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 2px;
+        padding: 6px 5px;
+        border-bottom: 1px solid var(--card-border);
         font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.03em;
         color: var(--muted);
-        padding: 6px 1px;
-        border-bottom: 1px solid var(--card-border);
-        vertical-align: top;
-        width: 26px;
       }
-      thead th.issue {
-        text-align: left;
+      .matrix .head.issue {
+        align-items: flex-start;
+        justify-content: flex-start;
         padding-left: 10px;
-        vertical-align: bottom;
-        width: auto;
+      }
+      /* issue-name cells (col 1) truncate */
+      .matrix .issue {
+        justify-content: flex-start;
+        min-width: 0;
+        padding-left: 10px;
+        padding-right: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        line-height: 26px;
+      }
+      .matrix .row-last {
+        border-bottom: none;
       }
       .wt-letter {
         display: inline-block;
@@ -141,43 +185,27 @@
         font-size: 10px;
         font-weight: 700;
         text-align: center;
+        text-transform: none;
       }
       .wt-date {
-        font-size: 9px;
+        font-size: 8px;
         font-weight: 500;
         color: var(--muted);
         text-transform: none;
-        letter-spacing: 0;
-        margin-top: 2px;
+        letter-spacing: -0.02em;
         white-space: nowrap;
       }
       .wt-old {
-        font-size: 9px;
+        font-size: 8px;
         font-weight: 500;
         color: var(--blocked);
         text-transform: none;
         letter-spacing: 0;
         white-space: nowrap;
       }
-      tbody td {
-        padding: 2px 1px;
-        border-bottom: 1px solid var(--neutral-20);
-      }
-      tbody td.issue {
-        text-align: left;
-        padding-left: 10px;
-        padding-right: 8px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 190px;
-      }
-      tbody tr:last-child td {
-        border-bottom: none;
-      }
-      .cell {
-        text-align: center;
-        line-height: 0;
+      /* moved-forward (ahead): previous, later date — good news, not a slip */
+      .wt-old.improved {
+        color: var(--ahead);
       }
       /* rounded-square status swatch — mirrors the work-type key style */
       .swatch-cell {
@@ -277,12 +305,11 @@
       }
 
       /* --- BIG --- */
-      .board.big table {
+      .board.big .matrix {
         font-size: 14px;
       }
-      .board.big thead th {
-        padding: 6px 3px;
-        width: 30px;
+      .board.big .matrix > div {
+        padding: 4px 6px;
       }
       .board.big .wt-letter {
         width: 18px;
@@ -293,31 +320,33 @@
       .board.big .wt-date {
         font-size: 10px;
       }
-      .board.big tbody td {
-        padding: 4px 2px;
+      .board.big .matrix .issue {
+        line-height: 30px;
       }
       .board.big .swatch-cell {
         width: 18px;
         height: 18px;
         border-radius: 4px;
       }
+      .board.big .swatch-cell.nodate::after {
+        font-size: 13px;
+      }
       .board.big .card {
         flex-basis: 250px;
         min-width: 240px;
-        max-width: 320px;
+        max-width: 340px;
       }
 
       /* --- TIGHT --- */
-      .board.tight table {
+      .board.tight .matrix {
         font-size: 11px;
-      }
-      .board.tight thead th {
-        padding: 4px 1px;
-        width: 18px;
       }
       .board.tight .card-header {
         padding: 4px 8px;
         font-size: 12px;
+      }
+      .board.tight .matrix > div {
+        padding: 1px 4px;
       }
       .board.tight .wt-letter {
         width: 12px;
@@ -332,23 +361,23 @@
       .board.tight .wt-old {
         font-size: 8px;
       }
-      .board.tight tbody td {
-        padding: 1px 1px;
-      }
-      .board.tight td.issue {
+      .board.tight .matrix .issue {
         padding-left: 8px;
         padding-right: 6px;
-        max-width: 150px;
+        line-height: 22px;
       }
       .board.tight .swatch-cell {
         width: 11px;
         height: 11px;
         border-radius: 3px;
       }
+      .board.tight .swatch-cell.nodate::after {
+        font-size: 8px;
+      }
       .board.tight .card {
         flex-basis: 180px;
         min-width: 172px;
-        max-width: 230px;
+        max-width: 260px;
       }
     </style>
   </head>
@@ -356,14 +385,26 @@
     <h1>Work Breakdown — Option A<span class="tag">Status matrix</span></h1>
     <p class="intro">
       Each card's children become a compact <b>matrix</b>: rows are child issues, columns are work types. The work‑type
-      letters (d&nbsp;D&nbsp;Q&nbsp;U) and their <b>rollup target dates</b> appear once in the header (a red date below
-      means it slipped from a previous period); each row is then just a tight grid of rounded status swatches — same
-      shape as the header keys — so a glance down the <b>Q</b> column answers "who's behind on QA?" while fitting in
-      narrow horizontal space. Use the <b>Big / Tight</b> toggle (like the current work breakdown) to trade legibility
-      for density.
+      letters (d&nbsp;D&nbsp;Q&nbsp;U) and their <b>rollup target dates</b> appear once in the header (a
+      <span style="color: #e2483d">red</span> date below means it slipped from a previous period; a
+      <span style="color: #2898bd">teal</span> date means it <b>moved forward</b> — pulled earlier); each row is then
+      just a tight grid of rounded status swatches — same shape as the header keys — so a glance down the
+      <b>Q</b> column answers "who's behind on QA?" while fitting in narrow horizontal space. Use the
+      <b>Big / Tight</b> toggle (like the current work breakdown) to trade legibility for density. Cells distinguish
+      three states, matching the Gantt: a <b>colored</b> swatch (work with dates), a tan <b>∅</b> swatch (work exists
+      but has <b>no dates</b> — the app's "unknown" status), and a <b>blank outline</b> (no work of that type for this
+      issue). The <b>Secondary report</b> toggle switches between <b>Status</b> (a single rollup-status column + Target
+      Delivery date per child) and <b>Work breakdown</b> (the full four-work-type matrix) — the same card, one column
+      vs. four.
     </p>
 
     <div class="controls">
+      <span>Secondary report:</span>
+      <span class="seg" id="mode">
+        <button data-mode="status">Status</button>
+        <button data-mode="breakdown" class="active">Work breakdown</button>
+      </span>
+      <span style="width: 12px"></span>
       <span>Density:</span>
       <span class="seg" id="density">
         <button data-density="big">Big</button>
@@ -384,6 +425,7 @@
         behind: 'Behind',
         warning: 'Warning',
         blocked: 'Blocked',
+        ahead: 'Ahead',
         notstarted: 'Not started',
         unknown: 'No dates',
       };
@@ -392,6 +434,7 @@
         {
           title: '100 Stores',
           status: 'ontrack',
+          due: 'Mar 9',
           childType: 'Epic',
           wt: {
             design: { status: 'complete', due: 'Feb 12' },
@@ -410,17 +453,18 @@
         {
           title: 'Outcome A',
           status: 'complete',
+          due: 'Oct 22',
           childType: 'Epic',
           wt: {
             design: { status: 'complete', due: 'Aug 20' },
             dev: { status: 'complete', due: 'Sep 25' },
-            qa: { status: 'ontrack', due: 'Oct 10' },
+            qa: { status: 'ahead', due: 'Oct 3', was: 'Oct 10' },
             uat: { status: 'ontrack', due: 'Oct 22' },
           },
           children: [
             ['Epic Analysis', ['complete', 'complete', 'complete', 'ontrack']],
-            ['Pet Photo Sharing', ['complete', 'complete', 'ontrack', 'nodate']],
-            ['Favorite sharing', ['complete', 'ontrack', 'nodate', null]],
+            ['Pet Photo Sharing', ['complete', 'complete', 'ahead', 'nodate']],
+            ['Favorite sharing', ['complete', 'ahead', 'nodate', null]],
             ['Pets corner', ['ontrack', 'behind', null, null]],
             ['Internationalization', ['behind', 'blocked', null, null]],
             ['Order Playback', ['nodate', 'nodate', null, null]],
@@ -429,6 +473,8 @@
         {
           title: 'Digital Channel sales - 5% increase',
           status: 'behind',
+          due: 'Jul 24',
+          was: 'Jun 19',
           childType: 'Epic',
           wt: {
             design: { status: 'complete', due: 'Jun 5' },
@@ -446,53 +492,119 @@
       ];
 
       const boardEl = document.getElementById('board');
-      for (const card of board) {
-        const div = document.createElement('div');
-        div.className = 'card';
-        let html = `<div class="card-header color-${card.status}">${card.title}</div><table><thead><tr><th class="issue">${card.childType}</th>`;
-        for (const wt of WT) {
-          const d = card.wt[wt];
-          const tip = `${wt}: ${statusLabel[d.status]}${d.due ? ' · due ' + d.due : ''}${d.was ? ' (was ' + d.was + ')' : ''}`;
-          html +=
-            `<th title="${tip}">` +
-            `<span class="wt-letter color-${d.status}">${sym[wt]}</span>` +
-            `<div class="wt-date">${d.due || '—'}</div>` +
-            (d.was ? `<div class="wt-old">${d.was}</div>` : '') +
-            `</th>`;
-        }
-        html += '</tr></thead><tbody>';
-        for (const [name, states] of card.children) {
-          html += `<tr><td class="issue" title="${name}">${name}</td>`;
-          states.forEach((st, i) => {
-            let cls, tip;
-            if (st === null) {
-              // work type doesn't exist for this issue
-              cls = 'na';
-              tip = `${WT[i]}: no ${WT[i]} work`;
-            } else if (st === 'nodate') {
-              // work exists but has no dates → unknown
-              cls = 'nodate';
-              tip = `${WT[i]}: work exists, no dates`;
-            } else {
-              cls = `color-${st}`;
-              tip = `${WT[i]}: ${statusLabel[st]}`;
-            }
-            html += `<td class="cell"><span class="swatch-cell ${cls}" title="${tip}"></span></td>`;
-          });
-          html += '</tr>';
-        }
-        html += '</tbody></table>';
-        div.innerHTML = html;
-        boardEl.appendChild(div);
+
+      // A child's single rollup status (for the "status" secondary report),
+      // taking the most attention-worthy work-type status. null = no work, nodate = dateless.
+      const rollupPriority = ['blocked', 'behind', 'warning', 'ahead', 'ontrack', 'complete', 'notstarted'];
+      function childRollup(states) {
+        const present = states.filter((s) => s !== null);
+        if (!present.length) return 'na';
+        const real = present.filter((s) => s !== 'nodate');
+        if (!real.length) return 'nodate';
+        for (const p of rollupPriority) if (real.includes(p)) return p;
+        return real[0];
       }
 
+      function renderCard(card, mode) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        let html = `<div class="card-header color-${card.status}">${card.title}</div><div class="matrix">`;
+
+        if (mode === 'status') {
+          // single column: Target Delivery header + child rows with the status swatch left of the name.
+          // Laid out with Tailwind utilities (not the custom .head/.issue/.wt-date classes) so the
+          // density selectors don't shrink these — status mode is always full size.
+          const tip = `Target Delivery${card.due ? ': ' + card.due : ''}${card.was ? ' (was ' + card.was + ')' : ''}`;
+          const wasColor = card.status === 'ahead' ? 'var(--ahead)' : 'var(--blocked)';
+          html +=
+            `<div class="flex flex-row items-baseline gap-1.5 px-2.5 py-1.5" title="${tip}">` +
+            `<span class="text-[13px] text-slate-800">Target Delivery</span>` +
+            `<span class="text-[13px] font-medium text-slate-500">${card.due || '—'}</span>` +
+            (card.was ? `<span class="text-[13px] font-medium" style="color:${wasColor}">${card.was}</span>` : '') +
+            `</div>`;
+          card.children.forEach(([name, states]) => {
+            const st = childRollup(states);
+            let cls, tip2;
+            if (st === 'na') {
+              cls = 'na';
+              tip2 = 'No work';
+            } else if (st === 'nodate') {
+              cls = 'nodate';
+              tip2 = 'Work exists, no dates';
+            } else {
+              cls = `color-${st}`;
+              tip2 = statusLabel[st];
+            }
+            html +=
+              `<div class="flex items-center gap-2 px-2.5 py-1 min-w-0" title="${name}">` +
+              `<span class="swatch-cell ${cls} shrink-0" title="${tip2}"></span>` +
+              `<span class="truncate text-[13px] text-slate-800">${name}</span>` +
+              `</div>`;
+          });
+        } else {
+          // work breakdown: one column per work type
+          html += `<div class="head issue">${card.childType}</div>`;
+          for (const wt of WT) {
+            const d = card.wt[wt];
+            const tip = `${wt}: ${statusLabel[d.status]}${d.due ? ' · due ' + d.due : ''}${d.was ? ' (was ' + d.was + ')' : ''}`;
+            html +=
+              `<div class="head" title="${tip}">` +
+              `<span class="wt-letter color-${d.status}">${sym[wt]}</span>` +
+              `<span class="wt-date">${d.due || '—'}</span>` +
+              (d.was ? `<span class="wt-old${d.status === 'ahead' ? ' improved' : ''}">${d.was}</span>` : '') +
+              `</div>`;
+          }
+          card.children.forEach(([name, states], ri) => {
+            const last = ri === card.children.length - 1 ? ' row-last' : '';
+            html += `<div class="issue${last}" title="${name}">${name}</div>`;
+            states.forEach((st, i) => {
+              let cls, tip;
+              if (st === null) {
+                cls = 'na';
+                tip = `${WT[i]}: no ${WT[i]} work`;
+              } else if (st === 'nodate') {
+                cls = 'nodate';
+                tip = `${WT[i]}: work exists, no dates`;
+              } else {
+                cls = `color-${st}`;
+                tip = `${WT[i]}: ${statusLabel[st]}`;
+              }
+              html += `<div class="cell${last}"><span class="swatch-cell ${cls}" title="${tip}"></span></div>`;
+            });
+          });
+        }
+
+        html += '</div>';
+        div.innerHTML = html;
+        return div;
+      }
+
+      function renderBoard(mode) {
+        boardEl.innerHTML = '';
+        boardEl.classList.toggle('status', mode === 'status');
+        for (const card of board) boardEl.appendChild(renderCard(card, mode));
+      }
+
+      renderBoard('breakdown');
+
       const legend = document.getElementById('legend');
-      const statusOrder = ['complete', 'ontrack', 'behind', 'warning', 'blocked', 'notstarted'];
+      const statusOrder = ['complete', 'ontrack', 'ahead', 'behind', 'warning', 'blocked', 'notstarted'];
       legend.innerHTML =
         '<div><b>Work types:</b> d = design, D = dev, Q = qa, U = uat</div>' +
         statusOrder.map((k) => `<div><span class="swatch color-${k}"></span>${statusLabel[k]}</div>`).join('') +
         '<div><span class="swatch nodate-key">∅</span>Has work, no dates</div>' +
         '<div><span class="swatch na-key"></span>No work of this type</div>';
+
+      // secondary-report mode toggle
+      let currentMode = 'breakdown';
+      const modeSeg = document.getElementById('mode');
+      modeSeg.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        currentMode = btn.dataset.mode;
+        renderBoard(currentMode);
+        modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
+      });
 
       // density toggle
       const density = document.getElementById('density');

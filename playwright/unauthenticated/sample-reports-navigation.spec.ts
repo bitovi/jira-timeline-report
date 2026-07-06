@@ -34,12 +34,14 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page has status report', async ({ page }) => {
-      await expect(page.locator('status-report')).toBeVisible();
-      await expect(page.locator('status-report').getByText('Track your order maps')).toBeVisible();
-      await expect(page.locator('status-report').getByText('Social sharing')).toBeVisible();
-      await expect(page.locator('status-report').getByText('QA: Favorite Sharing')).toBeVisible();
-      await expect(page.locator('status-report').getByText('QA: Internationalization')).toBeVisible();
-      await expect(page.locator('status-report').getByText('Order Playback')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('Track your order maps')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('Social sharing')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('QA: Favorite Sharing')).toBeVisible();
+      await expect(
+        page.locator('#react-secondary-report-container').getByText('QA: Internationalization'),
+      ).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('Order Playback')).toBeVisible();
     });
   });
 
@@ -69,12 +71,14 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page has status report', async ({ page }) => {
-      await expect(page.locator('status-report')).toBeVisible();
-      await expect(page.locator('status-report').getByText('Track your order maps')).toBeVisible();
-      await expect(page.locator('status-report').getByText('Social sharing')).toBeVisible();
-      await expect(page.locator('status-report').getByText('QA: Favorite Sharing')).toBeVisible();
-      await expect(page.locator('status-report').getByText('QA: Internationalization')).toBeVisible();
-      await expect(page.locator('status-report').getByText('Order Playback')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('Track your order maps')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('Social sharing')).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('QA: Favorite Sharing')).toBeVisible();
+      await expect(
+        page.locator('#react-secondary-report-container').getByText('QA: Internationalization'),
+      ).toBeVisible();
+      await expect(page.locator('#react-secondary-report-container').getByText('Order Playback')).toBeVisible();
     });
   });
 

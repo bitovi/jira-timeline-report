@@ -53,6 +53,16 @@ Decisions for the surprising/buggy behaviors catalogued in
    with density. **Remediation: preserve current appearance** (keep sizing identical) for the faithful
    port; collapse to a single constant so the redundancy is obvious. Actual resize is deferred to the
    "improve later" phase.
+6. **Group-header label status tint** — legacy parent group rows tint their bold label via
+   `classForSpecialStatus(issue.rollupStatuses.rollup.status)` (only `complete`/`blocked`/`warning`
+   are colored); team/project rows are synthetic and render default color
+   ([gantt-grid.js#L138-L150](src/canjs/reports/gantt-grid.js#L138-L150)). The shared `groupIssues`
+   returns `{ key, title, issues, rank }` and **drops** the parent's `rollupStatuses`, so a
+   naive port would lose the parent tint. **Remediation (Option A): extend the shared `IssueGroup`
+   with an additive `parent?: IssueOrRelease | null`** populated only by `groupByParent`. It is
+   additive (scatter ignores it — its tests stay green) and lets `toGroupHeader` reproduce the
+   legacy tint (logic.md §3.3). Group rows themselves remain bar-less (legacy `groupElement` only
+   draws a background stripe — [gantt-grid.js#L411-L421](src/canjs/reports/gantt-grid.js#L411-L421)).
 
 ### Dead code — do not port
 
@@ -97,9 +107,18 @@ Decisions for the surprising/buggy behaviors catalogued in
 
 ## Reusable helpers (date utils, pipeline)
 
-- `src/utils/date/quarters-and-months` (`getQuartersAndMonths`) — already used by the CanJS gantt.
+- `src/utils/date/compute-quarters-and-months` (`computeQuartersAndMonths`) — century-year-safe
+  axis quarters/months; the scatter rewrite switched to this over the legacy `getQuartersAndMonths`
+  (which uses `getYear()`). Use it, not the raw `getQuartersAndMonths`.
 - `src/utils/date/days-in-month`, `business-days`, `days-between`, `time-range-shorthand`.
-- `src/canjs/routing/utils/round` (`roundDateByRoundToParam`) — bar positioning rounding.
+- **Bar-endpoint rounding**: compose the pure `roundDate` table from
+  [src/utils/date/round.js](src/utils/date/round.js) with `roundTo` passed as a **param**
+  (start rounds down, end rounds up). **Never** use `roundDateByRoundToParam`
+  ([src/canjs/routing/utils/round.ts](src/canjs/routing/utils/round.ts)) — it reads the global
+  `routeData.roundTo` and would make the "pure" positioning helper depend on global state. This
+  mirrors the scatter rewrite's decision (spec/003 logic.md §2.2). Unlike the scatter's
+  `roundAndShiftDueDate`, the Gantt does **not** apply the `oneDayLater` shift — its
+  "occupy the final day" `+ DAY_MS` lives in the width calc, not in rounding.
 - `src/jira/rollup/rollup` (`makeGetChildrenFromReportingIssues`),
   `src/jira/rollup/dates/dates` (`mergeStartAndDueData`).
 
@@ -141,6 +160,13 @@ timeline bars + last-period shadow bars, breakdown (dev/qa/uat), % complete colu
    scatter's imports):
 
    - helpers: `groupIssues.ts`, `status.ts`, `density.ts`
+     (add the additive `IssueGroup.parent?: IssueOrRelease | null` field to `groupIssues.ts` here
+     — populated only by `groupByParent`; scatter ignores it so its tests stay green; see §Known issues #6)
+   - **generic functions extracted from scatter's `positioning.ts`** into a shared
+     `helpers/grid.ts`: `computeGridColumnCSS(months)` (day-weighted `fr` string) and
+     `calculateTodayMargin(today, firstDay, lastDay)` (today-line offset with the −2-day nudge).
+     Both are report-agnostic and needed by the Gantt (logic.md §3.2, §3.10). Update scatter's
+     imports; the Gantt wraps `computeGridColumnCSS` in its own `computeGridTemplateColumns`.
    - components: `QuarterAndMonthHeaders`, `TodayLine`, `GridLines`, `StatusLegend`
    - shared `IssueOrRelease` slice + `Quarter`/`Month` re-exports
 
@@ -148,15 +174,24 @@ timeline bars + last-period shadow bars, breakdown (dev/qa/uat), % complete colu
 
 ### Phase 1 — Scaffold + Gantt-specific pure helpers (parallelizable)
 
-1. Create `src/react/reports/GanttReport/GanttGrid/` with `index.ts`, `types.ts`, `fixtures.ts`.
+1. Create `src/react/reports/GanttReport/GanttGrid/` with `index.ts`, `types.ts`, `fixtures.ts`
+   (the container file is `GanttGrid.tsx` inside this dir; helper/function names below are the
+   canonical ones from logic.md §3).
 2. Port Gantt-only logic into `helpers/` (each with a `.test.ts`):
-   - `rows.ts` — flatten hierarchy w/ expand state (port `makeGetRows`, `getSortedParents`).
-   - grouping — REUSE shared `groupIssues.ts` (generic `getIssue` extractor); no new grouping helper.
-   - `positioning.ts` — bar left/width % (port `getPositionsFromWork`, extend/round logic). Gantt-specific.
-   - `columns.ts` / `quarters.ts` — `gridColumnsCSS`, `todayMarginLeft`; density REUSE shared
-     `density.ts`; quarters via `getQuartersAndMonths`.
-   - `barCorners.ts` — `roundBasedOnIfTheBarsExtend`, `borderBasedOnIfTheBarsExtend`. Status colors
-     REUSE shared `status.ts`.
+   - `rows.ts` — `flattenIssueRows` + `buildGanttRows` (port `makeGetRows`; grouping delegates to
+     shared `groupIssues.ts`, replacing `getSortedParents`). Grouping REUSES the shared helper —
+     no new grouping helper.
+   - `axisRange.ts` — `computeAxisRange` (port `quartersAndMonths` range/default/clamp math), then
+     `computeQuartersAndMonths`.
+   - `positioning.ts` — `computeBarPosition` (bar left/width %, extend flags; port
+     `getPositionsFromWork`). Gantt-specific.
+   - `barCorners.ts` — `barCornerClass` + `barBorderClasses` (port `roundBasedOnIfTheBarsExtend`,
+     `borderBasedOnIfTheBarsExtend`). Status colors REUSE shared `status.ts`.
+   - `columns.ts` — `computeGridTemplateColumns` (wraps shared `computeGridColumnCSS`); today-line
+     offset REUSES shared `calculateTodayMargin`; density REUSES shared `density.ts` via
+     `computeDensity`.
+   - `percentComplete.ts` — `computePercentComplete` (single source, divide-by-zero guard).
+   - `workTypes.ts` — `computeWorkTypesWithWork` (breakdown-mode dev/qa/uat presence).
 
 ### Phase 2 — React components (depends on Phase 0, 1)
 

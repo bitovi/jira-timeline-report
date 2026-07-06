@@ -52,26 +52,26 @@ Before writing new code, these already exist and are reused directly.
 
 Location: `src/react/reports/shared/timeline/`
 
-| Export                                                                | Source today                             | Gantt use                                                                                                                                                                                         |
-| --------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `groupIssues(items, allIssues, groupBy, getIssue)`                    | `ScatterTimeline/helpers/groupIssues.ts` | Replaces the parent/team/project branches of `gridRowData` **and** `getSortedParents`. Already handles the "No Team"/"No Parent"/"No Project" fallbacks and rank sorting (plan §Known issues #2). |
-| `getStatusColorClass(status)`, `getStatusLabel(status)`               | `helpers/status.ts`                      | Bar/circle colors (`color-text-and-bg-{status}`).                                                                                                                                                 |
-| `shouldUseDensityOptimizations(count)`                                | `helpers/density.ts`                     | `lotsOfIssues` = `count > 20`. Gantt additionally forces it **false in breakdown mode** (see `computeDensity`).                                                                                   |
-| `QuarterAndMonthHeaders`, `TodayLine`, `GridLines`, `StatusLegend`    | `components/*`                           | Rendered as bare grid children; each already accepts a `columnOffset` prop for the Gantt's label + %-complete gutter columns.                                                                     |
-| `IssueOrRelease` slice, `Quarter`, `Month`, `QuartersAndMonths` types | `types.ts`                               | Extended locally with Gantt-only fields (see §5).                                                                                                                                                 |
+| Export                                                                | Source today                             | Gantt use                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groupIssues(items, allIssues, groupBy, getIssue)`                    | `ScatterTimeline/helpers/groupIssues.ts` | Replaces the parent/team/project branches of `gridRowData` **and** `getSortedParents`. Already handles the "No Team"/"No Parent"/"No Project" fallbacks and rank sorting (plan §Known issues #2). Extended with an additive `parent?: IssueOrRelease \| null` for the group-header status tint (§3.3, plan §Known issues #6). |
+| `getStatusColorClass(status)`, `getStatusLabel(status)`               | `helpers/status.ts`                      | Bar/circle colors (`color-text-and-bg-{status}`).                                                                                                                                                                                                                                                                             |
+| `shouldUseDensityOptimizations(count)`                                | `helpers/density.ts`                     | `lotsOfIssues` = `count > 20`. Gantt additionally forces it **false in breakdown mode** (see `computeDensity`).                                                                                                                                                                                                               |
+| `QuarterAndMonthHeaders`, `TodayLine`, `GridLines`, `StatusLegend`    | `components/*`                           | Rendered as bare grid children; each already accepts a `columnOffset` prop for the Gantt's label + %-complete gutter columns.                                                                                                                                                                                                 |
+| `IssueOrRelease` slice, `Quarter`, `Month`, `QuartersAndMonths` types | `types.ts`                               | Extended locally with Gantt-only fields (see §5).                                                                                                                                                                                                                                                                             |
 
 ### 2.2 Existing date / rollup utilities
 
-| Export                                          | Location                                                                                                                      | Gantt use                                                                                                                                                  |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `computeQuartersAndMonths(start, end)`          | [src/utils/date/compute-quarters-and-months.ts](src/utils/date/compute-quarters-and-months.ts)                                | Axis quarters/months (century-year-safe; the scatter rewrite already switched to this over the legacy `getYear()` version).                                |
-| `getDaysInMonth(year, month)`                   | [src/utils/date/days-in-month.js](src/utils/date/days-in-month.js)                                                            | Only if not reading `month.daysInMonth` directly.                                                                                                          |
-| `roundAndShiftDueDate` / `roundDate` table      | [src/utils/date/round.js](src/utils/date/round.js), [round-and-shift-due-date.ts](src/utils/date/round-and-shift-due-date.ts) | Endpoint rounding keyed by a `roundTo` **string param** (pure) — replaces `roundDateByRoundToParam` which reads the global `routeData.roundTo` (see §3.4). |
-| `mergeStartAndDueData(rollups)`                 | [src/jira/rollup/dates/dates.ts](src/jira/rollup/dates/dates.ts)                                                              | Merge start/due across issues for the axis range.                                                                                                          |
-| `makeGetChildrenFromReportingIssues(allIssues)` | [src/jira/rollup/rollup.ts](src/jira/rollup/rollup.ts)                                                                        | Resolve a parent's children for hierarchy flattening and the percent-complete modal.                                                                       |
-| `daysBetween(a, b)`                             | [src/utils/date/days-between.js](src/utils/date/days-between.js)                                                              | Dates-tooltip duration.                                                                                                                                    |
-| `timeRangeShorthand(days)`                      | [src/utils/date/time-range-shorthand.js](src/utils/date/time-range-shorthand.js)                                              | Dates-tooltip "3w"/"2d" shorthand and signed diffs.                                                                                                        |
-| `workTypes`                                     | [src/jira/derived/work-status/work-status.ts](src/jira/derived/work-status/work-status.ts)                                    | Breakdown-mode dev/qa/uat bars.                                                                                                                            |
+| Export                                          | Location                                                                                       | Gantt use                                                                                                                                                                                                                                                                          |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `computeQuartersAndMonths(start, end)`          | [src/utils/date/compute-quarters-and-months.ts](src/utils/date/compute-quarters-and-months.ts) | Axis quarters/months (century-year-safe; the scatter rewrite already switched to this over the legacy `getYear()` version).                                                                                                                                                        |
+| `getDaysInMonth(year, month)`                   | [src/utils/date/days-in-month.js](src/utils/date/days-in-month.js)                             | Only if not reading `month.daysInMonth` directly.                                                                                                                                                                                                                                  |
+| `roundDate` table                               | [src/utils/date/round.js](src/utils/date/round.js)                                             | Endpoint rounding keyed by a `roundTo` **string param** (pure) — replaces `roundDateByRoundToParam` which reads the global `routeData.roundTo` (see §3.4). **Not** the scatter's `roundAndShiftDueDate` — that applies an extra `oneDayLater` shift the Gantt must not use (§3.4). |
+| `mergeStartAndDueData(rollups)`                 | [src/jira/rollup/dates/dates.ts](src/jira/rollup/dates/dates.ts)                               | Merge start/due across issues for the axis range.                                                                                                                                                                                                                                  |
+| `makeGetChildrenFromReportingIssues(allIssues)` | [src/jira/rollup/rollup.ts](src/jira/rollup/rollup.ts)                                         | Resolve a parent's children for hierarchy flattening and the percent-complete modal.                                                                                                                                                                                               |
+| `daysBetween(a, b)`                             | [src/utils/date/days-between.js](src/utils/date/days-between.js)                               | Dates-tooltip duration.                                                                                                                                                                                                                                                            |
+| `timeRangeShorthand(days)`                      | [src/utils/date/time-range-shorthand.js](src/utils/date/time-range-shorthand.js)               | Dates-tooltip "3w"/"2d" shorthand and signed diffs.                                                                                                                                                                                                                                |
+| `workTypes`                                     | [src/jira/derived/work-status/work-status.ts](src/jira/derived/work-status/work-status.ts)     | Breakdown-mode dev/qa/uat bars.                                                                                                                                                                                                                                                    |
 
 **Deliberately NOT reused**: `getBusinessDatesCount` (imported-but-unused in legacy),
 `roundDateByRoundToParam` (reads global state), the CanJS `SimpleTooltip`/`issue-tooltip`
@@ -125,7 +125,7 @@ clamped to `today+90d`; normal range → `axisStart === today`, `axisEnd === max
 **Purpose**: Build the CSS `grid-template-columns` string: two `auto` gutter columns (chevron +
 label), one `auto` per extra column (% complete), then one day-weighted `fr` per month.
 
-**Logic** (ports [gantt-grid.js#L404-L419](src/canjs/reports/gantt-grid.js#L404-L419) `gridColumnsCSS`,
+**Logic** (ports [gantt-grid.js#L244-L260](src/canjs/reports/gantt-grid.js#L244-L260) `gridColumnsCSS`,
 plus the leading `auto auto` from the template [L70](src/canjs/reports/gantt-grid.js#L70)):
 
 ```typescript
@@ -140,7 +140,7 @@ export const computeGridTemplateColumns = (months: Month[], extraColumnCount: nu
 > The shared `computeGridColumnCSS(months)` produces just the month `fr` portion; this Gantt
 > helper wraps it with the gutter + extra columns. Reuse it internally to avoid divergence.
 
-**Replaces**: [gantt-grid.js#L404-L419](src/canjs/reports/gantt-grid.js#L404-L419).
+**Replaces**: [gantt-grid.js#L244-L260](src/canjs/reports/gantt-grid.js#L244-L260).
 
 ---
 
@@ -211,8 +211,21 @@ export const buildGanttRows = (cfg: BuildGanttRowsConfig): GanttRow[] => {
 
 - `groupIssues` handles parent-summary/rank resolution and the "No Parent/Team/Project" fallbacks
   — this **fixes the legacy group-by-team crash** on issues without a team (plan §Known issues #2).
-- `toGroupHeader(group)` maps `IssueGroup` → a minimal `GroupHeader` (`{ key, summary, status? }`)
-  for the group row.
+- `toGroupHeader(group)` maps an `IssueGroup` → a minimal `GroupHeader`
+  (`{ key, summary, status }`) for the group row:
+  - `summary` = `group.title ?? group.key` (the shared helper already resolves the parent's
+    `summary`, or `'No Parent'`/`'No Team'`/`'No Project'`).
+  - `status` = `group.parent?.rollupStatuses?.rollup?.status ?? null`. This drives the legacy
+    label tint (`classForSpecialStatus`, only `complete`/`blocked`/`warning` are colored). It is
+    non-null **only** for `'parent'` grouping — team/project/no-parent group rows have no resolved
+    issue and render in default color, matching legacy (their synthetic rows carry no
+    `rollupStatuses`).
+
+> **Shared-helper extension (Option A, plan §Known issues #6)**: `IssueGroup` gains an optional
+> `parent?: IssueOrRelease | null` field, populated only by `groupByParent` (`allByKey.get(parentKey) ?? null`).
+> This is purely additive — the ScatterTimeline ignores it, so its tests stay green — and it lets
+> the Gantt reproduce the parent-status label tint that `groupIssues`'s `{ key, title, rank }`
+> output alone cannot supply. `toGroupHeader` is the only consumer.
 
 **Replaces**: `gridRowData` + `getSortedParents`
 ([gantt-grid.js#L352-L419](src/canjs/reports/gantt-grid.js#L352-L419),
@@ -220,7 +233,8 @@ export const buildGanttRows = (cfg: BuildGanttRowsConfig): GanttRow[] => {
 
 **Test cases**: ungrouped flatten; grouped-by-parent orders parents by rank; group-by-team with a
 teamless issue → "No Team" (no throw); `primaryIssueType === 'Release'` ignores `groupBy`; expand
-state inserts child rows at `depth+1`.
+state inserts child rows at `depth+1`; parent group header carries the parent's rollup `status`
+(via the new `IssueGroup.parent`) while team/project group headers have `status: null`.
 
 ---
 
@@ -259,6 +273,13 @@ interface BarPosition {
 ```typescript
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Pure rounding wrappers over the `roundDate` table (src/utils/date/round.js). `roundTo` is a
+// PARAM — never read `routeData.roundTo` via `roundDateByRoundToParam`. Unknown keys fall back
+// to `day` (identity), matching the scatter rewrite's `roundAndShiftDueDate` fallback. NOTE: no
+// `oneDayLater` shift here (that is scatter-only); the Gantt's "+ DAY_MS" lives in the width calc.
+const roundDownStart = (d: Date, roundTo: string): Date => (roundDate[roundTo]?.start ?? roundDate.day.start)(d);
+const roundUpEnd = (d: Date, roundTo: string): Date => (roundDate[roundTo]?.end ?? roundDate.day.end)(d);
+
 export const computeBarPosition = (range: AxisRange, work: Work, roundTo: string): BarPosition => {
   const firstDay = range.firstDay.getTime();
   const lastDay = range.lastDay.getTime();
@@ -293,14 +314,18 @@ export const computeBarPosition = (range: AxisRange, work: Work, roundTo: string
 ```
 
 - `roundDownStart` / `roundUpEnd` compose the pure `roundDate[roundTo]` table (start rounds down,
-  end rounds up) — **not** the global-reading `roundDateByRoundToParam` (same fix the scatter
-  rewrite made, logic.md §2.2 there).
-- The `+ DAY_MS` "occupy the final day" convention and `Math.max(_, 0)` clamp are preserved.
+  end rounds up) with an `?? roundDate.day` fallback for unknown keys — **not** the global-reading
+  `roundDateByRoundToParam` (same fix the scatter rewrite made, spec/003 logic.md §2.2).
+- **No `oneDayLater` shift**: unlike the scatter's `roundAndShiftDueDate` (which shifts the due
+  date +1 day because it anchors a point), the Gantt rounds only. The "occupy the final day"
+  `+ DAY_MS` and `Math.max(_, 0)` clamp are applied in the width math below, not in rounding —
+  do **not** reuse `roundAndShiftDueDate` here or every bar's due edge shifts a day.
 
 **Replaces**: [gantt-grid.js#L675-L716](src/canjs/reports/gantt-grid.js#L675-L716).
 
 **Test cases**: fully-inside bar; clip-left (`startExtends`); clip-right (`endExtends`);
-entirely-past (`endIsBeforeFirstDay`); both-null → `isEmpty`; single-day width; rounding by week/month.
+entirely-past (`endIsBeforeFirstDay`); both-null → `isEmpty`; single-day width; rounding by
+week/month; unknown `roundTo` key → falls back to `day` (identity, no throw).
 
 ---
 
