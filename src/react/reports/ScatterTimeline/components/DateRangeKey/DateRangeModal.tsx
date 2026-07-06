@@ -2,7 +2,7 @@ import React from 'react';
 import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
 import Button from '@atlaskit/button/new';
 import type { IssueOrRelease } from '../../types';
-import { getStatusColorClass } from '../../helpers';
+import { getStatusColorClass } from '../../../shared/timeline';
 
 export interface DateRangeModalProps {
   /** Issues whose due date falls outside the active date range, shown in incoming order. */

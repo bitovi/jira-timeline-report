@@ -9,3 +9,6 @@ export type { SlipInput } from './dateSlip';
 export { density, fontSizeClass } from './density';
 export { orderByAttention } from './ordering';
 export { buildBoard } from './buildBoard';
+export { buildIssuePopupViewModel } from './buildIssuePopupViewModel';
+export type { IssuePopupViewModel, IssuePopupWorkTypeRow, IssuePopupDateDetail } from './buildIssuePopupViewModel';
+export { buildExploreUrl } from './buildExploreUrl';

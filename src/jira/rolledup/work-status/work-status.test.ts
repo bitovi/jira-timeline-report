@@ -300,4 +300,94 @@ describe('calculateReportStatuses', () => {
       message: 'Unable to find this last period',
     });
   });
+
+  it("falls back to the issue's own (self) work type when it has no child work-type breakdown", () => {
+    const start = new Date('2024-02-01T00:00:00.000Z');
+    const due = new Date('2024-03-01T00:00:00.000Z');
+    const input = [
+      {
+        key: 'qa-epic',
+        workTypeRollups: {
+          self: {
+            qa: { start, due, issueKeys: ['qa-epic'] },
+          },
+          combined: {
+            qa: { start, due, issueKeys: ['qa-epic'] },
+          },
+          children: {},
+        },
+      },
+    ] as IssueOrReleaseForWorkStatus[];
+
+    const [status] = calculateReportStatuses(input);
+
+    // The self work type (qa) is used ...
+    expect(status.rollupStatuses.qa.issueKeys).toEqual(['qa-epic']);
+    expect(status.rollupStatuses.qa.start).toEqual(start);
+    expect(status.rollupStatuses.qa.due).toEqual(due);
+    // ... and every other lane stays empty so it renders a single bar in the qa slot.
+    expect(status.rollupStatuses.design.issueKeys).toEqual([]);
+    expect(status.rollupStatuses.dev.issueKeys).toEqual([]);
+    expect(status.rollupStatuses.uat.issueKeys).toEqual([]);
+  });
+
+  it('ignores the self work type when child work-type breakdown exists', () => {
+    const start = new Date('2024-02-01T00:00:00.000Z');
+    const due = new Date('2024-03-01T00:00:00.000Z');
+    const input = [
+      {
+        key: 'epic',
+        workTypeRollups: {
+          self: {
+            qa: { start, due, issueKeys: ['epic'] },
+          },
+          combined: {},
+          children: {
+            dev: { start, due, issueKeys: ['child-1'] },
+          },
+        },
+      },
+    ] as IssueOrReleaseForWorkStatus[];
+
+    const [status] = calculateReportStatuses(input);
+
+    // The child dev breakdown wins ...
+    expect(status.rollupStatuses.dev.issueKeys).toEqual(['child-1']);
+    // ... and the self qa fallback is NOT applied.
+    expect(status.rollupStatuses.qa.issueKeys).toEqual([]);
+  });
+
+  it('uses the self last period (not the empty children last period) for a self-fallback bar', () => {
+    // A future due date so `timedStatus` compares last period rather than short-circuiting.
+    const due = new Date(new Date().getFullYear() + 1, 0, 15);
+    const lastPeriodDue = new Date(new Date().getFullYear() + 1, 0, 1);
+    const input = [
+      {
+        key: 'qa-epic',
+        issueLastPeriod: {
+          rollupDates: {},
+          workTypeRollups: {
+            self: {
+              qa: { due: lastPeriodDue, issueKeys: ['qa-epic'] },
+            },
+            children: {},
+          },
+        },
+        workTypeRollups: {
+          self: {
+            qa: { due, issueKeys: ['qa-epic'] },
+          },
+          combined: {},
+          children: {},
+        },
+      },
+    ] as IssueOrReleaseForWorkStatus[];
+
+    const [status] = calculateReportStatuses(input);
+
+    // Because the self last period is now wired up, the bar has prior timing to compare against
+    // (due slipped later than last period) → 'behind', NOT the "no last period" 'new' status.
+    expect(status.rollupStatuses.qa.status).toBe('behind');
+    expect(status.rollupStatuses.qa.lastPeriod).toEqual({ due: lastPeriodDue, issueKeys: ['qa-epic'] });
+  });
 });

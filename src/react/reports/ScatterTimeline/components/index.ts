@@ -1,6 +1,4 @@
-export { QuarterAndMonthHeaders } from './QuarterAndMonthHeaders';
-export { TodayLine } from './TodayLine';
-export { GridLines } from './GridLines';
 export { IssueMarker } from './IssueMarker';
 export { GroupBand } from './GroupBand';
 export { NoDatesKey, NoDatesModal } from './NoDatesKey';
+// QuarterAndMonthHeaders, TodayLine, GridLines, StatusLegend moved to ../../shared/timeline/components

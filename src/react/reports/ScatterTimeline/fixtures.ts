@@ -6,7 +6,7 @@
  */
 import type { IssueOrRelease } from './types';
 import type { PlottedIssue } from './types';
-import { getStatusColorClass } from './helpers';
+import { getStatusColorClass } from '../shared/timeline';
 
 interface MakeIssueOptions {
   key: string;

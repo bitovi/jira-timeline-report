@@ -5,26 +5,28 @@ import type { IssueOrRelease } from './types';
 import { computeQuartersAndMonths } from '../../../utils/date/compute-quarters-and-months';
 import {
   computeDateRange,
-  computeGridColumnCSS,
-  calculateTodayMargin,
   packIssuesIntoRowsWithSides,
-  shouldUseDensityOptimizations,
   partitionIssuesByDate,
   computePlottedIssues,
   computeOccupiedDateExtent,
-  groupIssues,
   filterIssuesByDateRange,
   parseISODateRangeBoundary,
 } from './helpers';
-import type { GroupByOption } from './helpers';
+import {
+  computeGridColumnCSS,
+  calculateTodayMargin,
+  shouldUseDensityOptimizations,
+  groupIssues,
+  QuarterAndMonthHeaders,
+  TodayLine,
+  GridLines,
+  StatusLegend,
+} from '../shared/timeline';
+import type { GroupByOption } from '../shared/timeline';
 import { useMeasuredTextWidths } from './hooks/useMeasuredTextWidths';
-import { QuarterAndMonthHeaders } from './components/QuarterAndMonthHeaders';
-import { TodayLine } from './components/TodayLine';
-import { GridLines } from './components/GridLines';
 import { GroupBand } from './components/GroupBand';
 import { NoDatesKey } from './components/NoDatesKey';
 import { DateRangeKey } from './components/DateRangeKey';
-import { StatusLegend } from './components/StatusLegend';
 
 /** Fallback width (px) used before the container has been measured (matches legacy default). */
 const DEFAULT_WIDTH = 1230;

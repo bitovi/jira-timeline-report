@@ -1,7 +1,7 @@
 import type { IssueOrRelease, PlottedIssue } from '../types';
 import { roundAndShiftDueDate } from '../../../../utils/date/round-and-shift-due-date';
 import { calculatePositionPercentages } from './positioning';
-import { getStatusColorClass } from './status';
+import { getStatusColorClass } from '../../shared/timeline';
 
 const labelOf = (issue: IssueOrRelease): string => issue.names?.shortVersion || issue.summary;
 

@@ -2,7 +2,7 @@ import React from 'react';
 import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
 import Button from '@atlaskit/button/new';
 import type { IssueOrRelease } from '../../types';
-import { getStatusColorClass } from '../../helpers';
+import { getStatusColorClass } from '../../../shared/timeline';
 
 export interface NoDatesModalProps {
   /** Issues without a rollup due date, shown in incoming order. */

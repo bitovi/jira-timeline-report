@@ -35,7 +35,11 @@ export type WithChildren = {
 };
 
 export type WithWorkTypeRollups = {
-  workTypeRollups: WorkTypeRollups & WithChildren;
+  workTypeRollups: WorkTypeRollups &
+    WithChildren & {
+      self?: WorkTypeRollups;
+      combined?: WorkTypeRollups;
+    };
 };
 
 export type WorkTypeChildRollups = {

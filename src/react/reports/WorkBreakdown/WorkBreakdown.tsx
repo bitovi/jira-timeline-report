@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import type { IssueClickHandler, IssueOrRelease, SecondaryReportMode } from './types';
 import { buildBoard, fontSizeClass } from './helpers';
 import { WorkBreakdownCard } from './components/WorkBreakdownCard';
 import { PlanningCard } from './components/PlanningCard';
+import { IssuePopup } from './components/IssuePopup';
 
 /** Stable empty observable used when an optional observable prop isn't supplied. */
 const emptyIssuesObs: CanObservable<IssueOrRelease[]> = {
@@ -45,6 +46,13 @@ export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
   const planningIssues = useCanObservable(props.planningIssuesObs ?? emptyIssuesObs);
   const secondaryReportType = useCanObservable(props.secondaryReportTypeObs);
 
+  const [popup, setPopup] = useState<{ issue: IssueOrRelease; anchorEl: HTMLElement } | null>(null);
+
+  const handleIssueClick: IssueClickHandler = (event, issue) => {
+    props.onIssueClick?.(event, issue);
+    setPopup({ issue, anchorEl: event.currentTarget as HTMLElement });
+  };
+
   const mode = toMode(secondaryReportType);
   const board = buildBoard(primaryIssues ?? [], allIssues ?? [], mode, planningIssues ?? []);
 
@@ -63,15 +71,16 @@ export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
             card={card}
             mode={board.mode}
             density={board.density}
-            onIssueClick={props.onIssueClick}
+            onIssueClick={handleIssueClick}
           />
         ))
       )}
       <PlanningCard
         planning={board.planning}
         fontSize={fontSizeClass(board.density, board.planning.length)}
-        onIssueClick={props.onIssueClick}
+        onIssueClick={handleIssueClick}
       />
+      {popup && <IssuePopup issue={popup.issue} anchorEl={popup.anchorEl} onClose={() => setPopup(null)} />}
     </div>
   );
 };

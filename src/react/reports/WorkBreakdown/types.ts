@@ -20,10 +20,30 @@ export const WORK_TYPE_SYMBOLS: Record<WorkType, string> = {
   uat: 'U',
 };
 
+/** Human-readable name for each work type, shown in the issue popup. */
+export const WORK_TYPE_LABELS: Record<WorkType, string> = {
+  design: 'Design',
+  dev: 'Dev',
+  qa: 'QA',
+  uat: 'UAT',
+};
+
 /** The prior period's dates for a rollup/work-type, used to detect date slips. */
 export interface LastPeriod {
   due?: Date | null;
   start?: Date | null;
+}
+
+/** Why a rollup/work-type landed on its current status — mirrors the pipeline's `statusFrom`. */
+export interface StatusFrom {
+  message: string;
+  warning?: boolean;
+}
+
+/** The driving child issue for a start/due date, plus why it was chosen. */
+export interface DateDrivenBy {
+  message: string;
+  reference?: { url?: string; summary?: string };
 }
 
 /** The rolled-up status/dates for a single work type on an issue. */
@@ -33,6 +53,9 @@ export interface WorkTypeRollup {
   start?: Date | null;
   issueKeys?: string[];
   lastPeriod?: LastPeriod | null;
+  statusFrom?: StatusFrom;
+  startFrom?: DateDrivenBy;
+  dueTo?: DateDrivenBy;
 }
 
 /** The overall rolled-up status/dates for an issue. */
@@ -41,6 +64,9 @@ export interface RollupStatus {
   due?: Date | null;
   start?: Date | null;
   lastPeriod?: LastPeriod | null;
+  statusFrom?: StatusFrom;
+  startFrom?: DateDrivenBy;
+  dueTo?: DateDrivenBy;
 }
 
 /** The `rollupStatuses` slice the report reads: the overall rollup + per-work-type rollups. */
@@ -56,6 +82,10 @@ export interface RollupStatuses {
 export interface IssueOrRelease {
   key: string;
   summary: string;
+  /** Jira issue link — used for the "Open in Jira" action and popup title link. */
+  url?: string;
+  /** Issue type name (e.g. "Epic") — shown as a badge in the issue popup. */
+  type?: string;
   reportingHierarchy?: { childKeys: string[] };
   rollupStatuses: RollupStatuses;
 }

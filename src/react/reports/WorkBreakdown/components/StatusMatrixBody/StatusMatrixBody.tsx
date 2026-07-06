@@ -22,6 +22,18 @@ const cellTooltip = (type: WorkType, cell: CellState): string => {
   return `${type}: ${getStatusLabel(cell)}`;
 };
 
+/** Row padding/line-height per size tier — mirrors the tight/normal/big density variants. */
+const NAME_CELL_CLASS: Record<SwatchSize, string> = {
+  sm: 'pl-2 pr-1.5 py-px leading-[22px]',
+  md: 'pl-2.5 pr-2 py-0.5 leading-[26px]',
+  lg: 'pl-2.5 pr-2 py-1 leading-[30px]',
+};
+const SWATCH_CELL_CLASS: Record<SwatchSize, string> = {
+  sm: 'px-1 py-px',
+  md: 'px-[5px] py-0.5',
+  lg: 'px-1.5 py-1',
+};
+
 /**
  * Breakdown-mode card insides: a CSS-grid matrix whose rows are child issues and columns are the
  * present work types. The header carries each work type's letter chip + rollup date; each body row
@@ -45,7 +57,7 @@ export const StatusMatrixBody: React.FC<StatusMatrixBodyProps> = ({
       {card.matrixRows.map((row) => (
         <React.Fragment key={row.key}>
           <div
-            className="min-w-0 truncate px-2.5 py-1 leading-6 cursor-pointer border-b border-neutral-20 text-neutral-800 font-sans"
+            className={`min-w-0 truncate cursor-pointer text-neutral-800 font-sans ${NAME_CELL_CLASS[size]}`}
             title={row.name}
             onClick={(event) => onIssueClick?.(event, row.issue)}
           >
@@ -54,7 +66,7 @@ export const StatusMatrixBody: React.FC<StatusMatrixBodyProps> = ({
           {row.cells.map((cell, i) => (
             <div
               key={card.headerColumns[i].type}
-              className="flex items-center justify-center px-1.5 py-1 border-b border-neutral-20"
+              className={`flex items-center justify-center ${SWATCH_CELL_CLASS[size]}`}
             >
               <StatusSwatch state={cell} size={size} title={cellTooltip(card.headerColumns[i].type, cell)} />
             </div>

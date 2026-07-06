@@ -67,7 +67,7 @@ test.describe('Sample reports navigation', () => {
       const reportTypeBtn = page.getByRole('button', { name: /Gantt Chart/i });
       await expect(reportOnBtn).toBeVisible();
       await expect(reportTypeBtn).toBeVisible();
-      await expect(page.locator('gantt-grid')).toBeVisible();
+      await expect(page.locator('#react-report-container')).toBeVisible();
     });
 
     test('the page has status report', async ({ page }) => {
@@ -108,7 +108,7 @@ test.describe('Sample reports navigation', () => {
       const reportTypeBtn = page.getByRole('button', { name: /Gantt Chart/i });
       await expect(reportOnBtn).toBeVisible();
       await expect(reportTypeBtn).toBeVisible();
-      await expect(page.locator('gantt-grid')).toBeVisible();
+      await expect(page.locator('#react-report-container')).toBeVisible();
     });
   });
 });

@@ -20,6 +20,21 @@ const statusToCssMap: Record<string, string> = {
 /** Map a rollup status to its color class, falling back to `unknown`. */
 export const getStatusColorClass = (status: string): string => statusToCssMap[status] ?? 'color-text-and-bg-unknown';
 
+const statusToTextCssMap: Record<string, string> = {
+  complete: 'color-text-complete',
+  ontrack: 'color-text-ontrack',
+  behind: 'color-text-behind',
+  warning: 'color-text-warning',
+  blocked: 'color-text-blocked',
+  ahead: 'color-text-ahead',
+  new: 'color-text-new',
+  notstarted: 'color-text-notstarted',
+  unknown: 'color-text-unknown',
+};
+
+/** Map a rollup status to its text-only color class (no background), falling back to `unknown`. */
+export const getStatusTextClass = (status: string): string => statusToTextCssMap[status] ?? 'color-text-unknown';
+
 const statusLabels: Record<string, string> = {
   complete: 'Complete',
   ontrack: 'On track',

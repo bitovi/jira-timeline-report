@@ -81,4 +81,16 @@ describe('WorkBreakdown', () => {
     fireEvent.click(screen.getByText('Outcome A'));
     expect(onIssueClick.mock.calls[0][1].summary).toBe('Outcome A');
   });
+
+  test('clicking a card header opens the issue popup, and the close button closes it', () => {
+    renderReport();
+    expect(screen.queryByLabelText('Close')).toBeNull();
+
+    fireEvent.click(screen.getByText('Outcome A'));
+    expect(screen.getByLabelText('Close')).toBeTruthy();
+    expect(screen.getAllByText('Outcome A').length).toBeGreaterThan(1);
+
+    fireEvent.click(screen.getByLabelText('Close'));
+    expect(screen.queryByLabelText('Close')).toBeNull();
+  });
 });

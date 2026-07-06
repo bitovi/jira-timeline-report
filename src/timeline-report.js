@@ -3,7 +3,6 @@ import { StacheElement, type, queues, value } from './can.js';
 import routeData from './canjs/routing/route-data';
 
 import './canjs/controls/status-filter.js';
-import './canjs/reports/gantt-grid.js';
 import './canjs/reports/table-grid.js';
 
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
@@ -35,7 +34,7 @@ import { FlowMetrics } from './react/reports/FlowMetrics/FlowMetrics';
 import { TimeInStatus } from './react/reports/TimeInStatus/TimeInStatus';
 import { ScatterTimeline } from './react/reports/ScatterTimeline';
 import { WorkBreakdown } from './react/reports/WorkBreakdown';
-import { showTooltip } from './canjs/controls/issue-tooltip.js';
+import { GanttGrid } from './react/reports/GanttReport/GanttGrid';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
@@ -45,6 +44,7 @@ const urlParamValuesToReactComponents = {
   'flow-metrics': FlowMetrics,
   'time-in-status': TimeInStatus,
   due: ScatterTimeline,
+  'start-due': GanttGrid,
 };
 
 // Dev helper: logs the fully transformed (rolled up + rolled back) issue data that every report
@@ -91,12 +91,6 @@ export class TimelineReport extends StacheElement {
 
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
         <div class="my-2 border-box color-bg-white flex-1">
-          {{# eq(this.routeData.primaryReportType, "start-due")  }}
-            <gantt-grid 
-                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                ></gantt-grid>
-          {{/ eq }}
           {{# eq(this.routeData.primaryReportType, "table") }}
             <table-grid
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
@@ -243,6 +237,9 @@ export class TimelineReport extends StacheElement {
       groupByObs: value.bind(this.routeData, 'groupBy'),
       dateRangeStartObs: value.bind(this.routeData, 'scatterDateRangeStart'),
       dateRangeEndObs: value.bind(this.routeData, 'scatterDateRangeEnd'),
+      primaryIssueTypeObs: value.bind(this.routeData, 'primaryIssueType'),
+      breakdownObs: value.bind(this.routeData, 'primaryReportBreakdown'),
+      showPercentCompleteObs: value.bind(this.routeData, 'showPercentComplete'),
     };
 
     // GroupingReport needs to be wrapped with JiraProvider and QueryClientProvider
@@ -283,7 +280,6 @@ export class TimelineReport extends StacheElement {
         allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
         planningIssuesObs: value.from(this, 'planningIssues'),
         secondaryReportTypeObs: value.bind(this.routeData, 'secondaryReportType'),
-        onIssueClick: (event, issue) => showTooltip(event.currentTarget, issue),
       }),
     );
   }
