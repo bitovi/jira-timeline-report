@@ -32,7 +32,7 @@ export const TodayLine: React.FC<TodayLineProps> = ({ marginLeftPercent, monthCo
         marginLeft: `${marginLeftPercent}%`,
         width: '1px',
         backgroundColor: 'orange',
-        zIndex: 0,
+        zIndex: 1,
         position: 'relative',
         height: '100%',
       }}
