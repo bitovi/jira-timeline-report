@@ -45,7 +45,7 @@ export const IssuePopup: React.FC<IssuePopupProps> = ({ issue, anchorEl, onClose
   return (
     <Popper referenceElement={anchorEl} placement="bottom-start">
       {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => (
-        <div ref={ref} style={style} className="z-50">
+        <div ref={ref} style={{ ...style, zIndex: 9999 }}>
           <div
             ref={popupRef}
             className="w-[360px] overflow-hidden rounded-[10px] border border-neutral-40 bg-white text-[13px] shadow-lg"
