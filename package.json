@@ -19,7 +19,9 @@
     "test:e2e:watch": "playwright test --ui",
     "typecheck": "tsc",
     "prepare": "husky",
-    "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts"
+    "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
@@ -32,6 +34,7 @@
     "@atlaskit/button": "^20.2.1",
     "@atlaskit/checkbox": "^15.3.0",
     "@atlaskit/css-reset": "^6.11.1",
+    "@atlaskit/datetime-picker": "^18.1.1",
     "@atlaskit/dropdown-menu": "^12.22.3",
     "@atlaskit/ds-lib": "^2.6.0",
     "@atlaskit/dynamic-table": "^16.1.1",
@@ -43,6 +46,7 @@
     "@atlaskit/link": "^1.2.6",
     "@atlaskit/lozenge": "^11.12.7",
     "@atlaskit/modal-dialog": "^12.17.10",
+    "@atlaskit/popup": "^1.29.4",
     "@atlaskit/primitives": "^12.2.2",
     "@atlaskit/range": "^9.0.3",
     "@atlaskit/section-message": "^6.7.0",
@@ -84,6 +88,9 @@
     "@babel/preset-env": "^7.25.7",
     "@babel/preset-react": "^7.25.7",
     "@playwright/test": "^1.51.1",
+    "@storybook/addon-docs": "^10.4.6",
+    "@storybook/react-vite": "^10.4.6",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
@@ -107,6 +114,7 @@
     "rollup": "npm:@rollup/wasm-node@^4.2.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.6.3",
+    "storybook": "^10.4.6",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
     "typescript": "^5.5.4",

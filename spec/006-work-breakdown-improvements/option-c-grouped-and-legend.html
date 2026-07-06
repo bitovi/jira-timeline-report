@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Breakdown — Option C · Grouped & legended</title>
+    <style>
+      :root {
+        --complete: #22a06b;
+        --complete-t: #fff;
+        --ontrack: #388bff;
+        --ontrack-t: #fff;
+        --behind: #f5cd47;
+        --behind-t: #000;
+        --warning: #ff8e09;
+        --warning-t: #000;
+        --blocked: #e2483d;
+        --blocked-t: #fff;
+        --unknown: #8590a2;
+        --unknown-t: #fff;
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --card-border: #dfe1e6;
+        --neutral-20: #f1f2f4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 32px;
+        background: #fafbfc;
+        line-height: 1.4;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: var(--muted);
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 940px;
+        margin: 6px 0 20px;
+        font-size: 14px;
+      }
+      .color-complete {
+        background: var(--complete);
+        color: var(--complete-t);
+      }
+      .color-ontrack {
+        background: var(--ontrack);
+        color: var(--ontrack-t);
+      }
+      .color-behind {
+        background: var(--behind);
+        color: var(--behind-t);
+      }
+      .color-warning {
+        background: var(--warning);
+        color: var(--warning-t);
+      }
+      .color-blocked {
+        background: var(--blocked);
+        color: var(--blocked-t);
+      }
+      .color-unknown {
+        background: var(--unknown);
+        color: var(--unknown-t);
+      }
+
+      /* persistent legend bar */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: center;
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .legend .swatch {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        margin-right: 5px;
+        vertical-align: -2px;
+      }
+      .legend .divider {
+        width: 1px;
+        height: 18px;
+        background: var(--card-border);
+      }
+
+      .board {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .card {
+        flex: 1 1 250px;
+        min-width: 240px;
+        max-width: 300px;
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+      }
+      .card-header {
+        padding: 6px 10px 8px;
+      }
+      .card-header .title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .summary {
+        font-size: 11px;
+        margin-top: 3px;
+        opacity: 0.95;
+      }
+      .wt-dates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+        margin-top: 6px;
+      }
+      .wt-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 11px;
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 3px;
+        padding: 0 4px;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      .wt-date .k {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+        padding: 0 2px;
+        border-radius: 2px;
+      }
+      .wt-date .was {
+        color: var(--blocked);
+      }
+
+      .group {
+        border-top: 1px solid var(--neutral-20);
+      }
+      .group-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        user-select: none;
+      }
+      .group-head .chip {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+      }
+      .group-head .count {
+        margin-left: auto;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .group-head .caret {
+        color: var(--muted);
+        font-size: 10px;
+        transition: transform 0.15s;
+      }
+      .group.collapsed .caret {
+        transform: rotate(-90deg);
+      }
+      .group.collapsed ul.children {
+        display: none;
+      }
+      ul.children {
+        list-style: none;
+        margin: 0;
+        padding: 0 10px 6px 12px;
+      }
+      ul.children li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        padding: 2px 0;
+      }
+      .bd-icon {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+        padding: 0 2px;
+        border-radius: 2px;
+        line-height: 15px;
+      }
+      .child-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Work Breakdown — Option C<span class="tag">Grouped &amp; legended</span></h1>
+    <p class="intro">
+      Smallest change to today's card idiom, biggest clarity win: a <b>persistent legend</b>, a one‑line
+      <b>summary</b> in each header (<code>4/6 done · 1 blocked</code>), a compact strip of
+      <b>work‑type target dates</b> (red = slipped from a previous period), and children <b>grouped by status</b> so
+      Blocked / Behind surface first and Complete collapses out of the way.
+    </p>
+
+    <div class="legend" id="legend"></div>
+    <div class="board" id="board"></div>
+
+    <script>
+      const WT = ['design', 'dev', 'qa', 'uat'];
+      const sym = { design: 'd', dev: 'D', qa: 'Q', uat: 'U' };
+      const statusLabel = {
+        blocked: 'Blocked',
+        warning: 'Warning',
+        behind: 'Behind',
+        ontrack: 'On track',
+        complete: 'Complete',
+        unknown: 'Not started',
+      };
+      const groupOrder = ['blocked', 'warning', 'behind', 'ontrack', 'unknown', 'complete'];
+
+      // child = [name, rollupStatus, [designStatus, devStatus, qaStatus, uatStatus]]
+      // wt = per work-type rollup { status, due, was? } — target date, red "was" if it slipped
+      const board = [
+        {
+          title: '100 Stores',
+          status: 'ontrack',
+          wt: {
+            design: { status: 'complete', due: 'Feb 12' },
+            dev: { status: 'ontrack', due: 'Mar 9' },
+            qa: { status: 'behind', due: null },
+            uat: { status: 'unknown', due: null },
+          },
+          children: [
+            ['Digital menu board', 'complete', ['complete', 'complete', 'complete', 'complete']],
+            ['Digital orders', 'ontrack', ['complete', 'complete', 'behind', 'unknown']],
+            ['Delivery aggregators', 'ontrack', ['complete', 'ontrack', 'unknown', 'unknown']],
+            ['Promotions', 'behind', ['ontrack', 'behind', 'unknown', 'unknown']],
+            ['National menu', 'behind', ['ontrack', 'behind', 'unknown', 'unknown']],
+          ],
+        },
+        {
+          title: 'Outcome A',
+          status: 'complete',
+          wt: {
+            design: { status: 'complete', due: 'Aug 20' },
+            dev: { status: 'complete', due: 'Sep 25' },
+            qa: { status: 'ontrack', due: 'Oct 10' },
+            uat: { status: 'ontrack', due: 'Oct 22' },
+          },
+          children: [
+            ['Epic Analysis', 'complete', ['complete', 'complete', 'complete', 'complete']],
+            ['Pet Photo Sharing', 'ontrack', ['complete', 'complete', 'ontrack', 'unknown']],
+            ['Favorite sharing', 'ontrack', ['complete', 'ontrack', 'unknown', 'unknown']],
+            ['Pets corner', 'behind', ['ontrack', 'behind', 'unknown', 'unknown']],
+            ['Internationalization', 'blocked', ['behind', 'blocked', 'unknown', 'unknown']],
+            ['Order Playback', 'unknown', ['unknown', 'unknown', 'unknown', 'unknown']],
+          ],
+        },
+        {
+          title: 'Digital Channel sales - 5% increase',
+          status: 'behind',
+          wt: {
+            design: { status: 'complete', due: 'Jun 5' },
+            dev: { status: 'behind', due: 'Jul 24', was: 'Jun 19' },
+            qa: { status: 'unknown', due: null },
+            uat: { status: 'unknown', due: null },
+          },
+          children: [
+            ['Shared orders (for offices)', 'ontrack', ['complete', 'ontrack', 'unknown', 'unknown']],
+            ['Discounts for bigger carts', 'behind', ['complete', 'behind', 'unknown', 'unknown']],
+            ['Tasty images', 'warning', ['ontrack', 'warning', 'unknown', 'unknown']],
+            ['Upsell Recommendations', 'behind', ['ontrack', 'behind', 'unknown', 'unknown']],
+          ],
+        },
+      ];
+
+      // legend
+      document.getElementById('legend').innerHTML =
+        '<div><b>Work types:</b> d&nbsp;design · D&nbsp;dev · Q&nbsp;qa · U&nbsp;uat</div><div class="divider"></div>' +
+        Object.entries(statusLabel)
+          .map(([k, v]) => `<div><span class="swatch color-${k}"></span>${v}</div>`)
+          .join('');
+
+      const boardEl = document.getElementById('board');
+      for (const card of board) {
+        const div = document.createElement('div');
+        div.className = 'card';
+
+        const total = card.children.length;
+        const done = card.children.filter((c) => c[1] === 'complete').length;
+        const blocked = card.children.filter((c) => c[1] === 'blocked').length;
+        const summaryParts = [`${done}/${total} done`];
+        if (blocked) summaryParts.push(`${blocked} blocked`);
+
+        let html =
+          `<div class="card-header color-${card.status}">` +
+          `<div class="title">${card.title}</div>` +
+          `<div class="summary">${summaryParts.join(' · ')}</div>` +
+          `<div class="wt-dates">` +
+          WT.map((wt) => {
+            const d = card.wt[wt];
+            const dateTxt = d.due
+              ? `${d.due}${d.was ? ` <span class="was">(${d.was})</span>` : ''}`
+              : '<span style="opacity:.5">—</span>';
+            return `<span class="wt-date" title="${wt} target"><span class="k color-${d.status}">${sym[wt]}</span>${dateTxt}</span>`;
+          }).join('') +
+          `</div></div>`;
+
+        // group children by rollup status
+        const groups = {};
+        for (const c of card.children) (groups[c[1]] ??= []).push(c);
+
+        for (const st of groupOrder) {
+          const items = groups[st];
+          if (!items) continue;
+          const collapsed = st === 'complete' ? ' collapsed' : '';
+          html +=
+            `<div class="group${collapsed}" onclick="this.classList.toggle('collapsed')">` +
+            `<div class="group-head"><span class="chip color-${st}"></span>${statusLabel[st]}` +
+            `<span class="count">${items.length}</span><span class="caret">▾</span></div><ul class="children">`;
+          for (const [name, , states] of items) {
+            const icons = WT.map((wt, i) => `<span class="bd-icon color-${states[i]}">${sym[wt]}</span>`).join('');
+            html += `<li>${icons}<span class="child-name" title="${name}">${name}</span></li>`;
+          }
+          html += '</ul></div>';
+        }
+        div.innerHTML = html;
+        boardEl.appendChild(div);
+      }
+    </script>
+  </body>
+</html>

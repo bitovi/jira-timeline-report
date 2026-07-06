@@ -120,12 +120,28 @@ function prepareTimingData<
       lastPeriod: issueLastPeriod ? issueLastPeriod.rollupDates : null,
     },
   };
+  const children = issueWithPriorTiming.workTypeRollups.children;
+  const self = issueWithPriorTiming.workTypeRollups.self;
+  // If an issue has NO child work-type breakdown at all (e.g. a `QA: ...` epic whose stories
+  // aren't themselves broken down by dev/qa/uat), fall back to the issue's own work type so it
+  // still renders a single timing bar in its proper lane instead of showing nothing.
+  const hasChildWorkTypeBreakdown = workTypes.some((workType) => (children[workType]?.issueKeys?.length ?? 0) > 0);
+  const useSelfFallback = !hasChildWorkTypeBreakdown;
   for (let workType of workTypes) {
-    const workRollup = issueWithPriorTiming.workTypeRollups.children[workType];
+    const workRollup = children[workType] ?? (useSelfFallback ? self?.[workType] : undefined);
     if (workRollup) {
+      // When we fall back to the issue's own (self) rollup for the current period, we must also
+      // read last period from self — otherwise the empty `children` last period leaves the bar
+      // without prior timing, which `timedStatus` reports as "new".
+      const lastPeriodWorkTypeRollups = issueLastPeriod ? issueLastPeriod.workTypeRollups : null;
+      const lastPeriod = lastPeriodWorkTypeRollups
+        ? (lastPeriodWorkTypeRollups.children[workType] ??
+          (useSelfFallback ? lastPeriodWorkTypeRollups.self?.[workType] : undefined) ??
+          null)
+        : null;
       timingData[workType] = {
         ...workRollup,
-        lastPeriod: issueLastPeriod ? issueLastPeriod.workTypeRollups.children[workType] : null,
+        lastPeriod,
       };
     } else {
       timingData[workType] = {

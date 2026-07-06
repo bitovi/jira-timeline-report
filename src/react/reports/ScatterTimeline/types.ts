@@ -1,0 +1,100 @@
+/**
+ * Scatter-specific TypeScript types.
+ *
+ * The scatter timeline only reads a small, well-defined slice of the rolled-up
+ * issue/release shape, so we model that slice locally rather than depending on the
+ * full pipeline types. This keeps the pure layout math decoupled and easy to test.
+ */
+
+/** Minimal issue/release shape the scatter report reads. */
+export interface IssueOrRelease {
+  key: string;
+  summary: string;
+  names?: {
+    shortVersion?: string | null;
+    semver?: string | null;
+    name?: string | null;
+  };
+  rollupDates: {
+    start?: Date | null;
+    startFrom?: Date | null;
+    due?: Date | null;
+    dueTo?: Date | null;
+  };
+  rollupStatuses: {
+    rollup: {
+      status: string;
+      due?: Date | null;
+      start?: Date | null;
+    };
+  };
+  status?: string;
+  /** Team the issue belongs to — read for `'team'` grouping. */
+  team?: { name: string } | null;
+  /** Parent issue key — read for `'parent'` grouping. */
+  parentKey?: string | null;
+  /** Project key — read for `'project'` grouping. */
+  projectKey?: string;
+  /** Lexicographic rank (e.g. Jira's `Rank` field) — used to order `'parent'` groups. */
+  rank?: string | null;
+  /** Link to the issue/release in Jira — read for the "issues without dates" modal's row links. */
+  url?: string;
+}
+
+// Canonical calendar types live with the date utility that produces them; re-export so
+// scatter modules can import them from the local `types` barrel.
+export type { Month, Quarter, QuartersAndMonths } from '../../../utils/date/compute-quarters-and-months';
+
+export interface Range {
+  start: number;
+  end: number;
+}
+
+export interface PositionConfig {
+  roundedDueDate: Date;
+  textWidth: number;
+  widthOfArea: number;
+  firstDay: Date;
+  lastDay: Date;
+}
+
+export interface IssuePosition {
+  leftPercentStart: number;
+  rightPercentEnd: number;
+  endPercentFromRight: number;
+  widthInPercent: number;
+  /** True when the label would clip off the left edge and should flip to the right of the marker. */
+  overflowsLeft: boolean;
+}
+
+export interface PlottedIssue extends IssuePosition {
+  key: string;
+  issue: IssueOrRelease;
+  statusColorClass: string;
+  textSize: string;
+  markerRadius: number;
+}
+
+/** Which side of the date-anchored marker a label flows toward. */
+export type LabelSide = 'left' | 'right';
+
+/** A plotted issue after row packing has chosen which side its label flows toward. */
+export interface PlacedIssue extends PlottedIssue {
+  labelSide: LabelSide;
+}
+
+export interface Row {
+  items: PlacedIssue[];
+}
+
+export interface MeasureConfig {
+  /** Issue labels to measure (shortVersion || summary). */
+  texts: string[];
+  /** Affects font size / class used during measurement. */
+  isLotsOfIssues: boolean;
+}
+
+export interface TextWidthMeasurements {
+  widthsByText: Map<string, number>;
+  isMeasured: boolean;
+}

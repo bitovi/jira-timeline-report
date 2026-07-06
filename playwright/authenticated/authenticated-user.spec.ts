@@ -12,6 +12,6 @@ test.describe('Authenticated User', () => {
 
     await page.getByRole('button', { name: 'Apply' }).click();
 
-    await expect(page.locator('gantt-grid')).toBeVisible();
+    await expect(page.getByTestId('gantt-grid')).toBeVisible();
   });
 });

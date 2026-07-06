@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Breakdown — Epic popup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --complete: #22a06b;
+        --complete-t: #fff;
+        --ontrack: #388bff;
+        --ontrack-t: #fff;
+        --behind: #f5cd47;
+        --behind-t: #000;
+        --warning: #ff8e09;
+        --warning-t: #000;
+        --blocked: #e2483d;
+        --blocked-t: #fff;
+        --ahead: #2898bd;
+        --ahead-t: #fff;
+        --unknown: #dab092;
+        --unknown-t: #000;
+        --notstarted: #8590a2;
+        --notstarted-t: #fff;
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --card-border: #dfe1e6;
+        --neutral-20: #f1f2f4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 32px;
+        background: #fafbfc;
+        line-height: 1.4;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: var(--ontrack);
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 940px;
+        margin: 6px 0 24px;
+        font-size: 14px;
+      }
+      h2 {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin: 32px 0 12px;
+      }
+
+      .color-complete {
+        background: var(--complete);
+        color: var(--complete-t);
+      }
+      .color-ontrack {
+        background: var(--ontrack);
+        color: var(--ontrack-t);
+      }
+      .color-behind {
+        background: var(--behind);
+        color: var(--behind-t);
+      }
+      .color-warning {
+        background: var(--warning);
+        color: var(--warning-t);
+      }
+      .color-blocked {
+        background: var(--blocked);
+        color: var(--blocked-t);
+      }
+      .color-ahead {
+        background: var(--ahead);
+        color: var(--ahead-t);
+      }
+      .color-unknown {
+        background: var(--unknown);
+        color: var(--unknown-t);
+        opacity: 0.85;
+      }
+      .color-notstarted {
+        background: var(--notstarted);
+        color: var(--notstarted-t);
+      }
+      .text-complete {
+        color: var(--complete);
+      }
+      .text-ontrack {
+        color: var(--ontrack);
+      }
+      .text-behind {
+        color: #a3831a;
+      }
+      .text-warning {
+        color: #a35a09;
+      }
+      .text-blocked {
+        color: var(--blocked);
+      }
+      .text-ahead {
+        color: var(--ahead);
+      }
+
+      /* ---------- "before" replica (today's raw look) ---------- */
+      .before-box {
+        display: inline-block;
+        width: 340px;
+        border: 1px solid #ccc;
+        background: #fff;
+        padding: 8px;
+        font-size: 13px;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+      }
+      .before-box a.link {
+        color: #0052cc;
+        text-decoration: underline;
+      }
+      .release_box_subtitle_key {
+        display: inline-block;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 11px;
+      }
+      .release_box_subtitle_value {
+        font-size: 12px;
+      }
+
+      /* ---------- "after" popup card ---------- */
+      .popup-shell {
+        display: inline-block;
+        width: 360px;
+        vertical-align: top;
+      }
+      .popup-card {
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        box-shadow:
+          0 4px 10px rgba(9, 30, 66, 0.15),
+          0 0 1px rgba(9, 30, 66, 0.25);
+        overflow: hidden;
+        font-size: 13px;
+      }
+      .popup-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 8px 10px 12px;
+        color: #fff;
+      }
+      .popup-header .type-badge {
+        flex-shrink: 0;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 4px;
+        padding: 2px 6px;
+      }
+      .popup-header .key {
+        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.85;
+      }
+      .popup-header .title {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .popup-header .title:hover {
+        text-decoration: underline;
+      }
+      .popup-close {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border: 0;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .popup-close:hover {
+        background: rgba(255, 255, 255, 0.32);
+      }
+
+      .popup-subheader {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--neutral-20);
+        background: #fafbfc;
+      }
+      .status-pill {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .popup-subheader .sep {
+        color: var(--card-border);
+      }
+
+      .popup-warning {
+        display: flex;
+        gap: 6px;
+        align-items: flex-start;
+        margin: 8px 12px 0;
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: #fff7e6;
+        border: 1px solid #ffd591;
+        color: #a35a09;
+        font-size: 12px;
+      }
+
+      .popup-body {
+        padding: 4px 4px 6px;
+      }
+      .wt-row {
+        display: flex;
+        gap: 10px;
+        padding: 8px 8px;
+        border-top: 1px solid var(--neutral-20);
+      }
+      .wt-row:first-child {
+        border-top: none;
+      }
+      .wt-badge {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 1px;
+      }
+      .wt-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .wt-top {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .wt-name {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text);
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      .wt-dates {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .wt-was {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--blocked);
+      }
+      .wt-was.improved {
+        color: var(--ahead);
+      }
+      .wt-status {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .wt-detail-body {
+        display: flex;
+        gap: 8px;
+        margin: 6px 0 2px;
+      }
+      .wt-detail-col {
+        flex: 1;
+        min-width: 0;
+        background: var(--neutral-20);
+        border-radius: 6px;
+        padding: 6px 8px;
+      }
+      .wt-detail-col .label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+      }
+      .wt-detail-col .date {
+        font-size: 12px;
+        font-weight: 700;
+        margin: 2px 0;
+      }
+      .wt-detail-col a.link {
+        font-size: 11.5px;
+        color: #0052cc;
+        text-decoration: none;
+        display: block;
+      }
+      .wt-detail-col a.link:hover {
+        text-decoration: underline;
+      }
+      .wt-detail-col .msg {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10.5px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .na-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .na-row .wt-badge {
+        background: transparent;
+        border: 1px dashed var(--card-border);
+        color: var(--card-border);
+      }
+
+      .popup-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 12px;
+        border-top: 1px solid var(--neutral-20);
+        background: #fafbfc;
+      }
+      .popup-footer .link-btn {
+        font-size: 12px;
+        font-weight: 600;
+        color: #0052cc;
+        text-decoration: none;
+      }
+      .popup-footer .link-btn:hover {
+        text-decoration: underline;
+      }
+
+      .board {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+      }
+      .example-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        margin: 8px 0 6px;
+        padding: 10px 14px;
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .legend .swatch {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        margin-right: 5px;
+        vertical-align: -2px;
+      }
+
+      /* ---------- modal comparison (backdrop + centered card) ---------- */
+      .scrim-demo {
+        position: relative;
+        width: 100%;
+        max-width: 720px;
+        min-height: 360px;
+        border-radius: 10px;
+        background:
+          linear-gradient(rgba(9, 30, 66, 0.55), rgba(9, 30, 66, 0.55)),
+          repeating-linear-gradient(45deg, #e4e7eb 0 24px, #eef0f3 24px 48px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .modal-card {
+        width: 420px;
+        max-width: 100%;
+      }
+      .modal-card .popup-footer {
+        justify-content: flex-end;
+        gap: 16px;
+      }
+      .modal-card .btn {
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+      }
+      .modal-card .btn-primary {
+        background: var(--ontrack);
+        color: #fff;
+      }
+      .modal-card .btn-secondary {
+        color: var(--muted);
+        border: 1px solid var(--card-border);
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Work Breakdown — Epic popup<span class="tag">Detail popup</span></h1>
+    <p class="intro">
+      Clicking a child issue (an Epic row/cell) in the work breakdown opens a small popup with its rollup and
+      per‑work‑type dates. Today (<code>src/canjs/controls/issue-tooltip.js</code>) that popup is unstyled: a bare title
+      with a "❌" text glyph for close, plain "Show Children" text link, colored label pills for
+      <b>rollup / dev / qa / uat</b> each followed by wordy "Start: … / End: …" paragraphs, and warnings rendered as a
+      plain colored `&lt;div&gt;`. The mock below keeps <b>all the same underlying data</b> (target dates, "was" dates,
+      warning messages, and the driving issue links for start/due) but restyles it with the same visual language as the
+      other work‑breakdown mocks: a colored header strip for overall status, compact status pills, and work‑type swatch
+      badges (matching the matrix's <b>d/D/Q/U</b> letters) with the start/due driving-issue detail shown inline instead
+      of as verbose paragraphs.
+    </p>
+
+    <h2>Before — today's raw popup</h2>
+    <div class="before-box">
+      <div class="flex" style="justify-content: space-between">
+        <a class="link text-lg font-bold" href="#" target="_blank">Digital Channel sales - 5% increase</a>
+        <span>❌</span>
+      </div>
+      <a class="link" style="cursor: pointer">Show Children</a>
+      <div style="padding: 8px 0">
+        <div class="color-warning" style="padding: 4px; border-radius: 3px; margin-bottom: 4px">
+          Dev slipped 5 weeks vs last period
+        </div>
+        <div style="margin-bottom: 6px">
+          <span class="release_box_subtitle_key color-behind">&nbsp;DEV&nbsp;</span>
+          <span class="release_box_subtitle_value">Jun 19</span><span>-</span
+          ><span class="release_box_subtitle_value">Jul 24 (Jun 19)</span>
+          <p style="margin: 4px 0">Start: <a class="link" href="#" target="_blank">Shared orders</a>'s sprint start</p>
+          <p style="margin: 4px 0">
+            End: <a class="link" href="#" target="_blank">Upsell Recommendations</a>'s due date
+          </p>
+        </div>
+        <div>
+          <span class="release_box_subtitle_key color-unknown">&nbsp;QA&nbsp;</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>After — restyled popup (same data)</h2>
+    <div class="board">
+      <div class="popup-shell">
+        <div class="example-label">Normal · everything on track</div>
+        <div class="popup-card">
+          <div class="popup-header color-ontrack">
+            <span class="type-badge">Epic</span>
+            <span class="key">OUT-142</span>
+            <a class="title" href="#" target="_blank">100 Stores</a>
+            <button class="popup-close" aria-label="Close">✕</button>
+          </div>
+          <div class="popup-subheader">
+            <span class="status-pill color-ontrack">On track</span>
+            <span class="sep">·</span>
+            <span class="wt-dates">Feb 12 – Mar 9</span>
+          </div>
+          <div class="popup-body">
+            <div class="wt-row">
+              <span class="wt-badge color-complete">D</span>
+              <div class="wt-main">
+                <div class="wt-top">
+                  <span class="wt-name">Dev</span>
+                  <span class="wt-dates">Feb 12 – Feb 28</span>
+                  <span class="wt-status text-complete">Complete</span>
+                </div>
+                <div class="wt-detail-body">
+                  <div class="wt-detail-col">
+                    <div class="label">Start</div>
+                    <div class="date">Feb 12</div>
+                    <a class="link" href="#" target="_blank">Digital menu board</a>
+                    <div class="msg">sprint start</div>
+                  </div>
+                  <div class="wt-detail-col">
+                    <div class="label">Due</div>
+                    <div class="date">Feb 28</div>
+                    <a class="link" href="#" target="_blank">Delivery aggregators</a>
+                    <div class="msg">due date</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="wt-row">
+              <span class="wt-badge color-behind">Q</span>
+              <div class="wt-main">
+                <div class="wt-top">
+                  <span class="wt-name">QA</span>
+                  <span class="wt-dates">Mar 1 – Mar 9</span>
+                  <span class="wt-status text-behind">Behind</span>
+                </div>
+              </div>
+            </div>
+            <div class="na-row">
+              <span class="wt-badge">U</span>
+              <span>No UAT work on this epic</span>
+            </div>
+          </div>
+          <div class="popup-footer">
+            <a class="link-btn" href="#">Open in Jira ↗</a>
+            <a class="link-btn" href="#">Explore children →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup-shell">
+        <div class="example-label">Warning + slipped date</div>
+        <div class="popup-card">
+          <div class="popup-header color-behind">
+            <span class="type-badge">Epic</span>
+            <span class="key">OUT-88</span>
+            <a class="title" href="#" target="_blank">Digital Channel sales - 5% increase</a>
+            <button class="popup-close" aria-label="Close">✕</button>
+          </div>
+          <div class="popup-subheader">
+            <span class="status-pill color-behind">Behind</span>
+            <span class="sep">·</span>
+            <span class="wt-dates">Jun 5 – Jul 24</span>
+            <span class="wt-was">was Jun 19</span>
+          </div>
+          <div class="popup-warning">⚠️ <span>Dev slipped 5 weeks vs last period</span></div>
+          <div class="popup-body">
+            <div class="wt-row">
+              <span class="wt-badge color-complete">D</span>
+              <div class="wt-main">
+                <div class="wt-top">
+                  <span class="wt-name">Design</span>
+                  <span class="wt-dates">May 1 – Jun 5</span>
+                  <span class="wt-status text-complete">Complete</span>
+                </div>
+              </div>
+            </div>
+            <div class="wt-row">
+              <span class="wt-badge color-behind">D</span>
+              <div class="wt-main">
+                <div class="wt-top">
+                  <span class="wt-name">Dev</span>
+                  <span class="wt-dates">Jun 19 – Jul 24</span>
+                  <span class="wt-was">was Jun 19</span>
+                  <span class="wt-status text-behind">Behind</span>
+                </div>
+                <div class="wt-detail-body">
+                  <div class="wt-detail-col">
+                    <div class="label">Start</div>
+                    <div class="date">Jun 19</div>
+                    <a class="link" href="#" target="_blank">Shared orders (for offices)</a>
+                    <div class="msg">sprint start</div>
+                  </div>
+                  <div class="wt-detail-col">
+                    <div class="label">Due</div>
+                    <div class="date">Jul 24</div>
+                    <a class="link" href="#" target="_blank">Upsell Recommendations</a>
+                    <div class="msg">estimate slipped 2 sprints</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="wt-row">
+              <span class="wt-badge color-unknown">Q</span>
+              <div class="wt-main">
+                <div class="wt-top">
+                  <span class="wt-name">QA</span>
+                  <span class="wt-status" style="color: var(--unknown-t); opacity: 0.7">No dates yet</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="popup-footer">
+            <a class="link-btn" href="#">Open in Jira ↗</a>
+            <a class="link-btn" href="#">Explore children →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup-shell">
+        <div class="example-label">Planning epic · no rollup data</div>
+        <div class="popup-card">
+          <div class="popup-header color-notstarted">
+            <span class="type-badge">Epic</span>
+            <span class="key">PLAN-9</span>
+            <a class="title" href="#" target="_blank">National menu rollout (planning)</a>
+            <button class="popup-close" aria-label="Close">✕</button>
+          </div>
+          <div class="popup-subheader">
+            <span class="status-pill color-notstarted">Not started</span>
+            <span class="sep">·</span>
+            <span>No target dates yet</span>
+          </div>
+          <div class="popup-body">
+            <div class="na-row" style="padding: 14px 8px">
+              <span>This epic has no children or estimates yet, so there's nothing to roll up.</span>
+            </div>
+          </div>
+          <div class="popup-footer">
+            <a class="link-btn" href="#">Open in Jira ↗</a>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>What changed</h2>
+    <div class="legend" style="display: block">
+      <ul style="margin: 0; padding-left: 18px">
+        <li>Header is colored by overall rollup status (like the card headers elsewhere) instead of plain text.</li>
+        <li>Close is a real button (✕ in a rounded hit-target) instead of a bare "❌" glyph in the text flow.</li>
+        <li>
+          The overall rollup status and date range live once, in the subheader — the old separate "Rollup" row
+          duplicated that same status/date and has been removed.
+        </li>
+        <li>
+          Each work type gets a <b>swatch letter</b> (D/Q/U) matching the matrix mock's <b>d/D/Q/U</b> keys, so the
+          popup and the board read as one visual language.
+        </li>
+        <li>
+          Status is spelled out as a pill/word (<i>Behind</i>, <i>Complete</i>) next to the dates, not just color.
+        </li>
+        <li>
+          A slipped date shows its previous value inline (<span class="wt-was">was Jun 19</span>) instead of a trailing
+          parenthetical.
+        </li>
+        <li>
+          The "Start: … / End: …" paragraphs become a compact, always-visible two-column strip (start issue/reason, due
+          issue/reason) instead of full sentences.
+        </li>
+        <li>Warnings get an alert-styled banner (border + tint) instead of an unstyled colored block.</li>
+        <li>
+          "Show Children" becomes a single, clearly-labeled <b>"Explore children →"</b> footer action (no duplicate
+          link).
+        </li>
+      </ul>
+    </div>
+
+    <h2>Popup vs. modal</h2>
+    <p class="intro">
+      <b>Recommendation: keep it a popup, not a modal.</b> The work breakdown is a scanning workflow — you're comparing
+      several cards' statuses at once, and an anchored popup lets the rest of the board stay visible and in place while
+      you check one epic's detail, then click another card without an extra close step. A centered modal with a dimming
+      backdrop hides that context and adds friction for what's usually a quick "why is this behind?" glance. The content
+      here (one rollup row + up to 4 work types) is also small enough that an anchored popup never needs its own scroll.
+      A modal would make sense if this grew into a much bigger surface (e.g. a full child‑issue table) — but that's
+      exactly what the <b>"Explore children →"</b> action is for: it navigates to a dedicated, full‑width view instead
+      of cramming everything into the popup.
+    </p>
+    <div class="board" style="margin-top: 12px">
+      <div class="popup-shell">
+        <div class="example-label">Popup (recommended) — board stays visible</div>
+        <div class="scrim-demo" style="background: repeating-linear-gradient(45deg, #e4e7eb 0 24px, #eef0f3 24px 48px)">
+          <div style="position: absolute; top: 24px; left: 24px; right: 24px; display: flex; gap: 12px; opacity: 0.55">
+            <div class="popup-card" style="width: 140px">
+              <div class="popup-header color-complete" style="padding: 6px 8px; font-size: 11px">100 Stores</div>
+            </div>
+            <div class="popup-card" style="width: 140px">
+              <div class="popup-header color-behind" style="padding: 6px 8px; font-size: 11px">Outcome A</div>
+            </div>
+            <div class="popup-card" style="width: 140px">
+              <div class="popup-header color-blocked" style="padding: 6px 8px; font-size: 11px">Digital Channel</div>
+            </div>
+          </div>
+          <div class="popup-shell" style="width: 300px; margin-top: 40px">
+            <div class="popup-card">
+              <div class="popup-header color-behind">
+                <span class="type-badge">Epic</span>
+                <span class="key">OUT-88</span>
+                <a class="title" href="#" target="_blank">Digital Channel sales</a>
+                <button class="popup-close" aria-label="Close">✕</button>
+              </div>
+              <div class="popup-subheader">
+                <span class="status-pill color-behind">Behind</span>
+                <span class="sep">·</span>
+                <span class="wt-dates">Jun 5 – Jul 24</span>
+              </div>
+              <div class="popup-body">
+                <div class="wt-row">
+                  <span class="wt-badge color-complete">D</span>
+                  <div class="wt-main">
+                    <div class="wt-top">
+                      <span class="wt-name">Design</span>
+                      <span class="wt-status text-complete">Complete</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="popup-footer">
+                <a class="link-btn" href="#">Open in Jira ↗</a>
+                <a class="link-btn" href="#">Explore children →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup-shell">
+        <div class="example-label">Modal (not recommended) — board is hidden behind a backdrop</div>
+        <div class="scrim-demo">
+          <div class="modal-card">
+            <div class="popup-card">
+              <div class="popup-header color-behind">
+                <span class="type-badge">Epic</span>
+                <span class="key">OUT-88</span>
+                <a class="title" href="#" target="_blank">Digital Channel sales</a>
+                <button class="popup-close" aria-label="Close">✕</button>
+              </div>
+              <div class="popup-subheader">
+                <span class="status-pill color-behind">Behind</span>
+                <span class="sep">·</span>
+                <span class="wt-dates">Jun 5 – Jul 24</span>
+              </div>
+              <div class="popup-body">
+                <div class="wt-row">
+                  <span class="wt-badge color-complete">D</span>
+                  <div class="wt-main">
+                    <div class="wt-top">
+                      <span class="wt-name">Design</span>
+                      <span class="wt-status text-complete">Complete</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="popup-footer">
+                <a class="btn btn-secondary" href="#">Close</a>
+                <a class="btn btn-primary" href="#">Explore children →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

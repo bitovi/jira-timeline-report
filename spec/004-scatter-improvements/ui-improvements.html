@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scatter Plot — UI improvement ideas</title>
+    <style>
+      /* ------------------------------------------------------------------
+         Design tokens — pulled 1:1 from the real app so the mock matches.
+         Status colors: src/css/primitives.css
+         neutral-41 (label bg) / neutral-80 (grid line): tailwind.config.js
+         ------------------------------------------------------------------ */
+      :root {
+        --complete-color: #22a06b;
+        --complete-text: #fff;
+        --ontrack-color: #388bff;
+        --ontrack-text: #fff;
+        --behind-color: #f5cd47;
+        --behind-text: #000;
+        --warning-color: #ff8e09;
+        --warning-text: #000;
+        --blocked-color: #e2483d;
+        --blocked-text: #fff;
+        --notstarted-color: #8590a2;
+        --notstarted-text: #fff;
+
+        --neutral-41: #dcdfe4; /* accent.gray.subtler — real label bg */
+        --neutral-80: #091e4224; /* 14% alpha — real grid line */
+        --neutral-20: #f1f2f4; /* stripe */
+        --neutral-10: #fafbfc;
+
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --card-border: #dfe1e6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 32px;
+        background: #fafbfc;
+        line-height: 1.4;
+      }
+
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+
+      .intro {
+        color: var(--muted);
+        max-width: 900px;
+        margin-bottom: 28px;
+        font-size: 14px;
+      }
+
+      .intro code {
+        background: var(--neutral-20);
+        border-radius: 3px;
+        padding: 1px 4px;
+        font-size: 12px;
+      }
+
+      .idea {
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 20px 20px 26px;
+        margin-bottom: 28px;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+      }
+
+      .idea h2 {
+        font-size: 16px;
+        margin: 0 0 2px;
+      }
+
+      .idea .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: var(--ontrack-color);
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+
+      .idea .tag.rec {
+        background: var(--complete-color);
+      }
+
+      .idea .tag.current {
+        background: var(--muted);
+      }
+
+      .idea .desc {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 6px 0 18px;
+        max-width: 820px;
+      }
+
+      .idea .desc b {
+        color: var(--text);
+      }
+
+      .callouts {
+        margin: 14px 0 0;
+        padding: 12px 16px;
+        background: var(--neutral-10);
+        border: 1px solid var(--card-border);
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .callouts ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+      }
+      .callouts li {
+        margin: 4px 0;
+      }
+      .callouts b {
+        color: var(--text);
+      }
+
+      /* ==================================================================
+         FAITHFUL TIMELINE REPLICA
+         Mirrors src/react/reports/ScatterTimeline/*:
+           container  -> p-2 (8px) mb-10, overflow hidden
+           grid       -> grid-template-columns: <days>fr per month
+           quarters   -> row 1, span 3, text-center
+           months     -> row 2, border-b neutral-80, text-center
+           grid lines -> per month, border-l/-b neutral-80 (last +border-r)
+           rows       -> h-10 (40px), relative
+           marker     -> absolute; top:4px; gap-1 (4px)
+           label      -> bg-neutral-41, rounded (4px), px-0.5 (2px)
+           dot        -> 16px, rounded-full, 1px white border, right:0, v-center
+         ================================================================== */
+      .tl {
+        padding: 8px; /* p-2 */
+        overflow: hidden;
+      }
+
+      .tl-grid {
+        display: grid;
+        width: 100%;
+        position: relative;
+        font-size: 14px;
+      }
+
+      .q-cell {
+        grid-row: 1;
+        text-align: center;
+        grid-column: span 3;
+        font-size: 13px;
+      }
+
+      .m-cell {
+        grid-row: 2;
+        text-align: center;
+        border-bottom: 1px solid var(--neutral-80);
+        font-size: 13px;
+        padding-bottom: 2px;
+      }
+
+      .grid-line {
+        border-left: 1px solid var(--neutral-80);
+        border-bottom: 1px solid var(--neutral-80);
+      }
+      .grid-line.last {
+        border-right: 1px solid var(--neutral-80);
+      }
+
+      .today {
+        width: 1px;
+        background: orange;
+        position: relative;
+        height: 100%;
+      }
+
+      .tl-row {
+        position: relative;
+        height: 40px; /* h-10 */
+      }
+
+      /* marker container — anchored so the dot lands on the due date */
+      .marker {
+        position: absolute;
+        top: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px; /* gap-1 */
+        z-index: 100;
+        padding-right: 8px; /* reserve room for dot (radius) */
+      }
+
+      .marker .label {
+        position: relative;
+        background: var(--neutral-41);
+        border-radius: 4px;
+        padding: 0 12px 0 8px; /* px-0.5 + dot spacing (radius / radius*1.5) */
+        max-width: 300px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 20px;
+        z-index: 10;
+      }
+
+      .marker .dot {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        margin-top: -8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid #fff;
+        z-index: 101;
+      }
+
+      /* Overflow flip: long label near the left edge → dot on the date, label to the right. */
+      .marker.flip {
+        flex-direction: row-reverse;
+        padding-left: 8px;
+        padding-right: 0;
+      }
+      .marker.flip .dot {
+        left: 0;
+        right: auto;
+      }
+
+      .s-complete {
+        background: var(--complete-color);
+        color: var(--complete-text);
+      }
+      .s-ontrack {
+        background: var(--ontrack-color);
+        color: var(--ontrack-text);
+      }
+      .s-behind {
+        background: var(--behind-color);
+        color: var(--behind-text);
+      }
+      .s-warning {
+        background: var(--warning-color);
+        color: var(--warning-text);
+      }
+      .s-blocked {
+        background: var(--blocked-color);
+        color: var(--blocked-text);
+      }
+      .s-notstarted {
+        background: var(--notstarted-color);
+        color: var(--notstarted-text);
+      }
+
+      /* Annotation braces used to point out spacing problems */
+      .annot {
+        position: absolute;
+        right: -4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--blocked-color);
+        pointer-events: none;
+        z-index: 200;
+      }
+      .annot .bar {
+        width: 0;
+        border-left: 2px dotted var(--blocked-color);
+      }
+
+      /* ==================================================================
+         VARIANT: balanced vertical rhythm  (Idea 1)
+         ================================================================== */
+      .v-balanced .tl-row {
+        height: 34px;
+        display: flex;
+        align-items: center;
+      }
+      .v-balanced .marker {
+        top: auto; /* vertically centered by flex row instead of top:4px */
+        position: absolute;
+      }
+
+      /* ==================================================================
+         VARIANT: cohesive status chips  (Idea 2)
+         Same compact layout as the live marker (dot on the right edge); the
+         only change is the pill fill: gray → white + 1px hairline border.
+         ================================================================== */
+      .v-chips .tl-row {
+        height: 34px;
+        display: flex;
+        align-items: center;
+      }
+      .v-chips .marker {
+        top: auto;
+      }
+      .v-chips .marker .label {
+        background: #fff;
+        border: 1px solid var(--neutral-80);
+      }
+
+      /* ==================================================================
+         VARIANT: clickable  (Idea 3)
+         Compact white chip + click affordances (hover lift, focus ring).
+         ================================================================== */
+      .v-click .marker {
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        top: auto;
+      }
+      .v-click .tl-row {
+        height: 34px;
+        display: flex;
+        align-items: center;
+      }
+      .v-click .marker .label {
+        background: #fff;
+        border: 1px solid var(--neutral-80);
+        transition:
+          box-shadow 0.12s ease,
+          transform 0.12s ease;
+      }
+      .v-click .marker:hover .label,
+      .v-click .marker:focus-visible .label {
+        box-shadow: 0 2px 6px rgba(9, 30, 66, 0.16);
+        transform: translateY(-1px);
+        outline: none;
+      }
+      .v-click .marker:focus-visible .label {
+        border-color: var(--ontrack-color);
+        box-shadow: 0 0 0 2px rgba(56, 139, 255, 0.4);
+      }
+
+      /* ==================================================================
+         VARIANT: quarter-emphasized grid + today flag  (Idea 5)
+         ================================================================== */
+      .v-grid .grid-line {
+        border-left: 1px solid transparent; /* de-emphasize month lines */
+        border-bottom: 1px solid var(--neutral-80);
+      }
+      .v-grid .grid-line.q-start {
+        border-left: 1px solid var(--neutral-80); /* only quarter boundaries */
+      }
+      .v-grid .grid-line.q-band {
+        background: rgba(9, 30, 66, 0.02); /* alternating quarter tint */
+      }
+      .v-grid .m-cell {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .v-grid .q-cell {
+        font-weight: 600;
+      }
+      .v-grid .today {
+        background: transparent;
+        border-left: 2px dashed #ff8e09;
+        width: 0;
+      }
+      .today-flag {
+        position: absolute;
+        top: -2px;
+        transform: translateX(-50%);
+        background: #ff8e09;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        padding: 1px 6px;
+        border-radius: 3px;
+        white-space: nowrap;
+        z-index: 300;
+      }
+
+      /* Zebra striping for dense reports (Idea 6) */
+      .v-grid .tl-row:nth-child(even) {
+        background: rgba(9, 30, 66, 0.015);
+      }
+      .v-grid .tl-row {
+        height: 34px;
+        display: flex;
+        align-items: center;
+      }
+      .v-grid .marker {
+        top: auto;
+      }
+      .v-grid .marker .label {
+        background: #fff;
+        border: 1px solid var(--neutral-80);
+      }
+
+      /* ==================================================================
+         Report header + legend  (Idea 4)
+         ================================================================== */
+      .report-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 8px 10px;
+        flex-wrap: wrap;
+      }
+      .report-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .report-sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        align-items: center;
+      }
+      .legend .item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text);
+        background: var(--neutral-10);
+        border: 1px solid var(--neutral-80);
+        border-radius: 12px;
+        padding: 2px 9px 2px 7px;
+      }
+      .legend .swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 1px solid #fff;
+        box-shadow: 0 0 0 1px var(--neutral-80);
+      }
+      .legend .count {
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .fignote {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 8px 0;
+      }
+      .swatch.s-complete {
+        background: var(--complete-color);
+      }
+      .swatch.s-ontrack {
+        background: var(--ontrack-color);
+      }
+      .swatch.s-behind {
+        background: var(--behind-color);
+      }
+      .swatch.s-warning {
+        background: var(--warning-color);
+      }
+      .swatch.s-blocked {
+        background: var(--blocked-color);
+      }
+
+      /* ==================================================================
+         Chip-in-isolation showcase — CURRENT layout, recolored only.
+         Identical geometry to the live marker (dot overlaps the right edge,
+         compact horizontal footprint); the ONLY change is the pill fill:
+         gray (bg-neutral-41) → white + 1px hairline border.
+         ================================================================== */
+      .chip-showcase {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px 18px;
+        align-items: center;
+        padding: 10px 8px 4px;
+      }
+      /* .iso == the marker container (mirrors .marker) */
+      .iso {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px; /* gap-1 */
+        padding-right: 8px; /* reserve room for the dot (radius) */
+        font-size: 14px;
+      }
+      /* the pill (mirrors .marker .label) — recolored to white + hairline border */
+      .iso .label {
+        position: relative;
+        background: #fff; /* was var(--neutral-41) */
+        border: 1px solid var(--neutral-80); /* new hairline border */
+        border-radius: 4px;
+        padding: 0 12px 0 8px; /* px-0.5 + dot spacing (radius / radius*1.5) */
+        line-height: 20px;
+        white-space: nowrap;
+        z-index: 10;
+      }
+      /* the status dot (mirrors .marker .dot) — sits on the pill's right edge */
+      .iso .dot {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        margin-top: -8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid #fff;
+        z-index: 101;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scatter Plot — UI improvement ideas</h1>
+    <p class="intro">
+      Static HTML/CSS explorations for the scatter timeline report, styled to match the real component
+      (<code>src/react/reports/ScatterTimeline/</code>) and Atlassian design tokens. Everything here is pure HTML/CSS —
+      no charting library. Each section renders the same fixture data as the live report so differences are apples to
+      apples. This is for <b>reporting</b>, so ideas favor legibility, print-friendliness, and self-explanatory output
+      over interaction.
+    </p>
+
+    <!-- CHIP IN ISOLATION -->
+    <div class="idea">
+      <h2>The status chip, in isolation</h2>
+      <p class="desc">
+        Same compact layout as today's chip — the status dot still sits on the pill's right edge, so it packs just as
+        tightly. The <b>only</b> change is the fill: gray (<code>bg-neutral-41</code>) becomes
+        <b>white with a 1px hairline border</b>.
+      </p>
+      <div class="chip-showcase">
+        <span class="iso"><span class="label">Outcome A</span><span class="dot s-complete"></span></span>
+        <span class="iso"><span class="label">1st store</span><span class="dot s-ontrack"></span></span>
+        <span class="iso"><span class="label">10 stores</span><span class="dot s-behind"></span></span>
+        <span class="iso"
+          ><span class="label">hosting costs – 10% reduction</span><span class="dot s-warning"></span
+        ></span>
+        <span class="iso"
+          ><span class="label">Onboarding costs – 30% reduction</span><span class="dot s-blocked"></span
+        ></span>
+      </div>
+    </div>
+
+    <!-- 0. CURRENT -->
+    <div class="idea">
+      <h2>Current<span class="tag current">as-is</span></h2>
+      <p class="desc">
+        Faithful replica of today's report. Note the two annotated problems: the gap <b>above</b> the first row of pills
+        is much smaller than the gap <b>below</b> the last row, and the plain gray pills sit visually detached from
+        their status dots.
+      </p>
+      <div id="tl-current" class="tl"></div>
+      <div class="callouts">
+        <b>Things worth fixing (beyond the spacing you spotted):</b>
+        <ul>
+          <li>
+            <b>Vertical rhythm:</b> markers are pinned at <code>top: 4px</code> in a 40px row, so there's ~4px above the
+            first pill but ~16px below the last — the asymmetry you noticed. Centering markers in the row fixes it.
+          </li>
+          <li>
+            <b>Detached dot &amp; pill:</b> the gray pill and the colored dot read as two objects with a gap between
+            them, so the status color feels like an afterthought rather than part of the item.
+          </li>
+          <li>
+            <b>No legend:</b> nothing on the page says what green / blue / yellow / orange mean. Critical for a report
+            that gets screenshotted or exported.
+          </li>
+          <li>
+            <b>Yellow vs. orange:</b> <code>behind</code> (#f5cd47) and <code>warning</code> (#ff8e09) are easy to
+            confuse at dot size, especially in print or on projectors.
+          </li>
+          <li>
+            <b>Truncation with no recourse:</b> long labels get cut with an ellipsis and only a native
+            <code>title</code> tooltip — useless in a static export. Consider wider pills / wrapping for reports.
+          </li>
+          <li>
+            <b>Busy grid:</b> every month draws a full-height vertical line, competing with the data. Atlassian charts
+            keep gridlines light and emphasize larger units (quarters).
+          </li>
+          <li>
+            <b>Bare today line:</b> a 1px orange line with no label; readers can't tell it's "today" without context.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 1. BALANCED VERTICAL RHYTHM -->
+    <div class="idea">
+      <h2>Idea 1 — Balanced vertical rhythm<span class="tag rec">recommended</span></h2>
+      <p class="desc">
+        Center each marker within its row instead of pinning it to <code>top: 4px</code>. Equal breathing room above and
+        below every pill, and the top/bottom of the whole plot now match. Tiny change, immediately looks more
+        deliberate.
+      </p>
+      <div id="tl-balanced" class="tl v-balanced"></div>
+    </div>
+
+    <!-- 2. COHESIVE STATUS CHIPS -->
+    <div class="idea">
+      <h2>Idea 2 — Cohesive status chips<span class="tag rec">recommended</span></h2>
+      <p class="desc">
+        Keep today's compact layout — the status dot still sits on the pill's right edge, so chips pack just as tightly
+        — but swap the gray fill for a <b>white pill with a 1px hairline border</b>. Reads cleanly on white and in
+        print, and looks more like an Atlassian surface than a flat gray box.
+      </p>
+      <div id="tl-chips" class="tl v-chips"></div>
+    </div>
+
+    <!-- 3. CLICK TO OPEN -->
+    <div class="idea">
+      <h2>Idea 3 — Click to open the issue<span class="tag rec">recommended</span></h2>
+      <p class="desc">
+        Each chip becomes a real link to the Jira issue. Hover / keyboard focus lifts the chip, shows a focus ring, and
+        reveals an <b>↗ open-in-Jira</b> glyph. Fully keyboard accessible. <i>Hover or tab through the chips below.</i>
+      </p>
+      <div id="tl-click" class="tl v-click"></div>
+      <p class="fignote">Releases (which have no issue URL) would simply render as non-links.</p>
+    </div>
+
+    <!-- 4. LEGEND + HEADER -->
+    <div class="idea">
+      <h2>Idea 4 — Report header &amp; status legend<span class="tag rec">recommended</span></h2>
+      <p class="desc">
+        A compact header gives the report a title, date range, and a <b>status legend with counts</b> — so an exported
+        image is self-explanatory. Legend chips reuse the exact status colors.
+      </p>
+      <div class="report-head">
+        <div>
+          <div class="report-title">Delivery timeline — Outcomes &amp; Milestones</div>
+          <div class="report-sub">Jul 2025 – Mar 2027 · 11 items · rounded to day</div>
+        </div>
+        <div class="legend">
+          <span class="item"><span class="swatch s-complete"></span> Complete <span class="count">2</span></span>
+          <span class="item"><span class="swatch s-ontrack"></span> On track <span class="count">5</span></span>
+          <span class="item"><span class="swatch s-behind"></span> Behind <span class="count">3</span></span>
+          <span class="item"><span class="swatch s-warning"></span> Warning <span class="count">1</span></span>
+          <span class="item"><span class="swatch s-blocked"></span> Blocked <span class="count">0</span></span>
+        </div>
+      </div>
+      <div id="tl-legend" class="tl v-chips"></div>
+    </div>
+
+    <!-- 5. GRID + TODAY -->
+    <div class="idea">
+      <h2>Idea 5 — Lighter grid, emphasized quarters &amp; a "Today" flag</h2>
+      <p class="desc">
+        De-emphasize month lines, draw crisp lines only at <b>quarter boundaries</b>, and add a subtle alternating tint
+        per quarter to help the eye group time. The today line becomes a labeled dashed marker. Also adds gentle zebra
+        striping for row scanning.
+      </p>
+      <div id="tl-grid" class="tl v-grid"></div>
+    </div>
+
+    <!-- 6. EVERYTHING TOGETHER -->
+    <div class="idea">
+      <h2>Idea 6 — Everything together</h2>
+      <p class="desc">
+        The recommended set combined: header + legend, balanced rhythm, cohesive clickable chips, lighter
+        quarter-emphasized grid, and a labeled today flag.
+      </p>
+      <div class="report-head">
+        <div>
+          <div class="report-title">Delivery timeline — Outcomes &amp; Milestones</div>
+          <div class="report-sub">Jul 2025 – Mar 2027 · 11 items · rounded to day</div>
+        </div>
+        <div class="legend">
+          <span class="item"><span class="swatch s-complete"></span> Complete <span class="count">2</span></span>
+          <span class="item"><span class="swatch s-ontrack"></span> On track <span class="count">5</span></span>
+          <span class="item"><span class="swatch s-behind"></span> Behind <span class="count">3</span></span>
+          <span class="item"><span class="swatch s-warning"></span> Warning <span class="count">1</span></span>
+        </div>
+      </div>
+      <div id="tl-combined" class="tl v-grid v-click"></div>
+    </div>
+
+    <script>
+      // ---- Month model: mirrors computeQuartersAndMonths (fr = days in month) ----
+      const MONTHS = [
+        { name: 'Jul', days: 31, q: 'Q3' },
+        { name: 'Aug', days: 31, q: 'Q3' },
+        { name: 'Sep', days: 30, q: 'Q3' },
+        { name: 'Oct', days: 31, q: 'Q4' },
+        { name: 'Nov', days: 30, q: 'Q4' },
+        { name: 'Dec', days: 31, q: 'Q4' },
+        { name: 'Jan', days: 31, q: 'Q1' },
+        { name: 'Feb', days: 28, q: 'Q1' },
+        { name: 'Mar', days: 31, q: 'Q1' },
+        { name: 'Apr', days: 30, q: 'Q2' },
+        { name: 'May', days: 31, q: 'Q2' },
+        { name: 'Jun', days: 30, q: 'Q2' },
+        { name: 'Jul', days: 31, q: 'Q3' },
+        { name: 'Aug', days: 31, q: 'Q3' },
+        { name: 'Sep', days: 30, q: 'Q3' },
+        { name: 'Oct', days: 31, q: 'Q4' },
+        { name: 'Nov', days: 30, q: 'Q4' },
+        { name: 'Dec', days: 31, q: 'Q4' },
+        { name: 'Jan', days: 31, q: 'Q1' },
+        { name: 'Feb', days: 28, q: 'Q1' },
+        { name: 'Mar', days: 31, q: 'Q1' },
+      ];
+
+      const TODAY_PCT = 55; // ~ Jun 2026, matching the reference screenshot
+
+      // ---- Flat fixture (packing decides rows, so nothing overlaps) ----
+      // duePct = due-date position along the range (0–100), like rightPercentEnd.
+      const ITEMS = [
+        { label: 'Outcome A', status: 'complete', duePct: 12.1, key: 'OUT-1' },
+        { label: 'Returning customers – 3% growth', status: 'complete', duePct: 50.0, key: 'OUT-2' },
+        { label: '10 stores', status: 'behind', duePct: 56.4, key: 'STORE-10' },
+        { label: '1st store', status: 'ontrack', duePct: 65.2, key: 'STORE-1' },
+        { label: '100 Stores', status: 'ontrack', duePct: 93.3, key: 'STORE-100' },
+        { label: 'Digital Channel sales – 5% increase', status: 'behind', duePct: 50.8, key: 'DIG-1' },
+        { label: 'Onboarding costs – 30% reduction', status: 'ontrack', duePct: 70.8, key: 'ONB-1' },
+        { label: 'traffic capacity – 25% more', status: 'ontrack', duePct: 46.1, key: 'TRAF-1' },
+        { label: 'Returning Customers – 4% increase', status: 'behind', duePct: 30.0, key: 'RET-4' },
+        { label: 'conversions – 5% uplift', status: 'ontrack', duePct: 54.1, key: 'CONV-1' },
+        { label: 'hosting costs – 10% reduction', status: 'warning', duePct: 58.0, key: 'HOST-1' },
+      ];
+
+      /** Build one marker (label + status dot). Position is applied later by the packer. */
+      function makeMarker(item, opts) {
+        const marker = document.createElement(opts.clickable ? 'a' : 'div');
+        marker.className = 'marker';
+        if (opts.clickable) {
+          marker.href = 'https://your-domain.atlassian.net/browse/' + item.key;
+          marker.target = '_blank';
+          marker.rel = 'noopener';
+          marker.title = 'Open ' + item.key + ' in Jira';
+        }
+        const label = document.createElement('div');
+        label.className = 'label lb-' + item.status;
+        label.textContent = item.label;
+        label.title = item.label;
+        const dot = document.createElement('div');
+        dot.className = 'dot s-' + item.status;
+        marker.appendChild(label);
+        marker.appendChild(dot);
+        return marker;
+      }
+
+      /**
+       * Greedy first-fit row packing on MEASURED pixel spans — mirrors the real
+       * packIssuesIntoRows so chips are guaranteed never to overlap.
+       */
+      function packByMeasuredWidth(items, widths, plotWidth, gap) {
+        const geo = items.map((it, i) => {
+          const dueX = (plotWidth * it.duePct) / 100;
+          const w = widths[i];
+          // A chip normally flows LEFT from its due date. If that would clip the left edge,
+          // it flips and flows RIGHT instead — so its real on-screen span differs.
+          const overflow = dueX - w < 0;
+          const leftPx = overflow ? dueX : dueX - w;
+          const rightPx = overflow ? dueX + w : dueX;
+          return { it, w, leftPx, rightPx, overflow };
+        });
+        geo.sort((a, b) => a.leftPx - b.leftPx);
+        const rows = [];
+        for (const g of geo) {
+          let placed = false;
+          for (const row of rows) {
+            if (g.leftPx >= row.maxRight + gap) {
+              row.items.push(g);
+              row.maxRight = Math.max(row.maxRight, g.rightPx);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) rows.push({ items: [g], maxRight: g.rightPx });
+        }
+        return rows;
+      }
+
+      function renderTimeline(elId, opts = {}) {
+        const el = document.getElementById(elId);
+        const monthCount = MONTHS.length;
+
+        const grid = document.createElement('div');
+        grid.className = 'tl-grid';
+        grid.style.gridTemplateColumns = MONTHS.map((m) => m.days + 'fr').join(' ');
+
+        // Quarter header cells (every 3 months, span 3)
+        for (let i = 0; i < monthCount; i += 3) {
+          const q = document.createElement('div');
+          q.className = 'q-cell';
+          q.style.gridColumn = `${i + 1} / span 3`;
+          q.textContent = MONTHS[i].q;
+          grid.appendChild(q);
+        }
+
+        // Month header cells (row 2)
+        MONTHS.forEach((m, i) => {
+          const c = document.createElement('div');
+          c.className = 'm-cell';
+          c.style.gridColumn = `${i + 1} / span 1`;
+          c.style.gridRow = '2 / span 1';
+          c.textContent = m.name;
+          grid.appendChild(c);
+        });
+
+        // Mount now so we can measure real chip widths against the real column layout.
+        el.innerHTML = '';
+        el.appendChild(grid);
+        const plotWidth = grid.getBoundingClientRect().width;
+
+        // --- Measurement pass: lay each chip out statically and read its width. ---
+        const measRow = document.createElement('div');
+        measRow.className = 'tl-row';
+        measRow.style.cssText = 'grid-column:1 / span ' + monthCount + ';grid-row:2 / span 1;visibility:hidden';
+        grid.appendChild(measRow);
+        const widths = ITEMS.map((it) => {
+          const m = makeMarker(it, opts);
+          m.style.position = 'static';
+          measRow.appendChild(m);
+          const w = m.getBoundingClientRect().width;
+          measRow.removeChild(m);
+          return w;
+        });
+        grid.removeChild(measRow);
+
+        // --- Pack into non-overlapping rows, then size the grid. ---
+        const rows = packByMeasuredWidth(ITEMS, widths, plotWidth, 8);
+        const rowCount = rows.length;
+        grid.style.gridTemplateRows = `auto auto repeat(${rowCount}, auto)`;
+
+        // Vertical grid lines (row 3, span all issue rows)
+        MONTHS.forEach((m, i) => {
+          const g = document.createElement('div');
+          const isQStart = i % 3 === 0;
+          const qIndex = Math.floor(i / 3);
+          g.className =
+            'grid-line' +
+            (i === monthCount - 1 ? ' last' : '') +
+            (isQStart ? ' q-start' : '') +
+            (qIndex % 2 === 1 ? ' q-band' : '');
+          g.style.gridColumn = `${i + 1} / span 1`;
+          g.style.gridRow = `3 / span ${rowCount}`;
+          g.style.zIndex = 1;
+          grid.appendChild(g);
+        });
+
+        // Today line (spans rows below the quarter header)
+        const todayWrap = document.createElement('div');
+        todayWrap.style.gridColumn = `1 / span ${monthCount}`;
+        todayWrap.style.gridRow = `2 / span ${rowCount + 1}`;
+        todayWrap.style.position = 'relative';
+        todayWrap.style.zIndex = 2;
+        const todayLine = document.createElement('div');
+        todayLine.className = 'today';
+        todayLine.style.marginLeft = TODAY_PCT + '%';
+        todayWrap.appendChild(todayLine);
+        if (opts.todayFlag) {
+          const flag = document.createElement('div');
+          flag.className = 'today-flag';
+          flag.style.left = TODAY_PCT + '%';
+          flag.textContent = 'TODAY';
+          todayWrap.appendChild(flag);
+        }
+        grid.appendChild(todayWrap);
+
+        // Issue rows (packed — guaranteed no overlap)
+        rows.forEach((row, rIdx) => {
+          const rowEl = document.createElement('div');
+          rowEl.className = 'tl-row';
+          rowEl.style.gridColumn = `1 / span ${monthCount}`;
+          rowEl.style.gridRow = `${rIdx + 3} / span 1`;
+          row.items.forEach((g) => {
+            const marker = makeMarker(g.it, opts);
+            if (g.overflow) {
+              // Long label near the left edge → flip: dot on the date, label flows right.
+              marker.classList.add('flip');
+              marker.style.left = g.it.duePct + '%';
+            } else {
+              marker.style.right = 100 - g.it.duePct + '%';
+            }
+            rowEl.appendChild(marker);
+          });
+          grid.appendChild(rowEl);
+        });
+
+        // Annotation braces for the "current" figure only
+        if (opts.annotate) {
+          el.style.position = 'relative';
+          const topA = document.createElement('div');
+          topA.className = 'annot';
+          topA.style.top = '46px';
+          topA.innerHTML = '<span class="bar" style="height:8px"></span> small gap';
+          const botA = document.createElement('div');
+          botA.className = 'annot';
+          botA.style.bottom = '10px';
+          botA.innerHTML = '<span class="bar" style="height:18px"></span> large gap';
+          el.appendChild(topA);
+          el.appendChild(botA);
+        }
+      }
+
+      renderTimeline('tl-current', { annotate: true });
+      renderTimeline('tl-balanced');
+      renderTimeline('tl-chips');
+      renderTimeline('tl-click', { clickable: true });
+      renderTimeline('tl-legend');
+      renderTimeline('tl-grid', { todayFlag: true });
+      renderTimeline('tl-combined', { clickable: true, todayFlag: true });
+    </script>
+  </body>
+</html>

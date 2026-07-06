@@ -3,10 +3,7 @@ import { StacheElement, type, queues, value } from './can.js';
 import routeData from './canjs/routing/route-data';
 
 import './canjs/controls/status-filter.js';
-import './canjs/reports/gantt-grid.js';
 import './canjs/reports/table-grid.js';
-import './canjs/reports/scatter-timeline.js';
-import './canjs/reports/status-report.js';
 
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
@@ -14,6 +11,7 @@ import { getTheme, applyThemeToCssVars } from './jira/theme';
 
 import { groupIssuesByHierarchyLevelOrType } from './jira/rollup/rollup';
 import { pushStateObservable } from './canjs/routing/state-storage.js';
+import { defineFeatureFlag } from './shared/feature-flag';
 
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
@@ -34,6 +32,9 @@ import EstimationProgress from './react/reports/EstimationProgress/EstimationPro
 import { GroupingReport } from './react/reports/GroupingReport/GroupingReport';
 import { FlowMetrics } from './react/reports/FlowMetrics/FlowMetrics';
 import { TimeInStatus } from './react/reports/TimeInStatus/TimeInStatus';
+import { ScatterTimeline } from './react/reports/ScatterTimeline';
+import { WorkBreakdown } from './react/reports/WorkBreakdown';
+import { GanttGrid } from './react/reports/GanttReport/GanttGrid';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
@@ -42,7 +43,34 @@ const urlParamValuesToReactComponents = {
   grouper: GroupingReport,
   'flow-metrics': FlowMetrics,
   'time-in-status': TimeInStatus,
+  due: ScatterTimeline,
+  'start-due': GanttGrid,
 };
+
+// Dev helper: logs the fully transformed (rolled up + rolled back) issue data that every report
+// consumes. Off by default; toggle in the browser console via `window.featureFlags` and reload.
+const logReportData = defineFeatureFlag(
+  'logReportData',
+  'Logs the fully transformed (rolled up + rolled back) issue data all reports consume.',
+  undefined,
+  'ON',
+);
+
+const toISO = (date) => (date instanceof Date && !isNaN(date) ? date.toISOString() : (date ?? null));
+
+// Compact, copy-pasteable projection of the transformed data (raw issues carry circular parent
+// refs and are too large to paste). Keeps the fields reports position/status off of.
+const projectIssueForLog = (issueOrRelease) => ({
+  key: issueOrRelease.key,
+  summary: issueOrRelease.summary,
+  type: issueOrRelease.type,
+  hierarchyLevel: issueOrRelease.hierarchyLevel,
+  status: issueOrRelease.rollupStatuses?.rollup?.status,
+  rollupStatusesDue: toISO(issueOrRelease.rollupStatuses?.rollup?.due),
+  rollupStatusesStart: toISO(issueOrRelease.rollupStatuses?.rollup?.start),
+  rollupDatesDue: toISO(issueOrRelease.rollupDates?.due),
+  rollupDatesStart: toISO(issueOrRelease.rollupDates?.start),
+});
 
 export class TimelineReport extends StacheElement {
   static view = `
@@ -63,17 +91,6 @@ export class TimelineReport extends StacheElement {
 
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
         <div class="my-2 border-box color-bg-white flex-1">
-          {{# eq(this.routeData.primaryReportType, "start-due")  }}
-            <gantt-grid 
-                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"
-                ></gantt-grid>
-          {{/ eq }}
-          {{# eq(this.routeData.primaryReportType, "due") }}
-            <scatter-timeline 
-              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></scatter-timeline>
-          {{/ eq }}
           {{# eq(this.routeData.primaryReportType, "table") }}
             <table-grid
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
@@ -87,11 +104,9 @@ export class TimelineReport extends StacheElement {
           
 
           {{# or( eq(this.routeData.secondaryReportType, "status"), eq(this.routeData.secondaryReportType, "breakdown") ) }}
-            <status-report 
-              breakdown:from="eq(this.routeData.secondaryReportType, 'breakdown')"
-              planningIssues:from="this.planningIssues"
-              primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-              allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></status-report>
+            <div id='react-secondary-report-container'
+              on:inserted='this.attachReactSecondaryReport()'
+              on:removed='this.detachReactSecondaryReport()'></div>
           {{/ }}
 
           <div id="report-footer" class="sticky bottom-0 z-40"
@@ -218,6 +233,13 @@ export class TimelineReport extends StacheElement {
       timeInStatusIssueTypeFilterObs: value.bind(this.routeData, 'timeInStatusIssueTypeFilter'),
       timeInStatusProjectFilterObs: value.bind(this.routeData, 'timeInStatusProjectFilter'),
       timeInStatusReorderObs: value.bind(this.routeData, 'timeInStatusReorder'),
+      roundToObs: value.bind(this.routeData, 'roundTo'),
+      groupByObs: value.bind(this.routeData, 'groupBy'),
+      dateRangeStartObs: value.bind(this.routeData, 'scatterDateRangeStart'),
+      dateRangeEndObs: value.bind(this.routeData, 'scatterDateRangeEnd'),
+      primaryIssueTypeObs: value.bind(this.routeData, 'primaryIssueType'),
+      breakdownObs: value.bind(this.routeData, 'primaryReportBreakdown'),
+      showPercentCompleteObs: value.bind(this.routeData, 'showPercentComplete'),
     };
 
     // GroupingReport needs to be wrapped with JiraProvider and QueryClientProvider
@@ -242,6 +264,30 @@ export class TimelineReport extends StacheElement {
     if (this.reactReportRoot) {
       this.reactReportRoot.unmount();
       this.reactReportRoot = null;
+    }
+  }
+
+  attachReactSecondaryReport() {
+    const element = document.getElementById('react-secondary-report-container');
+    if (!element) {
+      console.warn('No element found for react secondary report container');
+      return;
+    }
+    this.reactSecondaryReportRoot = createRoot(element);
+    this.reactSecondaryReportRoot.render(
+      createElement(WorkBreakdown, {
+        primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
+        allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
+        planningIssuesObs: value.from(this, 'planningIssues'),
+        secondaryReportTypeObs: value.bind(this.routeData, 'secondaryReportType'),
+      }),
+    );
+  }
+
+  detachReactSecondaryReport() {
+    if (this.reactSecondaryReportRoot) {
+      this.reactSecondaryReportRoot.unmount();
+      this.reactSecondaryReportRoot = null;
     }
   }
 
@@ -379,6 +425,16 @@ export class TimelineReport extends StacheElement {
     );
 
     const statuses = calculateReportStatuses(rolledUp);
+
+    if (logReportData()) {
+      console.log('logReportData: rolledupAndRolledBackIssuesAndReleases', {
+        reportType: this.routeData.primaryReportType,
+        roundTo: this.routeData.roundTo,
+        count: statuses.length,
+        issues: statuses.map(projectIssueForLog),
+      });
+    }
+
     return statuses;
   }
 
@@ -423,6 +479,15 @@ export class TimelineReport extends StacheElement {
       return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
     }
 
+    // The Scatter Plot ('due' report) only needs a due date to plot a point, so its
+    // "no dates" definition is narrower than the legacy `startBeforeDue` rule (which also
+    // requires a start date). Gate on that when it's the primary report so a due-only issue
+    // isn't hidden by this toggle.
+    function hasNoDueDate(initiative) {
+      return initiative.rollupStatuses?.rollup?.due == null;
+    }
+    const isScatterPlot = this.routeData.primaryReportType === 'due';
+
     // lets remove stuff!
     const filtered = unfilteredPrimaryIssuesOrReleases.filter((issueOrRelease) => {
       // check if it's a planning issues
@@ -448,7 +513,7 @@ export class TimelineReport extends StacheElement {
         return false;
       }
 
-      if (hideUnknownInitiatives && !startBeforeDue(issueOrRelease)) {
+      if (hideUnknownInitiatives && (isScatterPlot ? hasNoDueDate(issueOrRelease) : !startBeforeDue(issueOrRelease))) {
         return false;
       }
       if (this.routeData.primaryIssueType === 'Release') {

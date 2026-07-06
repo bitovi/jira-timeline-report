@@ -2,7 +2,9 @@ Please help me build a detailed implementation plan in the selected markdown fil
 
 Please gather context from any links provided. Use MCP tools as needed to gather context, for example if you find a Jira (atlassian) or Figma link, fetch these immediately.
 
-Add any questions you have for me in a `## Questions` section at the end of the document. Number the questions so they are easy to reference. I will fill out answers inline.
+Add any questions you have for me in a `## Questions` section at the end of the document. Number the questions so they are easy to reference. Add a proposed answer with your best suggested answer. If the question is sufficiently complex, use a subagent to come up with the best answer.
+
+When complete, I will fill out answers inline.
 
 Please modify existing content as needed for clarity.
 

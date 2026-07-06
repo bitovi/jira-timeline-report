@@ -18,7 +18,7 @@ function isFullSimulationResult(
 ): issue is SimulationIssueResult {
   return 'url' in issue.linkedIssue && typeof issue.linkedIssue.url === 'string';
 }
-import { TotalWorkingDays } from '../GanttReport/PercentComplete/PercentComplete';
+import { TotalWorkingDays } from '../GanttReport/GanttGrid/components/PercentCompleteModal/CalculationBreakdown';
 import { Popper } from '@atlaskit/popper';
 
 const monthDateFormatter = new Intl.DateTimeFormat('en-US', {
