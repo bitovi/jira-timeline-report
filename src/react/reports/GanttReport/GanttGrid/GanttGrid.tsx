@@ -88,7 +88,7 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const childIssues = modalIssue ? getChildren(modalIssue) : [];
 
   return (
-    <div className="p-2 mb-10" style={{ overflow: 'hidden' }}>
+    <div className="p-2 mb-10" style={{ overflow: 'hidden' }} data-testid="gantt-grid">
       <div
         style={{
           display: 'grid',

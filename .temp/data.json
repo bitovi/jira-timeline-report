@@ -1,6 +1,6 @@
 {
-  "reportType": "due",
-  "roundTo": "month",
+  "reportType": "start-due",
+  "roundTo": "day",
   "count": 175,
   "issues": [
     {
@@ -130,10 +130,10 @@
       "type": "Epic",
       "hierarchyLevel": 1,
       "status": "complete",
-      "rollupStatusesDue": "2025-09-03T05:00:00.000Z",
-      "rollupStatusesStart": "2025-08-11T05:00:00.000Z",
-      "rollupDatesDue": "2025-09-03T05:00:00.000Z",
-      "rollupDatesStart": "2025-08-11T05:00:00.000Z"
+      "rollupStatusesDue": "2026-06-18T05:00:00.000Z",
+      "rollupStatusesStart": "2026-05-26T05:00:00.000Z",
+      "rollupDatesDue": "2026-06-18T05:00:00.000Z",
+      "rollupDatesStart": "2026-05-26T05:00:00.000Z"
     },
     {
       "key": "STORE-9",
@@ -305,7 +305,7 @@
       "summary": "Support Dayparts",
       "type": "Epic",
       "hierarchyLevel": 1,
-      "status": "notstarted",
+      "status": "ahead",
       "rollupStatusesDue": "2026-08-07T05:00:00.000Z",
       "rollupStatusesStart": "2026-07-09T05:00:00.000Z",
       "rollupDatesDue": "2026-08-07T05:00:00.000Z",
@@ -372,10 +372,10 @@
       "type": "Epic",
       "hierarchyLevel": 1,
       "status": "complete",
-      "rollupStatusesDue": "2025-09-19T05:00:00.000Z",
-      "rollupStatusesStart": "2025-09-05T05:00:00.000Z",
-      "rollupDatesDue": "2025-09-19T05:00:00.000Z",
-      "rollupDatesStart": "2025-09-05T05:00:00.000Z"
+      "rollupStatusesDue": "2026-07-04T05:00:00.000Z",
+      "rollupStatusesStart": "2026-06-20T05:00:00.000Z",
+      "rollupDatesDue": "2026-07-04T05:00:00.000Z",
+      "rollupDatesStart": "2026-06-20T05:00:00.000Z"
     },
     {
       "key": "ORDER-11",
@@ -734,22 +734,22 @@
       "summary": "QA: Pets Corner",
       "type": "Epic",
       "hierarchyLevel": 1,
-      "status": "complete",
-      "rollupStatusesDue": "2025-10-04T05:00:00.000Z",
-      "rollupStatusesStart": "2025-09-24T05:00:00.000Z",
-      "rollupDatesDue": "2025-10-04T05:00:00.000Z",
-      "rollupDatesStart": "2025-09-24T05:00:00.000Z"
+      "status": "behind",
+      "rollupStatusesDue": "2026-07-19T05:00:00.000Z",
+      "rollupStatusesStart": "2026-07-09T05:00:00.000Z",
+      "rollupDatesDue": "2026-07-19T05:00:00.000Z",
+      "rollupDatesStart": "2026-07-09T05:00:00.000Z"
     },
     {
       "key": "IMP-41",
       "summary": "UAT: Pets corner",
       "type": "Epic",
       "hierarchyLevel": 1,
-      "status": "complete",
-      "rollupStatusesDue": "2025-10-20T05:00:00.000Z",
-      "rollupStatusesStart": "2025-10-08T05:00:00.000Z",
-      "rollupDatesDue": "2025-10-20T05:00:00.000Z",
-      "rollupDatesStart": "2025-10-08T05:00:00.000Z"
+      "status": "behind",
+      "rollupStatusesDue": "2026-08-04T05:00:00.000Z",
+      "rollupStatusesStart": "2026-07-23T05:00:00.000Z",
+      "rollupDatesDue": "2026-08-04T05:00:00.000Z",
+      "rollupDatesStart": "2026-07-23T05:00:00.000Z"
     },
     {
       "key": "IMP-40",
@@ -800,7 +800,7 @@
       "summary": "Get wasabi working",
       "type": "Epic",
       "hierarchyLevel": 1,
-      "status": "notstarted",
+      "status": "behind",
       "rollupStatusesDue": "2026-07-23T05:00:00.000Z",
       "rollupStatusesStart": "2026-07-08T05:00:00.000Z",
       "rollupDatesDue": "2026-07-23T05:00:00.000Z",
@@ -1119,7 +1119,7 @@
       "summary": "Implement get cart",
       "type": "Epic",
       "hierarchyLevel": 1,
-      "status": "ontrack",
+      "status": "complete",
       "rollupStatusesDue": "2026-07-02T05:00:00.000Z",
       "rollupStatusesStart": "2026-06-02T05:00:00.000Z",
       "rollupDatesDue": "2026-07-02T05:00:00.000Z",
@@ -1284,7 +1284,7 @@
       "summary": "Midwest menu",
       "type": "Initiative",
       "hierarchyLevel": 2,
-      "status": "ontrack",
+      "status": "behind",
       "rollupStatusesDue": "2026-07-23T05:00:00.000Z",
       "rollupStatusesStart": "2026-05-22T05:00:00.000Z",
       "rollupDatesDue": "2026-07-23T05:00:00.000Z",
@@ -1394,11 +1394,11 @@
       "summary": "Pets corner",
       "type": "Initiative",
       "hierarchyLevel": 2,
-      "status": "complete",
-      "rollupStatusesDue": "2025-10-20T05:00:00.000Z",
-      "rollupStatusesStart": "2025-08-11T05:00:00.000Z",
-      "rollupDatesDue": "2025-10-20T05:00:00.000Z",
-      "rollupDatesStart": "2025-08-11T05:00:00.000Z"
+      "status": "behind",
+      "rollupStatusesDue": "2026-08-04T05:00:00.000Z",
+      "rollupStatusesStart": "2026-05-26T05:00:00.000Z",
+      "rollupDatesDue": "2026-08-04T05:00:00.000Z",
+      "rollupDatesStart": "2026-05-26T05:00:00.000Z"
     },
     {
       "key": "IMP-5",
@@ -1812,7 +1812,7 @@
       "summary": "10 stores",
       "type": "Outcome",
       "hierarchyLevel": 3,
-      "status": "ontrack",
+      "status": "behind",
       "rollupStatusesDue": "2026-07-23T05:00:00.000Z",
       "rollupStatusesStart": "2025-10-10T05:00:00.000Z",
       "rollupDatesDue": "2026-07-23T05:00:00.000Z",
@@ -1845,10 +1845,10 @@
       "summary": "Outcome A",
       "type": "Outcome",
       "hierarchyLevel": 3,
-      "status": "complete",
-      "rollupStatusesDue": "2025-10-22T05:00:00.000Z",
+      "status": "behind",
+      "rollupStatusesDue": "2026-08-04T05:00:00.000Z",
       "rollupStatusesStart": "2025-01-31T06:00:00.000Z",
-      "rollupDatesDue": "2025-10-22T05:00:00.000Z",
+      "rollupDatesDue": "2026-08-04T05:00:00.000Z",
       "rollupDatesStart": "2025-01-31T06:00:00.000Z"
     },
     {
