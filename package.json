@@ -78,7 +78,7 @@
     "react-dom": "^18.3.1",
     "react-error-boundary": "^4.0.13",
     "react-hook-form": "^7.53.0",
-    "undici": "^6.19.5",
+    "undici": "^6.27.0",
     "undici-types": "^6.19.5",
     "uuid": "^11.0.3",
     "winston": "^3.17.0",
