@@ -17,6 +17,7 @@ const underlyingReplaceState = history.replaceState;
 
 export const pushStateObservable = new RoutePushstate();
 pushStateObservable.replaceStateKeys.push('compareTo');
+pushStateObservable.replaceStateKeys.push('timeInStatusReorder');
 route.urlData = pushStateObservable;
 route.urlData.root = window.location.pathname;
 route.register('');
