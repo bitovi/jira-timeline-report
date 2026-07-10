@@ -1,7 +1,6 @@
 ---
 name: launch-dev
 description: Get Status Reports for Jira running locally. Verifies Node, ensures .env and Jira credentials, installs dependencies, clears port conflicts, and starts the dev servers (or Storybook for credential-free UI work).
-tools: ['run_in_terminal', 'get_terminal_output', 'read_file', 'manage_todo_list']
 model: haiku
 ---
 
@@ -32,8 +31,20 @@ Compare the running Node major version to `.nvmrc` (expects v22.9.0):
 cat .nvmrc; node -v
 ```
 
-If the major version differs, tell the user to run `nvm install && nvm use`
-(or install the right Node). Do not proceed on a mismatch without acknowledging it.
+If the major version differs, **ask the user** whether you should switch Node for
+them (via `nvm`):
+
+- **If they say yes**, run the switch yourself and confirm the new version:
+
+  ```bash
+  export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; nvm install; nvm use; node -v
+  ```
+
+- **If they say no**, stop — do not proceed with the rest of the workflow. Tell
+  them to run `nvm install && nvm use` (or install the right Node) themselves,
+  then re-run this agent.
+
+Do not proceed on a version mismatch without resolving it first.
 
 ### Step 2 — Ensure .env exists
 
