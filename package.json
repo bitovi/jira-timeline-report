@@ -21,7 +21,14 @@
     "prepare": "husky",
     "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "setup": "bash ./scripts/setup.sh",
+    "docker:dev": "docker compose -f docker-compose.dev.yaml up",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yaml down"
+  },
+  "engines": {
+    "node": ">=22.9.0",
+    "npm": ">=10.8.3"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"

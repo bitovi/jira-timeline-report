@@ -1,0 +1,25 @@
+{
+  "name": "Status Reports for Jira",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22-bookworm",
+  "forwardPorts": [5173, 3000, 6006],
+  "portsAttributes": {
+    "5173": { "label": "Web app (Vite)", "onAutoForward": "notify" },
+    "3000": { "label": "Auth server (Express)" },
+    "6006": { "label": "Storybook" }
+  },
+  "postCreateCommand": "cp -n .env.example .env || true && npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  }
+}
