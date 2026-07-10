@@ -1,0 +1,51 @@
+# Local development with live-reload — no Node.js required on the host.
+#
+# Usage:
+#   npm run docker:dev            # or: docker compose -f docker-compose.dev.yaml up
+#   npm run docker:dev:down       # stop and remove containers
+#
+# The source tree is volume-mounted, so edits to React/TS/CSS are picked up
+# instantly (Vite HMR + Tailwind watch). node_modules lives in a named volume
+# so it isn't clobbered by the host mount and persists across restarts.
+#
+# Requires a `.env` file (run `npm run setup` or `cp .env.example .env`).
+# For UI-only work with mock data, use the `storybook` profile below — it does
+# not need Jira credentials.
+
+services:
+  app:
+    image: node:22-bookworm
+    working_dir: /app
+    env_file: .env
+    ports:
+      - '5173:5173' # Vite dev server (web app)
+      - '3000:3000' # Express auth server (OAuth token exchange)
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    # Poll-based file watching so HMR works with the bind mount on macOS/Windows.
+    environment:
+      CHOKIDAR_USEPOLLING: 'true'
+    # Install deps on first run (named volume starts empty), then start all
+    # dev processes (Tailwind watch + Vite + Express).
+    command: sh -c "npm install && npm run dev"
+    stdin_open: true
+    tty: true
+
+  # Optional: Storybook with mock data (no Jira credentials needed).
+  #   docker compose -f docker-compose.dev.yaml --profile storybook up storybook
+  storybook:
+    image: node:22-bookworm
+    working_dir: /app
+    profiles: ['storybook']
+    ports:
+      - '6006:6006'
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: 'true'
+    command: sh -c "npm install && npm run storybook -- --host 0.0.0.0"
+
+volumes:
+  node_modules:

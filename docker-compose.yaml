@@ -1,3 +1,6 @@
+# Production-style compose — builds the image and runs the Express auth server.
+# For local development with live-reload, use docker-compose.dev.yaml
+# (`npm run docker:dev`) instead.
 version: '3.9'
 services:
   app:

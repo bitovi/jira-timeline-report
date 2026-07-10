@@ -6,6 +6,35 @@
 
 For guides and comprehensive documentation, checkout the [project's official wiki](https://bitovi.atlassian.net/wiki/spaces/StatusReportsForJira/overview).
 
+## Quick Start
+
+**Prerequisites:** Node.js 22.9.0 (`nvm install && nvm use`) — or use Docker / a Dev Container (no local Node needed).
+
+```sh
+git clone https://github.com/bitovi/jira-timeline-report.git
+cd jira-timeline-report
+npm run setup      # creates .env, installs deps, checks credentials
+npm run dev        # web app at http://localhost:5173
+```
+
+The full app needs Jira OAuth credentials. We use a **shared dev OAuth app** — if
+`VITE_JIRA_CLIENT_ID` / `JIRA_CLIENT_SECRET` are blank in your `.env`, ask in the
+team room for them (or create your own app, see [CONTRIBUTING.md](CONTRIBUTING.md)).
+
+**No credentials? Work on UI with mock data — no login required:**
+
+```sh
+npm run storybook  # component explorer at http://localhost:6006
+```
+
+**Other ways to run:**
+
+- **Docker (live-reload)** — no local Node required: `npm run docker:dev`
+- **Dev Container** — open in VS Code and "Reopen in Container" (auto-installs everything)
+- **AI agent** — ask Copilot/Claude to run the `launch-dev` agent to set everything up for you
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup, including running inside Jira.
+
 ## Need Help or Have Questions?
 
 This project is supported by Bitovi, an [Agile Project Management consultancy](https://www.bitovi.com/services/agile-project-management-consulting). For bugs or feature requests, please submit a [Github Issue](https://github.com/bitovi/jira-timeline-report/issues).

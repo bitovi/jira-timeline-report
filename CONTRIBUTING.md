@@ -1,5 +1,23 @@
 ## Contributing
 
+### Fast path
+
+```sh
+git clone https://github.com/bitovi/jira-timeline-report.git
+cd jira-timeline-report
+npm run setup   # checks Node, creates .env, installs deps, checks credentials
+npm run dev     # http://localhost:5173
+```
+
+`npm run setup` prints exactly what (if anything) is still needed. For UI-only work
+with mock data, run `npm run storybook` (http://localhost:6006) — no credentials
+required. Prefer containers? `npm run docker:dev` runs everything with live-reload,
+or open the folder in VS Code and "Reopen in Container".
+
+The rest of this guide covers manual setup and running inside Jira.
+
+### Manual setup
+
 Clone the application into your local machine and install node modules.
 
 Supported node/npm versions are:
@@ -25,6 +43,10 @@ The next step is to fill in your environment variables. You can use the `.env.ex
 ```sh
 cp .env.example .env
 ```
+
+> **Shortcut:** We maintain a **shared dev OAuth app**. If you just need to run the
+> app, ask in the team room for `VITE_JIRA_CLIENT_ID` and `JIRA_CLIENT_SECRET` and
+> paste them into `.env` — you can skip creating your own app below.
 
 Follow the steps below to get remaining environment variables:
 

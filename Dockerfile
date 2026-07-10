@@ -1,4 +1,7 @@
-FROM node:18-alpine
+# Production image — runs the Express auth server only.
+# For local development with live-reload, use docker-compose.dev.yaml instead
+# (`npm run docker:dev`).
+FROM node:22-bookworm
 ENV PORT=3000
 
 WORKDIR app
