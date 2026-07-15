@@ -744,6 +744,10 @@ export class RouteData extends ObservableObject {
     }),
     // TEST
     showPercentComplete: saveJSONToUrl('showPercentComplete', false, Boolean, booleanParsing),
+    // Focus/"fullscreen" mode — hides top nav, left sidebar, and report chrome (spec-less,
+    // see FullscreenToggle). Plain URL flag, not tied to saved-report data, so it's
+    // bookmarkable but doesn't get baked into saved reports.
+    fullscreen: saveJSONToUrl('fullscreen', false, Boolean, booleanParsing),
     sortByDueDate: saveJSONToUrlButAlsoLookAtReport_DataWrapper('sortByDueDate', false, Boolean, booleanParsing),
     hideUnknownInitiatives: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
       'hideUnknownInitiatives',
@@ -759,6 +763,33 @@ export class RouteData extends ObservableObject {
     ),
     statusesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('statusesToShow'),
     statusesToRemove: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('statusesToRemove'),
+    // Generic filter-row control (spec/007-secondary-improvements/filter-changed-and-blocked).
+    // Raw, persisted state — empty until the user adds a row. See `effectiveFilterRows` below for
+    // the legacy `statusesToShow`/`statusesToRemove` migration read by the actual filtering logic.
+    filterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('filterRows', [], Array, JSON),
+    // Independent filter-row state for the secondary (Work Breakdown) report's own Filters
+    // control. No legacy migration needed — this param is new.
+    secondaryFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryFilterRows', [], Array, JSON),
+    // A second, independent filter-row state scoped to the Work Breakdown's CHILD issue type.
+    // Decides which children (if any) render within an already-shown card — doesn't affect
+    // whether the card itself shows (that's `secondaryFilterRows`, above).
+    secondaryChildFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryChildFilterRows', [], Array, JSON),
+    // If `filterRows` is empty/unset, seed an equivalent `Jira Status` row from the legacy
+    // `statusesToShow`/`statusesToRemove` params so old bookmarks/saved reports keep filtering.
+    get effectiveFilterRows() {
+      if (this.filterRows && this.filterRows.length) {
+        return this.filterRows;
+      }
+      if (this.statusesToShow && this.statusesToShow.length) {
+        return [{ id: 'legacy-statuses-to-show', field: 'jiraStatus', operator: 'is', value: this.statusesToShow }];
+      }
+      if (this.statusesToRemove && this.statusesToRemove.length) {
+        return [
+          { id: 'legacy-statuses-to-remove', field: 'jiraStatus', operator: 'is not', value: this.statusesToRemove },
+        ];
+      }
+      return [];
+    },
     planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('planningStatuses'),
     releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('releasesToShow'),
     fields: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('fields'),

@@ -7,6 +7,7 @@
  */
 
 import type React from 'react';
+import type { AdfBlock } from './helpers/adfToBlocks';
 
 /** The four work types, in display order (matches the pipeline's `workType` order). */
 export const WORK_TYPES = ['design', 'dev', 'qa', 'uat'] as const;
@@ -67,6 +68,12 @@ export interface RollupStatus {
   statusFrom?: StatusFrom;
   startFrom?: DateDrivenBy;
   dueTo?: DateDrivenBy;
+  /** Has a start date on/before today that it didn't have (or hadn't reached) as of Compare-to. */
+  newlyStarted?: boolean;
+  /** Has a due date on/before today that hadn't passed yet as of Compare-to. */
+  newlyCompleted?: boolean;
+  /** Had no start/due at all as of Compare-to, but has one now. */
+  newlyDated?: boolean;
 }
 
 /** The `rollupStatuses` slice the report reads: the overall rollup + per-work-type rollups. */
@@ -88,6 +95,8 @@ export interface IssueOrRelease {
   type?: string;
   reportingHierarchy?: { childKeys: string[] };
   rollupStatuses: RollupStatuses;
+  /** Raw value of the configured "Status Summary" field (ADF object or plain string). */
+  statusSummary?: string | Record<string, unknown> | null;
 }
 
 /** Which secondary view is active — mirrors `routeData.secondaryReportType`. */
@@ -161,6 +170,8 @@ export interface Card {
   status: string;
   due?: Date | null;
   slip: DateSlip;
+  /** Narrative status summary shown above the child status rows, when present. */
+  statusSummary?: { blocks: AdfBlock[] };
   /** Per-card work-type header cells (one per {@link Board.workTypes}, same order). */
   headerColumns: WorkTypeColumn[];
   /** Rows for status mode. */

@@ -113,6 +113,7 @@ test('normalizeIssue', () => {
       },
     ],
     rank: '0|hzzzzn:',
+    statusSummary: null,
     issue,
   });
 });
@@ -265,6 +266,7 @@ test('normalizeIssue with custom getters', () => {
       },
     ],
     rank: null,
+    statusSummary: null,
     issue: modifiedIssue,
   });
 });

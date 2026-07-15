@@ -1,0 +1,31 @@
+/* Fullscreen "focus mode" stylesheet — driven by the bookmarkable `fullscreen` route-data
+ * flag (see FullscreenToggle, src/react/SaveReports/components/FullscreenToggle). Unlike
+ * print.css, this is toggled by a `fullscreen-mode` class on <body> at runtime rather than
+ * @media print, so it stays active on screen until the user exits.
+ *
+ * `.app-chrome-hidden` and `.report-chrome-hidden` are shared with print.css — see that
+ * file for the print/PDF equivalent of this "isolate the report" behavior.
+ */
+
+body.fullscreen-mode .app-chrome-hidden,
+/* Targets specific controls inside #saved-reports (save/copy report controls, the
+   "Create new report" button, and the Saved Reports dropdown) — see SaveReports.tsx.
+   The report name and the fullscreen toggle itself are intentionally left visible. */
+body.fullscreen-mode .report-chrome-hidden {
+  display: none !important;
+}
+
+/* Reclaim the horizontal padding that made room for the (now-hidden) sidebar. */
+body.fullscreen-mode .fullish-vh {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* .fullish-vh's padding is zeroed above, so give the still-visible report name (the only
+   thing left in #saved-reports) a bit of breathing room from the edge of the screen.
+   #saved-reports normally has py-4, but the bottom padding just wastes vertical space once
+   everything else in the row is hidden. */
+body.fullscreen-mode #saved-reports {
+  padding-left: 1rem;
+  padding-bottom: 0;
+}

@@ -22,6 +22,7 @@ export type Configuration = {
   confidenceField: string | null;
   startDateField: string | null;
   dueDateField: string | null;
+  statusSummaryField: string | null;
   spreadEffortAcrossDates: boolean | null;
 };
 
@@ -42,6 +43,7 @@ export const createEmptyConfiguration = (): Configuration => {
     confidenceField: null,
     startDateField: null,
     dueDateField: null,
+    statusSummaryField: null,
     spreadEffortAcrossDates: null,
   };
 };

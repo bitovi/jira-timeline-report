@@ -61,12 +61,18 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
     const countResponse = await getApproximateCount();
     const estimatedTotal = (countResponse as { count: number }).count;
 
+    // `progress.data` is a single object shared across every concurrent/recursive call to
+    // this function (one call per batch of parent issues, at every child-loading depth).
+    // Accumulate into the running totals here rather than overwriting them with this
+    // batch's own numbers, otherwise later batches reset the totals reported by earlier ones.
     if (progress.data) {
-      Object.assign(progress.data, { issuesRequested: estimatedTotal });
+      progress.data.issuesRequested = (progress.data.issuesRequested || 0) + estimatedTotal;
       progress(progress.data);
     }
 
     const searchExpand = USE_DIRECT_BULK_CHANGELOG ? [] : ['changelog'];
+
+    let previouslyReportedReceived = 0;
 
     do {
       const pageSize = Math.min(limit ? limit - allIssues.length : MAX_RESULTS, MAX_RESULTS);
@@ -85,7 +91,9 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
       isLast = searchResponse.isLast;
 
       if (progress.data) {
-        Object.assign(progress.data, { issuesReceived: allIssues.length });
+        const receivedDelta = allIssues.length - previouslyReportedReceived;
+        previouslyReportedReceived = allIssues.length;
+        progress.data.issuesReceived = (progress.data.issuesReceived || 0) + receivedDelta;
         progress(progress.data);
       }
 

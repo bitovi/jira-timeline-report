@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { buildBoard } from './buildBoard';
 import { primaryIssues, allIssues, planningIssues } from '../fixtures';
+import type { FilterRow } from '../../../../jira/rollup/filter-rows/filter-rows';
 
 describe('buildBoard', () => {
   test('exposes only present work types across the board', () => {
@@ -73,5 +74,61 @@ describe('buildBoard', () => {
     const board = buildBoard([], [], 'breakdown');
     expect(board.cards).toEqual([]);
     expect(board.workTypes).toEqual([]);
+  });
+
+  describe('filterRows (card inclusion) and childFilterRows (child trimming) — independent', () => {
+    const rollupRow = (value: string[]): FilterRow[] => [{ id: 'r1', field: 'rollupStatus', operator: 'is', value }];
+
+    test('empty filterRows/childFilterRows → unchanged behavior (all cards, full children)', () => {
+      const board = buildBoard(primaryIssues, allIssues, 'breakdown', [], [], []);
+      expect(board.cards.map((c) => c.key)).toEqual(['C-1', 'C-2', 'C-3']);
+      expect(board.cards[0].matrixRows).toHaveLength(5);
+    });
+
+    test('filterRows excludes a card based ONLY on its own rollup status — children are not considered', () => {
+      // card2's own status is 'complete'; it also has a 'blocked' child (O-5), but that no longer
+      // matters for card inclusion — only the card's own rollup is checked.
+      const board = buildBoard(primaryIssues, allIssues, 'breakdown', [], rollupRow(['blocked']));
+      expect(board.cards.map((c) => c.key)).toEqual([]);
+    });
+
+    test('filterRows keeps a card matching its own rollup status, regardless of its children', () => {
+      const board = buildBoard(primaryIssues, allIssues, 'breakdown', [], rollupRow(['complete']));
+      expect(board.cards.map((c) => c.key)).toEqual(['C-2']);
+      // childFilterRows is empty, so all 6 children still render untrimmed.
+      expect(board.cards[0].matrixRows).toHaveLength(6);
+    });
+
+    test('childFilterRows trims a shown card down to only its matching children', () => {
+      // card1 passes (empty filterRows = no card-level constraint); of its 5 children, S-2/S-5
+      // resolve to 'behind'.
+      const board = buildBoard(primaryIssues, allIssues, 'breakdown', [], [], rollupRow(['behind']));
+      const card1 = board.cards.find((c) => c.key === 'C-1')!;
+      expect(card1.matrixRows.map((r) => r.key)).toEqual(['S-2', 'S-5']);
+    });
+
+    test('childFilterRows never excludes the card itself — zero matching children still renders the card', () => {
+      // None of card3's children resolve to 'blocked'.
+      const board = buildBoard(primaryIssues, allIssues, 'breakdown', [], [], rollupRow(['blocked']));
+      const card3 = board.cards.find((c) => c.key === 'C-3')!;
+      expect(card3).toBeDefined();
+      expect(card3.matrixRows).toEqual([]);
+    });
+
+    test('filterRows and childFilterRows apply together, independently', () => {
+      // Only cards whose OWN status is 'ontrack' or 'behind' show (card1 'ontrack', card3
+      // 'behind'); within those shown cards, only children resolving to 'behind' render.
+      const board = buildBoard(
+        primaryIssues,
+        allIssues,
+        'breakdown',
+        [],
+        rollupRow(['ontrack', 'behind']),
+        rollupRow(['behind']),
+      );
+      expect(board.cards.map((c) => c.key)).toEqual(['C-1', 'C-3']);
+      expect(board.cards.find((c) => c.key === 'C-1')!.matrixRows.map((r) => r.key)).toEqual(['S-2', 'S-5']);
+      expect(board.cards.find((c) => c.key === 'C-3')!.matrixRows.map((r) => r.key)).toEqual(['D-2', 'D-4']);
+    });
   });
 });

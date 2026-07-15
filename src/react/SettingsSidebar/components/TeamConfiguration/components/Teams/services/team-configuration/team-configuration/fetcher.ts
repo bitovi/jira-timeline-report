@@ -48,6 +48,7 @@ export const updateAllTeamData = async (storage: AppStorage, updates: AllTeamDat
 export const fixAnyNonExistingFields = (storage: AppStorage, userData: AllTeamData, jiraIssues: IssueFields) => {
   const fieldExistMap: Record<string, boolean> = {
     'confidence-not-used': true,
+    'status-summary-not-used': true,
   };
 
   let normalizedTeamData = structuredClone(userData);
@@ -62,7 +63,13 @@ export const fixAnyNonExistingFields = (storage: AppStorage, userData: AllTeamDa
         continue;
       }
 
-      for (const fieldName of ['confidenceField', 'estimateField', 'startDateField', 'dueDateField'] as const) {
+      for (const fieldName of [
+        'confidenceField',
+        'estimateField',
+        'startDateField',
+        'dueDateField',
+        'statusSummaryField',
+      ] as const) {
         const field = configuration[fieldName];
 
         if (!field) {

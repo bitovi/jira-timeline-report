@@ -127,6 +127,8 @@ export interface NormalizedIssue {
   labels: Array<string>;
   releases: Array<NormalizedRelease>;
   rank: string | null;
+  /** Raw value of the configured "Status Summary" field (ADF object or plain string). */
+  statusSummary: string | Record<string, unknown> | null;
 }
 
 interface NormalizedSprint {

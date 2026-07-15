@@ -2,8 +2,6 @@ import type { FC } from 'react';
 
 import React, { Suspense, useMemo } from 'react';
 
-// @ts-expect-error we need to do something about all these conflicting react
-// types
 import { createPortal } from 'react-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@sentry/react';

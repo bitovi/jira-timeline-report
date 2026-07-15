@@ -7,6 +7,7 @@ import './canjs/reports/table-grid.js';
 
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
+import { matchesAllFilterRows } from './jira/rollup/filter-rows/filter-rows';
 import { getTheme, applyThemeToCssVars } from './jira/theme';
 
 import { groupIssuesByHierarchyLevelOrType } from './jira/rollup/rollup';
@@ -22,6 +23,7 @@ import SampleDataNotice from './react/SampleDataNotice';
 import SettingsSidebar from './react/SettingsSidebar';
 import ViewReports from './react/ViewReports';
 import ReportFooter from './react/ReportFooter/ReportFooter';
+import PrintHeader from './react/PrintHeader';
 import { JiraProvider } from './react/services/jira';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './react/services/query';
@@ -76,14 +78,14 @@ export class TimelineReport extends StacheElement {
   static view = `
     {{#if(showingConfiguration)}}
         <div id="timeline-configuration" 
-          class="border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
+          class="app-chrome-hidden border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0" 
         ></div>
     {{/if}}
     <div class="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
-      <div id="view-reports"></div>  
-      <div id='sample-data-notice' class='pt-4'></div>
+      <div id="view-reports" class="app-chrome-hidden"></div>  
+      <div id='sample-data-notice' class='app-chrome-hidden pt-4'></div>
       <div id="saved-reports" class='py-4'></div>
-      <div id="report-controls" class="flex gap-1"></div>
+      <div id="report-controls" class="app-chrome-hidden flex gap-1"></div>
 
       {{# and( not(this.routeData.jql), this.loginComponent.isLoggedIn  }}
         <div class="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">Configure a JQL in the sidebar on the left to get started.</div>
@@ -91,6 +93,7 @@ export class TimelineReport extends StacheElement {
 
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
         <div class="my-2 border-box color-bg-white flex-1">
+          <div id="print-header" on:inserted='this.attachPrintHeader()' on:removed='this.detachPrintHeader()'></div>
           {{# eq(this.routeData.primaryReportType, "table") }}
             <table-grid
                 primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
@@ -280,6 +283,8 @@ export class TimelineReport extends StacheElement {
         allIssuesOrReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
         planningIssuesObs: value.from(this, 'planningIssues'),
         secondaryReportTypeObs: value.bind(this.routeData, 'secondaryReportType'),
+        filterRowsObs: value.bind(this.routeData, 'secondaryFilterRows'),
+        childFilterRowsObs: value.bind(this.routeData, 'secondaryChildFilterRows'),
       }),
     );
   }
@@ -307,6 +312,24 @@ export class TimelineReport extends StacheElement {
     this.reportFooterRoot = null;
   }
 
+  attachPrintHeader() {
+    const element = document.getElementById('print-header');
+    if (!element) {
+      return;
+    }
+    this.printHeaderRoot = createRoot(element);
+    this.printHeaderRoot.render(createElement(PrintHeader));
+  }
+
+  detachPrintHeader() {
+    if (!this.printHeaderRoot) {
+      return;
+    }
+
+    this.printHeaderRoot.unmount();
+    this.printHeaderRoot = null;
+  }
+
   async connected() {
     // handle changes in the React components
     this.listenTo(this.routeData, 'primaryReportType', (ev, newValue) => {
@@ -331,7 +354,12 @@ export class TimelineReport extends StacheElement {
       }),
     );
 
-    createRoot(document.getElementById('report-controls')).render(createElement(ReportControls));
+    createRoot(document.getElementById('report-controls')).render(
+      createElement(ReportControls, {
+        rolledupAndRolledBackIssuesAndReleasesObs: value.from(this, 'rolledupAndRolledBackIssuesAndReleases'),
+        primaryIssuesOrReleasesObs: value.from(this, 'primaryIssuesOrReleases'),
+      }),
+    );
 
     createRoot(document.getElementById('sample-data-notice')).render(
       createElement(SampleDataNotice, {
@@ -417,14 +445,16 @@ export class TimelineReport extends StacheElement {
       return [];
     }
 
+    const when = new Date(new Date().getTime() - this.routeData.compareTo * 1000);
+
     const rolledUp = rollupAndRollback(
       this.filteredDerivedIssues,
       this.routeData.normalizeOptions,
       this.rollupTimingLevelsAndCalculations,
-      new Date(new Date().getTime() - this.routeData.compareTo * 1000),
+      when,
     );
 
-    const statuses = calculateReportStatuses(rolledUp);
+    const statuses = calculateReportStatuses(rolledUp, when);
 
     if (logReportData()) {
       console.log('logReportData: rolledupAndRolledBackIssuesAndReleases', {
@@ -472,8 +502,7 @@ export class TimelineReport extends StacheElement {
     const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
 
     const hideUnknownInitiatives = this.routeData.hideUnknownInitiatives;
-    let statusesToRemove = this.routeData.statusesToRemove;
-    let statusesToShow = this.routeData.statusesToShow;
+    const filterRows = this.routeData.effectiveFilterRows;
 
     function startBeforeDue(initiative) {
       return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
@@ -516,31 +545,9 @@ export class TimelineReport extends StacheElement {
       if (hideUnknownInitiatives && (isScatterPlot ? hasNoDueDate(issueOrRelease) : !startBeforeDue(issueOrRelease))) {
         return false;
       }
-      if (this.routeData.primaryIssueType === 'Release') {
-        // releases don't have statuses, so we look at their children
-        if (statusesToRemove && statusesToRemove.length) {
-          if (issueOrRelease.childStatuses.children.every(({ status }) => statusesToRemove.includes(status))) {
-            return false;
-          }
-        }
 
-        if (statusesToShow && statusesToShow.length) {
-          // Keep if any valeue has a status to show
-          if (!issueOrRelease.childStatuses.children.some(({ status }) => statusesToShow.includes(status))) {
-            return false;
-          }
-        }
-      } else {
-        if (statusesToShow && statusesToShow.length) {
-          if (!statusesToShow.includes(issueOrRelease.status)) {
-            return false;
-          }
-        }
-        if (statusesToRemove && statusesToRemove.length) {
-          if (statusesToRemove.includes(issueOrRelease.status)) {
-            return false;
-          }
-        }
+      if (!matchesAllFilterRows(issueOrRelease, filterRows)) {
+        return false;
       }
 
       return true;

@@ -18,7 +18,7 @@ export const PlanningCard: React.FC<PlanningCardProps> = ({ planning, fontSize =
   if (!planning.length) return null;
 
   return (
-    <div className="grow rounded border border-neutral-40 overflow-hidden bg-white">
+    <div className="print-avoid-break grow rounded border border-neutral-40 overflow-hidden bg-white">
       <div className="color-text-and-bg-unknown rounded-t px-2.5 py-1.5 font-semibold">Planning</div>
       <ul className="list-disc list-inside p-1">
         {planning.map((row) => (

@@ -79,7 +79,40 @@ const getStartDateField = createDefaultJiraFieldGetter('startDateField', ['Start
 
 const getDueDateField = createDefaultJiraFieldGetter('dueDateField', ['Due date', 'end date', 'target date']);
 
-const nonFieldDefaults: Omit<Configuration, 'estimateField' | 'confidenceField' | 'startDateField' | 'dueDateField'> = {
+const STATUS_SUMMARY_STRICT_NAMES = ['Status Summary', 'Executive Summary', 'Exec Summary', 'Status Note'];
+
+const getStatusSummaryField = (userData: Partial<Configuration>, jiraFields: IssueFields): string | null => {
+  const chosen = userData?.statusSummaryField;
+
+  // Respect an explicit "don't use" choice and any still-valid user selection.
+  if (chosen === 'status-summary-not-used') {
+    return 'status-summary-not-used';
+  }
+  if (chosen && jiraFields.some((field) => field.name === chosen)) {
+    return chosen;
+  }
+
+  // Strict, well-known names (case-insensitive).
+  for (const name of STATUS_SUMMARY_STRICT_NAMES) {
+    const match = jiraFields.find((field) => field.name.toLowerCase() === name.toLowerCase());
+    if (match) {
+      return match.name;
+    }
+  }
+
+  // Any field whose name mentions BOTH "status" and "summary" (never the bare "Summary" title).
+  const both = jiraFields.find((field) => {
+    const name = field.name.toLowerCase();
+    return name.includes('status') && name.includes('summary');
+  });
+
+  return both ? both.name : null;
+};
+
+const nonFieldDefaults: Omit<
+  Configuration,
+  'estimateField' | 'confidenceField' | 'startDateField' | 'dueDateField' | 'statusSummaryField'
+> = {
   sprintLength: 10,
   velocityPerSprint: 21,
   tracks: 1,
@@ -97,6 +130,7 @@ export const getGlobalDefaultData = (allTeamData: AllTeamData, jiraFields: Issue
     confidenceField: getConfidenceField(allTeamData.__GLOBAL__?.defaults, jiraFields),
     startDateField: getStartDateField(allTeamData.__GLOBAL__?.defaults, jiraFields),
     dueDateField: getDueDateField(allTeamData.__GLOBAL__?.defaults, jiraFields),
+    statusSummaryField: getStatusSummaryField(allTeamData.__GLOBAL__?.defaults, jiraFields),
   };
 };
 

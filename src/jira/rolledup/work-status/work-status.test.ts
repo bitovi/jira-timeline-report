@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateReportStatuses, WithRollupStatus } from './work-status';
+import { calculateReportStatuses, calculateNewlyFlags, WithRollupStatus } from './work-status';
 import { rollupAndRollback, WithIssueLastPeriod } from '../../rolledup-and-rolledback/rollup-and-rollback';
 import { WithBlockedStatuses } from '../../rollup/blocked-status-issues/blocked-status-issues';
 import { WithDateRollup } from '../../rollup/dates/dates';
@@ -93,6 +93,9 @@ describe('calculateReportStatuses', () => {
             statusFrom: {
               message: 'Own status',
             },
+            newlyStarted: false,
+            newlyCompleted: false,
+            newlyDated: false,
           },
           design: {
             issueKeys: [] as string[],
@@ -168,6 +171,9 @@ describe('calculateReportStatuses', () => {
               message: 'Children are all done, but the parent is not',
               warning: true,
             },
+            newlyStarted: false,
+            newlyCompleted: false,
+            newlyDated: false,
           },
           uat: {
             issueKeys: [],
@@ -215,6 +221,9 @@ describe('calculateReportStatuses', () => {
             statusFrom: {
               message: 'Own status',
             },
+            newlyStarted: false,
+            newlyCompleted: false,
+            newlyDated: false,
           },
           uat: {
             issueKeys: [],
@@ -233,7 +242,7 @@ describe('calculateReportStatuses', () => {
       },
     ] as IssueOrReleaseForWorkStatus<WithRollupStatus>[];
 
-    const actual = calculateReportStatuses(input);
+    const actual = calculateReportStatuses(input, new Date(2024, 0, 1));
     expect(actual).toStrictEqual(expected);
   });
 
@@ -293,7 +302,7 @@ describe('calculateReportStatuses', () => {
 
     // @TODO fix types between work status and rollup
     // @ts-expect-error type mismatch
-    const [status] = calculateReportStatuses(rolled);
+    const [status] = calculateReportStatuses(rolled, new Date(2024, 6, 17));
 
     expect(status.rollupStatuses.rollup.status).toBe('new');
     expect(status.rollupStatuses.rollup.statusFrom).toEqual({
@@ -319,7 +328,7 @@ describe('calculateReportStatuses', () => {
       },
     ] as IssueOrReleaseForWorkStatus[];
 
-    const [status] = calculateReportStatuses(input);
+    const [status] = calculateReportStatuses(input, new Date(2024, 0, 1));
 
     // The self work type (qa) is used ...
     expect(status.rollupStatuses.qa.issueKeys).toEqual(['qa-epic']);
@@ -349,7 +358,7 @@ describe('calculateReportStatuses', () => {
       },
     ] as IssueOrReleaseForWorkStatus[];
 
-    const [status] = calculateReportStatuses(input);
+    const [status] = calculateReportStatuses(input, new Date(2024, 0, 1));
 
     // The child dev breakdown wins ...
     expect(status.rollupStatuses.dev.issueKeys).toEqual(['child-1']);
@@ -383,11 +392,75 @@ describe('calculateReportStatuses', () => {
       },
     ] as IssueOrReleaseForWorkStatus[];
 
-    const [status] = calculateReportStatuses(input);
+    const [status] = calculateReportStatuses(input, new Date(2024, 0, 1));
 
     // Because the self last period is now wired up, the bar has prior timing to compare against
     // (due slipped later than last period) → 'behind', NOT the "no last period" 'new' status.
     expect(status.rollupStatuses.qa.status).toBe('behind');
     expect(status.rollupStatuses.qa.lastPeriod).toEqual({ due: lastPeriodDue, issueKeys: ['qa-epic'] });
+  });
+});
+
+describe('calculateNewlyFlags', () => {
+  const today = new Date(2024, 5, 15); // June 15, 2024
+  const when = new Date(2024, 5, 1); // June 1, 2024 (Compare-to period)
+
+  it('newly started: has a start date on/before today, but had none as of `when`', () => {
+    // lastPeriod has a due date (so it's not "no dates at all") but no start — isolates
+    // newlyStarted from newlyDated.
+    const flags = calculateNewlyFlags(
+      { start: new Date(2024, 5, 10) },
+      { start: null, due: new Date(2024, 6, 1) },
+      when,
+      today,
+    );
+    expect(flags).toEqual({ newlyStarted: true, newlyCompleted: false, newlyDated: false });
+  });
+
+  it("newly started: had a start date as of `when`, but hadn't arrived yet", () => {
+    const flags = calculateNewlyFlags({ start: new Date(2024, 5, 10) }, { start: new Date(2024, 5, 20) }, when, today);
+    expect(flags).toEqual({ newlyStarted: true, newlyCompleted: false, newlyDated: false });
+  });
+
+  it('not newly started when it had already started as of `when`', () => {
+    const flags = calculateNewlyFlags({ start: new Date(2024, 5, 10) }, { start: new Date(2024, 4, 1) }, when, today);
+    expect(flags.newlyStarted).toBe(false);
+  });
+
+  it('newly completed: has a due date on/before today, but it had not passed as of `when`', () => {
+    const flags = calculateNewlyFlags({ due: new Date(2024, 5, 10) }, { due: new Date(2024, 5, 20) }, when, today);
+    expect(flags).toEqual({ newlyStarted: false, newlyCompleted: true, newlyDated: false });
+  });
+
+  it('not newly completed when the due date had already passed as of `when`', () => {
+    const flags = calculateNewlyFlags({ due: new Date(2024, 5, 10) }, { due: new Date(2024, 4, 20) }, when, today);
+    expect(flags.newlyCompleted).toBe(false);
+  });
+
+  it('newly dated: had no start/due at all as of `when`, but has one now', () => {
+    const flags = calculateNewlyFlags({ start: new Date(2024, 5, 10) }, { start: null, due: null }, when, today);
+    expect(flags).toEqual({ newlyStarted: true, newlyCompleted: false, newlyDated: true });
+  });
+
+  it('not newly dated when it already had a date as of `when`', () => {
+    const flags = calculateNewlyFlags(
+      { start: new Date(2024, 5, 10), due: new Date(2024, 6, 1) },
+      { start: new Date(2024, 4, 1) },
+      when,
+      today,
+    );
+    expect(flags.newlyDated).toBe(false);
+  });
+
+  it('no prior period (issueLastPeriod missing) → all three false, fail-closed', () => {
+    const flags = calculateNewlyFlags({ start: new Date(2024, 5, 10) }, null, when, today);
+    expect(flags).toEqual({ newlyStarted: false, newlyCompleted: false, newlyDated: false });
+  });
+
+  it('none of the three when dates are identical at both points in time', () => {
+    const start = new Date(2024, 4, 1);
+    const due = new Date(2024, 6, 1);
+    const flags = calculateNewlyFlags({ start, due }, { start, due }, when, today);
+    expect(flags).toEqual({ newlyStarted: false, newlyCompleted: false, newlyDated: false });
   });
 });

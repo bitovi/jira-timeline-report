@@ -83,6 +83,20 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData
           control={control}
           onSave={update}
         />
+        <Select
+          name="statusSummaryField"
+          label="Status summary field"
+          optional
+          jiraFields={[
+            {
+              label: '',
+              options: [{ value: 'status-summary-not-used', label: "Don't show a status summary" }],
+            },
+            { label: 'Fields', options: selectableFields },
+          ]}
+          control={control}
+          onSave={update}
+        />
         <Hr />
         <TextField
           name="sprintLength"

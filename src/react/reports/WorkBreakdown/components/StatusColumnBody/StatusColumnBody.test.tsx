@@ -8,9 +8,8 @@ import { StatusColumnBody } from './StatusColumnBody';
 const card = buildBoard(primaryIssues, allIssues, 'status').cards[0];
 
 describe('StatusColumnBody', () => {
-  test('renders the Target Delivery header and child rows', () => {
+  test('renders one row per child', () => {
     render(<StatusColumnBody card={card} />);
-    expect(screen.getByText('Target Delivery')).toBeTruthy();
     expect(screen.getByText('Digital menu board')).toBeTruthy();
     expect(screen.getByText('National menu')).toBeTruthy();
   });

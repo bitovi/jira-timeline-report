@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-// @ts-expect-error react-dom types not installed; pattern used across this codebase
 import { createPortal } from 'react-dom';
 
 const TOOLTIP_WIDTH = 256;

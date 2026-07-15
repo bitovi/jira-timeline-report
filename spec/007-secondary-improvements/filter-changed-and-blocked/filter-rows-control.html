@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Filters — generic filter-row control (mock)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --border: #dfe1e6;
+        --panel-bg: #ffffff;
+        --page-bg: #fafbfc;
+        --brand: #0c66e4;
+        --brand-dark: #09326c;
+        --chip-bg: #f1f2f4;
+        --danger: #ae2e24;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 32px;
+        background: var(--page-bg);
+        line-height: 1.4;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 900px;
+        margin: 6px 0 28px;
+        font-size: 14px;
+      }
+      .intro code {
+        background: var(--chip-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 12.5px;
+      }
+
+      /* --- top controls bar mock --- */
+      .controls-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 28px;
+      }
+      .pill-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 4px;
+        padding: 7px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        cursor: default;
+        white-space: nowrap;
+      }
+      .pill-btn.active {
+        border-color: var(--brand);
+        color: var(--brand);
+        box-shadow: 0 0 0 1px var(--brand);
+      }
+      .pill-btn .chev {
+        color: var(--muted);
+        margin-left: 4px;
+        font-size: 10px;
+      }
+      .pill-spacer {
+        flex: 1;
+      }
+      .pill-note {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 4px;
+      }
+
+      /* --- panel --- */
+      .panels {
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .panel {
+        background: var(--panel-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        box-shadow: 0 4px 16px rgba(9, 30, 66, 0.12);
+        width: 620px;
+        padding: 20px 20px 16px;
+      }
+      .panel-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .panel-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #44546f;
+      }
+      .clear-all {
+        font-size: 12.5px;
+        color: var(--brand);
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        font-weight: 600;
+      }
+      .clear-all:hover {
+        text-decoration: underline;
+      }
+
+      .rows {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .filter-row {
+        display: grid;
+        grid-template-columns: 148px 96px 1fr 28px;
+        gap: 8px;
+        align-items: start;
+      }
+      select {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 7px 8px;
+        font-size: 13px;
+        color: var(--text);
+        background: #fff;
+        cursor: pointer;
+      }
+      select:focus,
+      .value-box:focus-within {
+        outline: none;
+        border-color: var(--brand);
+        box-shadow: 0 0 0 1px var(--brand);
+      }
+
+      .value-cell {
+        position: relative;
+      }
+      .value-box {
+        min-height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: #fff;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+        padding: 4px 6px;
+        cursor: pointer;
+      }
+      .value-box .placeholder {
+        color: #7a869a;
+        font-size: 13px;
+        padding: 2px 4px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--chip-bg);
+        border-radius: 3px;
+        padding: 2px 6px 2px 8px;
+        font-size: 12.5px;
+        color: var(--text);
+      }
+      .chip button {
+        border: none;
+        background: none;
+        color: #7a869a;
+        cursor: pointer;
+        font-size: 13px;
+        line-height: 1;
+        padding: 0;
+      }
+      .chip button:hover {
+        color: var(--danger);
+      }
+
+      .value-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        min-width: 220px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        box-shadow: 0 8px 20px rgba(9, 30, 66, 0.18);
+        padding: 6px;
+        z-index: 20;
+        display: none;
+      }
+      .value-dropdown.open {
+        display: block;
+      }
+      .value-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .value-option:hover {
+        background: #f1f2f4;
+      }
+      .value-option input {
+        pointer-events: none;
+      }
+      .value-option .count {
+        color: var(--muted);
+        margin-left: auto;
+        font-size: 12px;
+      }
+
+      .remove-row-btn {
+        border: none;
+        background: none;
+        color: #7a869a;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 6px 0;
+        line-height: 1;
+      }
+      .remove-row-btn:hover {
+        color: var(--danger);
+      }
+
+      .add-filter-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: none;
+        background: none;
+        color: var(--brand);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 6px 0;
+      }
+      .add-filter-btn:hover {
+        text-decoration: underline;
+      }
+
+      .legacy-section {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+      }
+      .legacy-section .panel-title {
+        margin-bottom: 10px;
+      }
+      .legacy-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+      .toggle {
+        width: 32px;
+        height: 18px;
+        border-radius: 999px;
+        background: #dfe1e6;
+        position: relative;
+        flex: none;
+      }
+      .toggle.on {
+        background: var(--brand);
+      }
+      .toggle::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+      }
+      .toggle.on::after {
+        left: 16px;
+      }
+
+      .panel-footnote {
+        margin-top: 14px;
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+
+      .hint {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Filter rows — mock</h1>
+    <p class="intro">
+      Not meant to match the design system — just a feel for the interaction. Two independent "Filters" dropdowns are
+      shown open side-by-side below: the existing primary one (now using generic rows instead of just Jira Status) and
+      the new secondary-only one that only appears when a secondary report is on. Click a Value box to open its
+      checklist, click chips'
+      <strong>×</strong> to remove a value, use <strong>+ Add filter</strong> / row <strong>×</strong> /
+      <strong>Clear all filters</strong>. Changing a row's Field resets its Value.
+    </p>
+
+    <div class="controls-bar">
+      <span class="pill-btn" style="opacity: 0.6">Compare to: 2 weeks ago ▾</span>
+      <span class="pill-btn active">Filters <span class="chev">▾</span></span>
+      <span class="pill-btn active" style="border-color: #6554c0; color: #6554c0; box-shadow: 0 0 0 1px #6554c0"
+        >Filters (secondary) <span class="chev">▾</span></span
+      >
+      <span class="pill-btn" style="opacity: 0.6">View settings ▾</span>
+      <div class="pill-spacer"></div>
+    </div>
+
+    <div class="panels">
+      <!-- ================= PRIMARY FILTERS PANEL ================= -->
+      <div class="panel" id="panel-primary">
+        <div class="panel-header">
+          <span class="panel-title">Filters</span>
+          <button class="clear-all" data-clear="primary">Clear all filters</button>
+        </div>
+        <div class="rows" id="rows-primary"></div>
+        <button class="add-filter-btn" data-add="primary">+ Add filter</button>
+
+        <div class="legacy-section">
+          <div class="panel-title">Issue type filters</div>
+          <div class="legacy-row"><span class="toggle"></span> Hide unknown initiatives</div>
+          <div class="legacy-row"><span class="toggle on"></span> Show only semver releases</div>
+          <div class="hint">(unchanged — <code>IssueTypeFilters</code>/<code>DateRangeFilter</code> stay as-is)</div>
+        </div>
+        <p class="panel-footnote">
+          Filters the shared issue list — affects the primary report (Gantt/Scatter) and which cards appear in Work
+          Breakdown.
+        </p>
+      </div>
+
+      <!-- ================= SECONDARY FILTERS PANEL ================= -->
+      <div class="panel" id="panel-secondary" style="border-color: #c9b8f5">
+        <div class="panel-header">
+          <span class="panel-title" style="color: #5243aa">Filters (secondary report)</span>
+          <button class="clear-all" data-clear="secondary" style="color: #6554c0">Clear all filters</button>
+        </div>
+        <div class="rows" id="rows-secondary"></div>
+        <button class="add-filter-btn" data-add="secondary" style="color: #6554c0">+ Add filter</button>
+        <p class="panel-footnote">
+          Independent state — only appears when a secondary report is showing. Narrows the Work Breakdown board's cards
+          <em>and</em> trims non-matching child rows within a kept card.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // ---- field definitions (mock data — counts are illustrative) ----
+      const FIELD_DEFS = {
+        jiraStatus: {
+          label: 'Jira Status',
+          operators: ['is', 'is not'],
+          options: [
+            { value: 'idea', label: 'Idea (2)' },
+            { value: 'development', label: 'Development (9)' },
+            { value: 'ready', label: 'Ready (4)' },
+            { value: 'canceled', label: 'Canceled (1)' },
+            { value: 'done', label: 'Done (14)' },
+          ],
+        },
+        rollupStatus: {
+          label: 'Rollup Status',
+          operators: ['is', 'is not'],
+          options: [
+            { value: 'ontrack', label: 'On track (12)' },
+            { value: 'behind', label: 'Behind (3)' },
+            { value: 'ahead', label: 'Ahead (1)' },
+            { value: 'blocked', label: 'Blocked (2)' },
+            { value: 'warning', label: 'Warning (4)' },
+            { value: 'complete', label: 'Complete (20)' },
+            { value: 'notstarted', label: 'Not started (6)' },
+            { value: 'unknown', label: 'No dates (2)' },
+            { value: 'newlyStarted', label: 'Newly started', changed: true, count: 3 },
+            { value: 'newlyCompleted', label: 'Newly completed', changed: true, count: 4 },
+            { value: 'newlyDated', label: 'Newly dated', changed: true, count: 2 },
+          ],
+        },
+      };
+
+      // ---- initial state: primary panel pre-populated to show the "needs attention" example ----
+      const state = {
+        primary: [{ id: rid(), field: 'jiraStatus', operator: 'is not', value: ['done', 'canceled'] }],
+        secondary: [
+          {
+            id: rid(),
+            field: 'rollupStatus',
+            operator: 'is',
+            value: ['blocked', 'warning', 'newlyStarted', 'newlyCompleted', 'newlyDated'],
+          },
+        ],
+      };
+
+      let openDropdownId = null;
+
+      function rid() {
+        return 'r' + Math.random().toString(36).slice(2, 9);
+      }
+
+      function fieldOptions(fieldKey) {
+        return FIELD_DEFS[fieldKey].options;
+      }
+
+      function optionLabel(fieldKey, value) {
+        const opt = fieldOptions(fieldKey).find((o) => o.value === value);
+        return opt ? opt.label.replace(/\s*\(\d+\)$/, '') : value;
+      }
+
+      function render(panelKey) {
+        const container = document.getElementById('rows-' + panelKey);
+        container.innerHTML = '';
+        state[panelKey].forEach((row) => container.appendChild(renderRow(panelKey, row)));
+      }
+
+      function renderRow(panelKey, row) {
+        const wrap = document.createElement('div');
+        wrap.className = 'filter-row';
+
+        // Field select
+        const fieldSel = document.createElement('select');
+        Object.entries(FIELD_DEFS).forEach(([key, def]) => {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = def.label;
+          if (key === row.field) opt.selected = true;
+          fieldSel.appendChild(opt);
+        });
+        fieldSel.addEventListener('change', (e) => {
+          row.field = e.target.value;
+          row.operator = FIELD_DEFS[row.field].operators[0];
+          row.value = [];
+          render(panelKey);
+        });
+
+        // Operator select
+        const opSel = document.createElement('select');
+        FIELD_DEFS[row.field].operators.forEach((op) => {
+          const opt = document.createElement('option');
+          opt.value = op;
+          opt.textContent = op;
+          if (op === row.operator) opt.selected = true;
+          opSel.appendChild(opt);
+        });
+        opSel.addEventListener('change', (e) => {
+          row.operator = e.target.value;
+        });
+
+        // Value multi-select
+        const valueCell = document.createElement('div');
+        valueCell.className = 'value-cell';
+
+        const valueBox = document.createElement('div');
+        valueBox.className = 'value-box';
+        if (row.value.length === 0) {
+          const ph = document.createElement('span');
+          ph.className = 'placeholder';
+          ph.textContent = 'Select...';
+          valueBox.appendChild(ph);
+        } else {
+          row.value.forEach((v) => {
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.textContent = optionLabel(row.field, v);
+            const x = document.createElement('button');
+            x.textContent = '×';
+            x.addEventListener('click', (e) => {
+              e.stopPropagation();
+              row.value = row.value.filter((val) => val !== v);
+              render(panelKey);
+            });
+            chip.appendChild(x);
+            valueBox.appendChild(chip);
+          });
+        }
+        valueBox.addEventListener('click', () => {
+          openDropdownId = openDropdownId === row.id ? null : row.id;
+          render(panelKey);
+        });
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'value-dropdown' + (openDropdownId === row.id ? ' open' : '');
+        fieldOptions(row.field).forEach((opt) => {
+          const optEl = document.createElement('label');
+          optEl.className = 'value-option';
+          const checked = row.value.includes(opt.value);
+          optEl.innerHTML =
+            '<input type="checkbox" ' +
+            (checked ? 'checked' : '') +
+            ' />' +
+            '<span>' +
+            opt.label.replace(/\s*\(\d+\)$/, '') +
+            '</span>' +
+            '<span class="count">' +
+            (opt.count != null
+              ? '(' + opt.count + ')'
+              : (opt.label.match(/\((\d+)\)/) || ['', ''])[1]
+                ? '(' + opt.label.match(/\((\d+)\)/)[1] + ')'
+                : '') +
+            '</span>';
+          optEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (row.value.includes(opt.value)) {
+              row.value = row.value.filter((v) => v !== opt.value);
+            } else {
+              row.value = [...row.value, opt.value];
+            }
+            render(panelKey);
+          });
+          dropdown.appendChild(optEl);
+        });
+
+        valueCell.appendChild(valueBox);
+        valueCell.appendChild(dropdown);
+
+        // Remove row
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-row-btn';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Remove filter';
+        removeBtn.addEventListener('click', () => {
+          state[panelKey] = state[panelKey].filter((r) => r.id !== row.id);
+          render(panelKey);
+        });
+
+        wrap.appendChild(fieldSel);
+        wrap.appendChild(opSel);
+        wrap.appendChild(valueCell);
+        wrap.appendChild(removeBtn);
+        return wrap;
+      }
+
+      document.querySelectorAll('[data-add]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const panelKey = btn.getAttribute('data-add');
+          state[panelKey].push({ id: rid(), field: 'jiraStatus', operator: 'is', value: [] });
+          render(panelKey);
+        });
+      });
+
+      document.querySelectorAll('[data-clear]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const panelKey = btn.getAttribute('data-clear');
+          state[panelKey] = [];
+          render(panelKey);
+        });
+      });
+
+      // close any open value-dropdown when clicking outside a value-cell
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.value-cell')) {
+          if (openDropdownId !== null) {
+            openDropdownId = null;
+            render('primary');
+            render('secondary');
+          }
+        }
+      });
+
+      render('primary');
+      render('secondary');
+    </script>
+  </body>
+</html>

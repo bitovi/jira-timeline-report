@@ -52,6 +52,7 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
     getReleases: defaults.getReleasesDefault,
     getRank: defaults.getRankDefault,
     getSummary: defaults.getSummaryDefault,
+    getStatusSummary: defaults.getStatusSummaryDefault,
     getTeamSpreadsEffortAcrossDates: defaults.getTeamSpreadsEffortAcrossDatesDefault,
     getProjectKeyDefault: defaults.getProjectKeyDefault,
     ...options,
@@ -97,6 +98,7 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
     labels: optionsWithDefaults.getLabels(issue),
     releases: optionsWithDefaults.getReleases(issue),
     rank: optionsWithDefaults.getRank(issue),
+    statusSummary: optionsWithDefaults.getStatusSummary(issue, optionsWithDefaults),
     issue,
   };
 }

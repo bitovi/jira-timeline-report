@@ -31,6 +31,7 @@ const getAllFields = (allData?: AllTeamData): string[] => {
         config?.confidenceField ?? '',
         config?.startDateField ?? '',
         config?.dueDateField ?? '',
+        config?.statusSummaryField ?? '',
       ];
     }
   }
@@ -143,6 +144,21 @@ export const createNormalizeConfiguration = (
       }
 
       return value;
+    },
+    getStatusSummary: (issue, config) => {
+      const teamHierarchyConfiguration = getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue),
+      );
+
+      const field = teamHierarchyConfiguration.statusSummaryField;
+
+      if (!field || field === 'status-summary-not-used') {
+        return null;
+      }
+
+      return ((issue.fields as Record<string, unknown>)[field] as string | Record<string, unknown> | null) ?? null;
     },
     getStoryPoints: (issue, config) => {
       const teamHierarchyConfiguration = getConfiguration(
