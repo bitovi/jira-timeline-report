@@ -91,10 +91,11 @@ always want to see currently-blocked/warning work, not just newly-blocked/warnin
    the Gantt/Scatter/Table report _and_ (indirectly, since it consumes the same list) which primary
    issues appear as Work Breakdown cards.
 2. **Secondary** — a new, second Filters control shown only when a secondary report
-   (`secondaryReportType !== 'none'`) is active. Has its own independent state, and additionally
-   filters **within** a kept Work Breakdown card: a card is shown if it _or any of its children_
-   match, and once shown, only the matching children render (a card with no matching children but a
-   matching rollup itself still renders in full, with nothing trimmed).
+   (`secondaryReportType !== 'none'`) is active. Has its own independent state and is split into two
+   scopes:
+   - **Card filters** (`secondaryFilterRows`) decide whether a card/primary issue shows.
+   - **Child filters** (`secondaryChildFilterRows`) trim which children render within an
+     already-shown card (a card can render with zero matching children).
 
 These are two separate route-persisted states — filtering the primary report does not affect the
 secondary report's filter and vice versa.
@@ -115,7 +116,7 @@ current filters") rather than the generic "Unable to find any issues."
 - [ ] A generic filter-row control (field/operator/value, add/remove row, clear all) replaces
       today's Jira-Status-only filter in the primary Filters dropdown.
 - [ ] The Rollup Status field offers `On Track / Behind / Ahead / Blocked / Warning / Complete /
-    Not Started / Unknown / Newly started / Newly completed / Newly dated` as selectable values,
+  Not Started / Unknown / Newly started / Newly completed / Newly dated` as selectable values,
       each showing a count.
 - [ ] `Rollup Status is any of [Blocked, Warning, Newly started, Newly completed, Newly dated]`
       (one row) shows exactly the "needs attention" set described above, on both reports.

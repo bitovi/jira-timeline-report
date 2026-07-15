@@ -19,14 +19,26 @@ const serveFreshProductionCss = (): Plugin => ({
   name: 'serve-fresh-production-css',
   configureServer(server) {
     server.middlewares.use((req, res, next) => {
-      if (!req.url?.startsWith('/dist/production.css')) {
+      // Match the exact path (ignoring any query string) so this doesn't also intercept
+      // requests like `/dist/production.css.map`.
+      const pathname = req.url?.split('?')[0];
+      if (pathname !== '/dist/production.css') {
+        next();
+        return;
+      }
+
+      let css: Buffer;
+      try {
+        css = readFileSync(resolve(__dirname, 'dist/production.css'));
+      } catch {
+        // Tailwind's watcher may not have written the file yet (e.g. on first startup).
         next();
         return;
       }
 
       res.setHeader('Content-Type', 'text/css');
       res.setHeader('Cache-Control', 'no-store');
-      res.end(readFileSync(resolve(__dirname, 'dist/production.css')));
+      res.end(css);
     });
   },
 });
