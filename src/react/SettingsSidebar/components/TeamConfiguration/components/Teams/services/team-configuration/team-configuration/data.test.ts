@@ -84,6 +84,7 @@ describe('Configuration Inheritance and Defaults', () => {
       confidenceField: 'Confidence',
       startDateField: 'Start date',
       dueDateField: 'Due date',
+      statusSummaryField: null,
     };
 
     expect(globalDefaults).toEqual(expectedDefaults);
@@ -153,6 +154,7 @@ describe('Configuration Inheritance and Defaults', () => {
       confidenceField: 'Confidence',
       startDateField: 'Start date',
       dueDateField: 'Due date',
+      statusSummaryField: null,
     };
 
     expect(augmentedData.__GLOBAL__.defaults).toEqual(expectedDefaults);
@@ -197,6 +199,7 @@ describe('Configuration Inheritance and Defaults', () => {
       confidenceField: 'Confidence',
       startDateField: 'Start date',
       dueDateField: 'Due date',
+      statusSummaryField: null,
     });
 
     expect(inheritedData['Team B']?.['3']).toEqual({
@@ -208,6 +211,7 @@ describe('Configuration Inheritance and Defaults', () => {
       confidenceField: 'Confidence',
       startDateField: 'Start date',
       dueDateField: 'Due date',
+      statusSummaryField: null,
     });
   });
 });

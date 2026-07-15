@@ -4,6 +4,8 @@ import { fontSizeClass, getStatusColorClass } from '../../helpers';
 import type { SwatchSize } from '../StatusSwatch';
 import { StatusColumnBody } from '../StatusColumnBody';
 import { StatusMatrixBody } from '../StatusMatrixBody';
+import { StatusSummaryBody } from '../StatusSummaryBody';
+import { TargetDeliveryDate } from '../TargetDeliveryDate';
 
 export interface WorkBreakdownCardProps {
   /** The card view model. */
@@ -30,7 +32,7 @@ export const WorkBreakdownCard: React.FC<WorkBreakdownCardProps> = ({ card, mode
   const headerFontSize = fontSizeClass(density, 0);
 
   return (
-    <div className="grow basis-56 min-w-[210px] max-w-[320px] rounded border border-neutral-40 overflow-hidden bg-white">
+    <div className="print-avoid-break grow basis-56 min-w-[210px] max-w-[320px] rounded border border-neutral-40 overflow-hidden bg-white">
       <div
         className={`cursor-pointer rounded-t px-2.5 py-1.5 font-semibold ${getStatusColorClass(card.status)} ${headerFontSize}`}
         title={card.title}
@@ -38,6 +40,12 @@ export const WorkBreakdownCard: React.FC<WorkBreakdownCardProps> = ({ card, mode
       >
         {card.title}
       </div>
+      {mode === 'status' ? (
+        <div className="px-2.5 py-1.5">
+          <TargetDeliveryDate due={card.due} slip={card.slip} />
+        </div>
+      ) : null}
+      {card.statusSummary ? <StatusSummaryBody card={card} fontSize={bodyFontSize} /> : null}
       {mode === 'status' ? (
         <StatusColumnBody card={card} size={size} fontSize={bodyFontSize} onIssueClick={onIssueClick} />
       ) : (

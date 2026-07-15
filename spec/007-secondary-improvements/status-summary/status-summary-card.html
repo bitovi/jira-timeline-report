@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Status Summary — card mock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Subset of src/css/primitives.css — the status colors used by getStatusColorClass(). */
+      :root {
+        --complete-color: #22a06b;
+        --complete-text-color: #fff;
+        --ontrack-color: #388bff;
+        --ontrack-text-color: #fff;
+        --behind-color: #f5cd47;
+        --behind-text-color: #000;
+        --unknown-color: #dab092;
+        --notstarted-color: #8590a2;
+        --notstarted-text-color: #fff;
+        --blocked-color: #e2483d;
+        --blocked-text-color: #fff;
+        --ahead-dark-color: #00a3bf;
+
+        --page-bg: #fafbfc;
+        --muted: #5e6c84;
+        --border: #dfe1e6;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #172b4d;
+        margin: 0;
+        padding: 32px;
+        background: var(--page-bg);
+        line-height: 1.4;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 900px;
+        margin: 6px 0 28px;
+        font-size: 14px;
+      }
+      .intro code {
+        background: #f1f2f4;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 12.5px;
+      }
+      .row {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        margin-bottom: 40px;
+      }
+      .col {
+        width: 260px;
+      }
+      .col-label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #44546f;
+        margin-bottom: 8px;
+      }
+      .col-note {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 10px;
+      }
+
+      /* --- classes lifted from src/css/colors.css --- */
+      .color-text-and-bg-complete {
+        background-color: var(--complete-color);
+        color: var(--complete-text-color);
+      }
+      .color-text-and-bg-ontrack {
+        background-color: var(--ontrack-color);
+        color: var(--ontrack-text-color);
+      }
+      .color-text-and-bg-behind {
+        background-color: var(--behind-color);
+        color: var(--behind-text-color);
+      }
+      .color-text-and-bg-unknown {
+        background-color: var(--unknown-color);
+        color: #000;
+        opacity: 0.8;
+      }
+      .color-text-and-bg-notstarted {
+        background-color: var(--notstarted-color);
+        color: var(--notstarted-text-color);
+      }
+      .color-text-and-bg-blocked {
+        background-color: var(--blocked-color);
+        color: var(--blocked-text-color);
+      }
+      .color-text-blocked {
+        color: var(--blocked-color);
+      }
+      .color-text-ahead {
+        color: var(--ahead-dark-color);
+      }
+      .jirasm {
+        border-radius: 3px;
+      }
+
+      /* --- neutral text/border colors used by the card (tailwind.config.js) --- */
+      .text-neutral-800 {
+        color: #172b4d;
+      }
+      .text-neutral-300 {
+        color: #5e6c84;
+      }
+      .border-neutral-40 {
+        border-color: #dfe1e6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Status Summary — WorkBreakdown card mock</h1>
+    <p class="intro">
+      Static HTML mock (no build step) comparing today's card body to the proposed
+      <code>StatusSummaryBody</code> (spec/007-secondary-improvements/status-summary). Card shell (colored header bubble
+      + title) is unchanged in every case. For the MVP the summary text is <b>additive</b> — it's inserted above the
+      existing status rows / matrix; the swatches are never hidden. A future fast-follow may add a display option to
+      show summary-only or swatches-only.
+    </p>
+
+    <div class="row">
+      <div class="col">
+        <div class="col-label">Today — no status summary field</div>
+        <!-- Unchanged baseline, exactly as provided. -->
+        <div
+          class="grow basis-56 min-w-[210px] max-w-[320px] rounded border border-neutral-40 overflow-hidden bg-white"
+        >
+          <div
+            class="cursor-pointer rounded-t px-2.5 py-1.5 font-semibold color-text-and-bg-ontrack text-xs"
+            title="100 Stores"
+          >
+            100 Stores
+          </div>
+          <div>
+            <div class="px-2.5 py-1.5">
+              <div class="flex flex-row items-baseline gap-1.5">
+                <b class="text-neutral-800">Target Delivery</b>
+                <span class="nowrap font-medium text-neutral-300">Mar 9</span>
+              </div>
+            </div>
+            <ul class="list-none m-0 p-1">
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Digital menu board"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-complete w-3 h-3 text-[8px]"
+                  title="Complete"
+                  aria-label="Complete"
+                ></span>
+                <span class="truncate text-neutral-800">Digital menu board</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Digital orders"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-notstarted w-3 h-3 text-[8px]"
+                  title="Not started"
+                  aria-label="Not started"
+                ></span>
+                <span class="truncate text-neutral-800">Digital orders</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Delivery aggregators"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-complete w-3 h-3 text-[8px]"
+                  title="Complete"
+                  aria-label="Complete"
+                ></span>
+                <span class="truncate text-neutral-800">Delivery aggregators</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Promotions"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-unknown w-3 h-3 text-[8px]"
+                  title="No dates"
+                  aria-label="No dates"
+                ></span>
+                <span class="truncate text-neutral-800">Promotions</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="National menu"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-unknown w-3 h-3 text-[8px]"
+                  title="No dates"
+                  aria-label="No dates"
+                ></span>
+                <span class="truncate text-neutral-800">National menu</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-note">Task 8/9 baseline — unaffected when no field is configured.</div>
+      </div>
+
+      <div class="col">
+        <div class="col-label">Status summary field configured + populated</div>
+        <!-- StatusSummaryBody is additive: it renders above the unchanged status/matrix body. -->
+        <div
+          class="grow basis-56 min-w-[210px] max-w-[320px] rounded border border-neutral-40 overflow-hidden bg-white"
+        >
+          <div
+            class="cursor-pointer rounded-t px-2.5 py-1.5 font-semibold color-text-and-bg-ontrack text-xs"
+            title="100 Stores"
+          >
+            100 Stores
+          </div>
+          <div>
+            <p class="m-0 whitespace-pre-line px-2.5 pt-1.5 pb-1 text-neutral-800 text-xs">
+              On track for Q3. QA starts Monday; vendor risk on delivery aggregators has been resolved. National menu
+              rollout still waiting on legal sign-off.
+            </p>
+            <div class="px-2.5 py-1.5">
+              <div class="flex flex-row items-baseline gap-1.5">
+                <b class="text-neutral-800">Target Delivery</b>
+                <span class="nowrap font-medium text-neutral-300">Mar 9</span>
+              </div>
+            </div>
+            <ul class="list-none m-0 p-1">
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Digital menu board"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-complete w-3 h-3 text-[8px]"
+                  title="Complete"
+                  aria-label="Complete"
+                ></span>
+                <span class="truncate text-neutral-800">Digital menu board</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Digital orders"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-notstarted w-3 h-3 text-[8px]"
+                  title="Not started"
+                  aria-label="Not started"
+                ></span>
+                <span class="truncate text-neutral-800">Digital orders</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Delivery aggregators"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-complete w-3 h-3 text-[8px]"
+                  title="Complete"
+                  aria-label="Complete"
+                ></span>
+                <span class="truncate text-neutral-800">Delivery aggregators</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="National menu"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-unknown w-3 h-3 text-[8px]"
+                  title="No dates"
+                  aria-label="No dates"
+                ></span>
+                <span class="truncate text-neutral-800">National menu</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-note">
+          <code>Card.statusSummary.text</code> renders <b>above</b> the unchanged status body — both the narrative and
+          the child swatches are visible.
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="col-label">Status summary field configured + populated + slipped date</div>
+        <!-- Shows the slip parenthetical from TargetDeliveryDate for completeness, plus the swatches. -->
+        <div
+          class="grow basis-56 min-w-[210px] max-w-[320px] rounded border border-neutral-40 overflow-hidden bg-white"
+        >
+          <div
+            class="cursor-pointer rounded-t px-2.5 py-1.5 font-semibold color-text-and-bg-behind text-xs"
+            title="200 Stores"
+          >
+            200 Stores
+          </div>
+          <div>
+            <p class="m-0 whitespace-pre-line px-2.5 pt-1.5 pb-1 text-neutral-800 text-xs">
+              Blocked on vendor hardware delivery — pushing rollout by ~2 weeks. Digital menu board and orders are
+              otherwise on track.
+            </p>
+            <div class="px-2.5 py-1.5">
+              <div class="flex flex-row items-baseline gap-1.5">
+                <b class="text-neutral-800">Target Delivery</b>
+                <span class="nowrap font-medium text-neutral-300">Apr 2</span>
+                <span class="nowrap font-medium color-text-blocked">(Mar 20)</span>
+              </div>
+            </div>
+            <ul class="list-none m-0 p-1">
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Digital menu board"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-complete w-3 h-3 text-[8px]"
+                  title="Complete"
+                  aria-label="Complete"
+                ></span>
+                <span class="truncate text-neutral-800">Digital menu board</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Vendor hardware"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-blocked w-3 h-3 text-[8px]"
+                  title="Blocked"
+                  aria-label="Blocked"
+                ></span>
+                <span class="truncate text-neutral-800">Vendor hardware</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-note">
+          Slip label (red) comes from the existing <code>TargetDeliveryDate</code>; swatches still render below the
+          summary text.
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="col-label">Status summary field configured, this card's field is empty</div>
+        <!-- Per-card fallback: identical to the "no field configured" baseline. -->
+        <div
+          class="grow basis-56 min-w-[210px] max-w-[320px] rounded border border-neutral-40 overflow-hidden bg-white"
+        >
+          <div
+            class="cursor-pointer rounded-t px-2.5 py-1.5 font-semibold color-text-and-bg-notstarted text-xs"
+            title="National Menu"
+          >
+            National Menu
+          </div>
+          <div>
+            <div class="px-2.5 py-1.5">
+              <div class="flex flex-row items-baseline gap-1.5">
+                <b class="text-neutral-800">Target Delivery</b>
+                <span class="nowrap font-medium text-neutral-300">—</span>
+              </div>
+            </div>
+            <ul class="list-none m-0 p-1">
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Legal review"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-notstarted w-3 h-3 text-[8px]"
+                  title="Not started"
+                  aria-label="Not started"
+                ></span>
+                <span class="truncate text-neutral-800">Legal review</span>
+              </li>
+              <li
+                class="flex items-center gap-2 px-2.5 py-1 min-w-0 cursor-pointer font-sans text-xs"
+                title="Menu design"
+              >
+                <span
+                  class="inline-block shrink-0 rounded jirasm color-text-and-bg-notstarted w-3 h-3 text-[8px]"
+                  title="Not started"
+                  aria-label="Not started"
+                ></span>
+                <span class="truncate text-neutral-800">Menu design</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-note">
+          <code>card.statusSummary</code> is <code>undefined</code> (empty field text) — no summary block is rendered,
+          card looks exactly like today.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

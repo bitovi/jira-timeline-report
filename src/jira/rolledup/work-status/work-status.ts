@@ -18,15 +18,69 @@ type PeriodStatus = {
   statusFrom?: { message: string; warning?: boolean };
 };
 
+/**
+ * Three independent, pure date comparisons ({@link calculateNewlyFlags}) — NOT reconstructed
+ * status categories. Only meaningful on `rollup` (not per-work-type lanes).
+ */
+export type NewlyFlags = {
+  newlyStarted: boolean;
+  newlyCompleted: boolean;
+  newlyDated: boolean;
+};
+
 type DatesIssueKeysLastPeriodAndStatus = Partial<DateAndIssueKeys> & {
   lastPeriod?: Partial<DateAndIssueKeys> | null;
 } & PeriodStatus;
 
+type RollupTimingData = DatesIssueKeysLastPeriodAndStatus & Partial<NewlyFlags>;
+
 type TimingData = {
   [key in (typeof workTypeWithChildren)[number]]?: DatesIssueKeysLastPeriodAndStatus;
-} & { rollup: DatesIssueKeysLastPeriodAndStatus };
+} & { rollup: RollupTimingData };
 
 export type WithRollupStatus = { rollupStatuses: TimingData };
+
+/**
+ * The 3 independent, pure date comparisons behind "Newly started"/"Newly completed"/"Newly
+ * dated" (see spec/007-secondary-improvements/filter-changed-and-blocked). Each compares the same
+ * raw start/due dates at two points in time — `today` and `when` (the Compare-to period's
+ * timestamp) — with no reconstruction of a prior-period status category. Fails closed (all
+ * `false`) when there's no prior period to compare against.
+ */
+export function calculateNewlyFlags(
+  current: { start?: Date | null; due?: Date | null },
+  lastPeriod: { start?: Date | null; due?: Date | null } | null | undefined,
+  when: Date,
+  today: Date = new Date(),
+): NewlyFlags {
+  if (!lastPeriod) {
+    return { newlyStarted: false, newlyCompleted: false, newlyDated: false };
+  }
+
+  const hasCurrentStart = current.start != null;
+  const hasCurrentDue = current.due != null;
+  const hadPriorStart = lastPeriod.start != null;
+  const hadPriorDue = lastPeriod.due != null;
+
+  // Newly started: has a start date on/before today, but as of `when` it had none or hadn't
+  // arrived yet.
+  const startedByToday = hasCurrentStart && current.start!.getTime() <= today.getTime();
+  const startedByWhen = hadPriorStart && lastPeriod.start!.getTime() <= when.getTime();
+  const newlyStarted = startedByToday && !startedByWhen;
+
+  // Newly completed: has a due date on/before today, but as of `when` it hadn't passed yet —
+  // mirrors the existing "due date passed -> complete" rule in `timedStatus`, evaluated twice.
+  const dueByToday = hasCurrentDue && current.due!.getTime() <= today.getTime();
+  const dueByWhen = hadPriorDue && lastPeriod.due!.getTime() <= when.getTime();
+  const newlyCompleted = dueByToday && !dueByWhen;
+
+  // Newly dated: had no start/due at all as of `when`, but has one now.
+  const hadNoDatesAtWhen = !hadPriorStart && !hadPriorDue;
+  const hasDatesNow = hasCurrentStart || hasCurrentDue;
+  const newlyDated = hadNoDatesAtWhen && hasDatesNow;
+
+  return { newlyStarted, newlyCompleted, newlyDated };
+}
 
 // The children "workTypeRollups" won't be right ...
 // this is really a "rollup" type thing ...
@@ -37,13 +91,13 @@ export function calculateReportStatuses<
     WithBlockedStatuses &
     WithWarningIssues &
     WithIssueLastPeriod<WithDateRollup & WithWorkTypeRollups>,
->(issues: IssueOrRelease<T>[]): IssueOrRelease<T & WithRollupStatus>[] {
+>(issues: IssueOrRelease<T>[], when: Date): IssueOrRelease<T & WithRollupStatus>[] {
   const getIssuesByKeys = makeGetIssuesByKeys(issues);
 
   return issues.map((issue) => {
     return {
       ...issue,
-      rollupStatuses: calculateStatuses(issue, getIssuesByKeys),
+      rollupStatuses: calculateStatuses(issue, getIssuesByKeys, when),
     };
   });
 }
@@ -65,7 +119,7 @@ function calculateStatuses<
     WithWarningIssues &
     WithIssueLastPeriod<WithDateRollup & WithWorkTypeRollups>,
   U extends IssueOrRelease & WithBlockedStatuses,
->(issueWithPriorTiming: IssueOrRelease<T>, getIssuesByKeys: (keys: string[]) => U[]) {
+>(issueWithPriorTiming: IssueOrRelease<T>, getIssuesByKeys: (keys: string[]) => U[], when: Date) {
   const timingData = prepareTimingData(issueWithPriorTiming);
 
   const isIssue = isDerivedIssue(issueWithPriorTiming);
@@ -95,6 +149,19 @@ function calculateStatuses<
   } else {
     Object.assign(timingData.rollup, timedStatus(timingData.rollup));
   }
+
+  // Blocked/Warning/Complete are plain, always-current-state values above. Newly started/
+  // completed/dated are independent of which of those branches ran, so they're computed here
+  // unconditionally, straight off the same rollup start/due + lastPeriod already prepared above.
+  Object.assign(
+    timingData.rollup,
+    calculateNewlyFlags(
+      { start: timingData.rollup.start, due: timingData.rollup.due },
+      timingData.rollup.lastPeriod,
+      when,
+    ),
+  );
+
   // do all the others
   for (let workCategory of workTypes) {
     if (timingData[workCategory]) {

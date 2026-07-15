@@ -92,6 +92,21 @@ export function getRankDefault({ fields }: Fields): NormalizedIssue['rank'] {
   return fields?.Rank || null;
 }
 
+type StatusSummaryMinimalIssue = {
+  fields: {
+    [key: string]: unknown;
+  };
+} & MinimalIssueTypeIssue &
+  MinimalHierarchyLevelIssue &
+  MinimalTeamKeyIssue;
+
+export function getStatusSummaryDefault(
+  _issue: StatusSummaryMinimalIssue,
+  _options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
+): NormalizedIssue['statusSummary'] {
+  return null;
+}
+
 type ConfidenceMinimalIssue = {
   fields: {
     'Story points confidence'?: JiraIssue['fields']['Story points confidence'];

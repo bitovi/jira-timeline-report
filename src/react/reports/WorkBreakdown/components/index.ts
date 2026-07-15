@@ -8,6 +8,8 @@ export { StatusColumnBody } from './StatusColumnBody';
 export type { StatusColumnBodyProps } from './StatusColumnBody';
 export { StatusMatrixBody } from './StatusMatrixBody';
 export type { StatusMatrixBodyProps } from './StatusMatrixBody';
+export { StatusSummaryBody } from './StatusSummaryBody';
+export type { StatusSummaryBodyProps } from './StatusSummaryBody';
 export { PlanningCard } from './PlanningCard';
 export type { PlanningCardProps } from './PlanningCard';
 export { WorkBreakdownCard } from './WorkBreakdownCard';

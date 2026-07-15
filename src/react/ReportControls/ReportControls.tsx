@@ -5,6 +5,7 @@ import SelectReportType from './components/SelectReportType';
 import SelectIssueType from './components/SelectIssueType';
 import CompareSlider from './components/CompareSlider';
 import Filters from './components/Filters';
+import type { FiltersProps } from './components/Filters';
 import ViewSettings from './components/ViewSettings';
 import { usePrimaryReportType } from './hooks/usePrimaryReportType';
 import AutoSchedulerControls from './components/AutoSchedulerControls';
@@ -207,7 +208,10 @@ export const ReportControlsWrapper: FC<{ children: ReactNode }> = ({ children })
   );
 };
 
-export const ReportControls: FC = () => {
+export const ReportControls: FC<Partial<FiltersProps>> = ({
+  rolledupAndRolledBackIssuesAndReleasesObs,
+  primaryIssuesOrReleasesObs,
+}) => {
   const [primaryReportType] = usePrimaryReportType();
 
   if (primaryReportType === 'estimation-progress' || primaryReportType === 'grouper') {
@@ -280,7 +284,10 @@ export const ReportControls: FC = () => {
         <CompareSlider />
       </div>
       <div className="self-end pb-1">
-        <Filters />
+        <Filters
+          rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
+          primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
+        />
       </div>
 
       {primaryReportType !== 'table' ? (

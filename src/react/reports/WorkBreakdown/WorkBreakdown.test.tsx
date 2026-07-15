@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, test, expect, vi } from 'vitest';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import type { IssueOrRelease } from './types';
+import type { FilterRow } from '../../../jira/rollup/filter-rows/filter-rows';
 import { WorkBreakdown } from './WorkBreakdown';
 import { primaryIssues, allIssues, planningIssues } from './fixtures';
 
@@ -22,6 +23,7 @@ const renderReport = (
     all: IssueOrRelease[];
     planning: IssueOrRelease[];
     secondaryReportType: string;
+    filterRows: FilterRow[];
     onIssueClick: (event: React.MouseEvent, issue: IssueOrRelease) => void;
   }> = {},
 ) => {
@@ -30,6 +32,7 @@ const renderReport = (
     all = allIssues,
     planning = [],
     secondaryReportType = 'breakdown',
+    filterRows = [],
     onIssueClick,
   } = overrides;
   return render(
@@ -38,6 +41,7 @@ const renderReport = (
       allIssuesOrReleasesObs={obs(all)}
       planningIssuesObs={obs(planning)}
       secondaryReportTypeObs={obs(secondaryReportType)}
+      filterRowsObs={obs(filterRows)}
       onIssueClick={onIssueClick}
     />,
   );
@@ -73,6 +77,14 @@ describe('WorkBreakdown', () => {
   test('shows an empty state when there are no issues', () => {
     renderReport({ primary: [], all: [], planning: [] });
     expect(screen.getByText('Unable to find any issues.')).toBeTruthy();
+  });
+
+  test('shows a distinct empty state when a filter removes everything', () => {
+    renderReport({
+      filterRows: [{ id: 'r1', field: 'rollupStatus', operator: 'is', value: ['no-such-status'] }],
+    });
+    expect(screen.getByText('Nothing matches the current filters.')).toBeTruthy();
+    expect(screen.queryByText('Unable to find any issues.')).toBeNull();
   });
 
   test('clicking a card header invokes onIssueClick', () => {

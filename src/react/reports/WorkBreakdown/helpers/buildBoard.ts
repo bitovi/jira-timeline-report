@@ -14,6 +14,9 @@ import { cellState } from './cellState';
 import { childRollup } from './childRollup';
 import { dateSlip } from './dateSlip';
 import { density } from './density';
+import { adfToBlocks } from './adfToBlocks';
+import { matchesAllFilterRows } from '../../../../jira/rollup/filter-rows/filter-rows';
+import type { FilterRow } from '../../../../jira/rollup/filter-rows/filter-rows';
 
 /**
  * Compose the pure helpers into a render-ready {@link Board} view model. The component just maps
@@ -23,22 +26,36 @@ import { density } from './density';
  * @param allIssues Every issue/release, used to look up children by key.
  * @param mode Which secondary view is active (`status` vs `breakdown`).
  * @param planningIssues Issues shown in the "Planning" fallback card; excluded from card children.
+ * @param filterRows The secondary report's own filter rows — decide whether a CARD shows at all,
+ *   evaluated against the card/primary issue only (children are not considered).
+ * @param childFilterRows A second, independent set of filter rows — decide which children (if
+ *   any) render within an already-shown card, evaluated against each child only. Doesn't affect
+ *   whether the card itself shows; a card with zero matching children still renders (with an
+ *   empty child list).
  */
 export const buildBoard = (
   primaryIssues: IssueOrRelease[],
   allIssues: IssueOrRelease[],
   mode: SecondaryReportMode,
   planningIssues: IssueOrRelease[] = [],
+  filterRows: FilterRow[] = [],
+  childFilterRows: FilterRow[] = [],
 ): Board => {
   const byKey = new Map(allIssues.map((issue) => [issue.key, issue]));
   const planningKeys = new Set(planningIssues.map((issue) => issue.key));
   const workTypes: WorkType[] = workTypePresence(primaryIssues).hasWorkList.map((wt) => wt.type);
 
-  const cards: Card[] = primaryIssues.map((primary) => {
-    const children = (primary.reportingHierarchy?.childKeys ?? [])
+  const cards: Card[] = primaryIssues.flatMap((primary) => {
+    if (!matchesAllFilterRows(primary, filterRows)) {
+      return [];
+    }
+
+    const allChildren = (primary.reportingHierarchy?.childKeys ?? [])
       .map((key) => byKey.get(key))
       .filter((issue): issue is IssueOrRelease => Boolean(issue))
       .filter((issue) => !planningKeys.has(issue.key));
+
+    const children = allChildren.filter((child) => matchesAllFilterRows(child, childFilterRows));
 
     const headerColumns: WorkTypeColumn[] = workTypes.map((type) => {
       const wt = primary.rollupStatuses[type];
@@ -67,17 +84,22 @@ export const buildBoard = (
       status: child.rollupStatuses.rollup?.status ?? childRollup(matrixRows[i].cells),
     }));
 
-    return {
-      key: primary.key,
-      title: primary.summary,
-      issue: primary,
-      status: primary.rollupStatuses.rollup.status,
-      due: primary.rollupStatuses.rollup.due ?? null,
-      slip: dateSlip(primary.rollupStatuses.rollup),
-      headerColumns,
-      statusRows,
-      matrixRows,
-    };
+    const statusSummaryBlocks = adfToBlocks(primary.statusSummary);
+
+    return [
+      {
+        key: primary.key,
+        title: primary.summary,
+        issue: primary,
+        status: primary.rollupStatuses.rollup.status,
+        due: primary.rollupStatuses.rollup.due ?? null,
+        slip: dateSlip(primary.rollupStatuses.rollup),
+        statusSummary: statusSummaryBlocks.length ? { blocks: statusSummaryBlocks } : undefined,
+        headerColumns,
+        statusRows,
+        matrixRows,
+      },
+    ];
   });
 
   return {

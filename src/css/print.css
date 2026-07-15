@@ -1,0 +1,74 @@
+/* Print stylesheet for the "Download PDF" feature (spec/008-downloadable/printable.md).
+ *
+ * Goal: isolate a report-like page — title/header + chart + footer legend — for the
+ * `due` (Scatter) and `start-due` (Gantt) reports, hiding all other app chrome.
+ *
+ * `.app-chrome-hidden` and `.report-chrome-hidden` are shared with fullscreen.css, which
+ * hides the same elements for the on-screen "focus mode" — see that file.
+ */
+
+@page {
+  size: landscape;
+  margin: 12mm;
+}
+
+/* Screen-hidden, print-shown. Applied to the #print-header element. */
+.print-only {
+  display: none;
+}
+
+@media print {
+  /* Browsers strip background colors when printing by default (to save ink) — but the Gantt/
+     Scatter timeline bars and the footer legend swatches are all `background-color`, so without
+     this they simply disappear from the printed page/PDF. Force them to actually print. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* App chrome that should never appear on the printed page — shared with fullscreen.css.
+     #saved-reports itself stays visible (the report name is a useful title); only the
+     rename/copy controls, "Create new report" button, and Saved Reports dropdown
+     (.report-chrome-hidden) and the fullscreen toggle (.print-hidden) hide. */
+  .app-chrome-hidden,
+  .report-chrome-hidden,
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  /* Remove scroll/height clamps so the full chart flows onto the page instead of clipping. */
+  html,
+  body,
+  #mainContent,
+  .fullish-vh,
+  #react-report-container {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Unstick the footer legend so it prints at the end of the report instead of floating. */
+  #report-footer {
+    position: static !important;
+  }
+
+  /* JS (PrintReportButton) sets --print-scale so wide charts shrink to fit the page width. */
+  #react-report-container {
+    transform: scale(var(--print-scale, 1));
+    transform-origin: top left;
+  }
+
+  /* The secondary "breakdown"/"status" report (WorkBreakdownCard/PlanningCard) renders as a
+     flex-wrap grid of cards below the primary chart — without this, a page break can land in
+     the middle of a card (e.g. header on one page, its child rows on the next). Each card
+     opts in via the `.print-avoid-break` class so it always moves to the next page as a whole
+     instead of being split. */
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

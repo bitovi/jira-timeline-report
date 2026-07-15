@@ -37,3 +37,49 @@ export const Breakdown: Story = { args: { mode: 'breakdown', cardIndex: 0 } };
 export const Status: Story = { args: { mode: 'status', cardIndex: 0 } };
 
 export const Tight: Story = { args: { mode: 'breakdown', density: 'high', cardIndex: 1 } };
+
+/** A card with a status summary shown above its normal status rows (both are visible). */
+export const WithStatusSummary: Story = {
+  render: () => {
+    const board = buildBoard(primaryIssues, allIssues, 'status');
+    const card = {
+      ...board.cards[0],
+      statusSummary: {
+        blocks: [{ type: 'paragraph' as const, text: 'On track for Q3. QA starts Monday; vendor risk resolved.' }],
+      },
+    };
+    return (
+      <div className="flex" style={{ width: 280 }}>
+        <WorkBreakdownCard card={card} mode="status" density="light" />
+      </div>
+    );
+  },
+};
+
+/** A status summary containing a real ordered list, rendered as an actual `<ol>` via `prose`. */
+export const WithStatusSummaryList: Story = {
+  render: () => {
+    const board = buildBoard(primaryIssues, allIssues, 'status');
+    const card = {
+      ...board.cards[0],
+      statusSummary: {
+        blocks: [
+          { type: 'paragraph' as const, text: 'Next steps:' },
+          {
+            type: 'orderedList' as const,
+            start: 1,
+            items: [
+              [{ type: 'paragraph' as const, text: 'Finish vendor integration' }],
+              [{ type: 'paragraph' as const, text: 'Ship to staging' }],
+            ],
+          },
+        ],
+      },
+    };
+    return (
+      <div className="flex" style={{ width: 280 }}>
+        <WorkBreakdownCard card={card} mode="status" density="light" />
+      </div>
+    );
+  },
+};

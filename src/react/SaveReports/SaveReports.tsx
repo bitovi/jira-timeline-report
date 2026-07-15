@@ -8,6 +8,8 @@ import Button from '@atlaskit/button/new';
 import { useAllReports, useCreateReport, useRecentReports } from '../services/reports';
 import SaveReportModal from './components/SaveReportModal';
 import SavedReportDropdown from './components/SavedReportDropdown';
+import FullscreenToggle from './components/FullscreenToggle';
+import PrintReportButton from '../ReportControls/components/PrintReportButton';
 import ReportControls from './components/ReportControls';
 import EditableTitle from './components/EditableTitle';
 import { useQueryParams } from '../hooks/useQueryParams';
@@ -106,25 +108,34 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
             validate={validateName}
           />
         )}
-        <ReportControls
-          hasSelectedReport={!!selectedReport}
-          isDirty={isDirty}
-          updateSelectedReport={updateSelectedReport}
-          openModal={openModal}
-          resetChanges={resetChanges}
-        />
+        {/* `contents` keeps this from affecting layout; fullscreen.css and print.css hide it
+            (fullscreen mode / printing) so only the report name (above) and the fullscreen
+            toggle (below) remain. */}
+        <div className="contents report-chrome-hidden">
+          <ReportControls
+            hasSelectedReport={!!selectedReport}
+            isDirty={isDirty}
+            updateSelectedReport={updateSelectedReport}
+            openModal={openModal}
+            resetChanges={resetChanges}
+          />
+        </div>
       </div>
-      <div className="flex gap-4">
-        {!selectedReport && !!queryParams.get('jql') && (
-          <Button appearance="primary" onClick={openModal}>
-            Create new report
-          </Button>
-        )}
-        <SavedReportDropdown
-          onViewReportsButtonClicked={onViewReportsButtonClicked}
-          recentReports={recentReports}
-          reports={reports}
-        />
+      <div className="flex gap-4 items-center">
+        <div className="contents report-chrome-hidden">
+          {!selectedReport && !!queryParams.get('jql') && (
+            <Button appearance="primary" onClick={openModal}>
+              Create new report
+            </Button>
+          )}
+          <SavedReportDropdown
+            onViewReportsButtonClicked={onViewReportsButtonClicked}
+            recentReports={recentReports}
+            reports={reports}
+          />
+          <PrintReportButton />
+        </div>
+        <FullscreenToggle />
       </div>
       <SaveReportModal
         isOpen={isOpen}

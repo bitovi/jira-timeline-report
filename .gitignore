@@ -20,3 +20,5 @@ public/atlassian-connect.json
 .playwright-mcp/
 *storybook.log
 storybook-static
+.temp/
+!.temp/Status\ Reports\ for\ Jira.pdf

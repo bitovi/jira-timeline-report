@@ -1,5 +1,4 @@
 import React from 'react';
-// @ts-expect-error react-dom types not installed; pattern used across this codebase
 import { createPortal } from 'react-dom';
 import { getInProgressDate } from './metrics';
 import type { MetricsIssue } from './adapter';
