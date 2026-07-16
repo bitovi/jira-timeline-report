@@ -25,6 +25,12 @@ export interface IssueOrRelease {
   projectKey?: string;
   /** Lexicographic rank (e.g. Jira's `Rank` field) — used to order `'parent'` groups. */
   rank?: string | null;
+  /**
+   * Raw Jira issue this object wraps, when available. Read only for the embedded `fields.Parent`
+   * fallback in `groupByParent` — Jira includes basic parent info (including summary) on a child
+   * issue even when the parent itself wasn't separately loaded into `allIssues`.
+   */
+  issue?: { fields?: { Parent?: { fields?: { summary?: string } } } };
 }
 
 // Canonical calendar types live with the date utility that produces them; re-export so

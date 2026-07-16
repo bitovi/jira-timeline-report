@@ -78,9 +78,13 @@ function groupByParent<T>(
         return { key: NO_PARENT_KEY, title: 'No Parent', issues: children, rank: null, parent: null };
       }
       const parent = allByKey.get(parentKey) ?? null;
+      // The parent itself may not be in `allIssues` (e.g. it sits above the rolled-up hierarchy).
+      // Fall back to the embedded `fields.Parent` Jira attaches to each child issue before
+      // resorting to the bare key.
+      const embeddedParentSummary = getIssue(children[0]).issue?.fields?.Parent?.fields?.summary;
       return {
         key: parentKey,
-        title: parent?.summary ?? parentKey,
+        title: parent?.summary ?? embeddedParentSummary ?? parentKey,
         issues: children,
         rank: parent?.rank ?? null,
         parent,
