@@ -100,6 +100,7 @@ const SingleChart: React.FC<{
   const [reorderOpen, setReorderOpen] = useState(false);
   const [dragStatus, setDragStatus] = useState<string | null>(null);
   const [dragFromSection, setDragFromSection] = useState<'visible' | 'hidden' | null>(null);
+  const [liveOrder, setLiveOrder] = useState<string[] | null>(null);
   const reorderRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -121,12 +122,13 @@ const SingleChart: React.FC<{
     const withData = statusColumns.filter((s) =>
       data.series.some((ser) => ser.points.some((pt) => pt.statusName === s)),
     );
-    if (!customOrder) return withData;
+    const effectiveOrder = liveOrder ?? customOrder;
+    if (!effectiveOrder) return withData;
     const dataSet = new Set(withData);
-    const filtered = customOrder.filter((s) => dataSet.has(s));
+    const filtered = effectiveOrder.filter((s) => dataSet.has(s));
     const extras = withData.filter((s) => !filtered.includes(s));
     return [...filtered, ...extras];
-  }, [statusColumns, customOrder, data.series]);
+  }, [statusColumns, customOrder, liveOrder, data.series]);
 
   const chartStatusSet = useMemo(() => new Set(chartStatuses), [chartStatuses]);
 
@@ -178,9 +180,13 @@ const SingleChart: React.FC<{
   const handleMove = (e: React.MouseEvent) =>
     setTooltip((prev) => (prev ? { ...prev, clientX: e.clientX, clientY: e.clientY } : prev));
 
-  const clearDrag = () => {
+  const handleDragEnd = () => {
+    if (liveOrder) {
+      onSetCustomOrder(liveOrder);
+    }
     setDragStatus(null);
     setDragFromSection(null);
+    setLiveOrder(null);
   };
 
   return (
@@ -216,12 +222,13 @@ const SingleChart: React.FC<{
                     onDragOver={(e) => {
                       e.preventDefault();
                       if (!dragStatus || dragStatus === status || dragFromSection !== 'visible') return;
-                      const newOrder = [...chartStatuses];
+                      const current = liveOrder ?? chartStatuses;
+                      const newOrder = [...current];
                       const fromIdx = newOrder.indexOf(dragStatus);
                       if (fromIdx === -1 || fromIdx === i) return;
                       newOrder.splice(fromIdx, 1);
                       newOrder.splice(i, 0, dragStatus);
-                      onSetCustomOrder(newOrder);
+                      setLiveOrder(newOrder);
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -233,7 +240,7 @@ const SingleChart: React.FC<{
                         onSetCustomOrder(newOrder);
                       }
                     }}
-                    onDragEnd={clearDrag}
+                    onDragEnd={handleDragEnd}
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm select-none hover:bg-neutral-50 ${dragStatus === status ? 'opacity-40' : ''}`}
                     style={{ cursor: 'grab' }}
                   >
@@ -267,7 +274,7 @@ const SingleChart: React.FC<{
                       setDragFromSection('hidden');
                     }}
                     onDragOver={(e) => e.preventDefault()}
-                    onDragEnd={clearDrag}
+                    onDragEnd={handleDragEnd}
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm select-none hover:bg-neutral-50 text-neutral-400 ${dragStatus === status ? 'opacity-40' : ''}`}
                     style={{ cursor: 'grab' }}
                   >

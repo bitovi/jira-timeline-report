@@ -858,7 +858,18 @@ export class RouteData extends ObservableObject {
     timeInStatusIssueTypeFilter:
       makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusIssueTypeFilter'),
     timeInStatusProjectFilter: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusProjectFilter'),
-    timeInStatusReorder: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('timeInStatusReorder'),
+    timeInStatusReorder: saveJSONToUrlButAlsoLookAtReport_DataWrapper('timeInStatusReorder', undefined, type.Any, {
+      parse: (value) => {
+        if (!value) return undefined;
+        try {
+          const parsed = JSON.parse(value);
+          return parsed && typeof parsed === 'object' ? parsed : undefined;
+        } catch {
+          return undefined;
+        }
+      },
+      stringify: (value) => (value ? JSON.stringify(value) : ''),
+    }),
   };
 }
 
