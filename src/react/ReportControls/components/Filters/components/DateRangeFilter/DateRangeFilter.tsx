@@ -10,11 +10,11 @@ import { useDateRangeFilter } from '../../hooks/useDateRangeFilter';
 const dateInputClassName = 'text-xs rounded bg-neutral-201 py-1 px-2 leading-3 hover:bg-neutral-301 cursor-pointer';
 
 /**
- * Scatter Plot "Due date range" filter section — two native `<input type="date">` fields
- * ("From" / "To", mirroring the "Compare to" control's date input), a Clear button, and
- * quarter preset chips. Empty From/To mean "unbounded on that side", so leaving both empty
- * reproduces today's unfiltered behavior. Scoped to the scatter (`'due'`) report by the
- * caller ({@link Filters}).
+ * "Due date range" filter section — two native `<input type="date">` fields ("From" / "To",
+ * mirroring the "Compare to" control's date input), a Clear button, and quarter preset chips.
+ * Empty From/To mean "unbounded on that side", so leaving both empty reproduces today's
+ * unfiltered behavior. Shared by the Scatter Plot (`'due'`) and Gantt Chart (`'start-due'`)
+ * reports, scoped by the caller ({@link Filters}).
  *
  * Rendered full-width (label as a section heading above the controls) rather than in the
  * narrow `FilterGrid` right cell: two native date inputs + Clear + preset chips need more

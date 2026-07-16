@@ -2,7 +2,14 @@ import React, { useMemo, useState } from 'react';
 import type { CanObservable } from '../../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../../hooks/useCanObservable/useCanObservable';
 import { computeQuartersAndMonths } from '../../../../utils/date/compute-quarters-and-months';
-import { QuarterAndMonthHeaders, TodayLine, GridLines, calculateTodayMargin } from '../../shared/timeline';
+import {
+  QuarterAndMonthHeaders,
+  TodayLine,
+  GridLines,
+  calculateTodayMargin,
+  filterIssuesKeepingUndated,
+  parseISODateRangeBoundary,
+} from '../../shared/timeline';
 import {
   computeAxisRange,
   computeGridTemplateColumns,
@@ -17,6 +24,16 @@ import { GroupRow } from './components/GroupRow';
 import { PercentCompleteModal } from './components/PercentCompleteModal';
 import type { GroupByOption, IssueOrRelease } from './types';
 
+/** Stable no-op observable used when `dateRangeStartObs`/`dateRangeEndObs` aren't supplied (range filter disabled). */
+const NO_DATE_RANGE_OBS: CanObservable<string> = {
+  value: '',
+  getData: () => '',
+  get: () => '',
+  set: () => undefined,
+  on: () => undefined,
+  off: () => undefined,
+};
+
 export interface GanttGridProps {
   primaryIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
   allIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
@@ -25,6 +42,16 @@ export interface GanttGridProps {
   roundToObs: CanObservable<string>;
   breakdownObs: CanObservable<boolean>;
   showPercentCompleteObs: CanObservable<boolean>;
+  /**
+   * `routeData.scatterDateRangeStart` — ISO `YYYY-MM-DD` lower bound of the due-date range
+   * filter (shared with the Scatter Plot). Empty/omitted means unbounded on this side.
+   */
+  dateRangeStartObs?: CanObservable<string>;
+  /**
+   * `routeData.scatterDateRangeEnd` — ISO `YYYY-MM-DD` upper bound of the due-date range
+   * filter (shared with the Scatter Plot). Empty/omitted means unbounded on this side.
+   */
+  dateRangeEndObs?: CanObservable<string>;
 }
 
 /**
@@ -34,13 +61,29 @@ export interface GanttGridProps {
  * Replaces [gantt-grid.js](src/canjs/reports/gantt-grid.js).
  */
 export const GanttGrid: React.FC<GanttGridProps> = (props) => {
-  const primaryIssues = useCanObservable(props.primaryIssuesOrReleasesObs);
+  const rawPrimaryIssues = useCanObservable(props.primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(props.allIssuesOrReleasesObs);
   const groupBy = useCanObservable(props.groupByObs);
   const primaryIssueType = useCanObservable(props.primaryIssueTypeObs);
   const roundTo = useCanObservable(props.roundToObs);
   const breakdown = useCanObservable(props.breakdownObs);
   const showPercentComplete = useCanObservable(props.showPercentCompleteObs);
+  const dateRangeStart = useCanObservable(props.dateRangeStartObs ?? NO_DATE_RANGE_OBS);
+  const dateRangeEnd = useCanObservable(props.dateRangeEndObs ?? NO_DATE_RANGE_OBS);
+
+  const dateRangeFilter = useMemo(
+    () => ({
+      from: parseISODateRangeBoundary(dateRangeStart),
+      to: parseISODateRangeBoundary(dateRangeEnd),
+    }),
+    [dateRangeStart, dateRangeEnd],
+  );
+  // Issues without a due date are always kept — the range only judges dated issues (mirrors
+  // the Scatter Plot's "N without dates" vs. "N outside date range" distinction).
+  const primaryIssues = useMemo(
+    () => filterIssuesKeepingUndated(rawPrimaryIssues, dateRangeFilter),
+    [rawPrimaryIssues, dateRangeFilter],
+  );
 
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const isExpanded = (key: string) => expandedKeys.has(key);

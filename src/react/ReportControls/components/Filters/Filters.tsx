@@ -77,9 +77,9 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
   const showOnlySemverReleasesControls = useShowOnlySemverReleases();
   const releasesControls = useSelectedReleases();
 
-  // The due-date range filter only applies to the Scatter Plot ('due' report) today — see
-  // spec/004-scatter-improvements/date-range.md §6 (Gantt reuse is a planned future step).
-  const isScatterPlot = primaryReportType === 'due';
+  // The due-date range filter applies to the Scatter Plot ('due') and Gantt Chart ('start-due')
+  // reports — see spec/004-scatter-improvements/date-range.md §6.
+  const supportsDateRangeFilter = primaryReportType === 'due' || primaryReportType === 'start-due';
 
   const showSecondaryFilters =
     Boolean(secondaryReport) && Boolean(secondaryReportType) && secondaryReportType !== 'none';
@@ -121,7 +121,7 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
               />
             </>
           )}
-          {isScatterPlot && (
+          {supportsDateRangeFilter && (
             <>
               <Hr className="my-6" />
               <DateRangeFilter />
