@@ -81,7 +81,7 @@ function groupByParent<T>(
       // The parent itself may not be in `allIssues` (e.g. it sits above the rolled-up hierarchy).
       // Fall back to the embedded `fields.Parent` Jira attaches to each child issue before
       // resorting to the bare key.
-      const embeddedParentSummary = getIssue(children[0]).issue?.fields?.Parent?.fields?.summary;
+const embeddedParentSummary = children.map(getIssue).map((i) => i.issue?.fields?.Parent?.fields?.summary).find(Boolean);
       return {
         key: parentKey,
         title: parent?.summary ?? embeddedParentSummary ?? parentKey,
