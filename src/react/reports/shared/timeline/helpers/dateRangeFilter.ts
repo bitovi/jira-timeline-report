@@ -26,7 +26,7 @@ export const isIssueInDateRange = (issue: IssueOrRelease, { from, to }: DateRang
 };
 
 /**
- * Split `issues` (assumed to already have a rolled-up due date — see `partitionIssuesByDate`)
+ * Split `issues`
  * into those whose due date falls inside `[from, to]` and those outside it.
  *
  * When both `from` and `to` are omitted, every issue is treated as "inside" (unbounded range —
