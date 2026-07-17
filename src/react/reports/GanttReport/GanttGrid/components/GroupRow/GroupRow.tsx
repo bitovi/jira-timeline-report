@@ -17,14 +17,18 @@ export interface GroupRowProps {
  * Ports the group-header portion of gantt-grid.js's `view` template.
  */
 export const GroupRow: React.FC<GroupRowProps> = ({ group, gridRow }) => {
-  const label = <span className={`font-bold px-1 ${specialStatusTextClass(group.status ?? '')}`}>{group.summary}</span>;
+  const label = (
+    <span className={`font-bold px-1 truncate max-w-96 ${specialStatusTextClass(group.status ?? '')}`}>
+      {group.summary}
+    </span>
+  );
 
   return (
-    <div style={{ gridRow, gridColumn: '1 / -1' }} className="flex items-center">
+    <div style={{ gridRow, gridColumn: '1 / -1' }} className="flex items-center min-w-0">
       {group.parent ? (
         <IssueTooltip issue={group.parent}>
           {(triggerProps) => (
-            <button type="button" {...triggerProps} className="pointer">
+            <button type="button" {...triggerProps} className="pointer min-w-0">
               {label}
             </button>
           )}

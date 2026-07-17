@@ -10,6 +10,7 @@ import {
   makeIssue,
   groupableIssues,
   groupableParents,
+  groupableGrandparents,
 } from './fixtures';
 
 // Mock the measurement hook so jsdom's width-0 doesn't collapse the layout. Inject a fixed
@@ -57,6 +58,24 @@ const renderGrouped = (issues: IssueOrRelease[], groupBy: string, allIssues: Iss
       <ScatterTimeline
         primaryIssuesOrReleasesObs={obs(issues)}
         allIssuesOrReleasesObs={obs(allIssues)}
+        roundToObs={obs('day')}
+        groupByObs={obs(groupBy)}
+      />
+    </Suspense>,
+  );
+
+const renderGroupedWithDerivedIssues = (
+  issues: IssueOrRelease[],
+  groupBy: string,
+  allIssues: IssueOrRelease[],
+  filteredDerivedIssues: IssueOrRelease[],
+) =>
+  render(
+    <Suspense fallback="loading">
+      <ScatterTimeline
+        primaryIssuesOrReleasesObs={obs(issues)}
+        allIssuesOrReleasesObs={obs(allIssues)}
+        filteredDerivedIssuesObs={obs(filteredDerivedIssues)}
         roundToObs={obs('day')}
         groupByObs={obs(groupBy)}
       />
@@ -221,6 +240,39 @@ describe('ScatterTimeline grouping', () => {
     expect(screen.getByText('Add social login')).toBeInTheDocument();
     // No Parent bucket:
     expect(screen.getByText('Unowned cleanup task')).toBeInTheDocument();
+  });
+
+  test('renders one band label per grandparent, plus a "No Grandparent" band', () => {
+    renderGrouped(groupableIssues, 'grandparent', [...allWithParents, ...groupableGrandparents]);
+    const bandTitles = screen.getAllByTestId('group-band-title').map((el) => el.textContent);
+    expect(bandTitles).toEqual(['Revenue Growth Initiative', 'No Grandparent']);
+  });
+
+  test('each grandparent band contains the right issues', () => {
+    renderGrouped(groupableIssues, 'grandparent', [...allWithParents, ...groupableGrandparents]);
+    // Revenue Growth Initiative (INIT-1) -> Checkout Revamp (EPIC-1) children:
+    expect(screen.getByText('Redesign cart page')).toBeInTheDocument();
+    expect(screen.getByText('Add saved payment methods')).toBeInTheDocument();
+    // Onboarding Overhaul (EPIC-2) has no parent -> No Grandparent bucket, along with the orphan:
+    expect(screen.getByText('Simplify signup flow')).toBeInTheDocument();
+    expect(screen.getByText('Add social login')).toBeInTheDocument();
+    expect(screen.getByText('Unowned cleanup task')).toBeInTheDocument();
+  });
+
+  test('resolves the grandparent via filteredDerivedIssuesObs when the ancestor is outside allIssuesOrReleasesObs (real-world bug repro)', () => {
+    // Mirrors the real bug: `allIssuesOrReleasesObs` (rolledupAndRolledBackIssuesAndReleases) is
+    // scoped to the primary issue type and below, so when reporting on Epics with hierarchy
+    // Outcome > Initiative > Epic, it contains ONLY the epics — the Initiative/Outcome are
+    // absent even though they were fetched via JQL. `filteredDerivedIssuesObs` (the full,
+    // unfiltered-by-hierarchy fetch) is where they actually live.
+    renderGroupedWithDerivedIssues(
+      groupableIssues,
+      'grandparent',
+      groupableIssues, // allIssuesOrReleasesObs: only the epics — no ancestors at all
+      [...groupableIssues, ...groupableParents, ...groupableGrandparents], // filteredDerivedIssuesObs: everything
+    );
+    const bandTitles = screen.getAllByTestId('group-band-title').map((el) => el.textContent);
+    expect(bandTitles).toEqual(['Revenue Growth Initiative', 'No Grandparent']);
   });
 
   test('renders one band label per team, with "No Team" last', () => {

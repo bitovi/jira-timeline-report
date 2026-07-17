@@ -12,6 +12,7 @@ import {
   smartLayoutIssues,
   groupableIssues,
   groupableParents,
+  groupableGrandparents,
 } from './fixtures';
 
 /** A minimal static observable stub for stories (no reactive updates needed). */
@@ -159,6 +160,15 @@ export const NoGrouping: Story = {
 /** Grouped by parent — one band per epic (via `parentKey`), labeled with the parent's summary, plus a "No Parent" band. */
 export const GroupedByParent: Story = {
   args: { issues: groupableIssues, allIssues: [...groupableIssues, ...groupableParents], groupBy: 'parent' },
+};
+
+/** Grouped by grandparent — one band per initiative (parent-of-parent), plus a "No Grandparent" band for issues whose parent has no parent of its own. */
+export const GroupedByGrandparent: Story = {
+  args: {
+    issues: groupableIssues,
+    allIssues: [...groupableIssues, ...groupableParents, ...groupableGrandparents],
+    groupBy: 'grandparent',
+  },
 };
 
 /** Grouped by team — one band per `team.name`, plus a "No Team" band for issues without one. */

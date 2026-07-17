@@ -1,6 +1,16 @@
 import type { IssueOrRelease } from '../types';
 
-export type GroupByOption = '' | 'parent' | 'team' | 'project';
+export type GroupByOption = '' | 'parent' | 'grandparent' | 'team' | 'project';
+
+/**
+ * Minimal shape needed to resolve an ancestor's title/rank/status while chasing `parentKey`
+ * chains for `'parent'`/`'grandparent'` grouping. A full `IssueOrRelease` satisfies this
+ * structurally, but so does a plain pre-rollup issue (e.g. a `DerivedIssue`) — which is what
+ * callers should supply via `allDerivedIssues` for ancestor types that fall outside
+ * `allIssues`'s scope (see `groupIssues`'s doc comment).
+ */
+export type AncestorRef = Pick<IssueOrRelease, 'key' | 'summary'> &
+  Partial<Pick<IssueOrRelease, 'parentKey' | 'rank' | 'rollupStatuses'>>;
 
 export interface IssueGroup<T = IssueOrRelease> {
   /** Stable key for the group (e.g. parent key, team name, project key). */
@@ -9,14 +19,17 @@ export interface IssueGroup<T = IssueOrRelease> {
   title: string | null;
   issues: T[];
   /**
-   * The resolved parent issue, populated only by `groupByParent` (`'parent'` grouping).
-   * `undefined` for team/project/ungrouped groups; `null` for the "No Parent" bucket.
-   * Additive field — consumers that ignore it (e.g. ScatterTimeline) are unaffected.
+   * The resolved parent/grandparent issue, populated only by `groupByParent` (`'parent'`
+   * grouping, where it's the parent) and `groupByGrandparent` (`'grandparent'` grouping, where
+   * it's the grandparent). `undefined` for team/project/ungrouped groups; `null` for the
+   * "No Parent"/"No Grandparent" bucket. Additive field — consumers that ignore it (e.g.
+   * ScatterTimeline) are unaffected.
    */
-  parent?: IssueOrRelease | null;
+  parent?: AncestorRef | null;
 }
 
 const NO_PARENT_KEY = 'no-parent';
+const NO_GRANDPARENT_KEY = 'no-grandparent';
 const NO_TEAM_KEY = 'no-team';
 const NO_PROJECT_KEY = 'no-project';
 
@@ -27,9 +40,17 @@ const identity = <T>(item: T): IssueOrRelease => item as unknown as IssueOrRelea
  * for the scatter timeline's band layout.
  *
  * `allIssues` is the full rolled-up issue set (not just the primary issues being plotted) and
- * is only used for `'parent'` grouping, to look up each parent's summary/rank the same way the
- * Gantt chart does (`getSortedParents` in gantt-grid.js) — the primary issues only carry their
- * own `parentKey`, not the parent's summary.
+ * is only used for `'parent'`/`'grandparent'` grouping, to look up each parent's (or
+ * grandparent's) summary/rank the same way the Gantt chart does (`getSortedParents` in
+ * gantt-grid.js) — the primary issues only carry their own `parentKey`, not the parent's
+ * summary, let alone the grandparent's.
+ *
+ * IMPORTANT: `allIssues` (`rolledupAndRolledBackIssuesAndReleases` upstream) is scoped to the
+ * primary issue type and its descendants — ancestor types *above* the primary type (e.g. a
+ * grandparent two levels up) are never present in it, even if they were fetched via JQL. Pass
+ * `allDerivedIssues` — the full, unfiltered-by-hierarchy issue set (`filteredDerivedIssues`
+ * upstream) — to fill that gap; it's consulted as a fallback whenever a key isn't found in
+ * `allIssues`.
  *
  * When `groupBy` is `''`, a single group with `title: null` is returned so callers can render
  * the ungrouped layout unchanged.
@@ -43,8 +64,10 @@ export const groupIssues = <T = IssueOrRelease>(
   allIssues: IssueOrRelease[],
   groupBy: GroupByOption,
   getIssue: (item: T) => IssueOrRelease = identity,
+  allDerivedIssues: AncestorRef[] = [],
 ): IssueGroup<T>[] => {
-  if (groupBy === 'parent') return groupByParent(items, allIssues, getIssue);
+  if (groupBy === 'parent') return groupByParent(items, allIssues, getIssue, allDerivedIssues);
+  if (groupBy === 'grandparent') return groupByGrandparent(items, allIssues, getIssue, allDerivedIssues);
   if (groupBy === 'team') {
     return groupByField(items, (item) => getIssue(item).team?.name || null, NO_TEAM_KEY, 'No Team');
   }
@@ -54,12 +77,24 @@ export const groupIssues = <T = IssueOrRelease>(
   return [{ key: 'all', title: null, issues: items }];
 };
 
+/**
+ * Builds a key → ancestor lookup Map, preferring `allIssues` (richer, fully-rolled-up data)
+ * over `allDerivedIssues` (a raw, unfiltered-by-hierarchy fallback) when a key appears in both.
+ */
+function buildAncestorLookup(allIssues: IssueOrRelease[], allDerivedIssues: AncestorRef[]): Map<string, AncestorRef> {
+  const byKey = new Map<string, AncestorRef>();
+  for (const issue of allDerivedIssues) byKey.set(issue.key, issue);
+  for (const issue of allIssues) byKey.set(issue.key, issue);
+  return byKey;
+}
+
 function groupByParent<T>(
   items: T[],
   allIssues: IssueOrRelease[],
   getIssue: (item: T) => IssueOrRelease,
+  allDerivedIssues: AncestorRef[] = [],
 ): IssueGroup<T>[] {
-  const allByKey = new Map(allIssues.map((issue) => [issue.key, issue]));
+  const allByKey = buildAncestorLookup(allIssues, allDerivedIssues);
   const childrenByParentKey = new Map<string, T[]>();
 
   for (const item of items) {
@@ -95,6 +130,61 @@ const embeddedParentSummary = children.map(getIssue).map((i) => i.issue?.fields?
   groups.sort((a, b) => {
     if (a.key === NO_PARENT_KEY) return 1;
     if (b.key === NO_PARENT_KEY) return -1;
+    if (a.rank != null && b.rank != null) {
+      return a.rank > b.rank ? 1 : a.rank < b.rank ? -1 : 0;
+    }
+    return (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' });
+  });
+
+  return groups.map(({ key, title, issues: groupedItems, parent }) => ({ key, title, issues: groupedItems, parent }));
+}
+
+function groupByGrandparent<T>(
+  items: T[],
+  allIssues: IssueOrRelease[],
+  getIssue: (item: T) => IssueOrRelease,
+  allDerivedIssues: AncestorRef[] = [],
+): IssueGroup<T>[] {
+  const allByKey = buildAncestorLookup(allIssues, allDerivedIssues);
+  const childrenByGrandparentKey = new Map<string, T[]>();
+
+  const grandparentKeyFor = (item: T): string => {
+    const parentKey = getIssue(item).parentKey;
+    if (!parentKey) return NO_GRANDPARENT_KEY;
+    const parent = allByKey.get(parentKey);
+    const grandparentKey = parent?.parentKey;
+    return grandparentKey || NO_GRANDPARENT_KEY;
+  };
+
+  for (const item of items) {
+    const grandparentKey = grandparentKeyFor(item);
+    const existing = childrenByGrandparentKey.get(grandparentKey);
+    if (existing) {
+      existing.push(item);
+    } else {
+      childrenByGrandparentKey.set(grandparentKey, [item]);
+    }
+  }
+
+  const groups: Array<IssueGroup<T> & { rank: string | null }> = Array.from(childrenByGrandparentKey.entries()).map(
+    ([grandparentKey, children]) => {
+      if (grandparentKey === NO_GRANDPARENT_KEY) {
+        return { key: NO_GRANDPARENT_KEY, title: 'No Grandparent', issues: children, rank: null, parent: null };
+      }
+      const grandparent = allByKey.get(grandparentKey) ?? null;
+      return {
+        key: grandparentKey,
+        title: grandparent?.summary ?? grandparentKey,
+        issues: children,
+        rank: grandparent?.rank ?? null,
+        parent: grandparent,
+      };
+    },
+  );
+
+  groups.sort((a, b) => {
+    if (a.key === NO_GRANDPARENT_KEY) return 1;
+    if (b.key === NO_GRANDPARENT_KEY) return -1;
     if (a.rank != null && b.rank != null) {
       return a.rank > b.rank ? 1 : a.rank < b.rank ? -1 : 0;
     }

@@ -22,7 +22,7 @@ import {
 import { IssueRow } from './components/IssueRow';
 import { GroupRow } from './components/GroupRow';
 import { PercentCompleteModal } from './components/PercentCompleteModal';
-import type { GroupByOption, IssueOrRelease } from './types';
+import type { GroupByOption, IssueOrRelease, AncestorRef } from './types';
 
 /** Stable no-op observable used when `dateRangeStartObs`/`dateRangeEndObs` aren't supplied (range filter disabled). */
 const NO_DATE_RANGE_OBS: CanObservable<string> = {
@@ -37,6 +37,12 @@ const NO_DATE_RANGE_OBS: CanObservable<string> = {
 export interface GanttGridProps {
   primaryIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
   allIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
+  /**
+   * The full, unfiltered-by-hierarchy issue set (`routeData.filteredDerivedIssues`) — used as a
+   * fallback ancestor lookup for `'parent'`/`'grandparent'` grouping when an ancestor falls
+   * outside `allIssuesOrReleasesObs`'s primary-type-and-below scope. Optional; defaults to none.
+   */
+  filteredDerivedIssuesObs?: CanObservable<AncestorRef[]>;
   groupByObs: CanObservable<GroupByOption>;
   primaryIssueTypeObs: CanObservable<string>;
   roundToObs: CanObservable<string>;
@@ -54,6 +60,16 @@ export interface GanttGridProps {
   dateRangeEndObs?: CanObservable<string>;
 }
 
+/** Stable no-op observable used when `filteredDerivedIssuesObs` isn't supplied. */
+const NO_DERIVED_ISSUES_OBS: CanObservable<AncestorRef[]> = {
+  value: [],
+  getData: () => [],
+  get: () => [],
+  set: () => undefined,
+  on: () => undefined,
+  off: () => undefined,
+};
+
 /**
  * The Gantt chart report (React). Renders a CSS grid of issue/group rows against a
  * quarter/month axis, mirroring `ScatterTimeline`'s container shape.
@@ -63,6 +79,7 @@ export interface GanttGridProps {
 export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const rawPrimaryIssues = useCanObservable(props.primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(props.allIssuesOrReleasesObs);
+  const allDerivedIssues = useCanObservable(props.filteredDerivedIssuesObs ?? NO_DERIVED_ISSUES_OBS);
   const groupBy = useCanObservable(props.groupByObs);
   const primaryIssueType = useCanObservable(props.primaryIssueTypeObs);
   const roundTo = useCanObservable(props.roundToObs);
@@ -113,9 +130,18 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
     [qam.months, extraColumns],
   );
   const rows = useMemo(
-    () => buildGanttRows({ primaryIssues, allIssues, groupBy, primaryIssueType, isExpanded, getChildren }),
+    () =>
+      buildGanttRows({
+        primaryIssues,
+        allIssues,
+        allDerivedIssues,
+        groupBy,
+        primaryIssueType,
+        isExpanded,
+        getChildren,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [primaryIssues, allIssues, groupBy, primaryIssueType, getChildren, expandedKeys],
+    [primaryIssues, allIssues, allDerivedIssues, groupBy, primaryIssueType, getChildren, expandedKeys],
   );
   const todayMargin = calculateTodayMargin(new Date(), qam.firstDay, qam.lastDay);
   const workTypesWithWork = useMemo(

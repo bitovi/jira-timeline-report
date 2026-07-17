@@ -2,7 +2,7 @@
  * this module gets available jira fields.
  */
 
-import { hasValidAccessToken } from './auth';
+import { hasAccessToken } from './auth';
 import { Config, FieldsRequest } from './types';
 
 export function fetchJiraFields(config: Config) {
@@ -26,7 +26,12 @@ function fieldPriorityOrder(
 }
 
 export function makeFieldsRequest(config: Config, setFieldsRequest: (req: FieldsRequest) => void) {
-  if (config.host === 'jira' || hasValidAccessToken()) {
+  // Note: we intentionally check hasAccessToken() (presence) rather than hasValidAccessToken()
+  // (presence + not expired). The request helpers (hosted/connect) already refresh an expired
+  // token before making the request, so gating on validity here just meant that on page load
+  // with an expired-but-refreshable token, this request would never even be kicked off, leaving
+  // fieldsRequest permanently undefined until the next full page load. See mapIdsToNames crash.
+  if (config.host === 'jira' || hasAccessToken()) {
     const req = fetchJiraFields(config)().then((fieldsPassed) => {
       const fields = fieldsPassed as unknown as Array<{ name: string; id: string }>;
 
