@@ -15,6 +15,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // file, so the dev server can end up serving an arbitrarily stale copy until restarted.
 // This plugin serves the file straight from disk on every request, ahead of Vite's own
 // middlewares, so it's always current.
+//
+// IMPORTANT: Storybook's Vite builder (`@storybook/builder-vite`) auto-merges this root
+// `vite.config.ts` into its own dev server config, so this plugin runs there too. Storybook's
+// `.storybook/preview.tsx` imports this same file as a JS module (`import
+// '../dist/production.css'`), which the browser fetches with `Sec-Fetch-Dest: script` and
+// expects a JS module response — force-serving raw `text/css` for that request breaks it with
+// a MIME-type error (blank Storybook). Only intercept the `<link rel="stylesheet">` fetch (
+// `Sec-Fetch-Dest: style`) that this plugin actually exists for; let Vite's own CSS-to-JS
+// transform handle module-script imports normally.
 const serveFreshProductionCss = (): Plugin => ({
   name: 'serve-fresh-production-css',
   configureServer(server) {
@@ -22,7 +31,7 @@ const serveFreshProductionCss = (): Plugin => ({
       // Match the exact path (ignoring any query string) so this doesn't also intercept
       // requests like `/dist/production.css.map`.
       const pathname = req.url?.split('?')[0];
-      if (pathname !== '/dist/production.css') {
+      if (pathname !== '/dist/production.css' || req.headers['sec-fetch-dest'] === 'script') {
         next();
         return;
       }
