@@ -62,11 +62,11 @@ export const GroupBand: React.FC<GroupBandProps> = ({
             gridRow: `${rowStart} / span ${rowSpan}`,
             zIndex: 5,
           }}
-          className="flex items-center justify-end px-2 text-right font-semibold text-sm truncate"
+          className="flex items-center justify-end min-w-0 px-2 text-right font-semibold text-sm"
           title={title ?? undefined}
           data-testid="group-band-title"
         >
-          {title}
+          <span className="truncate">{title}</span>
         </div>
       )}
 
