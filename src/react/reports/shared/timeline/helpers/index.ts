@@ -4,3 +4,5 @@ export { getStatusColorClass, getStatusLabel, countIssuesByStatus, STATUS_LEGEND
 export type { StatusCount } from './status';
 export { shouldUseDensityOptimizations } from './density';
 export { calculateTodayMargin, computeGridColumnCSS } from './grid';
+export { filterIssuesByDateRange, filterIssuesKeepingUndated, parseISODateRangeBoundary } from './dateRangeFilter';
+export type { DateRangeFilter } from './dateRangeFilter';

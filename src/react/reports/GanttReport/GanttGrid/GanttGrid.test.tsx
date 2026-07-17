@@ -70,4 +70,42 @@ describe('GanttGrid', () => {
     });
     expect(screen.getByText('Team Rocket')).toBeInTheDocument();
   });
+
+  describe('due date range filter', () => {
+    const inRange = makeIssue({ key: 'IN-1', summary: 'Due in January', due: new Date('2025-01-15') });
+    const outOfRange = makeIssue({ key: 'OUT-1', summary: 'Due in March', due: new Date('2025-03-15') });
+    const undated = makeIssue({ key: 'UNDATED-1', summary: 'No due date yet' });
+
+    it('hides dated issues outside the range but keeps issues inside it', () => {
+      renderGrid({
+        primaryIssuesOrReleasesObs: obs([inRange, outOfRange]),
+        allIssuesOrReleasesObs: obs([inRange, outOfRange]),
+        dateRangeStartObs: obs('2025-01-01'),
+        dateRangeEndObs: obs('2025-01-31'),
+      });
+      expect(screen.getByText('Due in January')).toBeInTheDocument();
+      expect(screen.queryByText('Due in March')).not.toBeInTheDocument();
+    });
+
+    it('keeps undated issues regardless of an active range', () => {
+      renderGrid({
+        primaryIssuesOrReleasesObs: obs([inRange, outOfRange, undated]),
+        allIssuesOrReleasesObs: obs([inRange, outOfRange, undated]),
+        dateRangeStartObs: obs('2025-01-01'),
+        dateRangeEndObs: obs('2025-01-31'),
+      });
+      expect(screen.getByText('Due in January')).toBeInTheDocument();
+      expect(screen.getByText('No due date yet')).toBeInTheDocument();
+      expect(screen.queryByText('Due in March')).not.toBeInTheDocument();
+    });
+
+    it('renders every issue when the range is empty (default/no filter)', () => {
+      renderGrid({
+        primaryIssuesOrReleasesObs: obs([inRange, outOfRange]),
+        allIssuesOrReleasesObs: obs([inRange, outOfRange]),
+      });
+      expect(screen.getByText('Due in January')).toBeInTheDocument();
+      expect(screen.getByText('Due in March')).toBeInTheDocument();
+    });
+  });
 });

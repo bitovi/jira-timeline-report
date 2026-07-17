@@ -2,8 +2,9 @@ import { useRouteData } from '../../../../../hooks/useRouteData';
 import { getDateRangePresets } from '../../components/DateRangeFilter/quarterPresets';
 
 /**
- * Scatter Plot "Due date range" filter — reads/writes the `scatterDateRangeStart` /
- * `scatterDateRangeEnd` route params (ISO `YYYY-MM-DD` strings, empty = unbounded).
+ * "Due date range" filter — reads/writes the `scatterDateRangeStart` / `scatterDateRangeEnd`
+ * route params (ISO `YYYY-MM-DD` strings, empty = unbounded). Despite the `scatter*` param
+ * names (kept for URL/back-compat), this is shared by the Scatter Plot and Gantt Chart reports.
  */
 export const useDateRangeFilter = () => {
   const [dateRangeStart, setDateRangeStart] = useRouteData<string>('scatterDateRangeStart');

@@ -72,8 +72,12 @@ export interface IssueOrRelease {
   };
   /** Present when the underlying issue has been through `deriveIssue` — powers the "self" calculation breakdown. */
   derivedTiming?: DerivedTimingSlice;
-  /** Raw Jira issue, only read for its issue-type icon in the % complete modal header. */
-  issue?: { fields?: { 'Issue Type'?: { iconUrl?: string } } };
+  /**
+   * Raw Jira issue. Read for its issue-type icon in the % complete modal header, and for the
+   * embedded `fields.Parent` fallback `groupByParent` uses when the parent itself isn't in
+   * `allIssues`.
+   */
+  issue?: { fields?: { 'Issue Type'?: { iconUrl?: string }; Parent?: { fields?: { summary?: string } } } };
   reportingHierarchy: { depth: number; childKeys: string[] };
   issueLastPeriod?: { rollupDates?: { start?: Date | null; due?: Date | null } };
 }

@@ -48,12 +48,26 @@ describe('groupIssues', () => {
       expect(groups[1].issues.map((i) => i.key)).toEqual(['ORPHAN-1']);
     });
 
-    it('falls back to the parent key as the title when the parent is not found in allIssues', () => {
+    it('falls back to the parent key as the title when the parent is not found in allIssues and has no embedded parent field', () => {
       const issues = [makeIssue({ key: 'CHILD-1', parentKey: 'PARENT-UNKNOWN' })];
 
       const groups = groupIssues(issues, issues, 'parent');
 
       expect(groups[0].title).toBe('PARENT-UNKNOWN');
+    });
+
+    it('falls back to the embedded fields.Parent summary when the parent is not found in allIssues', () => {
+      const issues = [
+        makeIssue({
+          key: 'CHILD-1',
+          parentKey: 'PARENT-UNKNOWN',
+          issue: { fields: { Parent: { fields: { summary: 'Real Parent Name' } } } },
+        }),
+      ];
+
+      const groups = groupIssues(issues, issues, 'parent');
+
+      expect(groups[0].title).toBe('Real Parent Name');
     });
 
     it('sorts by rank when both parents have one', () => {
