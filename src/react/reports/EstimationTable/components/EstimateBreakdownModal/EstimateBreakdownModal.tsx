@@ -187,9 +187,9 @@ export const EstimateBreakdownModal: FC<EstimateBreakdownModalProps> = ({ issue,
           <div className="w-full flex justify-between">
             <div>
               <p className="py-2 flex gap-1 text-xs items-center">
-                {issue.issue?.fields?.['Issue Type']?.iconUrl && (
-                  <img src={issue.issue.fields['Issue Type'].iconUrl} alt="" />
-                )}
+{issue.issue?.fields?.['Issue Type']?.iconUrl && (
+  <img src={issue.issue?.fields?.['Issue Type']?.iconUrl} alt="" />
+)}
                 {issue.url ? (
                   <a href={issue.url} className="hover:underline" target="_blank" rel="noreferrer">
                     {issue.key}
