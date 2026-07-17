@@ -2,9 +2,6 @@ import { StacheElement, type, queues, value } from './can.js';
 
 import routeData from './canjs/routing/route-data';
 
-import './canjs/controls/status-filter.js';
-import './canjs/reports/table-grid.js';
-
 import { rollupAndRollback } from './jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from './jira/rolledup/work-status/work-status';
 import { matchesAllFilterRows } from './jira/rollup/filter-rows/filter-rows';
@@ -37,6 +34,7 @@ import { TimeInStatus } from './react/reports/TimeInStatus/TimeInStatus';
 import { ScatterTimeline } from './react/reports/ScatterTimeline';
 import { WorkBreakdown } from './react/reports/WorkBreakdown';
 import { GanttGrid } from './react/reports/GanttReport/GanttGrid';
+import { EstimationTable } from './react/reports/EstimationTable';
 
 const urlParamValuesToReactComponents = {
   'estimate-analysis': EstimateAnalysis,
@@ -47,6 +45,7 @@ const urlParamValuesToReactComponents = {
   'time-in-status': TimeInStatus,
   due: ScatterTimeline,
   'start-due': GanttGrid,
+  table: EstimationTable,
 };
 
 // Dev helper: logs the fully transformed (rolled up + rolled back) issue data that every report
@@ -94,11 +93,6 @@ export class TimelineReport extends StacheElement {
       {{# and(this.routeData.derivedIssuesRequestData.issuesPromise.isResolved, this.primaryIssuesOrReleases.length) }}
         <div class="my-2 border-box color-bg-white flex-1">
           <div id="print-header" on:inserted='this.attachPrintHeader()' on:removed='this.detachPrintHeader()'></div>
-          {{# eq(this.routeData.primaryReportType, "table") }}
-            <table-grid
-                primaryIssuesOrReleases:from="this.primaryIssuesOrReleases"
-                allIssuesOrReleases:from="this.rolledupAndRolledBackIssuesAndReleases"></table-grid>
-          {{/ eq }}
           {{# if(this.isReactComponent(this.routeData.primaryReportType) ) }}
             <div id='react-report-container' 
               on:inserted='this.attachReactReport()'
