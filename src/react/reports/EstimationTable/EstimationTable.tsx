@@ -58,11 +58,14 @@ export const EstimationTable: React.FC<EstimationTableProps> = (props) => {
               <tr key={`${row.issue.key}-${index}`}>
                 <td style={{ paddingLeft: row.depth * 20 }} className="px-2 flex gap-2">
                   {iconUrl && <img src={iconUrl} alt="" className="inline-block" />}
-                  {row.issue.type !== 'Release' && (
-                    <a href={row.issue.url} target="_blank" rel="noreferrer" className="link inline-block">
-                      {row.issue.key}
-                    </a>
-                  )}
+{row.issue.type !== 'Release' &&
+  (row.issue.url ? (
+    <a href={row.issue.url} target="_blank" rel="noreferrer" className="link inline-block">
+      {row.issue.key}
+    </a>
+  ) : (
+    <span className="inline-block">{row.issue.key}</span>
+  ))}
                   <span className="text-ellipsis truncate inline-block max-w-96">{row.issue.summary}</span>
                 </td>
                 <td className="px-2 text-right cursor-pointer" onClick={() => setBreakdownIssue(row.issue)}>
