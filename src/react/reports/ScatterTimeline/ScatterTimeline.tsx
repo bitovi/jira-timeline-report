@@ -22,7 +22,7 @@ import {
   GridLines,
   StatusLegend,
 } from '../shared/timeline';
-import type { GroupByOption } from '../shared/timeline';
+import type { GroupByOption, AncestorRef } from '../shared/timeline';
 import { useMeasuredTextWidths } from './hooks/useMeasuredTextWidths';
 import { GroupBand } from './components/GroupBand';
 import { NoDatesKey } from './components/NoDatesKey';
@@ -51,6 +51,16 @@ const NO_DATE_RANGE_OBS: CanObservable<string> = {
   off: () => undefined,
 };
 
+/** Stable no-op observable used when `filteredDerivedIssuesObs` isn't supplied. */
+const NO_DERIVED_ISSUES_OBS: CanObservable<AncestorRef[]> = {
+  value: [],
+  getData: () => [],
+  get: () => [],
+  set: () => undefined,
+  on: () => undefined,
+  off: () => undefined,
+};
+
 /** Fixed width (px) of the group-label gutter column, shown when grouping is active. */
 const GUTTER_WIDTH_PX = 160;
 
@@ -63,6 +73,13 @@ export interface ScatterTimelineProps {
    * `primaryIssuesOrReleasesObs` when omitted.
    */
   allIssuesOrReleasesObs?: CanObservable<IssueOrRelease[]>;
+  /**
+   * The full, unfiltered-by-hierarchy issue set (`routeData.filteredDerivedIssues`) — used as a
+   * fallback ancestor lookup for `'parent'`/`'grandparent'` grouping when an ancestor (e.g. a
+   * grandparent two levels up) falls outside `allIssuesOrReleasesObs`'s primary-type-and-below
+   * scope. Falls back to an empty array when omitted.
+   */
+  filteredDerivedIssuesObs?: CanObservable<AncestorRef[]>;
   /** `routeData.roundTo` — rounding strategy for due dates. */
   roundToObs: CanObservable<string>;
   /** `routeData.groupBy` — band the plotted issues by parent/team/project. Defaults to `''` (no grouping). */
@@ -97,6 +114,7 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
   const issues = useCanObservable(props.primaryIssuesOrReleasesObs);
   const roundTo = useCanObservable(props.roundToObs);
   const allIssuesForGrouping = useCanObservable(props.allIssuesOrReleasesObs ?? props.primaryIssuesOrReleasesObs);
+  const allDerivedIssuesForGrouping = useCanObservable(props.filteredDerivedIssuesObs ?? NO_DERIVED_ISSUES_OBS);
   const groupBy = useCanObservable(props.groupByObs ?? NO_GROUP_BY_OBS) as GroupByOption;
   const dateRangeStart = useCanObservable(props.dateRangeStartObs ?? NO_DATE_RANGE_OBS);
   const dateRangeEnd = useCanObservable(props.dateRangeEndObs ?? NO_DATE_RANGE_OBS);
@@ -169,7 +187,7 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
       lastDay,
       isLotsOfIssues,
     });
-    const groups = groupIssues(plotted, allIssuesForGrouping, groupBy, (p) => p.issue);
+    const groups = groupIssues(plotted, allIssuesForGrouping, groupBy, (p) => p.issue, allDerivedIssuesForGrouping);
     return groups.map((group) => ({ ...group, rows: packIssuesIntoRowsWithSides(group.issues) }));
   };
 
@@ -186,6 +204,7 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
       isLotsOfIssues,
       initialQuartersAndMonths,
       allIssuesForGrouping,
+      allDerivedIssuesForGrouping,
       groupBy,
     ],
   );
@@ -222,6 +241,7 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
       firstDay,
       lastDay,
       allIssuesForGrouping,
+      allDerivedIssuesForGrouping,
       groupBy,
     ],
   );

@@ -126,4 +126,4 @@ export interface DatesTooltipData {
 
 // Quarter, Month, QuartersAndMonths — reused from shared/timeline (compute-quarters-and-months).
 export type { Month, Quarter, QuartersAndMonths } from '../../shared/timeline/types';
-export type { GroupByOption } from '../../shared/timeline/helpers/groupIssues';
+export type { GroupByOption, AncestorRef } from '../../shared/timeline/helpers/groupIssues';

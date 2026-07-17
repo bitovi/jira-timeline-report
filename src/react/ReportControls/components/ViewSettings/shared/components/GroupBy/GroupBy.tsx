@@ -8,6 +8,7 @@ import { useRouteData } from '../../../../../../hooks/useRouteData';
 const groupBy = [
   { label: 'None', value: '' },
   { label: 'Parent', value: 'parent' },
+  { label: 'Grandparent', value: 'grandparent' },
   { label: 'Team', value: 'team' },
   { label: 'Project', value: 'project' },
 ];

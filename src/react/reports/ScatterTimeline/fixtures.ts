@@ -146,8 +146,17 @@ export const smartLayoutIssues: IssueOrRelease[] = [
 
 /** Parent issues referenced by {@link groupableIssues}' `parentKey` — passed as `allIssues`. */
 export const groupableParents: IssueOrRelease[] = [
-  makeIssue({ key: 'EPIC-1', summary: 'Checkout Revamp', rank: '0|b' }),
+  makeIssue({ key: 'EPIC-1', summary: 'Checkout Revamp', rank: '0|b', parentKey: 'INIT-1' }),
   makeIssue({ key: 'EPIC-2', summary: 'Onboarding Overhaul', rank: '0|a' }),
+];
+
+/**
+ * Grandparent issue referenced by {@link groupableParents}' `EPIC-1.parentKey` — passed as
+ * `allIssues` alongside `groupableParents`. `EPIC-2` deliberately has no `parentKey`, so its
+ * children fall into the "No Grandparent" bucket when grouping by `'grandparent'`.
+ */
+export const groupableGrandparents: IssueOrRelease[] = [
+  makeIssue({ key: 'INIT-1', summary: 'Revenue Growth Initiative' }),
 ];
 
 /** Issues carrying `parentKey`/`team`/`projectKey` — enough to exercise every v1 grouping dimension. */
