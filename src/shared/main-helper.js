@@ -17,6 +17,11 @@ import { queryClient } from '../react/services/query/queryClient';
 import { getAllReports } from '../jira/reports/fetcher';
 import { reportKeys } from '../react/services/reports/key-factory';
 
+// Import React components for login page
+import { createRoot } from 'react-dom/client';
+import { createElement } from 'react';
+import LoginPageWrapper from '../react/components/LoginPage/LoginPageWrapper';
+
 domEvents.addEvent(domMutateDomEvents.inserted);
 
 export default async function mainHelper(
@@ -31,6 +36,136 @@ export default async function mainHelper(
   configureRouting(route);
 
   console.log('Loaded version of the Timeline Reporter: ' + config?.COMMIT_SHA);
+
+  let requestHelper;
+  if (host === 'jira') {
+    requestHelper = getConnectRequestHelper();
+  } else {
+    requestHelper = getHostedRequestHelper(config);
+  }
+
+  const jiraHelpers = JiraOIDCHelpers(config, requestHelper, host);
+
+  // Check if we should show the login page
+  const shouldShowLoginPage = !isAlwaysLoggedIn && !jiraHelpers.hasValidAccessToken() && host !== 'jira';
+
+  if (shouldShowLoginPage) {
+    return showLoginPageAndWaitForAuth(config, {
+      host,
+      createStorage,
+      configureRouting,
+      showSidebarBranding,
+      isAlwaysLoggedIn,
+      createLinkBuilder,
+      licensingPromise,
+    });
+  }
+
+  // Continue with existing logic for already authenticated users
+  return initializeMainApplication(config, {
+    host,
+    createStorage,
+    configureRouting,
+    showSidebarBranding,
+    isAlwaysLoggedIn,
+    createLinkBuilder,
+    licensingPromise,
+  });
+}
+
+async function showLoginPageAndWaitForAuth(config, options) {
+  const mainContent = document.getElementById('mainContent');
+  const loadingJira = document.getElementById('loadingJira');
+
+  if (loadingJira) {
+    loadingJira.style.display = 'none';
+  }
+
+  // Clear main content and show login page
+  mainContent.innerHTML = '';
+  const loginContainer = document.createElement('div');
+  loginContainer.id = 'login-page-container';
+  mainContent.appendChild(loginContainer);
+
+  const root = createRoot(loginContainer);
+
+  return new Promise((resolve) => {
+    const jiraHelpers = JiraOIDCHelpers(config, getHostedRequestHelper(config), options.host);
+
+    root.render(
+      createElement(LoginPageWrapper, {
+        jiraHelpers,
+        onLoginSuccess: () => {
+          root.unmount();
+          loginContainer.remove();
+
+          // Restore the original structure and continue with main app
+          restoreMainContentStructure();
+          resolve(initializeMainApplication(config, options));
+        },
+        onGuestAccess: () => {
+          root.unmount();
+          loginContainer.remove();
+
+          // Set up guest mode
+          routeData.isGuestMode = true;
+
+          // Restore the original structure and continue with main app
+          restoreMainContentStructure();
+          resolve(initializeMainApplication(config, { ...options, isGuestMode: true }));
+        },
+      }),
+    );
+  });
+}
+
+function restoreMainContentStructure() {
+  const mainContent = document.getElementById('mainContent');
+  mainContent.innerHTML = `
+    <div class="color-bg-white px-4 top-0 z-50 border-b border-neutral-301">
+      <nav class="mx-auto py-2 place-center">
+        <div class="flex gap-4" style="align-items: center">
+          <ul class="flex gap-3 grow items-baseline">
+            <li>
+              <a
+                href="https://github.com/bitovi/jira-timeline-report"
+                class="color-gray-900 font-3xl underline-on-hover bitovi-font-poppins font-bold"
+              >
+                Status Reports for Jira
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://www.bitovi.com/services/agile-project-management-consulting"
+                class="bitovi-poppins color-text-bitovi-red-orange"
+                style="line-height: 37px; font-size: 14px; text-decoration: none"
+              >
+                by <img src="./images/bitovi-logo.png" class="inline align-baseline" />
+              </a>
+            </li>
+          </ul>
+          <select-cloud></select-cloud>
+          <div id="login"></div>
+        </div>
+      </nav>
+    </div>
+    <div id="loadingJira" class="place-center" style="display: none;">
+      <p class="my-2">Loading the Jira Timeline Report ...</p>
+    </div>
+  `;
+}
+
+async function initializeMainApplication(config, options) {
+  const {
+    host,
+    createStorage,
+    configureRouting,
+    showSidebarBranding,
+    isAlwaysLoggedIn,
+    createLinkBuilder,
+    licensingPromise,
+    isGuestMode,
+  } = options;
 
   let requestHelper;
   if (host === 'jira') {
@@ -60,17 +195,23 @@ export default async function mainHelper(
   const storage = createStorage(jiraHelpers);
   const linkBuilder = createLinkBuilder(jiraHelpers.appKey);
 
-  const props = isAlwaysLoggedIn
-    ? {
-        isLoggedIn: true,
-      }
-    : {};
+  const props =
+    isAlwaysLoggedIn || isGuestMode
+      ? {
+          isLoggedIn: true,
+        }
+      : {};
 
   const loginComponent = new JiraLogin().initialize({ jiraHelpers, ...props });
   routeData.isLoggedInObservable = value.from(loginComponent, 'isLoggedIn');
   routeData.jiraHelpers = jiraHelpers;
   routeData.storage = storage;
   routeData.licensingPromise = licensingPromise;
+
+  // Set guest mode flag in route data
+  if (isGuestMode) {
+    routeData.isGuestMode = true;
+  }
 
   const timelineReportNeedsMet = {
     loginResolved: false,
@@ -97,10 +238,16 @@ export default async function mainHelper(
     selectCloud.jiraHelpers = jiraHelpers;
   }
 
+  const login = document.getElementById('login');
+  const loadingJira = document.getElementById('loadingJira');
+  const mainContent = document.getElementById('mainContent');
+
   const listener = ({ value }) => {
     if (value) {
       loginComponent.off('isResolved', listener);
-      loadingJira.style.display = 'none';
+      if (loadingJira) {
+        loadingJira.style.display = 'none';
+      }
       timelineReportNeedsMet.loginResolved = true;
       checkForNeedsAndInsertTimelineReport();
     }
@@ -131,9 +278,13 @@ export default async function mainHelper(
   }
 
   loginComponent.on('isResolved', listener);
-  login.appendChild(loginComponent);
+  if (login) {
+    login.appendChild(loginComponent);
+  }
   if (host === 'jira') {
-    login.style.display = 'none';
+    if (login) {
+      login.style.display = 'none';
+    }
   }
 
   return loginComponent;
