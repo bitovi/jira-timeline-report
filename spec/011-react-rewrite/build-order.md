@@ -7,12 +7,14 @@ Order for replacing the 5 CanJS leaf StacheElement components (the self-containe
 | 1   | **status-filter** | ✅ Deleted                    | Easy       | —                 | Delete                            |
 | 2   | **autocomplete**  | ✅ Deleted                    | Easy       | (deleted with #1) | Delete                            |
 | 3   | **table-grid**    | ✅ Ported → `EstimationTable` | Medium-low | —                 | Port                              |
-| 4   | **jira-login**    | Live, load-bearing            | Medium     | —                 | Extract auth store + React button |
-| 5   | **select-cloud**  | Live (hosted only)            | Medium     | #4                | Port                              |
+| 4   | **jira-login**    | ✅ Done (auth store + button) | Medium     | —                 | Extract auth store + React button |
+| 5   | **select-cloud**  | Live (hosted only)            | Medium     | #4 ✅             | Port                              |
 
-> **Progress (2026-07-16):** Phases 1 & 2 complete. status-filter + autocomplete deleted; table-grid
+> **Progress (2026-07-18):** Phases 1–3 complete. status-filter + autocomplete deleted; table-grid
 > ported to `src/react/reports/EstimationTable/` and registered as `table` in
-> `urlParamValuesToReactComponents`. `src/canjs/reports/` is now empty and removed. Next up: Phase 3 (jira-login).
+> `urlParamValuesToReactComponents` (`src/canjs/reports/` removed). jira-login extracted to the
+> `Login` observable store (`src/stateful-data/login.js`) + React `LoginButton`; `src/shared/jira-login.js`
+> deleted. **Next up: Phase 4 (select-cloud) — now unblocked.**
 
 ## Phase 1 — Delete dead code (status-filter + autocomplete)
 
@@ -49,10 +51,11 @@ Details: `./jira-login/plan.md`.
 
 The header site/cloud picker (hosted web only). Its query gates on `loginComponent.isLoggedIn`, so it wants the clean React-readable auth source from Phase 3.
 
-- React component + `useQuery` on `fetchAccessibleResources` (React Query already present), gated on login.
-- Replace the `SimpleTooltip` dropdown with an `@atlaskit` popover (or portal + positioning).
+- React component + `useQuery` on `fetchAccessibleResources` (React Query already present), gated on login via `routeData.isLoggedInObservable` + `useCanObservable`.
+- Replace the `SimpleTooltip` dropdown with `@atlaskit/dropdown-menu` (template: `SavedReportDropdown.tsx`).
 - Preserve `localStorage['scopeId']` + `window.location.reload()` on switch.
-- Remove the `querySelector` prop-injection in `main-helper.js:94-98`.
+- Replace the `querySelector` prop-injection at `main-helper.js:101-105` with a `createRoot` mount into a new `<div id="select-cloud">`.
+- **select-cloud is the last `simple-tooltip` consumer** — delete `src/canjs/ui/simple-tooltip/` with it.
 
 Details: `./select-cloud/plan.md`.
 
