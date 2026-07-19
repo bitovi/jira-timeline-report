@@ -1,4 +1,4 @@
-import { TimelineReport } from '../timeline-report';
+import TimelineReport from '../react/TimelineReport';
 
 import { initSentry } from './sentry';
 
@@ -114,21 +114,29 @@ export default async function mainHelper(
       // TODO: this is just to make sure things are bound so react can be cool
       routeData.on('timingCalculations', () => {});
 
-      const report = new TimelineReport().initialize({
-        jiraHelpers,
-        loginComponent: loginStore,
-        mode: 'TEAMS',
-        storage,
-        linkBuilder,
-        showSidebarBranding,
-        featuresPromise: getFeatures(storage).then((features) => {
-          queryClient.setQueryData(featuresKeyFactory.features(), features);
+      // Seed features into React Query. This was previously passed to the shell as
+      // `featuresPromise`, but the seeding is a side effect of the promise chain (reports read
+      // features via React Query, not the shell), so it runs here independent of the mount.
+      getFeatures(storage).then((features) => {
+        queryClient.setQueryData(featuresKeyFactory.features(), features);
 
-          return features;
-        }),
+        return features;
       });
-      report.className = 'flex flex-1 overflow-hidden';
-      mainContent.append(report);
+
+      // The shell is now a React tree. Mount it into a flex container appended to #mainContent
+      // (the class carries the layout the StacheElement's host element used to provide).
+      const container = document.createElement('div');
+      container.className = 'flex flex-1 overflow-hidden';
+      mainContent.append(container);
+
+      createRoot(container).render(
+        createElement(TimelineReport, {
+          loginComponent: loginStore,
+          storage,
+          linkBuilder,
+          showSidebarBranding,
+        }),
+      );
     }
   }
 
