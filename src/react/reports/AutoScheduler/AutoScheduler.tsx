@@ -61,7 +61,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
     statsAnalyzerRef.current = statsAnalyzer;
 
     return () => {
-      statsAnalyzer.teardown;
+      statsAnalyzer.teardown();
     };
   }, [primary]);
 
