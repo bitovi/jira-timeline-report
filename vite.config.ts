@@ -54,6 +54,24 @@ const serveFreshProductionCss = (): Plugin => ({
 
 export default defineConfig({
   plugins: [react(), serveFreshProductionCss()],
+  // Some transitive editor deps reference `process.env.CI` at module scope — notably
+  // `@atlaskit/media-state` (pulled in via `@atlaskit/jql-editor` → `@atlaskit/emoji`). Vite
+  // only substitutes `process.env.NODE_ENV`, so the bare `process` throws "process is not
+  // defined" in the browser. `define` covers the production build; the dev server pre-bundles
+  // deps with esbuild (where `define` doesn't reach), so the dep optimizer needs its own define.
+  // esbuild replaces the optimizer `define` wholesale, so `NODE_ENV` must be repeated here or
+  // every dep that reads it would break.
+  define: {
+    'process.env.CI': 'false',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+        'process.env.CI': 'false',
+      },
+    },
+  },
   server: {
     // Bind to all interfaces so the dev server is reachable from outside a
     // Docker container (not just localhost inside the container).

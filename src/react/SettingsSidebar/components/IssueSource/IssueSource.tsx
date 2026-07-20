@@ -4,8 +4,6 @@ import type { ExcludedStatusSelectOption } from './components/ExcludedStatusSele
 import React, { useMemo } from 'react';
 import Button from '@atlaskit/button/new';
 import Heading from '@atlaskit/heading';
-import SectionMessage from '@atlaskit/section-message';
-import Link from '@atlaskit/link';
 
 import { useJQL } from './hooks/useJQL';
 import { useRawIssuesRequestData } from './hooks/useRawIssueRequestData';
@@ -44,12 +42,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
         <Heading size="medium">Issue Source</Heading>
       </div>
       <p>Specify a JQL that loads all the issues needed for your report.</p>
-      <SectionMessage appearance="discovery">
-        <Link href="https://support.atlassian.com/jira-work-management/docs/use-advanced-search-with-jira-query-language-jql/">
-          Learn more
-        </Link>{' '}
-        about JQL.
-      </SectionMessage>
       <JQLTextArea jql={jql} setJql={setJql} {...issueRequestData} />
       <LoadChildren
         loadChildren={loadChildren}

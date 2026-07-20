@@ -1,9 +1,8 @@
 import type { FC } from 'react';
 
-import { Label } from '@atlaskit/form';
-import VisuallyHidden from '@atlaskit/visually-hidden';
-import React, { useId } from 'react';
-import TextArea from '@atlaskit/textarea';
+import React from 'react';
+
+import JqlEditor from '../JqlEditor';
 
 interface JQLTextAreaProps {
   jql: string;
@@ -24,22 +23,10 @@ const JQLTextArea: FC<JQLTextAreaProps> = ({
   totalChunks,
   numberOfIssues,
 }) => {
-  const textAreaId = useId();
-
   return (
-    <div className="flex items-end flex-col">
-      <VisuallyHidden>
-        <Label htmlFor={textAreaId}>Add your JQL</Label>
-      </VisuallyHidden>
-      <TextArea
-        id={textAreaId}
-        resize="none"
-        className="!min-h-48"
-        placeholder="issueType in (Epic, Story) order by Rank"
-        value={jql}
-        onChange={({ target }) => setJql(target.value)}
-      />
-      <div className="text-xs h-[26px] pt-1">
+    <div className="flex flex-col">
+      <JqlEditor query={jql} onUpdate={setJql} isSearching={isLoading} />
+      <div className="text-xs h-[26px] pt-1 self-end">
         {isLoading &&
           (totalChunks ? (
             <>
