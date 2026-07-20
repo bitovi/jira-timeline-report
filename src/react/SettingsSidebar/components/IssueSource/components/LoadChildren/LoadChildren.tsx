@@ -3,10 +3,10 @@ import type { FC } from 'react';
 import React, { useId } from 'react';
 import { Checkbox } from '@atlaskit/checkbox';
 import { Label } from '@atlaskit/form';
-import Textfield from '@atlaskit/textfield';
 
 import Hr from '../../../../../components/Hr';
 import { Accordion, AccordionContent, AccordionTitle } from '../../../../../components/Accordion';
+import JqlEditor from '../JqlEditor';
 
 interface LoadChildrenProps {
   loadChildren: boolean;
@@ -17,7 +17,6 @@ interface LoadChildrenProps {
 
 const LoadChildren: FC<LoadChildrenProps> = ({ loadChildren, childJql, setChildJql, setLoadChildren }) => {
   const loadChildrenId = useId();
-  const childJqlId = useId();
 
   return (
     <div>
@@ -33,15 +32,9 @@ const LoadChildren: FC<LoadChildrenProps> = ({ loadChildren, childJql, setChildJ
         </div>
         {loadChildren && (
           <div className="flex flex-col gap-1">
-            <Label htmlFor={childJqlId}>Optional children JQL filters</Label>
-            <Textfield
-              type="text"
-              id={childJqlId}
-              value={childJql}
-              onChange={({ currentTarget }) => {
-                setChildJql(currentTarget.value);
-              }}
-            />
+            {/* Caption only — the editor labels its own combobox, so there's no control to associate. */}
+            <Label htmlFor="">Optional children JQL filters</Label>
+            <JqlEditor query={childJql} onUpdate={setChildJql} />
           </div>
         )}
       </div>

@@ -48,6 +48,24 @@ export function fetchJiraIssue(config: Config) {
     return config.requestHelper(`/api/3/issue/${issueId}`);
   };
 }
+
+// JQL autocomplete (powers @atlaskit/jql-editor). These return the raw Jira
+// `/jql/autocompletedata` response shapes; the atlaskit-specific mapping lives in the
+// consuming hook (useJqlAutocompleteProvider). `requestHelper` supplies base URL + OIDC auth.
+export function fetchJqlAutocompleteData(config: Config) {
+  // Field + function metadata. The atlaskit hook passes a url, but it carries no params
+  // for initial data, so we ignore it and use the app's path convention.
+  return (_url: string) => config.requestHelper('/api/3/jql/autocompletedata');
+}
+
+export function fetchJqlAutocompleteSuggestions(config: Config) {
+  // The hook builds the query string (fieldName / fieldValue); preserve it, prepend the
+  // app's known-good path.
+  return (url: string) => {
+    const search = url.includes('?') ? url.slice(url.indexOf('?')) : '';
+    return config.requestHelper(`/api/3/jql/autocompletedata/suggestions${search}`);
+  };
+}
 export const fieldsToEditBody = (obj: Record<string, any>, fieldMapping: { nameMap: Record<string, string> }) => {
   const editBody: {
     fields: Record<string, any>;

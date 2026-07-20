@@ -3,6 +3,18 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
+// Swap the heavy ProseMirror editor for a textarea stub and stub the autocomplete provider hook
+// (which otherwise requires the Jira context) so IssueSource can mount under jsdom.
+vi.mock('@atlaskit/jql-editor', () => ({
+  JQLEditorAsync: ({ query, onUpdate }: { query: string; onUpdate?: (query: string) => void }) => (
+    <textarea aria-label="Add your JQL" value={query} onChange={(event) => onUpdate?.(event.target.value)} />
+  ),
+}));
+
+vi.mock('./hooks/useJqlAutocompleteProvider', () => ({
+  useJqlAutocompleteProvider: () => ({}),
+}));
+
 import IssueSource from './IssueSource';
 
 vi.mock('./hooks/useRawIssueRequestData', () => ({
