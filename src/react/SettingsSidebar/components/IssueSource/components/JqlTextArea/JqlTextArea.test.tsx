@@ -5,9 +5,17 @@ import { vi } from 'vitest';
 
 // The real JQLEditor is a heavy ProseMirror/react-intl component that is awkward under jsdom, so
 // we swap it for a light textarea stub that preserves the controlled `query` / `onUpdate` contract.
+// The aria-label/data-testid mirror the real widget's (see `messages.inputLabel` and
+// `jql-editor-view/index.js` in `@atlaskit/jql-editor`) so this stub can't silently drift from what
+// Playwright targets in the real DOM.
 vi.mock('@atlaskit/jql-editor', () => ({
   JQLEditorAsync: ({ query, onUpdate }: { query: string; onUpdate?: (query: string) => void }) => (
-    <textarea aria-label="Add your JQL" value={query} onChange={(event) => onUpdate?.(event.target.value)} />
+    <textarea
+      aria-label="JQL query"
+      data-testid="jql-editor-input"
+      value={query}
+      onChange={(event) => onUpdate?.(event.target.value)}
+    />
   ),
 }));
 
@@ -33,7 +41,7 @@ describe('<JQLTextArea />', () => {
       />,
     );
 
-    const jqlEditor = screen.getByLabelText('Add your JQL');
+    const jqlEditor = screen.getByTestId('jql-editor-input');
     expect(jqlEditor).toBeInTheDocument();
     expect(jqlEditor).toHaveValue('issueType in (Epic, Story) order by Rank');
 
