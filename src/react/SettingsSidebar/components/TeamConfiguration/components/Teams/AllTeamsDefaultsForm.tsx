@@ -11,6 +11,7 @@ import Select from './components/Select';
 import Hr from '../../../../../components/Hr';
 import { FormToggle } from './components/Toggle';
 import { RequiredAsterisk } from './components/Label';
+import { buildSelectableFields } from './shared/selectable-fields';
 
 export interface AllTeamsDefaultFormProps {
   save: (newConfiguration: Configuration) => void;
@@ -25,7 +26,7 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
 }
 
 const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData, inheritedData, jiraFields }) => {
-  const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
+  const selectableFields = buildSelectableFields(jiraFields);
 
   const { register, handleSubmit, control } = useForm<Configuration>({
     defaultValues: inheritedData,

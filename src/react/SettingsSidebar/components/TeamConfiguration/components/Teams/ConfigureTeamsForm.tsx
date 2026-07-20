@@ -13,6 +13,7 @@ import InheritanceTextField from './components/InheritanceTextField';
 import InheritanceToggleField from './components/InheritanceToggleField';
 import InheritanceSelect from './components/InheritanceSelect';
 import { RequiredAsterisk } from './components/Label';
+import { buildSelectableFields } from './shared/selectable-fields';
 
 export interface ConfigureTeamsFormProps {
   onInitialDefaultsLoad?: (overrides: Partial<NormalizeIssueConfig>) => void;
@@ -37,7 +38,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
   update,
   toggleInheritance,
 }) => {
-  const selectableFields = jiraFields.map(({ name }) => ({ value: name, label: name }));
+  const selectableFields = buildSelectableFields(jiraFields);
 
   return (
     <div className="py-2">
