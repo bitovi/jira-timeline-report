@@ -1,9 +1,13 @@
-import { TimelineReport } from '../timeline-report';
+import TimelineReport from '../react/TimelineReport';
 
-import '../shared/select-cloud';
 import { initSentry } from './sentry';
 
-import JiraLogin from '../shared/jira-login';
+import { createRoot } from 'react-dom/client';
+import { createElement } from 'react';
+
+import { Login } from '../stateful-data/login.js';
+import LoginButton from '../react/LoginButton';
+import SelectCloudWrapper from '../react/SelectCloud';
 import JiraOIDCHelpers from '../jira-oidc-helpers';
 import { getHostedRequestHelper } from '../request-helpers/hosted-request-helper';
 import { getConnectRequestHelper } from '../request-helpers/connect-request-helper';
@@ -66,8 +70,12 @@ export default async function mainHelper(
       }
     : {};
 
-  const loginComponent = new JiraLogin().initialize({ jiraHelpers, ...props });
-  routeData.isLoggedInObservable = value.from(loginComponent, 'isLoggedIn');
+  // Observable auth store — the single source of truth for login state. Feeds
+  // both the remaining CanJS StacheElements (timeline-report view) and React
+  // (LoginButton, SelectCloud). Auto-login runs in its constructor (may resolve
+  // synchronously).
+  const loginStore = new Login({ jiraHelpers, ...props });
+  routeData.isLoggedInObservable = value.from(loginStore, 'isLoggedIn');
   routeData.jiraHelpers = jiraHelpers;
   routeData.storage = storage;
   routeData.licensingPromise = licensingPromise;
@@ -91,20 +99,14 @@ export default async function mainHelper(
     });
   }
 
-  const selectCloud = document.querySelector('select-cloud');
-  if (selectCloud) {
-    selectCloud.loginComponent = loginComponent;
-    selectCloud.jiraHelpers = jiraHelpers;
+  // Mount the React site picker. `routeData.isLoggedInObservable` (:77) and
+  // `routeData.jiraHelpers` (:78) are set above, so the wrapper reads them at
+  // mount. The Connect (`jira`) host has no #select-cloud div, so this stays a
+  // no-op there — same as the old querySelector guard.
+  const selectCloudEl = document.getElementById('select-cloud');
+  if (selectCloudEl) {
+    createRoot(selectCloudEl).render(createElement(SelectCloudWrapper));
   }
-
-  const listener = ({ value }) => {
-    if (value) {
-      loginComponent.off('isResolved', listener);
-      loadingJira.style.display = 'none';
-      timelineReportNeedsMet.loginResolved = true;
-      checkForNeedsAndInsertTimelineReport();
-    }
-  };
 
   function checkForNeedsAndInsertTimelineReport() {
     // if every need met, initialize
@@ -112,31 +114,56 @@ export default async function mainHelper(
       // TODO: this is just to make sure things are bound so react can be cool
       routeData.on('timingCalculations', () => {});
 
-      const report = new TimelineReport().initialize({
-        jiraHelpers,
-        loginComponent,
-        mode: 'TEAMS',
-        storage,
-        linkBuilder,
-        showSidebarBranding,
-        featuresPromise: getFeatures(storage).then((features) => {
-          queryClient.setQueryData(featuresKeyFactory.features(), features);
+      // Seed features into React Query. This was previously passed to the shell as
+      // `featuresPromise`, but the seeding is a side effect of the promise chain (reports read
+      // features via React Query, not the shell), so it runs here independent of the mount.
+      getFeatures(storage).then((features) => {
+        queryClient.setQueryData(featuresKeyFactory.features(), features);
 
-          return features;
-        }),
+        return features;
       });
-      report.className = 'flex flex-1 overflow-hidden';
-      mainContent.append(report);
+
+      // The shell is now a React tree. Mount it into a flex container appended to #mainContent
+      // (the class carries the layout the StacheElement's host element used to provide).
+      const container = document.createElement('div');
+      container.className = 'flex flex-1 overflow-hidden';
+      mainContent.append(container);
+
+      createRoot(container).render(
+        createElement(TimelineReport, {
+          loginComponent: loginStore,
+          storage,
+          linkBuilder,
+          showSidebarBranding,
+        }),
+      );
     }
   }
 
-  loginComponent.on('isResolved', listener);
-  login.appendChild(loginComponent);
+  // Bootstrap gate. Await the store's `resolved` promise rather than
+  // subscribing to the `isResolved` change event — the store's auto-login can
+  // settle *synchronously* in its constructor (valid token / seed), and a plain
+  // `.on()` only delivers future changes, so the app would never mount. The
+  // promise is immune to that ordering (see stateful-data/login.js).
+  loginStore.resolved.then(() => {
+    loadingJira.style.display = 'none';
+    timelineReportNeedsMet.loginResolved = true;
+    checkForNeedsAndInsertTimelineReport();
+  });
+
+  // Render the thin React login button into <div id="login">.
+  createRoot(login).render(
+    createElement(LoginButton, {
+      store: loginStore,
+      isLoggedInObservable: value.from(loginStore, 'isLoggedIn'),
+      isPendingObservable: value.from(loginStore, 'isPending'),
+    }),
+  );
   if (host === 'jira') {
     login.style.display = 'none';
   }
 
-  return loginComponent;
+  return loginStore;
 }
 
 // LEGACY URL SUPPORT

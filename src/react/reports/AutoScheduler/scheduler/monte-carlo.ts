@@ -38,6 +38,11 @@ export function runMonteCarlo(
   let torndown = false;
 
   function runBatchAndLoop() {
+    // Bail out if this simulation was torn down (e.g. config changed and a new
+    // simulation started). `clearTimeout` handles the pending timer, but a batch
+    // callback already dequeued from the event loop can't be canceled that way —
+    // this guard stops it from posting stale results or rescheduling itself.
+    if (torndown) return;
     const batchData = runBatch(linkedIssues, { batchSize });
     batchesRemaining--;
     onBatch({ batchData, percentComplete: percentComplete() });

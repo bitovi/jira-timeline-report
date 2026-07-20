@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp/authv2"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--browser",
+        "chromium",
+        "--no-sandbox",
+        "--caps=vision",
+        "--output-dir",
+        "${CLAUDE_PROJECT_DIR:-.}/temp"
+      ]
+    }
+  }
+}

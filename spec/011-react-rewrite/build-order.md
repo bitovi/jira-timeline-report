@@ -7,12 +7,15 @@ Order for replacing the 5 CanJS leaf StacheElement components (the self-containe
 | 1   | **status-filter** | ✅ Deleted                    | Easy       | —                 | Delete                            |
 | 2   | **autocomplete**  | ✅ Deleted                    | Easy       | (deleted with #1) | Delete                            |
 | 3   | **table-grid**    | ✅ Ported → `EstimationTable` | Medium-low | —                 | Port                              |
-| 4   | **jira-login**    | Live, load-bearing            | Medium     | —                 | Extract auth store + React button |
-| 5   | **select-cloud**  | Live (hosted only)            | Medium     | #4                | Port                              |
+| 4   | **jira-login**    | ✅ Done (auth store + button) | Medium     | —                 | Extract auth store + React button |
+| 5   | **select-cloud**  | ✅ Ported → React site picker | Medium     | #4 ✅             | Port                              |
 
-> **Progress (2026-07-16):** Phases 1 & 2 complete. status-filter + autocomplete deleted; table-grid
-> ported to `src/react/reports/EstimationTable/` and registered as `table` in
-> `urlParamValuesToReactComponents`. `src/canjs/reports/` is now empty and removed. Next up: Phase 3 (jira-login).
+> **Progress (2026-07-18):** All 5 leaves done (Phases 1–4 complete). status-filter + autocomplete
+> deleted; table-grid ported to `src/react/reports/EstimationTable/` and registered as `table` in
+> `urlParamValuesToReactComponents` (`src/canjs/reports/` removed). jira-login extracted to the
+> `Login` observable store (`src/stateful-data/login.js`) + React `LoginButton`; `src/shared/jira-login.js`
+> deleted. select-cloud ported to a React site picker (`createRoot` mount); `simple-tooltip` retired
+> with it. **Next up: the two keystones (see "After the leaves") — starting with `timeline-report.js`.**
 
 ## Phase 1 — Delete dead code (status-filter + autocomplete)
 
@@ -49,10 +52,11 @@ Details: `./jira-login/plan.md`.
 
 The header site/cloud picker (hosted web only). Its query gates on `loginComponent.isLoggedIn`, so it wants the clean React-readable auth source from Phase 3.
 
-- React component + `useQuery` on `fetchAccessibleResources` (React Query already present), gated on login.
-- Replace the `SimpleTooltip` dropdown with an `@atlaskit` popover (or portal + positioning).
+- React component + `useQuery` on `fetchAccessibleResources` (React Query already present), gated on login via `routeData.isLoggedInObservable` + `useCanObservable`.
+- Replace the `SimpleTooltip` dropdown with `@atlaskit/dropdown-menu` (template: `SavedReportDropdown.tsx`).
 - Preserve `localStorage['scopeId']` + `window.location.reload()` on switch.
-- Remove the `querySelector` prop-injection in `main-helper.js:94-98`.
+- Replace the `querySelector` prop-injection at `main-helper.js:101-105` with a `createRoot` mount into a new `<div id="select-cloud">`.
+- **select-cloud is the last `simple-tooltip` consumer** — delete `src/canjs/ui/simple-tooltip/` with it.
 
 Details: `./select-cloud/plan.md`.
 
@@ -70,10 +74,22 @@ Phase 3: jira-login  ──────▶  Phase 4: select-cloud
 
 ## After the leaves
 
-Once these 5 are done, 2 of the original 6 StacheElements are deleted and 3 are React. Remaining migration keystones (separate specs):
+Once these 5 are done, 2 of the original 6 StacheElements are deleted and 3 are React. Remaining migration keystones:
 
-1. `src/timeline-report.js` — the 599-line app shell (converts near the end; entangled with bootstrap/routing).
-2. `src/canjs/routing/route-data/route-data.js` (`ObservableObject` store) + `src/react/hooks/useCanObservable/useCanObservable.ts` bridge — the final swap, after which `src/can.js` can be deleted.
+1. ✅ **`src/timeline-report.js` — the app shell. DONE (2026-07-18).** Ported to React at
+   `src/react/TimelineReport/` (`TimelineReport.tsx` + a `TimelineReportViewModel` ObservableObject
+   holding the derived-data pipeline). `main-helper.js` now mounts it via `createRoot`; the
+   StacheElement is deleted. Reports/chrome unchanged (Option A — kept the `value.from`/`value.bind`
+   `*Obs` contract). Verified: 17 unauth Playwright tests + 774 unit tests + typecheck green;
+   view-state Storybook stories added. Details: [`./timeline-report/`](./timeline-report/) —
+   `behavior.md`, `rewrite-plan.md`, `progressive-loading.md`.
+2. **`src/canjs/routing/route-data/route-data.js`** (`ObservableObject` store) +
+   `src/react/hooks/useCanObservable/useCanObservable.ts` bridge — the final swap, after which
+   `src/can.js` (and the shell's Option-A `value` shim) can be deleted. **Now the only keystone left.**
+
+> **Not yet done (follow-ups):** progressive/lazy report loading (the registry in `TimelineReport.tsx`
+> is the `React.lazy` seam — see `./timeline-report/progressive-loading.md`); Option B (plain report
+> props) after route-data migrates.
 
 ## Notes / open questions
 
