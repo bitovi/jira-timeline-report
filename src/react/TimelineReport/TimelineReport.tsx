@@ -10,6 +10,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { value, queues } from '../../can';
 import routeData from '../../canjs/routing/route-data';
 import { pushStateObservable } from '../../canjs/routing/state-storage';
+import { getTheme, applyThemeToCssVars } from '../../jira/theme';
 import { useCanObservable } from '../hooks/useCanObservable';
 import { useRouteData } from '../hooks/useRouteData';
 
@@ -119,6 +120,14 @@ export const TimelineReport: FC<TimelineReportProps> = ({
       window.removeEventListener('resize', updateFullishHeightSection);
     };
   }, []);
+
+  // Mirror the StacheElement's `connected()` — apply the saved theme to CSS vars on mount so the
+  // stored theme takes effect immediately, instead of only once the user tweaks the Theme panel.
+  useEffect(() => {
+    getTheme(storage)
+      .then(applyThemeToCssVars)
+      .catch((error) => console.error('Something went wrong getting the theme', error));
+  }, [storage]);
 
   // Report props — the same `*Obs` contract the StacheElement passed. Built once (vm/routeData are
   // stable) so reports don't resubscribe on every shell render.
