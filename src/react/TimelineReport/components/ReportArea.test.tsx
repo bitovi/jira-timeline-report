@@ -24,13 +24,15 @@ describe('<ReportArea>', () => {
     expect(screen.queryByText(/Loading/)).not.toBeInTheDocument();
   });
 
-  it('shows a growing progress counter while pending (total climbs as children are found)', () => {
+  it('shows a growing progress counter while pending (the primary step total climbs)', () => {
+    // The text-only "Loaded X of Y issues" line was replaced by the three-step LoadingProgress stepper
+    // (spec/013-loader); the growing primary count now reads "<received> of <requested>".
     const { rerender } = render(
       <ReportArea {...base} loadingState={{ status: 'pending', issuesReceived: 7, issuesRequested: 22 }}>
         {REPORT}
       </ReportArea>,
     );
-    expect(screen.getByText(/Loaded 7 of 22 issues/)).toBeInTheDocument();
+    expect(screen.getByText('7 of 22')).toBeInTheDocument();
     expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
 
     rerender(
@@ -38,13 +40,14 @@ describe('<ReportArea>', () => {
         {REPORT}
       </ReportArea>,
     );
-    expect(screen.getByText(/Loaded 15 of 40 issues/)).toBeInTheDocument();
-    expect(screen.queryByText(/Loaded 7 of 22/)).not.toBeInTheDocument();
+    expect(screen.getByText('15 of 40')).toBeInTheDocument();
+    expect(screen.queryByText('7 of 22')).not.toBeInTheDocument();
   });
 
-  it('shows a plain loading message before progress is known', () => {
+  it('shows the loading stepper before progress is known', () => {
     renderArea({ status: 'pending' });
-    expect(screen.getByText(/Loading/)).toBeInTheDocument();
+    expect(screen.getByText('Loading primary work items')).toBeInTheDocument();
+    expect(screen.getByText('estimating scope…')).toBeInTheDocument();
     expect(screen.queryByText(/Loaded/)).not.toBeInTheDocument();
   });
 

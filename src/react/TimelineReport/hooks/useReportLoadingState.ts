@@ -11,6 +11,20 @@ export interface ReportLoadingState {
   issuesRequested?: number;
   /** Issues received so far. */
   issuesReceived?: number;
+  /**
+   * Which part of the load is running: `'primary'` (root JQL) then `'children'` (deep-children
+   * discovery). Stays `undefined` on the no-children path. `'history'` is not a phase — it runs
+   * concurrently and is derived from the `changeLogs*` counts.
+   */
+  phase?: 'primary' | 'children';
+  /** Total changelogs (history) requested — GROWS in step with child discovery. */
+  changeLogsRequested?: number;
+  /** Changelogs (history) received so far. */
+  changeLogsReceived?: number;
+  /** Top-level parents whose children are being loaded (children phase). */
+  parentsToProcess?: number;
+  /** Top-level parents whose entire subtree has finished — drives the smoothed children bar. */
+  parentsProcessed?: number;
   /** Rejection value when `status === 'rejected'` (carries `.type` / `.errorMessages`). */
   rejectReason?: any;
 }
@@ -49,6 +63,36 @@ export function useReportLoadingState(rd: any = defaultRouteData): ReportLoading
   );
   const issuesReceived = useCanObservable(issuesReceivedObs);
 
+  const phaseObs = useMemo(
+    () => value.from<'primary' | 'children' | undefined>(rd, 'derivedIssuesRequestData.progressData.value.phase'),
+    [rd],
+  );
+  const phase = useCanObservable(phaseObs);
+
+  const changeLogsRequestedObs = useMemo(
+    () => value.from<number | undefined>(rd, 'derivedIssuesRequestData.progressData.value.changeLogsRequested'),
+    [rd],
+  );
+  const changeLogsRequested = useCanObservable(changeLogsRequestedObs);
+
+  const changeLogsReceivedObs = useMemo(
+    () => value.from<number | undefined>(rd, 'derivedIssuesRequestData.progressData.value.changeLogsReceived'),
+    [rd],
+  );
+  const changeLogsReceived = useCanObservable(changeLogsReceivedObs);
+
+  const parentsToProcessObs = useMemo(
+    () => value.from<number | undefined>(rd, 'derivedIssuesRequestData.progressData.value.parentsToProcess'),
+    [rd],
+  );
+  const parentsToProcess = useCanObservable(parentsToProcessObs);
+
+  const parentsProcessedObs = useMemo(
+    () => value.from<number | undefined>(rd, 'derivedIssuesRequestData.progressData.value.parentsProcessed'),
+    [rd],
+  );
+  const parentsProcessed = useCanObservable(parentsProcessedObs);
+
   const [state, setState] = useState<{ status: ReportLoadingState['status']; reason?: any }>({
     status: 'idle',
   });
@@ -73,6 +117,11 @@ export function useReportLoadingState(rd: any = defaultRouteData): ReportLoading
     status: state.status,
     issuesRequested,
     issuesReceived,
+    phase,
+    changeLogsRequested,
+    changeLogsReceived,
+    parentsToProcess,
+    parentsProcessed,
     rejectReason: state.reason,
   };
 }

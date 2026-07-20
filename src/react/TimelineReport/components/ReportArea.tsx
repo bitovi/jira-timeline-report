@@ -2,7 +2,8 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import type { ReportLoadingState } from '../hooks/useReportLoadingState';
-import { NoJqlMessage, LoadingMessage, EmptyResultMessage, ErrorMessage } from './ReportMessages';
+import { NoJqlMessage, EmptyResultMessage, ErrorMessage } from './ReportMessages';
+import { LoadingProgressContainer } from './LoadingProgress';
 
 export interface ReportAreaProps {
   /** Request loading state (see useReportLoadingState). */
@@ -20,8 +21,9 @@ export interface ReportAreaProps {
 /**
  * Pure view-state selector for the report area — decides which of {report / no-JQL / loading /
  * empty / error} renders, from explicit props. No routeData/vm dependency, so every state
- * (including the growing "Loaded X of Y" counter) is unit-testable by passing props. The report
- * block itself is supplied as `children` and mounted only in the resolved-with-data state.
+ * (including the pending LoadingProgress stepper with its growing counts) is unit-testable by
+ * passing props. The report block itself is supplied as `children` and mounted only in the
+ * resolved-with-data state.
  *
  * Conditions mirror the old `<timeline-report>` template exactly.
  */
@@ -33,7 +35,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
   primaryIssuesCount,
   children,
 }) => {
-  const { status, issuesRequested, issuesReceived, rejectReason } = loadingState;
+  const { status, rejectReason } = loadingState;
   const resolved = status === 'resolved';
   const pending = status === 'pending';
   const rejected = status === 'rejected';
@@ -48,7 +50,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
         <EmptyResultMessage count={primaryIssuesCount} primaryIssueType={primaryIssueType} />
       )}
 
-      {jql && pending && <LoadingMessage issuesRequested={issuesRequested} issuesReceived={issuesReceived} />}
+      {jql && pending && <LoadingProgressContainer loadingState={loadingState} />}
 
       {rejected && (
         <ErrorMessage

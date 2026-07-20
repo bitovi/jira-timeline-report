@@ -45,12 +45,24 @@ export type Params = {
   fields?: string[];
 };
 
+/**
+ * Which part of the load a shared `progress.data` is currently in. `'history'` is intentionally NOT
+ * a value — the history/changelog phase is derived from the `changeLogs*` counts, which run
+ * concurrently with the others. Stays `undefined` on the no-children path.
+ */
+export type LoadProgressPhase = 'primary' | 'children';
+
 export type ProgressData = {
   issuesRequested: number;
   issuesReceived: number;
   changeLogsRequested: number;
   changeLogsReceived: number;
   keysWhoseChildrenWeAreAlreadyLoading: Set<string>;
+  phase?: LoadProgressPhase;
+  /** Top-level parents whose children are being loaded (set when the children phase starts). */
+  parentsToProcess?: number;
+  /** Top-level parents whose entire subtree has finished loading. Grows as batches complete. */
+  parentsProcessed?: number;
 };
 
 export type Progress = {

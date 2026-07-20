@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Loader concept B — Phased stepper</title>
+    <style>
+      :root {
+        --blue: #0c66e4;
+        --blue-strong: #0055cc;
+        --track: #dcdfe4;
+        --ink: #172b4d;
+        --subtle: #626f86;
+        --bg: #f7f8f9;
+        --border: #dcdfe4;
+        --green: #22a06b;
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+      }
+      .card {
+        width: 640px;
+        max-width: 100%;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow:
+          0 1px 3px rgba(9, 30, 66, 0.12),
+          0 0 1px rgba(9, 30, 66, 0.2);
+        overflow: hidden;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--blue);
+      }
+      .head h1 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .head .jql {
+        font-size: 12px;
+        color: var(--subtle);
+        margin: 0;
+      }
+      .head .spacer {
+        flex: 1;
+      }
+      .concept {
+        font-size: 11px;
+        color: var(--subtle);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 10px;
+      }
+
+      .body {
+        min-height: 360px;
+        padding: 34px 44px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .step {
+        display: grid;
+        grid-template-columns: 28px 1fr auto;
+        align-items: start;
+        column-gap: 14px;
+        padding: 8px 0;
+        position: relative;
+      }
+      /* connector line between icons */
+      .step:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 13px;
+        top: 28px;
+        bottom: -8px;
+        width: 2px;
+        background: var(--track);
+      }
+      .step.done:not(:last-child)::before {
+        background: var(--green);
+      }
+      .ico {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #fff;
+        border: 2px solid var(--track);
+        color: var(--subtle);
+        font-size: 13px;
+        z-index: 1;
+      }
+      .step.done .ico {
+        background: var(--green);
+        border-color: var(--green);
+        color: #fff;
+      }
+      .step.active .ico {
+        border-color: var(--blue);
+      }
+      .step.pending .ico {
+        border-color: var(--track);
+      }
+
+      .label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink);
+        padding-top: 4px;
+      }
+      .step.pending .label {
+        color: var(--subtle);
+        font-weight: 400;
+      }
+      .detail {
+        font-size: 12px;
+        color: var(--subtle);
+        padding-top: 5px;
+        font-variant-numeric: tabular-nums;
+      }
+      .subbar {
+        grid-column: 2 / 4;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--track);
+        margin-top: 8px;
+        overflow: hidden;
+        display: none;
+        position: relative;
+      }
+      .step.active .subbar {
+        display: block;
+      }
+      .subbar .sf {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0%;
+        background: linear-gradient(90deg, var(--blue), var(--blue-strong));
+        border-radius: 999px;
+        transition: width 0.12s linear;
+      }
+      .subbar.indet .sf {
+        background: var(--track);
+      }
+      .subbar.indet::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 40%;
+        background: linear-gradient(90deg, transparent, rgba(12, 102, 228, 0.85), transparent);
+        animation: sweep 1.1s ease-in-out infinite;
+      }
+      @keyframes sweep {
+        0% {
+          left: -40%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+      .detail .grew {
+        color: var(--blue);
+        font-weight: 600;
+      }
+
+      .foot {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 18px;
+        border-top: 1px solid var(--border);
+        background: #fbfbfc;
+      }
+      button {
+        font-family: var(--font);
+        font-size: 13px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        border-radius: 6px;
+        padding: 6px 12px;
+      }
+      button:hover {
+        background: #f1f2f4;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .seg button {
+        border: 0;
+        border-radius: 0;
+        border-left: 1px solid var(--border);
+      }
+      .seg button:first-child {
+        border-left: 0;
+      }
+      .seg button.active {
+        background: var(--blue);
+        color: #fff;
+      }
+      .foot .spacer {
+        flex: 1;
+      }
+      #replay,
+      .seg {
+        flex-shrink: 0;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--subtle);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="head">
+        <span class="dot"></span>
+        <div>
+          <h1>Release Timeline</h1>
+          <p class="jql">issueType in (Epic) AND project = ACME · Load all children</p>
+        </div>
+        <span class="spacer"></span>
+        <span class="concept">B · Phased stepper</span>
+      </div>
+
+      <div class="body">
+        <ul class="steps" id="steps">
+          <li class="step" data-step="primary">
+            <span class="ico"></span><span class="label">Loading primary work items</span><span class="detail"></span>
+            <div class="subbar"><div class="sf"></div></div>
+          </li>
+          <li class="step" data-step="children">
+            <span class="ico"></span><span class="label">Loading children</span><span class="detail"></span>
+            <div class="subbar"><div class="sf"></div></div>
+          </li>
+          <li class="step" data-step="history">
+            <span class="ico"></span><span class="label">Loading history</span><span class="detail"></span>
+            <div class="subbar"><div class="sf"></div></div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="foot">
+        <button id="replay">↻ Replay</button>
+        <div class="seg" id="speed">
+          <button data-speed="1" class="active">1×</button>
+          <button data-speed="4">4×</button>
+          <button data-speed="instant">Instant</button>
+        </div>
+        <span class="spacer"></span>
+        <span class="hint"
+          >Three phases. The total grows on "Loading children" — scoped there, it never rewinds a finished step.</span
+        >
+      </div>
+    </div>
+
+    <script>
+      /* ---- shared simulation timeline (identical across all four mocks) ---- */
+      const TIMELINE = [
+        { t: 0.0, phase: 'estimating', requested: 0, received: 0 },
+        { t: 0.6, phase: 'estimating', requested: 342, received: 0 },
+        { t: 0.6, phase: 'loading', requested: 342, received: 0 },
+        { t: 2.0, phase: 'loading', requested: 342, received: 342 },
+        { t: 2.0, phase: 'discovering', requested: 822, received: 342 },
+        { t: 3.0, phase: 'discovering', requested: 822, received: 660 },
+        { t: 3.0, phase: 'discovering', requested: 1132, received: 660 },
+        { t: 3.9, phase: 'discovering', requested: 1132, received: 940 },
+        { t: 3.9, phase: 'discovering', requested: 1282, received: 940 },
+        { t: 5.1, phase: 'discovering', requested: 1282, received: 1282 },
+        { t: 5.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'done', requested: 1282, received: 1282 },
+      ];
+      const DURATION = 7.9;
+      function sample(e) {
+        e = Math.max(0, Math.min(DURATION, e));
+        let phase = TIMELINE[0].phase;
+        for (const k of TIMELINE) if (k.t <= e + 1e-9) phase = k.phase;
+        let requested = TIMELINE[TIMELINE.length - 1].requested;
+        let received = TIMELINE[TIMELINE.length - 1].received;
+        for (let i = 0; i < TIMELINE.length - 1; i++) {
+          const a = TIMELINE[i],
+            b = TIMELINE[i + 1];
+          if (b.t <= a.t) continue;
+          if (e >= a.t - 1e-9 && e <= b.t + 1e-9) {
+            const f = (e - a.t) / (b.t - a.t);
+            requested = a.requested + (b.requested - a.requested) * f;
+            received = a.received + (b.received - a.received) * f;
+            break;
+          }
+        }
+        return { phase, requested, received };
+      }
+      const fmt = (n) => Math.round(n).toLocaleString();
+
+      /* ---- concept B rendering (three phases) ---- */
+      const PIDX = { estimating: 0, loading: 1, discovering: 2, history: 3, building: 4, done: 5 };
+      const STEPS = ['primary', 'children', 'history'];
+      const PRIMARY_TOTAL = 342; // root work items (approximate-count of the root JQL)
+      const els = {};
+      document.querySelectorAll('.step').forEach((li) => {
+        els[li.dataset.step] = {
+          li,
+          ico: li.querySelector('.ico'),
+          detail: li.querySelector('.detail'),
+          subbar: li.querySelector('.subbar'),
+          sf: li.querySelector('.sf'),
+        };
+      });
+      let lastRequested = 0;
+
+      function reset() {
+        lastRequested = 0;
+      }
+
+      // estimate folds into "primary"; build/render folds into the tail of "history"
+      function statusOf(step, p) {
+        if (step === 'primary') return p >= 2 ? 'done' : 'active'; // estimating + loading
+        if (step === 'children') return p < 2 ? 'pending' : p > 2 ? 'done' : 'active';
+        return p < 3 ? 'pending' : p >= 5 ? 'done' : 'active'; // history + building
+      }
+
+      function render(s) {
+        const p = PIDX[s.phase];
+        const grew = s.requested > lastRequested + 0.5;
+        // child counts are scoped to just the children (exclude the primary items)
+        const childFound = Math.max(0, s.requested - PRIMARY_TOTAL);
+        const childLoaded = Math.max(0, s.received - PRIMARY_TOTAL);
+
+        STEPS.forEach((step) => {
+          const st = statusOf(step, p);
+          const e = els[step];
+          e.li.className = 'step ' + st;
+          e.ico.innerHTML = st === 'done' ? '✓' : '';
+          e.subbar.classList.remove('indet');
+
+          if (step === 'primary') {
+            if (st === 'done') e.detail.textContent = PRIMARY_TOTAL.toLocaleString() + ' work items';
+            else if (s.phase === 'estimating') {
+              e.detail.textContent = 'estimating scope…';
+              e.subbar.classList.add('indet');
+            } else {
+              e.detail.textContent = fmt(s.received) + ' of ' + PRIMARY_TOTAL;
+              e.sf.style.width = (Math.min(1, s.received / PRIMARY_TOTAL) * 100).toFixed(1) + '%';
+            }
+          }
+
+          if (step === 'children') {
+            if (st === 'pending') e.detail.textContent = '';
+            else if (st === 'active') {
+              e.detail.innerHTML =
+                fmt(childLoaded) +
+                ' of <span class="' +
+                (grew ? 'grew' : '') +
+                '">~' +
+                fmt(childFound) +
+                '</span> found';
+              e.sf.style.width = (childFound > 0 ? Math.min(1, childLoaded / childFound) * 100 : 0).toFixed(1) + '%';
+            } else e.detail.textContent = fmt(1282 - PRIMARY_TOTAL) + ' children';
+          }
+
+          if (step === 'history') {
+            if (st === 'pending') e.detail.textContent = '';
+            else if (st === 'active') {
+              e.detail.textContent = 'fetching changelogs…';
+              e.subbar.classList.add('indet');
+            } else e.detail.textContent = '1,282 histories';
+          }
+        });
+        if (s.requested > lastRequested) lastRequested = s.requested;
+      }
+
+      /* ---- shared runner + controls ---- */
+      let speed = 1,
+        instant = false,
+        startTs = null,
+        rafId = 0;
+      function loop(ts) {
+        if (startTs === null) startTs = ts;
+        let e = ((ts - startTs) / 1000) * speed;
+        if (e >= DURATION) {
+          render(sample(DURATION));
+          return;
+        }
+        render(sample(e));
+        rafId = requestAnimationFrame(loop);
+      }
+      function play() {
+        cancelAnimationFrame(rafId);
+        startTs = null;
+        reset();
+        if (instant) {
+          render(sample(DURATION));
+          return;
+        }
+        rafId = requestAnimationFrame(loop);
+      }
+      document.getElementById('replay').addEventListener('click', play);
+      document.getElementById('speed').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        [...e.currentTarget.children].forEach((c) => c.classList.remove('active'));
+        b.classList.add('active');
+        const v = b.dataset.speed;
+        instant = v === 'instant';
+        speed = instant ? 1 : Number(v);
+        play();
+      });
+      play();
+    </script>
+  </body>
+</html>

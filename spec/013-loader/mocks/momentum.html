@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Loader concept A — Momentum + live count</title>
+    <style>
+      :root {
+        --blue: #0c66e4;
+        --blue-strong: #0055cc;
+        --track: #dcdfe4;
+        --ink: #172b4d;
+        --subtle: #626f86;
+        --bg: #f7f8f9;
+        --border: #dcdfe4;
+        --green: #22a06b;
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+      }
+      .card {
+        width: 640px;
+        max-width: 100%;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow:
+          0 1px 3px rgba(9, 30, 66, 0.12),
+          0 0 1px rgba(9, 30, 66, 0.2);
+        overflow: hidden;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--blue);
+      }
+      .head h1 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .head .jql {
+        font-size: 12px;
+        color: var(--subtle);
+        margin: 0;
+      }
+      .head .spacer {
+        flex: 1;
+      }
+      .concept {
+        font-size: 11px;
+        color: var(--subtle);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 10px;
+      }
+
+      .body {
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+        gap: 6px;
+      }
+      .count {
+        font-size: 64px;
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -1px;
+        font-variant-numeric: tabular-nums;
+      }
+      .count-label {
+        font-size: 14px;
+        color: var(--subtle);
+        margin-bottom: 26px;
+      }
+
+      .barwrap {
+        width: 380px;
+        max-width: 80%;
+      }
+      .bar {
+        position: relative;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--track);
+        overflow: hidden;
+      }
+      .fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0%;
+        background: linear-gradient(90deg, var(--blue), var(--blue-strong));
+        border-radius: 999px;
+        transition: width 0.12s linear;
+      }
+      /* indeterminate shimmer used during history/building */
+      .bar.indet .fill {
+        background: var(--track);
+      }
+      .bar.indet::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 40%;
+        background: linear-gradient(90deg, transparent, rgba(12, 102, 228, 0.85), transparent);
+        animation: sweep 1.1s ease-in-out infinite;
+      }
+      @keyframes sweep {
+        0% {
+          left: -40%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+
+      .caption {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 380px;
+        max-width: 80%;
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--subtle);
+      }
+      .caption .act {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .spin {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid var(--track);
+        border-top-color: var(--blue);
+        animation: rot 0.7s linear infinite;
+      }
+      @keyframes rot {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .of .num {
+        font-variant-numeric: tabular-nums;
+      }
+      .of.bump {
+        color: var(--blue);
+        font-weight: 600;
+        transition: none;
+      }
+      .done-check {
+        color: var(--green);
+        font-weight: 600;
+      }
+
+      .foot {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 18px;
+        border-top: 1px solid var(--border);
+        background: #fbfbfc;
+      }
+      button {
+        font-family: var(--font);
+        font-size: 13px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        border-radius: 6px;
+        padding: 6px 12px;
+      }
+      button:hover {
+        background: #f1f2f4;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .seg button {
+        border: 0;
+        border-radius: 0;
+        border-left: 1px solid var(--border);
+      }
+      .seg button:first-child {
+        border-left: 0;
+      }
+      .seg button.active {
+        background: var(--blue);
+        color: #fff;
+      }
+      .foot .spacer {
+        flex: 1;
+      }
+      #replay,
+      .seg {
+        flex-shrink: 0;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--subtle);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="head">
+        <span class="dot"></span>
+        <div>
+          <h1>Release Timeline</h1>
+          <p class="jql">issueType in (Epic) AND project = ACME · Load all children</p>
+        </div>
+        <span class="spacer"></span>
+        <span class="concept">A · Momentum + live count</span>
+      </div>
+
+      <div class="body">
+        <div class="count" id="count">0</div>
+        <div class="count-label">issues loaded</div>
+        <div class="barwrap">
+          <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+          <div class="caption">
+            <span class="act"><span class="spin" id="spin"></span><span id="phase">Starting…</span></span>
+            <span class="of" id="of"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <button id="replay">↻ Replay</button>
+        <div class="seg" id="speed">
+          <button data-speed="1" class="active">1×</button>
+          <button data-speed="4">4×</button>
+          <button data-speed="instant">Instant</button>
+        </div>
+        <span class="spacer"></span>
+        <span class="hint"
+          >The count is the truth; the bar tracks issues loaded, so a jump in the total never rewinds it.</span
+        >
+      </div>
+    </div>
+
+    <script>
+      /* ---- shared simulation timeline (identical across all four mocks) ---- */
+      const TIMELINE = [
+        { t: 0.0, phase: 'estimating', requested: 0, received: 0 },
+        { t: 0.6, phase: 'estimating', requested: 342, received: 0 },
+        { t: 0.6, phase: 'loading', requested: 342, received: 0 },
+        { t: 2.0, phase: 'loading', requested: 342, received: 342 },
+        { t: 2.0, phase: 'discovering', requested: 822, received: 342 },
+        { t: 3.0, phase: 'discovering', requested: 822, received: 660 },
+        { t: 3.0, phase: 'discovering', requested: 1132, received: 660 },
+        { t: 3.9, phase: 'discovering', requested: 1132, received: 940 },
+        { t: 3.9, phase: 'discovering', requested: 1282, received: 940 },
+        { t: 5.1, phase: 'discovering', requested: 1282, received: 1282 },
+        { t: 5.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'done', requested: 1282, received: 1282 },
+      ];
+      const DURATION = 7.9;
+      function sample(e) {
+        e = Math.max(0, Math.min(DURATION, e));
+        let phase = TIMELINE[0].phase;
+        for (const k of TIMELINE) if (k.t <= e + 1e-9) phase = k.phase;
+        let requested = TIMELINE[TIMELINE.length - 1].requested;
+        let received = TIMELINE[TIMELINE.length - 1].received;
+        for (let i = 0; i < TIMELINE.length - 1; i++) {
+          const a = TIMELINE[i],
+            b = TIMELINE[i + 1];
+          if (b.t <= a.t) continue;
+          if (e >= a.t - 1e-9 && e <= b.t + 1e-9) {
+            const f = (e - a.t) / (b.t - a.t);
+            requested = a.requested + (b.requested - a.requested) * f;
+            received = a.received + (b.received - a.received) * f;
+            break;
+          }
+        }
+        return { phase, requested, received };
+      }
+      const PHASE_LABEL = {
+        estimating: 'Estimating scope…',
+        loading: 'Loading issues…',
+        discovering: 'Discovering children…',
+        history: 'Loading history…',
+        building: 'Building report…',
+        done: 'Ready',
+      };
+      const fmt = (n) => Math.round(n).toLocaleString();
+
+      /* ---- concept A rendering ---- */
+      const $count = document.getElementById('count'),
+        $fill = document.getElementById('fill'),
+        $bar = document.getElementById('bar'),
+        $phase = document.getElementById('phase'),
+        $of = document.getElementById('of'),
+        $spin = document.getElementById('spin');
+      let lastRequested = 0;
+
+      function reset() {
+        lastRequested = 0;
+        $of.classList.remove('bump');
+        $fill.style.width = '0%';
+      }
+
+      function render(s) {
+        const det = s.phase === 'estimating' || s.phase === 'loading' || s.phase === 'discovering';
+        // The bar is driven by VOLUME loaded (asymptotic), not the received/requested ratio.
+        // Because it only depends on `received` (which only grows), a jump in the total never
+        // moves it backward — it just keeps climbing toward, but never past, full.
+        const barFrac = 1 - Math.exp(-s.received / 900);
+        $count.textContent = fmt(s.received);
+
+        if (s.phase === 'done') {
+          $bar.classList.remove('indet');
+          $fill.style.width = '100%';
+          $phase.innerHTML = '<span class="done-check">✓ Ready</span>';
+          $spin.style.display = 'none';
+          $of.innerHTML = '<span class="num">1,282</span> issues';
+        } else if (det) {
+          $bar.classList.remove('indet');
+          $fill.style.width = (barFrac * 100).toFixed(1) + '%';
+          $spin.style.display = 'inline-block';
+          $phase.textContent = PHASE_LABEL[s.phase];
+          const grew = s.requested > lastRequested + 0.5;
+          $of.innerHTML = 'of ~<span class="num">' + fmt(s.requested) + '</span> found';
+          if (grew) {
+            $of.classList.add('bump');
+            setTimeout(() => $of.classList.remove('bump'), 450);
+          }
+          lastRequested = s.requested;
+        } else {
+          // history / building — indeterminate; number holds, bar shimmers
+          $bar.classList.add('indet');
+          $spin.style.display = 'inline-block';
+          $phase.textContent = PHASE_LABEL[s.phase];
+          $of.innerHTML = '<span class="num">1,282</span> issues found';
+        }
+      }
+
+      /* ---- shared runner + controls ---- */
+      let speed = 1,
+        instant = false,
+        startTs = null,
+        rafId = 0;
+      function loop(ts) {
+        if (startTs === null) startTs = ts;
+        let e = ((ts - startTs) / 1000) * speed;
+        if (e >= DURATION) {
+          render(sample(DURATION));
+          return;
+        }
+        render(sample(e));
+        rafId = requestAnimationFrame(loop);
+      }
+      function play() {
+        cancelAnimationFrame(rafId);
+        startTs = null;
+        reset();
+        if (instant) {
+          render(sample(DURATION));
+          return;
+        }
+        rafId = requestAnimationFrame(loop);
+      }
+      document.getElementById('replay').addEventListener('click', play);
+      document.getElementById('speed').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        [...e.currentTarget.children].forEach((c) => c.classList.remove('active'));
+        b.classList.add('active');
+        const v = b.dataset.speed;
+        instant = v === 'instant';
+        speed = instant ? 1 : Number(v);
+        play();
+      });
+      play();
+    </script>
+  </body>
+</html>

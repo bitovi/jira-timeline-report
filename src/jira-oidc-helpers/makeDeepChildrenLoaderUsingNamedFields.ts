@@ -22,33 +22,31 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
     //
     // params - base params
     // sourceParentIssues - the source of parent issues
-    function fetchChildrenResponses(params: Params, parentIssues: Issue[], progress: Progress): Promise<Issue[]>[] {
+    function fetchChildrenResponses(
+      params: Params,
+      parentIssues: Issue[],
+      progress: Progress,
+    ): { promise: Promise<Issue[]>; count: number }[] {
       const issuesThatNeedToBeLoaded = getIssuesThatHaventBeenLoaded(
         parentIssues,
         progress?.data?.keysWhoseChildrenWeAreAlreadyLoading ?? new Set<string>(),
       );
       const issuesToQuery = chunkArray(issuesThatNeedToBeLoaded, 40);
 
-      const batchedResponses = issuesToQuery.map((issues) => {
+      // `count` is the batch's parent count, so the top-level caller can report per-batch completion.
+      return issuesToQuery.map((issues) => {
         const keys = issues.map((issue) => issue.key);
         const jql = `parent in (${keys.join(', ')}) ${params.childJQL || ''}`;
 
-        return rootMethod(
-          {
-            ...params,
-            jql,
-          },
-          progress,
-        );
+        return { promise: rootMethod({ ...params, jql }, progress), count: issues.length };
       });
-      // this needs to be flattened
-      return batchedResponses;
     }
 
     async function fetchDeepChildren(
       params: Params,
       sourceParentIssues: Issue[],
       progress: Progress,
+      isTopLevel = false,
     ): Promise<Issue[]> {
       const batchedFirstResponses = fetchChildrenResponses(params, sourceParentIssues, progress);
 
@@ -61,8 +59,23 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
           return parentIssues;
         }
       };
-      const batchedIssueRequests = batchedFirstResponses.map((firstBatchPromise) => {
-        return firstBatchPromise.then(getChildren);
+      const batchedIssueRequests = batchedFirstResponses.map(({ promise, count }) => {
+        const loaded = promise.then(getChildren);
+        // Only the top-level call reports completion: one increment per top-level parent whose ENTIRE
+        // subtree (all descendants) has finished. This spreads across the load (unlike the bursty
+        // approximate-count totals) and drives the smoothed "Loading children" projection in React.
+        if (isTopLevel) {
+          loaded.then(
+            () => {
+              if (progress.data) {
+                progress.data.parentsProcessed = (progress.data.parentsProcessed || 0) + count;
+                progress(progress.data);
+              }
+            },
+            () => {}, // the error still propagates through the returned `loaded` below
+          );
+        }
+        return loaded;
       });
       const allChildren = await Promise.all(batchedIssueRequests);
       return allChildren.flat();
@@ -82,11 +95,26 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
         changeLogsRequested: 0,
         changeLogsReceived: 0,
         keysWhoseChildrenWeAreAlreadyLoading: new Set<string>(),
+        phase: 'primary',
+        parentsToProcess: 0,
+        parentsProcessed: 0,
       };
+
+      // The root-JQL fetch is the "primary work items" phase.
+      if (progress.data) progress.data.phase = 'primary';
       const parentIssues = await rootMethod(newParams, progress);
 
-      // go get the children
-      const allChildrenIssues = await fetchDeepChildren(newParams, parentIssues, progress);
+      // Deep-children discovery is where the total grows. Flip to the "children" phase and emit so the
+      // React stepper can snapshot the primary totals at this transition (parents are fully loaded now,
+      // and no child counts have been added yet). The shared `progress.data` keeps `phase === 'children'`
+      // for all the concurrent/recursive child `rootMethod` calls that follow.
+      if (progress.data) {
+        progress.data.phase = 'children';
+        progress.data.parentsToProcess = parentIssues.length;
+        progress.data.parentsProcessed = 0;
+        progress(progress.data);
+      }
+      const allChildrenIssues = await fetchDeepChildren(newParams, parentIssues, progress, true);
       const combinedUnique = uniqueKeys(parentIssues.concat(allChildrenIssues));
       const result = combinedUnique.map((issue) => ({
         ...issue,
