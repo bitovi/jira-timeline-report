@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Loader concept D — Report / hierarchy reveal</title>
+    <style>
+      :root {
+        --blue: #0c66e4;
+        --blue-strong: #0055cc;
+        --blue-light: #579dff;
+        --track: #dcdfe4;
+        --skel: #ebecf0;
+        --ink: #172b4d;
+        --subtle: #626f86;
+        --bg: #f7f8f9;
+        --border: #dcdfe4;
+        --green: #22a06b;
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+      }
+      .card {
+        width: 680px;
+        max-width: 100%;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow:
+          0 1px 3px rgba(9, 30, 66, 0.12),
+          0 0 1px rgba(9, 30, 66, 0.2);
+        overflow: hidden;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--blue);
+      }
+      .head h1 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .head .jql {
+        font-size: 12px;
+        color: var(--subtle);
+        margin: 0;
+      }
+      .head .spacer {
+        flex: 1;
+      }
+      .chip {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--blue);
+        background: #e9f2ff;
+        border-radius: 999px;
+        padding: 3px 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .concept {
+        font-size: 11px;
+        color: var(--subtle);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 10px;
+      }
+
+      .body {
+        min-height: 360px;
+        padding: 18px 20px 6px;
+      }
+      .caption {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--subtle);
+        margin: 2px 4px 12px;
+      }
+      .caption .spin {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid var(--track);
+        border-top-color: var(--blue);
+        animation: rot 0.7s linear infinite;
+      }
+      @keyframes rot {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .caption .done-check {
+        color: var(--green);
+        font-weight: 600;
+      }
+
+      .gantt {
+        position: relative;
+      }
+      .quarters {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        font-size: 11px;
+        color: var(--subtle);
+        margin-bottom: 6px;
+      }
+      .qtrs {
+        position: relative;
+        height: 16px;
+      }
+      .qtrs span {
+        position: absolute;
+        transform: translateX(-50%);
+      }
+      .gridlines {
+        position: absolute;
+        left: 180px;
+        right: 8px;
+        top: 22px;
+        bottom: 6px;
+        background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--skel) calc(25% - 1px) 25%);
+        pointer-events: none;
+      }
+
+      .rows {
+        position: relative;
+        z-index: 1;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        align-items: center;
+        height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition:
+          height 0.3s ease,
+          opacity 0.3s ease;
+      }
+      .row.in {
+        height: 32px;
+        opacity: 1;
+      }
+      .name {
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 10px;
+      }
+      .name.epic {
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .name.story {
+        color: var(--subtle);
+        padding-left: 20px;
+        font-size: 12px;
+      }
+      .name .tw {
+        color: var(--subtle);
+        font-weight: 400;
+        margin-right: 4px;
+      }
+      .cell {
+        position: relative;
+        height: 22px;
+      }
+      .skel {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        border-radius: 4px;
+        background: var(--skel);
+      }
+      .barfill {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        width: 0;
+        border-radius: 4px;
+        transition: width 0.18s linear;
+      }
+      .barfill.epic {
+        background: linear-gradient(90deg, var(--blue), var(--blue-strong));
+      }
+      .barfill.story {
+        background: var(--blue-light);
+      }
+      /* subtle history shimmer sweeping across filled bars */
+      .gantt.historizing .barfill::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 4px;
+        overflow: hidden;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+        background-size: 60% 100%;
+        background-repeat: no-repeat;
+        animation: hist 1.1s linear infinite;
+      }
+      @keyframes hist {
+        0% {
+          background-position: -60% 0;
+        }
+        100% {
+          background-position: 160% 0;
+        }
+      }
+
+      .foot {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 18px;
+        border-top: 1px solid var(--border);
+        background: #fbfbfc;
+      }
+      button {
+        font-family: var(--font);
+        font-size: 13px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        border-radius: 6px;
+        padding: 6px 12px;
+      }
+      button:hover {
+        background: #f1f2f4;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .seg button {
+        border: 0;
+        border-radius: 0;
+        border-left: 1px solid var(--border);
+      }
+      .seg button:first-child {
+        border-left: 0;
+      }
+      .seg button.active {
+        background: var(--blue);
+        color: #fff;
+      }
+      .foot .spacer {
+        flex: 1;
+      }
+      #replay,
+      .seg {
+        flex-shrink: 0;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--subtle);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="head">
+        <span class="dot"></span>
+        <div>
+          <h1>Release Timeline</h1>
+          <p class="jql">issueType in (Epic) AND project = ACME · Load all children</p>
+        </div>
+        <span class="spacer"></span>
+        <span class="chip" id="chip">0 issues</span>
+        <span class="concept">D · Hierarchy reveal</span>
+      </div>
+
+      <div class="body">
+        <div class="caption"><span class="spin" id="spin"></span><span id="caption">Starting…</span></div>
+        <div class="gantt" id="gantt">
+          <div class="quarters">
+            <div></div>
+            <div class="qtrs">
+              <span style="left: 12.5%">Q1</span><span style="left: 37.5%">Q2</span><span style="left: 62.5%">Q3</span
+              ><span style="left: 87.5%">Q4</span>
+            </div>
+          </div>
+          <div class="gridlines"></div>
+          <div class="rows" id="rowsEl"></div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <button id="replay">↻ Replay</button>
+        <div class="seg" id="speed">
+          <button data-speed="1" class="active">1×</button>
+          <button data-speed="4">4×</button>
+          <button data-speed="instant">Instant</button>
+        </div>
+        <span class="spacer"></span>
+        <span class="hint">Children discovered mid-load slide in as new rows — the report builds itself.</span>
+      </div>
+    </div>
+
+    <script>
+      /* ---- shared simulation timeline (identical across all four mocks) ---- */
+      const TIMELINE = [
+        { t: 0.0, phase: 'estimating', requested: 0, received: 0 },
+        { t: 0.6, phase: 'estimating', requested: 342, received: 0 },
+        { t: 0.6, phase: 'loading', requested: 342, received: 0 },
+        { t: 2.0, phase: 'loading', requested: 342, received: 342 },
+        { t: 2.0, phase: 'discovering', requested: 822, received: 342 },
+        { t: 3.0, phase: 'discovering', requested: 822, received: 660 },
+        { t: 3.0, phase: 'discovering', requested: 1132, received: 660 },
+        { t: 3.9, phase: 'discovering', requested: 1132, received: 940 },
+        { t: 3.9, phase: 'discovering', requested: 1282, received: 940 },
+        { t: 5.1, phase: 'discovering', requested: 1282, received: 1282 },
+        { t: 5.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'done', requested: 1282, received: 1282 },
+      ];
+      const DURATION = 7.9;
+      function sample(e) {
+        e = Math.max(0, Math.min(DURATION, e));
+        let phase = TIMELINE[0].phase;
+        for (const k of TIMELINE) if (k.t <= e + 1e-9) phase = k.phase;
+        let requested = TIMELINE[TIMELINE.length - 1].requested;
+        let received = TIMELINE[TIMELINE.length - 1].received;
+        for (let i = 0; i < TIMELINE.length - 1; i++) {
+          const a = TIMELINE[i],
+            b = TIMELINE[i + 1];
+          if (b.t <= a.t) continue;
+          if (e >= a.t - 1e-9 && e <= b.t + 1e-9) {
+            const f = (e - a.t) / (b.t - a.t);
+            requested = a.requested + (b.requested - a.requested) * f;
+            received = a.received + (b.received - a.received) * f;
+            break;
+          }
+        }
+        return { phase, requested, received };
+      }
+      const PHASE_LABEL = {
+        estimating: 'Estimating scope…',
+        loading: 'Loading epics…',
+        discovering: 'Discovering children…',
+        history: 'Loading history…',
+        building: 'Building report…',
+        done: 'Ready',
+      };
+      const fmt = (n) => Math.round(n).toLocaleString();
+
+      /* ---- concept D data: epics revealed while loading, stories while discovering ---- */
+      const WAVE_REQ = { 1: 822, 2: 1132, 3: 1282 };
+      // ordered so each epic is immediately followed by its (later-revealed) children
+      const ROWS = [
+        { id: 'E1', type: 'epic', name: 'Checkout revamp', left: 4, width: 58, delay: 0.0, when: { recv: 30 } },
+        { id: 'S1', type: 'story', name: 'Cart service', left: 6, width: 30, delay: 0.34, when: { wave: 1 } },
+        { id: 'S2', type: 'story', name: 'Payment intents', left: 34, width: 26, delay: 0.4, when: { wave: 1 } },
+        { id: 'S8', type: 'story', name: 'Fraud checks', left: 42, width: 18, delay: 0.72, when: { wave: 3 } },
+        { id: 'E2', type: 'epic', name: 'Payments platform', left: 16, width: 50, delay: 0.05, when: { recv: 120 } },
+        { id: 'S3', type: 'story', name: 'Ledger migration', left: 18, width: 34, delay: 0.42, when: { wave: 1 } },
+        { id: 'S5', type: 'story', name: 'Payout API', left: 42, width: 22, delay: 0.55, when: { wave: 2 } },
+        { id: 'E3', type: 'epic', name: 'Search relevance', left: 30, width: 40, delay: 0.1, when: { recv: 210 } },
+        { id: 'S4', type: 'story', name: 'Ranking model', left: 32, width: 24, delay: 0.46, when: { wave: 1 } },
+        { id: 'S9', type: 'story', name: 'Index sharding', left: 38, width: 22, delay: 0.74, when: { wave: 3 } },
+        { id: 'E4', type: 'epic', name: 'Mobile app v2', left: 8, width: 66, delay: 0.14, when: { recv: 300 } },
+        { id: 'S6', type: 'story', name: 'Offline sync', left: 12, width: 40, delay: 0.58, when: { wave: 2 } },
+        { id: 'S7', type: 'story', name: 'Push pipeline', left: 46, width: 24, delay: 0.62, when: { wave: 2 } },
+      ];
+
+      const rowsEl = document.getElementById('rowsEl');
+      const nodes = {};
+      for (const r of ROWS) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.dataset.id = r.id;
+        const marker = r.type === 'epic' ? '<span class="tw">▸</span>' : '<span class="tw">└</span>';
+        row.innerHTML =
+          '<div class="name ' +
+          r.type +
+          '">' +
+          marker +
+          r.name +
+          '</div>' +
+          '<div class="cell"><div class="skel" style="left:' +
+          r.left +
+          '%;width:' +
+          r.width +
+          '%"></div>' +
+          '<div class="barfill ' +
+          r.type +
+          '" style="left:' +
+          r.left +
+          '%"></div></div>';
+        rowsEl.appendChild(row);
+        nodes[r.id] = { row, fill: row.querySelector('.barfill') };
+      }
+
+      const $chip = document.getElementById('chip'),
+        $caption = document.getElementById('caption'),
+        $spin = document.getElementById('spin'),
+        $gantt = document.getElementById('gantt');
+      const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+      function reset() {
+        for (const r of ROWS) {
+          nodes[r.id].row.classList.remove('in');
+          nodes[r.id].fill.style.width = '0';
+        }
+        $gantt.classList.remove('historizing');
+      }
+
+      function render(s) {
+        $chip.textContent = fmt(s.received) + ' issues';
+        const g = s.received / 1282; // monotonic overall fill fraction
+
+        for (const r of ROWS) {
+          const revealed = r.when.recv != null ? s.received >= r.when.recv : s.requested >= WAVE_REQ[r.when.wave] - 0.5;
+          if (revealed) {
+            nodes[r.id].row.classList.add('in');
+            const frac = clamp01((g - r.delay) / (1 - r.delay));
+            nodes[r.id].fill.style.width = (r.width * frac).toFixed(1) + '%';
+          }
+        }
+
+        $gantt.classList.toggle('historizing', s.phase === 'history');
+        if (s.phase === 'done') {
+          $spin.style.display = 'none';
+          $caption.innerHTML = '<span class="done-check">✓ Ready — 1,282 issues across 4 epics</span>';
+        } else {
+          $spin.style.display = 'inline-block';
+          $caption.textContent =
+            PHASE_LABEL[s.phase] + (s.phase === 'discovering' ? '  ·  ~' + fmt(s.requested) + ' found' : '');
+        }
+      }
+
+      /* ---- shared runner + controls ---- */
+      let speed = 1,
+        instant = false,
+        startTs = null,
+        rafId = 0;
+      function loop(ts) {
+        if (startTs === null) startTs = ts;
+        let e = ((ts - startTs) / 1000) * speed;
+        if (e >= DURATION) {
+          render(sample(DURATION));
+          return;
+        }
+        render(sample(e));
+        rafId = requestAnimationFrame(loop);
+      }
+      function play() {
+        cancelAnimationFrame(rafId);
+        startTs = null;
+        reset();
+        if (instant) {
+          render(sample(DURATION));
+          return;
+        }
+        rafId = requestAnimationFrame(loop);
+      }
+      document.getElementById('replay').addEventListener('click', play);
+      document.getElementById('speed').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        [...e.currentTarget.children].forEach((c) => c.classList.remove('active'));
+        b.classList.add('active');
+        const v = b.dataset.speed;
+        instant = v === 'instant';
+        speed = instant ? 1 : Number(v);
+        play();
+      });
+      play();
+    </script>
+  </body>
+</html>

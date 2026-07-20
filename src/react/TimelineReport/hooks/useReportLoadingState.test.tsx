@@ -52,6 +52,46 @@ describe('useReportLoadingState', () => {
     await waitFor(() => expect(result.current.status).toBe('resolved'));
   });
 
+  it('surfaces the load phase and the changelog (history) counts', async () => {
+    const { rd, progressData, resolve } = makeFakeStore();
+    const { result } = renderHook(() => useReportLoadingState(rd));
+
+    await waitFor(() => expect(result.current.status).toBe('pending'));
+
+    // Primary phase: root JQL issues + their changelogs streaming in.
+    act(() => {
+      progressData.value = {
+        issuesRequested: 342,
+        issuesReceived: 342,
+        phase: 'primary',
+        changeLogsRequested: 342,
+        changeLogsReceived: 120,
+      };
+    });
+    expect(result.current.phase).toBe('primary');
+    expect(result.current.changeLogsRequested).toBe(342);
+    expect(result.current.changeLogsReceived).toBe(120);
+
+    // Children discovery: the phase flips and the history total grows alongside the issue total.
+    act(() => {
+      progressData.value = {
+        issuesRequested: 822,
+        issuesReceived: 474,
+        phase: 'children',
+        changeLogsRequested: 660,
+        changeLogsReceived: 512,
+      };
+    });
+    expect(result.current.phase).toBe('children');
+    expect(result.current.changeLogsRequested).toBe(660);
+    expect(result.current.changeLogsReceived).toBe(512);
+
+    await act(async () => {
+      resolve([]);
+    });
+    await waitFor(() => expect(result.current.status).toBe('resolved'));
+  });
+
   it('surfaces the rejection reason', async () => {
     const { rd, reject } = makeFakeStore();
     const { result } = renderHook(() => useReportLoadingState(rd));

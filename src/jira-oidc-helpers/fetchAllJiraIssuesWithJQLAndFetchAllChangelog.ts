@@ -105,8 +105,25 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
     if (USE_DIRECT_BULK_CHANGELOG) {
       // No inline changelog data from search — fetch everything via bulk in batches of 1000.
       const batches = chunkArray(allIssues, 1000);
+
+      // Report changelog (history) progress. Like the issue counts above, `progress.data` is shared
+      // across every concurrent/recursive call, so accumulate (`+=`) rather than overwrite: the history
+      // total grows in step with child discovery and never counts backward.
+      if (progress.data) {
+        progress.data.changeLogsRequested = (progress.data.changeLogsRequested || 0) + allIssues.length;
+        progress(progress.data);
+      }
+
       const changelogMaps = await Promise.all(
-        batches.map((batch) => fetchBulkChangelogs(config, { issueIdsOrKeys: batch.map((i) => i.id) })),
+        batches.map((batch) =>
+          fetchBulkChangelogs(config, { issueIdsOrKeys: batch.map((i) => i.id) }).then((changelogMap) => {
+            if (progress.data) {
+              progress.data.changeLogsReceived = (progress.data.changeLogsReceived || 0) + batch.length;
+              progress(progress.data);
+            }
+            return changelogMap;
+          }),
+        ),
       );
       const changelogMap = new Map(changelogMaps.flatMap((m) => [...m]));
       issuesWithCompleteChangelogs = allIssues.map(({ id, key, fields }) => ({

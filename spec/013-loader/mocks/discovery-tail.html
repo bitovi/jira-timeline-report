@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Loader concept C — Discovery tail</title>
+    <style>
+      :root {
+        --blue: #0c66e4;
+        --blue-strong: #0055cc;
+        --track: #dcdfe4;
+        --ink: #172b4d;
+        --subtle: #626f86;
+        --bg: #f7f8f9;
+        --border: #dcdfe4;
+        --green: #22a06b;
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+      }
+      .card {
+        width: 640px;
+        max-width: 100%;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow:
+          0 1px 3px rgba(9, 30, 66, 0.12),
+          0 0 1px rgba(9, 30, 66, 0.2);
+        overflow: hidden;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--blue);
+      }
+      .head h1 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .head .jql {
+        font-size: 12px;
+        color: var(--subtle);
+        margin: 0;
+      }
+      .head .spacer {
+        flex: 1;
+      }
+      .concept {
+        font-size: 11px;
+        color: var(--subtle);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 10px;
+      }
+
+      .body {
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+      }
+      .headline {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .sub {
+        font-size: 13px;
+        color: var(--subtle);
+        margin-bottom: 34px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sub .spin {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid var(--track);
+        border-top-color: var(--blue);
+        animation: rot 0.7s linear infinite;
+      }
+      @keyframes rot {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .barwrap {
+        width: 440px;
+        max-width: 86%;
+      }
+      .bar {
+        position: relative;
+        height: 14px;
+        border-radius: 999px;
+        background: var(--track);
+        overflow: hidden;
+      }
+      /* solid loaded segment (asymptotic, monotonic) */
+      .solid {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0%;
+        background: linear-gradient(90deg, var(--blue), var(--blue-strong));
+        border-radius: 999px;
+        transition: width 0.12s linear;
+      }
+      /* shimmering discovery tail — lengthens as the total grows */
+      .tail {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0%;
+        background: repeating-linear-gradient(90deg, rgba(12, 102, 228, 0.32) 0 8px, rgba(12, 102, 228, 0.14) 8px 16px);
+        transition:
+          left 0.12s linear,
+          width 0.18s ease-out;
+        overflow: hidden;
+      }
+      .tail::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -40%;
+        width: 40%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+        animation: sweep 1s linear infinite;
+      }
+      @keyframes sweep {
+        to {
+          left: 120%;
+        }
+      }
+      .ticks {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--subtle);
+        font-variant-numeric: tabular-nums;
+      }
+      .ticks .grew {
+        color: var(--blue);
+        font-weight: 600;
+      }
+      .legend {
+        display: flex;
+        gap: 18px;
+        margin-top: 20px;
+        font-size: 12px;
+        color: var(--subtle);
+      }
+      .legend span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .sw {
+        width: 14px;
+        height: 8px;
+        border-radius: 2px;
+      }
+      .sw.loaded {
+        background: linear-gradient(90deg, var(--blue), var(--blue-strong));
+      }
+      .sw.finding {
+        background: repeating-linear-gradient(90deg, rgba(12, 102, 228, 0.32) 0 6px, rgba(12, 102, 228, 0.14) 6px 12px);
+      }
+      .done-check {
+        color: var(--green);
+      }
+
+      .foot {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 18px;
+        border-top: 1px solid var(--border);
+        background: #fbfbfc;
+      }
+      button {
+        font-family: var(--font);
+        font-size: 13px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        border-radius: 6px;
+        padding: 6px 12px;
+      }
+      button:hover {
+        background: #f1f2f4;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .seg button {
+        border: 0;
+        border-radius: 0;
+        border-left: 1px solid var(--border);
+      }
+      .seg button:first-child {
+        border-left: 0;
+      }
+      .seg button.active {
+        background: var(--blue);
+        color: #fff;
+      }
+      .foot .spacer {
+        flex: 1;
+      }
+      #replay,
+      .seg {
+        flex-shrink: 0;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--subtle);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="head">
+        <span class="dot"></span>
+        <div>
+          <h1>Release Timeline</h1>
+          <p class="jql">issueType in (Epic) AND project = ACME · Load all children</p>
+        </div>
+        <span class="spacer"></span>
+        <span class="concept">C · Discovery tail</span>
+      </div>
+
+      <div class="body">
+        <div class="headline" id="headline">0 issues loaded</div>
+        <div class="sub"><span class="spin" id="spin"></span><span id="sub">Starting…</span></div>
+        <div class="barwrap">
+          <div class="bar">
+            <div class="solid" id="solid"></div>
+            <div class="tail" id="tail"></div>
+          </div>
+          <div class="ticks"><span id="tleft">0 loaded</span><span id="tright"></span></div>
+          <div class="legend">
+            <span><span class="sw loaded"></span>Loaded</span>
+            <span><span class="sw finding"></span>Still finding more</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <button id="replay">↻ Replay</button>
+        <div class="seg" id="speed">
+          <button data-speed="1" class="active">1×</button>
+          <button data-speed="4">4×</button>
+          <button data-speed="instant">Instant</button>
+        </div>
+        <span class="spacer"></span>
+        <span class="hint"
+          >The shimmering tail grows when children are discovered — the moving goalpost, visualized.</span
+        >
+      </div>
+    </div>
+
+    <script>
+      /* ---- shared simulation timeline (identical across all four mocks) ---- */
+      const TIMELINE = [
+        { t: 0.0, phase: 'estimating', requested: 0, received: 0 },
+        { t: 0.6, phase: 'estimating', requested: 342, received: 0 },
+        { t: 0.6, phase: 'loading', requested: 342, received: 0 },
+        { t: 2.0, phase: 'loading', requested: 342, received: 342 },
+        { t: 2.0, phase: 'discovering', requested: 822, received: 342 },
+        { t: 3.0, phase: 'discovering', requested: 822, received: 660 },
+        { t: 3.0, phase: 'discovering', requested: 1132, received: 660 },
+        { t: 3.9, phase: 'discovering', requested: 1132, received: 940 },
+        { t: 3.9, phase: 'discovering', requested: 1282, received: 940 },
+        { t: 5.1, phase: 'discovering', requested: 1282, received: 1282 },
+        { t: 5.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'history', requested: 1282, received: 1282 },
+        { t: 7.1, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'building', requested: 1282, received: 1282 },
+        { t: 7.9, phase: 'done', requested: 1282, received: 1282 },
+      ];
+      const DURATION = 7.9;
+      function sample(e) {
+        e = Math.max(0, Math.min(DURATION, e));
+        let phase = TIMELINE[0].phase;
+        for (const k of TIMELINE) if (k.t <= e + 1e-9) phase = k.phase;
+        let requested = TIMELINE[TIMELINE.length - 1].requested;
+        let received = TIMELINE[TIMELINE.length - 1].received;
+        for (let i = 0; i < TIMELINE.length - 1; i++) {
+          const a = TIMELINE[i],
+            b = TIMELINE[i + 1];
+          if (b.t <= a.t) continue;
+          if (e >= a.t - 1e-9 && e <= b.t + 1e-9) {
+            const f = (e - a.t) / (b.t - a.t);
+            requested = a.requested + (b.requested - a.requested) * f;
+            received = a.received + (b.received - a.received) * f;
+            break;
+          }
+        }
+        return { phase, requested, received };
+      }
+      const PHASE_LABEL = {
+        estimating: 'Estimating scope…',
+        loading: 'Loading issues…',
+        discovering: 'Discovering children…',
+        history: 'Loading history…',
+        building: 'Building report…',
+        done: 'Ready',
+      };
+      const fmt = (n) => Math.round(n).toLocaleString();
+
+      /* ---- concept C rendering ---- */
+      const $head = document.getElementById('headline'),
+        $sub = document.getElementById('sub'),
+        $spin = document.getElementById('spin'),
+        $solid = document.getElementById('solid'),
+        $tail = document.getElementById('tail'),
+        $tleft = document.getElementById('tleft'),
+        $tright = document.getElementById('tright');
+      const MAX_SOLID = 66; // solid never fills the whole track while loading
+      const solidPct = (r) => MAX_SOLID * (1 - Math.exp(-r / 560)); // asymptotic, monotonic in received
+      let lastRequested = 0;
+
+      function reset() {
+        lastRequested = 0;
+      }
+
+      function render(s) {
+        const det = s.phase === 'estimating' || s.phase === 'loading' || s.phase === 'discovering';
+        $head.textContent = fmt(s.received) + ' issues loaded';
+
+        if (s.phase === 'done') {
+          $solid.style.width = '100%';
+          $tail.style.width = '0%';
+          $spin.style.display = 'none';
+          $sub.innerHTML = '<span class="done-check">✓ Ready — timeline built</span>';
+          $tleft.textContent = '1,282 loaded';
+          $tright.textContent = '';
+          lastRequested = s.requested;
+          return;
+        }
+
+        $spin.style.display = 'inline-block';
+        $sub.textContent = PHASE_LABEL[s.phase];
+        const solid = solidPct(s.received);
+        $solid.style.width = solid.toFixed(1) + '%';
+
+        if (det) {
+          // tail width proportional to the yet-unknown remainder; grows on each discovery jump
+          const remainFrac = s.requested > 0 ? (s.requested - s.received) / s.requested : 0;
+          const tailW = Math.max(0, Math.min(26, remainFrac * 100));
+          $tail.style.left = solid.toFixed(1) + '%';
+          $tail.style.width = tailW.toFixed(1) + '%';
+          const grew = s.requested > lastRequested + 0.5;
+          $tleft.textContent = fmt(s.received) + ' loaded';
+          $tright.innerHTML =
+            s.phase === 'discovering'
+              ? '<span class="' + (grew ? 'grew' : '') + '">~' + fmt(s.requested) + ' found · still finding more</span>'
+              : '~' + fmt(s.requested) + ' found';
+          if (s.requested > lastRequested) lastRequested = s.requested;
+        } else {
+          // history / building: no unknown remainder — shimmer over the whole loaded span
+          $tail.style.left = '0%';
+          $tail.style.width = solid.toFixed(1) + '%';
+          $tleft.textContent = '1,282 loaded';
+          $tright.textContent = s.phase === 'history' ? 'loading history…' : 'building…';
+        }
+      }
+
+      /* ---- shared runner + controls ---- */
+      let speed = 1,
+        instant = false,
+        startTs = null,
+        rafId = 0;
+      function loop(ts) {
+        if (startTs === null) startTs = ts;
+        let e = ((ts - startTs) / 1000) * speed;
+        if (e >= DURATION) {
+          render(sample(DURATION));
+          return;
+        }
+        render(sample(e));
+        rafId = requestAnimationFrame(loop);
+      }
+      function play() {
+        cancelAnimationFrame(rafId);
+        startTs = null;
+        reset();
+        if (instant) {
+          render(sample(DURATION));
+          return;
+        }
+        rafId = requestAnimationFrame(loop);
+      }
+      document.getElementById('replay').addEventListener('click', play);
+      document.getElementById('speed').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        [...e.currentTarget.children].forEach((c) => c.classList.remove('active'));
+        b.classList.add('active');
+        const v = b.dataset.speed;
+        instant = v === 'instant';
+        speed = instant ? 1 : Number(v);
+        play();
+      });
+      play();
+    </script>
+  </body>
+</html>

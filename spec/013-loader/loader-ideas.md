@@ -64,12 +64,17 @@ climbing — the exact moment a naive bar would go backwards.
 
 ### A — Momentum bar + live count (`mocks/momentum.html`)
 
-A big rolling issue count is the hero; a slim bar _eases_ toward `received / requested`
-and **decelerates / holds** rather than snapping back when the total jumps. A subtle
-caption names the current activity ("Discovering children…", "Loading history…").
+A big rolling issue count is the hero. The slim bar is deliberately **decoupled from the
+jumpy `received / requested` ratio** — it's driven by the _volume loaded_ via an
+asymptotic curve (`1 - e^(-received/k)`) that approaches, but never reaches, full until
+the load is truly done. A subtle caption names the current activity ("Discovering
+children…", "Loading history…").
 
-- **Growing total:** the bar eases toward the target fraction but is clamped to never
-  decrease, so a jump in `requested` just makes the bar pause until `received` catches up.
+- **Growing total:** because the bar depends only on `received` (which only ever grows), a
+  jump in `requested` can't move it backward — it just keeps climbing. The growing total
+  is told honestly by the number ("453 of ~822 found"), not by a bar fighting itself. This
+  also avoids the naive-ratio trap where the bar hits ~100% after the first phase and then
+  looks stuck-near-done for the rest of the load.
 - **Tradeoffs:** calmest and most honest; low effort; less explicit about _what_ is
   happening than the stepper.
 
@@ -80,20 +85,26 @@ caption names the current activity ("Discovering children…", "Loading history�
   Discovering children…
 ```
 
-### B — Phased stepper (`mocks/stepper.html`)
+### B — Phased stepper (`mocks/stepper.html`) ★ chosen direction
 
-The real phases as an explicit step list: Estimate → Load issues → Discover children →
-Load history → Build report. Each step shows its own spinner/checkmark and sub-count.
+Three phases — the ones that actually take time and mean something to a user:
+**Loading primary work items → Loading children → Loading history.** Each shows its own
+spinner/checkmark and a sub-count. The fast/invisible phases fold in: the
+approximate-count estimate into "primary," and normalize/derive/render into the tail of
+"history." (The full five-phase lifecycle above is still simulated under the hood; the
+stepper just maps it to these three visible steps.)
 
-- **Growing total:** a jump only moves the _current step's_ sub-count; earlier steps stay
-  done. Nothing global regresses. Also the natural home for a real "Loading history" step.
-- **Tradeoffs:** most informative and most reassuring during long loads; slightly more
-  "enterprise" / less playful; needs the changelog-progress plumbing to be fully truthful.
+- **Growing total:** it's scoped to **Loading children** — the child sub-count climbs and
+  its "~N found" estimate grows only within that step, so it never rewinds a finished step.
+  Child counts are shown relative to the children themselves (received/requested minus the
+  342 primary items), so the step reads honestly.
+- **Tradeoffs:** informative and reassuring during long loads; needs the changelog-progress
+  plumbing (`changeLogsRequested/Received`, already on `ProgressData`) to make the "Loading
+  history" step truthful rather than time-boxed.
 
 ```
-  ✓ Estimating scope       342 issues
-  ⣾ Loading issues         1,284 loaded
-  ○ Discovering children
+  ✓ Loading primary work items   342 work items
+  ⣾ Loading children             474 of ~790 found
   ○ Loading history
 ```
 
@@ -132,10 +143,12 @@ waves. Progress is implied by the report materializing in front of you.
 
 ## Recommendation
 
-- **D** for delight and product fit (the user's favorite), optionally with a small live
-  count for a precise signal.
-- **A** as the calm, low-effort, always-honest default.
-- **C** whenever we specifically need to _explain_ the growing total in one element.
+- **B (three-phase stepper)** — **chosen direction.** Legible and reassuring, and the
+  growing total is cleanly scoped to the "Loading children" step. Slimmed to just
+  primary / children / history.
+- **D** for delight / product fit — could be layered on later if we want the report to
+  visibly build itself.
+- **A** and **C** remain useful references for the "never regress" bar mechanics.
 
 ## Mapping the mocks to real data
 
