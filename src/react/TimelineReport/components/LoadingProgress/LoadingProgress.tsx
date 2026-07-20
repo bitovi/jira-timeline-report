@@ -62,8 +62,9 @@ const clampPct = (ratio: number) => Math.min(100, Math.max(0, ratio * 100));
  *   `active` while pending, `done` when resolved. Counts are scoped to just the children
  *   (`global − primary snapshot`). The active bar/detail use the container's smoothed projection
  *   (`childrenBarValue` / `childrenProjectedTotal`) when provided, else received/discovered.
- * - history: concurrent live meter — `active` whenever pending, `done` when resolved. Its bar
- *   fills once changelog fetching starts (empty gray track before that).
+ * - history: concurrent live meter — `pending` until a changelog total is known (`changeLogsRequested`),
+ *   then `active` while pending, `done` when resolved. Its bar fills once changelog fetching starts
+ *   (empty gray track before that).
  *
  * Every step is a plain gray track that fills with a blue bar as it loads (green when done).
  */
@@ -132,10 +133,10 @@ export function computeSteps(props: LoadingProgressProps): StepView[] {
     });
   }
 
-  // --- Loading history (concurrent; fills once changelog fetching starts) ---
+  // --- Loading history (concurrent; pending until a changelog total is known, then fills) ---
   const historyReq = changeLogsRequested ?? 0;
   const historyRec = changeLogsReceived ?? 0;
-  const historyStatus: StepStatus = resolved ? 'done' : 'active';
+  const historyStatus: StepStatus = resolved ? 'done' : historyReq ? 'active' : 'pending';
   steps.push({
     key: 'history',
     label: 'Loading history',

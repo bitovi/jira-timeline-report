@@ -15,9 +15,9 @@ describe('computeSteps (step-state logic)', () => {
     expect(primary.status).toBe('active');
     expect(primary.detail).toBe('120 of 342');
     expect(primary.barValue).toBeCloseTo((120 / 342) * 100, 1);
-    // history is a concurrent live meter — active whenever pending; its bar is an empty gray track
-    // until changelog fetching starts.
-    expect(history.status).toBe('active');
+    // history is pending until a changelog total is known; its bar is an empty gray track until
+    // changelog fetching starts.
+    expect(history.status).toBe('pending');
     expect(history.barValue).toBe(0);
   });
 
