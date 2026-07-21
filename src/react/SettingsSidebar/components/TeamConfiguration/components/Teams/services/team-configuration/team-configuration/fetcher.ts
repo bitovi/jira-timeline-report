@@ -80,8 +80,10 @@ export const fixAnyNonExistingFields = (storage: AppStorage, userData: AllTeamDa
           continue;
         }
 
+        // Match by id OR name: name-colliding fields are stored by id (see
+        // spec/015-field-selection), while unique fields are still stored by name.
         const matched = jiraIssues.find((issue) => {
-          return issue.name === field;
+          return issue.id === field || issue.name === field;
         });
 
         if (matched) {

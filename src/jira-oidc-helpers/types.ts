@@ -33,6 +33,8 @@ export type FieldsData = {
   list: RequestHelperResponse;
   nameMap: Record<string, any>;
   idMap: Record<string, any>;
+  // ids of fields whose display name is shared by more than one field; see spec/015-field-selection.
+  ambiguousFieldIds: Set<string>;
 };
 export type FieldsRequest = Promise<FieldsData>;
 export type Issue = {
