@@ -1,0 +1,32 @@
+- generic [ref=f11e2]:
+  - navigation [ref=f11e4]:
+    - generic [ref=f11e5]:
+      - list [ref=f11e6]:
+        - listitem [ref=f11e7]:
+          - link "Status Reports for Jira" [ref=f11e8] [cursor=pointer]:
+            - /url: https://github.com/bitovi/jira-timeline-report
+        - listitem [ref=f11e9]:
+          - link "by" [ref=f11e10] [cursor=pointer]:
+            - /url: https://www.bitovi.com/services/agile-project-management-consulting
+      - button "Connect to Jira" [ref=f11e13] [cursor=pointer]
+  - generic [ref=f11e15]:
+    - generic [ref=f11e18]:
+      - img "warning" [ref=f11e20]
+      - generic [ref=f11e21]:
+        - heading "Welcome! You're currently viewing a sample report. To generate a custom status report, click Connect to Jira" [level=2] [ref=f11e22]
+        - generic [ref=f11e23]:
+          - paragraph [ref=f11e24]: "Checkout the sample reports:"
+          - list [ref=f11e25]:
+            - listitem [ref=f11e26]:
+              - link "Release end dates with initiative status" [ref=f11e27] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status&selectedIssueType=Initiative"
+            - listitem [ref=f11e28]:
+              - link "Release timeline with initiative work breakdown" [ref=f11e29] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown&selectedIssueType=Initiative"
+            - listitem [ref=f11e30]:
+              - link "Ready and in-development initiative work breakdown" [ref=f11e31] [cursor=pointer]:
+                - /url: "?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true&selectedIssueType=Initiative"
+    - generic [ref=f11e35]:
+      - generic [ref=f11e36]: Report type
+      - button "Table (beta)" [ref=f11e37] [cursor=pointer]
+    - generic [ref=f11e41]: Loading table…

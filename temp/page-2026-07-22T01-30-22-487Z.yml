@@ -1,0 +1,426 @@
+- generic [ref=f28e2]:
+  - navigation [ref=f28e4]:
+    - generic [ref=f28e5]:
+      - list [ref=f28e6]:
+        - listitem [ref=f28e7]:
+          - link "Status Reports for Jira" [ref=f28e8] [cursor=pointer]:
+            - /url: https://github.com/bitovi/jira-timeline-report
+        - listitem [ref=f28e9]:
+          - link "by" [ref=f28e10] [cursor=pointer]:
+            - /url: https://www.bitovi.com/services/agile-project-management-consulting
+      - button "Connect to Jira" [ref=f28e13] [cursor=pointer]
+  - generic [ref=f28e15]:
+    - generic [ref=f28e18]:
+      - img "warning" [ref=f28e20]
+      - generic [ref=f28e21]:
+        - heading "Welcome! You're currently viewing a sample report. To generate a custom status report, click Connect to Jira" [level=2] [ref=f28e22]
+        - generic [ref=f28e23]:
+          - paragraph [ref=f28e24]: "Checkout the sample reports:"
+          - list [ref=f28e25]:
+            - listitem [ref=f28e26]:
+              - link "Release end dates with initiative status" [ref=f28e27] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status&selectedIssueType=Initiative"
+            - listitem [ref=f28e28]:
+              - link "Release timeline with initiative work breakdown" [ref=f28e29] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown&selectedIssueType=Initiative"
+            - listitem [ref=f28e30]:
+              - link "Ready and in-development initiative work breakdown" [ref=f28e31] [cursor=pointer]:
+                - /url: "?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true&selectedIssueType=Initiative"
+    - generic [ref=f28e33]:
+      - generic [ref=f28e35]:
+        - generic [ref=f28e36]: Report type
+        - button "Table (beta)" [ref=f28e37] [cursor=pointer]
+      - generic [ref=f28e41]:
+        - generic [ref=f28e42]: Rows
+        - button "Sort" [ref=f28e43] [cursor=pointer]
+      - generic [ref=f28e47]:
+        - generic [ref=f28e48]: Group by
+        - button "None" [ref=f28e49] [cursor=pointer]
+      - button "+ Add column" [ref=f28e54] [cursor=pointer]
+    - table [ref=f28e59]:
+      - rowgroup [ref=f28e60]:
+        - row [ref=f28e61]:
+          - columnheader [ref=f28e62]:
+            - generic [ref=f28e63]:
+              - button "Issue type" [ref=f28e64] [cursor=pointer]
+              - button "Issue type column options" [ref=f28e65] [cursor=pointer]: ⋯
+          - columnheader [ref=f28e66]:
+            - generic [ref=f28e67]:
+              - button "Issue key" [ref=f28e68] [cursor=pointer]
+              - button "Issue key column options" [ref=f28e69] [cursor=pointer]: ⋯
+          - columnheader [ref=f28e70]:
+            - generic [ref=f28e71]:
+              - button "Summary" [ref=f28e72] [cursor=pointer]
+              - button "Summary column options" [ref=f28e73] [cursor=pointer]: ⋯
+      - rowgroup [ref=f28e74]:
+        - row [ref=f28e75]:
+          - cell [ref=f28e76]:
+            - img "Issue type" [ref=f28e77]
+          - cell [ref=f28e78]:
+            - link "ORDER-31" [ref=f28e79] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-31
+          - cell "Do the share reviews work" [ref=f28e80]
+        - row [ref=f28e81]:
+          - cell [ref=f28e82]:
+            - img "Issue type" [ref=f28e83]
+          - cell [ref=f28e84]:
+            - link "IMP-130" [ref=f28e85] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-130
+          - cell "Do stuff in a sprint" [ref=f28e86]
+        - row [ref=f28e87]:
+          - cell [ref=f28e88]:
+            - img "Issue type" [ref=f28e89]
+          - cell [ref=f28e90]:
+            - link "IMP-6" [ref=f28e91] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-6
+          - cell "Get Spanish language pack" [ref=f28e92]
+        - row [ref=f28e93]:
+          - cell [ref=f28e94]:
+            - img "Issue type" [ref=f28e95]
+          - cell [ref=f28e96]:
+            - link "STORE-14" [ref=f28e97] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/STORE-14
+          - cell "Create Reviews" [ref=f28e98]
+        - row [ref=f28e99]:
+          - cell [ref=f28e100]:
+            - img "Issue type" [ref=f28e101]
+          - cell [ref=f28e102]:
+            - link "STORE-13" [ref=f28e103] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/STORE-13
+          - cell "Events List" [ref=f28e104]
+        - row [ref=f28e105]:
+          - cell [ref=f28e106]:
+            - img "Issue type" [ref=f28e107]
+          - cell [ref=f28e108]:
+            - link "STORE-12" [ref=f28e109] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/STORE-12
+          - cell "Photo Upload" [ref=f28e110]
+        - row [ref=f28e111]:
+          - cell [ref=f28e112]:
+            - img "Issue type" [ref=f28e113]
+          - cell [ref=f28e114]:
+            - link "STORE-11" [ref=f28e115] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/STORE-11
+          - cell "Photo Share" [ref=f28e116]
+        - row [ref=f28e117]:
+          - cell [ref=f28e118]:
+            - img "Issue type" [ref=f28e119]
+          - cell [ref=f28e120]:
+            - link "STORE-10" [ref=f28e121] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/STORE-10
+          - cell "Pets Menu" [ref=f28e122]
+        - row [ref=f28e123]:
+          - cell [ref=f28e124]:
+            - img "Issue type" [ref=f28e125]
+          - cell [ref=f28e126]:
+            - link "STORE-9" [ref=f28e127] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/STORE-9
+          - cell "Enable Sharing" [ref=f28e128]
+        - row [ref=f28e129]:
+          - cell [ref=f28e130]:
+            - img "Issue type" [ref=f28e131]
+          - cell [ref=f28e132]:
+            - link "PROMO-1" [ref=f28e133] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/PROMO-1
+          - cell "Chat Que" [ref=f28e134]
+        - row [ref=f28e135]:
+          - cell [ref=f28e136]:
+            - img "Issue type" [ref=f28e137]
+          - cell [ref=f28e138]:
+            - link "ORDER-18" [ref=f28e139] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-18
+          - cell "Order Tracking" [ref=f28e140]
+        - row [ref=f28e141]:
+          - cell [ref=f28e142]:
+            - img "Issue type" [ref=f28e143]
+          - cell [ref=f28e144]:
+            - link "ORDER-17" [ref=f28e145] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-17
+          - cell "Share Order" [ref=f28e146]
+        - row [ref=f28e147]:
+          - cell [ref=f28e148]:
+            - img "Issue type" [ref=f28e149]
+          - cell [ref=f28e150]:
+            - link "ORDER-16" [ref=f28e151] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-16
+          - cell "Share Reviews" [ref=f28e152]
+        - row [ref=f28e153]:
+          - cell [ref=f28e154]:
+            - img "Issue type" [ref=f28e155]
+          - cell [ref=f28e156]:
+            - link "ORDER-15" [ref=f28e157] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-15
+          - cell "language packs" [ref=f28e158]
+        - row [ref=f28e159]:
+          - cell [ref=f28e160]:
+            - img "Issue type" [ref=f28e161]
+          - cell [ref=f28e162]:
+            - link "ORDER-12" [ref=f28e163] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-12
+          - cell "Order Pet Food" [ref=f28e164]
+        - row [ref=f28e165]:
+          - cell [ref=f28e166]:
+            - img "Issue type" [ref=f28e167]
+          - cell [ref=f28e168]:
+            - link "ORDER-11" [ref=f28e169] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-11
+          - cell "Share orders" [ref=f28e170]
+        - row [ref=f28e171]:
+          - cell [ref=f28e172]:
+            - img "Issue type" [ref=f28e173]
+          - cell [ref=f28e174]:
+            - link "ORDER-8" [ref=f28e175] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/ORDER-8
+          - cell "language select" [ref=f28e176]
+        - row [ref=f28e177]:
+          - cell [ref=f28e178]:
+            - img "Issue type" [ref=f28e179]
+          - cell [ref=f28e180]:
+            - link "IMP-137" [ref=f28e181] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-137
+          - cell "1-Click checkout" [ref=f28e182]
+        - row [ref=f28e183]:
+          - cell [ref=f28e184]:
+            - img "Issue type" [ref=f28e185]
+          - cell [ref=f28e186]:
+            - link "IMP-135" [ref=f28e187] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-135
+          - cell "Display option to select and checkout a menu item" [ref=f28e188]
+        - row [ref=f28e189]:
+          - cell [ref=f28e190]:
+            - img "Issue type" [ref=f28e191]
+          - cell [ref=f28e192]:
+            - link "IMP-131" [ref=f28e193] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-131
+          - cell "Add to cart and checkout" [ref=f28e194]
+        - row [ref=f28e195]:
+          - cell [ref=f28e196]:
+            - img "Issue type" [ref=f28e197]
+          - cell [ref=f28e198]:
+            - link "IMP-93" [ref=f28e199] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-93
+          - 'cell "UAT: Review Past Orders" [ref=f28e200]'
+        - row [ref=f28e201]:
+          - cell [ref=f28e202]:
+            - img "Issue type" [ref=f28e203]
+          - cell [ref=f28e204]:
+            - link "IMP-92" [ref=f28e205] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-92
+          - 'cell "QA: Review Past Orders" [ref=f28e206]'
+        - row [ref=f28e207]:
+          - cell [ref=f28e208]:
+            - img "Issue type" [ref=f28e209]
+          - cell [ref=f28e210]:
+            - link "IMP-91" [ref=f28e211] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-91
+          - cell "Review Past Orders" [ref=f28e212]
+        - row [ref=f28e213]:
+          - cell [ref=f28e214]:
+            - img "Issue type" [ref=f28e215]
+          - cell [ref=f28e216]:
+            - link "IMP-90" [ref=f28e217] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-90
+          - 'cell "UAT: Chat Cue" [ref=f28e218]'
+        - row [ref=f28e219]:
+          - cell [ref=f28e220]:
+            - img "Issue type" [ref=f28e221]
+          - cell [ref=f28e222]:
+            - link "IMP-89" [ref=f28e223] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-89
+          - 'cell "QA: Chat Cue" [ref=f28e224]'
+        - row [ref=f28e225]:
+          - cell [ref=f28e226]:
+            - img "Issue type" [ref=f28e227]
+          - cell [ref=f28e228]:
+            - link "IMP-87" [ref=f28e229] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-87
+          - 'cell "QA: Order Tracking" [ref=f28e230]'
+        - row [ref=f28e231]:
+          - cell [ref=f28e232]:
+            - img "Issue type" [ref=f28e233]
+          - cell [ref=f28e234]:
+            - link "IMP-86" [ref=f28e235] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-86
+          - 'cell "UAT: Order Tracking" [ref=f28e236]'
+        - row [ref=f28e237]:
+          - cell [ref=f28e238]:
+            - img "Issue type" [ref=f28e239]
+          - cell [ref=f28e240]:
+            - link "IMP-85" [ref=f28e241] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-85
+          - 'cell "QA: Share Order" [ref=f28e242]'
+        - row [ref=f28e243]:
+          - cell [ref=f28e244]:
+            - img "Issue type" [ref=f28e245]
+          - cell [ref=f28e246]:
+            - link "IMP-84" [ref=f28e247] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-84
+          - 'cell "UAT: Share Order" [ref=f28e248]'
+        - row [ref=f28e249]:
+          - cell [ref=f28e250]:
+            - img "Issue type" [ref=f28e251]
+          - cell [ref=f28e252]:
+            - link "IMP-83" [ref=f28e253] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-83
+          - 'cell "QA: Customer Reviews" [ref=f28e254]'
+        - row [ref=f28e255]:
+          - cell [ref=f28e256]:
+            - img "Issue type" [ref=f28e257]
+          - cell [ref=f28e258]:
+            - link "IMP-82" [ref=f28e259] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-82
+          - 'cell "UAT: Customer Reviews" [ref=f28e260]'
+        - row [ref=f28e261]:
+          - cell [ref=f28e262]:
+            - img "Issue type" [ref=f28e263]
+          - cell [ref=f28e264]:
+            - link "IMP-81" [ref=f28e265] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-81
+          - 'cell "QA: Customer Events" [ref=f28e266]'
+        - row [ref=f28e267]:
+          - cell [ref=f28e268]:
+            - img "Issue type" [ref=f28e269]
+          - cell [ref=f28e270]:
+            - link "IMP-80" [ref=f28e271] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-80
+          - 'cell "UAT: Customer Events" [ref=f28e272]'
+        - row [ref=f28e273]:
+          - cell [ref=f28e274]:
+            - img "Issue type" [ref=f28e275]
+          - cell [ref=f28e276]:
+            - link "IMP-74" [ref=f28e277] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-74
+          - 'cell "UAT: Favorite Sharing" [ref=f28e278]'
+        - row [ref=f28e279]:
+          - cell [ref=f28e280]:
+            - img "Issue type" [ref=f28e281]
+          - cell [ref=f28e282]:
+            - link "IMP-73" [ref=f28e283] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-73
+          - 'cell "QA: Favorite Sharing" [ref=f28e284]'
+        - row [ref=f28e285]:
+          - cell [ref=f28e286]:
+            - img "Issue type" [ref=f28e287]
+          - cell [ref=f28e288]:
+            - link "IMP-44" [ref=f28e289] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-44
+          - 'cell "QA: Pet Photo Sharing" [ref=f28e290]'
+        - row [ref=f28e291]:
+          - cell [ref=f28e292]:
+            - img "Issue type" [ref=f28e293]
+          - cell [ref=f28e294]:
+            - link "IMP-43" [ref=f28e295] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-43
+          - 'cell "UAT: Pet Photo Sharing" [ref=f28e296]'
+        - row [ref=f28e297]:
+          - cell [ref=f28e298]:
+            - img "Issue type" [ref=f28e299]
+          - cell [ref=f28e300]:
+            - link "IMP-42" [ref=f28e301] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-42
+          - 'cell "QA: Pets Corner" [ref=f28e302]'
+        - row [ref=f28e303]:
+          - cell [ref=f28e304]:
+            - img "Issue type" [ref=f28e305]
+          - cell [ref=f28e306]:
+            - link "IMP-41" [ref=f28e307] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-41
+          - 'cell "UAT: Pets corner" [ref=f28e308]'
+        - row [ref=f28e309]:
+          - cell [ref=f28e310]:
+            - img "Issue type" [ref=f28e311]
+          - cell [ref=f28e312]:
+            - link "IMP-40" [ref=f28e313] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-40
+          - 'cell "QA: Internationalization" [ref=f28e314]'
+        - row [ref=f28e315]:
+          - cell [ref=f28e316]:
+            - img "Issue type" [ref=f28e317]
+          - cell [ref=f28e318]:
+            - link "IMP-39" [ref=f28e319] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-39
+          - 'cell "UAT: Internationalization" [ref=f28e320]'
+        - row [ref=f28e321]:
+          - cell [ref=f28e322]:
+            - img "Issue type" [ref=f28e323]
+          - cell [ref=f28e324]:
+            - link "IMP-15" [ref=f28e325] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-15
+          - cell "Favorite sharing" [ref=f28e326]
+        - row [ref=f28e327]:
+          - cell [ref=f28e328]:
+            - img "Issue type" [ref=f28e329]
+          - cell [ref=f28e330]:
+            - link "IMP-5" [ref=f28e331] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-5
+          - cell "Internationalization" [ref=f28e332]
+        - row [ref=f28e333]:
+          - cell [ref=f28e334]:
+            - img "Issue type" [ref=f28e335]
+          - cell [ref=f28e336]:
+            - link "IMP-13" [ref=f28e337] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-13
+          - cell "Pets corner" [ref=f28e338]
+        - row [ref=f28e339]:
+          - cell [ref=f28e340]:
+            - img "Issue type" [ref=f28e341]
+          - cell [ref=f28e342]:
+            - link "IMP-37" [ref=f28e343] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-37
+          - cell "Pet Photo Sharing" [ref=f28e344]
+        - row [ref=f28e345]:
+          - cell [ref=f28e346]:
+            - img "Issue type" [ref=f28e347]
+          - cell [ref=f28e348]:
+            - link "IMP-3" [ref=f28e349] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-3
+          - cell "Order Playback" [ref=f28e350]
+        - row [ref=f28e351]:
+          - cell [ref=f28e352]:
+            - img "Issue type" [ref=f28e353]
+          - cell [ref=f28e354]:
+            - link "IMP-61" [ref=f28e355] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-61
+          - cell "Customer Events" [ref=f28e356]
+        - row [ref=f28e357]:
+          - cell [ref=f28e358]:
+            - img "Issue type" [ref=f28e359]
+          - cell [ref=f28e360]:
+            - link "IMP-10" [ref=f28e361] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-10
+          - cell "Social sharing" [ref=f28e362]
+        - row [ref=f28e363]:
+          - cell [ref=f28e364]:
+            - img "Issue type" [ref=f28e365]
+          - cell [ref=f28e366]:
+            - link "IMP-63" [ref=f28e367] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-63
+          - cell "Customer Reviews" [ref=f28e368]
+        - row [ref=f28e369]:
+          - cell [ref=f28e370]:
+            - img "Issue type" [ref=f28e371]
+          - cell [ref=f28e372]:
+            - link "IMP-67" [ref=f28e373] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-67
+          - cell "Live chat support" [ref=f28e374]
+        - row [ref=f28e375]:
+          - cell [ref=f28e376]:
+            - img "Issue type" [ref=f28e377]
+          - cell [ref=f28e378]:
+            - link "IMP-9" [ref=f28e379] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-9
+          - cell "Track your order maps" [ref=f28e380]
+        - row [ref=f28e381]:
+          - cell [ref=f28e382]:
+            - img "Issue type" [ref=f28e383]
+          - cell [ref=f28e384]:
+            - link "IMP-68" [ref=f28e385] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-68
+          - cell "1-click checkout" [ref=f28e386]
+        - row [ref=f28e387]:
+          - cell [ref=f28e388]:
+            - img "Issue type" [ref=f28e389]
+          - cell [ref=f28e390]:
+            - link "IMP-64" [ref=f28e391] [cursor=pointer]:
+              - /url: https://bitovi-training.atlassian.net/browse/IMP-64
+          - cell "Upselling" [ref=f28e392]

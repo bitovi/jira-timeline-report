@@ -1,0 +1,54 @@
+- generic [active] [ref=f1e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=f1e2]:
+    - text: Table Report
+    - generic [ref=f1e3]: Table + Grouper unification
+  - paragraph [ref=f1e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=f1e5]:
+    - generic [ref=f1e6]:
+      - generic [ref=f1e7]: Rows
+      - generic [ref=f1e8]:
+        - button "Sort" [ref=f1e9] [cursor=pointer]
+        - button "Hierarchy" [ref=f1e10] [cursor=pointer]
+    - generic [ref=f1e12]:
+      - generic [ref=f1e13]: Group by
+      - combobox [ref=f1e14] [cursor=pointer]:
+        - option "None"
+        - option "Project" [selected]
+        - option "Parent"
+        - option "Status"
+        - option "Assignee"
+      - combobox "Second dimension → 2D pivot" [ref=f1e15] [cursor=pointer]:
+        - option "+ column dimension (2D)"
+        - option "Status" [selected]
+        - option "Due quarter"
+    - button "+ Add column" [ref=f1e17] [cursor=pointer]
+  - generic [ref=f1e18]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=f1e21]:
+    - rowgroup [ref=f1e22]:
+      - row [ref=f1e223]:
+        - columnheader "Summary ▼ ⋯" [ref=f1e224]:
+          - generic [ref=f1e225] [cursor=pointer]:
+            - generic [ref=f1e226]: Summary
+            - generic [ref=f1e227]: ▼
+            - button "⋯" [ref=f1e228]
+        - columnheader "To Do" [ref=f1e229]
+        - columnheader "In Progress" [ref=f1e232]
+        - columnheader "Done" [ref=f1e235]
+        - columnheader "Blocked" [ref=f1e238]
+        - columnheader "Total" [ref=f1e241]
+    - rowgroup [ref=f1e69]:
+      - row [ref=f1e244]:
+        - cell "Cloud" [ref=f1e245]
+        - cell "·" [ref=f1e246]
+        - cell "13" [ref=f1e247]
+        - cell "8" [ref=f1e248]
+        - cell "5" [ref=f1e249]
+        - cell "26" [ref=f1e250]
+      - row [ref=f1e251]:
+        - cell "Mobile" [ref=f1e252]
+        - cell "5" [ref=f1e253]
+        - cell "8" [ref=f1e254]
+        - cell "3" [ref=f1e255]
+        - cell "·" [ref=f1e256]
+        - cell "16" [ref=f1e257]
+  - paragraph [ref=f1e221]: "Try: switch Rows → Hierarchy (issues indent under parents with expand/collapse; rolled-up columns fill in on parents). Pick Group by → Status (synthetic group-header rows appear; grouped columns show their aggregation). Add a second dimension to see the 2D pivot. Hover any header and click ⋯ for per-column sort / filter / aggregation. Click a header to sort."

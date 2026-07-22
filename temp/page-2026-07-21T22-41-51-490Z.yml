@@ -1,0 +1,133 @@
+- generic [ref=f9e2]:
+  - navigation [ref=f9e4]:
+    - generic [ref=f9e5]:
+      - list [ref=f9e6]:
+        - listitem [ref=f9e7]:
+          - link "Status Reports for Jira" [ref=f9e8] [cursor=pointer]:
+            - /url: https://github.com/bitovi/jira-timeline-report
+        - listitem [ref=f9e9]:
+          - link "by" [ref=f9e10] [cursor=pointer]:
+            - /url: https://www.bitovi.com/services/agile-project-management-consulting
+      - button "Connect to Jira" [ref=f9e13] [cursor=pointer]
+  - generic [ref=f9e15]:
+    - generic [ref=f9e18]:
+      - img "warning" [ref=f9e68]
+      - generic [ref=f9e21]:
+        - heading "Welcome! You're currently viewing a sample report. To generate a custom status report, click Connect to Jira" [level=2] [ref=f9e22]
+        - generic [ref=f9e23]:
+          - paragraph [ref=f9e24]: "Checkout the sample reports:"
+          - list [ref=f9e25]:
+            - listitem [ref=f9e26]:
+              - link "Release end dates with initiative status" [ref=f9e27] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status&selectedIssueType=Initiative"
+            - listitem [ref=f9e28]:
+              - link "Release timeline with initiative work breakdown" [ref=f9e29] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown&selectedIssueType=Initiative"
+            - listitem [ref=f9e30]:
+              - link "Ready and in-development initiative work breakdown" [ref=f9e31] [cursor=pointer]:
+                - /url: "?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true&selectedIssueType=Initiative"
+    - generic [ref=f9e33]:
+      - generic [ref=f9e35]:
+        - generic [ref=f9e36]: Report type
+        - button "Gantt Chart" [ref=f9e37] [cursor=pointer]
+      - generic [ref=f9e42]:
+        - generic [ref=f9e43]: Report on
+        - button "Initiatives" [ref=f9e69] [cursor=pointer]
+      - generic [ref=f9e49]:
+        - generic [ref=f9e50]:
+          - generic [ref=f9e51]:
+            - text: Compare to
+            - textbox [ref=f9e52] [cursor=pointer]: 2026-07-06
+          - generic [ref=f9e53]: 15 days ago
+        - slider "15 days ago" [ref=f9e55]: "76"
+      - button "Filters" [ref=f9e58] [cursor=pointer]
+      - generic [ref=f9e63]:
+        - button "View settings" [expanded] [active] [ref=f9e64] [cursor=pointer]
+        - menu [ref=f9e263]:
+          - generic [ref=f9e265]:
+            - generic [ref=f9e266]:
+              - paragraph [ref=f9e267]: sort by
+              - generic [ref=f9e269]:
+                - generic [ref=f9e270]: Sort By
+                - generic [ref=f9e271]:
+                  - log [ref=f9e273]
+                  - generic [ref=f9e275]:
+                    - generic [ref=f9e276]: JQL Order
+                    - combobox [ref=f9e278]
+            - generic [ref=f9e283]:
+              - paragraph [ref=f9e284]: group by
+              - generic [ref=f9e286]:
+                - generic [ref=f9e287]: Group By
+                - generic [ref=f9e288]:
+                  - log [ref=f9e290]
+                  - generic [ref=f9e292]:
+                    - generic [ref=f9e293]: None
+                    - combobox [ref=f9e295]
+            - separator [ref=f9e300]
+            - generic [ref=f9e301]:
+              - paragraph [ref=f9e302]: round dates to
+              - generic [ref=f9e304]:
+                - generic [ref=f9e305]: Round Dates To
+                - generic [ref=f9e306]:
+                  - log [ref=f9e308]
+                  - generic [ref=f9e310]:
+                    - generic [ref=f9e311]: Day
+                    - combobox [ref=f9e313]
+            - separator [ref=f9e318]
+            - generic [ref=f9e319]:
+              - paragraph [ref=f9e320]: view options
+              - generic [ref=f9e322]:
+                - checkbox "Show completion percentages" [ref=f9e324]
+                - generic [ref=f9e329]: Show completion percentages
+    - generic [ref=f9e71]:
+      - generic [ref=f9e74]:
+        - generic [ref=f9e75]: Q3
+        - generic [ref=f9e76]: Q4
+        - generic [ref=f9e77]: Jul
+        - generic [ref=f9e78]: Aug
+        - generic [ref=f9e79]: Sep
+        - generic [ref=f9e80]: Oct
+        - generic [ref=f9e81]: Nov
+        - generic [ref=f9e82]: Dec
+        - link "Favorite sharing" [ref=f9e95] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-15
+        - link "Internationalization" [ref=f9e107] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-5
+        - link "Pets corner" [ref=f9e119] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-13
+        - link "Pet Photo Sharing" [ref=f9e131] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-37
+        - link "Order Playback" [ref=f9e143] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-3
+        - link "Customer Events" [ref=f9e155] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-61
+        - link "Social sharing" [ref=f9e167] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-10
+        - link "Customer Reviews" [ref=f9e179] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-63
+        - link "Live chat support" [ref=f9e191] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-67
+        - link "Track your order maps" [ref=f9e203] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-9
+        - link "1-click checkout" [ref=f9e215] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-68
+        - link "Upselling" [ref=f9e227] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-64
+      - generic [ref=f9e233]:
+        - generic [ref=f9e234]:
+          - generic [ref=f9e235]: Unknown dates
+          - generic [ref=f9e239]:
+            - generic [ref=f9e240]: ←
+            - generic [ref=f9e241]: Dates are in the past outside this view
+          - generic [ref=f9e242]:
+            - generic [ref=f9e243]: →
+            - generic [ref=f9e244]: Dates are in the future outside this view
+        - generic [ref=f9e245]:
+          - generic [ref=f9e246]: Complete
+          - generic [ref=f9e248]: Blocked
+          - generic [ref=f9e250]: Warning
+          - generic [ref=f9e252]: New
+          - generic [ref=f9e254]: Behind
+          - generic [ref=f9e256]: Ahead
+          - generic [ref=f9e258]: On Track
+          - generic [ref=f9e260]: Not Started

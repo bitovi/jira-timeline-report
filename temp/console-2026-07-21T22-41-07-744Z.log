@@ -1,0 +1,168 @@
+[     551ms] [WARNING] For security reasons, Hotjar only works over HTTPS. Learn more: https://help.hotjar.com/hc/en-us/articles/115011624047 @ https://static.hotjar.com/c/hotjar-5105449.js?sv=7:2
+[    1337ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-YPJU3Z5G.js?v=712107f6:21550
+[    1364ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-YTUY4UQH.js?v=712107f6:6739
+[    1368ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-3B2GGDK4.js?v=712107f6:6730
+[    1373ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-VWH54LXF.js?v=712107f6:15442
+[    1375ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-VWH54LXF.js?v=712107f6:23639
+[    1380ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-RMG47GZK.js?v=712107f6:6733
+[    1383ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-A2HID6DE.js?v=712107f6:9588
+[    1391ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-4BYH4F5H.js?v=712107f6:16770
+[    1393ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-Y6U3TWRI.js?v=712107f6:6739
+[    1395ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-BAIIXBRJ.js?v=712107f6:6730
+[    1398ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-MMW57CFL.js?v=712107f6:7024
+[    1426ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:60607
+[    1428ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:66549
+[    1432ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:78827
+[    1443ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/@atlaskit_jql-editor-autocomplete-rest.js?v=712107f6:9614
+[    1455ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 0.0.0-development was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-QV3CVYTN.js?v=712107f6:7761
+[    1458ms] [LOG] Loaded version of the Timeline Reporter: undefined @ http://localhost:5173/src/shared/main-helper.js:36
+[    1555ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1555ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1555ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1555ms] [WARNING] Can't find status 10040 Validating @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1555ms] [WARNING] Can't find status 10038 Refinement @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1555ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[    1555ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[    1556ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1556ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1556ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1556ms] [WARNING] Can't find status 10040 Validating @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1556ms] [WARNING] Can't find status 10038 Refinement @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[    1556ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[    1556ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[    1610ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.atlassian.com/oauth/token/accessible-resources:0
+[    1611ms] [WARNING] Error: Unauthorized
+    at http://localhost:5173/src/utils/fetch/response-to-json.ts:4:19
+    at async http://localhost:5173/src/request-helpers/hosted-request-helper.js:69:24 @ :0
+[    2343ms] [LOG] Feature Flags {historicallyAdjustedEstimates: false, logReportData: false, devConfigurationIssue: null, historicallyAdjustedEstimates read details: undefined, historicallyAdjustedEstimates toggle value: undefined} @ http://localhost:5173/src/shared/feature-flag.js:39
+[   10059ms] [LOG] [web-vitals] Sending metrics triggered by: timeout {metric:fcp: 84, metric:ttfb: 21} @ https://connect-cdn.atl-paas.net/all.js:415
+[   37010ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:555
+[   37011ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   37701ms] [ERROR] Warning: %s uses the legacy childContextTypes API which is no longer supported and will be removed in the next major release. Use React.createContext() instead
+
+.Learn more about this warning here: https://reactjs.org/link/legacy-context%s AnalyticsContext4 
+    at AnalyticsContext4 (http://localhost:5173/node_modules/.vite/deps/chunk-TIOCCGQB.js?v=712107f6:154:5)
+    at ExportedAnalyticsContext2
+    at http://localhost:5173/node_modules/.vite/deps/chunk-TIOCCGQB.js?v=712107f6:245:35
+    at div
+    at SortBy (http://localhost:5173/src/react/ReportControls/components/ViewSettings/shared/components/SortBy/SortBy.tsx:49:14)
+    at div
+    at div
+    at SettingsSection (http://localhost:5173/src/react/ReportControls/components/ViewSettings/shared/components/SettingsSection/SettingsSection.tsx:17:28)
+    at div
+    at GanttViewSettings (http://localhost:5173/src/react/ReportControls/components/ViewSettings/components/GanttViewSettings/GanttViewSettings.tsx:31:25)
+    at div
+    at div
+    at http://localhost:5173/node_modules/.vite/deps/chunk-ZA2LBAEI.js?v=712107f6:1383:49
+    at MenuGroup2 (http://localhost:5173/node_modules/.vite/deps/@atlaskit_dropdown-menu.js?v=712107f6:476:24)
+    at MenuWrapper2 (http://localhost:5173/node_modules/.vite/deps/@atlaskit_dropdown-menu.js?v=712107f6:2161:24)
+    at FocusManager2 (http://localhost:5173/node_modules/.vite/deps/@atlaskit_dropdown-menu.js?v=712107f6:403:23)
+    at RepositionOnUpdate2 (http://localhost:5173/node_modules/.vite/deps/chunk-5DDEPZ3D.js?v=712107f6:2208:23)
+    at div
+    at http://localhost:5173/node_modules/.vite/deps/chunk-ZA2LBAEI.js?v=712107f6:1383:49
+    at http://localhost:5173/node_modules/.vite/deps/chunk-5DDEPZ3D.js?v=712107f6:2506:36
+    at Popper (http://localhost:5173/node_modules/.vite/deps/chunk-SEOBDGNF.js?v=712107f6:1788:29)
+    at Popper2 (http://localhost:5173/node_modules/.vite/deps/chunk-3BEL5YQL.js?v=712107f6:110:28)
+    at PopperWrapper (http://localhost:5173/node_modules/.vite/deps/chunk-5DDEPZ3D.js?v=712107f6:2517:20)
+    at LevelProvider2 (http://localhost:5173/node_modules/.vite/deps/chunk-5DDEPZ3D.js?v=712107f6:410:23)
+    at LayeringProvider2 (http://localhost:5173/node_modules/.vite/deps/chunk-5DDEPZ3D.js?v=712107f6:425:24)
+    at UNSAFE_LAYERING2 (http://localhost:5173/node_modules/.vite/deps/chunk-5DDEPZ3D.js?v=712107f6:440:24)
+    at Manager (http://localhost:5173/node_modules/.vite/deps/chunk-SEOBDGNF.js?v=712107f6:141:23)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-5DDEPZ3D.js?v=712107f6:2669:20
+    at SelectionStore2 (http://localhost:5173/node_modules/.vite/deps/@atlaskit_dropdown-menu.js?v=712107f6:2225:24)
+    at DropdownMenu2 (http://localhost:5173/node_modules/.vite/deps/@atlaskit_dropdown-menu.js?v=712107f6:2314:29)
+    at StorageProvider (http://localhost:5173/src/react/services/storage/StorageProvider.tsx:29:35)
+    at QueryClientProvider (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:2791:3)
+    at Suspense
+    at _ErrorBoundary (http://localhost:5173/node_modules/.vite/deps/@sentry_react.js?v=712107f6:40856:5)
+    at div
+    at ViewSettings (http://localhost:5173/src/react/ReportControls/components/ViewSettings/ViewSettings.tsx:60:31)
+    at div
+    at ReportControlsWrapper (http://localhost:5173/src/react/ReportControls/ReportControls.tsx:295:41)
+    at ReportControls (http://localhost:5173/src/react/ReportControls/ReportControls.tsx:324:3)
+    at div
+    at div
+    at TimelineReport (http://localhost:5173/src/react/TimelineReport/TimelineReport.tsx:64:3) @ http://localhost:5173/node_modules/.vite/deps/chunk-YPJU3Z5G.js?v=712107f6:520
+[   38014ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   39017ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   40022ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   41024ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   42029ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   43033ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   44038ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   45042ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/:0
+[   46138ms] [WARNING] For security reasons, Hotjar only works over HTTPS. Learn more: https://help.hotjar.com/hc/en-us/articles/115011624047 @ https://static.hotjar.com/c/hotjar-5105449.js?sv=7:2
+[   47242ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-YPJU3Z5G.js?v=712107f6:21550
+[   47252ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-YTUY4UQH.js?v=712107f6:6739
+[   47252ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-3B2GGDK4.js?v=712107f6:6730
+[   47253ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-VWH54LXF.js?v=712107f6:15442
+[   47254ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-VWH54LXF.js?v=712107f6:23639
+[   47257ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-RMG47GZK.js?v=712107f6:6733
+[   47257ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-A2HID6DE.js?v=712107f6:9588
+[   47258ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-4BYH4F5H.js?v=712107f6:16770
+[   47259ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-Y6U3TWRI.js?v=712107f6:6739
+[   47259ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-BAIIXBRJ.js?v=712107f6:6730
+[   47259ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-MMW57CFL.js?v=712107f6:7024
+[   47264ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:60607
+[   47265ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:66549
+[   47267ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:78827
+[   47271ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/@atlaskit_jql-editor-autocomplete-rest.js?v=712107f6:9614
+[   47275ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 0.0.0-development was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-QV3CVYTN.js?v=712107f6:7761
+[   47277ms] [LOG] Loaded version of the Timeline Reporter: undefined @ http://localhost:5173/src/shared/main-helper.js:36
+[   47337ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.atlassian.com/oauth/token/accessible-resources:0
+[   47360ms] [WARNING] Error: Unauthorized
+    at http://localhost:5173/src/utils/fetch/response-to-json.ts:4:19
+    at async http://localhost:5173/src/request-helpers/hosted-request-helper.js:69:24 @ :0
+[   47378ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47379ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47379ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47379ms] [WARNING] Can't find status 10040 Validating @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47379ms] [WARNING] Can't find status 10038 Refinement @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47379ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[   47379ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[   47380ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47380ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47380ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47380ms] [WARNING] Can't find status 10040 Validating @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47380ms] [WARNING] Can't find status 10038 Refinement @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47380ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[   47380ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[   47384ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47384ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47384ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47384ms] [WARNING] Can't find status 10040 Validating @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47385ms] [WARNING] Can't find status 10038 Refinement @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[   47385ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[   47385ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[   48248ms] [LOG] Feature Flags {historicallyAdjustedEstimates: false, logReportData: false, devConfigurationIssue: null, historicallyAdjustedEstimates read details: undefined, historicallyAdjustedEstimates toggle value: undefined} @ http://localhost:5173/src/shared/feature-flag.js:39
+[   56110ms] [LOG] [web-vitals] Sending metrics triggered by: timeout {metric:fcp: 136, metric:ttfb: 26} @ https://connect-cdn.atl-paas.net/all.js:415

@@ -1,0 +1,52 @@
+[     274ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:21550
+[    1279ms] [LOG] Feature Flags {historicallyAdjustedEstimates: false, historicallyAdjustedEstimates read details: undefined, historicallyAdjustedEstimates toggle value: undefined} @ http://localhost:6006/src/shared/feature-flag.js:39
+[   63560ms] ReferenceError: SegmentedControl is not defined
+    at TableReportControlsInner (http://localhost:6006/src/react/reports/TableReport/components/TableReportControls.tsx?t=1784683370233:110:7)
+    at renderWithHooks (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:11548:26)
+    at updateFunctionComponent (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:14582:28)
+    at beginWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:3674:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:3699:24)
+    at invokeGuardedCallback (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:3733:39)
+    at beginWork$1 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19765:15)
+    at performUnitOfWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19198:20)
+    at workLoopSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19137:13)
+[   63561ms] ReferenceError: SegmentedControl is not defined
+    at TableReportControlsInner (http://localhost:6006/src/react/reports/TableReport/components/TableReportControls.tsx?t=1784683370233:110:7)
+    at renderWithHooks (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:11548:26)
+    at updateFunctionComponent (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:14582:28)
+    at beginWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:3674:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:3699:24)
+    at invokeGuardedCallback (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:3733:39)
+    at beginWork$1 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19765:15)
+    at performUnitOfWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19198:20)
+    at workLoopSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19137:13)
+[   63562ms] [ERROR] The above error occurred in the <TableReportControlsInner> component:
+
+    at TableReportControlsInner (http://localhost:6006/src/react/reports/TableReport/components/TableReportControls.tsx?t=1784683370233:78:38)
+    at Suspense
+    at TableReportControls
+    at div
+    at div
+    at hookified (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=325f7e37:13865:11)
+    at JiraProvider (http://localhost:6006/src/react/services/jira/JiraProvider.tsx:29:32)
+    at QueryClientProvider (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/@tanstack_react-query.js?v=325f7e37:2791:3)
+    at JiraProvider (http://localhost:6006/src/react/services/jira/JiraProvider.tsx:29:32)
+    at QueryClientProvider (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/@tanstack_react-query.js?v=325f7e37:2791:3)
+    at unboundStoryFn (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=325f7e37:32742:319)
+    at ErrorBoundary (http://localhost:6006/node_modules/@storybook/react/dist/_browser-chunks/chunk-3HUEQMBJ.js?v=325f7e37:84:5)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:14031
+[   63562ms] [ERROR] Error rendering story 'reports-tablereport-tablereport--controls-bar': @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=325f7e37:11768
+[   63563ms] [ERROR] ReferenceError: SegmentedControl is not defined
+    at TableReportControlsInner (http://localhost:6006/src/react/reports/TableReport/components/TableReportControls.tsx?t=1784683370233:110:7)
+    at renderWithHooks (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:11548:26)
+    at updateFunctionComponent (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:14582:28)
+    at beginWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:15924:22)
+    at beginWork$1 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19753:22)
+    at performUnitOfWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19198:20)
+    at workLoopSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19137:13)
+    at renderRootSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:19116:15)
+    at recoverFromConcurrentError (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:18736:28)
+    at performSyncWorkOnRoot (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:18879:28) @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=325f7e37:11768

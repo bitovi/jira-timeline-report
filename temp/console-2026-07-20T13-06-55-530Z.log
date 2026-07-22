@@ -1,0 +1,3 @@
+[     135ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=1a9fdc4f:21550
+[     139ms] [ERROR] ReferenceError: process is not defined
+    at http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-7SR3ZNRP.js?v=1a9fdc4f:11638:18 @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=d89da3be:11768

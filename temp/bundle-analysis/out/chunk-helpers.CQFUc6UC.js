@@ -1,0 +1,1 @@
+const c=(t,n="asc")=>{const a=n==="asc"?(e,s)=>e.getTime()-s.getTime():(e,s)=>s.getTime()-e.getTime();return(e,s)=>{const o=t(e)??new Date(0),r=t(s)??new Date(0);return a(o,r)}},d=t=>t?.start,i=t=>t?.due,u=c(d),D=c(i,"desc");export{u as a,i as b,D as d,d as s};

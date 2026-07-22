@@ -1,0 +1,105 @@
+- generic [ref=f3e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=f3e2]:
+    - text: Table Report
+    - generic [ref=f3e3]: Table + Grouper unification
+  - paragraph [ref=f3e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=f3e5]:
+    - generic [ref=f3e6]:
+      - generic [ref=f3e7]: Rows
+      - generic [ref=f3e8]:
+        - button "Sort" [ref=f3e9] [cursor=pointer]
+        - button "Hierarchy" [ref=f3e10] [cursor=pointer]
+    - generic [ref=f3e12]:
+      - generic [ref=f3e13]: Row grouping ↓
+      - combobox [ref=f3e14] [cursor=pointer]:
+        - option "None"
+        - option "Project" [selected]
+        - option "Parent"
+        - option "Status"
+        - option "Assignee"
+    - generic [ref=f3e15]:
+      - generic [ref=f3e16]: Column grouping →
+      - combobox "Adds a column dimension → 2D pivot" [ref=f3e17] [cursor=pointer]:
+        - option "None"
+        - option "Status"
+        - option "Due quarter" [selected]
+    - generic [ref=f3e309]:
+      - generic [ref=f3e310]: Cell values
+      - generic [ref=f3e312]:
+        - text: Story Points
+        - generic [ref=f3e313]: · Sum
+      - button "+ value" [active] [ref=f3e314] [cursor=pointer]
+    - button "+ Add column" [ref=f3e19] [cursor=pointer]
+  - generic [ref=f3e20]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=f3e23]:
+    - rowgroup [ref=f3e24]:
+      - row [ref=f3e316]:
+        - columnheader "Project ↓" [ref=f3e317]
+        - columnheader "Q3 2026" [ref=f3e320]
+        - columnheader "Q4 2026" [ref=f3e323]
+        - columnheader "Total" [ref=f3e326]
+      - row [ref=f3e329]:
+        - columnheader "Story Points Sum" [ref=f3e330]:
+          - generic [ref=f3e331]:
+            - generic [ref=f3e332]: Story Points
+            - generic [ref=f3e333]: Sum
+        - columnheader "Story Points Sum" [ref=f3e334]:
+          - generic [ref=f3e335]:
+            - generic [ref=f3e336]: Story Points
+            - generic [ref=f3e337]: Sum
+        - columnheader "Story Points Sum" [ref=f3e338]:
+          - generic [ref=f3e339]:
+            - generic [ref=f3e340]: Story Points
+            - generic [ref=f3e341]: Sum
+    - rowgroup [ref=f3e71]:
+      - row [ref=f3e342]:
+        - cell "Cloud4" [ref=f3e343]
+        - cell "26" [ref=f3e344]
+        - cell "·" [ref=f3e345]
+        - cell "26" [ref=f3e346]
+      - row [ref=f3e347]:
+        - cell "Mobile4" [ref=f3e348]
+        - cell "11" [ref=f3e349]
+        - cell "5" [ref=f3e350]
+        - cell "16" [ref=f3e351]
+      - row [ref=f3e352]:
+        - cell "Total" [ref=f3e353]
+        - cell "37" [ref=f3e354]
+        - cell "5" [ref=f3e355]
+        - cell "42" [ref=f3e356]
+  - paragraph [ref=f3e223]: "Try: switch Rows → Hierarchy (issues indent under parents with expand/collapse; rolled-up columns fill in on parents). Pick Group by → Status (synthetic group-header rows appear; grouped columns show their aggregation). Add a second dimension to see the 2D pivot. Hover any header and click ⋯ for per-column sort / filter / aggregation. Click a header to sort."
+  - generic [ref=f3e358]:
+    - generic [ref=f3e359]: Add a cell value
+    - generic [ref=f3e360] [cursor=pointer]:
+      - text: Issue key
+      - generic [ref=f3e361]: Count
+    - generic [ref=f3e362] [cursor=pointer]:
+      - text: Status
+      - generic [ref=f3e363]: Distinct list
+    - generic [ref=f3e364] [cursor=pointer]:
+      - text: Assignee
+      - generic [ref=f3e365]: Distinct list
+    - generic [ref=f3e366] [cursor=pointer]:
+      - text: Project
+      - generic [ref=f3e367]: Distinct list
+    - generic [ref=f3e368] [cursor=pointer]:
+      - text: Due date
+      - generic [ref=f3e369]: Range
+    - generic [ref=f3e370] [cursor=pointer]:
+      - text: Labels
+      - generic [ref=f3e371]: Distinct list
+    - generic [ref=f3e372] [cursor=pointer]:
+      - text: Estimated Days
+      - generic [ref=f3e373]: Sum
+    - generic [ref=f3e374] [cursor=pointer]:
+      - text: Rolled Up Days
+      - generic [ref=f3e375]: Sum
+    - generic [ref=f3e376] [cursor=pointer]:
+      - text: Completion
+      - generic [ref=f3e377]: Completion %
+    - generic [ref=f3e378] [cursor=pointer]:
+      - text: Revenue
+      - generic [ref=f3e379]: Sum
+    - generic [ref=f3e380] [cursor=pointer]:
+      - text: Issue Count
+      - generic [ref=f3e381]: Sum

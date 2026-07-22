@@ -1,0 +1,7 @@
+[      99ms] [ERROR] SB_PREVIEW_API_0009 (NoStoryMatchError): Couldn't find story matching 'reports-tablereport-tablereport--grouped1-d'.
+
+- Are you sure a story with that id exists?
+- Please check your stories field of your main.js config.
+- Also check the browser console and terminal for error messages.
+    at PreviewWeb.selectSpecifiedStory (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=e70adf1e:34429:9)
+    at PreviewWeb.initializeWithStoryIndex (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=e70adf1e:34409:67) @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=e70adf1e:11768

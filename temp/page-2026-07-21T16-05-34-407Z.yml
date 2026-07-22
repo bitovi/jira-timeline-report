@@ -1,0 +1,76 @@
+- generic [active] [ref=e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=e2]:
+    - text: Table Report
+    - generic [ref=e3]: Table + Grouper unification
+  - paragraph [ref=e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Rows
+      - generic [ref=e8]:
+        - button "Sort" [ref=e9] [cursor=pointer]
+        - button "Hierarchy" [ref=e10] [cursor=pointer]
+    - generic [ref=e12]:
+      - generic [ref=e13]: Group by
+      - combobox [ref=e14] [cursor=pointer]:
+        - option "None"
+        - option "Project"
+        - option "Parent"
+        - option "Status" [selected]
+        - option "Assignee"
+      - combobox "Second dimension → 2D pivot" [ref=e15] [cursor=pointer]:
+        - option "+ column dimension (2D)"
+        - option "Status"
+        - option "Due quarter" [selected]
+    - button "+ Add column" [ref=e17] [cursor=pointer]
+  - generic [ref=e18]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=e21]:
+    - rowgroup [ref=e22]:
+      - row [ref=e707]:
+        - columnheader "Summary ▼ ⋯" [ref=e708]:
+          - generic [ref=e709] [cursor=pointer]:
+            - generic [ref=e710]: Summary
+            - generic [ref=e711]: ▼
+            - button "⋯" [ref=e712]
+        - columnheader "Q3 2026" [ref=e713]
+        - columnheader "Q4 2026" [ref=e716]
+        - columnheader "Total" [ref=e719]
+    - rowgroup [ref=e69]:
+      - row [ref=e722]:
+        - cell "In Progress" [ref=e723]
+        - cell "21" [ref=e724]
+        - cell "0" [ref=e725]
+        - cell "21" [ref=e726]
+      - row [ref=e727]:
+        - cell "Done" [ref=e728]
+        - cell "11" [ref=e729]
+        - cell "·" [ref=e730]
+        - cell "11" [ref=e731]
+      - row [ref=e732]:
+        - cell "Blocked" [ref=e733]
+        - cell "5" [ref=e734]
+        - cell "·" [ref=e735]
+        - cell "5" [ref=e736]
+      - row [ref=e737]:
+        - cell "To Do" [ref=e738]
+        - cell "·" [ref=e739]
+        - cell "5" [ref=e740]
+        - cell "5" [ref=e741]
+  - paragraph [ref=e221]: "Try: switch Rows → Hierarchy (issues indent under parents with expand/collapse; rolled-up columns fill in on parents). Pick Group by → Status (synthetic group-header rows appear; grouped columns show their aggregation). Add a second dimension to see the 2D pivot. Hover any header and click ⋯ for per-column sort / filter / aggregation. Click a header to sort."
+  - generic [ref=e684]:
+    - generic [ref=e685]: Story Points
+    - generic [ref=e686] [cursor=pointer]: Sort ascending
+    - generic [ref=e687] [cursor=pointer]: Sort descending
+    - generic [ref=e689]: Aggregation
+    - generic [ref=e690] [cursor=pointer]:
+      - generic [ref=e691]: ✓
+      - text: Sum
+    - generic [ref=e692] [cursor=pointer]: Avg
+    - generic [ref=e693] [cursor=pointer]: Min
+    - generic [ref=e694] [cursor=pointer]: Max
+    - generic [ref=e695] [cursor=pointer]: Count
+    - generic [ref=e697]: Filter
+    - generic [ref=e699]:
+      - spinbutton "min" [ref=e700]
+      - spinbutton "max" [ref=e701]
+    - button "Apply" [ref=e703] [cursor=pointer]
+    - generic [ref=e705] [cursor=pointer]: 🗑 Remove column

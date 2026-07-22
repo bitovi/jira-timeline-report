@@ -1,0 +1,142 @@
+- generic [active] [ref=f7e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=f7e2]:
+    - text: Table Report
+    - generic [ref=f7e3]: Table + Grouper unification
+  - paragraph [ref=f7e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=f7e5]:
+    - generic [ref=f7e6]:
+      - generic [ref=f7e7]: Rows
+      - generic [ref=f7e8]:
+        - button "Sort" [ref=f7e9] [cursor=pointer]
+        - button "Hierarchy" [ref=f7e10] [cursor=pointer]
+    - generic [ref=f7e12]:
+      - generic [ref=f7e13]: Group by ↓
+      - combobox [ref=f7e14] [cursor=pointer]:
+        - option "None"
+        - option "Project" [selected]
+        - option "Status"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f7e15]:
+      - button "⇄" [ref=f7e300] [cursor=pointer]
+      - generic [ref=f7e16]: across →
+      - combobox "Second grouping field → 2D" [ref=f7e17] [cursor=pointer]:
+        - option "None"
+        - option "Status" [selected]
+        - option "Project"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f7e301]:
+      - generic [ref=f7e302]: Fields
+      - generic "Lay the measure fields down as sub-rows, or across as sub-columns" [ref=f7e303]:
+        - button "↓ Down rows" [ref=f7e304] [cursor=pointer]
+        - button "→ Across cols" [ref=f7e305] [cursor=pointer]
+    - button "+ Add column" [ref=f7e19] [cursor=pointer]
+  - generic [ref=f7e20]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=f7e23]:
+    - rowgroup [ref=f7e24]:
+      - row [ref=f7e307]:
+        - columnheader [ref=f7e308]
+        - columnheader [ref=f7e309]
+        - columnheader "Status →" [ref=f7e310]
+      - row [ref=f7e313]:
+        - columnheader "Project ↓" [ref=f7e314]
+        - columnheader "Field" [ref=f7e317]
+        - columnheader "To Do" [ref=f7e320]
+        - columnheader "In Progress" [ref=f7e323]
+        - columnheader "Done" [ref=f7e326]
+        - columnheader "Blocked" [ref=f7e329]
+        - columnheader "Total" [ref=f7e332]
+    - rowgroup [ref=f7e71]:
+      - row [ref=f7e335]:
+        - cell "Cloud4" [ref=f7e336]
+        - cell "Assignee Distinct list" [ref=f7e338]
+        - cell "·" [ref=f7e339]
+        - cell "Dana" [ref=f7e340]
+        - cell "Amir" [ref=f7e341]
+        - cell "Priya" [ref=f7e342]
+        - cell "Dana, Amir, Priya" [ref=f7e343]
+      - row [ref=f7e344]:
+        - cell "Story Points Sum" [ref=f7e345]
+        - cell "·" [ref=f7e346]
+        - cell "13" [ref=f7e347]
+        - cell "8" [ref=f7e348]
+        - cell "5" [ref=f7e349]
+        - cell "26" [ref=f7e350]
+      - row [ref=f7e351]:
+        - cell "Due date Range" [ref=f7e352]
+        - cell "·" [ref=f7e353]
+        - cell "Sep 4 – Sep 29" [ref=f7e354]
+        - cell "Aug 11 – Aug 11" [ref=f7e355]
+        - cell "Sep 19 – Sep 19" [ref=f7e356]
+        - cell "Aug 11 – Sep 29" [ref=f7e357]
+      - row [ref=f7e358]:
+        - cell "Estimated Days Sum" [ref=f7e359]
+        - cell "·" [ref=f7e360]
+        - cell "47" [ref=f7e361]
+        - cell "8" [ref=f7e362]
+        - cell "6" [ref=f7e363]
+        - cell "61" [ref=f7e364]
+      - row [ref=f7e365]:
+        - cell "Rolled Up Days Sum" [ref=f7e366]
+        - cell "·" [ref=f7e367]
+        - cell "74" [ref=f7e368]
+        - cell "8" [ref=f7e369]
+        - cell "6" [ref=f7e370]
+        - cell "88" [ref=f7e371]
+      - row [ref=f7e372]:
+        - cell "Completion Completion %" [ref=f7e373]
+        - cell "·" [ref=f7e374]
+        - cell "51%" [ref=f7e375]
+        - cell "100%" [ref=f7e376]
+        - cell "10%" [ref=f7e377]
+        - cell "53%" [ref=f7e378]
+      - row [ref=f7e379]:
+        - cell "Mobile4" [ref=f7e380]
+        - cell "Assignee Distinct list" [ref=f7e382]
+        - cell "Lena" [ref=f7e383]
+        - cell "Sam" [ref=f7e384]
+        - cell "Lena" [ref=f7e385]
+        - cell "·" [ref=f7e386]
+        - cell "Sam, Lena" [ref=f7e387]
+      - row [ref=f7e388]:
+        - cell "Story Points Sum" [ref=f7e389]
+        - cell "5" [ref=f7e390]
+        - cell "8" [ref=f7e391]
+        - cell "3" [ref=f7e392]
+        - cell "·" [ref=f7e393]
+        - cell "16" [ref=f7e394]
+      - row [ref=f7e395]:
+        - cell "Due date Range" [ref=f7e396]
+        - cell "Oct 9 – Oct 9" [ref=f7e397]
+        - cell "Sep 27 – Oct 14" [ref=f7e398]
+        - cell "Aug 29 – Aug 29" [ref=f7e399]
+        - cell "·" [ref=f7e400]
+        - cell "Aug 29 – Oct 14" [ref=f7e401]
+      - row [ref=f7e402]:
+        - cell "Estimated Days Sum" [ref=f7e403]
+        - cell "5" [ref=f7e404]
+        - cell "31" [ref=f7e405]
+        - cell "3" [ref=f7e406]
+        - cell "·" [ref=f7e407]
+        - cell "39" [ref=f7e408]
+      - row [ref=f7e409]:
+        - cell "Rolled Up Days Sum" [ref=f7e410]
+        - cell "5" [ref=f7e411]
+        - cell "52" [ref=f7e412]
+        - cell "3" [ref=f7e413]
+        - cell "·" [ref=f7e414]
+        - cell "60" [ref=f7e415]
+      - row [ref=f7e416]:
+        - cell "Completion Completion %" [ref=f7e417]
+        - cell "0%" [ref=f7e418]
+        - cell "43%" [ref=f7e419]
+        - cell "100%" [ref=f7e420]
+        - cell "·" [ref=f7e421]
+        - cell "46%" [ref=f7e422]
+  - paragraph [ref=f7e223]:
+    - text: The columns you show
+    - emphasis [ref=f7e224]: are
+    - text: "the values that get aggregated — identity columns (Issue key) and the fields you group on drop out automatically. With two groupings you get a cross-tab (rows × columns, one value per cell). The Fields toggle controls how the measure fields are laid out within it: ↓ Down rows stacks them as sub-rows inside each row-value (easiest to read); → Across cols spreads them as merged sub-columns under each column-value. ⇄ swaps which field is rows vs columns. Hover any header + ⋯ for sort / filter / aggregation."

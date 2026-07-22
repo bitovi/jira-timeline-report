@@ -1,0 +1,7 @@
+# PORT is passed through to `npm run dev`; the Express OAuth server reads it and
+# listens here (matches .env.example). Vite serves the app on its own port, 5173.
+PORT=3000
+
+# The browser preview points at the Vite app.
+FIGMA_MAKE_URL=http://localhost:5173
+MAKE_LOCAL_URL=http://localhost:5173

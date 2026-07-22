@@ -1,0 +1,112 @@
+- table [ref=f33e5]:
+  - rowgroup [ref=f33e6]:
+    - row [ref=f33e7]:
+      - columnheader [ref=f33e8]:
+        - generic [ref=f33e9]:
+          - button "Issue key" [ref=f33e10] [cursor=pointer]
+          - button "Issue key column options" [ref=f33e11] [cursor=pointer]: ⋯
+      - columnheader [ref=f33e12]:
+        - generic [ref=f33e13]:
+          - button "Summary" [ref=f33e14] [cursor=pointer]
+          - button "Summary column options" [ref=f33e15] [cursor=pointer]: ⋯
+      - columnheader [ref=f33e16]:
+        - generic [ref=f33e17]:
+          - button "Parent" [ref=f33e18] [cursor=pointer]
+          - button "Parent column options" [ref=f33e19] [cursor=pointer]: ⋯
+      - columnheader [ref=f33e20]:
+        - generic [ref=f33e21]:
+          - button "Team" [ref=f33e22] [cursor=pointer]
+          - button "Team column options" [ref=f33e23] [cursor=pointer]: ⋯
+      - columnheader [ref=f33e24]:
+        - generic [ref=f33e25]:
+          - button "Status" [ref=f33e26] [cursor=pointer]
+          - button "Status column options" [ref=f33e27] [cursor=pointer]: ⋯
+  - rowgroup [ref=f33e28]:
+    - row [ref=f33e29]:
+      - cell [ref=f33e30]:
+        - link "EPIC-1" [ref=f33e31] [cursor=pointer]:
+          - /url: https://example.test/browse/EPIC-1
+      - cell "Authentication" [ref=f33e32]
+      - cell [ref=f33e33]
+      - cell "Platform Team" [ref=f33e34]
+      - cell "To Do" [ref=f33e35]
+    - row [ref=f33e36]:
+      - cell [ref=f33e37]:
+        - link "EPIC-2" [ref=f33e38] [cursor=pointer]:
+          - /url: https://example.test/browse/EPIC-2
+      - cell "Search & Discovery" [ref=f33e39]
+      - cell [ref=f33e40]
+      - cell "Growth Team" [ref=f33e41]
+      - cell "In Progress" [ref=f33e42]
+    - row [ref=f33e43]:
+      - cell [ref=f33e44]:
+        - link "EPIC-3" [ref=f33e45] [cursor=pointer]:
+          - /url: https://example.test/browse/EPIC-3
+      - cell "Checkout" [ref=f33e46]
+      - cell [ref=f33e47]
+      - cell "Data Team" [ref=f33e48]
+      - cell "Done" [ref=f33e49]
+    - row [ref=f33e50]:
+      - cell [ref=f33e51]:
+        - link "STORY-1" [ref=f33e52] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-1
+      - cell "Authentication — task 1" [ref=f33e53]
+      - cell "EPIC-1" [ref=f33e54]
+      - cell "Platform Team" [ref=f33e55]
+      - cell "To Do" [ref=f33e56]
+    - row [ref=f33e57]:
+      - cell [ref=f33e58]:
+        - link "STORY-2" [ref=f33e59] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-2
+      - cell "Authentication — task 2" [ref=f33e60]
+      - cell "EPIC-1" [ref=f33e61]
+      - cell "Platform Team" [ref=f33e62]
+      - cell "In Progress" [ref=f33e63]
+    - row [ref=f33e64]:
+      - cell [ref=f33e65]:
+        - link "STORY-3" [ref=f33e66] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-3
+      - cell "Authentication — task 3" [ref=f33e67]
+      - cell "EPIC-1" [ref=f33e68]
+      - cell "Platform Team" [ref=f33e69]
+      - cell "Done" [ref=f33e70]
+    - row [ref=f33e71]:
+      - cell [ref=f33e72]:
+        - link "STORY-4" [ref=f33e73] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-4
+      - cell "Search & Discovery — task 1" [ref=f33e74]
+      - cell "EPIC-2" [ref=f33e75]
+      - cell "Growth Team" [ref=f33e76]
+      - cell "In Progress" [ref=f33e77]
+    - row [ref=f33e78]:
+      - cell [ref=f33e79]:
+        - link "STORY-5" [ref=f33e80] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-5
+      - cell "Search & Discovery — task 2" [ref=f33e81]
+      - cell "EPIC-2" [ref=f33e82]
+      - cell "Growth Team" [ref=f33e83]
+      - cell "Done" [ref=f33e84]
+    - row [ref=f33e85]:
+      - cell [ref=f33e86]:
+        - link "STORY-6" [ref=f33e87] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-6
+      - cell "Checkout — task 1" [ref=f33e88]
+      - cell "EPIC-3" [ref=f33e89]
+      - cell "Data Team" [ref=f33e90]
+      - cell "Done" [ref=f33e91]
+    - row [ref=f33e92]:
+      - cell [ref=f33e93]:
+        - link "STORY-7" [ref=f33e94] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-7
+      - cell "Checkout — task 2" [ref=f33e95]
+      - cell "EPIC-3" [ref=f33e96]
+      - cell "Data Team" [ref=f33e97]
+      - cell "To Do" [ref=f33e98]
+    - row [ref=f33e99]:
+      - cell [ref=f33e100]:
+        - link "STORY-8" [ref=f33e101] [cursor=pointer]:
+          - /url: https://example.test/browse/STORY-8
+      - cell "Checkout — task 3" [ref=f33e102]
+      - cell "EPIC-3" [ref=f33e103]
+      - cell "Data Team" [ref=f33e104]
+      - cell "In Progress" [ref=f33e105]

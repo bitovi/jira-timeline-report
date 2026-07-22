@@ -92,6 +92,11 @@ const CORE_FIELDS = [
   'Linked Issues',
 ];
 
+// Always-loaded fields, exported so route-data can treat them as "already requested" when deciding
+// whether a Table column change actually alters the requested field set (avoids spurious refetches
+// when adding/removing a column whose field is core). See requested-fields.ts / allFieldsToRequest.
+export { CORE_FIELDS };
+
 export function getRawIssues({ isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL }, { progressUpdate }) {
   // console.log("REQUESTING", { isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL })
   // progressData.value = null; THIS NEEDS TO HAPPEN OUTSIDE

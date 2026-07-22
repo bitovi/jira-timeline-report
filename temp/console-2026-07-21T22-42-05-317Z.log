@@ -1,0 +1,107 @@
+[     158ms] [WARNING] For security reasons, Hotjar only works over HTTPS. Learn more: https://help.hotjar.com/hc/en-us/articles/115011624047 @ https://static.hotjar.com/c/hotjar-5105449.js?sv=7:2
+[     251ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-YPJU3Z5G.js?v=712107f6:21550
+[     262ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-YTUY4UQH.js?v=712107f6:6739
+[     262ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-3B2GGDK4.js?v=712107f6:6730
+[     262ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-VWH54LXF.js?v=712107f6:15442
+[     263ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-VWH54LXF.js?v=712107f6:23639
+[     266ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-RMG47GZK.js?v=712107f6:6733
+[     266ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-A2HID6DE.js?v=712107f6:9588
+[     268ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-4BYH4F5H.js?v=712107f6:16770
+[     269ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-Y6U3TWRI.js?v=712107f6:6739
+[     269ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-BAIIXBRJ.js?v=712107f6:6730
+[     269ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-MMW57CFL.js?v=712107f6:7024
+[     274ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:60607
+[     275ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:66549
+[     277ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-KHIOGCT2.js?v=712107f6:78827
+[     282ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 6.0.0 was loading. @ http://localhost:5173/node_modules/.vite/deps/@atlaskit_jql-editor-autocomplete-rest.js?v=712107f6:9614
+[     286ms] [WARNING] Multiple versions of FeatureGateClients found on the current page.
+      The currently bound version is 4.23.4 when module version 0.0.0-development was loading. @ http://localhost:5173/node_modules/.vite/deps/chunk-QV3CVYTN.js?v=712107f6:7761
+[     288ms] [WARNING] fixing url @ http://localhost:5173/src/shared/main-helper.js:183
+[     289ms] [LOG] Loaded version of the Timeline Reporter: undefined @ http://localhost:5173/src/shared/main-helper.js:36
+[     332ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     332ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     332ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     332ms] [WARNING] Can't find status 10040 Validating @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     332ms] [WARNING] Can't find status 10038 Refinement @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     332ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[     332ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[     333ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     333ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     333ms] [WARNING] Can't find status 10043 QA @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     333ms] [WARNING] Can't find status 10040 Validating @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     333ms] [WARNING] Can't find status 10038 Refinement @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:76
+[     333ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[     333ms] [WARNING] Can't find sprint  1 PMT Sprint 1 @ http://localhost:5173/src/jira/raw/rollback/rollback.ts:32
+[     345ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.atlassian.com/oauth/token/accessible-resources:0
+[     349ms] [WARNING] Error: Unauthorized
+    at http://localhost:5173/src/utils/fetch/response-to-json.ts:4:19
+    at async http://localhost:5173/src/request-helpers/hosted-request-helper.js:69:24 @ :0
+[     395ms] [ERROR] Access to fetch at 'https://api.atlassian.com/ex/jira/null/rest//api/3/field' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5173/?hideUnknownInitiatives=true&primaryReportType=table2&selectedIssueType=Initiative:0
+[     395ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.atlassian.com/ex/jira/null/rest//api/3/field:0
+[    1255ms] [LOG] Feature Flags {historicallyAdjustedEstimates: false, logReportData: false, devConfigurationIssue: null, historicallyAdjustedEstimates read details: undefined, historicallyAdjustedEstimates toggle value: undefined} @ http://localhost:5173/src/shared/feature-flag.js:39
+[    1447ms] [ERROR] Access to fetch at 'https://api.atlassian.com/ex/jira/null/rest//api/3/field' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5173/?hideUnknownInitiatives=true&primaryReportType=table2&selectedIssueType=Initiative:0
+[    1448ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.atlassian.com/ex/jira/null/rest//api/3/field:0
+[    3498ms] [ERROR] Access to fetch at 'https://api.atlassian.com/ex/jira/null/rest//api/3/field' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5173/?hideUnknownInitiatives=true&primaryReportType=table2&selectedIssueType=Initiative:0
+[    3498ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.atlassian.com/ex/jira/null/rest//api/3/field:0
+[    7551ms] [ERROR] Access to fetch at 'https://api.atlassian.com/ex/jira/null/rest//api/3/field' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5173/?hideUnknownInitiatives=true&primaryReportType=table2&selectedIssueType=Initiative:0
+[    7551ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.atlassian.com/ex/jira/null/rest//api/3/field:0
+[    7559ms] TypeError: Failed to fetch
+    at fetchJSON (http://localhost:5173/src/request-helpers/hosted-request-helper.js:13:10)
+    at http://localhost:5173/src/request-helpers/hosted-request-helper.js:69:30
+    at new Promise (<anonymous>)
+    at Object.requestHelper (http://localhost:5173/src/request-helpers/hosted-request-helper.js:31:12)
+    at http://localhost:5173/src/jira-oidc-helpers/fields.ts:4:19
+    at queryFn (http://localhost:5173/src/react/services/jira/useJiraIssueFields.ts:9:14)
+    at Object.fetchFn [as fn] (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:837:14)
+    at run (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:494:49)
+    at http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:519:11
+[    7561ms] TypeError: Failed to fetch
+    at fetchJSON (http://localhost:5173/src/request-helpers/hosted-request-helper.js:13:10)
+    at http://localhost:5173/src/request-helpers/hosted-request-helper.js:69:30
+    at new Promise (<anonymous>)
+    at Object.requestHelper (http://localhost:5173/src/request-helpers/hosted-request-helper.js:31:12)
+    at http://localhost:5173/src/jira-oidc-helpers/fields.ts:4:19
+    at queryFn (http://localhost:5173/src/react/services/jira/useJiraIssueFields.ts:9:14)
+    at Object.fetchFn [as fn] (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:837:14)
+    at run (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:494:49)
+    at http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:519:11
+[    7562ms] [ERROR] The above error occurred in the <TableReportInner> component:
+
+    at TableReportInner (http://localhost:5173/src/react/reports/TableReport/TableReport.tsx:372:3)
+    at Suspense
+    at TableReport
+    at JiraProvider (http://localhost:5173/src/react/services/jira/JiraProvider.tsx:29:32)
+    at QueryClientProvider (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:2791:3)
+    at div
+    at div
+    at ReportArea (http://localhost:5173/src/react/TimelineReport/components/ReportArea.tsx:20:3)
+    at div
+    at TimelineReport (http://localhost:5173/src/react/TimelineReport/TimelineReport.tsx:64:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-YPJU3Z5G.js?v=712107f6:14031
+[    7562ms] TypeError: Failed to fetch
+    at fetchJSON (http://localhost:5173/src/request-helpers/hosted-request-helper.js:13:10)
+    at http://localhost:5173/src/request-helpers/hosted-request-helper.js:69:30
+    at new Promise (<anonymous>)
+    at Object.requestHelper (http://localhost:5173/src/request-helpers/hosted-request-helper.js:31:12)
+    at http://localhost:5173/src/jira-oidc-helpers/fields.ts:4:19
+    at queryFn (http://localhost:5173/src/react/services/jira/useJiraIssueFields.ts:9:14)
+    at Object.fetchFn [as fn] (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:837:14)
+    at run (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:494:49)
+    at http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=712107f6:519:11
+[   10057ms] [LOG] [web-vitals] Sending metrics triggered by: timeout {metric:fcp: 80, metric:ttfb: 7} @ https://connect-cdn.atl-paas.net/all.js:415

@@ -1,0 +1,138 @@
+- generic [active] [ref=f8e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=f8e2]:
+    - text: Table Report
+    - generic [ref=f8e3]: Table + Grouper unification
+  - paragraph [ref=f8e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=f8e5]:
+    - generic [ref=f8e6]:
+      - generic [ref=f8e7]: Rows
+      - generic [ref=f8e8]:
+        - button "Sort" [ref=f8e9] [cursor=pointer]
+        - button "Hierarchy" [ref=f8e10] [cursor=pointer]
+    - generic [ref=f8e12]:
+      - generic [ref=f8e13]: Group by ↓
+      - combobox [ref=f8e14] [cursor=pointer]:
+        - option "None"
+        - option "Project" [selected]
+        - option "Status"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f8e15]:
+      - button "⇄" [ref=f8e300] [cursor=pointer]
+      - generic [ref=f8e16]: across →
+      - combobox "Second grouping field → 2D" [ref=f8e17] [cursor=pointer]:
+        - option "None"
+        - option "Status" [selected]
+        - option "Project"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f8e301]:
+      - generic [ref=f8e302]: Fields
+      - generic "Lay the measure fields down as sub-rows, or across as sub-columns" [ref=f8e303]:
+        - button "↓ Down rows" [ref=f8e304] [cursor=pointer]
+        - button "→ Across cols" [ref=f8e305] [cursor=pointer]
+    - button "+ Add column" [ref=f8e19] [cursor=pointer]
+  - generic [ref=f8e20]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=f8e23]:
+    - rowgroup [ref=f8e24]:
+      - row [ref=f8e307]:
+        - columnheader "Project" [ref=f8e308]
+        - columnheader "Field" [ref=f8e311]
+        - columnheader "To Do" [ref=f8e314]
+        - columnheader "In Progress" [ref=f8e317]
+        - columnheader "Done" [ref=f8e320]
+        - columnheader "Blocked" [ref=f8e323]
+        - columnheader "Total" [ref=f8e326]
+    - rowgroup [ref=f8e71]:
+      - row [ref=f8e329]:
+        - cell "Cloud4" [ref=f8e330]
+        - cell "Assignee Distinct list" [ref=f8e332]
+        - cell "·" [ref=f8e333]
+        - cell "Dana" [ref=f8e334]
+        - cell "Amir" [ref=f8e335]
+        - cell "Priya" [ref=f8e336]
+        - cell "Dana, Amir, Priya" [ref=f8e337]
+      - row [ref=f8e338]:
+        - cell "Story Points Sum" [ref=f8e339]
+        - cell "·" [ref=f8e340]
+        - cell "13" [ref=f8e341]
+        - cell "8" [ref=f8e342]
+        - cell "5" [ref=f8e343]
+        - cell "26" [ref=f8e344]
+      - row [ref=f8e345]:
+        - cell "Due date Range" [ref=f8e346]
+        - cell "·" [ref=f8e347]
+        - cell "Sep 4 – Sep 29" [ref=f8e348]
+        - cell "Aug 11 – Aug 11" [ref=f8e349]
+        - cell "Sep 19 – Sep 19" [ref=f8e350]
+        - cell "Aug 11 – Sep 29" [ref=f8e351]
+      - row [ref=f8e352]:
+        - cell "Estimated Days Sum" [ref=f8e353]
+        - cell "·" [ref=f8e354]
+        - cell "47" [ref=f8e355]
+        - cell "8" [ref=f8e356]
+        - cell "6" [ref=f8e357]
+        - cell "61" [ref=f8e358]
+      - row [ref=f8e359]:
+        - cell "Rolled Up Days Sum" [ref=f8e360]
+        - cell "·" [ref=f8e361]
+        - cell "74" [ref=f8e362]
+        - cell "8" [ref=f8e363]
+        - cell "6" [ref=f8e364]
+        - cell "88" [ref=f8e365]
+      - row [ref=f8e366]:
+        - cell "Completion Completion %" [ref=f8e367]
+        - cell "·" [ref=f8e368]
+        - cell "51%" [ref=f8e369]
+        - cell "100%" [ref=f8e370]
+        - cell "10%" [ref=f8e371]
+        - cell "53%" [ref=f8e372]
+      - row [ref=f8e373]:
+        - cell "Mobile4" [ref=f8e374]
+        - cell "Assignee Distinct list" [ref=f8e376]
+        - cell "Lena" [ref=f8e377]
+        - cell "Sam" [ref=f8e378]
+        - cell "Lena" [ref=f8e379]
+        - cell "·" [ref=f8e380]
+        - cell "Sam, Lena" [ref=f8e381]
+      - row [ref=f8e382]:
+        - cell "Story Points Sum" [ref=f8e383]
+        - cell "5" [ref=f8e384]
+        - cell "8" [ref=f8e385]
+        - cell "3" [ref=f8e386]
+        - cell "·" [ref=f8e387]
+        - cell "16" [ref=f8e388]
+      - row [ref=f8e389]:
+        - cell "Due date Range" [ref=f8e390]
+        - cell "Oct 9 – Oct 9" [ref=f8e391]
+        - cell "Sep 27 – Oct 14" [ref=f8e392]
+        - cell "Aug 29 – Aug 29" [ref=f8e393]
+        - cell "·" [ref=f8e394]
+        - cell "Aug 29 – Oct 14" [ref=f8e395]
+      - row [ref=f8e396]:
+        - cell "Estimated Days Sum" [ref=f8e397]
+        - cell "5" [ref=f8e398]
+        - cell "31" [ref=f8e399]
+        - cell "3" [ref=f8e400]
+        - cell "·" [ref=f8e401]
+        - cell "39" [ref=f8e402]
+      - row [ref=f8e403]:
+        - cell "Rolled Up Days Sum" [ref=f8e404]
+        - cell "5" [ref=f8e405]
+        - cell "52" [ref=f8e406]
+        - cell "3" [ref=f8e407]
+        - cell "·" [ref=f8e408]
+        - cell "60" [ref=f8e409]
+      - row [ref=f8e410]:
+        - cell "Completion Completion %" [ref=f8e411]
+        - cell "0%" [ref=f8e412]
+        - cell "43%" [ref=f8e413]
+        - cell "100%" [ref=f8e414]
+        - cell "·" [ref=f8e415]
+        - cell "46%" [ref=f8e416]
+  - paragraph [ref=f8e223]:
+    - text: The columns you show
+    - emphasis [ref=f8e224]: are
+    - text: "the values that get aggregated — identity columns (Issue key) and the fields you group on drop out automatically. With two groupings you get a cross-tab (rows × columns, one value per cell). The Fields toggle controls how the measure fields are laid out within it: ↓ Down rows stacks them as sub-rows inside each row-value (easiest to read); → Across cols spreads them as merged sub-columns under each column-value. ⇄ swaps which field is rows vs columns. Hover any header + ⋯ for sort / filter / aggregation."

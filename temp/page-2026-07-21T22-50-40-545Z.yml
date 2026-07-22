@@ -1,0 +1,76 @@
+- generic [ref=f18e3]:
+  - generic [ref=f18e4]:
+    - group "Row ordering" [ref=f18e5]:
+      - button "Sort" [disabled] [pressed] [ref=f18e6]
+      - button "Hierarchy" [disabled] [ref=f18e7]
+    - generic [ref=f18e8]:
+      - generic [ref=f18e9]: Group by
+      - combobox "Group by" [ref=f18e10]:
+        - option "None"
+        - option "Priority"
+        - option "Status" [selected]
+        - option "Story Points"
+        - option "Estimated Days"
+        - option "Timed Days"
+        - option "Rolled Up Days"
+    - button "Swap row and column grouping" [ref=f18e11] [cursor=pointer]: ⇄
+    - generic [ref=f18e12]:
+      - generic [ref=f18e13]: + column dimension (2D) →
+      - combobox "+ column dimension (2D) →" [ref=f18e14]:
+        - option "None"
+        - option "Priority" [selected]
+        - option "Story Points"
+        - option "Estimated Days"
+        - option "Timed Days"
+        - option "Rolled Up Days"
+    - group "Fields axis" [ref=f18e15]:
+      - generic [ref=f18e16]: Fields
+      - button "↓ Down rows" [ref=f18e17] [cursor=pointer]
+      - button "→ Across cols" [pressed] [ref=f18e18] [cursor=pointer]
+    - button "+ Add column" [ref=f18e19] [cursor=pointer]
+  - table [ref=f18e21]:
+    - rowgroup [ref=f18e22]:
+      - row [ref=f18e23]:
+        - columnheader "Status" [ref=f18e24]
+        - columnheader "High" [ref=f18e25]
+        - columnheader "Low" [ref=f18e26]
+        - columnheader "Medium" [ref=f18e27]
+        - columnheader "Total" [ref=f18e28]
+      - row [ref=f18e29]:
+        - columnheader "Story Points" [ref=f18e30]
+        - columnheader "Story Points" [ref=f18e31]
+        - columnheader "Story Points" [ref=f18e32]
+        - columnheader "Story Points" [ref=f18e33]
+    - rowgroup [ref=f18e34]:
+      - row [ref=f18e35]:
+        - cell "Done 5" [ref=f18e36]:
+          - text: Done
+          - generic [ref=f18e37]: "5"
+        - cell "·" [ref=f18e38]
+        - cell "19" [ref=f18e39]
+        - cell "·" [ref=f18e40]
+        - cell "19" [ref=f18e41]
+      - row [ref=f18e42]:
+        - cell "In Progress 5" [ref=f18e43]:
+          - text: In Progress
+          - generic [ref=f18e44]: "5"
+        - cell "·" [ref=f18e45]
+        - cell "·" [ref=f18e46]
+        - cell "19" [ref=f18e47]
+        - cell "19" [ref=f18e48]
+      - row [ref=f18e49]:
+        - cell "To Do 5" [ref=f18e50]:
+          - text: To Do
+          - generic [ref=f18e51]: "5"
+        - cell "19" [ref=f18e52]
+        - cell "·" [ref=f18e53]
+        - cell "·" [ref=f18e54]
+        - cell "19" [ref=f18e55]
+      - row [ref=f18e56]:
+        - cell "Total 15" [ref=f18e57]:
+          - text: Total
+          - generic [ref=f18e58]: "15"
+        - cell "19" [ref=f18e59]
+        - cell "19" [ref=f18e60]
+        - cell "19" [ref=f18e61]
+        - cell "57" [ref=f18e62]

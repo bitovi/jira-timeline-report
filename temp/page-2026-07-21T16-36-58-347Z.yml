@@ -1,0 +1,204 @@
+- generic [active] [ref=f5e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=f5e2]:
+    - text: Table Report
+    - generic [ref=f5e3]: Table + Grouper unification
+  - paragraph [ref=f5e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=f5e5]:
+    - generic [ref=f5e6]:
+      - generic [ref=f5e7]: Rows
+      - generic [ref=f5e8]:
+        - button "Sort" [ref=f5e9] [cursor=pointer]
+        - button "Hierarchy" [ref=f5e10] [cursor=pointer]
+    - generic [ref=f5e12]:
+      - generic [ref=f5e13]: Group by ↓
+      - combobox [ref=f5e14] [cursor=pointer]:
+        - option "None" [selected]
+        - option "Project"
+        - option "Status"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f5e15]:
+      - generic [ref=f5e16]: then ↓
+      - combobox "Second grouping field → 2D" [ref=f5e17] [cursor=pointer]:
+        - option "None" [selected]
+        - option "Status"
+        - option "Project"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - button "+ Add column" [ref=f5e19] [cursor=pointer]
+  - generic [ref=f5e20]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=f5e23]:
+    - rowgroup [ref=f5e24]:
+      - row [ref=f5e25]:
+        - columnheader "Summary ▼ ⋯" [ref=f5e26]:
+          - generic [ref=f5e27] [cursor=pointer]:
+            - generic [ref=f5e28]: Summary
+            - generic [ref=f5e29]: ▼
+            - button "⋯" [ref=f5e30]
+        - columnheader "Issue key ▼ ⋯" [ref=f5e31]:
+          - generic [ref=f5e32] [cursor=pointer]:
+            - generic [ref=f5e33]: Issue key
+            - generic [ref=f5e34]: ▼
+            - button "⋯" [ref=f5e35]
+        - columnheader "Status ▼ ⋯" [ref=f5e36]:
+          - generic [ref=f5e37] [cursor=pointer]:
+            - generic [ref=f5e38]: Status
+            - generic [ref=f5e39]: ▼
+            - button "⋯" [ref=f5e40]
+        - columnheader "Assignee ▼ ⋯" [ref=f5e41]:
+          - generic [ref=f5e42] [cursor=pointer]:
+            - generic [ref=f5e43]: Assignee
+            - generic [ref=f5e44]: ▼
+            - button "⋯" [ref=f5e45]
+        - columnheader "Story Points ▼ ⋯" [ref=f5e46]:
+          - generic [ref=f5e47] [cursor=pointer]:
+            - generic [ref=f5e48]: Story Points
+            - generic [ref=f5e49]: ▼
+            - button "⋯" [ref=f5e50]
+        - columnheader "Due date ▼ ⋯" [ref=f5e51]:
+          - generic [ref=f5e52] [cursor=pointer]:
+            - generic [ref=f5e53]: Due date
+            - generic [ref=f5e54]: ▼
+            - button "⋯" [ref=f5e55]
+        - columnheader "Estimated Days ▼ ⋯" [ref=f5e56]:
+          - generic [ref=f5e57] [cursor=pointer]:
+            - generic [ref=f5e58]: Estimated Days
+            - generic [ref=f5e59]: ▼
+            - button "⋯" [ref=f5e60]
+        - columnheader "Rolled Up Days ▼ ⋯" [ref=f5e61]:
+          - generic [ref=f5e62] [cursor=pointer]:
+            - generic [ref=f5e63]: Rolled Up Days
+            - generic [ref=f5e64]: ▼
+            - button "⋯" [ref=f5e65]
+        - columnheader "Completion ▼ ⋯" [ref=f5e66]:
+          - generic [ref=f5e67] [cursor=pointer]:
+            - generic [ref=f5e68]: Completion
+            - generic [ref=f5e69]: ▼
+            - button "⋯" [ref=f5e70]
+    - rowgroup [ref=f5e71]:
+      - row [ref=f5e72]:
+        - cell "E Checkout revamp" [ref=f5e73]:
+          - generic [ref=f5e75]:
+            - generic [ref=f5e76]: E
+            - text: Checkout revamp
+        - cell [ref=f5e77]:
+          - link "CLOUD-1" [ref=f5e78] [cursor=pointer]:
+            - /url: "#"
+        - cell "In Progress" [ref=f5e79]
+        - cell "Dana" [ref=f5e81]
+        - cell "—" [ref=f5e82]
+        - cell "Sep 29" [ref=f5e83]
+        - cell "34 (+4)" [ref=f5e84]
+        - cell "61 (+3)" [ref=f5e85]
+        - cell "62%" [ref=f5e86]
+      - row [ref=f5e91]:
+        - cell "S Cart service" [ref=f5e92]:
+          - generic [ref=f5e94]:
+            - generic [ref=f5e95]: S
+            - text: Cart service
+        - cell [ref=f5e96]:
+          - link "CLOUD-2" [ref=f5e97] [cursor=pointer]:
+            - /url: "#"
+        - cell "Done" [ref=f5e98]
+        - cell "Amir" [ref=f5e100]
+        - cell "8" [ref=f5e101]
+        - cell "Aug 11" [ref=f5e102]
+        - cell "8" [ref=f5e103]
+        - cell "8" [ref=f5e104]
+        - cell "100%" [ref=f5e105]
+      - row [ref=f5e110]:
+        - cell "S Apple Pay" [ref=f5e111]:
+          - generic [ref=f5e113]:
+            - generic [ref=f5e114]: S
+            - text: Apple Pay
+        - cell [ref=f5e115]:
+          - link "CLOUD-3" [ref=f5e116] [cursor=pointer]:
+            - /url: "#"
+        - cell "In Progress" [ref=f5e117]
+        - cell "Dana" [ref=f5e119]
+        - cell "13" [ref=f5e120]
+        - cell "Sep 4" [ref=f5e121]
+        - cell "13 (+3)" [ref=f5e122]
+        - cell "13 (+3)" [ref=f5e123]
+        - cell "40%" [ref=f5e124]
+      - row [ref=f5e129]:
+        - cell "T Fraud checks" [ref=f5e130]:
+          - generic [ref=f5e132]:
+            - generic [ref=f5e133]: T
+            - text: Fraud checks
+        - cell [ref=f5e134]:
+          - link "CLOUD-4" [ref=f5e135] [cursor=pointer]:
+            - /url: "#"
+        - cell "Blocked" [ref=f5e136]
+        - cell "Priya" [ref=f5e138]
+        - cell "5" [ref=f5e139]
+        - cell "Sep 19" [ref=f5e140]
+        - cell "6 (+1)" [ref=f5e141]
+        - cell "6 (+1)" [ref=f5e142]
+        - cell "10%" [ref=f5e143]
+      - row [ref=f5e148]:
+        - cell "E Mobile onboarding" [ref=f5e149]:
+          - generic [ref=f5e151]:
+            - generic [ref=f5e152]: E
+            - text: Mobile onboarding
+        - cell [ref=f5e153]:
+          - link "MOB-1" [ref=f5e154] [cursor=pointer]:
+            - /url: "#"
+        - cell "In Progress" [ref=f5e155]
+        - cell "Sam" [ref=f5e157]
+        - cell "—" [ref=f5e158]
+        - cell "Oct 14" [ref=f5e159]
+        - cell "22 (+2)" [ref=f5e160]
+        - cell "43 (+3)" [ref=f5e161]
+        - cell "35%" [ref=f5e162]
+      - row [ref=f5e167]:
+        - cell "S Signup flow" [ref=f5e168]:
+          - generic [ref=f5e170]:
+            - generic [ref=f5e171]: S
+            - text: Signup flow
+        - cell [ref=f5e172]:
+          - link "MOB-2" [ref=f5e173] [cursor=pointer]:
+            - /url: "#"
+        - cell "In Progress" [ref=f5e174]
+        - cell "Sam" [ref=f5e176]
+        - cell "8" [ref=f5e177]
+        - cell "Sep 27" [ref=f5e178]
+        - cell "9 (+1)" [ref=f5e179]
+        - cell "9 (+1)" [ref=f5e180]
+        - cell "50%" [ref=f5e181]
+      - row [ref=f5e186]:
+        - cell "S Push notifications" [ref=f5e187]:
+          - generic [ref=f5e189]:
+            - generic [ref=f5e190]: S
+            - text: Push notifications
+        - cell [ref=f5e191]:
+          - link "MOB-3" [ref=f5e192] [cursor=pointer]:
+            - /url: "#"
+        - cell "To Do" [ref=f5e193]
+        - cell "Lena" [ref=f5e195]
+        - cell "5" [ref=f5e196]
+        - cell "Oct 9" [ref=f5e197]
+        - cell "5" [ref=f5e198]
+        - cell "5" [ref=f5e199]
+        - cell "0%" [ref=f5e200]
+      - row [ref=f5e204]:
+        - cell "T Analytics wiring" [ref=f5e205]:
+          - generic [ref=f5e207]:
+            - generic [ref=f5e208]: T
+            - text: Analytics wiring
+        - cell [ref=f5e209]:
+          - link "MOB-4" [ref=f5e210] [cursor=pointer]:
+            - /url: "#"
+        - cell "Done" [ref=f5e211]
+        - cell "Lena" [ref=f5e213]
+        - cell "3" [ref=f5e214]
+        - cell "Aug 29" [ref=f5e215]
+        - cell "3" [ref=f5e216]
+        - cell "3" [ref=f5e217]
+        - cell "100%" [ref=f5e218]
+  - paragraph [ref=f5e223]:
+    - text: The columns you show
+    - emphasis [ref=f5e224]: are
+    - text: "the values that get aggregated — identity columns (Issue key) and the fields you group on drop out automatically, and the rest repeat under each group. Try Group by → Project, then → Status: Vertical nests Status inside each Project (measures shown once as columns — easiest to read); Cross-tab spreads Status across the top with the measures repeated under each. ⇄ swaps which field is outer (\"per Project\" vs \"per Status\"). Groups start collapsed (roll-up); expand to drill in. Hover any header + ⋯ for sort / filter / aggregation."

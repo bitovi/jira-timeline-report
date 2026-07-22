@@ -1,0 +1,109 @@
+- generic [active] [ref=f7e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=f7e2]:
+    - text: Table Report
+    - generic [ref=f7e3]: Table + Grouper unification
+  - paragraph [ref=f7e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=f7e5]:
+    - generic [ref=f7e6]:
+      - generic [ref=f7e7]: Rows
+      - generic [ref=f7e8]:
+        - button "Sort" [ref=f7e9] [cursor=pointer]
+        - button "Hierarchy" [ref=f7e10] [cursor=pointer]
+    - generic [ref=f7e12]:
+      - generic [ref=f7e13]: Group by ↓
+      - combobox [ref=f7e14] [cursor=pointer]:
+        - option "None"
+        - option "Project" [selected]
+        - option "Status"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f7e15]:
+      - generic [ref=f7e16]: then
+      - combobox "Second grouping field → 2D" [ref=f7e17] [cursor=pointer]:
+        - option "None" [selected]
+        - option "Status"
+        - option "Project"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - button "Expand all" [ref=f7e226] [cursor=pointer]
+    - button "+ Add column" [ref=f7e19] [cursor=pointer]
+  - generic [ref=f7e20]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=f7e23]:
+    - rowgroup [ref=f7e24]:
+      - row [ref=f7e228]:
+        - columnheader "Project ↓" [ref=f7e229]
+        - columnheader "Status Distinct list ▼ ⋯" [ref=f7e232]:
+          - generic [ref=f7e233] [cursor=pointer]:
+            - generic [ref=f7e234]: Status
+            - generic [ref=f7e235]: Distinct list
+            - generic [ref=f7e236]: ▼
+            - button "⋯" [ref=f7e237]
+        - columnheader "Assignee Distinct list ▼ ⋯" [ref=f7e238]:
+          - generic [ref=f7e239] [cursor=pointer]:
+            - generic [ref=f7e240]: Assignee
+            - generic [ref=f7e241]: Distinct list
+            - generic [ref=f7e242]: ▼
+            - button "⋯" [ref=f7e243]
+        - columnheader "Story Points Sum ▼ ⋯" [ref=f7e244]:
+          - generic [ref=f7e245] [cursor=pointer]:
+            - generic [ref=f7e246]: Story Points
+            - generic [ref=f7e247]: Sum
+            - generic [ref=f7e248]: ▼
+            - button "⋯" [ref=f7e249]
+        - columnheader "Due date Range ▼ ⋯" [ref=f7e250]:
+          - generic [ref=f7e251] [cursor=pointer]:
+            - generic [ref=f7e252]: Due date
+            - generic [ref=f7e253]: Range
+            - generic [ref=f7e254]: ▼
+            - button "⋯" [ref=f7e255]
+        - columnheader "Estimated Days Sum ▼ ⋯" [ref=f7e256]:
+          - generic [ref=f7e257] [cursor=pointer]:
+            - generic [ref=f7e258]: Estimated Days
+            - generic [ref=f7e259]: Sum
+            - generic [ref=f7e260]: ▼
+            - button "⋯" [ref=f7e261]
+        - columnheader "Rolled Up Days Sum ▼ ⋯" [ref=f7e262]:
+          - generic [ref=f7e263] [cursor=pointer]:
+            - generic [ref=f7e264]: Rolled Up Days
+            - generic [ref=f7e265]: Sum
+            - generic [ref=f7e266]: ▼
+            - button "⋯" [ref=f7e267]
+        - columnheader "Completion Completion % ▼ ⋯" [ref=f7e268]:
+          - generic [ref=f7e269] [cursor=pointer]:
+            - generic [ref=f7e270]: Completion
+            - generic [ref=f7e271]: Completion %
+            - generic [ref=f7e272]: ▼
+            - button "⋯" [ref=f7e273]
+    - rowgroup [ref=f7e71]:
+      - row [ref=f7e274]:
+        - cell "▾ Cloud 4" [ref=f7e275]:
+          - generic [ref=f7e276]:
+            - generic [ref=f7e277] [cursor=pointer]: ▾
+            - generic [ref=f7e278]: Cloud
+            - generic [ref=f7e279]: "4"
+        - cell "In Progress, Done, Blocked" [ref=f7e280]
+        - cell "Dana, Amir, Priya" [ref=f7e281]
+        - cell "26" [ref=f7e282]
+        - cell "Aug 11 – Sep 29" [ref=f7e283]
+        - cell "61" [ref=f7e284]
+        - cell "88" [ref=f7e285]
+        - cell "53%" [ref=f7e286]
+      - row [ref=f7e287]:
+        - cell "▾ Mobile 4" [ref=f7e288]:
+          - generic [ref=f7e289]:
+            - generic [ref=f7e290] [cursor=pointer]: ▾
+            - generic [ref=f7e291]: Mobile
+            - generic [ref=f7e292]: "4"
+        - cell "In Progress, To Do, Done" [ref=f7e293]
+        - cell "Sam, Lena" [ref=f7e294]
+        - cell "16" [ref=f7e295]
+        - cell "Aug 29 – Oct 14" [ref=f7e296]
+        - cell "39" [ref=f7e297]
+        - cell "60" [ref=f7e298]
+        - cell "46%" [ref=f7e299]
+  - paragraph [ref=f7e223]:
+    - text: The columns you show
+    - emphasis [ref=f7e224]: are
+    - text: "the values that get aggregated — identity columns (Issue key) and the fields you group on drop out automatically. With two groupings you get a cross-tab (rows × columns, one value per cell). The Fields toggle controls how the measure fields are laid out within it: ↓ Down rows stacks them as sub-rows inside each row-value (easiest to read); → Across cols spreads them as merged sub-columns under each column-value. ⇄ swaps which field is rows vs columns. Hover any header + ⋯ for sort / filter / aggregation."

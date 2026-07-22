@@ -1,0 +1,17 @@
+- generic [ref=f7e6]:
+  - generic [ref=f7e7]:
+    - generic [ref=f7e8]:
+      - combobox "JQL query" [expanded] [active] [ref=f7e10]:
+        - paragraph [ref=f7e11]: status =
+        - listbox [ref=f7e31]:
+          - option [ref=f7e32] [cursor=pointer]
+      - generic [ref=f7e12]:
+        - button "Editor" [ref=f7e14] [cursor=pointer]
+        - link "Syntax help" [ref=f7e18] [cursor=pointer]:
+          - /url: https://confluence.atlassian.com/display/SERVICEDESKCLOUD/Advanced+searching
+        - generic [ref=f7e22]: Open JQL syntax help in a new tab.
+    - generic [ref=f7e23]: Enter to add a new line
+    - status [ref=f7e28]: Choose from the suggested list of options below.
+  - generic [ref=f7e29]:
+    - text: e.g.
+    - code [ref=f7e30]: issueType in (Epic, Story) order by Rank

@@ -1,0 +1,50 @@
+[     120ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:21550
+[    1121ms] [LOG] Feature Flags {historicallyAdjustedEstimates: false, historicallyAdjustedEstimates read details: undefined, historicallyAdjustedEstimates toggle value: undefined} @ http://localhost:6006/src/shared/feature-flag.js:39
+[ 6765396ms] ReferenceError: rollupTimingLevelsAndCalculationsObs is not defined
+    at TableReportInner (http://localhost:6006/src/react/reports/TableReport/TableReport.tsx?t=1784681005656:386:62)
+    at renderWithHooks (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:11548:26)
+    at updateFunctionComponent (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:14582:28)
+    at beginWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:3674:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:3699:24)
+    at invokeGuardedCallback (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:3733:39)
+    at beginWork$1 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19765:15)
+    at performUnitOfWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19198:20)
+    at workLoopSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19137:13)
+[ 6765397ms] ReferenceError: rollupTimingLevelsAndCalculationsObs is not defined
+    at TableReportInner (http://localhost:6006/src/react/reports/TableReport/TableReport.tsx?t=1784681005656:386:62)
+    at renderWithHooks (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:11548:26)
+    at updateFunctionComponent (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:14582:28)
+    at beginWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:3674:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:3699:24)
+    at invokeGuardedCallback (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:3733:39)
+    at beginWork$1 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19765:15)
+    at performUnitOfWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19198:20)
+    at workLoopSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19137:13)
+[ 6765398ms] [ERROR] The above error occurred in the <TableReportInner> component:
+
+    at TableReportInner (http://localhost:6006/src/react/reports/TableReport/TableReport.tsx?t=1784681005656:372:3)
+    at Suspense
+    at TableReport
+    at hookified (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=e70adf1e:13865:11)
+    at JiraProvider (http://localhost:6006/src/react/services/jira/JiraProvider.tsx:29:32)
+    at QueryClientProvider (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/@tanstack_react-query.js?v=e70adf1e:2791:3)
+    at unboundStoryFn (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=e70adf1e:32742:319)
+    at ErrorBoundary (http://localhost:6006/node_modules/@storybook/react/dist/_browser-chunks/chunk-3HUEQMBJ.js?v=e70adf1e:84:5)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:14031
+[ 6765398ms] [ERROR] Error rendering story 'reports-tablereport-tablereport--cross-tab-2-d-across-cols': @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=e70adf1e:11768
+[ 6765398ms] [ERROR] ReferenceError: rollupTimingLevelsAndCalculationsObs is not defined
+    at TableReportInner (http://localhost:6006/src/react/reports/TableReport/TableReport.tsx?t=1784681005656:386:62)
+    at renderWithHooks (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:11548:26)
+    at updateFunctionComponent (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:14582:28)
+    at beginWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:15924:22)
+    at beginWork$1 (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19753:22)
+    at performUnitOfWork (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19198:20)
+    at workLoopSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19137:13)
+    at renderRootSync (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:19116:15)
+    at recoverFromConcurrentError (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:18736:28)
+    at performSyncWorkOnRoot (http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=e70adf1e:18879:28) @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/storybook_internal_preview_runtime.js?v=e70adf1e:11768
+[ 7285778ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:6006/node_modules/.cache/storybook/10.4.6/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-QT2YHWEP.js?v=325f7e37:21550
+[ 7286784ms] [LOG] Feature Flags {historicallyAdjustedEstimates: false, historicallyAdjustedEstimates read details: undefined, historicallyAdjustedEstimates toggle value: undefined} @ http://localhost:6006/src/shared/feature-flag.js:39

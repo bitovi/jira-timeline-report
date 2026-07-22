@@ -1,0 +1,96 @@
+- generic [ref=f24e2]:
+  - navigation [ref=f24e4]:
+    - generic [ref=f24e5]:
+      - list [ref=f24e6]:
+        - listitem [ref=f24e7]:
+          - link "Status Reports for Jira" [ref=f24e8] [cursor=pointer]:
+            - /url: https://github.com/bitovi/jira-timeline-report
+        - listitem [ref=f24e9]:
+          - link "by" [ref=f24e10] [cursor=pointer]:
+            - /url: https://www.bitovi.com/services/agile-project-management-consulting
+      - button "Connect to Jira" [ref=f24e13] [cursor=pointer]
+  - generic [ref=f24e15]:
+    - generic [ref=f24e18]:
+      - img "warning" [ref=f24e20]
+      - generic [ref=f24e21]:
+        - heading "Welcome! You're currently viewing a sample report. To generate a custom status report, click Connect to Jira" [level=2] [ref=f24e22]
+        - generic [ref=f24e23]:
+          - paragraph [ref=f24e24]: "Checkout the sample reports:"
+          - list [ref=f24e25]:
+            - listitem [ref=f24e26]:
+              - link "Release end dates with initiative status" [ref=f24e27] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status&selectedIssueType=Initiative"
+            - listitem [ref=f24e28]:
+              - link "Release timeline with initiative work breakdown" [ref=f24e29] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown&selectedIssueType=Initiative"
+            - listitem [ref=f24e30]:
+              - link "Ready and in-development initiative work breakdown" [ref=f24e31] [cursor=pointer]:
+                - /url: "?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true&selectedIssueType=Initiative"
+    - generic [ref=f24e33]:
+      - generic [ref=f24e35]:
+        - generic [ref=f24e36]: Report type
+        - button "Gantt Chart" [ref=f24e37] [cursor=pointer]
+      - generic [ref=f24e42]:
+        - generic [ref=f24e43]: Report on
+        - button "Initiatives" [ref=f24e44] [cursor=pointer]
+      - generic [ref=f24e49]:
+        - generic [ref=f24e50]:
+          - generic [ref=f24e51]:
+            - text: Compare to
+            - textbox [ref=f24e52] [cursor=pointer]: 2026-07-06
+          - generic [ref=f24e53]: 15 days ago
+        - slider "15 days ago" [ref=f24e55]: "76"
+      - button "Filters" [ref=f24e58] [cursor=pointer]
+      - button "View settings" [ref=f24e64] [cursor=pointer]
+    - generic [ref=f24e68]:
+      - generic [ref=f24e71]:
+        - generic [ref=f24e72]: Q3
+        - generic [ref=f24e73]: Q4
+        - generic [ref=f24e74]: Jul
+        - generic [ref=f24e75]: Aug
+        - generic [ref=f24e76]: Sep
+        - generic [ref=f24e77]: Oct
+        - generic [ref=f24e78]: Nov
+        - generic [ref=f24e79]: Dec
+        - link "Favorite sharing" [ref=f24e92] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-15
+        - link "Internationalization" [ref=f24e104] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-5
+        - link "Pets corner" [ref=f24e116] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-13
+        - link "Pet Photo Sharing" [ref=f24e128] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-37
+        - link "Order Playback" [ref=f24e140] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-3
+        - link "Customer Events" [ref=f24e152] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-61
+        - link "Social sharing" [ref=f24e164] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-10
+        - link "Customer Reviews" [ref=f24e176] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-63
+        - link "Live chat support" [ref=f24e188] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-67
+        - link "Track your order maps" [ref=f24e200] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-9
+        - link "1-click checkout" [ref=f24e212] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-68
+        - link "Upselling" [ref=f24e224] [cursor=pointer]:
+          - /url: https://bitovi-training.atlassian.net/browse/IMP-64
+      - generic [ref=f24e230]:
+        - generic [ref=f24e231]:
+          - generic [ref=f24e232]: Unknown dates
+          - generic [ref=f24e236]:
+            - generic [ref=f24e237]: ←
+            - generic [ref=f24e238]: Dates are in the past outside this view
+          - generic [ref=f24e239]:
+            - generic [ref=f24e240]: →
+            - generic [ref=f24e241]: Dates are in the future outside this view
+        - generic [ref=f24e242]:
+          - generic [ref=f24e243]: Complete
+          - generic [ref=f24e245]: Blocked
+          - generic [ref=f24e247]: Warning
+          - generic [ref=f24e249]: New
+          - generic [ref=f24e251]: Behind
+          - generic [ref=f24e253]: Ahead
+          - generic [ref=f24e255]: On Track
+          - generic [ref=f24e257]: Not Started

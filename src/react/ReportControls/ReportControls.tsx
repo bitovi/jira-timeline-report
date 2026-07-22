@@ -11,6 +11,7 @@ import { usePrimaryReportType } from './hooks/usePrimaryReportType';
 import AutoSchedulerControls from './components/AutoSchedulerControls';
 import { useRouteData } from '../hooks/useRouteData/useRouteData';
 import { ChecklistDropdown } from '../reports/FlowMetrics/ChecklistDropdown';
+import { TableReportControls } from '../reports/TableReport/components/TableReportControls';
 import type { DerivedIssue } from '../../jira/derived/derive';
 
 // Returns the number of days back that the `updated >= ...` clause covers.
@@ -237,6 +238,21 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
       <ReportControlsWrapper>
         <AutoSchedulerControls />
       </ReportControlsWrapper>
+    );
+  }
+
+  if (primaryReportType === 'table2') {
+    // The shared control row holds the report-type selector plus the Table's PRIMARY controls
+    // (Rows / Group by / 2D dimension / Fields axis / Add column). TableReportControls reads/writes
+    // the same route-data keys the report body reads, so the two stay in sync (plan §Control
+    // placement). Each control renders in its own aligned cell.
+    return (
+      <>
+        <div className="pt-1">
+          <SelectReportType />
+        </div>
+        <TableReportControls />
+      </>
     );
   }
 

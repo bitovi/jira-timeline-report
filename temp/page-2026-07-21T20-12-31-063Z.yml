@@ -1,0 +1,128 @@
+- generic [ref=f7e1]:
+  - heading "Table Report Table + Grouper unification" [level=1] [ref=f7e2]:
+    - text: Table Report
+    - generic [ref=f7e3]: Table + Grouper unification
+  - paragraph [ref=f7e4]: One engine, two orthogonal knobs. Row ordering (sort / hierarchy) and Grouping (off / 1D / 2D) turn the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns are addable field-or-computed values, each with its own sort · filter · aggregation living in a hover-only header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+  - generic [ref=f7e5]:
+    - generic [ref=f7e6]:
+      - generic [ref=f7e7]: Rows
+      - generic [ref=f7e8]:
+        - button "Sort" [ref=f7e9] [cursor=pointer]
+        - button "Hierarchy" [ref=f7e10] [cursor=pointer]
+    - generic [ref=f7e12]:
+      - generic [ref=f7e13]: Group by ↓
+      - combobox [ref=f7e14] [cursor=pointer]:
+        - option "None"
+        - option "Project" [selected]
+        - option "Status"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f7e15]:
+      - button "⇄" [ref=f7e300] [cursor=pointer]
+      - generic [ref=f7e16]: across →
+      - combobox "Second grouping field → 2D" [ref=f7e17] [cursor=pointer]:
+        - option "None"
+        - option "Status" [selected]
+        - option "Project"
+        - option "Assignee"
+        - option "Parent"
+        - option "Due quarter"
+    - generic [ref=f7e301]:
+      - generic [ref=f7e302]: Fields
+      - generic "Lay the measure fields down as sub-rows, or across as sub-columns" [ref=f7e303]:
+        - button "↓ Down rows" [ref=f7e304] [cursor=pointer]
+        - button "→ Across cols" [active] [ref=f7e305] [cursor=pointer]
+    - button "+ Add column" [ref=f7e19] [cursor=pointer]
+  - generic [ref=f7e20]: No filters. Open a column's ⋯ menu to filter.
+  - table [ref=f7e23]:
+    - rowgroup [ref=f7e24]:
+      - row [ref=f7e485]:
+        - columnheader "Project ↓" [ref=f7e486]
+        - columnheader "To Do" [ref=f7e489]
+        - columnheader "In Progress" [ref=f7e492]
+        - columnheader "Done" [ref=f7e495]
+        - columnheader "Blocked" [ref=f7e498]
+        - columnheader "Total" [ref=f7e501]
+      - row [ref=f7e504]:
+        - columnheader "Story Points Sum" [ref=f7e505]:
+          - generic [ref=f7e506]:
+            - generic [ref=f7e507]: Story Points
+            - generic [ref=f7e508]: Sum
+        - columnheader "Due date Range" [ref=f7e509]:
+          - generic [ref=f7e510]:
+            - generic [ref=f7e511]: Due date
+            - generic [ref=f7e512]: Range
+        - columnheader "Story Points Sum" [ref=f7e513]:
+          - generic [ref=f7e514]:
+            - generic [ref=f7e515]: Story Points
+            - generic [ref=f7e516]: Sum
+        - columnheader "Due date Range" [ref=f7e517]:
+          - generic [ref=f7e518]:
+            - generic [ref=f7e519]: Due date
+            - generic [ref=f7e520]: Range
+        - columnheader "Story Points Sum" [ref=f7e521]:
+          - generic [ref=f7e522]:
+            - generic [ref=f7e523]: Story Points
+            - generic [ref=f7e524]: Sum
+        - columnheader "Due date Range" [ref=f7e525]:
+          - generic [ref=f7e526]:
+            - generic [ref=f7e527]: Due date
+            - generic [ref=f7e528]: Range
+        - columnheader "Story Points Sum" [ref=f7e529]:
+          - generic [ref=f7e530]:
+            - generic [ref=f7e531]: Story Points
+            - generic [ref=f7e532]: Sum
+        - columnheader "Due date Range" [ref=f7e533]:
+          - generic [ref=f7e534]:
+            - generic [ref=f7e535]: Due date
+            - generic [ref=f7e536]: Range
+        - columnheader "Story Points Sum" [ref=f7e537]:
+          - generic [ref=f7e538]:
+            - generic [ref=f7e539]: Story Points
+            - generic [ref=f7e540]: Sum
+        - columnheader "Due date Range" [ref=f7e541]:
+          - generic [ref=f7e542]:
+            - generic [ref=f7e543]: Due date
+            - generic [ref=f7e544]: Range
+    - rowgroup [ref=f7e71]:
+      - row [ref=f7e545]:
+        - cell "Cloud4" [ref=f7e546]
+        - cell "·" [ref=f7e547]
+        - cell "·" [ref=f7e548]
+        - cell "13" [ref=f7e549]
+        - cell "Sep 4 – Sep 29" [ref=f7e550]
+        - cell "8" [ref=f7e551]
+        - cell "Aug 11 – Aug 11" [ref=f7e552]
+        - cell "5" [ref=f7e553]
+        - cell "Sep 19 – Sep 19" [ref=f7e554]
+        - cell "26" [ref=f7e555]
+        - cell "Aug 11 – Sep 29" [ref=f7e556]
+      - row [ref=f7e557]:
+        - cell "Mobile4" [ref=f7e558]
+        - cell "5" [ref=f7e559]
+        - cell "Oct 9 – Oct 9" [ref=f7e560]
+        - cell "8" [ref=f7e561]
+        - cell "Sep 27 – Oct 14" [ref=f7e562]
+        - cell "3" [ref=f7e563]
+        - cell "Aug 29 – Aug 29" [ref=f7e564]
+        - cell "·" [ref=f7e565]
+        - cell "·" [ref=f7e566]
+        - cell "16" [ref=f7e567]
+        - cell "Aug 29 – Oct 14" [ref=f7e568]
+      - row [ref=f7e569]:
+        - cell "Total" [ref=f7e570]
+        - cell "5" [ref=f7e571]
+        - cell "Oct 9 – Oct 9" [ref=f7e572]
+        - cell "21" [ref=f7e573]
+        - cell "Sep 4 – Oct 14" [ref=f7e574]
+        - cell "11" [ref=f7e575]
+        - cell "Aug 11 – Aug 29" [ref=f7e576]
+        - cell "5" [ref=f7e577]
+        - cell "Sep 19 – Sep 19" [ref=f7e578]
+        - cell "42" [ref=f7e579]
+        - cell "Aug 11 – Oct 14" [ref=f7e580]
+  - paragraph [ref=f7e223]:
+    - text: The columns you show
+    - emphasis [ref=f7e224]: are
+    - text: "the values that get aggregated — identity columns (Issue key) and the fields you group on drop out automatically. With two groupings you get a cross-tab (rows × columns, one value per cell). The Fields toggle controls how the measure fields are laid out within it: ↓ Down rows stacks them as sub-rows inside each row-value (easiest to read); → Across cols spreads them as merged sub-columns under each column-value. ⇄ swaps which field is rows vs columns. Hover any header + ⋯ for sort / filter / aggregation."

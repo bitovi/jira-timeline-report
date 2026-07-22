@@ -1,0 +1,44 @@
+- generic [ref=f9e2]:
+  - navigation [ref=f9e4]:
+    - generic [ref=f9e5]:
+      - list [ref=f9e6]:
+        - listitem [ref=f9e7]:
+          - link "Status Reports for Jira" [ref=f9e8] [cursor=pointer]:
+            - /url: https://github.com/bitovi/jira-timeline-report
+        - listitem [ref=f9e9]:
+          - link "by" [ref=f9e10] [cursor=pointer]:
+            - /url: https://www.bitovi.com/services/agile-project-management-consulting
+      - button "Connect to Jira" [ref=f9e13] [cursor=pointer]
+  - generic [ref=f9e15]:
+    - generic [ref=f9e18]:
+      - img "warning" [ref=f9e20]
+      - generic [ref=f9e21]:
+        - heading "Welcome! You're currently viewing a sample report. To generate a custom status report, click Connect to Jira" [level=2] [ref=f9e22]
+        - generic [ref=f9e23]:
+          - paragraph [ref=f9e24]: "Checkout the sample reports:"
+          - list [ref=f9e25]:
+            - listitem [ref=f9e26]:
+              - link "Release end dates with initiative status" [ref=f9e27] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&primaryReportType=due&secondaryReportType=status&selectedIssueType=Initiative"
+            - listitem [ref=f9e28]:
+              - link "Release timeline with initiative work breakdown" [ref=f9e29] [cursor=pointer]:
+                - /url: "?primaryIssueType=Release&hideUnknownInitiatives=true&secondaryReportType=breakdown&selectedIssueType=Initiative"
+            - listitem [ref=f9e30]:
+              - link "Ready and in-development initiative work breakdown" [ref=f9e31] [cursor=pointer]:
+                - /url: "?primaryIssueType=Initiative&hideUnknownInitiatives=true&primaryReportType=start-due&primaryReportBreakdown=true&selectedIssueType=Initiative"
+    - generic [ref=f9e33]:
+      - generic [ref=f9e35]:
+        - generic [ref=f9e36]: Report type
+        - button "Gantt Chart" [ref=f9e37] [cursor=pointer]
+      - generic [ref=f9e42]:
+        - generic [ref=f9e43]: Report on
+        - button "Loading..." [ref=f9e44] [cursor=pointer]
+      - generic [ref=f9e49]:
+        - generic [ref=f9e50]:
+          - generic [ref=f9e51]:
+            - text: Compare to
+            - textbox [ref=f9e52] [cursor=pointer]: 2026-07-06
+          - generic [ref=f9e53]: 15 days ago
+        - slider "15 days ago" [ref=f9e55]: "76"
+      - button "Filters" [ref=f9e58] [cursor=pointer]
+      - button "View settings" [ref=f9e64] [cursor=pointer]
