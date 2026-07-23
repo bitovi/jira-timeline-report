@@ -64,9 +64,14 @@ export class TimelineReportViewModel extends ObservableObject {
     // the timing calculations for the type and below
     // this is telling you how things roll up to you
     get rollupTimingLevelsAndCalculations() {
-      function getIssueHierarchyUnderType(timingCalculations = [], type) {
-        const index = timingCalculations.findIndex((calc) => calc.type === type);
-        return timingCalculations.slice(index);
+      // Slice the timing calculations to the selected From→To range. `fromType` is the top level
+      // (primary); `toType` caps the descent. When `toType` is absent/unknown (or above From), the
+      // range extends to the deepest level — i.e. full hierarchy, unchanged from prior behavior.
+      function getIssueHierarchyUnderType(timingCalculations = [], fromType, toType) {
+        const fromIndex = timingCalculations.findIndex((calc) => calc.type === fromType);
+        const toIndex = toType ? timingCalculations.findIndex((calc) => calc.type === toType) : -1;
+        const end = toIndex >= fromIndex ? toIndex + 1 : timingCalculations.length;
+        return timingCalculations.slice(fromIndex, end);
       }
 
       if (this.routeData.primaryIssueType === 'Release') {
@@ -78,7 +83,11 @@ export class TimelineReportViewModel extends ObservableObject {
           return [{ type: 'Release', hierarchyLevel: Infinity, calculation: 'childrenOnly' }, ...secondary];
         }
       } else {
-        return getIssueHierarchyUnderType(this.routeData.issueTimingCalculations, this.routeData.primaryIssueType);
+        return getIssueHierarchyUnderType(
+          this.routeData.issueTimingCalculations,
+          this.routeData.primaryIssueType,
+          this.routeData.toIssueType,
+        );
       }
     },
 

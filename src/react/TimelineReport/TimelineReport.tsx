@@ -40,6 +40,7 @@ import { TimeInStatus } from '../reports/TimeInStatus/TimeInStatus';
 import { ScatterTimeline } from '../reports/ScatterTimeline';
 import { GanttGrid } from '../reports/GanttReport/GanttGrid';
 import { EstimationTable } from '../reports/EstimationTable';
+import { TableReport } from '../reports/TableReport/TableReport';
 
 // URL `primaryReportType` → the React report that renders it. Typed loosely (each report has its
 // own prop subset of the shared `*Obs` bag) — matches the untyped `createElement` registry the
@@ -55,6 +56,7 @@ const urlParamValuesToReactComponents: Record<string, ComponentType<any>> = {
   due: ScatterTimeline,
   'start-due': GanttGrid,
   table: EstimationTable,
+  table2: TableReport,
 };
 
 // The `routeData` default export carries placeholder (.js) types; cast the observables/props we
@@ -158,6 +160,18 @@ export const TimelineReport: FC<TimelineReportProps> = ({
       primaryIssueTypeObs: value.bind(routeData, 'primaryIssueType'),
       breakdownObs: value.bind(routeData, 'primaryReportBreakdown'),
       showPercentCompleteObs: value.bind(routeData, 'showPercentComplete'),
+      // Table report (`table2`) persisted view state — spec/012-table-and-grouper Phase 5.
+      tableColumnsObs: value.bind(routeData, 'tableColumns'),
+      tableSortColumnObs: value.bind(routeData, 'tableSortColumn'),
+      tableSortDirObs: value.bind(routeData, 'tableSortDir'),
+      tableFiltersObs: value.bind(routeData, 'tableFilters'),
+      tableGroupByObs: value.bind(routeData, 'tableGroupBy'),
+      tableGroupByColObs: value.bind(routeData, 'tableGroupByCol'),
+      tableGroupByGranularityObs: value.bind(routeData, 'tableGroupByGranularity'),
+      tableGroupByColGranularityObs: value.bind(routeData, 'tableGroupByColGranularity'),
+      tableFieldAxisObs: value.bind(routeData, 'tableFieldAxis'),
+      tableShowRowTotalsObs: value.bind(routeData, 'tableShowRowTotals'),
+      tableShowColTotalsObs: value.bind(routeData, 'tableShowColTotals'),
     }),
     [vm],
   );
@@ -234,10 +248,18 @@ export const TimelineReport: FC<TimelineReportProps> = ({
         </div>
 
         <div id="report-controls" className="app-chrome-hidden flex gap-1">
-          <ReportControlsAny
-            rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs}
-            primaryIssuesOrReleasesObs={baseProps.primaryIssuesOrReleasesObs}
-          />
+          {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
+              that fetch Jira data — e.g. the Table report's TableReportControls calling
+              useJiraIssueFields — work here too. queryClient is a shared singleton, so the fields
+              query is deduped with the body rather than fetched twice. */}
+          <QueryClientProvider client={queryClient}>
+            <JiraProvider jira={rd.jiraHelpers}>
+              <ReportControlsAny
+                rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs}
+                primaryIssuesOrReleasesObs={baseProps.primaryIssuesOrReleasesObs}
+              />
+            </JiraProvider>
+          </QueryClientProvider>
         </div>
 
         <ReportArea

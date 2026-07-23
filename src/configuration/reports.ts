@@ -59,6 +59,13 @@ export const reports: Report[] = [
     onByDefault: false,
   },
   {
+    key: 'table2',
+    name: 'Table (beta)',
+    featureSubtitle: 'Unified table & grouper report',
+    featureFlag: 'tableReport',
+    onByDefault: false,
+  },
+  {
     key: 'flow-metrics',
     name: 'Flow Metrics',
     featureSubtitle: 'Cycle time, throughput, and WIP age',
