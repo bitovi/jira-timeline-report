@@ -69,6 +69,7 @@ export class TimelineReportViewModel extends ObservableObject {
       // range extends to the deepest level — i.e. full hierarchy, unchanged from prior behavior.
       function getIssueHierarchyUnderType(timingCalculations = [], fromType, toType) {
         const fromIndex = timingCalculations.findIndex((calc) => calc.type === fromType);
+        if (fromIndex < 0) return timingCalculations;
         const toIndex = toType ? timingCalculations.findIndex((calc) => calc.type === toType) : -1;
         const end = toIndex >= fromIndex ? toIndex + 1 : timingCalculations.length;
         return timingCalculations.slice(fromIndex, end);
