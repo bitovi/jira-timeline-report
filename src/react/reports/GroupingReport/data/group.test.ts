@@ -87,3 +87,30 @@ test('groupByKeys with items that belong to multiple groups', () => {
   const keyBY = createStableObjectKey({ category: 'B', tags: 'y' });
   expect(grouped.get(keyBY)).toEqual([{ id: 2, category: 'B', tags: ['y'] }]);
 });
+
+test('groupByKeys does not drop items whose array-valued groupBy is empty', () => {
+  const items = [
+    { id: 1, category: 'A', tags: ['x'] },
+    { id: 2, category: 'B', tags: [] },
+  ];
+
+  const groupBys = [
+    {
+      key: 'category',
+      value: (item) => item.category,
+    },
+    {
+      key: 'tags',
+      value: (item) => item.tags,
+    },
+  ];
+
+  const grouped = groupByKeys(items, groupBys);
+
+  // Item 2 has no tags — it must still land in a bucket (keyed by tags: null), not vanish entirely.
+  const allItems = Array.from(grouped.values()).flat();
+  expect(allItems.map((i) => i.id)).toContain(2);
+
+  const keyBNull = createStableObjectKey({ category: 'B', tags: null });
+  expect(grouped.get(keyBNull)).toEqual([{ id: 2, category: 'B', tags: [] }]);
+});

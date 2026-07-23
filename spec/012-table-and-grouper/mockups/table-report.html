@@ -1,0 +1,1565 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Table Report — unified table / grouper mockup</title>
+    <style>
+      :root {
+        --complete: #22a06b;
+        --ontrack: #388bff;
+        --behind: #f5cd47;
+        --warning: #ff8e09;
+        --blocked: #e2483d;
+        --unknown: #8590a2;
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --link: #0c66e4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 80px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: var(--muted);
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 960px;
+        margin: 6px 0 18px;
+        font-size: 13px;
+      }
+      .intro code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+      }
+
+      /* ---- Toolbar (report-level knobs) ---- */
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+      }
+      .toolbar .group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .toolbar .label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--subtle);
+      }
+      .toolbar .label .dir {
+        color: var(--brand);
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .seg button {
+        border: 0;
+        background: #fff;
+        padding: 5px 11px;
+        font-size: 13px;
+        cursor: pointer;
+        color: var(--text);
+        border-right: 1px solid var(--border);
+      }
+      .seg button:last-child {
+        border-right: 0;
+      }
+      .seg button.active {
+        background: var(--brand-bg);
+        color: var(--brand);
+        font-weight: 600;
+      }
+      select,
+      .pill-btn {
+        font-size: 13px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 5px 9px;
+        background: #fff;
+        color: var(--text);
+        cursor: pointer;
+      }
+      .pill-btn:hover {
+        background: var(--neutral-10);
+      }
+      .divider-v {
+        width: 1px;
+        align-self: stretch;
+        background: var(--border);
+      }
+      .grow {
+        flex: 1;
+      }
+      .add-col {
+        color: var(--brand);
+        border-color: #a6c8ff;
+        font-weight: 600;
+      }
+
+      /* ---- Active filter chips row ---- */
+      .filters-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+        min-height: 20px;
+      }
+      .filters-bar .empty {
+        color: var(--subtle);
+        font-size: 12px;
+      }
+      .fchip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--neutral-20);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 2px 6px 2px 10px;
+        font-size: 12px;
+      }
+      .fchip b {
+        font-weight: 600;
+      }
+      .fchip .x {
+        cursor: pointer;
+        color: var(--subtle);
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .fchip .x:hover {
+        background: var(--neutral-30);
+        color: var(--text);
+      }
+
+      /* ---- Table ---- */
+      .table-wrap {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow-x: auto; /* horizontal scroll when the cross-tab gets wide */
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      thead th {
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 0;
+        border-bottom: 2px solid var(--border);
+        background: #fff;
+        position: sticky;
+        top: 0;
+        white-space: nowrap;
+      }
+      .th-inner {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 9px 12px;
+        cursor: pointer;
+        position: relative;
+      }
+      .th-inner:hover {
+        background: var(--neutral-10);
+      }
+      th.num .th-inner {
+        justify-content: flex-end;
+      }
+      .sort-ind {
+        font-size: 10px;
+        color: var(--brand);
+        opacity: 0;
+      }
+      th.sorted .sort-ind {
+        opacity: 1;
+      }
+      .agg-tag {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+        background: var(--neutral-20);
+        border-radius: 3px;
+        padding: 1px 4px;
+      }
+      /* hover-only column menu trigger — the "printable at rest" rule */
+      .col-menu-btn {
+        margin-left: auto;
+        color: var(--subtle);
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 0.1s;
+      }
+      th.num .col-menu-btn {
+        margin-left: 6px;
+      }
+      th:hover .col-menu-btn,
+      th:focus-within .col-menu-btn {
+        opacity: 1;
+      }
+      .col-menu-btn:hover {
+        background: var(--neutral-30);
+        color: var(--text);
+      }
+
+      tbody td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--neutral-20);
+        font-size: 13px;
+        vertical-align: middle;
+      }
+      tbody tr:hover td {
+        background: var(--neutral-10);
+      }
+      td.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .key {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: var(--link);
+        text-decoration: none;
+      }
+      .key:hover {
+        text-decoration: underline;
+      }
+      .itype {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        vertical-align: -2px;
+        margin-right: 6px;
+        font-size: 9px;
+        line-height: 14px;
+        text-align: center;
+        color: #fff;
+        font-weight: 700;
+      }
+      .it-epic {
+        background: #904ee2;
+      }
+      .it-story {
+        background: #63ba3c;
+      }
+      .it-task {
+        background: #4bade8;
+      }
+      .summary-cell {
+        display: flex;
+        align-items: center;
+      }
+      .indent {
+        display: inline-block;
+      }
+      .caret {
+        display: inline-block;
+        width: 16px;
+        color: var(--subtle);
+        cursor: pointer;
+        font-size: 10px;
+        transition: transform 0.12s;
+        text-align: center;
+        flex: none;
+      }
+      .caret.collapsed {
+        transform: rotate(-90deg);
+      }
+      .caret.leaf {
+        visibility: hidden;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+        border-radius: 3px;
+        padding: 1px 7px;
+      }
+      .diff-up {
+        color: var(--complete);
+        font-size: 11px;
+      }
+      .diff-down {
+        color: var(--blocked);
+        font-size: 11px;
+      }
+      .prog {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: flex-end;
+      }
+      .prog .bar {
+        width: 56px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--neutral-30);
+        overflow: hidden;
+      }
+      .prog .bar i {
+        display: block;
+        height: 100%;
+        background: var(--complete);
+      }
+
+      /* group header rows */
+      tr.group-row td {
+        background: var(--neutral-10);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        border-top: 1px solid var(--border);
+      }
+      tr.group-row:hover td {
+        background: var(--neutral-20);
+      }
+      tr.group-row .gh {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      tr.group-row .count {
+        color: var(--subtle);
+        font-weight: 500;
+        font-size: 12px;
+        background: var(--neutral-30);
+        border-radius: 10px;
+        padding: 0 8px;
+      }
+      tr.group-hidden {
+        display: none;
+      }
+      .agg-val {
+        color: var(--muted);
+      }
+
+      /* ---- 2D pivot header (grouped measure sub-columns) ---- */
+      th.pivot-grp {
+        text-align: center;
+        border-bottom: 1px solid var(--border);
+      }
+      th.pivot-grp .pivot-grp-inner {
+        justify-content: center;
+        cursor: default;
+        color: var(--text);
+        font-size: 12px;
+      }
+      th.pivot-grp.total .pivot-grp-inner {
+        color: var(--subtle);
+      }
+      th.measure {
+        border-bottom: 2px solid var(--border);
+      }
+      th.measure .measure-inner {
+        justify-content: flex-end;
+        gap: 5px;
+        cursor: default;
+        font-size: 10px;
+        padding: 5px 12px;
+      }
+      th.pivot-row-head .th-inner {
+        cursor: default;
+      }
+      th.pivot-grp:nth-child(even) {
+        background: var(--neutral-10);
+      }
+      td.pivot-alt {
+        background: rgba(9, 30, 66, 0.02);
+      }
+      tr.pivot-row td:first-child {
+        font-weight: 600;
+      }
+      tr.pivot-row .count {
+        color: var(--subtle);
+        font-weight: 500;
+        font-size: 12px;
+        margin-left: 6px;
+      }
+      td.grand td,
+      tr.grand td {
+        border-top: 2px solid var(--border);
+        font-weight: 700;
+      }
+
+      /* ---- 2D vertical pivot (fields as sub-rows) ---- */
+      th.field-head .th-inner,
+      th.col-dim-cap .th-inner {
+        cursor: default;
+        color: var(--subtle);
+      }
+      th.col-dim-cap {
+        text-align: center;
+        border-bottom: 1px solid var(--border);
+      }
+      td.vgrp {
+        font-weight: 600;
+        vertical-align: top;
+        border-right: 1px solid var(--neutral-20);
+        white-space: nowrap;
+      }
+      td.fieldname {
+        color: var(--muted);
+        font-weight: 400;
+        border-right: 1px solid var(--neutral-20);
+        white-space: nowrap;
+      }
+      td.fieldname .agg-tag {
+        margin-left: 4px;
+      }
+      /* separate each row-dim block with a heavier top border */
+      tr.vrow.vgrp-first td {
+        border-top: 1px solid var(--border);
+      }
+      tr.vrow td {
+        border-bottom: 1px solid var(--neutral-20);
+      }
+      td.total-col {
+        border-left: 1px solid var(--border);
+        color: var(--subtle);
+      }
+
+      /* ---- floating menus / popovers ---- */
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: none;
+      }
+      .popover {
+        position: absolute;
+        z-index: 50;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(9, 30, 66, 0.24);
+        min-width: 250px;
+        padding: 6px;
+        font-size: 13px;
+        display: none;
+      }
+      .popover.open {
+        display: block;
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .menu-item:hover {
+        background: var(--neutral-10);
+      }
+      .menu-item .check {
+        color: var(--brand);
+        width: 14px;
+      }
+      .menu-sep {
+        height: 1px;
+        background: var(--border);
+        margin: 5px 4px;
+      }
+      .menu-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        padding: 6px 10px 3px;
+      }
+      .menu-sub {
+        padding: 3px 10px 8px;
+      }
+      .menu-sub input[type='text'],
+      .menu-sub input[type='number'] {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+      .menu-sub .row2 {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      .checkline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      .checkline:hover {
+        background: var(--neutral-10);
+      }
+      .swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+      }
+      .apply-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        padding: 6px 6px 2px;
+      }
+      .btn {
+        font-size: 13px;
+        border-radius: 5px;
+        padding: 5px 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        cursor: pointer;
+      }
+      .btn.primary {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+        font-weight: 600;
+      }
+      .col-search {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 7px 9px;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+      .col-group-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--subtle);
+        padding: 8px 10px 2px;
+      }
+      .note {
+        font-size: 12px;
+        color: var(--subtle);
+        margin: 18px 0 6px;
+        max-width: 960px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Table Report<span class="tag">Table + Grouper unification</span></h1>
+    <p class="intro">
+      One engine, two orthogonal knobs. <b>Row ordering</b> (sort / hierarchy) and <b>Grouping</b> (off / 1D / 2D) turn
+      the same issue-rows into a flat table, the Estimation-Table tree, a grouped outline, or the old 2×2 pivot. Columns
+      are addable field-or-computed values, each with its own <b>sort · filter · aggregation</b> living in a
+      <b>hover-only</b> header menu (⋯) so the report reads clean/printable at rest. Hover a header, then click ⋯.
+    </p>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="group">
+        <span class="label">Rows</span>
+        <div class="seg" id="rowMode">
+          <button data-mode="sort" class="active">Sort</button>
+          <button data-mode="hierarchy">Hierarchy</button>
+        </div>
+      </div>
+      <div class="divider-v"></div>
+      <div class="group">
+        <span class="label" id="grp1Label">Group by <span class="dir">↓</span></span>
+        <select id="groupBy">
+          <option value="">None</option>
+          <option value="project">Project</option>
+          <option value="status">Status</option>
+          <option value="assignee">Assignee</option>
+          <option value="parent">Parent</option>
+          <option value="dueQuarter">Due quarter</option>
+        </select>
+      </div>
+      <div class="group" id="grp2Wrap">
+        <button class="pill-btn swap" id="swapDims" title="Swap the two grouping fields" style="display: none">
+          ⇄
+        </button>
+        <span class="label" id="grp2Label">then <span class="dir">→</span></span>
+        <select id="groupBy2" title="Second grouping field → 2D">
+          <option value="">None</option>
+          <option value="status">Status</option>
+          <option value="project">Project</option>
+          <option value="assignee">Assignee</option>
+          <option value="parent">Parent</option>
+          <option value="dueQuarter">Due quarter</option>
+        </select>
+      </div>
+      <div class="group" id="layoutCtrl" style="display: none">
+        <span class="label">Fields</span>
+        <div class="seg" id="layoutSeg" title="Lay the measure fields down as sub-rows, or across as sub-columns">
+          <button data-layout="vertical" class="active">↓ Down rows</button>
+          <button data-layout="horizontal">→ Across cols</button>
+        </div>
+      </div>
+      <div class="group" id="groupToggleCtrl" style="display: none">
+        <button class="pill-btn" id="groupToggle">Expand all</button>
+      </div>
+      <div class="divider-v"></div>
+      <div class="grow"></div>
+      <button class="pill-btn add-col" id="addColBtn">+ Add column</button>
+    </div>
+
+    <!-- Active filters -->
+    <div class="filters-bar" id="filtersBar">
+      <span class="empty">No filters. Open a column's ⋯ menu to filter.</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead>
+          <tr id="headRow"></tr>
+        </thead>
+        <tbody id="body"></tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      The columns you show <em>are</em> the values that get aggregated — identity columns (Issue key) and the fields you
+      group on drop out automatically. With two groupings you get a cross-tab (rows × columns, one value per cell). The
+      <b>Fields</b> toggle controls how the measure fields are laid out within it: <b>↓ Down rows</b> stacks them as
+      sub-rows inside each row-value (easiest to read); <b>→ Across cols</b> spreads them as merged sub-columns under
+      each column-value. <b>⇄</b> swaps which field is rows vs columns. Hover any header + <b>⋯</b>
+      for sort / filter / aggregation.
+    </p>
+
+    <div class="backdrop" id="backdrop"></div>
+    <!-- Column menu popover -->
+    <div class="popover" id="colMenu"></div>
+    <!-- Add-column popover -->
+    <div class="popover" id="addMenu"></div>
+
+    <script>
+      // ---------- column catalog ----------
+      const AGGS = {
+        sum: 'Sum',
+        avg: 'Avg',
+        min: 'Min',
+        max: 'Max',
+        range: 'Range',
+        count: 'Count',
+        list: 'Distinct list',
+        pct: 'Completion %',
+      };
+      // type -> allowed aggregations + default
+      const TYPE_AGG = {
+        number: { def: 'sum', opts: ['sum', 'avg', 'min', 'max', 'count'] },
+        date: { def: 'range', opts: ['range', 'min', 'max', 'count'] },
+        text: { def: 'list', opts: ['list', 'count'] },
+        option: { def: 'list', opts: ['list', 'count'] },
+        progress: { def: 'pct', opts: ['pct', 'avg'] },
+        identity: { def: 'count', opts: ['count', 'list'] },
+      };
+
+      // catalog of available columns
+      const CATALOG = [
+        // identity / fields
+        { id: 'summary', name: 'Summary', type: 'identity', group: 'Identity', tree: true, always: true },
+        { id: 'key', name: 'Issue key', type: 'identity', group: 'Identity' },
+        { id: 'status', name: 'Status', type: 'option', group: 'Fields' },
+        { id: 'assignee', name: 'Assignee', type: 'text', group: 'Fields' },
+        { id: 'project', name: 'Project', type: 'text', group: 'Fields' },
+        { id: 'storyPoints', name: 'Story Points', type: 'number', group: 'Fields' },
+        { id: 'due', name: 'Due date', type: 'date', group: 'Fields' },
+        { id: 'labels', name: 'Labels', type: 'option', group: 'Fields' },
+        // estimation-table identity columns
+        { id: 'estDays', name: 'Estimated Days', type: 'number', group: 'Estimation', diff: true },
+        { id: 'rollupDays', name: 'Rolled Up Days', type: 'number', group: 'Estimation', diff: true },
+        { id: 'progress', name: 'Completion', type: 'progress', group: 'Estimation' },
+        // computed (old aggregators)
+        { id: 'revenue', name: 'Revenue', type: 'number', group: 'Computed', computed: true },
+        { id: 'issueCount', name: 'Issue Count', type: 'number', group: 'Computed', computed: true },
+      ];
+      const byId = Object.fromEntries(CATALOG.map((c) => [c.id, c]));
+
+      // ---------- sample data ----------
+      // issue: key,type,summary,parent,project,status,assignee,storyPoints,due,estDays(prev,cur),rollup(prev,cur),progress,labels
+      const S = ['To Do', 'In Progress', 'Done', 'Blocked'];
+      const ISSUES = [
+        [
+          'CLOUD-1',
+          'epic',
+          'Checkout revamp',
+          null,
+          'Cloud',
+          'In Progress',
+          'Dana',
+          null,
+          '2026-09-30',
+          [30, 34],
+          [58, 61],
+          62,
+          ['payments'],
+        ],
+        [
+          'CLOUD-2',
+          'story',
+          'Cart service',
+          'CLOUD-1',
+          'Cloud',
+          'Done',
+          'Amir',
+          8,
+          '2026-08-12',
+          [8, 8],
+          [8, 8],
+          100,
+          ['payments'],
+        ],
+        [
+          'CLOUD-3',
+          'story',
+          'Apple Pay',
+          'CLOUD-1',
+          'Cloud',
+          'In Progress',
+          'Dana',
+          13,
+          '2026-09-05',
+          [10, 13],
+          [10, 13],
+          40,
+          ['payments'],
+        ],
+        [
+          'CLOUD-4',
+          'task',
+          'Fraud checks',
+          'CLOUD-1',
+          'Cloud',
+          'Blocked',
+          'Priya',
+          5,
+          '2026-09-20',
+          [5, 6],
+          [5, 6],
+          10,
+          ['risk'],
+        ],
+        [
+          'MOB-1',
+          'epic',
+          'Mobile onboarding',
+          null,
+          'Mobile',
+          'In Progress',
+          'Sam',
+          null,
+          '2026-10-15',
+          [20, 22],
+          [40, 43],
+          35,
+          ['growth'],
+        ],
+        [
+          'MOB-2',
+          'story',
+          'Signup flow',
+          'MOB-1',
+          'Mobile',
+          'In Progress',
+          'Sam',
+          8,
+          '2026-09-28',
+          [8, 9],
+          [8, 9],
+          50,
+          ['growth'],
+        ],
+        [
+          'MOB-3',
+          'story',
+          'Push notifications',
+          'MOB-1',
+          'Mobile',
+          'To Do',
+          'Lena',
+          5,
+          '2026-10-10',
+          [5, 5],
+          [5, 5],
+          0,
+          ['growth'],
+        ],
+        [
+          'MOB-4',
+          'task',
+          'Analytics wiring',
+          'MOB-1',
+          'Mobile',
+          'Done',
+          'Lena',
+          3,
+          '2026-08-30',
+          [3, 3],
+          [3, 3],
+          100,
+          [],
+        ],
+      ];
+      function mk(a) {
+        return {
+          key: a[0],
+          type: a[1],
+          summary: a[2],
+          parent: a[3],
+          project: a[4],
+          status: a[5],
+          assignee: a[6],
+          storyPoints: a[7],
+          due: a[8],
+          estDays: a[9],
+          rollupDays: a[10],
+          progress: a[11],
+          labels: a[12],
+        };
+      }
+      const issues = ISSUES.map(mk);
+
+      // ---------- state ----------
+      const state = {
+        columns: ['summary', 'key', 'status', 'assignee', 'storyPoints', 'due', 'estDays', 'rollupDays', 'progress'],
+        aggr: {}, // colId -> agg override
+        rowMode: 'sort', // sort | hierarchy
+        sort: { col: null, dir: 0 }, // dir: 1 asc, -1 desc
+        groupBy: '',
+        groupBy2: '',
+        layout: 'vertical', // 2D measure axis: 'vertical' (fields down sub-rows) | 'horizontal' (fields across sub-columns)
+        filters: {}, // colId -> {kind, ...}
+        collapsed: new Set(), // hierarchy: keys collapsed (expanded by default)
+        expandedGroups: new Set(), // groups: paths expanded (collapsed by default = roll-up)
+      };
+      const GROUPER_NAME = {
+        project: 'Project',
+        parent: 'Parent',
+        status: 'Status',
+        assignee: 'Assignee',
+        dueQuarter: 'Due quarter',
+      };
+      // which displayed column (if any) a grouping dimension corresponds to — used to
+      // drop the grouped-on field from the repeated "measure" columns.
+      const DIM_FIELD = { project: 'project', status: 'status', assignee: 'assignee', parent: null, dueQuarter: 'due' };
+
+      // The measures = the columns the user is showing, minus the tree/identity columns
+      // and minus whatever fields are being grouped on. These repeat under each group.
+      function measureCols() {
+        const dimFields = [DIM_FIELD[state.groupBy], DIM_FIELD[state.groupBy2]].filter(Boolean);
+        return state.columns.filter((c) => !byId[c].tree && byId[c].group !== 'Identity' && !dimFields.includes(c));
+      }
+      function dimValue(iss, dim) {
+        if (dim === 'parent') {
+          const p = issues.find((i) => i.key === iss.parent);
+          return p ? p.summary : '(no parent)';
+        }
+        if (dim === 'dueQuarter') return dueQuarter(iss);
+        return iss[dim] ?? '(none)';
+      }
+      function groupByDim(subset, dim) {
+        const m = {};
+        for (const r of subset) (m[dimValue(r, dim)] ??= []).push(r);
+        return Object.entries(m);
+      }
+      const is2D = () => !!(state.groupBy && state.groupBy2);
+
+      // ---------- helpers ----------
+      const statusColor = { 'To Do': '#8590a2', 'In Progress': '#388bff', Done: '#22a06b', Blocked: '#e2483d' };
+      const el = (id) => document.getElementById(id);
+
+      function aggOf(colId) {
+        return state.aggr[colId] || TYPE_AGG[byId[colId].type].def;
+      }
+
+      function rawValue(iss, colId) {
+        if (colId === 'estDays') return iss.estDays[1];
+        if (colId === 'rollupDays') return iss.rollupDays[1];
+        if (colId === 'revenue') return (iss.storyPoints || 0) * 1500;
+        if (colId === 'issueCount') return 1;
+        return iss[colId];
+      }
+
+      function passesFilters(iss) {
+        for (const [colId, f] of Object.entries(state.filters)) {
+          const v = rawValue(iss, colId);
+          if (
+            f.kind === 'text' &&
+            !String(v || '')
+              .toLowerCase()
+              .includes(f.q.toLowerCase())
+          )
+            return false;
+          if (f.kind === 'range') {
+            if (f.min != null && v < f.min) return false;
+            if (f.max != null && v > f.max) return false;
+          }
+          if (f.kind === 'set' && f.values.length && !f.values.includes(v)) return false;
+        }
+        return true;
+      }
+
+      function fmt(iss, colId) {
+        const c = byId[colId];
+        if (colId === 'summary') return summaryCell(iss);
+        if (colId === 'key') return `<a class="key" href="#">${iss.key}</a>`;
+        if (colId === 'status')
+          return `<span class="badge" style="background:${statusColor[iss.status]}">${iss.status}</span>`;
+        if (colId === 'progress') return progressCell(iss.progress);
+        if (colId === 'estDays') return diffCell(iss.estDays);
+        if (colId === 'rollupDays') return diffCell(iss.rollupDays);
+        if (colId === 'revenue') return '$' + rawValue(iss, colId).toLocaleString();
+        if (colId === 'due')
+          return iss.due ? new Date(iss.due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+        if (c.type === 'option' && Array.isArray(iss[colId])) return iss[colId].join(', ') || '—';
+        const v = iss[colId];
+        return v == null || v === '' ? '—' : v;
+      }
+
+      function summaryCell(iss) {
+        const icon = `<span class="itype it-${iss.type}">${iss.type[0].toUpperCase()}</span>`;
+        return icon + iss.summary;
+      }
+      function diffCell([prev, cur]) {
+        if (prev === cur) return `${cur}`;
+        const up = cur > prev;
+        return `${cur} <span class="${up ? 'diff-up' : 'diff-down'}">(${up ? '+' : ''}${cur - prev})</span>`;
+      }
+      function progressCell(p) {
+        return `<span class="prog"><span class="bar"><i style="width:${p}%"></i></span><span class="agg-val">${p}%</span></span>`;
+      }
+
+      function isNum(colId) {
+        const t = byId[colId].type;
+        return t === 'number' || t === 'progress';
+      }
+
+      // aggregate a list of issues for a column
+      function aggregate(members, colId) {
+        const agg = aggOf(colId);
+        const vals = members.map((m) => rawValue(m, colId)).filter((v) => v != null && v !== '');
+        if (agg === 'count') return members.length;
+        if (agg === 'sum') return round(vals.reduce((a, b) => a + b, 0));
+        if (agg === 'avg') return vals.length ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : '—';
+        if (agg === 'min') return vals.length ? Math.min(...vals) : '—';
+        if (agg === 'max') return vals.length ? Math.max(...vals) : '—';
+        if (agg === 'pct') return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) + '%' : '—';
+        if (agg === 'range') {
+          const ds = members
+            .map((m) => m.due)
+            .filter(Boolean)
+            .sort();
+          if (!ds.length) return '—';
+          const f = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          return f(ds[0]) + ' – ' + f(ds[ds.length - 1]);
+        }
+        if (agg === 'list')
+          return [...new Set(members.flatMap((m) => [].concat(rawValue(m, colId) || [])))].join(', ') || '—';
+        return '—';
+      }
+      const round = (n) => Math.round(n * 10) / 10;
+
+      // ---------- render header ----------
+      function renderHead() {
+        const thead = el('tbl').tHead;
+        if (is2D()) thead.innerHTML = state.layout === 'vertical' ? pivotHeadVerticalHtml() : pivotHeadHtml();
+        else if (state.groupBy) thead.innerHTML = `<tr>${groupedHeadCells()}</tr>`;
+        else thead.innerHTML = `<tr>${flatHeadCells()}</tr>`;
+      }
+
+      // one <th> per column, with sort / filter / ⋯ menu affordances
+      function thCell(colId, { aggTag = false, label = null } = {}) {
+        const c = byId[colId];
+        const num = isNum(colId) ? ' num' : '';
+        const sorted = state.sort.col === colId ? ' sorted' : '';
+        const arrow = state.sort.dir === 1 ? '▲' : '▼';
+        const tag = aggTag && !c.tree ? `<span class="agg-tag">${AGGS[aggOf(colId)]}</span>` : '';
+        const fActive = state.filters[colId] ? ' style="color:var(--brand)"' : '';
+        return `<th class="${c.type}${num}${sorted}" data-col="${colId}">
+          <div class="th-inner" onclick="cycleSort('${colId}')">
+            <span>${label ?? c.name}</span>
+            ${tag}
+            <span class="sort-ind">${arrow}</span>
+            <button class="col-menu-btn" onclick="event.stopPropagation();openColMenu('${colId}', this)"${fActive}>⋯</button>
+          </div>
+        </th>`;
+      }
+
+      function flatHeadCells() {
+        return state.columns.map((colId) => thCell(colId)).join('');
+      }
+
+      // 1D grouped header: a "Group" label column + the measure columns (the shown fields,
+      // minus identity and minus the grouped-on field), each with its aggregation.
+      function groupedHeadCells() {
+        const first = `<th class="pivot-row-head"><div class="th-inner"><span>${GROUPER_NAME[state.groupBy]} <span style="color:var(--brand)">↓</span></span></div></th>`;
+        return (
+          first +
+          measureCols()
+            .map((colId) => thCell(colId, { aggTag: true }))
+            .join('')
+        );
+      }
+
+      function effMeasures() {
+        const m = measureCols();
+        return m.length ? m : ['issueCount'];
+      }
+
+      // 2D HORIZONTAL cross-tab header: two rows — each column-dimension value is a merged
+      // header (colspan = #measures) over its measure sub-columns.
+      function pivotHeadHtml() {
+        const dims = colDimValues();
+        const measures = effMeasures();
+        const rowName = GROUPER_NAME[state.groupBy] || state.groupBy;
+        const groups = [...dims.map((d) => ({ label: d })), { label: 'Total', total: true }];
+        const r1 =
+          `<th rowspan="2" class="pivot-row-head"><div class="th-inner"><span>${rowName} <span style="color:var(--brand)">↓</span></span></div></th>` +
+          groups
+            .map(
+              (g) =>
+                `<th class="pivot-grp${g.total ? ' total' : ''}" colspan="${measures.length}"><div class="th-inner pivot-grp-inner"><span>${g.label}</span></div></th>`,
+            )
+            .join('');
+        const r2 = groups
+          .map(() =>
+            measures
+              .map(
+                (m) =>
+                  `<th class="num measure"><div class="th-inner measure-inner"><span>${byId[m].name}</span><span class="agg-tag">${AGGS[aggOf(m)]}</span></div></th>`,
+              )
+              .join(''),
+          )
+          .join('');
+        return `<tr>${r1}</tr><tr>${r2}</tr>`;
+      }
+
+      // 2D VERTICAL cross-tab header: single row — row-dimension label, a "field" column,
+      // then one column per column-dimension value (measures become sub-rows in the body).
+      function pivotHeadVerticalHtml() {
+        const dims = colDimValues();
+        const rowName = GROUPER_NAME[state.groupBy] || state.groupBy;
+        const ths =
+          `<th class="pivot-row-head"><div class="th-inner"><span>${rowName}</span></div></th>` +
+          `<th class="pivot-row-head field-head"><div class="th-inner"><span>Field</span></div></th>` +
+          dims
+            .map((d) => `<th class="num pivot-grp"><div class="th-inner pivot-grp-inner"><span>${d}</span></div></th>`)
+            .join('') +
+          `<th class="num pivot-grp total"><div class="th-inner pivot-grp-inner"><span>Total</span></div></th>`;
+        return `<tr>${ths}</tr>`;
+      }
+
+      // ---------- render body ----------
+      function renderBody() {
+        const rows = issues.filter(passesFilters);
+        if (is2D()) return state.layout === 'vertical' ? renderPivotVertical(rows) : renderPivot(rows);
+        if (state.groupBy) return renderNested(rows); // 1D grouped
+        if (state.rowMode === 'hierarchy') return renderHierarchy(rows);
+        return renderFlat(rows);
+      }
+
+      function sortRows(rows) {
+        if (!state.sort.col || !state.sort.dir) return rows;
+        const col = state.sort.col;
+        return [...rows].sort((a, b) => {
+          let x = rawValue(a, col),
+            y = rawValue(b, col);
+          if (x == null) return 1;
+          if (y == null) return -1;
+          if (typeof x === 'string') return state.sort.dir * x.localeCompare(y);
+          return state.sort.dir * (x - y);
+        });
+      }
+
+      function rowHtml(iss, indent = 0, hasKids = false, key = '') {
+        const cols = state.columns;
+        return (
+          `<tr>` +
+          cols
+            .map((colId) => {
+              const num = isNum(colId) ? ' num' : '';
+              if (colId === 'summary') {
+                const collapsed = state.collapsed.has(key) ? ' collapsed' : '';
+                const caret =
+                  state.rowMode === 'hierarchy'
+                    ? `<span class="caret ${hasKids ? collapsed : 'leaf'}" onclick="toggle('${key}')">▾</span>`
+                    : '';
+                return `<td><span class="summary-cell"><span class="indent" style="width:${indent * 20}px"></span>${caret}<span>${summaryCell(iss)}</span></span></td>`;
+              }
+              return `<td class="${num}">${fmt(iss, colId)}</td>`;
+            })
+            .join('') +
+          `</tr>`
+        );
+      }
+
+      function renderFlat(rows) {
+        el('body').innerHTML = sortRows(rows)
+          .map((r) => rowHtml(r))
+          .join('');
+      }
+
+      function renderHierarchy(rows) {
+        const set = new Set(rows.map((r) => r.key));
+        const roots = rows.filter((r) => !r.parent || !set.has(r.parent));
+        const childrenOf = (k) => sortRows(rows.filter((r) => r.parent === k));
+        let html = '';
+        const walk = (iss, depth) => {
+          const kids = childrenOf(iss.key);
+          html += rowHtml(iss, depth, kids.length > 0, iss.key);
+          if (kids.length && !state.collapsed.has(iss.key)) kids.forEach((k) => walk(k, depth + 1));
+        };
+        sortRows(roots).forEach((r) => walk(r, 0));
+        el('body').innerHTML = html;
+      }
+
+      // 1D grouped rendering: group headers carry the measure aggregates; member rows
+      // (when expanded) show the raw per-issue values in those same measure columns.
+      function renderNested(rows) {
+        const dims = [state.groupBy];
+        const measures = measureCols();
+        let html = '';
+        const walk = (subset, level, prefix) => {
+          const dim = dims[level];
+          const isLeaf = level === dims.length - 1;
+          for (const [g, members] of groupByDim(subset, dim)) {
+            const path = prefix ? prefix + '›' + g : g;
+            const expanded = state.expandedGroups.has(path);
+            const cells = measures
+              .map(
+                (colId) =>
+                  `<td class="${isNum(colId) ? 'num' : ''}"><span class="agg-val">${aggregate(members, colId)}</span></td>`,
+              )
+              .join('');
+            html += `<tr class="group-row lvl${level}" onclick="toggleGroup('${path.replace(/'/g, '')}')">
+              <td><span class="gh" style="padding-left:${level * 18}px"><span class="caret ${expanded ? '' : 'collapsed'}">▾</span><span>${g}</span><span class="count">${members.length}</span></span></td>
+              ${cells}</tr>`;
+            if (expanded) {
+              if (isLeaf) {
+                html += sortRows(members)
+                  .map((r) => memberRow(r, level + 1, measures))
+                  .join('');
+              } else {
+                walk(members, level + 1, path);
+              }
+            }
+          }
+        };
+        walk(rows, 0, '');
+        el('body').innerHTML = html;
+      }
+
+      // a single issue row inside a nested group (label column = summary, then measures)
+      function memberRow(iss, indent, measures) {
+        const cells = measures
+          .map((colId) => `<td class="${isNum(colId) ? 'num' : ''}">${fmt(iss, colId)}</td>`)
+          .join('');
+        return `<tr class="member"><td><span class="summary-cell"><span class="indent" style="width:${indent * 18}px"></span><span>${summaryCell(iss)}</span></span></td>${cells}</tr>`;
+      }
+
+      // ---------- 2D cross-tab (wide pivot) ----------
+      function dueQuarter(iss) {
+        const m = new Date(iss.due).getMonth();
+        return m >= 6 && m <= 8 ? 'Q3 2026' : 'Q4 2026';
+      }
+      function colDimValues() {
+        if (state.groupBy2 === 'status') return S; // keep canonical status order
+        return [...new Set(issues.filter(passesFilters).map((r) => dimValue(r, state.groupBy2)))];
+      }
+      function colDimOf(iss) {
+        return dimValue(iss, state.groupBy2);
+      }
+      const DOT = '<span style="color:var(--unknown)">·</span>';
+
+      // HORIZONTAL: rows = row-dim; each column-dim value = a block of measure sub-columns.
+      function renderPivot(rows) {
+        const measures = effMeasures();
+        const dims = colDimValues();
+        const groups = {};
+        for (const r of rows) (groups[dimValue(r, state.groupBy)] ??= []).push(r);
+        // each cell = one measure aggregated over the issues in (row-group ∩ column-group)
+        const cellFor = (subset, alt) =>
+          measures
+            .map((m) => `<td class="num${alt ? ' pivot-alt' : ''}">${subset.length ? aggregate(subset, m) : DOT}</td>`)
+            .join('');
+        let html = '';
+        for (const [g, members] of Object.entries(groups)) {
+          const cols = dims
+            .map((d, i) =>
+              cellFor(
+                members.filter((m) => colDimOf(m) === d),
+                i % 2 === 1,
+              ),
+            )
+            .join('');
+          html += `<tr class="pivot-row"><td>${g}<span class="count">${members.length}</span></td>${cols}${cellFor(members, false)}</tr>`;
+        }
+        const total = rows;
+        const gcols = dims
+          .map((d, i) =>
+            cellFor(
+              total.filter((m) => colDimOf(m) === d),
+              i % 2 === 1,
+            ),
+          )
+          .join('');
+        html += `<tr class="grand"><td>Total</td>${gcols}${cellFor(total, false)}</tr>`;
+        el('body').innerHTML = html;
+      }
+
+      // VERTICAL: rows = row-dim × measure (measures stacked as sub-rows); columns = the
+      // column-dim values. Each row-dim value spans #measures rows (merged first cell).
+      function renderPivotVertical(rows) {
+        const measures = effMeasures();
+        const dims = colDimValues();
+        const groups = {};
+        for (const r of rows) (groups[dimValue(r, state.groupBy)] ??= []).push(r);
+        let html = '';
+        const entries = Object.entries(groups);
+        entries.forEach(([g, members], gi) => {
+          measures.forEach((m, mi) => {
+            const first =
+              mi === 0
+                ? `<td rowspan="${measures.length}" class="vgrp"><span class="gh">${g}<span class="count">${members.length}</span></span></td>`
+                : '';
+            const fieldCell = `<td class="fieldname">${byId[m].name} <span class="agg-tag">${AGGS[aggOf(m)]}</span></td>`;
+            const cells = dims
+              .map((d) => {
+                const sub = members.filter((x) => colDimOf(x) === d);
+                return `<td class="num">${sub.length ? aggregate(sub, m) : DOT}</td>`;
+              })
+              .join('');
+            const totalCell = `<td class="num total-col">${aggregate(members, m)}</td>`;
+            html += `<tr class="pivot-row vrow${mi === 0 ? ' vgrp-first' : ''}">${first}${fieldCell}${cells}${totalCell}</tr>`;
+          });
+        });
+        el('body').innerHTML = html;
+      }
+
+      // ---------- interactions ----------
+      window.cycleSort = (colId) => {
+        if (state.sort.col !== colId) state.sort = { col: colId, dir: 1 };
+        else if (state.sort.dir === 1) state.sort.dir = -1;
+        else state.sort = { col: null, dir: 0 };
+        render();
+      };
+      window.toggle = (key) => {
+        if (state.collapsed.has(key)) state.collapsed.delete(key);
+        else state.collapsed.add(key);
+        render();
+      };
+      window.toggleGroup = (g) => {
+        if (state.expandedGroups.has(g)) state.expandedGroups.delete(g);
+        else state.expandedGroups.add(g);
+        render();
+      };
+      // group keys for 1D expand/collapse-all
+      function allGroupKeys() {
+        return groupByDim(issues.filter(passesFilters), state.groupBy).map(([g]) => g.replace(/'/g, ''));
+      }
+      el('groupToggle').addEventListener('click', () => {
+        const keys = allGroupKeys();
+        if (state.expandedGroups.size >= keys.length) state.expandedGroups.clear();
+        else state.expandedGroups = new Set(keys);
+        render();
+      });
+      // layout toggle (vertical / cross-tab) + swap the two grouping fields
+      el('layoutSeg').addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON') return;
+        state.layout = e.target.dataset.layout;
+        [...e.currentTarget.children].forEach((b) => b.classList.toggle('active', b === e.target));
+        state.expandedGroups.clear();
+        render();
+      });
+      el('swapDims').addEventListener('click', () => {
+        [state.groupBy, state.groupBy2] = [state.groupBy2, state.groupBy];
+        el('groupBy').value = state.groupBy;
+        el('groupBy2').value = state.groupBy2;
+        state.expandedGroups.clear();
+        render();
+      });
+
+      // row mode segmented
+      el('rowMode').addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON') return;
+        state.rowMode = e.target.dataset.mode;
+        [...e.currentTarget.children].forEach((b) => b.classList.toggle('active', b === e.target));
+        render();
+      });
+      el('groupBy').addEventListener('change', (e) => {
+        state.groupBy = e.target.value;
+        if (!state.groupBy) (el('groupBy2').value = ''), (state.groupBy2 = '');
+        if (state.groupBy && state.groupBy === state.groupBy2) (el('groupBy2').value = ''), (state.groupBy2 = '');
+        state.expandedGroups.clear();
+        render();
+      });
+      el('groupBy2').addEventListener('change', (e) => {
+        state.groupBy2 = e.target.value;
+        if (state.groupBy2 && !state.groupBy) {
+          state.groupBy = 'project';
+          el('groupBy').value = 'project';
+        }
+        if (state.groupBy2 && state.groupBy2 === state.groupBy) {
+          // avoid grouping by the same field twice — bump row grouping to something else
+          state.groupBy = state.groupBy2 === 'project' ? 'status' : 'project';
+          el('groupBy').value = state.groupBy;
+        }
+        state.expandedGroups.clear();
+        render();
+      });
+
+      // ---------- column ⋯ menu ----------
+      const backdrop = el('backdrop');
+      function closeAll() {
+        backdrop.style.display = 'none';
+        el('colMenu').classList.remove('open');
+        el('addMenu').classList.remove('open');
+      }
+      backdrop.addEventListener('click', closeAll);
+
+      window.openColMenu = (colId, btn) => {
+        const c = byId[colId];
+        const f = state.filters[colId];
+        const typeAgg = TYPE_AGG[c.type];
+        let html = `<div class="menu-label">${c.name}</div>`;
+        // sort
+        html += `<div class="menu-item" onclick="cycleSort('${colId}');refreshMenu('${colId}')"><span class="check">${state.sort.col === colId && state.sort.dir === 1 ? '✓' : ''}</span>Sort ascending</div>`;
+        html += `<div class="menu-item" onclick="setSort('${colId}',-1)"><span class="check">${state.sort.col === colId && state.sort.dir === -1 ? '✓' : ''}</span>Sort descending</div>`;
+        // aggregation (only meaningful when grouped)
+        if (!c.tree) {
+          html += `<div class="menu-sep"></div><div class="menu-label">Aggregation ${state.groupBy ? '' : '(used when grouped)'}</div>`;
+          html += typeAgg.opts
+            .map(
+              (a) =>
+                `<div class="menu-item" onclick="setAgg('${colId}','${a}')"><span class="check">${aggOf(colId) === a ? '✓' : ''}</span>${AGGS[a]}</div>`,
+            )
+            .join('');
+        }
+        // filter
+        html += `<div class="menu-sep"></div><div class="menu-label">Filter</div>`;
+        if (c.type === 'number' || c.type === 'progress') {
+          html += `<div class="menu-sub"><div class="row2">
+            <input type="number" id="fmin" placeholder="min" value="${f?.min ?? ''}">
+            <input type="number" id="fmax" placeholder="max" value="${f?.max ?? ''}"></div></div>`;
+          html += applyRow(colId, `setFilter('${colId}',{kind:'range',min:numOrNull('fmin'),max:numOrNull('fmax')})`);
+        } else if (c.type === 'option' || colId === 'status' || colId === 'assignee' || colId === 'project') {
+          const opts = [...new Set(issues.flatMap((i) => [].concat(rawValue(i, colId) || [])))];
+          html +=
+            `<div class="menu-sub">` +
+            opts
+              .map((o) => {
+                const on = f?.values?.includes(o);
+                const sw =
+                  colId === 'status' ? `<span class="swatch" style="background:${statusColor[o]}"></span>` : '';
+                return `<label class="checkline"><input type="checkbox" data-v="${o}" ${on ? 'checked' : ''}>${sw}${o}</label>`;
+              })
+              .join('') +
+            `</div>`;
+          html += applyRow(colId, `setFilter('${colId}',{kind:'set',values:checkedVals()})`);
+        } else {
+          html += `<div class="menu-sub"><input type="text" id="fq" placeholder="contains…" value="${f?.q ?? ''}"></div>`;
+          html += applyRow(colId, `setFilter('${colId}',{kind:'text',q:val('fq')})`);
+        }
+        // remove column
+        if (!c.always) {
+          html += `<div class="menu-sep"></div><div class="menu-item" style="color:var(--blocked)" onclick="removeCol('${colId}')">🗑 Remove column</div>`;
+        }
+        showPopover('colMenu', html, btn);
+      };
+      function applyRow(colId, apply) {
+        const clear = state.filters[colId]
+          ? `<button class="btn" onclick="clearFilter('${colId}')">Clear</button>`
+          : '';
+        return `<div class="apply-row">${clear}<button class="btn primary" onclick="${apply}">Apply</button></div>`;
+      }
+      window.numOrNull = (id) => (el(id).value === '' ? null : +el(id).value);
+      window.val = (id) => el(id).value;
+      window.checkedVals = () =>
+        [...el('colMenu').querySelectorAll('input[type=checkbox]:checked')].map((c) => c.dataset.v);
+      window.setSort = (c, d) => {
+        state.sort = { col: c, dir: d };
+        closeAll();
+        render();
+      };
+      window.setAgg = (c, a) => {
+        state.aggr[c] = a;
+        render();
+        openColMenuRefresh(c);
+      };
+      window.setFilter = (c, f) => {
+        state.filters[c] = f;
+        closeAll();
+        render();
+      };
+      window.clearFilter = (c) => {
+        delete state.filters[c];
+        closeAll();
+        render();
+      };
+      window.removeCol = (c) => {
+        state.columns = state.columns.filter((x) => x !== c);
+        closeAll();
+        render();
+      };
+      window.refreshMenu = (c) => render();
+      function openColMenuRefresh(colId) {
+        const btn = el('tbl').tHead.querySelector(`th[data-col="${colId}"] .col-menu-btn`);
+        if (btn) openColMenu(colId, btn);
+      }
+
+      // ---------- add column ----------
+      el('addColBtn').addEventListener('click', (e) => {
+        const groups = {};
+        CATALOG.filter((c) => !state.columns.includes(c.id)).forEach((c) => (groups[c.group] ??= []).push(c));
+        let html = `<input class="col-search" placeholder="Search fields & computed values…" oninput="filterAdd(this.value)">`;
+        for (const [g, cols] of Object.entries(groups)) {
+          html += `<div class="col-group-label">${g}</div>`;
+          html += cols
+            .map(
+              (c) =>
+                `<div class="menu-item add-item" data-name="${c.name.toLowerCase()}" onclick="addCol('${c.id}')"><span class="check"></span>${c.name}<span class="agg-tag" style="margin-left:auto">${c.computed ? 'computed' : c.type}</span></div>`,
+            )
+            .join('');
+        }
+        showPopover('addMenu', html, e.currentTarget);
+      });
+      window.filterAdd = (q) => {
+        q = q.toLowerCase();
+        el('addMenu')
+          .querySelectorAll('.add-item')
+          .forEach((i) => (i.style.display = i.dataset.name.includes(q) ? '' : 'none'));
+      };
+      window.addCol = (id) => {
+        state.columns.push(id);
+        closeAll();
+        render();
+      };
+
+      function showPopover(id, html, anchor) {
+        closeAll();
+        const p = el(id);
+        p.innerHTML = html;
+        p.classList.add('open');
+        backdrop.style.display = 'block';
+        const r = anchor.getBoundingClientRect();
+        let left = r.left + window.scrollX;
+        const top = r.bottom + window.scrollY + 4;
+        p.style.top = top + 'px';
+        // keep within viewport
+        const pw = p.offsetWidth;
+        if (left + pw > window.innerWidth - 12) left = window.innerWidth - pw - 12;
+        p.style.left = Math.max(12, left) + 'px';
+      }
+
+      // ---------- filters bar ----------
+      function renderFilters() {
+        const entries = Object.entries(state.filters);
+        if (!entries.length) {
+          el('filtersBar').innerHTML = '<span class="empty">No filters. Open a column\'s ⋯ menu to filter.</span>';
+          return;
+        }
+        el('filtersBar').innerHTML = entries
+          .map(([colId, f]) => {
+            let desc = '';
+            if (f.kind === 'text') desc = `contains “${f.q}”`;
+            if (f.kind === 'range') desc = `${f.min ?? '−∞'} … ${f.max ?? '∞'}`;
+            if (f.kind === 'set') desc = f.values.join(', ');
+            return `<span class="fchip"><b>${byId[colId].name}</b> ${desc}<span class="x" onclick="clearFilter('${colId}')">×</span></span>`;
+          })
+          .join('');
+      }
+
+      function renderControls() {
+        const twoD = is2D();
+        // second dimension is always "across →" (columns) in a 2D cross-tab; swap flips them
+        el('swapDims').style.display = twoD ? '' : 'none';
+        el('grp1Label').innerHTML = 'Group by <span class="dir">↓</span>';
+        el('grp2Label').innerHTML = twoD ? 'across <span class="dir">→</span>' : 'then';
+        // Fields (measure axis) toggle only when two dimensions are grouped
+        el('layoutCtrl').style.display = twoD ? '' : 'none';
+        [...el('layoutSeg').children].forEach((b) => b.classList.toggle('active', b.dataset.layout === state.layout));
+        // Expand/collapse-all only for the 1D grouped (drill-in) view
+        const oneD = state.groupBy && !twoD;
+        el('groupToggleCtrl').style.display = oneD ? '' : 'none';
+        if (oneD) {
+          const all = state.expandedGroups.size >= allGroupKeys().length;
+          el('groupToggle').textContent = all ? 'Collapse all' : 'Expand all';
+        }
+      }
+
+      function render() {
+        renderControls();
+        renderHead();
+        renderBody();
+        renderFilters();
+      }
+      render();
+    </script>
+  </body>
+</html>

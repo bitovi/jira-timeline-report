@@ -6,6 +6,10 @@ import { isoToLocalDate } from '../../../utils/date/local.js';
 
 import { allStatusesSorted } from '../../../jira/normalized/normalize.ts';
 import { bitoviTrainingFields } from '../../../examples/bitovi-training.js';
+import { requiredFieldsFor } from '../../../react/reports/TableReport/model/builtinFieldRegistry.ts';
+import { deriveFieldMaps } from '../../../jira-oidc-helpers/fields.ts';
+import { CORE_FIELDS } from '../../../stateful-data/jira-data-requests.js';
+import { sameRequestedFields } from './requested-fields.ts';
 
 import {
   rawIssuesRequestData,
@@ -109,6 +113,22 @@ export class RouteData extends ObservableObject {
         } else {
           return bitoviTrainingFields();
         }
+      },
+      enumerable: false,
+    },
+    // Resolved Jira field name<->id maps (from `jiraFieldsPromise`). Used only to canonicalize the
+    // requested-field comparison in `allFieldsToRequest` (spec/012 column-source-registry.md §6);
+    // stays `undefined` until the field list loads, in which case the comparison falls back to a
+    // plain id-space diff.
+    fieldMaps: {
+      value({ resolve, listenTo }) {
+        const update = (fields) => {
+          if (fields) resolve(deriveFieldMaps(fields));
+        };
+        listenTo('jiraFieldsPromise', ({ value }) => {
+          Promise.resolve(value).then(update);
+        });
+        Promise.resolve(this.jiraFieldsPromise).then(update);
       },
       enumerable: false,
     },
@@ -372,16 +392,65 @@ export class RouteData extends ObservableObject {
         },
       },
 
-    // Computed property that combines fieldsToRequest and fields from URL parameters
-    get allFieldsToRequest() {
-      const baseFields = this.fieldsToRequest;
-      const urlFields = this.fields;
-      // Combine and deduplicate fields
-      if (baseFields && urlFields) {
-        return [...new Set([...baseFields, ...urlFields])];
-      } else {
-        return undefined;
-      }
+    // Jira field identifiers implied by the Table report's shown columns (spec/012 issues-plan #2,
+    // column-source-registry.md). Each `tableColumns` entry is `{ sourceId }`; `requiredFieldsFor`
+    // (the pure built-in registry) maps it to the Jira field **ids** that column needs LOADED:
+    // `field:<id>` -> that id; `builtin:*`/`rollup:*` -> the facet's declared `requires` (often none,
+    // e.g. Project Key derives from the issue key so it loads nothing); identity/estimation -> none.
+    // Reading `this.tableColumns` here makes column changes auto-refetch, so `tableColumns` stays the
+    // single source of truth (no parallel `fields` write, removals prune, derived columns are free).
+    get tableColumnFields() {
+      const columns = this.tableColumns || [];
+      return columns
+        .map((entry) => entry && entry.sourceId)
+        .filter((sourceId) => typeof sourceId === 'string')
+        .flatMap((sourceId) => requiredFieldsFor(sourceId));
+    },
+
+    // Computed property that combines the base fields, the URL `fields` param (legacy Grouper
+    // "Additional Fields"), and the Table report's shown-column fields.
+    //
+    // Only emits when the requested field set REALLY changes, so a full issue refetch is avoided
+    // when a column change doesn't alter what must be loaded. Two guards:
+    //   1. `diff.list`-style: a new (content-identical) array — e.g. `tableColumns` re-parsed on an
+    //      unrelated URL change — doesn't re-emit.
+    //   2. canonical id set incl. `CORE_FIELDS`: adding/removing a column whose field is already
+    //      always-loaded (Status, Parent, Labels, …) is a no-op. Names and ids are collapsed to one
+    //      id space via `fieldMaps`, so `field:status` (id) matches the core `Status` (name). Until
+    //      the maps load, this falls back to a plain id-space comparison.
+    // The resolved VALUE stays the raw union (unchanged request payload) — `getRawIssues` still adds
+    // `CORE_FIELDS` — we only gate WHEN it emits.
+    allFieldsToRequest: {
+      value({ resolve, listenTo }) {
+        let current;
+        let resolved = false;
+        const recompute = () => {
+          const baseFields = this.fieldsToRequest;
+          const urlFields = this.fields;
+          const next =
+            baseFields && urlFields
+              ? [...new Set([...baseFields, ...urlFields, ...this.tableColumnFields])]
+              : undefined;
+          let changed;
+          if (!resolved || (next === undefined) !== (current === undefined)) {
+            changed = true;
+          } else if (next && current) {
+            changed = !sameRequestedFields(next, current, CORE_FIELDS, this.fieldMaps);
+          } else {
+            changed = false;
+          }
+          if (changed) {
+            current = next;
+            resolved = true;
+            resolve(current);
+          }
+        };
+        listenTo('fieldsToRequest', recompute);
+        listenTo('fields', recompute);
+        listenTo('tableColumnFields', recompute);
+        listenTo('fieldMaps', recompute);
+        recompute();
+      },
     },
 
     // This can get set, but needs some base loaded normalize option
@@ -728,6 +797,107 @@ export class RouteData extends ObservableObject {
       return this.selectedIssueType && toSelectedParts(this.selectedIssueType).secondary;
     },
 
+    // The "To" (bottom) cap of the From→To hierarchy range. `selectedIssueType`/`primaryIssueType`
+    // is the "From" (top, required, self-healing) level; this is the optional bottom cap.
+    //
+    // Unlike `selectedIssueType`, this is TRULY OPTIONAL: when absent (or invalid) it resolves to
+    // the deepest level present in the results ("full hierarchy" = today's behavior) but does NOT
+    // write itself back to the URL. Only an explicit user selection persists. That keeps clearing
+    // the cap ("Show full hierarchy") from re-adding the param, while `selectedIssueType` keeps its
+    // required-level self-heal.
+    toIssueType: {
+      enumerable: true,
+      value({ resolve, lastSet, listenTo }) {
+        let reportDataParam;
+        let urlParam;
+        let resolveCurrentValue;
+
+        listenToReportDataChanged(this, 'toIssueType', listenTo, (param) => {
+          reportDataParam = param;
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        listenToUrlChange('toIssueType', listenTo, (param) => {
+          urlParam = param;
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        listenTo('issueHierarchy', () => {
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        // Re-clamp when the "From" level changes (a To above the new From is invalid).
+        listenTo('selectedIssueType', () => {
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
+        function getParamValue() {
+          if (urlParam != null) {
+            return urlParam;
+          } else if (reportDataParam != null) {
+            return reportDataParam;
+          } else {
+            return '';
+          }
+        }
+
+        // Persist the cap the same way a manual selection does: omit the param when it matches the
+        // saved report's value (keeps the URL clean), otherwise write it explicitly.
+        const writeUrlParam = (value) => {
+          const param = this.reportData && paramValue(this.reportData, 'toIssueType');
+          updateUrlParam('toIssueType', value || '', param || '');
+        };
+
+        resolveCurrentValue = () => {
+          // Wait for derivedIssues before defaulting/validating — same reasoning as
+          // selectedIssueType: use the real results-based hierarchy, not Jira metadata.
+          if (!(this.derivedIssues && this.derivedIssues.length)) {
+            return;
+          }
+
+          const hierarchy = this.issueHierarchy;
+          if (!(hierarchy && hierarchy.length)) {
+            resolve(undefined);
+            return;
+          }
+
+          // issueHierarchy is ordered top→bottom, so the last entry is the deepest level =
+          // "full hierarchy" (the default, absent-cap behavior).
+          const deepest = hierarchy[hierarchy.length - 1].name;
+
+          // The cap is relative to "From". When From is Release (or not yet resolved), the cap
+          // does not apply — descend fully. (Releases are out of scope for this control.)
+          const fromType = this.primaryIssueType;
+          const fromIndex = hierarchy.findIndex((level) => level.name === fromType);
+          if (fromType === 'Release' || fromIndex === -1) {
+            resolve(deepest);
+            return;
+          }
+
+          const curParamValue = getParamValue();
+          if (curParamValue) {
+            const toIndex = hierarchy.findIndex((level) => level.name === curParamValue);
+            // Valid only when present AND at or below "From" (clamp: To is never above From).
+            if (toIndex !== -1 && toIndex >= fromIndex) {
+              resolve(curParamValue);
+              return;
+            }
+          }
+
+          // Absent or invalid ⇒ deepest (full hierarchy). Deliberately no writeUrlParam here, so
+          // the param does not re-add itself when cleared.
+          resolve(deepest);
+        };
+
+        // Only an explicit user selection persists to the URL.
+        listenTo(lastSet, (value) => {
+          writeUrlParam(value);
+        });
+
+        resolveCurrentValue();
+      },
+    },
+
     primaryReportBreakdown: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
       'primaryReportBreakdown',
       false,
@@ -826,6 +996,76 @@ export class RouteData extends ObservableObject {
         },
       },
     }),
+
+    // Table report (`table2`, spec/012-table-and-grouper Phase 5) routing properties. These are new,
+    // namespaced with a `table` prefix so they never collide with the legacy Grouper keys
+    // (`fields`/`rowGroup`/`colGroup`/`aggregators`) — no legacy migration (plan Q2). Ephemeral UI
+    // toggles (expand/collapse of tree rows and groups) are NOT persisted; they stay local React state.
+    //
+    // `tableColumns` is the ordered shown-column list. Each entry is `{ sourceId, aggregation?, width? }`
+    // — the per-column aggregation override folds into the entry (no separate map). Default = the
+    // combined "Icon & Summary" tree column.
+    tableColumns: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      'tableColumns',
+      [{ sourceId: 'identity:treeSummary' }],
+      Array,
+      JSON,
+    ),
+    // Active column sort. Empty `tableSortColumn` means no sort (SortState === null). Row ordering is
+    // a property of the tree column's sort: `tableSortDir === 'tree'` on a tree-capable column nests
+    // the rows (no separate row-ordering key). Default = the tree column in Hierarchy mode.
+    tableSortColumn: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableSortColumn', 'identity:treeSummary', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    tableSortDir: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableSortDir', 'tree', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    // Per-column filter state — a `columnId → FilterValue` map (JSON object).
+    tableFilters: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableFilters', {}, Object, JSON),
+    // 1D/2D grouping column ids. Empty string means ungrouped / no column dimension (null).
+    tableGroupBy: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableGroupBy', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    tableGroupByCol: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableGroupByCol', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    // Date-bucket granularity ('day' | 'week' | 'month' | 'quarter' | 'year') for the corresponding
+    // `tableGroupBy`/`tableGroupByCol` column, when that column is a date/datetime field. Empty
+    // string means "not set" — the report defaults an unset granularity to 'day' for date columns
+    // (spec/012-table-and-grouper/date-bucket-grouping.md) so old saved links never regress to
+    // raw-timestamp grouping. Ignored entirely for non-date group columns.
+    tableGroupByGranularity: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableGroupByGranularity', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    tableGroupByColGranularity: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableGroupByColGranularity', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    // Cross-tab fields axis: 'rows' (each measure a sub-row) | 'cols' (measures as sub-columns).
+    tableFieldAxis: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableFieldAxis', 'rows', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    // Cross-tab totals visibility — independent toggles, both default off (totals used to always
+    // show; now opt-in). Row totals = the right-edge "Total" column (sum across each row); column
+    // totals = the bottom "Total" row (sum down each column).
+    tableShowRowTotals: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      'tableShowRowTotals',
+      false,
+      Boolean,
+      booleanParsing,
+    ),
+    tableShowColTotals: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      'tableShowColTotals',
+      false,
+      Boolean,
+      booleanParsing,
+    ),
 
     // Scatter Plot (`due` report) — due-date range filter. Empty string means unbounded on
     // that side. Namespaced `scatter*` because the range is scatter-only for now (see

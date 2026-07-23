@@ -18,6 +18,8 @@ public/atlassian-connect.json
 /blob-report/
 /dist/
 .playwright-mcp/
+/temp/
+foo.js
 *storybook.log
 storybook-static
 .temp/
