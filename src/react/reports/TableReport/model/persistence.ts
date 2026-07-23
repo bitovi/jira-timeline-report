@@ -61,6 +61,6 @@ export function buildColumnEntries(
 /** Compose the internal {@link SortState} from the two persisted scalars ('' column ⇒ no sort). */
 export function toSortState(sortColumn: string, sortDir: string): SortState {
   if (!sortColumn) return null;
-  const dir: SortMode = sortDir === 'desc' ? 'desc' : sortDir === 'tree' ? 'tree' : 'asc';
+  const dir: SortMode = sortDir === 'desc' ? 'desc' : sortDir === 'tree' ? 'tree' : sortDir === 'rank' ? 'rank' : 'asc';
   return { columnId: sortColumn, dir };
 }

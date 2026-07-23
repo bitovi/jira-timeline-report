@@ -11,11 +11,18 @@
 import { createElement } from 'react';
 
 import { defaultAggregationForType } from './aggregations';
-import { getFieldTypeEntry, issueKeyColumn, issueTypeColumn, summaryColumn, treeSummaryColumn } from './fieldTypeRegistry';
+import {
+  getFieldTypeEntry,
+  issueKeyColumn,
+  issueTypeColumn,
+  summaryColumn,
+  treeSummaryColumn,
+} from './fieldTypeRegistry';
 import { resolveNormalizedFieldSource } from './normalizedFieldSources';
 import { BUILTIN_CONCEPTS, CLAIMED_FIELD_IDS, REPORT_FIELD_FACETS } from './builtinFieldRegistry';
 import { iconRender, labelsRender, statusRender } from './normalizedRenderers';
 import { compareToLast } from './diffRender';
+import { computePercentComplete } from '../../GanttReport/GanttGrid/helpers/percentComplete';
 
 import type { ColumnDefinition, ColumnGroup, FilterDescriptor, RenderContext, TableIssue } from './columns';
 import type { ReactNode } from 'react';
@@ -57,15 +64,12 @@ function buildFieldColumn(field: JiraField): ColumnDefinition {
   // fallback when the normalized value is nullish) reads the raw Jira `issue.fields` map by name.
   const normalized = resolveNormalizedFieldSource(field);
   const rawGetValue = (issue: TableIssue) => issue.fields?.[field.name];
-  const getValue = normalized
-    ? (issue: TableIssue) => normalized.getValue(issue) ?? rawGetValue(issue)
-    : rawGetValue;
+  const getValue = normalized ? (issue: TableIssue) => normalized.getValue(issue) ?? rawGetValue(issue) : rawGetValue;
 
   // The normalized source may know a more specific type than the raw schema (e.g. a custom Team
   // field typed as `string` in Jira but sourced from a normalized object) — let it override.
   const filter = normalized?.filter ?? entry.filter;
-  const defaultAggregate =
-    normalized?.defaultAggregate ?? defaultAggregationForType(type, items);
+  const defaultAggregate = normalized?.defaultAggregate ?? defaultAggregationForType(type, items);
 
   return {
     id: `field:${field.key}`,
@@ -106,6 +110,41 @@ function rolledUpDaysValue(issue: TableIssue): number | undefined {
   return rollup?.totalWorkingDays || undefined;
 }
 
+/** Percent complete via the shared {@link computePercentComplete} (completed / total working days),
+ * guarding the loose {@link TableIssue} shape: `null` when there's no rollup / no work to divide by. */
+function percentCompleteValue(issue: TableIssue): number | null {
+  const rollup = issue.completionRollup as { totalWorkingDays?: number } | undefined;
+  if (!rollup?.totalWorkingDays) return null;
+  return computePercentComplete(issue as unknown as Parameters<typeof computePercentComplete>[0]);
+}
+
+/**
+ * Percent Complete — `NN%` (or `—`), clickable to open the percent-complete breakdown modal when the
+ * report supplies `onPercentBreakdown` (parity with the Gantt chart's clickable cell). Lives in the
+ * Report Fields group alongside the estimation/rollup columns; aggregates as an average.
+ */
+function buildPercentCompleteColumn(): ColumnDefinition<number | null> {
+  return {
+    id: 'report:percentComplete',
+    label: 'Percent Complete',
+    group: 'Report Fields',
+    source: { kind: 'computed', computedId: 'percentComplete' },
+    getValue: percentCompleteValue,
+    render: (value, ctx) => {
+      const text = value == null ? '—' : `${value}%`;
+      if (ctx?.issue && ctx.onPercentBreakdown) {
+        const onClick = () => ctx.onPercentBreakdown!(ctx.issue);
+        return createElement('span', { className: 'cursor-pointer', role: 'button', onClick }, text);
+      }
+      return text;
+    },
+    compare: (a, b) => (a ?? 0) - (b ?? 0),
+    filter: { kind: 'number' },
+    aggregate: 'avg',
+    defaultAggregate: 'avg',
+  };
+}
+
 function buildEstimationColumn(
   id: string,
   label: string,
@@ -115,7 +154,7 @@ function buildEstimationColumn(
   return {
     id: `estimation:${id}`,
     label,
-    group: 'Estimation',
+    group: 'Report Fields',
     source: { kind: 'computed', computedId: id },
     getValue,
     // Parity with the Estimation Table: render the "last ➡ current" diff (design §1/§4). The diff is
@@ -185,12 +224,7 @@ function buildBuiltinColumn(facet: BuiltinFacet, group: ColumnGroup, nominalFiel
  * (unclaimed) Jira field, and the Estimation parity columns.
  */
 export function buildColumnCatalog(fields: IssueFields): ColumnDefinition[] {
-  const identity: ColumnDefinition<any>[] = [
-    treeSummaryColumn(),
-    issueKeyColumn(),
-    summaryColumn(),
-    issueTypeColumn(),
-  ];
+  const identity: ColumnDefinition<any>[] = [treeSummaryColumn(), issueKeyColumn(), summaryColumn(), issueTypeColumn()];
 
   // Loadable field ids (key + id, lowercased) — gates which built-in facets can be offered.
   const availableFieldIds = new Set<string>();
@@ -230,9 +264,10 @@ export function buildColumnCatalog(fields: IssueFields): ColumnDefinition[] {
     buildEstimationColumn('estimatedDays', 'Estimated Days', estimatedDaysValue, true),
     buildEstimationColumn('timedDays', 'Timed Days', timedDaysValue),
     buildEstimationColumn('rolledUpDays', 'Rolled Up Days', rolledUpDaysValue),
+    buildPercentCompleteColumn(),
   ];
 
-  return [...identity, ...builtin, ...reportFields, ...fieldColumns, ...estimation];
+  return [...identity, ...builtin, ...reportFields, ...estimation, ...fieldColumns];
 }
 
 /**

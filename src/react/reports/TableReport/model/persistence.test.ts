@@ -57,6 +57,8 @@ describe('TableReport persistence schema', () => {
     expect(toSortState('', 'asc')).toBeNull();
     expect(toSortState('identity:key', 'asc')).toEqual({ columnId: 'identity:key', dir: 'asc' });
     expect(toSortState('identity:key', 'desc')).toEqual({ columnId: 'identity:key', dir: 'desc' });
+    expect(toSortState('identity:key', 'tree')).toEqual({ columnId: 'identity:key', dir: 'tree' });
+    expect(toSortState('identity:key', 'rank')).toEqual({ columnId: 'identity:key', dir: 'rank' });
     // Unknown dir falls back to 'asc'.
     expect(toSortState('identity:key', 'weird')).toEqual({ columnId: 'identity:key', dir: 'asc' });
   });

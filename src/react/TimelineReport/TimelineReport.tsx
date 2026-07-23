@@ -167,7 +167,11 @@ export const TimelineReport: FC<TimelineReportProps> = ({
       tableFiltersObs: value.bind(routeData, 'tableFilters'),
       tableGroupByObs: value.bind(routeData, 'tableGroupBy'),
       tableGroupByColObs: value.bind(routeData, 'tableGroupByCol'),
+      tableGroupByGranularityObs: value.bind(routeData, 'tableGroupByGranularity'),
+      tableGroupByColGranularityObs: value.bind(routeData, 'tableGroupByColGranularity'),
       tableFieldAxisObs: value.bind(routeData, 'tableFieldAxis'),
+      tableShowRowTotalsObs: value.bind(routeData, 'tableShowRowTotals'),
+      tableShowColTotalsObs: value.bind(routeData, 'tableShowColTotals'),
     }),
     [vm],
   );

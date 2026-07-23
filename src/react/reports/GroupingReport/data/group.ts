@@ -39,6 +39,10 @@ export function createStableObjectKey(obj: any): string {
 /**
  * Creates a stable string key from the result of multiple groupByKey objects.
  * Supports groupByKey.value returning a value or an array of values (multi-group).
+ *
+ * An empty array (e.g. an issue with no labels) is normalized to a single `null` value rather than
+ * left as `[]`: the cartesian product of any zero-length factor is itself zero combinations, which
+ * would otherwise silently drop the item from every bucket instead of grouping it under "no value".
  */
 export function createGroupKeyFromGroupBys<Item>(
   item: Item,
@@ -49,7 +53,7 @@ export function createGroupKeyFromGroupBys<Item>(
   for (const groupBy of groupBys) {
     const value = groupBy.value(item);
     if (Array.isArray(value)) {
-      valueArrays.push(value);
+      valueArrays.push(value.length === 0 ? [null] : value);
     } else {
       valueArrays.push([value]);
     }

@@ -691,21 +691,21 @@ export class RouteData extends ObservableObject {
                 if (this.issueHierarchy.some((issue) => issue.name === typeToCheck)) {
                   resolve(curParamValue);
                 }
-                // The stored value (URL param or saved report) names a level that isn't present in
-                // the returned results. Resolve to the highest available level, but do NOT write it
-                // back: leaving the original (temporarily invalid) value in the URL preserves the
-                // user's intent so it re-applies if that level reappears (e.g. switching sources
-                // back), and avoids pinning an auto-picked default.
+                // The stored value (URL param or saved report) names a level that isn't
+                // present in the returned results. Default to the highest available level
+                // and persist it to the URL so the selection stays consistent on reload,
+                // share, and when the hierarchy changes (e.g. switching issue sources).
                 else {
                   const defaultType = this.issueHierarchy[0].name;
                   resolve(defaultType);
+                  writeUrlParam(defaultType);
                 }
               } else {
-                // No stored value — resolve to the highest level present in the results WITHOUT
-                // persisting. An absent param means "the whole hierarchy, whatever its current top
-                // is," so the selection tracks hierarchy changes instead of pinning a level.
+                // No stored value — default to the highest level present in the results
+                // and persist it to the URL.
                 const defaultType = this.issueHierarchy[0].name;
                 resolve(defaultType);
+                writeUrlParam(defaultType);
               }
             }
           } else {
@@ -1033,11 +1033,39 @@ export class RouteData extends ObservableObject {
       parse: (x) => '' + x,
       stringify: (x) => '' + x,
     }),
+    // Date-bucket granularity ('day' | 'week' | 'month' | 'quarter' | 'year') for the corresponding
+    // `tableGroupBy`/`tableGroupByCol` column, when that column is a date/datetime field. Empty
+    // string means "not set" — the report defaults an unset granularity to 'day' for date columns
+    // (spec/012-table-and-grouper/date-bucket-grouping.md) so old saved links never regress to
+    // raw-timestamp grouping. Ignored entirely for non-date group columns.
+    tableGroupByGranularity: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableGroupByGranularity', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
+    tableGroupByColGranularity: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableGroupByColGranularity', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
     // Cross-tab fields axis: 'rows' (each measure a sub-row) | 'cols' (measures as sub-columns).
     tableFieldAxis: saveJSONToUrlButAlsoLookAtReport_DataWrapper('tableFieldAxis', 'rows', String, {
       parse: (x) => '' + x,
       stringify: (x) => '' + x,
     }),
+    // Cross-tab totals visibility — independent toggles, both default off (totals used to always
+    // show; now opt-in). Row totals = the right-edge "Total" column (sum across each row); column
+    // totals = the bottom "Total" row (sum down each column).
+    tableShowRowTotals: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      'tableShowRowTotals',
+      false,
+      Boolean,
+      booleanParsing,
+    ),
+    tableShowColTotals: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      'tableShowColTotals',
+      false,
+      Boolean,
+      booleanParsing,
+    ),
 
     // Scatter Plot (`due` report) — due-date range filter. Empty string means unbounded on
     // that side. Namespaced `scatter*` because the range is scatter-only for now (see

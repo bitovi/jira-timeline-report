@@ -1,6 +1,14 @@
 import { describe, test, expect } from 'vitest';
 
-import { buildCrossTab, cellMembers, cellValue, getAxisValues, TOTAL_KEY } from './crosstab';
+import {
+  buildCrossTab,
+  cellMembers,
+  cellValue,
+  effectiveMeasures,
+  getAxisValues,
+  ISSUE_COUNT_MEASURE,
+  TOTAL_KEY,
+} from './crosstab';
 import { EMPTY_GROUP_LABEL } from './grouping';
 
 import type { ColumnDefinition, TableIssue } from './columns';
@@ -121,5 +129,36 @@ describe('buildCrossTab with array-valued axes (cartesian, no double-counted tot
   test('the grand total counts each issue exactly once', () => {
     expect(cellMembers(ct, TOTAL_KEY, TOTAL_KEY).map((m) => m.key)).toEqual(['A-1', 'A-2']);
     expect(cellValue(ct, TOTAL_KEY, TOTAL_KEY, pointsCol)).toBe(6);
+  });
+});
+
+describe('effectiveMeasures fallback (no real measure columns)', () => {
+  const summaryCol = col('summary', { isIdentity: true, defaultAggregate: 'distinct' });
+
+  test('returns the caller measures unchanged when at least one is present', () => {
+    expect(effectiveMeasures([pointsCol], [summaryCol])).toEqual([pointsCol]);
+  });
+
+  test('falls back to the shown identity columns when there are no real measures', () => {
+    expect(effectiveMeasures([], [summaryCol])).toEqual([summaryCol]);
+  });
+
+  test('falls back to the synthetic Issue Count measure only when there are no columns at all', () => {
+    expect(effectiveMeasures([], [])).toEqual([ISSUE_COUNT_MEASURE]);
+  });
+
+  test('an identity fallback measure lists the distinct values in each cell', () => {
+    const ct = buildCrossTab(issues, projectCol, statusCol);
+    // Cloud ∩ Done has A-1 + A-3 → their distinct keys listed (getValue reads the id-named prop).
+    const idCol = col('key', { isIdentity: true, defaultAggregate: 'distinct' });
+    expect(cellValue(ct, 'Cloud', 'Done', idCol)).toEqual(['A-1', 'A-3']);
+    // An empty cell still aggregates to null (rendered as the empty-cell placeholder).
+    expect(cellValue(ct, 'Mobile', 'To Do', idCol)).toBeNull();
+  });
+
+  test('the synthetic Issue Count measure aggregates each cell to its member count', () => {
+    const ct = buildCrossTab(issues, projectCol, statusCol);
+    expect(cellValue(ct, 'Cloud', 'Done', ISSUE_COUNT_MEASURE)).toBe(2);
+    expect(cellValue(ct, TOTAL_KEY, TOTAL_KEY, ISSUE_COUNT_MEASURE)).toBe(4);
   });
 });

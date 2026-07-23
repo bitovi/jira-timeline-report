@@ -10,22 +10,30 @@ const fields: IssueFields = [
   { name: 'Due date', key: 'duedate', schema: { type: 'date' }, id: 'duedate', custom: false },
   { name: 'Description', key: 'description', schema: { type: 'string' }, id: 'description', custom: false },
   // `Components` is an unclaimed array field (unlike `Labels`, which is now a curated Common facet).
-  { name: 'Components', key: 'components', schema: { type: 'array', items: 'string' }, id: 'components', custom: false },
+  {
+    name: 'Components',
+    key: 'components',
+    schema: { type: 'array', items: 'string' },
+    id: 'components',
+    custom: false,
+  },
   { name: 'Weird', key: 'weird', schema: { type: 'mystery' }, id: 'weird', custom: true },
 ];
 
 describe('buildColumnCatalog', () => {
   const catalog = buildColumnCatalog(fields);
 
-  test('produces identity + common + report-field + field + estimation columns', () => {
+  test('produces identity + common + report-field + field columns (estimation under Report Fields)', () => {
     const groups = new Set(catalog.map((c) => c.group));
-    expect(groups).toEqual(new Set(['Common', 'Identity', 'Report Fields', 'Fields', 'Estimation']));
+    expect(groups).toEqual(new Set(['Common', 'Identity', 'Report Fields', 'Fields']));
 
     const identity = catalog.filter((c) => c.group === 'Identity').map((c) => c.id);
     expect(identity).toEqual(['identity:treeSummary', 'identity:key', 'identity:summary', 'identity:issueType']);
 
-    const estimation = catalog.filter((c) => c.group === 'Estimation').map((c) => c.id);
+    // Estimation parity columns now live under the Report Fields group.
+    const estimation = catalog.filter((c) => c.id.startsWith('estimation:')).map((c) => c.id);
     expect(estimation).toEqual(['estimation:estimatedDays', 'estimation:timedDays', 'estimation:rolledUpDays']);
+    expect(catalog.filter((c) => c.id.startsWith('estimation:')).every((c) => c.group === 'Report Fields')).toBe(true);
 
     // Curated built-in facets live in the `Common` group. Project Key is always available;
     // Project Name needs a `project` field, absent here.
@@ -51,7 +59,8 @@ describe('buildColumnCatalog', () => {
       ]),
     );
 
-    // Report Fields group: canonical per-issue normalized values, always offered.
+    // Report Fields group: canonical per-issue normalized values (then the estimation parity
+    // columns), always offered.
     const reportFields = catalog.filter((c) => c.group === 'Report Fields').map((c) => c.id);
     expect(reportFields).toEqual([
       'report:startDate',
@@ -59,6 +68,10 @@ describe('buildColumnCatalog', () => {
       'report:storyPoints',
       'report:storyPointsMedian',
       'report:confidence',
+      'estimation:estimatedDays',
+      'estimation:timedDays',
+      'estimation:rolledUpDays',
+      'report:percentComplete',
     ]);
 
     // Report Fields sit between the Common facets and the generic field columns.
@@ -77,7 +90,12 @@ describe('buildColumnCatalog', () => {
     expect(points.filter).toEqual({ kind: 'number' });
     expect(points.defaultAggregate).toBe('sum');
     expect(points.aggregate).toBe('sum');
-    expect(points.source).toEqual({ kind: 'field', fieldKey: 'customfield_1', schemaType: 'number', schemaItems: undefined });
+    expect(points.source).toEqual({
+      kind: 'field',
+      fieldKey: 'customfield_1',
+      schemaType: 'number',
+      schemaItems: undefined,
+    });
 
     const due = byId.get('field:duedate')!;
     expect(due.filter).toEqual({ kind: 'date' });
@@ -128,6 +146,32 @@ describe('buildColumnCatalog', () => {
     // no issue context → falls back to rounding the precomputed value
     expect(estimated.render(4.6, {} as unknown as Parameters<typeof estimated.render>[1])).toBe('5');
     expect(estimated.render(undefined, {} as unknown as Parameters<typeof estimated.render>[1])).toBe('');
+  });
+
+  test('percent complete column computes NN% from completionRollup and is clickable', () => {
+    const percent = buildColumnCatalog(fields).find((c) => c.id === 'report:percentComplete')!;
+    expect(percent.group).toBe('Report Fields');
+    expect(percent.filter).toEqual({ kind: 'number' });
+    expect(percent.defaultAggregate).toBe('avg');
+
+    // getValue: completed / total working days, rounded; null when there's no work.
+    expect(percent.getValue({ completionRollup: { completedWorkingDays: 3, totalWorkingDays: 4 } })).toBe(75);
+    expect(percent.getValue({ completionRollup: { completedWorkingDays: 0, totalWorkingDays: 0 } })).toBeNull();
+    expect(percent.getValue({})).toBeNull();
+
+    // render: `NN%` / `—`, plain text when no callback is supplied.
+    const issue: TableIssue = { completionRollup: { completedWorkingDays: 3, totalWorkingDays: 4 } };
+    expect(percent.render(75, { issue })).toBe('75%');
+    expect(percent.render(null, { issue })).toBe('—');
+
+    // render: clickable element wired to onPercentBreakdown when supplied.
+    let clicked: TableIssue | null = null;
+    const rendered = percent.render(75, { issue, onPercentBreakdown: (i) => (clicked = i) }) as {
+      props: { role: string; onClick: () => void };
+    };
+    expect(rendered.props.role).toBe('button');
+    rendered.props.onClick();
+    expect(clicked).toBe(issue);
   });
 
   test('field columns prefer the normalized value, falling back to raw issue.fields (#3/#4)', () => {

@@ -5,7 +5,9 @@ import {
   applyFilters,
   applySort,
   applyView,
+  compareRank,
   cycleSort,
+  cycleTreeSort,
   isFilterActive,
   makeFilterPredicate,
   removeColumn,
@@ -170,6 +172,36 @@ describe('applySort', () => {
   test('null column is a no-op', () => {
     expect(applySort(issues, null, 'asc')).toBe(issues);
   });
+
+  test("rank sorts by the issue's own rank field, ignoring the column's compare", () => {
+    const ranked: TableIssue[] = [
+      { ...(issues[0] as any), rank: '0|c' },
+      { ...(issues[1] as any), rank: '0|a' },
+      { ...(issues[2] as any), rank: '0|b' },
+    ];
+    // Sorting by `nameCol` in 'rank' mode should ignore alphabetical name order entirely.
+    const sorted = applySort(ranked, nameCol, 'rank');
+    expect(sorted.map((i) => (i as any).rank)).toEqual(['0|a', '0|b', '0|c']);
+  });
+});
+
+describe('compareRank', () => {
+  test('orders by plain string comparison (not localeCompare)', () => {
+    const a = { rank: '0|b' } as TableIssue;
+    const b = { rank: '0|a' } as TableIssue;
+    expect(compareRank(a, b)).toBeGreaterThan(0);
+    expect(compareRank(b, a)).toBeLessThan(0);
+    expect(compareRank(a, a)).toBe(0);
+  });
+
+  test('nulls sort last', () => {
+    const withRank = { rank: '0|a' } as TableIssue;
+    const noRank = { rank: null } as TableIssue;
+    const missingRank = {} as TableIssue;
+    expect(compareRank(withRank, noRank)).toBeLessThan(0);
+    expect(compareRank(noRank, withRank)).toBeGreaterThan(0);
+    expect(compareRank(noRank, missingRank)).toBe(0);
+  });
 });
 
 describe('applyView', () => {
@@ -237,5 +269,23 @@ describe('cycleSort', () => {
 
   test('switching columns starts fresh at asc', () => {
     expect(cycleSort({ columnId: 'x', dir: 'desc' }, 'y')).toEqual({ columnId: 'y', dir: 'asc' });
+  });
+});
+
+describe('cycleTreeSort', () => {
+  test('tree → asc → desc → rank → tree on the same column', () => {
+    const tree = cycleTreeSort(null, 'x');
+    expect(tree).toEqual({ columnId: 'x', dir: 'tree' });
+    const asc = cycleTreeSort(tree, 'x');
+    expect(asc).toEqual({ columnId: 'x', dir: 'asc' });
+    const desc = cycleTreeSort(asc, 'x');
+    expect(desc).toEqual({ columnId: 'x', dir: 'desc' });
+    const rank = cycleTreeSort(desc, 'x');
+    expect(rank).toEqual({ columnId: 'x', dir: 'rank' });
+    expect(cycleTreeSort(rank, 'x')).toEqual({ columnId: 'x', dir: 'tree' });
+  });
+
+  test('switching columns starts fresh at tree (hierarchy)', () => {
+    expect(cycleTreeSort({ columnId: 'x', dir: 'rank' }, 'y')).toEqual({ columnId: 'y', dir: 'tree' });
   });
 });

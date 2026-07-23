@@ -13,6 +13,19 @@ import type { FilterKind } from './columns';
 
 export type AggregationId = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'range' | 'distinct';
 
+/**
+ * Aggregation ids that always reduce to a single number, regardless of the underlying column's
+ * type (e.g. `count` on a text column still yields a number). Used to right-align aggregated
+ * (group-header / cross-tab) cells per the numeric-column alignment convention — `range` (a date
+ * span string) and `distinct` (a string list) are deliberately excluded.
+ */
+export const NUMERIC_AGGREGATION_IDS: ReadonlySet<AggregationId> = new Set(['sum', 'avg', 'min', 'max', 'count']);
+
+/** Whether an aggregation id always produces a numeric result (see {@link NUMERIC_AGGREGATION_IDS}). */
+export function isNumericAggregation(id: AggregationId): boolean {
+  return NUMERIC_AGGREGATION_IDS.has(id);
+}
+
 export interface AggregationSpec {
   id: AggregationId;
   label: string;
@@ -76,9 +89,17 @@ const distinctReducer: AggregationReducer<unknown, string[], 'distinct', string[
   name: 'distinct',
   initial: () => [],
   update: (acc, item) => {
-    if (item == null) return acc;
-    const str = String(item);
-    return acc.includes(str) ? acc : [...acc, str];
+    // Array-valued columns (e.g. Labels) pass each issue's whole array as `item` — flatten it so we
+    // dedupe individual values instead of stringifying the array (which produced bugs like an issue
+    // with no labels stringifying to `''` and rendering as a stray comma: "QA, , UAT").
+    const values = Array.isArray(item) ? item : [item];
+    let next = acc;
+    for (const value of values) {
+      if (value == null || value === '') continue;
+      const str = String(value);
+      if (!next.includes(str)) next = [...next, str];
+    }
+    return next;
   },
 };
 

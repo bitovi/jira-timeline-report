@@ -32,6 +32,8 @@ const mockFields: IssueFields = [
   // Team isn't a raw field at all — both are sourced from the normalized issue.
   { name: 'Parent', key: 'parent', schema: { type: 'string' }, id: 'parent', custom: false },
   { name: 'Team', key: 'customfield_team', schema: { type: 'string' }, id: 'customfield_team', custom: true },
+  // Date-bucket grouping demo (spec/012-table-and-grouper/date-bucket-grouping.md).
+  { name: 'Due date', key: 'duedate', schema: { type: 'date' }, id: 'duedate', custom: false },
 ];
 
 /** Fresh QueryClient with the field list pre-seeded so the suspense query resolves without a network call. */
@@ -132,7 +134,7 @@ const flatIssues = Array.from({ length: 15 }, (_, i) => {
     STATUSES[i % 3],
     PRIORITIES[i % 3],
     [1, 2, 3, 5, 8][i % 5],
-    ([1, 2, 3, 5, 8][i % 5]) * 1.5,
+    [1, 2, 3, 5, 8][i % 5] * 1.5,
     `2026-0${(i % 6) + 1}-15`,
   );
 });
@@ -213,7 +215,11 @@ interface Args {
   filters: FilterState;
   groupBy: string;
   groupByCol: string;
+  groupByGranularity: string;
+  groupByColGranularity: string;
   fieldAxis: string;
+  showRowTotals: boolean;
+  showColTotals: boolean;
   /** Flat-mode derived issues. */
   derived: any[];
   /** Hierarchy roots + full set. */
@@ -236,7 +242,11 @@ const meta: Meta<Args> = {
       tableFiltersObs={makeObs(args.filters)}
       tableGroupByObs={makeObs(args.groupBy)}
       tableGroupByColObs={makeObs(args.groupByCol)}
+      tableGroupByGranularityObs={makeObs(args.groupByGranularity)}
+      tableGroupByColGranularityObs={makeObs(args.groupByColGranularity)}
       tableFieldAxisObs={makeObs(args.fieldAxis)}
+      tableShowRowTotalsObs={makeObs(args.showRowTotals)}
+      tableShowColTotalsObs={makeObs(args.showColTotals)}
     />
   ),
   args: {
@@ -246,7 +256,14 @@ const meta: Meta<Args> = {
     filters: {},
     groupBy: '',
     groupByCol: '',
+    groupByGranularity: '',
+    groupByColGranularity: '',
     fieldAxis: 'rows',
+    // Both default OFF app-wide (spec: totals are opt-in), but the cross-tab stories below turn them
+    // ON so they keep demonstrating the fuller cross-tab shape (Total column/row) they were built to
+    // show off.
+    showRowTotals: true,
+    showColTotals: true,
     derived: flatIssues,
     primary: hierarchyRoots,
     all: hierarchyAll,
@@ -303,6 +320,25 @@ export const GroupedByTeam: Story = {
   },
 };
 
+/**
+ * Date-bucket grouping (spec/012-table-and-grouper/date-bucket-grouping.md): grouped by Due Date at
+ * Quarter granularity, so issues bucket into calendar quarters ("2026-Q1", "2026-Q2", …) instead of
+ * one group per exact due-date timestamp.
+ */
+export const GroupedByDueDateQuarter: Story = {
+  args: {
+    groupBy: 'field:duedate',
+    groupByGranularity: 'quarter',
+    columns: [
+      { sourceId: 'identity:key' },
+      { sourceId: 'identity:summary' },
+      { sourceId: 'field:duedate' },
+      { sourceId: 'field:status' },
+      { sourceId: 'field:customfield_1' },
+    ],
+  },
+};
+
 /** Hierarchy: rolled-up tree with indent + expand/collapse carets, plus the Estimation columns. */
 export const Hierarchy: Story = {
   args: {
@@ -322,7 +358,7 @@ export const Hierarchy: Story = {
 /** 1D grouping: grouped by Status with collapsed group headers showing counts + summed Story Points. */
 export const Grouped1D: Story = {
   args: {
-    groupBy: 'field:status',
+    groupBy: 'builtin:status:name',
     columns: [
       { sourceId: 'identity:key' },
       { sourceId: 'identity:summary' },
@@ -336,13 +372,13 @@ export const Grouped1D: Story = {
 /** 2D cross-tab (Down rows): Status down the rows, Priority across the columns, Story Points aggregated per cell. */
 export const CrossTab2D: Story = {
   args: {
-    groupBy: 'field:status',
+    groupBy: 'builtin:status:name',
     groupByCol: 'field:priority',
     fieldAxis: 'rows',
     columns: [
       { sourceId: 'identity:key' },
       { sourceId: 'identity:summary' },
-      { sourceId: 'field:status' },
+      { sourceId: 'builtin:status:name' },
       { sourceId: 'field:priority' },
       { sourceId: 'field:customfield_1' },
     ],
@@ -354,6 +390,47 @@ export const CrossTab2DAcrossCols: Story = {
   args: {
     ...CrossTab2D.args,
     fieldAxis: 'cols',
+  },
+};
+
+/**
+ * 2D cross-tab (Hidden): only one measure (Story Points) is shown, so the "Field" column that would
+ * otherwise just repeat "Story Points [Sum]" on every row is dropped — that label moves up into the
+ * corner header instead.
+ */
+export const CrossTab2DHiddenField: Story = {
+  args: {
+    groupBy: 'builtin:status:name',
+    groupByCol: 'field:priority',
+    fieldAxis: 'hidden',
+    columns: [{ sourceId: 'builtin:status:name' }, { sourceId: 'field:priority' }, { sourceId: 'field:customfield_1' }],
+  },
+};
+
+/** 2D cross-tab with totals off (the app-wide default) — no "Total" column or row at all. */
+export const CrossTab2DTotalsOff: Story = {
+  args: {
+    ...CrossTab2D.args,
+    showRowTotals: false,
+    showColTotals: false,
+  },
+};
+
+/** 2D cross-tab with ONLY row totals on — the right-edge "Total" column, no bottom "Total" row. */
+export const CrossTab2DRowTotalsOnly: Story = {
+  args: {
+    ...CrossTab2D.args,
+    showRowTotals: true,
+    showColTotals: false,
+  },
+};
+
+/** 2D cross-tab with ONLY column totals on — the bottom "Total" row, no right-edge "Total" column. */
+export const CrossTab2DColTotalsOnly: Story = {
+  args: {
+    ...CrossTab2D.args,
+    showRowTotals: false,
+    showColTotals: true,
   },
 };
 

@@ -63,18 +63,47 @@ describe('groupIssues', () => {
     const b = groupIssues(issues, statusCol).map((g) => g.key);
     expect(a).toEqual(b);
   });
+
+  test('issues with an empty array group value land in the (empty) bucket instead of being dropped', () => {
+    const labelsCol = col('labels', { filter: { kind: 'select' }, defaultAggregate: 'distinct' });
+    const withNoLabels: TableIssue[] = [
+      { key: 'A-1', labels: ['bug'] },
+      { key: 'A-2', labels: [] },
+      { key: 'A-3', summary: 'no labels field at all' },
+    ];
+    const groups = groupIssues(withNoLabels, labelsCol);
+    expect(groups.map((g) => g.label)).toEqual(['bug', EMPTY_GROUP_LABEL]);
+    const empty = groups.find((g) => g.label === EMPTY_GROUP_LABEL)!;
+    expect(empty.members.map((m) => m.key)).toEqual(['A-2', 'A-3']);
+  });
+
+  test('a multi-value issue is fanned out into each of its groups with a correct per-group label', () => {
+    const labelsCol = col('labels', { filter: { kind: 'select' }, defaultAggregate: 'distinct' });
+    const multiLabelIssues: TableIssue[] = [
+      { key: 'A-1', labels: ['bug', 'urgent'] },
+      { key: 'A-2', labels: ['urgent'] },
+    ];
+    const groups = groupIssues(multiLabelIssues, labelsCol);
+    expect(groups.map((g) => g.label)).toEqual(['bug', 'urgent']);
+
+    const bug = groups.find((g) => g.label === 'bug')!;
+    expect(bug.members.map((m) => m.key)).toEqual(['A-1']);
+
+    const urgent = groups.find((g) => g.label === 'urgent')!;
+    expect(urgent.members.map((m) => m.key)).toEqual(['A-1', 'A-2']);
+  });
 });
 
 describe('selectMeasureColumns', () => {
-  test('excludes identity columns and the grouped column', () => {
+  test('excludes only the grouped column, keeping identity columns as measures', () => {
     const shown = [keyCol, summaryCol, statusCol, pointsCol, dueCol];
     const measures = selectMeasureColumns(shown, statusCol);
-    expect(measures.map((c) => c.id)).toEqual(['points', 'due']);
+    expect(measures.map((c) => c.id)).toEqual(['key', 'summary', 'points', 'due']);
   });
 
-  test('with no group column, only identity columns drop out', () => {
+  test('with no group column, nothing drops out', () => {
     const shown = [keyCol, summaryCol, pointsCol];
-    expect(selectMeasureColumns(shown, null).map((c) => c.id)).toEqual(['points']);
+    expect(selectMeasureColumns(shown, null).map((c) => c.id)).toEqual(['key', 'summary', 'points']);
   });
 });
 

@@ -2,7 +2,7 @@
  * "+ Add column" control for the Table report (spec/012-table-and-grouper, Phase 1).
  *
  * Opens a searchable catalog popover grouped by {@link ColumnGroup} (Common / Identity / Fields /
- * Estimation). Only columns not already shown appear; picking one appends it to the shown columns.
+ * Report Fields). Only columns not already shown appear; picking one appends it to the shown columns.
  */
 import React, { useMemo, useState } from 'react';
 import Popup from '@atlaskit/popup';
@@ -17,9 +17,9 @@ interface AddColumnButtonProps {
   onAdd: (columnId: string) => void;
 }
 
-// `Common` (curated built-in facets) sits at the top, then the identity columns, then the raw Jira
-// fields, then computed/estimation.
-const GROUP_ORDER: ColumnGroup[] = ['Common', 'Identity', 'Fields', 'Estimation', 'Computed'];
+// `Common` (curated built-in facets) sits at the top, then identity, then Report Fields (canonical
+// per-issue values plus the estimation parity columns), then the raw Jira fields, then computed.
+const GROUP_ORDER: ColumnGroup[] = ['Common', 'Identity', 'Report Fields', 'Fields', 'Computed'];
 
 export const AddColumnButton: React.FC<AddColumnButtonProps> = ({ catalog, shownColumnIds, onAdd }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +85,7 @@ export const AddColumnButton: React.FC<AddColumnButtonProps> = ({ catalog, shown
           {...triggerProps}
           type="button"
           data-testid="table-add-column"
-          className="text-sm rounded bg-neutral-201 hover:bg-neutral-301 px-2 py-1 leading-4 cursor-pointer"
+          className="inline-flex items-center h-8 text-sm rounded bg-neutral-201 hover:bg-neutral-301 px-2 leading-4 cursor-pointer"
           onClick={() => setIsOpen((open) => !open)}
         >
           + Add column

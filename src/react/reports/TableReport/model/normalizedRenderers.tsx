@@ -54,7 +54,7 @@ export function labelsRender(value: unknown): React.ReactNode {
   return (
     <span className="inline-flex flex-wrap gap-1">
       {labels.map((label, i) => (
-        <span key={i} className="rounded bg-neutral-200 px-1.5 py-0.5 text-xs text-neutral-800">
+        <span key={i} className="rounded-jirasm bg-neutral-40 px-1.5 py-0.5 text-xs font-normal text-neutral-801">
           {String(label)}
         </span>
       ))}

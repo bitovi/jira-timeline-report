@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { aggregateGroup } from '../../GroupingReport/data/aggregate';
-import { aggregations, defaultAggregationForType } from './aggregations';
+import { aggregations, defaultAggregationForType, isNumericAggregation } from './aggregations';
 
 import type { AggregationId } from './aggregations';
 
@@ -30,6 +30,16 @@ describe('aggregation reducers', () => {
     expect(run('max', [])).toBeNull();
   });
 
+  test('isNumericAggregation: sum/avg/min/max/count are numeric, range/distinct are not', () => {
+    expect(isNumericAggregation('sum')).toBe(true);
+    expect(isNumericAggregation('avg')).toBe(true);
+    expect(isNumericAggregation('min')).toBe(true);
+    expect(isNumericAggregation('max')).toBe(true);
+    expect(isNumericAggregation('count')).toBe(true);
+    expect(isNumericAggregation('range')).toBe(false);
+    expect(isNumericAggregation('distinct')).toBe(false);
+  });
+
   test('count counts every item', () => {
     expect(run('count', ['a', 'b', null, 3])).toBe(4);
   });
@@ -42,6 +52,14 @@ describe('aggregation reducers', () => {
   test('distinct collects distinct values in first-seen order', () => {
     expect(run('distinct', ['A', 'B', 'A', 'C', null, 'B'])).toEqual(['A', 'B', 'C']);
     expect(run('distinct', [])).toEqual([]);
+  });
+
+  test('distinct flattens array-valued items (e.g. per-issue Labels arrays) instead of stringifying the array', () => {
+    // Regression: an issue with no labels ([]) used to stringify to '' and join into a stray comma
+    // like "QA, , UAT". Each issue's labels array must be flattened and empties skipped.
+    expect(run('distinct', [['QA'], [], ['UAT']])).toEqual(['QA', 'UAT']);
+    expect(run('distinct', [['AITEST', ''], []])).toEqual(['AITEST']);
+    expect(run('distinct', [[], [], []])).toEqual([]);
   });
 });
 

@@ -34,9 +34,30 @@ export type SortDir = 'asc' | 'desc';
 /**
  * A column's sort mode. `asc`/`desc` are the ordinary type-aware sorts; `tree` is only valid on a
  * tree-capable identity column and means "nest the rows into the reporting hierarchy" (row ordering
- * is a property of the column's sort — design/tree-column-brainstorm §4).
+ * is a property of the column's sort — design/tree-column-brainstorm §4). `rank` is also only valid
+ * on a tree-capable identity column: it orders the flat table by the issue's own Jira Rank (backlog
+ * order) rather than by the column's own value.
  */
-export type SortMode = SortDir | 'tree';
+export type SortMode = SortDir | 'tree' | 'rank';
+
+/** Read an issue's Jira Rank (LexoRank string), or `null` when absent. */
+function getIssueRank(issue: TableIssue): string | null {
+  return (issue as { rank?: string | null }).rank ?? null;
+}
+
+/**
+ * Compare two issues by their own Jira Rank field (nulls sort last). Plain string comparison —
+ * NOT `localeCompare` — since LexoRank strings must sort byte-wise to preserve Jira's backlog
+ * order (locale collation can misorder its punctuation/case-sensitive bucket characters).
+ */
+export function compareRank(a: TableIssue, b: TableIssue): number {
+  const rankA = getIssueRank(a);
+  const rankB = getIssueRank(b);
+  if (rankA == null && rankB == null) return 0;
+  if (rankA == null) return 1;
+  if (rankB == null) return -1;
+  return rankA < rankB ? -1 : rankA > rankB ? 1 : 0;
+}
 
 /** Coerce a date-ish value (Date | epoch number | parseable string) to epoch ms, or `null`. */
 function toTime(value: unknown): number | null {
@@ -129,11 +150,7 @@ export function makeFilterPredicate(
  * Apply every active filter (ANDed together) to the issue set. Columns are resolved by id from the
  * provided (active) column list; a filter whose column isn't currently shown is ignored.
  */
-export function applyFilters(
-  issues: TableIssue[],
-  columns: ColumnDefinition[],
-  filters: FilterState,
-): TableIssue[] {
+export function applyFilters(issues: TableIssue[], columns: ColumnDefinition[], filters: FilterState): TableIssue[] {
   const byId = new Map(columns.map((c) => [c.id, c]));
   const predicates: Array<(issue: TableIssue) => boolean> = [];
 
@@ -151,6 +168,8 @@ export function applyFilters(
 /**
  * Sort issues by a column using its type-aware `compare`. Returns a new array (never mutates the
  * input). `desc` reverses the comparison. A `null` column is a no-op (returns the input unchanged).
+ * `rank` ignores the column's own `compare` entirely and orders by each issue's Jira Rank instead
+ * (the column is only used to confirm a sortable column is active).
  */
 export function applySort(
   issues: TableIssue[],
@@ -159,6 +178,7 @@ export function applySort(
 ): TableIssue[] {
   // `tree` ordering is handled by the hierarchy render path, not here: leave the input untouched.
   if (!column || dir === 'tree') return issues;
+  if (dir === 'rank') return [...issues].sort(compareRank);
   const sign = dir === 'desc' ? -1 : 1;
   return [...issues].sort((a, b) => sign * column.compare(column.getValue(a), column.getValue(b)));
 }
@@ -215,14 +235,15 @@ export function cycleSort(current: SortState, columnId: string): SortState {
 }
 
 /**
- * Cycle a TREE-CAPABLE column's sort on a header click: hierarchy → asc → desc → hierarchy. A
- * tree-capable column always holds one of these three modes (never "unsorted"); clicking a different
- * tree-capable column starts it in `tree` (hierarchy) mode.
+ * Cycle a TREE-CAPABLE column's sort on a header click: hierarchy → asc → desc → rank → hierarchy.
+ * A tree-capable column always holds one of these four modes (never "unsorted"); clicking a
+ * different tree-capable column starts it in `tree` (hierarchy) mode.
  */
 export function cycleTreeSort(current: SortState, columnId: string): SortState {
   if (!current || current.columnId !== columnId) return { columnId, dir: 'tree' };
   if (current.dir === 'tree') return { columnId, dir: 'asc' };
   if (current.dir === 'asc') return { columnId, dir: 'desc' };
+  if (current.dir === 'desc') return { columnId, dir: 'rank' };
   return { columnId, dir: 'tree' };
 }
 

@@ -9,7 +9,8 @@
  *    the shared {@link groupByKeys} / {@link createStableObjectKey} engine, and returns ordered
  *    `{ key, label, members }` groups.
  *  - {@link selectMeasureColumns} derives the measures automatically: the shown columns MINUS the
- *    identity columns MINUS the grouped column (there is no separate measures picker — design §7).
+ *    grouped column(s) — including identity columns, which are eligible measures too (there is no
+ *    separate measures picker — design §7).
  *  - {@link computeMeasureValue} aggregates one measure column over a group's members using that
  *    column's effective aggregation (per-column override → `column.aggregate` → `defaultAggregate`).
  *
@@ -57,6 +58,12 @@ export function formatGroupLabel(value: unknown): string {
  * `groupColumn.getValue` (via {@link createStableObjectKey} for object values). Groups are returned
  * ordered by label ascending (the {@link EMPTY_GROUP_LABEL} bucket sorts last), which
  * {@link sortGroups} can then re-order.
+ *
+ * Array-valued columns (e.g. Labels) fan out: an issue with multiple values lands in every
+ * corresponding group, and an issue with none lands in the {@link EMPTY_GROUP_LABEL} bucket. Each
+ * group's label is derived from its own bucket key (decoded from the {@link createStableObjectKey}
+ * JSON) rather than re-reading a member's raw value, so a group only ever shows its own value (e.g.
+ * "bug"), never another member's full multi-value array (e.g. "bug, urgent").
  */
 export function groupIssues(issues: TableIssue[], groupColumn: ColumnDefinition): TableGroup[] {
   const buckets = groupByKeys(issues, [
@@ -65,7 +72,8 @@ export function groupIssues(issues: TableIssue[], groupColumn: ColumnDefinition)
 
   const groups: TableGroup[] = [];
   for (const [key, members] of buckets) {
-    groups.push({ key, label: formatGroupLabel(groupColumn.getValue(members[0])), members });
+    const groupValue = (JSON.parse(key) as Record<string, unknown>)[groupColumn.id];
+    groups.push({ key, label: formatGroupLabel(groupValue), members });
   }
 
   return orderByLabel(groups);
@@ -83,17 +91,20 @@ function orderByLabel(groups: TableGroup[], dir: 'asc' | 'desc' = 'asc'): TableG
 }
 
 /**
- * The measures are the shown columns automatically minus the identity columns and minus the grouped
- * column(s) (design §7, mockup README "Measures = the columns you're already showing"). No separate
- * picker. In 2D cross-tab BOTH grouped fields (rows + columns) drop out, so this accepts a variadic
- * list of grouped columns and excludes every one of them.
+ * The measures are the shown columns automatically minus the grouped column(s) (design §7, mockup
+ * README "Measures = the columns you're already showing"). No separate picker. In 2D cross-tab BOTH
+ * grouped fields drop out, so this accepts a variadic list of grouped columns and excludes every one
+ * of them. Identity columns (Issue key, Summary, Icon & Summary, …) ARE eligible measures too — a
+ * column being shown while grouped by something else is a perfectly valid thing to aggregate (e.g.
+ * "Count" or "Distinct list" of the summaries in each group); only the field(s) actively driving the
+ * grouping are excluded from aggregating themselves.
  */
 export function selectMeasureColumns(
   columns: ColumnDefinition[],
   ...groupColumns: Array<ColumnDefinition | null>
 ): ColumnDefinition[] {
   const excluded = new Set(groupColumns.filter((c): c is ColumnDefinition => c != null).map((c) => c.id));
-  return columns.filter((c) => !c.isIdentity && !excluded.has(c.id));
+  return columns.filter((c) => !excluded.has(c.id));
 }
 
 /**

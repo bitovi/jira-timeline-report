@@ -50,7 +50,7 @@ const LevelSelect: FC<{
   >
     {options.map((level) => (
       <option key={level.name} value={level.name}>
-        {level.name + 's'}
+        {level.name}
       </option>
     ))}
   </select>
@@ -68,7 +68,7 @@ const SelectHierarchyRange: FC = () => {
         <button
           type="button"
           disabled
-          className="inline-flex items-center gap-1 text-sm rounded bg-neutral-201 px-2 py-1 leading-4 text-neutral-801"
+          className="inline-flex items-center gap-1 h-8 text-sm rounded bg-neutral-201 px-2 leading-4 text-neutral-801"
         >
           Loading…
         </button>
@@ -146,7 +146,7 @@ const SelectHierarchyRange: FC = () => {
             {...triggerProps}
             type="button"
             data-testid="hierarchy-trigger"
-            className="inline-flex items-center gap-1 text-sm rounded bg-neutral-201 hover:bg-neutral-301 px-2 py-1 leading-4 cursor-pointer"
+            className="inline-flex items-center gap-1 h-8 text-sm rounded bg-neutral-201 hover:bg-neutral-301 px-2 leading-4 cursor-pointer"
             onClick={() => setIsOpen((open) => !open)}
           >
             {summary}

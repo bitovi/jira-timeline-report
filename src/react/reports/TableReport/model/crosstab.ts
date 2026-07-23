@@ -26,6 +26,42 @@ import type { ColumnDefinition, TableIssue } from './columns';
 export const TOTAL_KEY = '__total__';
 export const TOTAL_LABEL = 'Total';
 
+/**
+ * The synthetic "Issue Count" measure used as the last-resort cross-tab value when a cross-tab has
+ * neither real measure columns nor any shown identity columns to fall back to. A cross-tab needs at
+ * least one value per cell, so this counts the issues in each `row ∩ column` cell (mockup
+ * `effMeasures()` → `['issueCount']`, spec/012-table-and-grouper/mockups/table-report.html).
+ * `getValue` returns `1` per issue and the `count` aggregation reduces it to the cell's member count.
+ */
+export const ISSUE_COUNT_MEASURE: ColumnDefinition = {
+  id: 'computed:issueCount',
+  label: 'Issue Count',
+  group: 'Computed',
+  source: { kind: 'computed', computedId: 'issueCount' },
+  getValue: () => 1,
+  render: (value) => value as number,
+  compare: (a, b) => (a as number) - (b as number),
+  aggregate: 'count',
+  defaultAggregate: 'count',
+};
+
+/**
+ * The measures actually rendered in the cross-tab cells. Prefer the caller-selected `measures` (the
+ * shown non-identity columns). When there are none — e.g. only "Icon & Summary" is shown while
+ * grouping Status × Project Key — fall back to the shown `identityFallback` columns so each cell
+ * still shows a value labeled with the field name + its aggregation (e.g. "Icon & Summary
+ * [Distinct list]"), rather than collapsing to zero rows. Only if there are also no identity columns
+ * do we use the synthetic {@link ISSUE_COUNT_MEASURE}.
+ */
+export function effectiveMeasures(
+  measures: ColumnDefinition[],
+  identityFallback: ColumnDefinition[] = [],
+): ColumnDefinition[] {
+  if (measures.length > 0) return measures;
+  if (identityFallback.length > 0) return identityFallback;
+  return [ISSUE_COUNT_MEASURE];
+}
+
 /** Unique, ordered values along one axis of the cross-tab (parallel `keys` / `titles` / `values`). */
 export interface CrossTabAxis {
   /** Stable string keys (from {@link createStableObjectKey}) — React keys + grid lookup. */

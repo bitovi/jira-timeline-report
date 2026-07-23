@@ -30,12 +30,16 @@ import { linkIssues } from '../GroupingReport/jira/linked-issue/linked-issue';
 import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from '../../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time';
 import Stats from '../../Stats/Stats';
 import { EstimateBreakdownModal } from '../EstimationTable/components/EstimateBreakdownModal';
+import { PercentCompleteModal } from '../GanttReport/GanttGrid/components/PercentCompleteModal';
+import { makeGetChildren } from '../GanttReport/GanttGrid/helpers/getChildren';
+import type { IssueOrRelease } from '../GanttReport/GanttGrid/types';
 
 import { buildColumnCatalog, TREE_CAPABLE_IDS } from './model/buildColumnCatalog';
 import {
   applyFilters,
   applySort,
   applyView,
+  compareRank,
   cycleSort,
   cycleTreeSort,
   isFilterActive,
@@ -46,17 +50,22 @@ import {
 import { buildHierarchyRows } from './model/hierarchyRows';
 import {
   computeMeasureValue,
+  effectiveAggregationId,
   formatMeasureValue,
   groupIssues,
   selectMeasureColumns,
   sortGroups,
 } from './model/grouping';
-import { buildCrossTab, cellValue, TOTAL_KEY, TOTAL_LABEL } from './model/crosstab';
+import { aggregations, isNumericAggregation } from './model/aggregations';
+import { bucketedDateColumn, DATE_GRANULARITIES } from './model/dateBucketing';
+import { buildCrossTab, cellMembers, cellValue, effectiveMeasures, TOTAL_KEY, TOTAL_LABEL } from './model/crosstab';
+import { isNumericColumn } from './model/columns';
 import { ColumnHeaderMenu } from './components/ColumnHeaderMenu';
 
 import type { DerivedIssue } from '../../../jira/derived/derive';
 import type { EstimationIssue } from '../EstimationTable/types';
 import type { AggregationId } from './model/aggregations';
+import type { DateGranularity } from './model/dateBucketing';
 import type { ColumnDefinition, TableIssue } from './model/columns';
 import type { FilterState, FilterValue, SortState } from './model/applyView';
 import type { AggregationOverrides, GroupSort } from './model/grouping';
@@ -73,7 +82,11 @@ import {
 } from './model/persistence';
 
 /** A fully rolled-up issue as the pipeline hands it to reports (loose — columns read a narrow slice). */
-type RollupIssue = Record<string, unknown> & { key?: string; hierarchyLevel?: number; issue?: { fields?: Record<string, unknown> } };
+type RollupIssue = Record<string, unknown> & {
+  key?: string;
+  hierarchyLevel?: number;
+  issue?: { fields?: Record<string, unknown> };
+};
 
 export interface TableReportProps {
   filteredDerivedIssuesObs: CanObservable<DerivedIssue[]>;
@@ -98,8 +111,20 @@ export interface TableReportProps {
   tableGroupByObs?: CanObservable<string>;
   /** Column-axis (2D) group column id ('' = none). */
   tableGroupByColObs?: CanObservable<string>;
+  /**
+   * Date-bucket granularity for `tableGroupBy`, when that column is a date/datetime field
+   * ('day' | 'week' | 'month' | 'quarter' | 'year', '' = unset → defaults to 'day'). Ignored for
+   * non-date group columns (spec/012-table-and-grouper/date-bucket-grouping.md).
+   */
+  tableGroupByGranularityObs?: CanObservable<string>;
+  /** Same as {@link tableGroupByGranularityObs}, for the 2D `tableGroupByCol` dimension. */
+  tableGroupByColGranularityObs?: CanObservable<string>;
   /** Cross-tab fields axis: 'rows' | 'cols'. */
   tableFieldAxisObs?: CanObservable<string>;
+  /** Show the cross-tab's right-edge "Total" column (per-row sum). Default off. */
+  tableShowRowTotalsObs?: CanObservable<boolean>;
+  /** Show the cross-tab's bottom "Total" row (per-column sum). Default off. */
+  tableShowColTotalsObs?: CanObservable<boolean>;
 }
 
 /**
@@ -269,10 +294,30 @@ const HierarchySortGlyph: React.FC = () => (
 );
 
 const TABLE_STYLES = `
+/* Sticky headers against the DOCUMENT scroll (like the Gantt chart / the sticky report footer), NOT
+   a nested scroll area -- so the whole page keeps scrolling with a single scrollbar.
+
+   The trick: this wrapper must NOT be a scroll container. Any element that scrolls horizontally
+   (overflow-x:auto) is, per the CSS spec, also a scroll container in the block axis (computed
+   overflow-y becomes auto) and therefore TRAPS descendant position:sticky in BOTH axes -- which is
+   why a bounded-height inner-scroll wrapper gives the dreaded double scrollbar. Setting
+   overflow:visible keeps the wrapper out of the way, so the sticky top:0 header cells + the
+   sticky-left frozen column stick to the nearest REAL scroll container: the app's .fullish-vh page
+   region (the same ancestor the report footer's sticky bottom-0 sticks to).
+
+   Horizontal scrolling is then handled by that same page region (.fullish-vh is already a both-axis
+   scroll container): a table wider than the viewport overflows and the document scrolls sideways.
+   width:max-content + min-width:100% makes the bordered wrapper hug the table's real width
+   (full-width when it fits, growing when wider) so the border/rounded corners always wrap the whole
+   table instead of getting clipped at viewport width. In Storybook (no .fullish-vh) the nearest
+   scroll container is the iframe body, so it behaves the same there. */
 [data-testid="table-report"] .overflow-x-auto {
   border: 1px solid #dfe1e6;
   border-radius: 8px;
   background: #fff;
+  overflow: visible;
+  width: max-content;
+  min-width: 100%;
 }
 [data-testid="table-report"] table { border-collapse: collapse; width: 100%; font-size: 13px; }
 [data-testid="table-report"] thead th {
@@ -306,9 +351,6 @@ const TABLE_STYLES = `
 [data-testid="table-report"] tbody a.table-summary-link { color: inherit; text-decoration: none; }
 [data-testid="table-report"] tbody a.table-summary-link:hover,
 [data-testid="table-report"] tbody a.table-summary-link:focus-visible { color: #0c66e4; text-decoration: underline; }
-/* Cap the "Icon & Summary" column's width so long summaries ellipsis instead of stretching the
-   table indefinitely wide (the column's cell content truncates itself via Tailwind's truncate utility). */
-[data-testid="table-report"] td[data-column-id="identity:treeSummary"] { max-width: 420px; }
 /* Column drag-and-drop reordering (spec/012 column-reordering). New Tailwind utilities won't apply
    (precompiled CSS), so the reveal/affordance lives here. The grip is hidden at rest so the resting
    header renders identically to before — revealed only on header hover, grip focus, or active drag. */
@@ -318,6 +360,22 @@ const TABLE_STYLES = `
 [data-testid="table-report"] thead th[data-dragging="true"] [data-testid="table-header-drag-handle"] { opacity: 1; }
 [data-testid="table-report"] thead th[data-dragging="true"] { opacity: 0.5; }
 [data-testid="table-report"] thead th[data-drag-over="true"] { box-shadow: inset 2px 0 0 #0c66e4; }
+/* Aggregation tag shown next to a cross-tab measure's field name (e.g. "Sum", "Distinct list") so
+   it's clear how each cell value was rolled up. Literal CSS (precompiled Tailwind) — mirrors the
+   spec mockup's agg-tag pill. */
+[data-testid="table-report"] .agg-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f1f2f4;
+  color: #626f86;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
 `;
 
 interface CrossTabTableProps {
@@ -328,8 +386,16 @@ interface CrossTabTableProps {
   colColumn: ColumnDefinition;
   /** The measure columns aggregated in each cell (shown columns minus identity minus both groups). */
   measures: ColumnDefinition[];
-  fieldAxis: 'rows' | 'cols';
+  fieldAxis: 'rows' | 'cols' | 'hidden';
+  /** Show the synthetic "Total" column (right edge) — the sum across each row. Default off. */
+  showRowTotals: boolean;
+  /** Show the synthetic "Total" row (bottom) — the sum down each column. Default off. */
+  showColTotals: boolean;
   overrides: AggregationOverrides;
+  /** Set/clear a measure's per-column aggregation override (the same handler the flat/1D header uses). */
+  onAggregationChange: (columnId: string, value: AggregationId) => void;
+  /** Remove a measure column from the shown columns (the same handler the flat/1D header uses). */
+  onRemoveColumn: (columnId: string) => void;
 }
 
 /**
@@ -341,25 +407,140 @@ interface CrossTabTableProps {
  *    row-value spans one *sub-row per measure* (a "Field" column names the measure). Stays narrow.
  *  - **Across cols** (`fieldAxis === 'cols'`): a merged two-row header — each column-value spans a
  *    block of measure sub-columns — one row per row-value. Today's Grouper pivot shape.
+ *  - **Hidden** (`fieldAxis === 'hidden'`, only offered when there's a single measure): same shape
+ *    as Down rows but drops the redundant per-row "Field" column entirely — the sole measure's
+ *    name/aggregation tag/`⋯` menu aren't shown anywhere (not merely relocated); the corner header
+ *    is just the row-field's own label. Falls back to Down rows if there's more than one measure
+ *    (e.g. a column was added while hidden was active).
  */
-const CrossTabTable: React.FC<CrossTabTableProps> = ({ crossTab, rowColumn, colColumn, measures, fieldAxis, overrides }) => {
+const CrossTabTable: React.FC<CrossTabTableProps> = ({
+  crossTab,
+  rowColumn,
+  colColumn,
+  measures,
+  fieldAxis,
+  showRowTotals,
+  showColTotals,
+  overrides,
+  onAggregationChange,
+  onRemoveColumn,
+}) => {
   const { rowAxis, colAxis, rowTotals, colTotals, grandTotal } = crossTab;
-  // Column keys/titles with the synthetic total appended.
-  const colKeys = [...colAxis.keys, TOTAL_KEY];
-  const colTitles = [...colAxis.titles, TOTAL_LABEL];
-  const rowKeys = [...rowAxis.keys, TOTAL_KEY];
-  const rowTitles = [...rowAxis.titles, TOTAL_LABEL];
+  // Column keys/titles with the synthetic total appended — only when its toggle is on. The right-
+  // edge "Total" column (a per-row sum across columns) is gated on `showRowTotals`; the bottom
+  // "Total" row (a per-column sum down rows) is gated on `showColTotals`. Every render branch below
+  // (hidden/rows/cols) consumes these same arrays, so this is the only place that needs to change.
+  const colKeys = showRowTotals ? [...colAxis.keys, TOTAL_KEY] : colAxis.keys;
+  const colTitles = showRowTotals ? [...colAxis.titles, TOTAL_LABEL] : colAxis.titles;
+  const rowKeys = showColTotals ? [...rowAxis.keys, TOTAL_KEY] : rowAxis.keys;
+  const rowTitles = showColTotals ? [...rowAxis.titles, TOTAL_LABEL] : rowAxis.titles;
 
-  const countFor = (rowKey: string) => (rowKey === TOTAL_KEY ? grandTotal.length : rowTotals[rowKey]?.length ?? 0);
+  const countFor = (rowKey: string) => (rowKey === TOTAL_KEY ? grandTotal.length : (rowTotals[rowKey]?.length ?? 0));
+
+  // The aggregation label shown as a tag next to each measure's field name (e.g. "Sum",
+  // "Distinct list") — mirrors the mockup's per-field `agg-tag` so it's clear how each cell value
+  // was computed.
+  const aggLabel = (measure: ColumnDefinition) =>
+    aggregations[effectiveAggregationId(measure, overrides[measure.id])].label;
+  // The measure's field name + aggregation tag, plus a hover-reveal `⋯` menu offering Aggregation and
+  // Remove column (no sort/filter/move here — those aren't meaningful for a cross-tab measure).
+  const fieldName = (measure: ColumnDefinition) => (
+    <div className="group flex items-center min-w-0">
+      <span className="truncate" title={measure.label}>
+        {measure.label}
+      </span>
+      <span className="agg-tag flex-none">{aggLabel(measure)}</span>
+      <ColumnHeaderMenu
+        column={measure}
+        onRemove={() => onRemoveColumn(measure.id)}
+        aggregationOverride={overrides[measure.id]}
+        onAggregationChange={(value) => onAggregationChange(measure.id, value)}
+        aggregationActive
+      />
+    </div>
+  );
 
   const cell = (rowKey: string, colKey: string, measure: ColumnDefinition) => {
+    const aggId = effectiveAggregationId(measure, overrides[measure.id]);
+    const customRender = measure.renderMeasure?.[aggId];
+    if (customRender) {
+      const members = cellMembers(crossTab, rowKey, colKey);
+      return members.length === 0 ? EMPTY_CELL : customRender({ members });
+    }
     const value = cellValue(crossTab, rowKey, colKey, measure, overrides);
     return value == null ? EMPTY_CELL : formatMeasureValue(value);
   };
 
-  const cellClass = (colKey: string) => `p-2 text-right align-top border-b border-neutral-201 ${colKey === TOTAL_KEY ? 'font-semibold bg-neutral-101' : ''}`;
+  // Right-align only when the measure's effective aggregation always produces a number (sum/avg/
+  // min/max/count) — a `range` (date span) or `distinct` (list) result stays left-aligned. A null
+  // measure (no measures at all — shouldn't normally happen, `effectiveMeasures` always supplies at
+  // least the synthetic issue-count measure) renders `EMPTY_CELL` and stays left-aligned.
+  const isNumericMeasure = (measure: ColumnDefinition | null) =>
+    measure != null && isNumericAggregation(effectiveAggregationId(measure, overrides[measure.id]));
+  const cellClass = (colKey: string, measure: ColumnDefinition | null) =>
+    `p-2 align-top border-b border-neutral-201 ${isNumericMeasure(measure) ? 'text-right' : 'text-left'} ${colKey === TOTAL_KEY ? 'font-semibold bg-neutral-101' : ''}`;
 
-  if (fieldAxis === 'rows') {
+  // "Hidden" only makes sense with a single measure (there's nowhere left to distinguish a second
+  // measure's rows once the "Field" column is gone) — fall back to Down rows otherwise.
+  const effectiveFieldAxis = fieldAxis === 'hidden' && measures.length > 1 ? 'rows' : fieldAxis;
+
+  if (effectiveFieldAxis === 'hidden') {
+    // Hidden: identical shape to Down rows, minus the per-row "Field" column entirely — the sole
+    // measure's name/agg-tag/menu are dropped from view (not merely relocated), so the corner header
+    // is just the row-field's own label. There's no UI to change the measure's aggregation while
+    // hidden is active; switch to Down rows/Across cols to do that, then switch back.
+    const soleMeasure = measures[0] ?? null;
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full" data-testid="table-crosstab" data-field-axis="hidden">
+          <thead>
+            <tr className="border-b border-neutral-301">
+              <th
+                className="p-2 text-left font-semibold"
+                data-testid="table-crosstab-row-label"
+                style={stickyCornerStyle(0, 0, { width: FROZEN_COL1_W, minWidth: FROZEN_COL1_W })}
+              >
+                {rowColumn.label}
+              </th>
+              {colTitles.map((title, i) => (
+                <th
+                  key={colKeys[i]}
+                  className={`p-2 font-semibold ${soleMeasure && isNumericMeasure(soleMeasure) ? 'text-right' : 'text-left'} ${colKeys[i] === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                  style={stickyHeaderStyle()}
+                >
+                  {title}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rowKeys.map((rowKey, rowIdx) => (
+              <tr
+                key={rowKey}
+                data-testid={rowKey === TOTAL_KEY ? 'table-crosstab-total-row' : 'table-crosstab-row'}
+                className={rowKey === TOTAL_KEY ? 'bg-neutral-101 font-semibold' : ''}
+              >
+                <td
+                  className="p-2 align-top font-semibold border-t border-neutral-301"
+                  style={frozenLabelStyle(0, { width: FROZEN_COL1_W, minWidth: FROZEN_COL1_W })}
+                >
+                  {rowTitles[rowIdx]}
+                  <span className="text-neutral-801 font-normal"> {countFor(rowKey)}</span>
+                </td>
+                {colKeys.map((colKey) => (
+                  <td key={colKey} className={cellClass(colKey, soleMeasure)} data-testid="table-crosstab-cell">
+                    {soleMeasure ? cell(rowKey, colKey, soleMeasure) : EMPTY_CELL}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (effectiveFieldAxis === 'rows') {
     // ↓ Down rows: one header row (row-field, Field, each col-value…, Total); one sub-row per measure.
     return (
       <div className="overflow-x-auto">
@@ -380,7 +561,11 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({ crossTab, rowColumn, colC
                 Field
               </th>
               {colTitles.map((title, i) => (
-                <th key={colKeys[i]} className={`p-2 text-right font-semibold ${colKeys[i] === TOTAL_KEY ? 'bg-neutral-101' : ''}`} style={stickyHeaderStyle()}>
+                <th
+                  key={colKeys[i]}
+                  className={`p-2 text-right font-semibold ${colKeys[i] === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                  style={stickyHeaderStyle()}
+                >
                   {title}
                 </th>
               ))}
@@ -390,7 +575,11 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({ crossTab, rowColumn, colC
             {rowKeys.map((rowKey, rowIdx) => (
               <React.Fragment key={rowKey}>
                 {measures.map((measure, mIdx) => (
-                  <tr key={`${rowKey}-${measure.id}`} data-testid={rowKey === TOTAL_KEY ? 'table-crosstab-total-row' : 'table-crosstab-row'} className={rowKey === TOTAL_KEY ? 'bg-neutral-101 font-semibold' : ''}>
+                  <tr
+                    key={`${rowKey}-${measure.id}`}
+                    data-testid={rowKey === TOTAL_KEY ? 'table-crosstab-total-row' : 'table-crosstab-row'}
+                    className={rowKey === TOTAL_KEY ? 'bg-neutral-101 font-semibold' : ''}
+                  >
                     {mIdx === 0 && (
                       <td
                         rowSpan={measures.length || 1}
@@ -401,11 +590,14 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({ crossTab, rowColumn, colC
                         <span className="text-neutral-801 font-normal"> {countFor(rowKey)}</span>
                       </td>
                     )}
-                    <td className="p-2 align-top text-neutral-801" style={frozenLabelStyle(FROZEN_COL1_W, { width: FROZEN_COL2_W, minWidth: FROZEN_COL2_W })}>
-                      {measure.label}
+                    <td
+                      className="p-2 align-top text-neutral-801"
+                      style={frozenLabelStyle(FROZEN_COL1_W, { width: FROZEN_COL2_W, minWidth: FROZEN_COL2_W })}
+                    >
+                      {fieldName(measure)}
                     </td>
                     {colKeys.map((colKey) => (
-                      <td key={colKey} className={cellClass(colKey)} data-testid="table-crosstab-cell">
+                      <td key={colKey} className={cellClass(colKey, measure)} data-testid="table-crosstab-cell">
                         {cell(rowKey, colKey, measure)}
                       </td>
                     ))}
@@ -437,7 +629,12 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({ crossTab, rowColumn, colC
             </th>
             {/* Row 1 (column-value blocks): sticks at the very top. */}
             {colTitles.map((title, i) => (
-              <th key={colKeys[i]} colSpan={span} className={`p-2 text-center font-semibold border-l border-neutral-301 ${colKeys[i] === TOTAL_KEY ? 'bg-neutral-101' : ''}`} style={stickyHeaderStyle()}>
+              <th
+                key={colKeys[i]}
+                colSpan={span}
+                className={`p-2 text-center font-semibold border-l border-neutral-301 ${colKeys[i] === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                style={stickyHeaderStyle()}
+              >
                 {title}
               </th>
             ))}
@@ -446,8 +643,12 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({ crossTab, rowColumn, colC
           <tr className="border-b border-neutral-301">
             {colKeys.map((colKey) =>
               measures.map((measure, mIdx) => (
-                <th key={`${colKey}-${measure.id}`} className={`p-2 text-right font-medium text-neutral-801 ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`} style={stickyHeaderStyle({ top: HEADER_ROW_H })}>
-                  {measure.label}
+                <th
+                  key={`${colKey}-${measure.id}`}
+                  className={`p-2 font-medium text-neutral-801 ${isNumericMeasure(measure) ? 'text-right' : 'text-left'} ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                  style={stickyHeaderStyle({ top: HEADER_ROW_H })}
+                >
+                  {fieldName(measure)}
                 </th>
               )),
             )}
@@ -455,14 +656,29 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({ crossTab, rowColumn, colC
         </thead>
         <tbody>
           {rowKeys.map((rowKey, rowIdx) => (
-            <tr key={rowKey} data-testid={rowKey === TOTAL_KEY ? 'table-crosstab-total-row' : 'table-crosstab-row'} className={rowKey === TOTAL_KEY ? 'bg-neutral-101 font-semibold border-t border-neutral-301' : 'border-b border-neutral-201'}>
-              <td className="p-2 align-top font-semibold" style={frozenLabelStyle(0, { width: FROZEN_COL1_W, minWidth: FROZEN_COL1_W })}>
+            <tr
+              key={rowKey}
+              data-testid={rowKey === TOTAL_KEY ? 'table-crosstab-total-row' : 'table-crosstab-row'}
+              className={
+                rowKey === TOTAL_KEY
+                  ? 'bg-neutral-101 font-semibold border-t border-neutral-301'
+                  : 'border-b border-neutral-201'
+              }
+            >
+              <td
+                className="p-2 align-top font-semibold"
+                style={frozenLabelStyle(0, { width: FROZEN_COL1_W, minWidth: FROZEN_COL1_W })}
+              >
                 {rowTitles[rowIdx]}
                 <span className="text-neutral-801 font-normal"> {countFor(rowKey)}</span>
               </td>
               {colKeys.map((colKey) =>
                 measures.map((measure, mIdx) => (
-                  <td key={`${colKey}-${measure.id}`} className={`p-2 text-right align-top ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`} data-testid="table-crosstab-cell">
+                  <td
+                    key={`${colKey}-${measure.id}`}
+                    className={`p-2 align-top ${isNumericMeasure(measure) ? 'text-right' : 'text-left'} ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                    data-testid="table-crosstab-cell"
+                  >
                     {cell(rowKey, colKey, measure)}
                   </td>
                 )),
@@ -485,7 +701,11 @@ const TableReportInner: React.FC<TableReportProps> = ({
   tableFiltersObs,
   tableGroupByObs,
   tableGroupByColObs,
+  tableGroupByGranularityObs,
+  tableGroupByColGranularityObs,
   tableFieldAxisObs,
+  tableShowRowTotalsObs,
+  tableShowColTotalsObs,
 }) => {
   const filteredDerivedIssues = useCanObservable(filteredDerivedIssuesObs) || [];
   const primaryIssues = useCanObservable(primaryIssuesOrReleasesObs ?? EMPTY_OBS) || [];
@@ -518,7 +738,11 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const filtersObs = useOptionalObs(tableFiltersObs, {} as FilterState);
   const groupByObs = useOptionalObs(tableGroupByObs, '');
   const groupByColObs = useOptionalObs(tableGroupByColObs, '');
+  const groupByGranularityObs = useOptionalObs(tableGroupByGranularityObs, '');
+  const groupByColGranularityObs = useOptionalObs(tableGroupByColGranularityObs, '');
   const fieldAxisObs = useOptionalObs(tableFieldAxisObs, 'rows');
+  const showRowTotalsObs = useOptionalObs(tableShowRowTotalsObs, false);
+  const showColTotalsObs = useOptionalObs(tableShowColTotalsObs, false);
 
   const columnEntries = useCanObservable(columnsObs) || DEFAULT_TABLE_COLUMNS;
   const sortColumnId = useCanObservable(sortColumnObs) || '';
@@ -526,7 +750,11 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const filters = useCanObservable(filtersObs) || {};
   const groupByRaw = useCanObservable(groupByObs) || '';
   const groupByColRaw = useCanObservable(groupByColObs) || '';
-  const fieldAxis = ((useCanObservable(fieldAxisObs) || 'rows') as 'rows' | 'cols');
+  const groupByGranularityRaw = useCanObservable(groupByGranularityObs) || '';
+  const groupByColGranularityRaw = useCanObservable(groupByColGranularityObs) || '';
+  const fieldAxis = (useCanObservable(fieldAxisObs) || 'rows') as 'rows' | 'cols' | 'hidden';
+  const showRowTotals = !!useCanObservable(showRowTotalsObs);
+  const showColTotals = !!useCanObservable(showColTotalsObs);
 
   const columnIds = useMemo(() => entriesToColumnIds(columnEntries), [columnEntries]);
   const aggregationOverrides = useMemo<Record<string, AggregationId>>(
@@ -547,6 +775,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // Ephemeral UI toggles — deliberately NOT persisted (pure expand/collapse view state + modal).
   const [collapsedKeys, setCollapsedKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [breakdownIssue, setBreakdownIssue] = useState<TableIssue | null>(null);
+  const [percentBreakdownIssue, setPercentBreakdownIssue] = useState<TableIssue | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(() => new Set());
   // Group-ordering control: local-only (not in the Phase 5 persisted schema, plan lines 199-210).
   const [groupSort, setGroupSort] = useState<GroupSort>({ by: 'label', dir: 'asc' });
@@ -569,9 +798,22 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // The issue set the header's `select` filter options are drawn from.
   const filterSourceIssues = isHierarchy ? hierarchyAll : flatIssues;
 
+  // Child lookup for the Percent Complete breakdown modal — resolves `reportingHierarchy.childKeys`
+  // against the full loaded set (present in every mode), so the modal works in flat/hierarchy/grouped.
+  const getPercentChildren = useMemo(
+    () => makeGetChildren(filterSourceIssues as unknown as IssueOrRelease[]),
+    [filterSourceIssues],
+  );
+
   // Flat rows: filter + sort. Each row is a plain issue (depth 0, no tree decoration).
   const flatRows = useMemo(
-    () => applyView(flatIssues, columns, filters, sort).map<HierarchyRow>((issue) => ({ issue, depth: 0, hasChildren: false, childKeys: [] })),
+    () =>
+      applyView(flatIssues, columns, filters, sort).map<HierarchyRow>((issue) => ({
+        issue,
+        depth: 0,
+        hasChildren: false,
+        childKeys: [],
+      })),
     [flatIssues, columns, filters, sort],
   );
 
@@ -580,12 +822,15 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const hierarchyRows = useMemo(() => {
     const filteredAll = applyFilters(hierarchyAll, columns, filters);
     const roots = applyFilters(hierarchyRoots, columns, filters);
-    // A `tree` sort nests by the reporting hierarchy, so siblings keep their natural order; only an
-    // asc/desc sort on a column orders within siblings (design §4).
-    const sortColumn = sort && sort.dir !== 'tree' ? columns.find((c) => c.id === sort.columnId) ?? null : null;
+    // A `tree` sort nests by the reporting hierarchy; an asc/desc sort on a column orders within
+    // siblings (design §4). Absent an explicit column sort, siblings default to Jira Rank order
+    // (design.md: "depth-first by parent chain, then by rank within siblings").
+    const sortColumn =
+      sort && sort.dir !== 'tree' && sort.dir !== 'rank' ? (columns.find((c) => c.id === sort.columnId) ?? null) : null;
     const compareSiblings = sortColumn
-      ? (a: TableIssue, b: TableIssue) => (sort!.dir === 'desc' ? -1 : 1) * sortColumn.compare(sortColumn.getValue(a), sortColumn.getValue(b))
-      : undefined;
+      ? (a: TableIssue, b: TableIssue) =>
+          (sort!.dir === 'desc' ? -1 : 1) * sortColumn.compare(sortColumn.getValue(a), sortColumn.getValue(b))
+      : compareRank;
     return buildHierarchyRows({ roots, allIssues: filteredAll, collapsedKeys, compareSiblings });
   }, [hierarchyAll, hierarchyRoots, columns, filters, sort, collapsedKeys]);
 
@@ -594,8 +839,24 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // --- Phase 3 grouping ------------------------------------------------------
   // Grouping and hierarchy are mutually exclusive (design/tree-column-brainstorm §3): grouping only
   // applies in flat ordering, and `isHierarchy` is already false whenever a group is active.
-  const groupColumn = groupBy ? catalogById.get(groupBy) ?? null : null;
-  const groupColColumn = groupByCol ? catalogById.get(groupByCol) ?? null : null;
+  //
+  // Date-bucket grouping (spec/012-table-and-grouper/date-bucket-grouping.md): grouping/cross-tab
+  // code (`groupIssues`, `getAxisValues`, `buildGrid`) all key on a column's exact `getValue`, which
+  // for a date/datetime column is a full timestamp — nearly one group per issue. Rather than teach
+  // those generic engines about dates, a date-typed group column is wrapped into a bucket-label
+  // column here (the ONLY place the wrapping happens), so downstream grouping code needs no changes.
+  // An unset granularity defaults to 'day' for date columns so old saved links (no granularity yet)
+  // don't regress to raw-timestamp grouping; non-date columns are returned unwrapped.
+  const resolveGroupColumn = (id: string | null, granularityRaw: string): ColumnDefinition | null => {
+    const base = id ? (catalogById.get(id) ?? null) : null;
+    if (!base || base.filter?.kind !== 'date') return base;
+    const granularity = (DATE_GRANULARITIES as string[]).includes(granularityRaw)
+      ? (granularityRaw as DateGranularity)
+      : 'day';
+    return bucketedDateColumn(base, granularity);
+  };
+  const groupColumn = resolveGroupColumn(groupBy, groupByGranularityRaw);
+  const groupColColumn = resolveGroupColumn(groupByCol, groupByColGranularityRaw);
   // 2D cross-tab needs both group columns (and flat ordering); 1D needs only the row group column.
   const is2D = groupColumn != null && groupColColumn != null && !isHierarchy;
   const isGrouped = groupColumn != null && !is2D && !isHierarchy;
@@ -616,11 +877,17 @@ const TableReportInner: React.FC<TableReportProps> = ({
     [columns, groupColumn, groupColColumn, is2D],
   );
 
-  // Cross-tab measures (ordered): shown columns minus identity minus both grouped fields.
-  const crossTabMeasures = useMemo(
-    () => (is2D ? selectMeasureColumns(columns, groupColumn, groupColColumn) : []),
-    [is2D, columns, groupColumn, groupColColumn],
-  );
+  // Cross-tab measures (ordered): shown columns minus identity minus both grouped fields. When that
+  // leaves nothing (e.g. only the "Icon & Summary" identity column is shown), fall back to the shown
+  // identity columns themselves so each cell still shows a value labeled with its field +
+  // aggregation (design issue: an all-identity cross-tab must not collapse to zero rows).
+  const crossTabMeasures = useMemo(() => {
+    if (!is2D || !groupColumn || !groupColColumn) return [];
+    const measures = selectMeasureColumns(columns, groupColumn, groupColColumn);
+    const excluded = new Set([groupColumn.id, groupColColumn.id]);
+    const identityFallback = columns.filter((c) => c.isIdentity && !excluded.has(c.id));
+    return effectiveMeasures(measures, identityFallback);
+  }, [is2D, columns, groupColumn, groupColColumn]);
 
   // Build the cross-tab from the filtered flat issue set (design §7 — reuse the cartesian axis/grid).
   const crossTab = useMemo<CrossTab | null>(() => {
@@ -730,7 +997,9 @@ const TableReportInner: React.FC<TableReportProps> = ({
               value={typeof groupSort.by === 'string' ? groupSort.by : `col:${groupSort.by.columnId}`}
               onChange={(e) => {
                 const raw = e.target.value;
-                const by: GroupSort['by'] = raw.startsWith('col:') ? { columnId: raw.slice(4) } : (raw as 'label' | 'count');
+                const by: GroupSort['by'] = raw.startsWith('col:')
+                  ? { columnId: raw.slice(4) }
+                  : (raw as 'label' | 'count');
                 setGroupSort((prev) => ({ ...prev, by }));
               }}
             >
@@ -777,7 +1046,11 @@ const TableReportInner: React.FC<TableReportProps> = ({
             colColumn={groupColColumn}
             measures={crossTabMeasures}
             fieldAxis={fieldAxis}
+            showRowTotals={showRowTotals}
+            showColTotals={showColTotals}
             overrides={aggregationOverrides}
+            onAggregationChange={setColumnAggregation}
+            onRemoveColumn={handleRemoveColumn}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -796,13 +1069,16 @@ const TableReportInner: React.FC<TableReportProps> = ({
                     const firstMovableIndex = isGrouped ? 1 : 0;
                     const canMoveLeft = !isPinnedGroup && colIndex > firstMovableIndex;
                     const canMoveRight = !isPinnedGroup && colIndex < displayColumns.length - 1;
+                    // Numeric columns (real number fields + Estimation day-count columns) right-align
+                    // per the enterprise data-table convention; the header matches its column's alignment.
+                    const numeric = isNumericColumn(column);
                     return (
                       <th
                         key={column.id}
                         data-column-id={column.id}
                         data-drag-over={dragOverColumnId === column.id ? 'true' : undefined}
                         data-dragging={draggedColumnId === column.id ? 'true' : undefined}
-                        className="p-2 text-left align-bottom"
+                        className={`p-2 align-bottom ${numeric ? 'text-right' : 'text-left'}`}
                         style={headerStyle}
                         onDragOver={
                           isPinnedGroup
@@ -823,7 +1099,10 @@ const TableReportInner: React.FC<TableReportProps> = ({
                               }
                         }
                       >
-                        <div className="group flex items-center" style={{ position: 'relative' }}>
+                        <div
+                          className={`group flex items-center ${numeric ? 'justify-end' : ''}`}
+                          style={{ position: 'relative' }}
+                        >
                           {!isPinnedGroup && (
                             <span
                               role="button"
@@ -857,7 +1136,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
                           )}
                           <button
                             type="button"
-                            className="font-semibold text-left cursor-pointer hover:underline"
+                            className={`font-semibold cursor-pointer hover:underline ${numeric ? 'text-right' : 'text-left'}`}
                             data-testid="table-header-sort"
                             // Tree-capable columns cycle Hierarchy → A→Z → Z→A; others cycle asc/desc/none.
                             onClick={() => setSort((column.isTree ? cycleTreeSort : cycleSort)(sort, column.id))}
@@ -878,16 +1157,19 @@ const TableReportInner: React.FC<TableReportProps> = ({
                             filterValue={filters[column.id]}
                             onFilterChange={(value) => setColumnFilter(column.id, value)}
                             onRemove={() => handleRemoveColumn(column.id)}
-                            filterOptions={column.filter?.kind === 'select' ? distinctValues(column, filterSourceIssues) : undefined}
+                            filterOptions={
+                              column.filter?.kind === 'select' ? distinctValues(column, filterSourceIssues) : undefined
+                            }
                             isActive={active}
                             sortMode={columnSortMode}
                             onSortChange={(mode) => setSort(mode == null ? null : { columnId: column.id, dir: mode })}
                             aggregationOverride={aggregationOverrides[column.id]}
                             onAggregationChange={
-                              isGrouped && measureColumnIds.has(column.id)
+                              measureColumnIds.has(column.id)
                                 ? (value) => setColumnAggregation(column.id, value)
                                 : undefined
                             }
+                            aggregationActive={isGrouped}
                             onMoveLeft={canMoveLeft ? () => moveColumnLeft(colIndex) : undefined}
                             onMoveRight={canMoveRight ? () => moveColumnRight(colIndex) : undefined}
                           />
@@ -903,43 +1185,74 @@ const TableReportInner: React.FC<TableReportProps> = ({
                       const expanded = expandedGroups.has(group.key);
                       return (
                         <React.Fragment key={group.key}>
-                          <tr className="bg-neutral-101 font-semibold border-t border-neutral-301" data-testid="table-group-header">
+                          <tr className="bg-neutral-101 border-t border-neutral-301" data-testid="table-group-header">
                             {displayColumns.map((column) => {
                               // The grouped field is pulled to the FRONT as the label column: its cell holds
                               // the caret + group label + member count (design §7 / mockup preview-3-grouped).
-                              if (column.id === groupColumn?.id) {
+                              if (groupColumn && column.id === groupColumn.id) {
+                                // Identity/tree columns (Icon & Summary, Summary, Issue key) represent a
+                                // single issue per group in practice, so reuse the column's own `render`
+                                // (the same one normal rows use) to get its link — the hover-reveal summary
+                                // link, or the key link — instead of the plain formatted `group.label`.
+                                // Non-identity groupings (status, team, project, …) keep `group.label` since
+                                // there's no single issue to link to.
+                                const label =
+                                  groupColumn.isIdentity && groupColumn.isTree
+                                    ? groupColumn.render(groupColumn.getValue(group.members[0]), {
+                                        issue: group.members[0],
+                                        depth: 0,
+                                        isGroupHeader: true,
+                                        allIssues: filterSourceIssues,
+                                      })
+                                    : group.label;
                                 return (
                                   <td key={column.id} className="p-2 align-top" style={frozenLabelStyle()}>
-                                    <button
-                                      type="button"
-                                      className="flex items-center gap-1 cursor-pointer text-left"
-                                      data-testid="table-group-caret"
-                                      aria-expanded={expanded}
-                                      aria-label={expanded ? 'Collapse group' : 'Expand group'}
-                                      onClick={() => toggleGroupExpanded(group.key)}
-                                    >
-                                      <span className="w-4 text-neutral-801">{expanded ? '▼' : '▶'}</span>
-                                      <span>{group.label}</span>
-                                      <span className="text-neutral-801 font-normal" data-testid="table-group-count">
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        className="cursor-pointer w-4 text-neutral-801"
+                                        data-testid="table-group-caret"
+                                        aria-expanded={expanded}
+                                        aria-label={expanded ? 'Collapse group' : 'Expand group'}
+                                        onClick={() => toggleGroupExpanded(group.key)}
+                                      >
+                                        {expanded ? '▼' : '▶'}
+                                      </button>
+                                      <span className="font-semibold">{label}</span>
+                                      <span className="text-neutral-801" data-testid="table-group-count">
                                         ({group.members.length})
                                       </span>
-                                    </button>
+                                    </div>
                                   </td>
                                 );
                               }
                               if (measureColumnIds.has(column.id)) {
-                                const value = computeMeasureValue(column, group.members, aggregationOverrides[column.id]);
+                                const aggId = effectiveAggregationId(column, aggregationOverrides[column.id]);
+                                const customRender = column.renderMeasure?.[aggId];
+                                const content = customRender
+                                  ? customRender({ members: group.members, allIssues: filterSourceIssues })
+                                  : formatMeasureValue(
+                                      computeMeasureValue(column, group.members, aggregationOverrides[column.id]),
+                                    );
                                 return (
-                                  <td key={column.id} className="p-2 align-top" data-testid="table-group-measure">
-                                    {formatMeasureValue(value)}
+                                  <td
+                                    key={column.id}
+                                    className={`p-2 align-top ${isNumericAggregation(aggId) ? 'text-right' : ''}`}
+                                    data-testid="table-group-measure"
+                                  >
+                                    {content}
                                   </td>
                                 );
                               }
-                              // Remaining shown columns are identity columns (Issue Key, Summary, …). Rather
-                              // than leave them blank, list the group members' distinct values (issues.md —
-                              // "issue key and summary should be given the list").
+                              // Every other shown column is the grouped column itself in a 2D context handled
+                              // above, so this is effectively unreached for 1D grouping — kept as a plain-text
+                              // safety net rather than rendering nothing.
                               return (
-                                <td key={column.id} className="p-2 align-top text-neutral-801" data-testid="table-group-identity-list">
+                                <td
+                                  key={column.id}
+                                  className="p-2 align-top text-neutral-801"
+                                  data-testid="table-group-identity-list"
+                                >
                                   {distinctValues(column, group.members).join(', ')}
                                 </td>
                               );
@@ -951,8 +1264,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
                                 {displayColumns.map((column, colIndex) => (
                                   <td
                                     key={column.id}
-                                    data-column-id={column.id}
-                                    className="p-2 align-top pl-6"
+                                    className={`p-2 align-top pl-6 ${isNumericColumn(column) ? 'text-right' : ''}`}
                                     style={colIndex === 0 ? frozenLabelStyle() : undefined}
                                   >
                                     {column.render(column.getValue(issue), {
@@ -960,6 +1272,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
                                       depth: 0,
                                       allIssues: filterSourceIssues,
                                       onEstimateBreakdown: (i) => setBreakdownIssue(i),
+                                      onPercentBreakdown: (i) => setPercentBreakdownIssue(i),
                                     })}
                                   </td>
                                 ))}
@@ -976,21 +1289,21 @@ const TableReportInner: React.FC<TableReportProps> = ({
                             depth: row.depth,
                             allIssues: filterSourceIssues,
                             onEstimateBreakdown: (issue) => setBreakdownIssue(issue),
+                            onPercentBreakdown: (issue) => setPercentBreakdownIssue(issue),
                           });
                           const isTreeCell = column.isTree && isHierarchy && column.id === activeTreeId;
                           return (
                             <td
                               key={column.id}
-                              data-column-id={column.id}
-                              className="p-2 align-top"
+                              className={`p-2 align-top ${isNumericColumn(column) ? 'text-right' : ''}`}
                               style={colIndex === 0 ? frozenLabelStyle() : undefined}
                             >
                               {isTreeCell ? (
-                                <div className="flex items-center gap-1 min-w-0" style={{ paddingLeft: row.depth * 20 }}>
+                                <div className="flex items-center gap-1" style={{ paddingLeft: row.depth * 20 }}>
                                   {row.hasChildren ? (
                                     <button
                                       type="button"
-                                      className="cursor-pointer w-4 text-neutral-801 flex-none"
+                                      className="cursor-pointer w-4 text-neutral-801"
                                       data-testid="table-tree-caret"
                                       aria-expanded={!collapsedKeys.has(row.issue.key ?? '')}
                                       aria-label={collapsedKeys.has(row.issue.key ?? '') ? 'Expand' : 'Collapse'}
@@ -999,9 +1312,9 @@ const TableReportInner: React.FC<TableReportProps> = ({
                                       {collapsedKeys.has(row.issue.key ?? '') ? '▶' : '▼'}
                                     </button>
                                   ) : (
-                                    <span className="inline-block w-4 flex-none" />
+                                    <span className="inline-block w-4" />
                                   )}
-                                  <span className="truncate min-w-0 flex-1">{content}</span>
+                                  <span className="truncate">{content}</span>
                                 </div>
                               ) : (
                                 content
@@ -1016,7 +1329,18 @@ const TableReportInner: React.FC<TableReportProps> = ({
           </div>
         )}
 
-        <EstimateBreakdownModal issue={breakdownIssue as EstimationIssue | null} onClose={() => setBreakdownIssue(null)} />
+        <EstimateBreakdownModal
+          issue={breakdownIssue as EstimationIssue | null}
+          onClose={() => setBreakdownIssue(null)}
+        />
+        {percentBreakdownIssue && (
+          <PercentCompleteModal
+            isOpen={!!percentBreakdownIssue}
+            onClose={() => setPercentBreakdownIssue(null)}
+            issue={percentBreakdownIssue as unknown as IssueOrRelease}
+            childIssues={getPercentChildren(percentBreakdownIssue as unknown as IssueOrRelease)}
+          />
+        )}
       </>
     </div>
   );

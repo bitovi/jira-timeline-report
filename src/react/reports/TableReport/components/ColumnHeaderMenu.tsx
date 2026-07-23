@@ -19,27 +19,40 @@ import type { FilterValue, SortMode } from '../model/applyView';
 
 interface ColumnHeaderMenuProps {
   column: ColumnDefinition;
-  filterValue: FilterValue | undefined;
-  onFilterChange: (value: FilterValue | undefined) => void;
   onRemove: () => void;
+  /**
+   * Omitted entirely in contexts with no filter control (e.g. the 2D cross-tab measure menu), which
+   * hides the Filter section regardless of `column.filter`.
+   */
+  filterValue?: FilterValue | undefined;
+  onFilterChange?: (value: FilterValue | undefined) => void;
   /** Distinct values observed for this column, used by `select` filters. */
   filterOptions?: string[];
   /** Whether the column currently has an active filter (drives the always-visible state). */
-  isActive: boolean;
+  isActive?: boolean;
   /** This column's active sort mode, or `null` when another column (or none) owns the sort. */
   sortMode?: SortMode | null;
   /** Set this column's sort mode. Tree-capable columns also offer the `tree` (Hierarchy) mode. */
   onSortChange?: (mode: SortMode) => void;
   /**
-   * The column's current per-column aggregation override, if any. Supplied by the report only when
-   * grouping is active so the "Aggregation" submenu is shown. When omitted the submenu is hidden.
+   * The column's current per-column aggregation override, if any. Supplied whenever the column is a
+   * measure (identity/grouped columns are excluded upstream). When omitted the submenu is hidden.
    */
   aggregationOverride?: AggregationId;
   /** Set/clear this column's per-column aggregation override. Presence enables the submenu. */
-  onAggregationChange?: (value: AggregationId) => void;  /** Move this column one position toward the start. Omitted/disabled on the first shown column. */
+  onAggregationChange?: (value: AggregationId) => void;
+  /**
+   * Whether the chosen aggregation currently affects anything on screen (i.e. the report is grouped
+   * or in a 2D cross-tab). When `false`, the Aggregation label gets a "(used when grouped)" hint
+   * (mirrors spec/012-table-and-grouper/mockups/table-report.html) since the choice is a no-op until
+   * the view is grouped. Defaults to `true`.
+   */
+  aggregationActive?: boolean;
+  /** Move this column one position toward the start. Omitted/disabled on the first shown column. */
   onMoveLeft?: () => void;
   /** Move this column one position toward the end. Omitted/disabled on the last shown column. */
-  onMoveRight?: () => void;}
+  onMoveRight?: () => void;
+}
 
 export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
   column,
@@ -47,11 +60,12 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
   onFilterChange,
   onRemove,
   filterOptions,
-  isActive,
+  isActive = false,
   sortMode,
   onSortChange,
   aggregationOverride,
   onAggregationChange,
+  aggregationActive = true,
   onMoveLeft,
   onMoveRight,
 }) => {
@@ -61,12 +75,13 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
   const currentAggregation = effectiveAggregationId(column, aggregationOverride);
 
   // Sort options match the header-click behavior: tree-capable identity columns offer
-  // Hierarchy / A→Z / Z→A; every other column offers plain ascending / descending.
+  // Hierarchy / A→Z / Z→A / Rank; every other column offers plain ascending / descending.
   const sortOptions: Array<{ mode: SortMode; label: string }> = column.isTree
     ? [
         { mode: 'tree', label: 'Hierarchy (nested)' },
         { mode: 'asc', label: 'A → Z' },
         { mode: 'desc', label: 'Z → A' },
+        { mode: 'rank', label: 'Rank' },
       ]
     : [
         { mode: 'asc', label: 'Sort ascending' },
@@ -104,7 +119,9 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
           )}
           {aggregationOptions.length > 0 && onAggregationChange && (
             <div className="flex flex-col gap-1" data-testid="table-aggregation-menu">
-              <span className="text-xs font-semibold text-neutral-801">Aggregation</span>
+              <span className="text-xs font-semibold text-neutral-801">
+                Aggregation{aggregationActive ? '' : ' (used when grouped)'}
+              </span>
               <div className="flex flex-col">
                 {aggregationOptions.map((id) => (
                   <button
@@ -155,7 +172,7 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
               </div>
             </div>
           )}
-          {column.filter && (
+          {column.filter && onFilterChange && (
             <div className="flex flex-col gap-1">
               <span className="text-xs font-semibold text-neutral-801">Filter</span>
               <FilterControl
