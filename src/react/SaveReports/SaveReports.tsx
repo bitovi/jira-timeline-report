@@ -14,6 +14,10 @@ import ReportControls from './components/ReportControls';
 import EditableTitle from './components/EditableTitle';
 import { useQueryParams } from '../hooks/useQueryParams';
 import { useSelectedReport } from './hooks/useSelectedReports';
+import { usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportType';
+import { useReportLayout } from '../services/report-layout';
+import { toStoredSections } from '../reports/ReportOfReports/model/sections';
+import { storedQueryParams } from './storedQueryParams';
 import routeData from '../../canjs/routing/route-data';
 
 interface SaveReportProps {
@@ -27,11 +31,15 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const closeModal = () => setIsOpen(false);
 
   const reports = useAllReports();
+  const [primaryReportType] = usePrimaryReportType();
+
+  const { sections, resetSections } = useReportLayout();
 
   const { createReport, isCreating } = useCreateReport();
   const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
     reports,
     queryParamObservable,
+    sections,
   });
 
   const [name, setName] = useState(selectedReport?.name ?? 'Untitled Report');
@@ -70,10 +78,17 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
 
   const handleCreate = (name: string) => {
     const id = uuidv4();
-    const params = new URLSearchParams({ ...routeData.serialize(), report: id });
+    const params = new URLSearchParams({
+      ...(storedQueryParams(routeData.serialize()) as Record<string, string>),
+      report: id,
+    });
+
+    // `sections` is the report-of-reports document tree. Omitted entirely for every other report
+    // type, which has none. See spec/016-report-of-reports Phase 3.
+    const storedSections = toStoredSections(sections);
 
     createReport(
-      { id, name, queryParams: params.toString() },
+      { id, name, queryParams: params.toString(), ...(storedSections.length ? { sections: storedSections } : {}) },
       {
         onSuccess: () => {
           closeModal();
@@ -93,6 +108,9 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       return;
     }
 
+    // The URL reset restores every param-backed setting; the document tree lives outside the URL,
+    // so it needs restoring separately.
+    resetSections();
     queryParamObservable.set(`?report=${selectedReport.id}`);
   };
 
@@ -123,7 +141,10 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       </div>
       <div className="flex gap-4 items-center">
         <div className="contents report-chrome-hidden">
-          {!selectedReport && !!queryParams.get('jql') && (
+          {/* The `jql` gate is a proxy for "there's something worth saving". A report-of-reports
+              never has a `jql` param of its own, so it needs its own clause here.
+              See spec/016-report-of-reports. */}
+          {!selectedReport && (!!queryParams.get('jql') || primaryReportType === 'report-of-reports') && (
             <Button appearance="primary" onClick={openModal}>
               Create new report
             </Button>

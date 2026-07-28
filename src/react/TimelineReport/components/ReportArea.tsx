@@ -14,6 +14,15 @@ export interface ReportAreaProps {
   primaryIssueType?: string;
   /** Number of primary issues/releases after filtering — drives report vs. empty-result. */
   primaryIssuesCount: number;
+  /**
+   * The report owns its own data, so the shell's JQL / empty-result / loading gates don't apply.
+   * Set for `report-of-reports`, which has no JQL and no primary issues of its own — each embedded
+   * child fetches for itself. With no JQL the shell's request never runs (getRawIssues returns
+   * undefined) and its status sits at 'pending' forever, so without this the document would be
+   * replaced by the no-JQL prompt and the loading stepper. Rejections still surface.
+   * See spec/016-report-of-reports.
+   */
+  selfManagesData?: boolean;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */
   children: ReactNode;
 }
@@ -33,6 +42,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
   jql,
   primaryIssueType,
   primaryIssuesCount,
+  selfManagesData = false,
   children,
 }) => {
   const { status, rejectReason } = loadingState;
@@ -42,15 +52,17 @@ export const ReportArea: FC<ReportAreaProps> = ({
 
   return (
     <>
-      {!jql && isLoggedIn && <NoJqlMessage />}
+      {!jql && isLoggedIn && !selfManagesData && <NoJqlMessage />}
 
-      {resolved && primaryIssuesCount > 0 && <div className="my-2 border-box color-bg-white flex-1">{children}</div>}
+      {(selfManagesData || (resolved && primaryIssuesCount > 0)) && (
+        <div className="my-2 border-box color-bg-white flex-1">{children}</div>
+      )}
 
-      {resolved && primaryIssuesCount === 0 && (
+      {!selfManagesData && resolved && primaryIssuesCount === 0 && (
         <EmptyResultMessage count={primaryIssuesCount} primaryIssueType={primaryIssueType} />
       )}
 
-      {jql && pending && <LoadingProgressContainer loadingState={loadingState} />}
+      {!selfManagesData && jql && pending && <LoadingProgressContainer loadingState={loadingState} />}
 
       {rejected && (
         <ErrorMessage

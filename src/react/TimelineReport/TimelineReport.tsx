@@ -30,34 +30,13 @@ import ViewReports from '../ViewReports';
 import ReportFooter from '../ReportFooter/ReportFooter';
 import PrintHeader from '../PrintHeader';
 
-import { WorkBreakdown } from '../reports/WorkBreakdown';
-import { EstimateAnalysis } from '../reports/EstimateAnalysis/EstimateAnalysis';
-import AutoScheduler from '../reports/AutoScheduler/AutoScheduler';
-import EstimationProgress from '../reports/EstimationProgress/EstimationProgress';
-import { GroupingReport } from '../reports/GroupingReport/GroupingReport';
-import { FlowMetrics } from '../reports/FlowMetrics/FlowMetrics';
-import { TimeInStatus } from '../reports/TimeInStatus/TimeInStatus';
-import { ScatterTimeline } from '../reports/ScatterTimeline';
-import { GanttGrid } from '../reports/GanttReport/GanttGrid';
-import { EstimationTable } from '../reports/EstimationTable';
-import { TableReport } from '../reports/TableReport/TableReport';
+import { WorkBreakdown } from '../reports/registry';
+import { reportComponents } from '../reports/shellRegistry';
+import { propsFor, secondaryPropsFor } from '../reports/reportProps';
+import { ReportLayoutProvider } from '../services/report-layout';
 
-// URL `primaryReportType` → the React report that renders it. Typed loosely (each report has its
-// own prop subset of the shared `*Obs` bag) — matches the untyped `createElement` registry the
-// StacheElement used. This is the seam for future `React.lazy` code-splitting
-// (see spec/011-react-rewrite/timeline-report/progressive-loading.md).
-const urlParamValuesToReactComponents: Record<string, ComponentType<any>> = {
-  'estimate-analysis': EstimateAnalysis,
-  'auto-scheduler': AutoScheduler,
-  'estimation-progress': EstimationProgress,
-  grouper: GroupingReport,
-  'flow-metrics': FlowMetrics,
-  'time-in-status': TimeInStatus,
-  due: ScatterTimeline,
-  'start-due': GanttGrid,
-  table: EstimationTable,
-  table2: TableReport,
-};
+// Reports that own their own data instead of consuming the shell's single JQL-driven request.
+const SELF_MANAGED_REPORT_TYPES = new Set(['report-of-reports']);
 
 // The `routeData` default export carries placeholder (.js) types; cast the observables/props we
 // read off it, mirroring the pattern in SelectCloudWrapper.tsx.
@@ -105,6 +84,11 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const [primaryReportType] = useRouteData<string>('primaryReportType');
   const [secondaryReportType] = useRouteData<string>('secondaryReportType');
   const [primaryIssueType] = useRouteData<string>('primaryIssueType');
+  // The open saved report's record, which seeds the report-of-reports document tree. `reportsData`
+  // is populated before React mounts whenever `?report=` is present (shared/main-helper.js), and is
+  // briefly absent for a just-created report — the provider treats that as "unknown", not "empty".
+  const openReportObs = useMemo(() => value.from<any>(rd, 'reportData'), []);
+  const openReport = useCanObservable(openReportObs);
 
   const primaryIssuesOrReleasesObs = useMemo(() => value.from<any[]>(vm, 'primaryIssuesOrReleases'), [vm]);
   const primaryIssuesOrReleases = useCanObservable(primaryIssuesOrReleasesObs) ?? [];
@@ -132,61 +116,11 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   }, [storage]);
 
   // Report props — the same `*Obs` contract the StacheElement passed. Built once (vm/routeData are
-  // stable) so reports don't resubscribe on every shell render.
-  const baseProps = useMemo(
-    () => ({
-      primaryIssuesOrReleasesObs: value.from(vm, 'primaryIssuesOrReleases'),
-      allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
-      rollupTimingLevelsAndCalculationsObs: value.from(vm, 'rollupTimingLevelsAndCalculations'),
-      filteredDerivedIssuesObs: value.from(vm, 'filteredDerivedIssues'),
-      extraFieldsObs: value.bind(routeData, 'fields'),
-      rowGroupObs: value.bind(routeData, 'rowGroup'),
-      colGroupObs: value.bind(routeData, 'colGroup'),
-      aggregatorsObs: value.bind(routeData, 'aggregators'),
-      flowMetricsCycleTimeRangeObs: value.bind(routeData, 'flowMetricsCycleTimeRange'),
-      flowMetricsStatusFilterObs: value.bind(routeData, 'flowMetricsStatusFilter'),
-      flowMetricsIssueTypeFilterObs: value.bind(routeData, 'flowMetricsIssueTypeFilter'),
-      flowMetricsProjectFilterObs: value.bind(routeData, 'flowMetricsProjectFilter'),
-      flowMetricsTeamFilterObs: value.bind(routeData, 'flowMetricsTeamFilter'),
-      timeInStatusDateRangeObs: value.bind(routeData, 'timeInStatusDateRange'),
-      timeInStatusStatusFilterObs: value.bind(routeData, 'timeInStatusStatusFilter'),
-      timeInStatusIssueTypeFilterObs: value.bind(routeData, 'timeInStatusIssueTypeFilter'),
-      timeInStatusProjectFilterObs: value.bind(routeData, 'timeInStatusProjectFilter'),
-      timeInStatusReorderObs: value.bind(routeData, 'timeInStatusReorder'),
-      roundToObs: value.bind(routeData, 'roundTo'),
-      groupByObs: value.bind(routeData, 'groupBy'),
-      dateRangeStartObs: value.bind(routeData, 'scatterDateRangeStart'),
-      dateRangeEndObs: value.bind(routeData, 'scatterDateRangeEnd'),
-      primaryIssueTypeObs: value.bind(routeData, 'primaryIssueType'),
-      breakdownObs: value.bind(routeData, 'primaryReportBreakdown'),
-      showPercentCompleteObs: value.bind(routeData, 'showPercentComplete'),
-      // Table report (`table2`) persisted view state — spec/012-table-and-grouper Phase 5.
-      tableColumnsObs: value.bind(routeData, 'tableColumns'),
-      tableSortColumnObs: value.bind(routeData, 'tableSortColumn'),
-      tableSortDirObs: value.bind(routeData, 'tableSortDir'),
-      tableFiltersObs: value.bind(routeData, 'tableFilters'),
-      tableGroupByObs: value.bind(routeData, 'tableGroupBy'),
-      tableGroupByColObs: value.bind(routeData, 'tableGroupByCol'),
-      tableGroupByGranularityObs: value.bind(routeData, 'tableGroupByGranularity'),
-      tableGroupByColGranularityObs: value.bind(routeData, 'tableGroupByColGranularity'),
-      tableFieldAxisObs: value.bind(routeData, 'tableFieldAxis'),
-      tableShowRowTotalsObs: value.bind(routeData, 'tableShowRowTotals'),
-      tableShowColTotalsObs: value.bind(routeData, 'tableShowColTotals'),
-    }),
-    [vm],
-  );
+  // stable) so reports don't resubscribe on every shell render. The shell's source is the global
+  // `routeData`; embedded children build the same bag from their own config (spec/016 Phase 2).
+  const baseProps = useMemo(() => propsFor(vm, routeData), [vm]);
 
-  const secondaryProps = useMemo(
-    () => ({
-      primaryIssuesOrReleasesObs: value.from(vm, 'primaryIssuesOrReleases'),
-      allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
-      planningIssuesObs: value.from(vm, 'planningIssues'),
-      secondaryReportTypeObs: value.bind(routeData, 'secondaryReportType'),
-      filterRowsObs: value.bind(routeData, 'secondaryFilterRows'),
-      childFilterRowsObs: value.bind(routeData, 'secondaryChildFilterRows'),
-    }),
-    [vm],
-  );
+  const secondaryProps = useMemo(() => secondaryPropsFor(vm, routeData), [vm]);
 
   const onUpdateTeamsConfiguration = ({ fields, ...configuration }: any) => {
     queues.batch.start();
@@ -195,7 +129,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
     queues.batch.stop();
   };
 
-  const PrimaryReport = primaryReportType ? urlParamValuesToReactComponents[primaryReportType] : undefined;
+  const PrimaryReport = primaryReportType ? reportComponents[primaryReportType] : undefined;
   // Only the Gantt ('start-due') and Scatter Plot ('due') primaries support a secondary report, so a
   // stale `secondaryReportType` left in the URL must not render the Work Breakdown below an unrelated
   // primary (e.g. estimate-analysis). See showSecondaryReport.ts.
@@ -205,7 +139,9 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
-    <>
+    // Holds the report-of-reports document tree. Mounted here because its consumers are sibling
+    // subtrees: the report body below renders it, and SaveReports persists it (spec/016 Phase 3).
+    <ReportLayoutProvider savedReport={openReport}>
       {showingConfiguration && (
         <div
           id="timeline-configuration"
@@ -268,6 +204,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
           jql={jql}
           primaryIssueType={primaryIssueType}
           primaryIssuesCount={primaryIssuesOrReleases.length}
+          selfManagesData={SELF_MANAGED_REPORT_TYPES.has(primaryReportType)}
         >
           <div id="print-header">
             <PrintHeader />
@@ -294,7 +231,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
           </div>
         </ReportArea>
       </div>
-    </>
+    </ReportLayoutProvider>
   );
 };
 

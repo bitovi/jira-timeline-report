@@ -29,6 +29,16 @@ describe('<PrintReportButton />', () => {
     expect(screen.queryByRole('button', { name: 'Download PDF' })).not.toBeInTheDocument();
   });
 
+  // A composed document is one of the more valuable things to print — its children are the
+  // printable report types anyway. See spec/016-report-of-reports Phase 4.
+  it('renders a "Download PDF" button for a report-of-reports', () => {
+    vi.spyOn(PrimaryReportType, 'usePrimaryReportType').mockReturnValue(['report-of-reports', vi.fn()]);
+
+    render(<PrintReportButton />);
+
+    expect(screen.getByRole('button', { name: 'Download PDF' })).toBeInTheDocument();
+  });
+
   it('calls window.print() when clicked', () => {
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
     render(<PrintReportButton />);

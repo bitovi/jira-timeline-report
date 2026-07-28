@@ -215,6 +215,16 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
 }) => {
   const [primaryReportType] = usePrimaryReportType();
 
+  // A report-of-reports has no JQL, issue type, or view settings of its own — its children render
+  // as saved. Only the report-type selector applies. See spec/016-report-of-reports.
+  if (primaryReportType === 'report-of-reports') {
+    return (
+      <div className="pt-1">
+        <SelectReportType />
+      </div>
+    );
+  }
+
   if (primaryReportType === 'estimation-progress' || primaryReportType === 'grouper') {
     return (
       <>
