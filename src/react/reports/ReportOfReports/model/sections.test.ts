@@ -7,7 +7,9 @@ import {
   savedReportNode,
   sectionNode,
   appendNode,
+  inlineReportNode,
   setSectionTitleAt,
+  setExpressionAt,
   removeNodeAt,
   moveNodeAt,
   canMoveNodeAt,
@@ -24,6 +26,8 @@ const storedSection = (title: string, children: StoredNode[] = []): StoredNode =
   params: { title },
   children,
 });
+
+const storedInlineReport = (expression: string): StoredNode => ({ type: 'inline-report', params: { expression } });
 
 const reportIdOf = (node: StoredNode): string | undefined =>
   node.type === 'saved-report' ? node.params.reportId : undefined;
@@ -64,14 +68,27 @@ describe('parseSections', () => {
     expect(node.type === 'section' && node.children).toEqual([]);
   });
 
+  it('parses an inline-report node', () => {
+    const [node] = parseSections([storedInlineReport('(issue = IMP-1).summary')]);
+
+    expect(node.type).toBe('inline-report');
+    expect(node.type === 'inline-report' && node.params.expression).toBe('(issue = IMP-1).summary');
+  });
+
+  it('tolerates an inline-report node with no expression', () => {
+    const [node] = parseSections([{ type: 'inline-report' }]);
+
+    expect(node.type === 'inline-report' && node.params.expression).toBe('');
+  });
+
   // A document written by a newer client degrades to placeholders instead of blanking the page.
   it('degrades an unknown node type to a placeholder that keeps the original node', () => {
-    const raw = { type: 'inline-report', params: { expression: '(issue = IMP-1).summary' } };
+    const raw = { type: 'inline-report-grid', params: { columns: 2 } };
 
     const [node] = parseSections([raw]);
 
     expect(node.type).toBe('unknown');
-    expect(node.type === 'unknown' && node.params).toMatchObject({ originalType: 'inline-report', raw });
+    expect(node.type === 'unknown' && node.params).toMatchObject({ originalType: 'inline-report-grid', raw });
   });
 
   it('degrades malformed nodes to placeholders', () => {
@@ -131,7 +148,7 @@ describe('toStoredSections', () => {
   it('restores an unrecognized node exactly as it was stored', () => {
     const stored = [
       storedSavedReport('a'),
-      { type: 'inline-report', params: { expression: '(issue = IMP-1).summary' } } as unknown as StoredNode,
+      { type: 'inline-report-grid', params: { columns: 2 } } as unknown as StoredNode,
     ];
 
     expect(toStoredSections(parseSections(stored))).toEqual(stored);
@@ -141,6 +158,7 @@ describe('toStoredSections', () => {
     const stored = [
       storedSection('Q3', [
         storedSavedReport('a'),
+        storedInlineReport('(issue = IMP-1).summary'),
         { type: 'text', params: { content: 'hi' } } as unknown as StoredNode,
         storedSection('July', [storedSavedReport('b')]),
       ]),
@@ -277,6 +295,37 @@ describe('setSectionTitleAt', () => {
     setSectionTitleAt(tree, [0], 'Q4');
 
     expect(JSON.stringify(tree)).toBe(frozen);
+  });
+});
+
+describe('setExpressionAt', () => {
+  it('rewrites an expression at the root and at depth', () => {
+    const tree = parseSections([
+      storedInlineReport('(issue = A-1).summary'),
+      storedSection('Q3', [storedInlineReport('(issue = B-1).summary')]),
+    ]);
+
+    expect(toStoredSections(setExpressionAt(tree, [0], '(issue = A-2).duedate'))[0]).toEqual(
+      storedInlineReport('(issue = A-2).duedate'),
+    );
+    expect(toStoredSections(setExpressionAt(tree, [1, 0], '(issue = B-2).summary'))[1]).toEqual(
+      storedSection('Q3', [storedInlineReport('(issue = B-2).summary')]),
+    );
+  });
+
+  it('keeps the node id, so editing an expression does not remount the node', () => {
+    const node = inlineReportNode('(issue = A-1).summary');
+
+    expect(setExpressionAt([node], [0], '(issue = A-2).summary')[0].id).toBe(node.id);
+  });
+
+  it('leaves the tree unchanged for a path that misses, a node of another type, or no change', () => {
+    const tree = parseSections([storedInlineReport('(issue = A-1).summary'), storedSavedReport('a')]);
+
+    expect(setExpressionAt(tree, [9], 'x')).toBe(tree);
+    expect(setExpressionAt(tree, [], 'x')).toBe(tree);
+    expect(setExpressionAt(tree, [1], 'x')).toBe(tree);
+    expect(setExpressionAt(tree, [0], '(issue = A-1).summary')).toBe(tree);
   });
 });
 

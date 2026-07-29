@@ -31,8 +31,13 @@ export const SectionTitle: FC<SectionTitleProps> = ({ title, depth, isEditing, o
   const label = title || UNTITLED_SECTION;
 
   return (
-    // InlineEdit's internal styles can't be reached through props; this drops its outer margin.
-    <div className="[&>form>div]:!m-0 grow">
+    // InlineEdit's internal styles can't be reached through props; this drops its outer margin, and
+    // makes the resting hit area read as editable text rather than as a button.
+    //
+    // `grow` only while editing: the field wants the width of the row, but at rest the hit area has
+    // to end where the text ends. A full-width one would swallow clicks on the rest of the row —
+    // which is what pins it — turning "click the row" into "rename the section".
+    <div className={`[&>form>div]:!m-0 [&_button]:!cursor-text min-w-0 ${isEditing ? 'grow' : ''}`}>
       <InlineEdit
         isEditing={isEditing}
         onEdit={onEdit}
@@ -45,7 +50,9 @@ export const SectionTitle: FC<SectionTitleProps> = ({ title, depth, isEditing, o
           <Textfield {...fieldProps} autoFocus autoComplete="new-password" placeholder="Section title" />
         )}
         readView={() => (
-          <Heading className={`${className} ${title ? '' : 'italic font-normal text-slate-500'}`}>{label}</Heading>
+          <Heading className={`${className} truncate ${title ? '' : 'italic font-normal text-slate-500'}`}>
+            {label}
+          </Heading>
         )}
       />
     </div>
@@ -53,19 +60,24 @@ export const SectionTitle: FC<SectionTitleProps> = ({ title, depth, isEditing, o
 };
 
 /**
- * Scales the heading with nesting. Imperfect by design: a card's title is a fixed `h3` and cards can
- * sit at the root under no heading at all, so this buys a readable outline rather than a valid one.
+ * Scales the heading with nesting. Two steps, not three: a top-level section titles a whole part of
+ * the document, so it gets the display face; everything nested is one step down and matches the
+ * weight a report row's name carries, since at that point they're peers in the same list.
+ *
+ * Imperfect by design: a report row's name is a fixed `h3` and reports can sit at the root under no
+ * heading at all, so this buys a readable outline rather than a valid one.
+ * See spec/016-report-of-reports/004-redesign §4.
  */
 const headingFor = (depth: number): { Heading: 'h2' | 'h3' | 'h4'; className: string } => {
   if (depth <= 1) {
-    return { Heading: 'h2', className: 'text-lg font-semibold' };
+    return { Heading: 'h2', className: 'font-bitovipoppins text-lg font-bold' };
   }
 
   if (depth === 2) {
     return { Heading: 'h3', className: 'text-base font-semibold' };
   }
 
-  return { Heading: 'h4', className: 'text-sm font-semibold' };
+  return { Heading: 'h4', className: 'text-base font-semibold' };
 };
 
 export default SectionTitle;

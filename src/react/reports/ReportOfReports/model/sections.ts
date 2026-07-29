@@ -10,10 +10,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 export type StoredNode =
   | { type: 'saved-report'; params: { reportId: string } }
-  | { type: 'section'; params: { title: string }; children: StoredNode[] };
-// Coming: `{ type: 'inline-report'; params: { expression: string } }` — a Jira expression such as
-// `(issue = IMP-1).summary`, stored as the user's source text and parsed on read. Also anticipated:
-// `text` nodes, and grid options on a section's `params`.
+  | { type: 'section'; params: { title: string }; children: StoredNode[] }
+  | { type: 'inline-report'; params: { expression: string } };
+// Still anticipated: `text` nodes, and grid options on a section's `params`.
 
 /** ---- in-memory form: the stored form plus identity ---------------------------------------- */
 
@@ -22,13 +21,21 @@ export type SavedReportNode = { id: string; type: 'saved-report'; params: { repo
 export type SectionNode = { id: string; type: 'section'; params: { title: string }; children: LayoutNode[] };
 
 /**
+ * One live Jira field value, written as an expression the user types — `(issue = ABC-1).summary`. The
+ * source text is what's stored; it's split into its JQL and field halves on every render rather than
+ * at rest, so a saved document stays readable and re-editable.
+ * See spec/016-report-of-reports/003-self-reports.
+ */
+export type InlineReportNode = { id: string; type: 'inline-report'; params: { expression: string } };
+
+/**
  * A node this client can't interpret — an unrecognized `type` (a document written by a newer
  * client) or a structurally malformed one. It renders as a placeholder instead of blanking the
  * page, and `raw` keeps the original so {@link toStoredSections} writes it back untouched.
  */
 export type UnknownNode = { id: string; type: 'unknown'; params: { originalType: string; raw: unknown } };
 
-export type LayoutNode = SavedReportNode | SectionNode | UnknownNode;
+export type LayoutNode = SavedReportNode | SectionNode | InlineReportNode | UnknownNode;
 
 /** Position of a node in the tree: indices from the root, descending through `children`. */
 export type LayoutPath = number[];
@@ -52,6 +59,12 @@ export const sectionNode = (title: string, children: LayoutNode[] = []): Section
   type: 'section',
   params: { title },
   children,
+});
+
+export const inlineReportNode = (expression: string): InlineReportNode => ({
+  id: nextId(),
+  type: 'inline-report',
+  params: { expression },
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -83,6 +96,14 @@ const parseNode = (raw: unknown): LayoutNode => {
     return sectionNode(typeof title === 'string' ? title : '', parseSections(raw.children));
   }
 
+  if (raw.type === 'inline-report') {
+    const expression = isRecord(raw.params) ? raw.params.expression : undefined;
+
+    // A missing expression is tolerated as blank, like a section's title: the node renders its own
+    // "write an expression" state rather than becoming an unreadable placeholder.
+    return inlineReportNode(typeof expression === 'string' ? expression : '');
+  }
+
   return placeholder(raw);
 };
 
@@ -106,6 +127,10 @@ export const toStoredSections = (nodes: LayoutNode[]): StoredNode[] =>
 
     if (node.type === 'section') {
       return { type: 'section', params: { title: node.params.title }, children: toStoredSections(node.children) };
+    }
+
+    if (node.type === 'inline-report') {
+      return { type: 'inline-report', params: { expression: node.params.expression } };
     }
 
     return { type: 'saved-report', params: { reportId: node.params.reportId } };
@@ -193,6 +218,18 @@ export const appendNode = (nodes: LayoutNode[], node: LayoutNode, path: LayoutPa
 export const setSectionTitleAt = (nodes: LayoutNode[], path: LayoutPath, title: string): LayoutNode[] =>
   mapNodeAt(nodes, path, (node) =>
     node.type === 'section' && node.params.title !== title ? { ...node, params: { ...node.params, title } } : node,
+  );
+
+/**
+ * Rewrites the expression of the inline-value node at `path`, returning a new tree. Same contract as
+ * {@link setSectionTitleAt}: the node keeps its `id`, and an unresolvable path, a node of another
+ * type, or an unchanged expression all return the very same tree.
+ */
+export const setExpressionAt = (nodes: LayoutNode[], path: LayoutPath, expression: string): LayoutNode[] =>
+  mapNodeAt(nodes, path, (node) =>
+    node.type === 'inline-report' && node.params.expression !== expression
+      ? { ...node, params: { ...node.params, expression } }
+      : node,
   );
 
 /**
