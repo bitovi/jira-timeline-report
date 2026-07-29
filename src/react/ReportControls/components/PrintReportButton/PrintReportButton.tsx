@@ -10,10 +10,13 @@ import { computePrintScale } from './helpers/computePrintScale';
 const CHART_CONTAINER_ID = 'react-report-container';
 
 /**
- * `report-of-reports` prints the document it composes; each child card carries `print-avoid-break`
- * so a page break lands between children rather than through one.
+ * `report-of-reports` prints the document it composes; each embedded report's wrapper carries
+ * `print-avoid-break` so a page break lands between children rather than through one.
  */
 const PRINTABLE_REPORT_TYPES = new Set(['due', 'start-due', 'report-of-reports']);
+
+/** See the matching rule in src/css/print.css. */
+const MEASURING_CLASS = 'measuring-print-scale';
 
 const applyPrintScale = () => {
   const element = document.getElementById(CHART_CONTAINER_ID);
@@ -23,7 +26,14 @@ const applyPrintScale = () => {
 
   // Reset first so `scrollWidth` reflects the natural (unscaled) content width.
   element.style.setProperty('--print-scale', '1');
+
+  // A collapsed report-of-reports section is `display: none` on screen but prints in full, so it has
+  // to be revealed for the measurement — otherwise a wide chart inside one adds no width here and
+  // then prints clipped. Reading `scrollWidth` forces layout, so the class is in effect by then.
+  element.classList.add(MEASURING_CLASS);
   const scale = computePrintScale(element.scrollWidth);
+  element.classList.remove(MEASURING_CLASS);
+
   element.style.setProperty('--print-scale', String(scale));
 };
 

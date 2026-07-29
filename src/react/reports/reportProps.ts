@@ -62,45 +62,6 @@ export const secondaryPropsFor = (vm: any, config: any) => ({
   childFilterRowsObs: value.bind(config, 'secondaryChildFilterRows'),
 });
 
-/**
- * The exact keys {@link propsFor} produces. Frozen here so the extraction (and any later edit) is
- * checked by a test instead of by every report breaking at runtime.
- */
-export const REPORT_PROP_KEYS = [
-  'primaryIssuesOrReleasesObs',
-  'allIssuesOrReleasesObs',
-  'rollupTimingLevelsAndCalculationsObs',
-  'filteredDerivedIssuesObs',
-  'extraFieldsObs',
-  'rowGroupObs',
-  'colGroupObs',
-  'aggregatorsObs',
-  'flowMetricsCycleTimeRangeObs',
-  'flowMetricsStatusFilterObs',
-  'flowMetricsIssueTypeFilterObs',
-  'flowMetricsProjectFilterObs',
-  'flowMetricsTeamFilterObs',
-  'timeInStatusDateRangeObs',
-  'timeInStatusStatusFilterObs',
-  'timeInStatusIssueTypeFilterObs',
-  'timeInStatusProjectFilterObs',
-  'timeInStatusReorderObs',
-  'roundToObs',
-  'groupByObs',
-  'dateRangeStartObs',
-  'dateRangeEndObs',
-  'primaryIssueTypeObs',
-  'breakdownObs',
-  'showPercentCompleteObs',
-  'tableColumnsObs',
-  'tableSortColumnObs',
-  'tableSortDirObs',
-  'tableFiltersObs',
-  'tableGroupByObs',
-  'tableGroupByColObs',
-  'tableGroupByGranularityObs',
-  'tableGroupByColGranularityObs',
-  'tableFieldAxisObs',
-  'tableShowRowTotalsObs',
-  'tableShowColTotalsObs',
-] as const;
+// The key set this produces is pinned by `reportProps.test.ts`. The expected list lives in the test
+// rather than here on purpose: a guard kept beside the thing it guards gets "fixed" in the same edit
+// that broke it.

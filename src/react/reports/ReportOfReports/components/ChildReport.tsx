@@ -44,7 +44,7 @@ export interface ChildReportProps {
  * Settings" message points at controls a child doesn't have, so an empty child renders as its own
  * (empty) report. See spec/016-report-of-reports Phase 2.
  */
-export const ChildReport: FC<ChildReportProps> = ({
+const ChildReportView: FC<ChildReportProps> = ({
   report,
   parent = routeData,
   components = embeddableReportComponents,
@@ -90,6 +90,21 @@ export const ChildReport: FC<ChildReportProps> = ({
 
   return <PrimaryReport {...props} />;
 };
+
+/**
+ * Memoized because the document re-renders on every hover change — `Document` consumes the
+ * `DocumentEditing` context, so moving the pointer from one row to the next rebuilds the whole
+ * element tree. No report component under `src/react/reports` is memoized, so without this each row
+ * crossing reconciles every embedded chart's entire subtree; a Gantt of a few hundred issues is
+ * thousands of nodes. Charts are the expensive part of a document, and they cannot change as a
+ * result of a hover.
+ *
+ * A shallow compare is enough: `report` comes from the saved-reports query cache, and the three
+ * injectable props are test seams that production never passes.
+ */
+export const ChildReport = React.memo(ChildReportView);
+
+ChildReport.displayName = 'ChildReport';
 
 const ChildMessage: FC<{ children: React.ReactNode }> = ({ children }) => (
   <p className="p-4 text-slate-500">{children}</p>

@@ -199,6 +199,13 @@ const CHILD_PARAMS = {
 export const CHILD_PARAM_KEYS = Object.keys(CHILD_PARAMS);
 
 /**
+ * Settings the child reads out of its own `queryParams` but *not* through {@link CHILD_PARAMS},
+ * because they self-heal against the hierarchy its query returned rather than simply parsing. Listed
+ * so the drift test can tell "handled further down this file" from "forgotten".
+ */
+export const AD_HOC_CHILD_PARAM_KEYS = ['selectedIssueType', 'toIssueType'];
+
+/**
  * Report-aware parameters an embedded child deliberately does NOT take from its own `queryParams`.
  * Listed explicitly so the drift test can tell "handled elsewhere" from "forgotten".
  */
@@ -209,6 +216,13 @@ export const SHELL_ONLY_PARAM_KEYS = [
   'secondaryReportType',
   'secondaryFilterRows',
   'secondaryChildFilterRows',
+  // Which saved report the *page* has open. A child is identified by its node in the document tree;
+  // it never reads `?report=`.
+  'report',
+  // Page chrome, like `showSettings`: the whole page goes fullscreen, or opens the modal, not one
+  // embedded report.
+  'fullscreen',
+  'openAutoSchedulerModal',
 ];
 
 /** Builds a CanJS prop that resolves from `queryParams` but stays settable in memory. */

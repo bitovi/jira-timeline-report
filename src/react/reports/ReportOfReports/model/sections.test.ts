@@ -171,6 +171,41 @@ describe('toStoredSections', () => {
   it('writes an unreadable node back as it was found', () => {
     expect(toStoredSections(parseSections([null]))).toEqual([null]);
   });
+
+  /**
+   * The `unknown` placeholder covers a node type this client can't read. These cover the other half:
+   * extra keys on a type it *can* read. Grid options on a section's `params` are the next thing
+   * planned for this schema, so without this an older client that merely opened a newer document and
+   * pressed Save would erase them — a silent, unrecoverable edit nobody asked for.
+   */
+  it('preserves params it does not recognize on a section', () => {
+    const stored = [{ type: 'section', params: { title: 'Q3', columns: 2 }, children: [] } as unknown as StoredNode];
+
+    expect(toStoredSections(parseSections(stored))).toEqual(stored);
+  });
+
+  it('preserves params it does not recognize on a saved report and an inline value', () => {
+    const stored = [
+      { type: 'saved-report', params: { reportId: 'a', collapsed: true } },
+      { type: 'inline-report', params: { expression: '(issue = A-1).summary', format: 'bold' } },
+    ] as unknown as StoredNode[];
+
+    expect(toStoredSections(parseSections(stored))).toEqual(stored);
+  });
+
+  it('preserves unrecognized keys alongside an edit to a recognized one', () => {
+    const stored = [{ type: 'section', params: { title: 'Q3', columns: 2 }, children: [] } as unknown as StoredNode];
+
+    expect(toStoredSections(setSectionTitleAt(parseSections(stored), [0], 'Q4'))).toEqual([
+      { type: 'section', params: { title: 'Q4', columns: 2 }, children: [] },
+    ]);
+  });
+
+  it('keeps a preserved node comparing equal to itself, so the dirty flag stays put', () => {
+    const stored = [{ type: 'section', params: { title: 'Q3', columns: 2 }, children: [] } as unknown as StoredNode];
+
+    expect(sameSections(parseSections(stored), parseSections(stored))).toBe(true);
+  });
 });
 
 describe('sameSections', () => {

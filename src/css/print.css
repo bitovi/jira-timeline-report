@@ -30,6 +30,15 @@
   display: none !important;
 }
 
+/* `applyPrintScale` (PrintReportButton) reads `scrollWidth` while the rule above is still live, so a
+   collapsed subtree would contribute no width at all — a wide chart inside one would measure as
+   nothing, compute a scale of 1, and then print at full size and clip. The measurement adds this
+   class to #react-report-container for exactly as long as it takes to read `scrollWidth`. Two class
+   selectors, so it outranks the rule above whatever the source order. */
+.measuring-print-scale .collapsed-content {
+  display: block !important;
+}
+
 @media print {
   /* Browsers strip background colors when printing by default (to save ink) — but the Gantt/
      Scatter timeline bars and the footer legend swatches are all `background-color`, so without

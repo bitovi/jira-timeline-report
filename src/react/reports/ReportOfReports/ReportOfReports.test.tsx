@@ -471,6 +471,16 @@ describe('<ReportOfReports>', () => {
       expect(mounts).toEqual(['month', 'week']);
     });
 
+    // The other half of the print contract — a collapsed chart is a separate wrapper from a
+    // collapsed section's, and regresses independently. See the section case for why this matters.
+    it('hides the chart in a way print can put back', async () => {
+      renderReport({ savedSections: [stored('a')] });
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Collapse Alpha' }));
+
+      expect(screen.getByTestId('child-report').closest('[hidden]')).toHaveClass('collapsed-content');
+    });
+
     it('gives no caret to a row with nothing beneath it', async () => {
       renderReport({
         savedSections: [{ type: 'inline-report', params: { expression: '(issue = ABC-1).summary' } }, stored('gone')],
@@ -499,6 +509,26 @@ describe('<ReportOfReports>', () => {
       expect(screen.queryByRole('button', { name: 'Add Report to Q3' })).toBeNull();
       // The row itself stays, and the caret is the only thing that changed about it.
       expect(screen.getByRole('heading', { name: 'Q3' })).toBeVisible();
+    });
+
+    /**
+     * The assertions above are all satisfied by the `hidden` attribute alone, so on its own nothing
+     * here notices if `.collapsed-content` goes missing — and that class is the whole reason the
+     * subtree stays mounted rather than being unmounted. It is what `@media print` overrides
+     * (src/css/print.css), so losing it means "collapse a section to tidy the screen, then Download
+     * PDF" silently drops that section from the PDF. jsdom loads no stylesheet and cannot show that,
+     * so pin the contract structurally instead.
+     */
+    it('hides collapsed content in a way print can put back', async () => {
+      renderReport({ savedSections: withChildren });
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Collapse Q3' }));
+
+      const hiddenWrapper = screen.getAllByTestId('report-card')[0].closest('[hidden]');
+
+      expect(hiddenWrapper).toHaveClass('collapsed-content');
+      // The wrapper must carry no `display` utility of its own, or it would fight the print rule.
+      expect(hiddenWrapper?.className).not.toMatch(/\b(hidden|block|flex|grid|inline)\b/);
     });
 
     it('brings it back without remounting the children', async () => {
@@ -638,6 +668,19 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [{ type: 'section', params: { title: 'Q3' }, children: [] }] });
 
       expect(await screen.findByTestId('empty-container-note')).toHaveClass('pointer-events-none');
+    });
+
+    // The buttons reveal themselves on `focus-within` so the keyboard has a path to them, but this
+    // copy is their sibling and cannot see that focus — so it needs the group to fade out with them.
+    // Without it a keyboard user tabs the buttons in *underneath* fully opaque text. A class
+    // assertion for the same reason as above: jsdom has no stylesheet to compute this from.
+    it('clears the empty-section copy for a keyboard user, not just a pointer', async () => {
+      renderReport({ savedSections: [{ type: 'section', params: { title: 'Q3' }, children: [] }] });
+
+      const note = await screen.findByTestId('empty-container-note');
+
+      expect(note).toHaveClass('group-focus-within:opacity-0');
+      expect(note.parentElement).toHaveClass('group');
     });
 
     it('adds a section with its title field already focused', async () => {

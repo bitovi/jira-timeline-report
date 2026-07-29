@@ -16,9 +16,27 @@ export type StoredNode =
 
 /** ---- in-memory form: the stored form plus identity ---------------------------------------- */
 
-export type SavedReportNode = { id: string; type: 'saved-report'; params: { reportId: string } };
+/**
+ * The stored object a node was parsed from, when there was one.
+ *
+ * Kept so that keys this client doesn't understand survive a round trip instead of being dropped
+ * the next time the document is saved. The {@link UnknownNode} placeholder already does this for an
+ * unrecognized `type`; this does it for extra keys on a type we *do* recognize — grid options on a
+ * section's `params` are the next thing planned for this schema, and without this an older client
+ * that merely opened and saved a document would silently erase them.
+ *
+ * Absent on a node this client just created, which has nothing extra to preserve.
+ */
+type WithRaw = { raw?: Record<string, unknown> };
 
-export type SectionNode = { id: string; type: 'section'; params: { title: string }; children: LayoutNode[] };
+export type SavedReportNode = { id: string; type: 'saved-report'; params: { reportId: string } } & WithRaw;
+
+export type SectionNode = {
+  id: string;
+  type: 'section';
+  params: { title: string };
+  children: LayoutNode[];
+} & WithRaw;
 
 /**
  * One live Jira field value, written as an expression the user types — `(issue = ABC-1).summary`. The
@@ -26,7 +44,7 @@ export type SectionNode = { id: string; type: 'section'; params: { title: string
  * at rest, so a saved document stays readable and re-editable.
  * See spec/016-report-of-reports/003-self-reports.
  */
-export type InlineReportNode = { id: string; type: 'inline-report'; params: { expression: string } };
+export type InlineReportNode = { id: string; type: 'inline-report'; params: { expression: string } } & WithRaw;
 
 /**
  * A node this client can't interpret — an unrecognized `type` (a document written by a newer
@@ -87,13 +105,13 @@ const parseNode = (raw: unknown): LayoutNode => {
   if (raw.type === 'saved-report') {
     const reportId = isRecord(raw.params) ? raw.params.reportId : undefined;
 
-    return typeof reportId === 'string' && reportId ? savedReportNode(reportId) : placeholder(raw);
+    return typeof reportId === 'string' && reportId ? { ...savedReportNode(reportId), raw } : placeholder(raw);
   }
 
   if (raw.type === 'section') {
     const title = isRecord(raw.params) ? raw.params.title : undefined;
 
-    return sectionNode(typeof title === 'string' ? title : '', parseSections(raw.children));
+    return { ...sectionNode(typeof title === 'string' ? title : '', parseSections(raw.children)), raw };
   }
 
   if (raw.type === 'inline-report') {
@@ -101,7 +119,7 @@ const parseNode = (raw: unknown): LayoutNode => {
 
     // A missing expression is tolerated as blank, like a section's title: the node renders its own
     // "write an expression" state rather than becoming an unreadable placeholder.
-    return inlineReportNode(typeof expression === 'string' ? expression : '');
+    return { ...inlineReportNode(typeof expression === 'string' ? expression : ''), raw };
   }
 
   return placeholder(raw);
@@ -115,9 +133,24 @@ const parseNode = (raw: unknown): LayoutNode => {
 export const parseSections = (raw: unknown): LayoutNode[] => (Array.isArray(raw) ? raw.map(parseNode) : []);
 
 /**
- * The inverse of {@link parseSections}: drops in-memory ids and restores unrecognized nodes from
- * their original value, so a parse/serialize round trip is lossless even for content written by a
- * newer client.
+ * The keys this client owns on a node's `params`, layered back over whatever the document was
+ * stored with. Spreading the original first means keys we don't understand come along and the ones
+ * we do keep their original position, so a stored document serializes back byte-identical — which
+ * is what {@link sameSections} compares.
+ */
+const storedParams = (node: WithRaw, params: Record<string, unknown>): Record<string, unknown> => {
+  const original = isRecord(node.raw?.params) ? node.raw.params : undefined;
+
+  return original ? { ...original, ...params } : params;
+};
+
+/**
+ * The inverse of {@link parseSections}: drops in-memory ids and restores anything this client
+ * didn't interpret — an unrecognized node from its original value, and unrecognized keys on a
+ * recognized node from its {@link WithRaw} — so a parse/serialize round trip is lossless even for a
+ * document written by a newer client.
+ *
+ * The casts are because a preserved node carries keys `StoredNode` doesn't name; that is the point.
  */
 export const toStoredSections = (nodes: LayoutNode[]): StoredNode[] =>
   nodes.map((node) => {
@@ -126,14 +159,27 @@ export const toStoredSections = (nodes: LayoutNode[]): StoredNode[] =>
     }
 
     if (node.type === 'section') {
-      return { type: 'section', params: { title: node.params.title }, children: toStoredSections(node.children) };
+      return {
+        ...node.raw,
+        type: 'section',
+        params: storedParams(node, { title: node.params.title }),
+        children: toStoredSections(node.children),
+      } as StoredNode;
     }
 
     if (node.type === 'inline-report') {
-      return { type: 'inline-report', params: { expression: node.params.expression } };
+      return {
+        ...node.raw,
+        type: 'inline-report',
+        params: storedParams(node, { expression: node.params.expression }),
+      } as StoredNode;
     }
 
-    return { type: 'saved-report', params: { reportId: node.params.reportId } };
+    return {
+      ...node.raw,
+      type: 'saved-report',
+      params: storedParams(node, { reportId: node.params.reportId }),
+    } as StoredNode;
   });
 
 /**

@@ -1,6 +1,11 @@
 import { ObservableObject, value } from '../../../../can';
 import { RouteData } from '../../../../canjs/routing/route-data/route-data';
-import { ChildReportConfig, CHILD_PARAM_KEYS, SHELL_ONLY_PARAM_KEYS } from './ChildReportConfig';
+import {
+  ChildReportConfig,
+  CHILD_PARAM_KEYS,
+  AD_HOC_CHILD_PARAM_KEYS,
+  SHELL_ONLY_PARAM_KEYS,
+} from './ChildReportConfig';
 
 /**
  * A stand-in for the shared `routeData` singleton. `ChildReportConfig` reads only the genuinely
@@ -38,6 +43,30 @@ const makeParent = (overrides = {}) => {
 
 const childConfig = (queryParams, parentOverrides = {}) =>
   new ChildReportConfig({ queryParams, parent: makeParent(parentOverrides) });
+
+/**
+ * A Jira issue in the named-fields shape the fetch returns, minimal but real enough to survive
+ * `normalizeIssue` → `deriveIssue`. Deliberately undated: what these tests check is that the fetch
+ * chain resolves at all, and a fixed pair of dates would drift into whichever `work-timing` branch
+ * the current date puts it in.
+ */
+const jiraIssue = (key) => ({
+  id: key,
+  key,
+  fields: {
+    Summary: `summary for ${key}`,
+    'Issue Type': { hierarchyLevel: 1, name: 'Epic' },
+    Created: '2023-02-03T10:58:38.994-0600',
+    Status: { id: '1', name: 'Done', statusCategory: { name: 'Done' } },
+    'Project key': 'ONE',
+    Labels: [],
+    'Fix versions': [],
+    Parent: null,
+    Team: null,
+    Sprint: null,
+    Rank: '0|hzzzzn:',
+  },
+});
 
 describe('ChildReportConfig', () => {
   describe('per-child parameters', () => {
@@ -235,27 +264,117 @@ describe('ChildReportConfig', () => {
 
       expect(requested).toEqual(['project = ONE', 'project = TWO']);
     });
+
+    /**
+     * The test above proves two children *request* different issues. This one proves the rest of the
+     * chain actually produces any: raw → `derivedIssuesRequestData` → `derivedIssues`, through the
+     * real `state-helpers` functions and the real normalize/derive pipeline.
+     *
+     * Worth its own test because the failure here is silent. `derivedIssuesRequestData` returns a
+     * never-settling promise when `configurationPromise` or the licensing promise is missing
+     * (state-helpers.js), and both of those are properties the child mirrors off its parent — so a
+     * mis-wiring leaves every embedded report on a loading spinner forever with nothing thrown.
+     */
+    it('resolves those issues through to derivedIssues', async () => {
+      const parent = makeParent({
+        jiraHelpers: {
+          fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: () => Promise.resolve([jiraIssue('ONE-1')]),
+        },
+        // Exactly what the shell passes: route-data.js wires `configurationPromise` to
+        // `normalizeOptions` too, not to state-helpers' `configurationPromise`.
+        normalizeOptions: {},
+        licensingPromise: Promise.resolve({ active: true }),
+        fieldsToRequest: ['Status'],
+      });
+
+      const config = new ChildReportConfig({ queryParams: 'jql=project%20%3D%20ONE', parent });
+
+      const derived = await config.derivedIssuesPromise;
+
+      expect(derived.map((issue) => issue.key)).toEqual(['ONE-1']);
+      expect(derived[0].summary).toBe('summary for ONE-1');
+    });
+
+    it('stays pending rather than throwing when the parent has no configuration yet', async () => {
+      const parent = makeParent({
+        jiraHelpers: {
+          fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: () => Promise.resolve([jiraIssue('ONE-1')]),
+        },
+        // The bootstrap state: metadata hasn't landed, so `normalizeOptions` is still null.
+        normalizeOptions: null,
+        licensingPromise: Promise.resolve({ active: true }),
+      });
+
+      const config = new ChildReportConfig({ queryParams: 'jql=project%20%3D%20ONE', parent });
+      const settled = await Promise.race([
+        config.derivedIssuesPromise.then(() => 'settled'),
+        Promise.resolve('pending'),
+      ]);
+
+      expect(settled).toBe('pending');
+      expect(config.derivedIssues).toBeUndefined();
+    });
   });
 
   describe('drift from route-data', () => {
+    /**
+     * Route-data props that are not report settings at all, so a child neither parses nor inherits
+     * them as one. Enumerated by hand because the alternative — sniffing the definition's shape —
+     * is what let three real params slip past this test before: `report` and `fullscreen` are built
+     * by `saveJSONToUrl`, which emits no `serialize`, and `selectedIssueType` / `toIssueType` are
+     * hand-rolled `value()` props. Anything genuinely new lands in the failure list until it is
+     * classified deliberately.
+     */
+    const NOT_A_PARAM_KEYS = [
+      // Injected infrastructure — shared off the parent, identical for every report on the page.
+      'licensingPromise',
+      'jiraHelpers',
+      'isLoggedInObservable',
+      'storage',
+      'jiraFieldsPromise',
+      'fieldMaps',
+      'reportsData',
+      'reports',
+      // Derived data and the fetch pipeline — the child runs its own (see "its own fetch" above) or
+      // mirrors the parent's.
+      'simplifiedIssueHierarchy',
+      'baseNormalizeOptions',
+      'normalizeOptions',
+      'fieldsToRequest',
+      'allFieldsToRequest',
+      'rawIssuesRequestData',
+      'derivedIssuesRequestData',
+      'derivedIssues',
+      // CanJS's wildcard definition, not a property.
+      '*',
+    ];
+
     // Adding a per-report setting to route-data.js without adding it here would silently give every
     // embedded child that setting's default. This turns that into a build failure.
-    it('accounts for every report-aware parameter route-data defines', () => {
-      const accountedFor = new Set([...CHILD_PARAM_KEYS, ...SHELL_ONLY_PARAM_KEYS]);
+    it('accounts for every property route-data defines', () => {
+      const accountedFor = new Set([
+        ...CHILD_PARAM_KEYS,
+        ...AD_HOC_CHILD_PARAM_KEYS,
+        ...SHELL_ONLY_PARAM_KEYS,
+        ...NOT_A_PARAM_KEYS,
+      ]);
 
-      const routeDataParams = Object.getOwnPropertyNames(RouteData.props).filter((key) => {
-        const descriptor = Object.getOwnPropertyDescriptor(RouteData.props, key);
+      // Getters on the props object are derived properties, never stored settings.
+      const routeDataProps = Object.getOwnPropertyNames(RouteData.props).filter(
+        (key) => !Object.getOwnPropertyDescriptor(RouteData.props, key).get,
+      );
 
-        if (descriptor.get) {
-          return false;
-        }
+      expect(routeDataProps.filter((key) => !accountedFor.has(key))).toEqual([]);
+    });
 
-        const definition = descriptor.value;
+    // The buckets above are only as good as their coverage of the params that really exist, so pin
+    // the two that this test used to miss entirely.
+    it('classifies params that carry no serialize function', () => {
+      const accountedFor = new Set([...CHILD_PARAM_KEYS, ...AD_HOC_CHILD_PARAM_KEYS, ...SHELL_ONLY_PARAM_KEYS]);
 
-        return !!definition && typeof definition === 'object' && typeof definition.serialize === 'function';
-      });
-
-      expect(routeDataParams.filter((key) => !accountedFor.has(key))).toEqual([]);
+      expect(
+        ['report', 'fullscreen', 'selectedIssueType', 'toIssueType'].filter((key) => !accountedFor.has(key)),
+      ).toEqual([]);
     });
 
     it('keeps the per-child and shell-only buckets disjoint', () => {

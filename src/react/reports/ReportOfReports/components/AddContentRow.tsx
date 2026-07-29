@@ -51,16 +51,21 @@ export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = f
   const into = label ? ` to ${label}` : '';
 
   return (
-    <div className="relative min-h-10 print-hidden">
+    <div className="group relative min-h-10 print-hidden">
       {isEmpty && (
         // `pointer-events-none` is load-bearing, not a nicety: this shares the buttons' slot by being
         // positioned, and a positioned element paints over in-flow siblings whatever its opacity is.
         // Without it, the faded-out copy sits on top of the buttons it just revealed and eats every
         // click. Nothing in jsdom can catch that — no stylesheet is loaded and nothing hit-tests — so
         // the test below asserts the class itself.
+        //
+        // `group-focus-within` mirrors the buttons' own `focus-within` below. The two are siblings,
+        // so this copy cannot see the buttons' focus directly — without the group it would stay
+        // fully opaque while a keyboard user tabbed the buttons in underneath it, and the two would
+        // render on top of each other.
         <div
           data-testid="empty-container-note"
-          className={`pointer-events-none absolute inset-0 flex items-center px-2 transition-opacity duration-150 ${
+          className={`pointer-events-none absolute inset-0 flex items-center px-2 transition-opacity duration-150 group-focus-within:opacity-0 ${
             isShowing ? 'opacity-0' : 'opacity-100'
           }`}
         >
