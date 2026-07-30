@@ -31,10 +31,12 @@ const applyPrintScale = () => {
   // to be revealed for the measurement — otherwise a wide chart inside one adds no width here and
   // then prints clipped. Reading `scrollWidth` forces layout, so the class is in effect by then.
   element.classList.add(MEASURING_CLASS);
-  const scale = computePrintScale(element.scrollWidth);
-  element.classList.remove(MEASURING_CLASS);
-
-  element.style.setProperty('--print-scale', String(scale));
+  try {
+    const scale = computePrintScale(element.scrollWidth);
+    element.style.setProperty('--print-scale', String(scale));
+  } finally {
+    element.classList.remove(MEASURING_CLASS);
+  }
 };
 
 const resetPrintScale = () => {
