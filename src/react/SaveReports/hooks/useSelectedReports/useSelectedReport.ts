@@ -63,7 +63,7 @@ export const useSelectedReport = ({
       // needs the empty array written, or the spread in `updateReport` would keep the stale tree.
       const storedSections = toStoredSections(sections);
       const sectionsUpdate =
-        storedSections.length || selectedReport.sections ? { sections: storedSections } : undefined;
+        storedSections.length || selectedReport.sections ? { sections: storedSections } : {};
 
       updateReport(
         selectedReport.id,
