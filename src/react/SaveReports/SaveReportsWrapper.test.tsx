@@ -3,8 +3,14 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, vi } from 'vitest';
 
 import SaveReportsWrapper from './SaveReportsWrapper';
+import { ReportLayoutProvider } from '../services/report-layout';
 
 const mockOnViewReportsButtonClicked = vi.fn();
+
+// SaveReports persists the report-of-reports document tree and derives the dirty flag from it, so it
+// reads the shared layout context. In the app that context is mounted once in TimelineReport, above
+// both SaveReports and the report body. See spec/016-report-of-reports Phase 3.
+const renderWrapper = (element: React.ReactElement) => render(<ReportLayoutProvider>{element}</ReportLayoutProvider>);
 
 const loggedInObservable = {
   on: vi.fn(),
@@ -49,7 +55,7 @@ describe('<SaveReportsWrapper />', () => {
   });
 
   it('renders without crashing', async () => {
-    render(
+    renderWrapper(
       <SaveReportsWrapper
         linkBuilder={(query) => query}
         shouldShowReportsObservable={loggedInObservable}
@@ -78,7 +84,7 @@ describe('<SaveReportsWrapper />', () => {
   });
 
   it('shows the create report button if jql is present', async () => {
-    render(
+    renderWrapper(
       <SaveReportsWrapper
         linkBuilder={(query) => query}
         shouldShowReportsObservable={loggedInObservable}

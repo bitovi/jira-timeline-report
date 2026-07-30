@@ -79,6 +79,13 @@ export const reports: Report[] = [
     featureFlag: 'timeInStatus',
     onByDefault: false,
   },
+  {
+    key: 'report-of-reports',
+    name: 'Report of Reports',
+    featureSubtitle: 'Compose saved reports into one document',
+    featureFlag: 'reportOfReports',
+    onByDefault: false,
+  },
 ] as const;
 
 export type ReportKeys = (typeof reports)[number]['key'];

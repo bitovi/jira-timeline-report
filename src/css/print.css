@@ -17,6 +17,28 @@
   display: none;
 }
 
+/* A collapsed section's contents in the report-of-reports builder
+   (spec/016-report-of-reports/004-redesign). Both halves live here because they only make sense as a
+   pair: the subtree stays mounted (unmounting would remount every embedded report, and a remounted
+   child refetches from Jira) and is hidden in CSS, so *print* can put it back — otherwise collapsing
+   a section to tidy the screen would silently drop it from the PDF.
+
+   `!important` because the elements this lands on are Tailwind-styled: a `display` utility on the
+   same element would otherwise win or lose on stylesheet order. It pairs with the `hidden` attribute,
+   which is what hides the subtree where no stylesheet is loaded at all (jsdom, under test). */
+.collapsed-content {
+  display: none !important;
+}
+
+/* `applyPrintScale` (PrintReportButton) reads `scrollWidth` while the rule above is still live, so a
+   collapsed subtree would contribute no width at all — a wide chart inside one would measure as
+   nothing, compute a scale of 1, and then print at full size and clip. The measurement adds this
+   class to #react-report-container for exactly as long as it takes to read `scrollWidth`. Two class
+   selectors, so it outranks the rule above whatever the source order. */
+.measuring-print-scale .collapsed-content {
+  display: block !important;
+}
+
 @media print {
   /* Browsers strip background colors when printing by default (to save ink) — but the Gantt/
      Scatter timeline bars and the footer legend swatches are all `background-color`, so without
@@ -39,6 +61,12 @@
 
   .print-only {
     display: block;
+  }
+
+  /* Collapse is an on-screen convenience; a printed document is the whole document. Both rules are
+     `!important`, so source order is what settles it — this one has to come second. */
+  .collapsed-content {
+    display: block !important;
   }
 
   /* Remove scroll/height clamps so the full chart flows onto the page instead of clipping. */

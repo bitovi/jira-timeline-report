@@ -1,0 +1,303 @@
+import type { FC } from 'react';
+import type { Reports } from '../../../jira/reports';
+import type { InlineReportNode, LayoutNode, LayoutPath, SavedReportNode, SectionNode } from './model/sections';
+
+import React, { useMemo } from 'react';
+
+import { useAllReports } from '../../services/reports';
+import { useReportLayout } from '../../services/report-layout';
+import { appendNode, savedReportNode, setExpressionAt, setSectionTitleAt } from './model/sections';
+import { selectableReports } from './model/selectable-reports';
+import { useInlineExpression } from './hooks/useInlineExpression';
+import { AddContentRow } from './components/AddContentRow';
+import { AddReportModal } from './components/AddReportModal';
+import { ChildReport } from './components/ChildReport';
+import { CollapseToggle } from './components/CollapseToggle';
+import { DocumentEditingProvider, useDocumentEditing, useNodeRow } from './components/DocumentEditing';
+import { IndentLevel } from './components/IndentLevel';
+import { InlineValue } from './components/InlineValue';
+import { MissingReportNote } from './components/MissingReportNote';
+import { NodeControls } from './components/NodeControls';
+import { NodeRow } from './components/NodeRow';
+import { SectionTitle, UNTITLED_SECTION } from './components/SectionTitle';
+import type { ChildReportProps } from './components/ChildReport';
+
+export interface ReportOfReportsProps {
+  /** The saved report currently open, if any — it can't be embedded in itself. */
+  currentReportId?: string | null;
+  /**
+   * Forwarded to every embedded {@link ChildReport}. Its own defaults (the real `routeData`,
+   * registry, and loading-state hook) apply in production; tests inject fakes here.
+   */
+  childReportProps?: Partial<Omit<ChildReportProps, 'report'>>;
+}
+
+/**
+ * Composes other saved reports into a single document. See spec/016-report-of-reports.
+ *
+ * The document tree is held by `ReportLayoutProvider` (seeded from the open saved report's
+ * `sections`) and each embedded child owns its own config and fetch. Unlike every other report this
+ * one takes no `*Obs` props — it has no JQL and no primary issues of its own, which is why the shell
+ * passes `selfManagesData` to `ReportArea`.
+ */
+export const ReportOfReports: FC<ReportOfReportsProps> = (props) => (
+  <DocumentEditingProvider>
+    <Document {...props} />
+  </DocumentEditingProvider>
+);
+
+/** The document itself, inside the editing provider so it can read where the picker was opened. */
+const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps }) => {
+  const reports = useAllReports();
+  const { sections, setSections } = useReportLayout();
+  const { pickerPath, closeReportPicker, hoverNode } = useDocumentEditing();
+
+  const addableReports = useMemo(() => selectableReports(reports, currentReportId), [reports, currentReportId]);
+
+  const handleSelect = (reportId: string) => {
+    // `pickerPath` is the container the picker was opened from — `[]` for the document root, which is
+    // also `appendNode`'s default. Reports are allowed at every level, so there's nothing to check.
+    setSections(appendNode(sections, savedReportNode(reportId), pickerPath ?? []));
+    closeReportPicker();
+  };
+
+  // No frame of any kind: not a box per node, and not one around the whole document either. Nesting
+  // is carried entirely by indent and a hairline rail from here down, so the only borders on the page
+  // belong to the embedded reports themselves. See spec/016-report-of-reports/004-redesign §1.
+  //
+  // Nothing is hovered while the pointer is in the document but outside every row — each node's own
+  // handler stops the event before it reaches this one, so this only fires in the gaps.
+  return (
+    <div className="flex flex-col py-4" onMouseOver={() => hoverNode(null)} onMouseLeave={() => hoverNode(null)}>
+      {sections.map((node, index) => (
+        <LayoutNodeView
+          key={node.id}
+          node={node}
+          path={[index]}
+          reports={reports}
+          childReportProps={childReportProps}
+        />
+      ))}
+
+      <AddContentRow path={[]} />
+
+      {/* One picker for the whole document rather than one per add row. `[]` is a valid path — the
+          document root — and truthy, so "open" is `!== null`, never a truthiness test. */}
+      <AddReportModal
+        isOpen={pickerPath !== null}
+        reports={addableReports}
+        onSelect={handleSelect}
+        onClose={closeReportPicker}
+      />
+    </div>
+  );
+};
+
+interface LayoutNodeViewProps {
+  node: LayoutNode;
+  path: LayoutPath;
+  reports: Reports;
+  childReportProps?: Partial<Omit<ChildReportProps, 'report'>>;
+}
+
+/**
+ * Dispatches one document node to the view for its type. A pure dispatcher: each view runs hooks of
+ * its own, which can't happen in a component that returns early per node type.
+ */
+const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childReportProps }) => {
+  if (node.type === 'section') {
+    return <SectionView node={node} path={path} reports={reports} childReportProps={childReportProps} />;
+  }
+
+  if (node.type === 'inline-report') {
+    return <InlineReportView node={node} path={path} />;
+  }
+
+  if (node.type === 'saved-report') {
+    return <SavedReportView node={node} path={path} reports={reports} childReportProps={childReportProps} />;
+  }
+
+  return <UnknownView node={node} path={path} />;
+};
+
+/**
+ * One section: a row carrying its caret, editable title, and controls, then its children and its own
+ * add row indented one level beneath it.
+ *
+ * No `print-avoid-break` here, deliberately — a section can easily be taller than a page, and
+ * `break-inside: avoid` on something page-sized is worse than nothing. It stays on the reports.
+ */
+const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, path, reports, childReportProps }) => {
+  const { sections, setSections } = useReportLayout();
+  const { editingNodeId, beginEditing, endEditing, isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { hoverProps, rowProps } = useNodeRow(node, path);
+
+  const label = node.params.title || 'section';
+  const collapsed = isCollapsed(node.id);
+  const count = node.children.length;
+
+  return (
+    <section className="flex flex-col" {...hoverProps}>
+      <NodeRow
+        {...rowProps}
+        caret={
+          <CollapseToggle
+            isCollapsed={collapsed}
+            label={node.params.title || UNTITLED_SECTION}
+            onToggle={() => toggleCollapsed(node.id)}
+          />
+        }
+        controls={<NodeControls path={path} label={label} nodeId={node.id} hasChildren={count > 0} />}
+      >
+        <SectionTitle
+          title={node.params.title}
+          depth={path.length}
+          isEditing={editingNodeId === node.id}
+          onEdit={() => beginEditing(node.id)}
+          onConfirm={(title) => {
+            endEditing();
+            // Just an edit to the tree — it surfaces "Save report" like any other, and saves with it.
+            setSections(setSectionTitleAt(sections, path, title));
+          }}
+          onCancel={endEditing}
+        />
+      </NodeRow>
+      {/* Collapsed content stays mounted and is hidden in CSS: unmounting would remount every
+          ChildReport inside, and a remounted child refetches from Jira. It also lets print unhide it
+          (src/css/print.css), so collapsing to tidy up doesn't silently drop content from the PDF. */}
+      <div className={collapsed ? 'collapsed-content' : ''} hidden={collapsed}>
+        <IndentLevel>
+          {node.children.map((child, index) => (
+            <LayoutNodeView
+              key={child.id}
+              node={child}
+              path={[...path, index]}
+              reports={reports}
+              childReportProps={childReportProps}
+            />
+          ))}
+          <AddContentRow path={path} label={label} isEmpty={count === 0} />
+        </IndentLevel>
+      </div>
+    </section>
+  );
+};
+
+/**
+ * One embedded report: a row carrying its caret, name, and controls, then the report itself at the same
+ * indent. A report is a row *plus* content, not a row — nothing sensible fits a chart into 40px.
+ *
+ * The caret collapses the chart and leaves the row, exactly as a section's collapses its children —
+ * that's what makes a tall document skimmable, since a chart is most of what there is to scroll past.
+ * A row with nothing beneath it (a value, or a report that's gone) has no caret and reserves no space
+ * for one.
+ *
+ * Its name is read-only: it's the saved report's real name, and renaming belongs on the Saved Reports
+ * page, so the row deliberately offers no hit area and no text cursor.
+ *
+ * `print-avoid-break` (src/css/print.css) keeps a page break from landing inside a child.
+ */
+const SavedReportView: FC<LayoutNodeViewProps & { node: SavedReportNode }> = ({
+  node,
+  path,
+  reports,
+  childReportProps,
+}) => {
+  const { isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { hoverProps, rowProps } = useNodeRow(node, path);
+
+  const { reportId } = node.params;
+  const report = reports[reportId];
+  // Deliberately not "Report not found": the label names the node in every control, and two missing
+  // reports have to be tellable apart.
+  const label = report ? report.name : `missing report ${reportId}`;
+  const collapsed = isCollapsed(node.id);
+
+  return (
+    <div
+      {...hoverProps}
+      {...(report
+        ? { 'data-testid': 'report-card', 'data-report-name': report.name }
+        : { 'data-testid': 'missing-report', 'data-report-id': reportId })}
+      className="flex flex-col print-avoid-break"
+    >
+      <NodeRow
+        {...rowProps}
+        caret={
+          report && (
+            <CollapseToggle isCollapsed={collapsed} label={report.name} onToggle={() => toggleCollapsed(node.id)} />
+          )
+        }
+        controls={<NodeControls path={path} label={label} nodeId={node.id} />}
+      >
+        <h3 className={`truncate text-base font-semibold ${report ? '' : 'text-slate-500'}`}>
+          {report ? report.name : 'Report not found'}
+        </h3>
+      </NodeRow>
+      {/* Rows sit flush against each other — they're a list. A chart is content, and needs the air.
+          Collapsed, it stays mounted and hides in CSS for the reason a section's children do: a
+          remounted ChildReport refetches from Jira, and print puts it back (src/css/print.css). */}
+      {report ? (
+        <div className={`pb-4 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+          <ChildReport report={report} {...childReportProps} />
+        </div>
+      ) : (
+        <MissingReportNote reportId={reportId} />
+      )}
+    </div>
+  );
+};
+
+/**
+ * One inline value: the expression is resolved by `useInlineExpression` and handed to `InlineValue`,
+ * which stays pure and renders only the row's label.
+ *
+ * It's content, not chrome, so nothing here is `print-hidden` (the controls hide themselves).
+ * See spec/016-report-of-reports/003-self-reports.
+ */
+const InlineReportView: FC<{ node: InlineReportNode; path: LayoutPath }> = ({ node, path }) => {
+  const { sections, setSections } = useReportLayout();
+  const { editingNodeId, beginEditing, endEditing } = useDocumentEditing();
+  const { hoverProps, rowProps } = useNodeRow(node, path);
+  const state = useInlineExpression(node.params.expression);
+
+  const label = node.params.expression || 'inline value';
+
+  return (
+    <div className="flex flex-col" {...hoverProps}>
+      <NodeRow {...rowProps} controls={<NodeControls path={path} label={label} nodeId={node.id} />}>
+        <InlineValue
+          expression={node.params.expression}
+          state={state}
+          isEditing={editingNodeId === node.id}
+          onEdit={() => beginEditing(node.id)}
+          onConfirm={(expression) => {
+            endEditing();
+            setSections(setExpressionAt(sections, path, expression));
+          }}
+          onCancel={endEditing}
+        />
+      </NodeRow>
+    </div>
+  );
+};
+
+/**
+ * A node written by a newer client. It degrades to a labelled row rather than blanking the document,
+ * and `parseSections` kept the original so saving writes it back untouched.
+ */
+const UnknownView: FC<{ node: Extract<LayoutNode, { type: 'unknown' }>; path: LayoutPath }> = ({ node, path }) => {
+  const { hoverProps, rowProps } = useNodeRow(node, path);
+
+  const originalType = node.params.originalType || 'unknown';
+
+  return (
+    <div {...hoverProps} data-testid="report-card" data-report-name="" className="flex flex-col print-avoid-break">
+      <NodeRow {...rowProps} controls={<NodeControls path={path} label={originalType} nodeId={node.id} />}>
+        <h3 className="truncate text-base font-semibold text-slate-500">{`Unsupported content (${originalType})`}</h3>
+      </NodeRow>
+    </div>
+  );
+};
+
+export default ReportOfReports;
