@@ -54,7 +54,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
     <>
       {!jql && isLoggedIn && !selfManagesData && <NoJqlMessage />}
 
-      {(selfManagesData || (resolved && primaryIssuesCount > 0)) && (
+      {((selfManagesData && !rejected) || (resolved && primaryIssuesCount > 0)) && (
         <div className="my-2 border-box color-bg-white flex-1">{children}</div>
       )}
 
