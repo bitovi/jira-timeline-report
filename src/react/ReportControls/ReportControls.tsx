@@ -225,7 +225,7 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
     );
   }
 
-  if (primaryReportType === 'estimation-progress' || primaryReportType === 'grouper') {
+  if (primaryReportType === 'estimation-progress') {
     return (
       <>
         <SelectReportType />

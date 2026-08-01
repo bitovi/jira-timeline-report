@@ -4,7 +4,6 @@ import { WorkBreakdown } from './WorkBreakdown';
 import { EstimateAnalysis } from './EstimateAnalysis/EstimateAnalysis';
 import AutoScheduler from './AutoScheduler/AutoScheduler';
 import EstimationProgress from './EstimationProgress/EstimationProgress';
-import { GroupingReport } from './GroupingReport/GroupingReport';
 import { FlowMetrics } from './FlowMetrics/FlowMetrics';
 import { TimeInStatus } from './TimeInStatus/TimeInStatus';
 import { ScatterTimeline } from './ScatterTimeline';
@@ -30,7 +29,6 @@ export const embeddableReportComponents: Record<string, ComponentType<any>> = {
   'estimate-analysis': EstimateAnalysis,
   'auto-scheduler': AutoScheduler,
   'estimation-progress': EstimationProgress,
-  grouper: GroupingReport,
   'flow-metrics': FlowMetrics,
   'time-in-status': TimeInStatus,
   due: ScatterTimeline,

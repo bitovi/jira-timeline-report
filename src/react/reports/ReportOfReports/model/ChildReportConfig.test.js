@@ -100,8 +100,6 @@ describe('ChildReportConfig', () => {
     it('parses comma-separated lists', () => {
       expect(childConfig('statusesToExclude=Done,Rejected').statusesToExclude).toEqual(['Done', 'Rejected']);
       expect(childConfig('').statusesToExclude).toEqual([]);
-      expect(childConfig('').aggregators).toEqual(['issuesList']);
-      expect(childConfig('aggregators=storyPoints').aggregators).toEqual(['storyPoints']);
     });
 
     it('parses JSON params', () => {
@@ -140,8 +138,6 @@ describe('ChildReportConfig', () => {
     it('applies report-specific defaults', () => {
       const config = childConfig('');
 
-      expect(config.rowGroup).toBe('projectKey');
-      expect(config.colGroup).toBe('dueInMonth');
       expect(config.tableSortColumn).toBe('identity:treeSummary');
       expect(config.tableFieldAxis).toBe('rows');
       expect(config.scatterDateRangeStart).toBe('');
@@ -202,12 +198,15 @@ describe('ChildReportConfig', () => {
     });
 
     // allFieldsToRequest is the SECOND hybrid: the base field list is global (team config), but the
-    // `fields` param and the Table report's shown columns are per-child. A child that shared the
-    // parent's list would silently fail to load the fields its own report needs.
-    it('unions the shared base fields with its own requested fields', () => {
-      const config = childConfig('fields=Summary,Labels', { fieldsToRequest: ['Status', 'Parent'] });
+    // Table report's shown columns are per-child. A child that shared the parent's list would
+    // silently fail to load the fields its own report needs.
+    it('unions the shared base fields with its own table-column fields', () => {
+      const columns = JSON.stringify([{ sourceId: 'field:Story points' }]);
+      const config = childConfig('tableColumns=' + encodeURIComponent(columns), {
+        fieldsToRequest: ['Status', 'Parent'],
+      });
 
-      expect(config.allFieldsToRequest).toEqual(expect.arrayContaining(['Status', 'Parent', 'Summary', 'Labels']));
+      expect(config.allFieldsToRequest).toEqual(expect.arrayContaining(['Status', 'Parent', 'Story points']));
     });
 
     it('includes the fields its own table columns require', () => {

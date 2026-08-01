@@ -407,8 +407,7 @@ export class RouteData extends ObservableObject {
         .flatMap((sourceId) => requiredFieldsFor(sourceId));
     },
 
-    // Computed property that combines the base fields, the URL `fields` param (legacy Grouper
-    // "Additional Fields"), and the Table report's shown-column fields.
+    // Computed property that combines the base fields and the Table report's shown-column fields.
     //
     // Only emits when the requested field set REALLY changes, so a full issue refetch is avoided
     // when a column change doesn't alter what must be loaded. Two guards:
@@ -426,11 +425,7 @@ export class RouteData extends ObservableObject {
         let resolved = false;
         const recompute = () => {
           const baseFields = this.fieldsToRequest;
-          const urlFields = this.fields;
-          const next =
-            baseFields && urlFields
-              ? [...new Set([...baseFields, ...urlFields, ...this.tableColumnFields])]
-              : undefined;
+          const next = baseFields ? [...new Set([...baseFields, ...this.tableColumnFields])] : undefined;
           let changed;
           if (!resolved || (next === undefined) !== (current === undefined)) {
             changed = true;
@@ -446,7 +441,6 @@ export class RouteData extends ObservableObject {
           }
         };
         listenTo('fieldsToRequest', recompute);
-        listenTo('fields', recompute);
         listenTo('tableColumnFields', recompute);
         listenTo('fieldMaps', recompute);
         recompute();
@@ -962,18 +956,6 @@ export class RouteData extends ObservableObject {
     },
     planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('planningStatuses'),
     releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('releasesToShow'),
-    fields: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('fields'),
-
-    // GroupingReport routing properties
-    rowGroup: saveJSONToUrlButAlsoLookAtReport_DataWrapper('rowGroup', 'projectKey', String, {
-      parse: (x) => '' + x,
-      stringify: (x) => '' + x,
-    }),
-    colGroup: saveJSONToUrlButAlsoLookAtReport_DataWrapper('colGroup', 'dueInMonth', String, {
-      parse: (x) => '' + x,
-      stringify: (x) => '' + x,
-    }),
-    aggregators: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('aggregators', () => ['issuesList']),
 
     // GroupBy is not available for release ... so if a release primaryIssueType is set
     // then we need to remove it
@@ -997,10 +979,9 @@ export class RouteData extends ObservableObject {
       },
     }),
 
-    // Table report (`table2`, spec/012-table-and-grouper Phase 5) routing properties. These are new,
-    // namespaced with a `table` prefix so they never collide with the legacy Grouper keys
-    // (`fields`/`rowGroup`/`colGroup`/`aggregators`) — no legacy migration (plan Q2). Ephemeral UI
-    // toggles (expand/collapse of tree rows and groups) are NOT persisted; they stay local React state.
+    // Table report (spec/012-table-and-grouper Phase 5) routing properties, namespaced with a `table`
+    // prefix. Ephemeral UI toggles (expand/collapse of tree rows and groups) are NOT persisted; they
+    // stay local React state.
     //
     // `tableColumns` is the ordered shown-column list. Each entry is `{ sourceId, aggregation?, width? }`
     // — the per-column aggregation override folds into the entry (no separate map). Default = the

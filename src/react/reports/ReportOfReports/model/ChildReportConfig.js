@@ -129,7 +129,6 @@ const CHILD_PARAMS = {
   },
   primaryReportBreakdown: boolean(),
   showPercentComplete: boolean(),
-  fields: list(),
   uncertaintyWeight: {
     parse: (raw) => {
       if (raw === 'average') {
@@ -145,13 +144,10 @@ const CHILD_PARAMS = {
     defaultRaw: '',
   },
 
-  // Grouper
-  rowGroup: string('projectKey'),
-  colGroup: string('dueInMonth'),
-  aggregators: list('issuesList'),
   groupBy: string(),
 
-  // Table report (`table2`)
+  // Table report
+
   tableColumns: json([{ sourceId: 'identity:treeSummary' }]),
   tableSortColumn: string('identity:treeSummary'),
   tableSortDir: string('tree'),
@@ -319,18 +315,18 @@ export class ChildReportConfig extends ObservableObject {
     },
 
     /**
-     * The second hybrid: the base field list comes from team configuration (global), but `fields`
-     * and the Table report's shown columns are per-child. A child sharing the parent's list would
-     * silently fail to load the fields its own report needs.
+     * The second hybrid: the base field list comes from team configuration (global), but the Table
+     * report's shown columns are per-child. A child sharing the parent's list would silently fail to
+     * load the fields its own report needs.
      */
     get allFieldsToRequest() {
       const baseFields = this.fieldsToRequest;
 
-      if (!baseFields || !this.fields) {
+      if (!baseFields) {
         return undefined;
       }
 
-      return [...new Set([...baseFields, ...this.fields, ...this.tableColumnFields])];
+      return [...new Set([...baseFields, ...this.tableColumnFields])];
     },
 
     // --- own fetch -----------------------------------------------------------------------------
