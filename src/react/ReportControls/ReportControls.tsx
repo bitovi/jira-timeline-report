@@ -251,7 +251,7 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
     );
   }
 
-  if (primaryReportType === 'table2') {
+  if (primaryReportType === 'table') {
     // The shared control row holds the report-type selector plus the Table's PRIMARY controls
     // (Rows / Group by / 2D dimension / Fields axis / Add column). TableReportControls reads/writes
     // the same route-data keys the report body reads, so the two stay in sync (plan §Control

@@ -8,9 +8,8 @@
  * expand/collapse caret, parent rows show their precomputed rollup values, and the estimation
  * columns render the "last ➡ current" diff with a breakdown modal on Estimated Days.
  *
- * All behind the `tableReport` feature flag under the temporary report key `table2` (coexists with
- * the legacy `grouper` and `table` reports until retirement, plan Phase 7). Persistence is Phase 5 —
- * for now view state (columns, sort, filters, row ordering, collapsed keys) lives in local state.
+ * Behind the `tableReport` feature flag at report key `table`. Persistence is Phase 5 — for now view
+ * state (columns, sort, filters, row ordering, collapsed keys) lives in local state.
  *
  * Data:
  *  - Flat (sort) mode shows the FULL loaded issue set across ALL hierarchy levels: it prefers the

@@ -34,7 +34,7 @@ export const propsFor = (vm: any, config: any) => ({
   primaryIssueTypeObs: value.bind(config, 'primaryIssueType'),
   breakdownObs: value.bind(config, 'primaryReportBreakdown'),
   showPercentCompleteObs: value.bind(config, 'showPercentComplete'),
-  // Table report (`table2`) persisted view state — spec/012-table-and-grouper Phase 5.
+  // Table report persisted view state — spec/012-table-and-grouper Phase 5.
   tableColumnsObs: value.bind(config, 'tableColumns'),
   tableSortColumnObs: value.bind(config, 'tableSortColumn'),
   tableSortDirObs: value.bind(config, 'tableSortDir'),

@@ -146,7 +146,7 @@ describe('ChildReportConfig', () => {
     it('ignores the parent page URL entirely', () => {
       const original = window.location.search;
 
-      window.history.replaceState({}, '', '?jql=LEAKED&primaryReportType=table2');
+      window.history.replaceState({}, '', '?jql=LEAKED&primaryReportType=table');
 
       try {
         expect(childConfig('jql=MINE').jql).toBe('MINE');

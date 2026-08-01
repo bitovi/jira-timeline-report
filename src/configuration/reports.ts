@@ -45,8 +45,8 @@ export const reports: Report[] = [
     onByDefault: false,
   },
   {
-    key: 'table2',
-    name: 'Table (beta)',
+    key: 'table',
+    name: 'Table',
     featureSubtitle: 'Unified table & grouper report',
     featureFlag: 'tableReport',
     onByDefault: false,

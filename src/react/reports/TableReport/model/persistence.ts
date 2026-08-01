@@ -1,5 +1,5 @@
 /**
- * Persistence schema for the Table report (`table2`, spec/012-table-and-grouper Phase 5).
+ * Persistence schema for the Table report (spec/012-table-and-grouper Phase 5).
  *
  * The report's *configuration* (which columns are shown + their per-column aggregation, the active
  * sort, filters, grouping and cross-tab axis) is stored in route-data observables so the view

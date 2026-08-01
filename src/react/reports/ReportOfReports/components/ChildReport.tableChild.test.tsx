@@ -122,7 +122,7 @@ const makeParent = () => {
 /** A saved Table report as one is stored: the report type plus its persisted view state. */
 const TABLE_PARAMS = new URLSearchParams({
   jql: 'project = ORDER',
-  primaryReportType: 'table2',
+  primaryReportType: 'table',
   tableColumns: JSON.stringify([{ sourceId: 'identity:treeSummary' }]),
   tableSortColumn: 'identity:treeSummary',
   tableSortDir: 'tree',
@@ -136,7 +136,7 @@ const renderTableChild = () =>
           <ChildReport
             report={{ id: 'r', name: 'Order Table', queryParams: TABLE_PARAMS }}
             parent={makeParent()}
-            components={{ table2: TableReport }}
+            components={{ table: TableReport }}
           />
         </Suspense>
       </JiraProvider>

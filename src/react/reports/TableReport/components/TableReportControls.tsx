@@ -1,7 +1,7 @@
 /**
  * The Table report's PRIMARY control bar (spec/012-table-and-grouper, §"Control placement").
  *
- * Rendered in the shared `ReportControls` `table2` branch, in the SAME horizontal row as
+ * Rendered in the shared `ReportControls` `table` branch, in the SAME horizontal row as
  * <SelectReportType />. These controls read/write the SAME route-data keys the report body reads
  * (via {@link useRouteData}), so the body and controls stay in sync automatically — the body
  * subscribes to the same observables through `useCanObservable`.

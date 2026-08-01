@@ -33,7 +33,7 @@ export const embeddableReportComponents: Record<string, ComponentType<any>> = {
   'time-in-status': TimeInStatus,
   due: ScatterTimeline,
   'start-due': GanttGrid,
-  table2: TableReport,
+  table: TableReport,
 };
 
 /** The secondary (Work Breakdown) report, rendered below a Gantt or Scatter primary. */
