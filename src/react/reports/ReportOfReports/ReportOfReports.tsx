@@ -126,18 +126,31 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
  *
  * No `print-avoid-break` here, deliberately — a section can easily be taller than a page, and
  * `break-inside: avoid` on something page-sized is worse than nothing. It stays on the reports.
+ *
+ * While an "Add Report" / "Add Section" button somewhere in the document is pointed at, the section
+ * that button adds into is tinted — the whole of it, so what's about to gain a node is what lights
+ * up. Indent alone stops answering "where does this land?" once sections nest, and the two buttons
+ * of a deep section sit a few pixels from the ones belonging to its parent. It's a background rather
+ * than a border for the reason nothing else here has one: the only frames on the page belong to the
+ * embedded reports (.../004-redesign §1). Nothing tints for the document root's own pair — the whole
+ * page is not a highlight, and "no section lit" is exactly what adding at the top level means.
  */
 const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, path, reports, childReportProps }) => {
   const { sections, setSections } = useReportLayout();
-  const { editingNodeId, beginEditing, endEditing, isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { editingNodeId, beginEditing, endEditing, isCollapsed, toggleCollapsed, isAddTarget } = useDocumentEditing();
   const { hoverProps, rowProps } = useNodeRow(node, path);
 
   const label = node.params.title || 'section';
   const collapsed = isCollapsed(node.id);
   const count = node.children.length;
+  const isTarget = isAddTarget(path);
 
   return (
-    <section className="flex flex-col" {...hoverProps}>
+    <section
+      data-add-target={isTarget}
+      className={`flex flex-col rounded transition-colors duration-150 ${isTarget ? 'bg-blue-101' : ''}`}
+      {...hoverProps}
+    >
       <NodeRow
         {...rowProps}
         caret={

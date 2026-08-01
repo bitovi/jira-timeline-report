@@ -39,7 +39,7 @@ export interface AddContentRowProps {
  */
 export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = false }) => {
   const { sections, setSections } = useReportLayout();
-  const { beginEditing, openReportPicker, isContainerHovered } = useDocumentEditing();
+  const { beginEditing, openReportPicker, isContainerHovered, markAddTarget } = useDocumentEditing();
 
   const isRoot = path.length === 0;
   // The *innermost* container the pointer is in, not every container it's inside: pointing at
@@ -72,25 +72,51 @@ export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = f
           <span className="text-sm italic text-slate-500">Nothing here yet.</span>
         </div>
       )}
+      {/* Marking the target is the row's job, not each button's: both buttons add into the same
+          container, so moving between them must not clear and re-set it — the one-frame gap that
+          would leave reads as a flicker. Enter is per button (the row spans the full width, and the
+          empty space beside the buttons promises nothing); leaving the row clears. `onBlur` fires
+          before the next `onFocus`, so it checks where focus went for the same reason. */}
       <div
         data-testid="add-content-row"
         data-visible={isShowing}
+        onMouseLeave={() => markAddTarget(null)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            markAddTarget(null);
+          }
+        }}
         className={`flex min-h-10 items-center gap-1 transition-opacity duration-150 ${
           isShowing
             ? 'opacity-100'
             : 'opacity-0 pointer-events-none focus-within:opacity-100 focus-within:pointer-events-auto'
         }`}
       >
-        <AddButton text="Add Report" name={label && `Add Report${into}`} onClick={() => openReportPicker(path)} />
+        <AddButton
+          text="Add Report"
+          name={label && `Add Report${into}`}
+          onTarget={() => markAddTarget(path)}
+          // The picker covers the document with the pointer still on this button, and whatever is
+          // chosen pushes the row down before it uncovers — so no `mouseleave` is coming. Clearing
+          // now beats a tint stranded behind the modal and left over after it closes.
+          onClick={() => {
+            markAddTarget(null);
+            openReportPicker(path);
+          }}
+        />
         {canAddSectionAt(sections, path) && (
           <AddButton
             text="Add Section"
             name={label && `Add Section${into}`}
+            onTarget={() => markAddTarget(path)}
             onClick={() => {
               // A new section arrives blank and open focused — otherwise the user has to hunt for
               // the empty thing they just created to name it.
               const node = sectionNode('');
 
+              // The row is pushed down by what it just added, out from under the pointer, so the
+              // tint would otherwise outlive the pointer being there.
+              markAddTarget(null);
               setSections(appendNode(sections, node, path));
               beginEditing(node.id);
             }}
@@ -101,12 +127,25 @@ export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = f
   );
 };
 
-/** A borderless text button: muted at rest, neutral fill and an accent label under the pointer. */
-const AddButton: FC<{ text: string; name?: string; onClick: () => void }> = ({ text, name, onClick }) => (
+/**
+ * A borderless text button: muted at rest, neutral fill and an accent label under the pointer.
+ *
+ * `onTarget` fires on pointer *and* focus, so the container it adds into lights up for the keyboard
+ * too — the buttons already reveal themselves on `focus-within`, and a tab that reveals a pair of
+ * buttons without saying whose they are is the same puzzle this solves for the pointer.
+ */
+const AddButton: FC<{ text: string; name?: string; onClick: () => void; onTarget: () => void }> = ({
+  text,
+  name,
+  onClick,
+  onTarget,
+}) => (
   <button
     type="button"
     aria-label={name}
     onClick={onClick}
+    onMouseEnter={onTarget}
+    onFocus={onTarget}
     className="inline-flex items-center gap-1 rounded px-2 py-1 text-sm text-neutral-801 transition-colors duration-150 hover:bg-neutral-201 hover:text-blue-300"
   >
     <AddIcon label="" />

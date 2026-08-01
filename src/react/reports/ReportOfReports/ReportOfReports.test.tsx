@@ -3,7 +3,7 @@ import type { StoredNode } from './model/sections';
 import type { ComponentProps } from 'react';
 
 import React, { Suspense } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -738,6 +738,96 @@ describe('<ReportOfReports>', () => {
       expect(await screen.findByRole('button', { name: 'Add Section to Two' })).toBeInTheDocument();
       expect(await screen.findByRole('button', { name: 'Add Report to Three' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Add Section to Three' })).not.toBeInTheDocument();
+    });
+
+    // Indent alone stops answering "where will this land?" once sections nest: a deep section's two
+    // buttons sit a few pixels from its parent's, and both rows read the same. Pointing at one tints
+    // the container it adds into, so what is about to gain a node is what lights up.
+    describe('showing which container an add button belongs to', () => {
+      const nested = () => renderReport({ savedSections: [nest('One', [nest('Two', [stored('a')])])] });
+
+      /** The tint is a class; the attribute is how it is asserted, for the reason hover is state. */
+      const targeted = (section: HTMLElement) => section.getAttribute('data-add-target');
+
+      it('tints the section the pointer’s Add Report adds into, and no other', async () => {
+        nested();
+
+        const outer = await sectionFor('One');
+        const inner = await sectionFor('Two');
+
+        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report to Two' }));
+
+        expect(targeted(inner)).toBe('true');
+        expect(targeted(outer)).toBe('false');
+      });
+
+      it('tints it for Add Section the same way', async () => {
+        nested();
+
+        await userEvent.hover(await screen.findByRole('button', { name: 'Add Section to Two' }));
+
+        expect(targeted(await sectionFor('Two'))).toBe('true');
+        expect(targeted(await sectionFor('One'))).toBe('false');
+      });
+
+      // Both buttons add into the same container, so crossing between them must not clear the tint —
+      // it would go out and come back within a frame, which reads as a flicker rather than a cue.
+      it('holds the tint while the pointer crosses from one button to the other', async () => {
+        nested();
+
+        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report to Two' }));
+        await userEvent.hover(await screen.findByRole('button', { name: 'Add Section to Two' }));
+
+        expect(targeted(await sectionFor('Two'))).toBe('true');
+      });
+
+      it('drops the tint once the pointer leaves the row', async () => {
+        nested();
+
+        const button = await screen.findByRole('button', { name: 'Add Report to Two' });
+
+        await userEvent.hover(button);
+        await userEvent.unhover(button);
+
+        expect(targeted(await sectionFor('Two'))).toBe('false');
+      });
+
+      // The buttons reveal themselves on `focus-within`, so a keyboard user meets the same puzzle a
+      // pointer user does: a pair of buttons, and nothing saying whose they are.
+      it('tints for the keyboard too, and clears when focus leaves', async () => {
+        nested();
+
+        const button = await screen.findByRole('button', { name: 'Add Report to Two' });
+
+        await act(async () => button.focus());
+        expect(targeted(await sectionFor('Two'))).toBe('true');
+
+        await act(async () => button.blur());
+        expect(targeted(await sectionFor('Two'))).toBe('false');
+      });
+
+      // The root's pair adds at the top level. Tinting "the document" would be the whole page, and
+      // nothing lit is already what top-level means — every section stays untinted instead.
+      it('tints nothing for the document root’s own buttons', async () => {
+        nested();
+
+        // The root's buttons carry the bare label, so this finds the root row and not one of the two
+        // sections' — see the innermost-container case above.
+        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report' }));
+
+        expect(targeted(await sectionFor('One'))).toBe('false');
+        expect(targeted(await sectionFor('Two'))).toBe('false');
+      });
+
+      // The picker covers the document and the pointer never moves, so a tint left set would sit
+      // behind the modal and outlive the choice that closed it.
+      it('drops the tint when the picker opens', async () => {
+        nested();
+
+        await userEvent.click(await screen.findByRole('button', { name: 'Add Report to Two' }));
+
+        expect(targeted(await sectionFor('Two'))).toBe('false');
+      });
     });
   });
 
