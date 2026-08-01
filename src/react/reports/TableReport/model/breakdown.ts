@@ -1,4 +1,4 @@
-import type { EstimationIssue } from '../types';
+import type { EstimationIssue } from './estimationTypes';
 
 /**
  * Helpers for the Estimate Breakdown modal, ported from table-grid.js's `EstimateBreakdown`.

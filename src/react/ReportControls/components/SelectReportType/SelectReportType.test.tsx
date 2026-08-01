@@ -12,7 +12,7 @@ describe('<SelectReportType />', () => {
 
   beforeEach(() => {
     useFeaturesSpy = vi.spyOn(Features, 'useAsyncFeatures').mockReturnValue({
-      features: { ...defaultFeatures, estimationTable: true },
+      features: { ...defaultFeatures, tableReport: true },
       isLoading: false,
     });
   });

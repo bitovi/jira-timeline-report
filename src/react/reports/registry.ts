@@ -9,7 +9,6 @@ import { FlowMetrics } from './FlowMetrics/FlowMetrics';
 import { TimeInStatus } from './TimeInStatus/TimeInStatus';
 import { ScatterTimeline } from './ScatterTimeline';
 import { GanttGrid } from './GanttReport/GanttGrid';
-import { EstimationTable } from './EstimationTable';
 import { TableReport } from './TableReport/TableReport';
 
 /**
@@ -36,7 +35,6 @@ export const embeddableReportComponents: Record<string, ComponentType<any>> = {
   'time-in-status': TimeInStatus,
   due: ScatterTimeline,
   'start-due': GanttGrid,
-  table: EstimationTable,
   table2: TableReport,
 };
 

@@ -25,10 +25,6 @@ const reports = [
     name: 'Scatter Plot',
   },
   {
-    key: 'table',
-    name: 'Estimation Table',
-  },
-  {
     key: 'flow-metrics',
     name: 'Flow Metrics',
   },
@@ -40,7 +36,7 @@ const reports = [
 
 type ReportTypes = (typeof reports)[number]['key'];
 
-const viewSettingsMap: Record<Exclude<ReportTypes, 'table'>, FC> = {
+const viewSettingsMap: Record<ReportTypes, FC> = {
   'start-due': GanttViewSettings,
   due: ScatterPlotViewSettings,
   'flow-metrics': FlowMetricsViewSettings,

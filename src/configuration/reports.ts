@@ -52,13 +52,6 @@ export const reports: Report[] = [
     onByDefault: false,
   },
   {
-    key: 'table',
-    name: 'Estimation Table',
-    featureSubtitle: '',
-    featureFlag: 'estimationTable',
-    onByDefault: false,
-  },
-  {
     key: 'table2',
     name: 'Table (beta)',
     featureSubtitle: 'Unified table & grouper report',

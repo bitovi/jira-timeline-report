@@ -316,11 +316,9 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         />
       </div>
 
-      {primaryReportType !== 'table' ? (
-        <div className="self-end pb-1">
-          <ViewSettings />
-        </div>
-      ) : null}
+      <div className="self-end pb-1">
+        <ViewSettings />
+      </div>
     </ReportControlsWrapper>
   );
 };

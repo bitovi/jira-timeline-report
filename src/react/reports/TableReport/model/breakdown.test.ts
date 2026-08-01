@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getPath, round, formatPercent, usedStoryPointsMedian, teamsAreTheSame } from './breakdown';
-import type { EstimationIssue } from '../types';
+import type { EstimationIssue } from './estimationTypes';
 
 const makeIssue = (overrides: Partial<EstimationIssue> = {}): EstimationIssue => ({
   key: 'X-1',

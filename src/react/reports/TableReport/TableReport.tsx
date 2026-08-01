@@ -29,7 +29,7 @@ import { useJiraIssueFields } from '../../services/jira/useJiraIssueFields';
 import { linkIssues } from '../GroupingReport/jira/linked-issue/linked-issue';
 import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from '../../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time';
 import Stats from '../../Stats/Stats';
-import { EstimateBreakdownModal } from '../EstimationTable/components/EstimateBreakdownModal';
+import { EstimateBreakdownModal } from './components/EstimateBreakdownModal';
 import { PercentCompleteModal } from '../GanttReport/GanttGrid/components/PercentCompleteModal';
 import { makeGetChildren } from '../GanttReport/GanttGrid/helpers/getChildren';
 import type { IssueOrRelease } from '../GanttReport/GanttGrid/types';
@@ -63,7 +63,7 @@ import { isNumericColumn } from './model/columns';
 import { ColumnHeaderMenu } from './components/ColumnHeaderMenu';
 
 import type { DerivedIssue } from '../../../jira/derived/derive';
-import type { EstimationIssue } from '../EstimationTable/types';
+import type { EstimationIssue } from './model/estimationTypes';
 import type { AggregationId } from './model/aggregations';
 import type { DateGranularity } from './model/dateBucketing';
 import type { ColumnDefinition, TableIssue } from './model/columns';
