@@ -1,11 +1,11 @@
 import type { LinkedIssue } from '../../linked-issue';
-import { selectDue, selectStart, descSortByDue, sortByStart } from '../../../../../../../jira/shared/helpers';
+import { selectDue, selectStart, descSortByDue, sortByStart } from '../../../shared/helpers';
 import {
   DueData,
   StartData,
   getStartDateAndDueDataFromFieldsOrSprints,
   getStartDateAndDueDataFromSprints,
-} from '../../../../../../../shared/issue-data/date-data';
+} from '../../../../shared/issue-data/date-data';
 
 export type RollupDateData = Partial<StartData & DueData>;
 

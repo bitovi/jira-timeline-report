@@ -1,8 +1,8 @@
 /**
  * Hierarchy row-ordering for the Table report (spec/012-table-and-grouper, Phase 2, design §1/§4).
  *
- * Ports `EstimationTable/helpers/rows.ts` (`makeGetChildren` / `buildTableRows`) but generalised to
- * operate on the Table report's {@link TableIssue} set and to support:
+ * The `makeGetChildren` / `buildTableRows` row-ordering (ported from the former Estimation Table),
+ * generalised to operate on the Table report's {@link TableIssue} set and to support:
  *  - expand/collapse (descendants of a collapsed row are omitted),
  *  - column sort ordering *within* siblings when hierarchy is on (design §4).
  *

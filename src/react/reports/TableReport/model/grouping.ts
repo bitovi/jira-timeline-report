@@ -17,8 +17,8 @@
  * By convention (Phase 0) an aggregation reducer's item IS the already-extracted column value, so a
  * group is aggregated via `aggregateGroup(members.map(column.getValue), [reducer])`.
  */
-import { aggregateGroup } from '../../GroupingReport/data/aggregate';
-import { createStableObjectKey, groupByKeys } from '../../GroupingReport/data/group';
+import { aggregateGroup } from './aggregate';
+import { createStableObjectKey, groupByKeys } from './group';
 
 import { aggregations } from './aggregations';
 

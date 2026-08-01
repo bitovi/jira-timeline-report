@@ -1,7 +1,7 @@
-import type { DerivedIssue } from '../../../../../jira/derived/derive';
+import type { DerivedIssue } from '../derived/derive';
 
-import { partition, indexByKey, groupBy } from '../../../../../utils/array/array-helpers';
-import { getEstimationData } from '../../../../../jira/derived/work-timing/work-timing';
+import { partition, indexByKey, groupBy } from '../../utils/array/array-helpers';
+import { getEstimationData } from '../derived/work-timing/work-timing';
 
 type Mutable<T> = {
   -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer U>

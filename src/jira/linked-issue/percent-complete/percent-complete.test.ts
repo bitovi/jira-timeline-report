@@ -1,7 +1,7 @@
 import { expect, test, describe, it } from 'vitest';
 import { getPercentCompleteForLinkedIssue, sumChildRollups } from './percent-complete';
 import type { LinkedIssue } from '../linked-issue';
-import type { DerivedWorkTiming } from '../../../../../../jira/derived/work-timing/work-timing';
+import type { DerivedWorkTiming } from '../../derived/work-timing/work-timing';
 
 // Helper function to create a complete DerivedWorkTiming object with defaults
 function createDerivedWorkTiming(overrides: Partial<DerivedWorkTiming> = {}): DerivedWorkTiming {

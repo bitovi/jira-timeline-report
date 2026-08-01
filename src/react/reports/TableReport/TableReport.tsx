@@ -25,7 +25,7 @@ import Button from '@atlaskit/button/new';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useJiraIssueFields } from '../../services/jira/useJiraIssueFields';
-import { linkIssues } from '../GroupingReport/jira/linked-issue/linked-issue';
+import { linkIssues } from '../../../jira/linked-issue';
 import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from '../../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time';
 import Stats from '../../Stats/Stats';
 import { EstimateBreakdownModal } from './components/EstimateBreakdownModal';
@@ -779,7 +779,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // Group-ordering control: local-only (not in the Phase 5 persisted schema, plan lines 199-210).
   const [groupSort, setGroupSort] = useState<GroupSort>({ by: 'label', dir: 'asc' });
 
-  // --- Write-back helpers: mirror GroupingReport (obs.value = next) instead of setState -------------
+  // --- Write-back helpers: write persisted state back via obs.value = next (not setState) -----------
   const writeColumns = (nextIds: string[], nextOverrides: Record<string, AggregationId> = aggregationOverrides) => {
     columnsObs.value = buildColumnEntries(nextIds, nextOverrides, columnEntries);
   };

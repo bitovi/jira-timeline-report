@@ -21,8 +21,8 @@ import { TableReport } from './TableReport';
 
 /**
  * Minimal writable CanObservable stub. `value` is a getter/setter so both `.set(v)` (used by
- * upstream data observables) and `obs.value = v` (how the report writes persisted state back, like
- * GroupingReport) update the live value and notify subscribers.
+ * upstream data observables) and `obs.value = v` (how the report writes persisted state back)
+ * update the live value and notify subscribers.
  */
 const obs = <T,>(value: T): CanObservable<T> => {
   let current = value;

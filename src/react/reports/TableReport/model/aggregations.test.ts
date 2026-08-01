@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { aggregateGroup } from '../../GroupingReport/data/aggregate';
+import { aggregateGroup } from './aggregate';
 import { aggregations, defaultAggregationForType, isNumericAggregation } from './aggregations';
 
 import type { AggregationId } from './aggregations';
