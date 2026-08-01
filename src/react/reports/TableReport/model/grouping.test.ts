@@ -182,11 +182,6 @@ describe('sortGroups', () => {
     expect(sorted.map((g) => g.label)).toEqual(['To Do', 'Done']);
   });
 
-  test('by member count', () => {
-    const sorted = sortGroups(groups, { by: 'count', dir: 'desc' }, cols);
-    expect(sorted[0].label).toBe('Done'); // 3 members vs 2
-  });
-
   test('by a measure column value (sum of points)', () => {
     // Done sum = 6, To Do sum = 13 → asc puts Done first, desc puts To Do first.
     const asc = sortGroups(groups, { by: { columnId: 'points' }, dir: 'asc' }, cols);

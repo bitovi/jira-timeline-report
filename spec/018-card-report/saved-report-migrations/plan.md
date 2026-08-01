@@ -271,6 +271,7 @@ Per migration, when its test goes red:
 | `primary-issue-type-to-selected`      | 2026-08-xx            | lossy    | —       |
 | `secondary-report-type-to-cards-mode` | (with parent Phase 1) | lossy    | —       |
 | `secondary-filter-rows-to-cards`      | (with parent Phase 1) | lossy    | —       |
+| `table2-to-table`                     | 2026-08-xx            | fatal    | —       |
 
 ---
 

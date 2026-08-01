@@ -367,20 +367,12 @@ describe('TableReport (1D grouping body)', () => {
     expect(within(members[0]).getByText('AAA-1')).toBeInTheDocument();
   });
 
-  test('the grouped view renders the Order groups + Expand/Collapse strip', () => {
+  test("the grouped view has no separate group-controls strip — each group's own caret is the only expand/collapse affordance, and headers own group ordering", () => {
     setupGrouped();
-    expect(screen.getByTestId('table-group-controls')).toBeInTheDocument();
-    expect(screen.getByTestId('table-group-sort')).toBeInTheDocument();
-    expect(screen.getByTestId('table-expand-all')).toBeInTheDocument();
-    expect(screen.getByTestId('table-collapse-all')).toBeInTheDocument();
-  });
-
-  test('Expand all reveals members and Collapse all hides them', () => {
-    setupGrouped();
-    fireEvent.click(screen.getByTestId('table-expand-all'));
-    expect(screen.getAllByTestId('table-group-member').length).toBe(3);
-    fireEvent.click(screen.getByTestId('table-collapse-all'));
-    expect(screen.queryByTestId('table-group-member')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('table-group-controls')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('table-group-sort')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('table-expand-all')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('table-collapse-all')).not.toBeInTheDocument();
   });
 
   test('clicking an AGGREGATED measure column header while grouped sorts the GROUPS by that aggregate (not row order)', () => {
