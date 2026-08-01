@@ -11,7 +11,9 @@ describe('requiredFieldsFor', () => {
   });
 
   it('returns the loaded field for a raw built-in facet (Project Name)', () => {
-    expect(requiredFieldsFor('builtin:project:name')).toEqual(['project']);
+    // Uses the display name 'Project', not the raw id 'project' — the fetch pipeline renames
+    // response field keys from id -> display name (see builtinFieldRegistry.ts comment).
+    expect(requiredFieldsFor('builtin:project:name')).toEqual(['Project']);
   });
 
   it('passes a generic `field:<id>` column through as its id', () => {
@@ -68,9 +70,9 @@ describe('built-in facet accessors', () => {
     expect(facet.get(issue)).toBe('ORD');
   });
 
-  it('Project Name reads `.name` off the raw `project` field object', () => {
+  it('Project Name reads `.name` off the raw `Project` field object', () => {
     const facet = getBuiltinFacet('builtin:project:name')!;
-    const issue = { fields: { project: { id: '10000', key: 'ORD', name: 'Ordering' } } } as unknown as TableIssue;
+    const issue = { fields: { Project: { id: '10000', key: 'ORD', name: 'Ordering' } } } as unknown as TableIssue;
     expect(facet.get(issue)).toBe('Ordering');
   });
 

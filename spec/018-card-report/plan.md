@@ -6,6 +6,11 @@ needs to be a slot. A user who wants cards **and** a timeline can compose both i
 document. So the secondary report should become an ordinary primary report type
 named **Cards**, and the slot should go away.
 
+> **Verified against `feat/017-remove-legacy-reports` @ `1386d392`** (2026-08-01), on
+> which spec/017 has already landed — Grouper and Estimation Table are deleted and
+> `table2` → `table` is done. Line numbers below were checked at that commit; re-verify
+> with `grep` before trusting one that looks off.
+
 ## TL;DR — this is not a rename
 
 Three things make it more than a find-and-replace:
@@ -23,7 +28,7 @@ Three things make it more than a find-and-replace:
    `sections`), and it is behind a feature flag that is off by default. See
    [§ Migration policy](#migration-policy).
 3. **"Secondary" and "breakdown" are both overloaded**, and one of the collisions is
-   load-bearing. `secondaryIssueType` (`route-data.js:796`) is the _hierarchy_ pick for
+   load-bearing. `secondaryIssueType` (`route-data.js:790`) is the _hierarchy_ pick for
    `Release-Epic`-style selections and has nothing to do with the secondary report; a
    blind rename breaks issue-type selection. Likewise `primaryReportBreakdown` /
    "Show work breakdown" (`ShowWorkBreakdown.tsx`, flag `workBreakdowns`) is a **Gantt**
@@ -49,12 +54,12 @@ then retire the authoring path, then delete the slot in a later release.** Detai
   `PRIMARY_REPORT_TYPES_SUPPORTING_SECONDARY = ['start-due', 'due']`; `:16` also
   requires `secondaryReportType` to be `'status' | 'breakdown'`. Tested in
   `showSecondaryReport.test.ts`.
-- **Props**: `secondaryPropsFor(vm, routeData)` (`reportProps.ts:56-63`) — a
+- **Props**: `secondaryPropsFor(vm, routeData)` (`reportProps.ts:52-59`) — a
   _separate_ bag from `propsFor`, carrying `planningIssuesObs`,
   `secondaryReportTypeObs`, `filterRowsObs`, `childFilterRowsObs`.
 - **Component**: `src/react/reports/WorkBreakdown/` (~40 files: `WorkBreakdown.tsx`,
   `types.ts`, `fixtures.ts`, 10 `components/`, 14 `helpers/` + their tests, stories).
-  Exported from `registry.ts:44` _outside_ the `embeddableReportComponents` map.
+  Exported from `registry.ts:40` _outside_ the `embeddableReportComponents` map.
 - **Mode**: `WorkBreakdown.tsx:50` maps `secondaryReportType` → `SecondaryReportMode`
   (`'breakdown'` else `'status'`), consumed by `buildBoard` and `WorkBreakdownCard`.
 - **The render path is NOT feature-flagged.** `showSecondaryReport` reads only the two
@@ -68,13 +73,13 @@ then retire the authoring path, then delete the slot in a later release.** Detai
 
 ### Routing / persistence
 
-- `route-data.js:911` `secondaryReportType` (default `'none'`).
-- `route-data.js:942` `secondaryFilterRows` — card-level filter rows, applied inside
+- `route-data.js:905` `secondaryReportType` (default `'none'`).
+- `route-data.js:936` `secondaryFilterRows` — card-level filter rows, applied inside
   `buildBoard`.
-- `route-data.js:946` `secondaryChildFilterRows` — child-row filter rows.
-- All three are listed in `ChildReportConfig.js:212-226` `SHELL_ONLY_PARAM_KEYS`
+- `route-data.js:940` `secondaryChildFilterRows` — child-row filter rows.
+- All three are listed in `ChildReportConfig.js:208-222` `SHELL_ONLY_PARAM_KEYS`
   ("children render no secondary report in v1"), and the drift tests at
-  `ChildReportConfig.test.js:354-384` **fail the build** if a `route-data` param is in
+  `ChildReportConfig.test.js:353-383` **fail the build** if a `route-data` param is in
   none of the buckets. `planningStatuses` is already a `CHILD_PARAM`
   (`ChildReportConfig.js:106`).
 
@@ -84,10 +89,10 @@ then retire the authoring path, then delete the slot in a later release.** Detai
   from `GanttViewSettings.tsx:42-51` and `ScatterPlotViewSettings.tsx:35-42`, both
   gated on the `secondaryReport` feature flag, both bundling
   `StatusesShownAsPlanning` alongside it.
-- `Filters.tsx:84-123` — two extra `FilterRowsBuilder` sections ("Secondary Report
+- `Filters.tsx:84-121` — two extra `FilterRowsBuilder` sections ("Secondary Report
   {type} Status Filtering" ×2) shown when the flag is on _and_ `secondaryReportType`
   is set and not `none`.
-- `configuration/features.ts:10-16` — the `secondaryReport` flag, `onByDefault: false`.
+- `configuration/features.ts:10-16` — the `secondaryReport` flag (`:12`), `onByDefault: false`.
 
 ### Data pipeline
 
@@ -101,9 +106,8 @@ then retire the authoring path, then delete the slot in a later release.** Detai
 
 ### Chrome that keys off `primaryReportType`
 
-`configuration/reports.ts:11-89` (dropdown + flag) → `SelectReportType/utilities.ts`;
-`registry.ts` / `shellRegistry.ts`; `ReportControls.tsx` (per-type branches, plus the
-`!== 'table'` ViewSettings guard at `:319`); `ViewSettings.tsx:43-60` (map + 4-way
+`configuration/reports.ts:11-75` (dropdown + flag) → `SelectReportType/utilities.ts`;
+`registry.ts` / `shellRegistry.ts`; `ReportControls.tsx` (per-type branches at `:220-288`); `ViewSettings.tsx:39-58` (map + 4-way
 guard); `ReportFooter.tsx:7-10`; `PrintReportButton.tsx:16`
 (`PRINTABLE_REPORT_TYPES`); `Filters.tsx:82` (date-range filter).
 
@@ -127,18 +131,65 @@ registry entries — including report-of-reports embeddability.
 
 ## Decisions
 
-Recommended answers in **bold**; each is cheap to flip before Phase 1 and expensive
-after.
+**D1, D4 and the naming question were ratified by the product owner on 2026-08-01** and
+are no longer open; the rest stand as recommendations (bold) that an implementer may
+proceed on. Each is cheap to flip before Phase 1 and expensive after.
 
 | #   | Question                                  | Recommendation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | --- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | URL key for the new report type           | **`cards`**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| D1  | URL key for the new report type           | **`cards`** — **ratified 2026-08-01.** Plain noun, matching the existing `table` entry. Rejected: `status-cards` (collides with the `status` mode) and `work-breakdown` (collides with the Gantt's "Show work breakdown" option, the exact ambiguity this rename removes). Directory becomes `CardsReport/` (D5), mode param `cardsMode` (D2).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | D2  | Layout-mode param                         | **New `cardsMode` (`status` \| `breakdown`, default `status`). No fallback to `secondaryReportType`.** Reusing `secondaryReportType` would keep the confusing name and its `none` value forever. A fallback would be dead code: it could only fire for a config carrying `primaryReportType=cards` _and_ a legacy `secondaryReportType` _and_ no `cardsMode`, which nothing written before this spec can have — `cards` is a new value, so every legacy config says `start-due`/`due` and takes the legacy-slot path instead. The one link that could hit it is the Phase 3 deprecation link, which we generate and which writes `cardsMode` itself. Residual case: switching an already-open legacy saved report to Cards via the dropdown lands in `status` mode — the mode select is right there, and re-saving persists `cardsMode`. |
 | D3  | Feature flag                              | **New flag `cardsReport`, `onByDefault: false`, and it stays that way.** Cards is a new experimental report replacing an old one; it graduates on its own merits, not on this spec's schedule. Alias it from `secondaryReport` at read time (D6). Graduation is not part of Phases 1–3 — it is the **precondition for Phase 4** (see there). Same for `reportOfReports`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| D4  | Keep `secondaryFilterRows`?               | **No.** As a primary, the standard Filters control already filters the cards (`effectiveFilterRows` in the vm). Keep only the child-level rows, renamed `cardsChildFilterRows`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| D4  | Keep `secondaryFilterRows`?               | **No — ratified 2026-08-01.** `secondaryFilterRows` only exists because a Gantt and a card board share one page and one `filterRows`; as its own report, Cards' standard Filters control (`effectiveFilterRows` in the vm) already narrows the cards. The independent-filtering case is now report-of-reports, where each child owns its `filterRows`. **The migration is lossless:** a card shows today iff it passes `filterRows` **and** `secondaryFilterRows`, and `matchesAllFilterRows` requires every row to match — so concatenating the two lists is the same AND and the card set is unchanged. `secondaryChildFilterRows` is _not_ redundant (it filters child rows _inside_ a card) and survives as `cardsChildFilterRows`.                                                                                                  |
 | D5  | Rename `WorkBreakdown/` → `CardsReport/`? | **Yes, but last** (Phase 5), as an isolated mechanical commit. Doing it in Phase 1 makes the behavioural diff unreviewable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| D6  | Old feature-flag opt-in                   | **Migrate it.** `Features.tsx:13-21 removePreviousFeatures` silently drops unknown flag keys, so a bare rename resets everyone who had "Secondary Report" on. Map `secondaryReport → cardsReport` in `getFeatures` (`src/jira/features/fetcher.ts:15`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| D6  | Old feature-flag opt-in                   | **Migrate it.** `Features.tsx:13-21 removePreviousFeatures` silently drops unknown flag keys, so a bare rename resets everyone who had "Secondary Report" on. Map `secondaryReport → cardsReport` in `getFeatures` (`src/jira/features/fetcher.ts:16`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | D7  | Legacy slot                               | **Keep rendering it through Phase 3; delete in Phase 4** (separate release). See below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| D8  | Saved-report migrations                   | **One migration table, three consumers: the boot URL rewrite, read-time normalization in `getAllReports`, and a guarded write-back at boot.** Read-time is the correctness layer; the write is what makes scheduled EOL possible. Specified and scheduled separately — [`saved-report-migrations/plan.md`](saved-report-migrations/plan.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+<a id="saved-report-migration"></a>
+
+## Saved-report migration (D8)
+
+**Full plan: [`saved-report-migrations/plan.md`](saved-report-migrations/plan.md).**
+Separated so it can be built, reviewed and shipped independently — nothing in it is
+specific to Cards, and it retroactively covers spec/017's already-shipped `table2` →
+`table` rename if desired (see Open questions).
+
+The short version:
+
+- **The boot-time URL rewrite cannot reach saved reports.** `main-helper.js:32-33`
+  rewrites `window.location` only; saved-report params resolve off
+  `reportData.queryParams` via `paramValue()` (`state-storage.js:437`). A saved report
+  carrying `primaryReportType=breakdown` is therefore never fixed, and the shell renders
+  it **blank** — `TimelineReport.tsx:132` has no unknown-type fallback (`ChildReport.tsx`
+  does). A live bug today, independent of this spec.
+- **One ordered migration table, three consumers**: the URL rewrite, read-time
+  normalization in `getAllReports` (`fetcher.ts:23`), and a guarded write-back at boot
+  (`main-helper.js:94`). Read-time is the correctness layer; the write is what lets
+  migrations eventually be **deleted**, and is guarded on `changed` + logged-in +
+  `storageInitialized()`.
+- **Migrations are end-of-lifed on a schedule** (12 months), which is only safe because
+  of a permanent "this report was saved in a format we no longer support" fallback in
+  the shell. That fallback is the highest-value item in the sub-plan and should land
+  with the runner.
+
+What it buys this spec, and where the boundary is:
+
+| Transform                                           | Covered                                                          |
+| --------------------------------------------------- | ---------------------------------------------------------------- |
+| `secondaryReportType` → `cardsMode`                 | yes                                                              |
+| `secondaryChildFilterRows` → `cardsChildFilterRows` | yes                                                              |
+| merge `secondaryFilterRows` into `filterRows` (D4)  | yes — the one case that otherwise **silently loses user config** |
+| `primaryReportType=breakdown` → `start-due`         | yes — fixes the pre-existing bug above                           |
+| one saved report → Gantt + Cards + parent document  | **no**                                                           |
+
+The last row is the boundary. Splitting one record into three and inventing a parent
+document is not a transform — it changes the user's report list under them and can
+produce a document type they have not enabled. That stays an explicit action
+(Phase 3.5), never an automatic migration. So the migration layer cleanly solves the
+mechanical half and leaves the hard half exactly where § Migration policy puts it.
+
+---
 
 <a id="migration-policy"></a>
 
@@ -191,25 +242,39 @@ so the user has no reason left to open it.
 >   with the matching `cardsMode`, dropping the timeline above.
 > - To keep the timeline **and** the cards on one page, build a **Report of Reports**
 >   containing both.
+> - Don't see **Cards** or **Report of Reports** in the report dropdown? Turn them on
+>   under **Settings → Features**.
 
-**Who sees it: flag-holders only.** Both `cardsReport` and `reportOfReports` stay
-`onByDefault: false` (D3) — they are experimental replacements, not graduated features.
-But the slot itself renders for _everyone_ (§ Current state), so gating the warning on
-`showSecondaryReport` alone would show migration instructions to people whose dropdown
-contains neither Cards nor Report of Reports. So gate it on **both** the slot predicate
-and `useFeatures().cardsReport`: the warning appears exactly to users who can act on
-it. Everyone else keeps rendering the board, unwarned and unchanged, until the flags
-graduate.
+**Who sees it: everyone the slot renders for.** Gated on `showSecondaryReport(…)` and
+nothing else — no feature check. Both `cardsReport` and `reportOfReports` stay
+`onByDefault: false` (D3), and the slot renders for users holding neither flag
+(§ Current state) — but that is an argument for reaching them, not for staying quiet:
+they are precisely the people who lose a board in Phase 4. The third bullet tells them
+how to turn the replacements on, and is a no-op for anyone who already has them.
 
-This means `TimelineReport.tsx` gains its first `useFeatures` dependency. That hook
-needs `QueryClientProvider` / `StorageProvider` / `Suspense` ancestors (see the wrapper
-comment in `Filters.tsx:40-45`), so the notice must bring its own providers exactly as
-`Filters` and `ViewSettings` do — do not lift them into the shell for this.
+Two things make a flag-blind warning actionable rather than a tease:
 
-The corollary is that **Phase 4 cannot ship until the flags graduate** — otherwise the
-slot vanishes for a population that was never warned and has no replacement in their
-dropdown. That is the real constraint, and it belongs on the deletion, not on the
-warning.
+- **The link works with the flag off.** `SelectReportType.tsx:16-19` resolves the
+  current report against the full `REPORTS` list rather than the filtered dropdown,
+  specifically so a URL can select a flag-hidden report — _"these options can still
+  function if the url defaults to that value."_ So `?primaryReportType=cards` renders
+  Cards for anyone. The flag only governs whether Cards is **pickable** for new reports.
+- **The copy names where to enable them** — Settings → Features (`Features.tsx`), which
+  every logged-in user can reach.
+
+So the notice needs **no `useFeatures` call**: `TimelineReport.tsx` gains no
+feature-flag dependency and no extra `QueryClientProvider` / `StorageProvider` /
+`Suspense` wrapper (the dance `Filters.tsx:41-45` documents). Rejected alternative:
+branch the copy on `cardsReport` so as not to say "enable Cards" to someone who has it.
+Not worth dragging the provider stack into the shell for a notice Phase 4 deletes.
+
+**One population can't act on it: logged-out sample viewers.** `showingConfiguration =
+isLoggedIn` (`TimelineReport.tsx:96`) hides the settings sidebar entirely, so an
+anonymous visitor arriving via `SampleDataNotice.tsx:17` would be pointed at a panel
+they cannot open. Fix it at the source rather than branching the copy: **the
+`SampleDataNotice` link rewrite moves out of Phase 4 and into Phase 3**, so our own
+sample links stop using the slot before the warning ships. After that, every config
+still hitting it is user-owned and its owner is logged in.
 
 **Not dismissible, and deliberately so.** It only renders for a config actively using
 the deprecated slot, and it disappears the moment that config is migrated — so it is
@@ -280,6 +345,26 @@ renders the board standalone with a working mode select and child filters; every
 legacy `secondaryReportType` URL renders exactly as before; `tsc` + `vitest` +
 playwright green.
 
+### Phase 1.5 — Saved-report migrations (D8)
+
+**Executed from its own plan: [`saved-report-migrations/plan.md`](saved-report-migrations/plan.md).**
+Separately buildable and reviewable; only its final phase depends on this one.
+
+That plan's Phases A (mechanism) and B (the pre-existing `primaryReportType=breakdown`
+bug + the shell's missing unknown-type fallback) have **no dependency on Cards** and can
+land before, during, or independently of Phase 1 here. Its Phase C — the
+`secondaryReportType` → `cardsMode`, `secondaryChildFilterRows` →
+`cardsChildFilterRows`, and `secondaryFilterRows` → `filterRows` (D4) entries — needs
+the keys Phase 1 introduces, and should land before the Phase 3 warning tells anyone to
+migrate config we are about to normalize for them.
+
+Note the interaction with **D2**: once Phase C ships, a legacy saved report opened and
+switched to Cards _does_ pick up its old mode, because `cardsMode` is present in the
+normalized `queryParams`. That closes D2's residual case without any runtime fallback.
+
+**Exit (for this spec's purposes):** legacy saved reports resolve `cardsMode` /
+`cardsChildFilterRows` / `filterRows` correctly. See the sub-plan for its own exits.
+
 ### Phase 2 — Cards inside a report-of-reports
 
 Mostly forced by Phase 1 (`registry.test.ts` demands the embeddable entry), but verify
@@ -318,10 +403,26 @@ at all.
 
 ### Phase 4 — Delete the slot (separate release)
 
-- `TimelineReport.tsx` — drop `showSecondaryReport`, the `WorkBreakdown` import,
-  `secondaryProps`, and `#react-secondary-report-container`.
+**Preconditions — do not start until all three hold:**
+
+1. `cardsReport` has graduated to `onByDefault: true`. Until then, deleting the slot
+   takes a board away from users who cannot pick its replacement from the dropdown.
+   (They _can_ still reach it by URL — but "hand-edit your bookmark" is not a migration
+   path.)
+2. `reportOfReports` has graduated too — it is the only way to keep a timeline and a
+   card board on one page, which is this spec's whole premise.
+3. The Phase 3 warning has shipped at least one release earlier. It is visible to
+   everyone the moment it lands, so this is a time requirement, not a reach one.
+
+Graduating the two flags is out of scope here; each happens when the feature is ready.
+**Phase 4 is blocked on them, not the reverse.** If they stall, Phases 1–3 remain
+complete and shippable — Cards exists, the slot is unauthorable, everyone using it has
+been told, and nothing is broken.
+
+- `TimelineReport.tsx` — drop `showSecondaryReport`, the Phase 3 warning, the
+  `WorkBreakdown` import, `secondaryProps`, and `#react-secondary-report-container`.
 - Delete `showSecondaryReport.ts` + its test; `secondaryPropsFor` in `reportProps.ts`;
-  the bare `export { WorkBreakdown }` in `registry.ts:43-44`; the legacy
+  the bare `export { WorkBreakdown }` in `registry.ts:39-40`; the legacy
   `secondaryReportTypeObs` prop on the component.
 - `route-data.js` — remove `secondaryReportType`, `secondaryFilterRows`,
   `secondaryChildFilterRows`; remove them from `SHELL_ONLY_PARAM_KEYS`. The old params
@@ -337,8 +438,9 @@ at all.
   and container assertions at `#react-report-container`.
 - Comment-only cleanups in `src/examples/` + `public/examples/bitovi-training.js`.
 
-**Exit:** no `secondaryReportType` anywhere outside a back-compat fallback; the
-sample-report journeys pass against the new URLs.
+**Exit:** `secondaryReportType` survives only as an entry in the Phase 1.5 migration
+table (D2 leaves no runtime fallback to keep); the sample-report journeys pass against
+the new URLs.
 
 ### Phase 5 — Mechanical rename (optional, isolated commit)
 
@@ -357,24 +459,25 @@ behaviour change. Keep `primaryReportBreakdown` / `ShowWorkBreakdown` /
 Source of truth for "did we get everything" — `grep -ril secondary src --include=*.ts --include=*.tsx --include=*.js`
 plus the non-`src` surfaces below.
 
-| Area                          | Files                                                                                                      | Phase                  |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------- |
-| Report type config / dropdown | `configuration/reports.ts`, `SelectReportType.test.tsx`                                                    | 1                      |
-| Registries                    | `reports/registry.ts`, `shellRegistry.ts`, `registry.test.ts`                                              | 1                      |
-| Routing                       | `route-data/route-data.js`, `route-data/types.ts`                                                          | 1, 4                   |
-| Child config                  | `ReportOfReports/model/ChildReportConfig.js` + `.test.js`                                                  | 1, 4                   |
-| Props                         | `reports/reportProps.ts` + `.test.ts`                                                                      | 1, 4                   |
-| Report component              | `reports/WorkBreakdown/**` (incl. `types.ts`, stories, tests)                                              | 1, 5                   |
-| Shell                         | `TimelineReport/TimelineReport.tsx`, `showSecondaryReport.ts` + test                                       | 3, 4                   |
-| Deprecation warning           | new component beside `TimelineReport.tsx` + test                                                           | 3 (added), 4 (deleted) |
-| View settings                 | `GanttViewSettings`, `ScatterPlotViewSettings`, `ViewSettings.tsx`, `SecondaryReportType/`                 | 1, 3                   |
-| Filters                       | `ReportControls/components/Filters/Filters.tsx`, `useSecondaryFilterRows/`, `useSecondaryChildFilterRows/` | 1, 3, 4                |
-| Print                         | `PrintReportButton.tsx`, `src/css/print.css`                                                               | 1                      |
-| Feature flags                 | `configuration/features.ts`, `jira/features/fetcher.ts`, `Features.test.tsx`                               | 1, 3                   |
-| Sample data                   | `SampleDataNotice.tsx`                                                                                     | 4                      |
-| Connect descriptor            | `scripts/atlassian-connect/index.ts`                                                                       | 4                      |
-| E2E                           | `playwright/unauthenticated/sample-reports-navigation.spec.ts`                                             | 4                      |
-| Docs/examples                 | `src/examples/bitovi-training.js`, `public/examples/bitovi-training.js`                                    | 4                      |
+| Area                          | Files                                                                                                      | Phase                                       |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Report type config / dropdown | `configuration/reports.ts`, `SelectReportType.test.tsx`                                                    | 1                                           |
+| Registries                    | `reports/registry.ts`, `shellRegistry.ts`, `registry.test.ts`                                              | 1                                           |
+| Routing                       | `route-data/route-data.js`, `route-data/types.ts`                                                          | 1, 4                                        |
+| Saved-report migrations       | new `jira/reports/migrations/`, `jira/reports/fetcher.ts`, `shared/main-helper.js`, `TimelineReport.tsx`   | [sub-plan](saved-report-migrations/plan.md) |
+| Child config                  | `ReportOfReports/model/ChildReportConfig.js` + `.test.js`                                                  | 1, 4                                        |
+| Props                         | `reports/reportProps.ts` + `.test.ts`                                                                      | 1, 4                                        |
+| Report component              | `reports/WorkBreakdown/**` (incl. `types.ts`, stories, tests)                                              | 1, 5                                        |
+| Shell                         | `TimelineReport/TimelineReport.tsx`, `showSecondaryReport.ts` + test                                       | 3, 4                                        |
+| Deprecation warning           | new component beside `TimelineReport.tsx` + test                                                           | 3 (added), 4 (deleted)                      |
+| View settings                 | `GanttViewSettings`, `ScatterPlotViewSettings`, `ViewSettings.tsx`, `SecondaryReportType/`                 | 1, 3                                        |
+| Filters                       | `ReportControls/components/Filters/Filters.tsx`, `useSecondaryFilterRows/`, `useSecondaryChildFilterRows/` | 1, 3, 4                                     |
+| Print                         | `PrintReportButton.tsx`, `src/css/print.css`                                                               | 1                                           |
+| Feature flags                 | `configuration/features.ts`, `jira/features/fetcher.ts`, `Features.test.tsx`                               | 1, 3                                        |
+| Sample data                   | `SampleDataNotice.tsx`                                                                                     | 4                                           |
+| Connect descriptor            | `scripts/atlassian-connect/index.ts`                                                                       | 4                                           |
+| E2E                           | `playwright/unauthenticated/sample-reports-navigation.spec.ts`                                             | 4                                           |
+| Docs/examples                 | `src/examples/bitovi-training.js`, `public/examples/bitovi-training.js`                                    | 4                                           |
 
 **Explicitly out of scope — do not rename:** `secondaryIssueType` (`route-data.js:796`,
 `useSelectedIssueType.ts:5`, `timeline-report-view-model.js:79`,
@@ -385,20 +488,18 @@ plus the non-`src` surfaces below.
 
 ## Open questions
 
-1. **D-list sign-off**, especially D2 (`cardsMode`), D4 (drop `secondaryFilterRows`),
-   and D7 (keep the legacy slot for a release).
-1. **Is Report of Reports ready to be on by default?** The deprecation warning depends
-   on it (§ The deprecation warning, "Blocker"), and so does this spec's premise. If it
-   is not ready, the whole staged plan needs rethinking — deprecating the slot before
-   its replacement is generally available leaves users with no way to keep a timeline
-   and a card board on one page.
+1. **Remaining D-list sign-off** — D2 (`cardsMode`) and D7 (keep the legacy slot for a
+   release). D1, D4 and the report name were ratified 2026-08-01.
+1. **What graduates `cardsReport` and `reportOfReports`, and roughly when?** Not this
+   spec's call — but Phase 4 is blocked on both, so the answer decides whether the slot
+   is deleted next release or lives on indefinitely. Phases 1–3 ship either way.
 1. Should the empty-result gate count planning-only boards as non-empty (Phase 1
    "watch for")?
-1. Is "Cards" the right user-facing name, or "Status Cards" / "Work Breakdown Cards"?
-   The dropdown already has a "Table", so a plain noun fits — but the two modes are
-   _Status_ and _Work Breakdown_, and "Cards" names the shape rather than the content.
 1. Does Phase 3.5 (one-click split into a report-of-reports) have enough demand to
    build, or is the deprecation notice enough?
-1. Sequencing against [spec/017](../017-remove-legacy-reports/plan.md), which also
-   edits `configuration/reports.ts`, `registry.ts` and `ReportControls.tsx`. The
-   overlaps are small but real — land 017 first, or expect conflicts.
+1. Sequencing note (no longer a question): spec/017 has landed on
+   `feat/017-remove-legacy-reports` — Grouper and Estimation Table are deleted and
+   `table2` → `table` is done. **Ratified 2026-08-01: the migrations sub-plan adds a
+   `table2` → `table` entry**, retroactively un-breaking saved reports that render blank
+   today. This deliberately reverses that rename's documented "no alias" decision
+   (commit `6a7ca435`, _"acceptable per 012 Q2"_).

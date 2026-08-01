@@ -383,6 +383,60 @@ describe('TableReport (1D grouping body)', () => {
     expect(screen.queryByTestId('table-group-member')).not.toBeInTheDocument();
   });
 
+  test('clicking an AGGREGATED measure column header while grouped sorts the GROUPS by that aggregate (not row order)', () => {
+    const tableObs = makeTableObs();
+    tableObs.tableColumnsObs.set([...DEFAULT_COLUMNS, { sourceId: 'field:customfield_1' }]);
+    tableObs.tableGroupByObs.set('builtin:status:name');
+    // Done sum = 1 + 1 = 2; To Do sum = 20 — clearly distinct so ordering is unambiguous.
+    renderReport(
+      [makeGrouped('AAA-1', 'Done', 1), makeGrouped('AAA-2', 'To Do', 20), makeGrouped('AAA-3', 'Done', 1)],
+      tableObs,
+    );
+
+    // Default order is by label ascending → Done first.
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('Done');
+
+    const pointsHeader = screen
+      .getAllByTestId('table-header-sort')
+      .find((b) => b.textContent?.startsWith('Story Points'))!;
+    fireEvent.click(pointsHeader); // asc by Story Points sum → Done (2) before To Do (20)
+    expect(pointsHeader.textContent).toContain('▲');
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('Done');
+
+    fireEvent.click(pointsHeader); // desc → To Do (20) before Done (2)
+    expect(pointsHeader.textContent).toContain('▼');
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('To Do');
+
+    // A third click drops back to the default label-ascending order rather than an "unsorted" state.
+    fireEvent.click(pointsHeader);
+    expect(pointsHeader.textContent).not.toContain('▲');
+    expect(pointsHeader.textContent).not.toContain('▼');
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('Done');
+  });
+
+  test('clicking a TREE-CAPABLE measure column header while grouped sorts groups too — no hierarchy nesting kicks in', () => {
+    setupGrouped();
+    // "Icon & Summary" is tree-capable, but grouping and hierarchy are mutually exclusive.
+    const summaryHeader = screen.getAllByTestId('table-header-sort').find((b) => b.textContent?.startsWith('Summary'))!;
+    fireEvent.click(summaryHeader);
+    // No hierarchy glyph, no tree/rank sort mode — just the plain asc arrow.
+    expect(summaryHeader.textContent).toContain('▲');
+    // Still rendered as two flat group headers (not nested rows).
+    expect(screen.getAllByTestId('table-group-header')).toHaveLength(2);
+  });
+
+  test('the column sort menu hides Hierarchy/Rank options on tree-capable columns while grouped', () => {
+    setupGrouped();
+    const summaryHeader = screen.getAllByTestId('table-header-sort').find((b) => b.textContent?.startsWith('Summary'))!;
+    const th = summaryHeader.closest('th') as HTMLElement;
+    fireEvent.click(within(th).getByTestId('table-column-menu-trigger'));
+    const menu = screen.getByTestId('table-sort-menu');
+    expect(within(menu).queryByTestId('table-sort-tree')).not.toBeInTheDocument();
+    expect(within(menu).queryByTestId('table-sort-rank')).not.toBeInTheDocument();
+    expect(within(menu).getByTestId('table-sort-asc')).toBeInTheDocument();
+    expect(within(menu).getByTestId('table-sort-desc')).toBeInTheDocument();
+  });
+
   test.each([
     ['identity:treeSummary', 'AAA-1 summary'],
     ['identity:summary', 'AAA-1 summary'],

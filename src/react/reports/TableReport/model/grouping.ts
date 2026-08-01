@@ -154,6 +154,25 @@ export function applicableAggregations(column: ColumnDefinition): AggregationId[
 /** Group-level ordering spec: by the group label, or by a measure column's aggregated value. */
 export type GroupSort = { by: 'label' | 'count' | { columnId: string }; dir: 'asc' | 'desc' };
 
+/** Is a {@link GroupSort} currently ordering by a given target ('label' or a measure column id)? */
+function isGroupSortTarget(sort: GroupSort, target: 'label' | { columnId: string }): boolean {
+  if (target === 'label') return sort.by === 'label';
+  return typeof sort.by !== 'string' && sort.by.columnId === target.columnId;
+}
+
+/**
+ * Cycle the GROUP ordering on a header click (the grouped-view analogue of {@link cycleSort} in
+ * `applyView.ts`): clicking a column that isn't currently ordering the groups starts it at `asc`;
+ * clicking the same target again flips `asc` → `desc`; a third click falls back to the default
+ * (label ascending) rather than an "unsorted" state, since the groups always have SOME order.
+ * `target` is `'label'` for the pinned grouped-column header, or `{ columnId }` for a measure column.
+ */
+export function cycleGroupSort(current: GroupSort, target: 'label' | { columnId: string }): GroupSort {
+  if (!isGroupSortTarget(current, target)) return { by: target, dir: 'asc' };
+  if (current.dir === 'asc') return { by: target, dir: 'desc' };
+  return { by: 'label', dir: 'asc' };
+}
+
 /**
  * Order the groups themselves (design §4 "a separate control orders the groups"). Supports ordering
  * by label, by member count, or by a measure column's aggregated value (numeric where possible,

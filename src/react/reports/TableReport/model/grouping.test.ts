@@ -3,6 +3,7 @@ import { describe, test, expect } from 'vitest';
 import {
   applicableAggregations,
   computeMeasureValue,
+  cycleGroupSort,
   effectiveAggregationId,
   formatMeasureValue,
   groupIssues,
@@ -12,6 +13,7 @@ import {
 } from './grouping';
 
 import type { ColumnDefinition, TableIssue } from './columns';
+import type { GroupSort } from './grouping';
 
 /** A tiny column builder over a bag of arbitrary props on the issue. */
 function col(id: string, overrides: Partial<ColumnDefinition> = {}): ColumnDefinition {
@@ -195,5 +197,28 @@ describe('sortGroups', () => {
 
   test('null sort is a no-op', () => {
     expect(sortGroups(groups, null, cols)).toBe(groups);
+  });
+});
+
+describe('cycleGroupSort', () => {
+  const label: GroupSort['by'] = 'label';
+  const points = { columnId: 'points' };
+
+  test('clicking a target not currently active starts it at asc', () => {
+    expect(cycleGroupSort({ by: 'label', dir: 'asc' }, points)).toEqual({ by: points, dir: 'asc' });
+    expect(cycleGroupSort({ by: points, dir: 'desc' }, label)).toEqual({ by: label, dir: 'asc' });
+  });
+
+  test('clicking the active target flips asc -> desc', () => {
+    expect(cycleGroupSort({ by: points, dir: 'asc' }, points)).toEqual({ by: points, dir: 'desc' });
+    expect(cycleGroupSort({ by: label, dir: 'asc' }, label)).toEqual({ by: label, dir: 'desc' });
+  });
+
+  test('a third click on a measure column falls back to the default label-ascending order', () => {
+    expect(cycleGroupSort({ by: points, dir: 'desc' }, points)).toEqual({ by: label, dir: 'asc' });
+  });
+
+  test('a third click on the label column just flips back to asc (no separate "unsorted" state)', () => {
+    expect(cycleGroupSort({ by: label, dir: 'desc' }, label)).toEqual({ by: label, dir: 'asc' });
   });
 });

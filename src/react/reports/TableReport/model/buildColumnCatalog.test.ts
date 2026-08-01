@@ -301,7 +301,7 @@ describe('buildColumnCatalog', () => {
     expect(key.getValue({ projectKey: 'ORD' } as unknown as TableIssue)).toBe('ORD');
 
     const name = byId.get('builtin:project:name')!;
-    expect(name.getValue({ fields: { project: { name: 'Ordering' } } } as unknown as TableIssue)).toBe('Ordering');
+    expect(name.getValue({ fields: { Project: { name: 'Ordering' } } } as unknown as TableIssue)).toBe('Ordering');
     expect(name.getValue({ fields: {} } as unknown as TableIssue)).toBeUndefined();
   });
 

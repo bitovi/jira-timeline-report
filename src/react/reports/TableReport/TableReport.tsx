@@ -49,6 +49,7 @@ import {
 import { buildHierarchyRows } from './model/hierarchyRows';
 import {
   computeMeasureValue,
+  cycleGroupSort,
   effectiveAggregationId,
   formatMeasureValue,
   groupIssues,
@@ -66,7 +67,7 @@ import type { EstimationIssue } from './model/estimationTypes';
 import type { AggregationId } from './model/aggregations';
 import type { DateGranularity } from './model/dateBucketing';
 import type { ColumnDefinition, TableIssue } from './model/columns';
-import type { FilterState, FilterValue, SortState } from './model/applyView';
+import type { FilterState, FilterValue, SortMode, SortState } from './model/applyView';
 import type { AggregationOverrides, GroupSort } from './model/grouping';
 import type { CrossTab } from './model/crosstab';
 import type { HierarchyRow } from './model/hierarchyRows';
@@ -1058,7 +1059,23 @@ const TableReportInner: React.FC<TableReportProps> = ({
                 <tr>
                   {displayColumns.map((column, colIndex) => {
                     const active = isFilterActive(filters[column.id]);
-                    const columnSortMode = sort?.columnId === column.id ? sort.dir : null;
+                    // While grouped, a header's sort arrow/click acts on the GROUP order (design:
+                    // grouped-column-sort brainstorm) rather than row order — the aggregated value is
+                    // what's actually shown at the (default collapsed) group-header level, so sorting
+                    // rows within a group is invisible for any aggregated measure. The pinned grouped
+                    // column orders groups by label; every other shown column orders groups by its own
+                    // aggregated value (reusing the same `groupSort` the "Order groups" control writes).
+                    const columnSortMode: SortMode | null = isGrouped
+                      ? groupColumn && column.id === groupColumn.id
+                        ? groupSort.by === 'label'
+                          ? groupSort.dir
+                          : null
+                        : typeof groupSort.by !== 'string' && groupSort.by.columnId === column.id
+                          ? groupSort.dir
+                          : null
+                      : sort?.columnId === column.id
+                        ? sort.dir
+                        : null;
                     // The first column is the row-label column and freezes on horizontal scroll, so its
                     // header is the sticky corner (top + left); the rest only stick to the top.
                     const headerStyle = colIndex === 0 ? stickyCornerStyle(0, 0) : stickyHeaderStyle();
@@ -1137,8 +1154,18 @@ const TableReportInner: React.FC<TableReportProps> = ({
                             type="button"
                             className={`font-semibold cursor-pointer hover:underline ${numeric ? 'text-right' : 'text-left'}`}
                             data-testid="table-header-sort"
-                            // Tree-capable columns cycle Hierarchy → A→Z → Z→A; others cycle asc/desc/none.
-                            onClick={() => setSort((column.isTree ? cycleTreeSort : cycleSort)(sort, column.id))}
+                            // Tree-capable columns cycle Hierarchy → A→Z → Z→A → Rank; others cycle
+                            // asc/desc/none. While grouped, every column instead cycles the GROUP order
+                            // (asc/desc, falling back to the default label order) via `groupSort`.
+                            onClick={() => {
+                              if (isGrouped) {
+                                const target: GroupSort['by'] =
+                                  groupColumn && column.id === groupColumn.id ? 'label' : { columnId: column.id };
+                                setGroupSort((prev) => cycleGroupSort(prev, target));
+                                return;
+                              }
+                              setSort((column.isTree ? cycleTreeSort : cycleSort)(sort, column.id));
+                            }}
                           >
                             {column.label}
                             {columnSortMode === 'tree' ? (
@@ -1161,7 +1188,17 @@ const TableReportInner: React.FC<TableReportProps> = ({
                             }
                             isActive={active}
                             sortMode={columnSortMode}
-                            onSortChange={(mode) => setSort(mode == null ? null : { columnId: column.id, dir: mode })}
+                            disableTreeSort={isGrouped}
+                            onSortChange={(mode) => {
+                              if (isGrouped) {
+                                if (mode !== 'asc' && mode !== 'desc') return;
+                                const target: GroupSort['by'] =
+                                  groupColumn && column.id === groupColumn.id ? 'label' : { columnId: column.id };
+                                setGroupSort({ by: target, dir: mode });
+                                return;
+                              }
+                              setSort(mode == null ? null : { columnId: column.id, dir: mode });
+                            }}
                             aggregationOverride={aggregationOverrides[column.id]}
                             onAggregationChange={
                               measureColumnIds.has(column.id)
