@@ -9,10 +9,23 @@ import { v4 as uuidv4 } from 'uuid';
 /** ---- stored form: exactly what lands in Jira ---------------------------------------------- */
 
 export type StoredNode =
-  | { type: 'saved-report'; params: { reportId: string } }
+  | { type: 'saved-report'; params: SavedReportParams }
   | { type: 'section'; params: { title: string }; children: StoredNode[] }
   | { type: 'inline-report'; params: { expression: string } };
 // Still anticipated: `text` nodes, and grid options on a section's `params`.
+
+/**
+ * `overrides` is how a change made *inside* an embedded report is kept: a `URLSearchParams`-shaped
+ * fragment of only the keys that differ from that report's own saved `queryParams`, so a child's
+ * effective configuration is `merge(report.queryParams, overrides)` — a string both
+ * `ChildReportConfig` and `parseChildQuery` already know how to read.
+ *
+ * It rides on the node rather than being keyed by one, which is what lets it travel through a
+ * reorder or a delete, survive `toStoredSections`/`parseSections`, and persist on "Save report"
+ * with no change to the save path — and is why node ids can stay in-memory-only.
+ * See spec/016-report-of-reports/006-url-state Phase 2.
+ */
+type SavedReportParams = { reportId: string; overrides?: string };
 
 /** ---- in-memory form: the stored form plus identity ---------------------------------------- */
 
@@ -29,7 +42,7 @@ export type StoredNode =
  */
 type WithRaw = { raw?: Record<string, unknown> };
 
-export type SavedReportNode = { id: string; type: 'saved-report'; params: { reportId: string } } & WithRaw;
+export type SavedReportNode = { id: string; type: 'saved-report'; params: SavedReportParams } & WithRaw;
 
 export type SectionNode = {
   id: string;
@@ -66,10 +79,10 @@ export type LayoutPath = number[];
  */
 const nextId = (): string => uuidv4();
 
-export const savedReportNode = (reportId: string): SavedReportNode => ({
+export const savedReportNode = (reportId: string, overrides?: string): SavedReportNode => ({
   id: nextId(),
   type: 'saved-report',
-  params: { reportId },
+  params: overrides ? { reportId, overrides } : { reportId },
 });
 
 export const sectionNode = (title: string, children: LayoutNode[] = []): SectionNode => ({
@@ -104,8 +117,11 @@ const parseNode = (raw: unknown): LayoutNode => {
 
   if (raw.type === 'saved-report') {
     const reportId = isRecord(raw.params) ? raw.params.reportId : undefined;
+    const overrides = isRecord(raw.params) ? raw.params.overrides : undefined;
 
-    return typeof reportId === 'string' && reportId ? { ...savedReportNode(reportId), raw } : placeholder(raw);
+    return typeof reportId === 'string' && reportId
+      ? { ...savedReportNode(reportId, typeof overrides === 'string' ? overrides : undefined), raw }
+      : placeholder(raw);
   }
 
   if (raw.type === 'section') {
@@ -175,11 +191,18 @@ export const toStoredSections = (nodes: LayoutNode[]): StoredNode[] =>
       } as StoredNode;
     }
 
-    return {
-      ...node.raw,
-      type: 'saved-report',
-      params: storedParams(node, { reportId: node.params.reportId }),
-    } as StoredNode;
+    const params = storedParams(node, { reportId: node.params.reportId });
+
+    // The one key that can be *removed* rather than merely rewritten — an override drops off when
+    // its value returns to the child's saved one. Spreading the original back over it would
+    // otherwise resurrect the old fragment.
+    if (node.params.overrides) {
+      params.overrides = node.params.overrides;
+    } else {
+      delete params.overrides;
+    }
+
+    return { ...node.raw, type: 'saved-report', params } as StoredNode;
   });
 
 /**
@@ -277,6 +300,95 @@ export const setExpressionAt = (nodes: LayoutNode[], path: LayoutPath, expressio
       ? { ...node, params: { ...node.params, expression } }
       : node,
   );
+
+/**
+ * Same as {@link mapNodeAt} but keyed by node identity, so the caller doesn't have to hold a path.
+ * Used by the override path, where the callback is handed to a memoized `ChildReport`: an id is a
+ * string and keeps that memo intact, while a path is a fresh array on every render and would defeat
+ * it — and a document re-renders on every hover.
+ */
+const mapNodeById = (nodes: LayoutNode[], id: string, replace: (node: LayoutNode) => LayoutNode): LayoutNode[] => {
+  let changed = false;
+
+  const next = nodes.map((node) => {
+    if (node.id === id) {
+      const updated = replace(node);
+
+      changed = changed || updated !== node;
+
+      return updated;
+    }
+
+    const children = childrenOf(node);
+
+    if (children === undefined) {
+      return node;
+    }
+
+    const updatedChildren = mapNodeById(children, id, replace);
+
+    if (updatedChildren === children) {
+      return node;
+    }
+
+    changed = true;
+
+    return withChildren(node, updatedChildren);
+  });
+
+  return changed ? next : nodes;
+};
+
+/**
+ * Records — or clears, when `value` is `undefined` — one configuration override on an embedded
+ * report's node, returning a new tree.
+ *
+ * The node keeps its `id`, so recording an override never remounts the child that just made it; a
+ * remounted child refetches from Jira. Same "nothing changed" contract as {@link setSectionTitleAt}:
+ * an unknown id, a node of another type, and a write that leaves the fragment as it was all return
+ * the very same tree — which is what keeps a report re-announcing its current value from flipping
+ * the dirty flag.
+ *
+ * See spec/016-report-of-reports/006-url-state Phase 2.
+ */
+export const setNodeOverride = (
+  nodes: LayoutNode[],
+  nodeId: string,
+  key: string,
+  value: string | undefined,
+): LayoutNode[] =>
+  mapNodeById(nodes, nodeId, (node) => {
+    if (node.type !== 'saved-report') {
+      return node;
+    }
+
+    const overrides = new URLSearchParams(node.params.overrides ?? '');
+
+    if (value === undefined) {
+      if (!overrides.has(key)) {
+        return node;
+      }
+
+      overrides.delete(key);
+    } else {
+      if (overrides.get(key) === value) {
+        return node;
+      }
+
+      overrides.set(key, value);
+    }
+
+    const params: SavedReportParams = { ...node.params };
+    const fragment = overrides.toString();
+
+    if (fragment) {
+      params.overrides = fragment;
+    } else {
+      delete params.overrides;
+    }
+
+    return { ...node, params };
+  });
 
 /**
  * Removes the node at `path`, returning a new tree. A path that doesn't resolve — out of range, or

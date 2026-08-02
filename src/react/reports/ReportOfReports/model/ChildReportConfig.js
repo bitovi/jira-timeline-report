@@ -56,15 +56,43 @@ const asJSON = (fallback) => (raw) => {
   }
 };
 
-const string = (defaultRaw = '') => ({ parse: asString, defaultRaw });
-const boolean = (defaultRaw = 'false') => ({ parse: asBoolean, defaultRaw });
-const list = (defaultRaw = '') => ({ parse: asList, defaultRaw });
-const number = (defaultRaw) => ({ parse: asNumber, defaultRaw });
+// --- serializers, the inverse of the parsers above -----------------------------------------------
+//
+// New to a child, which has only ever *read* its configuration — but not new to the app:
+// route-data.js round-trips every one of these keys through the URL today, so each of these is a
+// port of the converter it already hands `state-storage.js`. They exist so an edit made *inside* an
+// embedded report can be captured back onto its node in the document.
+// See spec/016-report-of-reports/006-url-state Phase 2.
+
+const fromString = (value) => '' + value;
+
+// Ports `makeArrayOfStringsQueryParamValueButAlsoLookAtReportData`, unescaped comma and all: a
+// status name containing a `,` round-trips as two values. Pre-existing and shared with every list
+// param in the app (state-storage.js:320 says so) — not something to diverge on here.
+const fromList = (value) => {
+  if (!value) {
+    return '';
+  }
+  if (Array.isArray(value)) {
+    return value.join(',');
+  }
+  return typeof value === 'string' ? value : JSON.stringify(value);
+};
+
+const string = (defaultRaw = '') => ({ parse: asString, stringify: fromString, defaultRaw });
+const boolean = (defaultRaw = 'false') => ({ parse: asBoolean, stringify: fromString, defaultRaw });
+const list = (defaultRaw = '') => ({ parse: asList, stringify: fromList, defaultRaw });
+const number = (defaultRaw) => ({ parse: asNumber, stringify: fromString, defaultRaw });
 const json = (defaultValue) => ({
   parse: asJSON(() => structuredClone(defaultValue)),
+  stringify: JSON.stringify,
   defaultRaw: JSON.stringify(defaultValue),
 });
-const isoDate = () => ({ parse: (raw) => (isValidIsoDateString('' + raw) ? '' + raw : ''), defaultRaw: '' });
+const isoDate = () => ({
+  parse: (raw) => (isValidIsoDateString('' + raw) ? '' + raw : ''),
+  stringify: fromString,
+  defaultRaw: '',
+});
 
 /**
  * Every setting an embedded child parses out of its own `queryParams`. Keyed by the property name
@@ -73,14 +101,21 @@ const isoDate = () => ({ parse: (raw) => (isValidIsoDateString('' + raw) ? '' + 
  * A test asserts this covers every report-aware parameter `RouteData` defines, so adding a setting
  * to route-data.js without adding it here fails the build rather than silently handing every child
  * that setting's default. See spec/016-report-of-reports Phase 2.
+ *
+ * Exported for `childParams.js`'s `parseChildQuery`, which lets the *document* ask "what query does
+ * this saved report run?" without building a config. There must be exactly one parser: if the
+ * document parsed a child's query differently from how the child parses it, request-dedupe groups
+ * would be computed off the wrong values and split, with nothing thrown and nothing rendered wrong.
+ * See spec/016-report-of-reports/005-optimize/001-request-dedupe Phase 0.
  */
-const CHILD_PARAMS = {
+export const CHILD_PARAMS = {
   // core query
   jql: string(),
   childJQL: string(),
   loadChildren: boolean(),
   primaryReportType: {
     parse: (raw) => (REPORTS.find((report) => report.key === raw) ? '' + raw : REPORTS[0].key),
+    stringify: fromString,
     defaultRaw: REPORTS[0].key,
   },
 
@@ -96,6 +131,13 @@ const CHILD_PARAMS = {
         return data;
       }, {});
     },
+    // Re-emits in the object's insertion order, which needn't match the order the saved string had.
+    // That is why an override is compared against the *canonicalized* saved value rather than the
+    // raw one — see `childOverrideValue` in childParams.js.
+    stringify: (value) =>
+      Object.keys(value)
+        .map((key) => key + ':' + value[key])
+        .join(','),
     defaultRaw: '',
   },
 
@@ -121,10 +163,16 @@ const CHILD_PARAMS = {
       }
       return _15DAYS_IN_S;
     },
+    // Lossy by construction — see NON_OVERRIDABLE_CHILD_PARAM_KEYS, which keeps it out of the
+    // override mechanism. route-data's version has a `value instanceof Date` branch above this one
+    // that references an undeclared `date` and would throw a ReferenceError; it is dead there (the
+    // value is always a number by then) and deliberately not reproduced here.
+    stringify: fromString,
     defaultRaw: '' + _15DAYS_IN_S,
   },
   roundTo: {
     parse: (raw) => (ROUND_OPTIONS.find((option) => option === raw) ? '' + raw : 'day'),
+    stringify: fromString,
     defaultRaw: 'day',
   },
   primaryReportBreakdown: boolean(),
@@ -137,10 +185,12 @@ const CHILD_PARAMS = {
       const parsed = +raw;
       return isNaN(parsed) ? 'average' : parsed;
     },
+    stringify: fromString,
     defaultRaw: 'average',
   },
   selectedStartDate: {
     parse: (raw) => (raw ? new Date(raw) : nowUTC()),
+    stringify: (value) => (value ? value.toISOString() : nowUTC().toISOString()),
     defaultRaw: '',
   },
 
@@ -188,6 +238,7 @@ const CHILD_PARAMS = {
         return undefined;
       }
     },
+    stringify: (value) => (value ? JSON.stringify(value) : ''),
     defaultRaw: '',
   },
 };
@@ -200,6 +251,54 @@ export const CHILD_PARAM_KEYS = Object.keys(CHILD_PARAMS);
  * so the drift test can tell "handled further down this file" from "forgotten".
  */
 export const AD_HOC_CHILD_PARAM_KEYS = ['selectedIssueType', 'toIssueType'];
+
+/**
+ * `stringify` for the {@link AD_HOC_CHILD_PARAM_KEYS}. Both are plain strings in the URL, so both
+ * invert trivially — but they are not in {@link CHILD_PARAMS}, so a table built over that object
+ * alone would silently miss them, and a missing serializer means an edit that vanishes on refresh
+ * rather than an error. Nothing writes them from inside a report today (`SelectIssueType` is shell
+ * chrome, which `ReportControls` hides for a document), so this is a guard, not a live path.
+ */
+const AD_HOC_CHILD_PARAM_STRINGIFY = {
+  selectedIssueType: fromString,
+  toIssueType: fromString,
+};
+
+/**
+ * Settings an embedded child may change in memory but never records as an override.
+ *
+ * `compareTo`'s parse collapses `compareTo=2026-06-01` into "how many seconds ago is that",
+ * computed against `new Date()` — the date string is unrecoverable. Writing the result back would
+ * silently rewrite a *fixed date* as a *relative offset that drifts every day*, and `compareToType`
+ * reads the raw URL to decide which of the two the user is shown. Excluded until that pair is
+ * modelled properly. See spec/016-report-of-reports/006-url-state Phase 2.
+ */
+export const NON_OVERRIDABLE_CHILD_PARAM_KEYS = ['compareTo'];
+
+/**
+ * A child's in-memory value as the query-string fragment that would produce it, or `undefined` to
+ * mean "no value — remove the key".
+ *
+ * `undefined` is never the string `"undefined"`: `asBoolean` returns it for an unrecognized value by
+ * design, and `timeInStatusReorder` returns it deliberately. `route-data.js` sets the same
+ * precedent with `value ? JSON.stringify(value) : ''`.
+ */
+export function serializeChildParam(key, value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const spec = CHILD_PARAMS[key];
+  const stringify = spec ? spec.stringify : AD_HOC_CHILD_PARAM_STRINGIFY[key];
+
+  if (!stringify) {
+    // Unreachable while the drift test holds — it fails the build for a spec with no `stringify`.
+    console.error(`No stringify for child param "${key}"; the change will not survive a refresh.`);
+    return undefined;
+  }
+
+  return stringify(value);
+}
 
 /**
  * Report-aware parameters an embedded child deliberately does NOT take from its own `queryParams`.
@@ -223,6 +322,8 @@ export const SHELL_ONLY_PARAM_KEYS = [
 
 /** Builds a CanJS prop that resolves from `queryParams` but stays settable in memory. */
 function childParam(key, { parse, defaultRaw }) {
+  const overridable = !NON_OVERRIDABLE_CHILD_PARAM_KEYS.includes(key);
+
   return {
     enumerable: true,
     value({ resolve, lastSet, listenTo }) {
@@ -232,9 +333,18 @@ function childParam(key, { parse, defaultRaw }) {
       };
 
       listenTo('queryParams', resolveFromParams);
-      // An edit made inside the child (a column sort, say) stays in memory. Children render as
-      // saved and never write to the page URL — that URL belongs to the composed document.
-      listenTo(lastSet, (newValue) => resolve(newValue));
+      // An edit made inside the child (a column sort, say) resolves in memory and is announced
+      // upward, so the document can record it on this child's node and put it in the page URL.
+      // Only a *set* announces: a `queryParams` resolve is the document telling us, not us telling
+      // the document, and echoing it back would be a loop.
+      // See spec/016-report-of-reports/006-url-state Phase 2.
+      listenTo(lastSet, (newValue) => {
+        resolve(newValue);
+
+        if (overridable && this.onParamChange) {
+          this.onParamChange(key, serializeChildParam(key, newValue));
+        }
+      });
 
       resolveFromParams();
     },
@@ -276,6 +386,23 @@ export class ChildReportConfig extends ObservableObject {
     queryParams: { type: String, default: '' },
     /** The shared `routeData` singleton, injected so this class stays testable. */
     parent: { enumerable: false, default: null },
+    /**
+     * The wider field list this child should LOAD, when the document found other embedded reports
+     * asking Jira the same question — the union of what that group between them needs, so all of them
+     * send identical requests and `getRawIssues` collapses them onto one fetch. `null` outside a
+     * document, or for a report whose query nothing else shares.
+     *
+     * See spec/016-report-of-reports/005-optimize/001-request-dedupe Phase 1 and `childQueryGroups`.
+     */
+    tableColumnFieldsOverride: { enumerable: false, default: null },
+    /**
+     * Called `(key, serialized)` when something inside the report writes one of this child's
+     * settings — `serialized` being `undefined` for "no value". The document uses it to record the
+     * change as an override on this child's node, which puts it in the page URL and saves with the
+     * report. Absent everywhere else, so nothing outside a document changes behaviour.
+     * See spec/016-report-of-reports/006-url-state Phase 2.
+     */
+    onParamChange: { enumerable: false, type: type.Any, default: null },
 
     ...childParamProps,
 
@@ -306,8 +433,25 @@ export class ChildReportConfig extends ObservableObject {
       }));
     },
 
-    /** Jira fields implied by this child's own Table columns. Mirrors route-data's version. */
+    /**
+     * Jira fields implied by this child's own Table columns. Mirrors route-data's version, except
+     * that a document can widen it — see {@link tableColumnFieldsOverride}.
+     *
+     * **`tableColumns` itself is never overridden.** The report renders exactly the columns it was
+     * saved with (plus whatever the document has recorded on its node); only what gets loaded
+     * widens. Override the load, never the view.
+     *
+     * The union is computed from the child's *effective* `queryParams`, so a column change made
+     * inside the report is recorded as a node override and the union recomputes from it
+     * (spec/016-report-of-reports/006-url-state Phase 3). What still isn't reconciled is a change
+     * that never reaches the node: a key with no serializer, or one this config declines to record.
+     * A column added that way would render empty, because its field was never requested.
+     */
     get tableColumnFields() {
+      if (this.tableColumnFieldsOverride) {
+        return [...this.tableColumnFieldsOverride];
+      }
+
       return (this.tableColumns || [])
         .map((entry) => entry && entry.sourceId)
         .filter((sourceId) => typeof sourceId === 'string')
@@ -423,7 +567,10 @@ export class ChildReportConfig extends ObservableObject {
 
         listenTo('queryParams', resolveCurrentValue);
         listenTo('issueHierarchy', resolveCurrentValue);
-        listenTo(lastSet, (newValue) => resolve(newValue));
+        listenTo(lastSet, (newValue) => {
+          resolve(newValue);
+          this.onParamChange?.('selectedIssueType', serializeChildParam('selectedIssueType', newValue));
+        });
 
         resolveCurrentValue();
       },
@@ -473,7 +620,10 @@ export class ChildReportConfig extends ObservableObject {
         listenTo('queryParams', resolveCurrentValue);
         listenTo('issueHierarchy', resolveCurrentValue);
         listenTo('selectedIssueType', resolveCurrentValue);
-        listenTo(lastSet, (newValue) => resolve(newValue));
+        listenTo(lastSet, (newValue) => {
+          resolve(newValue);
+          this.onParamChange?.('toIssueType', serializeChildParam('toIssueType', newValue));
+        });
 
         resolveCurrentValue();
       },

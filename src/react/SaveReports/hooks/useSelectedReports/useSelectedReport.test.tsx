@@ -6,7 +6,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { useSelectedReport } from './useSelectedReport';
-import { savedReportNode, parseSections } from '../../../reports/ReportOfReports/model/sections';
+import { parseSections } from '../../../reports/ReportOfReports/model/sections';
 
 const stored = (reportId: string): StoredNode => ({ type: 'saved-report', params: { reportId } });
 
@@ -28,6 +28,12 @@ vi.mock('../../../../canjs/routing/route-data', () => ({
 }));
 
 const queryParamObservable = { value: '?report=doc', set: vi.fn(), on: vi.fn(), off: vi.fn() } as any;
+
+/** The hook reads the URL directly on mount and the observable thereafter, so both have to move. */
+const setSearch = (search: string) => {
+  window.history.replaceState({}, '', search);
+  queryParamObservable.value = search;
+};
 
 const Harness = ({ reports, sections }: { reports: Reports; sections: LayoutNode[] }) => {
   const { selectedReport, isDirty, updateSelectedReport } = useSelectedReport({
@@ -52,7 +58,8 @@ const docReport = (sections?: StoredNode[]) => ({
 describe('useSelectedReport', () => {
   beforeEach(() => {
     updates.length = 0;
-    window.history.replaceState({}, '', '?report=doc');
+    queryParamObservable.set.mockClear();
+    setSearch('?report=doc');
   });
 
   it('selects the report named in the URL', () => {
@@ -61,22 +68,19 @@ describe('useSelectedReport', () => {
     expect(screen.getByTestId('selected')).toHaveTextContent('doc');
   });
 
-  // Layout edits live outside the URL, so paramsMatchReport can't see them. Without this the
-  // "Save report" button would never appear for a report-of-reports.
-  it('is dirty when the in-memory tree differs from the saved one', () => {
+  // A document's layout edits are a `sections` URL param now
+  // (spec/016-report-of-reports/006-url-state Phase 1), so the one dirty signal every other report
+  // uses covers them too — this hook no longer compares trees at all.
+  it('is dirty when the URL carries a sections param', () => {
+    setSearch('?report=doc&sections=%5B%5D');
+
     render(<Harness reports={docReport([stored('a')])} sections={parseSections([stored('a'), stored('b')])} />);
 
     expect(screen.getByTestId('dirty')).toHaveTextContent('true');
   });
 
-  it('is not dirty when the tree matches what was saved', () => {
-    render(<Harness reports={docReport([stored('a')])} sections={parseSections([stored('a')])} />);
-
-    expect(screen.getByTestId('dirty')).toHaveTextContent('false');
-  });
-
-  it('ignores node ids when comparing', () => {
-    render(<Harness reports={docReport([stored('a')])} sections={[savedReportNode('a')]} />);
+  it('is not dirty at a clean ?report=<id>, whatever the in-memory tree', () => {
+    render(<Harness reports={docReport([stored('a')])} sections={parseSections([stored('a'), stored('b')])} />);
 
     expect(screen.getByTestId('dirty')).toHaveTextContent('false');
   });
@@ -98,18 +102,34 @@ describe('useSelectedReport', () => {
     expect(updates[0].updates.sections).toEqual([stored('a'), stored('b')]);
   });
 
-  // Saving writes the updated map into the query cache, so `reports` refreshes on the next render.
-  // Holding `selectedReport` in state meant the comparison kept running against the pre-save record
-  // and "Save report" never went away.
-  it('clears the dirty flag once the saved report reflects the save', () => {
-    const sections = parseSections([stored('a'), stored('b')]);
+  it('clears the dirty flag on a successful save', async () => {
+    setSearch('?report=doc&sections=%5B%5D');
 
-    const { rerender } = render(<Harness reports={docReport([stored('a')])} sections={sections} />);
+    render(<Harness reports={docReport([stored('a')])} sections={parseSections([stored('a'), stored('b')])} />);
     expect(screen.getByTestId('dirty')).toHaveTextContent('true');
 
-    rerender(<Harness reports={docReport([stored('a'), stored('b')])} sections={sections} />);
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
 
     expect(screen.getByTestId('dirty')).toHaveTextContent('false');
+    // ...and the URL is reset to the saved report, which clears the `sections` param with it.
+    expect(queryParamObservable.set).toHaveBeenCalledWith('?report=doc');
+  });
+
+  // Overrides are node params, so the existing save path carries them with no change to it — but
+  // "no change needed" is exactly the sort of claim that stops being true silently.
+  // See spec/016-report-of-reports/006-url-state Phase 3.
+  it('persists a child report override with the tree', async () => {
+    const tweaked = parseSections([
+      { type: 'saved-report', params: { reportId: 'a', overrides: 'tableSortDir=desc' } },
+    ]);
+
+    render(<Harness reports={docReport([stored('a')])} sections={tweaked} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    expect(updates[0].updates.sections).toEqual([
+      { type: 'saved-report', params: { reportId: 'a', overrides: 'tableSortDir=desc' } },
+    ]);
   });
 
   // Every other report type has an empty tree. Writing `sections: []` onto all of them would add

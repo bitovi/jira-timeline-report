@@ -10,13 +10,13 @@ have since been corrected by the plans that checked them; see [Corrections](#cor
 
 ## The plans, in priority order
 
-| #   | plan                                                                     | what it does                                                                                                    | status                                            |
-| --- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| 1   | [identical-request dedupe](001-identical-request-dedupe/plan.md)         | Singleflight + short TTL at `getRawIssues`, so N reports issuing the byte-identical request produce one fetch   | planned                                           |
-| 2   | —                                                                        | Request queue + `Retry-After` backoff in the two request helpers                                                | **not planned yet**                               |
-| 3   | [skip child approximate-count](003-skip-child-approximate-count/plan.md) | Stop paying a count request per 40-parent child batch — 43% of the deep-children walk                           | planned                                           |
-| 4   | [fix `expand=changelog`](004-fix-search-expand-changelog/plan.md)        | The suppression at the search call site is a no-op, so every page carries changelog data that is then discarded | planned; payoff needs measurement                 |
-| 5   | [partial-overlap sharing](005-partial-overlap-dedupe/plan.md)            | Sharing work between reports whose _different_ JQLs match some of the same items                                | planned; **recommends building measurement only** |
+| #   | plan                                                                     | what it does                                                                                                                                                     | status                                            |
+| --- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 1   | [request dedupe](001-request-dedupe/plan.md)                             | A document-level field union that makes reports over one JQL send identical requests, then singleflight + short TTL at `getRawIssues` so those produce one fetch | planned                                           |
+| 2   | —                                                                        | Request queue + `Retry-After` backoff in the two request helpers                                                                                                 | **not planned yet**                               |
+| 3   | [skip child approximate-count](003-skip-child-approximate-count/plan.md) | Stop paying a count request per 40-parent child batch — 43% of the deep-children walk                                                                            | planned                                           |
+| 4   | [fix `expand=changelog`](004-fix-search-expand-changelog/plan.md)        | The suppression at the search call site is a no-op, so every page carries changelog data that is then discarded                                                  | planned; payoff needs measurement                 |
+| 5   | [partial-overlap sharing](005-partial-overlap-dedupe/plan.md)            | Sharing work between reports whose _different_ JQLs match some of the same items                                                                                 | planned; **recommends building measurement only** |
 
 **Why 2 has no plan.** It is the only item that stops a 429 from surfacing as a failed report rather
 than merely making one less likely, and it is needed even for a single report on a page — one
@@ -34,6 +34,12 @@ four were written, not judged unimportant. It ranks second.
 - **Plan 4's payoff is unknown until measured.** Its Phase 1 is a network-panel procedure with an
   explicit decision rule, because whether Jira caps page size in the presence of `expand` decides
   whether this is urgent or merely tidy.
+- **Plan 1 grew a second half.** Deduping identical requests is only half the job: reports over one JQL
+  don't send identical requests, because a Table contributes its columns' fields and a Gantt contributes
+  none. So plan 1 now also computes a field union per query group at the document layer, from the static
+  `sections` roster. On a five-report document that is the difference between three fetches and one.
+  A debounce and a request barrier were both considered and rejected — see that plan's §Where the field
+  union is computed.
 
 ## Corrections to `before.md`
 
@@ -52,6 +58,14 @@ Two plans independently flagged the same suspect path: `useRawIssueRequestData.t
 may be reporting wrong numbers on the deep-children path; if it does not, it is dead. Unresolved from
 source alone — marked **[UNVERIFIED]** in both plans.
 
-The larger unmeasured premise, common to plans 1 and 5: nobody has counted how much real customer
-documents actually overlap, or how often embedded reports are byte-identical. Plan 1's instrumentation
-is free once its key function exists, and plan 5 gates its entire build on the answer.
+**Resolved for plan 1, still open for plan 5.** Earlier drafts flagged one unmeasured premise as common
+to both: nobody had counted how much real documents overlap. Those are two different questions, and only
+plan 5's is still open. Plan 1 asks whether a document's reports reuse _one_ query — the user has counted,
+and they do, so plan 1's `[UNVERIFIED]` flag is retired. Plan 5 asks how much _different_ queries overlap,
+which remains unmeasured and still gates its entire build.
+
+Plan 1 also declines to measure whether Jira shrinks a search page as the requested field list grows,
+which its field union makes larger. Decided rather than deferred: real field-set deltas are a field or two
+on top of a mostly-core set, so there is nothing for a payload cap to bite on. Note that this is the same
+question plan 4 has to answer for `expand=changelog` — if anyone measures it there, plan 1 gets the answer
+for free.

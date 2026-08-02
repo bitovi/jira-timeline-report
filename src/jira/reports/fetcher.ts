@@ -2,6 +2,7 @@ import type { StoredNode } from '../../react/reports/ReportOfReports/model/secti
 
 import routeData from '../../canjs/routing/route-data';
 import { AppStorage } from '../storage/common';
+import { migrateReports, type MigrationOutcome } from './migrations';
 
 export type Report = {
   id: string;
@@ -20,11 +21,29 @@ export type Reports = Partial<Record<string, Report>>;
 
 const reportsKey = 'saved-reports';
 
-export const getAllReports = async (storage: AppStorage): Promise<Reports> => {
-  const reports = await storage.get<Reports>(reportsKey).then((reports) => reports || {});
+/**
+ * Reads the saved reports and normalizes them through the migration table — the correctness layer
+ * for every legacy param key. Pure apart from the existing `storage.get`: it never writes, so a
+ * report that cannot be persisted still renders correctly this session.
+ *
+ * Returns the migration outcome alongside the reports because the write-back layer needs it: once
+ * these reports are normalized, re-running `migrateReports` on them reports `changed: false`, so
+ * `changed` has to come out of the call that actually read storage.
+ *
+ * See spec/018-card-report/saved-report-migrations/plan.md § Wiring.
+ */
+export const readAllReports = async (storage: AppStorage): Promise<MigrationOutcome & { reports: Reports }> => {
+  const stored = await storage.get<Reports>(reportsKey).then((reports) => reports || {});
+  const { reports, changed, applied } = migrateReports(stored);
 
   // @ts-ignore
   routeData.reportsData = reports;
+
+  return { reports, changed, applied };
+};
+
+export const getAllReports = async (storage: AppStorage): Promise<Reports> => {
+  const { reports } = await readAllReports(storage);
 
   return reports;
 };

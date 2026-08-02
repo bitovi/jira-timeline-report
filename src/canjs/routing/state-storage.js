@@ -412,15 +412,20 @@ export function makeArrayOfStringsQueryParamValueButAlsoLookAtReportDataLongForm
   };
 }
 */
-export function directlyReplaceUrlParam(key, valueJSON, defaultJSON) {
-  const newUrl = new URL(window.location);
-  if (valueJSON !== defaultJSON) {
-    newUrl.searchParams.set(key, valueJSON);
-  } else {
-    newUrl.searchParams.delete(key);
-  }
-  underlyingReplaceState.call(history, {}, '', newUrl.search);
-  //pushStateObservable.value = newUrl.search;
+/**
+ * Replaces the whole query string *without* publishing to `pushStateObservable`, so the correction
+ * lands before anything observes the URL. Used by the boot-time legacy-param rewrite — see
+ * jira/reports/migrations/url.ts. Anything the app should react to belongs in `updateUrlParam`.
+ *
+ * Falls back to the pathname when the new search is empty: `replaceState(…, '')` resolves the empty
+ * string against the current document URL, which would keep the very params being removed. (That is
+ * what made the old per-key `directlyReplaceUrlParam` silently fail to delete the last param.)
+ */
+export function directlyReplaceUrlSearch(search) {
+  const normalized = !search ? window.location.pathname : search.startsWith('?') ? search : '?' + search;
+
+  underlyingReplaceState.call(history, {}, '', normalized);
+  //pushStateObservable.value = search;
 }
 
 export function updateUrlParam(key, valueJSON, defaultJSON) {

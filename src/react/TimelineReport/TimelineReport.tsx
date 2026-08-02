@@ -18,6 +18,7 @@ import { TimelineReportViewModel } from './timeline-report-view-model';
 import { useReportLoadingState as defaultUseReportLoadingState } from './hooks/useReportLoadingState';
 import { ReportArea } from './components/ReportArea';
 import { showSecondaryReport } from './showSecondaryReport';
+import { unsupportedReportType } from './unsupportedReportType';
 
 import { JiraProvider } from '../services/jira';
 import { queryClient } from '../services/query';
@@ -37,6 +38,11 @@ import { ReportLayoutProvider } from '../services/report-layout';
 
 // Reports that own their own data instead of consuming the shell's single JQL-driven request.
 const SELF_MANAGED_REPORT_TYPES = new Set(['report-of-reports']);
+
+// Every report type the shell can render. `registry.test.ts` pins these keys to `configuration/
+// reports.ts`, so anything outside this list is a key no build of this app ever had — or no longer
+// has. See unsupportedReportType.ts.
+const KNOWN_REPORT_TYPES = Object.keys(reportComponents);
 
 // The `routeData` default export carries placeholder (.js) types; cast the observables/props we
 // read off it, mirroring the pattern in SelectCloudWrapper.tsx.
@@ -129,6 +135,24 @@ export const TimelineReport: FC<TimelineReportProps> = ({
     queues.batch.stop();
   };
 
+  // The report type the config actually asked for, when this build cannot render it. Derived through
+  // a CanJS observation rather than a `useQueryParams` subscription so the shell re-renders only when
+  // this string changes — subscribing the root to every URL change would re-render the whole tree on
+  // things like a compare-slider drag. Tracks both sources the helper reads (the search string and
+  // the open saved report), so switching report type clears the message.
+  const unsupportedReportTypeObs = useMemo(
+    () =>
+      value.returnedBy<string | undefined>(() =>
+        unsupportedReportType({
+          urlParams: new URLSearchParams(pushStateObservable.value as string),
+          savedReport: rd.reportData,
+          knownReportTypes: KNOWN_REPORT_TYPES,
+        }),
+      ),
+    [],
+  );
+  const deadReportType = useCanObservable(unsupportedReportTypeObs);
+
   const PrimaryReport = primaryReportType ? reportComponents[primaryReportType] : undefined;
   // Only the Gantt ('start-due') and Scatter Plot ('due') primaries support a secondary report, so a
   // stale `secondaryReportType` left in the URL must not render the Work Breakdown below an unrelated
@@ -205,6 +229,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
           primaryIssueType={primaryIssueType}
           primaryIssuesCount={primaryIssuesOrReleases.length}
           selfManagesData={SELF_MANAGED_REPORT_TYPES.has(primaryReportType)}
+          unsupportedReportType={deadReportType}
         >
           <div id="print-header">
             <PrintHeader />

@@ -33,14 +33,18 @@ export const LoadingPrimary: Story = {
   },
 };
 
-/** Children discovery — the total grows, scoped to the children step; history fills alongside. */
-export const LoadingChildren: Story = {
+/**
+ * Children discovery before the first parent subtree completes: on the real deep path the child batches
+ * skip the approximate-count, so `issuesRequested` never grows past the primary snapshot. The children
+ * detail reads "N found" with an empty bar until the smoothed projection kicks in.
+ */
+export const ChildrenDiscovering: Story = {
   args: {
     status: 'pending',
     phase: 'children',
     primaryRequested: 342,
     primaryReceived: 342,
-    issuesRequested: 822,
+    issuesRequested: 342,
     issuesReceived: 474,
     changeLogsRequested: 660,
     changeLogsReceived: 512,
@@ -60,20 +64,6 @@ export const LoadingChildrenSmoothed: Story = {
     changeLogsReceived: 512,
     childrenBarValue: 55,
     childrenProjectedTotal: 600,
-  },
-};
-
-/** Later in discovery: the child total has jumped up again (never rewinds the primary step). */
-export const ChildrenTotalGrew: Story = {
-  args: {
-    status: 'pending',
-    phase: 'children',
-    primaryRequested: 342,
-    primaryReceived: 342,
-    issuesRequested: 1282,
-    issuesReceived: 940,
-    changeLogsRequested: 1132,
-    changeLogsReceived: 900,
   },
 };
 

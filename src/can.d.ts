@@ -3,6 +3,12 @@ import { CanObservable } from './react/hooks/useCanObservable/useCanObservable.j
 type Value = {
   from: <T>(object: typeof ObservableObject | CanObservable<any>, keyPath?: string) => CanObservable<T>;
   bind: <T>(object: typeof ObservableObject | CanObservable<any>, keyPath?: string) => CanObservable<T>;
+  /**
+   * A computed observable — recomputes whenever any observable read inside `getter` changes, so
+   * subscribers only hear about changes to the derived value. Already used from .js
+   * (canjs/controls/timeline-configuration/state-helpers.js).
+   */
+  returnedBy: <T>(getter: () => T, context?: unknown, initialValue?: T) => CanObservable<T>;
 };
 
 type ObservableObject = Function;

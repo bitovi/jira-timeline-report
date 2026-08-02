@@ -102,7 +102,11 @@ const storage = {
 } as unknown as ComponentProps<typeof StorageProvider>['storage'];
 
 const renderReport = (
-  { savedSections, currentReportId }: { savedSections?: StoredNode[]; currentReportId?: string } = {},
+  {
+    savedSections,
+    currentReportId,
+    unsaved,
+  }: { savedSections?: StoredNode[]; currentReportId?: string; unsaved?: boolean } = {},
   storageOverride: AppStorage = storage,
 ) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -112,7 +116,9 @@ const renderReport = (
       <StorageProvider storage={storageOverride as ComponentProps<typeof StorageProvider>['storage']}>
         <QueryClientProvider client={queryClient}>
           <JiraProvider jira={jira}>
-            <ReportLayoutProvider savedReport={{ id: 'doc', sections: savedSections }}>
+            {/* `unsaved` is a document with no `?report=` behind it, so nothing to seed from but
+                the URL. See spec/016-report-of-reports/006-url-state Phase 1. */}
+            <ReportLayoutProvider savedReport={unsaved ? undefined : { id: 'doc', sections: savedSections }}>
               <ReportOfReports currentReportId={currentReportId} childReportProps={childReportProps} />
             </ReportLayoutProvider>
           </JiraProvider>
@@ -196,6 +202,8 @@ describe('<ReportOfReports>', () => {
     searches.length = 0;
     searchResult = [];
     mounts.length = 0;
+    // Editing the document writes a `sections` param, which would otherwise seed the next test.
+    window.history.replaceState({}, '', '/');
   });
 
   it('renders an Add Report button as its empty state', async () => {
@@ -904,7 +912,9 @@ describe('<ReportOfReports>', () => {
 
       const section = (await sectionTitle('Q3')).closest('section') as HTMLElement;
 
-      expect(within(section).getByTestId('inline-value')).toHaveTextContent('inside');
+      // `find`, not `get`: the section's title button is on screen a render before its value has
+      // resolved, so a synchronous read here races the expression's own Jira lookup.
+      expect(await within(section).findByTestId('inline-value')).toHaveTextContent('inside');
     });
 
     it('can be removed like any other node', async () => {
@@ -938,6 +948,32 @@ describe('<ReportOfReports>', () => {
 
       expect(screen.queryByTestId('missing-report')).not.toBeInTheDocument();
       expect(cardNames()).toEqual(['Alpha', 'Beta']);
+    });
+  });
+
+  // The headline case for spec/016-report-of-reports/006-url-state: build a document, refresh, and
+  // it's still there. There is no `?report=` and so no record to re-seed from — the URL is carrying
+  // the whole thing.
+  describe('a document in the URL', () => {
+    it('renders the children a sections param names, with no saved report at all', async () => {
+      window.history.replaceState(
+        {},
+        '',
+        `/?sections=${encodeURIComponent(JSON.stringify([nest('Q3', [stored('b')]), stored('a')]))}`,
+      );
+
+      renderReport({ unsaved: true });
+
+      expect(await sectionTitle('Q3')).toBeInTheDocument();
+      expect(cardNames()).toEqual(['Beta', 'Alpha']);
+    });
+
+    it('grows the param as the document is edited', async () => {
+      renderReport({ unsaved: true });
+
+      await addReport('Alpha');
+
+      expect(new URLSearchParams(window.location.search).get('sections')).toBe(JSON.stringify([stored('a')]));
     });
   });
 });

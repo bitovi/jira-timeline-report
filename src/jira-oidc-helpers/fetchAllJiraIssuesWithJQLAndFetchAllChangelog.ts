@@ -20,6 +20,12 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
       maxResults?: number;
       startAt?: number;
       expand?: string[];
+      /**
+       * When true, skip the opening `approximate-count` request (and its `issuesRequested` accumulation).
+       * Set by the deep-children loader on every child batch — the count's only product is the children
+       * denominator, which the smoothed projection no longer needs, so it's one saved request per batch.
+       */
+      skipApproximateCount?: boolean;
       [key: string]: any;
     },
     progress: {
@@ -27,7 +33,10 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
       (data: ProgressData): void;
     } = () => {},
   ): Promise<Issue[]> => {
-    const { limit, ...apiParams } = params;
+    // Destructure `skipApproximateCount` out alongside `limit` so it never lands in `apiParams` and can
+    // never reach the wire via `searchJiraIssuesWithJQL` (belt-and-braces — that helper also whitelists
+    // its query keys).
+    const { limit, skipApproximateCount, ...apiParams } = params;
 
     progress.data =
       progress.data ||
@@ -58,16 +67,20 @@ export function fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config: Config) {
       }
     };
 
-    const countResponse = await getApproximateCount();
-    const estimatedTotal = (countResponse as { count: number }).count;
+    // Child batches skip the count entirely (see makeDeepChildrenLoaderUsingNamedFields): emit nothing so
+    // the batch's first progress tick is its search result, rather than accumulating a zero.
+    if (!skipApproximateCount) {
+      const countResponse = await getApproximateCount();
+      const estimatedTotal = (countResponse as { count: number }).count;
 
-    // `progress.data` is a single object shared across every concurrent/recursive call to
-    // this function (one call per batch of parent issues, at every child-loading depth).
-    // Accumulate into the running totals here rather than overwriting them with this
-    // batch's own numbers, otherwise later batches reset the totals reported by earlier ones.
-    if (progress.data) {
-      progress.data.issuesRequested = (progress.data.issuesRequested || 0) + estimatedTotal;
-      progress(progress.data);
+      // `progress.data` is a single object shared across every concurrent/recursive call to
+      // this function (one call per batch of parent issues, at every child-loading depth).
+      // Accumulate into the running totals here rather than overwriting them with this
+      // batch's own numbers, otherwise later batches reset the totals reported by earlier ones.
+      if (progress.data) {
+        progress.data.issuesRequested = (progress.data.issuesRequested || 0) + estimatedTotal;
+        progress(progress.data);
+      }
     }
 
     const searchExpand = USE_DIRECT_BULK_CHANGELOG ? [] : ['changelog'];

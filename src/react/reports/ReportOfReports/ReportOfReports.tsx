@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import type { Reports } from '../../../jira/reports';
 import type { InlineReportNode, LayoutNode, LayoutPath, SavedReportNode, SectionNode } from './model/sections';
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { useAllReports } from '../../services/reports';
 import { useReportLayout } from '../../services/report-layout';
@@ -12,6 +12,7 @@ import { useInlineExpression } from './hooks/useInlineExpression';
 import { AddContentRow } from './components/AddContentRow';
 import { AddReportModal } from './components/AddReportModal';
 import { ChildReport } from './components/ChildReport';
+import { ChildQueryGroupsProvider } from './components/ChildQueryGroups';
 import { CollapseToggle } from './components/CollapseToggle';
 import { DocumentEditingProvider, useDocumentEditing, useNodeRow } from './components/DocumentEditing';
 import { IndentLevel } from './components/IndentLevel';
@@ -68,28 +69,38 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
   // Nothing is hovered while the pointer is in the document but outside every row — each node's own
   // handler stops the event before it reaches this one, so this only fires in the gaps.
   return (
-    <div className="flex flex-col py-4" onMouseOver={() => hoverNode(null)} onMouseLeave={() => hoverNode(null)}>
-      {sections.map((node, index) => (
-        <LayoutNodeView
-          key={node.id}
-          node={node}
-          path={[index]}
-          reports={reports}
-          childReportProps={childReportProps}
+    /* Most embedded reports in a document ask Jira the same question — a "Q3 status" document is
+       typically one JQL shown several ways — but each child runs its own complete fetch cascade, so
+       N such reports hammer Jira N times and earn a 429. The provider groups the children that share
+       a query and publishes the union of the fields each group needs, which is what makes their
+       requests byte-identical and lets `getRawIssues` collapse them onto one. It widens only what is
+       LOADED: every report still renders exactly the columns it was saved with, and still receives
+       exactly the work items it would have fetched alone.
+       See spec/016-report-of-reports/005-optimize/001-request-dedupe. */
+    <ChildQueryGroupsProvider sections={sections} reports={reports}>
+      <div className="flex flex-col py-4" onMouseOver={() => hoverNode(null)} onMouseLeave={() => hoverNode(null)}>
+        {sections.map((node, index) => (
+          <LayoutNodeView
+            key={node.id}
+            node={node}
+            path={[index]}
+            reports={reports}
+            childReportProps={childReportProps}
+          />
+        ))}
+
+        <AddContentRow path={[]} />
+
+        {/* One picker for the whole document rather than one per add row. `[]` is a valid path — the
+            document root — and truthy, so "open" is `!== null`, never a truthiness test. */}
+        <AddReportModal
+          isOpen={pickerPath !== null}
+          reports={addableReports}
+          onSelect={handleSelect}
+          onClose={closeReportPicker}
         />
-      ))}
-
-      <AddContentRow path={[]} />
-
-      {/* One picker for the whole document rather than one per add row. `[]` is a valid path — the
-          document root — and truthy, so "open" is `!== null`, never a truthiness test. */}
-      <AddReportModal
-        isOpen={pickerPath !== null}
-        reports={addableReports}
-        onSelect={handleSelect}
-        onClose={closeReportPicker}
-      />
-    </div>
+      </div>
+    </ChildQueryGroupsProvider>
   );
 };
 
@@ -217,7 +228,16 @@ const SavedReportView: FC<LayoutNodeViewProps & { node: SavedReportNode }> = ({
   childReportProps,
 }) => {
   const { isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { setNodeOverrideOn } = useReportLayout();
   const { hoverProps, rowProps } = useNodeRow(node, path);
+
+  // Keyed by node id rather than by `path`, which is a fresh array on every render and would defeat
+  // ChildReport's memo — the memo that keeps a document from reconciling every embedded chart each
+  // time the pointer crosses a row. See spec/016-report-of-reports/006-url-state Phase 2.
+  const onParamChange = useCallback(
+    (key: string, serialized: string | undefined) => setNodeOverrideOn(node.id, key, serialized),
+    [setNodeOverrideOn, node.id],
+  );
 
   const { reportId } = node.params;
   const report = reports[reportId];
@@ -252,7 +272,12 @@ const SavedReportView: FC<LayoutNodeViewProps & { node: SavedReportNode }> = ({
           remounted ChildReport refetches from Jira, and print puts it back (src/css/print.css). */}
       {report ? (
         <div className={`pb-4 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
-          <ChildReport report={report} {...childReportProps} />
+          <ChildReport
+            report={report}
+            overrides={node.params.overrides}
+            onParamChange={onParamChange}
+            {...childReportProps}
+          />
         </div>
       ) : (
         <MissingReportNote reportId={reportId} />

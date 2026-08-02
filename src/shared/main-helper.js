@@ -12,7 +12,7 @@ import JiraOIDCHelpers from '../jira-oidc-helpers';
 import { getHostedRequestHelper } from '../request-helpers/hosted-request-helper';
 import { getConnectRequestHelper } from '../request-helpers/connect-request-helper';
 
-import { directlyReplaceUrlParam } from '../canjs/routing/state-storage';
+import { migrateUrlParams } from '../jira/reports/migrations/url';
 import { route, value, domMutateDomEvents, domEvents } from '../can';
 import routeData from '../canjs/routing/route-data';
 import { getFeatures } from '../jira/features/fetcher';
@@ -29,10 +29,12 @@ export default async function mainHelper(
 ) {
   initSentry(config);
 
-  let fix = await legacyPrimaryReportingTypeRoutingFix();
-  fix = await legacyPrimaryIssueTypeRoutingFix();
-
-  configureRouting(route);
+  // LEGACY URL SUPPORT — rewrites legacy params (e.g. `primaryReportType=breakdown`) from the shared
+  // migration table. Handed to the host rather than called here because it has to land between the
+  // Connect host's `reconcileRoutingState()` (which replaces the whole search string, discarding
+  // anything written before it) and `route.start()` (after which the rewrite would be invisible to
+  // `pushStateObservable`). See jira/reports/migrations/url.ts.
+  configureRouting(route, { beforeRouteStart: migrateUrlParams });
 
   console.log('Loaded version of the Timeline Reporter: ' + config?.COMMIT_SHA);
 
@@ -164,23 +166,4 @@ export default async function mainHelper(
   }
 
   return loginStore;
-}
-
-// LEGACY URL SUPPORT
-function legacyPrimaryReportingTypeRoutingFix() {
-  const primaryIssueType = new URL(window.location).searchParams.get('primaryReportType');
-  if (primaryIssueType === 'breakdown') {
-    directlyReplaceUrlParam('primaryReportType', 'start-due');
-    directlyReplaceUrlParam('primaryReportBreakdown', 'true');
-    console.warn('fixing url');
-  }
-}
-
-function legacyPrimaryIssueTypeRoutingFix() {
-  const primaryIssueType = new URL(window.location).searchParams.get('primaryIssueType');
-  if (primaryIssueType) {
-    directlyReplaceUrlParam('primaryIssueType', '', '');
-    directlyReplaceUrlParam('selectedIssueType', primaryIssueType, '');
-    console.warn('fixing url');
-  }
 }

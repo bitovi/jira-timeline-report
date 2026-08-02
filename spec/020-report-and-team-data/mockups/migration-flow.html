@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Migration flow + what the data looks like in Jira</title>
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --link: #0c66e4;
+        --success: #22a06b;
+        --success-bg: #dffcf0;
+        --warn-bg: #fff7d6;
+        --warn-text: #7f5f01;
+        --purple: #6554c0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 80px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2.section {
+        font-size: 16px;
+        margin: 36px 0 4px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border);
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 940px;
+        margin: 6px 0 8px;
+        font-size: 13px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      a {
+        color: var(--link);
+      }
+
+      .steps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        margin-top: 22px;
+        align-items: flex-start;
+      }
+      .step {
+        width: 430px;
+      }
+      .step > h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        margin: 0 0 2px;
+      }
+      .step > .note {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 10px;
+        min-height: 30px;
+      }
+
+      /* ---- modal chrome ---- */
+      .modal {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        box-shadow: 0 8px 16px -4px rgba(9, 30, 66, 0.25);
+        overflow: hidden;
+      }
+      .modal-head {
+        padding: 18px 22px 6px;
+      }
+      .modal-head h4 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .modal-head p {
+        margin: 5px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .modal-body {
+        padding: 14px 22px 18px;
+      }
+      .modal-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 22px;
+        background: var(--neutral-10);
+        border-top: 1px solid var(--border);
+      }
+
+      /* ---- wizard progress ---- */
+      .wiz {
+        display: flex;
+        gap: 6px;
+        padding: 10px 22px 0;
+        font-size: 11px;
+        color: var(--subtle);
+      }
+      .wiz span {
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: var(--neutral-20);
+      }
+      .wiz span.on {
+        background: var(--brand);
+        color: #fff;
+        font-weight: 600;
+      }
+      .wiz span.done {
+        background: var(--success-bg);
+        color: #14663f;
+      }
+
+      /* ---- form bits ---- */
+      label.fl {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 12px 0 5px;
+      }
+      .select,
+      .input {
+        width: 100%;
+        border: 2px solid var(--neutral-30);
+        background: var(--neutral-10);
+        border-radius: 3px;
+        padding: 7px 10px;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--text);
+      }
+      .select:focus,
+      .input:focus {
+        border-color: var(--brand);
+        background: #fff;
+        outline: none;
+      }
+      .radio {
+        display: flex;
+        gap: 9px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        margin-bottom: 8px;
+        cursor: pointer;
+      }
+      .radio.sel {
+        border-color: var(--brand);
+        background: var(--brand-bg);
+      }
+      .radio .dot {
+        flex: 0 0 auto;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid var(--subtle);
+        margin-top: 2px;
+      }
+      .radio.sel .dot {
+        border-color: var(--brand);
+        border-width: 4px;
+      }
+      .radio .t {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .radio .d {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+
+      /* ---- banners ---- */
+      .banner {
+        display: flex;
+        gap: 8px;
+        border-radius: 4px;
+        padding: 10px 12px;
+        font-size: 12px;
+        margin: 12px 0;
+        line-height: 1.45;
+      }
+      .banner .icon {
+        flex: 0 0 auto;
+        font-weight: 700;
+      }
+      .banner strong {
+        display: block;
+      }
+      .banner.info {
+        background: var(--brand-bg);
+        color: #0a4fb5;
+      }
+      .banner.good {
+        background: var(--success-bg);
+        color: #14663f;
+      }
+      .banner.warn {
+        background: var(--warn-bg);
+        color: var(--warn-text);
+      }
+
+      /* ---- dry-run summary ---- */
+      .drylist {
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+      .dryrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid var(--neutral-30);
+      }
+      .dryrow:last-child {
+        border-bottom: none;
+      }
+      .dryrow .ct {
+        font-variant-numeric: tabular-nums;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .dryrow .arrow {
+        color: var(--subtle);
+        margin: 0 8px;
+      }
+
+      /* ---- progress ---- */
+      .prog {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--neutral-30);
+        overflow: hidden;
+        margin: 10px 0 6px;
+      }
+      .prog > span {
+        display: block;
+        height: 100%;
+        background: var(--brand);
+      }
+      .logline {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        color: var(--muted);
+        padding: 2px 0;
+      }
+      .logline b {
+        color: var(--success);
+        font-weight: 600;
+      }
+
+      /* ---- buttons ---- */
+      .btn {
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 3px;
+        padding: 7px 14px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn.primary {
+        background: var(--brand);
+        color: #fff;
+      }
+      .btn.subtle {
+        background: var(--neutral-20);
+        color: var(--text);
+      }
+      .btn[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* ---- Jira issue mock ---- */
+      .jira {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+      .issue {
+        width: 470px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 16px 18px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
+      }
+      .bc {
+        font-size: 11px;
+        color: var(--subtle);
+        margin-bottom: 6px;
+      }
+      .bc a {
+        text-decoration: none;
+      }
+      .issue h4 {
+        margin: 0 0 12px;
+        font-size: 19px;
+        font-weight: 500;
+      }
+      .adf {
+        border: 1px dashed var(--neutral-30);
+        border-radius: 4px;
+        padding: 12px 14px;
+        font-size: 13px;
+        background: var(--neutral-10);
+      }
+      .adf p {
+        margin: 0 0 8px;
+      }
+      .adf .lbl {
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .adf table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12px;
+        margin: 4px 0 10px;
+      }
+      .adf th,
+      .adf td {
+        border: 1px solid var(--neutral-30);
+        padding: 4px 8px;
+        text-align: left;
+      }
+      .adf th {
+        background: var(--neutral-20);
+        font-weight: 600;
+      }
+      .adf .gen {
+        font-size: 11px;
+        color: var(--subtle);
+        font-style: italic;
+        border-top: 1px solid var(--neutral-30);
+        padding-top: 8px;
+        margin-top: 4px;
+      }
+      .propbox {
+        margin-top: 14px;
+        border: 1px solid var(--purple);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .propbox .ph {
+        background: #f3f0ff;
+        color: #4b3ba0;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 10px;
+        letter-spacing: 0.02em;
+      }
+      .propbox pre {
+        margin: 0;
+        padding: 10px 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        line-height: 1.5;
+        overflow-x: auto;
+        background: #fff;
+      }
+      .meta {
+        display: flex;
+        gap: 16px;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .tagchip {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        background: var(--neutral-20);
+        color: var(--subtle);
+        border-radius: 3px;
+        padding: 2px 6px;
+      }
+      .callout {
+        max-width: 940px;
+        border-left: 3px solid var(--brand);
+        background: #fff;
+        padding: 10px 14px;
+        margin: 22px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .callout strong {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Migration flow, and what the data looks like afterward</h1>
+    <p class="intro">
+      Mockup for <a href="../plan.md">plan.md § Phase 5</a>. Three principles the UI is built around:
+      <strong>user-initiated</strong> (never automatic), <strong>nothing is deleted</strong> (the old blob is retained
+      indefinitely), and <strong>the user presses the last button</strong> (the app doesn't stop reading the backup
+      until a human confirms the counts match).
+    </p>
+
+    <h2 class="section">The wizard</h2>
+    <div class="steps">
+      <!-- STEP 1 -->
+      <div class="step">
+        <h3>Step 1 · Choose a destination</h3>
+        <p class="note">
+          Existing project first, because creating one needs a site admin. The permission precheck runs here, not on
+          first save.
+        </p>
+        <div class="modal">
+          <div class="wiz">
+            <span class="on">1 Destination</span><span>2 Preview</span><span>3 Copy</span><span>4 Confirm</span>
+          </div>
+          <div class="modal-head">
+            <h4>Move storage to a Jira project</h4>
+            <p>Each report becomes one Jira issue, with its own permissions and edit history.</p>
+          </div>
+          <div class="modal-body">
+            <div class="radio sel">
+              <span class="dot"></span>
+              <span>
+                <span class="t">Use an existing project</span>
+                <span class="d">Recommended — no admin needed.</span>
+              </span>
+            </div>
+            <div class="radio">
+              <span class="dot"></span>
+              <span>
+                <span class="t">Create a new project</span>
+                <span class="d">Requires the Administer Jira permission. You don't have it.</span>
+              </span>
+            </div>
+
+            <label class="fl">Reports project</label>
+            <select class="select">
+              <option>OPS — Operations</option>
+            </select>
+            <p class="hint">✓ You have Create Issues and Edit Issues in OPS.</p>
+
+            <label class="fl">Team data project <span style="font-weight: 400">(optional)</span></label>
+            <select class="select">
+              <option>Same as reports — OPS</option>
+            </select>
+
+            <label class="fl">Issue type</label>
+            <select class="select">
+              <option>Task</option>
+            </select>
+            <p class="hint">Reports will be created as Tasks. You can change this later.</p>
+
+            <div class="banner warn">
+              <span class="icon">⚠</span>
+              <span>
+                Reports will appear in OPS's issue list and in Jira search. We recommend a project without a board — or
+                adding <code>and issuetype != Task</code> to OPS's board filter.
+              </span>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn subtle">Cancel</button><button class="btn primary">Preview →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step">
+        <h3>Step 2 · Preview (dry run)</h3>
+        <p class="note">Exact counts, and an unmissable statement that nothing is removed.</p>
+        <div class="modal">
+          <div class="wiz">
+            <span class="done">✓ Destination</span><span class="on">2 Preview</span><span>3 Copy</span
+            ><span>4 Confirm</span>
+          </div>
+          <div class="modal-head">
+            <h4>Here's what will happen</h4>
+            <p>Nothing has changed yet.</p>
+          </div>
+          <div class="modal-body">
+            <div class="drylist">
+              <div class="dryrow">
+                <span>Saved reports <span class="ct">42</span></span>
+                <span class="arrow">→</span>
+                <span class="ct">42 new issues in OPS</span>
+              </div>
+              <div class="dryrow">
+                <span>Report-of-reports docs <span class="ct">3</span></span>
+                <span class="arrow">→</span>
+                <span class="ct">included above · links preserved</span>
+              </div>
+              <div class="dryrow">
+                <span>Teams <span class="ct">12</span></span>
+                <span class="arrow">→</span>
+                <span class="ct">12 new issues in OPS</span>
+              </div>
+              <div class="dryrow">
+                <span>Theme &amp; feature flags</span>
+                <span class="arrow">→</span>
+                <span class="ct">stay in app storage</span>
+              </div>
+            </div>
+
+            <div class="banner info">
+              <span class="icon">ℹ</span>
+              <span>
+                <strong>Nothing is deleted.</strong>
+                Your current data stays in app storage as a read-only backup. You can switch back at any time.
+              </span>
+            </div>
+            <div class="banner warn">
+              <span class="icon">🔒</span>
+              <span>
+                <strong>After this, saving a report requires Edit Issues in OPS.</strong>
+                4 people who use this app today don't have it and will become read-only.
+                <a href="#">See who →</a>
+              </span>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn subtle">Back</button><button class="btn primary">Copy 54 records →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step">
+        <h3>Step 3 · Copying</h3>
+        <p class="note">
+          Idempotent on <code>legacyId</code> — interrupting it and re-running repairs rather than duplicates.
+        </p>
+        <div class="modal">
+          <div class="wiz">
+            <span class="done">✓ Destination</span><span class="done">✓ Preview</span><span class="on">3 Copy</span
+            ><span>4 Confirm</span>
+          </div>
+          <div class="modal-head">
+            <h4>Copying to OPS…</h4>
+            <p>Safe to leave this open. Reports are still readable from app storage while this runs.</p>
+          </div>
+          <div class="modal-body">
+            <div class="prog"><span style="width: 63%"></span></div>
+            <p class="hint" style="margin-bottom: 12px">34 of 54 · about 40 seconds left</p>
+            <div class="logline"><b>✓</b> OPS-1041 &nbsp;Q3 Platform Status</div>
+            <div class="logline"><b>✓</b> OPS-1042 &nbsp;Exec Rollup</div>
+            <div class="logline"><b>✓</b> OPS-1043 &nbsp;Payments Timeline</div>
+            <div class="logline"><b>✓</b> OPS-1044 &nbsp;Mobile — Q3</div>
+            <div class="logline" style="opacity: 0.6">… Infra Initiatives</div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn subtle">Stop</button><button class="btn primary" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="step">
+        <h3>Step 4 · Reconcile and cut over</h3>
+        <p class="note">
+          The one irreversible-feeling moment, so it's the one the <em>user</em> triggers — and even it is reversible.
+        </p>
+        <div class="modal">
+          <div class="wiz">
+            <span class="done">✓ Destination</span><span class="done">✓ Preview</span><span class="done">✓ Copy</span
+            ><span class="on">4 Confirm</span>
+          </div>
+          <div class="modal-head">
+            <h4>Check the numbers</h4>
+            <p>Right now the app reads from OPS and falls back to app storage for anything missing.</p>
+          </div>
+          <div class="modal-body">
+            <div class="drylist">
+              <div class="dryrow"><span>Reports expected</span><span class="ct">42</span></div>
+              <div class="dryrow">
+                <span>Reports found in OPS</span><span class="ct" style="color: #14663f; font-weight: 600">42 ✓</span>
+              </div>
+              <div class="dryrow"><span>Teams expected</span><span class="ct">12</span></div>
+              <div class="dryrow">
+                <span>Teams found in OPS</span><span class="ct" style="color: #14663f; font-weight: 600">12 ✓</span>
+              </div>
+            </div>
+
+            <div class="banner good">
+              <span class="icon">✓</span>
+              <span><strong>Everything copied.</strong> <a href="#">Open OPS in Jira →</a></span>
+            </div>
+
+            <div class="banner info">
+              <span class="icon">ℹ</span>
+              <span>
+                Finishing stops the fallback reads from app storage. The backup copy stays —
+                <strong>Switch back</strong>
+                in Data storage settings restores it at any time.
+              </span>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn subtle">Keep the fallback on</button
+            ><button class="btn primary">Finish migration</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section">What a record looks like in Jira afterward</h2>
+    <p class="intro">
+      The <span class="tagchip">purple</span> block is the entity property — the source of truth, invisible in Jira's
+      UI, 32&nbsp;KB of its own. The description above it is a <strong>rendered view that the app never reads</strong>;
+      it exists so Jira's issue history has something meaningful to diff, and so a human opening the issue understands
+      what it is. See
+      <a href="../../019-saved-data-options/001-jira-project-storage.md#where-the-payload-actually-lives"
+        >019 § Where the payload actually lives</a
+      >.
+    </p>
+
+    <div class="jira">
+      <div class="issue">
+        <div class="bc"><a href="#">OPS</a> / <a href="#">OPS-1041</a> · Task</div>
+        <h4>Q3 Platform Status</h4>
+        <div class="adf">
+          <p class="lbl">Report</p>
+          <p>Gantt (start / due) · rounded to month · children loaded</p>
+          <p class="lbl">Issue source</p>
+          <p><code>project in (ABC, DEF) AND issuetype = Initiative ORDER BY Rank</code></p>
+          <p class="lbl">Statuses shown</p>
+          <p>Development, Ready, Blocked</p>
+          <p class="gen">
+            Generated by Status Reports for Jira. <a href="#">Open this report →</a><br />
+            Editing this description won't change the report.
+          </p>
+        </div>
+
+        <div class="propbox">
+          <div class="ph">⌗ entity property · bitovi.status-report.payload · not shown in Jira</div>
+          <pre>
+{
+  "schemaVersion": 1,
+  "legacyId": "a7f3",
+  "queryParams": "primaryIssueType=Initiative&primaryReportType=start-due
+                  &roundTo=month&loadChildren=true&statusesToShow=…"
+}</pre
+          >
+        </div>
+
+        <div class="meta">
+          <span><span class="tagchip">start-due</span></span>
+          <span>Reporter · Justin Meyer</span>
+          <span>Updated · 2 hours ago</span>
+          <span>History · 7 edits</span>
+        </div>
+      </div>
+
+      <div class="issue">
+        <div class="bc"><a href="#">OPS</a> / <a href="#">OPS-1088</a> · Task</div>
+        <h4>Platform</h4>
+        <div class="adf">
+          <p class="lbl">Team configuration</p>
+          <table>
+            <tr>
+              <th>Level</th>
+              <th>Velocity</th>
+              <th>Tracks</th>
+              <th>Sprint</th>
+            </tr>
+            <tr>
+              <td>Defaults</td>
+              <td>21</td>
+              <td>1</td>
+              <td>10 days</td>
+            </tr>
+            <tr>
+              <td>Epic</td>
+              <td>34</td>
+              <td>2</td>
+              <td>—</td>
+            </tr>
+          </table>
+          <p class="lbl">Fields</p>
+          <p>Estimate: Story points · Confidence: Confidence · Start: Start date</p>
+          <p class="gen">
+            Generated by Status Reports for Jira.<br />
+            The table above is also read by the Jira Auto&nbsp;Scheduler (TR-133).
+          </p>
+        </div>
+
+        <div class="propbox">
+          <div class="ph">⌗ entity property · bitovi.status-report.payload · not shown in Jira</div>
+          <pre>
+{
+  "schemaVersion": 1,
+  "legacyId": "Platform",
+  "defaults": { "velocityPerSprint": 21, "tracks": 1, "sprintLength": 10,
+                "estimateField": "Story points", … },
+  "1": { "velocityPerSprint": 34, "tracks": 2 }
+}</pre
+          >
+        </div>
+
+        <div class="meta">
+          <span><span class="tagchip">team</span></span>
+          <span>Updated · yesterday</span>
+          <span>History · 3 edits</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>The team issue is where TR-133 gets interesting.</strong> The rendered table isn't decoration here — the
+      Jira Auto Scheduler reads a table like it out of the config issue today
+      (<code>src/jira/storage/index.web.ts:128-155</code>). Moving team data to <code>TEAMMAP</code> either keeps
+      writing that table in its old location, or needs a coordinated change in the Auto Scheduler. That's why
+      <a href="../plan.md">Phase 6</a> is blocked rather than merely last.
+    </div>
+  </body>
+</html>

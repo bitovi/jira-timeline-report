@@ -46,6 +46,12 @@ export function rawIssuesRequestData(
         progressUpdate: (receivedProgressData) => {
           progressData.value = { ...receivedProgressData };
         },
+        // `getRawIssues` shares one fetch between callers asking the same thing and fans its progress
+        // out to all of them, keyed by owner. This closure is rebuilt on every recompute, so it can't
+        // be its own key: a config recomputing onto the same request would register a second callback
+        // and every tick would write this observable twice. `progressData` is the one thing here that
+        // is per-config AND survives a recompute — and it's what the callback writes to anyway.
+        owner: progressData,
       },
     );
   });

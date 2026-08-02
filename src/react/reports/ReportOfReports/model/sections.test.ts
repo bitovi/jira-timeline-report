@@ -10,6 +10,7 @@ import {
   inlineReportNode,
   setSectionTitleAt,
   setExpressionAt,
+  setNodeOverride,
   removeNodeAt,
   moveNodeAt,
   canMoveNodeAt,
@@ -542,6 +543,94 @@ describe('visitNodes', () => {
       ['saved-report', [0, 1, 0]],
       ['saved-report', [1]],
     ]);
+  });
+});
+
+// spec/016-report-of-reports/006-url-state Phase 2. An override is a query-string fragment of only
+// what differs from the child's own saved `queryParams`, carried on the node so it travels through
+// a reorder, a delete, and a save.
+describe('setNodeOverride', () => {
+  const withReport = () => {
+    const child = savedReportNode('a');
+
+    return { child, tree: [sectionNode('Q3', [child]), savedReportNode('b')] as LayoutNode[] };
+  };
+
+  it('adds an override to a nested node, leaving its siblings alone', () => {
+    const { child, tree } = withReport();
+
+    const next = setNodeOverride(tree, child.id, 'tableSortDir', 'desc');
+
+    expect(toStoredSections(next)).toEqual([
+      {
+        type: 'section',
+        params: { title: 'Q3' },
+        children: [{ type: 'saved-report', params: { reportId: 'a', overrides: 'tableSortDir=desc' } }],
+      },
+      { type: 'saved-report', params: { reportId: 'b' } },
+    ]);
+  });
+
+  it('keeps the node id, so recording an override never remounts the child', () => {
+    const { child, tree } = withReport();
+
+    const next = setNodeOverride(tree, child.id, 'tableSortDir', 'desc');
+
+    expect(((next[0] as SectionNode).children[0] as LayoutNode).id).toBe(child.id);
+  });
+
+  it('adds a second key alongside the first, and updates one in place', () => {
+    const { child, tree } = withReport();
+
+    let next = setNodeOverride(tree, child.id, 'tableSortDir', 'desc');
+    next = setNodeOverride(next, child.id, 'tableSortColumn', 'summary');
+    next = setNodeOverride(next, child.id, 'tableSortDir', 'asc');
+
+    expect(((next[0] as SectionNode).children[0] as any).params.overrides).toBe(
+      'tableSortDir=asc&tableSortColumn=summary',
+    );
+  });
+
+  // The rule that keeps a sort toggled there and back from leaving a permanently dirty document.
+  it('removes the key on `undefined`, and the fragment with the last key', () => {
+    const { child, tree } = withReport();
+
+    const one = setNodeOverride(tree, child.id, 'tableSortDir', 'desc');
+    const none = setNodeOverride(one, child.id, 'tableSortDir', undefined);
+
+    expect(((none[0] as SectionNode).children[0] as any).params).toEqual({ reportId: 'a' });
+    expect(toStoredSections(none)).toEqual(toStoredSections(tree));
+  });
+
+  it('returns the same reference for an unknown id', () => {
+    const { tree } = withReport();
+
+    expect(setNodeOverride(tree, 'nope', 'tableSortDir', 'desc')).toBe(tree);
+  });
+
+  it('returns the same reference for a node that is not a saved report', () => {
+    const { tree } = withReport();
+
+    expect(setNodeOverride(tree, tree[0].id, 'tableSortDir', 'desc')).toBe(tree);
+  });
+
+  it('returns the same reference when the value is already what it would be set to', () => {
+    const { child, tree } = withReport();
+    const one = setNodeOverride(tree, child.id, 'tableSortDir', 'desc');
+
+    expect(setNodeOverride(one, child.id, 'tableSortDir', 'desc')).toBe(one);
+    expect(setNodeOverride(tree, child.id, 'tableSortDir', undefined)).toBe(tree);
+  });
+
+  // Overrides are node params, so "Save report" persists a tweaked child with no change to the save
+  // path — and reopening that report brings the tweak back.
+  it('survives a store/parse round trip', () => {
+    const { child, tree } = withReport();
+    const next = setNodeOverride(tree, child.id, 'tableSortDir', 'desc');
+    const stored = toStoredSections(next);
+
+    expect(sameSections(parseSections(stored), next)).toBe(true);
+    expect(toStoredSections(parseSections(stored))).toEqual(stored);
   });
 });
 

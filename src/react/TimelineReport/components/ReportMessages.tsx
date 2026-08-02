@@ -52,6 +52,29 @@ export interface ErrorMessageProps {
   errorMessage?: string;
 }
 
+export interface UnsupportedReportTypeMessageProps {
+  /** The raw, unrecognized `primaryReportType` from the URL or the saved report. */
+  reportType: string;
+}
+
+/**
+ * Shown when the config asks for a report type this build has no entry for — a saved report or link
+ * from before a report was renamed or removed. Permanent, not a migration: it is what keeps a
+ * migration's eventual deletion from silently substituting a different report (see
+ * spec/018-card-report/saved-report-migrations/plan.md § End of life).
+ */
+export const UnsupportedReportTypeMessage: FC<UnsupportedReportTypeMessageProps> = ({ reportType }) => (
+  <div className="my-2 p-2 h-780 border-box block overflow-hidden color-text-and-bg-warning">
+    <p>
+      <strong>This report was saved in a format we no longer support.</strong>
+    </p>
+    <p>
+      It refers to a report type (<code>{reportType}</code>) that no longer exists. Pick a report type above to rebuild
+      it, or delete it from Saved Reports.
+    </p>
+  </div>
+);
+
 /** Shown when the request rejected — either a licensing error or a generic Jira error. */
 export const ErrorMessage: FC<ErrorMessageProps> = ({ noLicense, errorMessage }) => (
   <div className="my-2 p-2 h-780 border-box block overflow-hidden color-text-and-bg-blocked">
