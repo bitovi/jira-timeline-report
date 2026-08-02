@@ -13,23 +13,17 @@ type Value = {
 
 type ObservableObject = Function;
 
-class Observation<T> {
-  constructor(fn: () => T) {}
-}
-
-class SimpleObservable<T> {
-  constructor(init: T) {}
-
-  getData: () => T;
-  value: T;
-  on: (handler: () => void) => void;
-  off: (handler: () => void) => void;
-  set: (value: TData) => void;
-  get(): TData;
-}
-
 export var value: Value;
 export var ObservableObject: ObservableObject;
 export var queues: any;
-export var Observation: Observation;
-export var SimpleObservable: SimpleObservable;
+
+// The rest of the re-export surface. These are only consumed from .js files today (which tsconfig
+// excludes), so they are untyped — declared here so this file stays an accurate description of
+// what `can.js` actually exports.
+export var Reflect: any;
+export var route: any;
+export var RoutePushstate: any;
+export var diff: any;
+export var type: any;
+export var domEvents: any;
+export var domMutateDomEvents: any;
