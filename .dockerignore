@@ -1,2 +1,22 @@
+# The auth-server image (Dockerfile) only needs server/, package*.json, and
+# production node_modules. Keep frontend build output and dev/test assets out of
+# the image to keep it small and avoid exhausting the deploy VM's disk.
 node_modules
 .git
+
+# Frontend build artifacts (served from S3, not by the auth server)
+dist
+storybook-static
+
+# Tests, specs, and scratch output
+playwright
+spec
+temp
+.temp
+
+# Local env / editor files
+.env
+.env.*
+!.env.example
+.vscode
+.idea
