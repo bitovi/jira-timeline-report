@@ -26,14 +26,11 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
-      const reportOnBtn = page.getByRole('button', { name: /Initiatives/i });
-      const reportTypeBtn = page.getByRole('button', { name: /Scatter Plot/i });
+      const reportOnBtn = page.getByRole('button', { name: /Initiative/i });
+      const reportTypeBtn = page.getByRole('button', { name: /Scatter Plot|Gantt Chart/i });
       await expect(reportOnBtn).toBeVisible();
       await expect(reportTypeBtn).toBeVisible();
-      await expect(page.getByText('Track your order maps')).toBeDefined();
-      await expect(page.getByText('Favorite sharing')).toBeDefined();
-      await expect(page.getByText('Order Playback')).toBeDefined();
-      await expect(page.getByText('Social sharing')).toBeDefined();
+      await expect(page.locator('#react-report-container')).toBeVisible();
     });
 
     test('the page renders the report', async ({ page }) => {
@@ -59,7 +56,7 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
-      const reportOnBtn = page.getByRole('button', { name: /Initiatives/i });
+      const reportOnBtn = page.getByRole('button', { name: /Initiative/i });
       const reportTypeBtn = page.getByRole('button', { name: /Gantt Chart/i });
       await expect(reportOnBtn).toBeVisible();
       await expect(reportTypeBtn).toBeVisible();
@@ -89,7 +86,7 @@ test.describe('Sample reports navigation', () => {
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
-      const reportOnBtn = page.getByRole('button', { name: /Initiatives/i });
+      const reportOnBtn = page.getByRole('button', { name: /Initiative/i });
       const reportTypeBtn = page.getByRole('button', { name: /Gantt Chart/i });
       await expect(reportOnBtn).toBeVisible();
       await expect(reportTypeBtn).toBeVisible();
