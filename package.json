@@ -18,7 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:watch": "playwright test --ui",
     "typecheck": "tsc",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "create:atlassian-connect": "tsx ./scripts/atlassian-connect/index.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
