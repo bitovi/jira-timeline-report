@@ -255,4 +255,71 @@ describe('<ChildReport>', () => {
       expect(changes).toEqual([['tableSortDir', undefined]]);
     });
   });
+
+  // An inline report is a whole report configured in the document rather than referring out to a
+  // saved one. Nothing downstream can tell the difference — all any of it sees is a query string.
+  // See spec/018-card-report/alt-plan.md.
+  describe('an inline report', () => {
+    const renderInline = (inlineQuery: string, { components = { 'start-due': Probe }, onParamChange }: any = {}) =>
+      render(
+        <ChildReport
+          inlineQuery={inlineQuery}
+          onParamChange={onParamChange}
+          parent={makeParent()}
+          components={components}
+          useLoadingState={() => ({ status: 'resolved' }) as any}
+        />,
+      );
+
+    it('builds its prop bag from the node’s query instead of a saved report', () => {
+      renderInline('jql=project%3DA&primaryReportType=start-due&roundTo=month');
+
+      expect(screen.getByTestId('probe')).toHaveTextContent('month');
+    });
+
+    // It is its own baseline, so there is nothing to diff against: every value it writes is a real
+    // change, announced as-is for the document to write into the node's query.
+    it('announces a write verbatim, with no override comparison', async () => {
+      const changes: Array<[string, string | undefined]> = [];
+
+      renderInline('jql=project%3DA&primaryReportType=table&tableSortDir=tree', {
+        components: { table: SortingProbe },
+        onParamChange: (key: string, serialized: string | undefined) => changes.push([key, serialized]),
+      });
+
+      await userEvent.click(screen.getByTestId('sort'));
+
+      expect(changes).toEqual([['tableSortDir', 'desc']]);
+      expect(screen.getByTestId('sort')).toHaveTextContent('desc');
+    });
+
+    // A saved-report child would report `undefined` here — the write matches its saved value, so the
+    // override clears. An inline report has no such value, and announcing `undefined` would delete the
+    // key from its own configuration.
+    it('announces a write that matches the node’s own query, rather than clearing it', async () => {
+      const changes: Array<[string, string | undefined]> = [];
+
+      renderInline('jql=project%3DA&primaryReportType=table&tableSortDir=desc', {
+        components: { table: SortingProbe },
+        onParamChange: (key: string, serialized: string | undefined) => changes.push([key, serialized]),
+      });
+
+      await userEvent.click(screen.getByTestId('sort'));
+
+      expect(changes).toEqual([['tableSortDir', 'desc']]);
+    });
+
+    it('reports a dead report type from the node’s query, same as it would from a record', () => {
+      renderInline('jql=project%3DA&primaryReportType=some-future-report');
+
+      expect(screen.getByText(/no longer support/)).toBeInTheDocument();
+      expect(screen.getByText(/some-future-report/)).toBeInTheDocument();
+    });
+
+    it('still refuses to nest a report-of-reports', () => {
+      renderInline('primaryReportType=report-of-reports');
+
+      expect(screen.getByText(/cannot be embedded/i)).toBeInTheDocument();
+    });
+  });
 });

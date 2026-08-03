@@ -23,7 +23,8 @@ import { createStableObjectKey, groupByKeys } from './group';
 import { aggregations } from './aggregations';
 
 import type { AggregationId } from './aggregations';
-import type { ColumnDefinition, TableIssue } from './columns';
+import type { ColumnDefinition, RenderMeasureContext, TableIssue } from './columns';
+import type { ReactNode } from 'react';
 
 /** A single 1D group: its stable key, a display label, and the member issues in it. */
 export interface TableGroup {
@@ -113,6 +114,27 @@ export function selectMeasureColumns(
  */
 export function effectiveAggregationId(column: ColumnDefinition, override?: AggregationId): AggregationId {
   return override ?? column.aggregate ?? column.defaultAggregate ?? 'count';
+}
+
+/**
+ * Looks up a column's `renderMeasure` override for an aggregation id, guarding against `aggId`
+ * values that didn't originate from the {@link AggregationId} union — e.g. a hand-edited saved
+ * report or URL param. `column.renderMeasure` is keyed by aggregation id and its values are invoked
+ * as functions, so an unvalidated lookup here is a dynamic-method-call risk (CWE-754): confirm the
+ * key is an own property AND that the value is actually a function before returning it.
+ */
+export function getMeasureRenderer(
+  column: ColumnDefinition,
+  aggId: AggregationId,
+): ((ctx: RenderMeasureContext) => ReactNode) | null {
+  const renderMeasure = column.renderMeasure;
+  if (renderMeasure && Object.prototype.hasOwnProperty.call(renderMeasure, aggId)) {
+    const candidate = renderMeasure[aggId];
+    if (typeof candidate === 'function') {
+      return candidate;
+    }
+  }
+  return null;
 }
 
 /**

@@ -42,14 +42,26 @@ export const NO_CHILD_QUERY_GROUPS: ChildQueryGroups = new Map();
  * wrong, the group would just split and cost a fetch, which is the exact failure this module
  * exists to prevent. See spec/016-report-of-reports/006-url-state Phase 3.
  *
- * `InlineReportNode` and `UnknownNode` are skipped — neither issues an issue request. An unresolvable
+ * An inline report contributes its own `query` — it renders a `ChildReport` exactly as a saved-report
+ * node does, and so issues exactly the same request. Leaving it out would be a silent regression for
+ * the case this module most obviously exists for: the secondary-slot migration produces documents
+ * that are *two inline reports over one JQL* (spec/018-card-report/alt-plan.md). It costs nothing
+ * for a Gantt beside a card board, whose requests are byte-identical anyway, and one whole fetch the
+ * moment such a document gains a Table.
+ *
+ * `InlineValueNode` and `UnknownNode` are skipped — neither issues an issue request. An unresolvable
  * `reportId` is skipped too: it renders `MissingReportNote` instead of a `ChildReport`, so it never
  * fetches and must not pull a field into a union or turn a singleton into a group.
  */
-function collectSavedReports(nodes: LayoutNode[], reports: Reports, found: string[]): void {
+function collectChildQueries(nodes: LayoutNode[], reports: Reports, found: string[]): void {
   for (const node of nodes) {
     if (node.type === 'section') {
-      collectSavedReports(node.children, reports, found);
+      collectChildQueries(node.children, reports, found);
+      continue;
+    }
+
+    if (node.type === 'inline-report') {
+      found.push(node.params.query);
       continue;
     }
 
@@ -78,7 +90,7 @@ function collectSavedReports(nodes: LayoutNode[], reports: Reports, found: strin
  */
 export function childQueryGroups(nodes: LayoutNode[], reports: Reports): ChildQueryGroups {
   const found: string[] = [];
-  collectSavedReports(nodes, reports, found);
+  collectChildQueries(nodes, reports, found);
 
   const byQuery = new Map<string, { members: number; fields: Set<string> }>();
 

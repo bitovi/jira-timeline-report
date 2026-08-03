@@ -5,7 +5,10 @@ import { useRouting } from './RoutingProvider';
 
 interface LinkProps extends ComponentProps<'a'> {}
 
-const isIFrame = !!(AP?.history?.getState ?? false);
+// `AP` is injected by Atlassian Connect's all.js, which only index.html loads. Guard the global
+// read so importing this module outside the app shell (Storybook, any non-Connect host) doesn't
+// throw a ReferenceError at load — `typeof` is the only safe test for an undeclared identifier.
+const isIFrame = typeof AP !== 'undefined' && !!(AP?.history?.getState ?? false);
 
 /**
  * This is a custom link component that is used to link to pages within the jira application.

@@ -438,6 +438,8 @@ describe('ChildReportConfig', () => {
       uncertaintyWeight: '80',
       selectedStartDate: '2026-06-01T00:00:00.000Z',
       groupBy: 'team',
+      cardsMode: 'breakdown',
+      cardsChildFilterRows: JSON.stringify([{ id: '1', field: 'jiraStatus', operator: 'is', value: ['QA'] }]),
       tableColumns: JSON.stringify([{ sourceId: 'identity:treeSummary' }, { sourceId: 'field:Status' }]),
       tableSortColumn: 'field:Status',
       tableSortDir: 'desc',

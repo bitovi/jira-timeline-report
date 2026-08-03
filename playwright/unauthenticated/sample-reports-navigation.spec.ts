@@ -1,25 +1,28 @@
 import test, { expect } from '@playwright/test';
 
+/**
+ * The sample links only ever point at reports that are `onByDefault: true` — the Scatter Plot and
+ * the Gantt Chart. The first two used to render a `secondaryReportType` card board below their
+ * chart; that slot is gone and its report is behind the `cardsReport` flag, so each is now just its
+ * chart. See spec/018-card-report/alt-plan.md and SampleDataNotice.tsx.
+ */
 test.describe('Sample reports navigation', () => {
-  test.describe("On 'Release end dates with initiative status' click", () => {
+  test.describe("On 'Initiative end dates' click", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/');
-      const releaseLink = page.getByText('Release end dates with initiative status');
-      await releaseLink.waitFor({ state: 'visible' });
-      await releaseLink.click();
+      const scatterLink = page.getByText('Initiative end dates');
+      await scatterLink.waitFor({ state: 'visible' });
+      await scatterLink.click();
     });
 
-    test('URL contains primaryIssueType=Release', async ({ page }) => {
-      expect(page.url()).toContain('primaryIssueType=Release');
+    test('URL contains selectedIssueType=Initiative', async ({ page }) => {
+      expect(page.url()).toContain('selectedIssueType=Initiative');
     });
     test('URL contains hideUnknownInitiatives=true', async ({ page }) => {
       expect(page.url()).toContain('hideUnknownInitiatives=true');
     });
     test('URL contains primaryReportType=due', async ({ page }) => {
       expect(page.url()).toContain('primaryReportType=due');
-    });
-    test('URL contains secondaryReportType=status', async ({ page }) => {
-      expect(page.url()).toContain('secondaryReportType=status');
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
@@ -33,33 +36,26 @@ test.describe('Sample reports navigation', () => {
       await expect(page.getByText('Social sharing')).toBeDefined();
     });
 
-    test('the page has status report', async ({ page }) => {
-      await expect(page.locator('#react-secondary-report-container')).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('Track your order maps')).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('Social sharing')).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('QA: Favorite Sharing')).toBeVisible();
-      await expect(
-        page.locator('#react-secondary-report-container').getByText('QA: Internationalization'),
-      ).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('Order Playback')).toBeVisible();
+    test('the page renders the report', async ({ page }) => {
+      await expect(page.locator('#react-report-container')).toBeVisible();
     });
   });
 
-  test.describe("On 'Release timeline with initiative work breakdown' click", () => {
+  test.describe("On 'Initiative timeline' click", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/');
-      await page.getByText('Release timeline with initiative work breakdown').click();
+      await page.getByText('Initiative timeline').click();
     });
 
-    test('URL contains primaryIssueType=Release', async ({ page }) => {
-      expect(page.url()).toContain('primaryIssueType=Release');
+    test('URL contains selectedIssueType=Initiative', async ({ page }) => {
+      expect(page.url()).toContain('selectedIssueType=Initiative');
     });
     test('URL contains hideUnknownInitiatives=true', async ({ page }) => {
       expect(page.url()).toContain('hideUnknownInitiatives=true');
     });
 
-    test('URL contains secondaryReportType=breakdown', async ({ page }) => {
-      expect(page.url()).toContain('secondaryReportType=breakdown');
+    test('URL contains primaryReportType=start-due', async ({ page }) => {
+      expect(page.url()).toContain('primaryReportType=start-due');
     });
 
     test('the page contains existing initiatives', async ({ page }) => {
@@ -69,17 +65,6 @@ test.describe('Sample reports navigation', () => {
       await expect(reportTypeBtn).toBeVisible();
       await expect(page.locator('#react-report-container')).toBeVisible();
     });
-
-    test('the page has status report', async ({ page }) => {
-      await expect(page.locator('#react-secondary-report-container')).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('Track your order maps')).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('Social sharing')).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('QA: Favorite Sharing')).toBeVisible();
-      await expect(
-        page.locator('#react-secondary-report-container').getByText('QA: Internationalization'),
-      ).toBeVisible();
-      await expect(page.locator('#react-secondary-report-container').getByText('Order Playback')).toBeVisible();
-    });
   });
 
   test.describe("On 'Ready and in-development initiative work breakdown' click", () => {
@@ -88,8 +73,8 @@ test.describe('Sample reports navigation', () => {
       await page.getByText('Ready and in-development initiative work breakdown').click();
     });
 
-    test('URL contains primaryIssueType=Initiative', async ({ page }) => {
-      expect(page.url()).toContain('primaryIssueType=Initiative');
+    test('URL contains selectedIssueType=Initiative', async ({ page }) => {
+      expect(page.url()).toContain('selectedIssueType=Initiative');
     });
     test('URL contains hideUnknownInitiatives=true', async ({ page }) => {
       expect(page.url()).toContain('hideUnknownInitiatives=true');

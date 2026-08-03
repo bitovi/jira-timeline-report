@@ -11,7 +11,8 @@ import { v4 as uuidv4 } from 'uuid';
 export type StoredNode =
   | { type: 'saved-report'; params: SavedReportParams }
   | { type: 'section'; params: { title: string }; children: StoredNode[] }
-  | { type: 'inline-report'; params: { expression: string } };
+  | { type: 'inline-value'; params: { expression: string } }
+  | { type: 'inline-report'; params: { query: string } };
 // Still anticipated: `text` nodes, and grid options on a section's `params`.
 
 /**
@@ -57,7 +58,25 @@ export type SectionNode = {
  * at rest, so a saved document stays readable and re-editable.
  * See spec/016-report-of-reports/003-self-reports.
  */
-export type InlineReportNode = { id: string; type: 'inline-report'; params: { expression: string } } & WithRaw;
+export type InlineValueNode = { id: string; type: 'inline-value'; params: { expression: string } } & WithRaw;
+
+/**
+ * A whole report that lives *in* the document rather than referring out to a saved one — the
+ * unsaved counterpart of a {@link SavedReportNode}, and rendered by the same `ChildReport`.
+ *
+ * Its configuration is stored as one `URLSearchParams`-shaped query string rather than a nested
+ * object, deliberately: it is exactly the shape `ChildReportConfig`, `parseChildQuery` and
+ * `mergeChildQuery` already read, so nothing downstream needs a second encoding — and a node's
+ * config can be pasted to and from a page URL.
+ *
+ * **No `overrides` key.** That mechanism exists because a saved-report child has a saved baseline to
+ * diff against, so a setting returned to its original value clears itself. An inline report *is* its
+ * own baseline, so an edit writes straight into `params.query` — see {@link setInlineReportParam}.
+ *
+ * Created by the secondary-slot migration, which turns one legacy config carrying both a chart and a
+ * card board into a document with one of these per report. See spec/018-card-report/alt-plan.md.
+ */
+export type InlineReportNode = { id: string; type: 'inline-report'; params: { query: string } } & WithRaw;
 
 /**
  * A node this client can't interpret — an unrecognized `type` (a document written by a newer
@@ -66,7 +85,7 @@ export type InlineReportNode = { id: string; type: 'inline-report'; params: { ex
  */
 export type UnknownNode = { id: string; type: 'unknown'; params: { originalType: string; raw: unknown } };
 
-export type LayoutNode = SavedReportNode | SectionNode | InlineReportNode | UnknownNode;
+export type LayoutNode = SavedReportNode | SectionNode | InlineValueNode | InlineReportNode | UnknownNode;
 
 /** Position of a node in the tree: indices from the root, descending through `children`. */
 export type LayoutPath = number[];
@@ -92,10 +111,16 @@ export const sectionNode = (title: string, children: LayoutNode[] = []): Section
   children,
 });
 
-export const inlineReportNode = (expression: string): InlineReportNode => ({
+export const inlineValueNode = (expression: string): InlineValueNode => ({
+  id: nextId(),
+  type: 'inline-value',
+  params: { expression },
+});
+
+export const inlineReportNode = (query: string): InlineReportNode => ({
   id: nextId(),
   type: 'inline-report',
-  params: { expression },
+  params: { query },
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -130,12 +155,21 @@ const parseNode = (raw: unknown): LayoutNode => {
     return { ...sectionNode(typeof title === 'string' ? title : '', parseSections(raw.children)), raw };
   }
 
-  if (raw.type === 'inline-report') {
+  if (raw.type === 'inline-value') {
     const expression = isRecord(raw.params) ? raw.params.expression : undefined;
 
     // A missing expression is tolerated as blank, like a section's title: the node renders its own
     // "write an expression" state rather than becoming an unreadable placeholder.
-    return { ...inlineReportNode(typeof expression === 'string' ? expression : ''), raw };
+    return { ...inlineValueNode(typeof expression === 'string' ? expression : ''), raw };
+  }
+
+  if (raw.type === 'inline-report') {
+    const query = isRecord(raw.params) ? raw.params.query : undefined;
+
+    // A missing query is tolerated as blank rather than becoming a placeholder: an empty query is a
+    // renderable report (the default one, over no JQL), and turning it into "Unsupported content"
+    // would be a harsher failure than the config deserves.
+    return { ...inlineReportNode(typeof query === 'string' ? query : ''), raw };
   }
 
   return placeholder(raw);
@@ -183,11 +217,24 @@ export const toStoredSections = (nodes: LayoutNode[]): StoredNode[] =>
       } as StoredNode;
     }
 
+    if (node.type === 'inline-value') {
+      return {
+        ...node.raw,
+        type: 'inline-value',
+        params: storedParams(node, { expression: node.params.expression }),
+      } as StoredNode;
+    }
+
+    // Needs its own branch for the same reason every type above does — the fall-through below is the
+    // saved-report case, so an unhandled node would serialize as
+    // `{ type: 'saved-report', params: { reportId: undefined } }` and be destroyed on the first save.
+    // `WithRaw` does not rescue that: it preserves unrecognized *keys on a recognized type*, and a
+    // node this client just created (which is every node the migration makes) has no `raw` at all.
     if (node.type === 'inline-report') {
       return {
         ...node.raw,
         type: 'inline-report',
-        params: storedParams(node, { expression: node.params.expression }),
+        params: storedParams(node, { query: node.params.query }),
       } as StoredNode;
     }
 
@@ -296,7 +343,7 @@ export const setSectionTitleAt = (nodes: LayoutNode[], path: LayoutPath, title: 
  */
 export const setExpressionAt = (nodes: LayoutNode[], path: LayoutPath, expression: string): LayoutNode[] =>
   mapNodeAt(nodes, path, (node) =>
-    node.type === 'inline-report' && node.params.expression !== expression
+    node.type === 'inline-value' && node.params.expression !== expression
       ? { ...node, params: { ...node.params, expression } }
       : node,
   );
@@ -388,6 +435,52 @@ export const setNodeOverride = (
     }
 
     return { ...node, params };
+  });
+
+/**
+ * Records one setting an inline report just wrote — or removes it, when `value` is `undefined` — by
+ * rewriting that key in the node's own `query`.
+ *
+ * The inline-report counterpart of {@link setNodeOverride}, and deliberately not the same function:
+ * an override is a *diff against a saved report*, and an inline report has no saved report to diff
+ * against. Its query IS its configuration, so an edit is written straight into it. (This is also why
+ * `setNodeOverride` returns anything that isn't a `saved-report` untouched, and must keep doing so —
+ * an inline report routed through it would silently grow an `overrides` key nothing reads.)
+ *
+ * Same contracts as {@link setNodeOverride} otherwise: keyed by node id so the memoized `ChildReport`
+ * that calls it isn't rebuilt per render, the node keeps its `id` so recording a change never
+ * remounts the child that made it (a remounted child refetches from Jira), and a write that leaves
+ * the query as it was returns the very same tree — which is what keeps a report re-announcing its
+ * current value from flipping the dirty flag.
+ */
+export const setInlineReportParam = (
+  nodes: LayoutNode[],
+  nodeId: string,
+  key: string,
+  value: string | undefined,
+): LayoutNode[] =>
+  mapNodeById(nodes, nodeId, (node) => {
+    if (node.type !== 'inline-report') {
+      return node;
+    }
+
+    const query = new URLSearchParams(node.params.query);
+
+    if (value === undefined) {
+      if (!query.has(key)) {
+        return node;
+      }
+
+      query.delete(key);
+    } else {
+      if (query.get(key) === value) {
+        return node;
+      }
+
+      query.set(key, value);
+    }
+
+    return { ...node, params: { ...node.params, query: query.toString() } };
   });
 
 /**

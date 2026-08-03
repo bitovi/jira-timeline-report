@@ -34,7 +34,7 @@ export const embeddableReportComponents: Record<string, ComponentType<any>> = {
   due: ScatterTimeline,
   'start-due': GanttGrid,
   table: TableReport,
+  // The former secondary slot's report, now a primary of its own. The directory keeps its
+  // `WorkBreakdown` name; the user-visible one is "Cards". See spec/018-card-report/alt-plan.md.
+  cards: WorkBreakdown,
 };
-
-/** The secondary (Work Breakdown) report, rendered below a Gantt or Scatter primary. */
-export { WorkBreakdown };

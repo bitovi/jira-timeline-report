@@ -17,6 +17,13 @@ export const propsFor = (vm: any, config: any) => ({
   allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
   rollupTimingLevelsAndCalculationsObs: value.from(vm, 'rollupTimingLevelsAndCalculations'),
   filteredDerivedIssuesObs: value.from(vm, 'filteredDerivedIssues'),
+  // Cards report — spec/018-card-report/alt-plan.md. The issues the vm held back as "planning" are
+  // exactly what its Planning card shows, so they arrive alongside the primaries rather than being
+  // recomputed. No `filterRows` counterpart: the vm has already applied it to `primaryIssuesOrReleases`,
+  // and Cards' second list is scoped to the child rows (`cardsChildFilterRows`).
+  planningIssuesObs: value.from(vm, 'planningIssues'),
+  cardsModeObs: value.bind(config, 'cardsMode'),
+  cardsChildFilterRowsObs: value.bind(config, 'cardsChildFilterRows'),
   flowMetricsCycleTimeRangeObs: value.bind(config, 'flowMetricsCycleTimeRange'),
   flowMetricsStatusFilterObs: value.bind(config, 'flowMetricsStatusFilter'),
   flowMetricsIssueTypeFilterObs: value.bind(config, 'flowMetricsIssueTypeFilter'),
@@ -46,16 +53,6 @@ export const propsFor = (vm: any, config: any) => ({
   tableFieldAxisObs: value.bind(config, 'tableFieldAxis'),
   tableShowRowTotalsObs: value.bind(config, 'tableShowRowTotals'),
   tableShowColTotalsObs: value.bind(config, 'tableShowColTotals'),
-});
-
-/** The secondary (Work Breakdown) report's prop bag. Shell-only — children render no secondary. */
-export const secondaryPropsFor = (vm: any, config: any) => ({
-  primaryIssuesOrReleasesObs: value.from(vm, 'primaryIssuesOrReleases'),
-  allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
-  planningIssuesObs: value.from(vm, 'planningIssues'),
-  secondaryReportTypeObs: value.bind(config, 'secondaryReportType'),
-  filterRowsObs: value.bind(config, 'secondaryFilterRows'),
-  childFilterRowsObs: value.bind(config, 'secondaryChildFilterRows'),
 });
 
 // The key set this produces is pinned by `reportProps.test.ts`. The expected list lives in the test

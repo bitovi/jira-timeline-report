@@ -57,10 +57,31 @@ export function migrateQueryParams(
 }
 
 /**
- * Normalizes one saved report. Rebuilds `queryParams` only — every other field is spread through,
- * including ones this build has never heard of (a document saved by a newer client must survive a
- * round trip; `fetcher.test.ts` pins that). Returns the same object identity when nothing applied,
- * so callers can compare by reference.
+ * The report-of-reports document tree, as a query param. Same name as the record's own field, and
+ * the same value — see `documentParam.ts`'s `SECTIONS_PARAM`, which this deliberately does not
+ * import: nothing under `src/jira` points at `src/react`, and a migration must not read a live
+ * constant a later edit could change out from under it.
+ */
+const SECTIONS_KEY = 'sections';
+
+/**
+ * Normalizes one saved report. Rebuilds `queryParams` — and, when a migration produced a document,
+ * moves it onto the record's own `sections` field. Every other field is spread through, including
+ * ones this build has never heard of (a document saved by a newer client must survive a round trip;
+ * `fetcher.test.ts` pins that). Returns the same object identity when nothing applied, so callers
+ * can compare by reference.
+ *
+ * **Why the lift, rather than a `queryParams['sections']` fallback in the provider.**
+ * `ReportLayoutProvider` reads the saved tree in four places (the lazy initializer, the URL-change
+ * listener, the `savedKey` re-seed effect and `resetSections`), and `sectionsBaseline` in
+ * `documentParam.ts` computes the baseline `updateUrlParam` compares against — five. Miss one and
+ * the document silently blanks: the re-seed effect fires on mount, sees no URL param so doesn't
+ * bail, computes the saved tree as empty, finds that differs from what's on screen, and adopts the
+ * empty tree. Putting the document in the field the provider already reads deletes that whole class
+ * of bug, and the save path already writes that field.
+ *
+ * A URL, by contrast, needs no lift at all: `sections` *is* a real URL param, and the provider reads
+ * it first. See spec/018-card-report/alt-plan.md § Two destinations.
  */
 export function migrateReport(
   report: Report,
@@ -72,13 +93,33 @@ export function migrateReport(
     return { report, changed, applied };
   }
 
+  const document = params.get(SECTIONS_KEY);
+
+  // Guarded on the record having no document already, so a lift can never clobber one. No entry in
+  // the table today can hit that guard — `secondary-report-to-inline-document` declines to run on a
+  // config that is already a document — but the guard is what makes the lift safe for the next one.
+  if (document !== null && !report.sections?.length) {
+    try {
+      const sections = JSON.parse(document);
+
+      params.delete(SECTIONS_KEY);
+
+      return { report: { ...report, queryParams: params.toString(), sections }, changed, applied };
+    } catch {
+      // A hand-mangled record whose `sections` param isn't JSON. Leave it in `queryParams` rather
+      // than dropping it: the provider's own reader is tolerant, and a migration must not lose data
+      // it cannot understand.
+    }
+  }
+
   return { report: { ...report, queryParams: params.toString() }, changed, applied };
 }
 
 /**
- * Normalizes the whole saved-reports map — the read layer's entry point. `sections` and any
- * undefined slots (the map is `Partial`) pass through untouched; only `queryParams` is rewritten,
- * and only for the reports that needed it. Returns the same map identity when nothing applied.
+ * Normalizes the whole saved-reports map — the read layer's entry point. Undefined slots (the map is
+ * `Partial`) pass through untouched, and every report keeps every other field; only `queryParams` is
+ * rewritten — plus `sections`, for a report a migration turned into a document and which had none.
+ * Only the reports that needed it are touched. Returns the same map identity when nothing applied.
  */
 export function migrateReports(
   reports: Reports,

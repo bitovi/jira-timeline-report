@@ -1,9 +1,17 @@
 import type { FC } from 'react';
 import type { Reports } from '../../../jira/reports';
-import type { InlineReportNode, LayoutNode, LayoutPath, SavedReportNode, SectionNode } from './model/sections';
+import type {
+  InlineReportNode,
+  InlineValueNode,
+  LayoutNode,
+  LayoutPath,
+  SavedReportNode,
+  SectionNode,
+} from './model/sections';
 
 import React, { useCallback, useMemo } from 'react';
 
+import { reports as REPORTS } from '../../../configuration/reports';
 import { useAllReports } from '../../services/reports';
 import { useReportLayout } from '../../services/report-layout';
 import { appendNode, savedReportNode, setExpressionAt, setSectionTitleAt } from './model/sections';
@@ -30,7 +38,7 @@ export interface ReportOfReportsProps {
    * Forwarded to every embedded {@link ChildReport}. Its own defaults (the real `routeData`,
    * registry, and loading-state hook) apply in production; tests inject fakes here.
    */
-  childReportProps?: Partial<Omit<ChildReportProps, 'report'>>;
+  childReportProps?: Partial<Omit<ChildReportProps, 'report' | 'inlineQuery'>>;
 }
 
 /**
@@ -108,7 +116,7 @@ interface LayoutNodeViewProps {
   node: LayoutNode;
   path: LayoutPath;
   reports: Reports;
-  childReportProps?: Partial<Omit<ChildReportProps, 'report'>>;
+  childReportProps?: Partial<Omit<ChildReportProps, 'report' | 'inlineQuery'>>;
 }
 
 /**
@@ -120,12 +128,16 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
     return <SectionView node={node} path={path} reports={reports} childReportProps={childReportProps} />;
   }
 
-  if (node.type === 'inline-report') {
-    return <InlineReportView node={node} path={path} />;
+  if (node.type === 'inline-value') {
+    return <InlineValueView node={node} path={path} />;
   }
 
   if (node.type === 'saved-report') {
     return <SavedReportView node={node} path={path} reports={reports} childReportProps={childReportProps} />;
+  }
+
+  if (node.type === 'inline-report') {
+    return <InlineReportView node={node} path={path} childReportProps={childReportProps} />;
   }
 
   return <UnknownView node={node} path={path} />;
@@ -287,13 +299,77 @@ const SavedReportView: FC<LayoutNodeViewProps & { node: SavedReportNode }> = ({
 };
 
 /**
+ * What to call an inline report on its row. It has no saved report and so no name of its own — the
+ * report type is the only thing there is to say about it, and it is the thing that distinguishes the
+ * two children the secondary-slot migration produces ("Gantt Chart" above "Cards").
+ *
+ * Read straight off the query rather than through `ChildReportConfig`, which is the child's business:
+ * this is a label. Falls back the same way route-data's clamp does — an absent or unrecognized type
+ * renders as the first entry in `REPORTS`, which is what the child below will actually show.
+ */
+const inlineReportLabel = (query: string): string => {
+  const raw = new URLSearchParams(query).get('primaryReportType');
+
+  return (REPORTS.find((report) => report.key === raw) ?? REPORTS[0]).name;
+};
+
+/**
+ * One inline report: a whole report configured in the document rather than referred out to a saved
+ * one. Structurally the same row-plus-content as {@link SavedReportView} — caret, name, controls,
+ * then the report at the same indent — and it renders through the very same `ChildReport`.
+ *
+ * Two differences, both because there is no saved record behind it. Its name comes from its report
+ * type rather than a report's name, and it can never be "not found", so there is no missing-report
+ * branch and the caret is unconditional. Its edits are recorded straight into the node's query
+ * instead of as overrides — see `setInlineReportParam`.
+ *
+ * The document offers no way to *create* one: the migration writes them, and they are otherwise
+ * reachable only by hand-editing the `sections` param. See spec/018-card-report/alt-plan.md
+ * § Accepted costs.
+ */
+const InlineReportView: FC<{
+  node: InlineReportNode;
+  path: LayoutPath;
+  childReportProps?: Partial<Omit<ChildReportProps, 'report' | 'inlineQuery'>>;
+}> = ({ node, path, childReportProps }) => {
+  const { isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { setInlineReportParamOn } = useReportLayout();
+  const { hoverProps, rowProps } = useNodeRow(node, path);
+
+  // Keyed by node id rather than by `path`, for the reason `SavedReportView`'s copy of this is:
+  // a path is a fresh array every render and would defeat `ChildReport`'s memo.
+  const onParamChange = useCallback(
+    (key: string, serialized: string | undefined) => setInlineReportParamOn(node.id, key, serialized),
+    [setInlineReportParamOn, node.id],
+  );
+
+  const label = inlineReportLabel(node.params.query);
+  const collapsed = isCollapsed(node.id);
+
+  return (
+    <div {...hoverProps} data-testid="report-card" data-report-name={label} className="flex flex-col print-avoid-break">
+      <NodeRow
+        {...rowProps}
+        caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
+        controls={<NodeControls path={path} label={label} nodeId={node.id} />}
+      >
+        <h3 className="truncate text-base font-semibold">{label}</h3>
+      </NodeRow>
+      <div className={`pb-4 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+        <ChildReport inlineQuery={node.params.query} onParamChange={onParamChange} {...childReportProps} />
+      </div>
+    </div>
+  );
+};
+
+/**
  * One inline value: the expression is resolved by `useInlineExpression` and handed to `InlineValue`,
  * which stays pure and renders only the row's label.
  *
  * It's content, not chrome, so nothing here is `print-hidden` (the controls hide themselves).
  * See spec/016-report-of-reports/003-self-reports.
  */
-const InlineReportView: FC<{ node: InlineReportNode; path: LayoutPath }> = ({ node, path }) => {
+const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
   const { sections, setSections } = useReportLayout();
   const { editingNodeId, beginEditing, endEditing } = useDocumentEditing();
   const { hoverProps, rowProps } = useNodeRow(node, path);

@@ -20,22 +20,22 @@ interface Args {
   primary: IssueOrRelease[];
   all: IssueOrRelease[];
   planning: IssueOrRelease[];
-  secondaryReportType: string;
+  cardsMode: string;
 }
 
 const meta: Meta<Args> = {
   title: 'Reports/WorkBreakdown/WorkBreakdown',
-  render: ({ primary, all, planning, secondaryReportType }) => (
+  render: ({ primary, all, planning, cardsMode }) => (
     <WorkBreakdown
       primaryIssuesOrReleasesObs={obs(primary)}
       allIssuesOrReleasesObs={obs(all)}
       planningIssuesObs={obs(planning)}
-      secondaryReportTypeObs={obs(secondaryReportType)}
+      cardsModeObs={obs(cardsMode)}
     />
   ),
-  args: { primary: primaryIssues, all: allIssues, planning: [], secondaryReportType: 'breakdown' },
+  args: { primary: primaryIssues, all: allIssues, planning: [], cardsMode: 'breakdown' },
   argTypes: {
-    secondaryReportType: { control: 'inline-radio', options: ['status', 'breakdown'] },
+    cardsMode: { control: 'inline-radio', options: ['status', 'breakdown'] },
   },
 };
 export default meta;
@@ -43,21 +43,21 @@ export default meta;
 type Story = StoryObj<Args>;
 
 /** Status mode — a single rollup-status column + Target Delivery date per card. */
-export const StatusMode: Story = { args: { secondaryReportType: 'status' } };
+export const StatusMode: Story = { args: { cardsMode: 'status' } };
 
 /** Work-breakdown mode — the full work-type status matrix. */
-export const WorkBreakdownMode: Story = { args: { secondaryReportType: 'breakdown' } };
+export const WorkBreakdownMode: Story = { args: { cardsMode: 'breakdown' } };
 
 /** Slipped (red) and ahead/improved (teal) header dates across cards. */
-export const SlippedAndAheadDates: Story = { args: { secondaryReportType: 'breakdown' } };
+export const SlippedAndAheadDates: Story = { args: { cardsMode: 'breakdown' } };
 
 /** A large board that trips the `absurd` density tier (tight swatches + small text). */
 export const DenseBoard: Story = {
-  args: { primary: densePrimaryIssues, all: denseAllIssues, secondaryReportType: 'breakdown' },
+  args: { primary: densePrimaryIssues, all: denseAllIssues, cardsMode: 'breakdown' },
 };
 
 /** With a "Planning" fallback card of unscheduled issues. */
-export const WithPlanning: Story = { args: { planning: planningIssues, secondaryReportType: 'breakdown' } };
+export const WithPlanning: Story = { args: { planning: planningIssues, cardsMode: 'breakdown' } };
 
 /** Empty state — no issues found. */
 export const Empty: Story = { args: { primary: [], all: [], planning: [] } };

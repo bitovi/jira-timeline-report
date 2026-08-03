@@ -22,7 +22,7 @@ const renderReport = (
     primary: IssueOrRelease[];
     all: IssueOrRelease[];
     planning: IssueOrRelease[];
-    secondaryReportType: string;
+    cardsMode: string;
     filterRows: FilterRow[];
     onIssueClick: (event: React.MouseEvent, issue: IssueOrRelease) => void;
   }> = {},
@@ -31,7 +31,7 @@ const renderReport = (
     primary = primaryIssues,
     all = allIssues,
     planning = [],
-    secondaryReportType = 'breakdown',
+    cardsMode = 'breakdown',
     filterRows = [],
     onIssueClick,
   } = overrides;
@@ -40,7 +40,7 @@ const renderReport = (
       primaryIssuesOrReleasesObs={obs(primary)}
       allIssuesOrReleasesObs={obs(all)}
       planningIssuesObs={obs(planning)}
-      secondaryReportTypeObs={obs(secondaryReportType)}
+      cardsModeObs={obs(cardsMode)}
       filterRowsObs={obs(filterRows)}
       onIssueClick={onIssueClick}
     />,
@@ -49,7 +49,7 @@ const renderReport = (
 
 describe('WorkBreakdown', () => {
   test('breakdown mode renders a matrix card per primary issue', () => {
-    renderReport({ secondaryReportType: 'breakdown' });
+    renderReport({ cardsMode: 'breakdown' });
     expect(screen.getByText('100 Stores')).toBeTruthy();
     expect(screen.getByText('Outcome A')).toBeTruthy();
     // Work-type header letters are present in breakdown mode.
@@ -57,13 +57,13 @@ describe('WorkBreakdown', () => {
   });
 
   test('status mode renders a Target Delivery column per card and no matrix letters', () => {
-    renderReport({ secondaryReportType: 'status' });
+    renderReport({ cardsMode: 'status' });
     expect(screen.getAllByText('Target Delivery').length).toBe(primaryIssues.length);
     expect(screen.queryByText('Q')).toBeNull();
   });
 
   test('header bubbles use the card rollup status color', () => {
-    renderReport({ secondaryReportType: 'breakdown' });
+    renderReport({ cardsMode: 'breakdown' });
     expect(screen.getByText('100 Stores').className).toContain('color-text-and-bg-ontrack');
     expect(screen.getByText('Digital Channel sales - 5% increase').className).toContain('color-text-and-bg-behind');
   });

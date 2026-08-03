@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@sentry/react';
 
 import ScatterPlotViewSettings from './components/ScatterPlotViewSettings';
 import GanttViewSettings from './components/GanttViewSettings';
+import CardsViewSettings from './components/CardsViewSettings';
 import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
 import { queryClient } from '../../../services/query';
 import { StorageProvider } from '../../../services/storage';
@@ -32,6 +33,10 @@ const reports = [
     key: 'time-in-status',
     name: 'Time in Status',
   },
+  {
+    key: 'cards',
+    name: 'Cards',
+  },
 ] as const;
 
 type ReportTypes = (typeof reports)[number]['key'];
@@ -41,6 +46,7 @@ const viewSettingsMap: Record<ReportTypes, FC> = {
   due: ScatterPlotViewSettings,
   'flow-metrics': FlowMetricsViewSettings,
   'time-in-status': TimeInStatusViewSettings,
+  cards: CardsViewSettings,
 };
 
 const ViewSettings: FC = () => {
@@ -50,7 +56,8 @@ const ViewSettings: FC = () => {
     primaryReportType !== 'start-due' &&
     primaryReportType !== 'due' &&
     primaryReportType !== 'flow-metrics' &&
-    primaryReportType !== 'time-in-status'
+    primaryReportType !== 'time-in-status' &&
+    primaryReportType !== 'cards'
   ) {
     return null;
   }

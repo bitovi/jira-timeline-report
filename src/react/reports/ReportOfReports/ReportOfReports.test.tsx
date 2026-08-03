@@ -491,7 +491,7 @@ describe('<ReportOfReports>', () => {
 
     it('gives no caret to a row with nothing beneath it', async () => {
       renderReport({
-        savedSections: [{ type: 'inline-report', params: { expression: '(issue = ABC-1).summary' } }, stored('gone')],
+        savedSections: [{ type: 'inline-value', params: { expression: '(issue = ABC-1).summary' } }, stored('gone')],
       });
 
       expect(await screen.findByTestId('missing-report')).toBeInTheDocument();
@@ -842,7 +842,7 @@ describe('<ReportOfReports>', () => {
   // See spec/016-report-of-reports/003-self-reports.
   describe('inline values', () => {
     const storedValue = (expression: string): StoredNode =>
-      ({ type: 'inline-report', params: { expression } }) as StoredNode;
+      ({ type: 'inline-value', params: { expression } }) as StoredNode;
 
     const value = () => screen.findByTestId('inline-value');
 
@@ -948,6 +948,98 @@ describe('<ReportOfReports>', () => {
 
       expect(screen.queryByTestId('missing-report')).not.toBeInTheDocument();
       expect(cardNames()).toEqual(['Alpha', 'Beta']);
+    });
+  });
+
+  /**
+   * The node type the secondary-slot migration writes: a whole report configured in the document
+   * rather than referring out to a saved one. Nothing here can create one — the migration does, and
+   * a hand-edited `sections` param can. See spec/018-card-report/alt-plan.md.
+   */
+  describe('inline reports', () => {
+    const storedInlineReport = (query: string): StoredNode => ({ type: 'inline-report', params: { query } });
+
+    /** What the migration produces: one config, split into a chart and a card board over one JQL. */
+    const migrated = [
+      storedInlineReport('jql=project%3DA&primaryReportType=start-due&roundTo=month'),
+      storedInlineReport('jql=project%3DA&primaryReportType=due&roundTo=week'),
+    ];
+
+    it('renders each inline report from its own query', async () => {
+      renderReport({ savedSections: migrated });
+
+      expect((await screen.findAllByTestId('child-report')).map((node) => node.textContent)).toEqual(['month', 'week']);
+    });
+
+    // It has no saved report and so no name — the report type is the only thing there is to say, and
+    // it is what tells the migration's two children apart.
+    it('names each row after its report type', async () => {
+      renderReport({ savedSections: migrated });
+
+      await screen.findAllByTestId('child-report');
+
+      expect(cardNames()).toEqual(['Gantt Chart', 'Scatter Plot']);
+    });
+
+    it('falls back to the default report type’s name for a query that names none', async () => {
+      renderReport({ savedSections: [storedInlineReport('jql=project%3DA')] });
+
+      await screen.findAllByTestId('child-report');
+
+      expect(cardNames()).toEqual(['Gantt Chart']);
+    });
+
+    it('renders alongside saved-report children and sections', async () => {
+      renderReport({ savedSections: [stored('a'), nest('Q3', [migrated[1]])] });
+
+      await screen.findAllByTestId('child-report');
+
+      expect(cardNames()).toEqual(['Alpha', 'Scatter Plot']);
+      expect(await sectionTitle('Q3')).toBeInTheDocument();
+    });
+
+    it('moves and deletes like any other node', async () => {
+      renderReport({ savedSections: [stored('a'), ...migrated] });
+
+      await clickControl('Move Gantt Chart up');
+
+      expect(cardNames()).toEqual(['Gantt Chart', 'Alpha', 'Scatter Plot']);
+
+      await removeNode('Scatter Plot');
+
+      expect(cardNames()).toEqual(['Gantt Chart', 'Alpha']);
+    });
+
+    it('collapses its report and leaves its row', async () => {
+      renderReport({ savedSections: [migrated[0]] });
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Collapse Gantt Chart' }));
+
+      expect(screen.getByTestId('child-report').closest('[hidden]')).not.toBeNull();
+      expect(screen.getByRole('button', { name: 'Expand Gantt Chart' })).toBeInTheDocument();
+    });
+
+    /**
+     * The failure mode this guards is silent and total: the serializer's fall-through is the
+     * saved-report branch, so an inline report it had no case for would be written back as
+     * `{ type: 'saved-report', params: { reportId: undefined } }` — the report replaced by a broken
+     * reference the moment anything saved the document.
+     */
+    it('survives a save with its query intact', async () => {
+      // Written out through the URL param, which is exactly `toStoredSections` — the same value the
+      // save path writes to the record's `sections` field.
+      window.history.replaceState({}, '', `/?sections=${encodeURIComponent(JSON.stringify(migrated))}`);
+
+      renderReport({ unsaved: true });
+
+      await screen.findAllByTestId('child-report');
+      // Any structural edit is enough to make the provider write the whole tree out.
+      await clickControl('Move Scatter Plot up');
+
+      expect(JSON.parse(new URLSearchParams(window.location.search).get('sections') as string)).toEqual([
+        migrated[1],
+        migrated[0],
+      ]);
     });
   });
 

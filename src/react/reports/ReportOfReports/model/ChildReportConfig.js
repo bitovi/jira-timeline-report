@@ -196,6 +196,14 @@ export const CHILD_PARAMS = {
 
   groupBy: string(),
 
+  // Cards report
+  //
+  // `cardsMode` is a plain string rather than a clamped enum for the reason route-data's version is:
+  // the report itself resolves anything that isn't 'breakdown' to 'status', so a clamp here would be
+  // a second place to keep that rule.
+  cardsMode: string('status'),
+  cardsChildFilterRows: json([]),
+
   // Table report
 
   tableColumns: json([{ sourceId: 'identity:treeSummary' }]),
@@ -307,10 +315,6 @@ export function serializeChildParam(key, value) {
 export const SHELL_ONLY_PARAM_KEYS = [
   // Settings-sidebar chrome — a page-level concern, not a property of an embedded report.
   'showSettings',
-  // Children render no secondary report in v1 (spec/016 "Out of scope").
-  'secondaryReportType',
-  'secondaryFilterRows',
-  'secondaryChildFilterRows',
   // Which saved report the *page* has open. A child is identified by its node in the document tree;
   // it never reads `?report=`.
   'report',

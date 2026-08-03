@@ -27,7 +27,26 @@ const upperCaseBar: Migration = {
   migrate: (params) => params.set('bar', (params.get('bar') as string).toUpperCase()),
 };
 
+/**
+ * A synthetic stand-in for `secondary-report-to-inline-document`: the only kind of entry whose
+ * output is a whole document rather than a setting, which is what the `sections` lift below exists
+ * for. Kept fake for the same reason the two above are — these cases must survive that entry's
+ * deletion at end of life.
+ */
+const toDocument: Migration = {
+  id: 'to-document',
+  addedOn: '2026-03-01',
+  onDrop: 'lossy',
+  describe: 'turns a legacy config into a document',
+  applies: (params) => params.has('legacySlot'),
+  migrate: (params) => {
+    params.set('sections', JSON.stringify([{ type: 'inline-report', params: { query: 'jql=one' } }]));
+    params.delete('legacySlot');
+  },
+};
+
 const table = [renameFooToBar, upperCaseBar];
+const documentTable = [toDocument];
 
 describe('migrateQueryParams', () => {
   it('applies nothing and reports no change when the table has nothing to do', () => {
@@ -119,6 +138,56 @@ describe('migrateReport', () => {
     const empty = { id: 'doc', name: 'Document', queryParams: '' };
 
     expect(migrateReport(empty, table)).toEqual({ report: empty, changed: false, applied: [] });
+  });
+
+  // The record-level half of § Two destinations: a URL keeps its `sections` param (the provider
+  // reads it first), while a record's document has to land in the field the provider reads.
+  describe('the sections lift', () => {
+    const legacy = { id: 'r3', name: 'Legacy', queryParams: 'legacySlot=status&jql=project%3DORDER' };
+
+    it('moves a produced document onto the record and out of queryParams', () => {
+      const { report } = migrateReport(legacy, documentTable);
+
+      expect(report.sections).toEqual([{ type: 'inline-report', params: { query: 'jql=one' } }]);
+      expect(new URLSearchParams(report.queryParams).has('sections')).toBe(false);
+      expect(new URLSearchParams(report.queryParams).get('jql')).toBe('project=ORDER');
+    });
+
+    it('never clobbers a document the record already has', () => {
+      const existing = [{ type: 'saved-report' as const, params: { reportId: 'x' } }];
+
+      const { report } = migrateReport({ ...legacy, sections: existing }, documentTable);
+
+      expect(report.sections).toBe(existing);
+      // Left in `queryParams` rather than dropped — losing it would be worse than leaving it.
+      expect(new URLSearchParams(report.queryParams).has('sections')).toBe(true);
+    });
+
+    it('treats an empty sections array as no document, so a lift can still fill it', () => {
+      const { report } = migrateReport({ ...legacy, sections: [] }, documentTable);
+
+      expect(report.sections).toEqual([{ type: 'inline-report', params: { query: 'jql=one' } }]);
+    });
+
+    it('leaves an unparseable sections param alone rather than throwing', () => {
+      const mangled: Migration = {
+        ...toDocument,
+        migrate: (params) => {
+          params.set('sections', '{oops');
+          params.delete('legacySlot');
+        },
+      };
+
+      const { report } = migrateReport(legacy, [mangled]);
+
+      expect(report.sections).toBeUndefined();
+      expect(new URLSearchParams(report.queryParams).get('sections')).toBe('{oops');
+    });
+
+    // The URL consumer has no lift: `migrateQueryParams` is what `migrateUrlParams` writes back.
+    it('is a record-level step only — the params keep their sections key', () => {
+      expect(migrateQueryParams(legacy.queryParams, documentTable).params.has('sections')).toBe(true);
+    });
   });
 });
 

@@ -66,6 +66,13 @@ export const reports: Report[] = [
     onByDefault: false,
   },
   {
+    key: 'cards',
+    name: 'Cards',
+    featureSubtitle: 'Status and work-breakdown cards, one per issue',
+    featureFlag: 'cardsReport',
+    onByDefault: false,
+  },
+  {
     key: 'report-of-reports',
     name: 'Report of Reports',
     featureSubtitle: 'Compose saved reports into one document',

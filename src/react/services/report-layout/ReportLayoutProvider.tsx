@@ -3,7 +3,12 @@ import type { LayoutNode, StoredNode } from '../../reports/ReportOfReports/model
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { parseSections, sameSections, setNodeOverride } from '../../reports/ReportOfReports/model/sections';
+import {
+  parseSections,
+  sameSections,
+  setInlineReportParam,
+  setNodeOverride,
+} from '../../reports/ReportOfReports/model/sections';
 import {
   SECTIONS_PARAM,
   decodeSections,
@@ -25,6 +30,12 @@ export interface ReportLayoutContextValue {
    * the reason a document doesn't reconcile every embedded chart on every hover).
    */
   setNodeOverrideOn: (nodeId: string, key: string, value: string | undefined) => void;
+  /**
+   * The same thing for an inline report, which has no saved report to diff against and so records the
+   * change straight into its own query. Separate rather than one dispatching setter because the two
+   * mean genuinely different things — see `setInlineReportParam`. Stable for the same reason.
+   */
+  setInlineReportParamOn: (nodeId: string, key: string, value: string | undefined) => void;
   /** Discards edits and restores the tree as last saved. Backs "Reset changes". */
   resetSections: () => void;
 }
@@ -134,6 +145,18 @@ export const ReportLayoutProvider: FC<ReportLayoutProviderProps> = ({ children, 
     [setSections],
   );
 
+  /** Same shape and the same "unchanged tree, no write" rule, into an inline report's own query. */
+  const setInlineReportParamOn = useCallback(
+    (nodeId: string, key: string, value: string | undefined) => {
+      const next = setInlineReportParam(sectionsRef.current, nodeId, key, value);
+
+      if (next !== sectionsRef.current) {
+        setSections(next);
+      }
+    },
+    [setSections],
+  );
+
   /**
    * Restores the tree as last saved, and (because the restored tree matches the baseline) clears
    * the param with it.
@@ -190,8 +213,8 @@ export const ReportLayoutProvider: FC<ReportLayoutProviderProps> = ({ children, 
   }, [savedKey, adopt]);
 
   const value = useMemo(
-    () => ({ sections, setSections, setNodeOverrideOn, resetSections }),
-    [sections, setSections, setNodeOverrideOn, resetSections],
+    () => ({ sections, setSections, setNodeOverrideOn, setInlineReportParamOn, resetSections }),
+    [sections, setSections, setNodeOverrideOn, setInlineReportParamOn, resetSections],
   );
 
   return <ReportLayoutContext.Provider value={value}>{children}</ReportLayoutContext.Provider>;

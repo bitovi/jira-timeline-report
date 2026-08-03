@@ -11,14 +11,12 @@ import type { FilterFieldDefinition } from './components/FilterRowsBuilder';
 import IssueTypeFilters from './components/IssueTypeFilters';
 import DateRangeFilter from './components/DateRangeFilter';
 import { useFilterRows } from './hooks/useFilterRows';
-import { useSecondaryFilterRows } from './hooks/useSecondaryFilterRows';
-import { useSecondaryChildFilterRows } from './hooks/useSecondaryChildFilterRows';
+import { useCardsChildFilterRows } from './hooks/useCardsChildFilterRows';
 import { useSelectableRollupStatuses } from './hooks/useSelectableRollupStatuses';
 import type { MinimalRollupIssue } from './hooks/useSelectableRollupStatuses';
 import { useSelectableChildStatuses } from './hooks/useSelectableChildStatuses';
 import type { MinimalChildStatusIssue } from './hooks/useSelectableChildStatuses';
 import { useSelectableStatuses } from '../../../services/issues';
-import { useFeatures } from '../../../services/features';
 import { queryClient } from '../../../services/query';
 import { StorageProvider } from '../../../services/storage';
 import { useSelectedReleases } from './hooks/useSelectedReleases';
@@ -26,33 +24,28 @@ import { useShowOnlySemverReleases } from './hooks/useOnlySemverReleases';
 import { useUnknownInitiatives } from './hooks/useUnknownInitiatives';
 import { useSelectedIssueType } from '../../../services/issues/useSelectedIssueType';
 import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
-import { useRouteData } from '../../../hooks/useRouteData/useRouteData';
 import type { CanObservable } from '../../../hooks/useCanObservable/useCanObservable';
 import routeData from '../../../../canjs/routing/route-data';
 
 export interface FiltersProps {
   /** All rolled-up issues/releases — used to compute Rollup Status filter option counts. */
   rolledupAndRolledBackIssuesAndReleasesObs?: CanObservable<MinimalRollupIssue[]>;
-  /** The primary cards — used to derive the Work Breakdown child issue type/status options. */
+  /** The primary cards — used to derive the Cards report's child issue type/status options. */
   primaryIssuesOrReleasesObs?: CanObservable<MinimalChildStatusIssue[]>;
 }
 
 /**
- * `useFeatures()` (used to gate the secondary filter section) needs `QueryClientProvider`/
+ * The hooks below (`useSelectableStatuses` and friends) need `QueryClientProvider`/
  * `StorageProvider`/`Suspense` ancestors that `ReportControls`'s standalone React root doesn't
- * otherwise provide — mirrors `ViewSettings.tsx`, the other `ReportControls` child that reads
- * feature flags.
+ * otherwise provide — mirrors `ViewSettings.tsx`, the other `ReportControls` child in the same
+ * position.
  */
 const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleasesObs, primaryIssuesOrReleasesObs }) => {
   const { selectedIssueType, isRelease } = useSelectedIssueType();
   const [primaryReportType] = usePrimaryReportType();
-  const [secondaryReportType] = useRouteData<string>('secondaryReportType');
-  const { secondaryReport } = useFeatures();
 
   const { filterRows, setFilterRows } = useFilterRows();
-  const { filterRows: secondaryFilterRows, setFilterRows: setSecondaryFilterRows } = useSecondaryFilterRows();
-  const { filterRows: secondaryChildFilterRows, setFilterRows: setSecondaryChildFilterRows } =
-    useSecondaryChildFilterRows();
+  const { filterRows: cardsChildFilterRows, setFilterRows: setCardsChildFilterRows } = useCardsChildFilterRows();
   const jiraStatusOptions = useSelectableStatuses();
   const rollupStatusOptions = useSelectableRollupStatuses(rolledupAndRolledBackIssuesAndReleasesObs);
   const { childType, statusOptions: childStatusOptions } = useSelectableChildStatuses(
@@ -81,8 +74,9 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
   // reports — see spec/004-scatter-improvements/date-range.md §6.
   const supportsDateRangeFilter = primaryReportType === 'due' || primaryReportType === 'start-due';
 
-  const showSecondaryFilters =
-    Boolean(secondaryReport) && Boolean(secondaryReportType) && secondaryReportType !== 'none';
+  // Only the Cards report renders child rows inside each card, so it is the only report the second
+  // filter list means anything for. See spec/018-card-report/alt-plan.md.
+  const showCardsChildFilters = primaryReportType === 'cards';
 
   return (
     // Don't touch this id, its a hack to change the overflow of the dropdown menu
@@ -99,24 +93,13 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
             {...showOnlySemverReleasesControls}
             {...releasesControls}
           />
-          {showSecondaryFilters && (
+          {showCardsChildFilters && (
             <>
               <Hr className="my-6" />
-              <p className="uppercase text-sm font-semibold text-zinc-800 pb-6">
-                Secondary Report {selectedIssueType} Status Filtering
-              </p>
+              <p className="uppercase text-sm font-semibold text-zinc-800 pb-6">Card {childType} Status Filtering</p>
               <FilterRowsBuilder
-                rows={secondaryFilterRows}
-                onChange={setSecondaryFilterRows}
-                fieldDefinitions={fieldDefinitions}
-              />
-              <Hr className="my-6" />
-              <p className="uppercase text-sm font-semibold text-zinc-800 pb-6">
-                Secondary Report {childType} Status Filtering
-              </p>
-              <FilterRowsBuilder
-                rows={secondaryChildFilterRows}
-                onChange={setSecondaryChildFilterRows}
+                rows={cardsChildFilterRows}
+                onChange={setCardsChildFilterRows}
                 fieldDefinitions={childFieldDefinitions}
               />
             </>

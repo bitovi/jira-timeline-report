@@ -902,7 +902,11 @@ export class RouteData extends ObservableObject {
       type: Boolean,
       defaultValue: false,
     },
-    secondaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryReportType', 'none', String, {
+    // Which view the Cards report shows: 'status' (one status column) or 'breakdown' (the work-type
+    // matrix). Replaces the legacy `secondaryReportType`, which selected the same two views from the
+    // now-deleted secondary slot. Unrecognized values are clamped by the report itself, exactly as
+    // `secondaryReportType` was. See spec/018-card-report/alt-plan.md.
+    cardsMode: saveJSONToUrlButAlsoLookAtReport_DataWrapper('cardsMode', 'status', String, {
       parse: (x) => '' + x,
       stringify: (x) => '' + x,
     }),
@@ -931,13 +935,12 @@ export class RouteData extends ObservableObject {
     // Raw, persisted state — empty until the user adds a row. See `effectiveFilterRows` below for
     // the legacy `statusesToShow`/`statusesToRemove` migration read by the actual filtering logic.
     filterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('filterRows', [], Array, JSON),
-    // Independent filter-row state for the secondary (Work Breakdown) report's own Filters
-    // control. No legacy migration needed — this param is new.
-    secondaryFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryFilterRows', [], Array, JSON),
-    // A second, independent filter-row state scoped to the Work Breakdown's CHILD issue type.
-    // Decides which children (if any) render within an already-shown card — doesn't affect
-    // whether the card itself shows (that's `secondaryFilterRows`, above).
-    secondaryChildFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryChildFilterRows', [], Array, JSON),
+    // Filter-row state scoped to the Cards report's CHILD issue type. Decides which children (if
+    // any) render within an already-shown card — it doesn't affect whether the card itself shows.
+    // That is `filterRows`, which narrows the primaries every report on the page is built from;
+    // Cards has no second list of its own now that it is a primary report.
+    // Replaces the legacy `secondaryChildFilterRows` (spec/018-card-report/alt-plan.md).
+    cardsChildFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('cardsChildFilterRows', [], Array, JSON),
     // If `filterRows` is empty/unset, seed an equivalent `Jira Status` row from the legacy
     // `statusesToShow`/`statusesToRemove` params so old bookmarks/saved reports keep filtering.
     get effectiveFilterRows() {

@@ -51,6 +51,7 @@ import {
   cycleGroupSort,
   effectiveAggregationId,
   formatMeasureValue,
+  getMeasureRenderer,
   groupIssues,
   selectMeasureColumns,
   sortGroups,
@@ -479,7 +480,7 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
 
   const cell = (rowKey: string, colKey: string, measure: ColumnDefinition) => {
     const aggId = effectiveAggregationId(measure, overrides[measure.id]);
-    const customRender = measure.renderMeasure?.[aggId];
+    const customRender = getMeasureRenderer(measure, aggId);
     if (customRender) {
       const members = cellMembers(crossTab, rowKey, colKey);
       return members.length === 0 ? EMPTY_CELL : customRender({ members });
@@ -1240,7 +1241,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
                               }
                               if (measureColumnIds.has(column.id)) {
                                 const aggId = effectiveAggregationId(column, aggregationOverrides[column.id]);
-                                const customRender = column.renderMeasure?.[aggId];
+                                const customRender = getMeasureRenderer(column, aggId);
                                 // Custom renders (e.g. the identity distinct-list, which stacks entries in a
                                 // flex column) manage their own layout, so the long-list wrap style below only
                                 // applies to the plain comma-joined `formatMeasureValue` string.

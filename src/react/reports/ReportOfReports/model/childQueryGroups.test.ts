@@ -4,7 +4,7 @@ import type { LayoutNode } from './sections';
 import { describe, expect, it } from 'vitest';
 
 import { childQueryGroups, overrideFor } from './childQueryGroups';
-import { inlineReportNode, savedReportNode, sectionNode } from './sections';
+import { inlineReportNode, inlineValueNode, savedReportNode, sectionNode } from './sections';
 import { queryKeyOf } from '../../../../stateful-data/raw-issues-cache-key';
 
 const ORDER_JQL = 'project = ORDER';
@@ -83,7 +83,7 @@ describe('childQueryGroups', () => {
     });
 
     it('ignores inline values', () => {
-      expect(childQueryGroups([savedReportNode('gantt'), inlineReportNode('count')], reports).size).toBe(0);
+      expect(childQueryGroups([savedReportNode('gantt'), inlineValueNode('count')], reports).size).toBe(0);
     });
 
     it('ignores unknown nodes written by a newer client', () => {
@@ -98,6 +98,44 @@ describe('childQueryGroups', () => {
      */
     it('skips a reportId no saved report answers to', () => {
       expect(childQueryGroups(doc('gantt', 'deleted'), reports).size).toBe(0);
+    });
+  });
+
+  /**
+   * An inline report renders a `ChildReport` exactly as a saved-report node does, so it issues exactly
+   * the same request and has to be grouped with everything else asking the same question. This is the
+   * shape the secondary-slot migration produces — two inline reports over one JQL
+   * (spec/018-card-report/alt-plan.md).
+   */
+  describe('inline reports', () => {
+    const cards = params({ jql: ORDER_JQL, primaryReportType: 'cards', cardsMode: 'status' });
+    const chart = params({ jql: ORDER_JQL, primaryReportType: 'start-due' });
+
+    it('groups two inline reports over one JQL', () => {
+      const nodes = [inlineReportNode(chart), inlineReportNode(cards)];
+
+      expect(childQueryGroups(nodes, reports).get(queryKeyOf({ jql: ORDER_JQL }))).toEqual([]);
+      expect(groupFor(nodes, cards)).toEqual([]);
+    });
+
+    it('groups an inline report with a saved-report child asking the same question', () => {
+      const nodes = [savedReportNode('table'), inlineReportNode(cards)];
+
+      // The Table's column field is loaded by both, so their requests stay byte-identical.
+      expect(groupFor(nodes, cards)).toEqual(['cf1']);
+      expect(groupFor(nodes, reports.table!.queryParams)).toEqual(['cf1']);
+    });
+
+    it('leaves an inline report asking a different question on its own', () => {
+      const nodes = [savedReportNode('billing'), inlineReportNode(cards)];
+
+      expect(childQueryGroups(nodes, reports).size).toBe(0);
+    });
+
+    it('finds an inline report nested in a section', () => {
+      const nodes = [savedReportNode('table'), sectionNode('Q3', [inlineReportNode(cards)])];
+
+      expect(groupFor(nodes, cards)).toEqual(['cf1']);
     });
   });
 

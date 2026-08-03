@@ -9,14 +9,13 @@ import GroupBy from '../../shared/components/GroupBy';
 import SortBy from '../../shared/components/SortBy';
 import Hr from '../../../../../components/Hr';
 import RoundDatesTo from '../../shared/components/RoundDatesTo';
-import SecondaryReportType from '../../shared/components/SecondaryReportType';
 import StatusesShownAsPlanning from '../../shared/components/StatusesShownAsPlanning';
 import { useSelectedIssueType } from '../../../../../services/issues';
 import { useFeatures } from '../../../../../services/features';
 
 const GanttViewSettings: FC = () => {
   const { isRelease } = useSelectedIssueType();
-  const { workBreakdowns, secondaryReport } = useFeatures();
+  const { workBreakdowns } = useFeatures();
 
   const canGroup = !isRelease;
 
@@ -39,16 +38,11 @@ const GanttViewSettings: FC = () => {
         <ShowCompletionPercentage />
         {workBreakdowns && <ShowWorkBreakdown />}
       </SettingsSection>
-      {secondaryReport && (
-        <>
-          <SettingsSection title="secondary report type" centered>
-            <SecondaryReportType />
-          </SettingsSection>
-          <SettingsSection title="statuses shown as planning" centered>
-            <StatusesShownAsPlanning />
-          </SettingsSection>
-        </>
-      )}
+      {/* Kept after the secondary slot was deleted: `planningStatuses` feeds the view model's
+          planning filter for every report, not just the Cards report it also drives. */}
+      <SettingsSection title="statuses shown as planning" centered>
+        <StatusesShownAsPlanning />
+      </SettingsSection>
     </div>
   );
 };

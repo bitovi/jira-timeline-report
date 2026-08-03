@@ -17,7 +17,6 @@ import { useRouteData } from '../hooks/useRouteData';
 import { TimelineReportViewModel } from './timeline-report-view-model';
 import { useReportLoadingState as defaultUseReportLoadingState } from './hooks/useReportLoadingState';
 import { ReportArea } from './components/ReportArea';
-import { showSecondaryReport } from './showSecondaryReport';
 import { unsupportedReportType } from './unsupportedReportType';
 
 import { JiraProvider } from '../services/jira';
@@ -31,9 +30,8 @@ import ViewReports from '../ViewReports';
 import ReportFooter from '../ReportFooter/ReportFooter';
 import PrintHeader from '../PrintHeader';
 
-import { WorkBreakdown } from '../reports/registry';
 import { reportComponents } from '../reports/shellRegistry';
-import { propsFor, secondaryPropsFor } from '../reports/reportProps';
+import { propsFor } from '../reports/reportProps';
 import { ReportLayoutProvider } from '../services/report-layout';
 
 // Reports that own their own data instead of consuming the shell's single JQL-driven request.
@@ -88,7 +86,6 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const isLoggedIn = useCanObservable(routeData.isLoggedInObservable as unknown as CanObservable<boolean>);
   const [jql] = useRouteData<string>('jql');
   const [primaryReportType] = useRouteData<string>('primaryReportType');
-  const [secondaryReportType] = useRouteData<string>('secondaryReportType');
   const [primaryIssueType] = useRouteData<string>('primaryIssueType');
   // The open saved report's record, which seeds the report-of-reports document tree. `reportsData`
   // is populated before React mounts whenever `?report=` is present (shared/main-helper.js), and is
@@ -126,8 +123,6 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   // `routeData`; embedded children build the same bag from their own config (spec/016 Phase 2).
   const baseProps = useMemo(() => propsFor(vm, routeData), [vm]);
 
-  const secondaryProps = useMemo(() => secondaryPropsFor(vm, routeData), [vm]);
-
   const onUpdateTeamsConfiguration = ({ fields, ...configuration }: any) => {
     queues.batch.start();
     rd.fieldsToRequest = fields;
@@ -154,12 +149,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const deadReportType = useCanObservable(unsupportedReportTypeObs);
 
   const PrimaryReport = primaryReportType ? reportComponents[primaryReportType] : undefined;
-  // Only the Gantt ('start-due') and Scatter Plot ('due') primaries support a secondary report, so a
-  // stale `secondaryReportType` left in the URL must not render the Work Breakdown below an unrelated
-  // primary (e.g. estimate-analysis). See showSecondaryReport.ts.
-  const showSecondary = showSecondaryReport(primaryReportType, secondaryReportType);
 
-  const WorkBreakdownAny = WorkBreakdown as ComponentType<any>;
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
@@ -242,12 +232,6 @@ export const TimelineReport: FC<TimelineReportProps> = ({
                   <PrimaryReport key={primaryReportType} {...baseProps} />
                 </JiraProvider>
               </QueryClientProvider>
-            </div>
-          )}
-
-          {showSecondary && (
-            <div id="react-secondary-report-container">
-              <WorkBreakdownAny {...secondaryProps} />
             </div>
           )}
 

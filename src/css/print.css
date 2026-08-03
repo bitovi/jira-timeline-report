@@ -90,11 +90,14 @@
     transform-origin: top left;
   }
 
-  /* The secondary "breakdown"/"status" report (WorkBreakdownCard/PlanningCard) renders as a
-     flex-wrap grid of cards below the primary chart — without this, a page break can land in
-     the middle of a card (e.g. header on one page, its child rows on the next). Each card
-     opts in via the `.print-avoid-break` class so it always moves to the next page as a whole
-     instead of being split. */
+  /* The Cards report (WorkBreakdownCard/PlanningCard) renders as a flex-wrap grid of cards —
+     without this, a page break can land in the middle of one (e.g. header on one page, its child
+     rows on the next). Each card opts in via the `.print-avoid-break` class so it always moves to
+     the next page as a whole instead of being split. A report-of-reports child does the same, so a
+     break lands between children rather than through one.
+
+     The grid wraps rather than overflowing, so `scrollWidth` above stays at the container width and
+     a card board prints unscaled — the scale only bites if a single card is wider than the page. */
   .print-avoid-break {
     break-inside: avoid;
     page-break-inside: avoid;

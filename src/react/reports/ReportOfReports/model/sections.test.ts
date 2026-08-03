@@ -7,9 +7,11 @@ import {
   savedReportNode,
   sectionNode,
   appendNode,
+  inlineValueNode,
   inlineReportNode,
   setSectionTitleAt,
   setExpressionAt,
+  setInlineReportParam,
   setNodeOverride,
   removeNodeAt,
   moveNodeAt,
@@ -28,7 +30,9 @@ const storedSection = (title: string, children: StoredNode[] = []): StoredNode =
   children,
 });
 
-const storedInlineReport = (expression: string): StoredNode => ({ type: 'inline-report', params: { expression } });
+const storedInlineValue = (expression: string): StoredNode => ({ type: 'inline-value', params: { expression } });
+
+const storedInlineReport = (query: string): StoredNode => ({ type: 'inline-report', params: { query } });
 
 const reportIdOf = (node: StoredNode): string | undefined =>
   node.type === 'saved-report' ? node.params.reportId : undefined;
@@ -70,16 +74,29 @@ describe('parseSections', () => {
   });
 
   it('parses an inline-report node', () => {
-    const [node] = parseSections([storedInlineReport('(issue = IMP-1).summary')]);
+    const [node] = parseSections([storedInlineReport('jql=project%3DORDER&primaryReportType=cards')]);
 
     expect(node.type).toBe('inline-report');
-    expect(node.type === 'inline-report' && node.params.expression).toBe('(issue = IMP-1).summary');
+    expect(node.type === 'inline-report' && node.params.query).toBe('jql=project%3DORDER&primaryReportType=cards');
   });
 
-  it('tolerates an inline-report node with no expression', () => {
+  it('tolerates an inline-report node with no query', () => {
     const [node] = parseSections([{ type: 'inline-report' }]);
 
-    expect(node.type === 'inline-report' && node.params.expression).toBe('');
+    expect(node.type === 'inline-report' && node.params.query).toBe('');
+  });
+
+  it('parses an inline-value node', () => {
+    const [node] = parseSections([storedInlineValue('(issue = IMP-1).summary')]);
+
+    expect(node.type).toBe('inline-value');
+    expect(node.type === 'inline-value' && node.params.expression).toBe('(issue = IMP-1).summary');
+  });
+
+  it('tolerates an inline-value node with no expression', () => {
+    const [node] = parseSections([{ type: 'inline-value' }]);
+
+    expect(node.type === 'inline-value' && node.params.expression).toBe('');
   });
 
   // A document written by a newer client degrades to placeholders instead of blanking the page.
@@ -159,7 +176,8 @@ describe('toStoredSections', () => {
     const stored = [
       storedSection('Q3', [
         storedSavedReport('a'),
-        storedInlineReport('(issue = IMP-1).summary'),
+        storedInlineValue('(issue = IMP-1).summary'),
+        storedInlineReport('jql=project%3DORDER&primaryReportType=cards&cardsMode=breakdown'),
         { type: 'text', params: { content: 'hi' } } as unknown as StoredNode,
         storedSection('July', [storedSavedReport('b')]),
       ]),
@@ -167,6 +185,27 @@ describe('toStoredSections', () => {
     ];
 
     expect(toStoredSections(parseSections(stored))).toEqual(stored);
+  });
+
+  /**
+   * The serializer's fall-through is the saved-report branch, so a node type it has no explicit
+   * case for comes back as `{ type: 'saved-report', params: { reportId: undefined } }` — the whole
+   * document destroyed on the first save. `WithRaw` is no defence: it preserves unrecognized *keys
+   * on a recognized type*, and the nodes the secondary-slot migration writes have no `raw` at all.
+   */
+  it('writes back an inline report this client just created, not a broken saved-report reference', () => {
+    const created = [inlineReportNode('jql=project%3DORDER&primaryReportType=cards')];
+
+    expect(toStoredSections(created)).toEqual([storedInlineReport('jql=project%3DORDER&primaryReportType=cards')]);
+  });
+
+  it('writes back an inline report that was edited after being parsed', () => {
+    const parsed = parseSections([storedInlineReport('jql=one&primaryReportType=cards')]);
+    const edited = setInlineReportParam(parsed, parsed[0].id, 'cardsMode', 'breakdown');
+
+    expect(toStoredSections(edited)).toEqual([
+      storedInlineReport('jql=one&primaryReportType=cards&cardsMode=breakdown'),
+    ]);
   });
 
   it('writes an unreadable node back as it was found', () => {
@@ -185,10 +224,11 @@ describe('toStoredSections', () => {
     expect(toStoredSections(parseSections(stored))).toEqual(stored);
   });
 
-  it('preserves params it does not recognize on a saved report and an inline value', () => {
+  it('preserves params it does not recognize on a saved report, an inline value and an inline report', () => {
     const stored = [
       { type: 'saved-report', params: { reportId: 'a', collapsed: true } },
-      { type: 'inline-report', params: { expression: '(issue = A-1).summary', format: 'bold' } },
+      { type: 'inline-value', params: { expression: '(issue = A-1).summary', format: 'bold' } },
+      { type: 'inline-report', params: { query: 'jql=one', title: 'Board' } },
     ] as unknown as StoredNode[];
 
     expect(toStoredSections(parseSections(stored))).toEqual(stored);
@@ -337,26 +377,26 @@ describe('setSectionTitleAt', () => {
 describe('setExpressionAt', () => {
   it('rewrites an expression at the root and at depth', () => {
     const tree = parseSections([
-      storedInlineReport('(issue = A-1).summary'),
-      storedSection('Q3', [storedInlineReport('(issue = B-1).summary')]),
+      storedInlineValue('(issue = A-1).summary'),
+      storedSection('Q3', [storedInlineValue('(issue = B-1).summary')]),
     ]);
 
     expect(toStoredSections(setExpressionAt(tree, [0], '(issue = A-2).duedate'))[0]).toEqual(
-      storedInlineReport('(issue = A-2).duedate'),
+      storedInlineValue('(issue = A-2).duedate'),
     );
     expect(toStoredSections(setExpressionAt(tree, [1, 0], '(issue = B-2).summary'))[1]).toEqual(
-      storedSection('Q3', [storedInlineReport('(issue = B-2).summary')]),
+      storedSection('Q3', [storedInlineValue('(issue = B-2).summary')]),
     );
   });
 
   it('keeps the node id, so editing an expression does not remount the node', () => {
-    const node = inlineReportNode('(issue = A-1).summary');
+    const node = inlineValueNode('(issue = A-1).summary');
 
     expect(setExpressionAt([node], [0], '(issue = A-2).summary')[0].id).toBe(node.id);
   });
 
   it('leaves the tree unchanged for a path that misses, a node of another type, or no change', () => {
-    const tree = parseSections([storedInlineReport('(issue = A-1).summary'), storedSavedReport('a')]);
+    const tree = parseSections([storedInlineValue('(issue = A-1).summary'), storedSavedReport('a')]);
 
     expect(setExpressionAt(tree, [9], 'x')).toBe(tree);
     expect(setExpressionAt(tree, [], 'x')).toBe(tree);
@@ -627,6 +667,101 @@ describe('setNodeOverride', () => {
   it('survives a store/parse round trip', () => {
     const { child, tree } = withReport();
     const next = setNodeOverride(tree, child.id, 'tableSortDir', 'desc');
+    const stored = toStoredSections(next);
+
+    expect(sameSections(parseSections(stored), next)).toBe(true);
+    expect(toStoredSections(parseSections(stored))).toEqual(stored);
+  });
+});
+
+describe('setInlineReportParam', () => {
+  const withInlineReport = () => {
+    const child = inlineReportNode('jql=project%3DORDER&primaryReportType=cards');
+
+    return { child, tree: [sectionNode('Q3', [child]), savedReportNode('b')] as LayoutNode[] };
+  };
+
+  it('writes the key into the nested child’s own query, leaving its siblings alone', () => {
+    const { child, tree } = withInlineReport();
+
+    const next = setInlineReportParam(tree, child.id, 'cardsMode', 'breakdown');
+
+    expect(toStoredSections(next)).toEqual([
+      {
+        type: 'section',
+        params: { title: 'Q3' },
+        children: [
+          {
+            type: 'inline-report',
+            params: { query: 'jql=project%3DORDER&primaryReportType=cards&cardsMode=breakdown' },
+          },
+        ],
+      },
+      { type: 'saved-report', params: { reportId: 'b' } },
+    ]);
+  });
+
+  it('keeps the node id, so recording a change never remounts the child', () => {
+    const { child, tree } = withInlineReport();
+
+    const next = setInlineReportParam(tree, child.id, 'cardsMode', 'breakdown');
+
+    expect(((next[0] as SectionNode).children[0] as LayoutNode).id).toBe(child.id);
+  });
+
+  it('updates a key already in the query in place', () => {
+    const { child, tree } = withInlineReport();
+
+    let next = setInlineReportParam(tree, child.id, 'cardsMode', 'breakdown');
+    next = setInlineReportParam(next, child.id, 'cardsMode', 'status');
+
+    expect(((next[0] as SectionNode).children[0] as any).params.query).toBe(
+      'jql=project%3DORDER&primaryReportType=cards&cardsMode=status',
+    );
+  });
+
+  it('removes the key on `undefined`', () => {
+    const { child, tree } = withInlineReport();
+
+    const one = setInlineReportParam(tree, child.id, 'cardsMode', 'breakdown');
+    const none = setInlineReportParam(one, child.id, 'cardsMode', undefined);
+
+    expect(((none[0] as SectionNode).children[0] as any).params.query).toBe(
+      'jql=project%3DORDER&primaryReportType=cards',
+    );
+  });
+
+  it('returns the same reference for an unknown id', () => {
+    const { tree } = withInlineReport();
+
+    expect(setInlineReportParam(tree, 'nope', 'cardsMode', 'breakdown')).toBe(tree);
+  });
+
+  // An inline report is its own baseline, so it never grows an `overrides` key — and a saved report
+  // never has its query rewritten. The two setters must stay disjoint.
+  it('returns the same reference for a node that is not an inline report', () => {
+    const { tree } = withInlineReport();
+
+    expect(setInlineReportParam(tree, tree[1].id, 'cardsMode', 'breakdown')).toBe(tree);
+    expect(setInlineReportParam(tree, tree[0].id, 'cardsMode', 'breakdown')).toBe(tree);
+  });
+
+  it('leaves an inline report alone when routed through setNodeOverride', () => {
+    const { child, tree } = withInlineReport();
+
+    expect(setNodeOverride(tree, child.id, 'cardsMode', 'breakdown')).toBe(tree);
+  });
+
+  it('returns the same reference when the value is already what it would be set to', () => {
+    const { child, tree } = withInlineReport();
+
+    expect(setInlineReportParam(tree, child.id, 'primaryReportType', 'cards')).toBe(tree);
+    expect(setInlineReportParam(tree, child.id, 'cardsMode', undefined)).toBe(tree);
+  });
+
+  it('survives a store/parse round trip', () => {
+    const { child, tree } = withInlineReport();
+    const next = setInlineReportParam(tree, child.id, 'cardsMode', 'breakdown');
     const stored = toStoredSections(next);
 
     expect(sameSections(parseSections(stored), next)).toBe(true);

@@ -29,12 +29,27 @@ export interface ChildReportProps {
   /**
    * The saved report being embedded. Its `queryParams`, plus {@link overrides}, is the child's
    * entire configuration.
+   *
+   * Absent for an *inline report* — one that lives in the document rather than referring out to a
+   * saved one — which supplies {@link inlineQuery} instead. Everything downstream is the same
+   * either way: `ChildReportConfig`, `TimelineReportViewModel`, `propsFor` and the report component
+   * itself cannot tell the difference, because all any of them sees is a query string.
    */
-  report: Report;
+  report?: Report;
+  /**
+   * An inline report's whole configuration, as a query string. Ignored when {@link report} is
+   * present. A string rather than a node so this component keeps its shallow `React.memo` compare:
+   * a pseudo-report object synthesized in the parent would be a fresh reference every render and
+   * defeat the memo the whole document's hover performance rests on.
+   */
+  inlineQuery?: string;
   /**
    * This child's node's configuration overrides — a query-string fragment of only the keys that
    * differ from the saved report's own. A string rather than an object so it can be compared and
    * memoized by value, and so the merged result is still a query string.
+   *
+   * Never set for an inline report: it is its own baseline, so there is nothing to diff against and
+   * its edits are written straight into {@link inlineQuery}.
    */
   overrides?: string;
   /**
@@ -69,31 +84,37 @@ export interface ChildReportProps {
  */
 const ChildReportView: FC<ChildReportProps> = ({
   report,
+  inlineQuery,
   overrides,
   onParamChange,
   parent = routeData,
   components = embeddableReportComponents,
   useLoadingState = useReportLoadingState,
 }) => {
-  // What this child is actually configured to do: what it was saved with, plus whatever has been
-  // changed inside it since. Everything downstream reads this rather than `report.queryParams`, or
-  // it would silently disagree with what the child renders.
-  const queryParams: string = useMemo(
-    () => mergeChildQuery(report.queryParams, overrides),
-    [report.queryParams, overrides],
-  );
+  // This child's baseline: the saved report's own string, or — for an inline report — the node's.
+  const savedQuery: string = report?.queryParams ?? inlineQuery ?? '';
+
+  // What this child is actually configured to do: its baseline, plus whatever has been changed
+  // inside it since. Everything downstream reads this rather than the baseline, or it would
+  // silently disagree with what the child renders.
+  const queryParams: string = useMemo(() => mergeChildQuery(savedQuery, overrides), [savedQuery, overrides]);
 
   // An override records only what *differs* from the saved report, so a value the report writes
   // back to what it was saved with clears the override instead of pinning it — the same rule
   // `updateUrlParam` follows for every other setting, and what keeps a sort toggled there and back
   // from leaving a permanently dirty document. The child owns this comparison because it is the
   // only thing here that knows its own saved `queryParams`.
+  //
+  // An inline report skips it entirely: with no saved report to compare against, every value it
+  // writes is a real change, and the document records it straight into the node's query.
   const handleParamChange = useMemo(
     () =>
       onParamChange &&
-      ((key: string, serialized: string | undefined) =>
-        onParamChange(key, childOverrideValue(report.queryParams, key, serialized))),
-    [report.queryParams, onParamChange],
+      (report
+        ? (key: string, serialized: string | undefined) =>
+            onParamChange(key, childOverrideValue(report.queryParams, key, serialized))
+        : onParamChange),
+    [report, onParamChange],
   );
 
   // When the document found other embedded reports asking Jira the same question, this is the union
@@ -115,7 +136,7 @@ const ChildReportView: FC<ChildReportProps> = ({
   const config: any = useMemo(
     () => new ConfigClass({ queryParams, parent, tableColumnFieldsOverride, onParamChange: handleParamChange }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [report.queryParams, parent, tableColumnFieldsOverride, handleParamChange],
+    [savedQuery, parent, tableColumnFieldsOverride, handleParamChange],
   );
 
   useEffect(() => {
@@ -143,8 +164,11 @@ const ChildReportView: FC<ChildReportProps> = ({
   // Gantt instead. Check the raw saved value for that, same as the shell does. Compared against the
   // report *catalog*, not the injected registry, so an incomplete registry still falls through to the
   // backstop below rather than being reported as a dead saved format.
+  //
+  // Fed the baseline query rather than the record, so an inline report written against a report type
+  // this build no longer has reports itself properly too.
   const deadReportType = unsupportedReportType({
-    savedReport: report,
+    savedReport: { queryParams: savedQuery },
     knownReportTypes: KNOWN_REPORT_TYPES,
   });
 
@@ -186,9 +210,9 @@ const ChildReportView: FC<ChildReportProps> = ({
  * thousands of nodes. Charts are the expensive part of a document, and they cannot change as a
  * result of a hover.
  *
- * A shallow compare is enough: `report` comes from the saved-reports query cache, `overrides` is a
- * string, `onParamChange` is stable for the layout provider's lifetime, and the three injectable
- * props are test seams that production never passes.
+ * A shallow compare is enough: `report` comes from the saved-reports query cache, `inlineQuery` and
+ * `overrides` are strings, `onParamChange` is stable for the layout provider's lifetime, and the
+ * three injectable props are test seams that production never passes.
  */
 export const ChildReport = React.memo(ChildReportView);
 

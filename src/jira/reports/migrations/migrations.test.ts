@@ -12,6 +12,7 @@ const APPLIES_TO: Record<string, string> = {
   'breakdown-primary-report-type': 'primaryReportType=breakdown&jql=project%3DORDER',
   'primary-issue-type-to-selected': 'primaryIssueType=Initiative&jql=project%3DORDER',
   'table2-to-table': 'primaryReportType=table2&jql=project%3DORDER',
+  'secondary-report-to-inline-document': 'primaryReportType=start-due&secondaryReportType=status&jql=project%3DORDER',
 };
 
 describe('the migration table', () => {
@@ -120,6 +121,140 @@ describe('table2-to-table', () => {
 
   it('leaves an already-renamed report alone', () => {
     expect(migrateQueryParams('primaryReportType=table').changed).toBe(false);
+  });
+});
+
+describe('secondary-report-to-inline-document', () => {
+  /** The two `inline-report` nodes a migrated config's `sections` describes, as query strings. */
+  const childQueries = (params: URLSearchParams): string[] =>
+    JSON.parse(params.get('sections') as string).map((node: { params: { query: string } }) => node.params.query);
+
+  const legacy = (extra = '') =>
+    `jql=project%3DORDER&primaryReportType=start-due&selectedIssueType=Initiative&secondaryReportType=breakdown${extra}`;
+
+  it('applies to the two slot values that rendered a card board, and nothing else', () => {
+    expect(migrateQueryParams(legacy()).applied).toContain('secondary-report-to-inline-document');
+    expect(migrateQueryParams('secondaryReportType=status').applied).toContain('secondary-report-to-inline-document');
+    expect(migrateQueryParams('secondaryReportType=none').changed).toBe(false);
+    expect(migrateQueryParams('secondaryReportType=').changed).toBe(false);
+    expect(migrateQueryParams('primaryReportType=start-due').changed).toBe(false);
+  });
+
+  // Only the Gantt and the Scatter Plot ever rendered a secondary. A stale key under any other
+  // primary describes a card board the user has never seen, and a saved report that is already a
+  // document would have its `sections` overwritten by one.
+  it('ignores a stale slot value under a primary that never showed a secondary', () => {
+    expect(migrateQueryParams('primaryReportType=table&secondaryReportType=status').changed).toBe(false);
+    expect(migrateQueryParams('primaryReportType=report-of-reports&secondaryReportType=status').changed).toBe(false);
+    // Absent means the default primary, which is the Gantt — so this one does convert.
+    expect(migrateQueryParams('secondaryReportType=status').changed).toBe(true);
+  });
+
+  // The postcondition the whole write layer rests on: `persistMigrations` overwrites the site-wide
+  // saved-reports blob, so an entry that still applies would rewrite shared storage on every load.
+  it('stops applying once it has run', () => {
+    const once = migrateQueryParams(legacy());
+
+    expect(migrateQueryParams(once.params).applied).toEqual([]);
+  });
+
+  it('leaves the caller’s params untouched', () => {
+    const input = new URLSearchParams(legacy());
+
+    migrateQueryParams(input);
+
+    expect(input.toString()).toBe(new URLSearchParams(legacy()).toString());
+  });
+
+  it('turns the config into a document of two inline reports', () => {
+    const params = migrated(legacy());
+
+    expect(params.get('primaryReportType')).toBe('report-of-reports');
+    expect(JSON.parse(params.get('sections') as string).map((node: { type: string }) => node.type)).toEqual([
+      'inline-report',
+      'inline-report',
+    ]);
+  });
+
+  it('gives the first child the original primary and the second the Cards report in the slot’s mode', () => {
+    const [chart, cards] = childQueries(migrated(legacy())).map((query) => new URLSearchParams(query));
+
+    expect(chart.get('primaryReportType')).toBe('start-due');
+    expect(chart.get('cardsMode')).toBeNull();
+    expect(cards.get('primaryReportType')).toBe('cards');
+    expect(cards.get('cardsMode')).toBe('breakdown');
+  });
+
+  it('defaults the chart child to the report an absent primaryReportType would have rendered', () => {
+    const [chart] = childQueries(migrated('secondaryReportType=status&jql=project%3DORDER'));
+
+    expect(new URLSearchParams(chart).get('primaryReportType')).toBe('start-due');
+  });
+
+  // The whole bag, minus the page-level keys — an allow-list here would silently drop settings.
+  it('carries every non-page param into both children', () => {
+    const queries = childQueries(
+      migrated(legacy('&loadChildren=true&statusesToShow=Development&showSettings=REPORTS&report=abc&fullscreen=true')),
+    );
+
+    for (const query of queries) {
+      const child = new URLSearchParams(query);
+
+      expect(child.get('jql')).toBe('project=ORDER');
+      expect(child.get('selectedIssueType')).toBe('Initiative');
+      expect(child.get('loadChildren')).toBe('true');
+      expect(child.get('statusesToShow')).toBe('Development');
+      // Page chrome and the legacy keys belong to neither child.
+      expect(child.has('showSettings')).toBe(false);
+      expect(child.has('report')).toBe(false);
+      expect(child.has('fullscreen')).toBe(false);
+      expect(child.has('secondaryReportType')).toBe(false);
+      expect(child.has('secondaryFilterRows')).toBe(false);
+      expect(child.has('secondaryChildFilterRows')).toBe(false);
+    }
+  });
+
+  // A card showed iff it passed both lists, and `matchesAllFilterRows` requires every row to match.
+  it('gives the cards child the concatenation of both legacy filter lists', () => {
+    const primaryRow = { id: 'a', field: 'jiraStatus', operator: 'is', value: ['Development'] };
+    const secondaryRow = { id: 'b', field: 'rollupStatus', operator: 'is not', value: ['complete'] };
+    const childRow = { id: 'c', field: 'jiraStatus', operator: 'is', value: ['QA'] };
+
+    const [chart, cards] = childQueries(
+      migrated(
+        legacy(
+          `&filterRows=${encodeURIComponent(JSON.stringify([primaryRow]))}` +
+            `&secondaryFilterRows=${encodeURIComponent(JSON.stringify([secondaryRow]))}` +
+            `&secondaryChildFilterRows=${encodeURIComponent(JSON.stringify([childRow]))}`,
+        ),
+      ),
+    ).map((query) => new URLSearchParams(query));
+
+    expect(JSON.parse(chart.get('filterRows') as string)).toEqual([primaryRow]);
+    expect(chart.has('cardsChildFilterRows')).toBe(false);
+    expect(JSON.parse(cards.get('filterRows') as string)).toEqual([primaryRow, secondaryRow]);
+    expect(JSON.parse(cards.get('cardsChildFilterRows') as string)).toEqual([childRow]);
+  });
+
+  it('writes no empty filter lists when there were none to carry', () => {
+    const [, cards] = childQueries(migrated(legacy())).map((query) => new URLSearchParams(query));
+
+    expect(cards.has('filterRows')).toBe(false);
+    expect(cards.has('cardsChildFilterRows')).toBe(false);
+  });
+
+  // Ordering: the entries above run first, so this one copies their output rather than the raw keys.
+  it('sees the output of the earlier entries in the table', () => {
+    const [chart, cards] = childQueries(
+      migrated('primaryReportType=breakdown&primaryIssueType=Initiative&secondaryReportType=status'),
+    ).map((query) => new URLSearchParams(query));
+
+    expect(chart.get('primaryReportType')).toBe('start-due');
+    expect(chart.get('primaryReportBreakdown')).toBe('true');
+    expect(chart.get('selectedIssueType')).toBe('Initiative');
+    expect(chart.has('primaryIssueType')).toBe(false);
+    expect(cards.get('primaryReportType')).toBe('cards');
+    expect(cards.get('selectedIssueType')).toBe('Initiative');
   });
 });
 

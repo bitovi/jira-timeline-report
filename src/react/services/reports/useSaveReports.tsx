@@ -28,9 +28,13 @@ const useSaveReport = () => {
 
       return { previousReports };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: reportKeys.allReports });
-    },
+    // No `onSettled` refetch here on purpose: the optimistic cache set above is already the
+    // correct final state once `mutationFn` resolves, and re-fetching immediately would read it
+    // straight back from Jira's search index (`getConfigurationIssue` → JQL search), which lags
+    // real writes by a few seconds. Invalidating here reliably clobbered a just-created/updated/
+    // deleted report with the stale pre-write version — e.g. a brand-new saved report vanishing
+    // from the report-of-reports "Add Report" picker until a manual page refresh. `onError` below
+    // still rolls back to the last-known-good snapshot on failure.
     onError: (error, _, context) => {
       queryClient.setQueryData<Reports>(reportKeys.allReports, context?.previousReports);
 

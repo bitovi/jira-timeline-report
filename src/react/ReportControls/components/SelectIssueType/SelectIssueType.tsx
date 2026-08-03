@@ -14,12 +14,9 @@ const formatTitle = (rawTitle: string, issueHierarchy: IssueHierarchy[] | null) 
   if (!rawTitle) {
     return '';
   } else if (rawTitle.startsWith('Release-')) {
-    return rawTitle
-      ?.split('-')
-      .map((part) => part + 's')
-      .join(' / ');
+    return rawTitle?.split('-').join(' / ');
   } else {
-    return rawTitle + 's';
+    return rawTitle;
   }
 };
 
@@ -67,7 +64,7 @@ const SelectIssueType: FC = () => {
         <DropdownItemGroup>
           {issueHierarchy.map((item) => (
             <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange(item.name)}>
-              {item.name + 's'}
+              {item.name}
             </DropdownItem>
           ))}
         </DropdownItemGroup>
@@ -82,7 +79,7 @@ const SelectIssueType: FC = () => {
           >
             {issueHierarchy.map((item) => (
               <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange('Release', item.name)}>
-                {item.name + 's'}
+                {item.name}
               </DropdownItem>
             ))}
           </DropdownMenu>

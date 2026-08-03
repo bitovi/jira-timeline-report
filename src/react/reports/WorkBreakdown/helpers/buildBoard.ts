@@ -1,13 +1,4 @@
-import type {
-  Board,
-  Card,
-  IssueOrRelease,
-  MatrixRow,
-  SecondaryReportMode,
-  StatusRow,
-  WorkType,
-  WorkTypeColumn,
-} from '../types';
+import type { Board, Card, CardsMode, IssueOrRelease, MatrixRow, StatusRow, WorkType, WorkTypeColumn } from '../types';
 import { WORK_TYPE_SYMBOLS } from '../types';
 import { workTypePresence } from './workTypePresence';
 import { cellState } from './cellState';
@@ -36,7 +27,7 @@ import type { FilterRow } from '../../../../jira/rollup/filter-rows/filter-rows'
 export const buildBoard = (
   primaryIssues: IssueOrRelease[],
   allIssues: IssueOrRelease[],
-  mode: SecondaryReportMode,
+  mode: CardsMode,
   planningIssues: IssueOrRelease[] = [],
   filterRows: FilterRow[] = [],
   childFilterRows: FilterRow[] = [],

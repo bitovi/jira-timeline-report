@@ -439,6 +439,36 @@ export function updateUrlParam(key, valueJSON, defaultJSON) {
   //history.pushState({}, '', );
 }
 
+/**
+ * Removes `key` from the URL and publishes, folding the removal into the history entry that is
+ * already being pushed rather than adding one of its own.
+ *
+ * `updateUrlParam` can only delete a param by being handed a value equal to its default, which a
+ * param whose *absence* is the meaningful state has no way to express. The one such param is
+ * `sections`, the report-of-reports document (`documentParam.ts`), and its only caller is the
+ * report-type switch in `SelectReportType`, which drops the document right after changing the type.
+ *
+ * That switch has already pushed a history entry, and a second push would leave a dead one behind
+ * whose only difference is a param nothing on screen reads — Back would look broken. Hence
+ * `replaceStateOnce`, which makes this write amend that entry instead.
+ *
+ * Nothing is armed when the param is already absent, and that guard is also what guarantees the
+ * arming is spent: `PushstateObservable.set` only honors a once-key its own diff of the old and new
+ * query strings sees change, and a key left armed would silently turn the *next* change to it into a
+ * replaceState too — costing the document its back/forward history.
+ */
+export function deleteUrlParam(key) {
+  const newUrl = new URL(window.location);
+
+  if (!newUrl.searchParams.has(key)) {
+    return;
+  }
+
+  newUrl.searchParams.delete(key);
+  pushStateObservable.replaceStateOnce(key);
+  pushStateObservable.value = newUrl.search;
+}
+
 export function paramValue(reportData, key) {
   return new URLSearchParams(reportData.queryParams).get(key);
 }

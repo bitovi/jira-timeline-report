@@ -1,7 +1,7 @@
 import type { StoredNode } from './sections';
 
 import { SECTIONS_PARAM, decodeSections, encodeSections, sectionsBaseline } from './documentParam';
-import { inlineReportNode, savedReportNode, sectionNode } from './sections';
+import { inlineValueNode, savedReportNode, sectionNode } from './sections';
 
 describe('documentParam', () => {
   it('names the param after the stored field', () => {
@@ -13,7 +13,7 @@ describe('documentParam', () => {
     const unknown = decodeSections(JSON.stringify([{ type: 'chart', params: { kind: 'pie' } }]))!;
 
     const tree = [
-      sectionNode('Q3', [savedReportNode('abc-123'), inlineReportNode('(issue = ABC-1).summary')]),
+      sectionNode('Q3', [savedReportNode('abc-123'), inlineValueNode('(issue = ABC-1).summary')]),
       ...unknown,
     ];
 
@@ -26,7 +26,7 @@ describe('documentParam', () => {
           params: { title: 'Q3' },
           children: [
             { type: 'saved-report', params: { reportId: 'abc-123' } },
-            { type: 'inline-report', params: { expression: '(issue = ABC-1).summary' } },
+            { type: 'inline-value', params: { expression: '(issue = ABC-1).summary' } },
           ],
         },
         { type: 'chart', params: { kind: 'pie' } },

@@ -1,12 +1,12 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Density, SecondaryReportMode } from '../../types';
+import type { CardsMode, Density } from '../../types';
 import { buildBoard } from '../../helpers';
 import { primaryIssues, allIssues } from '../../fixtures';
 import { WorkBreakdownCard } from './WorkBreakdownCard';
 
 interface Args {
-  mode: SecondaryReportMode;
+  mode: CardsMode;
   density: Density;
   cardIndex: number;
 }
