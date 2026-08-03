@@ -65,7 +65,25 @@ describe('computeSteps (step-state logic)', () => {
         issuesReceived: 342,
       }),
     );
-    expect(children.detail).toBe('0 of ~0 found');
+    expect(children.detail).toBe('0 found');
+    expect(children.barValue).toBe(0);
+  });
+
+  it('shows "N found" with an empty bar before the first projection (deep path: counts skipped)', () => {
+    // On the real deep path child batches skip the approximate-count, so `issuesRequested` never grows
+    // past the primary snapshot: childReq is 0. Until the container supplies a projection the children
+    // step reads a plain running count with no denominator and an empty bar.
+    const { children } = byKey(
+      computeSteps({
+        status: 'pending',
+        phase: 'children',
+        primaryRequested: 342,
+        primaryReceived: 342,
+        issuesRequested: 342,
+        issuesReceived: 474,
+      }),
+    );
+    expect(children.detail).toBe('132 found');
     expect(children.barValue).toBe(0);
   });
 
@@ -243,6 +261,53 @@ describe('<LoadingProgressContainer> primary snapshot', () => {
           issuesRequested: 100,
           issuesReceived: 100,
         }}
+      />,
+    );
+    expect(screen.getByText('80 of ~800')).toBeInTheDocument();
+    expect(childBarWidth()).toBe('20%'); // monotonic — never rewinds
+  });
+
+  it('projects the children bar with issuesRequested frozen — it never needed the count', () => {
+    // Same run as the smoothing test above, but with `issuesRequested` pinned at 20 across EVERY rerender
+    // (the real deep path: child batches skip the approximate-count, so the global request total never
+    // grows past the primary snapshot). Every assertion below must still hold — proof the projection is
+    // driven by issuesReceived + parentsProcessed alone, not by the discovered denominator.
+    const base = { status: 'pending' as const, changeLogsRequested: 0, changeLogsReceived: 0, issuesRequested: 20 };
+    const childBarWidth = () => {
+      const li = screen.getByText('Loading children').closest('li') as HTMLElement;
+      return (li.querySelector('div[style*="width"]') as HTMLElement)?.style.width;
+    };
+
+    const { rerender } = render(
+      <LoadingProgressContainer loadingState={{ ...base, phase: 'primary', issuesReceived: 20 }} />,
+    );
+    rerender(
+      <LoadingProgressContainer
+        loadingState={{ ...base, phase: 'children', parentsToProcess: 20, parentsProcessed: 0, issuesReceived: 20 }}
+      />,
+    );
+
+    // First parent's subtree finishes: 20 children received for 1 parent ⇒ project 20 × 20 = 400.
+    rerender(
+      <LoadingProgressContainer
+        loadingState={{ ...base, phase: 'children', parentsToProcess: 20, parentsProcessed: 1, issuesReceived: 40 }}
+      />,
+    );
+    expect(screen.getByText('20 of ~400')).toBeInTheDocument();
+    expect(childBarWidth()).toBe('5%'); // 20 / 400
+
+    // More children stream in before the next completion (childRec 20 → 80); bar rises, projection held.
+    rerender(
+      <LoadingProgressContainer
+        loadingState={{ ...base, phase: 'children', parentsToProcess: 20, parentsProcessed: 1, issuesReceived: 100 }}
+      />,
+    );
+    expect(childBarWidth()).toBe('20%'); // 80 / 400
+
+    // Second completion re-projects UP (20 × 80/2 = 800) ⇒ raw would drop to 10%, but the bar holds at 20%.
+    rerender(
+      <LoadingProgressContainer
+        loadingState={{ ...base, phase: 'children', parentsToProcess: 20, parentsProcessed: 2, issuesReceived: 100 }}
       />,
     );
     expect(screen.getByText('80 of ~800')).toBeInTheDocument();

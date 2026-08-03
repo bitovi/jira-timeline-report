@@ -1,14 +1,14 @@
 /**
  * Aggregation catalog for the Table report (spec/012-table-and-grouper, design §2).
  *
- * Each aggregation is expressed as an {@link AggregationReducer} reused from the GroupingReport
+ * Each aggregation is expressed as an {@link AggregationReducer} reused from the shared aggregate
  * engine. By convention the reducer's `Item` IS the already-extracted column value (the caller maps
  * `issues.map(column.getValue)` before aggregating, i.e. the getter is the identity), which keeps
  * these reducers type-agnostic and directly unit-testable over value arrays.
  */
-import { avgReducer, countReducer, sumReducer } from '../../GroupingReport/data/aggregate';
+import { avgReducer, countReducer, sumReducer } from './aggregate';
 
-import type { AggregationReducer } from '../../GroupingReport/data/aggregate';
+import type { AggregationReducer } from './aggregate';
 import type { FilterKind } from './columns';
 
 export type AggregationId = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'range' | 'distinct';

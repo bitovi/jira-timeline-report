@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data storage — Global Settings panel mockup</title>
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --link: #0c66e4;
+        --success: #22a06b;
+        --success-bg: #dffcf0;
+        --warn: #f5cd47;
+        --warn-bg: #fff7d6;
+        --warn-text: #7f5f01;
+        --danger: #e2483d;
+        --danger-bg: #ffedeb;
+        --sidebar-bg: #ffffff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 80px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 900px;
+        margin: 6px 0 8px;
+        font-size: 13px;
+      }
+      .intro code,
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .intro a {
+        color: var(--link);
+      }
+
+      /* ---- icon comparison strip ---- */
+      .iconstrip {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 14px 16px;
+        margin-top: 18px;
+        max-width: 900px;
+      }
+      .iconstrip-label {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      .iconstrip-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .iconstrip figure {
+        margin: 0;
+        width: 96px;
+        text-align: center;
+        padding: 12px 4px 8px;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        background: var(--neutral-10);
+      }
+      .iconstrip figure.isnew {
+        border-color: var(--brand);
+        background: var(--brand-bg);
+      }
+      .iconstrip figure svg {
+        width: 18px;
+        height: 18px;
+        display: block;
+        margin: 0 auto 8px;
+      }
+      .iconstrip figcaption {
+        font-size: 10px;
+        color: var(--subtle);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .iconstrip figcaption span {
+        display: block;
+        margin-top: 3px;
+        font-family: inherit;
+        color: var(--brand);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .iconstrip-note {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 12px 0 0;
+        line-height: 1.55;
+      }
+
+      /* ---- layout: states side by side ---- */
+      .states {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        margin-top: 24px;
+        align-items: flex-start;
+      }
+      .state {
+        width: 384px;
+      }
+      .state > h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        margin: 0 0 2px;
+      }
+      .state > .note {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 10px;
+        min-height: 32px;
+      }
+
+      /* ---- the sidebar panel chrome ---- */
+      .panel {
+        background: var(--sidebar-bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
+        overflow: hidden;
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 16px 10px;
+      }
+      .back {
+        color: var(--subtle);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .panel-head h3 {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 600;
+      }
+      .panel-body {
+        padding: 4px 16px 18px;
+      }
+      .blurb {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 14px;
+      }
+
+      /* ---- "where your data lives" card ---- */
+      .where {
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 14px;
+        background: var(--neutral-10);
+      }
+      .where.active {
+        border-color: var(--brand);
+        background: var(--brand-bg);
+      }
+      .where-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .where-title {
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .where-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .pill {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 7px;
+        border-radius: 10px;
+        white-space: nowrap;
+      }
+      .pill.current {
+        background: var(--neutral-30);
+        color: var(--subtle);
+      }
+      .pill.on {
+        background: var(--brand);
+        color: #fff;
+      }
+      .pill.ok {
+        background: var(--success);
+        color: #fff;
+      }
+      .pill.warn {
+        background: var(--warn);
+        color: var(--warn-text);
+      }
+      .pill.beta {
+        background: #6554c0;
+        color: #fff;
+      }
+
+      /* ---- capacity meter ---- */
+      .meter-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--muted);
+        margin: 12px 0 4px;
+      }
+      .meter {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--neutral-30);
+        overflow: hidden;
+      }
+      .meter > span {
+        display: block;
+        height: 100%;
+        background: var(--success);
+      }
+      .meter.warn > span {
+        background: var(--warn);
+      }
+      .meter.danger > span {
+        background: var(--danger);
+      }
+      .meter-note {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+
+      /* ---- banners ---- */
+      .banner {
+        display: flex;
+        gap: 8px;
+        border-radius: 4px;
+        padding: 10px 12px;
+        font-size: 12px;
+        margin-bottom: 14px;
+        line-height: 1.45;
+      }
+      .banner .icon {
+        flex: 0 0 auto;
+        font-weight: 700;
+      }
+      .banner.warn {
+        background: var(--warn-bg);
+        color: var(--warn-text);
+      }
+      .banner.info {
+        background: var(--brand-bg);
+        color: #0a4fb5;
+      }
+      .banner.good {
+        background: var(--success-bg);
+        color: #14663f;
+      }
+      .banner.bad {
+        background: var(--danger-bg);
+        color: #a8291f;
+      }
+      .banner strong {
+        display: block;
+      }
+
+      /* ---- buttons ---- */
+      .btn {
+        display: inline-block;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 3px;
+        padding: 6px 12px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn.primary {
+        background: var(--brand);
+        color: #fff;
+      }
+      .btn.subtle {
+        background: var(--neutral-20);
+        color: var(--text);
+      }
+      .btn.link {
+        background: none;
+        color: var(--link);
+        padding: 6px 0;
+      }
+      .btn[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 4px;
+      }
+
+      /* ---- misc ---- */
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 16px 0 14px;
+      }
+      .section-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .kv {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        padding: 5px 0;
+        border-bottom: 1px dashed var(--neutral-30);
+      }
+      .kv:last-child {
+        border-bottom: none;
+      }
+      .kv .k {
+        color: var(--muted);
+      }
+      .kv .v {
+        font-weight: 500;
+      }
+      .kv .v a {
+        color: var(--link);
+        text-decoration: none;
+      }
+
+      /* ---- the sidebar nav (context for where this lives) ---- */
+      .nav {
+        width: 260px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 16px 12px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
+      }
+      .nav .group {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        font-weight: 700;
+        margin: 0 0 6px;
+        padding-left: 8px;
+      }
+      .nav .group + .item {
+        margin-bottom: 2px;
+      }
+      .nav .spacer {
+        height: 18px;
+      }
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 8px;
+        border-radius: 3px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .item:hover {
+        background: var(--neutral-20);
+      }
+      .item.new {
+        background: var(--brand-bg);
+        color: var(--brand);
+        font-weight: 600;
+      }
+      /* Real sidebar icons, inlined from public/images/*.svg so this file stays
+         self-contained. Same path data, same #626F86 fill, all rendered at 18px. */
+      .item .ico {
+        flex: 0 0 18px;
+        width: 18px;
+        height: 18px;
+        display: block;
+      }
+      .item.new .ico path {
+        fill: var(--brand);
+      }
+      .item .newtag {
+        margin-left: auto;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        background: var(--brand);
+        color: #fff;
+        border-radius: 8px;
+        padding: 1px 6px;
+      }
+      .callout {
+        max-width: 900px;
+        border-left: 3px solid var(--brand);
+        background: #fff;
+        padding: 10px 14px;
+        margin: 20px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .callout strong {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Data storage — a new Global Settings panel</h1>
+    <p class="intro">
+      Mockup for <a href="../plan.md">spec/020-report-and-team-data/plan.md</a>. Sits alongside Teams / Features / Theme
+      under <strong>Global Settings</strong> in the existing sidebar (<code>ReportSettings.tsx</code>), reached with
+      <code>changeSettings('STORAGE')</code>. Four states, left to right: today, near the limit, after choosing a Jira
+      project, and the failure case.
+    </p>
+    <p class="intro">
+      The capacity meter is <strong>Phase&nbsp;1</strong> and ships on its own — it's useful even if nothing below it is
+      ever built. Everything else is Phase&nbsp;5.
+    </p>
+
+    <div class="iconstrip">
+      <p class="iconstrip-label">
+        Sidebar icons — the five real ones from <code>public/images/</code>, plus the new <code>storage.svg</code>. Same
+        <code>#626F86</code> fill, same solid-fill (no stroke) construction.
+      </p>
+      <div class="iconstrip-row">
+        <figure>
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M13.436 12.0849L17.376 16.0949C17.5525 16.2857 17.6478 16.5377 17.6417 16.7975C17.6356 17.0573 17.5286 17.3046 17.3433 17.4869C17.158 17.6691 16.9091 17.7721 16.6492 17.774C16.3893 17.7759 16.1389 17.6765 15.951 17.4969L12.013 13.4909C10.4935 14.6356 8.59589 15.16 6.70428 14.9581C4.81266 14.7562 3.06845 13.8431 1.82482 12.4035C0.581181 10.9639 -0.0689429 9.10557 0.00608451 7.2047C0.081112 5.30382 0.875683 3.50248 2.22891 2.16542C3.58214 0.828356 5.3929 0.05549 7.29454 0.00331263C9.19618 -0.0488648 11.0466 0.623545 12.4711 1.88439C13.8956 3.14524 14.7878 4.9003 14.9669 6.7942C15.1461 8.6881 14.5988 10.5793 13.436 12.0849ZM7.5 12.9999C8.95869 12.9999 10.3576 12.4204 11.3891 11.389C12.4205 10.3575 13 8.9586 13 7.49991C13 6.04122 12.4205 4.64227 11.3891 3.61082C10.3576 2.57937 8.95869 1.99991 7.5 1.99991C6.04131 1.99991 4.64236 2.57937 3.61091 3.61082C2.57946 4.64227 2 6.04122 2 7.49991C2 8.9586 2.57946 10.3575 3.61091 11.389C4.64236 12.4204 6.04131 12.9999 7.5 12.9999Z"
+              fill="#626F86"
+            />
+          </svg>
+          <figcaption>magnifying-glass</figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M1.995 2H16.005C17.107 2 18 2.895 18 3.994V16.006C18 16.2679 17.9484 16.5273 17.8481 16.7693C17.7478 17.0113 17.6009 17.2312 17.4156 17.4163C17.2304 17.6015 17.0104 17.7484 16.7684 17.8485C16.5263 17.9487 16.2669 18.0001 16.005 18H1.995C1.46607 18 0.958782 17.7899 0.584675 17.416C0.210569 17.0421 0.00026513 16.5349 0 16.006V3.994C0 2.893 0.892 2 1.995 2ZM2 6V15C2 15.2652 2.10536 15.5196 2.29289 15.7071C2.48043 15.8946 2.73478 16 3 16H15C15.2652 16 15.5196 15.8946 15.7071 15.7071C15.8946 15.5196 16 15.2652 16 15V6H2ZM3 1C3 0.734784 3.10536 0.48043 3.29289 0.292893C3.48043 0.105357 3.73478 0 4 0C4.26522 0 4.51957 0.105357 4.70711 0.292893C4.89464 0.48043 5 0.734784 5 1V2H3V1ZM13 1C13 0.734784 13.1054 0.48043 13.2929 0.292893C13.4804 0.105357 13.7348 0 14 0C14.2652 0 14.5196 0.105357 14.7071 0.292893C14.8946 0.48043 15 0.734784 15 1V2H13V1ZM4 10V7.999H6V10H4ZM12 10V7.999H14V10H12ZM8 10V7.999H10.001V10H8ZM4 14V12H6V14H4ZM8 14V12H10.001V14H8ZM12 14V12H14V14H12Z"
+              fill="#626F86"
+            />
+          </svg>
+          <figcaption>calendar</figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              d="M13 9C14.6569 9 16 7.65685 16 6C16 4.34315 14.6569 3 13 3C11.3431 3 10 4.34315 10 6C10 7.65685 11.3431 9 13 9Z"
+              fill="#626F86"
+            />
+            <path
+              d="M5 6C6.65685 6 8 4.65685 8 3C8 1.34315 6.65685 0 5 0C3.34315 0 2 1.34315 2 3C2 4.65685 3.34315 6 5 6Z"
+              fill="#626F86"
+            />
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M8 12C8 10.895 8.887 10 10 10H16C17.105 10 18 10.885 18 12V15.73C18 18.757 8 18.757 8 15.73V12Z"
+              fill="#626F86"
+            />
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M10 9C10.0004 8.73725 9.94893 8.477 9.84856 8.23417C9.74819 7.99134 9.60089 7.7707 9.41509 7.58491C9.2293 7.39911 9.00866 7.25181 8.76583 7.15144C8.523 7.05107 8.26275 6.99961 8 7H2C0.887 7 0 7.897 0 9.003V12.829C0 14.75 4.054 15.347 7 14.813V12.006C6.99934 11.6118 7.07635 11.2214 7.22662 10.857C7.37689 10.4925 7.59748 10.1613 7.87579 9.88215C8.1541 9.60301 8.48468 9.38143 8.84864 9.23006C9.2126 9.0787 9.60282 9.00052 9.997 9H10Z"
+              fill="#626F86"
+            />
+          </svg>
+          <figcaption>team</figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M9.276 4.38207L7.357 9.24707L2.494 11.1641C2.34877 11.2217 2.22419 11.3216 2.13641 11.4509C2.04864 11.5802 2.00171 11.7328 2.00171 11.8891C2.00171 12.0453 2.04864 12.198 2.13641 12.3272C2.22419 12.4565 2.34877 12.5564 2.494 12.6141L7.357 14.5321L9.276 19.3951C9.33364 19.5403 9.43356 19.6649 9.56283 19.7527C9.6921 19.8404 9.84475 19.8874 10.001 19.8874C10.1573 19.8874 10.3099 19.8404 10.4392 19.7527C10.5684 19.6649 10.6684 19.5403 10.726 19.3951H10.725L12.643 14.5321L17.507 12.6131C17.6518 12.5551 17.776 12.455 17.8634 12.3258C17.9509 12.1965 17.9976 12.0441 17.9976 11.8881C17.9976 11.732 17.9509 11.5796 17.8634 11.4504C17.776 11.3212 17.6518 11.2211 17.507 11.1631L12.643 9.24707L10.725 4.38207C10.6858 4.28271 10.6264 4.19252 10.5507 4.11715C10.475 4.04179 10.3845 3.98286 10.285 3.94407C10.1899 3.90646 10.0884 3.88795 9.98615 3.8896C9.88392 3.89126 9.78302 3.91305 9.68922 3.95373C9.59542 3.99441 9.51055 4.05318 9.43948 4.12667C9.3684 4.20017 9.31251 4.28696 9.275 4.38207H9.276ZM17.573 2.35207L16.83 4.23807L14.946 4.98107C14.8427 5.02295 14.7542 5.09471 14.6919 5.18717C14.6296 5.27963 14.5963 5.38859 14.5963 5.50007C14.5963 5.61156 14.6296 5.72051 14.6919 5.81298C14.7542 5.90544 14.8427 5.9772 14.946 6.01907L16.83 6.76207L17.573 8.64807C17.6141 8.75219 17.6856 8.84154 17.7782 8.9045C17.8707 8.96746 17.9801 9.00113 18.092 9.00113C18.2039 9.00113 18.3133 8.96746 18.4059 8.9045C18.4984 8.84154 18.5699 8.75219 18.611 8.64807L19.356 6.76207L21.239 6.01907C21.3435 5.97835 21.4333 5.90702 21.4966 5.81441C21.5599 5.72181 21.5938 5.61225 21.5938 5.50007C21.5938 5.3879 21.5599 5.27834 21.4966 5.18573C21.4333 5.09313 21.3435 5.0218 21.239 4.98107L19.356 4.23807L18.611 2.35307C18.5833 2.28185 18.541 2.21716 18.487 2.16311C18.4329 2.10906 18.3682 2.06682 18.297 2.03907C18.1593 1.98579 18.0061 1.98886 17.8706 2.04762C17.7351 2.10638 17.6282 2.21611 17.573 2.35307V2.35207ZM16.869 15.3551L16.125 17.2381L14.242 17.9821C14.1704 18.0096 14.1054 18.0518 14.051 18.1058C13.9966 18.1599 13.954 18.2247 13.926 18.2961C13.8723 18.434 13.8754 18.5876 13.9346 18.7233C13.9938 18.859 14.1043 18.9657 14.242 19.0201L16.125 19.7631L16.869 21.6471C16.926 21.7911 17.039 21.9051 17.183 21.9621C17.3208 22.0158 17.4743 22.0129 17.61 21.9539C17.7456 21.8949 17.8524 21.7846 17.907 21.6471L18.651 19.7631L20.534 19.0201C20.6385 18.9794 20.7283 18.908 20.7916 18.8154C20.8549 18.7228 20.8888 18.6132 20.8888 18.5011C20.8888 18.3889 20.8549 18.2793 20.7916 18.1867C20.7283 18.0941 20.6385 18.0228 20.534 17.9821L18.651 17.2381L17.907 15.3551C17.8794 15.2833 17.8372 15.2182 17.7829 15.1638C17.7287 15.1093 17.6636 15.0669 17.592 15.0391C17.4542 14.9857 17.3008 14.9889 17.1654 15.0481C17.03 15.1073 16.9234 15.2176 16.869 15.3551Z"
+              fill="#626F86"
+            />
+          </svg>
+          <figcaption>features</figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              d="M6.48595 13.7283C4.89295 15.3273 6.23795 16.9683 4.12195 19.4023C3.16695 20.5003 8.05395 20.1653 10.4759 17.7343C11.5029 16.7043 11.2129 15.2003 10.1119 14.0943C9.00995 12.9883 7.51195 12.6973 6.48595 13.7283ZM19.9569 4.04333C19.4199 3.49533 13.2239 8.29333 11.4539 10.1013C10.5759 10.9983 10.2829 11.4793 10.0139 11.8393C9.89595 11.9953 10.0509 12.0433 10.1209 12.0803C10.4689 12.2643 10.9629 12.5873 11.2769 12.9083C11.5919 13.2293 11.9419 13.7233 12.1169 14.0693C12.1529 14.1403 12.1999 14.2993 12.3529 14.1793C12.7049 13.9043 13.1759 13.6053 14.0539 12.7073C15.8239 10.9003 20.4939 4.59233 19.9569 4.04333Z"
+              fill="#626F86"
+            />
+          </svg>
+          <figcaption>theme</figcaption>
+        </figure>
+        <figure class="isnew">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M1 4.4A8 2.9 0 0 1 17 4.4A8 2.9 0 0 1 1 4.4Z" fill="#626F86" />
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M1 6A8 2.9 0 0 0 17 6V9A8 2.9 0 0 1 1 9Z" fill="#626F86" />
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M1 10.6A8 2.9 0 0 0 17 10.6V13.6A8 2.9 0 0 1 1 13.6Z"
+              fill="#626F86"
+            />
+          </svg>
+          <figcaption>storage <span>new</span></figcaption>
+        </figure>
+      </div>
+      <p class="iconstrip-note">
+        The new icon is a three-band cylinder: a filled cap ellipse plus two crescents, drawn only with
+        <code>&lt;path&gt;</code> fills like every other icon in the set. Nothing in the sidebar renders it yet — it's
+        just the asset. Note the existing set isn't uniform: <code>magnifying-glass</code>, <code>calendar</code>, and
+        <code>team</code> are 18×18 viewBoxes drawn edge-to-edge, while <code>features</code> and <code>theme</code> are
+        24×24 with padding baked in, and <code>ReportSettings.tsx</code> renders <code>features</code> at its natural
+        24px while forcing <code>theme</code> to <code>w-[18px]</code>. <code>storage.svg</code> follows the 18×18
+        edge-to-edge convention, which is the one the majority uses. Everything above is rendered at 18px.
+      </p>
+    </div>
+
+    <div class="states">
+      <!-- ============ nav context ============ -->
+      <div class="state" style="width: 260px">
+        <h2>Where it lives</h2>
+        <p class="note">The existing sidebar, with one new row.</p>
+        <div class="nav">
+          <p class="group">Report Settings</p>
+          <div class="item">
+            <!-- public/images/magnifying-glass.svg -->
+            <svg class="ico" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M13.436 12.0849L17.376 16.0949C17.5525 16.2857 17.6478 16.5377 17.6417 16.7975C17.6356 17.0573 17.5286 17.3046 17.3433 17.4869C17.158 17.6691 16.9091 17.7721 16.6492 17.774C16.3893 17.7759 16.1389 17.6765 15.951 17.4969L12.013 13.4909C10.4935 14.6356 8.59589 15.16 6.70428 14.9581C4.81266 14.7562 3.06845 13.8431 1.82482 12.4035C0.581181 10.9639 -0.0689429 9.10557 0.00608451 7.2047C0.081112 5.30382 0.875683 3.50248 2.22891 2.16542C3.58214 0.828356 5.3929 0.05549 7.29454 0.00331263C9.19618 -0.0488648 11.0466 0.623545 12.4711 1.88439C13.8956 3.14524 14.7878 4.9003 14.9669 6.7942C15.1461 8.6881 14.5988 10.5793 13.436 12.0849ZM7.5 12.9999C8.95869 12.9999 10.3576 12.4204 11.3891 11.389C12.4205 10.3575 13 8.9586 13 7.49991C13 6.04122 12.4205 4.64227 11.3891 3.61082C10.3576 2.57937 8.95869 1.99991 7.5 1.99991C6.04131 1.99991 4.64236 2.57937 3.61091 3.61082C2.57946 4.64227 2 6.04122 2 7.49991C2 8.9586 2.57946 10.3575 3.61091 11.389C4.64236 12.4204 6.04131 12.9999 7.5 12.9999Z"
+                fill="#626F86"
+              />
+            </svg>
+            Sources
+          </div>
+          <div class="item">
+            <!-- public/images/calendar.svg -->
+            <svg class="ico" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M1.995 2H16.005C17.107 2 18 2.895 18 3.994V16.006C18 16.2679 17.9484 16.5273 17.8481 16.7693C17.7478 17.0113 17.6009 17.2312 17.4156 17.4163C17.2304 17.6015 17.0104 17.7484 16.7684 17.8485C16.5263 17.9487 16.2669 18.0001 16.005 18H1.995C1.46607 18 0.958782 17.7899 0.584675 17.416C0.210569 17.0421 0.00026513 16.5349 0 16.006V3.994C0 2.893 0.892 2 1.995 2ZM2 6V15C2 15.2652 2.10536 15.5196 2.29289 15.7071C2.48043 15.8946 2.73478 16 3 16H15C15.2652 16 15.5196 15.8946 15.7071 15.7071C15.8946 15.5196 16 15.2652 16 15V6H2ZM3 1C3 0.734784 3.10536 0.48043 3.29289 0.292893C3.48043 0.105357 3.73478 0 4 0C4.26522 0 4.51957 0.105357 4.70711 0.292893C4.89464 0.48043 5 0.734784 5 1V2H3V1ZM13 1C13 0.734784 13.1054 0.48043 13.2929 0.292893C13.4804 0.105357 13.7348 0 14 0C14.2652 0 14.5196 0.105357 14.7071 0.292893C14.8946 0.48043 15 0.734784 15 1V2H13V1ZM4 10V7.999H6V10H4ZM12 10V7.999H14V10H12ZM8 10V7.999H10.001V10H8ZM4 14V12H6V14H4ZM8 14V12H10.001V14H8ZM12 14V12H14V14H12Z"
+                fill="#626F86"
+              />
+            </svg>
+            Timing
+          </div>
+          <div class="spacer"></div>
+          <p class="group">Global Settings</p>
+          <div class="item">
+            <!-- public/images/team.svg -->
+            <svg class="ico" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path
+                d="M13 9C14.6569 9 16 7.65685 16 6C16 4.34315 14.6569 3 13 3C11.3431 3 10 4.34315 10 6C10 7.65685 11.3431 9 13 9Z"
+                fill="#626F86"
+              />
+              <path
+                d="M5 6C6.65685 6 8 4.65685 8 3C8 1.34315 6.65685 0 5 0C3.34315 0 2 1.34315 2 3C2 4.65685 3.34315 6 5 6Z"
+                fill="#626F86"
+              />
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M8 12C8 10.895 8.887 10 10 10H16C17.105 10 18 10.885 18 12V15.73C18 18.757 8 18.757 8 15.73V12Z"
+                fill="#626F86"
+              />
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M10 9C10.0004 8.73725 9.94893 8.477 9.84856 8.23417C9.74819 7.99134 9.60089 7.7707 9.41509 7.58491C9.2293 7.39911 9.00866 7.25181 8.76583 7.15144C8.523 7.05107 8.26275 6.99961 8 7H2C0.887 7 0 7.897 0 9.003V12.829C0 14.75 4.054 15.347 7 14.813V12.006C6.99934 11.6118 7.07635 11.2214 7.22662 10.857C7.37689 10.4925 7.59748 10.1613 7.87579 9.88215C8.1541 9.60301 8.48468 9.38143 8.84864 9.23006C9.2126 9.0787 9.60282 9.00052 9.997 9H10Z"
+                fill="#626F86"
+              />
+            </svg>
+            Teams
+          </div>
+          <div class="item">
+            <!-- public/images/features.svg -->
+            <svg class="ico" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M9.276 4.38207L7.357 9.24707L2.494 11.1641C2.34877 11.2217 2.22419 11.3216 2.13641 11.4509C2.04864 11.5802 2.00171 11.7328 2.00171 11.8891C2.00171 12.0453 2.04864 12.198 2.13641 12.3272C2.22419 12.4565 2.34877 12.5564 2.494 12.6141L7.357 14.5321L9.276 19.3951C9.33364 19.5403 9.43356 19.6649 9.56283 19.7527C9.6921 19.8404 9.84475 19.8874 10.001 19.8874C10.1573 19.8874 10.3099 19.8404 10.4392 19.7527C10.5684 19.6649 10.6684 19.5403 10.726 19.3951H10.725L12.643 14.5321L17.507 12.6131C17.6518 12.5551 17.776 12.455 17.8634 12.3258C17.9509 12.1965 17.9976 12.0441 17.9976 11.8881C17.9976 11.732 17.9509 11.5796 17.8634 11.4504C17.776 11.3212 17.6518 11.2211 17.507 11.1631L12.643 9.24707L10.725 4.38207C10.6858 4.28271 10.6264 4.19252 10.5507 4.11715C10.475 4.04179 10.3845 3.98286 10.285 3.94407C10.1899 3.90646 10.0884 3.88795 9.98615 3.8896C9.88392 3.89126 9.78302 3.91305 9.68922 3.95373C9.59542 3.99441 9.51055 4.05318 9.43948 4.12667C9.3684 4.20017 9.31251 4.28696 9.275 4.38207H9.276ZM17.573 2.35207L16.83 4.23807L14.946 4.98107C14.8427 5.02295 14.7542 5.09471 14.6919 5.18717C14.6296 5.27963 14.5963 5.38859 14.5963 5.50007C14.5963 5.61156 14.6296 5.72051 14.6919 5.81298C14.7542 5.90544 14.8427 5.9772 14.946 6.01907L16.83 6.76207L17.573 8.64807C17.6141 8.75219 17.6856 8.84154 17.7782 8.9045C17.8707 8.96746 17.9801 9.00113 18.092 9.00113C18.2039 9.00113 18.3133 8.96746 18.4059 8.9045C18.4984 8.84154 18.5699 8.75219 18.611 8.64807L19.356 6.76207L21.239 6.01907C21.3435 5.97835 21.4333 5.90702 21.4966 5.81441C21.5599 5.72181 21.5938 5.61225 21.5938 5.50007C21.5938 5.3879 21.5599 5.27834 21.4966 5.18573C21.4333 5.09313 21.3435 5.0218 21.239 4.98107L19.356 4.23807L18.611 2.35307C18.5833 2.28185 18.541 2.21716 18.487 2.16311C18.4329 2.10906 18.3682 2.06682 18.297 2.03907C18.1593 1.98579 18.0061 1.98886 17.8706 2.04762C17.7351 2.10638 17.6282 2.21611 17.573 2.35307V2.35207ZM16.869 15.3551L16.125 17.2381L14.242 17.9821C14.1704 18.0096 14.1054 18.0518 14.051 18.1058C13.9966 18.1599 13.954 18.2247 13.926 18.2961C13.8723 18.434 13.8754 18.5876 13.9346 18.7233C13.9938 18.859 14.1043 18.9657 14.242 19.0201L16.125 19.7631L16.869 21.6471C16.926 21.7911 17.039 21.9051 17.183 21.9621C17.3208 22.0158 17.4743 22.0129 17.61 21.9539C17.7456 21.8949 17.8524 21.7846 17.907 21.6471L18.651 19.7631L20.534 19.0201C20.6385 18.9794 20.7283 18.908 20.7916 18.8154C20.8549 18.7228 20.8888 18.6132 20.8888 18.5011C20.8888 18.3889 20.8549 18.2793 20.7916 18.1867C20.7283 18.0941 20.6385 18.0228 20.534 17.9821L18.651 17.2381L17.907 15.3551C17.8794 15.2833 17.8372 15.2182 17.7829 15.1638C17.7287 15.1093 17.6636 15.0669 17.592 15.0391C17.4542 14.9857 17.3008 14.9889 17.1654 15.0481C17.03 15.1073 16.9234 15.2176 16.869 15.3551Z"
+                fill="#626F86"
+              />
+            </svg>
+            Features
+          </div>
+          <div class="item">
+            <!-- public/images/theme.svg -->
+            <svg class="ico" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path
+                d="M6.48595 13.7283C4.89295 15.3273 6.23795 16.9683 4.12195 19.4023C3.16695 20.5003 8.05395 20.1653 10.4759 17.7343C11.5029 16.7043 11.2129 15.2003 10.1119 14.0943C9.00995 12.9883 7.51195 12.6973 6.48595 13.7283ZM19.9569 4.04333C19.4199 3.49533 13.2239 8.29333 11.4539 10.1013C10.5759 10.9983 10.2829 11.4793 10.0139 11.8393C9.89595 11.9953 10.0509 12.0433 10.1209 12.0803C10.4689 12.2643 10.9629 12.5873 11.2769 12.9083C11.5919 13.2293 11.9419 13.7233 12.1169 14.0693C12.1529 14.1403 12.1999 14.2993 12.3529 14.1793C12.7049 13.9043 13.1759 13.6053 14.0539 12.7073C15.8239 10.9003 20.4939 4.59233 19.9569 4.04333Z"
+                fill="#626F86"
+              />
+            </svg>
+            Theme
+          </div>
+          <div class="item new">
+            <!-- NEW — public/images/storage.svg -->
+            <svg class="ico" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1 4.4A8 2.9 0 0 1 17 4.4A8 2.9 0 0 1 1 4.4Z" fill="#626F86" />
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M1 6A8 2.9 0 0 0 17 6V9A8 2.9 0 0 1 1 9Z"
+                fill="#626F86"
+              />
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M1 10.6A8 2.9 0 0 0 17 10.6V13.6A8 2.9 0 0 1 1 13.6Z"
+                fill="#626F86"
+              />
+            </svg>
+            Data storage <span class="newtag">New</span>
+          </div>
+        </div>
+        <p class="note" style="margin-top: 10px">
+          Reads its state from the <code>storage-config</code> pointer. With no pointer written, it shows state 1 and
+          nothing changes for anyone.
+        </p>
+      </div>
+
+      <!-- ============ STATE 1 — healthy legacy ============ -->
+      <div class="state">
+        <h2>1 · Today (default)</h2>
+        <p class="note">
+          What every site sees on day one. Informational only — no call to action, because nothing is wrong.
+        </p>
+        <div class="panel">
+          <div class="panel-head">
+            <span class="back">←</span>
+            <h3>Data storage</h3>
+          </div>
+          <div class="panel-body">
+            <p class="blurb">Where this app keeps your saved reports and team configuration.</p>
+
+            <div class="where active">
+              <div class="where-top">
+                <span class="where-title">App storage</span>
+                <span class="pill on">Current</span>
+              </div>
+              <div class="where-sub">Managed by Status Reports for Jira. Nothing to set up.</div>
+
+              <div class="meter-row"><span>Reports &amp; teams</span><span>11.2 KB of 32 KB</span></div>
+              <div class="meter"><span style="width: 34%"></span></div>
+              <div class="meter-note">24 reports · 9 teams</div>
+            </div>
+
+            <div class="divider"></div>
+            <p class="section-label">Other options</p>
+            <div class="where">
+              <div class="where-top">
+                <span class="where-title">A Jira project</span>
+                <span class="pill beta">Beta</span>
+              </div>
+              <div class="where-sub">
+                One issue per report. Adds per-report permissions, full edit history, and effectively unlimited
+                capacity. Requires people to have edit access in the project to save.
+              </div>
+              <div class="btn-row"><button class="btn subtle">Set up…</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ STATE 2 — near the cap ============ -->
+      <div class="state">
+        <h2>2 · Approaching the limit</h2>
+        <p class="note">
+          <strong>Phase&nbsp;1.</strong> Fires at ≥80%. This is the state that exists today with no UI at all — the save
+          just fails.
+        </p>
+        <div class="panel">
+          <div class="panel-head">
+            <span class="back">←</span>
+            <h3>Data storage</h3>
+          </div>
+          <div class="panel-body">
+            <div class="banner warn">
+              <span class="icon">⚠</span>
+              <span>
+                <strong>You're close to the storage limit.</strong>
+                About 6 more reports will fit. After that, saving will fail. Delete unused reports, or move storage to a
+                Jira project.
+              </span>
+            </div>
+
+            <div class="where active">
+              <div class="where-top">
+                <span class="where-title">App storage</span>
+                <span class="pill warn">91% full</span>
+              </div>
+              <div class="where-sub">Managed by Status Reports for Jira.</div>
+
+              <div class="meter-row"><span>Reports &amp; teams</span><span>29.8 KB of 32 KB</span></div>
+              <div class="meter warn"><span style="width: 91%"></span></div>
+              <div class="meter-note">64 reports · 12 teams</div>
+              <div class="btn-row"><button class="btn link">Review saved reports →</button></div>
+            </div>
+
+            <div class="divider"></div>
+            <p class="section-label">Other options</p>
+            <div class="where">
+              <div class="where-top">
+                <span class="where-title">A Jira project</span>
+                <span class="pill beta">Beta</span>
+              </div>
+              <div class="where-sub">
+                Removes the limit entirely — each report becomes its own Jira issue with its own 32&nbsp;KB. Also adds
+                per-report permissions and edit history.
+              </div>
+              <div class="btn-row"><button class="btn primary">Set up…</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ STATE 3 — migrated ============ -->
+      <div class="state">
+        <h2>3 · Using a Jira project</h2>
+        <p class="note">After migration. Note the old data is still there and the pointer can be reverted.</p>
+        <div class="panel">
+          <div class="panel-head">
+            <span class="back">←</span>
+            <h3>Data storage</h3>
+          </div>
+          <div class="panel-body">
+            <div class="banner good">
+              <span class="icon">✓</span>
+              <span>
+                <strong>42 reports and 12 teams are stored in Jira.</strong>
+                Migrated 14 Jul 2026 by Justin Meyer.
+              </span>
+            </div>
+
+            <div class="where active">
+              <div class="where-top">
+                <span class="where-title">Jira projects</span>
+                <span class="pill on">Current</span>
+              </div>
+              <div class="kv">
+                <span class="k">Reports</span><span class="v"><a href="#">OPS</a> · Operations</span>
+              </div>
+              <div class="kv">
+                <span class="k">Teams</span><span class="v"><a href="#">TEAMMAP</a> · Team Map</span>
+              </div>
+              <div class="kv"><span class="k">Capacity</span><span class="v">No practical limit</span></div>
+              <div class="kv">
+                <span class="k">Who can save</span><span class="v">Anyone with Edit Issues in OPS</span>
+              </div>
+              <div class="kv"><span class="k">Your access</span><span class="v">Read &amp; write ✓</span></div>
+              <div class="btn-row"><button class="btn link">Change projects…</button></div>
+            </div>
+
+            <div class="divider"></div>
+            <p class="section-label">Previous location</p>
+            <div class="where">
+              <div class="where-top">
+                <span class="where-title">App storage</span>
+                <span class="pill current">Backup</span>
+              </div>
+              <div class="where-sub">
+                A read-only copy of your data from before the migration is still here. We keep it indefinitely — nothing
+                was deleted.
+              </div>
+              <div class="btn-row">
+                <button class="btn subtle">Switch back</button>
+                <button class="btn link">Download copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ STATE 4 — degraded ============ -->
+      <div class="state">
+        <h2>4 · Something's wrong</h2>
+        <p class="note">
+          Two failure modes worth designing for now, because each is otherwise a support ticket. Neither wipes the
+          pointer.
+        </p>
+
+        <div class="panel" style="margin-bottom: 20px">
+          <div class="panel-head">
+            <span class="back">←</span>
+            <h3>Data storage</h3>
+          </div>
+          <div class="panel-body">
+            <div class="banner bad">
+              <span class="icon">✕</span>
+              <span>
+                <strong>Can't reach project OPS.</strong>
+                It may have been deleted, or your access may have been removed. We're showing the backup copy from app
+                storage — <em>changes you make now won't be saved to Jira.</em>
+              </span>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary">Retry</button>
+              <button class="btn subtle">Pick a different project</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="back">←</span>
+            <h3>Data storage</h3>
+          </div>
+          <div class="panel-body">
+            <div class="banner info">
+              <span class="icon">🔒</span>
+              <span>
+                <strong>You can view reports, but not save them.</strong>
+                Saving requires the <em>Edit Issues</em> permission in project OPS. Ask a Jira admin for access.
+              </span>
+            </div>
+            <div class="where active">
+              <div class="where-top">
+                <span class="where-title">Jira projects</span>
+                <span class="pill on">Current</span>
+              </div>
+              <div class="kv">
+                <span class="k">Reports</span><span class="v"><a href="#">OPS</a> · Operations</span>
+              </div>
+              <div class="kv">
+                <span class="k">Your access</span><span class="v" style="color: #a8291f">Read only</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Two things the mockup is deliberately taking a position on.</strong> First, the destination is
+      <em>“a Jira project,”</em> not <em>“create a STATREPS project”</em> — pointing at an existing project the customer
+      already has avoids gating the feature behind a site-admin ticket. Second, App storage is described as
+      <em>“Backup,”</em> never <em>“Deprecated.”</em> It's the only mode where saving a report needs no Jira write
+      permission, so it stays supported. See <a href="../plan.md">plan.md § Risks</a>.
+    </div>
+  </body>
+</html>

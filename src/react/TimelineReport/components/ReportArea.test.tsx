@@ -76,6 +76,34 @@ describe('<ReportArea>', () => {
     expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
   });
 
+  // A dead report type (a saved report from before a report was renamed or removed) is dead whatever
+  // the request does, and route-data clamps it to the first entry in REPORTS — so without this the
+  // user gets a Gantt and no explanation. See unsupportedReportType.ts.
+  describe('unsupportedReportType', () => {
+    it('explains the dead report type instead of rendering a report', () => {
+      renderArea({ status: 'resolved' }, { unsupportedReportType: 'table2' });
+
+      expect(screen.getByText(/no longer support/)).toBeInTheDocument();
+      expect(screen.getByText('table2')).toBeInTheDocument();
+      expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
+    });
+
+    it('takes precedence over every other view state', () => {
+      renderArea({ status: 'pending' }, { unsupportedReportType: 'table2', jql: '', primaryIssuesCount: 0 });
+
+      expect(screen.getByText(/no longer support/)).toBeInTheDocument();
+      expect(screen.queryByText(/Configure a JQL/)).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading primary work items')).not.toBeInTheDocument();
+    });
+
+    it('is absent for every renderable report type', () => {
+      renderArea({ status: 'resolved' });
+
+      expect(screen.queryByText(/no longer support/)).not.toBeInTheDocument();
+      expect(screen.getByTestId('report-block')).toBeInTheDocument();
+    });
+  });
+
   // A report-of-reports has no JQL and no primary issues of its own — its children each fetch their
   // own data. `selfManagesData` bypasses the JQL / empty-result / loading gates that assume the
   // shell owns the request. See spec/016-report-of-reports Phase 0.

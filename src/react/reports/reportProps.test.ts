@@ -16,10 +16,6 @@ const SHELL_PROP_KEYS_AT_EXTRACTION = [
   'allIssuesOrReleasesObs',
   'rollupTimingLevelsAndCalculationsObs',
   'filteredDerivedIssuesObs',
-  'extraFieldsObs',
-  'rowGroupObs',
-  'colGroupObs',
-  'aggregatorsObs',
   'flowMetricsCycleTimeRangeObs',
   'flowMetricsStatusFilterObs',
   'flowMetricsIssueTypeFilterObs',
@@ -50,6 +46,22 @@ const SHELL_PROP_KEYS_AT_EXTRACTION = [
   'tableShowColTotalsObs',
 ];
 
+/**
+ * Props added to the bag *after* the extraction, each with the date and the change that added it.
+ *
+ * Kept as a separate list rather than folded into the one above, because the value of that list is
+ * that it was transcribed from a specific commit and never edited. Growing the bag is legitimate;
+ * quietly rewriting the record of what it used to be is not. So a new prop is one line here, and a
+ * *dropped* prop is still a failure.
+ */
+const SHELL_PROP_KEYS_ADDED_SINCE = [
+  // 2026-08-02 — Cards promoted from the secondary slot to a primary report type.
+  // spec/018-card-report/alt-plan.md Phase 1.
+  'planningIssuesObs',
+  'cardsModeObs',
+  'cardsChildFilterRowsObs',
+];
+
 // A stand-in for routeData / ChildReportConfig — propsFor only ever reads named properties off it.
 class FakeConfig extends ObservableObject {
   static props = {
@@ -61,6 +73,7 @@ class FakeConfig extends ObservableObject {
     jql: { default: '' },
     primaryIssueType: { default: '' },
     roundTo: { default: 'day' },
+    cardsMode: { default: 'status' },
   };
 }
 
@@ -86,6 +99,11 @@ class FakeViewModel extends ObservableObject {
         return [];
       },
     },
+    planningIssues: {
+      get default() {
+        return [];
+      },
+    },
   };
 }
 
@@ -93,10 +111,12 @@ describe('propsFor', () => {
   // Guards the Phase 2 extraction: the shell and each embedded child must build an identical bag
   // from different sources, so a key dropped while moving this out of TimelineReport is a test
   // failure rather than a silently broken report. See spec/016-report-of-reports.
-  it('returns exactly the key set the shell passed before the extraction', () => {
+  it('returns exactly the key set the shell passed before the extraction, plus the dated additions', () => {
     const props = propsFor(new FakeViewModel(), new FakeConfig());
 
-    expect(Object.keys(props).sort()).toEqual([...SHELL_PROP_KEYS_AT_EXTRACTION].sort());
+    expect(Object.keys(props).sort()).toEqual(
+      [...SHELL_PROP_KEYS_AT_EXTRACTION, ...SHELL_PROP_KEYS_ADDED_SINCE].sort(),
+    );
   });
 
   it('binds config-backed props to the config it is given, not a global', () => {

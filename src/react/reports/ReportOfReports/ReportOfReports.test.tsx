@@ -102,7 +102,11 @@ const storage = {
 } as unknown as ComponentProps<typeof StorageProvider>['storage'];
 
 const renderReport = (
-  { savedSections, currentReportId }: { savedSections?: StoredNode[]; currentReportId?: string } = {},
+  {
+    savedSections,
+    currentReportId,
+    unsaved,
+  }: { savedSections?: StoredNode[]; currentReportId?: string; unsaved?: boolean } = {},
   storageOverride: AppStorage = storage,
 ) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -112,7 +116,9 @@ const renderReport = (
       <StorageProvider storage={storageOverride as ComponentProps<typeof StorageProvider>['storage']}>
         <QueryClientProvider client={queryClient}>
           <JiraProvider jira={jira}>
-            <ReportLayoutProvider savedReport={{ id: 'doc', sections: savedSections }}>
+            {/* `unsaved` is a document with no `?report=` behind it, so nothing to seed from but
+                the URL. See spec/016-report-of-reports/006-url-state Phase 1. */}
+            <ReportLayoutProvider savedReport={unsaved ? undefined : { id: 'doc', sections: savedSections }}>
               <ReportOfReports currentReportId={currentReportId} childReportProps={childReportProps} />
             </ReportLayoutProvider>
           </JiraProvider>
@@ -196,6 +202,8 @@ describe('<ReportOfReports>', () => {
     searches.length = 0;
     searchResult = [];
     mounts.length = 0;
+    // Editing the document writes a `sections` param, which would otherwise seed the next test.
+    window.history.replaceState({}, '', '/');
   });
 
   it('renders an Add Report button as its empty state', async () => {
@@ -483,7 +491,7 @@ describe('<ReportOfReports>', () => {
 
     it('gives no caret to a row with nothing beneath it', async () => {
       renderReport({
-        savedSections: [{ type: 'inline-report', params: { expression: '(issue = ABC-1).summary' } }, stored('gone')],
+        savedSections: [{ type: 'inline-value', params: { expression: '(issue = ABC-1).summary' } }, stored('gone')],
       });
 
       expect(await screen.findByTestId('missing-report')).toBeInTheDocument();
@@ -834,7 +842,7 @@ describe('<ReportOfReports>', () => {
   // See spec/016-report-of-reports/003-self-reports.
   describe('inline values', () => {
     const storedValue = (expression: string): StoredNode =>
-      ({ type: 'inline-report', params: { expression } }) as StoredNode;
+      ({ type: 'inline-value', params: { expression } }) as StoredNode;
 
     const value = () => screen.findByTestId('inline-value');
 
@@ -904,7 +912,9 @@ describe('<ReportOfReports>', () => {
 
       const section = (await sectionTitle('Q3')).closest('section') as HTMLElement;
 
-      expect(within(section).getByTestId('inline-value')).toHaveTextContent('inside');
+      // `find`, not `get`: the section's title button is on screen a render before its value has
+      // resolved, so a synchronous read here races the expression's own Jira lookup.
+      expect(await within(section).findByTestId('inline-value')).toHaveTextContent('inside');
     });
 
     it('can be removed like any other node', async () => {
@@ -938,6 +948,124 @@ describe('<ReportOfReports>', () => {
 
       expect(screen.queryByTestId('missing-report')).not.toBeInTheDocument();
       expect(cardNames()).toEqual(['Alpha', 'Beta']);
+    });
+  });
+
+  /**
+   * The node type the secondary-slot migration writes: a whole report configured in the document
+   * rather than referring out to a saved one. Nothing here can create one — the migration does, and
+   * a hand-edited `sections` param can. See spec/018-card-report/alt-plan.md.
+   */
+  describe('inline reports', () => {
+    const storedInlineReport = (query: string): StoredNode => ({ type: 'inline-report', params: { query } });
+
+    /** What the migration produces: one config, split into a chart and a card board over one JQL. */
+    const migrated = [
+      storedInlineReport('jql=project%3DA&primaryReportType=start-due&roundTo=month'),
+      storedInlineReport('jql=project%3DA&primaryReportType=due&roundTo=week'),
+    ];
+
+    it('renders each inline report from its own query', async () => {
+      renderReport({ savedSections: migrated });
+
+      expect((await screen.findAllByTestId('child-report')).map((node) => node.textContent)).toEqual(['month', 'week']);
+    });
+
+    // It has no saved report and so no name — the report type is the only thing there is to say, and
+    // it is what tells the migration's two children apart.
+    it('names each row after its report type', async () => {
+      renderReport({ savedSections: migrated });
+
+      await screen.findAllByTestId('child-report');
+
+      expect(cardNames()).toEqual(['Gantt Chart', 'Scatter Plot']);
+    });
+
+    it('falls back to the default report type’s name for a query that names none', async () => {
+      renderReport({ savedSections: [storedInlineReport('jql=project%3DA')] });
+
+      await screen.findAllByTestId('child-report');
+
+      expect(cardNames()).toEqual(['Gantt Chart']);
+    });
+
+    it('renders alongside saved-report children and sections', async () => {
+      renderReport({ savedSections: [stored('a'), nest('Q3', [migrated[1]])] });
+
+      await screen.findAllByTestId('child-report');
+
+      expect(cardNames()).toEqual(['Alpha', 'Scatter Plot']);
+      expect(await sectionTitle('Q3')).toBeInTheDocument();
+    });
+
+    it('moves and deletes like any other node', async () => {
+      renderReport({ savedSections: [stored('a'), ...migrated] });
+
+      await clickControl('Move Gantt Chart up');
+
+      expect(cardNames()).toEqual(['Gantt Chart', 'Alpha', 'Scatter Plot']);
+
+      await removeNode('Scatter Plot');
+
+      expect(cardNames()).toEqual(['Gantt Chart', 'Alpha']);
+    });
+
+    it('collapses its report and leaves its row', async () => {
+      renderReport({ savedSections: [migrated[0]] });
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Collapse Gantt Chart' }));
+
+      expect(screen.getByTestId('child-report').closest('[hidden]')).not.toBeNull();
+      expect(screen.getByRole('button', { name: 'Expand Gantt Chart' })).toBeInTheDocument();
+    });
+
+    /**
+     * The failure mode this guards is silent and total: the serializer's fall-through is the
+     * saved-report branch, so an inline report it had no case for would be written back as
+     * `{ type: 'saved-report', params: { reportId: undefined } }` — the report replaced by a broken
+     * reference the moment anything saved the document.
+     */
+    it('survives a save with its query intact', async () => {
+      // Written out through the URL param, which is exactly `toStoredSections` — the same value the
+      // save path writes to the record's `sections` field.
+      window.history.replaceState({}, '', `/?sections=${encodeURIComponent(JSON.stringify(migrated))}`);
+
+      renderReport({ unsaved: true });
+
+      await screen.findAllByTestId('child-report');
+      // Any structural edit is enough to make the provider write the whole tree out.
+      await clickControl('Move Scatter Plot up');
+
+      expect(JSON.parse(new URLSearchParams(window.location.search).get('sections') as string)).toEqual([
+        migrated[1],
+        migrated[0],
+      ]);
+    });
+  });
+
+  // The headline case for spec/016-report-of-reports/006-url-state: build a document, refresh, and
+  // it's still there. There is no `?report=` and so no record to re-seed from — the URL is carrying
+  // the whole thing.
+  describe('a document in the URL', () => {
+    it('renders the children a sections param names, with no saved report at all', async () => {
+      window.history.replaceState(
+        {},
+        '',
+        `/?sections=${encodeURIComponent(JSON.stringify([nest('Q3', [stored('b')]), stored('a')]))}`,
+      );
+
+      renderReport({ unsaved: true });
+
+      expect(await sectionTitle('Q3')).toBeInTheDocument();
+      expect(cardNames()).toEqual(['Beta', 'Alpha']);
+    });
+
+    it('grows the param as the document is edited', async () => {
+      renderReport({ unsaved: true });
+
+      await addReport('Alpha');
+
+      expect(new URLSearchParams(window.location.search).get('sections')).toBe(JSON.stringify([stored('a')]));
     });
   });
 });

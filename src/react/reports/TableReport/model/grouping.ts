@@ -17,13 +17,14 @@
  * By convention (Phase 0) an aggregation reducer's item IS the already-extracted column value, so a
  * group is aggregated via `aggregateGroup(members.map(column.getValue), [reducer])`.
  */
-import { aggregateGroup } from '../../GroupingReport/data/aggregate';
-import { createStableObjectKey, groupByKeys } from '../../GroupingReport/data/group';
+import { aggregateGroup } from './aggregate';
+import { createStableObjectKey, groupByKeys } from './group';
 
 import { aggregations } from './aggregations';
 
 import type { AggregationId } from './aggregations';
-import type { ColumnDefinition, TableIssue } from './columns';
+import type { ColumnDefinition, RenderMeasureContext, TableIssue } from './columns';
+import type { ReactNode } from 'react';
 
 /** A single 1D group: its stable key, a display label, and the member issues in it. */
 export interface TableGroup {
@@ -116,6 +117,27 @@ export function effectiveAggregationId(column: ColumnDefinition, override?: Aggr
 }
 
 /**
+ * Looks up a column's `renderMeasure` override for an aggregation id, guarding against `aggId`
+ * values that didn't originate from the {@link AggregationId} union — e.g. a hand-edited saved
+ * report or URL param. `column.renderMeasure` is keyed by aggregation id and its values are invoked
+ * as functions, so an unvalidated lookup here is a dynamic-method-call risk (CWE-754): confirm the
+ * key is an own property AND that the value is actually a function before returning it.
+ */
+export function getMeasureRenderer(
+  column: ColumnDefinition,
+  aggId: AggregationId,
+): ((ctx: RenderMeasureContext) => ReactNode) | null {
+  const renderMeasure = column.renderMeasure;
+  if (renderMeasure && Object.prototype.hasOwnProperty.call(renderMeasure, aggId)) {
+    const candidate = renderMeasure[aggId];
+    if (typeof candidate === 'function') {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/**
  * Aggregate one measure column over a group's members using its effective aggregation. By convention
  * the reducer's item is the already-extracted column value, so we map `members` through
  * `column.getValue` before reducing. Returns the raw aggregated value (number | string | string[] |
@@ -152,12 +174,33 @@ export function applicableAggregations(column: ColumnDefinition): AggregationId[
 }
 
 /** Group-level ordering spec: by the group label, or by a measure column's aggregated value. */
-export type GroupSort = { by: 'label' | 'count' | { columnId: string }; dir: 'asc' | 'desc' };
+export type GroupSort = { by: 'label' | { columnId: string }; dir: 'asc' | 'desc' };
+
+/** Is a {@link GroupSort} currently ordering by a given target ('label' or a measure column id)? */
+function isGroupSortTarget(sort: GroupSort, target: 'label' | { columnId: string }): boolean {
+  if (target === 'label') return sort.by === 'label';
+  return typeof sort.by !== 'string' && sort.by.columnId === target.columnId;
+}
 
 /**
- * Order the groups themselves (design §4 "a separate control orders the groups"). Supports ordering
- * by label, by member count, or by a measure column's aggregated value (numeric where possible,
- * falling back to a string compare of the formatted value).
+ * Cycle the GROUP ordering on a header click (the grouped-view analogue of {@link cycleSort} in
+ * `applyView.ts`): clicking a column that isn't currently ordering the groups starts it at `asc`;
+ * clicking the same target again flips `asc` → `desc`; a third click falls back to the default
+ * (label ascending) rather than an "unsorted" state, since the groups always have SOME order.
+ * `target` is `'label'` for the pinned grouped-column header, or `{ columnId }` for a measure column.
+ */
+export function cycleGroupSort(current: GroupSort, target: 'label' | { columnId: string }): GroupSort {
+  if (!isGroupSortTarget(current, target)) return { by: target, dir: 'asc' };
+  if (current.dir === 'asc') return { by: target, dir: 'desc' };
+  return { by: 'label', dir: 'asc' };
+}
+
+/**
+ * Order the groups themselves (design §4 "a separate control orders the groups"). Groups are ordered
+ * by clicking a column header while grouped ({@link cycleGroupSort}): by label, or by a measure
+ * column's aggregated value (numeric where possible, falling back to a string compare of the
+ * formatted value). There is no member-count sort — a group's member count isn't a shown column
+ * (it's always visible next to the group's expand caret), so it has no header to click.
  */
 export function sortGroups(
   groups: TableGroup[],
@@ -169,10 +212,6 @@ export function sortGroups(
   const sign = sort.dir === 'desc' ? -1 : 1;
 
   if (sort.by === 'label') return orderByLabel(groups, sort.dir);
-
-  if (sort.by === 'count') {
-    return [...groups].sort((a, b) => sign * (a.members.length - b.members.length));
-  }
 
   const by = sort.by;
   const column = columns.find((c) => c.id === by.columnId);

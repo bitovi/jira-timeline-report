@@ -3,7 +3,7 @@ import { nativeFetchJSON } from '../jira-oidc-helpers';
 const REFERENCE_DATE = new Date(2024, 8, 21);
 const DAY = 1000 * 60 * 60 * 24;
 
-// http://localhost:3000/?primaryIssueType=Initiative&statusesToShow=Development%2CReady&primaryReportType=breakdown&secondaryReportType=breakdown&jql=parent+in+%28IMP-143%2C+IMP-147%29+Order+By+Rank&loadChildren=true
+// http://localhost:3000/?primaryIssueType=Initiative&statusesToShow=Development%2CReady&primaryReportType=cards&cardsMode=breakdown&jql=parent+in+%28IMP-143%2C+IMP-147%29+Order+By+Rank&loadChildren=true
 
 let PROMISE = null;
 

@@ -47,12 +47,21 @@ export default async function main() {
     {
       host: 'jira',
       createStorage: createJiraPluginStorage,
-      configureRouting: (route: {
-        reconcileRoutingState: () => void;
-        start: () => void;
-        _onStartComplete: unknown;
-      }) => {
+      configureRouting: (
+        route: {
+          reconcileRoutingState: () => void;
+          start: () => void;
+          _onStartComplete: unknown;
+        },
+        { beforeRouteStart }: { beforeRouteStart: () => void },
+      ) => {
         routing.reconcileRoutingState();
+
+        // Legacy-param rewrite goes here, not before this call: `reconcileRoutingState` replaces the
+        // entire search string with the container's params, so anything written earlier is lost —
+        // which is why the legacy URL fixes never worked in this host. Still before `route.start()`,
+        // since the rewrite is invisible to `pushStateObservable` (see migrations/url.ts).
+        beforeRouteStart();
 
         route._onStartComplete = routing.syncRouters;
         route.start();

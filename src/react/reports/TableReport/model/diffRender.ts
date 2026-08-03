@@ -1,11 +1,10 @@
 /**
  * "last ➡ current" diff formatting for the Table report (spec/012-table-and-grouper, Phase 2).
  *
- * Ported from `EstimationTable/helpers/cells.ts` (`anythingToString` / `compareToLast`) but
- * generalised to operate on the Table report's loose {@link TableIssue} shape rather than the
- * Estimation report's `EstimationIssue`. Each estimation column formats its current value against
- * the prior-period counterpart read from `issue.issueLastPeriod`, producing the same
- * "last ➡ current" string the Estimation Table shows.
+ * The `anythingToString` / `compareToLast` formatting (ported from the former Estimation Table),
+ * generalised to operate on the Table report's loose {@link TableIssue} shape. Each estimation
+ * column formats its current value against the prior-period counterpart read from
+ * `issue.issueLastPeriod`, producing a "last ➡ current" string.
  */
 import type { TableIssue } from './columns';
 

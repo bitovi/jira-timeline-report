@@ -7,7 +7,7 @@
  *   - how a column READS its value → `get`
  * plus which raw Jira field id(s) a concept `claims`, so the generic "one column per Jira
  * field" loop can suppress the bare duplicate (e.g. don't show "Project" when we offer
- * "Project Key" + "Project Name").
+ * "Project Key" + "Space Name").
  *
  * Imported by BOTH the React catalog (`buildColumnCatalog`) and `route-data.js`
  * (`tableColumnFields`), so it must NOT import any React/UI. Presentation (render/compare/
@@ -91,11 +91,18 @@ export const BUILTIN_CONCEPTS: readonly BuiltinConcept[] = [
         get: (issue) => issue.projectKey,
       },
       {
-        // Requires loading the `project` field, then reading `.name` off the JSON object.
+        // Requires loading the `project` field, then reading `.name` off the JSON object. The
+        // request/response pipeline (`fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields`)
+        // renames every response field key from raw id -> display name via `mapIdsToNames`, so the
+        // issue's raw project field ends up under the key `Project` (capitalized), not `project` (the
+        // id). `requires` must use the display name too so `route-data.js` requests it via the
+        // name-based `nameMap` translation, same as the other raw CORE facets (`Created`, `Status`, …).
         sourceId: 'builtin:project:name',
-        label: 'Project Name',
-        requires: ['project'],
-        get: (issue) => fieldObjectName(issue, 'project'),
+        // Jira renamed "Project" -> "Space"; the sourceId/requires stay as-is (persisted column
+        // ids + the underlying Jira field are unchanged) but the user-facing label follows the rename.
+        label: 'Space Name',
+        requires: ['Project'],
+        get: (issue) => fieldObjectName(issue, 'Project'),
       },
     ],
   },

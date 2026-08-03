@@ -6,7 +6,7 @@ import { useQueryParams } from '../../../hooks/useQueryParams';
 import { CanObservable } from '../../../hooks/useCanObservable';
 import { useUpdateReport } from '../../../services/reports';
 import { getReportFromParams, paramsMatchReport } from './utilities';
-import { parseSections, sameSections, toStoredSections } from '../../../reports/ReportOfReports/model/sections';
+import { toStoredSections } from '../../../reports/ReportOfReports/model/sections';
 import { storedQueryParams } from '../../storedQueryParams';
 import routeData from '../../../../canjs/routing/route-data';
 
@@ -18,9 +18,12 @@ export const useSelectedReport = ({
   queryParamObservable: CanObservable<string>;
   reports: Reports;
   /**
-   * The in-memory report-of-reports document tree. Empty for every other report type. Passed in
-   * rather than read from the layout context so this hook stays independent of that provider.
-   * See spec/016-report-of-reports Phase 3.
+   * The in-memory report-of-reports document tree, for {@link updateSelectedReport} to persist.
+   * Empty for every other report type. Passed in rather than read from the layout context so this
+   * hook stays independent of that provider. See spec/016-report-of-reports Phase 3.
+   *
+   * Not part of the dirty flag: a tree that differs from the saved one is a `sections` URL param
+   * (spec/016-report-of-reports/006-url-state Phase 1), so `paramsMatchReport` already sees it.
    */
   sections?: LayoutNode[];
 }) => {
@@ -43,11 +46,6 @@ export const useSelectedReport = ({
     },
   });
 
-  // The document tree lives outside the URL, so `paramsMatchReport` can't see layout edits. Without
-  // this comparison "Save report" would never appear for a report-of-reports. A report with no saved
-  // `sections` and an empty tree compares equal, so older reports never load dirty.
-  const sectionsAreDirty = !!selectedReport && !sameSections(sections, parseSections(selectedReport.sections));
-
   return {
     selectedReport,
     updateSelectedReport: () => {
@@ -62,8 +60,7 @@ export const useSelectedReport = ({
       // than writing `sections: []` onto all of them. A document whose last node was removed still
       // needs the empty array written, or the spread in `updateReport` would keep the stale tree.
       const storedSections = toStoredSections(sections);
-      const sectionsUpdate =
-        storedSections.length || selectedReport.sections ? { sections: storedSections } : {};
+      const sectionsUpdate = storedSections.length || selectedReport.sections ? { sections: storedSections } : {};
 
       updateReport(
         selectedReport.id,
@@ -77,6 +74,6 @@ export const useSelectedReport = ({
         },
       );
     },
-    isDirty: paramsAreDirty || sectionsAreDirty,
+    isDirty: paramsAreDirty,
   };
 };

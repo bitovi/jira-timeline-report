@@ -2,7 +2,7 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import type { ReportLoadingState } from '../hooks/useReportLoadingState';
-import { NoJqlMessage, EmptyResultMessage, ErrorMessage } from './ReportMessages';
+import { NoJqlMessage, EmptyResultMessage, ErrorMessage, UnsupportedReportTypeMessage } from './ReportMessages';
 import { LoadingProgressContainer } from './LoadingProgress';
 
 export interface ReportAreaProps {
@@ -23,6 +23,14 @@ export interface ReportAreaProps {
    * See spec/016-report-of-reports.
    */
   selfManagesData?: boolean;
+  /**
+   * The raw report type the config asked for, when this build has no entry for it (see
+   * `unsupportedReportType.ts`). Takes precedence over every other view state: the report type is
+   * dead whatever the request does, so saying so must not wait on data that would only produce the
+   * wrong report — route-data clamps a dead key to the first entry in `REPORTS`, so without this the
+   * user gets a Gantt and no explanation.
+   */
+  unsupportedReportType?: string;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */
   children: ReactNode;
 }
@@ -43,12 +51,17 @@ export const ReportArea: FC<ReportAreaProps> = ({
   primaryIssueType,
   primaryIssuesCount,
   selfManagesData = false,
+  unsupportedReportType,
   children,
 }) => {
   const { status, rejectReason } = loadingState;
   const resolved = status === 'resolved';
   const pending = status === 'pending';
   const rejected = status === 'rejected';
+
+  if (unsupportedReportType) {
+    return <UnsupportedReportTypeMessage reportType={unsupportedReportType} />;
+  }
 
   return (
     <>

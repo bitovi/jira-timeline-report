@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Report modal — redesign mockups</title>
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --link: #0c66e4;
+        --success: #22a06b;
+        --success-bg: #dffcf0;
+        --purple: #6e5dc6;
+        --purple-bg: #eceafa;
+        --teal: #1d7f8c;
+        --teal-bg: #e7f9fc;
+        --orange: #a54800;
+        --orange-bg: #fff3eb;
+        --indigo: #4c4fce;
+        --indigo-bg: #eceafc;
+        --magenta: #ae4787;
+        --magenta-bg: #fdeef6;
+        --cyan: #206b74;
+        --cyan-bg: #e3f7f9;
+        --gold: #7f5f01;
+        --gold-bg: #fff7d6;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 80px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 34px 0 2px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 920px;
+        margin: 6px 0 8px;
+        font-size: 13px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 2px 0 14px;
+        max-width: 920px;
+      }
+      .stage {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+      }
+
+      /* ---- modal shell (mimics @atlaskit/modal-dialog) ---- */
+      .modal {
+        width: 480px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow:
+          0 8px 24px rgba(9, 30, 66, 0.18),
+          0 0 1px rgba(9, 30, 66, 0.31);
+        overflow: hidden;
+      }
+      .modal-head {
+        padding: 20px 24px 12px;
+      }
+      .modal-title {
+        font-size: 20px;
+        font-weight: 500;
+        margin: 0;
+      }
+      .modal-sub {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 2px 0 0;
+      }
+
+      /* ---- search ---- */
+      .search {
+        padding: 4px 24px 12px;
+      }
+      .search-field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 2px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 10px;
+        background: var(--neutral-10);
+      }
+      .search-field.focused {
+        border-color: var(--brand);
+        background: #fff;
+      }
+      .search-field svg {
+        flex: none;
+      }
+      .search-field input {
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font-size: 14px;
+        width: 100%;
+        color: var(--text);
+      }
+      .search-count {
+        color: var(--subtle);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      /* ---- list ---- */
+      .list {
+        list-style: none;
+        margin: 0;
+        padding: 0 12px;
+        max-height: 340px;
+        overflow-y: auto;
+        border-top: 1px solid var(--neutral-30);
+      }
+      .group-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--subtle);
+        padding: 12px 12px 4px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 9px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text);
+      }
+      .row:hover,
+      .row.active {
+        background: var(--brand-bg);
+      }
+      .row-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .row-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .row-name {
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .row-meta {
+        color: var(--subtle);
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 1px;
+      }
+      .row-meta .dot {
+        margin: 0 5px;
+        opacity: 0.5;
+      }
+      mark {
+        background: #fff1a8;
+        color: inherit;
+        border-radius: 2px;
+        padding: 0 1px;
+      }
+      .badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 1px 7px;
+        border-radius: 10px;
+        white-space: nowrap;
+        flex: none;
+      }
+      .b-gantt {
+        background: var(--brand-bg);
+        color: var(--brand);
+      }
+      .b-scatter {
+        background: var(--purple-bg);
+        color: var(--purple);
+      }
+      .b-table {
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .b-cards {
+        background: var(--teal-bg);
+        color: var(--teal);
+      }
+      .b-ror {
+        background: var(--orange-bg);
+        color: var(--orange);
+      }
+
+      /* type icon backgrounds */
+      .i-gantt {
+        background: var(--brand-bg);
+        color: var(--brand);
+      }
+      .i-scatter {
+        background: var(--purple-bg);
+        color: var(--purple);
+      }
+      .i-table {
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .i-cards {
+        background: var(--teal-bg);
+        color: var(--teal);
+      }
+      .i-estprogress,
+      .b-estprogress {
+        background: var(--orange-bg);
+        color: var(--orange);
+      }
+      .i-scheduler,
+      .b-scheduler {
+        background: var(--indigo-bg);
+        color: var(--indigo);
+      }
+      .i-estanalysis,
+      .b-estanalysis {
+        background: var(--magenta-bg);
+        color: var(--magenta);
+      }
+      .i-flow,
+      .b-flow {
+        background: var(--cyan-bg);
+        color: var(--cyan);
+      }
+      .i-tis,
+      .b-tis {
+        background: var(--gold-bg);
+        color: var(--gold);
+      }
+      .i-ror {
+        background: var(--orange-bg);
+        color: var(--orange);
+      }
+
+      /* ---- icon legend ---- */
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 10px 18px;
+        max-width: 960px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 18px 20px;
+        margin: 6px 0 10px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .legend-item .row-icon {
+        width: 34px;
+        height: 34px;
+      }
+      .legend-name {
+        font-weight: 500;
+      }
+      .legend-key {
+        color: var(--subtle);
+        font-size: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      .modal-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 24px 20px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      .btn {
+        border: 0;
+        border-radius: 6px;
+        padding: 7px 14px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn-subtle {
+        background: transparent;
+        color: var(--text);
+      }
+      .btn-subtle:hover {
+        background: var(--neutral-20);
+      }
+
+      /* empty / no-results */
+      .empty {
+        padding: 34px 24px;
+        text-align: center;
+        color: var(--subtle);
+      }
+      .empty strong {
+        display: block;
+        color: var(--text);
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      .kbd {
+        display: inline-block;
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        padding: 0 5px;
+        font-size: 11px;
+        background: var(--neutral-10);
+        color: var(--muted);
+        min-width: 18px;
+        text-align: center;
+      }
+      .foot-hint {
+        margin-right: auto;
+        color: var(--subtle);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Add Report modal — redesign</h1>
+    <p class="intro">
+      Companion mockup for <a href="../README.md">spec/023-report-modal</a>. Replaces the plain stack of centered subtle
+      buttons with a searchable, left-aligned list where each row carries a type icon, a type badge, and a secondary
+      metadata line. Same data source (<code>selectableReports()</code>); the only new capability is client-side
+      filtering. Everything below the dashed line depends on new <code>Report</code> fields we do not store yet — see
+      the README.
+    </p>
+
+    <h2 style="margin-top: 22px">Report type icons — the full set</h2>
+    <p class="caption">
+      One icon + badge color per <code>primaryReportType</code> in <code>src/configuration/reports.ts</code>, including
+      Report of Reports. The picker excludes nested report-of-reports today, but the type still needs an icon for the
+      Saved Reports page and the report-type dropdown, so it's drawn here too. Note: the "Scatter Plot" report is really
+      dots placed along a time axis (not an XY cloud), so its icon is dots on a baseline.
+    </p>
+    <div class="legend">
+      <div class="legend-item">
+        <span class="row-icon i-gantt">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="5" width="11" height="3" rx="1.5" />
+            <rect x="7" y="10.5" width="12" height="3" rx="1.5" />
+            <rect x="5" y="16" width="9" height="3" rx="1.5" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Gantt Chart</div>
+          <div class="legend-key">start-due</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-scatter">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="6" cy="15" r="2" />
+            <circle cx="11" cy="8" r="2" />
+            <circle cx="15" cy="16" r="2" />
+            <circle cx="19" cy="6" r="2" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Scatter Plot</div>
+          <div class="legend-key">due</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-estprogress">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="8" width="18" height="8" rx="4" stroke="currentColor" stroke-width="2" />
+            <rect x="5" y="10" width="9" height="4" rx="2" fill="currentColor" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Estimation Progress</div>
+          <div class="legend-key">estimation-progress</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-scheduler">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="17" width="2.5" height="4" rx="0.5" />
+            <rect x="6" y="12" width="2.5" height="9" rx="0.5" />
+            <rect x="9" y="7" width="2.5" height="14" rx="0.5" />
+            <rect x="12" y="7" width="2.5" height="14" rx="0.5" />
+            <rect x="15" y="12" width="2.5" height="9" rx="0.5" />
+            <rect x="18" y="17" width="2.5" height="4" rx="0.5" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Auto-Scheduler</div>
+          <div class="legend-key">auto-scheduler</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-estanalysis">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 20V10M9 20V6M14 20v-7" stroke-linecap="round" />
+            <circle cx="17" cy="9" r="3.5" />
+            <path d="M19.5 11.5L22 14" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Estimation Analysis</div>
+          <div class="legend-key">estimate-analysis</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-table">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="5" width="16" height="14" rx="1.5" />
+            <path d="M4 10h16M10 5v14" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Table</div>
+          <div class="legend-key">table</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-flow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 6l6 6-6 6M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Flow Metrics</div>
+          <div class="legend-key">flow-metrics</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-tis">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="13" r="7" />
+            <path d="M12 13V9M12 13l3 2M10 2h4" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Time in Status</div>
+          <div class="legend-key">time-in-status</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-cards">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="4" y="5" width="7" height="7" rx="1.5" />
+            <rect x="13" y="5" width="7" height="7" rx="1.5" />
+            <rect x="4" y="14" width="7" height="5" rx="1.5" />
+            <rect x="13" y="14" width="7" height="5" rx="1.5" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Cards</div>
+          <div class="legend-key">cards</div>
+        </div>
+      </div>
+
+      <div class="legend-item">
+        <span class="row-icon i-ror">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="8" y="3" width="13" height="16" rx="2" />
+            <path d="M11 8h7M11 12h7M11 16h4" stroke-linecap="round" />
+            <path d="M5 6v13a2 2 0 0 0 2 2h9" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <div>
+          <div class="legend-name">Report of Reports</div>
+          <div class="legend-key">report-of-reports</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <!-- ============ A. Default state ============ -->
+      <div>
+        <h2>A · Default — searchable list with type</h2>
+        <p class="caption">Search autofocuses. Type icon + badge make the report type scannable at a glance.</p>
+        <div class="modal">
+          <div class="modal-head">
+            <h2 class="modal-title" style="margin: 0">Add Report</h2>
+            <p class="modal-sub">Pick a saved report to embed in this document.</p>
+          </div>
+          <div class="search">
+            <div class="search-field focused">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" stroke-width="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" stroke-linecap="round" />
+              </svg>
+              <input value="" placeholder="Search reports by name or type…" />
+              <span class="search-count">18 reports</span>
+            </div>
+          </div>
+          <ul class="list">
+            <li>
+              <button class="row active">
+                <span class="row-icon i-gantt" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="3" y="5" width="11" height="3" rx="1.5" />
+                    <rect x="7" y="10.5" width="12" height="3" rx="1.5" />
+                    <rect x="5" y="16" width="9" height="3" rx="1.5" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">All Outcomes</div>
+                  <div class="row-meta">project = ECOM AND type = Outcome</div>
+                </span>
+                <span class="badge b-gantt">Gantt Chart</span>
+              </button>
+            </li>
+            <li>
+              <button class="row">
+                <span class="row-icon i-scatter" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="6" cy="15" r="2" />
+                    <circle cx="11" cy="8" r="2" />
+                    <circle cx="15" cy="16" r="2" />
+                    <circle cx="19" cy="6" r="2" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">Initiatives scatter</div>
+                  <div class="row-meta">project = ECOM AND type = Initiative</div>
+                </span>
+                <span class="badge b-scatter">Scatter Plot</span>
+              </button>
+            </li>
+            <li>
+              <button class="row">
+                <span class="row-icon i-table" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect
+                      x="4"
+                      y="5"
+                      width="16"
+                      height="14"
+                      rx="1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <path d="M4 10h16M10 5v14" stroke="currentColor" stroke-width="2" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">Arthur Simple Table</div>
+                  <div class="row-meta">assignee = arthur ORDER BY due ASC</div>
+                </span>
+                <span class="badge b-table">Table</span>
+              </button>
+            </li>
+            <li>
+              <button class="row">
+                <span class="row-icon i-cards" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="4" y="5" width="7" height="7" rx="1.5" />
+                    <rect x="13" y="5" width="7" height="7" rx="1.5" />
+                    <rect x="4" y="14" width="7" height="5" rx="1.5" />
+                    <rect x="13" y="14" width="7" height="5" rx="1.5" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">In Progress Epics</div>
+                  <div class="row-meta">statusCategory = "In Progress" AND type = Epic</div>
+                </span>
+                <span class="badge b-cards">Cards</span>
+              </button>
+            </li>
+            <li>
+              <button class="row">
+                <span class="row-icon i-gantt" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="3" y="5" width="11" height="3" rx="1.5" />
+                    <rect x="7" y="10.5" width="12" height="3" rx="1.5" />
+                    <rect x="5" y="16" width="9" height="3" rx="1.5" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">Epics and Initiatives</div>
+                  <div class="row-meta">project = ECOM AND type in (Epic, Initiative)</div>
+                </span>
+                <span class="badge b-gantt">Gantt Chart</span>
+              </button>
+            </li>
+          </ul>
+          <div class="modal-foot">
+            <span class="foot-hint"
+              ><span class="kbd">↑</span><span class="kbd">↓</span> navigate <span class="kbd">↵</span> add</span
+            >
+            <button class="btn btn-subtle">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ B. Typing / filtering ============ -->
+      <div>
+        <h2>B · Filtering — matches highlighted</h2>
+        <p class="caption">Filters name <em>and</em> type. Query terms are highlighted in the matched text.</p>
+        <div class="modal">
+          <div class="modal-head">
+            <h2 class="modal-title" style="margin: 0">Add Report</h2>
+            <p class="modal-sub">Pick a saved report to embed in this document.</p>
+          </div>
+          <div class="search">
+            <div class="search-field focused">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" stroke-width="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" stroke-linecap="round" />
+              </svg>
+              <input value="init" placeholder="Search reports by name or type…" />
+              <span class="search-count">3 of 18</span>
+            </div>
+          </div>
+          <ul class="list">
+            <li>
+              <button class="row active">
+                <span class="row-icon i-scatter" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="6" cy="15" r="2" />
+                    <circle cx="11" cy="8" r="2" />
+                    <circle cx="15" cy="16" r="2" />
+                    <circle cx="19" cy="6" r="2" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name"><mark>Init</mark>iatives scatter</div>
+                  <div class="row-meta">project = ECOM AND type = Initiative</div>
+                </span>
+                <span class="badge b-scatter">Scatter Plot</span>
+              </button>
+            </li>
+            <li>
+              <button class="row">
+                <span class="row-icon i-gantt" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="3" y="5" width="11" height="3" rx="1.5" />
+                    <rect x="7" y="10.5" width="12" height="3" rx="1.5" />
+                    <rect x="5" y="16" width="9" height="3" rx="1.5" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name"><mark>Init</mark>iatives grouped by parent</div>
+                  <div class="row-meta">project = ECOM AND type = Initiative</div>
+                </span>
+                <span class="badge b-gantt">Gantt Chart</span>
+              </button>
+            </li>
+            <li>
+              <button class="row">
+                <span class="row-icon i-cards" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="4" y="5" width="7" height="7" rx="1.5" />
+                    <rect x="13" y="5" width="7" height="7" rx="1.5" />
+                    <rect x="4" y="14" width="7" height="5" rx="1.5" />
+                    <rect x="13" y="14" width="7" height="5" rx="1.5" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">In Progress <mark>Init</mark>iatives</div>
+                  <div class="row-meta">statusCategory = "In Progress" AND type = Initiative</div>
+                </span>
+                <span class="badge b-cards">Cards</span>
+              </button>
+            </li>
+          </ul>
+          <div class="modal-foot">
+            <span class="foot-hint"
+              ><span class="kbd">↑</span><span class="kbd">↓</span> navigate <span class="kbd">↵</span> add</span
+            >
+            <button class="btn btn-subtle">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ C. No results ============ -->
+      <div>
+        <h2>C · No results</h2>
+        <p class="caption">
+          A real dead-end (typo, or nothing matches) gets a distinct message from "no reports at all."
+        </p>
+        <div class="modal">
+          <div class="modal-head">
+            <h2 class="modal-title" style="margin: 0">Add Report</h2>
+            <p class="modal-sub">Pick a saved report to embed in this document.</p>
+          </div>
+          <div class="search">
+            <div class="search-field focused">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" stroke-width="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" stroke-linecap="round" />
+              </svg>
+              <input value="quarterly rollup" placeholder="Search reports by name or type…" />
+              <span class="search-count">0 of 18</span>
+            </div>
+          </div>
+          <div class="empty">
+            <strong>No reports match "quarterly rollup"</strong>
+            Try a different name, or a report type like "gantt" or "table".
+          </div>
+          <div class="modal-foot">
+            <button class="btn btn-subtle">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ D. Empty (no saved reports) ============ -->
+      <div>
+        <h2>D · Empty — nothing to add yet</h2>
+        <p class="caption">Preserves today's copy for the "no other saved reports" case.</p>
+        <div class="modal">
+          <div class="modal-head">
+            <h2 class="modal-title" style="margin: 0">Add Report</h2>
+          </div>
+          <div class="empty">
+            <strong>No other saved reports to add</strong>
+            Save a report first, then compose it here.
+          </div>
+          <div class="modal-foot">
+            <button class="btn btn-subtle">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ E. Future — with saved metadata ============ -->
+      <div>
+        <h2>E · Future — if we captured save metadata</h2>
+        <p class="caption">
+          Depends on <strong>new</strong> <code>Report</code> fields (<code>updatedAt</code>, <code>updatedBy</code>).
+          Shown so the row layout is designed to absorb it without a redesign. See README §"What we don't have."
+        </p>
+        <div class="modal">
+          <div class="modal-head">
+            <h2 class="modal-title" style="margin: 0">Add Report</h2>
+            <p class="modal-sub">Pick a saved report to embed in this document.</p>
+          </div>
+          <div class="search">
+            <div class="search-field">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" stroke-width="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" stroke-linecap="round" />
+              </svg>
+              <input value="" placeholder="Search reports by name or type…" />
+              <span class="search-count">18 reports</span>
+            </div>
+          </div>
+          <ul class="list">
+            <li>
+              <button class="row active">
+                <span class="row-icon i-gantt" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="3" y="5" width="11" height="3" rx="1.5" />
+                    <rect x="7" y="10.5" width="12" height="3" rx="1.5" />
+                    <rect x="5" y="16" width="9" height="3" rx="1.5" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">All Outcomes</div>
+                  <div class="row-meta">Gantt Chart <span class="dot">•</span> Updated Jul 28 by Justin Meyer</div>
+                </span>
+                <span class="badge b-gantt">Gantt Chart</span>
+              </button>
+            </li>
+            <li>
+              <button class="row">
+                <span class="row-icon i-scatter" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="6" cy="15" r="2" />
+                    <circle cx="11" cy="8" r="2" />
+                    <circle cx="15" cy="16" r="2" />
+                    <circle cx="19" cy="6" r="2" />
+                  </svg>
+                </span>
+                <span class="row-main">
+                  <div class="row-name">Initiatives scatter</div>
+                  <div class="row-meta">Scatter Plot <span class="dot">•</span> Updated Aug 1 by Arthur Vandelay</div>
+                </span>
+                <span class="badge b-scatter">Scatter Plot</span>
+              </button>
+            </li>
+          </ul>
+          <div class="modal-foot">
+            <span class="foot-hint">Sorted by <strong style="margin-left: 4px">Recently updated ▾</strong></span>
+            <button class="btn btn-subtle">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

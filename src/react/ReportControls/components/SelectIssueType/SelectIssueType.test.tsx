@@ -34,7 +34,7 @@ describe('<SelectIssueType />', () => {
 
     render(<SelectIssueType />);
 
-    const dropdownTrigger = await screen.findByText('Epics');
+    const dropdownTrigger = await screen.findByText('Epic');
     expect(dropdownTrigger).toBeInTheDocument();
 
     spy.mockReset();

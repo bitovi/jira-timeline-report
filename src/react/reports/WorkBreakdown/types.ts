@@ -99,8 +99,8 @@ export interface IssueOrRelease {
   statusSummary?: string | Record<string, unknown> | null;
 }
 
-/** Which secondary view is active — mirrors `routeData.secondaryReportType`. */
-export type SecondaryReportMode = 'status' | 'breakdown';
+/** Which Cards view is active — mirrors `routeData.cardsMode`. */
+export type CardsMode = 'status' | 'breakdown';
 
 /** Handler invoked when an issue row/card is clicked (wired to the legacy issue tooltip). */
 export type IssueClickHandler = (event: React.MouseEvent, issue: IssueOrRelease) => void;
@@ -182,7 +182,7 @@ export interface Card {
 
 /** The render-ready view model produced by `buildBoard`. */
 export interface Board {
-  mode: SecondaryReportMode;
+  mode: CardsMode;
   /** Work types present across the board (columns shown in breakdown mode), in display order. */
   workTypes: WorkType[];
   cards: Card[];

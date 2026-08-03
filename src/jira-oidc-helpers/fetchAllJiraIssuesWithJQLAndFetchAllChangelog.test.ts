@@ -71,4 +71,67 @@ describe('fetchAllJiraIssuesWithJQLAndFetchAllChangelog', () => {
     expect(afterSecond.issuesRequested).toBe(5);
     expect(afterSecond.issuesReceived).toBe(5);
   });
+
+  const callsMatching = (config: Config, fragment: string) =>
+    (config.requestHelper as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(([url]: [string]) =>
+      url.includes(fragment),
+    );
+
+  it('skips the approximate-count when asked, but still searches and fetches changelogs', async () => {
+    const config = makeConfig({
+      'parent in (A)': [
+        { id: '1', key: 'A-1' },
+        { id: '2', key: 'A-2' },
+      ],
+    });
+    const fetchAll = fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config);
+
+    await fetchAll({ jql: 'parent in (A)', fields: [], skipApproximateCount: true });
+
+    expect(callsMatching(config, 'approximate-count')).toHaveLength(0);
+    expect(callsMatching(config, '/api/3/search/jql')).toHaveLength(1);
+    expect(callsMatching(config, '/api/3/changelog/bulkfetch')).toHaveLength(1);
+  });
+
+  it('leaves issuesRequested at 0 when the count is skipped (emit skipped, not zeroed)', async () => {
+    const config = makeConfig({
+      'parent in (A)': [
+        { id: '1', key: 'A-1' },
+        { id: '2', key: 'A-2' },
+      ],
+    });
+    const fetchAll = fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config);
+
+    const progress = (() => {}) as { (data: ProgressData): void; data?: ProgressData };
+    await fetchAll({ jql: 'parent in (A)', fields: [], skipApproximateCount: true }, progress);
+
+    expect(progress.data!.issuesRequested).toBe(0);
+    expect(progress.data!.issuesReceived).toBe(2);
+  });
+
+  it('counts by default (no flag ⇒ exactly one approximate-count and issuesRequested tracks it)', async () => {
+    const config = makeConfig({
+      'parent in (A)': [
+        { id: '1', key: 'A-1' },
+        { id: '2', key: 'A-2' },
+      ],
+    });
+    const fetchAll = fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config);
+
+    const progress = (() => {}) as { (data: ProgressData): void; data?: ProgressData };
+    await fetchAll({ jql: 'parent in (A)', fields: [] }, progress);
+
+    expect(callsMatching(config, 'approximate-count')).toHaveLength(1);
+    expect(progress.data!.issuesRequested).toBe(2);
+  });
+
+  it('never lets the skip flag reach the wire (not in the search/jql URL)', async () => {
+    const config = makeConfig({ 'parent in (A)': [{ id: '1', key: 'A-1' }] });
+    const fetchAll = fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config);
+
+    await fetchAll({ jql: 'parent in (A)', fields: [], skipApproximateCount: true });
+
+    const [[searchUrl]] = callsMatching(config, '/api/3/search/jql');
+    expect(searchUrl).not.toContain('skipApproximateCount');
+  });
 });

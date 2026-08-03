@@ -17,10 +17,13 @@ export const propsFor = (vm: any, config: any) => ({
   allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
   rollupTimingLevelsAndCalculationsObs: value.from(vm, 'rollupTimingLevelsAndCalculations'),
   filteredDerivedIssuesObs: value.from(vm, 'filteredDerivedIssues'),
-  extraFieldsObs: value.bind(config, 'fields'),
-  rowGroupObs: value.bind(config, 'rowGroup'),
-  colGroupObs: value.bind(config, 'colGroup'),
-  aggregatorsObs: value.bind(config, 'aggregators'),
+  // Cards report — spec/018-card-report/alt-plan.md. The issues the vm held back as "planning" are
+  // exactly what its Planning card shows, so they arrive alongside the primaries rather than being
+  // recomputed. No `filterRows` counterpart: the vm has already applied it to `primaryIssuesOrReleases`,
+  // and Cards' second list is scoped to the child rows (`cardsChildFilterRows`).
+  planningIssuesObs: value.from(vm, 'planningIssues'),
+  cardsModeObs: value.bind(config, 'cardsMode'),
+  cardsChildFilterRowsObs: value.bind(config, 'cardsChildFilterRows'),
   flowMetricsCycleTimeRangeObs: value.bind(config, 'flowMetricsCycleTimeRange'),
   flowMetricsStatusFilterObs: value.bind(config, 'flowMetricsStatusFilter'),
   flowMetricsIssueTypeFilterObs: value.bind(config, 'flowMetricsIssueTypeFilter'),
@@ -38,7 +41,7 @@ export const propsFor = (vm: any, config: any) => ({
   primaryIssueTypeObs: value.bind(config, 'primaryIssueType'),
   breakdownObs: value.bind(config, 'primaryReportBreakdown'),
   showPercentCompleteObs: value.bind(config, 'showPercentComplete'),
-  // Table report (`table2`) persisted view state — spec/012-table-and-grouper Phase 5.
+  // Table report persisted view state — spec/012-table-and-grouper Phase 5.
   tableColumnsObs: value.bind(config, 'tableColumns'),
   tableSortColumnObs: value.bind(config, 'tableSortColumn'),
   tableSortDirObs: value.bind(config, 'tableSortDir'),
@@ -50,16 +53,6 @@ export const propsFor = (vm: any, config: any) => ({
   tableFieldAxisObs: value.bind(config, 'tableFieldAxis'),
   tableShowRowTotalsObs: value.bind(config, 'tableShowRowTotals'),
   tableShowColTotalsObs: value.bind(config, 'tableShowColTotals'),
-});
-
-/** The secondary (Work Breakdown) report's prop bag. Shell-only — children render no secondary. */
-export const secondaryPropsFor = (vm: any, config: any) => ({
-  primaryIssuesOrReleasesObs: value.from(vm, 'primaryIssuesOrReleases'),
-  allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
-  planningIssuesObs: value.from(vm, 'planningIssues'),
-  secondaryReportTypeObs: value.bind(config, 'secondaryReportType'),
-  filterRowsObs: value.bind(config, 'secondaryFilterRows'),
-  childFilterRowsObs: value.bind(config, 'secondaryChildFilterRows'),
 });
 
 // The key set this produces is pinned by `reportProps.test.ts`. The expected list lives in the test

@@ -10,8 +10,9 @@ const features = [
   { title: 'Estimation Progress', subtitle: '' },
   { title: 'Auto-Scheduler', subtitle: '' },
   { title: 'Estimation Analysis', subtitle: '' },
-  { title: 'Estimation Table', subtitle: '' },
-  { title: 'Secondary Report', subtitle: '' },
+  // 'Secondary Report' was retired with the slot it gated; 'Cards' is the report it used to show.
+  // See spec/018-card-report/alt-plan.md.
+  { title: 'Cards', subtitle: 'Status and work-breakdown cards, one per issue' },
   { title: 'Work Breakdowns', subtitle: '' },
 ];
 

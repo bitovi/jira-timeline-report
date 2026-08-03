@@ -38,7 +38,10 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
         const keys = issues.map((issue) => issue.key);
         const jql = `parent in (${keys.join(', ')}) ${params.childJQL || ''}`;
 
-        return { promise: rootMethod({ ...params, jql }, progress), count: issues.length };
+        // Child batches skip the approximate-count: it's one request per 40-parent batch whose only
+        // product is the children denominator, which the smoothed projection doesn't read. The root call
+        // (fetchAllDeepChildren below) keeps its count as the primary-phase denominator.
+        return { promise: rootMethod({ ...params, jql, skipApproximateCount: true }, progress), count: issues.length };
       });
     }
 

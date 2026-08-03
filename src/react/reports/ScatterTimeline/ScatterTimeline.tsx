@@ -254,7 +254,10 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
   const gridTemplateColumns = showGutter ? `${GUTTER_WIDTH_PX}px ${gridColumnsCSS}` : gridColumnsCSS;
 
   return (
-    <div ref={containerRef} className="p-2 mb-10" style={{ overflow: 'hidden' }}>
+    // `isolate` keeps the report's internal layering (group bands at 0/5, issue markers at 100/101)
+    // inside its own stacking context. Without it those z-indexes resolve against the root stacking
+    // context and paint over body-portaled overlays like the Saved Reports page (z-50).
+    <div ref={containerRef} className="p-2 mb-10 isolate" style={{ overflow: 'hidden' }}>
       {showEmptyRangeState ? (
         <div className="flex items-center justify-center text-center text-neutral-500 text-sm py-16 border border-dashed border-neutral-80 rounded">
           No issues are due in the selected date range.
@@ -307,7 +310,7 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
         </div>
       )}
       {(filteredIssues.length > 0 || undatedIssues.length > 0 || hasDateRange) && (
-        <div className="mt-2 pt-2 border-t border-neutral-80 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <div className="mt-2 pt-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <StatusLegend issues={filteredIssues} />
             {hasDateRange && (

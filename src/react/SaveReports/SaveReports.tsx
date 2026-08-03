@@ -108,8 +108,10 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       return;
     }
 
-    // The URL reset restores every param-backed setting; the document tree lives outside the URL,
-    // so it needs restoring separately.
+    // The URL reset below restores every param-backed setting, the document tree included — it is
+    // a `sections` param now (spec/016-report-of-reports/006-url-state). `resetSections` is still
+    // called first so the tree is restored synchronously, rather than depending on the order the
+    // provider observes the rewrite in.
     resetSections();
     queryParamObservable.set(`?report=${selectedReport.id}`);
   };

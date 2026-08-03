@@ -35,6 +35,13 @@ interface ColumnHeaderMenuProps {
   /** Set this column's sort mode. Tree-capable columns also offer the `tree` (Hierarchy) mode. */
   onSortChange?: (mode: SortMode) => void;
   /**
+   * Suppresses the Hierarchy/Rank sort options on an otherwise tree-capable column, offering plain
+   * ascending/descending only. Set while the report is grouped (spec/012-table-and-grouper,
+   * grouped-column-sort brainstorm): grouping and hierarchy nesting are mutually exclusive, and
+   * `sortMode`/`onSortChange` are driven by the GROUP order in that case, not row order.
+   */
+  disableTreeSort?: boolean;
+  /**
    * The column's current per-column aggregation override, if any. Supplied whenever the column is a
    * measure (identity/grouped columns are excluded upstream). When omitted the submenu is hidden.
    */
@@ -63,6 +70,7 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
   isActive = false,
   sortMode,
   onSortChange,
+  disableTreeSort = false,
   aggregationOverride,
   onAggregationChange,
   aggregationActive = true,
@@ -75,18 +83,20 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
   const currentAggregation = effectiveAggregationId(column, aggregationOverride);
 
   // Sort options match the header-click behavior: tree-capable identity columns offer
-  // Hierarchy / A→Z / Z→A / Rank; every other column offers plain ascending / descending.
-  const sortOptions: Array<{ mode: SortMode; label: string }> = column.isTree
-    ? [
-        { mode: 'tree', label: 'Hierarchy (nested)' },
-        { mode: 'asc', label: 'A → Z' },
-        { mode: 'desc', label: 'Z → A' },
-        { mode: 'rank', label: 'Rank' },
-      ]
-    : [
-        { mode: 'asc', label: 'Sort ascending' },
-        { mode: 'desc', label: 'Sort descending' },
-      ];
+  // Hierarchy / A→Z / Z→A / Rank; every other column (or any column while grouped, since hierarchy
+  // nesting and grouping are mutually exclusive) offers plain ascending / descending only.
+  const sortOptions: Array<{ mode: SortMode; label: string }> =
+    column.isTree && !disableTreeSort
+      ? [
+          { mode: 'tree', label: 'Hierarchy (nested)' },
+          { mode: 'asc', label: 'A → Z' },
+          { mode: 'desc', label: 'Z → A' },
+          { mode: 'rank', label: 'Rank' },
+        ]
+      : [
+          { mode: 'asc', label: 'Sort ascending' },
+          { mode: 'desc', label: 'Sort descending' },
+        ];
 
   return (
     <Popup

@@ -61,7 +61,10 @@ const clampPct = (ratio: number) => Math.min(100, Math.max(0, ratio * 100));
  * - children: HIDDEN until children are seen (phase reached `'children'`, i.e. a snapshot exists);
  *   `active` while pending, `done` when resolved. Counts are scoped to just the children
  *   (`global − primary snapshot`). The active bar/detail use the container's smoothed projection
- *   (`childrenBarValue` / `childrenProjectedTotal`) when provided, else received/discovered.
+ *   (`childrenBarValue` / `childrenProjectedTotal`) when provided. Before the first parent subtree
+ *   completes there is no projection: on the real deep path `childReq` is 0 (child batches skip the
+ *   approximate-count), so the detail reads `"N found"` with an empty bar. The `"N of ~M found"`
+ *   discovered-total branch is now only reachable by props (kept for that reason), not by the live load.
  * - history: concurrent live meter — `pending` until a changelog total is known (`changeLogsRequested`),
  *   then `active` while pending, `done` when resolved. Its bar fills once changelog fetching starts
  *   (empty gray track before that).
@@ -121,7 +124,9 @@ export function computeSteps(props: LoadingProgressProps): StepView[] {
           ? `${fmt(childRec)} children`
           : childrenProjectedTotal
             ? `${fmt(childRec)} of ~${fmt(childrenProjectedTotal)}`
-            : `${fmt(childRec)} of ~${fmt(childReq)} found`,
+            : childReq
+              ? `${fmt(childRec)} of ~${fmt(childReq)} found`
+              : `${fmt(childRec)} found`,
       barValue:
         childStatus === 'done'
           ? 100

@@ -2,9 +2,12 @@ import { ObservableObject, value } from '../../../../can';
 import { RouteData } from '../../../../canjs/routing/route-data/route-data';
 import {
   ChildReportConfig,
+  CHILD_PARAMS,
   CHILD_PARAM_KEYS,
   AD_HOC_CHILD_PARAM_KEYS,
+  NON_OVERRIDABLE_CHILD_PARAM_KEYS,
   SHELL_ONLY_PARAM_KEYS,
+  serializeChildParam,
 } from './ChildReportConfig';
 
 /**
@@ -100,8 +103,6 @@ describe('ChildReportConfig', () => {
     it('parses comma-separated lists', () => {
       expect(childConfig('statusesToExclude=Done,Rejected').statusesToExclude).toEqual(['Done', 'Rejected']);
       expect(childConfig('').statusesToExclude).toEqual([]);
-      expect(childConfig('').aggregators).toEqual(['issuesList']);
-      expect(childConfig('aggregators=storyPoints').aggregators).toEqual(['storyPoints']);
     });
 
     it('parses JSON params', () => {
@@ -140,8 +141,6 @@ describe('ChildReportConfig', () => {
     it('applies report-specific defaults', () => {
       const config = childConfig('');
 
-      expect(config.rowGroup).toBe('projectKey');
-      expect(config.colGroup).toBe('dueInMonth');
       expect(config.tableSortColumn).toBe('identity:treeSummary');
       expect(config.tableFieldAxis).toBe('rows');
       expect(config.scatterDateRangeStart).toBe('');
@@ -150,7 +149,7 @@ describe('ChildReportConfig', () => {
     it('ignores the parent page URL entirely', () => {
       const original = window.location.search;
 
-      window.history.replaceState({}, '', '?jql=LEAKED&primaryReportType=table2');
+      window.history.replaceState({}, '', '?jql=LEAKED&primaryReportType=table');
 
       try {
         expect(childConfig('jql=MINE').jql).toBe('MINE');
@@ -202,12 +201,15 @@ describe('ChildReportConfig', () => {
     });
 
     // allFieldsToRequest is the SECOND hybrid: the base field list is global (team config), but the
-    // `fields` param and the Table report's shown columns are per-child. A child that shared the
-    // parent's list would silently fail to load the fields its own report needs.
-    it('unions the shared base fields with its own requested fields', () => {
-      const config = childConfig('fields=Summary,Labels', { fieldsToRequest: ['Status', 'Parent'] });
+    // Table report's shown columns are per-child. A child that shared the parent's list would
+    // silently fail to load the fields its own report needs.
+    it('unions the shared base fields with its own table-column fields', () => {
+      const columns = JSON.stringify([{ sourceId: 'field:Story points' }]);
+      const config = childConfig('tableColumns=' + encodeURIComponent(columns), {
+        fieldsToRequest: ['Status', 'Parent'],
+      });
 
-      expect(config.allFieldsToRequest).toEqual(expect.arrayContaining(['Status', 'Parent', 'Summary', 'Labels']));
+      expect(config.allFieldsToRequest).toEqual(expect.arrayContaining(['Status', 'Parent', 'Story points']));
     });
 
     it('includes the fields its own table columns require', () => {
@@ -215,6 +217,90 @@ describe('ChildReportConfig', () => {
       const config = childConfig('tableColumns=' + encodeURIComponent(columns), { fieldsToRequest: ['Status'] });
 
       expect(config.allFieldsToRequest).toEqual(expect.arrayContaining(['Status', 'Story points']));
+    });
+
+    /**
+     * The trap request-dedupe has to survive, made executable rather than asserted in prose.
+     *
+     * `allFieldsToRequest` is a `[...new Set(...)]` union, and a Set preserves insertion order — so
+     * the array's order is data. The base fields contribute the same prefix everywhere, but
+     * `tableColumnFields` is ordered by the report's COLUMN order, the thing users drag around. Two
+     * Tables over one JQL showing the same columns in a different order therefore produce different
+     * ARRAYS for the same SET, and a cache key that compared arrays would silently miss the dedupe.
+     * `rawIssuesCacheKey` sorts a canonical id set for exactly this reason.
+     */
+    it('orders the requested fields by column order, so a key must compare sets not arrays', () => {
+      const columnsFor = (...sourceIds) =>
+        'tableColumns=' + encodeURIComponent(JSON.stringify(sourceIds.map((sourceId) => ({ sourceId }))));
+
+      const parentOverrides = { fieldsToRequest: ['Status'] };
+      const first = childConfig(columnsFor('field:customfield_1', 'field:customfield_2'), parentOverrides);
+      const second = childConfig(columnsFor('field:customfield_2', 'field:customfield_1'), parentOverrides);
+
+      expect(first.allFieldsToRequest).not.toEqual(second.allFieldsToRequest);
+      expect(new Set(first.allFieldsToRequest)).toEqual(new Set(second.allFieldsToRequest));
+    });
+  });
+
+  /**
+   * When a document finds several embedded reports asking Jira the same question, it hands each of
+   * them the union of the fields the group between them needs — so their requests become identical
+   * and `getRawIssues` collapses the cascades onto one. Override the LOAD, never the view.
+   *
+   * See spec/016-report-of-reports/005-optimize/001-request-dedupe Phase 1.
+   */
+  describe('tableColumnFieldsOverride', () => {
+    const columnsFor = (...sourceIds) =>
+      'tableColumns=' + encodeURIComponent(JSON.stringify(sourceIds.map((sourceId) => ({ sourceId }))));
+
+    const overridden = (queryParams, override, parentOverrides = { fieldsToRequest: ['Status'] }) =>
+      new ChildReportConfig({
+        queryParams,
+        parent: makeParent(parentOverrides),
+        tableColumnFieldsOverride: override,
+      });
+
+    it('loads the override instead of its own column fields', () => {
+      const config = overridden(columnsFor('field:customfield_1'), ['customfield_1', 'customfield_2']);
+
+      expect(config.tableColumnFields).toEqual(['customfield_1', 'customfield_2']);
+      expect(config.allFieldsToRequest).toEqual(expect.arrayContaining(['Status', 'customfield_1', 'customfield_2']));
+    });
+
+    // The separation the whole phase rests on: what it renders is not what it loads.
+    it('leaves tableColumns — and therefore the rendered report — untouched', () => {
+      const config = overridden(columnsFor('field:customfield_1'), ['customfield_1', 'customfield_2']);
+
+      expect(config.tableColumns).toEqual([{ sourceId: 'field:customfield_1' }]);
+    });
+
+    // This phase's own success condition, assertable with no cache in sight.
+    it('makes two reports with DIFFERENT columns request the same fields', () => {
+      const union = ['customfield_1', 'customfield_2'];
+      const first = overridden(columnsFor('field:customfield_1'), union);
+      const second = overridden(columnsFor('field:customfield_2'), union);
+
+      expect(first.allFieldsToRequest).toEqual(second.allFieldsToRequest);
+    });
+
+    it('copies the override, so one shared array cannot be mutated through a config', () => {
+      const union = ['customfield_1'];
+      const config = overridden(columnsFor('field:customfield_1'), union);
+
+      config.tableColumnFields.push('customfield_99');
+
+      expect(union).toEqual(['customfield_1']);
+    });
+
+    // The fail-safe path: no override is today's behaviour exactly, which is what makes a wrong
+    // grouping a no-op rather than a wrong request.
+    it.each([
+      ['null', null],
+      ['undefined', undefined],
+    ])('falls back to its own columns when the override is %s', (_label, override) => {
+      const config = overridden(columnsFor('field:customfield_1'), override);
+
+      expect(config.tableColumnFields).toEqual(['customfield_1']);
     });
   });
 
@@ -313,6 +399,184 @@ describe('ChildReportConfig', () => {
 
       expect(settled).toBe('pending');
       expect(config.derivedIssues).toBeUndefined();
+    });
+  });
+
+  /**
+   * spec/016-report-of-reports/006-url-state Phase 2.
+   *
+   * Two laws, and the second is the one that bites. `parse(stringify(v))` deep-equalling `v` says
+   * the conversion is right. `stringify(parse(raw)) === raw` says it is *canonical* — and a spec
+   * that isn't canonical manufactures an override for a value that never changed, which presents
+   * not as a broken report but as a document that is permanently dirty.
+   */
+  describe('serializing a child param', () => {
+    /**
+     * A realistic saved `raw` per key — what a report's `queryParams` would actually hold.
+     * Table-driven off `CHILD_PARAMS` so a spec added without one fails here rather than silently
+     * skipping both laws.
+     */
+    const SAVED_RAW = {
+      jql: 'project = ORDER',
+      childJQL: 'type = Bug',
+      loadChildren: 'true',
+      primaryReportType: 'table',
+      timingCalculations: 'Epic:childrenFirstThenParent,Story:parentFirstThenChildren',
+      statusesToExclude: 'Done,Cancelled',
+      statusesToShow: 'In Progress',
+      statusesToRemove: 'Done',
+      planningStatuses: 'Idea',
+      releasesToShow: 'R1,R2',
+      filterRows: JSON.stringify([{ id: '1', field: 'jiraStatus', operator: 'is', value: ['Done'] }]),
+      hideUnknownInitiatives: 'true',
+      showOnlySemverReleases: 'false',
+      sortByDueDate: 'true',
+      compareTo: '1296000',
+      roundTo: 'week',
+      primaryReportBreakdown: 'true',
+      showPercentComplete: 'false',
+      uncertaintyWeight: '80',
+      selectedStartDate: '2026-06-01T00:00:00.000Z',
+      groupBy: 'team',
+      cardsMode: 'breakdown',
+      cardsChildFilterRows: JSON.stringify([{ id: '1', field: 'jiraStatus', operator: 'is', value: ['QA'] }]),
+      tableColumns: JSON.stringify([{ sourceId: 'identity:treeSummary' }, { sourceId: 'field:Status' }]),
+      tableSortColumn: 'field:Status',
+      tableSortDir: 'desc',
+      tableFilters: JSON.stringify({ 'field:Status': { kind: 'select', values: ['Done'] } }),
+      tableGroupBy: 'field:Status',
+      tableGroupByCol: 'field:Team',
+      tableGroupByGranularity: 'month',
+      tableGroupByColGranularity: 'week',
+      tableFieldAxis: 'columns',
+      tableShowRowTotals: 'true',
+      tableShowColTotals: 'false',
+      scatterDateRangeStart: '2026-01-01',
+      scatterDateRangeEnd: '2026-12-31',
+      flowMetricsCycleTimeRange: '60',
+      flowMetricsStatusFilter: 'Done,In Progress',
+      flowMetricsIssueTypeFilter: 'Story',
+      flowMetricsProjectFilter: 'ORDER',
+      flowMetricsTeamFilter: 'Core',
+      timeInStatusDateRange: '90',
+      timeInStatusStatusFilter: 'Done',
+      timeInStatusIssueTypeFilter: 'Bug',
+      timeInStatusProjectFilter: 'ORDER',
+      timeInStatusReorder: JSON.stringify({ Done: 1 }),
+    };
+
+    /**
+     * Keys that legitimately cannot satisfy the canonicalization law, named rather than skipped.
+     *
+     * `compareTo`'s parse throws away the date it was given and returns an offset from *now*, which
+     * is precisely why it is in {@link NON_OVERRIDABLE_CHILD_PARAM_KEYS}. Nothing else is exempt —
+     * where a spec's own round trip is order-dependent (`timingCalculations`, the JSON blobs), the
+     * override path compares canonicalized values on both sides instead, so this stays honest here.
+     */
+    const NOT_CANONICAL = ['compareTo'];
+
+    it('gives every parameter a stringify', () => {
+      expect(CHILD_PARAM_KEYS.filter((key) => typeof CHILD_PARAMS[key].stringify !== 'function')).toEqual([]);
+    });
+
+    it('has a realistic saved value on record for every parameter', () => {
+      expect(CHILD_PARAM_KEYS.filter((key) => !(key in SAVED_RAW))).toEqual([]);
+    });
+
+    it.each(CHILD_PARAM_KEYS)('%s: parse(stringify(v)) round-trips the value', (key) => {
+      const { parse } = CHILD_PARAMS[key];
+      const parsed = parse(SAVED_RAW[key]);
+
+      expect(parse(serializeChildParam(key, parsed))).toEqual(parsed);
+    });
+
+    it.each(CHILD_PARAM_KEYS.filter((key) => !NOT_CANONICAL.includes(key)))(
+      '%s: stringify(parse(raw)) is the raw it came from',
+      (key) => {
+        expect(serializeChildParam(key, CHILD_PARAMS[key].parse(SAVED_RAW[key]))).toBe(SAVED_RAW[key]);
+      },
+    );
+
+    it('names compareTo as the key that cannot round-trip, and excludes it', () => {
+      // 2026-06-01 collapses to "how many seconds ago is that" and the date is gone for good.
+      expect(serializeChildParam('compareTo', CHILD_PARAMS.compareTo.parse('2026-06-01'))).not.toBe('2026-06-01');
+      expect(NON_OVERRIDABLE_CHILD_PARAM_KEYS).toContain('compareTo');
+      expect(NOT_CANONICAL).toEqual(NON_OVERRIDABLE_CHILD_PARAM_KEYS);
+    });
+
+    // `asBoolean` returns undefined for an unrecognized value by design, and timeInStatusReorder
+    // returns it deliberately. Writing the string "undefined" into a URL would be worse than useless.
+    it('serializes an absent value as undefined, never the string', () => {
+      expect(serializeChildParam('hideUnknownInitiatives', undefined)).toBeUndefined();
+      expect(serializeChildParam('timeInStatusReorder', undefined)).toBeUndefined();
+    });
+
+    // The two settings that self-heal against the returned hierarchy rather than parsing, so they
+    // are not in CHILD_PARAMS and a table over it alone would miss them.
+    it.each(AD_HOC_CHILD_PARAM_KEYS)('%s: serializes even though it has no CHILD_PARAMS spec', (key) => {
+      expect(serializeChildParam(key, 'Epic')).toBe('Epic');
+    });
+
+    // Inherited from `makeArrayOfStringsQueryParamValueButAlsoLookAtReportData`, which says so
+    // itself: "we probably need to escape things with `,`". Pinned so it fails as a *known* caveat
+    // rather than as a mystery in the canonicalization test above.
+    it('splits a list value containing a comma, as every list param in the app does', () => {
+      const parsed = CHILD_PARAMS.statusesToShow.parse('Done, really');
+
+      expect(parsed).toEqual(['Done', ' really']);
+      expect(serializeChildParam('statusesToShow', parsed)).toBe('Done, really');
+    });
+
+    /**
+     * A setting as a report actually holds it: `propsFor` hands every report `value.bind(config,
+     * key)`, and `useCanObservable` binds it. Setting an *unbound* CanJS `value()` prop never
+     * reaches its `lastSet` listener, so a test that assigned `config.x` directly would assert
+     * nothing about the path production takes.
+     */
+    const boundParam = (config, key) => {
+      const observable = value.bind(config, key);
+
+      observable.on(() => {});
+
+      return observable;
+    };
+
+    it('announces a set to the document, and stays silent on a queryParams resolve', () => {
+      const changes = [];
+      const config = new ChildReportConfig({
+        queryParams: 'tableSortDir=tree',
+        parent: makeParent(),
+        onParamChange: (key, serialized) => changes.push([key, serialized]),
+      });
+      const sortDir = boundParam(config, 'tableSortDir');
+
+      expect(sortDir.value).toBe('tree');
+      expect(changes).toEqual([]);
+
+      sortDir.value = 'desc';
+
+      expect(changes).toEqual([['tableSortDir', 'desc']]);
+
+      // The document answering back — not a change of the child's own making.
+      config.queryParams = 'tableSortDir=asc';
+
+      expect(sortDir.value).toBe('asc');
+      expect(changes).toEqual([['tableSortDir', 'desc']]);
+    });
+
+    it('never announces a non-overridable key', () => {
+      const changes = [];
+      const config = new ChildReportConfig({
+        queryParams: '',
+        parent: makeParent(),
+        onParamChange: (key) => changes.push(key),
+      });
+      const compareTo = boundParam(config, 'compareTo');
+
+      compareTo.value = 999;
+
+      expect(compareTo.value).toBe(999);
+      expect(changes).toEqual([]);
     });
   });
 

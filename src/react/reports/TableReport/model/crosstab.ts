@@ -4,8 +4,7 @@
  *
  * When two fields are grouped it is a single cross-tab: one field down the rows, the other across
  * the columns, one aggregated value per cell (`row-group ∩ column-group`). This is the pure model
- * layer, mirroring the GroupingReport pivot (`GroupingReport.tsx:271-306` — `getAxisValues` /
- * `buildGrid`) but driven by {@link ColumnDefinition}s instead of `Grouper` objects, and reusing:
+ * layer, a pivot (getAxisValues / buildGrid) driven by {@link ColumnDefinition}s, reusing:
  *
  *  - {@link createStableObjectKey} — stable per-axis-value keys (matching 1D {@link groupIssues}).
  *  - {@link formatGroupLabel} — the same axis-value → header label formatting as 1D grouping.
@@ -15,7 +14,7 @@
  * cells), exactly like the shared {@link groupByKeys} engine. Totals never double-count: a row/column
  * total collects each issue once per value on *that* axis only, and the grand total once overall.
  */
-import { createStableObjectKey } from '../../GroupingReport/data/group';
+import { createStableObjectKey } from './group';
 
 import { computeMeasureValue, formatGroupLabel, EMPTY_GROUP_LABEL } from './grouping';
 
@@ -91,7 +90,7 @@ function expand(raw: unknown): unknown[] {
   return [raw ?? null];
 }
 
-/** The stable string key for an axis value (mirrors 1D grouping / GroupingReport `buildGrid`). */
+/** The stable string key for an axis value (mirrors 1D grouping / `buildGrid`). */
 function axisKey(value: unknown): string {
   return typeof value === 'object' && value !== null ? createStableObjectKey(value) : String(value ?? null);
 }

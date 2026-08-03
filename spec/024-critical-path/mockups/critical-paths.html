@@ -1,0 +1,1703 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Critical Paths — redesign & placement mockups</title>
+    <style>
+      :root {
+        /* Atlaskit-derived tokens, same set as spec/023-report-modal/mockups */
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --link: #0c66e4;
+        --success: #22a06b;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+
+        /* ---- the two validated series hues ----
+           node scripts/validate_palette.js "#0c66e4,#b65c02" --mode light
+             lightness band PASS · chroma floor PASS
+             CVD separation PASS  ΔE 30.2 (protan) · 26.3 (tritan)
+             normal-vision    PASS  ΔE 34.2
+             contrast vs surface PASS
+           Wide margins, so no secondary encoding is required and texture stays opt-in. */
+        --series-work: #0c66e4;
+        --series-wait: #b65c02;
+        --series-work-bg: #e9f2ff;
+        --series-wait-bg: #fff3eb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 90px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 40px 0 2px;
+        padding-top: 14px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 22px 0 6px;
+        color: var(--slate);
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 940px;
+        margin: 6px 0 8px;
+        font-size: 13px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 2px 0 16px;
+        max-width: 940px;
+      }
+      .stage {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+      }
+
+      /* ---------- generic report card shell ---------- */
+      .card {
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.08);
+      }
+      .card-head {
+        padding: 14px 18px 12px;
+        border-bottom: 1px solid var(--neutral-30);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .card-sub {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 3px 0 0;
+      }
+      .head-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      /* ---------- legend (required: 2 series) ---------- */
+      .legend {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+      .sw-work {
+        background: var(--series-work);
+      }
+      .sw-wait {
+        background: var(--series-wait);
+      }
+
+      /* ---------- buttons / chrome ---------- */
+      .btn {
+        font: inherit;
+        font-size: 13px;
+        border: none;
+        border-radius: 3px;
+        padding: 5px 10px;
+        background: var(--neutral-20);
+        color: var(--slate);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--neutral-30);
+      }
+      .btn-subtle {
+        background: transparent;
+        color: var(--link);
+        padding: 5px 6px;
+      }
+      .btn-subtle:hover {
+        background: var(--brand-bg);
+      }
+      .btn-sm {
+        font-size: 12px;
+        padding: 3px 8px;
+      }
+      .link {
+        color: var(--link);
+        text-decoration: none;
+      }
+      .link:hover {
+        text-decoration: underline;
+      }
+
+      /* ---------- ranked path rows ---------- */
+      .paths {
+        padding: 4px 0 0;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 58px minmax(260px, 1fr) 330px;
+        gap: 0 16px;
+        padding: 13px 18px;
+        border-bottom: 1px solid var(--neutral-20);
+        position: relative;
+      }
+      .row:last-child {
+        border-bottom: none;
+      }
+      .row.focused {
+        background: var(--brand-bg);
+        box-shadow: inset 3px 0 0 var(--brand);
+      }
+      .row.dimmed {
+        opacity: 0.45;
+      }
+
+      /* rank + criticality: a number, not a one-bar chart */
+      .rankcol {
+        text-align: right;
+      }
+      .rank {
+        font-size: 11px;
+        color: var(--subtle);
+        font-variant-numeric: tabular-nums;
+      }
+      .crit {
+        font-size: 19px;
+        font-weight: 600;
+        line-height: 1.1;
+        margin-top: 1px;
+        letter-spacing: -0.2px;
+      }
+      .crit-label {
+        font-size: 10px;
+        color: var(--subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        line-height: 1.25;
+        margin-top: 2px;
+      }
+      .crit.low {
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      /* middle column */
+      .epic {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .epic a {
+        color: var(--link);
+        text-decoration: none;
+      }
+      .epic a:hover {
+        text-decoration: underline;
+      }
+      .meta {
+        font-size: 12px;
+        color: var(--subtle);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .team-tag {
+        background: var(--slate-bg);
+        color: var(--slate);
+        border-radius: 3px;
+        padding: 1px 6px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .chain {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+        font-size: 12px;
+      }
+      .chip {
+        background: var(--neutral-10);
+        border: 1px solid var(--neutral-30);
+        border-radius: 3px;
+        padding: 2px 7px;
+        color: var(--link);
+        text-decoration: none;
+        white-space: nowrap;
+        max-width: 210px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .chip:hover {
+        background: var(--brand-bg);
+        border-color: #b3d4ff;
+      }
+      .arrow {
+        color: #a5adba;
+        font-size: 11px;
+        flex-shrink: 0;
+      }
+      .chain-lead {
+        color: var(--subtle);
+        flex-shrink: 0;
+      }
+      .fanout {
+        margin-top: 7px;
+        font-size: 12px;
+      }
+      .fanout summary {
+        cursor: pointer;
+        color: var(--link);
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .fanout summary::-webkit-details-marker {
+        display: none;
+      }
+      .fanout summary::before {
+        content: '▸';
+        font-size: 9px;
+        color: #a5adba;
+      }
+      .fanout[open] summary::before {
+        content: '▾';
+      }
+      .fanout-body {
+        margin-top: 6px;
+        padding: 8px 10px;
+        background: var(--neutral-10);
+        border-radius: 3px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .no-chain {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--subtle);
+        font-style: italic;
+      }
+
+      /* ---------- the segmented duration bar ---------- */
+      .barcol {
+        padding-top: 3px;
+        position: relative; /* so the hover tooltip anchors to the bar, not the row */
+      }
+      .bartrack {
+        position: relative;
+        height: 12px;
+      }
+      /* recessive solid hairline gridlines — never dashed */
+      .gridlines {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .gridlines span {
+        position: absolute;
+        top: -3px;
+        bottom: -3px;
+        width: 1px;
+        background: var(--neutral-30);
+      }
+      .bar {
+        position: relative;
+        display: flex;
+        gap: 2px; /* 2px SURFACE gap between fills — not a border */
+        height: 10px;
+        margin-top: 1px;
+      }
+      .seg {
+        height: 100%;
+        cursor: pointer;
+      }
+      .seg:first-child {
+        border-radius: 0; /* anchored to the baseline */
+      }
+      .seg:last-child {
+        border-radius: 0 4px 4px 0; /* 4px rounded data-end */
+      }
+      .seg.only {
+        border-radius: 0 4px 4px 0;
+      }
+      .seg-work {
+        background: var(--series-work);
+      }
+      .seg-wait {
+        background: var(--series-wait);
+      }
+      .barvals {
+        margin-top: 7px;
+        font-size: 12px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .barvals b {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .barvals .dot {
+        color: #c1c7d0;
+        margin: 0 5px;
+      }
+      /* the axis band shares the row grid so ticks land under the bars, and it lives
+         inside the card so no nested scrollbar can crop it */
+      .axis {
+        display: grid;
+        grid-template-columns: 58px minmax(260px, 1fr) 330px;
+        gap: 0 16px;
+        padding: 2px 18px 12px;
+      }
+      .axis-ticks {
+        grid-column: 3;
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--subtle);
+        font-variant-numeric: tabular-nums;
+      }
+      .axis-label {
+        grid-column: 2;
+        justify-self: end;
+        align-self: start;
+        font-size: 10px;
+        color: var(--subtle);
+        padding-right: 2px;
+      }
+
+      /* tooltip demo */
+      .tip {
+        position: absolute;
+        z-index: 10;
+        background: #172b4d;
+        color: #fff;
+        border-radius: 4px;
+        padding: 7px 10px;
+        font-size: 12px;
+        line-height: 1.45;
+        box-shadow: 0 4px 12px rgba(9, 30, 66, 0.28);
+        width: 232px;
+      }
+      .tip::after {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: 26px;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-bottom: 5px solid #172b4d;
+      }
+      .tip .tip-t {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .tip .tip-r {
+        color: #b6c2cf;
+      }
+
+      /* ---------- footer / show more ---------- */
+      .card-foot {
+        padding: 10px 18px;
+        border-top: 1px solid var(--neutral-30);
+        background: var(--neutral-10);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--subtle);
+        border-radius: 0 0 4px 4px;
+      }
+
+      /* ---------- team capacity callout ---------- */
+      .teams {
+        padding: 12px 18px 6px;
+      }
+      .teamrow {
+        display: grid;
+        grid-template-columns: 96px 1fr 116px;
+        gap: 12px;
+        align-items: center;
+        padding: 5px 0;
+        font-size: 13px;
+      }
+      .teamname {
+        text-align: right;
+        color: var(--slate);
+        font-weight: 500;
+      }
+      .teambar {
+        height: 10px;
+        background: var(--series-work);
+        border-radius: 0 4px 4px 0;
+      }
+      /* emphasis, NOT a value ramp: one series is one color; the constraint is
+         highlighted and the rest recede */
+      .teambar.recede {
+        background: #9db9e8;
+      }
+      .teamval {
+        font-size: 12px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .teamval b {
+        color: var(--text);
+      }
+      .constraint {
+        margin: 4px 18px 14px;
+        padding: 9px 12px;
+        background: var(--series-wait-bg);
+        border-left: 3px solid var(--series-wait);
+        border-radius: 0 3px 3px 0;
+        font-size: 12px;
+        color: #5f3811;
+      }
+
+      /* ---------- autoscheduler wireframes ---------- */
+      .wire {
+        width: 470px;
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .wire-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--neutral-30);
+        font-size: 11px;
+        color: var(--muted);
+        background: var(--neutral-10);
+        flex-wrap: wrap;
+      }
+      .pill {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 3px;
+        padding: 2px 7px;
+        font-size: 11px;
+        color: var(--slate);
+      }
+      .pill.active {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+      }
+      .toggle {
+        display: flex;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .toggle span {
+        padding: 2px 8px;
+        font-size: 11px;
+        background: #fff;
+        color: var(--slate);
+      }
+      .toggle span.on {
+        background: var(--brand);
+        color: #fff;
+      }
+      .wire-grid {
+        padding: 6px 0 10px;
+        font-size: 10px;
+      }
+      .wire-years {
+        display: flex;
+        border-bottom: 1px solid var(--neutral-30);
+        color: var(--subtle);
+        padding: 0 0 3px;
+      }
+      .wire-years span {
+        flex: 1;
+        padding-left: 4px;
+        border-left: 1px solid var(--neutral-30);
+      }
+      .wire-team {
+        background: var(--neutral-20);
+        padding: 3px 8px;
+        font-weight: 600;
+        font-size: 10px;
+        color: var(--text);
+        display: flex;
+      }
+      .wire-team .wt-right {
+        margin-left: auto;
+        font-weight: 400;
+        color: var(--subtle);
+      }
+      .wire-issue {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 1px 8px 1px 16px;
+        color: var(--muted);
+      }
+      .wire-issue .nm {
+        width: 108px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .wire-issue .track {
+        flex: 1;
+        position: relative;
+        height: 8px;
+      }
+      .wire-issue .b {
+        position: absolute;
+        height: 7px;
+        border-radius: 2px;
+        background: #9db9e8;
+      }
+      /* Emphasis, not a second hue: the focused chain is the full-strength step of the
+         SAME blue the other bars recede to. Using the orange here would give one hue two
+         meanings — "waiting on team" in the legend, "on the focused path" in the grid. */
+      .wire-issue .b.hot {
+        background: var(--series-work);
+      }
+      .wire-issue.hot .nm {
+        color: var(--text);
+        font-weight: 500;
+      }
+      .wire-issue.faded {
+        opacity: 0.4;
+      }
+
+      /* strip inside autoscheduler */
+      .strip {
+        border-bottom: 1px solid var(--neutral-30);
+        background: #fff;
+      }
+      .strip-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .strip-head .sh-sub {
+        font-weight: 400;
+        color: var(--subtle);
+      }
+      .strip-head .sh-right {
+        margin-left: auto;
+      }
+      .striprow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 10px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .striprow:hover {
+        background: var(--neutral-10);
+      }
+      .striprow.on {
+        background: var(--brand-bg);
+        box-shadow: inset 2px 0 0 var(--brand);
+      }
+      .striprow .sr-rank {
+        color: var(--subtle);
+        width: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .striprow .sr-crit {
+        font-weight: 600;
+        width: 30px;
+        font-variant-numeric: tabular-nums;
+      }
+      .striprow .sr-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--link);
+      }
+      .striprow .sr-bar {
+        width: 84px;
+        display: flex;
+        gap: 2px;
+        height: 7px;
+        flex-shrink: 0;
+      }
+      .striprow .sr-bar i {
+        height: 100%;
+        display: block;
+      }
+      .striprow .sr-days {
+        width: 44px;
+        text-align: right;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+      }
+
+      /* dropdown */
+      .dd {
+        position: absolute;
+        z-index: 20;
+        top: 30px;
+        left: 128px;
+        width: 300px;
+        background: #fff;
+        border-radius: 4px;
+        box-shadow:
+          0 8px 20px rgba(9, 30, 66, 0.22),
+          0 0 1px rgba(9, 30, 66, 0.31);
+        padding: 6px 0;
+      }
+      .dd-head {
+        padding: 5px 12px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--subtle);
+      }
+      .dd-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 5px 12px;
+        font-size: 11px;
+      }
+      .dd-item:hover {
+        background: var(--neutral-10);
+      }
+      .dd-item .di-crit {
+        font-weight: 600;
+        width: 28px;
+        font-variant-numeric: tabular-nums;
+      }
+      .dd-item .di-name {
+        flex: 1;
+        color: var(--link);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .dd-foot {
+        border-top: 1px solid var(--neutral-30);
+        margin-top: 5px;
+        padding: 6px 12px 2px;
+      }
+
+      /* caption inside the grid for the highlight-only option — brand tint, because it
+         names the highlighted path; orange is reserved for capacity-waiting */
+      .gridcaption {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 6px 8px 2px;
+        padding: 5px 8px;
+        background: var(--brand-bg);
+        border-left: 3px solid var(--brand);
+        font-size: 11px;
+        color: #09326c;
+      }
+
+      /* ---------- loading ---------- */
+      .skel {
+        background: linear-gradient(90deg, var(--neutral-20), var(--neutral-30), var(--neutral-20));
+        border-radius: 3px;
+        height: 10px;
+      }
+      .progress {
+        height: 3px;
+        background: var(--neutral-20);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress i {
+        display: block;
+        height: 100%;
+        background: var(--series-wait);
+      }
+
+      /* ---------- annotation callouts ---------- */
+      .notes {
+        max-width: 470px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .notes ul {
+        padding-left: 18px;
+        margin: 6px 0;
+      }
+      .notes li {
+        margin-bottom: 6px;
+      }
+      .tradeoff {
+        font-size: 12px;
+        margin-top: 8px;
+        max-width: 470px;
+      }
+      .tradeoff .good {
+        color: #1f6b4a;
+      }
+      .tradeoff .bad {
+        color: #8f4700;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--brand-bg);
+        color: var(--brand);
+        border-radius: 3px;
+        padding: 1px 6px;
+        vertical-align: 2px;
+        margin-left: 6px;
+      }
+      table.tv {
+        border-collapse: collapse;
+        font-size: 12px;
+        margin: 4px 18px 14px;
+      }
+      table.tv th,
+      table.tv td {
+        border: 1px solid var(--neutral-30);
+        padding: 4px 9px;
+        text-align: left;
+      }
+      table.tv th {
+        background: var(--neutral-10);
+        font-weight: 600;
+        font-size: 11px;
+      }
+      table.tv td.n {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Critical Paths — redesign &amp; placement</h1>
+    <p class="intro">
+      Mockups for <code>spec/024-critical-path</code>. All numbers assume the <b>phase-1 model fix</b>: the Monte Carlo
+      traces the chain that actually drove the finish date in each iteration, so every path carries a
+      <b>criticality index</b> (% of simulations it was on the driving chain) and a split of its span into working time
+      versus time queued behind other work <i>in this plan</i>.
+    </p>
+    <div
+      class="notes"
+      style="
+        max-width: 940px;
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-left: 3px solid var(--slate);
+        border-radius: 0 3px 3px 0;
+        padding: 11px 14px;
+        margin: 12px 0 6px;
+      "
+    >
+      <b style="color: var(--text)">Two definitions this report rests on</b>
+      <ul style="margin-bottom: 0">
+        <li>
+          <b>Chain span</b> — the days from the first epic's start to the last epic's end, measured at the selected
+          uncertainty percentile so it agrees with the autoscheduler's bars. It is <i>not</i> the plan length: the chain
+          that drives the finish date in any single iteration runs from day 0 to the last day, so that quantity is the
+          same for every row and useless as a column. Nor is it today's <code>totalDaysInCriticalPath</code>, which sums
+          per-issue P80s and is not a duration at all.
+        </li>
+        <li>
+          <b>Queued</b> — <code>startDay − earliestStartTimeFromBlockers(issue)</code>: the gap between an epic being
+          unblocked and its team's track having room (<code>schedule.ts:67</code> → <code>workplan.ts:117</code>). The
+          thing occupying that track is <b>another epic in this plan</b>. Work the team does outside the plan is
+          invisible to the scheduler — it enters only through <code>pointsPerDayPerTrack</code> and
+          <code>parallelWorkLimit</code> — so every queued figure here is a <b>floor</b>. Real waiting is equal or
+          worse, never better.
+        </li>
+      </ul>
+    </div>
+    <p class="caption">
+      Series palette <code>#0c66e4</code> / <code>#b65c02</code> validated with the dataviz validator — CVD ΔE 30.2
+      (protan), normal-vision ΔE 34.2, all six checks pass. Status tokens (<code>--blocked-color</code>,
+      <code>--warning-color</code>, …) are reserved and deliberately not reused here; the two series are composition,
+      not state, so they carry a legend.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>1 · The report, redesigned</h2>
+    <p class="caption">
+      Standalone <code>critical-path</code> report. Compare against <code>../critical-path.png</code>: the five-column
+      grid becomes ranked rows, the vertical stacks of blue links become an inline chain, and the two near-duplicate day
+      columns become one bar with a legend.
+    </p>
+
+    <div class="card" style="max-width: 1000px">
+      <div class="card-head">
+        <div>
+          <p class="card-title">Critical Paths</p>
+          <p class="card-sub">
+            The chains that decide when this plan finishes. Ranked by how often each one drove the finish date across
+            10,000 simulations.
+          </p>
+        </div>
+        <div class="head-right">
+          <div class="legend">
+            <span class="legend-item"><span class="swatch sw-work"></span> Work</span>
+            <span class="legend-item"><span class="swatch sw-wait"></span> Queued behind other plan work</span>
+          </div>
+          <button class="btn btn-sm">Table view</button>
+        </div>
+      </div>
+
+      <div class="paths">
+        <!-- row 1 -->
+        <div class="row">
+          <div class="rankcol">
+            <div class="rank">1</div>
+            <div class="crit">78%</div>
+            <div class="crit-label">of runs</div>
+          </div>
+          <div>
+            <div class="epic"><a href="#">Epic X.1</a></div>
+            <div class="meta"><span class="team-tag">ADJ3</span> <span>6 epics in chain</span></div>
+            <div class="chain">
+              <span class="chain-lead">then</span>
+              <a class="chip" href="#">Epic X.2</a><span class="arrow">→</span> <a class="chip" href="#">Epic X.3</a
+              ><span class="arrow">→</span> <a class="chip" href="#">Epic X.4</a><span class="arrow">→</span>
+              <a class="chip" href="#">Epic X.5</a><span class="arrow">→</span>
+              <a class="chip" href="#">Epic X.6</a>
+            </div>
+            <details class="fanout">
+              <summary>6 more epics blocked by this chain · 55 days</summary>
+              <div class="fanout-body">
+                <a class="chip" href="#">Validate promotion code is available</a>
+                <a class="chip" href="#">Add promotion to cart</a>
+                <a class="chip" href="#">Show promotion discount on receipt</a>
+                <a class="chip" href="#">Promotion Ad created and released to Market</a>
+                <a class="chip" href="#">Remove Promotion from Cart</a>
+                <a class="chip" href="#">Handle rejection case</a>
+              </div>
+            </details>
+          </div>
+          <div class="barcol">
+            <div class="bartrack">
+              <div class="gridlines">
+                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
+                ><span style="left: 100%"></span>
+              </div>
+              <div class="bar" style="width: 100%">
+                <div class="seg seg-work" style="flex: 142"></div>
+                <div class="seg seg-wait" style="flex: 115"></div>
+              </div>
+            </div>
+            <div class="barvals">
+              <b>257 day span</b> <span class="dot">·</span> 142 working, 115 queued behind ADJ3's other epics
+            </div>
+            <!-- hover state, pinned open for the mockup: anchored under the orange segment -->
+            <div class="tip" style="top: 38px; left: 62px">
+              <div class="tip-t">Queued behind ADJ3's other epics · 115 days</div>
+              <div class="tip-r">
+                45% of this span is idle because ADJ3's track was busy with other epics <i>in this plan</i>. Longest
+                single wait: Epic X.4, 38 days. Excludes any work ADJ3 does outside the plan.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- row 2 -->
+        <div class="row">
+          <div class="rankcol">
+            <div class="rank">2</div>
+            <div class="crit">44%</div>
+            <div class="crit-label">of runs</div>
+          </div>
+          <div>
+            <div class="epic"><a href="#">Show tip</a></div>
+            <div class="meta"><span class="team-tag">BTP</span> <span>8 epics in chain</span></div>
+            <div class="chain">
+              <span class="chain-lead">then</span>
+              <a class="chip" href="#">QA: Take tip amount</a><span class="arrow">→</span>
+              <a class="chip" href="#">UAT: Take Tip Amount</a><span class="arrow">→</span>
+              <a class="chip" href="#">Add Tip Amount to Payment</a><span class="arrow">→</span>
+              <a class="chip" href="#">Process Payment</a><span class="arrow">→</span>
+              <a class="chip" href="#">Pay driver</a><span class="arrow">→</span> <a class="chip" href="#">Ship Order</a
+              ><span class="arrow">→</span>
+              <a class="chip" href="#">Track Order Status</a>
+            </div>
+            <details class="fanout">
+              <summary>5 more epics blocked by this chain · 67 days</summary>
+              <div class="fanout-body">
+                <a class="chip" href="#">Add Tip Amount to Payment</a>
+                <a class="chip" href="#">Process Payment</a>
+                <a class="chip" href="#">Pay driver</a>
+                <a class="chip" href="#">Ship Order</a>
+                <a class="chip" href="#">Track Order Status</a>
+              </div>
+            </details>
+          </div>
+          <div class="barcol">
+            <div class="bartrack">
+              <div class="gridlines">
+                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
+                ><span style="left: 100%"></span>
+              </div>
+              <div class="bar" style="width: 42%">
+                <div class="seg seg-work" style="flex: 71"></div>
+                <div class="seg seg-wait" style="flex: 37"></div>
+              </div>
+            </div>
+            <div class="barvals">
+              <b>108 day span</b> <span class="dot">·</span> 71 working, 37 queued behind BTP's other epics
+            </div>
+          </div>
+        </div>
+
+        <!-- row 3 -->
+        <div class="row">
+          <div class="rankcol">
+            <div class="rank">3</div>
+            <div class="crit">31%</div>
+            <div class="crit-label">of runs</div>
+          </div>
+          <div>
+            <div class="epic"><a href="#">Get test devices</a></div>
+            <div class="meta"><span class="team-tag">ADMIN</span> <span>5 epics in chain</span></div>
+            <div class="chain">
+              <span class="chain-lead">then</span>
+              <a class="chip" href="#">Pay on device</a><span class="arrow">→</span>
+              <a class="chip" href="#">Refund on device</a><span class="arrow">→</span>
+              <a class="chip" href="#">Send data to BOH</a><span class="arrow">→</span>
+              <a class="chip" href="#">Get data from BOH</a>
+            </div>
+            <details class="fanout">
+              <summary>4 more epics blocked by this chain · 71 days</summary>
+              <div class="fanout-body">
+                <a class="chip" href="#">Get drawer api and mocks</a>
+                <a class="chip" href="#">Open drawer</a>
+                <a class="chip" href="#"
+                  >Detect if drawer is open or not and create signal and make a very, very very very long epic name</a
+                >
+                <a class="chip" href="#">Close drawer</a>
+              </div>
+            </details>
+          </div>
+          <div class="barcol">
+            <div class="bartrack">
+              <div class="gridlines">
+                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
+                ><span style="left: 100%"></span>
+              </div>
+              <div class="bar" style="width: 42.8%">
+                <div class="seg seg-work" style="flex: 96"></div>
+                <div class="seg seg-wait" style="flex: 14"></div>
+              </div>
+            </div>
+            <div class="barvals">
+              <b>110 day span</b> <span class="dot">·</span> 96 working, 14 queued behind ADMIN's other epics
+            </div>
+          </div>
+        </div>
+
+        <!-- row 4 — the point of the model fix -->
+        <div class="row">
+          <div class="rankcol">
+            <div class="rank">4</div>
+            <div class="crit low">12%</div>
+            <div class="crit-label">of runs</div>
+          </div>
+          <div>
+            <div class="epic"><a href="#">Tablet Mode UI Enhancements</a></div>
+            <div class="meta"><span class="team-tag">ADJ3</span> <span>blocks nothing</span></div>
+            <div class="no-chain">
+              Long, but it has slack — it only lands on the critical path when it runs late and ADJ3 is already busy.
+            </div>
+          </div>
+          <div class="barcol">
+            <div class="bartrack">
+              <div class="gridlines">
+                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
+                ><span style="left: 100%"></span>
+              </div>
+              <div class="bar" style="width: 51.4%">
+                <div class="seg seg-work only" style="flex: 132"></div>
+              </div>
+            </div>
+            <div class="barvals">
+              <b>132 day span</b> <span class="dot">·</span> never queued behind other plan work
+            </div>
+          </div>
+        </div>
+
+        <!-- row 5 -->
+        <div class="row">
+          <div class="rankcol">
+            <div class="rank">5</div>
+            <div class="crit low">9%</div>
+            <div class="crit-label">of runs</div>
+          </div>
+          <div>
+            <div class="epic"><a href="#">Daily Sales Summary Report</a></div>
+            <div class="meta"><span class="team-tag">ADJI-Team</span> <span>blocks nothing</span></div>
+            <div class="no-chain">Long, but it has slack.</div>
+          </div>
+          <div class="barcol">
+            <div class="bartrack">
+              <div class="gridlines">
+                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
+                ><span style="left: 100%"></span>
+              </div>
+              <div class="bar" style="width: 46.7%">
+                <div class="seg seg-work only" style="flex: 120"></div>
+              </div>
+            </div>
+            <div class="barvals">
+              <b>120 day span</b> <span class="dot">·</span> never queued behind other plan work
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="axis">
+        <div class="axis-label">chain span →</div>
+        <div class="axis-ticks"><span>0</span><span>64</span><span>128</span><span>192</span><span>257 days</span></div>
+      </div>
+
+      <div class="card-foot">
+        <button class="btn btn-sm">Show 7 more paths</button>
+        <span>Remaining paths are critical in under 9% of simulations.</span>
+      </div>
+    </div>
+
+    <h3>Why row 4 matters</h3>
+    <p class="caption" style="max-width: 940px">
+      In the current report (<code>../critical-path.png</code>) "Tablet Mode UI Enhancements" is <b>row 2</b>, because
+      132 days is the second-largest number. Under criticality it drops to row 4 at 12% — it is long but it has slack,
+      so it rarely decides the finish date. This is the same failure as the A→[9,9,9]→10 vs 10→10→10 case: ranking by a
+      deterministic day-sum names the wrong long pole.
+    </p>
+
+    <h3>Table view</h3>
+    <p class="caption">
+      Every value on screen is also printed as text, and a table twin exists — nothing is reachable only by color or
+      only by tooltip.
+    </p>
+    <table class="tv">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>First epic</th>
+          <th>Team</th>
+          <th>Critical in</th>
+          <th>Chain span</th>
+          <th>Working</th>
+          <th>Queued</th>
+          <th>Chain</th>
+          <th>Also blocked</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="n">1</td>
+          <td>Epic X.1</td>
+          <td>ADJ3</td>
+          <td class="n">78%</td>
+          <td class="n">257</td>
+          <td class="n">142</td>
+          <td class="n">115</td>
+          <td class="n">6</td>
+          <td class="n">6 · 55d</td>
+        </tr>
+        <tr>
+          <td class="n">2</td>
+          <td>Show tip</td>
+          <td>BTP</td>
+          <td class="n">44%</td>
+          <td class="n">108</td>
+          <td class="n">71</td>
+          <td class="n">37</td>
+          <td class="n">8</td>
+          <td class="n">5 · 67d</td>
+        </tr>
+        <tr>
+          <td class="n">3</td>
+          <td>Get test devices</td>
+          <td>ADMIN</td>
+          <td class="n">31%</td>
+          <td class="n">110</td>
+          <td class="n">96</td>
+          <td class="n">14</td>
+          <td class="n">5</td>
+          <td class="n">4 · 71d</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ============================================================ -->
+    <h2>2 · Team load callout</h2>
+    <p class="caption">
+      idea.md asked for "a little call out for the teams that have the most <code>total working days</code>." Raw total
+      working days alone can't say whether a team is over-capacitated — 300 days of work inside a 900-day plan is fine.
+      What the model can say is how much of the plan's length a team's own queue fills, which is also exactly where the
+      orange segments above come from. One series, one color; the largest is emphasized rather than value-ramped.
+    </p>
+    <p class="caption">
+      <b>This is not a capacity verdict, and the wording has to say so.</b> The scheduler only sees the epics loaded
+      into the plan. A team also carrying substantial unmodeled work is already past 100% while this panel still reads
+      92% — so the panel reports plan load and names the exclusion, rather than declaring anyone over-capacitated. The
+      way to model out-of-plan load is to lower that team's <code>pointsPerDayPerTrack</code> in team configuration.
+    </p>
+
+    <div class="card" style="width: 560px">
+      <div class="card-head">
+        <div>
+          <p class="card-title">Team load in this plan</p>
+          <p class="card-sub">Working days queued per team, against the 340-day plan · excludes out-of-plan work</p>
+        </div>
+      </div>
+      <div class="teams">
+        <div class="teamrow">
+          <div class="teamname">ADJ3</div>
+          <div class="teambar" style="width: 92%"></div>
+          <div class="teamval"><b>312 d</b> · 92% of plan</div>
+        </div>
+        <div class="teamrow">
+          <div class="teamname">BTP</div>
+          <div class="teambar recede" style="width: 60%"></div>
+          <div class="teamval"><b>205 d</b> · 60%</div>
+        </div>
+        <div class="teamrow">
+          <div class="teamname">ADMIN</div>
+          <div class="teambar recede" style="width: 43.5%"></div>
+          <div class="teamval"><b>148 d</b> · 44%</div>
+        </div>
+        <div class="teamrow">
+          <div class="teamname">ADJI-Team</div>
+          <div class="teambar recede" style="width: 28%"></div>
+          <div class="teamval"><b>96 d</b> · 28%</div>
+        </div>
+      </div>
+      <div class="constraint">
+        <b>ADJ3 is the constraint <i>within this plan</i>.</b> Its queued epics fill 92% of the plan's length across 1
+        track, and it accounts for 115 of the 257 days on the top path. Adding a parallel track here shortens the plan;
+        adding one elsewhere doesn't. If ADJ3 also carries work outside this plan, it is already past 100% and these
+        numbers are a floor.
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>3 · Where it lives in the autoscheduler</h2>
+    <p class="caption">
+      Four options for problem (a) — "it's at the bottom of the page and folks might not even see it." The same
+      component renders the standalone report in every case; these differ only in what the autoscheduler itself shows.
+    </p>
+
+    <div class="stage">
+      <!-- OPTION A -->
+      <div>
+        <h3>
+          A · Always-visible summary strip
+          <span class="badge" style="background: var(--neutral-20); color: var(--subtle)">considered</span>
+        </h3>
+        <div class="wire">
+          <div class="wire-controls">
+            <span class="pill">Auto-Scheduler</span><span class="pill">Epics</span> <span style="flex: 1"></span
+            ><span class="pill">80%</span><span class="pill">Update Epic Dates</span>
+          </div>
+          <div class="strip">
+            <div class="strip-head">
+              Long poles
+              <span class="sh-sub">— what decides your finish date</span>
+              <span class="sh-right"><button class="btn btn-sm btn-subtle">All 12 paths →</button></span>
+            </div>
+            <div class="striprow on">
+              <span class="sr-rank">1</span><span class="sr-crit">78%</span>
+              <span class="sr-name">Epic X.1 → Epic X.2 → … → Epic X.6</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 142"></i
+                ><i style="background: var(--series-wait); flex: 115"></i
+              ></span>
+              <span class="sr-days">257 d</span>
+            </div>
+            <div class="striprow">
+              <span class="sr-rank">2</span><span class="sr-crit">44%</span>
+              <span class="sr-name">Show tip → QA: Take tip amount → …</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 71"></i
+                ><i style="background: var(--series-wait); flex: 37"></i><i style="flex: 149"></i
+              ></span>
+              <span class="sr-days">108 d</span>
+            </div>
+            <div class="striprow">
+              <span class="sr-rank">3</span><span class="sr-crit">31%</span>
+              <span class="sr-name">Get test devices → Pay on device → …</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 96"></i
+                ><i style="background: var(--series-wait); flex: 14"></i><i style="flex: 147"></i
+              ></span>
+              <span class="sr-days">110 d</span>
+            </div>
+          </div>
+          <div class="wire-grid">
+            <div class="wire-years">
+              <span>2026</span><span>2027</span><span>2028</span><span>2029</span><span>2030</span>
+            </div>
+            <div class="wire-team">ADJ3 <span class="wt-right">312 days · 1 track</span></div>
+            <div class="wire-issue hot">
+              <span class="nm">Epic X.1</span>
+              <span class="track"><i class="b hot" style="left: 2%; width: 16%"></i></span>
+            </div>
+            <div class="wire-issue hot">
+              <span class="nm">Epic X.2</span>
+              <span class="track"><i class="b hot" style="left: 19%; width: 13%"></i></span>
+            </div>
+            <div class="wire-issue faded">
+              <span class="nm">Tablet Mode UI Enh…</span>
+              <span class="track"><i class="b" style="left: 33%; width: 20%"></i></span>
+            </div>
+            <div class="wire-team">BTP <span class="wt-right">205 days · 1 track</span></div>
+            <div class="wire-issue faded">
+              <span class="nm">Currency options</span>
+              <span class="track"><i class="b" style="left: 1%; width: 6%"></i></span>
+            </div>
+            <div class="wire-issue faded">
+              <span class="nm">Language options</span>
+              <span class="track"><i class="b" style="left: 8%; width: 7%"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <ul>
+            <li>Top 3 sit under the controls, above the grid. Nothing to discover, no mode to switch.</li>
+            <li>
+              Clicking a row focuses that path in the grid below — today's "Show critical path and blocked work" button,
+              but as one click on the thing itself.
+            </li>
+            <li>Focus <b>dims</b> the rest instead of filtering them out, so you keep the surrounding context.</li>
+          </ul>
+          <p class="tradeoff">
+            <span class="good">+ Solves the discoverability problem outright; path and timeline visible together.</span
+            ><br /><span class="bad">− Costs ~70px above the grid, on a report that's already tall.</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div>
+        <h3>B · Timeline / Critical Paths toggle</h3>
+        <div class="wire">
+          <div class="wire-controls">
+            <span class="pill">Auto-Scheduler</span><span class="pill">Epics</span>
+            <span class="toggle"><span>Timeline</span><span class="on">Critical paths</span></span>
+            <span style="flex: 1"></span><span class="pill">80%</span>
+          </div>
+          <div style="padding: 8px 10px">
+            <div class="striprow on" style="border-radius: 3px">
+              <span class="sr-rank">1</span><span class="sr-crit">78%</span>
+              <span class="sr-name">Epic X.1 → Epic X.2 → … → Epic X.6</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 142"></i
+                ><i style="background: var(--series-wait); flex: 115"></i
+              ></span>
+              <span class="sr-days">257 d</span>
+            </div>
+            <div class="striprow">
+              <span class="sr-rank">2</span><span class="sr-crit">44%</span>
+              <span class="sr-name">Show tip → QA: Take tip amount → …</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 71"></i
+                ><i style="background: var(--series-wait); flex: 37"></i><i style="flex: 149"></i
+              ></span>
+              <span class="sr-days">108 d</span>
+            </div>
+            <div class="striprow">
+              <span class="sr-rank">3</span><span class="sr-crit">31%</span>
+              <span class="sr-name">Get test devices → Pay on device → …</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 96"></i
+                ><i style="background: var(--series-wait); flex: 14"></i><i style="flex: 147"></i
+              ></span>
+              <span class="sr-days">110 d</span>
+            </div>
+            <div class="striprow">
+              <span class="sr-rank">4</span><span class="sr-crit" style="color: var(--muted)">12%</span>
+              <span class="sr-name">Tablet Mode UI Enhancements</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 132"></i><i style="flex: 125"></i
+              ></span>
+              <span class="sr-days">132 d</span>
+            </div>
+            <div class="striprow">
+              <span class="sr-rank">5</span><span class="sr-crit" style="color: var(--muted)">9%</span>
+              <span class="sr-name">Daily Sales Summary Report</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 120"></i><i style="flex: 137"></i
+              ></span>
+              <span class="sr-days">120 d</span>
+            </div>
+            <div style="font-size: 11px; color: var(--subtle); padding: 8px 2px 2px">
+              …7 more · the grid is one click away
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <ul>
+            <li>Your option 2 — a saved param, so a report can open straight into this view.</li>
+            <li>Full width for the paths, which is where the long chain names actually fit comfortably.</li>
+          </ul>
+          <p class="tradeoff">
+            <span class="good">+ Most room; saved param means a report can land here deliberately.</span><br /><span
+              class="bad"
+              >− It's a mode: you can't see a path and the timeline at once, and anyone who never toggles still never
+              sees it — which is problem (a) again.</span
+            >
+          </p>
+        </div>
+      </div>
+
+      <!-- OPTION C -->
+      <div>
+        <h3>C · Button + dropdown in the controls <span class="badge">chosen</span></h3>
+        <div class="wire" style="position: relative">
+          <div class="wire-controls">
+            <span class="pill">Auto-Scheduler</span><span class="pill active">Critical paths ▾</span>
+            <span style="flex: 1"></span><span class="pill">80%</span>
+          </div>
+          <div class="dd">
+            <div class="dd-head">Long poles · 12 paths</div>
+            <div class="dd-item">
+              <span class="di-crit">78%</span><span class="di-name">Epic X.1 → … → Epic X.6</span
+              ><span style="color: var(--muted)">257 d</span>
+            </div>
+            <div class="dd-item">
+              <span class="di-crit">44%</span><span class="di-name">Show tip → …</span
+              ><span style="color: var(--muted)">108 d</span>
+            </div>
+            <div class="dd-item">
+              <span class="di-crit">31%</span><span class="di-name">Get test devices → …</span
+              ><span style="color: var(--muted)">110 d</span>
+            </div>
+            <div class="dd-item">
+              <span class="di-crit" style="color: var(--muted)">12%</span
+              ><span class="di-name">Tablet Mode UI Enhancements</span><span style="color: var(--muted)">132 d</span>
+            </div>
+            <div class="dd-foot"><button class="btn btn-sm btn-subtle">Open full Critical Paths report →</button></div>
+          </div>
+          <div class="wire-grid" style="padding-top: 148px">
+            <div class="wire-team">ADJ3 <span class="wt-right">312 days · 1 track</span></div>
+            <div class="wire-issue">
+              <span class="nm">Epic X.1</span>
+              <span class="track"><i class="b" style="left: 2%; width: 16%"></i></span>
+            </div>
+            <div class="wire-issue">
+              <span class="nm">Epic X.2</span>
+              <span class="track"><i class="b" style="left: 19%; width: 13%"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <ul>
+            <li>Your option 1 — click a row to focus it in the grid, or open the full report from the footer.</li>
+          </ul>
+          <p class="tradeoff">
+            <span class="good">+ Zero layout cost; keeps focusing; trivially cheap to build.</span><br /><span
+              class="bad"
+              >− Still a thing you have to know to click, which is the problem you opened with.</span
+            >
+          </p>
+        </div>
+      </div>
+
+      <!-- OPTION D -->
+      <div>
+        <h3>D · Highlight the top path in the grid</h3>
+        <div class="wire">
+          <div class="wire-controls">
+            <span class="pill">Auto-Scheduler</span><span class="pill">Epics</span> <span style="flex: 1"></span
+            ><span class="pill">80%</span>
+          </div>
+          <div class="gridcaption">
+            <b>Longest pole:</b> Epic X.1 → … → Epic X.6 · 257 days · critical in 78% of runs
+            <span style="margin-left: auto"><a class="link" href="#">All paths →</a></span>
+          </div>
+          <div class="wire-grid">
+            <div class="wire-years">
+              <span>2026</span><span>2027</span><span>2028</span><span>2029</span><span>2030</span>
+            </div>
+            <div class="wire-team">ADJ3 <span class="wt-right">312 days · 1 track</span></div>
+            <div class="wire-issue hot">
+              <span class="nm">Epic X.1</span>
+              <span class="track"><i class="b hot" style="left: 2%; width: 16%"></i></span>
+            </div>
+            <div class="wire-issue hot">
+              <span class="nm">Epic X.2</span>
+              <span class="track"><i class="b hot" style="left: 19%; width: 13%"></i></span>
+            </div>
+            <div class="wire-issue">
+              <span class="nm">Tablet Mode UI Enh…</span>
+              <span class="track"><i class="b" style="left: 33%; width: 20%"></i></span>
+            </div>
+            <div class="wire-team">BTP <span class="wt-right">205 days · 1 track</span></div>
+            <div class="wire-issue hot">
+              <span class="nm">Epic X.3</span>
+              <span class="track"><i class="b hot" style="left: 34%; width: 11%"></i></span>
+            </div>
+            <div class="wire-issue">
+              <span class="nm">Currency options</span>
+              <span class="track"><i class="b" style="left: 1%; width: 6%"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <ul>
+            <li>No listing in the autoscheduler at all — the critical chain is just tinted in the grid.</li>
+            <li>One caption names it and links out to the full report.</li>
+          </ul>
+          <p class="tradeoff">
+            <span class="good">+ Genuinely unmissable, and zero extra vertical space.</span><br /><span class="bad"
+              >− Shows one path, so you can't compare; complements a listing rather than replacing it. Also collides
+              with the grid's existing blue→green bar gradient.</span
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>4 · Inside a Report of Reports</h2>
+    <p class="caption">
+      Top 5 with "show more", no autoscheduler grid. Criticality needs the simulation, so this is where the
+      critical-path-specific loading state you asked about earns its keep — and it should say what it's doing rather
+      than showing a bare spinner.
+    </p>
+
+    <div class="stage">
+      <div>
+        <h3>Running the simulation</h3>
+        <div class="card" style="width: 470px">
+          <div class="card-head">
+            <div>
+              <p class="card-title">Critical Paths</p>
+              <p class="card-sub">Simulating 10,000 schedules to find the long poles…</p>
+            </div>
+          </div>
+          <div style="padding: 14px 18px">
+            <div class="progress" style="margin-bottom: 14px"><i style="width: 38%"></i></div>
+            <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 11px">
+              <div class="skel" style="width: 34px"></div>
+              <div class="skel" style="flex: 1"></div>
+              <div class="skel" style="width: 74px"></div>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 11px; opacity: 0.7">
+              <div class="skel" style="width: 34px"></div>
+              <div class="skel" style="flex: 1"></div>
+              <div class="skel" style="width: 74px"></div>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center; opacity: 0.45">
+              <div class="skel" style="width: 34px"></div>
+              <div class="skel" style="flex: 1"></div>
+              <div class="skel" style="width: 74px"></div>
+            </div>
+          </div>
+          <div class="card-foot">38% · about 4 seconds left</div>
+        </div>
+        <div class="notes">
+          <p class="tradeoff">
+            Ranking is unstable until the simulation is well along, so rows should <b>not</b> stream in and reshuffle —
+            hold the skeleton, then reveal. A document with three of these embedded runs three simulations; worth
+            deciding whether they share one.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <h3>Resolved · compact variant</h3>
+        <div class="card" style="width: 470px">
+          <div class="card-head">
+            <div>
+              <p class="card-title">Critical Paths</p>
+              <p class="card-sub">Ranked by how often each drove the finish date</p>
+            </div>
+            <div class="head-right">
+              <div class="legend">
+                <span class="legend-item"><span class="swatch sw-work"></span> Work</span>
+                <span class="legend-item"><span class="swatch sw-wait"></span> Queued</span>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 6px 0">
+            <div class="striprow" style="padding: 6px 14px">
+              <span class="sr-rank">1</span><span class="sr-crit">78%</span>
+              <span class="sr-name">Epic X.1 → … → Epic X.6</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 142"></i
+                ><i style="background: var(--series-wait); flex: 115"></i
+              ></span>
+              <span class="sr-days">257 d</span>
+            </div>
+            <div class="striprow" style="padding: 6px 14px">
+              <span class="sr-rank">2</span><span class="sr-crit">44%</span>
+              <span class="sr-name">Show tip → …</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 71"></i
+                ><i style="background: var(--series-wait); flex: 37"></i><i style="flex: 149"></i
+              ></span>
+              <span class="sr-days">108 d</span>
+            </div>
+            <div class="striprow" style="padding: 6px 14px">
+              <span class="sr-rank">3</span><span class="sr-crit">31%</span>
+              <span class="sr-name">Get test devices → …</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 96"></i
+                ><i style="background: var(--series-wait); flex: 14"></i><i style="flex: 147"></i
+              ></span>
+              <span class="sr-days">110 d</span>
+            </div>
+            <div class="striprow" style="padding: 6px 14px">
+              <span class="sr-rank">4</span><span class="sr-crit" style="color: var(--muted)">12%</span>
+              <span class="sr-name">Tablet Mode UI Enhancements</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 132"></i><i style="flex: 125"></i
+              ></span>
+              <span class="sr-days">132 d</span>
+            </div>
+            <div class="striprow" style="padding: 6px 14px">
+              <span class="sr-rank">5</span><span class="sr-crit" style="color: var(--muted)">9%</span>
+              <span class="sr-name">Daily Sales Summary Report</span>
+              <span class="sr-bar"
+                ><i style="background: var(--series-work); flex: 120"></i><i style="flex: 137"></i
+              ></span>
+              <span class="sr-days">120 d</span>
+            </div>
+          </div>
+          <div class="card-foot"><button class="btn btn-sm">Show 7 more</button></div>
+        </div>
+        <div class="notes">
+          <p class="tradeoff">
+            Same component as §1 at a narrower breakpoint: chains collapse to
+            <code>first → … → last</code>, the fan-out disclosure drops, one line per path. This is also exactly what
+            option A's strip renders.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>5 · Decisions taken</h2>
+    <div class="notes" style="max-width: 940px">
+      <ul>
+        <li>
+          <b>Fix the model before the presentation.</b> Ranking by deterministic <code>blocksWorkDepth</code> can name
+          the wrong long pole (see "Why row 4 matters"), so phase 1 adds the per-iteration trace and phase 2 builds this
+          UI on top of it.
+        </li>
+        <li>
+          <b>Criticality all the way through.</b> The greedy pass that picks cone roots runs in criticality order, not
+          <code>blocksWorkDepth</code> order — otherwise a high-criticality epic could be swallowed into another epic's
+          cone and never appear as a row. The next-hop pick uses criticality too.
+        </li>
+        <li>
+          <b>Placement: option C.</b> A control + dropdown in the autoscheduler, with a button through to the full
+          report. The collapsed <code>&lt;details&gt;</code> at the bottom of <code>AutoScheduler.tsx</code> goes away;
+          focusing moves into the dropdown, the full listing becomes the standalone report.
+        </li>
+        <li>
+          <b>Keep the work/queued split, labeled honestly.</b> It answers "shorten this chain by cutting dependencies,
+          or by adding capacity?" — the most actionable thing the trace produces — so it stays, scoped explicitly to
+          in-plan queueing.
+        </li>
+      </ul>
+    </div>
+
+    <h2>6 · Still open</h2>
+    <div class="notes" style="max-width: 940px">
+      <ul>
+        <li>
+          <b>Does the standalone report include the team-load callout (§2)?</b> It's derived from the same trace, but it
+          is arguably its own report.
+        </li>
+        <li>
+          <b>Shared simulation across a document.</b> Three embedded critical-path reports over the same JQL currently
+          means three Monte Carlos. There's precedent for collapsing this — <code>ChildQueryGroups</code> already
+          dedupes identical Jira requests.
+        </li>
+        <li>
+          <b>Slack as a later addition.</b> How far a chain can slip before the finish date moves is the classic
+          complement to criticality, is a property of the schedule rather than a claim about teams, and falls out of the
+          same trace. Deliberately not in v1.
+        </li>
+        <li>
+          <b>Chains that leave the query.</b> <code>linkDirectBlocks</code> drops blockers whose keys aren't in the
+          result set, so some chains dead-end for a reason we should say out loud rather than render as "starts here."
+        </li>
+        <li>
+          <b>Pre-existing bug, out of scope.</b> <code>resetLinkedIssue</code> calls
+          <code>getEstimationData(issue, {})</code>, which skips the user's configured story-point and confidence
+          defaults and pins <code>uncertaintyWeight</code> to the function's hardcoded 80.
+        </li>
+        <li>
+          <b>Texture stays opt-in.</b> The validated hue pair has wide CVD margins, so no hatching by default; a 45°
+          texture is available for print and forced-colors.
+        </li>
+      </ul>
+    </div>
+  </body>
+</html>

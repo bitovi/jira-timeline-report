@@ -21,8 +21,8 @@ import { TableReport } from './TableReport';
 
 /**
  * Minimal writable CanObservable stub. `value` is a getter/setter so both `.set(v)` (used by
- * upstream data observables) and `obs.value = v` (how the report writes persisted state back, like
- * GroupingReport) update the live value and notify subscribers.
+ * upstream data observables) and `obs.value = v` (how the report writes persisted state back)
+ * update the live value and notify subscribers.
  */
 const obs = <T,>(value: T): CanObservable<T> => {
   let current = value;
@@ -367,20 +367,66 @@ describe('TableReport (1D grouping body)', () => {
     expect(within(members[0]).getByText('AAA-1')).toBeInTheDocument();
   });
 
-  test('the grouped view renders the Order groups + Expand/Collapse strip', () => {
+  test("the grouped view has no separate group-controls strip — each group's own caret is the only expand/collapse affordance, and headers own group ordering", () => {
     setupGrouped();
-    expect(screen.getByTestId('table-group-controls')).toBeInTheDocument();
-    expect(screen.getByTestId('table-group-sort')).toBeInTheDocument();
-    expect(screen.getByTestId('table-expand-all')).toBeInTheDocument();
-    expect(screen.getByTestId('table-collapse-all')).toBeInTheDocument();
+    expect(screen.queryByTestId('table-group-controls')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('table-group-sort')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('table-expand-all')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('table-collapse-all')).not.toBeInTheDocument();
   });
 
-  test('Expand all reveals members and Collapse all hides them', () => {
+  test('clicking an AGGREGATED measure column header while grouped sorts the GROUPS by that aggregate (not row order)', () => {
+    const tableObs = makeTableObs();
+    tableObs.tableColumnsObs.set([...DEFAULT_COLUMNS, { sourceId: 'field:customfield_1' }]);
+    tableObs.tableGroupByObs.set('builtin:status:name');
+    // Done sum = 1 + 1 = 2; To Do sum = 20 — clearly distinct so ordering is unambiguous.
+    renderReport(
+      [makeGrouped('AAA-1', 'Done', 1), makeGrouped('AAA-2', 'To Do', 20), makeGrouped('AAA-3', 'Done', 1)],
+      tableObs,
+    );
+
+    // Default order is by label ascending → Done first.
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('Done');
+
+    const pointsHeader = screen
+      .getAllByTestId('table-header-sort')
+      .find((b) => b.textContent?.startsWith('Story Points'))!;
+    fireEvent.click(pointsHeader); // asc by Story Points sum → Done (2) before To Do (20)
+    expect(pointsHeader.textContent).toContain('▲');
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('Done');
+
+    fireEvent.click(pointsHeader); // desc → To Do (20) before Done (2)
+    expect(pointsHeader.textContent).toContain('▼');
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('To Do');
+
+    // A third click drops back to the default label-ascending order rather than an "unsorted" state.
+    fireEvent.click(pointsHeader);
+    expect(pointsHeader.textContent).not.toContain('▲');
+    expect(pointsHeader.textContent).not.toContain('▼');
+    expect(screen.getAllByTestId('table-group-header')[0].textContent).toContain('Done');
+  });
+
+  test('clicking a TREE-CAPABLE measure column header while grouped sorts groups too — no hierarchy nesting kicks in', () => {
     setupGrouped();
-    fireEvent.click(screen.getByTestId('table-expand-all'));
-    expect(screen.getAllByTestId('table-group-member').length).toBe(3);
-    fireEvent.click(screen.getByTestId('table-collapse-all'));
-    expect(screen.queryByTestId('table-group-member')).not.toBeInTheDocument();
+    // "Icon & Summary" is tree-capable, but grouping and hierarchy are mutually exclusive.
+    const summaryHeader = screen.getAllByTestId('table-header-sort').find((b) => b.textContent?.startsWith('Summary'))!;
+    fireEvent.click(summaryHeader);
+    // No hierarchy glyph, no tree/rank sort mode — just the plain asc arrow.
+    expect(summaryHeader.textContent).toContain('▲');
+    // Still rendered as two flat group headers (not nested rows).
+    expect(screen.getAllByTestId('table-group-header')).toHaveLength(2);
+  });
+
+  test('the column sort menu hides Hierarchy/Rank options on tree-capable columns while grouped', () => {
+    setupGrouped();
+    const summaryHeader = screen.getAllByTestId('table-header-sort').find((b) => b.textContent?.startsWith('Summary'))!;
+    const th = summaryHeader.closest('th') as HTMLElement;
+    fireEvent.click(within(th).getByTestId('table-column-menu-trigger'));
+    const menu = screen.getByTestId('table-sort-menu');
+    expect(within(menu).queryByTestId('table-sort-tree')).not.toBeInTheDocument();
+    expect(within(menu).queryByTestId('table-sort-rank')).not.toBeInTheDocument();
+    expect(within(menu).getByTestId('table-sort-asc')).toBeInTheDocument();
+    expect(within(menu).getByTestId('table-sort-desc')).toBeInTheDocument();
   });
 
   test.each([

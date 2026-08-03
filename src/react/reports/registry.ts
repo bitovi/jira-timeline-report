@@ -4,12 +4,10 @@ import { WorkBreakdown } from './WorkBreakdown';
 import { EstimateAnalysis } from './EstimateAnalysis/EstimateAnalysis';
 import AutoScheduler from './AutoScheduler/AutoScheduler';
 import EstimationProgress from './EstimationProgress/EstimationProgress';
-import { GroupingReport } from './GroupingReport/GroupingReport';
 import { FlowMetrics } from './FlowMetrics/FlowMetrics';
 import { TimeInStatus } from './TimeInStatus/TimeInStatus';
 import { ScatterTimeline } from './ScatterTimeline';
 import { GanttGrid } from './GanttReport/GanttGrid';
-import { EstimationTable } from './EstimationTable';
 import { TableReport } from './TableReport/TableReport';
 
 /**
@@ -31,14 +29,12 @@ export const embeddableReportComponents: Record<string, ComponentType<any>> = {
   'estimate-analysis': EstimateAnalysis,
   'auto-scheduler': AutoScheduler,
   'estimation-progress': EstimationProgress,
-  grouper: GroupingReport,
   'flow-metrics': FlowMetrics,
   'time-in-status': TimeInStatus,
   due: ScatterTimeline,
   'start-due': GanttGrid,
-  table: EstimationTable,
-  table2: TableReport,
+  table: TableReport,
+  // The former secondary slot's report, now a primary of its own. The directory keeps its
+  // `WorkBreakdown` name; the user-visible one is "Cards". See spec/018-card-report/alt-plan.md.
+  cards: WorkBreakdown,
 };
-
-/** The secondary (Work Breakdown) report, rendered below a Gantt or Scatter primary. */
-export { WorkBreakdown };

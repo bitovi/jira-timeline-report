@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
-import type { IssueClickHandler, IssueOrRelease, SecondaryReportMode } from './types';
+import type { CardsMode, IssueClickHandler, IssueOrRelease } from './types';
 import { buildBoard, fontSizeClass } from './helpers';
 import { WorkBreakdownCard } from './components/WorkBreakdownCard';
 import { PlanningCard } from './components/PlanningCard';
@@ -35,35 +35,45 @@ export interface WorkBreakdownProps {
   allIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
   /** Issues shown in the "Planning" fallback card (excluded from card children). */
   planningIssuesObs?: CanObservable<IssueOrRelease[]>;
-  /** `routeData.secondaryReportType` — `'breakdown'` shows the matrix; anything else shows status. */
-  secondaryReportTypeObs: CanObservable<string>;
-  /** The secondary report's own filter rows — narrows cards/child rows independently of the
-   *  primary Filters control (see `buildBoard`). */
+  /** `cardsMode` — `'breakdown'` shows the matrix; anything else shows status. */
+  cardsModeObs: CanObservable<string>;
+  /**
+   * Filter rows narrowing which cards show, on top of the primaries the view model already handed
+   * over (see `buildBoard`).
+   *
+   * The shell leaves this unwired: as a primary report, Cards is built from
+   * `primaryIssuesOrReleases`, which the view model has *already* narrowed by `filterRows` — passing
+   * the same list again would filter twice. It stays here because `buildBoard` takes it and the
+   * stories drive it, and because the two lists were genuinely independent while Cards lived in the
+   * secondary slot. See spec/018-card-report/alt-plan.md.
+   */
   filterRowsObs?: CanObservable<FilterRow[]>;
   /** A second, independent set of filter rows scoped to the CHILD issue type — decides which
    *  children (if any) render within an already-shown card (see `buildBoard`). */
-  childFilterRowsObs?: CanObservable<FilterRow[]>;
+  cardsChildFilterRowsObs?: CanObservable<FilterRow[]>;
   /** Click handler for cards/rows — wired to the issue tooltip when mounted in the app. */
   onIssueClick?: IssueClickHandler;
 }
 
-const toMode = (secondaryReportType: string): SecondaryReportMode =>
-  secondaryReportType === 'breakdown' ? 'breakdown' : 'status';
+const toMode = (cardsMode: string): CardsMode => (cardsMode === 'breakdown' ? 'breakdown' : 'status');
 
 /**
- * Work Breakdown & Status secondary report (React). Renders one card per primary issue: a
- * rollup-status header over either a single status column (`status`) or a work-type status matrix
- * (`breakdown`), plus a "Planning" fallback card. All status/date/density math lives in
- * {@link buildBoard} and the pure helpers it composes; this component only reads observables and
- * maps the resulting board to JSX.
+ * The Cards report (React). Renders one card per primary issue: a rollup-status header over either
+ * a single status column (`status`) or a work-type status matrix (`breakdown`), plus a "Planning"
+ * fallback card. All status/date/density math lives in {@link buildBoard} and the pure helpers it
+ * composes; this component only reads observables and maps the resulting board to JSX.
+ *
+ * It spent its first life as the *secondary* report rendered below a Gantt or Scatter primary; it is
+ * now a primary report of its own, under the `cards` key. The directory keeps the old name.
+ * See spec/018-card-report/alt-plan.md.
  */
 export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
   const primaryIssues = useCanObservable(props.primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(props.allIssuesOrReleasesObs);
   const planningIssues = useCanObservable(props.planningIssuesObs ?? emptyIssuesObs);
-  const secondaryReportType = useCanObservable(props.secondaryReportTypeObs);
+  const cardsMode = useCanObservable(props.cardsModeObs);
   const filterRows = useCanObservable(props.filterRowsObs ?? emptyFilterRowsObs);
-  const childFilterRows = useCanObservable(props.childFilterRowsObs ?? emptyFilterRowsObs);
+  const childFilterRows = useCanObservable(props.cardsChildFilterRowsObs ?? emptyFilterRowsObs);
 
   const [popup, setPopup] = useState<{ issue: IssueOrRelease; anchorEl: HTMLElement } | null>(null);
 
@@ -72,7 +82,7 @@ export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
     setPopup({ issue, anchorEl: event.currentTarget as HTMLElement });
   };
 
-  const mode = toMode(secondaryReportType);
+  const mode = toMode(cardsMode);
   const board = buildBoard(
     primaryIssues ?? [],
     allIssues ?? [],

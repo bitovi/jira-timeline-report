@@ -407,8 +407,7 @@ export class RouteData extends ObservableObject {
         .flatMap((sourceId) => requiredFieldsFor(sourceId));
     },
 
-    // Computed property that combines the base fields, the URL `fields` param (legacy Grouper
-    // "Additional Fields"), and the Table report's shown-column fields.
+    // Computed property that combines the base fields and the Table report's shown-column fields.
     //
     // Only emits when the requested field set REALLY changes, so a full issue refetch is avoided
     // when a column change doesn't alter what must be loaded. Two guards:
@@ -426,11 +425,7 @@ export class RouteData extends ObservableObject {
         let resolved = false;
         const recompute = () => {
           const baseFields = this.fieldsToRequest;
-          const urlFields = this.fields;
-          const next =
-            baseFields && urlFields
-              ? [...new Set([...baseFields, ...urlFields, ...this.tableColumnFields])]
-              : undefined;
+          const next = baseFields ? [...new Set([...baseFields, ...this.tableColumnFields])] : undefined;
           let changed;
           if (!resolved || (next === undefined) !== (current === undefined)) {
             changed = true;
@@ -446,7 +441,6 @@ export class RouteData extends ObservableObject {
           }
         };
         listenTo('fieldsToRequest', recompute);
-        listenTo('fields', recompute);
         listenTo('tableColumnFields', recompute);
         listenTo('fieldMaps', recompute);
         recompute();
@@ -908,7 +902,11 @@ export class RouteData extends ObservableObject {
       type: Boolean,
       defaultValue: false,
     },
-    secondaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryReportType', 'none', String, {
+    // Which view the Cards report shows: 'status' (one status column) or 'breakdown' (the work-type
+    // matrix). Replaces the legacy `secondaryReportType`, which selected the same two views from the
+    // now-deleted secondary slot. Unrecognized values are clamped by the report itself, exactly as
+    // `secondaryReportType` was. See spec/018-card-report/alt-plan.md.
+    cardsMode: saveJSONToUrlButAlsoLookAtReport_DataWrapper('cardsMode', 'status', String, {
       parse: (x) => '' + x,
       stringify: (x) => '' + x,
     }),
@@ -937,13 +935,12 @@ export class RouteData extends ObservableObject {
     // Raw, persisted state — empty until the user adds a row. See `effectiveFilterRows` below for
     // the legacy `statusesToShow`/`statusesToRemove` migration read by the actual filtering logic.
     filterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('filterRows', [], Array, JSON),
-    // Independent filter-row state for the secondary (Work Breakdown) report's own Filters
-    // control. No legacy migration needed — this param is new.
-    secondaryFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryFilterRows', [], Array, JSON),
-    // A second, independent filter-row state scoped to the Work Breakdown's CHILD issue type.
-    // Decides which children (if any) render within an already-shown card — doesn't affect
-    // whether the card itself shows (that's `secondaryFilterRows`, above).
-    secondaryChildFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('secondaryChildFilterRows', [], Array, JSON),
+    // Filter-row state scoped to the Cards report's CHILD issue type. Decides which children (if
+    // any) render within an already-shown card — it doesn't affect whether the card itself shows.
+    // That is `filterRows`, which narrows the primaries every report on the page is built from;
+    // Cards has no second list of its own now that it is a primary report.
+    // Replaces the legacy `secondaryChildFilterRows` (spec/018-card-report/alt-plan.md).
+    cardsChildFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('cardsChildFilterRows', [], Array, JSON),
     // If `filterRows` is empty/unset, seed an equivalent `Jira Status` row from the legacy
     // `statusesToShow`/`statusesToRemove` params so old bookmarks/saved reports keep filtering.
     get effectiveFilterRows() {
@@ -962,18 +959,6 @@ export class RouteData extends ObservableObject {
     },
     planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('planningStatuses'),
     releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('releasesToShow'),
-    fields: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('fields'),
-
-    // GroupingReport routing properties
-    rowGroup: saveJSONToUrlButAlsoLookAtReport_DataWrapper('rowGroup', 'projectKey', String, {
-      parse: (x) => '' + x,
-      stringify: (x) => '' + x,
-    }),
-    colGroup: saveJSONToUrlButAlsoLookAtReport_DataWrapper('colGroup', 'dueInMonth', String, {
-      parse: (x) => '' + x,
-      stringify: (x) => '' + x,
-    }),
-    aggregators: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('aggregators', () => ['issuesList']),
 
     // GroupBy is not available for release ... so if a release primaryIssueType is set
     // then we need to remove it
@@ -997,10 +982,9 @@ export class RouteData extends ObservableObject {
       },
     }),
 
-    // Table report (`table2`, spec/012-table-and-grouper Phase 5) routing properties. These are new,
-    // namespaced with a `table` prefix so they never collide with the legacy Grouper keys
-    // (`fields`/`rowGroup`/`colGroup`/`aggregators`) — no legacy migration (plan Q2). Ephemeral UI
-    // toggles (expand/collapse of tree rows and groups) are NOT persisted; they stay local React state.
+    // Table report (spec/012-table-and-grouper Phase 5) routing properties, namespaced with a `table`
+    // prefix. Ephemeral UI toggles (expand/collapse of tree rows and groups) are NOT persisted; they
+    // stay local React state.
     //
     // `tableColumns` is the ordered shown-column list. Each entry is `{ sourceId, aggregation?, width? }`
     // — the per-column aggregation override folds into the entry (no separate map). Default = the

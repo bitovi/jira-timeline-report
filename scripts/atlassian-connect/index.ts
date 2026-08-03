@@ -98,7 +98,11 @@ function createModules({ name, key }: Metadata) {
           },
         },
         {
-          url: `/connect.html?primaryIssueType={ac.${key}.primaryIssueType}&hideUnknownInitiatives={ac.${key}.hideUnknownInitiatives}&jql={ac.${key}.jql}&loadChildren={ac.${key}.loadChildren}&primaryReportType={ac.${key}.primaryReportType}&secondaryReportType={ac.${key}.secondaryReportType}&showPercentComplete={ac.${key}.showPercentComplete}&showOnlySemverReleases={ac.${key}.showOnlySemverReleases}&settings={ac.${key}.settings}`,
+          // `secondaryReportType` was replaced by `cardsMode` when the secondary slot was deleted
+          // and its report became the `cards` primary — spec/018-card-report/alt-plan.md. Changing
+          // this regenerates the published `atlassian-connect.json`, so it needs a coordinated
+          // descriptor deploy.
+          url: `/connect.html?primaryIssueType={ac.${key}.primaryIssueType}&hideUnknownInitiatives={ac.${key}.hideUnknownInitiatives}&jql={ac.${key}.jql}&loadChildren={ac.${key}.loadChildren}&primaryReportType={ac.${key}.primaryReportType}&cardsMode={ac.${key}.cardsMode}&showPercentComplete={ac.${key}.showPercentComplete}&showOnlySemverReleases={ac.${key}.showOnlySemverReleases}&settings={ac.${key}.settings}`,
           key: 'deeplink',
           location: 'none',
           name: {

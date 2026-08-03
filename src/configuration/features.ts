@@ -8,12 +8,10 @@ type Feature = {
 };
 
 export const nonReportsFeatures: Feature[] = [
-  {
-    name: 'Secondary Report',
-    subtitle: '',
-    featureFlag: 'secondaryReport',
-    onByDefault: false,
-  },
+  // `secondaryReport` used to live here. The slot it gated is gone, and its report is now the
+  // `cards` entry in `reports.ts` — which derives the `cardsReport` flag below. Anyone who had the
+  // old flag on is carried over to the new one by the alias in `jira/features/fetcher.ts`.
+  // See spec/018-card-report/alt-plan.md § Delete the slot.
   {
     name: 'Work Breakdowns',
     subtitle: '',

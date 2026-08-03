@@ -56,7 +56,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpda
         </div>
       )}
       {showSettings === 'FEATURES' && (
-        <SidebarLayout onGoBack={returnToSettings}>
+        <SidebarLayout onGoBack={returnToSettings} className="w-96">
           <Features />
         </SidebarLayout>
       )}

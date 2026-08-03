@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Card, Density, IssueClickHandler, SecondaryReportMode } from '../../types';
+import type { Card, CardsMode, Density, IssueClickHandler } from '../../types';
 import { fontSizeClass, getStatusColorClass } from '../../helpers';
 import type { SwatchSize } from '../StatusSwatch';
 import { StatusColumnBody } from '../StatusColumnBody';
@@ -11,7 +11,7 @@ export interface WorkBreakdownCardProps {
   /** The card view model. */
   card: Card;
   /** Which body to render. */
-  mode: SecondaryReportMode;
+  mode: CardsMode;
   /** Board density tier — sizes the swatches and text. */
   density: Density;
   /** Click handler for the header + child rows (opens the issue tooltip). */

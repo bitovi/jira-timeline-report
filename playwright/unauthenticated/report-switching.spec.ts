@@ -5,7 +5,9 @@ import test, { expect } from '@playwright/test';
 test.describe('Report type switching (React shell)', () => {
   test('swaps the primary report in place when the report type changes', async ({ page }) => {
     await page.goto('/');
-    await page.getByText('Release end dates with initiative status').click();
+    const sampleLink = page.getByText(/Initiative end dates/i);
+    await expect(sampleLink).toBeVisible();
+    await sampleLink.click();
 
     // Scatter Plot ('due') renders.
     await expect(page.locator('#react-report-container')).toBeVisible();

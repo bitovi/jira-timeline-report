@@ -24,8 +24,8 @@ describe('<SampleDataNotice />', () => {
 
     expect(screen.getByText(/Welcome! You're currently viewing a sample report/i)).toBeInTheDocument();
 
-    expect(screen.getByText(/Release end dates with initiative status/i)).toBeInTheDocument();
-    expect(screen.getByText(/Release timeline with initiative work breakdown/i)).toBeInTheDocument();
+    expect(screen.getByText(/Initiative end dates/i)).toBeInTheDocument();
+    expect(screen.getByText(/Initiative timeline/i)).toBeInTheDocument();
     expect(screen.getByText(/Ready and in-development initiative work breakdown/i)).toBeInTheDocument();
   });
 

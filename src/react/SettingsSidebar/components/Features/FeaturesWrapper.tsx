@@ -15,19 +15,17 @@ interface FeaturesWrapperProps {}
 
 const FeaturesWrapper: FC<FeaturesWrapperProps> = () => {
   return (
-    <div className="w-96">
-      <FlagsProvider>
-        <ErrorBoundary fallback={({ error }) => <FeaturesErrorBoundary error={error} />}>
-          <Suspense fallback={<FeaturesSkeleton />}>
-            <StorageProvider storage={routeData.storage}>
-              <QueryClientProvider client={queryClient}>
-                <Features />
-              </QueryClientProvider>
-            </StorageProvider>
-          </Suspense>
-        </ErrorBoundary>
-      </FlagsProvider>
-    </div>
+    <FlagsProvider>
+      <ErrorBoundary fallback={({ error }) => <FeaturesErrorBoundary error={error} />}>
+        <Suspense fallback={<FeaturesSkeleton />}>
+          <StorageProvider storage={routeData.storage}>
+            <QueryClientProvider client={queryClient}>
+              <Features />
+            </QueryClientProvider>
+          </StorageProvider>
+        </Suspense>
+      </ErrorBoundary>
+    </FlagsProvider>
   );
 };
 

@@ -73,18 +73,16 @@ describe('ViewReports Component', () => {
 
     const backButton = await screen.findByText('Back to report');
     const title = await screen.findByText('Saved Reports');
-    const manageHeading = await screen.findByText('Manage');
-    const reportHeading = await screen.findByText('Report');
-    const report = await screen.findByText('Report 1');
+    const search = await screen.findByRole('textbox', { name: 'Search reports' });
+    const report = await screen.findByRole('link', { name: 'Report 1' });
 
     expect(backButton).toBeInTheDocument();
-    expect(manageHeading).toBeInTheDocument();
-    expect(reportHeading).toBeInTheDocument();
+    expect(search).toBeInTheDocument();
     expect(title).toBeInTheDocument();
     expect(report).toBeInTheDocument();
   });
 
-  it('renders reports in the table', async () => {
+  it('renders reports in the list', async () => {
     renderWithWrappers({
       storage: {
         get: async () => {
@@ -117,7 +115,55 @@ describe('ViewReports Component', () => {
       },
     });
 
-    expect(await screen.findByText('Report 1', { selector: 'a' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Report 1' })).toHaveAttribute('href', '?report=1');
+  });
+
+  it("shows each report's type as a badge", async () => {
+    renderWithWrappers({
+      storage: {
+        get: async () => ({
+          '1': { id: '1', name: 'Report 1', queryParams: 'primaryReportType=due' },
+          '2': { id: '2', name: 'Report 2', queryParams: 'primaryReportType=table' },
+        }),
+      },
+    });
+
+    expect(await screen.findByText('Scatter Plot')).toBeInTheDocument();
+    expect(await screen.findByText('Table')).toBeInTheDocument();
+  });
+
+  it('filters the list by name or type as the user types', async () => {
+    renderWithWrappers({
+      storage: {
+        get: async () => ({
+          '1': { id: '1', name: 'Alpha', queryParams: 'primaryReportType=due' },
+          '2': { id: '2', name: 'Beta', queryParams: 'primaryReportType=table' },
+        }),
+      },
+    });
+
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Search reports' }), 'alph');
+
+    expect(screen.getByRole('link', { name: 'Alpha' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Beta' })).not.toBeInTheDocument();
+  });
+
+  it('shows a search-specific empty state when nothing matches', async () => {
+    renderWithWrappers({
+      storage: {
+        get: async () => ({ '1': { id: '1', name: 'Alpha', queryParams: '' } }),
+      },
+    });
+
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Search reports' }), 'zzz');
+
+    expect(screen.getByText(/No reports match/)).toBeInTheDocument();
+  });
+
+  it('explains itself when nothing has been saved yet', async () => {
+    renderWithWrappers({ storage: { get: async () => ({}) } });
+
+    expect(await screen.findByText(/No saved reports yet/)).toBeInTheDocument();
   });
 
   it('deletes report', async () => {

@@ -45,22 +45,8 @@ export const reports: Report[] = [
     onByDefault: false,
   },
   {
-    key: 'grouper',
-    name: 'Grouper',
-    featureSubtitle: 'A report that groups issues based on various criteria.',
-    featureFlag: 'grouper',
-    onByDefault: false,
-  },
-  {
     key: 'table',
-    name: 'Estimation Table',
-    featureSubtitle: '',
-    featureFlag: 'estimationTable',
-    onByDefault: false,
-  },
-  {
-    key: 'table2',
-    name: 'Table (beta)',
+    name: 'Table',
     featureSubtitle: 'Unified table & grouper report',
     featureFlag: 'tableReport',
     onByDefault: false,
@@ -77,6 +63,13 @@ export const reports: Report[] = [
     name: 'Time in Status',
     featureSubtitle: 'Average and median time issues spend in each workflow status',
     featureFlag: 'timeInStatus',
+    onByDefault: false,
+  },
+  {
+    key: 'cards',
+    name: 'Cards',
+    featureSubtitle: 'Status and work-breakdown cards, one per issue',
+    featureFlag: 'cardsReport',
     onByDefault: false,
   },
   {

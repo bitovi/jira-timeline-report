@@ -6,7 +6,6 @@ import { createPortal } from 'react-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@sentry/react';
 import SectionMessage from '@atlaskit/section-message';
-import DynamicTable from '@atlaskit/dynamic-table';
 import { FlagsProvider } from '@atlaskit/flag';
 
 import ViewReports from './ViewReports';
@@ -77,24 +76,13 @@ const ViewReportSkeleton: FC<ViewReportSkeletonProps> = ({ onBackButtonClicked }
     return !!params.get('report');
   }, []);
 
-  const rows = [...Array.from({ length: numberOfSkeletonRows }).keys()].map((i) => {
-    return {
-      key: i.toString(),
-      cells: [{ key: `${i}-report`, content: <Skeleton height="40px" /> }],
-    };
-  });
-
   return (
     <ViewReportLayout onBackButtonClicked={onBackButtonClicked} reportInfo={selectedReportExists ? <Skeleton /> : null}>
-      <DynamicTable
-        head={{
-          cells: [
-            { key: 'report-heading', content: 'Report' },
-            { key: ' manage-reports', content: 'Manage' },
-          ],
-        }}
-        rows={rows}
-      />
+      <div className="flex flex-col gap-1">
+        {[...Array.from({ length: numberOfSkeletonRows }).keys()].map((i) => (
+          <Skeleton key={i} height="48px" />
+        ))}
+      </div>
     </ViewReportLayout>
   );
 };

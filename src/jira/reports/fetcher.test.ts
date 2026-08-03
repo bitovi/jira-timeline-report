@@ -1,7 +1,7 @@
 import type { AppStorage } from '../storage/common';
 import type { Reports } from './fetcher';
 
-import { getAllReports, updateReports } from './fetcher';
+import { getAllReports, readAllReports, updateReports } from './fetcher';
 
 /**
  * A storage double that does a real JSON round trip, like both production backends: the web build
@@ -66,5 +66,60 @@ describe('saved report persistence', () => {
 
   it('returns an empty map when nothing has been saved', async () => {
     expect(await getAllReports(makeStorage())).toEqual({});
+  });
+});
+
+// The read layer is the correctness layer: a saved report's params never pass through the URL, so the
+// boot-time URL rewrite could never reach them and legacy keys survived indefinitely.
+// See spec/018-card-report/saved-report-migrations/plan.md.
+describe('read-time migration', () => {
+  it('normalizes legacy params on the way out of storage', async () => {
+    const storage = makeStorage();
+
+    await updateReports(storage, {
+      legacy: { id: 'legacy', name: 'Old Table', queryParams: 'jql=project%3DORDER&primaryReportType=table2' },
+    });
+
+    const params = new URLSearchParams((await getAllReports(storage)).legacy?.queryParams);
+
+    expect(params.get('primaryReportType')).toBe('table');
+    expect(params.get('jql')).toBe('project=ORDER');
+  });
+
+  it('reports what it migrated, so the write-back layer can converge storage', async () => {
+    const storage = makeStorage();
+
+    await updateReports(storage, {
+      legacy: { id: 'legacy', name: 'Old', queryParams: 'primaryReportType=breakdown' },
+      fine: { id: 'fine', name: 'Fine', queryParams: 'primaryReportType=start-due' },
+    });
+
+    const { changed, applied } = await readAllReports(storage);
+
+    expect(changed).toBe(true);
+    expect(applied).toEqual(['breakdown-primary-report-type']);
+  });
+
+  it('reports no change for reports a current build saved', async () => {
+    const storage = makeStorage();
+
+    await updateReports(storage, {
+      gantt: { id: 'gantt', name: 'Gantt', queryParams: 'jql=project%3DORDER&primaryReportType=start-due' },
+    });
+
+    expect(await readAllReports(storage)).toMatchObject({ changed: false, applied: [] });
+  });
+
+  it('keeps a document tree and unknown fields through a migration', async () => {
+    const storage = makeStorage();
+    const doc = { id: 'doc', name: 'Doc', queryParams: 'primaryReportType=table2', sections, theme: 'compact' };
+
+    await updateReports(storage, { doc } as unknown as Reports);
+
+    const loaded = (await getAllReports(storage)).doc as unknown as typeof doc;
+
+    expect(loaded.sections).toEqual(sections);
+    expect(loaded.theme).toBe('compact');
+    expect(new URLSearchParams(loaded.queryParams).get('primaryReportType')).toBe('table');
   });
 });

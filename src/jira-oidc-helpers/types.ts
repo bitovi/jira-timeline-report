@@ -45,6 +45,8 @@ export type Issue = {
 export type Params = {
   [key: string]: any; // Adjust based on the actual structure of params
   fields?: string[];
+  /** Set by the deep-children loader on child batches to skip their opening approximate-count request. */
+  skipApproximateCount?: boolean;
 };
 
 /**

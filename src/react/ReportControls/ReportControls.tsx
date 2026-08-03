@@ -225,7 +225,7 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
     );
   }
 
-  if (primaryReportType === 'estimation-progress' || primaryReportType === 'grouper') {
+  if (primaryReportType === 'estimation-progress') {
     return (
       <>
         <SelectReportType />
@@ -251,7 +251,7 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
     );
   }
 
-  if (primaryReportType === 'table2') {
+  if (primaryReportType === 'table') {
     // The shared control row holds the report-type selector plus the Table's PRIMARY controls
     // (Rows / Group by / 2D dimension / Fields axis / Add column). TableReportControls reads/writes
     // the same route-data keys the report body reads, so the two stay in sync (plan §Control
@@ -316,11 +316,9 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         />
       </div>
 
-      {primaryReportType !== 'table' ? (
-        <div className="self-end pb-1">
-          <ViewSettings />
-        </div>
-      ) : null}
+      <div className="self-end pb-1">
+        <ViewSettings />
+      </div>
     </ReportControlsWrapper>
   );
 };

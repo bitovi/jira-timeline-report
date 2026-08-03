@@ -17,7 +17,10 @@ async function main() {
     {
       host: 'hosted',
       createStorage: createWebAppStorage,
-      configureRouting: (route: { start: () => void }) => {
+      configureRouting: (route: { start: () => void }, { beforeRouteStart }: { beforeRouteStart: () => void }) => {
+        // No container to reconcile against on the web host, so the URL is already final here. Still
+        // has to precede `route.start()` — see migrations/url.ts.
+        beforeRouteStart();
         route.start();
       },
       createLinkBuilder: createWebLinkBuilder,

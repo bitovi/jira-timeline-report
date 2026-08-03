@@ -57,4 +57,56 @@ describe('<AddReportModal>', () => {
 
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("shows each report's type as a badge", async () => {
+    renderModal({
+      reports: [{ id: 'a', name: 'Alpha', queryParams: 'primaryReportType=due' }],
+    });
+
+    expect(await screen.findByText('Scatter Plot')).toBeInTheDocument();
+  });
+
+  it('filters by name as the user types', async () => {
+    renderModal({
+      reports: [
+        { id: 'a', name: 'Alpha', queryParams: 'primaryReportType=due' },
+        { id: 'b', name: 'Beta', queryParams: 'primaryReportType=table' },
+      ],
+    });
+
+    await userEvent.type(screen.getByRole('textbox'), 'alph');
+
+    expect(screen.getByRole('button', { name: 'Alpha' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Beta' })).not.toBeInTheDocument();
+  });
+
+  it('matches on report type too', async () => {
+    renderModal({ reports: [{ id: 'b', name: 'Beta', queryParams: 'primaryReportType=table' }] });
+
+    await userEvent.type(screen.getByRole('textbox'), 'table');
+
+    expect(screen.getByRole('button', { name: 'Beta' })).toBeInTheDocument();
+  });
+
+  it('shows a search-specific empty state when nothing matches', async () => {
+    renderModal();
+
+    await userEvent.type(screen.getByRole('textbox'), 'zzz');
+
+    expect(screen.getByText(/No reports match/)).toBeInTheDocument();
+  });
+
+  it('selects the top filtered report on Enter', async () => {
+    const { onSelect } = renderModal({
+      reports: [
+        { id: 'a', name: 'Alpha', queryParams: 'primaryReportType=due' },
+        { id: 'b', name: 'Beta', queryParams: 'primaryReportType=table' },
+      ],
+    });
+
+    await userEvent.type(screen.getByRole('textbox'), 'alph');
+    await userEvent.keyboard('{Enter}');
+
+    expect(onSelect).toHaveBeenCalledWith('a');
+  });
 });

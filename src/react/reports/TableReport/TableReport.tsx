@@ -8,9 +8,8 @@
  * expand/collapse caret, parent rows show their precomputed rollup values, and the estimation
  * columns render the "last ➡ current" diff with a breakdown modal on Estimated Days.
  *
- * All behind the `tableReport` feature flag under the temporary report key `table2` (coexists with
- * the legacy `grouper` and `table` reports until retirement, plan Phase 7). Persistence is Phase 5 —
- * for now view state (columns, sort, filters, row ordering, collapsed keys) lives in local state.
+ * Behind the `tableReport` feature flag at report key `table`. Persistence is Phase 5 — for now view
+ * state (columns, sort, filters, row ordering, collapsed keys) lives in local state.
  *
  * Data:
  *  - Flat (sort) mode shows the FULL loaded issue set across ALL hierarchy levels: it prefers the
@@ -21,15 +20,14 @@
  *    exactly like the Estimation Table.
  */
 import React, { Suspense, useMemo, useState } from 'react';
-import Button from '@atlaskit/button/new';
 
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useJiraIssueFields } from '../../services/jira/useJiraIssueFields';
-import { linkIssues } from '../GroupingReport/jira/linked-issue/linked-issue';
+import { linkIssues } from '../../../jira/linked-issue';
 import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from '../../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time';
 import Stats from '../../Stats/Stats';
-import { EstimateBreakdownModal } from '../EstimationTable/components/EstimateBreakdownModal';
+import { EstimateBreakdownModal } from './components/EstimateBreakdownModal';
 import { PercentCompleteModal } from '../GanttReport/GanttGrid/components/PercentCompleteModal';
 import { makeGetChildren } from '../GanttReport/GanttGrid/helpers/getChildren';
 import type { IssueOrRelease } from '../GanttReport/GanttGrid/types';
@@ -50,8 +48,10 @@ import {
 import { buildHierarchyRows } from './model/hierarchyRows';
 import {
   computeMeasureValue,
+  cycleGroupSort,
   effectiveAggregationId,
   formatMeasureValue,
+  getMeasureRenderer,
   groupIssues,
   selectMeasureColumns,
   sortGroups,
@@ -63,11 +63,11 @@ import { isNumericColumn } from './model/columns';
 import { ColumnHeaderMenu } from './components/ColumnHeaderMenu';
 
 import type { DerivedIssue } from '../../../jira/derived/derive';
-import type { EstimationIssue } from '../EstimationTable/types';
+import type { EstimationIssue } from './model/estimationTypes';
 import type { AggregationId } from './model/aggregations';
 import type { DateGranularity } from './model/dateBucketing';
 import type { ColumnDefinition, TableIssue } from './model/columns';
-import type { FilterState, FilterValue, SortState } from './model/applyView';
+import type { FilterState, FilterValue, SortMode, SortState } from './model/applyView';
 import type { AggregationOverrides, GroupSort } from './model/grouping';
 import type { CrossTab } from './model/crosstab';
 import type { HierarchyRow } from './model/hierarchyRows';
@@ -214,6 +214,24 @@ function distinctValues(column: ColumnDefinition, issues: TableIssue[]): string[
 
 /** Placeholder shown for an empty cross-tab cell (no members). */
 const EMPTY_CELL = '·';
+
+/**
+ * A comma-joined list cell (e.g. a `distinct` aggregation over a text column, or the group-header
+ * identity-list fallback) can grow arbitrarily long — with no fixed table layout, a single very long
+ * joined string just stretches the WHOLE table wider instead of wrapping. Once the joined text
+ * exceeds this many characters, cap the cell at a fixed width and let it wrap onto multiple lines.
+ * Inline styles (not Tailwind classes) on purpose — see STICKY_BG comment above: the app loads a
+ * precompiled `dist/production.css`, so a brand-new utility class here wouldn't apply without a
+ * `build:css` rebuild.
+ */
+const LONG_LIST_WRAP_THRESHOLD = 80;
+const LONG_LIST_MAX_WIDTH = 480;
+
+/** Style override for a list cell whose joined text is long enough to need wrapping (see above). */
+function longListWrapStyle(text: string): React.CSSProperties | undefined {
+  if (text.length <= LONG_LIST_WRAP_THRESHOLD) return undefined;
+  return { maxWidth: LONG_LIST_MAX_WIDTH, whiteSpace: 'normal', wordBreak: 'break-word' };
+}
 
 // --- Phase 6: sticky headers / frozen label columns (design §8) ------------------------------------
 // Implemented with inline React.CSSProperties objects rather than Tailwind utilities on purpose: the
@@ -462,7 +480,7 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
 
   const cell = (rowKey: string, colKey: string, measure: ColumnDefinition) => {
     const aggId = effectiveAggregationId(measure, overrides[measure.id]);
-    const customRender = measure.renderMeasure?.[aggId];
+    const customRender = getMeasureRenderer(measure, aggId);
     if (customRender) {
       const members = cellMembers(crossTab, rowKey, colKey);
       return members.length === 0 ? EMPTY_CELL : customRender({ members });
@@ -780,7 +798,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // Group-ordering control: local-only (not in the Phase 5 persisted schema, plan lines 199-210).
   const [groupSort, setGroupSort] = useState<GroupSort>({ by: 'label', dir: 'asc' });
 
-  // --- Write-back helpers: mirror GroupingReport (obs.value = next) instead of setState -------------
+  // --- Write-back helpers: write persisted state back via obs.value = next (not setState) -----------
   const writeColumns = (nextIds: string[], nextOverrides: Record<string, AggregationId> = aggregationOverrides) => {
     columnsObs.value = buildColumnEntries(nextIds, nextOverrides, columnEntries);
   };
@@ -971,9 +989,6 @@ const TableReportInner: React.FC<TableReportProps> = ({
     });
   };
 
-  const expandAllGroups = () => setExpandedGroups(new Set(groups.map((g) => g.key)));
-  const collapseAllGroups = () => setExpandedGroups(new Set());
-
   const setColumnAggregation = (columnId: string, value: AggregationId) => {
     writeColumns(columnIds, { ...aggregationOverrides, [columnId]: value });
   };
@@ -985,50 +1000,12 @@ const TableReportInner: React.FC<TableReportProps> = ({
       <style>{TABLE_STYLES}</style>
       {/* The PRIMARY controls (Rows / Group by / 2D dimension / Fields axis / Add column) live in the
           shared Report-type control row via <TableReportControls /> — they write the same route-data
-          keys this body reads, so the two stay in sync. The controls below are contextual to the
-          grouped view and act on body-local ephemeral state (group ordering + expand/collapse), so
-          they stay here, rendered only when grouped. */}
-      {isGrouped && (
-        <div className="flex items-center gap-2 pb-2 flex-wrap" data-testid="table-group-controls">
-          <label className="flex items-center gap-1 text-sm" data-testid="table-group-sort">
-            <span className="text-neutral-801">Order groups</span>
-            <select
-              className="border border-neutral-301 rounded px-2 py-1 text-sm bg-white"
-              value={typeof groupSort.by === 'string' ? groupSort.by : `col:${groupSort.by.columnId}`}
-              onChange={(e) => {
-                const raw = e.target.value;
-                const by: GroupSort['by'] = raw.startsWith('col:')
-                  ? { columnId: raw.slice(4) }
-                  : (raw as 'label' | 'count');
-                setGroupSort((prev) => ({ ...prev, by }));
-              }}
-            >
-              <option value="label">Label</option>
-              <option value="count">Count</option>
-              {selectMeasureColumns(columns, groupColumn).map((c) => (
-                <option key={c.id} value={`col:${c.id}`}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              data-testid="table-group-sort-dir"
-              className="border border-neutral-301 rounded px-2 py-1 text-sm bg-white"
-              onClick={() => setGroupSort((prev) => ({ ...prev, dir: prev.dir === 'asc' ? 'desc' : 'asc' }))}
-            >
-              {groupSort.dir === 'asc' ? '▲' : '▼'}
-            </button>
-          </label>
-
-          <Button testId="table-expand-all" appearance="default" spacing="compact" onClick={expandAllGroups}>
-            Expand all
-          </Button>
-          <Button testId="table-collapse-all" appearance="default" spacing="compact" onClick={collapseAllGroups}>
-            Collapse all
-          </Button>
-        </div>
-      )}
+          keys this body reads, so the two stay in sync. Group ordering used to have its own "Order
+          groups" dropdown (+ Expand all/Collapse all buttons) here, but ordering fully duplicated
+          clicking a column header (which drives the same `groupSort` state — design/grouped-column-
+          sort brainstorm), and expand/collapse-all had no other consumer, so both were removed —
+          each group's own caret (rendered per-row in the body) is the only expand/collapse affordance
+          now. */}
 
       {showStats && (
         <Stats
@@ -1059,7 +1036,23 @@ const TableReportInner: React.FC<TableReportProps> = ({
                 <tr>
                   {displayColumns.map((column, colIndex) => {
                     const active = isFilterActive(filters[column.id]);
-                    const columnSortMode = sort?.columnId === column.id ? sort.dir : null;
+                    // While grouped, a header's sort arrow/click acts on the GROUP order (design:
+                    // grouped-column-sort brainstorm) rather than row order — the aggregated value is
+                    // what's actually shown at the (default collapsed) group-header level, so sorting
+                    // rows within a group is invisible for any aggregated measure. The pinned grouped
+                    // column orders groups by label; every other shown column orders groups by its own
+                    // aggregated value (reusing the same `groupSort` the "Order groups" control writes).
+                    const columnSortMode: SortMode | null = isGrouped
+                      ? groupColumn && column.id === groupColumn.id
+                        ? groupSort.by === 'label'
+                          ? groupSort.dir
+                          : null
+                        : typeof groupSort.by !== 'string' && groupSort.by.columnId === column.id
+                          ? groupSort.dir
+                          : null
+                      : sort?.columnId === column.id
+                        ? sort.dir
+                        : null;
                     // The first column is the row-label column and freezes on horizontal scroll, so its
                     // header is the sticky corner (top + left); the rest only stick to the top.
                     const headerStyle = colIndex === 0 ? stickyCornerStyle(0, 0) : stickyHeaderStyle();
@@ -1138,8 +1131,18 @@ const TableReportInner: React.FC<TableReportProps> = ({
                             type="button"
                             className={`font-semibold cursor-pointer hover:underline ${numeric ? 'text-right' : 'text-left'}`}
                             data-testid="table-header-sort"
-                            // Tree-capable columns cycle Hierarchy → A→Z → Z→A; others cycle asc/desc/none.
-                            onClick={() => setSort((column.isTree ? cycleTreeSort : cycleSort)(sort, column.id))}
+                            // Tree-capable columns cycle Hierarchy → A→Z → Z→A → Rank; others cycle
+                            // asc/desc/none. While grouped, every column instead cycles the GROUP order
+                            // (asc/desc, falling back to the default label order) via `groupSort`.
+                            onClick={() => {
+                              if (isGrouped) {
+                                const target: GroupSort['by'] =
+                                  groupColumn && column.id === groupColumn.id ? 'label' : { columnId: column.id };
+                                setGroupSort((prev) => cycleGroupSort(prev, target));
+                                return;
+                              }
+                              setSort((column.isTree ? cycleTreeSort : cycleSort)(sort, column.id));
+                            }}
                           >
                             {column.label}
                             {columnSortMode === 'tree' ? (
@@ -1162,7 +1165,17 @@ const TableReportInner: React.FC<TableReportProps> = ({
                             }
                             isActive={active}
                             sortMode={columnSortMode}
-                            onSortChange={(mode) => setSort(mode == null ? null : { columnId: column.id, dir: mode })}
+                            disableTreeSort={isGrouped}
+                            onSortChange={(mode) => {
+                              if (isGrouped) {
+                                if (mode !== 'asc' && mode !== 'desc') return;
+                                const target: GroupSort['by'] =
+                                  groupColumn && column.id === groupColumn.id ? 'label' : { columnId: column.id };
+                                setGroupSort({ by: target, dir: mode });
+                                return;
+                              }
+                              setSort(mode == null ? null : { columnId: column.id, dir: mode });
+                            }}
                             aggregationOverride={aggregationOverrides[column.id]}
                             onAggregationChange={
                               measureColumnIds.has(column.id)
@@ -1228,17 +1241,24 @@ const TableReportInner: React.FC<TableReportProps> = ({
                               }
                               if (measureColumnIds.has(column.id)) {
                                 const aggId = effectiveAggregationId(column, aggregationOverrides[column.id]);
-                                const customRender = column.renderMeasure?.[aggId];
-                                const content = customRender
-                                  ? customRender({ members: group.members, allIssues: filterSourceIssues })
+                                const customRender = getMeasureRenderer(column, aggId);
+                                // Custom renders (e.g. the identity distinct-list, which stacks entries in a
+                                // flex column) manage their own layout, so the long-list wrap style below only
+                                // applies to the plain comma-joined `formatMeasureValue` string.
+                                const plainContent = customRender
+                                  ? null
                                   : formatMeasureValue(
                                       computeMeasureValue(column, group.members, aggregationOverrides[column.id]),
                                     );
+                                const content = customRender
+                                  ? customRender({ members: group.members, allIssues: filterSourceIssues })
+                                  : plainContent;
                                 return (
                                   <td
                                     key={column.id}
                                     className={`p-2 align-top ${isNumericAggregation(aggId) ? 'text-right' : ''}`}
                                     data-testid="table-group-measure"
+                                    style={plainContent != null ? longListWrapStyle(plainContent) : undefined}
                                   >
                                     {content}
                                   </td>
@@ -1247,13 +1267,15 @@ const TableReportInner: React.FC<TableReportProps> = ({
                               // Every other shown column is the grouped column itself in a 2D context handled
                               // above, so this is effectively unreached for 1D grouping — kept as a plain-text
                               // safety net rather than rendering nothing.
+                              const identityList = distinctValues(column, group.members).join(', ');
                               return (
                                 <td
                                   key={column.id}
                                   className="p-2 align-top text-neutral-801"
                                   data-testid="table-group-identity-list"
+                                  style={longListWrapStyle(identityList)}
                                 >
-                                  {distinctValues(column, group.members).join(', ')}
+                                  {identityList}
                                 </td>
                               );
                             })}
