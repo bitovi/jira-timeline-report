@@ -1246,15 +1246,15 @@
     <!-- ============================================================ -->
     <h2>3 · Where it lives in the autoscheduler</h2>
     <p class="caption">
-      Four options for problem (a) — "it's at the bottom of the page and folks might not even see it." The same
-      component renders the standalone report in every case; these differ only in what the autoscheduler itself shows.
+      Four answers to "it's at the bottom of the page and folks might not even see it." The same component renders the
+      standalone report in every case; these differ only in what the autoscheduler itself shows.
     </p>
 
     <div class="stage">
       <!-- OPTION A -->
       <div>
         <h3>
-          A · Always-visible summary strip
+          Always-visible summary strip above the grid
           <span class="badge" style="background: var(--neutral-20); color: var(--subtle)">considered</span>
         </h3>
         <div class="wire">
@@ -1342,7 +1342,10 @@
 
       <!-- OPTION B -->
       <div>
-        <h3>B · Timeline / Critical Paths toggle</h3>
+        <h3>
+          Timeline / Critical Paths view toggle
+          <span class="badge" style="background: var(--neutral-20); color: var(--subtle)">considered</span>
+        </h3>
         <div class="wire">
           <div class="wire-controls">
             <span class="pill">Auto-Scheduler</span><span class="pill">Epics</span>
@@ -1400,14 +1403,14 @@
         </div>
         <div class="notes">
           <ul>
-            <li>Your option 2 — a saved param, so a report can open straight into this view.</li>
+            <li>A saved param, so a report can open straight into this view.</li>
             <li>Full width for the paths, which is where the long chain names actually fit comfortably.</li>
           </ul>
           <p class="tradeoff">
             <span class="good">+ Most room; saved param means a report can land here deliberately.</span><br /><span
               class="bad"
               >− It's a mode: you can't see a path and the timeline at once, and anyone who never toggles still never
-              sees it — which is problem (a) again.</span
+              sees the paths at all — the original complaint, unfixed.</span
             >
           </p>
         </div>
@@ -1415,7 +1418,7 @@
 
       <!-- OPTION C -->
       <div>
-        <h3>C · Button + dropdown in the controls <span class="badge">chosen</span></h3>
+        <h3>&ldquo;Critical paths&rdquo; button + dropdown in the controls <span class="badge">chosen</span></h3>
         <div class="wire" style="position: relative">
           <div class="wire-controls">
             <span class="pill">Auto-Scheduler</span><span class="pill active">Critical paths ▾</span>
@@ -1455,7 +1458,10 @@
         </div>
         <div class="notes">
           <ul>
-            <li>Your option 1 — click a row to focus it in the grid, or open the full report from the footer.</li>
+            <li>
+              The design idea.md describes first: click a row to highlight it in the grid, or open the full report from
+              the footer.
+            </li>
           </ul>
           <p class="tradeoff">
             <span class="good">+ Zero layout cost; keeps focusing; trivially cheap to build.</span><br /><span
@@ -1468,7 +1474,10 @@
 
       <!-- OPTION D -->
       <div>
-        <h3>D · Highlight the top path in the grid</h3>
+        <h3>
+          Highlight the top path in the grid itself
+          <span class="badge" style="background: var(--neutral-20); color: var(--subtle)">considered</span>
+        </h3>
         <div class="wire">
           <div class="wire-controls">
             <span class="pill">Auto-Scheduler</span><span class="pill">Epics</span> <span style="flex: 1"></span
@@ -1632,9 +1641,9 @@
         </div>
         <div class="notes">
           <p class="tradeoff">
-            Same component as §1 at a narrower breakpoint: chains collapse to
+            Same component as the full report above, at a narrower breakpoint: chains collapse to
             <code>first → … → last</code>, the fan-out disclosure drops, one line per path. This is also exactly what
-            option A's strip renders.
+            the summary strip above would render.
           </p>
         </div>
       </div>
@@ -1655,9 +1664,10 @@
           cone and never appear as a row. The next-hop pick uses criticality too.
         </li>
         <li>
-          <b>Placement: option C.</b> A control + dropdown in the autoscheduler, with a button through to the full
-          report. The collapsed <code>&lt;details&gt;</code> at the bottom of <code>AutoScheduler.tsx</code> goes away;
-          focusing moves into the dropdown, the full listing becomes the standalone report.
+          <b>Placement: a &ldquo;Critical paths&rdquo; button and dropdown in the Auto-Scheduler controls</b>, with a
+          button through to the full report. The collapsed <code>&lt;details&gt;</code> at the bottom of
+          <code>AutoScheduler.tsx</code> goes away; focusing moves into the dropdown, the full listing becomes the
+          standalone report.
         </li>
         <li>
           <b>Keep the work/queued split, labeled honestly.</b> It answers "shorten this chain by cutting dependencies,
@@ -1671,8 +1681,8 @@
     <div class="notes" style="max-width: 940px">
       <ul>
         <li>
-          <b>Does the standalone report include the team-load callout (§2)?</b> It's derived from the same trace, but it
-          is arguably its own report.
+          <b>Does the standalone report include the team-load section?</b> It's derived from the same trace, but it is
+          arguably its own report.
         </li>
         <li>
           <b>Shared simulation across a document.</b> Three embedded critical-path reports over the same JQL currently
