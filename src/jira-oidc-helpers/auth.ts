@@ -44,6 +44,10 @@ export const timeRemainingBeforeAccessTokenExpiresInSeconds = () => {
 export const refreshAccessToken = (config: Config) => async (): Promise<string | undefined> => {
   const storedRefreshToken = fetchFromLocalStorage('refreshToken');
   if (!storedRefreshToken) {
+    // Without a refresh token the stored accessToken (if any) is unusable. Clear it before
+    // bouncing to Atlassian so we return to the callback page with clean storage — a leftover
+    // dead token there makes downstream code think we're still authenticated.
+    clearAuthFromLocalStorage();
     fetchAuthorizationCode(config)();
     return;
   }
@@ -98,6 +102,8 @@ export const getAccessToken = (config: Config) => async () => {
   if (!hasValidAccessToken()) {
     const refreshToken = fetchFromLocalStorage('refreshToken');
     if (!refreshToken) {
+      // Same reasoning as refreshAccessToken: drop the expired token before re-authing.
+      clearAuthFromLocalStorage();
       fetchAuthorizationCode(config)();
     } else {
       return refreshAccessToken(config)();
