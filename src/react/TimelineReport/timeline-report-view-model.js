@@ -19,6 +19,42 @@ const logReportData = defineFeatureFlag(
 
 const toISO = (date) => (date instanceof Date && !isNaN(date) ? date.toISOString() : (date ?? null));
 
+/**
+ * Slice the timing calculations to the selected From→To range, matching by hierarchy LEVEL rather
+ * than by type name. `fromType`/`toType` are the "Report on" and "To" labels, which come from
+ * `issueHierarchy` — a hierarchy derived from the *loaded issues*. That label can differ from the
+ * issue-type-config label for the same level: a JQL that loads only Risks labels level 0 "Risk",
+ * while the config (which `timingCalculations` is built from) calls level 0 "Story". Matching by
+ * name silently fails in that case (the primary bucket ends up empty and the report shows
+ * "0 issues"); matching by level is robust. `fromType` is the top (primary) level; `toType` caps
+ * the descent. When `toType` is absent/unknown (or above From), the range extends to the deepest
+ * level. Falls back to name matching when a label isn't present in `issueHierarchy` (e.g. nothing of
+ * that type was loaded), preserving prior behavior.
+ *
+ * @param {Array<{type: string, hierarchyLevel: number}>} timingCalculations top-down config levels
+ * @param {string} fromType primary "Report on" label
+ * @param {string} [toType] optional "To" cap label
+ * @param {Array<{name: string, hierarchyLevel: number}>} [issueHierarchy] data-derived hierarchy
+ */
+export function getIssueHierarchyUnderType(timingCalculations = [], fromType, toType, issueHierarchy = []) {
+  const levelForType = (typeName) => {
+    const entry = issueHierarchy.find((h) => h.name === typeName);
+    return entry ? entry.hierarchyLevel : undefined;
+  };
+  const indexForType = (typeName) => {
+    const level = levelForType(typeName);
+    return level != null
+      ? timingCalculations.findIndex((calc) => calc.hierarchyLevel === level)
+      : timingCalculations.findIndex((calc) => calc.type === typeName);
+  };
+
+  const fromIndex = indexForType(fromType);
+  if (fromIndex < 0) return timingCalculations;
+  const toIndex = toType ? indexForType(toType) : -1;
+  const end = toIndex >= fromIndex ? toIndex + 1 : timingCalculations.length;
+  return timingCalculations.slice(fromIndex, end);
+}
+
 // Compact, copy-pasteable projection of the transformed data (raw issues carry circular parent
 // refs and are too large to paste). Keeps the fields reports position/status off of.
 const projectIssueForLog = (issueOrRelease) => ({
@@ -64,22 +100,13 @@ export class TimelineReportViewModel extends ObservableObject {
     // the timing calculations for the type and below
     // this is telling you how things roll up to you
     get rollupTimingLevelsAndCalculations() {
-      // Slice the timing calculations to the selected From→To range. `fromType` is the top level
-      // (primary); `toType` caps the descent. When `toType` is absent/unknown (or above From), the
-      // range extends to the deepest level — i.e. full hierarchy, unchanged from prior behavior.
-      function getIssueHierarchyUnderType(timingCalculations = [], fromType, toType) {
-        const fromIndex = timingCalculations.findIndex((calc) => calc.type === fromType);
-        if (fromIndex < 0) return timingCalculations;
-        const toIndex = toType ? timingCalculations.findIndex((calc) => calc.type === toType) : -1;
-        const end = toIndex >= fromIndex ? toIndex + 1 : timingCalculations.length;
-        return timingCalculations.slice(fromIndex, end);
-      }
-
       if (this.routeData.primaryIssueType === 'Release') {
         if (this.routeData.secondaryIssueType) {
           const secondary = getIssueHierarchyUnderType(
             this.routeData.issueTimingCalculations,
             this.routeData.secondaryIssueType,
+            undefined,
+            this.routeData.issueHierarchy,
           );
           return [{ type: 'Release', hierarchyLevel: Infinity, calculation: 'childrenOnly' }, ...secondary];
         }
@@ -88,6 +115,7 @@ export class TimelineReportViewModel extends ObservableObject {
           this.routeData.issueTimingCalculations,
           this.routeData.primaryIssueType,
           this.routeData.toIssueType,
+          this.routeData.issueHierarchy,
         );
       }
     },
