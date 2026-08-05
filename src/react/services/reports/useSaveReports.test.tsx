@@ -3,7 +3,7 @@ import type { AppStorage } from '../../../jira/storage/common';
 import type { Reports } from '../../../jira/reports';
 
 import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
