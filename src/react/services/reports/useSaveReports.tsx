@@ -7,7 +7,7 @@ import { Text } from '@atlaskit/primitives';
 import { token } from '@atlaskit/tokens';
 
 import type { Report, Reports } from '../../../jira/reports';
-import { updateReports } from '../../../jira/reports';
+import { publishReportsToRouteData, updateReports } from '../../../jira/reports';
 import { useStorage } from '../../services/storage';
 import { reportKeys } from './key-factory';
 
@@ -26,6 +26,14 @@ const useSaveReport = () => {
       const previousReports = queryClient.getQueryData<Reports>(reportKeys.allReports);
       queryClient.setQueryData<Reports>(reportKeys.allReports, toSave);
 
+      // `routeData.reportsData` is the second reader of this same map, and it has to move with the
+      // cache — not on the next fetch, which the comment below explains never comes. Both callers
+      // collapse the URL to `?report=<id>` on success, at which point every setting for the open
+      // report resolves through `reportsData`: a map that predates the save has no record for a
+      // just-created id (so the report renders as "Configure a JQL in the sidebar" until something
+      // refetches) and the pre-update record for a just-updated one (so the save silently reverts).
+      publishReportsToRouteData(toSave);
+
       return { previousReports };
     },
     // No `onSettled` refetch here on purpose: the optimistic cache set above is already the
@@ -37,6 +45,7 @@ const useSaveReport = () => {
     // still rolls back to the last-known-good snapshot on failure.
     onError: (error, _, context) => {
       queryClient.setQueryData<Reports>(reportKeys.allReports, context?.previousReports);
+      publishReportsToRouteData(context?.previousReports ?? {});
 
       let description = error?.message;
 
