@@ -22,6 +22,20 @@ export type Reports = Partial<Record<string, Report>>;
 const reportsKey = 'saved-reports';
 
 /**
+ * Mirrors the saved-reports map onto `routeData.reportsData`, the fallback every param-backed
+ * setting reads when the URL doesn't carry the param itself (`makeParamAndReportDataReducer` in
+ * canjs/routing/state-storage.js: URL param, then report param, then the default).
+ *
+ * Every writer of the `saved-reports` React Query cache has to call this. The two stores hold the
+ * same data, and opening a saved report collapses the URL to `?report=<id>` — so a `reportsData`
+ * that lags the cache means the settings for the open report resolve to their *defaults*, and an
+ * empty `jql` renders as "Configure a JQL in the sidebar" over a report that has one.
+ */
+export const publishReportsToRouteData = (reports: Reports): void => {
+  (routeData as unknown as { reportsData: Reports }).reportsData = reports;
+};
+
+/**
  * Reads the saved reports and normalizes them through the migration table — the correctness layer
  * for every legacy param key. Pure apart from the existing `storage.get`: it never writes, so a
  * report that cannot be persisted still renders correctly this session.
@@ -36,8 +50,7 @@ export const readAllReports = async (storage: AppStorage): Promise<MigrationOutc
   const stored = await storage.get<Reports>(reportsKey).then((reports) => reports || {});
   const { reports, changed, applied } = migrateReports(stored);
 
-  // @ts-ignore
-  routeData.reportsData = reports;
+  publishReportsToRouteData(reports);
 
   return { reports, changed, applied };
 };

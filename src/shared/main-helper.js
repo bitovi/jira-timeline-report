@@ -19,6 +19,7 @@ import { getFeatures } from '../jira/features/fetcher';
 import { featuresKeyFactory } from '../react/services/features/key-factory';
 import { queryClient } from '../react/services/query/queryClient';
 import { getAllReports } from '../jira/reports/fetcher';
+import { installSavedReportsDebugger } from '../jira/reports/debug';
 import { reportKeys } from '../react/services/reports/key-factory';
 
 domEvents.addEvent(domMutateDomEvents.inserted);
@@ -65,6 +66,9 @@ export default async function mainHelper(
 
   const storage = createStorage(jiraHelpers);
   const linkBuilder = createLinkBuilder(jiraHelpers.appKey);
+
+  // Console helper: `logSavedReports()` dumps every saved report with its data.
+  installSavedReportsDebugger(storage);
 
   const props = isAlwaysLoggedIn
     ? {
