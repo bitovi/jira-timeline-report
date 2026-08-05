@@ -61,7 +61,9 @@ describe('saving a report', () => {
     const created = { id: 'new-report', name: 'New', queryParams: 'report=new-report&jql=project%3DECOM' };
     const { result } = renderSaveHook(() => useCreateReport());
 
-    result.current.createReport(created);
+    act(() => {
+      result.current.createReport(created);
+    });
 
     await waitFor(() => {
       expect(reportDataFor('new-report')).toMatchObject(created);
