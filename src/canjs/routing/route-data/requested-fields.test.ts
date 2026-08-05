@@ -72,3 +72,56 @@ describe('sameRequestedFields', () => {
     expect(sameRequestedFields(['customfield_1'], ['customfield_2'], CORE)).toBe(false);
   });
 });
+
+// spec/015-field-selection. An account with two "Start date" fields: `nameMap` can only pin the
+// shared name to ONE of them, so the name must not be treated as equivalent to any id — otherwise
+// picking a specific duplicate looks like no change and the report never refetches.
+describe('ambiguous display names', () => {
+  const ambiguousMaps: FieldMaps = {
+    nameMap: { ...maps.nameMap, 'Start date': 'customfield_10325' },
+    idMap: { ...maps.idMap, customfield_10325: 'Start date', customfield_10015: 'Start date' },
+    ambiguousFieldIds: new Set(['customfield_10325', 'customfield_10015']),
+  };
+
+  it('leaves an ambiguous name in name space', () => {
+    expect(toFieldId('Start date', ambiguousMaps)).toBe('Start date');
+  });
+
+  it('still canonicalizes unambiguous names', () => {
+    expect(toFieldId('Status', ambiguousMaps)).toBe('status');
+  });
+
+  it('passes each ambiguous id through unchanged and distinct', () => {
+    expect(toFieldId('customfield_10325', ambiguousMaps)).toBe('customfield_10325');
+    expect(toFieldId('customfield_10015', ambiguousMaps)).toBe('customfield_10015');
+  });
+
+  it.each(['customfield_10325', 'customfield_10015'])('choosing %s triggers a refetch', (id) => {
+    // `getAllFields` always contributes the literal name 'Start date' alongside the configured
+    // value, so the "before" list already carries the name. Picking EITHER duplicate — including
+    // the priority-order one the name happens to resolve to — must count as a change.
+    expect(sameRequestedFields(['Start date', id], ['Start date'], CORE, ambiguousMaps)).toBe(false);
+  });
+
+  it('switching between the two duplicates triggers a refetch', () => {
+    expect(
+      sameRequestedFields(
+        ['Start date', 'customfield_10015'],
+        ['Start date', 'customfield_10325'],
+        CORE,
+        ambiguousMaps,
+      ),
+    ).toBe(false);
+  });
+
+  it('an unrelated no-op change is still a no-op', () => {
+    expect(
+      sameRequestedFields(
+        ['Start date', 'customfield_10325', 'status'],
+        ['Start date', 'customfield_10325'],
+        CORE,
+        ambiguousMaps,
+      ),
+    ).toBe(true);
+  });
+});

@@ -15,7 +15,7 @@ import { TableReport } from './TableReport';
 // Seeding the Jira fields WITHOUT credentials.
 //
 // TableReport calls `useJiraIssueFields()`, which is a `useSuspenseQuery` keyed on
-// `jiraKeys.allIssueFields()` whose `queryFn` calls `useJira().fetchJiraFields()`. Storybook can't use
+// `jiraKeys.issueFields(mode)` whose `queryFn` calls `useJira().fetchJiraFields()`. Storybook can't use
 // `vi.mock` (that's the test's approach), so instead we PRE-SEED a QueryClient's cache with the field
 // list under that exact query key and give it `staleTime: Infinity`. Because the data is already in
 // the cache and never goes stale, `useSuspenseQuery` resolves synchronously and the `queryFn` (which
@@ -39,7 +39,9 @@ const mockFields: IssueFields = [
 /** Fresh QueryClient with the field list pre-seeded so the suspense query resolves without a network call. */
 const makeSeededClient = () => {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
-  client.setQueryData(jiraKeys.allIssueFields(), mockFields);
+  // Seed BOTH modes: the hook keys on login state, which Storybook doesn't control.
+  client.setQueryData(jiraKeys.issueFields('auth'), mockFields);
+  client.setQueryData(jiraKeys.issueFields('sample'), mockFields);
   return client;
 };
 

@@ -205,6 +205,35 @@ line 28 respectively) with `buildSelectableFields(jiraFields)`. No other form ch
   open Team configuration, confirm both "Start date" fields are selectable and switching
   between them changes which field drives the report.
 
+## Follow-up: what the first pass missed
+
+Shipped as #480, the above let the _dropdown_ express "the other Start date" but left three gaps.
+Found by instrumenting a real account with two global "Start date" fields
+(`customfield_10325`, `customfield_10015`, neither scoped).
+
+1. **The report froze on its loading screen after any team-config save.** Not actually caused by
+   this spec — a query-key regression from `219408e8`. `useJiraIssueFields` keys on
+   `[...allIssueFields(), 'auth' | 'sample']`, but `useSaveAllTeamData` read
+   `getQueryData(allIssueFields())`. `getQueryData` matches _exactly_ (only the filter APIs match by
+   prefix), so it always returned `undefined` → `onUpdate({})` → `fieldsToRequest` cleared →
+   `getRawIssues` returns `undefined` → `derivedIssuesRequestData` hands back its never-settling
+   sentinel. Fixed by splitting `jiraKeys.issueFields(mode)` (exact) from `allIssueFields()`
+   (prefix) and reading through `readCachedIssueFields`. `onUpdateTeamsConfiguration` now ignores a
+   fields-less update instead of wedging, and the sentinel branch warns.
+
+2. **The selection didn't survive a reload.** `createDefaultJiraFieldGetter` and
+   `getStatusSummaryField` (`allTeamDefault.ts`) checked field existence by display **name** only —
+   the same bug Change 4 fixed in `fixAnyNonExistingFields`, in a sibling that was missed. An
+   id-valued config matched nothing, so it was replaced by the display name, which then matched no
+   dropdown option (they're id-valued for collisions) and the select rendered blank. Both now match
+   by id **or** name via a shared `fieldExists`.
+
+3. **Choosing the priority-order duplicate skipped the refetch.** `toFieldId`
+   (`requested-fields.ts`, spec/012 §6) canonicalized `'Start date'` to `nameMap['Start date']` —
+   i.e. exactly `customfield_10325` — so selecting _that_ duplicate produced an identical canonical
+   set and `allFieldsToRequest` never re-emitted. `toFieldId` now leaves an **ambiguous** name in
+   name space, since such a name doesn't determine a field.
+
 ## Out of scope (→ separate "right fix" plan)
 
 - Migrating the whole app from field names to field ids (config, transport, FlowMetrics'
