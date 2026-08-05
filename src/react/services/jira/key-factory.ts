@@ -20,4 +20,10 @@ export const jiraKeys = {
    * asking the same question share one request. See spec/016-report-of-reports/003-self-reports.
    */
   inlineExpression: (jql: string, fieldId: string) => [...jiraKeys.all, 'inline-expression', jql, fieldId],
+  /**
+   * One work item's newest comment. Keyed by the *resolved* key rather than the JQL that found it, so
+   * two nodes pointing at the same work item by different queries share one request.
+   * See spec/016-report-of-reports/007-latest-comment-report.
+   */
+  latestComment: (issueKey: string) => [...jiraKeys.all, 'latest-comment', issueKey],
 };

@@ -49,6 +49,44 @@ export function fetchJiraIssue(config: Config) {
   };
 }
 
+/** One comment as the comment endpoint returns it. `body` is an ADF document. */
+export interface JiraComment {
+  id?: string;
+  body?: unknown;
+  author?: { displayName?: string };
+  created?: string;
+  updated?: string;
+}
+
+export interface JiraCommentsPage {
+  comments?: JiraComment[];
+  total?: number;
+  startAt?: number;
+  maxResults?: number;
+}
+
+/**
+ * The newest comment on one work item.
+ *
+ * Asks the comment sub-resource rather than putting `comment` in a search's `fields`, on correctness:
+ * **Jira returns comments oldest-first**, and the page embedded in a search response is capped, so
+ * `comments.at(-1)` there can be the newest of the *oldest* N — silently wrong, and wrong exactly on
+ * the busy work items most likely to be worth quoting. `orderBy=-created&maxResults=1` makes Jira
+ * responsible for the ordering instead.
+ *
+ * Same issue-subresource shape as {@link fetchJiraChangelog}. It cannot be grouped with a document's
+ * other requests — it is not an issue search, so it was never a candidate for `childQueryGroups`.
+ * See spec/016-report-of-reports/007-latest-comment-report Phase 2.
+ */
+export function fetchLatestComment(config: Config) {
+  return (issueIdOrKey: string): Promise<JiraCommentsPage> => {
+    return config.requestHelper(
+      `/api/3/issue/${issueIdOrKey}/comment?` +
+        new URLSearchParams({ orderBy: '-created', maxResults: '1' }).toString(),
+    ) as unknown as Promise<JiraCommentsPage>;
+  };
+}
+
 // JQL autocomplete (powers @atlaskit/jql-editor). These return the raw Jira
 // `/jql/autocompletedata` response shapes; the atlaskit-specific mapping lives in the
 // consuming hook (useJqlAutocompleteProvider). `requestHelper` supplies base URL + OIDC auth.

@@ -6,6 +6,7 @@ import InlineEdit from '@atlaskit/inline-edit';
 import Textfield from '@atlaskit/textfield';
 
 import { formatFieldValue } from '../model/formatFieldValue';
+import { LATEST_COMMENT_ACCESSOR } from '../model/accessors';
 
 export const EXPRESSION_PLACEHOLDER = '(issue = ABC-1).summary';
 
@@ -56,7 +57,10 @@ export const InlineValue: FC<InlineValueProps> = ({ expression, state, isEditing
 
 const ReadView: FC<Pick<InlineValueProps, 'expression' | 'state'>> = ({ expression, state }) => {
   if (!expression.trim()) {
-    return <p className="text-slate-500 italic">{`Write an expression — for example ${EXPRESSION_PLACEHOLDER}`}</p>;
+    // Nothing to say. A blank value renders as an empty row rather than instructions — the height keeps
+    // it clickable so it can still be filled in. With "Add Value" commented out this only arises in a
+    // hand-edited or previously-saved document.
+    return <p className="min-h-5" />;
   }
 
   if (state.status === 'loading') {
@@ -70,9 +74,16 @@ const ReadView: FC<Pick<InlineValueProps, 'expression' | 'state'>> = ({ expressi
   const text = formatFieldValue(state.value, state.field.schema);
 
   if (text === null) {
+    // `.comment` resolves — it's a real Jira field — and then dead-ends here, because a page of
+    // comments is not a value. Rather than leave that as a dead end, point at the accessor that does
+    // what someone typing `.comment` almost certainly wanted. It is the only signpost to the
+    // pseudo-accessor, which by definition can't be found in Jira's field list.
+    // See spec/016-report-of-reports/007-latest-comment-report Phase 4.
     return (
       <Problem expression={expression}>
-        {`"${state.field.name}" holds a ${state.field.schema.type ?? 'value'} this can't show as text yet.`}
+        {state.field.id === 'comment'
+          ? `Comments can't show as a value — use .${LATEST_COMMENT_ACCESSOR} for the newest one.`
+          : `"${state.field.name}" holds a ${state.field.schema.type ?? 'value'} this can't show as text yet.`}
       </Problem>
     );
   }

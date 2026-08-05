@@ -7,7 +7,7 @@
  */
 
 import type React from 'react';
-import type { AdfBlock } from './helpers/adfToBlocks';
+import type { AdfBlock } from '../../components/AdfBlocks';
 
 /** The four work types, in display order (matches the pipeline's `workType` order). */
 export const WORK_TYPES = ['design', 'dev', 'qa', 'uat'] as const;

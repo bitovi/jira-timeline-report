@@ -82,6 +82,21 @@ export const UnsupportedType: Story = {
   },
 };
 
+/**
+ * `.comment` is a real field, so it resolves — and then dead-ends, because a page of comments isn't a
+ * value. The message is the only signpost to `.latestComment`, which can't be found in Jira's fields.
+ */
+export const CommentsPage: Story = {
+  args: {
+    expression: '(issue = ABC-1).comment',
+    state: {
+      status: 'ok',
+      value: { comments: [], total: 0, startAt: 0, maxResults: 1 },
+      field: { id: 'comment', name: 'Comment', schema: { type: 'comments-page' } },
+    },
+  },
+};
+
 /** Wired the way a document wires it — editing state and the expression belong to the caller. */
 export const Interactive: Story = {
   render: () => {

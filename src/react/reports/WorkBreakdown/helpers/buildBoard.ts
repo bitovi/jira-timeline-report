@@ -5,7 +5,7 @@ import { cellState } from './cellState';
 import { childRollup } from './childRollup';
 import { dateSlip } from './dateSlip';
 import { density } from './density';
-import { adfToBlocks } from './adfToBlocks';
+import { adfToBlocks } from '../../../components/AdfBlocks';
 import { matchesAllFilterRows } from '../../../../jira/rollup/filter-rows/filter-rows';
 import type { FilterRow } from '../../../../jira/rollup/filter-rows/filter-rows';
 

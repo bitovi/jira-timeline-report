@@ -15,8 +15,11 @@ import { reports as REPORTS } from '../../../configuration/reports';
 import { useAllReports } from '../../services/reports';
 import { useReportLayout } from '../../services/report-layout';
 import { appendNode, savedReportNode, setExpressionAt, setSectionTitleAt } from './model/sections';
+import { isExpressionError, parseExpression } from './model/expression';
+import { isLatestCommentExpression, issueKeyOf, latestCommentExpression, looksLikeKey } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
 import { useInlineExpression } from './hooks/useInlineExpression';
+import { useLatestComment } from './hooks/useLatestComment';
 import { AddContentRow } from './components/AddContentRow';
 import { AddReportModal } from './components/AddReportModal';
 import { ChildReport } from './components/ChildReport';
@@ -25,6 +28,7 @@ import { CollapseToggle } from './components/CollapseToggle';
 import { DocumentEditingProvider, useDocumentEditing, useNodeRow } from './components/DocumentEditing';
 import { IndentLevel } from './components/IndentLevel';
 import { InlineValue } from './components/InlineValue';
+import { LatestComment, LatestCommentBody } from './components/LatestComment';
 import { MissingReportNote } from './components/MissingReportNote';
 import { NodeControls } from './components/NodeControls';
 import { NodeRow } from './components/NodeRow';
@@ -129,7 +133,16 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
   }
 
   if (node.type === 'inline-value') {
-    return <InlineValueView node={node} path={path} />;
+    // Two presets of one node type, told apart by the expression's accessor — there is no second node
+    // type, and nothing in the stored document distinguishes them. The branch is here rather than
+    // inside `InlineValueView` for the same reason this dispatcher exists at all: the two read
+    // different hooks, and a hook can't be called conditionally.
+    // See spec/016-report-of-reports/007-latest-comment-report Phase 4.
+    return isLatestCommentExpression(node.params.expression) ? (
+      <LatestCommentView node={node} path={path} />
+    ) : (
+      <InlineValueView node={node} path={path} />
+    );
   }
 
   if (node.type === 'saved-report') {
@@ -392,6 +405,77 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
           onCancel={endEditing}
         />
       </NodeRow>
+    </div>
+  );
+};
+
+/**
+ * One latest-comment value: the same `inline-value` node as above, whose accessor happens to be
+ * `latestComment`.
+ *
+ * It reads `useLatestComment` instead of `useInlineExpression` and renders a report-shaped node — a row
+ * plus content beneath it — because a comment is a block of rich text rather than one value in a pill.
+ * Content beneath the row means it gets a caret, per 004-redesign's rule.
+ *
+ * **The row edits a key, not an expression,** whenever the JQL is a single equality — which is what the
+ * Add button writes and what practically every one of these is. A hand-written query falls back to
+ * editing the whole expression, because a key field can't represent one. `issueKeyOf` is the whole of
+ * that distinction; the *fetch* always goes through the JQL either way.
+ *
+ * It's content, not chrome, so nothing here is `print-hidden` (the controls and caret hide themselves)
+ * and the body stays mounted while collapsed so print can restore it.
+ * See spec/016-report-of-reports/007-latest-comment-report Phase 4.
+ */
+const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
+  const { sections, setSections } = useReportLayout();
+  const { editingNodeId, beginEditing, endEditing, isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { hoverProps, rowProps } = useNodeRow(node, path);
+
+  // `isLatestCommentExpression` already proved this parses, so the error branch is unreachable — it's
+  // here to satisfy the type rather than to handle anything.
+  const parsed = parseExpression(node.params.expression);
+  const jql = isExpressionError(parsed) ? '' : parsed.jql;
+
+  const key = issueKeyOf(jql);
+  const targetKind = key === null ? 'expression' : 'key';
+  const target = key === null ? node.params.expression : key;
+
+  // Nothing targeted yet means asking Jira nothing: a blank key leaves the JQL as `issue =`, which is
+  // not a query, and a freshly created node must not fire a request that can only fail.
+  const state = useLatestComment(target.trim() ? jql : '');
+
+  const label = target || 'latest comment';
+  const collapsed = isCollapsed(node.id);
+
+  return (
+    <div {...hoverProps} data-testid="latest-comment-node" className="flex flex-col print-avoid-break">
+      <NodeRow
+        {...rowProps}
+        caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
+        controls={<NodeControls path={path} label={label} nodeId={node.id} />}
+      >
+        <LatestComment
+          target={target}
+          targetKind={targetKind}
+          isEditing={editingNodeId === node.id}
+          onEdit={() => beginEditing(node.id)}
+          onConfirm={(next) => {
+            endEditing();
+            // A key field's content is always a key. So is a bare term typed into an *expression* field
+            // — otherwise confirming `SUNNYSUSHI-54` writes it as the whole expression, which doesn't
+            // parse, and the node stops being a comment node with no way back but hand-typing
+            // `(issue = SUNNYSUSHI-54).latestComment`.
+            // See .../007-latest-comment-report § Editing can't un-make the node.
+            const expression = targetKind === 'key' || looksLikeKey(next) ? latestCommentExpression(next) : next;
+
+            setSections(setExpressionAt(sections, path, expression));
+          }}
+          onCancel={endEditing}
+        />
+      </NodeRow>
+      <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+        <LatestCommentBody target={target} state={state} />
+      </div>
     </div>
   );
 };
