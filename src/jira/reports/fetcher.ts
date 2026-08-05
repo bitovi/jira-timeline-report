@@ -32,8 +32,7 @@ const reportsKey = 'saved-reports';
  * empty `jql` renders as "Configure a JQL in the sidebar" over a report that has one.
  */
 export const publishReportsToRouteData = (reports: Reports): void => {
-  // @ts-ignore
-  routeData.reportsData = reports;
+  (routeData as unknown as { reportsData: Reports }).reportsData = reports;
 };
 
 /**
