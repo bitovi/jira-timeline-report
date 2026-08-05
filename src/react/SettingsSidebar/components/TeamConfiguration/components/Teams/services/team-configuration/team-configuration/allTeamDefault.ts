@@ -3,8 +3,17 @@
  */
 import { AllTeamData, Configuration, IssueFields } from './shared';
 
-const findFieldCalled = (name: string, jiraFields: IssueFields): string | undefined => {
-  return jiraFields.find((field) => field.name.toLowerCase() === name.toLowerCase())?.name;
+/**
+ * Does a configured value still point at a real Jira field?
+ *
+ * Matches an exact field **id** as well as a case-insensitive display **name**. A field whose name
+ * collides with another's is stored by id (spec/015-field-selection); checking names alone silently
+ * discarded those selections and fell through to the name-based defaults below, so the user's pick
+ * was replaced by the display name and the dropdown — whose colliding options are id-valued — then
+ * showed nothing selected.
+ */
+const fieldExists = (value: string, jiraFields: IssueFields): boolean => {
+  return jiraFields.some((field) => field.id === value || field.name.toLowerCase() === value.toLowerCase());
 };
 
 const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
@@ -13,10 +22,10 @@ const createDefaultJiraFieldGetter = <TFormField extends keyof Configuration>(
   nameFragments: string[] = [],
 ) => {
   return function (userData: Partial<Configuration>, jiraFields: IssueFields) {
-    const userDefinedFieldExists = findFieldCalled((userData?.[formField] ?? '').toString(), jiraFields);
+    const configured = userData?.[formField];
 
-    if (userData?.[formField] && userDefinedFieldExists) {
-      return userData[formField];
+    if (configured && fieldExists(configured.toString(), jiraFields)) {
+      return configured;
     }
 
     for (const possibleName of possibleNames) {
@@ -88,7 +97,7 @@ const getStatusSummaryField = (userData: Partial<Configuration>, jiraFields: Iss
   if (chosen === 'status-summary-not-used') {
     return 'status-summary-not-used';
   }
-  if (chosen && jiraFields.some((field) => field.name === chosen)) {
+  if (chosen && fieldExists(chosen, jiraFields)) {
     return chosen;
   }
 

@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery, type QueryClient } from '@tanstack/react-query';
 
 import { useJira } from './JiraProvider';
 import { jiraKeys } from './key-factory';
@@ -44,7 +44,7 @@ export const useJiraIssueFields: UseJiraIssueFields = () => {
   );
 
   const { data } = useSuspenseQuery({
-    queryKey: [...jiraKeys.allIssueFields(), isLoggedIn ? 'auth' : 'sample'],
+    queryKey: jiraKeys.issueFields(isLoggedIn ? 'auth' : 'sample'),
     queryFn: async () => {
       // TODO fix types here
       if (!isLoggedIn) {
@@ -56,3 +56,17 @@ export const useJiraIssueFields: UseJiraIssueFields = () => {
 
   return data.sort((lhs, rhs) => lhs.name.toLowerCase().localeCompare(rhs.name.toLowerCase()));
 };
+
+/**
+ * Read whichever field catalog is already cached, without needing to know the login mode.
+ *
+ * Callers outside React (mutation callbacks) can't use the hook, and they can't use
+ * `getQueryData(jiraKeys.allIssueFields())` either: that key is only a prefix, and `getQueryData`
+ * matches exactly, so it always returned `undefined`. `getQueriesData` matches by prefix, so this
+ * finds the catalog under either mode. See spec/015-field-selection.
+ */
+export const readCachedIssueFields = (queryClient: QueryClient): IssueFields | undefined =>
+  queryClient
+    .getQueriesData<IssueFields>({ queryKey: jiraKeys.allIssueFields() })
+    .map(([, fields]) => fields)
+    .find((fields): fields is IssueFields => Array.isArray(fields) && fields.length > 0);

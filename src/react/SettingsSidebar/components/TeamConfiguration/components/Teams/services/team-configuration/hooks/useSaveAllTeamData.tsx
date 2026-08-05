@@ -1,6 +1,5 @@
 import type { NormalizeIssueConfig } from '../../../../../../../../../jira/normalized/normalize';
 import type { AllTeamData, Configuration, TeamConfiguration } from '../team-configuration';
-import type { UseJiraIssueFields } from '../../../../../../../../services/jira';
 import type { TeamDataCache } from './useAllTeamData';
 
 import React from 'react';
@@ -14,7 +13,7 @@ import { useStorage } from '../../../../../../../../services/storage';
 import { updateTeamConfigurationKeys } from '../key-factory';
 import { createFullyInheritedConfig, updateAllTeamData } from '../team-configuration';
 import { createNormalizeConfiguration } from '../../../shared/normalize';
-import { jiraKeys } from '../../../../../../../../services/jira';
+import { readCachedIssueFields } from '../../../../../../../../services/jira';
 import { sanitizeAllTeamData } from './sanitizeAllTeamData';
 
 type UseSaveAllTeamData = (config?: { onUpdate?: (config: Partial<NormalizeIssueConfig>) => void }) => {
@@ -49,7 +48,7 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
     },
     onSettled: (data, error, allTeamData) => {
       queryClient.invalidateQueries({ queryKey: updateTeamConfigurationKeys.allTeamData });
-      const jiraFields = queryClient.getQueryData<ReturnType<UseJiraIssueFields>>(jiraKeys.allIssueFields());
+      const jiraFields = readCachedIssueFields(queryClient);
 
       const allData = queryClient.getQueryData<TeamDataCache>(updateTeamConfigurationKeys.allTeamData);
 

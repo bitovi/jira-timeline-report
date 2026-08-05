@@ -15,18 +15,27 @@ export interface FieldMaps {
   nameMap: Record<string, string>;
   /** field id → display name */
   idMap: Record<string, string>;
+  /** ids of fields whose display name is shared by more than one field; see spec/015-field-selection. */
+  ambiguousFieldIds?: Set<string>;
 }
 
 /**
  * Canonicalize one name-or-id identifier to its stable Jira field id. A known display name maps to
  * its id; an identifier that's already an id (or is unknown) passes through unchanged. Without maps
  * (not yet loaded) the identifier is returned as-is.
+ *
+ * An **ambiguous** display name is the exception: it does not determine a field. `nameMap` only
+ * pins it to the priority-order pick, so collapsing it would make "the name Start date" compare
+ * equal to "the id of the first Start date" — and choosing that specific duplicate would look like
+ * no change at all, so `allFieldsToRequest` would skip the refetch. Ambiguous names therefore stay
+ * in name space, distinct from every id. See spec/015-field-selection.
  */
 export function toFieldId(identifier: string, maps?: FieldMaps): string {
   if (!maps) return identifier;
   const mappedFromName = maps.nameMap[identifier];
-  if (mappedFromName) return mappedFromName;
-  return identifier;
+  if (!mappedFromName) return identifier;
+  if (maps.ambiguousFieldIds?.has(mappedFromName)) return identifier;
+  return mappedFromName;
 }
 
 /** The set of canonical field ids implied by a list of name-or-id identifiers. */

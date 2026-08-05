@@ -159,6 +159,19 @@ export function derivedIssuesRequestData(
         });
       });
     } else {
+      // This promise NEVER settles, so the report sits on its loading screen until some other
+      // input changes. That is intended while the page is still waiting for a JQL, but it also
+      // silently swallowed a cleared `fieldsToRequest` (spec/015-field-selection) — the freeze was
+      // invisible because nothing logged. Say which input is missing.
+      if (!rawIssuesRequestData.value.issuesPromise) {
+        console.warn(
+          [
+            'derivedIssuesRequestData (state-helpers):',
+            'No raw-issues request — the report will stay on its loading screen.',
+            'getRawIssues returns undefined when `fields` or `jql` is missing.',
+          ].join('\n'),
+        );
+      }
       // make a pending promise ...
       const promise = new Promise(() => {});
       promise.__isAlwaysPending = true;

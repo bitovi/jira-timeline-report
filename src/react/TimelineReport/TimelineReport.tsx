@@ -124,6 +124,22 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const baseProps = useMemo(() => propsFor(vm, routeData), [vm]);
 
   const onUpdateTeamsConfiguration = ({ fields, ...configuration }: any) => {
+    // A save that could not derive its config passes `{}` (see useSaveAllTeamData's guards), so
+    // `fields` is undefined. Writing that through clears `fieldsToRequest`, which makes
+    // `getRawIssues` return undefined and leaves the report on `derivedIssuesPromise`'s
+    // never-settling promise — a spinner that can never clear. Keep the last known-good config
+    // instead; the report stays on the data it already has. See spec/015-field-selection.
+    if (!fields) {
+      console.warn(
+        [
+          'onUpdateTeamsConfiguration (TimelineReport):',
+          'Ignoring a team configuration update that carried no fields.',
+          'The report keeps its previous configuration.',
+        ].join('\n'),
+      );
+      return;
+    }
+
     queues.batch.start();
     rd.fieldsToRequest = fields;
     rd.normalizeOptions = configuration;
