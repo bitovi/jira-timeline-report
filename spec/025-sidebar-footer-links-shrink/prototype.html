@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Sidebar footer-links shrink prototype (pure CSS flexbox, no height media queries)</title>
+<style>
+  :root {
+    --slate-300: #cbd5e1;
+    --slate-500: #64748b;
+    --slate-700: #334155;
+    --slate-900: #0f172a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 24px;
+    background: #f4f5f7;
+    color: var(--slate-900);
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.lead { color: var(--slate-500); margin: 0 0 20px; max-width: 640px; font-size: 14px; }
+
+  .demo-area {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  /* The resizable box simulates the browser window shrinking vertically.
+     Drag the bottom-right corner (native CSS `resize`) to test — this is
+     standing in for the user resizing the actual app window. */
+  .window-sim {
+    resize: vertical;
+    overflow: hidden;
+    height: 640px;
+    min-height: 80px;
+    max-height: 900px;
+    width: 260px;
+    border: 2px dashed #8993a4;
+    border-radius: 8px;
+    background: white;
+    position: relative;
+  }
+  .window-sim::after {
+    content: "↕ drag to resize";
+    position: absolute;
+    bottom: 2px;
+    right: 6px;
+    font-size: 10px;
+    color: #8993a4;
+    pointer-events: none;
+  }
+
+  /* ---- The actual sidebar structure being prototyped ---- */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 16px 16px 8px;
+    overflow: hidden;
+  }
+
+  .nav-heading {
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate-500);
+    margin: 12px 0 6px;
+    flex-shrink: 0;
+  }
+  .nav-heading:first-child { margin-top: 0; }
+
+  .nav-btn {
+    flex-shrink: 0; /* nav buttons are essential: never shrink, never disappear */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+    font-size: 14px;
+    border-radius: 4px;
+    color: var(--slate-700);
+  }
+  .nav-btn .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: #b3bac5;
+    flex-shrink: 0;
+  }
+
+  /* Footer section: allowed to shrink as a whole (its OWN box gets smaller),
+     but its children never shrink or squish — they just overflow the box and
+     get clipped by `overflow: hidden`, top-down, so whichever items are
+     stacked lowest (least important, listed last) are the ones clipped away
+     first. No per-item weighting needed. */
+  .footer-links {
+    flex-shrink: 1;
+    flex-grow: 0;
+    min-height: 0;      /* <-- the key override; default is `auto` (content size) */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    /* justify-content: flex-start (default) — items pack from the TOP of this
+       box downward, so once the box shrinks smaller than the content, the
+       overflow (and thus the clipping) happens at the BOTTOM, not the top. */
+    margin-top: auto;   /* push footer down when there IS room, like `fixed bottom` did visually */
+    padding-top: 8px;
+    position: relative;
+  }
+
+  /* A small fixed fade at the bottom edge of the wrapper. Whichever item
+     happens to be straddling the clip boundary gets softened by this instead
+     of showing a hard mid-glyph cut. It's practically invisible when nothing
+     is being clipped (just a subtle edge), and disguises the cutoff when
+     something is. */
+  .footer-links::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 8px;
+    background: linear-gradient(to bottom, transparent, white);
+    pointer-events: none;
+  }
+
+  /* Each footer link is a plain flex item. It's never explicitly shrunk —
+     its own text content already gives it a natural (auto) minimum height
+     that flex-shrink can't reduce below anyway, so there's nothing to gain
+     by adding flex-shrink weighting here. */
+  .footer-item {
+    flex-shrink: 0;
+    flex-grow: 0;
+    line-height: 26px; /* natural height each item wants */
+    font-size: 13px;
+    color: var(--slate-500);
+    white-space: nowrap;
+    text-align: center;
+  }
+  .footer-item a, .footer-item button {
+    color: inherit;
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .legend {
+    max-width: 420px;
+    font-size: 13px;
+    color: var(--slate-700);
+  }
+  .legend code { background: #eef0f3; padding: 1px 5px; border-radius: 4px; }
+  .legend ol { padding-left: 18px; }
+  .legend li { margin-bottom: 6px; }
+  .readout {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--slate-500);
+    font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+  <h1>Sidebar footer links: shrink-to-nothing via flexbox (no height media queries)</h1>
+  <p class="lead">
+    Drag the dashed box's bottom-right corner smaller/larger. The nav buttons (Sources → Theme)
+    never move or overlap. The footer links give up space to them automatically, disappearing
+    least-important-first — no per-item shrink weighting, no JS, no
+    <code>@media (max-height)</code> breakpoints. Links just overflow the (shrinking) wrapper
+    box top-down and get clipped.
+  </p>
+
+  <div class="demo-area">
+    <div class="window-sim" id="windowSim">
+      <div class="sidebar">
+        <div class="nav-heading">Report Settings</div>
+        <div class="nav-btn"><span class="dot"></span> Sources</div>
+        <div class="nav-btn"><span class="dot"></span> Timing</div>
+
+        <div class="nav-heading">Global Settings</div>
+        <div class="nav-btn"><span class="dot"></span> Teams</div>
+        <div class="nav-btn"><span class="dot"></span> Features</div>
+        <div class="nav-btn"><span class="dot"></span> Theme</div>
+
+        <div class="footer-links">
+          <!-- Ordered most-important (kept longest) at top to least-important
+               (dropped first) at bottom. Order alone determines drop-off. -->
+          <div class="footer-item"><a href="#">Read the guides</a></div>
+          <div class="footer-item"><a href="#">APM Training</a></div>
+          <div class="footer-item"><a href="#">Connect with Bitovi</a></div>
+          <div class="footer-item"><a href="#">Join the Mailing List</a></div>
+          <div class="footer-item"><button>Report a bug</button></div>
+          <div class="footer-item"><button>Request a feature</button></div>
+          <div class="footer-item"><a href="#">Write a review</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <strong>How it works</strong>
+      <ol>
+        <li>Nav buttons get <code>flex-shrink: 0</code> — they're essential and always keep their full height.</li>
+        <li>The footer links wrapper gets <code>min-height: 0; overflow: hidden</code> so it's actually allowed to shrink below its content size (the default <code>min-height: auto</code> is what causes the original overlap bug). It's the only item in the outer column absorbing negative space, so it's the one that shrinks.</li>
+        <li>The individual links do NOT shrink (<code>flex-shrink: 0</code>) — their own text already gives them a natural minimum height, so there's nothing to gain by asking them to shrink anyway.</li>
+        <li>Because they're stacked top-down (default <code>justify-content: flex-start</code>) inside a box that's now smaller than their combined height, the ones at the bottom simply extend past the box's bottom edge and get clipped by <code>overflow: hidden</code> — automatically least-important-first, with zero tuning.</li>
+        <li>A small fixed gradient at the wrapper's bottom edge softens whichever item happens to straddle the cutoff, so it fades instead of hard-clipping mid-glyph.</li>
+      </ol>
+      <div class="readout" id="readout"></div>
+    </div>
+  </div>
+
+  <script>
+    const el = document.getElementById('windowSim');
+    const readout = document.getElementById('readout');
+    const ro = new ResizeObserver(() => {
+      readout.textContent = `window-sim height: ${Math.round(el.getBoundingClientRect().height)}px`;
+    });
+    ro.observe(el);
+  </script>
+</body>
+</html>

@@ -120,7 +120,7 @@ export function TotalWorkingDays({ issue }: { issue: TimingIssue }) {
           />
           <div className="self-center justify-self-center">=</div>
           <div className="flex justify-evenly" style={{ gridColumn: '3 / span 3' }}>
-            <CalculationBox title="Velocity per sprint" currentValue={issue.team?.velocity ?? 0} />
+            <CalculationBox title="Capacity per sprint" currentValue={issue.team?.velocity ?? 0} />
             <div className="self-center justify-self-center">÷</div>
             <CalculationBox title="Parallel work tracks" currentValue={issue.team?.parallelWorkLimit ?? 0} />
             <div className="self-center justify-self-center">÷</div>

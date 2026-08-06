@@ -51,7 +51,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           onInheritanceChange={(shouldCustomize) => toggleInheritance('velocityPerSprint', shouldCustomize)}
           name="velocityPerSprint"
           type="number"
-          label="Velocity per sprint"
+          label="Capacity per sprint"
           unit="estimating units"
           min={1}
           register={register}
