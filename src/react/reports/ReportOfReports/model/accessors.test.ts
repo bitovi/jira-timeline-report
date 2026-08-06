@@ -1,12 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import {
-  derivedAccessor,
-  issueKeyOf,
-  latestCommentExpression,
-  looksLikeKey,
-  LATEST_COMMENT_ACCESSOR,
-} from './accessors';
+import { derivedAccessor, issueKeyOf, latestCommentExpression, LATEST_COMMENT_ACCESSOR } from './accessors';
 
 describe('derivedAccessor', () => {
   it('matches latestComment', () => {
@@ -66,12 +60,12 @@ describe('issueKeyOf', () => {
     expect(issueKeyOf('issue = "ABC-1"')).toBe('ABC-1');
   });
 
-  it('returns "" for the right shape with no key yet, so a new node still gets a key field', () => {
+  it('returns "" for the right shape with no key yet, so the row shows its placeholder', () => {
     expect(issueKeyOf('issue =')).toBe('');
     expect(issueKeyOf('issue = ')).toBe('');
   });
 
-  it('returns null for anything a key field could not represent', () => {
+  it('returns null for anything that names no single work item, so the row is titled with the JQL', () => {
     expect(issueKeyOf('project = ABC')).toBeNull();
     expect(issueKeyOf('issue = ABC-1 AND status = Done')).toBeNull();
     expect(issueKeyOf('issue in (ABC-1, ABC-2)')).toBeNull();
@@ -79,35 +73,13 @@ describe('issueKeyOf', () => {
     expect(issueKeyOf('')).toBeNull();
   });
 
-  // The reverse of what this used to assert, and the fix for a reported bug. Requiring `ABC-1` shape made
-  // a typo unrecoverable: `issue = ASDF` fell to `null`, the node flipped to editing its whole
-  // expression, and typing a real key into that field un-made the node. "Can a key field hold this?" is
-  // the question — not "does this name a work item", which is Jira's to answer.
-  it('keeps a mistyped key in the key field rather than giving up on it', () => {
+  // Not "is this a well-formed key" — whether `ASDF` names anything is Jira's to answer, and it answers
+  // "No work item matched." under a row still titled `ASDF`. Titling that row `issue = ASDF` instead
+  // would show the reader the query rather than the thing they got wrong.
+  it('titles the row with a mistyped key rather than giving up on it', () => {
     expect(issueKeyOf('issue = ASDF')).toBe('ASDF');
     expect(issueKeyOf('issue = 123')).toBe('123');
     expect(issueKeyOf('issue = SUNNYSUSHI')).toBe('SUNNYSUSHI');
     expect(issueKeyOf('issue = ABC-')).toBe('ABC-');
-  });
-});
-
-describe('looksLikeKey', () => {
-  it('accepts a bare term, whether or not it names anything', () => {
-    expect(looksLikeKey('SUNNYSUSHI-54')).toBe(true);
-    expect(looksLikeKey('ASDF')).toBe(true);
-    expect(looksLikeKey('  ABC-1  ')).toBe(true);
-  });
-
-  // Clearing the field blanks the key; it must not turn a comment node into an empty inline value.
-  it('accepts empty', () => {
-    expect(looksLikeKey('')).toBe(true);
-    expect(looksLikeKey('   ')).toBe(true);
-  });
-
-  it('rejects anything that is an expression or a query', () => {
-    expect(looksLikeKey('(issue = ABC-1).latestComment')).toBe(false);
-    expect(looksLikeKey('project = ABC')).toBe(false);
-    expect(looksLikeKey('ABC-1 AND ABC-2')).toBe(false);
-    expect(looksLikeKey('assignee = currentUser()')).toBe(false);
   });
 });

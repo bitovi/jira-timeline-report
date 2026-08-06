@@ -14,9 +14,9 @@ import React, { useCallback, useMemo } from 'react';
 import { reports as REPORTS } from '../../../configuration/reports';
 import { useAllReports } from '../../services/reports';
 import { useReportLayout } from '../../services/report-layout';
-import { appendNode, savedReportNode, setExpressionAt, setSectionTitleAt } from './model/sections';
+import { appendNode, inlineValueNode, savedReportNode, setSectionTitleAt } from './model/sections';
 import { isExpressionError, parseExpression } from './model/expression';
-import { isLatestCommentExpression, issueKeyOf, latestCommentExpression, looksLikeKey } from './model/accessors';
+import { isLatestCommentExpression, issueKeyOf } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
 import { useInlineExpression } from './hooks/useInlineExpression';
 import { useLatestComment } from './hooks/useLatestComment';
@@ -74,6 +74,14 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
     closeReportPicker();
   };
 
+  // The same three lines with a value node instead of a saved-report one — and deliberately **no**
+  // `beginEditing`: the modal already collected the work item and the field, which is the whole point of
+  // moving authoring into it. See spec/016-report-of-reports/009-value-report-modal Phase 6.
+  const handleAddValue = (expression: string) => {
+    setSections(appendNode(sections, inlineValueNode(expression), pickerPath ?? []));
+    closeReportPicker();
+  };
+
   // No frame of any kind: not a box per node, and not one around the whole document either. Nesting
   // is carried entirely by indent and a hairline rail from here down, so the only borders on the page
   // belong to the embedded reports themselves. See spec/016-report-of-reports/004-redesign §1.
@@ -109,6 +117,7 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
           isOpen={pickerPath !== null}
           reports={addableReports}
           onSelect={handleSelect}
+          onAddValue={handleAddValue}
           onClose={closeReportPicker}
         />
       </div>
@@ -391,8 +400,6 @@ const InlineReportView: FC<{
  * See spec/016-report-of-reports/003-self-reports.
  */
 const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
-  const { sections, setSections } = useReportLayout();
-  const { editingNodeId, beginEditing, endEditing } = useDocumentEditing();
   const { hoverProps, rowProps } = useNodeRow(node, path);
   const state = useInlineExpression(node.params.expression);
 
@@ -401,17 +408,7 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
   return (
     <div className="flex flex-col" {...hoverProps}>
       <NodeRow {...rowProps} controls={<NodeControls path={path} label={label} nodeId={node.id} />}>
-        <InlineValue
-          expression={node.params.expression}
-          state={state}
-          isEditing={editingNodeId === node.id}
-          onEdit={() => beginEditing(node.id)}
-          onConfirm={(expression) => {
-            endEditing();
-            setSections(setExpressionAt(sections, path, expression));
-          }}
-          onCancel={endEditing}
-        />
+        <InlineValue expression={node.params.expression} state={state} />
       </NodeRow>
     </div>
   );
@@ -425,18 +422,17 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
  * plus content beneath it — because a comment is a block of rich text rather than one value in a pill.
  * Content beneath the row means it gets a caret, per 004-redesign's rule.
  *
- * **The row edits a key, not an expression,** whenever the JQL is a single equality — which is what the
- * Add button writes and what practically every one of these is. A hand-written query falls back to
- * editing the whole expression, because a key field can't represent one. `issueKeyOf` is the whole of
- * that distinction; the *fetch* always goes through the JQL either way.
+ * **The row is the work item key** whenever the JQL is a single equality — which is what the modal
+ * writes and what practically every one of these is. `issueKeyOf` is the whole of that distinction, and
+ * it is now purely about what to title the row: a hand-written query, reachable only from a document
+ * saved earlier, titles itself with its JQL. The *fetch* always goes through the JQL either way.
  *
  * It's content, not chrome, so nothing here is `print-hidden` (the controls and caret hide themselves)
  * and the body stays mounted while collapsed so print can restore it.
  * See spec/016-report-of-reports/007-latest-comment-report Phase 4.
  */
 const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
-  const { sections, setSections } = useReportLayout();
-  const { editingNodeId, beginEditing, endEditing, isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { isCollapsed, toggleCollapsed } = useDocumentEditing();
   const { hoverProps, rowProps } = useNodeRow(node, path);
 
   // `isLatestCommentExpression` already proved this parses, so the error branch is unreachable — it's
@@ -445,8 +441,7 @@ const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ no
   const jql = isExpressionError(parsed) ? '' : parsed.jql;
 
   const key = issueKeyOf(jql);
-  const targetKind = key === null ? 'expression' : 'key';
-  const target = key === null ? node.params.expression : key;
+  const target = key ?? jql;
 
   // Nothing targeted yet means asking Jira nothing: a blank key leaves the JQL as `issue =`, which is
   // not a query, and a freshly created node must not fire a request that can only fail.
@@ -462,24 +457,7 @@ const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ no
         caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
         controls={<NodeControls path={path} label={label} nodeId={node.id} />}
       >
-        <LatestComment
-          target={target}
-          targetKind={targetKind}
-          isEditing={editingNodeId === node.id}
-          onEdit={() => beginEditing(node.id)}
-          onConfirm={(next) => {
-            endEditing();
-            // A key field's content is always a key. So is a bare term typed into an *expression* field
-            // — otherwise confirming `SUNNYSUSHI-54` writes it as the whole expression, which doesn't
-            // parse, and the node stops being a comment node with no way back but hand-typing
-            // `(issue = SUNNYSUSHI-54).latestComment`.
-            // See .../007-latest-comment-report § Editing can't un-make the node.
-            const expression = targetKind === 'key' || looksLikeKey(next) ? latestCommentExpression(next) : next;
-
-            setSections(setExpressionAt(sections, path, expression));
-          }}
-          onCancel={endEditing}
-        />
+        <LatestComment target={target} />
       </NodeRow>
       <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
         <LatestCommentBody target={target} state={state} />

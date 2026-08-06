@@ -10,7 +10,6 @@ import {
   inlineValueNode,
   inlineReportNode,
   setSectionTitleAt,
-  setExpressionAt,
   setInlineReportParam,
   setNodeOverride,
   removeNodeAt,
@@ -371,37 +370,6 @@ describe('setSectionTitleAt', () => {
     setSectionTitleAt(tree, [0], 'Q4');
 
     expect(JSON.stringify(tree)).toBe(frozen);
-  });
-});
-
-describe('setExpressionAt', () => {
-  it('rewrites an expression at the root and at depth', () => {
-    const tree = parseSections([
-      storedInlineValue('(issue = A-1).summary'),
-      storedSection('Q3', [storedInlineValue('(issue = B-1).summary')]),
-    ]);
-
-    expect(toStoredSections(setExpressionAt(tree, [0], '(issue = A-2).duedate'))[0]).toEqual(
-      storedInlineValue('(issue = A-2).duedate'),
-    );
-    expect(toStoredSections(setExpressionAt(tree, [1, 0], '(issue = B-2).summary'))[1]).toEqual(
-      storedSection('Q3', [storedInlineValue('(issue = B-2).summary')]),
-    );
-  });
-
-  it('keeps the node id, so editing an expression does not remount the node', () => {
-    const node = inlineValueNode('(issue = A-1).summary');
-
-    expect(setExpressionAt([node], [0], '(issue = A-2).summary')[0].id).toBe(node.id);
-  });
-
-  it('leaves the tree unchanged for a path that misses, a node of another type, or no change', () => {
-    const tree = parseSections([storedInlineValue('(issue = A-1).summary'), storedSavedReport('a')]);
-
-    expect(setExpressionAt(tree, [9], 'x')).toBe(tree);
-    expect(setExpressionAt(tree, [], 'x')).toBe(tree);
-    expect(setExpressionAt(tree, [1], 'x')).toBe(tree);
-    expect(setExpressionAt(tree, [0], '(issue = A-1).summary')).toBe(tree);
   });
 });
 

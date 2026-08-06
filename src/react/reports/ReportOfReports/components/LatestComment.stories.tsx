@@ -60,24 +60,22 @@ const ok = (body: unknown): LatestCommentState => ({
 
 /**
  * The whole node as a document renders it — row, caret, and body — so a story shows what a reviewer
- * actually sees. `LatestComment` on its own is only the row's editable key.
+ * actually sees. `LatestComment` on its own is only the row.
+ *
+ * The editing stories are gone with the edit field: the node is read-only, and a wrong one is deleted
+ * and re-added from the Add Report modal.
+ * See spec/016-report-of-reports/009-value-report-modal § The node stops being editable.
  */
 const Node = ({
   target,
   state,
-  targetKind = 'key',
   startCollapsed = false,
-  startEditing = false,
 }: {
   target: string;
   state: LatestCommentState;
-  targetKind?: 'key' | 'expression';
   startCollapsed?: boolean;
-  startEditing?: boolean;
 }) => {
   const [collapsed, setCollapsed] = useState(startCollapsed);
-  const [isEditing, setIsEditing] = useState(startEditing);
-  const [value, setValue] = useState(target);
 
   return (
     <div className="flex flex-col">
@@ -86,25 +84,15 @@ const Node = ({
         caret={
           <CollapseToggle
             isCollapsed={collapsed}
-            label={value || 'latest comment'}
+            label={target || 'latest comment'}
             onToggle={() => setCollapsed(!collapsed)}
           />
         }
       >
-        <LatestComment
-          target={value}
-          targetKind={targetKind}
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(true)}
-          onConfirm={(next) => {
-            setIsEditing(false);
-            setValue(next);
-          }}
-          onCancel={() => setIsEditing(false)}
-        />
+        <LatestComment target={target} />
       </NodeRow>
       <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
-        <LatestCommentBody target={value} state={state} />
+        <LatestCommentBody target={target} state={state} />
       </div>
     </div>
   );
@@ -138,23 +126,9 @@ export const RichText: Story = {
   args: { state: ok(rich) },
 };
 
-/** A freshly added node — the key isn't typed yet, so it asks Jira nothing and says what to do. */
+/** No work item set — only reachable from a document saved before the modal took over authoring. */
 export const BlankKey: Story = {
   args: { target: '', state: { status: 'loading' } },
-};
-
-/** With its key field open and focused, as the Add button leaves it. */
-export const Editing: Story = {
-  args: { target: '', state: { status: 'loading' }, startEditing: true },
-};
-
-/**
- * **Retargeting a resolved node — the case worth reviewing.** The row is only the key, so opening the
- * field replaces the heading in place and the comment below does not move; the field takes the row's
- * width because `grow` applies only while editing.
- */
-export const EditingResolved: Story = {
-  args: { target: 'ABC-1', state: ok(plain), startEditing: true },
 };
 
 export const Loading: Story = {
@@ -171,8 +145,7 @@ export const NoMatch: Story = {
 
 export const SeveralMatched: Story = {
   args: {
-    target: '(project = ABC).latestComment',
-    targetKind: 'expression',
+    target: 'project = ABC',
     state: { status: 'error', message: 'More than one work item matched — narrow the query.' },
   },
 };
@@ -187,11 +160,8 @@ export const NoRenderableContent: Story = {
   args: { state: ok(doc({ type: 'mediaSingle', content: [{ type: 'media', attrs: { type: 'file' } }] })) },
 };
 
-/** A hand-written query rather than a key — the field then edits the whole expression. */
-export const ExpressionTarget: Story = {
-  args: {
-    target: '(assignee = currentUser() AND updated > -1d).latestComment',
-    targetKind: 'expression',
-    state: ok(plain),
-  },
+/** A hand-written query rather than a key — the row is titled with the query, since it names no one
+ * work item. Only a document saved before the modal existed can hold one. */
+export const QueryTarget: Story = {
+  args: { target: 'assignee = currentUser() AND updated > -1d', state: ok(plain) },
 };

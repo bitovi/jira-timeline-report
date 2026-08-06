@@ -7,22 +7,33 @@ import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition
 import Textfield from '@atlaskit/textfield';
 
 import { ReportRow, useReportSearch } from '../../../components/ReportListing';
+import { ValueReportForm } from './ValueReportForm';
 
 export interface AddReportModalProps {
   isOpen: boolean;
   /** The reports offered, already filtered and ordered — see `model/selectable-reports`. */
   reports: Report[];
   onSelect: (reportId: Report['id']) => void;
+  /** Receives the expression the Value Report half built; the caller makes the node. */
+  onAddValue: (expression: string) => void;
   onClose: () => void;
 }
 
 /**
- * Picks a saved report to embed in a report-of-reports. Pure and prop-driven: the caller supplies
- * the (already filtered) list, so the picker itself needs no fetch — every saved report is in
- * memory before React mounts. Rows and search come from `components/ReportListing`, shared with the
- * Saved Reports page. See spec/016-report-of-reports and spec/023-report-modal.
+ * Adds a node to a report-of-reports: either a live Jira value, or a saved report to embed.
+ *
+ * **Two halves with different natures, and that shows in the code.** The saved-report half is pure and
+ * prop-driven — the caller supplies the already-filtered list, because every saved report is in memory
+ * before React mounts. The Value Report half can't be: a work-item typeahead and a field catalog are
+ * fetches no prop can supply, so it lives in `ValueReportForm` with its own tests and this file just
+ * places it. Rows and search come from `components/ReportListing`, shared with the Saved Reports page.
+ *
+ * **Focus stays on the reports search**, as it did before the Value Report row existed: it is the
+ * half with keyboard navigation (↑/↓/↵/Esc) and the one most opens are for. Tab reaches the value row.
+ *
+ * See spec/016-report-of-reports, spec/023-report-modal, and .../009-value-report-modal Phase 6.
  */
-export const AddReportModal: FC<AddReportModalProps> = ({ isOpen, reports, onSelect, onClose }) => {
+export const AddReportModal: FC<AddReportModalProps> = ({ isOpen, reports, onSelect, onAddValue, onClose }) => {
   const { query, setQuery, described, filtered, activeIndex, setActiveIndex, handleKeyDown } = useReportSearch(
     reports,
     { onActivate: (report) => onSelect(report.id), onEscape: onClose },
@@ -36,6 +47,9 @@ export const AddReportModal: FC<AddReportModalProps> = ({ isOpen, reports, onSel
             <ModalTitle>Add Report</ModalTitle>
           </ModalHeader>
           <ModalBody>
+            <Subtitle>Value Report</Subtitle>
+            <ValueReportForm onAdd={onAddValue} />
+            <Subtitle>Saved Report</Subtitle>
             {described.length === 0 ? (
               <p className="py-2 text-slate-500">
                 No other saved reports to add. Save a report first, then compose it here.
@@ -82,5 +96,13 @@ export const AddReportModal: FC<AddReportModalProps> = ({ isOpen, reports, onSel
     </ModalTransition>
   );
 };
+
+/**
+ * One of the modal's two section headings. Quiet on purpose — the modal already has a title, and these
+ * are labels telling two halves apart rather than a second level of shouting.
+ */
+const Subtitle: FC<{ children: string }> = ({ children }) => (
+  <h3 className="pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-neutral-801 first:pt-0">{children}</h3>
+);
 
 export default AddReportModal;

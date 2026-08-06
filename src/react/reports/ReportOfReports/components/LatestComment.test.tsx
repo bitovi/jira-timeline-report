@@ -33,19 +33,7 @@ const ok = (body: unknown): LatestCommentState => ({
   updated: '2026-08-04T14:22:00.000Z',
 });
 
-const noop = () => {};
-
-const renderRow = (target: string, targetKind: 'key' | 'expression' = 'key', isEditing = false) =>
-  render(
-    <LatestComment
-      target={target}
-      targetKind={targetKind}
-      isEditing={isEditing}
-      onEdit={noop}
-      onConfirm={noop}
-      onCancel={noop}
-    />,
-  );
+const renderRow = (target: string) => render(<LatestComment target={target} />);
 
 // See spec/016-report-of-reports/007-latest-comment-report § The row is the key.
 describe('LatestComment row', () => {
@@ -64,17 +52,20 @@ describe('LatestComment row', () => {
     expect(screen.getByText('ABC-1')).toBeInTheDocument();
   });
 
-  it('offers a key field when editing a key', () => {
-    renderRow('ABC-1', 'key', true);
+  // Authoring is the Add Report modal's; the node is read-only.
+  // See spec/016-report-of-reports/009-value-report-modal § The node stops being editable.
+  it('offers nothing to click or type into', () => {
+    renderRow('ABC-1');
 
-    expect(screen.getByPlaceholderText('ABC-1')).toHaveFocus();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
-  // A key field can't represent `project = A AND …`, so a hand-written query edits as an expression.
-  it('offers an expression field when the target is a whole expression', () => {
-    renderRow('(project = A).latestComment', 'expression', true);
+  // A hand-written query names no single work item, so it titles the row as-is.
+  it('titles the row with the query when the JQL names no single work item', () => {
+    renderRow('project = A AND status = Done');
 
-    expect(screen.getByPlaceholderText('(issue = ABC-1).latestComment')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'project = A AND status = Done' })).toBeInTheDocument();
   });
 });
 
@@ -170,10 +161,12 @@ describe('LatestCommentBody', () => {
     expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
   });
 
-  it('prompts for a key before anything is targeted, rather than reporting a state', () => {
+  // A statement of fact rather than an instruction: with the node read-only there is nowhere to enter a
+  // key, and only a document saved before the modal took over authoring can reach this state.
+  it('states that no work item is set, rather than reporting a state or giving an instruction', () => {
     render(<LatestCommentBody target="" state={{ status: 'loading' }} />);
 
-    expect(screen.getByText('Enter a work item key — for example ABC-1.')).toBeInTheDocument();
+    expect(screen.getByText('No work item set.')).toBeInTheDocument();
   });
 
   it('reports loading', () => {

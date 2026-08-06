@@ -5,8 +5,7 @@ import React from 'react';
 import AddIcon from '@atlaskit/icon/core/add';
 
 import { useReportLayout } from '../../../services/report-layout';
-import { appendNode, canAddSectionAt, inlineValueNode, sectionNode } from '../model/sections';
-import { latestCommentExpression } from '../model/accessors';
+import { appendNode, canAddSectionAt, sectionNode } from '../model/sections';
 import { useDocumentEditing } from './DocumentEditing';
 
 export interface AddContentRowProps {
@@ -23,10 +22,9 @@ export interface AddContentRowProps {
 }
 
 /**
- * The `[+ Add Report] [+ Add Section]` row that closes the document and every section in it, plus
- * `[+ Add Work Item Update]` on sections only.
+ * The `[+ Add Report] [+ Add Section]` row that closes the document and every section in it.
  *
- * One pattern everywhere: the same buttons, worded and styled the same, at every level. They're
+ * One pattern everywhere: the same two buttons, worded and styled the same, at every level. They're
  * deliberately quieter than the theme's primaries — a document with four sections would otherwise
  * have five call-to-action rows down the page, all shouting.
  *
@@ -37,17 +35,15 @@ export interface AddContentRowProps {
  * An editing affordance rather than content, so the whole row carries `print-hidden`
  * (src/css/print.css). "Add Section" is hidden — not disabled — once nesting reaches
  * `MAX_SECTION_DEPTH`: there is no state to explain, the level simply doesn't take another section.
- * **"Add Work Item Update" is section-only, and has no depth cap.** It's absent from the document root's
- * row: a comment is a note *about* something, so it belongs beside the report or section it comments on
- * rather than floating at the top of the document. It carries no cap because the node it creates holds
- * nothing and so can't deepen the tree — the opposite of "Add Section".
  *
- * It appends an `inline-value` node seeded with `(issue = ).latestComment`, which is to say it's a
- * preset of the parked "Add Value" rather than a second concept — the reason it costs nothing in
- * `sections.ts`. Restoring "Add Value" is uncommenting one block.
+ * **"Add Report" adds either kind of node.** It opens the Add Report modal, whose Value Report half
+ * builds an `inline-value` node from a work item and a field. That is where "Add Value" — parked three
+ * times as an expression box, and briefly shipped here as the `Add Work Item Update` preset — finally
+ * lives, as two validated controls rather than a button that drops a blank node on the page. Neither
+ * block survives here; the modal does what both were for.
  *
  * See spec/016-report-of-reports/002-nested-sections, .../003-self-reports Phase 4,
- * .../004-redesign §6, and .../007-latest-comment-report Phase 5.
+ * .../004-redesign §6, and .../009-value-report-modal Phase 6.
  */
 export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = false }) => {
   const { sections, setSections } = useReportLayout();
@@ -128,51 +124,6 @@ export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = f
 
               // The row is pushed down by what it just added, out from under the pointer, so the
               // tint would otherwise outlive the pointer being there.
-              markAddTarget(null);
-              setSections(appendNode(sections, node, path));
-              beginEditing(node.id);
-            }}
-          />
-        )}
-        {/* "Add Value" is parked — again. Nothing beneath it is removed: the `inline-value` node, its
-            parser, resolver, formatter, hook and view all stay live, reachable from a hand-edited or
-            previously-saved document and covered by their own unit tests. "Add Work Item Update" below
-            creates the same node type, so this is a commented-out *button*, not a dark feature.
-            Third time round for this button — see .../004-redesign §6 and § Add Value, unparked.
-
-        <AddButton
-          text="Add Value"
-          name={label && `Add Value${into}`}
-          onTarget={() => markAddTarget(path)}
-          onClick={() => {
-            // Blank and open focused, for the reason a new section is: an expression is the whole of
-            // what a value is, so one that arrives without its field open is an empty row the user
-            // then has to find and click.
-            const node = inlineValueNode('');
-
-            markAddTarget(null);
-            setSections(appendNode(sections, node, path));
-            beginEditing(node.id);
-          }}
-        />
-        */}
-        {!isRoot && (
-          <AddButton
-            // "Add Work Item Update", not "Add Latest Comment": named for what the reader gets — the
-            // current word on a work item — rather than for the Jira object it comes from. "Work item",
-            // not "issue", so it matches the copy the node's own states use ("No work item matched.",
-            // "Enter a work item key") and the term the rest of the app uses for Jira's renamed issue.
-            text="Add Work Item Update"
-            name={label && `Add Work Item Update${into}`}
-            onTarget={() => markAddTarget(path)}
-            onClick={() => {
-              // The same node type "Add Value" creates, seeded with an expression instead of left blank —
-              // which is the whole of what this button is. The seed decides how the node renders and how
-              // it's edited: the accessor routes it to `LatestCommentView`, and the `issue = ` JQL is what
-              // gets it a work item key field rather than an expression field.
-              // See spec/016-report-of-reports/007-latest-comment-report Phase 5.
-              const node = inlineValueNode(latestCommentExpression(''));
-
               markAddTarget(null);
               setSections(appendNode(sections, node, path));
               beginEditing(node.id);

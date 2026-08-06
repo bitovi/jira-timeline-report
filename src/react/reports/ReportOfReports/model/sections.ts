@@ -337,18 +337,6 @@ export const setSectionTitleAt = (nodes: LayoutNode[], path: LayoutPath, title: 
   );
 
 /**
- * Rewrites the expression of the inline-value node at `path`, returning a new tree. Same contract as
- * {@link setSectionTitleAt}: the node keeps its `id`, and an unresolvable path, a node of another
- * type, or an unchanged expression all return the very same tree.
- */
-export const setExpressionAt = (nodes: LayoutNode[], path: LayoutPath, expression: string): LayoutNode[] =>
-  mapNodeAt(nodes, path, (node) =>
-    node.type === 'inline-value' && node.params.expression !== expression
-      ? { ...node, params: { ...node.params, expression } }
-      : node,
-  );
-
-/**
  * Same as {@link mapNodeAt} but keyed by node identity, so the caller doesn't have to hold a path.
  * Used by the override path, where the callback is handed to a memoized `ChildReport`: an id is a
  * string and keeps that memo intact, while a path is a fresh array on every render and would defeat

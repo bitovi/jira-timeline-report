@@ -2,36 +2,17 @@ import type { FC, ReactNode } from 'react';
 import type { LatestCommentState } from '../hooks/useLatestComment';
 
 import React from 'react';
-import InlineEdit from '@atlaskit/inline-edit';
-import Textfield from '@atlaskit/textfield';
 
 import { AdfDocument } from '../../../components/AdfDocument';
-import { LATEST_COMMENT_ACCESSOR } from '../model/accessors';
 
+/** What an untargeted node shows in place of a key — see the read view below. */
 export const KEY_PLACEHOLDER = 'ABC-1';
-export const EXPRESSION_PLACEHOLDER = `(issue = ABC-1).${LATEST_COMMENT_ACCESSOR}`;
-
-/**
- * What the row's one editable field holds.
- *
- * `key` is the shape the Add button writes and what practically every comment node is: the JQL is a
- * single equality, so the user edits a work item key and never sees the expression. `expression` is
- * the escape hatch for a hand-written query — a key field cannot represent `project = A AND …`, so
- * the whole expression is edited instead, the way an ordinary inline value is.
- */
-export type TargetKind = 'key' | 'expression';
 
 export interface LatestCommentProps {
-  /** The work item key, or the whole expression when {@link targetKind} is `expression`. */
+  /** The work item key, or the whole JQL when the query is one a key can't represent. */
   target: string;
-  targetKind: TargetKind;
   // No `state`: the row is the key, and every fetched thing — author, comment, timestamp — is
   // `LatestCommentBody`'s. The row used to take one and never read it.
-  isEditing: boolean;
-  onEdit: () => void;
-  /** Receives the raw field text; the container turns it back into an expression. */
-  onConfirm: (target: string) => void;
-  onCancel: () => void;
 }
 
 // Local time, deliberately: a comment's timestamp is read by a person wondering how recent it is, and
@@ -70,58 +51,27 @@ export const formatCommentTime = (timestamp: string): string => {
  * with its latest comment under it.
  *
  * **What that costs, stated plainly:** collapsed, the node is a bare `▸ ABC-1` and nothing says it is a
- * comment. That is the same trade a collapsed report card makes — its row is `▸ Alpha` — and the
- * accessible names follow the same convention (`ABC-1, edit`, like `Alpha, edit`), so the node is
+ * comment. That is the same trade a collapsed report card makes — its row is `▸ Alpha` — so the node is
  * consistent with its neighbours rather than self-describing.
+ *
+ * **Read-only.** The work item and the field are chosen in the Add Report modal; a wrong node is
+ * deleted and re-added rather than corrected in place.
+ * See spec/016-report-of-reports/009-value-report-modal § The node stops being editable.
  *
  * It's content, not chrome, so nothing here is `print-hidden`.
  * See spec/016-report-of-reports/007-latest-comment-report § The row is the key.
  */
-export const LatestComment: FC<LatestCommentProps> = ({
-  target,
-  targetKind,
-  isEditing,
-  onEdit,
-  onConfirm,
-  onCancel,
-}) => (
-  // InlineEdit's internal styles can't be reached through props; this drops its outer margin, and makes
-  // the resting hit area read as editable text rather than as a button.
+export const LatestComment: FC<LatestCommentProps> = ({ target }) => (
+  // An untargeted node shows the placeholder key in the muted italic `SectionTitle` gives an untitled
+  // section, so "not filled in yet" doesn't read as "a work item called ABC-1". Only a document saved
+  // before the modal existed can be in that state.
   //
-  // `grow` only while editing, copied from `SectionTitle` and for its reason: the field wants the width
-  // of the row, but at rest the hit area has to end where the key ends. A full-width one would swallow
-  // clicks on the rest of the row — which is what pins it — turning "click the row" into "retarget the
-  // comment".
-  <div className={`[&>form>div]:!m-0 [&_button]:!cursor-text min-w-0 ${isEditing ? 'grow' : ''}`}>
-    <InlineEdit
-      isEditing={isEditing}
-      onEdit={onEdit}
-      defaultValue={target}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
-      editButtonLabel={target || 'latest comment'}
-      editView={({ errorMessage, ...fieldProps }) => (
-        <Textfield
-          {...fieldProps}
-          autoFocus
-          autoComplete="new-password"
-          placeholder={targetKind === 'key' ? KEY_PLACEHOLDER : EXPRESSION_PLACEHOLDER}
-          className={targetKind === 'key' ? '' : '[&>input]:!font-mono [&>input]:!text-sm'}
-        />
-      )}
-      // An untargeted node shows the placeholder key in the muted italic `SectionTitle` gives an
-      // untitled section, so "not filled in yet" doesn't read as "a work item called ABC-1".
-      readView={() => (
-        <h3
-          className={`truncate text-base font-semibold ${target ? '' : 'font-normal italic text-slate-500'} ${
-            targetKind === 'key' ? '' : 'font-mono text-sm'
-          }`}
-        >
-          {target || KEY_PLACEHOLDER}
-        </h3>
-      )}
-    />
-  </div>
+  // A hand-written query, also only reachable from such a document, titles the row as-is in the same
+  // style. It used to be monospaced, but that branch existed to match the edit field's mode; with no
+  // field to match, one row style is the honest simplification.
+  <h3 className={`min-w-0 grow truncate text-base font-semibold ${target ? '' : 'font-normal italic text-slate-500'}`}>
+    {target || KEY_PLACEHOLDER}
+  </h3>
 );
 
 export interface LatestCommentBodyProps {
@@ -142,7 +92,9 @@ export interface LatestCommentBodyProps {
  */
 export const LatestCommentBody: FC<LatestCommentBodyProps> = ({ target, state }) => {
   if (!target.trim()) {
-    return <Note>{`Enter a work item key — for example ${KEY_PLACEHOLDER}.`}</Note>;
+    // A statement of fact, not an instruction: there is no longer a field to enter a key into. Only a
+    // document saved before the Add Report modal took over authoring can reach this.
+    return <Note>No work item set.</Note>;
   }
 
   if (state.status === 'loading') {
@@ -158,8 +110,9 @@ export const LatestCommentBody: FC<LatestCommentBodyProps> = ({ target, state })
   }
 
   if (state.status === 'empty') {
-    // "No updates found.", matching the `Add Work Item Update` button rather than naming the Jira object
-    // behind it — the reader never sees the word "comment" anywhere in this node.
+    // "No updates found.", not "no comments": the reader never sees the word "comment" anywhere in this
+    // node, which is named for what they get — the current word on a work item — rather than for the
+    // Jira object it comes from.
     return <Note>No updates found.</Note>;
   }
 

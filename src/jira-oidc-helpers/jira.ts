@@ -87,6 +87,48 @@ export function fetchLatestComment(config: Config) {
   };
 }
 
+/** One suggestion from the issue picker. `summaryText` is the plain summary; `summary` is HTML. */
+export interface JiraIssuePickerIssue {
+  id?: number;
+  key?: string;
+  keyHtml?: string;
+  summary?: string;
+  summaryText?: string;
+  img?: string;
+}
+
+/** `id` is `hs` for recently-viewed history and `cs` for the current search. */
+export interface JiraIssuePickerSection {
+  id?: string;
+  label?: string;
+  issues?: JiraIssuePickerIssue[];
+}
+
+export interface JiraIssuePickerResponse {
+  sections?: JiraIssuePickerSection[];
+}
+
+/**
+ * Work-item suggestions for a typeahead — the endpoint Jira's own issue pickers use.
+ *
+ * **Not a JQL search, because JQL cannot prefix-match a key.** `key` supports `=`, `in`, `>` and `<`
+ * only; there is no `key ~ "ABC-1*"`, so "suggest as the user types a key" is not merely awkward to
+ * express as a search, it is inexpressible. This endpoint takes a plain query string instead, which
+ * also removes the JQL-escaping and 400-on-unparseable-input hazards a built query would carry.
+ *
+ * An empty query is legal and useful: the `hs` section is the caller's recently-viewed list, which is a
+ * better resting state for a picker than a blank box.
+ *
+ * See spec/016-report-of-reports/009-value-report-modal Phase 2.
+ */
+export function fetchIssuePickerSuggestions(config: Config) {
+  return (query: string): Promise<JiraIssuePickerResponse> => {
+    return config.requestHelper(
+      `/api/3/issue/picker?${new URLSearchParams({ query })}`,
+    ) as unknown as Promise<JiraIssuePickerResponse>;
+  };
+}
+
 // JQL autocomplete (powers @atlaskit/jql-editor). These return the raw Jira
 // `/jql/autocompletedata` response shapes; the atlaskit-specific mapping lives in the
 // consuming hook (useJqlAutocompleteProvider). `requestHelper` supplies base URL + OIDC auth.

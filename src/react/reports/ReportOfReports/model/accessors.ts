@@ -50,31 +50,23 @@ export const latestCommentExpression = (issueKey: string): string =>
   `(issue = ${issueKey.trim()}).${LATEST_COMMENT_ACCESSOR}`;
 
 /**
- * A work-item key out of the simplest possible JQL, so a comment node can be edited as a key field
- * rather than as an expression.
+ * The work item a comment node's JQL names, so the row can be titled with it.
  *
  * **This is not a JQL parser and must not become one.** It recognizes exactly one shape — a single
- * equality against one bare term — which is the shape the Add button writes. Returns:
+ * equality against one bare term — which is the shape the Add Report modal writes. Returns:
  *
  * - the term, for `issue = ABC-1`
- * - `''` for `issue =`, the freshly-added node: the shape is right, the key isn't typed yet
- * - `null` for anything else, including a real query — the caller then falls back to editing the
- *   whole expression, because a key field cannot represent `project = A AND status = Done`
+ * - `''` for `issue =`, which only a document saved before the modal existed can contain
+ * - `null` for anything else, including a real query — the caller then titles the row with the JQL
+ *   itself, because `project = A AND status = Done` names no single work item
  *
- * **It does not check that the term is a well-formed key, and must not.** It used to require
- * `[A-Za-z][A-Za-z0-9_]*-\d+`, and that made a typo unrecoverable: `issue = ASDF` fell through to
- * `null`, so the node flipped to editing its whole expression and showed
- * `(issue = ASDF).latestComment` as its heading — and typing a real key into *that* field produced the
- * expression `SUNNYSUSHI-54`, which doesn't parse, so the node stopped being a comment node at all.
- * The only way out was to hand-type the full expression.
- *
- * The question this answers is **"can a key field represent this JQL?"**, not "is this a valid key".
- * Whether `ASDF` names anything is Jira's to answer, and it answers _"No work item matched."_ — in
- * place, beside a field that still edits a key.
+ * **It does not check that the term is a well-formed key, and must not.** Whether `ASDF` names anything
+ * is Jira's to answer, and it answers _"No work item matched."_ under a row still titled `ASDF`. The
+ * question here is only **"what should this row be called?"**
  *
  * The **fetch** never uses this: `useLatestComment` takes the JQL and resolves it through the search
  * like any other expression, so a hand-written query works. Short-circuiting a bare key to skip that
- * search is a deliberate non-goal — see the plan's § Out of scope.
+ * search is a deliberate non-goal — see 007's § Out of scope.
  */
 const SINGLE_KEY = /^(?:issue|issuekey|key|id)\s*=\s*"?([A-Za-z0-9_-]*)"?$/i;
 
@@ -83,18 +75,3 @@ export const issueKeyOf = (jql: string): string | null => {
 
   return match ? (match[1] ?? '') : null;
 };
-
-/**
- * Whether text typed into a comment node's one field is a work item key rather than an expression.
- *
- * The second half of the recovery above, and it covers the case `issueKeyOf` cannot: a node whose JQL is
- * a genuine query (`(project = ABC).latestComment`) legitimately edits as an expression, and typing a
- * bare key into that field would otherwise write the unparseable expression `SUNNYSUSHI-54` and un-make
- * the node. A bare term is always meant as a key, so the caller wraps it in
- * {@link latestCommentExpression} instead. **A node added with "Add Work Item Update" cannot be knocked out
- * of being a comment node by anything typed into it.**
- *
- * Empty counts, deliberately: clearing the field should blank the key, not turn the node into an empty
- * inline value.
- */
-export const looksLikeKey = (text: string): boolean => /^[A-Za-z0-9_-]*$/.test(text.trim());
