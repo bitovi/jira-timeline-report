@@ -558,6 +558,28 @@ export const canAddSectionAt = (nodes: LayoutNode[], path: LayoutPath): boolean 
 };
 
 /**
+ * The title of the section a node would be added into, for naming the destination in the Add Report
+ * modal — the same `path` {@link appendNode} takes.
+ *
+ * `undefined` means "nothing to name": the document root (`[]`), a path that misses, or a container
+ * that isn't a section. An **untitled** section is `''`, which is a different answer — the caller can
+ * then say "this section" rather than pretending the add is going nowhere in particular.
+ *
+ * See spec/016-report-of-reports/009-value-report-modal.
+ */
+export const sectionTitleAt = (nodes: LayoutNode[], path: LayoutPath): string | undefined => {
+  const found = locate(nodes, path);
+
+  if (!found) {
+    return undefined;
+  }
+
+  const node = found.siblings[found.index];
+
+  return node.type === 'section' ? node.params.title : undefined;
+};
+
+/**
  * Whether the node at `path` can move `offset` places among its siblings. Backs the disabled state
  * of the move controls, and gates {@link moveNodeAt} so the two can't disagree.
  */

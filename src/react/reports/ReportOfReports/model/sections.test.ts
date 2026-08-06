@@ -10,6 +10,7 @@ import {
   inlineValueNode,
   inlineReportNode,
   setSectionTitleAt,
+  sectionTitleAt,
   setInlineReportParam,
   setNodeOverride,
   removeNodeAt,
@@ -307,6 +308,32 @@ describe('appendNode', () => {
 
     expect(appendNode(tree, savedReportNode('b'), [0])).toEqual(tree);
     expect(appendNode(tree, savedReportNode('b'), [9])).toEqual(tree);
+  });
+});
+
+// Names the destination in the Add Report modal's header.
+// See spec/016-report-of-reports/009-value-report-modal § Restructure.
+describe('sectionTitleAt', () => {
+  it('reads the title of a section at the root and at depth', () => {
+    const tree = [sectionNode('Q3', [sectionNode('July')]), savedReportNode('a')];
+
+    expect(sectionTitleAt(tree, [0])).toBe('Q3');
+    expect(sectionTitleAt(tree, [0, 0])).toBe('July');
+  });
+
+  // `''` and `undefined` are different answers: a section that exists but isn't named yet is still a
+  // destination worth telling the user about, where the document root is not.
+  it('distinguishes an untitled section from no section at all', () => {
+    expect(sectionTitleAt([sectionNode('')], [0])).toBe('');
+    expect(sectionTitleAt([sectionNode('Q3')], [])).toBeUndefined();
+  });
+
+  it('returns undefined for a path that misses or points at something other than a section', () => {
+    const tree = [sectionNode('Q3'), savedReportNode('a')];
+
+    expect(sectionTitleAt(tree, [9])).toBeUndefined();
+    expect(sectionTitleAt(tree, [1])).toBeUndefined();
+    expect(sectionTitleAt(tree, [0, 0])).toBeUndefined();
   });
 });
 

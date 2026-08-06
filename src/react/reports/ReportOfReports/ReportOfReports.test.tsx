@@ -1124,6 +1124,16 @@ describe('<ReportOfReports>', () => {
     // A reversal of 007, which made the button section-only on the reasoning that a note belongs beside
     // what it comments on. One modal that changes shape by origin costs more to explain than that is
     // worth. See .../009-value-report-modal § Decided with the user.
+    // The add row that opened the modal sits inside one specific container, and the modal covers it.
+    // See .../009-value-report-modal § Restructure.
+    it('names the section it was opened from', async () => {
+      renderReport({ savedSections: [nest('Q3', [])] });
+
+      await clickAdd('Add Report to Q3');
+
+      expect(await screen.findByText('Adding to Q3')).toBeInTheDocument();
+    });
+
     it('can be added at the document root too', async () => {
       resolves('ABC-1', 'At the top.');
       renderReport({ savedSections: [] });

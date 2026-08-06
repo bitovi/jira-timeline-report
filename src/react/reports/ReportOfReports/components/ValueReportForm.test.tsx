@@ -70,7 +70,7 @@ describe('<ValueReportForm>', () => {
     queries = [];
   });
 
-  it('keeps + disabled until both halves are chosen', async () => {
+  it('keeps Add disabled until both halves are chosen', async () => {
     renderForm();
 
     expect(addButton()).toBeDisabled();
@@ -80,6 +80,16 @@ describe('<ValueReportForm>', () => {
 
     pickField('Summary');
     expect(addButton()).toBeEnabled();
+  });
+
+  // A bare `+` has to be guessed at, and its disabled state — the only validation this form has —
+  // reads as decoration. See spec/016-report-of-reports/009-value-report-modal § Restructure.
+  it('labels the add control and both inputs', () => {
+    renderForm();
+
+    expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Work item')).toBeInTheDocument();
+    expect(screen.getByLabelText('Field')).toBeInTheDocument();
   });
 
   it('stays disabled when only a field is chosen', () => {

@@ -398,6 +398,57 @@ Net expectation: the suite shrinks. If it doesn't, something was rewritten that 
   disruptive to the existing keyboard flow) and let Tab reach the value row. Called out because it is easy to
   ship an accidental answer here.
 
+## Restructure
+
+The dialog Phase 6 describes is two labelled halves stacked in a `ModalBody`. In use that has one
+structural fault and several cosmetic ones, all fixed together. The layout is unchanged in outline —
+Value Report above, Saved Report below.
+
+**Only the list scrolls.** `ModalBody` _is_ Atlaskit's scroll container, so everything in it scrolled
+together: browsing a long report list carried the search field you were typing into, and the entire
+Value Report half, off the top of the dialog. So `ModalBody` is gone. The dialog is already
+`display: flex; flex-direction: column` with a viewport-bounded `max-height`, so the content between
+header and footer is a plain flex column, and the list alone gets `flex-1 overflow-y-auto`. `min-h-0` on
+the shrinkable parts is load-bearing: without it a flex child won't shrink below its content, the column
+grows, and the modal's own overflow takes back over.
+
+Atlaskit's cap is `calc(100vh - 119px)` rather than the ~80vh the brief suggests. Left alone
+deliberately — it is what every other modal in the app uses, and a uniquely-sized dialog is a worse
+outcome than a few vh.
+
+**The section separation is two hairlines, no fill.** The Value Report band rules edge to edge rather
+than stopping at the 24px gutter, which means it can't inherit the dialog's horizontal padding — each
+section now carries its own `px-6`. That is the whole treatment: no tint, no background.
+
+**The Value row is labelled.** Visible `Work item` and `Field` labels; a 1.3fr / 1fr split, because a
+work item reads as `ABC-123 — some summary` and a field name is one or two words, so an even split
+truncates the half carrying the identifying detail. The bare `+` becomes a primary **Add** button —
+an unlabelled icon has to be guessed at, and its disabled state is the only validation this form has, so
+it must read as "you're not done" rather than as decoration.
+
+**The list is countable and finite-looking.** `24 reports` beside the Saved Report label, becoming
+`3 of 24` while searching; a fade over the list's bottom edge; a hairline between the list and the
+footer. The fade paints `var(--ds-surface-overlay)` rather than white, so it still disappears into the
+dialog under a theme that isn't.
+
+**A close ✕, and a destination subhead.** Cancel sits below a scrolling list, which makes it the
+hardest exit to reach from the top. And the add row that opened the dialog belongs to one specific
+container that the dialog is now covering — `sectionTitleAt` (new, in `sections.ts`) resolves it, and the
+header says _"Adding to Q3 Initiative"_. It distinguishes three cases: a named section, an untitled one
+(_"Adding to an untitled section"_ — still a real destination), and the document root (nothing said).
+
+**Not done, and why.** Two items were specified that the data cannot support. A saved `Report` is
+`{ id, name, queryParams, sections? }` — there is no last-used timestamp and no owner anywhere in
+storage, and owner is not a concept this app has at all. So "replace the JQL subtitle with last-used
+date + owner" and "sort recently-used first" are not small changes to this dialog; they are a schema
+field, a write on every report open, and a migration. Rows keep their current shape and alphabetical
+order until that exists. The field dropdown's grouping was also to be renamed to Fields / Derived /
+Virtual; the catalog holds only real Jira fields plus one pseudo-accessor, the three names didn't map
+onto anything, and the user confirmed the existing Derived / Common / Fields stands.
+
+Also: the brief asks to remove a descriptive subline under the Value Report label. There wasn't one —
+the shipped dialog never had it.
+
 ## Reversed after implementation
 
 Three things this plan got wrong, found in the app rather than in the tests. Recorded here rather than

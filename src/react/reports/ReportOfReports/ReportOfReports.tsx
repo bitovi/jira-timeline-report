@@ -14,7 +14,7 @@ import React, { useCallback, useMemo } from 'react';
 import { reports as REPORTS } from '../../../configuration/reports';
 import { useAllReports } from '../../services/reports';
 import { useReportLayout } from '../../services/report-layout';
-import { appendNode, inlineValueNode, savedReportNode, setSectionTitleAt } from './model/sections';
+import { appendNode, inlineValueNode, savedReportNode, sectionTitleAt, setSectionTitleAt } from './model/sections';
 import { isExpressionError, parseExpression } from './model/expression';
 import { isLatestCommentExpression, issueKeyOf } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
@@ -116,6 +116,9 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
         <AddReportModal
           isOpen={pickerPath !== null}
           reports={addableReports}
+          // What the add row that opened this belongs to. `undefined` at the document root, which is
+          // also what a null `pickerPath` gives — the modal is closed then anyway.
+          destination={pickerPath ? sectionTitleAt(sections, pickerPath) : undefined}
           onSelect={handleSelect}
           onAddValue={handleAddValue}
           onClose={closeReportPicker}

@@ -1,11 +1,9 @@
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import type { StylesConfig } from '@atlaskit/select';
 
 import React, { Suspense, useMemo, useState } from 'react';
 import Select from '@atlaskit/select';
-import { IconButton } from '@atlaskit/button/new';
-import AddIcon from '@atlaskit/icon/glyph/add';
-import VisuallyHidden from '@atlaskit/visually-hidden';
+import Button from '@atlaskit/button/new';
 
 import { useJiraIssueFields } from '../../../services/jira/useJiraIssueFields';
 import { useWorkItemSearch } from '../hooks/useWorkItemSearch';
@@ -76,11 +74,14 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   };
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto] items-center gap-2 pb-2">
+    // 1.3fr / 1fr: a work item reads as `ABC-123 — some summary` and a field name is one or two words,
+    // so an even split would truncate the half that carries the identifying detail. `items-end` sits the
+    // button on the inputs' baseline rather than centring it against their labels.
+    <div className="grid grid-cols-[1.3fr_1fr_auto] items-end gap-2">
+      <Labelled htmlFor="ror-value-work-item">Work item</Labelled>
+      <Labelled htmlFor="ror-value-field">Field</Labelled>
+      <span />
       <div>
-        <VisuallyHidden>
-          <label htmlFor="ror-value-work-item">Work item</label>
-        </VisuallyHidden>
         <Select<SelectOption>
           inputId="ror-value-work-item"
           placeholder="Search work items…"
@@ -102,25 +103,28 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
         />
       </div>
       <div>
-        <VisuallyHidden>
-          <label htmlFor="ror-value-field">Field</label>
-        </VisuallyHidden>
         <Suspense
           fallback={<Select<SelectOption> inputId="ror-value-field" placeholder="Field" isDisabled isLoading />}
         >
           <FieldSelect value={field} onChange={setField} />
         </Suspense>
       </div>
-      <IconButton
-        icon={AddIcon}
-        label="Add value report"
-        testId="ror-value-add"
-        isDisabled={!canAdd}
-        onClick={handleAdd}
-      />
+      {/* A labelled button rather than a bare `+`. An unlabelled icon has to be guessed at, and its
+          disabled state — which is the only validation this form has — reads as decoration rather than
+          as "you are not done yet". */}
+      <Button appearance="primary" testId="ror-value-add" isDisabled={!canAdd} onClick={handleAdd}>
+        Add
+      </Button>
     </div>
   );
 };
+
+/** A field label in the dialog's own small style. `htmlFor` targets the select's `inputId`. */
+const Labelled: FC<{ htmlFor: string; children: ReactNode }> = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block pb-1 text-xs font-medium text-neutral-801">
+    {children}
+  </label>
+);
 
 /**
  * The field half, split out for one reason: `useJiraIssueFields` is a suspense query and ROR's only

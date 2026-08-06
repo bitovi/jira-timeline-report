@@ -165,3 +165,72 @@ describe('<AddReportModal>', () => {
     expect(reportSearch()).toHaveFocus();
   });
 });
+
+// The restructure. See spec/016-report-of-reports/009-value-report-modal § Restructure.
+describe('<AddReportModal> layout', () => {
+  it('offers a close control in the header, since Cancel sits below a scrolling list', async () => {
+    const { onClose } = renderModal();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Close' }));
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('names the section being added to', async () => {
+    renderModal({ destination: 'Q3 Initiative' });
+
+    expect(await screen.findByText('Adding to Q3 Initiative')).toBeInTheDocument();
+  });
+
+  // `''` is a section that exists but hasn't been named — a different answer from "no section", and
+  // still worth telling the user, since the add is going somewhere specific.
+  it('still names an untitled section as the destination', async () => {
+    renderModal({ destination: '' });
+
+    expect(await screen.findByText('Adding to an untitled section')).toBeInTheDocument();
+  });
+
+  it('says nothing about a destination at the document root', async () => {
+    renderModal();
+
+    expect(await screen.findByRole('button', { name: 'Alpha' })).toBeInTheDocument();
+    expect(screen.queryByText(/^Adding to/)).not.toBeInTheDocument();
+  });
+
+  it('counts the list so its length is legible before scrolling', async () => {
+    renderModal();
+
+    expect(await screen.findByText('2 reports')).toBeInTheDocument();
+  });
+
+  it('counts the matches instead while searching', async () => {
+    renderModal();
+
+    await userEvent.type(reportSearch(), 'alph');
+
+    expect(screen.getByText('1 of 2')).toBeInTheDocument();
+  });
+
+  it('singularizes the count', async () => {
+    renderModal({ reports: [report('a', 'Alpha')] });
+
+    expect(await screen.findByText('1 report')).toBeInTheDocument();
+  });
+
+  /**
+   * jsdom loads no stylesheet and lays nothing out, so "only the list scrolls" can't be observed — the
+   * class is asserted instead, the way `AddContentRow` asserts `pointer-events-none`. What it protects
+   * is real: the whole body used to scroll, carrying the search field and the entire Value Report half
+   * off the top of the dialog while you browsed.
+   */
+  it('confines scrolling to the list', async () => {
+    renderModal();
+
+    const list = await screen.findByTestId('add-report-list');
+
+    expect(list.className).toContain('overflow-y-auto');
+    // The search field and the value form are outside it, so they stay put.
+    expect(list).not.toContainElement(reportSearch());
+    expect(list).not.toContainElement(screen.getByTestId('ror-value-add'));
+  });
+});
