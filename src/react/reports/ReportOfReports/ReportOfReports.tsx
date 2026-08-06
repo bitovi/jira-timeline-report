@@ -170,6 +170,12 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
  * than a border for the reason nothing else here has one: the only frames on the page belong to the
  * embedded reports (.../004-redesign §1). Nothing tints for the document root's own pair — the whole
  * page is not a highlight, and "no section lit" is exactly what adding at the top level means.
+ *
+ * `color-bg-section` carries the themeable section background (Theme panel → Report of Reports),
+ * defaulting to white so sections still read as unframed. Every section reads the same variable, so
+ * a nested one repaints its parent's color rather than showing depth — depth is the indent rails'
+ * job. The add-target tint above still wins, since Tailwind's utilities layer comes after colors.css.
+ * See spec/016-report-of-reports/008-theme.
  */
 const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, path, reports, childReportProps }) => {
   const { sections, setSections } = useReportLayout();
@@ -184,7 +190,9 @@ const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, pa
   return (
     <section
       data-add-target={isTarget}
-      className={`flex flex-col rounded transition-colors duration-150 ${isTarget ? 'bg-blue-101' : ''}`}
+      className={`color-bg-section flex flex-col rounded transition-colors duration-150 ${
+        isTarget ? 'bg-blue-101' : ''
+      }`}
       {...hoverProps}
     >
       <NodeRow

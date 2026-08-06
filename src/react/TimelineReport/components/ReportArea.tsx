@@ -68,7 +68,10 @@ export const ReportArea: FC<ReportAreaProps> = ({
       {!jql && isLoggedIn && !selfManagesData && <NoJqlMessage />}
 
       {((selfManagesData && !rejected) || (resolved && primaryIssuesCount > 0)) && (
-        <div className="my-2 border-box color-bg-white flex-1">{children}</div>
+        // `report-font-scope` confines the Theme panel's font choice to the report block. It sits
+        // here rather than higher up because everything above — nav, sidebar, saved reports, report
+        // controls — is app chrome and keeps the default stack. See src/css/fonts.css.
+        <div className="report-font-scope my-2 border-box color-bg-white flex-1">{children}</div>
       )}
 
       {!selfManagesData && resolved && primaryIssuesCount === 0 && (
