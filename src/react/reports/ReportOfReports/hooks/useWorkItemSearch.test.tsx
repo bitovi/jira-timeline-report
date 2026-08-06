@@ -98,6 +98,30 @@ describe('useWorkItemSearch', () => {
     expect(state()).toHaveTextContent('ABC-1|Summary of ABC-1,ABC-2|Summary of ABC-2');
   });
 
+  /**
+   * Jira returns two sections concatenated, each in an undocumented order, so the list read as
+   * arbitrary and could reorder itself between queries. Sorting by key replaces that outright.
+   */
+  it('orders by key, numerically within a project rather than as strings', async () => {
+    renderProbe(
+      'ABC',
+      makeJira(() => ({ sections: [section('hs', ['ABC-10', 'ZZZ-1']), section('cs', ['ABC-2', 'ABC-1'])] })),
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    await settled();
+
+    // `ABC-2` before `ABC-10`, which a plain string sort gets backwards — and the project prefix wins
+    // over the number, so `ZZZ-1` sorts last rather than first.
+    expect(
+      state()
+        .textContent?.split(',')
+        .map((entry) => entry.split('|')[0]),
+    ).toEqual(['ABC-1', 'ABC-2', 'ABC-10', 'ZZZ-1']);
+  });
+
   it('collapses keystrokes into one request', async () => {
     // Mounts empty, as the real form does.
     const { retype } = renderProbe(

@@ -429,6 +429,13 @@ That leaves `SearchablePicker` with one caller. The extraction is kept: it is a 
 Table's popover the unit tests it never had, and it is where a second non-modal caller should still go.
 Reverting it is a clean single-commit revert if that reads as dead weight later.
 
+**Suggestions are sorted by key.** Phase 2 says only "flatten both sections, dedupe by key", which left
+the list in Jira's order: `cs` then `hs`, each undocumented. It read as arbitrary, and the same query
+could reorder itself as the recently-viewed half changed underneath it. `useWorkItemSearch` now sorts by
+key — project alphabetically, then number **numerically**, so `ABC-2` precedes `ABC-10`, which is the
+case a part-typed key hits constantly. Jira still chooses _which_ items come back when there are more
+matches than it returns; this only fixes the order they are shown in.
+
 Also corrected, too small for its own note: Phase 4 specifies `filterOption={() => false}` to mean "the
 server already filtered". In react-select a predicate **excludes** options, so that renders a
 permanently empty menu; `filterOption={null}` is what disables filtering. Caught by

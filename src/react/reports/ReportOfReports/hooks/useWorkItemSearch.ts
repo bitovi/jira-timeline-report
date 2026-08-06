@@ -29,6 +29,25 @@ const DEBOUNCE_MS = 300;
  */
 const MIN_QUERY_LENGTH = 2;
 
+/** A work item key as two comparable parts: the project prefix, and the number after the last dash. */
+const KEY_PARTS = /^(.*)-(\d+)$/;
+
+/**
+ * Work item keys in the order a person reading a list of them expects: project alphabetically, then
+ * number **numerically** — so `ABC-2` precedes `ABC-10`, which a plain string sort gets backwards.
+ *
+ * Anything not shaped like `PREFIX-123` falls back to a plain comparison, which is only about staying
+ * deterministic; Jira has no other key shape.
+ */
+const compareKeys = (left: string, right: string): number => {
+  const a = KEY_PARTS.exec(left);
+  const b = KEY_PARTS.exec(right);
+
+  if (!a || !b) return left.localeCompare(right);
+
+  return a[1] === b[1] ? Number(a[2]) - Number(b[2]) : a[1].localeCompare(b[1]);
+};
+
 /**
  * Work-item suggestions for the Value Report typeahead.
  *
@@ -60,8 +79,7 @@ export const useWorkItemSearch = (query: string): WorkItemSearchState => {
       const response = await jira.fetchIssuePickerSuggestions(debounced);
 
       // Both sections, flattened: `cs` is what matched the query and `hs` is recently-viewed, and an
-      // item can legitimately be in both. Dedupe by key so it is offered once, keeping whichever came
-      // first — Jira orders the sections by usefulness.
+      // item can legitimately be in both. Dedupe by key so it is offered once.
       const seen = new Set<string>();
       const suggestions: WorkItemSuggestion[] = [];
 
@@ -76,7 +94,15 @@ export const useWorkItemSearch = (query: string): WorkItemSearchState => {
         }
       }
 
-      return suggestions;
+      // **Sorted by key, replacing Jira's order.** What came back was two sections concatenated, each in
+      // an order the endpoint doesn't document — so the list read as arbitrary, and the same query could
+      // reorder itself as the recently-viewed half changed underneath it. Sorting is the whole fix: it
+      // makes the list scannable, and it puts `ABC-1` above `ABC-10` when you're part-way through typing
+      // a key, which is the case this picker exists for.
+      //
+      // Jira still chooses *which* items come back — the scope's `order by lastViewed DESC` decides that
+      // when there are more matches than it will return. This only decides the order they're shown in.
+      return suggestions.sort((left, right) => compareKeys(left.key, right.key));
     },
   });
 
