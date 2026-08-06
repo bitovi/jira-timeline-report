@@ -130,8 +130,12 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
           the two don't line up on their own — bottom-aligning a shorter control just makes it look
           dropped. The child selector is how the height reaches the button: `Button` doesn't forward
           `className`, and Tailwind's `.foo > button` beats emotion's single-class rule on specificity
-          whichever order they load in. */}
-      <div className="[&>button]:h-10">
+          whichever order they load in.
+
+          The 5px of padding under it lifts the button off the row's bottom edge: `items-end` aligns the
+          two boxes exactly, but a select's visual weight sits above its border box, so matched edges
+          still read as the button hanging low. Measured by eye, hence the odd value. */}
+      <div className="pb-[5px] [&>button]:h-10">
         <Button appearance="primary" testId="ror-value-add" isDisabled={!canAdd} onClick={handleAdd}>
           Add
         </Button>
