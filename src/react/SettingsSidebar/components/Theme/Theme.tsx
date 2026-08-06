@@ -64,20 +64,28 @@ const ThemeView: FC<ThemeProps> = () => {
   const debouncedFont = useDebounce(localFont, 500);
 
   useEffect(() => {
+    setLocalTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    setLocalFont(font);
+  }, [font]);
+
+  useEffect(() => {
     if (JSON.stringify(theme) === JSON.stringify(debouncedTheme)) {
       return;
     }
 
-    save(debouncedTheme, { onError: () => setLocalTheme(theme) });
-  }, [debouncedTheme, save]);
+    save(debouncedTheme);
+  }, [debouncedTheme, save, theme]);
 
   useEffect(() => {
     if (JSON.stringify(font) === JSON.stringify(debouncedFont)) {
       return;
     }
 
-    saveFont(debouncedFont, { onError: () => setLocalFont(font) });
-  }, [debouncedFont, saveFont]);
+    saveFont(debouncedFont);
+  }, [debouncedFont, font, saveFont]);
 
   const statusItems = localTheme.filter(({ group }) => group === 'status');
   const reportOfReportsItems = localTheme.filter(({ group }) => group === 'reportOfReports');
