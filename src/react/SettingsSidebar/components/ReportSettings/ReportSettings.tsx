@@ -104,7 +104,7 @@ export default ReportSettings;
 
 const SmallLink: FC<Omit<ComponentProps<'a'>, 'className' | 'target'>> = ({ href, children, ...rest }) => {
   return (
-    <a className="link shrink-0 text-slate-300 text-sm" target="_blank" href={href} {...rest}>
+    <a className="link shrink-0 text-slate-300 text-sm" target="_blank" href={href} {...rest} rel="noopener noreferrer">
       {children}
     </a>
   );
