@@ -18,7 +18,7 @@ import { appendNode, inlineValueNode, savedReportNode, sectionTitleAt, setSectio
 import { isExpressionError, parseExpression } from './model/expression';
 import { isLatestCommentExpression, issueKeyOf } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
-import { useInlineExpression } from './hooks/useInlineExpression';
+import { useInlineExpression, type InlineExpressionState } from './hooks/useInlineExpression';
 import { useLatestComment } from './hooks/useLatestComment';
 import { AddContentRow } from './components/AddContentRow';
 import { AddReportModal } from './components/AddReportModal';
@@ -396,6 +396,28 @@ const InlineReportView: FC<{
 };
 
 /**
+ * What a value node is called in its own controls — _"Move SUNNYSUSHI-54 Status up"_,
+ * _"Delete "SUNNYSUSHI-54 Status"?"_.
+ *
+ * **Not the expression.** The controls used to be labelled with it, which put
+ * `Delete "(issue = SUNNYSUSHI-54).status"?` in front of the user. That was defensible while the row
+ * was editable and the expression was something you typed; now it is an internal storage format that
+ * nothing else displays, and a confirm dialog is the worst place to leak one — see
+ * .../009-value-report-modal § The node stops being editable.
+ *
+ * Built from the two things the user actually chose in the modal. The field name is only known once
+ * the expression resolves, so an erroring or still-loading node degrades to just its work item, and one
+ * with neither — a blank node from an older document — to a bare word rather than an empty label.
+ */
+const inlineValueLabel = (expression: string, state: InlineExpressionState): string => {
+  const parsed = parseExpression(expression);
+  const key = isExpressionError(parsed) ? null : issueKeyOf(parsed.jql);
+  const field = state.status === 'ok' ? state.field.name : null;
+
+  return [key, field].filter(Boolean).join(' ') || 'value';
+};
+
+/**
  * One inline value: the expression is resolved by `useInlineExpression` and handed to `InlineValue`,
  * which stays pure and renders only the row's label.
  *
@@ -406,7 +428,7 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
   const { hoverProps, rowProps } = useNodeRow(node, path);
   const state = useInlineExpression(node.params.expression);
 
-  const label = node.params.expression || 'inline value';
+  const label = inlineValueLabel(node.params.expression, state);
 
   return (
     <div className="flex flex-col" {...hoverProps}>

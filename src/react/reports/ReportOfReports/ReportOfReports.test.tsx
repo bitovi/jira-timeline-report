@@ -994,14 +994,34 @@ describe('<ReportOfReports>', () => {
       expect(await within(section).findByTestId('inline-value')).toHaveTextContent('inside');
     });
 
-    it('can be removed like any other node', async () => {
+    /**
+     * Named by what the user picked in the modal, never by the stored expression — a confirm dialog
+     * saying `Delete "(issue = ABC-1).summary"?` puts an internal storage format in front of someone
+     * who never typed one. See .../009-value-report-modal § The node stops being editable.
+     */
+    it('names itself by work item and field in its controls, not by its expression', async () => {
       searchResult = [{ fields: { Summary: 'gone soon' } }];
       renderReport({ savedSections: [storedValue('(issue = ABC-1).summary'), stored('a')] });
 
-      await removeNode('(issue = ABC-1).summary');
+      await value();
+
+      expect(screen.getByRole('button', { name: 'Remove ABC-1 Summary' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /issue = ABC-1/ })).not.toBeInTheDocument();
+
+      await removeNode('ABC-1 Summary');
 
       expect(screen.queryByTestId('inline-value')).not.toBeInTheDocument();
       expect(cardNames()).toEqual(['Alpha']);
+    });
+
+    // The field name only exists once the expression resolves, so the label has to degrade rather than
+    // read "ABC-1 undefined" or fall back to the expression it is there to avoid showing.
+    it('falls back to the work item alone when the field cannot resolve', async () => {
+      searchResult = [];
+      renderReport({ savedSections: [storedValue('(issue = ABC-1).nope')] });
+
+      expect(await screen.findByTestId('inline-value-error')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Remove ABC-1' })).toBeInTheDocument();
     });
 
     // `.comment` is a real field, so it resolves and then dead-ends in the formatter. That message is

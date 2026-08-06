@@ -480,6 +480,14 @@ That leaves `SearchablePicker` with one caller. The extraction is kept: it is a 
 Table's popover the unit tests it never had, and it is where a second non-modal caller should still go.
 Reverting it is a clean single-commit revert if that reads as dead weight later.
 
+**A value node's controls are named by work item and field, not by its expression.** § The node stops
+being editable argues the stored expression becomes an internal format that nothing displays — but the
+node's own controls still took it as their label, so deleting one asked
+`Delete "(issue = SUNNYSUSHI-54).status"?`. A confirm dialog is the worst place to leak a storage
+format. `inlineValueLabel` builds `SUNNYSUSHI-54 Status` from the two things the modal collected,
+degrading to the work item alone while the field is unresolved and to `value` when there is neither.
+`LatestCommentView` already labelled itself with the key and is unchanged.
+
 **Suggestions are sorted by key.** Phase 2 says only "flatten both sections, dedupe by key", which left
 the list in Jira's order: `cs` then `hs`, each undocumented. It read as arbitrary, and the same query
 could reorder itself as the recently-viewed half changed underneath it. `useWorkItemSearch` now sorts by
