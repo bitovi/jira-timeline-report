@@ -2,6 +2,13 @@
 
 Show the newest comment on a work item in a document — its rich text, who wrote it, and when.
 
+> **Phase 5 and § Editing can't un-make the node are superseded by
+> [009-value-report-modal](../009-value-report-modal/plan.md).** The `Add Work Item Update` button is
+> removed — a work item and a field are chosen in the Add Report modal — and **the node is no longer
+> editable in place**, so the whole class of defect § Editing can't un-make the node fixes cannot occur.
+> A wrong node is deleted and re-added. Everything else here — the node type, the grammar, the accessor,
+> the fetch, and the ADF rendering — is unchanged, and this remains the record for it.
+
 **This is a preset, not a new feature.** The node is an ordinary `inline-value` node whose expression is
 `(issue = ABC-1).latestComment`. A button writes that string so nobody has to type it, and the edit
 affordance for such a node is a plain key field. One node type, one grammar, one authoring path, one set
@@ -121,6 +128,12 @@ The two states shared with Add Value keep their copy verbatim, because copy that
 across both presets shouldn't diverge for one of them.
 
 ## Editing can't un-make the node
+
+**Superseded by [009-value-report-modal](../009-value-report-modal/plan.md) § The node stops being
+editable.** The node has no edit field any more, so nothing can be typed into it and neither fix below is
+reachable. `looksLikeKey` is deleted, `issueKeyOf` survives only to title the row, and the two integration
+tests that pin these fixes are deleted rather than rewritten. Kept as the record of a defect the current
+design makes impossible.
 
 A bug found in use, and the sharpest possible demonstration of what the preset design costs. Reported as:
 typing `ASDF` into a new comment node produced the heading `(issue = ASDF).latestComment` and the error
@@ -495,6 +508,10 @@ dead end becomes a discovery path for the pseudo-accessor — which is the mitig
 design carries.
 
 ### Phase 5 — authoring
+
+**Superseded by [009-value-report-modal](../009-value-report-modal/plan.md).** The button below shipped and
+was then moved into the Add Report modal on UX feedback, which also un-parked `Add Value` by giving it a
+field picker. The text is kept as the record of what was built; the code no longer matches it.
 
 `components/AddContentRow.tsx` — a fourth `AddButton`, `Add Work Item Update`, appending
 `inlineValueNode('(issue = ).latestComment')` then `beginEditing(node.id)`. The same two calls
