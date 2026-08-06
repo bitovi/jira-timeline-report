@@ -32,6 +32,17 @@ const menuAboveModal: StylesConfig<SelectOption, false> = {
 };
 
 /**
+ * Strips the caret off the work-item input, which is a search box wearing a select's clothes.
+ *
+ * A caret advertises a list you can open. This one has nothing to open until Jira answers a query, so
+ * clicking it does visibly nothing — the affordance promises something the control cannot do. The
+ * indicator separator goes too: it exists only to divide the caret from the value.
+ *
+ * The **field** select keeps both. It genuinely is a dropdown over a fixed list.
+ */
+const SEARCH_ONLY = { DropdownIndicator: null, IndicatorSeparator: null };
+
+/**
  * Pick a work item and a field, press `+`, get a value node.
  *
  * The impure half of the Add Report modal: it owns two fetches (the suggestion list and the field
@@ -74,14 +85,12 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   };
 
   return (
-    // 1.3fr / 1fr: a work item reads as `ABC-123 — some summary` and a field name is one or two words,
-    // so an even split would truncate the half that carries the identifying detail. `items-end` sits the
-    // button on the inputs' baseline rather than centring it against their labels.
+    // Three children, one per column — each `Field` is its own label-plus-input, so a label can never
+    // drift away from what it names. 1.3fr / 1fr because a work item reads as `ABC-123 — some summary`
+    // while a field name is a word or two, so an even split truncates the half carrying the detail.
+    // `items-end` bottom-aligns the button with the inputs rather than centring it against the labels.
     <div className="grid grid-cols-[1.3fr_1fr_auto] items-end gap-2">
-      <Labelled htmlFor="ror-value-work-item">Work item</Labelled>
-      <Labelled htmlFor="ror-value-field">Field</Labelled>
-      <span />
-      <div>
+      <Field htmlFor="ror-value-work-item" label="Work item">
         <Select<SelectOption>
           inputId="ror-value-work-item"
           placeholder="Search work items…"
@@ -93,6 +102,10 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
           isLoading={isLoading}
           menuPortalTarget={document.body}
           styles={menuAboveModal}
+          // **No caret.** This is a search box, not a dropdown: it has no options until Jira answers a
+          // query, so a caret invites a click that opens an empty menu and looks broken. The separator
+          // goes with it — it exists to divide the caret from the value.
+          components={SEARCH_ONLY}
           // `null` disables filtering; a predicate here would *exclude* options, not pass them through.
           // Jira already matched, and re-filtering client-side would hide results whose match was on a
           // summary word the typed text doesn't literally contain.
@@ -101,14 +114,14 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
             isLoading ? 'Searching…' : isTooShort ? 'Keep typing…' : inputValue ? 'No work items found.' : null
           }
         />
-      </div>
-      <div>
+      </Field>
+      <Field htmlFor="ror-value-field" label="Field">
         <Suspense
           fallback={<Select<SelectOption> inputId="ror-value-field" placeholder="Field" isDisabled isLoading />}
         >
           <FieldSelect value={field} onChange={setField} />
         </Suspense>
-      </div>
+      </Field>
       {/* A labelled button rather than a bare `+`. An unlabelled icon has to be guessed at, and its
           disabled state — which is the only validation this form has — reads as decoration rather than
           as "you are not done yet". */}
@@ -119,11 +132,23 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   );
 };
 
-/** A field label in the dialog's own small style. `htmlFor` targets the select's `inputId`. */
-const Labelled: FC<{ htmlFor: string; children: ReactNode }> = ({ htmlFor, children }) => (
-  <label htmlFor={htmlFor} className="block pb-1 text-xs font-medium text-neutral-801">
+/**
+ * A labelled control, as **one** grid child.
+ *
+ * The label was briefly a grid child of its own, which put it in the row above its input with the
+ * grid's row gap between them — so it read as floating above the row rather than as belonging to one
+ * control. A column is one cell containing both; the grid only ever sees three children.
+ *
+ * `htmlFor` targets the select's `inputId`, which is what makes the label clickable and what the tests
+ * find these by.
+ */
+const Field: FC<{ htmlFor: string; label: string; children: ReactNode }> = ({ htmlFor, label, children }) => (
+  <div className="min-w-0">
+    <label htmlFor={htmlFor} className="mb-1 block text-xs font-medium text-neutral-801">
+      {label}
+    </label>
     {children}
-  </label>
+  </div>
 );
 
 /**
