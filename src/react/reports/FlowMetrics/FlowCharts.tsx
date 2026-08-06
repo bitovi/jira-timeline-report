@@ -3,6 +3,7 @@ import Tabs, { Tab, TabList, TabPanel } from '@atlaskit/tabs';
 import type { MetricsIssue } from './adapter';
 import { getInProgressDate } from './metrics';
 import { InfoTooltip } from './Tooltip';
+import ExpandChartButton from '../../components/ExpandChartButton';
 
 interface FlowChartsProps {
   doneIssues: MetricsIssue[];
@@ -105,6 +106,108 @@ function histNiceMax(n: number): number {
   return Math.ceil(n / 5) * 5;
 }
 
+interface HistBarTooltipState {
+  clientX: number;
+  clientY: number;
+  label: string;
+  count: number;
+}
+
+const HistogramCard: React.FC<{
+  proj: ProjectHistogram;
+  cycleTimeRangeDays: number;
+  onHistogramBarClick?: (issueKeys: string[]) => void;
+  setHistBarTooltip: React.Dispatch<React.SetStateAction<HistBarTooltipState | null>>;
+}> = ({ proj, cycleTimeRangeDays, onHistogramBarClick, setHistBarTooltip }) => {
+  const [expanded, setExpanded] = useState(false);
+  const yMax = histNiceMax(proj.maxCount);
+  const histYTicks = [0, Math.round(yMax / 2), yMax];
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-5" style={{ maxWidth: expanded ? 'none' : '900px' }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 mb-1">
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: proj.color }}
+          />
+          <h3 className="text-sm font-semibold text-gray-800">{proj.projectKey}</h3>
+          <span className="text-xs text-gray-400">
+            {proj.total} item{proj.total !== 1 ? 's' : ''} · max {proj.maxCt}d
+          </span>
+        </div>
+        <ExpandChartButton expanded={expanded} onToggle={() => setExpanded((e) => !e)} />
+      </div>
+      <p className="text-xs text-gray-400 mb-3">Cycle time distribution · last {cycleTimeRangeDays} days</p>
+      <svg width="100%" viewBox={`0 0 ${HW} ${HH}`} style={{ display: 'block', overflow: 'visible' }}>
+        {histYTicks.map((tick) => {
+          const y = HPT + HPH - (tick / yMax) * HPH;
+          return (
+            <g key={tick}>
+              <line x1={HPL} y1={y} x2={HPL + HPW} y2={y} stroke="#f3f4f6" strokeWidth="1" />
+              <text x={HPL - 4} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">
+                {tick}
+              </text>
+            </g>
+          );
+        })}
+
+        <line x1={HPL} y1={HPT} x2={HPL} y2={HPT + HPH} stroke="#e5e7eb" strokeWidth="1" />
+        <line x1={HPL} y1={HPT + HPH} x2={HPL + HPW} y2={HPT + HPH} stroke="#e5e7eb" strokeWidth="1" />
+
+        {(() => {
+          const dynBinW = proj.bins.length > 0 ? HPW / proj.bins.length : HPW / BIN_COUNT;
+          const dynBarW = Math.max(dynBinW - 3, 1);
+          return proj.bins.map((bin, i) => {
+            const binX = HPL + i * dynBinW;
+            const barX = binX + (dynBinW - dynBarW) / 2;
+            const barH = yMax > 0 ? (bin.count / yMax) * HPH : 0;
+            const barY = HPT + HPH - barH;
+            const labelX = binX + dynBinW / 2;
+            const labelY = HPT + HPH + 6;
+            return (
+              <g
+                key={i}
+                style={{ cursor: bin.count > 0 ? 'pointer' : 'default' }}
+                onMouseEnter={(e) =>
+                  setHistBarTooltip({
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    label: bin.label,
+                    count: bin.count,
+                  })
+                }
+                onMouseMove={(e) =>
+                  setHistBarTooltip((prev) => (prev ? { ...prev, clientX: e.clientX, clientY: e.clientY } : prev))
+                }
+                onMouseLeave={() => setHistBarTooltip(null)}
+                onClick={() => {
+                  if (bin.count > 0) onHistogramBarClick?.(bin.issueKeys);
+                }}
+              >
+                <rect x={barX} y={HPT} width={dynBarW} height={HPH} fill="transparent" />
+                {bin.count > 0 && (
+                  <rect x={barX} y={barY} width={dynBarW} height={barH} fill={proj.color} fillOpacity="0.75" rx="1" />
+                )}
+                <text
+                  x={labelX}
+                  y={labelY}
+                  textAnchor="end"
+                  fontSize="9"
+                  fill="#9ca3af"
+                  transform={`rotate(-45,${labelX},${labelY})`}
+                >
+                  {bin.label}
+                </text>
+              </g>
+            );
+          });
+        })()}
+      </svg>
+    </div>
+  );
+};
+
 export const FlowCharts: React.FC<FlowChartsProps> = ({
   doneIssues,
   allProjectKeys,
@@ -115,6 +218,7 @@ export const FlowCharts: React.FC<FlowChartsProps> = ({
 }) => {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [pinnedTooltip, setPinnedTooltip] = useState<TooltipState | null>(null);
+  const [scatterExpanded, setScatterExpanded] = useState(false);
   const [histBarTooltip, setHistBarTooltip] = useState<{
     clientX: number;
     clientY: number;
@@ -307,11 +411,17 @@ export const FlowCharts: React.FC<FlowChartsProps> = ({
         </TabList>
 
         <TabPanel>
-          <div className="bg-white border border-gray-200 rounded-lg p-5 mt-2 w-full">
-            <h3 className="text-sm font-semibold text-gray-800 mb-0.5">
-              Cycle Time Scatter
-              <InfoTooltip text="Each dot represents a completed item. The x-axis is the date it was completed; the y-axis is how many days it took (from last To Do → In Progress transition to done). Dashed lines show the median cycle time per team." />
-            </h3>
+          <div
+            className="bg-white border border-gray-200 rounded-lg p-5 mt-2 w-full"
+            style={{ maxWidth: scatterExpanded ? 'none' : '900px' }}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-800 mb-0.5">
+                Cycle Time Scatter
+                <InfoTooltip text="Each dot represents a completed item. The x-axis is the date it was completed; the y-axis is how many days it took (from last To Do → In Progress transition to done). Dashed lines show the median cycle time per team." />
+              </h3>
+              <ExpandChartButton expanded={scatterExpanded} onToggle={() => setScatterExpanded((e) => !e)} />
+            </div>
             <p className="text-xs text-gray-400 mb-3">Completed items over last {cycleTimeRangeDays} days</p>
 
             {noData || !scatterData ? (
@@ -433,102 +543,15 @@ export const FlowCharts: React.FC<FlowChartsProps> = ({
             <p className="text-sm text-gray-400 mt-2 w-full">No completed items in range.</p>
           ) : (
             <div className="flex flex-col gap-4 mt-2 w-full">
-              {histogramData.map((proj) => {
-                const yMax = histNiceMax(proj.maxCount);
-                const histYTicks = [0, Math.round(yMax / 2), yMax];
-                return (
-                  <div key={proj.projectKey} className="bg-white border border-gray-200 rounded-lg p-5">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: proj.color }}
-                      />
-                      <h3 className="text-sm font-semibold text-gray-800">{proj.projectKey}</h3>
-                      <span className="text-xs text-gray-400">
-                        {proj.total} item{proj.total !== 1 ? 's' : ''} · max {proj.maxCt}d
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mb-3">
-                      Cycle time distribution · last {cycleTimeRangeDays} days
-                    </p>
-                    <svg width="100%" viewBox={`0 0 ${HW} ${HH}`} style={{ display: 'block', overflow: 'visible' }}>
-                      {histYTicks.map((tick) => {
-                        const y = HPT + HPH - (tick / yMax) * HPH;
-                        return (
-                          <g key={tick}>
-                            <line x1={HPL} y1={y} x2={HPL + HPW} y2={y} stroke="#f3f4f6" strokeWidth="1" />
-                            <text x={HPL - 4} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">
-                              {tick}
-                            </text>
-                          </g>
-                        );
-                      })}
-
-                      <line x1={HPL} y1={HPT} x2={HPL} y2={HPT + HPH} stroke="#e5e7eb" strokeWidth="1" />
-                      <line x1={HPL} y1={HPT + HPH} x2={HPL + HPW} y2={HPT + HPH} stroke="#e5e7eb" strokeWidth="1" />
-
-                      {(() => {
-                        const dynBinW = proj.bins.length > 0 ? HPW / proj.bins.length : HPW / BIN_COUNT;
-                        const dynBarW = Math.max(dynBinW - 3, 1);
-                        return proj.bins.map((bin, i) => {
-                          const binX = HPL + i * dynBinW;
-                          const barX = binX + (dynBinW - dynBarW) / 2;
-                          const barH = yMax > 0 ? (bin.count / yMax) * HPH : 0;
-                          const barY = HPT + HPH - barH;
-                          const labelX = binX + dynBinW / 2;
-                          const labelY = HPT + HPH + 6;
-                          return (
-                            <g
-                              key={i}
-                              style={{ cursor: bin.count > 0 ? 'pointer' : 'default' }}
-                              onMouseEnter={(e) =>
-                                setHistBarTooltip({
-                                  clientX: e.clientX,
-                                  clientY: e.clientY,
-                                  label: bin.label,
-                                  count: bin.count,
-                                })
-                              }
-                              onMouseMove={(e) =>
-                                setHistBarTooltip((prev) =>
-                                  prev ? { ...prev, clientX: e.clientX, clientY: e.clientY } : prev,
-                                )
-                              }
-                              onMouseLeave={() => setHistBarTooltip(null)}
-                              onClick={() => {
-                                if (bin.count > 0) onHistogramBarClick?.(bin.issueKeys);
-                              }}
-                            >
-                              <rect x={barX} y={HPT} width={dynBarW} height={HPH} fill="transparent" />
-                              {bin.count > 0 && (
-                                <rect
-                                  x={barX}
-                                  y={barY}
-                                  width={dynBarW}
-                                  height={barH}
-                                  fill={proj.color}
-                                  fillOpacity="0.75"
-                                  rx="1"
-                                />
-                              )}
-                              <text
-                                x={labelX}
-                                y={labelY}
-                                textAnchor="end"
-                                fontSize="9"
-                                fill="#9ca3af"
-                                transform={`rotate(-45,${labelX},${labelY})`}
-                              >
-                                {bin.label}
-                              </text>
-                            </g>
-                          );
-                        });
-                      })()}
-                    </svg>
-                  </div>
-                );
-              })}
+              {histogramData.map((proj) => (
+                <HistogramCard
+                  key={proj.projectKey}
+                  proj={proj}
+                  cycleTimeRangeDays={cycleTimeRangeDays}
+                  onHistogramBarClick={onHistogramBarClick}
+                  setHistBarTooltip={setHistBarTooltip}
+                />
+              ))}
             </div>
           )}
         </TabPanel>
