@@ -111,7 +111,7 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData
         <TextField
           name="velocityPerSprint"
           type="number"
-          label="Velocity per sprint"
+          label="Capacity per sprint"
           unit="estimating units per sprint"
           min={1}
           register={register}

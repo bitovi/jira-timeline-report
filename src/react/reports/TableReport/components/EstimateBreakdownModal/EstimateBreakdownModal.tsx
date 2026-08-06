@@ -132,7 +132,7 @@ const EstimateBreakdownBody: FC<{ issue: EstimationIssue }> = ({ issue }) => {
             <div className="text-right">{round(issue.team?.pointsPerDayPerTrack, 2)}</div>
           </ValueColumn>
           <div className="text-center">=</div>
-          <ValueColumn title="Estimate Points Per Sprint">
+          <ValueColumn title="Capacity Per Sprint">
             <div className="text-right">{issue.team?.velocity}</div>
           </ValueColumn>
           <div>÷</div>
@@ -150,7 +150,7 @@ const EstimateBreakdownBody: FC<{ issue: EstimationIssue }> = ({ issue }) => {
             <CurrentAndPrevious issue={issue} valueKey="team.pointsPerDayPerTrack" />
           </ValueColumn>
           <div className="text-center">=</div>
-          <ValueColumn title="Estimate Points Per Sprint">
+          <ValueColumn title="Capacity Per Sprint">
             <CurrentAndPrevious issue={issue} valueKey="team.velocity" />
           </ValueColumn>
           <div>÷</div>
