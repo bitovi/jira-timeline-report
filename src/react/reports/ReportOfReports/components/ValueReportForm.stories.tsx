@@ -74,18 +74,38 @@ export default meta;
 
 type Story = StoryObj<typeof ValueReportForm>;
 
-/** At rest, before anything is picked — `+` is disabled and the field trigger reads "Field". */
+/**
+ * At rest, before anything is typed — `+` is disabled and both selects show their placeholders. The
+ * work-item list stays empty until two characters are typed, so there is nothing to show here yet.
+ */
 export const Resting: Story = {
   decorators: [withJira(makeJira(async () => suggestions))],
 };
 
-/** A suggestion lookup that never lands, so the select holds its spinner. */
+/** A suggestion lookup that never lands, so the select holds its spinner. Type two characters. */
 export const Loading: Story = {
   decorators: [withJira(makeJira(() => new Promise(() => {})))],
 };
 
 export const NoResults: Story = {
   decorators: [withJira(makeJira(async () => ({ sections: [] })))],
+};
+
+/**
+ * **Both menus have to paint above a modal.** These stories render the form on a bare page, where a
+ * clipped or under-layered menu still looks right — so review this one inside the real Add Report modal
+ * too. See the `menuAboveModal` styles for what goes wrong without them.
+ */
+export const InAModal: Story = {
+  decorators: [
+    withJira(makeJira(async () => suggestions)),
+    (Story) => (
+      <div className="rounded border border-neutral-301 bg-neutral-100 p-4 shadow-lg">
+        <h2 className="pb-3 text-lg font-semibold">Add Report</h2>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 /** A failed lookup must leave the form usable — the field half and `+` still work. */

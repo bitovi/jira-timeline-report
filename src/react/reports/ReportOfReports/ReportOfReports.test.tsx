@@ -193,11 +193,11 @@ const addReport = async (name: string) => {
 const addValue = async (opener: string, key: string, field: string) => {
   await clickAdd(opener);
 
-  fireEvent.change(await screen.findByRole('combobox'), { target: { value: key } });
+  fireEvent.change(await screen.findByLabelText('Work item'), { target: { value: key } });
   await userEvent.click(await screen.findByText(`${key} — ${key} summary`));
 
-  await userEvent.click(screen.getByText('Field'));
-  await userEvent.click(within(await screen.findByTestId('ror-field-popover')).getByText(field));
+  fireEvent.keyDown(screen.getByLabelText('Field'), { key: 'ArrowDown' });
+  await userEvent.click(await screen.findByText(field));
 
   await userEvent.click(screen.getByTestId('ror-value-add'));
 };

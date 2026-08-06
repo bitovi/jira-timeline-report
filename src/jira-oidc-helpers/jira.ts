@@ -109,6 +109,21 @@ export interface JiraIssuePickerResponse {
 }
 
 /**
+ * The scope the `cs` section searches. **Not optional, and not a refinement.**
+ *
+ * `currentJQL` names the set of issues the query term is matched against, and Jira's documented
+ * behaviour is that _"the query term is ignored if this parameter isn't provided"_ — so without it the
+ * response carries only `hs`, the caller's recently-viewed list, and a search for a work item you have
+ * never opened finds nothing while the same search after opening it in another tab succeeds. That is
+ * exactly the bug this constant fixes.
+ *
+ * A bare `order by` clause is a valid JQL matching every issue, which is the widest scope there is;
+ * `lastViewed` puts the familiar first among ties. Narrowing this (to the document's own project, say)
+ * is a real option later — it just can't be omitted.
+ */
+const PICKER_SCOPE = 'order by lastViewed DESC';
+
+/**
  * Work-item suggestions for a typeahead — the endpoint Jira's own issue pickers use.
  *
  * **Not a JQL search, because JQL cannot prefix-match a key.** `key` supports `=`, `in`, `>` and `<`
@@ -116,15 +131,15 @@ export interface JiraIssuePickerResponse {
  * express as a search, it is inexpressible. This endpoint takes a plain query string instead, which
  * also removes the JQL-escaping and 400-on-unparseable-input hazards a built query would carry.
  *
- * An empty query is legal and useful: the `hs` section is the caller's recently-viewed list, which is a
- * better resting state for a picker than a blank box.
+ * Returns two sections: `cs` is what matched the query within {@link PICKER_SCOPE}, `hs` is the
+ * caller's recently-viewed items. The caller merges them.
  *
  * See spec/016-report-of-reports/009-value-report-modal Phase 2.
  */
 export function fetchIssuePickerSuggestions(config: Config) {
   return (query: string): Promise<JiraIssuePickerResponse> => {
     return config.requestHelper(
-      `/api/3/issue/picker?${new URLSearchParams({ query })}`,
+      `/api/3/issue/picker?${new URLSearchParams({ query, currentJQL: PICKER_SCOPE })}`,
     ) as unknown as Promise<JiraIssuePickerResponse>;
   };
 }

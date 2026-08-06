@@ -11,10 +11,23 @@ export interface WorkItemSuggestion {
 export interface WorkItemSearchState {
   suggestions: WorkItemSuggestion[];
   isLoading: boolean;
+  /** Something is typed, but not yet enough to search on. */
+  isTooShort: boolean;
 }
 
 /** Long enough that a typed key doesn't fire five requests, short enough not to feel laggy. */
 const DEBOUNCE_MS = 300;
+
+/**
+ * Below this, the picker asks nothing and shows nothing.
+ *
+ * It used to ask on the empty query too, for the `hs` recently-viewed section, on the theory that a
+ * populated resting list beats a blank box. In use that read as a mystery: the list is neither
+ * everything nor what you typed, so a work item you had opened in another tab appeared while one you
+ * hadn't did not, with nothing on screen explaining the difference. A picker that stays empty until you
+ * type is less clever and much easier to trust.
+ */
+const MIN_QUERY_LENGTH = 2;
 
 /**
  * Work-item suggestions for the Value Report typeahead.
@@ -25,11 +38,8 @@ const DEBOUNCE_MS = 300;
  * stale response that lands after a newer one. The cost is that the select becomes controlled on
  * `inputValue`, which the form does anyway.
  *
- * **Never disabled, deliberately.** On an empty query the picker endpoint returns the caller's
- * recently-viewed items in its `hs` section, which is a better resting state than a blank box — so the
- * empty query is a real question worth asking, not a case to skip. `useDebounce` seeds from its initial
- * value, so that first ask happens on mount rather than 300ms later, which is what you want for a list
- * the user hasn't typed towards yet.
+ * **Nothing until {@link MIN_QUERY_LENGTH} characters**, so the list is only ever what the user asked
+ * for.
  *
  * `useQuery`, not `useSuspenseQuery`: a failed suggestion lookup must leave the modal usable. The
  * caller can still type nothing and pick a field; it just gets no help choosing the work item.
@@ -38,10 +48,14 @@ const DEBOUNCE_MS = 300;
  */
 export const useWorkItemSearch = (query: string): WorkItemSearchState => {
   const jira = useJira();
-  const debounced = useDebounce(query.trim(), DEBOUNCE_MS);
+  const trimmed = query.trim();
+  const debounced = useDebounce(trimmed, DEBOUNCE_MS);
+
+  const isSearchable = debounced.length >= MIN_QUERY_LENGTH;
 
   const { data, isFetching } = useQuery({
     queryKey: jiraKeys.workItemSuggestions(debounced),
+    enabled: isSearchable,
     queryFn: async () => {
       const response = await jira.fetchIssuePickerSuggestions(debounced);
 
@@ -67,9 +81,12 @@ export const useWorkItemSearch = (query: string): WorkItemSearchState => {
   });
 
   return {
-    suggestions: data ?? [],
-    // `isFetching`, not `isPending`: a re-query for a new term should show the spinner even though
-    // the previous term's results are still on screen.
-    isLoading: isFetching || query.trim() !== debounced,
+    suggestions: isSearchable ? (data ?? []) : [],
+    // `isFetching`, not `isPending`: a re-query for a new term should show the spinner even though the
+    // previous term's results are still on screen. The second clause covers the debounce window, so a
+    // keystroke doesn't leave the field looking settled on the results of the term before it.
+    isLoading: isSearchable && (isFetching || trimmed !== debounced),
+    /** So the caller can say "keep typing" rather than "no results" for a one-character query. */
+    isTooShort: trimmed.length > 0 && trimmed.length < MIN_QUERY_LENGTH,
   };
 };

@@ -33,10 +33,10 @@ const section = (id: string, keys: string[]): JiraIssuePickerSection => ({
 });
 
 const Probe: FC<{ query: string }> = ({ query }) => {
-  const { suggestions, isLoading } = useWorkItemSearch(query);
+  const { suggestions, isLoading, isTooShort } = useWorkItemSearch(query);
 
   return (
-    <div data-testid="state" data-loading={isLoading}>
+    <div data-testid="state" data-loading={isLoading} data-too-short={isTooShort}>
       {suggestions.map((s) => `${s.key}|${s.summary}`).join(',')}
     </div>
   );
@@ -99,26 +99,31 @@ describe('useWorkItemSearch', () => {
   });
 
   it('collapses keystrokes into one request', async () => {
-    // Mounts empty, as the real form does, so the first entry below is the recently-viewed query.
+    // Mounts empty, as the real form does.
     const { retype } = renderProbe(
       '',
       makeJira(() => ({ sections: [section('cs', ['ABC-1'])] })),
     );
 
-    retype('A');
     retype('AB');
     retype('ABC');
+    retype('ABC-');
 
     await act(async () => {
       vi.advanceTimersByTime(300);
     });
     await settled();
 
-    expect(queries).toEqual(['', 'ABC']);
+    expect(queries).toEqual(['ABC-']);
   });
 
-  it('asks on the empty query too, for the recently-viewed list', async () => {
-    renderProbe(
+  /**
+   * It used to ask on the empty query, for the `hs` recently-viewed section, on the theory that a
+   * populated resting list beats a blank box. In use that read as a mystery list — neither everything
+   * nor what you typed — so it now asks nothing until there is something to search on.
+   */
+  it('asks nothing until the query is long enough to search on', async () => {
+    const { retype } = renderProbe(
       '',
       makeJira(() => ({ sections: [section('hs', ['RECENT-1'])] })),
     );
@@ -126,15 +131,25 @@ describe('useWorkItemSearch', () => {
     await act(async () => {
       vi.advanceTimersByTime(300);
     });
-    await settled();
 
-    expect(queries).toEqual(['']);
-    expect(state()).toHaveTextContent('RECENT-1|Summary of RECENT-1');
+    expect(queries).toEqual([]);
+    expect(state()).toHaveTextContent('');
+    expect(state()).toHaveAttribute('data-loading', 'false');
+
+    retype('A');
+
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(queries).toEqual([]);
+    // Not "no results" — there is a difference between asked-and-found-nothing and not-asked-yet.
+    expect(state()).toHaveAttribute('data-too-short', 'true');
   });
 
   it('reports loading while the typed query is still ahead of the debounced one', async () => {
     const { retype } = renderProbe(
-      '',
+      'ABC',
       makeJira(() => ({ sections: [] })),
     );
 
@@ -143,7 +158,7 @@ describe('useWorkItemSearch', () => {
     });
     await settled();
 
-    retype('ABC');
+    retype('ABCD');
 
     // Nothing has been asked yet, but the field must not look settled on stale results.
     expect(state()).toHaveAttribute('data-loading', 'true');

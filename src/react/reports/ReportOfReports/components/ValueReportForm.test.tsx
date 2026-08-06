@@ -19,10 +19,15 @@ vi.mock('../../../services/jira/useJiraIssueFields', () => ({
   useJiraIssueFields: () => catalog,
 }));
 
+/** Every query that actually reached Jira — the "don't ask on one character" assertion reads this. */
+let queries: string[] = [];
+
 const jira = {
-  fetchIssuePickerSuggestions: async () => ({
-    sections: [{ id: 'cs', issues: [{ key: 'ABC-1', summaryText: 'Migrate auth to OIDC' }] }],
-  }),
+  fetchIssuePickerSuggestions: async (query: string) => {
+    queries.push(query);
+
+    return { sections: [{ id: 'cs', issues: [{ key: 'ABC-1', summaryText: 'Migrate auth to OIDC' }] }] };
+  },
 } as unknown as Jira;
 
 const renderForm = () => {
@@ -48,18 +53,23 @@ const addButton = () => screen.getByTestId('ror-value-add');
 
 const pickWorkItem = async () => {
   // Typing is what opens react-select's menu; the suggestion list is fetched, so the option has to
-  // arrive before it can be clicked.
-  fireEvent.change(screen.getByRole('combobox'), { target: { value: 'ABC' } });
+  // arrive before it can be clicked. `fireEvent`, not `userEvent`: the menu portals to `document.body`
+  // and repositions as it opens, which `userEvent.type`'s per-keystroke awaits can type across.
+  fireEvent.change(screen.getByLabelText('Work item'), { target: { value: 'ABC' } });
   fireEvent.click(await screen.findByText('ABC-1 — Migrate auth to OIDC'));
 };
 
 const pickField = (label: string) => {
-  fireEvent.click(screen.getByText('Field'));
+  fireEvent.keyDown(screen.getByLabelText('Field'), { key: 'ArrowDown' });
   fireEvent.click(screen.getByText(label));
 };
 
 // See spec/016-report-of-reports/009-value-report-modal Phase 4.
 describe('<ValueReportForm>', () => {
+  beforeEach(() => {
+    queries = [];
+  });
+
   it('keeps + disabled until both halves are chosen', async () => {
     renderForm();
 
@@ -108,6 +118,23 @@ describe('<ValueReportForm>', () => {
     fireEvent.click(addButton());
 
     await waitFor(() => expect(addButton()).toBeDisabled());
-    expect(screen.getByText('Field')).toBeInTheDocument();
+    // Both selects are back to their placeholders — neither the picked field nor the picked work item
+    // is still displayed anywhere.
+    expect(screen.queryByText('Summary')).not.toBeInTheDocument();
+    expect(screen.queryByText(/ABC-1/)).not.toBeInTheDocument();
+  });
+
+  // The picker used to ask on every query including the empty one, whose `hs` section is the caller's
+  // recently-viewed list — which read as a mystery list, since it is neither everything nor what you
+  // typed. See `useWorkItemSearch`'s MIN_QUERY_LENGTH.
+  it('shows nothing until enough is typed to search on', async () => {
+    renderForm();
+
+    expect(queries).toEqual([]);
+
+    fireEvent.change(screen.getByLabelText('Work item'), { target: { value: 'A' } });
+
+    expect(await screen.findByText('Keep typing…')).toBeInTheDocument();
+    expect(queries).toEqual([]);
   });
 });

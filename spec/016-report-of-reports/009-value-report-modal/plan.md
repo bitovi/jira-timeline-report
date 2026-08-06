@@ -398,6 +398,42 @@ Net expectation: the suite shrinks. If it doesn't, something was rewritten that 
   disruptive to the existing keyboard flow) and let Tab reach the value row. Called out because it is easy to
   ship an accidental answer here.
 
+## Reversed after implementation
+
+Three things this plan got wrong, found in the app rather than in the tests. Recorded here rather than
+edited into the phases above, so the reasoning stays readable — 007 § Reversed after implementation is
+the model.
+
+**`currentJQL` is not optional.** § Out of scope below lists "scoping suggestions with the picker's
+`currentJQL` parameter" as a later refinement. It isn't a refinement: Jira ignores the query term
+entirely when `currentJQL` is absent, so the response carries only its `hs` recently-viewed section. The
+symptom was precise and baffling — searching `SUNNYSUSHI-61` found nothing, and then found it after the
+work item was opened in another browser tab. `jira.ts` now always sends `order by lastViewed DESC`, a
+bare `order by` being a valid JQL matching every issue. Narrowing that scope is still a later option.
+
+**The empty query is not a good resting state.** Phase 2 enables the search on the empty query
+deliberately, to show recently-viewed items before anything is typed. In use that list is unexplainable:
+it is neither everything nor what you typed, and it made the `currentJQL` bug above much harder to see —
+some searches appeared to work. The picker now asks nothing below two characters and says _"Keep
+typing…"_, which is duller and honest. `useWorkItemSearch` gains `MIN_QUERY_LENGTH` and an `isTooShort`
+flag so the caller can tell "asked and found nothing" from "haven't asked".
+
+**The field picker is an `@atlaskit/select`, not the `SearchablePicker`.** Phase 1 extracted Table's
+`+ Add column` popover so both callers could share one control. Inside a modal it was wrong twice: its
+Tailwind-styled trigger doesn't read as a sibling of the Atlaskit select beside it, and `@atlaskit/popup`
+renders _behind_ `@atlaskit/modal-dialog`. Two selects are consistent by construction, and react-select's
+`menuPortalTarget` plus an explicit `zIndex` layers correctly — needed on **both** selects, since an
+un-portaled menu is clipped by the modal body's scroll container instead.
+
+That leaves `SearchablePicker` with one caller. The extraction is kept: it is a pure move, it gave
+Table's popover the unit tests it never had, and it is where a second non-modal caller should still go.
+Reverting it is a clean single-commit revert if that reads as dead weight later.
+
+Also corrected, too small for its own note: Phase 4 specifies `filterOption={() => false}` to mean "the
+server already filtered". In react-select a predicate **excludes** options, so that renders a
+permanently empty menu; `filterOption={null}` is what disables filtering. Caught by
+`ValueReportForm.test.tsx` before it ran anywhere.
+
 ## Out of scope
 
 Editing a value node by any means; scoping suggestions with the picker's `currentJQL` parameter; multi-add
