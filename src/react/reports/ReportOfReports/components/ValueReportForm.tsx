@@ -124,10 +124,18 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
       </Field>
       {/* A labelled button rather than a bare `+`. An unlabelled icon has to be guessed at, and its
           disabled state — which is the only validation this form has — reads as decoration rather than
-          as "you are not done yet". */}
-      <Button appearance="primary" testId="ror-value-add" isDisabled={!canAdd} onClick={handleAdd}>
-        Add
-      </Button>
+          as "you are not done yet".
+
+          `h-10` because an Atlaskit button is 32px and an Atlaskit select is 40px (`styles.js:79`), so
+          the two don't line up on their own — bottom-aligning a shorter control just makes it look
+          dropped. The child selector is how the height reaches the button: `Button` doesn't forward
+          `className`, and Tailwind's `.foo > button` beats emotion's single-class rule on specificity
+          whichever order they load in. */}
+      <div className="[&>button]:h-10">
+        <Button appearance="primary" testId="ror-value-add" isDisabled={!canAdd} onClick={handleAdd}>
+          Add
+        </Button>
+      </div>
     </div>
   );
 };

@@ -94,7 +94,12 @@ export const AddReportModal: FC<AddReportModalProps> = ({
                 header and footer use, so the band reads as a band. Its padding is its own. */}
             <section className="border-y border-neutral-301 px-6 py-4">
               <SectionLabel>Value Report</SectionLabel>
-              <ValueReportForm onAdd={onAddValue} />
+              {/* The band's own label and the first input's label are both small and grey, so with no
+                  gap they read as one two-line label rather than as a heading over a form. Spaced here
+                  rather than on `SectionLabel`, which the Saved Report half positions differently. */}
+              <div className="pt-3">
+                <ValueReportForm onAdd={onAddValue} />
+              </div>
             </section>
 
             <div className="flex items-baseline justify-between gap-4 px-6 pb-1 pt-4">

@@ -56,7 +56,9 @@ const pickWorkItem = async () => {
   // arrive before it can be clicked. `fireEvent`, not `userEvent`: the menu portals to `document.body`
   // and repositions as it opens, which `userEvent.type`'s per-keystroke awaits can type across.
   fireEvent.change(screen.getByLabelText('Work item'), { target: { value: 'ABC' } });
-  fireEvent.click(await screen.findByText('ABC-1 — Migrate auth to OIDC'));
+  // 3s, not the 1s default — the typeahead debounces 300ms of real time before it asks, which leaves
+  // too little of the default budget under full-suite load. See the same note in ReportOfReports.test.
+  fireEvent.click(await screen.findByText('ABC-1 — Migrate auth to OIDC', undefined, { timeout: 3000 }));
 };
 
 const pickField = (label: string) => {

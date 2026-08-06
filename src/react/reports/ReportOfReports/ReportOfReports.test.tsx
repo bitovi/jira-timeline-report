@@ -194,7 +194,10 @@ const addValue = async (opener: string, key: string, field: string) => {
   await clickAdd(opener);
 
   fireEvent.change(await screen.findByLabelText('Work item'), { target: { value: key } });
-  await userEvent.click(await screen.findByText(`${key} — ${key} summary`));
+  // 3s, not the 1s default: the typeahead debounces 300ms of REAL time before it even asks, and under
+  // full-suite load the remaining budget isn't enough for the query and two renders. This failed once
+  // in a pre-commit run and passed on every re-run, which is the signature.
+  await userEvent.click(await screen.findByText(`${key} — ${key} summary`, undefined, { timeout: 3000 }));
 
   fireEvent.keyDown(screen.getByLabelText('Field'), { key: 'ArrowDown' });
   await userEvent.click(await screen.findByText(field));
