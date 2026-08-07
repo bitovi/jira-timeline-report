@@ -27,7 +27,9 @@ import { TableReport } from './TableReport';
 const mockFields: IssueFields = [
   { name: 'Story Points', key: 'customfield_1', schema: { type: 'number' }, id: 'customfield_1', custom: true },
   { name: 'Status', key: 'status', schema: { type: 'string' }, id: 'status', custom: false },
-  { name: 'Priority', key: 'priority', schema: { type: 'string' }, id: 'priority', custom: false },
+  // Priority is object-valued in raw Jira (`{ name, iconUrl, id }`) and typed `priority`, not
+  // `string` — the stories carry the real shape so the object-label rendering is exercised here.
+  { name: 'Priority', key: 'priority', schema: { type: 'priority' }, id: 'priority', custom: false },
   // Object-valued / derived concepts (issues-plan.md #3/#4): Parent is object-valued in raw Jira,
   // Team isn't a raw field at all — both are sourced from the normalized issue.
   { name: 'Parent', key: 'parent', schema: { type: 'string' }, id: 'parent', custom: false },
@@ -117,7 +119,8 @@ const makeFlatIssue = (
       fields: {
         'Issue Type': { iconUrl: '' },
         Status: status,
-        Priority: priority,
+        // Object-valued, as Jira actually sends it — the column reads its `name`.
+        Priority: { name: priority, iconUrl: '', id: priority },
         'Story Points': points,
         'Due date': dueDate,
       },

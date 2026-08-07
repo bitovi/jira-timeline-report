@@ -132,10 +132,15 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
           `className`, and Tailwind's `.foo > button` beats emotion's single-class rule on specificity
           whichever order they load in.
 
+          `items-center` goes with the height, and has to: the button lays its label out with
+          `align-items: baseline` (`use-button-base.js:32`), which centres the text only at the 32px
+          height it ships with. Stretching the box to 40px leaves the baseline where it was, so the
+          label sits high in the taller button until this overrides it.
+
           The 5px of padding under it lifts the button off the row's bottom edge: `items-end` aligns the
           two boxes exactly, but a select's visual weight sits above its border box, so matched edges
           still read as the button hanging low. Measured by eye, hence the odd value. */}
-      <div className="pb-[5px] [&>button]:h-10">
+      <div className="[&>button]:h-10 [&>button]:items-center">
         <Button appearance="primary" testId="ror-value-add" isDisabled={!canAdd} onClick={handleAdd}>
           Add
         </Button>
