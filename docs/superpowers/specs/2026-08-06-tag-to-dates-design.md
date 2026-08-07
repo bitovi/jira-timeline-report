@@ -72,6 +72,7 @@ src/utils/date/half-quarters.test.ts  NEW   vitest
 src/utils/date/round.test.ts          NEW   roundDate.halfQuarter regression test
 src/utils/date/round.js               MOD   -11 lines, +1 import
 server/tag-to-dates.js                NEW   express handler, no date math
+server/tag-to-dates.test.js           NEW   handler branching, fake res
 server/server.js                      MOD   +1 route, +1 import
 .dockerignore                         MOD   comment: server/ imports from src/
 ```
@@ -188,8 +189,12 @@ Assertions are on exact ISO strings, which makes them timezone-proof by construc
 insurance, since `round.js` has no tests today and this change touches a path four report surfaces
 depend on.
 
-No route-level tests. There is no server test infrastructure and no `supertest` dependency; the
-handler is kept thin enough that the module tests carry the weight. Revisit if the handler grows.
+`server/tag-to-dates.test.js` covers the handler's own branching — both tags, neither tag, no body,
+and input containing no tag — by calling it as a plain function with a stand-in `res` that records
+`status`/`json`. This needs no HTTP server and no `supertest` dependency.
+
+Full HTTP-level tests are still out of scope; the route registration itself is verified by booting
+the server and exercising the endpoint with curl.
 
 `ci.yaml:20-22` runs `typecheck`, `build`, and `test` on every PR, so these are enforced.
 

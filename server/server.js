@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { fetchTokenWithAccessCode } from './helper.js';
 import cors from 'cors';
 import { logger } from './logger.js';
+import tagToDates from './tag-to-dates.js';
 
 // configurations
 dotenv.config();
@@ -64,6 +65,8 @@ app.post('/domain', async (req, res) => {
 
   res.status(204).send();
 });
+
+app.post('/tag-to-dates', tagToDates);
 
 // Start server
 app.listen(port, () => console.log(`Server is listening on port ${port}!`));

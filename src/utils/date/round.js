@@ -1,14 +1,4 @@
-// HALF QUARTER
-const HALF_QUARTERS = [
-  [1, 1], // Jan 1
-  [2, 15], // Feb 15
-  [4, 1], // Apr 1
-  [5, 15], // May 15
-  [7, 1], // Jul 1
-  [8, 15], // Aug 15
-  [10, 1], // Oct 1
-  [11, 15], // Nov 15
-];
+import { HALF_QUARTERS } from './half-quarters.js';
 
 /**
  * Aligns a date to the Monday on or before the current date.
