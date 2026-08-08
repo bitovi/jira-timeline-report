@@ -18,6 +18,7 @@
  * group is aggregated via `aggregateGroup(members.map(column.getValue), [reducer])`.
  */
 import { aggregateGroup } from './aggregate';
+import { fieldValueText } from './fieldValueText';
 import { createStableObjectKey, groupByKeys } from './group';
 
 import { aggregations } from './aggregations';
@@ -42,16 +43,16 @@ export type AggregationOverrides = Record<string, AggregationId>;
 /** The label shown for an empty / missing group value. */
 export const EMPTY_GROUP_LABEL = '(empty)';
 
-/** Format a grouped-column value into a header label. */
+/**
+ * Format a grouped-column value into a header label, falling back to {@link EMPTY_GROUP_LABEL} for
+ * anything that has no text (missing, empty, or an unlabellable object). Object-valued fields resolve
+ * via the shared {@link fieldValueText} — which is what lets grouping by Assignee show a person's
+ * name rather than `[object Object]` (`displayName` is not a key this used to look for).
+ */
 export function formatGroupLabel(value: unknown): string {
   if (value == null || value === '') return EMPTY_GROUP_LABEL;
   if (Array.isArray(value)) return value.length === 0 ? EMPTY_GROUP_LABEL : value.map(formatGroupLabel).join(', ');
-  if (typeof value === 'object') {
-    const named = value as { name?: unknown; value?: unknown };
-    if (named.name != null) return String(named.name);
-    if (named.value != null) return String(named.value);
-  }
-  return String(value);
+  return fieldValueText(value) || EMPTY_GROUP_LABEL;
 }
 
 /**

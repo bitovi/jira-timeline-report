@@ -49,7 +49,10 @@ export const NO_CHILD_QUERY_GROUPS: ChildQueryGroups = new Map();
  * for a Gantt beside a card board, whose requests are byte-identical anyway, and one whole fetch the
  * moment such a document gains a Table.
  *
- * `InlineValueNode` and `UnknownNode` are skipped — neither issues an issue request. An unresolvable
+ * `InlineValueNode` and `UnknownNode` are skipped — neither renders a `ChildReport`, so neither has a
+ * child query to group. An inline value *does* fetch (a one-row search, and a comment request on top of
+ * it for a `latestComment` one — spec/016-report-of-reports/007-latest-comment-report), but not through
+ * `getRawIssues`, so it has no field projection to widen and nothing here can help it. An unresolvable
  * `reportId` is skipped too: it renders `MissingReportNote` instead of a `ChildReport`, so it never
  * fetches and must not pull a field into a union or turn a singleton into a group.
  */

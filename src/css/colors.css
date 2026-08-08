@@ -196,6 +196,17 @@
   background-color: var(--slate-300-color);
 }
 
+/* Report-of-reports sections. Deliberately plain classes rather than a dynamic `bg-${color}`
+   utility, which Tailwind's static scanner would never emit. Both sit before `@tailwind utilities`,
+   so a section's transient `bg-blue-101` add-target tint still wins on source order. */
+.color-bg-section {
+  background-color: var(--section-color);
+}
+
+.color-text-section {
+  color: var(--section-text-color);
+}
+
 .drop-shadow-sm {
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }

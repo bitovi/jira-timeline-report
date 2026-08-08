@@ -41,6 +41,7 @@ at rest and at most 4 on the node under the pointer.
   rows get no hover hit-area and no text cursor, so they never look editable.
 - **"Add Value" is parked.** The add row goes back to two buttons (Add Section, Add Report). Existing
   `inline-report` nodes still render and still round-trip; they just can't be created from the UI.
+  **Reversed after the fact — see § Add Value, unparked.**
 - **"Selected row" == the click-pinned row** from §5 of the notes. One at a time, cleared by outside
   click or Escape. No selection model, no keyboard navigation.
 - **Collapse state is ephemeral** (React state, lost on reload) — persisting it would be a schema change,
@@ -359,10 +360,36 @@ and nothing else does.
 an opacity change by design — the buttons stay focusable, which is the keyboard path — so there is nothing
 for a DOM query to observe otherwise.
 
+## Add Value, unparked
+
+The parking above is reversed. Nothing was restored, because nothing had been removed: 003-self-reports
+and this redesign landed in the same commit (`06d13bc1`), so the button was designed in 003 and dropped
+here before it ever reached git — there was no commented-out code and no revert to make. What the parking
+actually cost was ten lines of JSX; everything beneath them stayed live the whole time, which is what the
+risk note above predicted and what the 003 unit tests kept honest.
+
+- `AddContentRow.tsx` carries a third `AddButton`, wired to `inlineValueNode('')` + `beginEditing` — the
+  same two calls "Add Section" makes. Accessible name `Add Value` / `Add Value to <container>`, matching
+  its siblings.
+- **No depth cap on it.** `canAddSectionAt` gates "Add Section" because a section deepens the tree; a
+  value holds nothing, so it is offered at every level including `MAX_SECTION_DEPTH`.
+- Order is Add Report, Add Section, Add Value — the new one last, so no existing document-order
+  assertion moves.
+- 003's note still stands: if three buttons per level reads as crowded, the fix is one `Add ▾` split
+  button, not dropping a level's affordance.
+- `adds a blank value with its field already focused` is back (the one test this plan deleted, for
+  testing only the button). The two tests it rewrote to seed `inline-value` nodes from storage stay as
+  they are — seeding is the better test of what a saved document does, and they cover the round-trip the
+  button doesn't touch. 71 tests in `ReportOfReports.test.tsx`.
+- `npm run typecheck` and `npm test` (1717 passing, 2 todo) clean. Not yet exercised against real Jira —
+  see below.
+
 ### Still open
 
 - The credentialed walkthrough in **Verification** above, including the print check. Nothing here can be
-  exercised against real Jira without `npm start` and credentials.
+  exercised against real Jira without `npm start` and credentials. **Add Value now belongs in that pass:**
+  create a value from the button at the root and inside a section, confirm the field opens focused, and
+  confirm the expression resolves against a real issue.
 - Charts inside a collapsed section are `display: none` while hidden. Content is drawn before the collapse
   and the SVG survives it, but a resize observer that fires at zero width could redraw wrong — worth a
   look during the credentialed pass, and not something jsdom or Storybook can tell us.

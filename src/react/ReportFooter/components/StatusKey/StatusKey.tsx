@@ -13,17 +13,21 @@ const StatusKey: FC = () => {
         <ItemStatus icon="→">Dates are in the future outside this view</ItemStatus>
       </div>
       <div className="flex gap-x-1">
-        {theme.map(({ backgroundCssVar, textCssVar, label }) => (
-          <Lozenge
-            key={label}
-            style={{
-              backgroundColor: `var(${backgroundCssVar})`,
-              color: `var(${textCssVar})`,
-            }}
-          >
-            {label}
-          </Lozenge>
-        ))}
+        {/* Statuses only — the theme also carries non-status entries (the report-of-reports section
+            background), and those are not legend items. */}
+        {theme
+          .filter(({ group }) => group === 'status')
+          .map(({ backgroundCssVar, textCssVar, label }) => (
+            <Lozenge
+              key={label}
+              style={{
+                backgroundColor: `var(${backgroundCssVar})`,
+                color: `var(${textCssVar})`,
+              }}
+            >
+              {label}
+            </Lozenge>
+          ))}
       </div>
     </div>
   );

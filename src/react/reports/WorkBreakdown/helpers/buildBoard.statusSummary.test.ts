@@ -13,7 +13,9 @@ const primary = (over: Partial<IssueOrRelease>): IssueOrRelease => ({
 describe('buildBoard statusSummary', () => {
   it('populates card.statusSummary from a plain-string statusSummary', () => {
     const card = buildBoard([primary({ statusSummary: 'Ahead of plan' })], [], 'status').cards[0];
-    expect(card.statusSummary?.blocks).toEqual([{ type: 'paragraph', text: 'Ahead of plan' }]);
+    expect(card.statusSummary?.blocks).toEqual([
+      { type: 'paragraph', content: [{ type: 'text', text: 'Ahead of plan' }] },
+    ]);
   });
 
   it('populates card.statusSummary from an ADF statusSummary, preserving list structure', () => {
@@ -31,8 +33,12 @@ describe('buildBoard statusSummary', () => {
     };
     const card = buildBoard([primary({ statusSummary: adf })], [], 'status').cards[0];
     expect(card.statusSummary?.blocks).toEqual([
-      { type: 'paragraph', text: 'Blocked on vendor' },
-      { type: 'orderedList', start: 1, items: [[{ type: 'paragraph', text: 'Escalate' }]] },
+      { type: 'paragraph', content: [{ type: 'text', text: 'Blocked on vendor' }] },
+      {
+        type: 'orderedList',
+        start: 1,
+        items: [[{ type: 'paragraph', content: [{ type: 'text', text: 'Escalate' }] }]],
+      },
     ]);
   });
 

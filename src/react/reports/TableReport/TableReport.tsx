@@ -60,6 +60,7 @@ import { aggregations, isNumericAggregation } from './model/aggregations';
 import { bucketedDateColumn, DATE_GRANULARITIES } from './model/dateBucketing';
 import { buildCrossTab, cellMembers, cellValue, effectiveMeasures, TOTAL_KEY, TOTAL_LABEL } from './model/crosstab';
 import { isNumericColumn } from './model/columns';
+import { fieldValueText } from './model/fieldValueText';
 import { ColumnHeaderMenu } from './components/ColumnHeaderMenu';
 
 import type { DerivedIssue } from '../../../jira/derived/derive';
@@ -206,8 +207,11 @@ function toHierarchyIssue(issue: RollupIssue): TableIssue {
 function distinctValues(column: ColumnDefinition, issues: TableIssue[]): string[] {
   const seen = new Set<string>();
   for (const issue of issues) {
-    const raw = column.getValue(issue);
-    if (raw != null && raw !== '') seen.add(String(raw));
+    // `fieldValueText` matches what the cell shows and what the `select` filter predicate compares
+    // against, so an object-valued column offers real choices ("High", "Arthur Pankiewicz") rather
+    // than a single "[object Object]" entry that every row would match.
+    const text = fieldValueText(column.getValue(issue));
+    if (text !== '') seen.add(text);
   }
   return [...seen].sort((a, b) => a.localeCompare(b));
 }

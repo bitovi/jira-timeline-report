@@ -61,6 +61,16 @@ describe('aggregation reducers', () => {
     expect(run('distinct', [['AITEST', ''], []])).toEqual(['AITEST']);
     expect(run('distinct', [[], [], []])).toEqual([]);
   });
+
+  test('distinct lists object-valued items by their label, not "[object Object]"', () => {
+    // Every Assignee/Priority object used to stringify identically, so a whole group collapsed to a
+    // single "[object Object]" entry.
+    expect(run('distinct', [{ displayName: 'Arthur' }, { displayName: 'Justin' }, { displayName: 'Arthur' }])).toEqual([
+      'Arthur',
+      'Justin',
+    ]);
+    expect(run('distinct', [{ name: 'High' }, { name: 'Low' }])).toEqual(['High', 'Low']);
+  });
 });
 
 describe('catalog shape', () => {

@@ -49,6 +49,101 @@ export function fetchJiraIssue(config: Config) {
   };
 }
 
+/** One comment as the comment endpoint returns it. `body` is an ADF document. */
+export interface JiraComment {
+  id?: string;
+  body?: unknown;
+  author?: { displayName?: string };
+  created?: string;
+  updated?: string;
+}
+
+export interface JiraCommentsPage {
+  comments?: JiraComment[];
+  total?: number;
+  startAt?: number;
+  maxResults?: number;
+}
+
+/**
+ * The newest comment on one work item.
+ *
+ * Asks the comment sub-resource rather than putting `comment` in a search's `fields`, on correctness:
+ * **Jira returns comments oldest-first**, and the page embedded in a search response is capped, so
+ * `comments.at(-1)` there can be the newest of the *oldest* N — silently wrong, and wrong exactly on
+ * the busy work items most likely to be worth quoting. `orderBy=-created&maxResults=1` makes Jira
+ * responsible for the ordering instead.
+ *
+ * Same issue-subresource shape as {@link fetchJiraChangelog}. It cannot be grouped with a document's
+ * other requests — it is not an issue search, so it was never a candidate for `childQueryGroups`.
+ * See spec/016-report-of-reports/007-latest-comment-report Phase 2.
+ */
+export function fetchLatestComment(config: Config) {
+  return (issueIdOrKey: string): Promise<JiraCommentsPage> => {
+    return config.requestHelper(
+      `/api/3/issue/${issueIdOrKey}/comment?` +
+        new URLSearchParams({ orderBy: '-created', maxResults: '1' }).toString(),
+    ) as unknown as Promise<JiraCommentsPage>;
+  };
+}
+
+/** One suggestion from the issue picker. `summaryText` is the plain summary; `summary` is HTML. */
+export interface JiraIssuePickerIssue {
+  id?: number;
+  key?: string;
+  keyHtml?: string;
+  summary?: string;
+  summaryText?: string;
+  img?: string;
+}
+
+/** `id` is `hs` for recently-viewed history and `cs` for the current search. */
+export interface JiraIssuePickerSection {
+  id?: string;
+  label?: string;
+  issues?: JiraIssuePickerIssue[];
+}
+
+export interface JiraIssuePickerResponse {
+  sections?: JiraIssuePickerSection[];
+}
+
+/**
+ * The scope the `cs` section searches. **Not optional, and not a refinement.**
+ *
+ * `currentJQL` names the set of issues the query term is matched against, and Jira's documented
+ * behaviour is that _"the query term is ignored if this parameter isn't provided"_ — so without it the
+ * response carries only `hs`, the caller's recently-viewed list, and a search for a work item you have
+ * never opened finds nothing while the same search after opening it in another tab succeeds. That is
+ * exactly the bug this constant fixes.
+ *
+ * A bare `order by` clause is a valid JQL matching every issue, which is the widest scope there is;
+ * `lastViewed` puts the familiar first among ties. Narrowing this (to the document's own project, say)
+ * is a real option later — it just can't be omitted.
+ */
+const PICKER_SCOPE = 'order by lastViewed DESC';
+
+/**
+ * Work-item suggestions for a typeahead — the endpoint Jira's own issue pickers use.
+ *
+ * **Not a JQL search, because JQL cannot prefix-match a key.** `key` supports `=`, `in`, `>` and `<`
+ * only; there is no `key ~ "ABC-1*"`, so "suggest as the user types a key" is not merely awkward to
+ * express as a search, it is inexpressible. This endpoint takes a plain query string instead, which
+ * also removes the JQL-escaping and 400-on-unparseable-input hazards a built query would carry.
+ *
+ * Returns two sections: `cs` is what matched the query within {@link PICKER_SCOPE}, `hs` is the
+ * caller's recently-viewed items. The caller merges them.
+ *
+ * See spec/016-report-of-reports/009-value-report-modal Phase 2.
+ */
+export function fetchIssuePickerSuggestions(config: Config) {
+  return (query: string): Promise<JiraIssuePickerResponse> => {
+    return config.requestHelper(
+      `/api/3/issue/picker?${new URLSearchParams({ query, currentJQL: PICKER_SCOPE })}`,
+    ) as unknown as Promise<JiraIssuePickerResponse>;
+  };
+}
+
 // JQL autocomplete (powers @atlaskit/jql-editor). These return the raw Jira
 // `/jql/autocompletedata` response shapes; the atlaskit-specific mapping lives in the
 // consuming hook (useJqlAutocompleteProvider). `requestHelper` supplies base URL + OIDC auth.

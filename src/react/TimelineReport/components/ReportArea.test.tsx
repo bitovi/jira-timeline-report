@@ -25,6 +25,15 @@ describe('<ReportArea>', () => {
     expect(screen.queryByText(/Loading/)).not.toBeInTheDocument();
   });
 
+  // The Theme panel's font is scoped to this block by class, so that the app's own chrome — nav,
+  // sidebar, saved-reports bar, report controls — keeps the default stack. Losing the class would
+  // silently push the report font back onto the whole page. See src/css/fonts.css.
+  it('scopes the report font to the report block', () => {
+    renderArea({ status: 'resolved' });
+
+    expect(screen.getByTestId('report-block').closest('.report-font-scope')).not.toBeNull();
+  });
+
   it('shows a growing progress counter while pending (the primary step total climbs)', () => {
     // The text-only "Loaded X of Y issues" line was replaced by the three-step LoadingProgress stepper
     // (spec/013-loader); the growing primary count now reads "<received> of <requested>".

@@ -5,6 +5,7 @@ import {
   computeMeasureValue,
   cycleGroupSort,
   effectiveAggregationId,
+  formatGroupLabel,
   formatMeasureValue,
   groupIssues,
   selectMeasureColumns,
@@ -170,6 +171,28 @@ describe('formatMeasureValue', () => {
     expect(formatMeasureValue(['a', 'b'])).toBe('a, b');
     expect(formatMeasureValue('x')).toBe('x');
     expect(formatMeasureValue(null)).toBe('');
+  });
+});
+
+describe('formatGroupLabel', () => {
+  test('labels object-valued group values (Assignee, Priority) rather than "[object Object]"', () => {
+    expect(formatGroupLabel({ displayName: 'Arthur Pankiewicz', accountId: 'abc' })).toBe('Arthur Pankiewicz');
+    expect(formatGroupLabel({ name: 'High', iconUrl: 'https://x/high.svg' })).toBe('High');
+    expect(formatGroupLabel({ value: 'Needs review', id: '1' })).toBe('Needs review');
+  });
+
+  test('falls back to the empty bucket for missing and unlabellable values', () => {
+    expect(formatGroupLabel(null)).toBe(EMPTY_GROUP_LABEL);
+    expect(formatGroupLabel('')).toBe(EMPTY_GROUP_LABEL);
+    expect(formatGroupLabel([])).toBe(EMPTY_GROUP_LABEL);
+    // An object carrying no label key at all — previously "[object Object]".
+    expect(formatGroupLabel({ originalEstimate: '1d' })).toBe(EMPTY_GROUP_LABEL);
+  });
+
+  test('scalars and arrays keep their existing formatting', () => {
+    expect(formatGroupLabel('Done')).toBe('Done');
+    expect(formatGroupLabel(3)).toBe('3');
+    expect(formatGroupLabel(['QA', 'UAT'])).toBe('QA, UAT');
   });
 });
 

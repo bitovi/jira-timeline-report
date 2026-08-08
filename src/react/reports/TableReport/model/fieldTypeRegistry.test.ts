@@ -43,6 +43,19 @@ describe('getFieldTypeEntry', () => {
     expect(getFieldTypeEntry('array', 'number')).toBe(getFieldTypeEntry('number'));
   });
 
+  test('object-valued types (user/priority) render and sort by their label', () => {
+    // Jira has no registry entry for `user`/`priority`, so they land on the fallback entry — which
+    // must resolve the object's label rather than stringify it into "[object Object]".
+    const user = getFieldTypeEntry('user');
+    expect(user.render({ displayName: 'Arthur Pankiewicz', accountId: 'abc' }, ctx({}))).toBe('Arthur Pankiewicz');
+
+    const priority = getFieldTypeEntry('priority');
+    expect(priority.render({ name: 'High', iconUrl: 'https://x/high.svg' }, ctx({}))).toBe('High');
+
+    const priorities = [{ name: 'Medium' }, { name: 'High' }, { name: 'Low' }];
+    expect(priorities.sort(priority.compare).map((p) => p.name)).toEqual(['High', 'Low', 'Medium']);
+  });
+
   test('nullish values sort last', () => {
     const entry = getFieldTypeEntry('number');
     expect([null, 2, undefined, 1].sort(entry.compare)).toEqual([1, 2, null, undefined]);

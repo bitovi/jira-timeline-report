@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { InlineValue } from './InlineValue';
@@ -17,7 +17,6 @@ const meta: Meta<typeof InlineValue> = {
   ],
   args: {
     expression: '(issue = ABC-1).summary',
-    isEditing: false,
     state: { status: 'ok', value: 'Migrate auth to OIDC', field: summary },
   },
 };
@@ -31,14 +30,12 @@ export const Loading: Story = {
   args: { state: { status: 'loading' } },
 };
 
-/** A blank node — how one saved with no expression at all renders. */
+/**
+ * A blank node — how one saved with no expression at all renders. It keeps its height so the row stays
+ * hoverable and its delete control reachable; a zero-height row would be an undeletable one.
+ */
 export const Empty: Story = {
   args: { expression: '', state: { status: 'loading' } },
-};
-
-/** With its field open and focused, as clicking the value opens it. */
-export const Editing: Story = {
-  args: { expression: '', isEditing: true, state: { status: 'loading' } },
 };
 
 /** An empty field is not an error — it renders an em dash rather than nothing at all. */
@@ -82,24 +79,33 @@ export const UnsupportedType: Story = {
   },
 };
 
-/** Wired the way a document wires it — editing state and the expression belong to the caller. */
-export const Interactive: Story = {
-  render: () => {
-    const [expression, setExpression] = useState('(issue = ABC-1).summary');
-    const [isEditing, setIsEditing] = useState(false);
+/**
+ * `.comment` is a real field, so it resolves — and then dead-ends, because a page of comments isn't a
+ * value. The message is the only signpost to `.latestComment`, which can't be found in Jira's fields.
+ */
+export const CommentsPage: Story = {
+  args: {
+    expression: '(issue = ABC-1).comment',
+    state: {
+      status: 'ok',
+      value: { comments: [], total: 0, startAt: 0, maxResults: 1 },
+      field: { id: 'comment', name: 'Comment', schema: { type: 'comments-page' } },
+    },
+  },
+};
 
-    return (
-      <InlineValue
-        expression={expression}
-        state={{ status: 'ok', value: `resolved from "${expression}"`, field: summary }}
-        isEditing={isEditing}
-        onEdit={() => setIsEditing(true)}
-        onConfirm={(next) => {
-          setIsEditing(false);
-          setExpression(next);
-        }}
-        onCancel={() => setIsEditing(false)}
-      />
-    );
+/**
+ * A long value, to review the truncation. There is no interactive story any more: the node is
+ * read-only, so a story with state in it would have nothing to demonstrate — authoring lives in
+ * `ValueReportForm`, which has its own.
+ * See spec/016-report-of-reports/009-value-report-modal § The node stops being editable.
+ */
+export const LongValue: Story = {
+  args: {
+    state: {
+      status: 'ok',
+      value: 'Migrate the authentication stack to OIDC and retire the legacy token exchange entirely',
+      field: summary,
+    },
   },
 };

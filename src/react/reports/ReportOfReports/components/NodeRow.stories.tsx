@@ -62,7 +62,7 @@ export const Pinned: Story = {
 export const Section: Story = {
   args: {
     caret: <CollapseToggle isCollapsed={false} label="Q3 Planning" onToggle={() => {}} />,
-    children: <h2 className="truncate font-bitovipoppins text-lg font-bold">Q3 Planning</h2>,
+    children: <h2 className="truncate text-lg font-bold">Q3 Planning</h2>,
     isHovered: true,
     controls: <Controls isVisible />,
   },
@@ -72,7 +72,7 @@ export const Section: Story = {
 export const Collapsed: Story = {
   args: {
     caret: <CollapseToggle isCollapsed label="Q3 Planning" onToggle={() => {}} />,
-    children: <h2 className="truncate font-bitovipoppins text-lg font-bold">Q3 Planning</h2>,
+    children: <h2 className="truncate text-lg font-bold">Q3 Planning</h2>,
     controls: <Controls />,
   },
 };
@@ -146,7 +146,7 @@ export const Document: Story = {
           <>
             {row(
               'q3',
-              <h2 className="truncate font-bitovipoppins text-lg font-bold">Q3 Planning</h2>,
+              <h2 className="truncate text-lg font-bold">Q3 Planning</h2>,
               <CollapseToggle isCollapsed={collapsed} label="Q3 Planning" onToggle={() => setCollapsed(!collapsed)} />,
             )}
             {!collapsed && (

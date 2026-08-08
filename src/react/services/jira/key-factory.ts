@@ -20,4 +20,17 @@ export const jiraKeys = {
    * asking the same question share one request. See spec/016-report-of-reports/003-self-reports.
    */
   inlineExpression: (jql: string, fieldId: string) => [...jiraKeys.all, 'inline-expression', jql, fieldId],
+  /**
+   * One work item's newest comment. Keyed by the *resolved* key rather than the JQL that found it, so
+   * two nodes pointing at the same work item by different queries share one request.
+   * See spec/016-report-of-reports/007-latest-comment-report.
+   */
+  latestComment: (issueKey: string) => [...jiraKeys.all, 'latest-comment', issueKey],
+  /**
+   * One page of work-item typeahead suggestions. Keyed by the debounced query, so re-typing a query
+   * already asked replays from cache rather than asking Jira again — which is most of why the picker
+   * goes through React Query rather than `AsyncSelect`'s `loadOptions`.
+   * See spec/016-report-of-reports/009-value-report-modal.
+   */
+  workItemSuggestions: (query: string) => [...jiraKeys.all, 'work-item-suggestions', query],
 };
