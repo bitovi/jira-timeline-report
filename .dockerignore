@@ -1,6 +1,9 @@
-# The auth-server image (Dockerfile) only needs server/, package*.json, and
+# The auth-server image (Dockerfile) only needs server/, src/, package*.json, and
 # production node_modules. Keep frontend build output and dev/test assets out of
 # the image to keep it small and avoid exhausting the deploy VM's disk.
+#
+# `src` must stay in the image: server/tag-to-dates.js imports
+# src/utils/date/half-quarters.js, so pruning src/ would break the server at boot.
 node_modules
 .git
 

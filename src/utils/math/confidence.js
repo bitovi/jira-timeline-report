@@ -1,4 +1,12 @@
-import { jStat } from 'jstat';
+// `jstat` is CommonJS with no `exports` map, so Node's ESM loader can't detect
+// `jStat` as a named export — `import { jStat }` throws at startup under plain
+// `node server/server.js`, which `server/adjusted-story-points.js` reaches through
+// this module. Its `module.exports` is the jStat function carrying a `.jStat`
+// self-reference, so a default import destructures correctly under both Node and
+// Vite. Don't "tidy" this back into a named import.
+import jstat from 'jstat';
+
+const { jStat } = jstat;
 
 function toStandardDeviations({
   confidence,
