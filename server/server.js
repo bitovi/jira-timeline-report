@@ -8,6 +8,8 @@ import { fetchTokenWithAccessCode } from './helper.js';
 import cors from 'cors';
 import { logger } from './logger.js';
 import tagToDates from './tag-to-dates.js';
+import adjustedStoryPoints from './adjusted-story-points.js';
+import datesToHalfQuarterDates from './dates-to-half-quarter-dates.js';
 
 // configurations
 dotenv.config();
@@ -67,6 +69,10 @@ app.post('/domain', async (req, res) => {
 });
 
 app.post('/tag-to-dates', tagToDates);
+
+app.post('/adjusted-story-points', adjustedStoryPoints);
+
+app.post('/dates-to-half-quarter-dates', datesToHalfQuarterDates);
 
 // Start server
 app.listen(port, () => console.log(`Server is listening on port ${port}!`));

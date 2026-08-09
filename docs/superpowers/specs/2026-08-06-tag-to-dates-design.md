@@ -26,9 +26,10 @@ This spec ports the logic into Status Reports' own Express server and makes the 
 
 - Wiring tag parsing into report rendering (normalization, Gantt bars, release timing). The consumers
   are Automation rules, not the UI.
-- Porting the other two auto-scheduler endpoints. `/adjusted-story-points` and
+- ~~Porting the other two auto-scheduler endpoints. `/adjusted-story-points` and
   `/dates-to-half-quarter-dates` already exist here as in-process code
-  (`src/utils/math/confidence.js`, `src/utils/date/round.js`) and are out of scope.
+  (`src/utils/math/confidence.js`, `src/utils/date/round.js`) and are out of scope.~~
+  **Reversed 2026-08-09 — see [Amendment](#amendment-2026-08-09-porting-the-remaining-two-endpoints).**
 - Any CDN routing so the endpoint answers on `statusreports.bitovi.com`. See Deployment.
 
 ## Background
@@ -274,8 +275,121 @@ needs three corrections. Replacement text:
 > `400` with `{ "errors": ["..."] }` when both or neither field is sent, or when no entry parses as a
 > tag.
 
+## Amendment (2026-08-09): porting the remaining two endpoints
+
+**Status:** Implemented.
+
+### Why the non-goal was wrong
+
+The original non-goal justified leaving `/adjusted-story-points` and
+`/dates-to-half-quarter-dates` behind on the grounds that they "already exist here as in-process
+code." That conflates two different things. The _math_ is here and is used by the frontend, but the
+consumers of these endpoints are Jira Automation rules, which can only call an HTTP endpoint. Having
+`estimateExtraPoints` in the bundle does nothing for a rule.
+
+What made the omission look harmless was that, unlike `/tag-to-dates`, both endpoints were actually
+reachable — just at `auto-scheduler.bitovi-jira.com` rather than the documented URL. Retiring that
+host removes the only place they are served, so both had to move.
+
+### What changed
+
+| File                                         |     | Purpose                                  |
+| -------------------------------------------- | --- | ---------------------------------------- |
+| `server/adjusted-story-points.js`            | NEW | handler + validation, no math            |
+| `server/adjusted-story-points.test.js`       | NEW | vitest                                   |
+| `server/dates-to-half-quarter-dates.js`      | NEW | handler, no date math                    |
+| `server/dates-to-half-quarter-dates.test.js` | NEW | vitest                                   |
+| `src/utils/date/half-quarters.js`            | MOD | + UTC `roundToHalfQuarterStart` / `…End` |
+| `src/utils/math/confidence.js`               | MOD | default import of `jstat` (see below)    |
+| `server/server.js`                           | MOD | +2 routes                                |
+| `package.json`, `package-lock.json`          | MOD | `jstat` devDependencies → dependencies   |
+
+### `jstat` must be a runtime dependency
+
+`server/adjusted-story-points.js` reaches `jstat` through `src/utils/math/confidence.js`, and
+`Dockerfile:15` installs with `npm ci --omit=dev`. Left as a devDependency, the production image
+resolves nothing and the server dies at boot — taking `/access-token` down with it, not just the new
+route. Moving it in `package.json` is not sufficient on its own; `package-lock.json` records
+`"dev": true` per package and must be regenerated, or `npm ci --omit=dev` still skips it.
+
+Separately, `jstat` is CommonJS with no `exports` map, so Node's ESM loader cannot detect `jStat` as
+a named export and `import { jStat } from 'jstat'` throws at startup. Vitest and Vite both paper
+over this with their own CJS interop, so the unit tests pass while the real server will not boot —
+this is only caught by running `node server/server.js`. `confidence.js` now uses a default import.
+
+### Rounding in UTC
+
+`round.js` builds its candidate boundaries with `new Date(y, m, d)` — local time, which is correct in
+the browser and wrong on a server, where the answer would depend on the host's timezone.
+`half-quarters.js` gains UTC equivalents rather than changing `round.js`, so the browser keeps its
+local-time behaviour and the two continue to share the `HALF_QUARTERS` table. The boundaries still
+cannot drift, which was the point of the original consolidation.
+
+### Deviations from upstream
+
+`/adjusted-story-points`:
+
+1. **`riskThreshold` is validated.** Upstream never checked it, so a non-numeric threshold produced
+   `NaN` and serialized as a body of `null`s. Now a 400.
+2. **`riskThreshold: 0` is honoured.** Upstream's `|| 80` silently replaced it with the default.
+   Everything else — response fields, validation messages, the `{ errors: [{ message }] }` shape — is
+   byte-identical.
+
+`/dates-to-half-quarter-dates`:
+
+3. **A due date between Nov 15 and Nov 30 no longer rounds to `null`.** Upstream only extended its
+   candidate boundaries into the following year when the input fell in December, so dates in the back
+   half of November had no candidate at or after them and returned `null` — which an Automation rule
+   would write into the field as a blank. Candidates now always span the neighbouring years.
+
+### Error-shape inconsistency, retained
+
+The three endpoints disagree with each other:
+
+| Endpoint                       | Error body                  |
+| ------------------------------ | --------------------------- |
+| `/tag-to-dates`                | `{ errors: [string] }`      |
+| `/adjusted-story-points`       | `{ errors: [{ message }] }` |
+| `/dates-to-half-quarter-dates` | `{ error: string }`         |
+
+Each matches its own predecessor. Normalising them would break every existing Automation rule that
+inspects an error body, for no benefit to the rules that do not. Deliberately left alone; worth
+revisiting only if these ever get a v2.
+
+### Wiki updates
+
+All three pages document a `https://statusreports.bitovi.com/...` URL. That host is the frontend
+CDN alias (`deploy-prod.yaml:151-152`), not the API, so every one of them 403s. All three become
+`https://api-status-reports.bitovi.tools/<endpoint>`, staging
+`https://api-status-reports-staging.bitovi.tools/<endpoint>`.
+
+The two pages carried over from the auto-scheduler also need:
+
+- **`/adjusted-story-points`** — the URL in the page body uses U+2010 HYPHEN (`‐`) rather than ASCII
+  `-`, so it cannot be pasted into an Automation rule and work. Note that `riskThreshold` also
+  accepts the string `"average"`, which upstream supported but the page never documented.
+- **`/dates-to-half-quarter-dates`** — document that a rounded value can be `null` when the
+  corresponding input is omitted, and that supplying a `dueDate` that rounds behind the
+  `roundedStartDate` stretches it to the end of the start's own half-quarter.
+
+Both should carry a migration note: rules pointed at `auto-scheduler.bitovi-jira.com` must be
+re-pointed before that host is retired, and `/dates-to-half-quarter-dates` answers differ for
+late-November due dates (see Deviations).
+
+### Verification
+
+Beyond the unit tests, the local server was differential-tested against the live
+`auto-scheduler.bitovi-jira.com` across 274 requests spanning all three endpoints — every
+half-quarter tag, boundary-adjacent dates through a full year, and the estimation grid.
+`/adjusted-story-points` matched on all 47 cases. The 15 differences were exactly the deviations
+listed above and in the original spec: 9 from the T1/T2 seam, 6 from the November null. Reproduce it
+by booting the server and replaying both hosts.
+
 ## Follow-ups
 
 - Optional CDN route so `statusreports.bitovi.com/tag-to-dates` resolves.
 - `src/utils/math/confidence.js` and `src/utils/date/round.js` are duplicated source shared with
   jira-auto-scheduler and free to drift. Not addressed here.
+- `round.js`'s local-time half-quarter rounding and `half-quarters.js`'s UTC version are now parallel
+  implementations over one shared table. Collapsing them would mean giving the browser UTC semantics;
+  not obviously correct, and not attempted.

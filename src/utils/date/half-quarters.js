@@ -71,6 +71,65 @@ export function halfQuarterTagToDate(text, { isEndDate = false } = {}) {
 }
 
 /**
+ * Every half-quarter boundary in the years surrounding `date`, as epoch ms at UTC
+ * midnight. Spanning the neighbouring years means the nearest boundary to a date in
+ * late December or early January is found without a special case.
+ *
+ * @param {Date} date
+ * @returns {number[]} ascending
+ */
+function surroundingBoundaries(date) {
+  const year = date.getUTCFullYear();
+
+  return [year - 1, year, year + 1].flatMap((candidateYear) =>
+    HALF_QUARTERS.map(([month, day]) => Date.UTC(candidateYear, month - 1, day)),
+  );
+}
+
+/**
+ * Rounds to the nearest half-quarter start.
+ *
+ * The equivalent in `round.js` builds its candidates in local time, which is right for
+ * the browser but makes a server's answer depend on its timezone; this one is UTC
+ * throughout. Both read the same `HALF_QUARTERS` table, so they cannot disagree about
+ * where a boundary falls.
+ *
+ * @param {Date} date
+ * @returns {Date} UTC midnight on the nearest boundary
+ */
+export function roundToHalfQuarterStart(date) {
+  const time = date.getTime();
+
+  const nearest = surroundingBoundaries(date).reduce((best, candidate) =>
+    Math.abs(candidate - time) < Math.abs(best - time) ? candidate : best,
+  );
+
+  return new Date(nearest);
+}
+
+/**
+ * Rounds to the nearest half-quarter end — the day before a boundary — that is not
+ * before `date`.
+ *
+ * Unlike the upstream implementation this ports, the candidate list always reaches into
+ * the following year. Upstream only did so for a date in December, so a date between
+ * Nov 15 and Nov 30 had no candidate at or after it and rounded to null.
+ *
+ * @param {Date} date
+ * @returns {Date} UTC midnight on the nearest boundary end
+ */
+export function roundToHalfQuarterEnd(date) {
+  const time = date.getTime();
+
+  const nearest = surroundingBoundaries(date)
+    .map((boundary) => boundary - MS_PER_DAY)
+    .filter((end) => end >= time)
+    .reduce((best, end) => (end - time < best - time ? end : best));
+
+  return new Date(nearest);
+}
+
+/**
  * Splits input into candidate tags. Jira Automation renders `{{issue.labels}}`
  * into a request body as comma-separated text, so a caller may hand us one tag,
  * a list of them, or an array of either.
