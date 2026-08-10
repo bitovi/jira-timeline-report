@@ -10,7 +10,12 @@ import { token } from '@atlaskit/tokens';
 import { useStorage } from '../../services/storage';
 import { themeKeys } from './key-factory';
 
-export const useSaveFont = () => {
+interface UseSaveFontConfig {
+  /** See `useSaveTheme` — lets the panel's working copy follow a failed save's rollback. */
+  onRollback?: (previous: FontSetting) => void;
+}
+
+export const useSaveFont = ({ onRollback }: UseSaveFontConfig = {}) => {
   const storage = useStorage();
   const queryClient = useQueryClient();
   const { showFlag } = useFlags();
@@ -27,14 +32,19 @@ export const useSaveFont = () => {
 
       return { previousFont };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: themeKeys.font });
-    },
+    // No `onSettled` refetch, for the same reason as `useSaveTheme`: the write goes to the issue,
+    // the read comes from Jira's search index, and the index lags.
     onError: (error, _, context) => {
       queryClient.setQueryData<FontSetting>(themeKeys.font, context?.previousFont);
       // Reverts the DOM too, not just the cache — the panel applies the font optimistically for
       // live preview, so without this a failed save leaves the page showing a font nobody has.
       applyFontToCssVars(context?.previousFont);
+
+      if (context?.previousFont) {
+        onRollback?.(context.previousFont);
+      }
+
+      queryClient.invalidateQueries({ queryKey: themeKeys.font });
 
       let description = error?.message;
 

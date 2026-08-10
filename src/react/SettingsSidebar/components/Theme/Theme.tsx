@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from 'react';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import Heading from '@atlaskit/heading';
 import Spinner from '@atlaskit/spinner';
@@ -18,7 +18,7 @@ import {
   type FontSetting,
   type Theme,
 } from '../../../../jira/theme';
-import { useDebounce } from '../../../hooks/useDebounce';
+import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback';
 import { Accordion, AccordionContent, AccordionTitle } from '../../../components/Accordion';
 import ColorRow from './components/ColorRow';
 import FontPicker from './components/FontPicker';
@@ -30,54 +30,56 @@ interface ThemeProps {}
  * section background.
  *
  * Everything here previews live by writing CSS variables to `document.documentElement` on change,
- * then persists on a 500ms debounce. Colors and font are separate storage keys, so they save
- * independently — see spec/016-report-of-reports/008-theme.
+ * then persists 500ms after you stop changing it. Colors and font are separate storage keys, so they
+ * save independently — see spec/016-report-of-reports/008-theme.
+ *
+ * The working copy lives here rather than in the query cache so that dragging a color input repaints
+ * through CSS variables without re-rendering the report behind the panel. A save is triggered by the
+ * edit that caused it — never by comparing this copy against the saved one. That comparison is what
+ * `save` itself changes, so a save whose result differs from what was written (a failed write, or
+ * Jira's search index lagging the write) would ask to be saved again, forever. See the revert of
+ * e528ebae.
  */
 const ThemeView: FC<ThemeProps> = () => {
   const theme = useTheme();
   const font = useFont();
-  const { save, isPending } = useSaveTheme();
-  const { save: saveFont, isPending: isFontPending } = useSaveFont();
 
+  // Both queries suspend, so these are the saved values on the first render — the working copy needs
+  // no effect to catch up with them, and deliberately doesn't follow later cache changes: a refetch
+  // that lands mid-edit would overwrite what you are in the middle of picking.
   const [localTheme, setLocalTheme] = useState(theme);
   const [localFont, setLocalFont] = useState(font);
   // Bumped on reset so the font picker's own "custom vs preset" state remounts with it. Without
   // this, resetting while Custom is selected leaves the URL and family fields filled in.
   const [resetNonce, setResetNonce] = useState(0);
 
+  // `setLocalTheme`/`setLocalFont` are the rollback: a failed save puts the cache and the page's CSS
+  // variables back, and the working copy has to follow or the panel keeps showing a color that was
+  // never persisted.
+  const { save, isPending } = useSaveTheme({ onRollback: setLocalTheme });
+  const { save: saveFont, isPending: isFontPending } = useSaveFont({ onRollback: setLocalFont });
+
+  // Debounced so holding a color picker open, or typing a font URL, doesn't write to Jira per
+  // keystroke. A pending save is flushed if the panel closes first.
+  const saveTheme = useDebouncedCallback(save, 500);
+  const saveLocalFont = useDebouncedCallback(saveFont, 500);
+
   const updateLocalTheme = (newLocalTheme: Theme) => {
     applyThemeToCssVars(newLocalTheme);
     setLocalTheme(newLocalTheme);
+    saveTheme(newLocalTheme);
   };
 
   const updateLocalFont = (newLocalFont: FontSetting) => {
     applyFontToCssVars(newLocalFont);
     setLocalFont(newLocalFont);
+    saveLocalFont(newLocalFont);
   };
 
   /** Keyed by label rather than index: the rows render in filtered groups, so indices don't line up. */
   const updateColor = (label: string, backgroundColor: string) => {
     updateLocalTheme(localTheme.map((item) => (item.label === label ? { ...item, backgroundColor } : item)));
   };
-
-  const debouncedTheme = useDebounce(localTheme, 500);
-  const debouncedFont = useDebounce(localFont, 500);
-
-  useEffect(() => {
-    if (JSON.stringify(theme) === JSON.stringify(debouncedTheme)) {
-      return;
-    }
-
-    save(debouncedTheme, { onError: () => setLocalTheme(theme) });
-  }, [debouncedTheme, save]);
-
-  useEffect(() => {
-    if (JSON.stringify(font) === JSON.stringify(debouncedFont)) {
-      return;
-    }
-
-    saveFont(debouncedFont, { onError: () => setLocalFont(font) });
-  }, [debouncedFont, saveFont]);
 
   const statusItems = localTheme.filter(({ group }) => group === 'status');
   const reportOfReportsItems = localTheme.filter(({ group }) => group === 'reportOfReports');
