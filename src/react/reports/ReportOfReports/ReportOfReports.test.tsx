@@ -182,7 +182,7 @@ const addReport = async (name: string) => {
 };
 
 /**
- * Adds a value through the Add Report modal's Value Report half: pick a work item, pick a field, press
+ * Adds a value through the Add Report modal's Work Item Value half: pick a work item, pick a field, press
  * `+`. `opener` is the add row's button — `Add Report`, or `Add Report to Q3` for a section.
  *
  * The typeahead is debounced, so the suggestion arrives a beat after the keystroke; `findByText` waits
@@ -285,6 +285,15 @@ describe('<ReportOfReports>', () => {
 
     expect(await screen.findByRole('button', { name: 'Add Report' })).toBeInTheDocument();
     expect(screen.queryAllByTestId('report-card')).toHaveLength(0);
+  });
+
+  it('marks the document root with the hook fullscreen.css indents by', async () => {
+    renderReport();
+
+    // The gutter this keeps in fullscreen lives in a global stylesheet, so dropping the class here
+    // would silently push the document back against both screen edges — jsdom loads no CSS, and
+    // there is nothing else to notice.
+    expect((await screen.findByRole('button', { name: 'Add Report' })).closest('.ror-document')).not.toBeNull();
   });
 
   it('adds the chosen report and keeps the Add Report button below it', async () => {

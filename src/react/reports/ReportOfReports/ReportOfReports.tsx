@@ -98,7 +98,13 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
        exactly the work items it would have fetched alone.
        See spec/016-report-of-reports/005-optimize/001-request-dedupe. */
     <ChildQueryGroupsProvider sections={sections} reports={reports}>
-      <div className="flex flex-col py-4" onMouseOver={() => hoverNode(null)} onMouseLeave={() => hoverNode(null)}>
+      {/* `ror-document` is a styling hook, not a layout class: fullscreen.css uses it to keep the
+          document off the screen edges once `.fullish-vh`'s gutter is reclaimed. */}
+      <div
+        className="ror-document flex flex-col py-4"
+        onMouseOver={() => hoverNode(null)}
+        onMouseLeave={() => hoverNode(null)}
+      >
         {sections.map((node, index) => (
           <LayoutNodeView
             key={node.id}

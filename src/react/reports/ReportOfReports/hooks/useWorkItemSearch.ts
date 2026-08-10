@@ -49,7 +49,7 @@ const compareKeys = (left: string, right: string): number => {
 };
 
 /**
- * Work-item suggestions for the Value Report typeahead.
+ * Work-item suggestions for the typeahead in the Add Report modal's Work Item Value half.
  *
  * **Debounce + React Query rather than `AsyncSelect`'s `loadOptions`.** `loadOptions` hands back a bare
  * promise per keystroke, which means hand-rolling three things React Query already does correctly:

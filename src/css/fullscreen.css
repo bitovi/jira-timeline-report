@@ -29,3 +29,15 @@ body.fullscreen-mode #saved-reports {
   padding-left: 1rem;
   padding-bottom: 0;
 }
+
+/* A report-of-reports keeps a gutter that a chart doesn't need. Reclaiming .fullish-vh's padding
+   suits a Gantt or a table, which earn something from every pixel of width — but this report is a
+   document, and its section titles, inline values and comment bodies sat flush against both screen
+   edges with nothing to hold them in.
+
+   1rem to match #saved-reports above, so the document's left edge lines up with the report name
+   rather than landing a few pixels off it. */
+body.fullscreen-mode .ror-document {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}

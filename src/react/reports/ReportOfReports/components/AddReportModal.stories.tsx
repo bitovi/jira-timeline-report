@@ -8,7 +8,7 @@ import { JiraProvider } from '../../../services/jira/JiraProvider';
 import { jiraKeys } from '../../../services/jira/key-factory';
 import { AddReportModal } from './AddReportModal';
 
-// The Value Report half fetches; the saved-report half doesn't. Same seeding as
+// The Work Item Value half fetches; the saved-report half doesn't. Same seeding as
 // `ValueReportForm.stories.tsx` — catalog pre-seeded into the cache (it's a suspense query), picker
 // suggestions through a stub.
 const mockFields = [
@@ -67,7 +67,7 @@ export default meta;
 type Story = StoryObj<typeof AddReportModal>;
 
 /**
- * **The case the restructure is for.** Scroll the list: the header, the Value Report band, the Saved
+ * **The case the restructure is for.** Scroll the list: the header, the Work Item Value band, the Saved
  * Report label and its search field all stay put, and the fade at the bottom edge says there is more.
  * Before, the whole body scrolled and the search field you were typing into left the dialog.
  */
@@ -89,7 +89,7 @@ export const FewReports: Story = {
 };
 
 /**
- * The Value Report half has to stay usable when there is nothing to embed — the two halves are
+ * The Work Item Value half has to stay usable when there is nothing to embed — the two halves are
  * independent, and this is the state a brand-new install is in.
  */
 export const NoSavedReports: Story = {

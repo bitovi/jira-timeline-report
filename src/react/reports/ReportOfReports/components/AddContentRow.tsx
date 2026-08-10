@@ -36,7 +36,7 @@ export interface AddContentRowProps {
  * (src/css/print.css). "Add Section" is hidden — not disabled — once nesting reaches
  * `MAX_SECTION_DEPTH`: there is no state to explain, the level simply doesn't take another section.
  *
- * **"Add Report" adds either kind of node.** It opens the Add Report modal, whose Value Report half
+ * **"Add Report" adds either kind of node.** It opens the Add Report modal, whose Work Item Value half
  * builds an `inline-value` node from a work item and a field. That is where "Add Value" — parked three
  * times as an expression box, and briefly shipped here as the `Add Work Item Update` preset — finally
  * lives, as two validated controls rather than a button that drops a blank node on the page. Neither

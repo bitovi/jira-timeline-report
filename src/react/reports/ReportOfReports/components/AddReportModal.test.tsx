@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { JiraProvider } from '../../../services/jira';
 import { AddReportModal } from './AddReportModal';
 
-// The Value Report half fetches; the saved-report half — which is what these tests are about — does
+// The Work Item Value half fetches; the saved-report half — which is what these tests are about — does
 // not. Stub both fetches so the modal mounts without Jira. `useJiraIssueFields` is a suspense query,
 // which is why it is mocked rather than stubbed through the provider.
 vi.mock('../../../services/jira/useJiraIssueFields', () => ({
@@ -49,7 +49,7 @@ const renderModal = (overrides: Partial<React.ComponentProps<typeof AddReportMod
 };
 
 /**
- * The reports search, by placeholder rather than by role: the Value Report row puts a second textbox in
+ * The reports search, by placeholder rather than by role: the Work Item Value row puts a second textbox in
  * the modal, so a bare `getByRole('textbox')` now matches more than one and throws.
  */
 const reportSearch = () => screen.getByPlaceholderText('Search reports by name or type…');
@@ -146,15 +146,15 @@ describe('<AddReportModal>', () => {
   it('offers both halves, labelled', async () => {
     renderModal();
 
-    expect(await screen.findByText('Value Report')).toBeInTheDocument();
+    expect(await screen.findByText('Work Item Value')).toBeInTheDocument();
     expect(screen.getByText('Saved Report')).toBeInTheDocument();
   });
 
-  it('offers the Value Report half even when there are no saved reports to add', async () => {
+  it('offers the Work Item Value half even when there are no saved reports to add', async () => {
     renderModal({ reports: [] });
 
     // The two halves are independent: an empty saved-report list must not take the value form with it.
-    expect(await screen.findByText('Value Report')).toBeInTheDocument();
+    expect(await screen.findByText('Work Item Value')).toBeInTheDocument();
     expect(screen.getByTestId('ror-value-add')).toBeInTheDocument();
   });
 
@@ -220,7 +220,7 @@ describe('<AddReportModal> layout', () => {
   /**
    * jsdom loads no stylesheet and lays nothing out, so "only the list scrolls" can't be observed — the
    * class is asserted instead, the way `AddContentRow` asserts `pointer-events-none`. What it protects
-   * is real: the whole body used to scroll, carrying the search field and the entire Value Report half
+   * is real: the whole body used to scroll, carrying the search field and the entire Work Item Value half
    * off the top of the dialog while you browsed.
    */
   it('confines scrolling to the list', async () => {

@@ -20,7 +20,7 @@ export interface AddReportModalProps {
    */
   destination?: string;
   onSelect: (reportId: Report['id']) => void;
-  /** Receives the expression the Value Report half built; the caller makes the node. */
+  /** Receives the expression the Work Item Value half built; the caller makes the node. */
   onAddValue: (expression: string) => void;
   onClose: () => void;
 }
@@ -29,23 +29,23 @@ export interface AddReportModalProps {
  * Adds a node to a report-of-reports: either a live Jira value, or a saved report to embed.
  *
  * **One scrolling region, and it is the list.** The dialog is a fixed-height flex column: header,
- * Value Report band, the Saved Report label and its search field are all pinned, and only the rows
+ * Work Item Value band, the Saved Report label and its search field are all pinned, and only the rows
  * scroll under them. It used to be one scrolling body, so browsing a long list carried the search
- * field and the whole Value Report half off the top of the dialog — you could not see what you were
+ * field and the whole Work Item Value half off the top of the dialog — you could not see what you were
  * filtering with, or add a value, without scrolling back up.
  *
  * That means **not** using `ModalBody`, which is itself the scroll container. The content between
  * header and footer is a plain flex column with `min-h-0` on the parts that must be allowed to shrink,
  * and each section carries its own horizontal padding instead of inheriting one — which is also what
- * lets the Value Report band rule edge to edge.
+ * lets the Work Item Value band rule edge to edge.
  *
  * **Two halves with different natures, and that shows in the code.** The saved-report half is pure and
  * prop-driven — the caller supplies the already-filtered list, because every saved report is in memory
- * before React mounts. The Value Report half can't be: a work-item typeahead and a field catalog are
+ * before React mounts. The Work Item Value half can't be: a work-item typeahead and a field catalog are
  * fetches no prop can supply, so it lives in `ValueReportForm` with its own tests and this file just
  * places it. Rows and search come from `components/ReportListing`, shared with the Saved Reports page.
  *
- * **Focus stays on the reports search**, as it did before the Value Report band existed: it is the
+ * **Focus stays on the reports search**, as it did before the Work Item Value band existed: it is the
  * half with keyboard navigation (↑/↓/↵/Esc) and the one most opens are for. Tab reaches the value row.
  *
  * See spec/016-report-of-reports, spec/023-report-modal, and .../009-value-report-modal § Restructure.
@@ -93,7 +93,7 @@ export const AddReportModal: FC<AddReportModalProps> = ({
             {/* Full-bleed: the rules run the dialog's width rather than stopping at the 24px gutter the
                 header and footer use, so the band reads as a band. Its padding is its own. */}
             <section className="border-y border-neutral-301 px-6 py-4">
-              <SectionLabel>Value Report</SectionLabel>
+              <SectionLabel>Work Item Value</SectionLabel>
               {/* The band's own label and the first input's label are both small and grey, so with no
                   gap they read as one two-line label rather than as a heading over a form. Spaced here
                   rather than on `SectionLabel`, which the Saved Report half positions differently. */}

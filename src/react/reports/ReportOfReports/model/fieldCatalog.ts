@@ -1,5 +1,5 @@
 /**
- * The Value Report field dropdown's contents, and the expression a pick becomes.
+ * The field dropdown in the Add Report modal's Work Item Value half, and the expression a pick becomes.
  *
  * Built from Jira's field catalog — the same one `resolveField` resolves against — plus one derived
  * entry for `latestComment`. Deliberately **not** `buildColumnCatalog`: Table's `Computed` and
