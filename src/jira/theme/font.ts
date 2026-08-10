@@ -128,5 +128,7 @@ export const applyFontToCssVars = (font?: FontSetting) => {
     }
   }
 
-  document.documentElement.style.setProperty('--report-font-sans', stack || defaultFont.stack);
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--report-font-sans', stack || defaultFont.stack);
+  }
 };

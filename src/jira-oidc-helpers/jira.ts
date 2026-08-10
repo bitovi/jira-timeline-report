@@ -80,9 +80,10 @@ export interface JiraCommentsPage {
  */
 export function fetchLatestComment(config: Config) {
   return (issueIdOrKey: string): Promise<JiraCommentsPage> => {
+    const encoded = encodeURIComponent(issueIdOrKey);
+
     return config.requestHelper(
-      `/api/3/issue/${issueIdOrKey}/comment?` +
-        new URLSearchParams({ orderBy: '-created', maxResults: '1' }).toString(),
+      `/api/3/issue/${encoded}/comment?` + new URLSearchParams({ orderBy: '-created', maxResults: '1' }).toString(),
     ) as unknown as Promise<JiraCommentsPage>;
   };
 }
