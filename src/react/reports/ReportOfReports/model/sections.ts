@@ -337,18 +337,6 @@ export const setSectionTitleAt = (nodes: LayoutNode[], path: LayoutPath, title: 
   );
 
 /**
- * Rewrites the expression of the inline-value node at `path`, returning a new tree. Same contract as
- * {@link setSectionTitleAt}: the node keeps its `id`, and an unresolvable path, a node of another
- * type, or an unchanged expression all return the very same tree.
- */
-export const setExpressionAt = (nodes: LayoutNode[], path: LayoutPath, expression: string): LayoutNode[] =>
-  mapNodeAt(nodes, path, (node) =>
-    node.type === 'inline-value' && node.params.expression !== expression
-      ? { ...node, params: { ...node.params, expression } }
-      : node,
-  );
-
-/**
  * Same as {@link mapNodeAt} but keyed by node identity, so the caller doesn't have to hold a path.
  * Used by the override path, where the callback is handed to a memoized `ChildReport`: an id is a
  * string and keeps that memo intact, while a path is a fresh array on every render and would defeat
@@ -567,6 +555,28 @@ export const canAddSectionAt = (nodes: LayoutNode[], path: LayoutPath): boolean 
   const found = locate(nodes, path);
 
   return found !== undefined && found.siblings[found.index].type === 'section';
+};
+
+/**
+ * The title of the section a node would be added into, for naming the destination in the Add Report
+ * modal — the same `path` {@link appendNode} takes.
+ *
+ * `undefined` means "nothing to name": the document root (`[]`), a path that misses, or a container
+ * that isn't a section. An **untitled** section is `''`, which is a different answer — the caller can
+ * then say "this section" rather than pretending the add is going nowhere in particular.
+ *
+ * See spec/016-report-of-reports/009-value-report-modal.
+ */
+export const sectionTitleAt = (nodes: LayoutNode[], path: LayoutPath): string | undefined => {
+  const found = locate(nodes, path);
+
+  if (!found) {
+    return undefined;
+  }
+
+  const node = found.siblings[found.index];
+
+  return node.type === 'section' ? node.params.title : undefined;
 };
 
 /**

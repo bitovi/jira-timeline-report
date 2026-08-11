@@ -6,6 +6,68 @@
   font-family: var(--font-sans);
 }
 
+/**
+ * Scopes the Theme panel's font choice to the report block (print header + report + footer legend),
+ * leaving the surrounding app chrome on the default stack.
+ *
+ * Redefining `--font-sans` here is what reaches Tailwind's `.font-sans` utility, which report tables
+ * and cards use heavily — it resolves the variable at each element, so inside this subtree it picks
+ * up the report font and outside it keeps the `:root` value.
+ *
+ * The `font-family` declaration is separately load-bearing: `font-family` inherits as a *computed*
+ * value, so plain unclassed text would otherwise inherit whatever `body` resolved from the root
+ * variable and never see the override.
+ *
+ * `--ds-font-family-body` is Atlassian's design-system token. `@atlaskit/renderer` — which draws the
+ * latest-update node's comment body — sets an *explicit* `font-family: var(--ds-font-family-body, …)`
+ * on its own wrapper (`RendererStyleContainer.js`), and an explicit declaration stops inheritance, so
+ * the two rules above never reach it. Defining the token here is the supported way in: the renderer
+ * reads it, no `!important` and no patching. Scoped to the report for the same reason as the rest —
+ * Atlaskit chrome in the sidebar keeps Atlassian Sans. Same technique as the `--ds-*` color aliases
+ * in primitives.css.
+ *
+ * `--ds-font-family-code` is deliberately left alone: code blocks stay monospace, like `--font-mono`.
+ */
+.report-font-scope {
+  --font-sans: var(--report-font-sans);
+  --ds-font-family-body: var(--report-font-sans);
+
+  font-family: var(--font-sans);
+}
+
+/**
+ * Jira rich text (the latest-update node's comment body) drawn by `@atlaskit/renderer`.
+ *
+ * The token above is not enough on its own. Block content inside the renderer is styled from
+ * `editor-common`'s UGC tokens, and those are plain strings with the family baked in — see
+ * `ugc-tokens/get-editor-ugc-token.js`, which just returns
+ * `'normal 600 1.71429em/1.16667 "Atlassian Sans", …'`. There is no `var()` to redefine, and because
+ * it arrives as a `font` **shorthand** it also sets size, weight, and line-height.
+ *
+ * So this overrides the family and nothing else: a `font-family` longhand at higher specificity
+ * beats the shorthand's family while leaving the renderer's own sizing and rhythm intact.
+ *
+ * Only the elements that carry an explicit family are listed. Everything else — spans, links, list
+ * markers, panel bodies — inherits from these, so a blanket descendant selector is not just
+ * unnecessary but harmful: Atlaskit puts code's monospace on a wrapping `span.code` rather than on
+ * the `<code>` element, so overriding every descendant silently turns inline code into body text.
+ * Leaving inline elements alone is what keeps `--ds-font-family-code` working.
+ *
+ * This couples to `.ak-renderer-document`, an Atlaskit class name rather than an API. It is their
+ * documented DOM hook and far stabler than the emotion hash beside it, but if a renderer upgrade
+ * renames it the symptom is comments quietly falling back to Atlassian Sans — cosmetic, not broken.
+ */
+.report-font-scope .ak-renderer-document,
+.report-font-scope .ak-renderer-document p,
+.report-font-scope .ak-renderer-document h1,
+.report-font-scope .ak-renderer-document h2,
+.report-font-scope .ak-renderer-document h3,
+.report-font-scope .ak-renderer-document h4,
+.report-font-scope .ak-renderer-document h5,
+.report-font-scope .ak-renderer-document h6 {
+  font-family: var(--report-font-sans);
+}
+
 .font-bold {
   font-weight: 700;
 }

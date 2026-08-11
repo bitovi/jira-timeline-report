@@ -49,9 +49,12 @@ const ThemeSkeleton: FC<ThemeSkeletonProps> = () => {
       <div className="my-4">
         <Heading size="small">Theme</Heading>
       </div>
-      <div className="pt-6 flex flex-col gap-8">
+      {/* Font picker, then the two collapsible color groups. Heights track the compact rows in
+          Theme.tsx so the panel doesn't jump when it resolves. */}
+      <div className="pt-4 flex flex-col gap-3">
+        <Skeleton height="56px" />
         {[...Array.from({ length: 9 }).keys()].map((i) => (
-          <Skeleton key={i} height="44px" />
+          <Skeleton key={i} height="40px" />
         ))}
       </div>
     </>

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { fetchJqlAutocompleteData, fetchJqlAutocompleteSuggestions } from './jira';
+import { fetchJqlAutocompleteData, fetchJqlAutocompleteSuggestions, fetchLatestComment } from './jira';
 import { Config } from './types';
 
 // Minimal config whose requestHelper just records the path it was called with.
@@ -43,5 +43,27 @@ describe('JQL autocomplete fetchers', () => {
     await fetchJqlAutocompleteSuggestions(config)('/rest/api/latest/jql/autocompletedata/suggestions');
 
     expect(requestHelper).toHaveBeenCalledWith('/api/3/jql/autocompletedata/suggestions');
+  });
+});
+
+// See spec/016-report-of-reports/007-latest-comment-report Phase 2.
+describe('fetchLatestComment', () => {
+  // The ordering is the whole reason this endpoint is used instead of `fields: ['comment']` on a
+  // search: Jira returns comments oldest-first, so without `-created` the one comment we ask for is
+  // the *oldest*. This assertion is the guard on that.
+  it('asks for one comment, newest first', async () => {
+    const { config, requestHelper } = makeConfig();
+
+    await fetchLatestComment(config)('ABC-1');
+
+    expect(requestHelper).toHaveBeenCalledWith('/api/3/issue/ABC-1/comment?orderBy=-created&maxResults=1');
+  });
+
+  it('escapes a key into the path', async () => {
+    const { config, requestHelper } = makeConfig();
+
+    await fetchLatestComment(config)('SYSTEMS-918');
+
+    expect(requestHelper).toHaveBeenCalledWith('/api/3/issue/SYSTEMS-918/comment?orderBy=-created&maxResults=1');
   });
 });

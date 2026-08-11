@@ -135,6 +135,38 @@ describe('makeFilterPredicate', () => {
   test('inactive filter yields no predicate', () => {
     expect(makeFilterPredicate(nameCol, { kind: 'text', contains: '' })).toBeNull();
   });
+
+  // Object-valued fields (Assignee `{ displayName }`, Priority `{ name }`) are matched on their
+  // display text — filtering used to test the literal string "[object object]", so a text filter
+  // matched every row or none, and a `select` filter matched nothing at all.
+  describe('object-valued fields match on their label', () => {
+    const assigneeCol: ColumnDefinition = {
+      ...nameCol,
+      id: 'assignee',
+      getValue: (issue) => (issue as any).assignee,
+    };
+    const people: TableIssue[] = [
+      { name: 'Alpha', assignee: { displayName: 'Arthur Pankiewicz', accountId: 'a' } } as any,
+      { name: 'Beta', assignee: { displayName: 'Justin Meyer', accountId: 'b' } } as any,
+      { name: 'Gamma', assignee: null } as any,
+    ];
+
+    test('text: contains matches the display name', () => {
+      const p = makeFilterPredicate(assigneeCol, { kind: 'text', contains: 'arthur' })!;
+      expect(people.filter(p).map((i) => (i as any).name)).toEqual(['Alpha']);
+    });
+
+    test('select: membership uses the display name', () => {
+      const p = makeFilterPredicate(
+        { ...assigneeCol, filter: { kind: 'select' } },
+        {
+          kind: 'select',
+          selected: ['Justin Meyer'],
+        },
+      )!;
+      expect(people.filter(p).map((i) => (i as any).name)).toEqual(['Beta']);
+    });
+  });
 });
 
 describe('applyFilters', () => {

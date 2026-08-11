@@ -12,5 +12,8 @@ export { buildBoard } from './buildBoard';
 export { buildIssuePopupViewModel } from './buildIssuePopupViewModel';
 export type { IssuePopupViewModel, IssuePopupWorkTypeRow, IssuePopupDateDetail } from './buildIssuePopupViewModel';
 export { buildExploreUrl } from './buildExploreUrl';
-export { adfToBlocks } from './adfToBlocks';
-export type { AdfBlock } from './adfToBlocks';
+// Promoted to `src/react/components/AdfBlocks` so a report-of-reports document can render Jira rich
+// text with the same walker — re-exported here so WorkBreakdown's own callers are unaffected.
+// See spec/016-report-of-reports/007-latest-comment-report Phase 3.
+export { adfToBlocks } from '../../../components/AdfBlocks';
+export type { AdfBlock } from '../../../components/AdfBlocks';

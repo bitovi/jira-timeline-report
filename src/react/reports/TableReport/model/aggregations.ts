@@ -7,6 +7,7 @@
  * these reducers type-agnostic and directly unit-testable over value arrays.
  */
 import { avgReducer, countReducer, sumReducer } from './aggregate';
+import { fieldValueText } from './fieldValueText';
 
 import type { AggregationReducer } from './aggregate';
 import type { FilterKind } from './columns';
@@ -95,8 +96,10 @@ const distinctReducer: AggregationReducer<unknown, string[], 'distinct', string[
     const values = Array.isArray(item) ? item : [item];
     let next = acc;
     for (const value of values) {
-      if (value == null || value === '') continue;
-      const str = String(value);
+      // Via `fieldValueText` so an object-valued field (Assignee, Priority) contributes its label
+      // instead of a list of identical `[object Object]` entries collapsing into one.
+      const str = fieldValueText(value);
+      if (str === '') continue;
       if (!next.includes(str)) next = [...next, str];
     }
     return next;

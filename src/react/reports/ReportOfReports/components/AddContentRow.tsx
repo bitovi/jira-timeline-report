@@ -35,7 +35,15 @@ export interface AddContentRowProps {
  * An editing affordance rather than content, so the whole row carries `print-hidden`
  * (src/css/print.css). "Add Section" is hidden — not disabled — once nesting reaches
  * `MAX_SECTION_DEPTH`: there is no state to explain, the level simply doesn't take another section.
- * See spec/016-report-of-reports/002-nested-sections and .../004-redesign §6.
+ *
+ * **"Add Report" adds either kind of node.** It opens the Add Report modal, whose Work Item Value half
+ * builds an `inline-value` node from a work item and a field. That is where "Add Value" — parked three
+ * times as an expression box, and briefly shipped here as the `Add Work Item Update` preset — finally
+ * lives, as two validated controls rather than a button that drops a blank node on the page. Neither
+ * block survives here; the modal does what both were for.
+ *
+ * See spec/016-report-of-reports/002-nested-sections, .../003-self-reports Phase 4,
+ * .../004-redesign §6, and .../009-value-report-modal Phase 6.
  */
 export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = false }) => {
   const { sections, setSections } = useReportLayout();

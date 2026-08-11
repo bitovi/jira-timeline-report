@@ -10,7 +10,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { value, queues } from '../../can';
 import routeData from '../../canjs/routing/route-data';
 import { pushStateObservable } from '../../canjs/routing/state-storage';
-import { getTheme, applyThemeToCssVars } from '../../jira/theme';
+import { getTheme, applyThemeToCssVars, getFont, applyFontToCssVars } from '../../jira/theme';
 import { useCanObservable } from '../hooks/useCanObservable';
 import { useRouteData } from '../hooks/useRouteData';
 
@@ -112,10 +112,16 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 
   // Mirror the StacheElement's `connected()` — apply the saved theme to CSS vars on mount so the
   // stored theme takes effect immediately, instead of only once the user tweaks the Theme panel.
+  // Colors and font are separate storage keys, so they resolve independently; a failure in one must
+  // not stop the other from applying.
   useEffect(() => {
     getTheme(storage)
       .then(applyThemeToCssVars)
       .catch((error) => console.error('Something went wrong getting the theme', error));
+
+    getFont(storage)
+      .then(applyFontToCssVars)
+      .catch((error) => console.error('Something went wrong getting the font', error));
   }, [storage]);
 
   // Report props — the same `*Obs` contract the StacheElement passed. Built once (vm/routeData are

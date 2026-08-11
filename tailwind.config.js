@@ -3,7 +3,12 @@ module.exports = {
   safelist: ['pl-2', 'pl-4', 'pl-6', 'pl-8', 'border-neutral-301'],
   theme: {
     fontFamily: {
-      sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+      // Points at the variable declared in src/css/primitives.css so the Theme panel's font picker
+      // can override it at runtime. Without this the generated `.font-sans` utility ships a
+      // hardcoded stack that lands later in dist/production.css than the var-based rule in
+      // fonts.css and wins at equal specificity — i.e. the font setting would silently do nothing
+      // on every element carrying `font-sans`. See spec/016-report-of-reports/008-theme.
+      sans: 'var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif)',
       serif: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
       mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       bitovipoppins:
