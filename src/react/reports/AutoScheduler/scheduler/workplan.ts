@@ -14,7 +14,7 @@ export interface ScheduledWorkItem {
   track?: number;
 }
 
-class ScheduledWorkNode {
+export class ScheduledWorkNode {
   work: ScheduledWorkItem;
   next: ScheduledWorkNode | null = null;
   previous: ScheduledWorkNode | null = null;
