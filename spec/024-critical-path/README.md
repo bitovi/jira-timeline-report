@@ -208,34 +208,50 @@ it.
 
 ### The report
 
-Drawn as "The report, redesigned" in [the mockup](./mockups/critical-paths.html). Ranked rows replace
-the five-column grid:
+Drawn as "The report, redesigned" in [the mockup](./mockups/critical-paths.html), then simplified
+twice after review. First pass replaced today's five-column grid with ranked rows carrying a
+segmented bar plus the full spelled-out chain — still too much to scan at once. Second pass dropped
+the bar and chain entirely in favor of a bare text row — lost the at-a-glance work/queued signal that
+made the mockup's other placements (the Auto-Scheduler strip, the dropdown) easy to read. What's kept
+now is that strip's density: one compact line per path, everything else behind a disclosure.
 
-- **Criticality % as the headline number** on each row, with rank above it. A number, not a
-  one-bar chart.
-- **Epic, team tag, and the chain inline** as `A → B → C` chips, replacing today's vertical stacks of
-  blue links. Long names ellipsize rather than blowing out a column, which is what happens now.
-- **One segmented bar** replacing the two near-duplicate day columns — blue for working time, orange
-  for queued, on a shared axis across all rows so spans are comparable. In
-  [critical-path.png](./critical-path.png) those two columns are identical on every row without
-  fan-out (132/132, 120/120, 104/104), which reads as a bug.
-- **Fan-out collapsed** behind a disclosure, since it is the largest and least-scanned content.
+**Collapsed row** — one line per path, five columns, under a real header row (CSS Grid, so the
+header and every row share one column definition — no separate legend needed, since "Work"/"Queued"
+swatches sit directly in the header cell they label):
+
+| Criticality index | Critical path           | Work · Queued | Total days |
+| ----------------- | ----------------------- | ------------- | ---------- |
+| 1 · 78%           | Epic X.1 → … → Epic X.6 | ▬▬▬▬▬▬▬▬▓▓▓▓  | 257 d      |
+
+"Criticality index" itself spans three grid columns — the expander, the rank number, and the
+percent — since those three together are what the header names.
+
+- **Chain** always shows just the first epic → `…` → the last epic, not every epic spelled out —
+  that's what made the earlier version wide and slow to scan. The full chain, in order, lives in the
+  expanded detail.
+- **Work / queued** is a small two-color bar, scaled to a shared max span so rows are comparable —
+  the same encoding as the mockup's Auto-Scheduler strip, just also present in the standalone report.
 - Top 5, then "Show more".
 
-Encoding rules, from the dataviz procedure:
+**Expanded row** (disclosure per path) adds:
 
-- Palette `#0c66e4` / `#b65c02`, validated rather than eyeballed — CVD ΔE 30.2 (protan), 26.3
-  (tritan), normal-vision 34.2, all six checks pass. Margins are wide enough that texture stays
-  opt-in for print and forced-colors.
-- Two series, so a legend is always present. Values are printed as text beside every bar and a table
-  view exists, so nothing is reachable only by color or only by a tooltip.
-- The user-configurable status tokens (`--blocked-color`, `--warning-color`, …) are reserved. These
-  two series are composition, not state.
-- 2px surface gap between segments, 4px rounded data-end, solid hairline gridlines, per-segment
-  hover tooltips.
-- Where the focused chain is highlighted in the Auto-Scheduler grid, it uses the **full-strength step
-  of the same blue** the other bars recede to — emphasis, not a second hue. Tinting it orange would
-  give one color two meanings across two surfaces.
+- **Full chain** — every epic in the chain as linked chips. No row-level team tag: a chain is built
+  from capacity hops (necessarily same-team) and dependency hops (which can jump to any team), so it
+  routinely crosses teams — a single tag would misrepresent it.
+- **Biggest epic by days of work** — the single largest work item on the chain, e.g. "Epic X.2 — 41
+  days". Answers "what's the biggest piece of scope on this chain?" — the epic to split or descope
+  if you want to shorten it.
+- **Biggest epic by queued delay** — the hop with the longest queued gap before it started, e.g.
+  "Epic X.4 — 38 days queued behind ADJ3's other epics". Answers a different question — "where's the
+  capacity bottleneck?" — and descoping the epic above wouldn't touch this number, since some other
+  epic would just queue in its place. Both are shown because they can and often do point at
+  different epics.
+- **Other epics blocked by this chain** — the fan-out, as a list, with the total days across it, e.g.
+  "119 days across 6 blocked epics".
+
+Encoding rules for the bar carry over unchanged from the earlier draft: palette `#0c66e4` /
+`#b65c02`, validated (CVD ΔE 30.2 protan, 26.3 tritan, normal-vision 34.2), a legend since there are
+two series, and values also present as text so nothing is color-only.
 
 ### Team load
 
@@ -267,9 +283,12 @@ the page ([`AutoScheduler.tsx:273`](../../src/react/reports/AutoScheduler/AutoSc
 deleted**, and its two jobs split: highlighting a path moves into the dropdown, the full listing
 becomes the standalone report.
 
-Highlighting should **dim** the other issues rather than filter them out. Today `gridifyStatsUIData`
-removes non-highlighted issues from the grid entirely (`AutoScheduler.tsx:436-438`), which discards
-the context that makes a critical path meaningful.
+Highlighting keeps today's behavior: `gridifyStatsUIData` hides every row except the
+highlighted path's issues (`AutoScheduler.tsx:494-508`). A real plan can be large enough that
+dimming still leaves too much on screen to make the selected chain readable — hiding the rest is
+what makes "just this path" legible at plan scale. The tradeoff (losing surrounding context) is
+accepted;
+that context is recoverable by clearing the selection.
 
 Recorded tradeoff: of the four placements drawn in the mockup, a button-and-dropdown is the weakest
 against the complaint that the report is easy to miss, because a control still has to be clicked. It

@@ -38,8 +38,25 @@ interface AutoSchedulerProps {
 }
 
 const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, allIssuesOrReleasesObs }) => {
-  const primary = useCanObservable(primaryIssuesOrReleasesObs);
+  const primaryRaw = useCanObservable(primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(allIssuesOrReleasesObs);
+
+  // `primaryIssuesOrReleases` re-emits a NEW array on every URL change — including moving the
+  // uncertainty slider — even though the issue objects inside are unchanged. (Empty JSON URL params
+  // such as `filterRows` resolve a fresh reference on each `pushState`; `primaryIssuesOrReleases`
+  // reads them while filtering, so its `.filter()` produces a new array of the same items.) Without
+  // this guard the `[primary]` effect below tears down and re-runs the whole Monte-Carlo simulation
+  // on every slider tick. Keep the previous reference while the set of issue objects is identical so
+  // the simulation is reused and only the percentile selection updates; a genuine data change (rollup
+  // recompute) yields new issue objects and correctly restarts the run.
+  const primaryRef = useRef(primaryRaw);
+  if (
+    primaryRef.current !== primaryRaw &&
+    (primaryRef.current.length !== primaryRaw.length || primaryRef.current.some((issue, i) => issue !== primaryRaw[i]))
+  ) {
+    primaryRef.current = primaryRaw;
+  }
+  const primary = primaryRef.current;
 
   const [selectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight] = useUncertaintyWeight();
@@ -100,6 +117,22 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   // converts the stats into data for a grid
   const gridData = gridUIData(uiData, selectedStartDate, workItemsToHighlight);
+
+  // Plan-level estimate for the Summary row. Mirrors the slider exactly: a single value for
+  // median/average, a range for a percentile band. `dueDay*` are business-day counts.
+  const planResult = uiData.endDaySimulationResult;
+  const planBottomDays = Math.round(planResult.dueDayBottom);
+  const planTopDays = Math.round(planResult.dueDayTop);
+  let planEstimateText: string;
+  if (uncertaintyWeight === 'average') {
+    planEstimateText = `${planTopDays} working days · average`;
+  } else if (uncertaintyWeight === 50) {
+    planEstimateText = `${planTopDays} working days · median`;
+  } else if (planBottomDays === planTopDays) {
+    planEstimateText = `${planTopDays} working days`;
+  } else {
+    planEstimateText = `${planBottomDays}–${planTopDays} working days`;
+  }
 
   return (
     <div className="relative py-2">
@@ -192,6 +225,28 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
         <div className="pl-2 pt-2 pb-1 pr-1 flex " style={{ gridRow: 2, gridColumnStart: 'what' }}>
           <div className="text-base grow font-semibold">Summary</div>
         </div>
+
+        {uiData.overallConfidence && (
+          <div
+            className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
+            style={{
+              gridRow: `2 / span 1`,
+              gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
+            }}
+          >
+            {uiData.overallConfidence.isFitGood ? (
+              <div>Confidence: {roundTo(uiData.overallConfidence.confidence, 0)}%</div>
+            ) : (
+              <div
+                className="text-neutral-500"
+                title="The plan's completion times aren't well described by a single distribution (e.g. competing critical paths), so a composite confidence would be misleading."
+              >
+                Confidence: n/a
+              </div>
+            )}
+            <div>{planEstimateText}</div>
+          </div>
+        )}
 
         <IssueSimulationRow
           issue={uiData.endDaySimulationResult}

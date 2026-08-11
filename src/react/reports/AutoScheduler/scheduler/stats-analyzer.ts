@@ -5,6 +5,8 @@ import type { BatchDatas, BatchIssueData } from './monte-carlo';
 
 import type { LinkedIssue } from './link-issues';
 
+import { fitLognormal } from './fit-lognormal';
+
 import {
   insertSortedArrayInPlace,
   average,
@@ -119,6 +121,14 @@ export class StatsAnalyzer {
 
     const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
 
+    // Fit a lognormal to the whole-plan completion distribution so we can report a single
+    // composite confidence alongside the per-issue ones. `lastDays` is kept sorted ascending.
+    const fit = fitLognormal(this.lastDays);
+    const overallConfidence = fit && {
+      confidence: fit.confidence,
+      isFitGood: fit.isFitGood,
+    };
+
     // lets get it ready for teams ...
     const teamGroups = groupBy(
       simulationIssueResults,
@@ -138,6 +148,7 @@ export class StatsAnalyzer {
       percentComplete: this.percentComplete,
       uncertaintyWeight: this.uncertaintyWeight,
       endDaySimulationResult,
+      overallConfidence,
       simulationIssueResults,
       teams,
     };
