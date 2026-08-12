@@ -26,7 +26,10 @@ describe('StatusSummaryBody', () => {
             blocks: [
               {
                 type: 'bulletList',
-                items: [[{ type: 'paragraph', text: 'first' }], [{ type: 'paragraph', text: 'second' }]],
+                items: [
+                  [{ type: 'paragraph', content: [{ type: 'text', text: 'first' }] }],
+                  [{ type: 'paragraph', content: [{ type: 'text', text: 'second' }] }],
+                ],
               },
             ],
           },
@@ -47,7 +50,10 @@ describe('StatusSummaryBody', () => {
             blocks: [
               {
                 type: 'bulletList',
-                items: [[{ type: 'paragraph', text: 'first' }], [{ type: 'paragraph', text: 'second' }]],
+                items: [
+                  [{ type: 'paragraph', content: [{ type: 'text', text: 'first' }] }],
+                  [{ type: 'paragraph', content: [{ type: 'text', text: 'second' }] }],
+                ],
               },
             ],
           },

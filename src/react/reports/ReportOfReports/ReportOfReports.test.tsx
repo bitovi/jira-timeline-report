@@ -3,7 +3,7 @@ import type { StoredNode } from './model/sections';
 import type { ComponentProps } from 'react';
 
 import React, { Suspense } from 'react';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -17,12 +17,45 @@ import { useCanObservable } from '../../hooks/useCanObservable';
 // The field catalog is fetched with `useSuspenseQuery`; stub it so inline-value tests exercise the
 // document rather than React Query's suspense plumbing. See .../003-self-reports.
 vi.mock('../../services/jira/useJiraIssueFields', () => ({
-  useJiraIssueFields: () => [{ id: 'summary', name: 'Summary', schema: { type: 'string' }, clauseNames: ['summary'] }],
+  useJiraIssueFields: () => [
+    { id: 'summary', name: 'Summary', schema: { type: 'string' }, clauseNames: ['summary'] },
+    // `comment` is here because it's real: it resolves, and then dead-ends in the formatter, which is
+    // where the signpost to `.latestComment` lives. See .../007-latest-comment-report.
+    { id: 'comment', name: 'Comment', schema: { type: 'comments-page' }, clauseNames: ['comment'] },
+  ],
 }));
+
+/**
+ * A comment body renders through `AdfDocument`, which `React.lazy`-imports `@atlaskit/renderer`. Left
+ * real, every test here would pull the whole editor stack through vite's transform pipeline — which
+ * took these tests past the 5s timeout under full-suite load, non-deterministically and in a different
+ * test each run.
+ *
+ * So stub it with its own `Suspense` fallback: the local walker, rendered synchronously. These tests are
+ * about what the *document* does with a comment, not about Atlassian's renderer, which has its own tests
+ * in `AdfDocument.test.tsx` and its own Storybook stories.
+ * See spec/016-report-of-reports/007-latest-comment-report § Rich rendering.
+ */
+vi.mock('../../components/AdfDocument', async () => {
+  const react = await import('react');
+  const { AdfBlocks, adfToBlocks } = await import('../../components/AdfBlocks');
+
+  return {
+    AdfDocument: ({ document, fallbackClassName }: { document: unknown; fallbackClassName?: string }) =>
+      react.createElement(AdfBlocks, { blocks: adfToBlocks(document), className: fallbackClassName }),
+  };
+});
 
 /** Records the searches inline values issue, and answers them. */
 const searches: Array<{ jql: string; fields: string[] }> = [];
-let searchResult: Array<{ fields: Record<string, unknown> }> = [];
+let searchResult: Array<{ key?: string; fields: Record<string, unknown> }> = [];
+
+/**
+ * The comment endpoint a latest-comment value reaches after the search names its work item.
+ * See spec/016-report-of-reports/007-latest-comment-report.
+ */
+const commentRequests: string[] = [];
+let commentResult: unknown = { comments: [] };
 
 const jira = {
   fetchJiraIssuesWithJQLWithNamedFields: async (params: any) => {
@@ -30,6 +63,21 @@ const jira = {
 
     return searchResult;
   },
+  fetchLatestComment: async (issueKey: string) => {
+    commentRequests.push(issueKey);
+
+    if (commentResult instanceof Error) {
+      throw commentResult;
+    }
+
+    return commentResult;
+  },
+  // The Add Report modal's work-item typeahead. Echoing the query back as a suggestion means a test
+  // can "pick" any key it likes without a fixture per key. The empty query — which the picker asks on
+  // open, for the recently-viewed list — answers with nothing.
+  fetchIssuePickerSuggestions: async (query: string) => ({
+    sections: query ? [{ id: 'cs', issues: [{ key: query, summaryText: `${query} summary` }] }] : [],
+  }),
 } as any;
 
 const savedReports = {
@@ -133,6 +181,30 @@ const addReport = async (name: string) => {
   await userEvent.click(await screen.findByRole('button', { name }));
 };
 
+/**
+ * Adds a value through the Add Report modal's Work Item Value half: pick a work item, pick a field, press
+ * `+`. `opener` is the add row's button — `Add Report`, or `Add Report to Q3` for a section.
+ *
+ * The typeahead is debounced, so the suggestion arrives a beat after the keystroke; `findByText` waits
+ * it out. `fireEvent.change` rather than `userEvent.type` because react-select's input lives in a
+ * portal that repositions as it opens.
+ * See spec/016-report-of-reports/009-value-report-modal Phase 6.
+ */
+const addValue = async (opener: string, key: string, field: string) => {
+  await clickAdd(opener);
+
+  fireEvent.change(await screen.findByLabelText('Work item'), { target: { value: key } });
+  // 3s, not the 1s default: the typeahead debounces 300ms of REAL time before it even asks, and under
+  // full-suite load the remaining budget isn't enough for the query and two renders. This failed once
+  // in a pre-commit run and passed on every re-run, which is the signature.
+  await userEvent.click(await screen.findByText(`${key} — ${key} summary`, undefined, { timeout: 3000 }));
+
+  fireEvent.keyDown(screen.getByLabelText('Field'), { key: 'ArrowDown' });
+  await userEvent.click(await screen.findByText(field));
+
+  await userEvent.click(screen.getByTestId('ror-value-add'));
+};
+
 const cardNames = () => screen.getAllByTestId('report-card').map((card) => card.getAttribute('data-report-name'));
 
 /** The row a control sits on. Hover, pin, and the controls' visibility are all per row. */
@@ -201,6 +273,8 @@ describe('<ReportOfReports>', () => {
   beforeEach(() => {
     searches.length = 0;
     searchResult = [];
+    commentRequests.length = 0;
+    commentResult = { comments: [] };
     mounts.length = 0;
     // Editing the document writes a `sections` param, which would otherwise seed the next test.
     window.history.replaceState({}, '', '/');
@@ -211,6 +285,15 @@ describe('<ReportOfReports>', () => {
 
     expect(await screen.findByRole('button', { name: 'Add Report' })).toBeInTheDocument();
     expect(screen.queryAllByTestId('report-card')).toHaveLength(0);
+  });
+
+  it('marks the document root with the hook fullscreen.css indents by', async () => {
+    renderReport();
+
+    // The gutter this keeps in fullscreen lives in a global stylesheet, so dropping the class here
+    // would silently push the document back against both screen edges — jsdom loads no CSS, and
+    // there is nothing else to notice.
+    expect((await screen.findByRole('button', { name: 'Add Report' })).closest('.ror-document')).not.toBeNull();
   });
 
   it('adds the chosen report and keeps the Add Report button below it', async () => {
@@ -882,24 +965,27 @@ describe('<ReportOfReports>', () => {
       expect(await screen.findByTestId('inline-value-error')).toHaveTextContent('No work item matched.');
     });
 
-    it('prompts for an expression when the node is blank', async () => {
-      renderReport({ savedSections: [storedValue('')] });
+    // A blank value says nothing — no instructions in the document — and there is nothing to click: it
+    // can only arrive from a saved or hand-edited document, and the way to be rid of it is delete.
+    it('renders a blank value as an empty row with nothing to edit', async () => {
+      renderReport({ savedSections: [storedValue(''), stored('a')] });
 
-      expect(await screen.findByText(/Write an expression/)).toBeInTheDocument();
+      // The document renders around it; the row itself offers no edit affordance.
+      expect(await screen.findByTestId('report-card')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'inline value, edit' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
 
-    // "Add Value" is parked by .../004-redesign §6 — the add row is two buttons again — so these seed
-    // the node the way a saved document does. Everything a value *does* is still covered; only the
-    // way one comes into existence is gone.
-    it('resolves an expression typed into a blank value', async () => {
-      searchResult = [{ fields: { Summary: 'Rotate signing keys' } }];
-      renderReport({ savedSections: [storedValue('')] });
+    // A value node is read-only: both halves are chosen in the modal, and a wrong one is deleted rather
+    // than corrected. See .../009-value-report-modal § The node stops being editable.
+    it('offers no way to edit a resolved value in place', async () => {
+      searchResult = [{ fields: { Summary: 'Migrate auth to OIDC' } }];
+      renderReport({ savedSections: [storedValue('(issue = ABC-1).summary')] });
 
-      await userEvent.click(await screen.findByRole('button', { name: 'inline value, edit' }));
-      await userEvent.type(await screen.findByRole('textbox'), '(issue = ABC-2).summary');
-      await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+      await value();
 
-      expect(await value()).toHaveTextContent('Rotate signing keys');
+      expect(screen.queryByRole('button', { name: /, edit$/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
 
     it('renders a value nested in a section, inside that section', async () => {
@@ -917,13 +1003,289 @@ describe('<ReportOfReports>', () => {
       expect(await within(section).findByTestId('inline-value')).toHaveTextContent('inside');
     });
 
-    it('can be removed like any other node', async () => {
+    /**
+     * Named by what the user picked in the modal, never by the stored expression — a confirm dialog
+     * saying `Delete "(issue = ABC-1).summary"?` puts an internal storage format in front of someone
+     * who never typed one. See .../009-value-report-modal § The node stops being editable.
+     */
+    it('names itself by work item and field in its controls, not by its expression', async () => {
       searchResult = [{ fields: { Summary: 'gone soon' } }];
       renderReport({ savedSections: [storedValue('(issue = ABC-1).summary'), stored('a')] });
 
-      await removeNode('(issue = ABC-1).summary');
+      await value();
+
+      expect(screen.getByRole('button', { name: 'Remove ABC-1 Summary' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /issue = ABC-1/ })).not.toBeInTheDocument();
+
+      await removeNode('ABC-1 Summary');
 
       expect(screen.queryByTestId('inline-value')).not.toBeInTheDocument();
+      expect(cardNames()).toEqual(['Alpha']);
+    });
+
+    // The field name only exists once the expression resolves, so the label has to degrade rather than
+    // read "ABC-1 undefined" or fall back to the expression it is there to avoid showing.
+    it('falls back to the work item alone when the field cannot resolve', async () => {
+      searchResult = [];
+      renderReport({ savedSections: [storedValue('(issue = ABC-1).nope')] });
+
+      expect(await screen.findByTestId('inline-value-error')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Remove ABC-1' })).toBeInTheDocument();
+    });
+
+    // `.comment` is a real field, so it resolves and then dead-ends in the formatter. That message is
+    // the only signpost to the pseudo-accessor, which by definition isn't in Jira's field list.
+    it('points a .comment expression at .latestComment', async () => {
+      searchResult = [{ fields: { Comment: { comments: [], total: 0 } } }];
+      renderReport({ savedSections: [storedValue('(issue = ABC-1).comment')] });
+
+      expect(await screen.findByTestId('inline-value-error')).toHaveTextContent(
+        "Comments can't show as a value — use .latestComment for the newest one.",
+      );
+    });
+  });
+
+  /**
+   * The same `inline-value` node, whose accessor is `latestComment` — a preset, not a second node type.
+   * See spec/016-report-of-reports/007-latest-comment-report.
+   */
+  describe('latest comment values', () => {
+    const storedComment = (issueKey: string): StoredNode =>
+      ({ type: 'inline-value', params: { expression: `(issue = ${issueKey}).latestComment` } }) as StoredNode;
+
+    const comment = (text: string) => ({
+      comments: [
+        {
+          body: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] },
+          author: { displayName: 'Dana Ruiz' },
+          created: '2026-08-04T14:22:00.000Z',
+        },
+      ],
+    });
+
+    /** A resolvable work item — the search names it, the comment endpoint answers for it. */
+    const resolves = (key = 'ABC-1', text = 'Blocked on the SSO cert rotation.') => {
+      searchResult = [{ key, fields: {} }];
+      commentResult = comment(text);
+    };
+
+    const body = () => screen.findByTestId('latest-comment');
+
+    it('renders the comment, then who updated it and when', async () => {
+      resolves();
+      renderReport({ savedSections: [storedComment('ABC-1')] });
+
+      expect(await body()).toHaveTextContent('Blocked on the SSO cert rotation.');
+      expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+      expect(screen.getByText(/^Last updated: /)).toBeInTheDocument();
+    });
+
+    // The row is the key as the node's heading — no "Latest comment" prefix, and never the raw
+    // expression. See .../007-latest-comment-report § The row is the key.
+    it('heads the node with the key, not the expression', async () => {
+      resolves();
+      renderReport({ savedSections: [storedComment('ABC-1')] });
+
+      await body();
+
+      expect(screen.getByRole('heading', { name: 'ABC-1' })).toBeInTheDocument();
+      expect(screen.queryByText('Latest comment')).not.toBeInTheDocument();
+      expect(screen.queryByText('(issue = ABC-1).latestComment')).not.toBeInTheDocument();
+    });
+
+    // Two requests, deliberately: the search names the work item, the comment endpoint answers for it.
+    it('reaches the comment endpoint through the key the search found', async () => {
+      resolves('SYSTEMS-918');
+      renderReport({ savedSections: [storedComment('SYSTEMS-918')] });
+
+      await body();
+
+      expect(searches).toEqual([
+        expect.objectContaining({ jql: 'issue = SYSTEMS-918', fields: ['summary'], maxResults: 2 }),
+      ]);
+      expect(commentRequests).toEqual(['SYSTEMS-918']);
+    });
+
+    it('renders the comment as semantic HTML rather than flattened text', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      commentResult = {
+        comments: [
+          {
+            body: {
+              type: 'doc',
+              version: 1,
+              content: [
+                {
+                  type: 'bulletList',
+                  content: [
+                    {
+                      type: 'listItem',
+                      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'cert rotation' }] }],
+                    },
+                  ],
+                },
+              ],
+            },
+            author: { displayName: 'Dana Ruiz' },
+            created: '2026-08-04T14:22:00.000Z',
+          },
+        ],
+      };
+      renderReport({ savedSections: [storedComment('ABC-1')] });
+
+      await body();
+
+      expect(screen.getByText('cert rotation').closest('ul')).toBeInTheDocument();
+    });
+
+    // Authoring is the Add Report modal's now, and picking `Latest Comment` is what makes the node a
+    // comment node — the accessor in the expression is still the whole of the distinction.
+    // See .../009-value-report-modal Phase 6.
+    it('is added from the Add Report modal, into the section it was opened from', async () => {
+      resolves('ABC-1', 'Blocked on the cert.');
+      renderReport({ savedSections: [nest('Q3', [])] });
+
+      await addValue('Add Report to Q3', 'ABC-1', 'Latest Comment');
+
+      const section = (await sectionTitle('Q3')).closest('section') as HTMLElement;
+
+      expect(await within(section).findByTestId('latest-comment')).toHaveTextContent('Blocked on the cert.');
+      expect(within(section).getByRole('heading', { name: 'ABC-1' })).toBeInTheDocument();
+    });
+
+    // A reversal of 007, which made the button section-only on the reasoning that a note belongs beside
+    // what it comments on. One modal that changes shape by origin costs more to explain than that is
+    // worth. See .../009-value-report-modal § Decided with the user.
+    // The add row that opened the modal sits inside one specific container, and the modal covers it.
+    // See .../009-value-report-modal § Restructure.
+    it('names the section it was opened from', async () => {
+      renderReport({ savedSections: [nest('Q3', [])] });
+
+      await clickAdd('Add Report to Q3');
+
+      expect(await screen.findByText('Adding to Q3')).toBeInTheDocument();
+    });
+
+    it('can be added at the document root too', async () => {
+      resolves('ABC-1', 'At the top.');
+      renderReport({ savedSections: [] });
+
+      await addValue('Add Report', 'ABC-1', 'Latest Comment');
+
+      expect(await body()).toHaveTextContent('At the top.');
+    });
+
+    it('adds an ordinary field from the same two controls', async () => {
+      searchResult = [{ key: 'ABC-1', fields: { Summary: 'Migrate auth to OIDC' } }];
+      renderReport({ savedSections: [] });
+
+      await addValue('Add Report', 'ABC-1', 'Summary');
+
+      expect(await screen.findByTestId('inline-value')).toHaveTextContent('Migrate auth to OIDC');
+    });
+
+    // A blank node can only come from a document saved before the modal existed. It states the fact and
+    // asks nothing — a request built from `issue =` could only fail.
+    it('asks Jira nothing for a node with no work item set', async () => {
+      renderReport({ savedSections: [storedComment('')] });
+
+      expect(await screen.findByText('No work item set.')).toBeInTheDocument();
+      expect(searches).toEqual([]);
+      expect(commentRequests).toEqual([]);
+    });
+
+    it('reports a work item with no comments without taking the document down', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      commentResult = { comments: [], total: 0 };
+      renderReport({ savedSections: [storedComment('ABC-1'), stored('a')] });
+
+      expect(await screen.findByText('No updates found.')).toBeInTheDocument();
+      expect(cardNames()).toEqual(['Alpha']);
+    });
+
+    it('reports a key that matched nothing', async () => {
+      searchResult = [];
+      renderReport({ savedSections: [storedComment('NOPE-1')] });
+
+      expect(await screen.findByTestId('latest-comment-error')).toHaveTextContent('No work item matched.');
+      expect(commentRequests).toEqual([]);
+    });
+
+    // Content beneath the row means a caret, per .../004-redesign. The body stays mounted while hidden
+    // so print can restore it, the same way a chart's does.
+    it('offers a caret that hides the comment and leaves the row', async () => {
+      resolves();
+      renderReport({ savedSections: [storedComment('ABC-1')] });
+
+      await body();
+      await userEvent.click(screen.getByRole('button', { name: 'Collapse ABC-1' }));
+
+      expect(screen.getByTestId('latest-comment').closest('[hidden]')).toBeInTheDocument();
+      // The key is the row, so collapsed the node is `▸ ABC-1` and that heading is what has to survive.
+      expect(screen.getByRole('heading', { name: 'ABC-1' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Expand ABC-1' })).toBeInTheDocument();
+    });
+
+    it('renders inside the section it belongs to', async () => {
+      resolves('ABC-3', 'inside');
+      renderReport({ savedSections: [nest('Q3', [storedComment('ABC-3')])] });
+
+      const section = (await sectionTitle('Q3')).closest('section') as HTMLElement;
+
+      expect(await within(section).findByTestId('latest-comment')).toHaveTextContent('inside');
+    });
+
+    it('moves and deletes like any other node', async () => {
+      resolves();
+      renderReport({ savedSections: [stored('a'), storedComment('ABC-1')] });
+
+      await body();
+      await clickControl('Move ABC-1 up');
+
+      expect(await body()).toBeInTheDocument();
+
+      await removeNode('ABC-1');
+
+      expect(screen.queryByTestId('latest-comment')).not.toBeInTheDocument();
+      expect(cardNames()).toEqual(['Alpha']);
+    });
+
+    /**
+     * The modal can't write one, but a document saved earlier can hold one — so it still fetches (the
+     * hook takes the JQL either way) and it still has to title itself with something. That something is
+     * the JQL, since no single work item is named.
+     */
+    it('renders a hand-written query, titled with the query', async () => {
+      resolves('ABC-9', 'from a query');
+      const expression = '(assignee = currentUser() AND updated > -1d).latestComment';
+      renderReport({ savedSections: [{ type: 'inline-value', params: { expression } } as StoredNode] });
+
+      expect(await body()).toHaveTextContent('from a query');
+      expect(searches).toEqual([
+        expect.objectContaining({ jql: 'assignee = currentUser() AND updated > -1d', fields: ['summary'] }),
+      ]);
+      expect(screen.getByRole('heading', { name: 'assignee = currentUser() AND updated > -1d' })).toBeInTheDocument();
+    });
+
+    /**
+     * Delete is the only correction there is, so the controls it hangs off have to be reachable — which
+     * is the whole reason a blank row keeps its min-height. 007's § Editing can't un-make the node and
+     * its two recovery tests are gone with the edit field: a node nothing can type into cannot be typed
+     * out of being a comment node.
+     * See .../009-value-report-modal § The node stops being editable.
+     */
+    it('offers no edit affordance, but still offers delete', async () => {
+      resolves();
+      renderReport({ savedSections: [storedComment('ABC-1'), stored('a')] });
+
+      await body();
+
+      expect(screen.queryByRole('button', { name: 'ABC-1, edit' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+
+      await removeNode('ABC-1');
+
+      expect(screen.queryByTestId('latest-comment')).not.toBeInTheDocument();
       expect(cardNames()).toEqual(['Alpha']);
     });
   });

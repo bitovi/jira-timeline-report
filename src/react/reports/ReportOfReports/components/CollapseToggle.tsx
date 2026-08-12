@@ -18,7 +18,9 @@ export interface CollapseToggleProps {
  * A section's caret. Down when expanded, right when collapsed; `aria-expanded` says the same thing to
  * a screen reader, which is what makes this a disclosure rather than a mystery arrow.
  *
- * Only sections have one — reports and values render no caret and reserve no space for it.
+ * A caret appears wherever there is content beneath the row: sections, embedded reports, and a
+ * latest-comment value. An ordinary inline value is a row and nothing else, so it renders no caret and
+ * reserves no space for one.
  * See spec/016-report-of-reports/004-redesign §3.
  */
 export const CollapseToggle: FC<CollapseToggleProps> = ({ isCollapsed, label, onToggle }) => (

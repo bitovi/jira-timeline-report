@@ -12,6 +12,7 @@
 import { createElement } from 'react';
 
 import { defaultAggregationForType } from './aggregations';
+import { fieldValueText } from './fieldValueText';
 
 import type { ReactNode } from 'react';
 import type { AggregationId } from './aggregations';
@@ -47,9 +48,15 @@ function nullsLast(a: unknown, b: unknown): number | null {
   return null;
 }
 
+/**
+ * The default entry, and the fallback for every schema type without one of its own — which is most
+ * of Jira's object-valued types (`user`, `priority`, `option`, `resolution`, `component`, …). Both
+ * `render` and `compare` go through {@link fieldValueText} rather than `String(value)` so those
+ * fields show (and sort by) their label instead of `[object Object]`.
+ */
 const textEntry: FieldTypeEntry = {
-  render: (value) => (value == null ? '' : String(value)),
-  compare: (a, b) => nullsLast(a, b) ?? String(a).localeCompare(String(b)),
+  render: (value) => fieldValueText(value),
+  compare: (a, b) => nullsLast(a, b) ?? fieldValueText(a).localeCompare(fieldValueText(b)),
   filter: { kind: 'text' },
   defaultAggregate: defaultAggregationForType('string'),
 };

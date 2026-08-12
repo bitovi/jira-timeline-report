@@ -3,11 +3,14 @@
  *
  * Opens a searchable catalog popover grouped by {@link ColumnGroup} (Common / Identity / Fields /
  * Report Fields). Only columns not already shown appear; picking one appends it to the shown columns.
+ *
+ * The popover itself is {@link SearchablePicker}, shared with Report of Reports' field picker
+ * (spec/016-report-of-reports/009-value-report-modal, Phase 1). This file is what remains that is
+ * Table-specific: the group order, the copy, the `table-add-column*` test ids, and the trigger.
  */
-import React, { useMemo, useState } from 'react';
-import Popup from '@atlaskit/popup';
-import Textfield from '@atlaskit/textfield';
+import React, { useMemo } from 'react';
 
+import { SearchablePicker, type PickerItem } from '../../../components/SearchablePicker';
 import type { ColumnDefinition, ColumnGroup } from '../model/columns';
 
 interface AddColumnButtonProps {
@@ -22,71 +25,27 @@ interface AddColumnButtonProps {
 const GROUP_ORDER: ColumnGroup[] = ['Common', 'Identity', 'Report Fields', 'Fields', 'Computed'];
 
 export const AddColumnButton: React.FC<AddColumnButtonProps> = ({ catalog, shownColumnIds, onAdd }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-
-  const shown = useMemo(() => new Set(shownColumnIds), [shownColumnIds]);
-
-  const grouped = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    const available = catalog.filter(
-      (c) => !shown.has(c.id) && (needle === '' || c.label.toLowerCase().includes(needle)),
-    );
-    return GROUP_ORDER.map((group) => ({
-      group,
-      columns: available.filter((c) => c.group === group),
-    })).filter((section) => section.columns.length > 0);
-  }, [catalog, shown, search]);
+  const items = useMemo<PickerItem[]>(
+    () => catalog.map((column) => ({ id: column.id, label: column.label, group: column.group })),
+    [catalog],
+  );
 
   return (
-    <Popup
-      isOpen={isOpen}
-      onClose={() => {
-        setIsOpen(false);
-        setSearch('');
-      }}
-      placement="bottom-start"
-      content={() => (
-        <div className="p-3 w-72 flex flex-col gap-2" data-testid="table-add-column-popover">
-          <Textfield
-            testId="table-add-column-search"
-            placeholder="Search columns…"
-            value={search}
-            autoFocus
-            onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
-          />
-          <div className="max-h-72 overflow-auto flex flex-col gap-2">
-            {grouped.length === 0 && <div className="text-neutral-801 text-xs px-1">No columns to add.</div>}
-            {grouped.map((section) => (
-              <div key={section.group} className="flex flex-col">
-                <span className="text-xs font-semibold text-neutral-801 px-1 py-1">{section.group}</span>
-                {section.columns.map((column) => (
-                  <button
-                    key={column.id}
-                    type="button"
-                    data-testid="table-add-column-option"
-                    className="text-left text-sm px-2 py-1 rounded hover:bg-neutral-201"
-                    onClick={() => {
-                      onAdd(column.id);
-                      setSearch('');
-                      setIsOpen(false);
-                    }}
-                  >
-                    {column.label}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      trigger={(triggerProps) => (
+    <SearchablePicker
+      items={items}
+      groupOrder={GROUP_ORDER}
+      excludeIds={shownColumnIds}
+      placeholder="Search columns…"
+      emptyMessage="No columns to add."
+      testIdPrefix="table-add-column"
+      onSelect={onAdd}
+      trigger={(triggerProps, toggle) => (
         <button
           {...triggerProps}
           type="button"
           data-testid="table-add-column"
           className="inline-flex items-center h-8 text-sm rounded bg-neutral-201 hover:bg-neutral-301 px-2 leading-4 cursor-pointer"
-          onClick={() => setIsOpen((open) => !open)}
+          onClick={toggle}
         >
           + Add column
         </button>

@@ -14,9 +14,12 @@ import React, { useCallback, useMemo } from 'react';
 import { reports as REPORTS } from '../../../configuration/reports';
 import { useAllReports } from '../../services/reports';
 import { useReportLayout } from '../../services/report-layout';
-import { appendNode, savedReportNode, setExpressionAt, setSectionTitleAt } from './model/sections';
+import { appendNode, inlineValueNode, savedReportNode, sectionTitleAt, setSectionTitleAt } from './model/sections';
+import { isExpressionError, parseExpression } from './model/expression';
+import { isLatestCommentExpression, issueKeyOf } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
-import { useInlineExpression } from './hooks/useInlineExpression';
+import { useInlineExpression, type InlineExpressionState } from './hooks/useInlineExpression';
+import { useLatestComment } from './hooks/useLatestComment';
 import { AddContentRow } from './components/AddContentRow';
 import { AddReportModal } from './components/AddReportModal';
 import { ChildReport } from './components/ChildReport';
@@ -25,6 +28,7 @@ import { CollapseToggle } from './components/CollapseToggle';
 import { DocumentEditingProvider, useDocumentEditing, useNodeRow } from './components/DocumentEditing';
 import { IndentLevel } from './components/IndentLevel';
 import { InlineValue } from './components/InlineValue';
+import { LatestComment, LatestCommentBody } from './components/LatestComment';
 import { MissingReportNote } from './components/MissingReportNote';
 import { NodeControls } from './components/NodeControls';
 import { NodeRow } from './components/NodeRow';
@@ -70,6 +74,14 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
     closeReportPicker();
   };
 
+  // The same three lines with a value node instead of a saved-report one — and deliberately **no**
+  // `beginEditing`: the modal already collected the work item and the field, which is the whole point of
+  // moving authoring into it. See spec/016-report-of-reports/009-value-report-modal Phase 6.
+  const handleAddValue = (expression: string) => {
+    setSections(appendNode(sections, inlineValueNode(expression), pickerPath ?? []));
+    closeReportPicker();
+  };
+
   // No frame of any kind: not a box per node, and not one around the whole document either. Nesting
   // is carried entirely by indent and a hairline rail from here down, so the only borders on the page
   // belong to the embedded reports themselves. See spec/016-report-of-reports/004-redesign §1.
@@ -86,7 +98,13 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
        exactly the work items it would have fetched alone.
        See spec/016-report-of-reports/005-optimize/001-request-dedupe. */
     <ChildQueryGroupsProvider sections={sections} reports={reports}>
-      <div className="flex flex-col py-4" onMouseOver={() => hoverNode(null)} onMouseLeave={() => hoverNode(null)}>
+      {/* `ror-document` is a styling hook, not a layout class: fullscreen.css uses it to keep the
+          document off the screen edges once `.fullish-vh`'s gutter is reclaimed. */}
+      <div
+        className="ror-document flex flex-col py-4"
+        onMouseOver={() => hoverNode(null)}
+        onMouseLeave={() => hoverNode(null)}
+      >
         {sections.map((node, index) => (
           <LayoutNodeView
             key={node.id}
@@ -104,7 +122,11 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
         <AddReportModal
           isOpen={pickerPath !== null}
           reports={addableReports}
+          // What the add row that opened this belongs to. `undefined` at the document root, which is
+          // also what a null `pickerPath` gives — the modal is closed then anyway.
+          destination={pickerPath ? sectionTitleAt(sections, pickerPath) : undefined}
           onSelect={handleSelect}
+          onAddValue={handleAddValue}
           onClose={closeReportPicker}
         />
       </div>
@@ -129,7 +151,16 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
   }
 
   if (node.type === 'inline-value') {
-    return <InlineValueView node={node} path={path} />;
+    // Two presets of one node type, told apart by the expression's accessor — there is no second node
+    // type, and nothing in the stored document distinguishes them. The branch is here rather than
+    // inside `InlineValueView` for the same reason this dispatcher exists at all: the two read
+    // different hooks, and a hook can't be called conditionally.
+    // See spec/016-report-of-reports/007-latest-comment-report Phase 4.
+    return isLatestCommentExpression(node.params.expression) ? (
+      <LatestCommentView node={node} path={path} />
+    ) : (
+      <InlineValueView node={node} path={path} />
+    );
   }
 
   if (node.type === 'saved-report') {
@@ -157,6 +188,12 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
  * than a border for the reason nothing else here has one: the only frames on the page belong to the
  * embedded reports (.../004-redesign §1). Nothing tints for the document root's own pair — the whole
  * page is not a highlight, and "no section lit" is exactly what adding at the top level means.
+ *
+ * `color-bg-section` carries the themeable section background (Theme panel → Report of Reports),
+ * defaulting to white so sections still read as unframed. Every section reads the same variable, so
+ * a nested one repaints its parent's color rather than showing depth — depth is the indent rails'
+ * job. The add-target tint above still wins, since Tailwind's utilities layer comes after colors.css.
+ * See spec/016-report-of-reports/008-theme.
  */
 const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, path, reports, childReportProps }) => {
   const { sections, setSections } = useReportLayout();
@@ -171,7 +208,9 @@ const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, pa
   return (
     <section
       data-add-target={isTarget}
-      className={`flex flex-col rounded transition-colors duration-150 ${isTarget ? 'bg-blue-101' : ''}`}
+      className={`color-bg-section flex flex-col rounded transition-colors duration-150 ${
+        isTarget ? 'bg-blue-101' : ''
+      }`}
       {...hoverProps}
     >
       <NodeRow
@@ -363,6 +402,28 @@ const InlineReportView: FC<{
 };
 
 /**
+ * What a value node is called in its own controls — _"Move SUNNYSUSHI-54 Status up"_,
+ * _"Delete "SUNNYSUSHI-54 Status"?"_.
+ *
+ * **Not the expression.** The controls used to be labelled with it, which put
+ * `Delete "(issue = SUNNYSUSHI-54).status"?` in front of the user. That was defensible while the row
+ * was editable and the expression was something you typed; now it is an internal storage format that
+ * nothing else displays, and a confirm dialog is the worst place to leak one — see
+ * .../009-value-report-modal § The node stops being editable.
+ *
+ * Built from the two things the user actually chose in the modal. The field name is only known once
+ * the expression resolves, so an erroring or still-loading node degrades to just its work item, and one
+ * with neither — a blank node from an older document — to a bare word rather than an empty label.
+ */
+const inlineValueLabel = (expression: string, state: InlineExpressionState): string => {
+  const parsed = parseExpression(expression);
+  const key = isExpressionError(parsed) ? null : issueKeyOf(parsed.jql);
+  const field = state.status === 'ok' ? state.field.name : null;
+
+  return [key, field].filter(Boolean).join(' ') || 'value';
+};
+
+/**
  * One inline value: the expression is resolved by `useInlineExpression` and handed to `InlineValue`,
  * which stays pure and renders only the row's label.
  *
@@ -370,28 +431,68 @@ const InlineReportView: FC<{
  * See spec/016-report-of-reports/003-self-reports.
  */
 const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
-  const { sections, setSections } = useReportLayout();
-  const { editingNodeId, beginEditing, endEditing } = useDocumentEditing();
   const { hoverProps, rowProps } = useNodeRow(node, path);
   const state = useInlineExpression(node.params.expression);
 
-  const label = node.params.expression || 'inline value';
+  const label = inlineValueLabel(node.params.expression, state);
 
   return (
     <div className="flex flex-col" {...hoverProps}>
       <NodeRow {...rowProps} controls={<NodeControls path={path} label={label} nodeId={node.id} />}>
-        <InlineValue
-          expression={node.params.expression}
-          state={state}
-          isEditing={editingNodeId === node.id}
-          onEdit={() => beginEditing(node.id)}
-          onConfirm={(expression) => {
-            endEditing();
-            setSections(setExpressionAt(sections, path, expression));
-          }}
-          onCancel={endEditing}
-        />
+        <InlineValue expression={node.params.expression} state={state} />
       </NodeRow>
+    </div>
+  );
+};
+
+/**
+ * One latest-comment value: the same `inline-value` node as above, whose accessor happens to be
+ * `latestComment`.
+ *
+ * It reads `useLatestComment` instead of `useInlineExpression` and renders a report-shaped node — a row
+ * plus content beneath it — because a comment is a block of rich text rather than one value in a pill.
+ * Content beneath the row means it gets a caret, per 004-redesign's rule.
+ *
+ * **The row is the work item key** whenever the JQL is a single equality — which is what the modal
+ * writes and what practically every one of these is. `issueKeyOf` is the whole of that distinction, and
+ * it is now purely about what to title the row: a hand-written query, reachable only from a document
+ * saved earlier, titles itself with its JQL. The *fetch* always goes through the JQL either way.
+ *
+ * It's content, not chrome, so nothing here is `print-hidden` (the controls and caret hide themselves)
+ * and the body stays mounted while collapsed so print can restore it.
+ * See spec/016-report-of-reports/007-latest-comment-report Phase 4.
+ */
+const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
+  const { isCollapsed, toggleCollapsed } = useDocumentEditing();
+  const { hoverProps, rowProps } = useNodeRow(node, path);
+
+  // `isLatestCommentExpression` already proved this parses, so the error branch is unreachable — it's
+  // here to satisfy the type rather than to handle anything.
+  const parsed = parseExpression(node.params.expression);
+  const jql = isExpressionError(parsed) ? '' : parsed.jql;
+
+  const key = issueKeyOf(jql);
+  const target = key ?? jql;
+
+  // Nothing targeted yet means asking Jira nothing: a blank key leaves the JQL as `issue =`, which is
+  // not a query, and a freshly created node must not fire a request that can only fail.
+  const state = useLatestComment(target.trim() ? jql : '');
+
+  const label = target || 'latest comment';
+  const collapsed = isCollapsed(node.id);
+
+  return (
+    <div {...hoverProps} data-testid="latest-comment-node" className="flex flex-col print-avoid-break">
+      <NodeRow
+        {...rowProps}
+        caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
+        controls={<NodeControls path={path} label={label} nodeId={node.id} />}
+      >
+        <LatestComment target={target} />
+      </NodeRow>
+      <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+        <LatestCommentBody target={target} state={state} />
+      </div>
     </div>
   );
 };

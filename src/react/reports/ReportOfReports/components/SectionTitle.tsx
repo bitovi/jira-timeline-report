@@ -50,7 +50,12 @@ export const SectionTitle: FC<SectionTitleProps> = ({ title, depth, isEditing, o
           <Textfield {...fieldProps} autoFocus autoComplete="new-password" placeholder="Section title" />
         )}
         readView={() => (
-          <Heading className={`${className} truncate ${title ? '' : 'italic font-normal text-slate-500'}`}>
+          // `color-text-section` tracks the themeable section background so the title stays legible
+          // on a dark one. The untitled placeholder is muted with opacity rather than a fixed slate
+          // for the same reason — a fixed gray reads as muted on white and as unreadable on navy.
+          <Heading
+            className={`${className} color-text-section truncate ${title ? '' : 'italic font-normal opacity-60'}`}
+          >
             {label}
           </Heading>
         )}
@@ -61,8 +66,12 @@ export const SectionTitle: FC<SectionTitleProps> = ({ title, depth, isEditing, o
 
 /**
  * Scales the heading with nesting. Two steps, not three: a top-level section titles a whole part of
- * the document, so it gets the display face; everything nested is one step down and matches the
+ * the document, so it gets more size and weight; everything nested is one step down and matches the
  * weight a report row's name carries, since at that point they're peers in the same list.
+ *
+ * Size and weight only — no font family. A top-level title used to be pinned to the Poppins display
+ * face, which meant it ignored the font chosen in the Theme panel while the rest of the document
+ * followed it. The document is the customer's, so it uses their font throughout.
  *
  * Imperfect by design: a report row's name is a fixed `h3` and reports can sit at the root under no
  * heading at all, so this buys a readable outline rather than a valid one.
@@ -70,7 +79,7 @@ export const SectionTitle: FC<SectionTitleProps> = ({ title, depth, isEditing, o
  */
 const headingFor = (depth: number): { Heading: 'h2' | 'h3' | 'h4'; className: string } => {
   if (depth <= 1) {
-    return { Heading: 'h2', className: 'font-bitovipoppins text-lg font-bold' };
+    return { Heading: 'h2', className: 'text-lg font-bold' };
   }
 
   if (depth === 2) {

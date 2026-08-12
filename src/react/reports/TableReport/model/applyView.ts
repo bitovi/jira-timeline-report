@@ -10,6 +10,8 @@
  * reads `getValue` (to filter/sort) and `compare` (to sort), and inspects `filter.kind` to interpret
  * the stored {@link FilterValue}.
  */
+import { fieldValueText } from './fieldValueText';
+
 import type { ColumnDefinition, TableIssue } from './columns';
 
 /**
@@ -104,8 +106,10 @@ export function makeFilterPredicate(
     case 'text': {
       const needle = value.contains.trim().toLowerCase();
       return (issue) => {
-        const raw = column.getValue(issue);
-        return raw != null && String(raw).toLowerCase().includes(needle);
+        // Matched against the column's display text (see `fieldValueText`), so typing a person's or
+        // priority's name filters an object-valued field instead of testing "[object object]".
+        const text = fieldValueText(column.getValue(issue));
+        return text !== '' && text.toLowerCase().includes(needle);
       };
     }
     case 'number': {
@@ -134,9 +138,10 @@ export function makeFilterPredicate(
     case 'select': {
       const allowed = new Set(value.selected);
       return (issue) => {
-        const raw = column.getValue(issue);
-        if (raw == null) return false;
-        return allowed.has(String(raw));
+        // The stored selections come from `distinctValues`, which lists the same display text, so
+        // both sides of this lookup must resolve object values the same way.
+        const text = fieldValueText(column.getValue(issue));
+        return text !== '' && allowed.has(text);
       };
     }
     case 'boolean': {

@@ -10,7 +10,11 @@ import type { IssueFields } from './model/buildColumnCatalog';
 const mockFields: IssueFields = [
   { name: 'Story Points', key: 'customfield_1', schema: { type: 'number' }, id: 'customfield_1', custom: true },
   { name: 'Status', key: 'status', schema: { type: 'string' }, id: 'status', custom: false },
-  { name: 'Priority', key: 'priority', schema: { type: 'string' }, id: 'priority', custom: false },
+  // Priority and Assignee carry the schema types real Jira reports for them — `priority`/`user`, not
+  // `string` — because their VALUES are objects (`{ name }` / `{ displayName }`), and a fixture that
+  // called them strings is exactly what hid the `[object Object]` cell bug from these tests.
+  { name: 'Priority', key: 'priority', schema: { type: 'priority' }, id: 'priority', custom: false },
+  { name: 'Assignee', key: 'assignee', schema: { type: 'user' }, id: 'assignee', custom: false },
   { name: 'Due date', key: 'duedate', schema: { type: 'date' }, id: 'duedate', custom: false },
 ];
 vi.mock('../../services/jira/useJiraIssueFields', () => ({
@@ -225,6 +229,57 @@ describe('TableReport (flat body)', () => {
 
     expect(screen.getByText('3').closest('td')).toHaveClass('text-right');
     expect(screen.getByText('High').closest('td')).not.toHaveClass('text-right');
+  });
+});
+
+describe('TableReport (object-valued Jira fields)', () => {
+  /**
+   * Jira sends Assignee as `{ displayName, accountId, avatarUrls, … }` and Priority as
+   * `{ name, iconUrl, id }` — neither has a curated built-in column or a normalized accessor, so both
+   * flow through the generic `field:<key>` column that reads the raw object out of `issue.fields`.
+   * Every one of those used to be stringified with `String(value)`, painting `[object Object]`.
+   */
+  const withObjectFields = () =>
+    ({
+      key: 'AAA-1',
+      summary: 'AAA-1 summary',
+      url: 'https://example.test/AAA-1',
+      hierarchyLevel: 1,
+      parentKey: null,
+      derivedTiming: {},
+      issue: {
+        fields: {
+          'Issue Type': { iconUrl: '' },
+          Priority: { self: 'https://x/priority/2', iconUrl: 'https://x/high.svg', name: 'High', id: '2' },
+          Assignee: {
+            self: 'https://x/user?accountId=abc',
+            accountId: 'abc',
+            displayName: 'Arthur Pankiewicz',
+            avatarUrls: { '48x48': 'https://x/avatar.png' },
+            active: true,
+          },
+        },
+      },
+    }) as any;
+
+  test('renders the label of an object-valued field, not [object Object]', () => {
+    const tableObs = makeTableObs();
+    tableObs.tableColumnsObs.set([{ sourceId: 'field:priority' }, { sourceId: 'field:assignee' }]);
+    renderReport([withObjectFields()], tableObs);
+
+    expect(screen.getByText('High')).toBeInTheDocument();
+    expect(screen.getByText('Arthur Pankiewicz')).toBeInTheDocument();
+    expect(screen.queryByText('[object Object]')).not.toBeInTheDocument();
+  });
+
+  test('groups by an object-valued field under its label', () => {
+    const tableObs = makeTableObs();
+    tableObs.tableColumnsObs.set([{ sourceId: 'identity:key' }, { sourceId: 'field:assignee' }]);
+    tableObs.tableGroupByObs.set('field:assignee');
+    renderReport([withObjectFields()], tableObs);
+
+    expect(screen.getByText(/Arthur Pankiewicz/)).toBeInTheDocument();
+    expect(screen.queryByText(/\[object Object\]/)).not.toBeInTheDocument();
   });
 });
 

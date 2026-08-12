@@ -10,7 +10,7 @@ import {
   inlineValueNode,
   inlineReportNode,
   setSectionTitleAt,
-  setExpressionAt,
+  sectionTitleAt,
   setInlineReportParam,
   setNodeOverride,
   removeNodeAt,
@@ -311,6 +311,32 @@ describe('appendNode', () => {
   });
 });
 
+// Names the destination in the Add Report modal's header.
+// See spec/016-report-of-reports/009-value-report-modal § Restructure.
+describe('sectionTitleAt', () => {
+  it('reads the title of a section at the root and at depth', () => {
+    const tree = [sectionNode('Q3', [sectionNode('July')]), savedReportNode('a')];
+
+    expect(sectionTitleAt(tree, [0])).toBe('Q3');
+    expect(sectionTitleAt(tree, [0, 0])).toBe('July');
+  });
+
+  // `''` and `undefined` are different answers: a section that exists but isn't named yet is still a
+  // destination worth telling the user about, where the document root is not.
+  it('distinguishes an untitled section from no section at all', () => {
+    expect(sectionTitleAt([sectionNode('')], [0])).toBe('');
+    expect(sectionTitleAt([sectionNode('Q3')], [])).toBeUndefined();
+  });
+
+  it('returns undefined for a path that misses or points at something other than a section', () => {
+    const tree = [sectionNode('Q3'), savedReportNode('a')];
+
+    expect(sectionTitleAt(tree, [9])).toBeUndefined();
+    expect(sectionTitleAt(tree, [1])).toBeUndefined();
+    expect(sectionTitleAt(tree, [0, 0])).toBeUndefined();
+  });
+});
+
 describe('setSectionTitleAt', () => {
   it('retitles a root section', () => {
     const tree = [sectionNode('Q3'), savedReportNode('a')];
@@ -371,37 +397,6 @@ describe('setSectionTitleAt', () => {
     setSectionTitleAt(tree, [0], 'Q4');
 
     expect(JSON.stringify(tree)).toBe(frozen);
-  });
-});
-
-describe('setExpressionAt', () => {
-  it('rewrites an expression at the root and at depth', () => {
-    const tree = parseSections([
-      storedInlineValue('(issue = A-1).summary'),
-      storedSection('Q3', [storedInlineValue('(issue = B-1).summary')]),
-    ]);
-
-    expect(toStoredSections(setExpressionAt(tree, [0], '(issue = A-2).duedate'))[0]).toEqual(
-      storedInlineValue('(issue = A-2).duedate'),
-    );
-    expect(toStoredSections(setExpressionAt(tree, [1, 0], '(issue = B-2).summary'))[1]).toEqual(
-      storedSection('Q3', [storedInlineValue('(issue = B-2).summary')]),
-    );
-  });
-
-  it('keeps the node id, so editing an expression does not remount the node', () => {
-    const node = inlineValueNode('(issue = A-1).summary');
-
-    expect(setExpressionAt([node], [0], '(issue = A-2).summary')[0].id).toBe(node.id);
-  });
-
-  it('leaves the tree unchanged for a path that misses, a node of another type, or no change', () => {
-    const tree = parseSections([storedInlineValue('(issue = A-1).summary'), storedSavedReport('a')]);
-
-    expect(setExpressionAt(tree, [9], 'x')).toBe(tree);
-    expect(setExpressionAt(tree, [], 'x')).toBe(tree);
-    expect(setExpressionAt(tree, [1], 'x')).toBe(tree);
-    expect(setExpressionAt(tree, [0], '(issue = A-1).summary')).toBe(tree);
   });
 });
 

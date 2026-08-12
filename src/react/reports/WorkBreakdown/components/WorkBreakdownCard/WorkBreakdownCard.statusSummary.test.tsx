@@ -20,7 +20,10 @@ describe('WorkBreakdownCard statusSummary', () => {
   test('renders the summary text ABOVE the child status rows (both shown) when a status summary is present', () => {
     render(
       <WorkBreakdownCard
-        card={{ ...baseCard, statusSummary: { blocks: [{ type: 'paragraph', text: 'Ahead of plan' }] } }}
+        card={{
+          ...baseCard,
+          statusSummary: { blocks: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ahead of plan' }] }] },
+        }}
         mode="status"
         density="light"
       />,
@@ -38,7 +41,10 @@ describe('WorkBreakdownCard statusSummary', () => {
   test('orders content as Target Delivery, then the summary, then the child status rows', () => {
     const { container } = render(
       <WorkBreakdownCard
-        card={{ ...baseCard, statusSummary: { blocks: [{ type: 'paragraph', text: 'Ahead of plan' }] } }}
+        card={{
+          ...baseCard,
+          statusSummary: { blocks: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ahead of plan' }] }] },
+        }}
         mode="status"
         density="light"
       />,
