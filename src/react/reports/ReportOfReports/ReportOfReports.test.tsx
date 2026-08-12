@@ -296,6 +296,29 @@ describe('<ReportOfReports>', () => {
     expect((await screen.findByRole('button', { name: 'Add Report' })).closest('.ror-document')).not.toBeNull();
   });
 
+  it('marks the add row as chrome, so print and fullscreen both drop it', async () => {
+    renderReport();
+
+    // Same reason as above: `report-chrome-hidden` is only meaningful to print.css and
+    // fullscreen.css, neither of which jsdom loads. Swapping it back to `print-hidden` would leave
+    // a row of add buttons sitting in the middle of a document read in focus mode, and every other
+    // test here would still pass.
+    const addRow = (await screen.findByRole('button', { name: 'Add Report' })).closest(
+      '[data-testid="add-content-row"]',
+    );
+
+    expect(addRow?.parentElement).toHaveClass('report-chrome-hidden');
+  });
+
+  it('marks the node controls as chrome too, hover-revealed or not', async () => {
+    renderReport({ savedSections: [nest('Delivery', [])] });
+
+    // Being invisible at rest isn't the same as being gone: in fullscreen the pointer still travels
+    // down the document, and arrows and a trash can appearing under it offer to edit a report that
+    // is being presented. Opacity is the component's own state, so only the class rules it out.
+    expect(await screen.findByTestId('node-controls')).toHaveClass('report-chrome-hidden');
+  });
+
   it('adds the chosen report and keeps the Add Report button below it', async () => {
     renderReport();
 

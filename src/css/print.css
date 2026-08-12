@@ -51,8 +51,11 @@
 
   /* App chrome that should never appear on the printed page — shared with fullscreen.css.
      #saved-reports itself stays visible (the report name is a useful title); only the
-     rename/copy controls, "Create new report" button, and Saved Reports dropdown
-     (.report-chrome-hidden) and the fullscreen toggle (.print-hidden) hide. */
+     rename/copy controls, "Create new report" button, and Saved Reports dropdown hide.
+     `.report-chrome-hidden` also covers the report-of-reports editing affordances (the add
+     rows and each node's reorder/delete cluster), which hide here and in fullscreen;
+     `.print-hidden` is the print-only half of the pair (the fullscreen toggle and the
+     collapse caret, both of which have to stay reachable on screen). */
   .app-chrome-hidden,
   .report-chrome-hidden,
   .print-hidden {

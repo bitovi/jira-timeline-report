@@ -30,6 +30,7 @@ import {
   makeParamAndReportDataReducer,
   listenToReportDataChanged,
   listenToUrlChange,
+  openReportParam,
 } from '../state-storage.js';
 
 import { roundDate } from '../../../utils/date/round.js';
@@ -75,6 +76,20 @@ const booleanParsing = {
   },
   stringify: (x) => '' + x,
 };
+
+/**
+ * `{ Epic: 'widgetLogic' }` -> `"Epic:widgetLogic"`.
+ *
+ * Module scope rather than a closure inside the `timingCalculations` definition because that
+ * definition also has to hand it to CanJS as its `serialize`. Without one, `routeData.serialize()`
+ * hands the raw object to `URLSearchParams` and every saved report stores the string
+ * `"[object Object]"`.
+ */
+function stringifyTimingCalculations(obj) {
+  return Object.keys(obj || {})
+    .map((key) => key + ':' + obj[key])
+    .join(',');
+}
 
 import { reports } from '../../../configuration/reports';
 
@@ -518,6 +533,7 @@ export class RouteData extends ObservableObject {
       // we might want this if we see a bug toggling percentages completion
       {
         enumerable: true,
+        serialize: stringifyTimingCalculations,
         value({ resolve, lastSet, listenTo }) {
           //console.log("timingCalculations value init")
           var currentValue = undefined;
@@ -526,14 +542,16 @@ export class RouteData extends ObservableObject {
             const data = {};
             for (let phrase of phrases) {
               const parts = phrase.split(':');
+              // Skip anything that isn't a `key:value` pair. Reports saved before this param had a
+              // serializer stored the literal string "[object Object]", and keeping it would parse
+              // to `{"[object Object]": undefined}` and be written straight back out on the next
+              // save. Dropping it lets those records heal themselves instead.
+              if (parts.length !== 2 || !parts[0] || !parts[1]) {
+                continue;
+              }
               data[parts[0]] = parts[1];
             }
             return data;
-          }
-          function stringify(obj) {
-            return Object.keys(obj)
-              .map((key) => key + ':' + obj[key])
-              .join(',');
           }
 
           const resolveValue = () => {
@@ -555,8 +573,10 @@ export class RouteData extends ObservableObject {
           resolveValue();
 
           listenTo(lastSet, (value) => {
-            let defaultValue = this.reportData ? paramValue(this.reportData, 'timingCalculations') : stringify([]);
-            updateUrlParam('timingCalculations', stringify(value), defaultValue);
+            let defaultValue = this.reportData
+              ? paramValue(this.reportData, 'timingCalculations')
+              : stringifyTimingCalculations({});
+            updateUrlParam('timingCalculations', stringifyTimingCalculations(value), defaultValue);
           });
 
           function parseAndResolve(value) {
@@ -612,13 +632,13 @@ export class RouteData extends ObservableObject {
     selectedIssueType: {
       enumerable: true,
       value({ resolve, lastSet, listenTo }) {
-        let reportDataParam;
         let urlParam;
         let resolveCurrentValue;
 
-        // bind to stuff ... but we don't want to respond to change just yet
-        listenToReportDataChanged(this, 'selectedIssueType', listenTo, (param) => {
-          reportDataParam = param;
+        // Re-resolve whenever the open report's record appears or changes (loaded, saved,
+        // switched). The value handed to this callback is deliberately ignored — `reportData` lags
+        // the URL mid-dispatch, so the report's own value is read through `openReportParam` below.
+        listenToReportDataChanged(this, 'selectedIssueType', listenTo, () => {
           resolveCurrentValue && resolveCurrentValue();
         });
 
@@ -631,15 +651,7 @@ export class RouteData extends ObservableObject {
           resolveCurrentValue && resolveCurrentValue();
         });
 
-        function getParamValue() {
-          if (urlParam != null) {
-            return urlParam;
-          } else if (reportDataParam != null) {
-            return reportDataParam;
-          } else {
-            return '';
-          }
-        }
+        const savedReportParam = () => openReportParam(this.reportsData, 'selectedIssueType');
 
         let timers = [];
         function clearTimers() {
@@ -651,8 +663,7 @@ export class RouteData extends ObservableObject {
         // omits the param when it matches the saved report's value (keeps the URL clean
         // while the report still provides it), otherwise writes it explicitly.
         const writeUrlParam = (value) => {
-          const param = this.reportData && paramValue(this.reportData, 'selectedIssueType');
-          updateUrlParam('selectedIssueType', value, param || '');
+          updateUrlParam('selectedIssueType', value, savedReportParam().value || '');
         };
 
         // anything happens in state, update the route
@@ -668,9 +679,18 @@ export class RouteData extends ObservableObject {
             return;
           }
 
+          const reportParam = savedReportParam();
+
+          // The URL names a saved report whose record hasn't loaded yet. That record is this
+          // setting's fallback, so there is nothing to validate — and defaulting now would write
+          // the top level into the URL, permanently overriding whatever the report was saved with.
+          if (reportParam.pending) {
+            return;
+          }
+
           // we wait to resolve to a defined value until we can check it's right
           if (this.issueHierarchy && this.issueHierarchy.length) {
-            const curParamValue = getParamValue();
+            const curParamValue = urlParam != null ? urlParam : (reportParam.value ?? '');
 
             // helps with legacy support to pick the first type
             if (curParamValue === 'Release') {

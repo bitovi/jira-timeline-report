@@ -469,8 +469,68 @@ export function deleteUrlParam(key) {
   pushStateObservable.value = newUrl.search;
 }
 
+/**
+ * Replaces the whole query string and guarantees a *pushed* history entry, so Back returns to where
+ * the user was.
+ *
+ * A plain `set` can't promise that. `PushstateObservable.set` diffs the old and new query strings
+ * and downgrades the whole write to `replaceState` if **any one** changed key is in
+ * `replaceStateKeys` — the any-of rule at can-route-pushstate.js:316. That list exists for the
+ * compare slider (`compareTo`), whose drags would otherwise add a history entry per frame, and it
+ * has no idea whether the write it's inspecting is a drag or a navigation. Saved reports almost all
+ * carry a `compareTo`, so a write that inlines a report's settings trips the rule and silently
+ * vanishes from history.
+ *
+ * Suspending the keys for the duration of the write says which of the two this is. Restored in a
+ * `finally` so a throw can't leave the slider pushing an entry per frame.
+ *
+ * Only for writes the user should be able to Back out of. `updateUrlParam` is still the right thing
+ * for a setting changing.
+ */
+export function pushUrlSearch(search) {
+  const suspended = pushStateObservable.replaceStateKeys.splice(0);
+
+  try {
+    pushStateObservable.value = search;
+  } finally {
+    pushStateObservable.replaceStateKeys.push(...suspended);
+  }
+}
+
 export function paramValue(reportData, key) {
   return new URLSearchParams(reportData.queryParams).get(key);
+}
+
+/**
+ * The value `key` has in the saved report the URL currently points at, read straight from the URL
+ * and the reports map rather than through the `reportData` getter.
+ *
+ * `reportData` is derived from the `report` observable, which learns about a URL change from its
+ * own `pushStateObservable` listener — so for the duration of that change's dispatch it is stale
+ * for every listener that happens to run before it. Observables that both fall back to the saved
+ * report AND write a default back to the URL cannot tolerate that: they see "no URL param and no
+ * report param", conclude the setting is unset, and stamp a default into the URL, where it then
+ * outranks the value the report was actually saved with. Saving a report walks straight through
+ * that window, because `SaveReports` collapses the whole URL to `?report=<id>` in one write.
+ *
+ * `pending` is true only while the reports map itself is still loading. An id with no record (a
+ * deleted report) reports `value: null`, so callers fall through to their defaults instead of
+ * waiting forever.
+ */
+export function openReportParam(reportsData, key) {
+  const reportId = new URL(window.location).searchParams.get('report');
+
+  if (!reportId) {
+    return { pending: false, value: null };
+  }
+
+  if (!reportsData) {
+    return { pending: true, value: null };
+  }
+
+  const report = reportsData[reportId];
+
+  return { pending: false, value: report ? paramValue(report, key) : null };
 }
 
 export function listenToReportDataChanged(routeData, key, listenTo, onReportDataChanged) {
