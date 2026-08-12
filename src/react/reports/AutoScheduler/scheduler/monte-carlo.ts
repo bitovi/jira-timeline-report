@@ -3,6 +3,8 @@ import type { LinkedIssue } from './link-issues';
 
 import { resetLinkedIssue, linkIssues } from './link-issues';
 import { scheduleIssues } from './schedule';
+import { traceDrivingChain, type TraceLinkedIssue, type TraceWorkItem, type TraceNode } from './critical-path-trace';
+import { CriticalityAccumulator } from './criticality-accumulator';
 
 export function runMonteCarlo(
   issues: DerivedIssue[],
@@ -72,7 +74,18 @@ export type BatchIssueData = {
 export type BatchDatas = {
   batchIssueData: BatchIssueData[];
   lastDays: number[];
+  criticalityAccumulator: CriticalityAccumulator;
 };
+
+function buildNodeByWorkItem(teamWork: ReturnType<typeof scheduleIssues>): Map<TraceWorkItem, TraceNode> {
+  const nodeByWorkItem = new Map<TraceWorkItem, TraceNode>();
+  Object.values(teamWork).forEach((team) => {
+    team.workPlans.workNodes().forEach((node) => {
+      nodeByWorkItem.set(node.work as TraceWorkItem, node as unknown as TraceNode);
+    });
+  });
+  return nodeByWorkItem;
+}
 
 function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: number }): BatchDatas {
   const items: BatchIssueData[] = linkedIssues.map((linkedIssue) => ({
@@ -83,7 +96,16 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     trackNumbers: [],
   }));
 
+  // Stable across every iteration of this batch — object identity of `mutableWorkItem` never changes,
+  // only its properties are reset. Used by the trace to walk from a ScheduledWorkNode's `.work` back to
+  // the LinkedIssue that owns it.
+  const issueByWorkItem = new Map<TraceWorkItem, TraceLinkedIssue>();
+  linkedIssues.forEach((issue) =>
+    issueByWorkItem.set(issue.mutableWorkItem as TraceWorkItem, issue as unknown as TraceLinkedIssue),
+  );
+
   const lastDays: number[] = [];
+  const criticalityAccumulator = new CriticalityAccumulator();
 
   for (let i = 0; i < batchSize; i++) {
     // Reset state
@@ -102,6 +124,7 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     });
 
     let lastDay = 0;
+    let lastIssue: LinkedIssue | null = null;
 
     for (let li = 0; li < linkedIssues.length; li++) {
       const linkedIssue = linkedIssues[li];
@@ -115,11 +138,20 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
       items[li].dueDays.push(dueDay);
       items[li].trackNumbers.push(workItem.track as number);
 
-      lastDay = Math.max(lastDay, dueDay);
+      if (dueDay > lastDay) {
+        lastDay = dueDay;
+        lastIssue = linkedIssue;
+      }
     }
 
     lastDays[i] = lastDay;
+
+    if (lastIssue) {
+      const nodeByWorkItem = buildNodeByWorkItem(teamWork);
+      const hops = traceDrivingChain(lastIssue as unknown as TraceLinkedIssue, nodeByWorkItem, issueByWorkItem);
+      criticalityAccumulator.addIteration(hops);
+    }
   }
 
-  return { batchIssueData: items, lastDays };
+  return { batchIssueData: items, lastDays, criticalityAccumulator };
 }
