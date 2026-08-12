@@ -8,9 +8,12 @@
  */
 
 body.fullscreen-mode .app-chrome-hidden,
-/* Targets specific controls inside #saved-reports (save/copy report controls, the
-   "Create new report" button, and the Saved Reports dropdown) — see SaveReports.tsx.
-   The report name and the fullscreen toggle itself are intentionally left visible. */
+/* Controls that belong to a report rather than to the app frame. Two places carry it:
+   specific controls inside #saved-reports (save/copy report controls, the "Create new
+   report" button, and the Saved Reports dropdown — see SaveReports.tsx), and the
+   report-of-reports editing affordances — the "Add Report"/"Add Section" rows
+   (AddContentRow.tsx) and each node's reorder/delete cluster (NodeControls.tsx). The report
+   name and the fullscreen toggle itself are intentionally left visible. */
 body.fullscreen-mode .report-chrome-hidden {
   display: none !important;
 }

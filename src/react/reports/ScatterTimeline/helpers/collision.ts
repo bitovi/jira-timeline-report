@@ -60,6 +60,12 @@ export interface SidePackBounds {
 
 const DEFAULT_BOUNDS: SidePackBounds = { min: 0, max: 100 };
 
+/**
+ * Orientations to try, in order. Left first: it ends the span at the marker rather than at
+ * `marker + width`, so it consumes the least horizontal room in the row.
+ */
+const SIDES_LEFT_FIRST: readonly LabelSide[] = ['left', 'right'];
+
 /** The horizontal span a label occupies for a given orientation (marker stays on the date). */
 const spanForSide = (item: SidePackable, side: LabelSide): Range =>
   side === 'left'
@@ -71,18 +77,23 @@ const spanFitsWithinBounds = (span: Range, bounds: SidePackBounds): boolean =>
 
 /**
  * Pack issues into non-overlapping rows while choosing each label's side (left/right of its
- * date-anchored marker) to minimize the number of rows and reclaim edge space.
+ * date-anchored marker) to minimize the number of rows and keep labels within the grid.
  *
  * The marker always stays on the due date — only the label flows left or right. Compared to
  * {@link packIssuesIntoRows} (which flows every label left on a fixed span), letting the
  * packer flip labels lets two items that would collide share a row when one flows the other
  * way, reducing height.
  *
- * Strategy: sweep markers left-to-right. Row minimization is primary (first-fit across rows);
- * an inward bias — labels near the left edge prefer flowing right, near the right edge prefer
- * flowing left — is the tiebreaker, which also pulls edge labels away from empty margins.
- * Orientations that would clip a grid edge (`bounds`) are skipped; if neither side fits the
- * bounds (label wider than the whole plot) the inward-preferred side is used anyway.
+ * Strategy: sweep markers left-to-right and try the LEFT orientation first, falling back to
+ * right. In any valid row, spans are ordered consistently with their markers, so a row is
+ * extended only at its right end — and a left-flowing label ends at its marker while a
+ * right-flowing one ends at `marker + width`. Always taking the earlier-ending side that
+ * still fits leaves the row open as far right as possible, which (by the usual greedy
+ * exchange argument) maximizes how many items each row holds.
+ *
+ * Orientations that would clip a grid edge (`bounds`) are skipped, which is what makes labels
+ * near the left edge flow right. If neither side fits the bounds (label wider than the whole
+ * plot) an inward bias breaks the tie, so the label spills into the roomier half.
  *
  * Co-located markers (issues that round to the same position) are forced onto separate rows —
  * their dots would otherwise stack on the exact same point while their labels flow to opposite
@@ -103,13 +114,11 @@ export const packIssuesIntoRowsWithSides = <T extends SidePackable>(
   const rows: PlacedRow[] = [];
 
   for (const issue of sorted) {
-    // Inward bias: a marker left of center prefers flowing its label right (and vice versa).
-    const preferred: LabelSide = issue.rightPercentEnd < midpoint ? 'right' : 'left';
-    const other: LabelSide = preferred === 'left' ? 'right' : 'left';
-
-    const inBoundsOrder = [preferred, other].filter((side) => spanFitsWithinBounds(spanForSide(issue, side), bounds));
-    // Degenerate case (label wider than the whole plot): keep the preferred side so it renders.
-    const candidateOrder: LabelSide[] = inBoundsOrder.length > 0 ? inBoundsOrder : [preferred];
+    const inBoundsOrder = SIDES_LEFT_FIRST.filter((side) => spanFitsWithinBounds(spanForSide(issue, side), bounds));
+    // Degenerate case (label wider than the whole plot): neither side fits, so fall back to the
+    // inward-biased side — a marker left of center spills right, and vice versa.
+    const candidateOrder: LabelSide[] =
+      inBoundsOrder.length > 0 ? inBoundsOrder : [issue.rightPercentEnd < midpoint ? 'right' : 'left'];
 
     let placed = false;
     for (const row of rows) {

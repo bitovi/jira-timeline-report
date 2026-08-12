@@ -37,6 +37,11 @@ export interface NodeControlsProps {
  * the row is pinned, or while the confirm popover is up. Opacity rather than mounting, so nothing on
  * the row moves as it appears and the cluster's width is reserved either way. Keyboard users get it
  * from `focus-within`, which is CSS — there's nothing to make stateful about tabbing into it.
+ *
+ * `report-chrome-hidden` (print.css and fullscreen.css) takes it out of the printed page and out of
+ * on-screen focus mode. Hover-revealed isn't quiet enough for fullscreen: reading a document there
+ * still means moving the pointer down it, and arrows and a trash can surfacing under it read as an
+ * invitation to edit a report that is being presented.
  */
 export const NodeControls: FC<NodeControlsProps> = ({ path, label, nodeId, hasChildren = false }) => {
   const { sections, setSections } = useReportLayout();
@@ -49,7 +54,7 @@ export const NodeControls: FC<NodeControlsProps> = ({ path, label, nodeId, hasCh
     <div
       data-testid="node-controls"
       data-visible={isVisible}
-      className={`flex items-center transition-opacity duration-150 print-hidden ${
+      className={`flex items-center transition-opacity duration-150 report-chrome-hidden ${
         isVisible
           ? 'opacity-100'
           : 'opacity-0 pointer-events-none focus-within:opacity-100 focus-within:pointer-events-auto'

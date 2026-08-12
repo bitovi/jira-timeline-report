@@ -32,9 +32,15 @@ export interface AddContentRowProps {
  * that section, and an empty section shows "Nothing here yet." in the same fixed-height slot the
  * buttons will occupy, so revealing them shifts nothing.
  *
- * An editing affordance rather than content, so the whole row carries `print-hidden`
- * (src/css/print.css). "Add Section" is hidden — not disabled — once nesting reaches
- * `MAX_SECTION_DEPTH`: there is no state to explain, the level simply doesn't take another section.
+ * An editing affordance rather than content, so the whole row carries `report-chrome-hidden` — the
+ * class shared by src/css/print.css and src/css/fullscreen.css, which keeps it off the printed page
+ * *and* out of on-screen focus mode. `print-hidden` would only have covered the first: fullscreen is
+ * for reading a finished document, and a row of add buttons at the root and in every section is the
+ * loudest thing left on the page once the app chrome goes. It takes the empty-container note with
+ * it, which lives in the same wrapper and only exists to explain where those buttons will appear.
+ *
+ * "Add Section" is hidden — not disabled — once nesting reaches `MAX_SECTION_DEPTH`: there is no
+ * state to explain, the level simply doesn't take another section.
  *
  * **"Add Report" adds either kind of node.** It opens the Add Report modal, whose Work Item Value half
  * builds an `inline-value` node from a work item and a field. That is where "Add Value" — parked three
@@ -59,7 +65,7 @@ export const AddContentRow: FC<AddContentRowProps> = ({ path, label, isEmpty = f
   const into = label ? ` to ${label}` : '';
 
   return (
-    <div className="group relative min-h-10 print-hidden">
+    <div className="group relative min-h-10 report-chrome-hidden">
       {isEmpty && (
         // `pointer-events-none` is load-bearing, not a nicety: this shares the buttons' slot by being
         // positioned, and a positioned element paints over in-flow siblings whatever its opacity is.

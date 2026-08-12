@@ -18,6 +18,8 @@ import { usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportTy
 import { useReportLayout } from '../services/report-layout';
 import { toStoredSections } from '../reports/ReportOfReports/model/sections';
 import { storedQueryParams } from './storedQueryParams';
+import { detachedSearch } from './detachedSearch';
+import { pushUrlSearch } from '../../canjs/routing/state-storage';
 import routeData from '../../canjs/routing/route-data';
 
 interface SaveReportProps {
@@ -116,9 +118,30 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     queryParamObservable.set(`?report=${selectedReport.id}`);
   };
 
+  /**
+   * Drops the `report` param, inlining everything the saved report was supplying so the report on
+   * screen doesn't change — see {@link detachedSearch}. What's left is an unsaved report: the title
+   * and these controls disappear on their own, because `selectedReport` resolves from the param.
+   *
+   * Written through `pushUrlSearch` rather than the observable directly, because Back *is* the undo
+   * here and a plain `set` would be swallowed: the inlined params almost always include `compareTo`,
+   * which is on `replaceStateKeys`. Nothing is written to storage either way, and the report stays
+   * in the Saved Reports list.
+   */
+  const detachReport = () => {
+    if (!selectedReport) {
+      return;
+    }
+
+    pushUrlSearch(detachedSearch({ currentSearch: window.location.search, savedReport: selectedReport, sections }));
+  };
+
   return (
     <div className="flex gap-1 justify-between items-center">
-      <div className="flex gap-3 items-center">
+      {/* `min-w-0` + `flex-wrap` let this group give up width as the viewport narrows — without it
+          its intrinsic width wins and the right-hand group (fullscreen toggle included) is pushed
+          past the edge of the container. */}
+      <div className="flex gap-3 items-center flex-wrap min-w-0">
         {selectedReport && (
           <EditableTitle
             key={selectedReport.id}
@@ -138,10 +161,11 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
             updateSelectedReport={updateSelectedReport}
             openModal={openModal}
             resetChanges={resetChanges}
+            detachReport={detachReport}
           />
         </div>
       </div>
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center shrink-0">
         <div className="contents report-chrome-hidden">
           {/* The `jql` gate is a proxy for "there's something worth saving". A report-of-reports
               never has a `jql` param of its own, so it needs its own clause here.

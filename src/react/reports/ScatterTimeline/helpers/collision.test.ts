@@ -85,7 +85,27 @@ describe('packIssuesIntoRowsWithSides', () => {
     expect(byKey).toEqual({ A: 'left', B: 'right' });
   });
 
-  test('inward bias: markers near the left edge flow right, near the right edge flow left', () => {
+  test('two adjacent markers straddling the midpoint still share one row', () => {
+    // Regression: an inward bias (flow right when left of center, left when right of center)
+    // fanned these two OUTWARD toward each other, forcing a second row. Flowing A left
+    // ([6,42]) and B right ([50,77]) clears both within a single row.
+    const rows = packIssuesIntoRowsWithSides([
+      { key: 'A', rightPercentEnd: 42, widthInPercent: 36 },
+      { key: 'B', rightPercentEnd: 50, widthInPercent: 27 },
+    ]);
+    expect(rows).toHaveLength(1);
+    const byKey = Object.fromEntries(rows[0].items.map((i) => [i.key, i.labelSide]));
+    expect(byKey).toEqual({ A: 'left', B: 'right' });
+  });
+
+  test('prefers the left side when both fit, leaving the most room for later markers', () => {
+    // A left-flowing label ends at its marker; a right-flowing one ends at marker + width.
+    // Always taking the earlier-ending side keeps the row open as far right as possible.
+    const rows = packIssuesIntoRowsWithSides([{ key: 'A', rightPercentEnd: 50, widthInPercent: 20 }]);
+    expect(rows[0].items[0].labelSide).toBe('left');
+  });
+
+  test('edge markers flip inward rather than clip the grid (respects bounds)', () => {
     const rows = packIssuesIntoRowsWithSides([
       { key: 'L', rightPercentEnd: 10, widthInPercent: 15 },
       { key: 'R', rightPercentEnd: 90, widthInPercent: 15 },
@@ -96,8 +116,8 @@ describe('packIssuesIntoRowsWithSides', () => {
   });
 
   test('avoids an orientation that would clip a grid edge (respects bounds)', () => {
-    // Dot at 45 is left of this range's center (30), so it prefers flowing right → [45,65];
-    // but 65 exceeds max=60, so it falls back to the in-bounds left orientation.
+    // Left is tried first → [25,45], which fits inside 0–60, so it wins outright.
+    // (Flowing right would reach 65 and clip max=60.)
     const rows = packIssuesIntoRowsWithSides([{ key: 'A', rightPercentEnd: 45, widthInPercent: 20 }], {
       min: 0,
       max: 60,
@@ -105,7 +125,9 @@ describe('packIssuesIntoRowsWithSides', () => {
     expect(rows[0].items[0].labelSide).toBe('left');
   });
 
-  test('keeps the preferred side when a label is wider than the whole plot (degenerate)', () => {
+  test('falls back to the inward side when a label is wider than the whole plot (degenerate)', () => {
+    // Neither orientation fits the bounds, so the inward bias breaks the tie: a marker left
+    // of center flows right, spilling into the wider half instead of off the left edge.
     const rows = packIssuesIntoRowsWithSides([{ key: 'X', rightPercentEnd: 45, widthInPercent: 120 }]);
     expect(rows).toHaveLength(1);
     expect(rows[0].items[0].labelSide).toBe('right');
