@@ -22,6 +22,7 @@ import { bestFitRanges } from '../../../utils/date/best-fit-ranges';
 import routeData from '../../../canjs/routing/route-data/index';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 import { CriticalPath } from './CriticalPath';
+import { CriticalPathsReport } from './CriticalPathsReport';
 import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
 
@@ -326,6 +327,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
       </div>
       {/* Critical Path Report */}
       <CriticalPath
+        uiData={uiData}
+        workItemsToHighlight={workItemsToHighlight}
+        setWorkItemsToHighlight={setWorkItemsToHighlight}
+      />
+      {/* Critical Paths Report (POC of spec/024-critical-path) */}
+      <CriticalPathsReport
         uiData={uiData}
         workItemsToHighlight={workItemsToHighlight}
         setWorkItemsToHighlight={setWorkItemsToHighlight}
