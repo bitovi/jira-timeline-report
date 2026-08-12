@@ -5,6 +5,9 @@ import type { BatchDatas, BatchIssueData } from './monte-carlo';
 
 import type { LinkedIssue } from './link-issues';
 
+import { fitLognormal } from './fit-lognormal';
+import { CriticalityAccumulator } from './criticality-accumulator';
+
 import {
   insertSortedArrayInPlace,
   average,
@@ -42,6 +45,7 @@ export class StatsAnalyzer {
   uncertaintyWeight: number | 'average';
   setUIState: (data: StatsUIData) => void;
   _teardown: () => void;
+  criticalityAccumulator = new CriticalityAccumulator();
   constructor({
     issues,
     uncertaintyWeight,
@@ -92,6 +96,7 @@ export class StatsAnalyzer {
       insertSortedArrayInPlace(simulationIssue.trackNumbers, batchForIssue.trackNumbers);
     }
     insertSortedArrayInPlace(this.lastDays, batchData.lastDays);
+    this.criticalityAccumulator.merge(batchData.criticalityAccumulator);
 
     this.setUIState(this.dataForUI());
   }
@@ -114,10 +119,25 @@ export class StatsAnalyzer {
     // lets calculate the stats based on the uncertainty threshold
     // while we're at it, lets also get the last run data ...
     const simulationIssueResults = this.simulationIssues.map((simulationIssue) => {
-      return getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight);
+      const result = getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight);
+      const key = simulationIssue.linkedIssue.key;
+      return {
+        ...result,
+        criticalityIndex: this.criticalityAccumulator.criticalityIndex(key),
+        meanWorkDays: this.criticalityAccumulator.meanWorkDays(key),
+        meanQueuedDays: this.criticalityAccumulator.meanQueuedDays(key),
+      };
     });
 
     const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
+
+    // Fit a lognormal to the whole-plan completion distribution so we can report a single
+    // composite confidence alongside the per-issue ones. `lastDays` is kept sorted ascending.
+    const fit = fitLognormal(this.lastDays);
+    const overallConfidence = fit && {
+      confidence: fit.confidence,
+      isFitGood: fit.isFitGood,
+    };
 
     // lets get it ready for teams ...
     const teamGroups = groupBy(
@@ -138,6 +158,7 @@ export class StatsAnalyzer {
       percentComplete: this.percentComplete,
       uncertaintyWeight: this.uncertaintyWeight,
       endDaySimulationResult,
+      overallConfidence,
       simulationIssueResults,
       teams,
     };

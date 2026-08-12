@@ -3,6 +3,8 @@ import type { LinkedIssue } from './link-issues';
 
 import { resetLinkedIssue, linkIssues } from './link-issues';
 import { scheduleIssues } from './schedule';
+import { traceDrivingChain, type TraceLinkedIssue } from './critical-path-trace';
+import { CriticalityAccumulator } from './criticality-accumulator';
 
 export function runMonteCarlo(
   issues: DerivedIssue[],
@@ -72,6 +74,7 @@ export type BatchIssueData = {
 export type BatchDatas = {
   batchIssueData: BatchIssueData[];
   lastDays: number[];
+  criticalityAccumulator: CriticalityAccumulator;
 };
 
 function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: number }): BatchDatas {
@@ -84,6 +87,7 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
   }));
 
   const lastDays: number[] = [];
+  const criticalityAccumulator = new CriticalityAccumulator();
 
   for (let i = 0; i < batchSize; i++) {
     // Reset state
@@ -102,6 +106,7 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     });
 
     let lastDay = 0;
+    let lastIssue: LinkedIssue | null = null;
 
     for (let li = 0; li < linkedIssues.length; li++) {
       const linkedIssue = linkedIssues[li];
@@ -115,11 +120,19 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
       items[li].dueDays.push(dueDay);
       items[li].trackNumbers.push(workItem.track as number);
 
-      lastDay = Math.max(lastDay, dueDay);
+      if (dueDay > lastDay) {
+        lastDay = dueDay;
+        lastIssue = linkedIssue;
+      }
     }
 
     lastDays[i] = lastDay;
+
+    if (lastIssue) {
+      const hops = traceDrivingChain(lastIssue as unknown as TraceLinkedIssue);
+      criticalityAccumulator.addIteration(hops);
+    }
   }
 
-  return { batchIssueData: items, lastDays };
+  return { batchIssueData: items, lastDays, criticalityAccumulator };
 }

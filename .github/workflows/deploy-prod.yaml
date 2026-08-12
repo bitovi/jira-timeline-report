@@ -99,7 +99,10 @@ jobs:
           aws_elb_app_port: 3000
 
           docker_full_cleanup: true
-          ansible_start_docker_timeout: 600
+          # docker_full_cleanup wipes the layer cache, so every deploy rebuilds
+          # the image from scratch on a 2-vCPU t3.small. 600s used to be cutting
+          # it close enough to fail.
+          ansible_start_docker_timeout: 1800
 
           aws_ec2_instance_type: t3.small
           aws_ec2_instance_root_vol_size: 16

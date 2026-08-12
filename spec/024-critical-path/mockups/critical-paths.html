@@ -183,94 +183,171 @@
         text-decoration: underline;
       }
 
-      /* ---------- ranked path rows ---------- */
+      /* ---------- ranked path rows: number | % | chain | bar | days, per-row expandable detail ---------- */
       .paths {
         padding: 4px 0 0;
       }
       .row {
-        display: grid;
-        grid-template-columns: 58px minmax(260px, 1fr) 330px;
-        gap: 0 16px;
-        padding: 13px 18px;
         border-bottom: 1px solid var(--neutral-20);
-        position: relative;
       }
       .row:last-child {
         border-bottom: none;
       }
-      .row.focused {
+      .row.focused .row-summary {
         background: var(--brand-bg);
         box-shadow: inset 3px 0 0 var(--brand);
       }
       .row.dimmed {
         opacity: 0.45;
       }
-
-      /* rank + criticality: a number, not a one-bar chart */
-      .rankcol {
-        text-align: right;
+      .paths-head,
+      .row-summary {
+        display: grid;
+        grid-template-columns: 14px 14px 36px minmax(0, 1fr) 130px 48px;
+        column-gap: 10px;
+        align-items: center;
       }
-      .rank {
+      .row-summary {
+        padding: 9px 18px;
+        cursor: pointer;
+        list-style: none;
+      }
+      .paths-head {
+        padding: 2px 18px 8px;
+        border-bottom: 1px solid var(--neutral-30);
         font-size: 11px;
-        color: var(--subtle);
-        font-variant-numeric: tabular-nums;
-      }
-      .crit {
-        font-size: 19px;
         font-weight: 600;
-        line-height: 1.1;
-        margin-top: 1px;
-        letter-spacing: -0.2px;
-      }
-      .crit-label {
-        font-size: 10px;
         color: var(--subtle);
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        line-height: 1.25;
-        margin-top: 2px;
+        letter-spacing: 0.02em;
       }
-      .crit.low {
+      .ph-crit {
+        grid-column: 1 / span 3;
+      }
+      .ph-chain {
+        grid-column: 4;
+      }
+      .ph-bar {
+        grid-column: 5;
+        display: flex;
+        gap: 8px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: none;
+        color: var(--muted);
+      }
+      .ph-bar .legend-item {
+        gap: 4px;
+      }
+      .ph-days {
+        grid-column: 6;
+        text-align: right;
+      }
+      .row-summary:hover {
+        background: var(--neutral-10);
+      }
+      .row-summary::-webkit-details-marker {
+        display: none;
+      }
+      .row-summary::before {
+        content: '▸';
+        font-size: 9px;
+        color: #a5adba;
+        flex-shrink: 0;
+      }
+      .row[open] .row-summary::before {
+        content: '▾';
+      }
+
+      /* rank + criticality: a number, not a one-bar chart */
+      .row-rank {
+        width: 14px;
+        color: var(--subtle);
+        font-size: 12px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+      }
+      .row-crit {
+        width: 36px;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+      }
+      .row-crit.low {
         color: var(--muted);
         font-weight: 500;
       }
 
-      /* middle column */
-      .epic {
-        font-size: 14px;
-        font-weight: 500;
+      /* chain column: "Epic X.1 → Epic X.2 → … → Epic X.6", one line, ellipsized */
+      .row-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        color: var(--link);
       }
-      .epic a {
+
+      /* small work/queued bar, scaled to a shared max span so rows are comparable */
+      .row-bartrack {
+        width: 130px;
+        flex-shrink: 0;
+      }
+      .row-bar {
+        display: flex;
+        gap: 2px;
+        height: 8px;
+      }
+      .row-bar i {
+        display: block;
+        height: 100%;
+      }
+      .row-bar i:last-child {
+        border-radius: 0 3px 3px 0;
+      }
+      .row-bar .seg-work {
+        background: var(--series-work);
+      }
+      .row-bar .seg-wait {
+        background: var(--series-wait);
+      }
+
+      /* right column: the number a full report needs at a glance */
+      .row-days {
+        width: 48px;
+        text-align: right;
+        color: var(--muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+      }
+
+      /* ---------- expanded detail: full chain, biggest-by-work, biggest-by-queued-delay, fan-out ---------- */
+      .row-detail {
+        padding: 2px 18px 16px 40px;
+        display: grid;
+        gap: 10px;
+      }
+      .detail-stat {
+        font-size: 12px;
+      }
+      .detail-label {
+        color: var(--subtle);
+        margin-bottom: 3px;
+      }
+      .detail-value {
+        color: var(--text);
+      }
+      .detail-value a {
         color: var(--link);
         text-decoration: none;
       }
-      .epic a:hover {
+      .detail-value a:hover {
         text-decoration: underline;
-      }
-      .meta {
-        font-size: 12px;
-        color: var(--subtle);
-        margin-top: 2px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-      .team-tag {
-        background: var(--slate-bg);
-        color: var(--slate);
-        border-radius: 3px;
-        padding: 1px 6px;
-        font-size: 11px;
-        font-weight: 500;
-      }
-      .chain {
-        margin-top: 8px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        flex-wrap: wrap;
-        font-size: 12px;
       }
       .chip {
         background: var(--neutral-10);
@@ -280,9 +357,6 @@
         color: var(--link);
         text-decoration: none;
         white-space: nowrap;
-        max-width: 210px;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
       .chip:hover {
         background: var(--brand-bg);
@@ -293,164 +367,14 @@
         font-size: 11px;
         flex-shrink: 0;
       }
-      .chain-lead {
-        color: var(--subtle);
-        flex-shrink: 0;
-      }
-      .fanout {
-        margin-top: 7px;
-        font-size: 12px;
-      }
-      .fanout summary {
-        cursor: pointer;
-        color: var(--link);
-        list-style: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-      }
-      .fanout summary::-webkit-details-marker {
-        display: none;
-      }
-      .fanout summary::before {
-        content: '▸';
-        font-size: 9px;
-        color: #a5adba;
-      }
-      .fanout[open] summary::before {
-        content: '▾';
-      }
       .fanout-body {
-        margin-top: 6px;
+        margin-top: 4px;
         padding: 8px 10px;
         background: var(--neutral-10);
         border-radius: 3px;
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
-      }
-      .no-chain {
-        margin-top: 8px;
-        font-size: 12px;
-        color: var(--subtle);
-        font-style: italic;
-      }
-
-      /* ---------- the segmented duration bar ---------- */
-      .barcol {
-        padding-top: 3px;
-        position: relative; /* so the hover tooltip anchors to the bar, not the row */
-      }
-      .bartrack {
-        position: relative;
-        height: 12px;
-      }
-      /* recessive solid hairline gridlines — never dashed */
-      .gridlines {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-      }
-      .gridlines span {
-        position: absolute;
-        top: -3px;
-        bottom: -3px;
-        width: 1px;
-        background: var(--neutral-30);
-      }
-      .bar {
-        position: relative;
-        display: flex;
-        gap: 2px; /* 2px SURFACE gap between fills — not a border */
-        height: 10px;
-        margin-top: 1px;
-      }
-      .seg {
-        height: 100%;
-        cursor: pointer;
-      }
-      .seg:first-child {
-        border-radius: 0; /* anchored to the baseline */
-      }
-      .seg:last-child {
-        border-radius: 0 4px 4px 0; /* 4px rounded data-end */
-      }
-      .seg.only {
-        border-radius: 0 4px 4px 0;
-      }
-      .seg-work {
-        background: var(--series-work);
-      }
-      .seg-wait {
-        background: var(--series-wait);
-      }
-      .barvals {
-        margin-top: 7px;
-        font-size: 12px;
-        color: var(--muted);
-        font-variant-numeric: tabular-nums;
-      }
-      .barvals b {
-        color: var(--text);
-        font-weight: 600;
-      }
-      .barvals .dot {
-        color: #c1c7d0;
-        margin: 0 5px;
-      }
-      /* the axis band shares the row grid so ticks land under the bars, and it lives
-         inside the card so no nested scrollbar can crop it */
-      .axis {
-        display: grid;
-        grid-template-columns: 58px minmax(260px, 1fr) 330px;
-        gap: 0 16px;
-        padding: 2px 18px 12px;
-      }
-      .axis-ticks {
-        grid-column: 3;
-        display: flex;
-        justify-content: space-between;
-        font-size: 10px;
-        color: var(--subtle);
-        font-variant-numeric: tabular-nums;
-      }
-      .axis-label {
-        grid-column: 2;
-        justify-self: end;
-        align-self: start;
-        font-size: 10px;
-        color: var(--subtle);
-        padding-right: 2px;
-      }
-
-      /* tooltip demo */
-      .tip {
-        position: absolute;
-        z-index: 10;
-        background: #172b4d;
-        color: #fff;
-        border-radius: 4px;
-        padding: 7px 10px;
-        font-size: 12px;
-        line-height: 1.45;
-        box-shadow: 0 4px 12px rgba(9, 30, 66, 0.28);
-        width: 232px;
-      }
-      .tip::after {
-        content: '';
-        position: absolute;
-        top: -5px;
-        left: 26px;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-bottom: 5px solid #172b4d;
-      }
-      .tip .tip-t {
-        font-weight: 600;
-        margin-bottom: 2px;
-      }
-      .tip .tip-r {
-        color: #b6c2cf;
       }
 
       /* ---------- footer / show more ---------- */
@@ -886,11 +810,11 @@
     <h2>1 · The report, redesigned</h2>
     <p class="caption">
       Standalone <code>critical-path</code> report. Compare against <code>../critical-path.png</code>: the five-column
-      grid becomes ranked rows, the vertical stacks of blue links become an inline chain, and the two near-duplicate day
-      columns become one bar with a legend.
+      grid becomes rank, %, chain, a small work/queued bar, and span — one line per row — with the full chain, which
+      epic is biggest, and what else it blocks behind a per-row disclosure instead of always on screen.
     </p>
 
-    <div class="card" style="max-width: 1000px">
+    <div class="card" style="max-width: 720px">
       <div class="card-head">
         <div>
           <p class="card-title">Critical Paths</p>
@@ -900,34 +824,54 @@
           </p>
         </div>
         <div class="head-right">
-          <div class="legend">
-            <span class="legend-item"><span class="swatch sw-work"></span> Work</span>
-            <span class="legend-item"><span class="swatch sw-wait"></span> Queued behind other plan work</span>
-          </div>
           <button class="btn btn-sm">Table view</button>
         </div>
       </div>
 
       <div class="paths">
+        <div class="paths-head">
+          <span class="ph-crit">Criticality index</span>
+          <span class="ph-chain">Critical path</span>
+          <span class="ph-bar">
+            <span class="legend-item"><span class="swatch sw-work"></span>Work</span>
+            <span class="legend-item"><span class="swatch sw-wait"></span>Queued</span>
+          </span>
+          <span class="ph-days">Total days</span>
+        </div>
         <!-- row 1 -->
-        <div class="row">
-          <div class="rankcol">
-            <div class="rank">1</div>
-            <div class="crit">78%</div>
-            <div class="crit-label">of runs</div>
-          </div>
-          <div>
-            <div class="epic"><a href="#">Epic X.1</a></div>
-            <div class="meta"><span class="team-tag">ADJ3</span> <span>6 epics in chain</span></div>
-            <div class="chain">
-              <span class="chain-lead">then</span>
-              <a class="chip" href="#">Epic X.2</a><span class="arrow">→</span> <a class="chip" href="#">Epic X.3</a
-              ><span class="arrow">→</span> <a class="chip" href="#">Epic X.4</a><span class="arrow">→</span>
-              <a class="chip" href="#">Epic X.5</a><span class="arrow">→</span>
-              <a class="chip" href="#">Epic X.6</a>
+        <details class="row" open>
+          <summary class="row-summary">
+            <span class="row-rank">1</span>
+            <span class="row-crit">78%</span>
+            <span class="row-name">Epic X.1 → … → Epic X.6</span>
+            <span class="row-bartrack">
+              <span class="row-bar" style="width: 100%">
+                <i class="seg-work" style="flex: 142"></i><i class="seg-wait" style="flex: 115"></i>
+              </span>
+            </span>
+            <span class="row-days">257 d</span>
+          </summary>
+          <div class="row-detail">
+            <div class="detail-stat">
+              <div class="detail-label">Full chain</div>
+              <div class="detail-value">
+                <a class="chip" href="#">Epic X.1</a><span class="arrow">→</span> <a class="chip" href="#">Epic X.2</a
+                ><span class="arrow">→</span> <a class="chip" href="#">Epic X.3</a><span class="arrow">→</span>
+                <a class="chip" href="#">Epic X.4</a><span class="arrow">→</span> <a class="chip" href="#">Epic X.5</a
+                ><span class="arrow">→</span>
+                <a class="chip" href="#">Epic X.6</a>
+              </div>
             </div>
-            <details class="fanout">
-              <summary>6 more epics blocked by this chain · 55 days</summary>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by days of work</div>
+              <div class="detail-value"><a href="#">Epic X.2</a> — 41 days</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by queued delay</div>
+              <div class="detail-value"><a href="#">Epic X.4</a> — 38 days queued behind ADJ3's other epics</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Other epics blocked by this chain · 55 days total</div>
               <div class="fanout-body">
                 <a class="chip" href="#">Validate promotion code is available</a>
                 <a class="chip" href="#">Add promotion to cart</a>
@@ -936,55 +880,47 @@
                 <a class="chip" href="#">Remove Promotion from Cart</a>
                 <a class="chip" href="#">Handle rejection case</a>
               </div>
-            </details>
-          </div>
-          <div class="barcol">
-            <div class="bartrack">
-              <div class="gridlines">
-                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
-                ><span style="left: 100%"></span>
-              </div>
-              <div class="bar" style="width: 100%">
-                <div class="seg seg-work" style="flex: 142"></div>
-                <div class="seg seg-wait" style="flex: 115"></div>
-              </div>
-            </div>
-            <div class="barvals">
-              <b>257 day span</b> <span class="dot">·</span> 142 working, 115 queued behind ADJ3's other epics
-            </div>
-            <!-- hover state, pinned open for the mockup: anchored under the orange segment -->
-            <div class="tip" style="top: 38px; left: 62px">
-              <div class="tip-t">Queued behind ADJ3's other epics · 115 days</div>
-              <div class="tip-r">
-                45% of this span is idle because ADJ3's track was busy with other epics <i>in this plan</i>. Longest
-                single wait: Epic X.4, 38 days. Excludes any work ADJ3 does outside the plan.
-              </div>
             </div>
           </div>
-        </div>
+        </details>
 
         <!-- row 2 -->
-        <div class="row">
-          <div class="rankcol">
-            <div class="rank">2</div>
-            <div class="crit">44%</div>
-            <div class="crit-label">of runs</div>
-          </div>
-          <div>
-            <div class="epic"><a href="#">Show tip</a></div>
-            <div class="meta"><span class="team-tag">BTP</span> <span>8 epics in chain</span></div>
-            <div class="chain">
-              <span class="chain-lead">then</span>
-              <a class="chip" href="#">QA: Take tip amount</a><span class="arrow">→</span>
-              <a class="chip" href="#">UAT: Take Tip Amount</a><span class="arrow">→</span>
-              <a class="chip" href="#">Add Tip Amount to Payment</a><span class="arrow">→</span>
-              <a class="chip" href="#">Process Payment</a><span class="arrow">→</span>
-              <a class="chip" href="#">Pay driver</a><span class="arrow">→</span> <a class="chip" href="#">Ship Order</a
-              ><span class="arrow">→</span>
-              <a class="chip" href="#">Track Order Status</a>
+        <details class="row">
+          <summary class="row-summary">
+            <span class="row-rank">2</span>
+            <span class="row-crit">44%</span>
+            <span class="row-name">Show tip → … → Track Order Status</span>
+            <span class="row-bartrack">
+              <span class="row-bar" style="width: 42%">
+                <i class="seg-work" style="flex: 71"></i><i class="seg-wait" style="flex: 37"></i>
+              </span>
+            </span>
+            <span class="row-days">108 d</span>
+          </summary>
+          <div class="row-detail">
+            <div class="detail-stat">
+              <div class="detail-label">Full chain</div>
+              <div class="detail-value">
+                <a class="chip" href="#">Show tip</a><span class="arrow">→</span>
+                <a class="chip" href="#">QA: Take tip amount</a><span class="arrow">→</span>
+                <a class="chip" href="#">UAT: Take Tip Amount</a><span class="arrow">→</span>
+                <a class="chip" href="#">Add Tip Amount to Payment</a><span class="arrow">→</span>
+                <a class="chip" href="#">Process Payment</a><span class="arrow">→</span>
+                <a class="chip" href="#">Pay driver</a><span class="arrow">→</span>
+                <a class="chip" href="#">Ship Order</a><span class="arrow">→</span>
+                <a class="chip" href="#">Track Order Status</a>
+              </div>
             </div>
-            <details class="fanout">
-              <summary>5 more epics blocked by this chain · 67 days</summary>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by days of work</div>
+              <div class="detail-value"><a href="#">Process Payment</a> — 22 days</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by queued delay</div>
+              <div class="detail-value"><a href="#">Ship Order</a> — 19 days queued behind BTP's other epics</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Other epics blocked by this chain · 67 days total</div>
               <div class="fanout-body">
                 <a class="chip" href="#">Add Tip Amount to Payment</a>
                 <a class="chip" href="#">Process Payment</a>
@@ -992,44 +928,46 @@
                 <a class="chip" href="#">Ship Order</a>
                 <a class="chip" href="#">Track Order Status</a>
               </div>
-            </details>
-          </div>
-          <div class="barcol">
-            <div class="bartrack">
-              <div class="gridlines">
-                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
-                ><span style="left: 100%"></span>
-              </div>
-              <div class="bar" style="width: 42%">
-                <div class="seg seg-work" style="flex: 71"></div>
-                <div class="seg seg-wait" style="flex: 37"></div>
-              </div>
-            </div>
-            <div class="barvals">
-              <b>108 day span</b> <span class="dot">·</span> 71 working, 37 queued behind BTP's other epics
             </div>
           </div>
-        </div>
+        </details>
 
         <!-- row 3 -->
-        <div class="row">
-          <div class="rankcol">
-            <div class="rank">3</div>
-            <div class="crit">31%</div>
-            <div class="crit-label">of runs</div>
-          </div>
-          <div>
-            <div class="epic"><a href="#">Get test devices</a></div>
-            <div class="meta"><span class="team-tag">ADMIN</span> <span>5 epics in chain</span></div>
-            <div class="chain">
-              <span class="chain-lead">then</span>
-              <a class="chip" href="#">Pay on device</a><span class="arrow">→</span>
-              <a class="chip" href="#">Refund on device</a><span class="arrow">→</span>
-              <a class="chip" href="#">Send data to BOH</a><span class="arrow">→</span>
-              <a class="chip" href="#">Get data from BOH</a>
+        <details class="row">
+          <summary class="row-summary">
+            <span class="row-rank">3</span>
+            <span class="row-crit">31%</span>
+            <span class="row-name">Get test devices → … → Get data from BOH</span>
+            <span class="row-bartrack">
+              <span class="row-bar" style="width: 42.8%">
+                <i class="seg-work" style="flex: 96"></i><i class="seg-wait" style="flex: 14"></i>
+              </span>
+            </span>
+            <span class="row-days">110 d</span>
+          </summary>
+          <div class="row-detail">
+            <div class="detail-stat">
+              <div class="detail-label">Full chain</div>
+              <div class="detail-value">
+                <a class="chip" href="#">Get test devices</a><span class="arrow">→</span>
+                <a class="chip" href="#">Pay on device</a><span class="arrow">→</span>
+                <a class="chip" href="#">Refund on device</a><span class="arrow">→</span>
+                <a class="chip" href="#">Send data to BOH</a><span class="arrow">→</span>
+                <a class="chip" href="#">Get data from BOH</a>
+              </div>
             </div>
-            <details class="fanout">
-              <summary>4 more epics blocked by this chain · 71 days</summary>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by days of work</div>
+              <div class="detail-value"><a href="#">Pay on device</a> — 31 days</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by queued delay</div>
+              <div class="detail-value">
+                <a href="#">Get data from BOH</a> — 9 days queued behind ADMIN's other epics
+              </div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Other epics blocked by this chain · 71 days total</div>
               <div class="fanout-body">
                 <a class="chip" href="#">Get drawer api and mocks</a>
                 <a class="chip" href="#">Open drawer</a>
@@ -1038,87 +976,77 @@
                 >
                 <a class="chip" href="#">Close drawer</a>
               </div>
-            </details>
-          </div>
-          <div class="barcol">
-            <div class="bartrack">
-              <div class="gridlines">
-                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
-                ><span style="left: 100%"></span>
-              </div>
-              <div class="bar" style="width: 42.8%">
-                <div class="seg seg-work" style="flex: 96"></div>
-                <div class="seg seg-wait" style="flex: 14"></div>
-              </div>
-            </div>
-            <div class="barvals">
-              <b>110 day span</b> <span class="dot">·</span> 96 working, 14 queued behind ADMIN's other epics
             </div>
           </div>
-        </div>
+        </details>
 
         <!-- row 4 — the point of the model fix -->
-        <div class="row">
-          <div class="rankcol">
-            <div class="rank">4</div>
-            <div class="crit low">12%</div>
-            <div class="crit-label">of runs</div>
-          </div>
-          <div>
-            <div class="epic"><a href="#">Tablet Mode UI Enhancements</a></div>
-            <div class="meta"><span class="team-tag">ADJ3</span> <span>blocks nothing</span></div>
-            <div class="no-chain">
-              Long, but it has slack — it only lands on the critical path when it runs late and ADJ3 is already busy.
-            </div>
-          </div>
-          <div class="barcol">
-            <div class="bartrack">
-              <div class="gridlines">
-                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
-                ><span style="left: 100%"></span>
-              </div>
-              <div class="bar" style="width: 51.4%">
-                <div class="seg seg-work only" style="flex: 132"></div>
+        <details class="row">
+          <summary class="row-summary">
+            <span class="row-rank">4</span>
+            <span class="row-crit low">12%</span>
+            <span class="row-name">Tablet Mode UI Enhancements</span>
+            <span class="row-bartrack">
+              <span class="row-bar" style="width: 51.4%">
+                <i class="seg-work" style="flex: 132"></i>
+              </span>
+            </span>
+            <span class="row-days">132 d</span>
+          </summary>
+          <div class="row-detail">
+            <div class="detail-stat">
+              <div class="detail-label">Why it's only 12%</div>
+              <div class="detail-value">
+                Long, but it has slack — it only lands on the critical path when it runs late and ADJ3 is already busy.
               </div>
             </div>
-            <div class="barvals">
-              <b>132 day span</b> <span class="dot">·</span> never queued behind other plan work
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by days of work</div>
+              <div class="detail-value">A single epic — 132 days, no chain.</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by queued delay</div>
+              <div class="detail-value">Never queued behind other plan work.</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Other epics blocked by this chain</div>
+              <div class="detail-value">None — it blocks nothing else in this plan.</div>
             </div>
           </div>
-        </div>
+        </details>
 
         <!-- row 5 -->
-        <div class="row">
-          <div class="rankcol">
-            <div class="rank">5</div>
-            <div class="crit low">9%</div>
-            <div class="crit-label">of runs</div>
-          </div>
-          <div>
-            <div class="epic"><a href="#">Daily Sales Summary Report</a></div>
-            <div class="meta"><span class="team-tag">ADJI-Team</span> <span>blocks nothing</span></div>
-            <div class="no-chain">Long, but it has slack.</div>
-          </div>
-          <div class="barcol">
-            <div class="bartrack">
-              <div class="gridlines">
-                <span style="left: 25%"></span><span style="left: 50%"></span><span style="left: 75%"></span
-                ><span style="left: 100%"></span>
-              </div>
-              <div class="bar" style="width: 46.7%">
-                <div class="seg seg-work only" style="flex: 120"></div>
-              </div>
+        <details class="row">
+          <summary class="row-summary">
+            <span class="row-rank">5</span>
+            <span class="row-crit low">9%</span>
+            <span class="row-name">Daily Sales Summary Report</span>
+            <span class="row-bartrack">
+              <span class="row-bar" style="width: 46.7%">
+                <i class="seg-work" style="flex: 120"></i>
+              </span>
+            </span>
+            <span class="row-days">120 d</span>
+          </summary>
+          <div class="row-detail">
+            <div class="detail-stat">
+              <div class="detail-label">Why it's only 9%</div>
+              <div class="detail-value">Long, but it has slack.</div>
             </div>
-            <div class="barvals">
-              <b>120 day span</b> <span class="dot">·</span> never queued behind other plan work
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by days of work</div>
+              <div class="detail-value">A single epic — 120 days, no chain.</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Biggest epic by queued delay</div>
+              <div class="detail-value">Never queued behind other plan work.</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-label">Other epics blocked by this chain</div>
+              <div class="detail-value">None — it blocks nothing else in this plan.</div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="axis">
-        <div class="axis-label">chain span →</div>
-        <div class="axis-ticks"><span>0</span><span>64</span><span>128</span><span>192</span><span>257 days</span></div>
+        </details>
       </div>
 
       <div class="card-foot">
