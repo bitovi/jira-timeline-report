@@ -3,7 +3,7 @@ import type { LinkedIssue } from './link-issues';
 
 import { resetLinkedIssue, linkIssues } from './link-issues';
 import { scheduleIssues } from './schedule';
-import { traceDrivingChain, type TraceLinkedIssue, type TraceWorkItem, type TraceNode } from './critical-path-trace';
+import { traceDrivingChain, type TraceLinkedIssue } from './critical-path-trace';
 import { CriticalityAccumulator } from './criticality-accumulator';
 
 export function runMonteCarlo(
@@ -77,16 +77,6 @@ export type BatchDatas = {
   criticalityAccumulator: CriticalityAccumulator;
 };
 
-function buildNodeByWorkItem(teamWork: ReturnType<typeof scheduleIssues>): Map<TraceWorkItem, TraceNode> {
-  const nodeByWorkItem = new Map<TraceWorkItem, TraceNode>();
-  Object.values(teamWork).forEach((team) => {
-    team.workPlans.workNodes().forEach((node) => {
-      nodeByWorkItem.set(node.work as TraceWorkItem, node as unknown as TraceNode);
-    });
-  });
-  return nodeByWorkItem;
-}
-
 function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: number }): BatchDatas {
   const items: BatchIssueData[] = linkedIssues.map((linkedIssue) => ({
     linkedIssue,
@@ -95,14 +85,6 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     daysOfWork: [],
     trackNumbers: [],
   }));
-
-  // Stable across every iteration of this batch — object identity of `mutableWorkItem` never changes,
-  // only its properties are reset. Used by the trace to walk from a ScheduledWorkNode's `.work` back to
-  // the LinkedIssue that owns it.
-  const issueByWorkItem = new Map<TraceWorkItem, TraceLinkedIssue>();
-  linkedIssues.forEach((issue) =>
-    issueByWorkItem.set(issue.mutableWorkItem as TraceWorkItem, issue as unknown as TraceLinkedIssue),
-  );
 
   const lastDays: number[] = [];
   const criticalityAccumulator = new CriticalityAccumulator();
@@ -147,8 +129,7 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     lastDays[i] = lastDay;
 
     if (lastIssue) {
-      const nodeByWorkItem = buildNodeByWorkItem(teamWork);
-      const hops = traceDrivingChain(lastIssue as unknown as TraceLinkedIssue, nodeByWorkItem, issueByWorkItem);
+      const hops = traceDrivingChain(lastIssue as unknown as TraceLinkedIssue);
       criticalityAccumulator.addIteration(hops);
     }
   }

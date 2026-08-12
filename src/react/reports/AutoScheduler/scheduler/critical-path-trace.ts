@@ -10,17 +10,18 @@ export interface TraceLinkedIssue {
   linkedBlockedBy: TraceLinkedIssue[];
 }
 
-export interface TraceNode {
-  work: TraceWorkItem;
-  previous: TraceNode | null;
-}
-
-export type HopType = 'capacity' | 'dependency' | 'root';
+export type HopType = 'dependency' | 'root';
 
 export interface Hop {
   issueKey: string;
+  /** Whether this issue was reached from a blocker (`dependency`) or ended the walk (`root`). */
   hopType: HopType;
   workDays: number;
+  /**
+   * `startDay − earliestStartFromBlockers` — the gap between this issue being unblocked and its
+   * team's track having room. Non-zero exactly when the scheduler pushed it past its
+   * blocker-ready date, i.e. when it queued behind other work in this plan.
+   */
   queuedDays: number;
 }
 
@@ -35,22 +36,28 @@ function argmaxBlockerByEndDay(blockers: TraceLinkedIssue[]): TraceLinkedIssue {
   return blockers.reduce((best, blocker) => {
     const bestEnd = best.mutableWorkItem.startDay + best.mutableWorkItem.daysOfWork;
     const end = blocker.mutableWorkItem.startDay + blocker.mutableWorkItem.daysOfWork;
-    return end > bestEnd ? blocker : best;
+    if (end !== bestEnd) return end > bestEnd ? blocker : best;
+    // Deterministic tiebreak, so the trace doesn't jitter run to run on equal end days.
+    return blocker.key < best.key ? blocker : best;
   });
 }
 
 /**
- * Walks backward from `startIssue` (typically the last-finishing item in a single Monte Carlo
- * iteration), classifying each hop as a capacity hop (the item's own team track was busy) or a
- * dependency hop (the item started exactly when its blockers allowed). Stops at a "root" hop: an
- * issue with no blockers and no track predecessor. See spec/024-critical-path/README.md, "The fix:
- * trace the driving chain per iteration".
+ * Walks backward from `startIssue` (the last-finishing item in a single Monte Carlo iteration)
+ * along blocker links, taking the blocker that finished last at each step, and stops at an issue
+ * with no blockers.
+ *
+ * Each hop records the days that issue spent working and the days it spent queued behind other
+ * work in this plan. Because an issue starts either exactly when its last blocker ended or later,
+ * work + queued along the chain sums to the elapsed time the chain covers.
+ *
+ * The walk deliberately does *not* step sideways onto the team track when an issue was capacity
+ * delayed. Doing so pulled unrelated epics onto the chain — and their whole upstream lineage with
+ * them — which is why nearly every epic in a large plan reported ~100% criticality. Capacity delay
+ * is reported as the delayed issue's own `queuedDays`, not as extra chain members. See
+ * spec/024-critical-path/issues-and-concerns.md #1.
  */
-export function traceDrivingChain(
-  startIssue: TraceLinkedIssue,
-  nodeByWorkItem: Map<TraceWorkItem, TraceNode>,
-  issueByWorkItem: Map<TraceWorkItem, TraceLinkedIssue>,
-): Hop[] {
+export function traceDrivingChain(startIssue: TraceLinkedIssue): Hop[] {
   const hops: Hop[] = [];
   const visited = new Set<string>();
   let current: TraceLinkedIssue | null = startIssue;
@@ -58,22 +65,13 @@ export function traceDrivingChain(
   while (current && !visited.has(current.key)) {
     visited.add(current.key);
     const work = current.mutableWorkItem;
-    // queuedDays only counts if there were blockers to wait for; otherwise it's 0
-    const queuedDays =
-      current.linkedBlockedBy.length > 0 ? Math.max(0, work.startDay - earliestStartFromBlockers(current)) : 0;
-    const workDays = work.daysOfWork;
+    const queuedDays = Math.max(0, work.startDay - earliestStartFromBlockers(current));
 
-    if (work.artificiallyDelayed) {
-      const node = nodeByWorkItem.get(work);
-      const previousWork = node?.previous?.work ?? null;
-      const next = previousWork ? (issueByWorkItem.get(previousWork) ?? null) : null;
-      hops.push({ issueKey: current.key, hopType: next ? 'capacity' : 'root', workDays, queuedDays });
-      current = next;
-    } else if (current.linkedBlockedBy.length > 0) {
-      hops.push({ issueKey: current.key, hopType: 'dependency', workDays, queuedDays });
+    if (current.linkedBlockedBy.length > 0) {
+      hops.push({ issueKey: current.key, hopType: 'dependency', workDays: work.daysOfWork, queuedDays });
       current = argmaxBlockerByEndDay(current.linkedBlockedBy);
     } else {
-      hops.push({ issueKey: current.key, hopType: 'root', workDays, queuedDays });
+      hops.push({ issueKey: current.key, hopType: 'root', workDays: work.daysOfWork, queuedDays });
       current = null;
     }
   }

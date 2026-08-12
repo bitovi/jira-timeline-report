@@ -93,7 +93,10 @@ export function buildCriticalPaths(uiData: StatsUIData): CriticalPathRow[] {
     const { chain, fanOut } = buildChain(candidate, excludedKeys, keyToWorkItem);
 
     const totalWorkDays = chain.reduce((sum, wi) => sum + wi.meanWorkDays, 0);
-    const totalQueuedDays = chain.reduce((sum, wi) => sum + wi.meanQueuedDays, 0);
+    // Chain span runs from the *first* epic's start to the last epic's end, so the first epic's
+    // own queued days — the time before the chain began — are outside it. Including them made a
+    // single late-starting epic report a span close to the whole plan length.
+    const totalQueuedDays = chain.slice(1).reduce((sum, wi) => sum + wi.meanQueuedDays, 0);
     const fanOutTotalDays = fanOut.reduce((sum, wi) => sum + wi.adjustedDaysOfWork, 0);
 
     rows.push({

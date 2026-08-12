@@ -40,7 +40,9 @@ describe('CriticalPathsReport', () => {
     render(<CriticalPathsReport uiData={uiData} workItemsToHighlight={null} setWorkItemsToHighlight={vi.fn()} />);
 
     expect(screen.getByText('78%')).toBeInTheDocument();
-    expect(screen.getByText('37 d')).toBeInTheDocument(); // 10+20 work + 2+5 queued
+    // 10 + 20 work, plus B's 5 queued. A is the first epic on the chain, so its 2 queued days
+    // sit before the span starts and are excluded.
+    expect(screen.getByText('35 d')).toBeInTheDocument();
   });
 
   it('highlights the row-s chain and fan-out when expanded, and clears highlighting when collapsed', () => {

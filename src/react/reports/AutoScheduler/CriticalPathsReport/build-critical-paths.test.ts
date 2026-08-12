@@ -65,8 +65,9 @@ describe('buildCriticalPaths', () => {
     expect(row.chain.map((wi) => wi.linkedIssue.key)).toEqual(['C', 'B', 'A']);
     expect(row.fanOut.map((wi) => wi.linkedIssue.key)).toEqual(['D']);
     expect(row.totalWorkDays).toBe(20); // 10 + 6 + 4
-    expect(row.totalQueuedDays).toBe(3); // 1 + 0 + 2
-    expect(row.totalDays).toBe(23);
+    // C is the first epic on the chain, so its own 2 queued days sit before the span starts.
+    expect(row.totalQueuedDays).toBe(1); // B's 0 + A's 1
+    expect(row.totalDays).toBe(21);
     expect(row.biggestByWork.linkedIssue.key).toBe('A'); // 10 work days is the largest
     expect(row.biggestByQueuedDelay.linkedIssue.key).toBe('C'); // 2 queued days is the largest
   });
