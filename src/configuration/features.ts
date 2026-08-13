@@ -18,6 +18,15 @@ export const nonReportsFeatures: Feature[] = [
     featureFlag: 'workBreakdowns',
     onByDefault: false,
   },
+  // Gates the Storage panel only. Everything behind it — the pointer, the backend seam, the
+  // migration — ships regardless; a site that never opens the panel keeps the legacy record it
+  // already has. See spec/026-storage-saved-reports.
+  {
+    name: 'Reports Storage',
+    subtitle: 'Choose where saved reports are stored, including one Jira work item per report.',
+    featureFlag: 'reportsStorage',
+    onByDefault: false,
+  },
 ] as const;
 
 export const features = reports

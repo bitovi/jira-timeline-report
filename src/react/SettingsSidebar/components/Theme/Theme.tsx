@@ -91,11 +91,11 @@ const ThemeView: FC<ThemeProps> = () => {
         {(isPending || isFontPending) && <Spinner size="small" />}
       </div>
 
-      <div className="pt-4">
-        <FontPicker key={resetNonce} font={localFont} onChange={updateLocalFont} />
-      </div>
-
       <div className="pt-4 flex flex-col gap-2">
+        <ThemeSection title="Font">
+          <FontPicker key={resetNonce} font={localFont} onChange={updateLocalFont} />
+        </ThemeSection>
+
         <ThemeGroup title="Status colors">
           {statusItems.map((item) => (
             <ColorRow key={item.label} item={item} onChange={updateColor} />
@@ -120,6 +120,28 @@ const ThemeView: FC<ThemeProps> = () => {
           Reset theme
         </Button>
       </div>
+    </div>
+  );
+};
+
+interface ThemeSectionProps {
+  title: string;
+  children: ReactNode;
+}
+
+/**
+ * A labelled group of settings that has nothing to collapse, headed like `ThemeGroup` so the panel
+ * reads as one list of sections. The title starts where the groups below start their chevron, not
+ * where they start their text — indenting it to the text would leave an obvious gap where the
+ * missing caret should be.
+ */
+const ThemeSection: FC<ThemeSectionProps> = ({ title, children }) => {
+  return (
+    <div>
+      <div className="flex items-center p-2 bg-white">
+        <Heading size="xsmall">{title}</Heading>
+      </div>
+      <div className="px-4 py-2">{children}</div>
     </div>
   );
 };

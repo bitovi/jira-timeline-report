@@ -22,6 +22,9 @@ import {
   fetchDeepChildren,
   fetchJiraChangelog,
   fetchIssueTypes,
+  fetchJiraProject,
+  fetchProjectIssueTypes,
+  createJiraIssue,
   fetchJiraIssue,
   fetchLatestComment,
   fetchIssuePickerSuggestions,
@@ -83,6 +86,12 @@ export default function createJiraHelpers(
 
   const jiraHelpers = {
     appKey: JIRA_APP_KEY,
+    /**
+     * Which build this is — `jira` for the Connect app embedded in Jira, `hosted` for the
+     * standalone web app. Already on `config`; surfaced here because the Storage settings panel has
+     * to know which of its two cards describes the host the user is actually in.
+     */
+    host,
     saveInformationToLocalStorage,
     clearAuthFromLocalStorage,
     fetchFromLocalStorage,
@@ -118,6 +127,9 @@ export default function createJiraHelpers(
     fetchDeepChildren: fetchDeepChildren(config),
     fetchJiraFields: fetchJiraFields(config),
     fetchIssueTypes: fetchIssueTypes(config),
+    fetchJiraProject: fetchJiraProject(config),
+    fetchProjectIssueTypes: fetchProjectIssueTypes(config),
+    createJiraIssue: createJiraIssue(config),
     getAccessToken: getAccessToken(config),
     hasAccessToken,
     hasValidAccessToken,

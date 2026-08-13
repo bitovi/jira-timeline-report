@@ -718,12 +718,7 @@ export function editJiraIssueWithNamedFields(config: Config) {
      * request helper / jira client
      */
 
-    const isPlugin = !!(AP?.history?.getState ?? false);
-
-    interface APResponse {
-      body: string;
-      xhr: { status: number; statusText: string };
-    }
+    const isPlugin = isConnectHost();
 
     if (isPlugin) {
       return AP?.request(`/rest/api/3/issue/${issueId}?returnIssue=true` + '' /*new URLSearchParams(params)*/, {
@@ -757,5 +752,138 @@ export function editJiraIssueWithNamedFields(config: Config) {
         body: JSON.stringify(editBody),
       },
     ).then(responseToText);
+  };
+}
+
+/**
+ * True when this page is running inside Jira as a Connect app, where writes go over the `AP` bridge
+ * instead of a bearer-token `fetch`.
+ *
+ * Same probe `editJiraIssueWithNamedFields` uses above — `AP` itself is stubbed to `{}` in tests, so
+ * the presence of the *history* API is what actually distinguishes the host.
+ */
+const isConnectHost = (): boolean => !!(AP?.history?.getState ?? false);
+
+interface APResponse {
+  body: string;
+  xhr: { status: number; statusText: string };
+}
+
+/** `${JIRA_API_URL}/${cloudId}/rest` — the base every non-Connect write goes through. */
+const hostedRestUrl = (config: Config, path: string): string => {
+  return `${config.env.JIRA_API_URL}/${fetchFromLocalStorage('scopeId')}/rest${path}`;
+};
+
+const hostedWriteHeaders = (): Record<string, string> => ({
+  Authorization: `Bearer ${fetchFromLocalStorage('accessToken')}`,
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+});
+
+/**
+ * `AP.request` rejects with `{err}` — a JSON *string*, not an `Error` — so an unwrapped bridge
+ * failure reaches the UI as a bare "Something went wrong".
+ *
+ * Worth the unwrapping here in particular: a Connect app's `DELETE` scope is **separate from
+ * `write`**, so deleting a work item fails on a descriptor asking only for `["read", "write"]`, and
+ * "you don't have permission" is a very different message from "something went wrong".
+ */
+const apRequestError = (operation: string, error: unknown): Error => {
+  const raw = (error as { err?: unknown })?.err;
+
+  if (typeof raw === 'string') {
+    try {
+      const { statusCode, message } = JSON.parse(raw) as { statusCode?: number; message?: string };
+
+      return new Error(`${operation} failed${statusCode ? ` (HTTP ${statusCode})` : ''}: ${message ?? raw}`);
+    } catch {
+      return new Error(`${operation} failed: ${raw}`);
+    }
+  }
+
+  return error instanceof Error ? error : new Error(`${operation} failed`);
+};
+
+export interface CreatedJiraIssue {
+  id: string;
+  key: string;
+  self?: string;
+}
+
+/**
+ * Creates one work item. Used by the Reports Space backend, where every saved report is its own
+ * work item — see spec/026-storage-saved-reports.
+ *
+ * Deliberately **not** routed through {@link fieldsToEditBody}: `project`, `issuetype`, `summary`
+ * and `description` are raw system field ids, and the name mapping that helps custom fields would
+ * only get in their way here.
+ */
+export function createJiraIssue(config: Config) {
+  return async (fields: Record<string, unknown>): Promise<CreatedJiraIssue> => {
+    const body = JSON.stringify({ fields });
+
+    if (isConnectHost()) {
+      return AP!
+        .request(`/rest/api/3/issue`, {
+          type: 'POST',
+          contentType: 'application/json',
+          data: body,
+        })
+        .then(
+          (response) => JSON.parse((response as APResponse).body) as CreatedJiraIssue,
+          (error) => {
+            throw apRequestError('Creating a work item', error);
+          },
+        );
+    }
+
+    return fetch(hostedRestUrl(config, '/api/3/issue'), {
+      method: 'POST',
+      headers: hostedWriteHeaders(),
+      body,
+    })
+      .then(responseToText)
+      .then((text) => JSON.parse(text) as CreatedJiraIssue);
+  };
+}
+
+export interface JiraProject {
+  id: string;
+  key: string;
+  name: string;
+}
+
+/**
+ * One space (Jira still calls it a project over REST) by key. Used to confirm a Reports Space exists
+ * and is reachable before the pointer is written to it.
+ */
+export function fetchJiraProject(config: Config) {
+  return (projectKeyOrId: string): Promise<JiraProject> => {
+    return config.requestHelper(
+      `/api/3/project/${encodeURIComponent(projectKeyOrId)}`,
+    ) as unknown as Promise<JiraProject>;
+  };
+}
+
+export interface JiraCreateMetaIssueType {
+  id: string;
+  name: string;
+  description?: string;
+  subtask?: boolean;
+  hierarchyLevel?: number;
+}
+
+/**
+ * The work item types the current user can **create** in one space.
+ *
+ * Narrower than the site-wide {@link fetchIssueTypes} on purpose: picking from this list means the
+ * chosen type is valid for that space by construction, and a non-empty answer is also the cheapest
+ * available signal that the user holds Create Issues there.
+ */
+export function fetchProjectIssueTypes(config: Config) {
+  return (projectKeyOrId: string): Promise<{ issueTypes: JiraCreateMetaIssueType[] }> => {
+    return config.requestHelper(
+      `/api/3/issue/createmeta/${encodeURIComponent(projectKeyOrId)}/issuetypes`,
+    ) as unknown as Promise<{ issueTypes: JiraCreateMetaIssueType[] }>;
   };
 }

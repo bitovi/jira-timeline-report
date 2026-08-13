@@ -19,6 +19,7 @@ import { getFeatures } from '../jira/features/fetcher';
 import { featuresKeyFactory } from '../react/services/features/key-factory';
 import { queryClient } from '../react/services/query/queryClient';
 import { getAllReports } from '../jira/reports/fetcher';
+import { getReportsBackend, initReportsStorage } from '../jira/reports/backend';
 import { installSavedReportsDebugger } from '../jira/reports/debug';
 import { reportKeys } from '../react/services/reports/key-factory';
 
@@ -67,8 +68,15 @@ export default async function mainHelper(
   const storage = createStorage(jiraHelpers);
   const linkBuilder = createLinkBuilder(jiraHelpers.appKey);
 
+  // Where saved reports live is a per-site setting (the legacy single record, or a work item per
+  // report in a Reports Space) read once here. Deliberately not awaited: `getReportsBackend`
+  // returns a facade that waits on this read itself, so nothing below has to be ordered after it
+  // and boot doesn't grow a round trip. See spec/026-storage-saved-reports.
+  void initReportsStorage({ storage, jiraHelpers });
+  const reportsBackend = getReportsBackend(storage);
+
   // Console helper: `logSavedReports()` dumps every saved report with its data.
-  installSavedReportsDebugger(storage);
+  installSavedReportsDebugger(reportsBackend);
 
   const props = isAlwaysLoggedIn
     ? {
@@ -97,7 +105,7 @@ export default async function mainHelper(
   if (report) {
     console.log('Loading report data ... ');
     timelineReportNeedsMet.reportData = false;
-    getAllReports(storage).then((reports) => {
+    getAllReports(reportsBackend).then((reports) => {
       queryClient.setQueryData(reportKeys.allReports, reports);
 
       timelineReportNeedsMet.reportData = true;

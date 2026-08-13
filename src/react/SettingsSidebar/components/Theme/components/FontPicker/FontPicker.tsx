@@ -58,8 +58,10 @@ export const FontPicker: FC<FontPickerProps> = ({ font, onChange }) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={selectId}>Font</Label>
+      {/* Labelled by aria rather than a visible <Label>: the panel titles this section itself, with
+          the same heading style as the color groups. */}
       <Select<FontOption>
+        aria-label="Font"
         inputId={selectId}
         options={options}
         value={options.find((option) => (isCustom ? option.value === CUSTOM : option.value === font.stack)) ?? null}

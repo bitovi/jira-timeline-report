@@ -52,7 +52,6 @@ import {
   toSelectedParts,
 } from '../data-utils.js';
 import { getTimingLevels } from '../../../utils/timing/helpers';
-import { getAllReports } from '../../../jira/reports/fetcher';
 import { reportKeys } from '../../../react/services/reports';
 import { queryClient } from '../../../react/services/query/queryClient';
 import { nowUTC } from '../../../utils/date/utc';
