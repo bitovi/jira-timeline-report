@@ -10,6 +10,7 @@ import { IconButton } from '@atlaskit/button/new';
 
 import ViewReportsLayout from './components/ViewReportsLayout';
 import { useAllReports, useDeleteReport, useRecentReports } from '../services/reports';
+import { useReportsStorageConfig } from '../services/reports-storage';
 import DeleteReportModal from './components/DeleteReportModal';
 import { ReportRow, useReportSearch } from '../components/ReportListing';
 
@@ -19,6 +20,9 @@ interface ViewReportProps {
 
 const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
   const reports = useAllReports();
+  // Read here rather than in the modal: this component already suspends on `useAllReports`, so the
+  // config resolves alongside the list instead of suspending the modal open.
+  const storage = useReportsStorageConfig();
 
   const { deleteReport, isDeleting } = useDeleteReport();
   const [managedReport, setManagedReport] = useState<Report>();
@@ -122,6 +126,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked }) => {
           });
         }}
         report={managedReport}
+        storage={storage}
       />
     </>
   );

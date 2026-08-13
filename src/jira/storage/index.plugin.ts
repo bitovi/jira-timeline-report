@@ -8,7 +8,7 @@ declare global {
       url: string,
       config?: {
         contentType?: string;
-        type?: 'GET' | 'PUT';
+        type?: 'GET' | 'PUT' | 'POST' | 'DELETE';
         headers?: Record<string, string>;
         data?: any;
       },

@@ -7,7 +7,9 @@ import TimingCalculation from './components/TimingCalculation';
 import Theme from './components/Theme';
 import SidebarLayout from './components/SidebarLayout';
 import Features from './components/Features';
+import Storage from './components/Storage';
 import AnimatedSidebar from './components/AnimatedSidebar';
+import { useAsyncFeatures } from '../services/features';
 import { value } from '../../can';
 import routeData from '../../canjs/routing/route-data';
 import { CanObservable } from '../hooks/useCanObservable';
@@ -21,6 +23,7 @@ export interface SettingsSidebarProps {
 
 const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpdateTeamsConfiguration }) => {
   const [showSettings] = useRouteData<string>('showSettings');
+  const { features } = useAsyncFeatures();
   const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string } }[]> = value.from(
     routeData,
     'derivedIssues',
@@ -34,7 +37,13 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpda
 
   return (
     <AnimatedSidebar>
-      {!showSettings && <ReportSettings showSidebarBranding={showSidebarBranding} changeSettings={changeSettings} />}
+      {!showSettings && (
+        <ReportSettings
+          showSidebarBranding={showSidebarBranding}
+          changeSettings={changeSettings}
+          showStorage={!!features?.reportsStorage}
+        />
+      )}
       {showSettings === 'SOURCES' && (
         <SidebarLayout onGoBack={returnToSettings} className="w-96">
           <IssueSource />
@@ -58,6 +67,11 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpda
       {showSettings === 'FEATURES' && (
         <SidebarLayout onGoBack={returnToSettings} className="w-96">
           <Features />
+        </SidebarLayout>
+      )}
+      {showSettings === 'STORAGE' && (
+        <SidebarLayout onGoBack={returnToSettings} className="w-[560px]">
+          <Storage />
         </SidebarLayout>
       )}
       {showSettings === 'THEME' && (

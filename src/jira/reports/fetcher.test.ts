@@ -2,6 +2,7 @@ import type { AppStorage } from '../storage/common';
 import type { Reports } from './fetcher';
 
 import { getAllReports, readAllReports, updateReports } from './fetcher';
+import { createLegacyReportsBackend } from './backend/legacy';
 
 /**
  * A storage double that does a real JSON round trip, like both production backends: the web build
@@ -39,7 +40,7 @@ describe('saved report persistence', () => {
 
     await updateReports(storage, reports);
 
-    expect((await getAllReports(storage)).doc?.sections).toEqual(sections);
+    expect((await getAllReports(createLegacyReportsBackend(storage))).doc?.sections).toEqual(sections);
   });
 
   it('loads a report saved before sections existed', async () => {
@@ -49,7 +50,7 @@ describe('saved report persistence', () => {
       gantt: { id: 'gantt', name: 'Gantt', queryParams: 'jql=project%3DORDER&primaryReportType=start-due' },
     });
 
-    const loaded = await getAllReports(storage);
+    const loaded = await getAllReports(createLegacyReportsBackend(storage));
 
     expect(loaded.gantt?.name).toBe('Gantt');
     expect(loaded.gantt?.sections).toBeUndefined();
@@ -61,11 +62,11 @@ describe('saved report persistence', () => {
 
     await updateReports(storage, { doc: withFutureField } as unknown as Reports);
 
-    expect(await getAllReports(storage)).toEqual({ doc: withFutureField });
+    expect(await getAllReports(createLegacyReportsBackend(storage))).toEqual({ doc: withFutureField });
   });
 
   it('returns an empty map when nothing has been saved', async () => {
-    expect(await getAllReports(makeStorage())).toEqual({});
+    expect(await getAllReports(createLegacyReportsBackend(makeStorage()))).toEqual({});
   });
 });
 
@@ -80,7 +81,7 @@ describe('read-time migration', () => {
       legacy: { id: 'legacy', name: 'Old Table', queryParams: 'jql=project%3DORDER&primaryReportType=table2' },
     });
 
-    const params = new URLSearchParams((await getAllReports(storage)).legacy?.queryParams);
+    const params = new URLSearchParams((await getAllReports(createLegacyReportsBackend(storage))).legacy?.queryParams);
 
     expect(params.get('primaryReportType')).toBe('table');
     expect(params.get('jql')).toBe('project=ORDER');
@@ -94,7 +95,7 @@ describe('read-time migration', () => {
       fine: { id: 'fine', name: 'Fine', queryParams: 'primaryReportType=start-due' },
     });
 
-    const { changed, applied } = await readAllReports(storage);
+    const { changed, applied } = await readAllReports(createLegacyReportsBackend(storage));
 
     expect(changed).toBe(true);
     expect(applied).toEqual(['breakdown-primary-report-type']);
@@ -107,7 +108,7 @@ describe('read-time migration', () => {
       gantt: { id: 'gantt', name: 'Gantt', queryParams: 'jql=project%3DORDER&primaryReportType=start-due' },
     });
 
-    expect(await readAllReports(storage)).toMatchObject({ changed: false, applied: [] });
+    expect(await readAllReports(createLegacyReportsBackend(storage))).toMatchObject({ changed: false, applied: [] });
   });
 
   it('keeps a document tree and unknown fields through a migration', async () => {
@@ -116,7 +117,7 @@ describe('read-time migration', () => {
 
     await updateReports(storage, { doc } as unknown as Reports);
 
-    const loaded = (await getAllReports(storage)).doc as unknown as typeof doc;
+    const loaded = (await getAllReports(createLegacyReportsBackend(storage))).doc as unknown as typeof doc;
 
     expect(loaded.sections).toEqual(sections);
     expect(loaded.theme).toBe('compact');

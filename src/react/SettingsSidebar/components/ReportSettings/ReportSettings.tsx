@@ -11,9 +11,14 @@ import BugReportModal from './components/BugReportModal';
 interface ReportSettingsProps {
   changeSettings: (setting: string) => void;
   showSidebarBranding: boolean;
+  /**
+   * Behind the `reportsStorage` feature flag, resolved by the parent — this component renders
+   * outside any provider in its own test, so it takes the answer rather than asking for it.
+   */
+  showStorage?: boolean;
 }
 
-const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBranding }) => {
+const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBranding, showStorage = false }) => {
   const [isFeedbackFormOpen, setIsFeedbackFormOpen] = useState(false);
   const [isBugFormOpen, setIsBugFormOpen] = useState(false);
 
@@ -55,6 +60,12 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
           <img src="/images/theme.svg" className="w-[18px]" aria-hidden />
           Theme
         </SidebarButton>
+        {showStorage && (
+          <SidebarButton onClick={() => changeSettings('STORAGE')}>
+            <img src="/images/storage.svg" className="w-[18px]" aria-hidden />
+            Storage
+          </SidebarButton>
+        )}
       </div>
 
       {/*

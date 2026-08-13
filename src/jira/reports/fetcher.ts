@@ -1,4 +1,5 @@
 import type { StoredNode } from '../../react/reports/ReportOfReports/model/sections';
+import type { ReportsBackend } from './backend/types';
 
 import routeData from '../../canjs/routing/route-data';
 import { AppStorage } from '../storage/common';
@@ -19,7 +20,7 @@ export type Report = {
 
 export type Reports = Partial<Record<string, Report>>;
 
-const reportsKey = 'saved-reports';
+export const reportsKey = 'saved-reports';
 
 /**
  * Mirrors the saved-reports map onto `routeData.reportsData`, the fallback every param-backed
@@ -35,10 +36,25 @@ export const publishReportsToRouteData = (reports: Reports): void => {
   (routeData as unknown as { reportsData: Reports }).reportsData = reports;
 };
 
+export type ReadReportsOutcome = MigrationOutcome & {
+  reports: Reports;
+  /**
+   * Only the reports a migration actually rewrote. The write-back layer needs the subset rather than
+   * the map: a Reports Space stores one work item per report, so writing all of them back would be
+   * *n* edits where one report changed. `migrateReports` returns unchanged reports by reference,
+   * which is what makes this an identity comparison rather than a deep one.
+   */
+  migrated: Report[];
+};
+
 /**
  * Reads the saved reports and normalizes them through the migration table — the correctness layer
- * for every legacy param key. Pure apart from the existing `storage.get`: it never writes, so a
- * report that cannot be persisted still renders correctly this session.
+ * for every legacy param key. Pure apart from the backend read: it never writes, so a report that
+ * cannot be persisted still renders correctly this session.
+ *
+ * Runs over whatever backend it is given, which is the point: reports loaded out of a Reports Space
+ * go through exactly the same migrations, and `publishReportsToRouteData` still fires for them —
+ * `routeData.reportsData` is what every param-backed setting falls back to.
  *
  * Returns the migration outcome alongside the reports because the write-back layer needs it: once
  * these reports are normalized, re-running `migrateReports` on them reports `changed: false`, so
@@ -46,17 +62,21 @@ export const publishReportsToRouteData = (reports: Reports): void => {
  *
  * See spec/018-card-report/saved-report-migrations/plan.md § Wiring.
  */
-export const readAllReports = async (storage: AppStorage): Promise<MigrationOutcome & { reports: Reports }> => {
-  const stored = await storage.get<Reports>(reportsKey).then((reports) => reports || {});
+export const readAllReports = async (backend: ReportsBackend): Promise<ReadReportsOutcome> => {
+  const stored = await backend.readAll();
   const { reports, changed, applied } = migrateReports(stored);
 
   publishReportsToRouteData(reports);
 
-  return { reports, changed, applied };
+  const migrated = changed
+    ? Object.entries(reports).flatMap(([id, report]) => (report && stored[id] !== report ? [report] : []))
+    : [];
+
+  return { reports, changed, applied, migrated };
 };
 
-export const getAllReports = async (storage: AppStorage): Promise<Reports> => {
-  const { reports } = await readAllReports(storage);
+export const getAllReports = async (backend: ReportsBackend): Promise<Reports> => {
+  const { reports } = await readAllReports(backend);
 
   return reports;
 };

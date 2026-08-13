@@ -1,8 +1,5 @@
-import type { AppStorage } from '../../storage/common';
-import type { Reports } from '../fetcher';
-import type { MigrationOutcome } from './index';
-
-import { updateReports } from '../fetcher';
+import type { ReportsBackend } from '../backend/types';
+import type { ReadReportsOutcome } from '../fetcher';
 
 export type PersistMigrationsResult =
   | 'nothing-to-migrate'
@@ -34,15 +31,17 @@ export const resetPersistMigrationsForTests = (): void => {
  * layer has normalized, a second `migrateReports` pass would report `changed: false` and this would
  * never write anything.
  *
- * The storage blob is shared by the whole Jira site (app properties are per-installation) and
- * `updateReports` overwrites it wholesale, so this must stay a rare event — hence the `changed`
- * guard, which caps it at one write per install per migration.
+ * Goes through `writeMigrated` rather than a loop of `upsert`s so each backend can do this its own
+ * cheapest way. The legacy storage blob is shared by the whole Jira site and gets overwritten
+ * wholesale, so this must stay a rare event — hence the `changed` guard, which caps it at one write
+ * per install per migration. A Reports Space instead writes only `migrated`, the reports that
+ * actually changed.
  *
  * See spec/018-card-report/saved-report-migrations/plan.md § Wiring.
  */
 export const persistMigrations = async (
-  storage: AppStorage,
-  { reports, changed, applied }: MigrationOutcome & { reports: Reports },
+  backend: ReportsBackend,
+  { reports, changed, applied, migrated }: ReadReportsOutcome,
   { isLoggedIn }: { isLoggedIn: boolean },
 ): Promise<PersistMigrationsResult> => {
   // Cheapest and by far the most common outcome: storage is already up to date. Checked before the
@@ -64,11 +63,11 @@ export const persistMigrations = async (
   try {
     // The web backend's `update` throws without a configuration issue, and its `get` returns null
     // in that state (so `changed` would be false anyway) — this is the documented precondition.
-    if (!(await storage.storageInitialized())) {
+    if (!(await backend.canWrite())) {
       return 'storage-not-initialized';
     }
 
-    await updateReports(storage, reports);
+    await backend.writeMigrated(migrated, reports);
     console.log(`[reports/migrations] persisted migrated saved reports: ${applied.join(', ')}`);
 
     return 'written';

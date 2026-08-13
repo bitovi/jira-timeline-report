@@ -1,31 +1,12 @@
 import type { StorageFactory } from './common';
+import type { CodeBlock, Paragraph } from './adf';
 
 import { configurationIssueTitle } from '../../shared/configurationIssue';
+import { createCodeBlock } from './adf';
 
 // Todo remove. See special logic note below
 import { AllTeamData } from '../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 //
-
-interface Paragraph {
-  type: 'paragraph';
-  content?: Array<TextContent>;
-}
-
-type TextContent = {
-  type: 'text';
-  text: string;
-  marks?: Mark[];
-};
-
-type Mark = {
-  type: 'strong';
-};
-
-interface CodeBlock {
-  type: 'codeBlock';
-  attrs: { language: string };
-  content: Array<{ type: 'text'; text: string }>;
-}
 
 type StorageIssueContent = Table | Paragraph | CodeBlock;
 
@@ -61,14 +42,6 @@ const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[num
   }
 
   return configurationIssues[0];
-};
-
-const createCodeBlock = (using?: string): CodeBlock => {
-  return {
-    type: 'codeBlock',
-    attrs: { language: 'json' },
-    content: [{ type: 'text', text: using ?? `{}` }],
-  };
 };
 
 function findTeamTable(document: any): Array<Record<'team' | 'velocity' | 'tracks' | 'sprint length', string>> | null {

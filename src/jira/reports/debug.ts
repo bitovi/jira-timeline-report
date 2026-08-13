@@ -1,4 +1,4 @@
-import type { AppStorage } from '../storage/common';
+import type { ReportsBackend } from './backend/types';
 import type { Report } from './fetcher';
 
 import { readAllReports } from './fetcher';
@@ -23,14 +23,15 @@ const parseQueryParams = (queryParams: string): Record<string, string> => {
 
 /**
  * Puts `logSavedReports()` on `window` so saved reports can be inspected from the browser console
- * without digging through storage (app properties on the web host, Connect properties in Jira).
+ * without digging through wherever they are stored (a Connect app property, the configuration
+ * issue, or a work item per report in a Reports Space).
  *
  * Reports are read through `readAllReports`, so what gets logged is the migrated shape the app
  * actually renders — the same thing every report reader sees.
  */
-export const installSavedReportsDebugger = (storage: AppStorage): void => {
+export const installSavedReportsDebugger = (backend: ReportsBackend): void => {
   window.logSavedReports = async () => {
-    const { reports, changed, applied } = await readAllReports(storage);
+    const { reports, changed, applied } = await readAllReports(backend);
     const entries = Object.entries(reports).filter((entry): entry is [string, Report] => Boolean(entry[1]));
 
     console.group(`Saved reports (${entries.length})`);
