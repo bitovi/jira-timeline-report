@@ -72,7 +72,7 @@ const StorageView: FC = () => {
   const [pendingMigration, setPendingMigration] = useState<{ reportCount: number } | null>(null);
 
   // Every distinct key is its own query, so an undebounced field asks Jira once per keystroke.
-  // `useDebounce` seeds itself with the initial value, so a already-configured space resolves its
+  // `useDebounce` seeds itself with the initial value, so an already-configured space resolves its
   // types on mount with no delay.
   const debouncedSpaceName = useDebounce(spaceName, 300);
   const { issueTypes, isLoading: isLoadingIssueTypes, error: issueTypesError } = useSpaceIssueTypes(debouncedSpaceName);

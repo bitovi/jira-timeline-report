@@ -99,9 +99,9 @@ src/react/SettingsSidebar/components/Storage/
 ```
 
 Populate **Space Type** from `GET /rest/api/3/issue/createmeta/{spaceKey}/issuetypes` once a Space
-Name is entered, so the list is valid for that space by construction. Fall back to the existing
-`fetchIssueTypes` (`src/jira-oidc-helpers/jira.ts:355`, site-wide) if that endpoint misbehaves —
-**verify it during implementation.** On Save, `GET /rest/api/3/project/{spaceKey}` to confirm the
+Name is entered, so the list is valid for that space by construction. Do **not** fall back to the
+site-wide `fetchIssueTypes`: a failure here is the earliest honest signal that the key is wrong or
+you don't have access. On Save, `GET /rest/api/3/project/{spaceKey}` to confirm the
 space exists and is reachable, and show an inline error if not.
 
 ---
@@ -146,7 +146,7 @@ implementation ignores the argument it does not want. Document that in the type.
 | --------- | --------------------------------------------- | ------------------------------------------------ |
 | `readAll` | `storage.get('saved-reports')`                | 1 JQL search, payloads inline                    |
 | `upsert`  | `storage.update('saved-reports', allReports)` | create-or-edit one work item                     |
-| `remove`  | `storage.update('saved-reports', allReports)` | `DELETE /rest/api/3/issue/{key}`                 |
+| `remove`  | `storage.update('saved-reports', allReports)` | tombstone one work item (edit Summary + Description)
 
 Chosen at boot from the pointer, in a factory alongside the existing `createStorage` call sites
 (`src/plugin.main.ts:49`, `src/web.main.ts:19`). The build-time host choice stays — it decides _how_
