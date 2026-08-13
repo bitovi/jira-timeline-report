@@ -289,7 +289,9 @@ describe('<Storage />', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Yes, migrate' }));
 
-    expect(await screen.findByText(/were already in STATREPS, so nothing was copied/)).toBeInTheDocument();
+    expect(
+      await screen.findByText('The saved report was already in STATREPS, so nothing was copied.', { exact: false }),
+    ).toBeInTheDocument();
     expect(jira.createJiraIssue).not.toHaveBeenCalled();
   });
 

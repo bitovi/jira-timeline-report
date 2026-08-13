@@ -280,7 +280,10 @@ const describeMigration = (
   spaceName: string,
 ): string => {
   if (!copied) {
-    return `All ${alreadyThere} saved ${reportWord(alreadyThere)} were already in ${spaceName}, so nothing was copied.`;
+    // "All 1 saved report were already there" — the count adds nothing when there is one of them.
+    return alreadyThere === 1
+      ? `The saved report was already in ${spaceName}, so nothing was copied.`
+      : `All ${alreadyThere} saved reports were already in ${spaceName}, so nothing was copied.`;
   }
 
   if (!alreadyThere) {
