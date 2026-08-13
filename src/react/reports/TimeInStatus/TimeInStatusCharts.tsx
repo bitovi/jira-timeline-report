@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Button from '@atlaskit/button/new';
 import Heading from '@atlaskit/heading';
+import ExpandChartButton from '../../components/ExpandChartButton';
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
@@ -98,6 +99,7 @@ const SingleChart: React.FC<{
   const statusColumns = data.statusColumns;
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [reorderOpen, setReorderOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [dragStatus, setDragStatus] = useState<string | null>(null);
   const [dragFromSection, setDragFromSection] = useState<'visible' | 'hidden' | null>(null);
   const [liveOrder, setLiveOrder] = useState<string[] | null>(null);
@@ -190,7 +192,7 @@ const SingleChart: React.FC<{
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5" style={{ maxWidth: '900px' }}>
+    <div className="bg-white border border-gray-200 rounded-lg p-5" style={{ maxWidth: expanded ? 'none' : '900px' }}>
       <div className="flex items-center gap-3 mb-2">
         <Heading size="small">
           {data.issueType} <span className="text-neutral-400 font-normal text-sm">({data.count})</span>
@@ -298,6 +300,9 @@ const SingleChart: React.FC<{
               )}
             </div>
           )}
+        </div>
+        <div className="ml-auto">
+          <ExpandChartButton expanded={expanded} onToggle={() => setExpanded((e) => !e)} />
         </div>
       </div>
 
