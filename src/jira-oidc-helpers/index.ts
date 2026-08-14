@@ -1,7 +1,7 @@
 /**
  * this module creates the jira oidc helpers object from all the helper functions in the jira-oidc-helpers folder.
  */
-import { Config, FieldsRequest, RequestHelper, FieldsData } from './types';
+import { Config, FieldsRequest, RequestHelper, FieldsData, Host } from './types';
 import { RequestHelperResponse, JtrEnv } from '../shared/types';
 import { saveInformationToLocalStorage, clearAuthFromLocalStorage, fetchFromLocalStorage } from './storage';
 import {
@@ -60,7 +60,7 @@ export type Jira = ReturnType<typeof createJiraHelpers>;
 export default function createJiraHelpers(
   { JIRA_CLIENT_ID, JIRA_SCOPE, JIRA_CALLBACK_URL, JIRA_API_URL, JIRA_APP_KEY } = window.env,
   requestHelper: RequestHelper,
-  host: 'jira' | 'hosted',
+  host: Host,
 ) {
   // TODO currently fieldsRequest has to be defined and passed to other functions before it's
   // assigned, feels like there should be a better way to do it than this, but a setter function
@@ -87,9 +87,8 @@ export default function createJiraHelpers(
   const jiraHelpers = {
     appKey: JIRA_APP_KEY,
     /**
-     * Which build this is — `jira` for the Connect app embedded in Jira, `hosted` for the
-     * standalone web app. Already on `config`; surfaced here because the Storage settings panel has
-     * to know which of its two cards describes the host the user is actually in.
+     * Which build this is — see {@link Host}. Already on `config`; surfaced here because the
+     * Storage settings panel has to know which of its cards describes the host the user is in.
      */
     host,
     saveInformationToLocalStorage,

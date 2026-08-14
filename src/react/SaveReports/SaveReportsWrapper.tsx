@@ -18,6 +18,8 @@ import { useCanObservable } from '../hooks/useCanObservable';
 interface SaveReportsWrapperProps {
   storage: AppStorage;
   linkBuilder: ReturnType<LinkBuilderFactory>;
+  /** See `Routing.interceptLinkClicks`. Defaults off, which is what Storybook and tests want. */
+  interceptLinkClicks?: boolean;
   onViewReportsButtonClicked: () => void;
   queryParamObservable: CanObservable<string>;
   shouldShowReportsObservable: CanObservable<boolean>;
@@ -27,6 +29,7 @@ const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({
   storage,
   shouldShowReportsObservable,
   linkBuilder,
+  interceptLinkClicks,
   ...saveReportProps
 }) => {
   const shouldShowReports = useCanObservable(shouldShowReportsObservable);
@@ -37,7 +40,7 @@ const SaveReportsWrapper: FC<SaveReportsWrapperProps> = ({
 
   return (
     <StorageProvider storage={storage}>
-      <RoutingProvider routing={{ linkBuilder }}>
+      <RoutingProvider routing={{ linkBuilder, interceptLinkClicks }}>
         <ErrorBoundary fallback={<SaveReportError />}>
           <FlagsProvider>
             <Suspense fallback={<SaveReportSkeleton />}>

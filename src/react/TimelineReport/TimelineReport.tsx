@@ -50,6 +50,11 @@ export interface TimelineReportProps {
   loginComponent: { isLoggedIn: boolean; login: () => void };
   storage: AppStorage;
   linkBuilder: ReturnType<LinkBuilderFactory>;
+  /**
+   * See `Routing.interceptLinkClicks` — true for the embedded hosts (Connect, Forge). Optional so
+   * tests and stories, which want the browser's own navigation, get it by default.
+   */
+  interceptLinkClicks?: boolean;
   showSidebarBranding: boolean;
   /**
    * Injectable for tests (default-prop dependency injection) — defaults to the real routeData-backed
@@ -70,6 +75,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   loginComponent,
   storage,
   linkBuilder,
+  interceptLinkClicks,
   showSidebarBranding,
   useReportLoadingState = defaultUseReportLoadingState,
 }) => {
@@ -186,6 +192,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
           <SettingsSidebar
             showSidebarBranding={showSidebarBranding}
             linkBuilder={linkBuilder}
+            interceptLinkClicks={interceptLinkClicks}
             onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
           />
         </div>
@@ -212,6 +219,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             queryParamObservable={pushStateObservable as unknown as CanObservable<string>}
             storage={storage}
             linkBuilder={linkBuilder}
+            interceptLinkClicks={interceptLinkClicks}
             shouldShowReportsObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
             onViewReportsButtonClicked={() => {
               rd.showSettings = 'REPORTS';

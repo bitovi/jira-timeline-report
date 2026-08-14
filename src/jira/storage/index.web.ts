@@ -18,14 +18,20 @@ interface StorageIssue {
   };
 }
 
-const getConfigurationIssue = async (jiraHelpers: Parameters<StorageFactory>[number]): Promise<StorageIssue | null> => {
-  // Check if user is logged in before making API request
-  // In preview mode (logged out), accessToken and scopeId will be null
-  const accessToken = window.localStorage.getItem('accessToken');
-  const scopeId = window.localStorage.getItem('scopeId');
+/**
+ * Whether it is worth asking Jira for the configuration work item at all.
+ *
+ * The standalone website can be sitting in logged-out preview mode with mock data, where there is
+ * no session to make the request with. The embedded hosts have no such state — the container
+ * authenticates the iframe — so they answer yes unconditionally.
+ */
+type CanReadJira = () => boolean;
 
-  if (!accessToken || !scopeId) {
-    // User is not logged in (preview mode with mock data)
+const getConfigurationIssue = async (
+  jiraHelpers: Parameters<StorageFactory>[number],
+  canReadJira: CanReadJira,
+): Promise<StorageIssue | null> => {
+  if (!canReadJira()) {
     return null;
   }
 
@@ -61,98 +67,126 @@ function findTeamTable(document: any): Array<Record<'team' | 'velocity' | 'track
   );
 }
 
-export const createWebAppStorage: StorageFactory = (jiraHelpers) => {
-  return {
-    storageInitialized: async () => {
-      const configurationIssue = await getConfigurationIssue(jiraHelpers);
-      return !!configurationIssue;
-    },
-    get: async function <TData>(key: string, defaultShape: unknown = {}): Promise<TData | null> {
-      const configurationIssue = await getConfigurationIssue(jiraHelpers);
+/**
+ * Storage backed by a configuration work item in the user's own Jira site.
+ *
+ * Host-neutral by construction: the only Jira it touches is
+ * `fetchJiraIssuesWithJQLWithNamedFields` and `editJiraIssueWithNamedFields`, both of which the
+ * request helper has already made host-appropriate. The one host-specific question — "is there a
+ * session to read with?" — is injected.
+ */
+const createConfigurationIssueStorage =
+  (canReadJira: CanReadJira): StorageFactory =>
+  (jiraHelpers) => {
+    return {
+      storageInitialized: async () => {
+        const configurationIssue = await getConfigurationIssue(jiraHelpers, canReadJira);
+        return !!configurationIssue;
+      },
+      get: async function <TData>(key: string, defaultShape: unknown = {}): Promise<TData | null> {
+        const configurationIssue = await getConfigurationIssue(jiraHelpers, canReadJira);
 
-      if (!configurationIssue) {
-        return null;
-      }
+        if (!configurationIssue) {
+          return null;
+        }
 
-      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === 'codeBlock');
+        let storeContent = configurationIssue.fields.Description.content.find(
+          (content) => content.type === 'codeBlock',
+        );
 
-      if (!storeContent) {
-        storeContent = createCodeBlock(JSON.stringify({ [key]: defaultShape }));
-      }
+        if (!storeContent) {
+          storeContent = createCodeBlock(JSON.stringify({ [key]: defaultShape }));
+        }
 
-      const [stringifiedStore] = storeContent.content;
-      const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
+        const [stringifiedStore] = storeContent.content;
+        const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-      return store[key];
-    },
-    update: async function <TData>(key: string, value: TData) {
-      const configurationIssue = await getConfigurationIssue(jiraHelpers);
+        return store[key];
+      },
+      update: async function <TData>(key: string, value: TData) {
+        const configurationIssue = await getConfigurationIssue(jiraHelpers, canReadJira);
 
-      if (!configurationIssue) {
-        throw new Error('[Storage Error]: update (web-app) needs a configuration issue');
-      }
+        if (!configurationIssue) {
+          throw new Error('[Storage Error]: update (web-app) needs a configuration issue');
+        }
 
-      let storeContent = configurationIssue.fields.Description.content.find((content) => content.type === 'codeBlock');
+        let storeContent = configurationIssue.fields.Description.content.find(
+          (content) => content.type === 'codeBlock',
+        );
 
-      if (!storeContent) {
-        storeContent = createCodeBlock();
-      }
+        if (!storeContent) {
+          storeContent = createCodeBlock();
+        }
 
-      /**
-       * Temporary special logic, see below
-       */
-      const teamTable = findTeamTable(configurationIssue);
+        /**
+         * Temporary special logic, see below
+         */
+        const teamTable = findTeamTable(configurationIssue);
 
-      let newTeamsTable: Table | undefined;
+        let newTeamsTable: Table | undefined;
 
-      if (!!teamTable && key === 'all-team-data') {
-        newTeamsTable = getUpdatedTeamTable(value as AllTeamData, teamTable);
-      }
-      /**
-       * End special logic
-       */
+        if (!!teamTable && key === 'all-team-data') {
+          newTeamsTable = getUpdatedTeamTable(value as AllTeamData, teamTable);
+        }
+        /**
+         * End special logic
+         */
 
-      const [stringifiedStore] = storeContent.content;
-      const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
+        const [stringifiedStore] = storeContent.content;
+        const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-      const newContent: Array<StorageIssueContent> = [createCodeBlock(JSON.stringify({ ...store, [key]: value }))];
+        const newContent: Array<StorageIssueContent> = [createCodeBlock(JSON.stringify({ ...store, [key]: value }))];
 
-      /**
-       * Temporary special logic, see below
-       */
-      if (newTeamsTable) {
-        newContent.unshift(newTeamsTable);
-      }
-      /**
-       * End special logic
-       */
+        /**
+         * Temporary special logic, see below
+         */
+        if (newTeamsTable) {
+          newContent.unshift(newTeamsTable);
+        }
+        /**
+         * End special logic
+         */
 
-      return jiraHelpers
-        .editJiraIssueWithNamedFields(configurationIssue.id, {
-          Description: {
-            ...configurationIssue.fields.Description,
-            content: [
-              ...configurationIssue.fields.Description.content.filter((content) => {
-                /**
-                 * Temporary special logic, see below
-                 */
-                if (!!newTeamsTable) {
-                  return content.type !== 'codeBlock' && content.type !== 'table';
-                }
-                /**
-                 * End special logic
-                 */
+        return jiraHelpers
+          .editJiraIssueWithNamedFields(configurationIssue.id, {
+            Description: {
+              ...configurationIssue.fields.Description,
+              content: [
+                ...configurationIssue.fields.Description.content.filter((content) => {
+                  /**
+                   * Temporary special logic, see below
+                   */
+                  if (!!newTeamsTable) {
+                    return content.type !== 'codeBlock' && content.type !== 'table';
+                  }
+                  /**
+                   * End special logic
+                   */
 
-                return content.type !== 'codeBlock';
-              }),
-              ...newContent,
-            ],
-          },
-        })
-        .then();
-    },
+                  return content.type !== 'codeBlock';
+                }),
+                ...newContent,
+              ],
+            },
+          })
+          .then();
+      },
+    };
   };
-};
+
+/**
+ * The standalone website. In preview mode (logged out, mock data) there is no `accessToken` or
+ * `scopeId` in localStorage, so there is nothing to authenticate a read with.
+ */
+export const createWebAppStorage: StorageFactory = createConfigurationIssueStorage(
+  () => !!window.localStorage.getItem('accessToken') && !!window.localStorage.getItem('scopeId'),
+);
+
+/**
+ * The Forge app. Jira authenticates the iframe, so there is no logged-out state to guard against —
+ * a Forge site needs a configuration work item exactly like the website does.
+ */
+export const createForgeStorage: StorageFactory = createConfigurationIssueStorage(() => true);
 
 /**
  * Below is special temporary logic to keep the Tabular data in sync with app data.

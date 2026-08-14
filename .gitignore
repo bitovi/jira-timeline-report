@@ -17,6 +17,11 @@ public/atlassian-connect.json
 /playwright/.cache/
 /blob-report/
 /dist/
+# Forge build output — uploaded wholesale by `forge deploy` (manifest.yml `resources.path`).
+/dist-forge/
+# Compiled Tailwind for the Forge entry. Written by `build:css:forge`, bundled by Vite from
+# inside the Forge Vite root, so it has to live in the source tree.
+/forge/production.css
 .playwright-mcp/
 /temp/
 foo.js

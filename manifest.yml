@@ -1,0 +1,44 @@
+modules:
+  jira:globalPage:
+    - key: status-reports-global
+      resource: main
+      title: Status Reports for Jira (forge - arthur)
+      layout: blank
+  jira:projectPage:
+    - key: status-reports-project
+      resource: main
+      title: Status Reports for Jira (forge - arthur)
+      layout: blank
+
+resources:
+  - key: main
+    path: dist-forge
+    # `forge tunnel` proxies to the Vite dev server (`npm run dev:forge`) instead of the
+    # uploaded bundle, so the app hot-reloads inside real Jira without a redeploy.
+    tunnel:
+      port: 5173
+
+# Deliberately no `function` module and no `resolver`: this app has no backend. Every Jira call
+# goes through @forge/bridge's requestJira straight from the iframe, which is what keeps it off
+# the Forge invocation quota.
+
+permissions:
+  scopes:
+    # Mirrors VITE_JIRA_SCOPE in .env.example minus `offline_access`, which is OAuth-only.
+    # Connect's coarse ["read","write"] has no Forge equivalent.
+    #
+    # Adding a scope later is a MAJOR version: `forge deploy` refuses without
+    # `--approve MAJOR_VERSION_RULE`, and existing installs keep the old permission set until
+    # a site admin approves the upgrade. Settle this list before Phase 7 Stage 2.
+    - read:jira-work
+    - write:jira-work
+  content:
+    styles:
+      # Atlaskit is Emotion-based and injects <style> tags at runtime.
+      - unsafe-inline
+app:
+  id: ari:cloud:ecosystem::app/916b1dfd-cb45-4322-96cc-daa9462036e3
+  # Required by the CLI even though this app ships no functions — see the note above `permissions`.
+  # Nothing executes on it, so the choice is inert; it tracks the repo's own Node (.nvmrc).
+  runtime:
+    name: nodejs22.x

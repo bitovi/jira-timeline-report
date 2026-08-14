@@ -65,7 +65,12 @@ export function makeFieldsRequest(config: Config, setFieldsRequest: (req: Fields
   // token before making the request, so gating on validity here just meant that on page load
   // with an expired-but-refreshable token, this request would never even be kicked off, leaving
   // fieldsRequest permanently undefined until the next full page load. See mapIdsToNames crash.
-  if (config.host === 'jira' || hasAccessToken()) {
+  //
+  // The host check is `!== 'hosted'` rather than `=== 'jira'` because it is really asking "is this
+  // iframe already authenticated by its container?", which is true of Connect *and* Forge. Left as
+  // an equality test, `fieldsRequest` stays permanently undefined on Forge and every field lookup
+  // crashes in `mapIdsToNames`.
+  if (config.host !== 'hosted' || hasAccessToken()) {
     const req = fetchJiraFields(config)().then((fieldsPassed) => {
       const fields = fieldsPassed as unknown as Array<{ name: string; id: string }>;
 

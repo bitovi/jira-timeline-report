@@ -34,11 +34,11 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
           </Heading>
         </div>
         <SidebarButton onClick={() => changeSettings('SOURCES')}>
-          <img src="/images/magnifying-glass.svg" aria-hidden />
+          <img src="./images/magnifying-glass.svg" aria-hidden />
           Sources
         </SidebarButton>
         <SidebarButton onClick={() => changeSettings('TIMING')}>
-          <img src="/images/calendar.svg" aria-hidden />
+          <img src="./images/calendar.svg" aria-hidden />
           Timing
         </SidebarButton>
 
@@ -49,20 +49,20 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         </div>
 
         <SidebarButton onClick={() => changeSettings('TEAMS')}>
-          <img src="/images/team.svg" aria-hidden />
+          <img src="./images/team.svg" aria-hidden />
           Teams
         </SidebarButton>
         <SidebarButton onClick={() => changeSettings('FEATURES')}>
-          <img src="/images/features.svg" aria-hidden />
+          <img src="./images/features.svg" aria-hidden />
           Features
         </SidebarButton>
         <SidebarButton onClick={() => changeSettings('THEME')}>
-          <img src="/images/theme.svg" className="w-[18px]" aria-hidden />
+          <img src="./images/theme.svg" className="w-[18px]" aria-hidden />
           Theme
         </SidebarButton>
         {showStorage && (
           <SidebarButton onClick={() => changeSettings('STORAGE')}>
-            <img src="/images/storage.svg" className="w-[18px]" aria-hidden />
+            <img src="./images/storage.svg" className="w-[18px]" aria-hidden />
             Storage
           </SidebarButton>
         )}

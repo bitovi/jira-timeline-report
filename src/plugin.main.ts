@@ -2,6 +2,7 @@ import mainHelper from './shared/main-helper.js';
 import { createJiraPluginStorage } from './jira/storage/index.plugin';
 import routing from './routing/index.plugin';
 import { createPluginLinkBuilder } from './routing/index.plugin';
+import { getConnectRequestHelper } from './request-helpers/connect-request-helper';
 
 interface LicensingInformation {
   active: boolean;
@@ -46,6 +47,7 @@ export default async function main() {
     },
     {
       host: 'jira',
+      createRequestHelper: getConnectRequestHelper,
       createStorage: createJiraPluginStorage,
       configureRouting: (
         route: {

@@ -8,7 +8,7 @@ const StatusKey: FC = () => {
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-3 p-4 justify-between bg-white">
       <div className="flex gap-x-8">
-        <ItemStatus icon={<img className="m-0.5" src="/images/empty-set.svg" />}>Unknown dates</ItemStatus>
+        <ItemStatus icon={<img className="m-0.5" src="./images/empty-set.svg" />}>Unknown dates</ItemStatus>
         <ItemStatus icon="←">Dates are in the past outside this view</ItemStatus>
         <ItemStatus icon="→">Dates are in the future outside this view</ItemStatus>
       </div>
