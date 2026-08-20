@@ -3,7 +3,7 @@ import type { LatestCommentState } from '../hooks/useLatestComment';
 
 import React, { useState } from 'react';
 
-import { LatestComment, LatestCommentBody } from './LatestComment';
+import { CommentBody, CommentRow } from './CommentReport';
 import { CollapseToggle } from './CollapseToggle';
 import { NodeRow } from './NodeRow';
 
@@ -60,7 +60,7 @@ const ok = (body: unknown): LatestCommentState => ({
 
 /**
  * The whole node as a document renders it — row, caret, and body — so a story shows what a reviewer
- * actually sees. `LatestComment` on its own is only the row.
+ * actually sees. `CommentRow` on its own is only the row.
  *
  * The editing stories are gone with the edit field: the node is read-only, and a wrong one is deleted
  * and re-added from the Add Report modal.
@@ -89,17 +89,17 @@ const Node = ({
           />
         }
       >
-        <LatestComment target={target} />
+        <CommentRow target={target} />
       </NodeRow>
       <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
-        <LatestCommentBody target={target} state={state} />
+        <CommentBody target={target} state={state} emptyNote="No updates found." testId="latest-comment" />
       </div>
     </div>
   );
 };
 
 const meta: Meta<typeof Node> = {
-  title: 'Reports/ReportOfReports/LatestComment',
+  title: 'Reports/ReportOfReports/CommentReport',
   component: Node,
   decorators: [
     (Story) => (

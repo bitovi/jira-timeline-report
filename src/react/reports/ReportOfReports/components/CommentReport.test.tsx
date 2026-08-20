@@ -1,10 +1,12 @@
+import type { FC } from 'react';
 import type { LatestCommentState } from '../hooks/useLatestComment';
+import type { CommentBodyProps } from './CommentReport';
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
-import { LatestComment, LatestCommentBody, formatCommentTime } from './LatestComment';
+import { CommentBody, CommentRow, formatCommentTime } from './CommentReport';
 
 /**
  * Stub `AdfDocument` with its own `Suspense` fallback — the local walker, synchronously — so this suite
@@ -33,10 +35,19 @@ const ok = (body: unknown): LatestCommentState => ({
   updated: '2026-08-04T14:22:00.000Z',
 });
 
-const renderRow = (target: string) => render(<LatestComment target={target} />);
+const renderRow = (target: string) => render(<CommentRow target={target} />);
+
+/**
+ * The body carrying the Latest Comment preset's two strings, so the cases below read as they did before
+ * `CommentReport` was generalized — every one of them is about rendering a comment, which is the same
+ * question for both presets. The two strings that aren't get their own cases at the end.
+ */
+const LatestCommentBody: FC<Omit<CommentBodyProps, 'emptyNote' | 'testId'>> = (props) => (
+  <CommentBody {...props} emptyNote="No updates found." testId="latest-comment" />
+);
 
 // See spec/016-report-of-reports/007-latest-comment-report § The row is the key.
-describe('LatestComment row', () => {
+describe('CommentRow', () => {
   // The row is the key and nothing else — no "Latest comment" prefix. See § The row is the key for why
   // the label went, and what collapsing costs without it.
   it('is the work item key, as the node’s heading', () => {
@@ -69,7 +80,7 @@ describe('LatestComment row', () => {
   });
 });
 
-describe('LatestCommentBody', () => {
+describe('CommentBody', () => {
   // The comment leads; who updated it and when close it out. Order matters as much as presence, so this
   // asserts the document order rather than just that all three are somewhere on screen.
   it('renders the comment, then who updated it and when', () => {
@@ -210,5 +221,51 @@ describe('LatestCommentBody', () => {
 
   it('shows Jira own string rather than "Invalid Date" for an unparseable timestamp', () => {
     expect(formatCommentTime('not a date')).toBe('not a date');
+  });
+});
+
+/**
+ * The two things a preset owns. Everything else above is shared, which is the point of the rename.
+ * See spec/027-status-updates § The view.
+ */
+describe('CommentBody, per preset', () => {
+  it('says what the caller says for empty, so each preset states its own true thing', () => {
+    render(
+      <CommentBody
+        target="ABC-1"
+        state={{ status: 'empty' }}
+        emptyNote="No status update has been posted yet."
+        testId="status-update"
+      />,
+    );
+
+    expect(screen.getByText('No status update has been posted yet.')).toBeInTheDocument();
+    expect(screen.queryByText('No updates found.')).not.toBeInTheDocument();
+  });
+
+  it('keys the body and the error line by the caller testId, so two presets are findable apart', () => {
+    const { unmount } = render(
+      <CommentBody
+        target="ABC-1"
+        state={ok(doc({ type: 'paragraph', content: text('Shipped.') }))}
+        emptyNote="No status update has been posted yet."
+        testId="status-update"
+      />,
+    );
+
+    expect(screen.getByTestId('status-update')).toHaveTextContent('Shipped.');
+    expect(screen.queryByTestId('latest-comment')).not.toBeInTheDocument();
+
+    unmount();
+    render(
+      <CommentBody
+        target="NOPE-1"
+        state={{ status: 'error', message: 'No work item matched.' }}
+        emptyNote="No status update has been posted yet."
+        testId="status-update"
+      />,
+    );
+
+    expect(screen.getByTestId('status-update-error')).toHaveTextContent('No work item matched.');
   });
 });

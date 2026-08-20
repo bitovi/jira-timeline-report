@@ -28,7 +28,7 @@ import { CollapseToggle } from './components/CollapseToggle';
 import { DocumentEditingProvider, useDocumentEditing, useNodeRow } from './components/DocumentEditing';
 import { IndentLevel } from './components/IndentLevel';
 import { InlineValue } from './components/InlineValue';
-import { LatestComment, LatestCommentBody } from './components/LatestComment';
+import { CommentBody, CommentRow } from './components/CommentReport';
 import { MissingReportNote } from './components/MissingReportNote';
 import { NodeControls } from './components/NodeControls';
 import { NodeRow } from './components/NodeRow';
@@ -488,10 +488,10 @@ const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ no
         caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
         controls={<NodeControls path={path} label={label} nodeId={node.id} />}
       >
-        <LatestComment target={target} />
+        <CommentRow target={target} />
       </NodeRow>
       <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
-        <LatestCommentBody target={target} state={state} />
+        <CommentBody target={target} state={state} emptyNote="No updates found." testId="latest-comment" />
       </div>
     </div>
   );
