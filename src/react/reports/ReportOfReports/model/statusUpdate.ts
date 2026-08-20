@@ -52,7 +52,7 @@ const leadingText = (body: unknown): string => {
 export const isStatusUpdateComment = (body: unknown): boolean =>
   leadingText(body).trimStart().toLowerCase().startsWith(PREFIX);
 
-/** The timestamp the feature filters and orders by: `updated`, Jira's last-edited, else `created`. */
+/** The timestamp the winner is chosen by: `updated`, Jira's last-edited, else `created`. */
 const stamp = (comment: JiraComment): number => {
   const time = Date.parse(comment.updated ?? comment.created ?? '');
 
@@ -62,12 +62,23 @@ const stamp = (comment: JiraComment): number => {
 /**
  * This week's status update, if there is one.
  *
- * `updated` rather than `created` because an edit is a correction, and a corrected update is the
- * current one. The explicit sort is **not** redundant with the fetch's `orderBy=-created`: the response
- * is ordered by *created* and the winner is chosen by *updated*, so an edited older comment has to be
- * able to overtake a newer one.
+ * **The two timestamps do different jobs, and this is the whole of the rule.**
+ *
+ * `created` decides *membership*: which week an update belongs to is when it was posted. Editing a
+ * comment doesn't move it to another week — a correction typed on Monday to last Thursday's update is
+ * still last week's update, and a September edit of an update posted in June does not make it this
+ * week's news.
+ *
+ * `updated` decides *the winner* among the week's updates, because an edit is a correction and a
+ * corrected update is the current one. So the explicit sort is **not** redundant with the fetch's
+ * `orderBy=-created`: the response is ordered by *created* and the winner is chosen by *updated*, so an
+ * edited earlier comment has to be able to overtake a later one from the same week.
+ *
+ * A comment with no `created` at all is excluded rather than guessed at from its `updated` — there is
+ * then nothing that says when it was posted, and "this week's" is a claim about when it was posted.
+ * Jira always sends one, so this is a guard, not a case.
  */
 export const pickStatusUpdate = (comments: JiraComment[], week: WeekWindow): JiraComment | undefined =>
   comments
-    .filter((comment) => isWithinWeek(comment.updated ?? comment.created, week) && isStatusUpdateComment(comment.body))
+    .filter((comment) => isWithinWeek(comment.created, week) && isStatusUpdateComment(comment.body))
     .sort((left, right) => stamp(right) - stamp(left))[0];

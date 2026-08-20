@@ -85,11 +85,15 @@ export function fetchLatestComment(config: Config) {
 /**
  * How far back a status-update scan looks.
  *
- * Jira's comment endpoint documents `orderBy` values of `created` / `-created` / `+created` only —
- * **there is no `-updated`**. So with `updated` as the filter, a comment created long ago and edited
- * this week can sit arbitrarily deep in the list, and no ordering Jira offers brings it forward. The
- * bound is therefore explicit rather than exact: the 100 most recently *created* comments are scanned,
- * and a status update older than those *and* edited this week is not found.
+ * `-created` is the ordering that matters, because a status update belongs to the week it was *posted*
+ * in. So one page of the newest-created comments is not a heuristic: the 100 most recently created
+ * comments contain every comment created this week unless a single work item took more than 100 comments
+ * in one week. Only then can an update be missed — and it would have to be among the oldest of that
+ * week's hundred.
+ *
+ * (Jira's comment endpoint documents `orderBy` values of `created` / `-created` / `+created` only —
+ * there is no `-updated`. That would have mattered had membership been decided by the edit date; it
+ * isn't, which is what makes this bound tight.)
  * See spec/027-status-updates § The scan limit.
  */
 export const COMMENT_SCAN_SIZE = 100;

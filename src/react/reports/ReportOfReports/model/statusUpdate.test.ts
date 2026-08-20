@@ -170,21 +170,25 @@ describe('pickStatusUpdate', () => {
     expect(pickStatusUpdate(comments, week)?.id).toBe('edited-later');
   });
 
-  // The whole point of filtering on `updated`: a correction to an old update is the current update.
-  it('finds a comment created long ago and edited this week', () => {
+  // Membership is `created`, so editing a comment doesn't move it into this week. A September edit of an
+  // update posted in June is not this week's news.
+  it('ignores a comment created long ago, however recently it was edited', () => {
     const comments = [update('stale', { created: '2026-06-01T10:00:00.000Z', updated: '2026-08-19T10:00:00.000Z' })];
-
-    expect(pickStatusUpdate(comments, week)?.id).toBe('stale');
-  });
-
-  // The mirror of the above: an update posted this week and then edited *after* the week is next week's.
-  it('excludes a comment edited out of the week', () => {
-    const comments = [update('moved', { created: '2026-08-19T10:00:00.000Z', updated: '2026-08-25T10:00:00.000Z' })];
 
     expect(pickStatusUpdate(comments, week)).toBeUndefined();
   });
 
-  it('falls back to created when Jira sends no updated', () => {
+  // The mirror, and the reason membership can't be `updated`: this update was posted in the week, so it
+  // is the week's update, and a later correction to it doesn't take it away.
+  it('keeps a comment created in the week but edited after it', () => {
+    const comments = [
+      update('corrected', { created: '2026-08-19T10:00:00.000Z', updated: '2026-08-25T10:00:00.000Z' }),
+    ];
+
+    expect(pickStatusUpdate(comments, week)?.id).toBe('corrected');
+  });
+
+  it('orders on created when Jira sends no updated', () => {
     const comments = [comment('mine', doc(para('Status Update: shipped')), { created: '2026-08-19T10:00:00.000Z' })];
 
     delete comments[0].updated;
@@ -192,13 +196,20 @@ describe('pickStatusUpdate', () => {
     expect(pickStatusUpdate(comments, week)?.id).toBe('mine');
   });
 
-  it('excludes a comment with no usable timestamp at all, without throwing', () => {
+  // Nothing says when either of these was posted, and "this week's" is a claim about when it was posted.
+  it('excludes a comment with no usable created date, without throwing', () => {
     const nothing: JiraComment = { id: 'nothing', body: doc(para('Status Update: shipped')) };
     const unparseable = update('unparseable', { created: 'yesterday-ish' });
+    const editedOnly: JiraComment = {
+      id: 'edited-only',
+      body: doc(para('Status Update: shipped')),
+      updated: '2026-08-19T10:00:00.000Z',
+    };
 
-    expect(pickStatusUpdate([nothing, unparseable], week)).toBeUndefined();
+    expect(pickStatusUpdate([nothing, unparseable, editedOnly], week)).toBeUndefined();
   });
 
+  // Both boundaries on `created`, which is what membership is decided by.
   it('places the week boundaries either side of Sunday midnight UTC', () => {
     expect(pickStatusUpdate([update('in', { created: '2026-08-23T23:59:59.999Z' })], week)?.id).toBe('in');
     expect(pickStatusUpdate([update('out', { created: '2026-08-24T00:00:00.000Z' })], week)).toBeUndefined();

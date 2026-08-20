@@ -175,15 +175,32 @@ describe('useStatusUpdate', () => {
     expect(await settled()).toHaveTextContent('Status Update: corrected');
   });
 
-  // The whole point of filtering on `updated`: a correction to an old update is the current update.
-  it('finds an old comment edited into this week', async () => {
+  // Membership is `created`: editing an old update doesn't move it into this week. `updated` only
+  // chooses between the updates the week already has.
+  it('ignores an old comment edited into this week', async () => {
     const comments = {
       comments: [comment('Status Update: revised', { created: '2026-06-01T09:00:00.000+0000', updated: THIS_WEEK })],
     };
 
     renderHook('issue = ABC-1', makeJira({ comments }));
 
-    expect(await settled()).toHaveAttribute('data-status', 'ok');
+    expect(await settled()).toHaveAttribute('data-status', 'empty');
+  });
+
+  // The mirror: posted in the week, corrected after it — still the week's update.
+  it('keeps an update posted this week and edited later', async () => {
+    const comments = {
+      comments: [
+        comment('Status Update: corrected', {
+          created: '2026-08-19T09:00:00.000+0000',
+          updated: '2026-08-27T09:00:00.000+0000',
+        }),
+      ],
+    };
+
+    renderHook('issue = ABC-1', makeJira({ comments }));
+
+    expect(await settled()).toHaveTextContent('Status Update: corrected');
   });
 
   // One `empty` for both nothings: the reader is told the same true thing either way.

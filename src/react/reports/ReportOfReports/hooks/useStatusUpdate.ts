@@ -10,7 +10,8 @@ import { useResolvedIssueKey, type CommentReportState } from './useCommentReport
  *
  * Step 1 is `useResolvedIssueKey`, shared verbatim with `useLatestComment`. Step 2 differs in both
  * halves: it asks for a *page* of comments rather than one, and the answer is chosen by a rule rather
- * than by Jira's ordering — which is the whole difference between the two presets.
+ * than by Jira's ordering — which is the whole difference between the two presets. The rule reads both
+ * of a comment's timestamps, and for different things: see `pickStatusUpdate`.
  *
  * The clock is read here rather than in `pickStatusUpdate` so the rule and the week stay pure and
  * testable with explicit numbers; only this hook's test needs `vi.setSystemTime`.
@@ -51,8 +52,8 @@ export const useStatusUpdate = (jql: string): CommentReportState => {
     status: 'ok',
     body: match.body,
     author: match.author?.displayName ?? 'Unknown',
-    // The same field the pick was made on, so the footer's "Last updated" is the timestamp that
-    // actually decided this comment is the current update.
+    // `updated`, not the `created` the week was decided by: it is the field that chose this comment over
+    // the week's other updates, and the footer labels it "Last updated".
     updated: match.updated ?? match.created ?? '',
   };
 };

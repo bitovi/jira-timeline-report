@@ -24,13 +24,14 @@ Latest Comment is unchanged and stays in the dropdown. This is a sibling preset,
 
 ## Decisions (locked with the user)
 
-| Question                             | Decision                                                                     |
-| ------------------------------------ | ---------------------------------------------------------------------------- |
-| Week boundary                        | Monday 00:00 UTC → the following Monday 00:00 UTC, half-open                 |
-| Match rule                           | Leading plain text, lowercased, `startsWith('status update')` — nothing else |
-| Which timestamp filters and displays | `updated` (Jira's last-edited), falling back to `created`                    |
-| Two matches in one week              | The newest one wins                                                          |
-| The `Status Update` prefix           | Left in the rendered body                                                    |
+| Question                         | Decision                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| Week boundary                    | Monday 00:00 UTC → the following Monday 00:00 UTC, half-open                 |
+| Match rule                       | Leading plain text, lowercased, `startsWith('status update')` — nothing else |
+| Which timestamp decides the week | `created` — an update belongs to the week it was posted in                   |
+| Which timestamp picks the winner | `updated` (Jira's last-edited), falling back to `created`                    |
+| Two matches in one week          | The most recently edited one wins                                            |
+| The `Status Update` prefix       | Left in the rendered body                                                    |
 
 Two of these are worth their reasoning:
 
@@ -39,8 +40,14 @@ right trim differs depending on whether the prefix is its own paragraph, a headi
 before a colon. Leaving it in removes the only piece of document surgery in the feature, and `<AdfDocument>`
 keeps receiving the author's document byte-for-byte.
 
-**`updated`, not `created`.** An edit is a correction, and a corrected update is the current one. The cost
-is stated in § The scan limit — it is the one place this decision leaks.
+**The two timestamps do different jobs.** `created` decides _membership_, because which week an update
+belongs to is when it was posted: editing a comment does not move it to another week, so a September edit
+of a June update is not this week's news, and a Monday correction to last Thursday's update is still last
+week's. `updated` then decides _the winner_ among the week's updates, because an edit is a correction and
+a corrected update is the current one.
+
+Filtering on `created` also makes the fetch's bound tight rather than approximate — see § The scan limit,
+which is where an `updated`-based filter would have leaked.
 
 ---
 
@@ -162,17 +169,18 @@ the same cost as Latest Comment.
 
 ### The scan limit
 
-Jira's comment endpoint documents `orderBy` values of `created` / `-created` / `+created` only. **There is
-no `-updated`.** So with `updated` as the filter, a comment created long ago and edited this week can sit
-arbitrarily deep in the list, and no ordering Jira offers brings it forward.
+`-created` is the ordering that matters, because membership is decided by when an update was posted. So one
+page of the newest-created comments is not a heuristic: **the 100 most recently created comments contain
+every comment created this week**, unless a single work item took more than 100 comments in one week. Only
+then can an update be missed, and it would have to be among the oldest of that week's hundred.
 
-The bound is therefore explicit: **the 100 most recently created comments are scanned.** A status update
-that is older than the 100 newest comments _and_ was edited this week is not found. On a work item with
-100+ comments where the update is that stale, the node reports no update — which is wrong, and is the
-accepted cost of `updated`-based filtering against an API that can't sort by it.
+Worth recording what this dodges. Jira's comment endpoint documents `orderBy` values of `created` /
+`-created` / `+created` only — **there is no `-updated`.** Had membership been decided by the edit date, a
+comment created long ago and edited this week could sit arbitrarily deep in the list with no ordering Jira
+offers to bring it forward, and the bound would have been an accepted wrongness rather than a real one. It
+isn't, which is what makes this tight.
 
-This is fine in practice because the two conditions have to coincide, and a status update is by nature
-recent. If real data disproves that, § Open questions has the escalation.
+If a real work item does take 100+ comments in a week, § Open questions has the escalation.
 
 ---
 
@@ -237,12 +245,15 @@ export const useStatusUpdate = (jql: string): CommentReportState => {
 // model/statusUpdate.ts
 export const pickStatusUpdate = (comments: JiraComment[], week: WeekWindow): JiraComment | undefined =>
   comments
-    .filter((c) => isWithinWeek(c.updated ?? c.created, week) && isStatusUpdateComment(c.body))
+    .filter((c) => isWithinWeek(c.created, week) && isStatusUpdateComment(c.body))
     .sort((a, b) => stamp(b) - stamp(a))[0];
 ```
 
 The explicit sort is not redundant with `orderBy=-created`: the response is ordered by **created** and the
-winner is chosen by **updated**, so an edited older comment must be able to overtake a newer one.
+winner is chosen by **updated**, so an edited earlier comment must be able to overtake a later one from the
+same week. A comment with no readable `created` is excluded rather than guessed at from its `updated` —
+"this week's" is a claim about when it was posted, so with nothing saying when that was there is no claim
+to make. Jira always sends one, so this is a guard, not a case.
 
 ---
 
@@ -425,10 +436,14 @@ New cases worth naming, because they are the ones that catch a wrong implementat
 - a matching comment from last week — `empty`, not `ok`
 - comments this week, none matching — `empty`
 - two matches this week — the one with the newer `updated` wins
-- a comment created last month, edited this week, within the scanned page — matches (this is the whole
-  point of choosing `updated`)
+- a comment created last month and edited this week — does **not** match; an edit doesn't move an update
+  into this week
+- a comment created this week and edited after it — **does** match; a later correction doesn't take the
+  week's update away
+- two matches this week, the earlier-created one edited later — the edited one wins (this is the whole
+  point of ordering on `updated`)
 - Sunday 23:59 UTC and Monday 00:00 UTC — opposite sides of the boundary
-- an unparseable or absent `updated` — excluded, no throw
+- an unparseable or absent `created` — excluded, no throw
 
 `useStatusUpdate.test.tsx` models on `useLatestComment.test.tsx:36-59`'s fake `Jira` and pins the clock
 with `vi.setSystemTime`.
@@ -453,7 +468,9 @@ End to end against a real Jira, on a work item you can comment on:
 4. Post a second, unrelated comment. Latest Comment on the same work item follows it; Status Update does
    not move. **This is the behaviour the feature exists for** — verify it explicitly.
 5. Post `Status Update: corrected` — the node switches to the newer one.
-6. Edit the _first_ status update so its `updated` is newest — the node switches back to it.
+6. Edit the _first_ status update so its `updated` is newest — the node switches back to it, because both
+   were posted this week and `updated` breaks the tie. Then edit a status update from a _previous_ week —
+   the node does **not** move to it, because `created` is what decides the week.
 7. Collapse the node, print-preview the document, confirm the comment still appears.
 8. Point a node at a bad key and at a multi-match JQL — the same two error messages Latest Comment gives.
 
@@ -462,8 +479,8 @@ End to end against a real Jira, on a work item you can comment on:
 1. **UTC weeks, local timestamps.** The window is UTC; `formatCommentTime` renders local. Late-Sunday
    comments in western timezones show a Sunday date and belong to the next week. Accepted for a
    deterministic boundary that every viewer of a shared report agrees on.
-2. **100-comment scan depth.** See § The scan limit. Unavoidable while filtering on `updated` against an
-   endpoint that only sorts by `created`.
+2. **100-comment scan depth.** See § The scan limit. Exact unless one work item takes 100+ comments in a
+   single week, since `created` decides membership and `-created` is the ordering Jira gives.
 3. **One request per node, not batched.** Same as Latest Comment, and for the same reason — the comment
    sub-resource is not an issue search, so `childQueryGroups` (`childQueryGroups.ts:53-55`) cannot fold it
    in. Ten status-update nodes are twenty requests.
@@ -482,9 +499,8 @@ registry (`fieldCatalog.ts:5-8`).
 1. Does any real work item carry more than 100 comments in a week? If so, page `fetchRecentComments`
    until the page's oldest `created` falls before the week start — the shape is already there, it just
    needs a loop inside the `queryFn` and no key change.
-2. Is `orderBy=-updated` quietly accepted by the comment endpoint even though it is undocumented? If a
-   `curl` says yes, trade-off 2 disappears and the scan becomes exact:
-   `curl -u … '…/rest/api/3/issue/ABC-1/comment?orderBy=-updated&maxResults=1'`
+2. ~~Is `orderBy=-updated` quietly accepted by the comment endpoint even though it is undocumented?~~
+   Moot: membership is decided by `created`, which the endpoint does sort by.
 3. Should Status Update sit above Latest Comment in the Derived group? `FIELD_GROUP_ORDER`
    (`fieldCatalog.ts:27`) puts Derived first specifically so Latest Comment heads an unfiltered list; if
    status reports become the common case, the order inside the group is a one-line change.
