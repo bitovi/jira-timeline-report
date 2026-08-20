@@ -1082,7 +1082,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [storedValue('(issue = ABC-1).comment')] });
 
       expect(await screen.findByTestId('inline-value-error')).toHaveTextContent(
-        "Comments can't show as a value — use .latestComment for the newest one.",
+        "Comments can't show as a value — use .latestComment for the newest one, or .statusUpdate for this week's update.",
       );
     });
   });

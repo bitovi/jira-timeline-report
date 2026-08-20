@@ -70,10 +70,18 @@ const Node = ({
   target,
   state,
   startCollapsed = false,
+  // The three strings a preset owns, defaulted to Latest Comment's — the stories below are about
+  // rendering a comment, which is the same for both, until the two that aren't.
+  fallbackLabel = 'latest comment',
+  emptyNote = 'No updates found.',
+  testId = 'latest-comment',
 }: {
   target: string;
   state: CommentReportState;
   startCollapsed?: boolean;
+  fallbackLabel?: string;
+  emptyNote?: string;
+  testId?: string;
 }) => {
   const [collapsed, setCollapsed] = useState(startCollapsed);
 
@@ -84,7 +92,7 @@ const Node = ({
         caret={
           <CollapseToggle
             isCollapsed={collapsed}
-            label={target || 'latest comment'}
+            label={target || fallbackLabel}
             onToggle={() => setCollapsed(!collapsed)}
           />
         }
@@ -92,10 +100,17 @@ const Node = ({
         <CommentRow target={target} />
       </NodeRow>
       <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
-        <CommentBody target={target} state={state} emptyNote="No updates found." testId="latest-comment" />
+        <CommentBody target={target} state={state} emptyNote={emptyNote} testId={testId} />
       </div>
     </div>
   );
+};
+
+/** Everything a Status Update node passes that a Latest Comment one doesn't. */
+const statusUpdate = {
+  fallbackLabel: 'status update',
+  emptyNote: 'No status update has been posted yet.',
+  testId: 'status-update',
 };
 
 const meta: Meta<typeof Node> = {
@@ -164,4 +179,37 @@ export const NoRenderableContent: Story = {
  * work item. Only a document saved before the modal existed can hold one. */
 export const QueryTarget: Story = {
   args: { target: 'assignee = currentUser() AND updated > -1d', state: ok(plain) },
+};
+
+/**
+ * This week's status update. The `Status Update` prefix stays in the rendered body — stripping it would
+ * mean cloning the ADF tree and trimming its first text node, and the right trim differs depending on
+ * whether the prefix is its own paragraph, a heading, bolded, or inline before a colon.
+ * See spec/027-status-updates § Decisions.
+ */
+export const StatusUpdate: Story = {
+  args: {
+    ...statusUpdate,
+    state: ok(
+      doc(
+        { type: 'paragraph', content: [marked('Status Update:', { type: 'strong' })] },
+        {
+          type: 'bulletList',
+          content: [
+            { type: 'listItem', content: [{ type: 'paragraph', content: text('Cert rotation lands Thursday.') }] },
+            { type: 'listItem', content: [{ type: 'paragraph', content: text('Audit backfill is running.') }] },
+          ],
+        },
+      ),
+    ),
+  },
+};
+
+/**
+ * **The state the preset exists for.** Nobody has posted an update this week, and the node says exactly
+ * that — where Latest Comment would either show a three-week-old comment as though it were current, or
+ * say only "No updates found." See spec/027-status-updates § Context.
+ */
+export const NoStatusUpdateYet: Story = {
+  args: { ...statusUpdate, state: { status: 'empty' } },
 };
