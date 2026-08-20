@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from 'react';
-import type { LatestCommentState } from '../hooks/useLatestComment';
+import type { CommentReportState } from '../hooks/useCommentReport';
 
 import React from 'react';
 
@@ -78,7 +78,7 @@ export const CommentRow: FC<CommentRowProps> = ({ target }) => (
 export interface CommentBodyProps {
   /** `''` while nothing is targeted yet — checked before `state`, which can't tell that from loading. */
   target: string;
-  state: LatestCommentState;
+  state: CommentReportState;
   /**
    * What the `empty` state says. The one piece of copy the two presets don't share: Latest Comment
    * reports that there is no comment at all, Status Update that nobody has posted *this week's*.

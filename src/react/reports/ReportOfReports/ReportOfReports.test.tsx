@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ObservableObject, value } from '../../../can';
 import { ReportOfReports } from './ReportOfReports';
+import { startOfWeekUTC } from './model/currentWeek';
 import { StorageProvider } from '../../services/storage';
 import { JiraProvider } from '../../services/jira';
 import { ReportLayoutProvider } from '../../services/report-layout';
@@ -57,6 +58,13 @@ let searchResult: Array<{ key?: string; fields: Record<string, unknown> }> = [];
 const commentRequests: string[] = [];
 let commentResult: unknown = { comments: [] };
 
+/**
+ * The page endpoint a status-update value reaches — a second fetcher, because a week needs a page and
+ * `fetchLatestComment` asks for exactly one comment. See spec/027-status-updates § Fetching.
+ */
+const recentCommentRequests: string[] = [];
+let recentCommentsResult: unknown = { comments: [] };
+
 const jira = {
   fetchJiraIssuesWithJQLWithNamedFields: async (params: any) => {
     searches.push(params);
@@ -71,6 +79,15 @@ const jira = {
     }
 
     return commentResult;
+  },
+  fetchRecentComments: async (issueKey: string) => {
+    recentCommentRequests.push(issueKey);
+
+    if (recentCommentsResult instanceof Error) {
+      throw recentCommentsResult;
+    }
+
+    return recentCommentsResult;
   },
   // The Add Report modal's work-item typeahead. Echoing the query back as a suggestion means a test
   // can "pick" any key it likes without a fixture per key. The empty query — which the picker asks on
@@ -275,6 +292,8 @@ describe('<ReportOfReports>', () => {
     searchResult = [];
     commentRequests.length = 0;
     commentResult = { comments: [] };
+    recentCommentRequests.length = 0;
+    recentCommentsResult = { comments: [] };
     mounts.length = 0;
     // Editing the document writes a `sections` param, which would otherwise seed the next test.
     window.history.replaceState({}, '', '/');
@@ -1310,6 +1329,157 @@ describe('<ReportOfReports>', () => {
 
       expect(screen.queryByTestId('latest-comment')).not.toBeInTheDocument();
       expect(cardNames()).toEqual(['Alpha']);
+    });
+  });
+
+  /**
+   * The third preset of the same `inline-value` node: `statusUpdate`. It shares the shell, the row, and
+   * every failure message with Latest Comment, so what's asserted here is only what differs — the rule
+   * that picks the comment, and the note when nothing does.
+   * See spec/027-status-updates.
+   */
+  describe('status update values', () => {
+    const storedUpdate = (issueKey: string): StoredNode =>
+      ({ type: 'inline-value', params: { expression: `(issue = ${issueKey}).statusUpdate` } }) as StoredNode;
+
+    /** Its sibling preset, for the one test that puts both on the same work item. */
+    const storedLatest = (issueKey: string): StoredNode =>
+      ({ type: 'inline-value', params: { expression: `(issue = ${issueKey}).latestComment` } }) as StoredNode;
+
+    /**
+     * Fixture times built off the current week rather than a mocked clock: the Monday that opens this
+     * week is always in it, and a millisecond before that Monday never is. Which spares this suite —
+     * whose typeahead debounces real time — from fake timers. The boundary itself is pinned with
+     * `vi.setSystemTime` in `useStatusUpdate.test.tsx`.
+     */
+    const weekStart = () => startOfWeekUTC(Date.now());
+    const inWeek = (offsetMs = 0) => new Date(weekStart() + offsetMs).toISOString();
+    const beforeWeek = () => new Date(weekStart() - 1).toISOString();
+
+    const commentAt = (text: string, created: string) => ({
+      body: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] },
+      author: { displayName: 'Dana Ruiz' },
+      created,
+      updated: created,
+    });
+
+    const body = () => screen.findByTestId('status-update');
+
+    it('renders this week update, then who updated it and when', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: cert rotation lands Thursday.', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('ABC-1')] });
+
+      expect(await body()).toHaveTextContent('Status Update: cert rotation lands Thursday.');
+      expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+      expect(screen.getByText(/^Last updated: /)).toBeInTheDocument();
+    });
+
+    // The row is the key, exactly as its sibling's is — the shell is shared, and nothing on the row
+    // says which preset this is.
+    it('heads the node with the key, not the expression', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: fine', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('ABC-1')] });
+
+      await body();
+
+      expect(screen.getByRole('heading', { name: 'ABC-1' })).toBeInTheDocument();
+      expect(screen.queryByText('(issue = ABC-1).statusUpdate')).not.toBeInTheDocument();
+    });
+
+    // A page, through the second fetcher — not the single-comment one Latest Comment uses.
+    it('reaches the page endpoint through the key the search found', async () => {
+      searchResult = [{ key: 'SYSTEMS-918', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: fine', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('SYSTEMS-918')] });
+
+      await body();
+
+      expect(searches).toEqual([
+        expect.objectContaining({ jql: 'issue = SYSTEMS-918', fields: ['summary'], maxResults: 2 }),
+      ]);
+      expect(recentCommentRequests).toEqual(['SYSTEMS-918']);
+      expect(commentRequests).toEqual([]);
+    });
+
+    /**
+     * **The behaviour the feature exists for.** Both presets on one work item, one document: an
+     * unrelated comment posted after the update becomes the latest comment, and the status update
+     * doesn't move.
+     */
+    it('does not follow a newer unrelated comment, where latest comment does', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      commentResult = { comments: [commentAt('can you rebase this?', inWeek(120_000))] };
+      recentCommentsResult = {
+        comments: [
+          commentAt('can you rebase this?', inWeek(120_000)),
+          commentAt('Status Update: still on the cert.', inWeek(60_000)),
+        ],
+      };
+      renderReport({ savedSections: [storedUpdate('ABC-1'), storedLatest('ABC-1')] });
+
+      expect(await body()).toHaveTextContent('Status Update: still on the cert.');
+      expect(await screen.findByTestId('latest-comment')).toHaveTextContent('can you rebase this?');
+    });
+
+    // The thing Latest Comment structurally cannot say. One note for both nothings — no comments this
+    // week, and comments but no update — because the reader is told the same true thing either way.
+    it('says nobody has posted one yet, rather than showing a stale update', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = {
+        comments: [commentAt('Status Update: last week.', beforeWeek()), commentAt('merged', inWeek(60_000))],
+      };
+      renderReport({ savedSections: [storedUpdate('ABC-1'), stored('a')] });
+
+      expect(await screen.findByText('No status update has been posted yet.')).toBeInTheDocument();
+      expect(screen.queryByText('No updates found.')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('status-update')).not.toBeInTheDocument();
+      // And the document around it keeps rendering.
+      expect(cardNames()).toEqual(['Alpha']);
+    });
+
+    it('is added from the Add Report modal, into the section it was opened from', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: added from the modal.', inWeek(60_000))] };
+      renderReport({ savedSections: [nest('Q3', [])] });
+
+      await addValue('Add Report to Q3', 'ABC-1', 'Status Update');
+
+      const section = (await sectionTitle('Q3')).closest('section') as HTMLElement;
+
+      expect(await within(section).findByTestId('status-update')).toHaveTextContent(
+        'Status Update: added from the modal.',
+      );
+    });
+
+    it('asks Jira nothing for a node with no work item set', async () => {
+      renderReport({ savedSections: [storedUpdate('')] });
+
+      expect(await screen.findByText('No work item set.')).toBeInTheDocument();
+      expect(searches).toEqual([]);
+      expect(recentCommentRequests).toEqual([]);
+    });
+
+    it('reports a key that matched nothing with the same message its sibling gives', async () => {
+      searchResult = [];
+      renderReport({ savedSections: [storedUpdate('NOPE-1')] });
+
+      expect(await screen.findByTestId('status-update-error')).toHaveTextContent('No work item matched.');
+      expect(recentCommentRequests).toEqual([]);
+    });
+
+    // The shared shell's caret, and the body that stays mounted so print restores it.
+    it('offers a caret that hides the update and leaves the row', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: fine', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('ABC-1')] });
+
+      await body();
+      await userEvent.click(screen.getByRole('button', { name: 'Collapse ABC-1' }));
+
+      expect(screen.getByTestId('status-update').closest('[hidden]')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'ABC-1' })).toBeInTheDocument();
     });
   });
 

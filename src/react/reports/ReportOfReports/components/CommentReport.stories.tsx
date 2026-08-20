@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { LatestCommentState } from '../hooks/useLatestComment';
+import type { CommentReportState } from '../hooks/useCommentReport';
 
 import React, { useState } from 'react';
 
@@ -51,7 +51,7 @@ const rich = doc(
   { type: 'blockquote', content: [{ type: 'paragraph', content: text('Ship it Thursday or slip a week.') }] },
 );
 
-const ok = (body: unknown): LatestCommentState => ({
+const ok = (body: unknown): CommentReportState => ({
   status: 'ok',
   body,
   author: 'Dana Ruiz',
@@ -72,7 +72,7 @@ const Node = ({
   startCollapsed = false,
 }: {
   target: string;
-  state: LatestCommentState;
+  state: CommentReportState;
   startCollapsed?: boolean;
 }) => {
   const [collapsed, setCollapsed] = useState(startCollapsed);

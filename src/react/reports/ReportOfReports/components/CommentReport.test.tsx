@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import type { LatestCommentState } from '../hooks/useLatestComment';
+import type { CommentReportState } from '../hooks/useCommentReport';
 import type { CommentBodyProps } from './CommentReport';
 
 import React from 'react';
@@ -28,7 +28,7 @@ vi.mock('../../../components/AdfDocument', async () => {
 const doc = (...content: unknown[]) => ({ type: 'doc', version: 1, content });
 const text = (value: string) => [{ type: 'text', text: value }];
 
-const ok = (body: unknown): LatestCommentState => ({
+const ok = (body: unknown): CommentReportState => ({
   status: 'ok',
   body,
   author: 'Dana Ruiz',

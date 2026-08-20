@@ -19,7 +19,9 @@ import { isExpressionError, parseExpression } from './model/expression';
 import { derivedKindOf, issueKeyOf } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
 import { useInlineExpression, type InlineExpressionState } from './hooks/useInlineExpression';
+import { type CommentReportState } from './hooks/useCommentReport';
 import { useLatestComment } from './hooks/useLatestComment';
+import { useStatusUpdate } from './hooks/useStatusUpdate';
 import { AddContentRow } from './components/AddContentRow';
 import { AddReportModal } from './components/AddReportModal';
 import { ChildReport } from './components/ChildReport';
@@ -151,16 +153,22 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
   }
 
   if (node.type === 'inline-value') {
-    // Two presets of one node type, told apart by the expression's accessor — there is no second node
+    // Three presets of one node type, told apart by the expression's accessor — there is no second node
     // type, and nothing in the stored document distinguishes them. The branch is here rather than
-    // inside `InlineValueView` for the same reason this dispatcher exists at all: the two read
-    // different hooks, and a hook can't be called conditionally.
-    // See spec/016-report-of-reports/007-latest-comment-report Phase 4.
-    return derivedKindOf(node.params.expression) === 'latest-comment' ? (
-      <LatestCommentView node={node} path={path} />
-    ) : (
-      <InlineValueView node={node} path={path} />
-    );
+    // inside `InlineValueView` for the same reason this dispatcher exists at all: each reads a
+    // different hook, and a hook can't be called conditionally.
+    // See spec/016-report-of-reports/007-latest-comment-report Phase 4 and spec/027-status-updates.
+    const kind = derivedKindOf(node.params.expression);
+
+    if (kind === 'latest-comment') {
+      return <LatestCommentView node={node} path={path} />;
+    }
+
+    if (kind === 'status-update') {
+      return <StatusUpdateView node={node} path={path} />;
+    }
+
+    return <InlineValueView node={node} path={path} />;
   }
 
   if (node.type === 'saved-report') {
@@ -446,43 +454,66 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
 };
 
 /**
- * One latest-comment value: the same `inline-value` node as above, whose accessor happens to be
- * `latestComment`.
+ * The work item a comment node fetches through, and what its row is titled with.
  *
- * It reads `useLatestComment` instead of `useInlineExpression` and renders a report-shaped node — a row
- * plus content beneath it — because a comment is a block of rich text rather than one value in a pill.
- * Content beneath the row means it gets a caret, per 004-redesign's rule.
+ * `derivedKindOf` already proved the expression parses, so the error branch is unreachable — it's here
+ * to satisfy the type rather than to handle anything.
  *
  * **The row is the work item key** whenever the JQL is a single equality — which is what the modal
  * writes and what practically every one of these is. `issueKeyOf` is the whole of that distinction, and
- * it is now purely about what to title the row: a hand-written query, reachable only from a document
- * saved earlier, titles itself with its JQL. The *fetch* always goes through the JQL either way.
+ * it is purely about what to title the row: a hand-written query, reachable only from a document saved
+ * earlier, titles itself with its JQL. The *fetch* always goes through the JQL either way.
+ */
+const commentTargetOf = (node: InlineValueNode): { jql: string; target: string } => {
+  const parsed = parseExpression(node.params.expression);
+  const jql = isExpressionError(parsed) ? '' : parsed.jql;
+  const key = issueKeyOf(jql);
+
+  return { jql, target: key ?? jql };
+};
+
+interface CommentReportViewProps {
+  node: InlineValueNode;
+  path: LayoutPath;
+  state: CommentReportState;
+  target: string;
+  /** What the caret and controls are named when no work item is set yet. */
+  fallbackLabel: string;
+  testId: string;
+  emptyNote: string;
+}
+
+/**
+ * A comment report in a document: a row plus content beneath it, rather than one value in a pill —
+ * because a comment is a block of rich text. Content beneath the row means it gets a caret, per
+ * 004-redesign's rule.
+ *
+ * Shared by both comment presets, which differ only in the hook that produced `state` and in three
+ * strings. They stay two components rather than one taking a `kind`, because a hook cannot be called
+ * conditionally — which is the reason the node dispatcher above exists at all.
  *
  * It's content, not chrome, so nothing here is `print-hidden` (the controls and caret hide themselves)
  * and the body stays mounted while collapsed so print can restore it.
- * See spec/016-report-of-reports/007-latest-comment-report Phase 4.
+ * See spec/016-report-of-reports/007-latest-comment-report Phase 4, and spec/027-status-updates § The
+ * view for the extraction.
  */
-const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
+const CommentReportView: FC<CommentReportViewProps> = ({
+  node,
+  path,
+  state,
+  target,
+  fallbackLabel,
+  testId,
+  emptyNote,
+}) => {
   const { isCollapsed, toggleCollapsed } = useDocumentEditing();
   const { hoverProps, rowProps } = useNodeRow(node, path);
 
-  // `isLatestCommentExpression` already proved this parses, so the error branch is unreachable — it's
-  // here to satisfy the type rather than to handle anything.
-  const parsed = parseExpression(node.params.expression);
-  const jql = isExpressionError(parsed) ? '' : parsed.jql;
-
-  const key = issueKeyOf(jql);
-  const target = key ?? jql;
-
-  // Nothing targeted yet means asking Jira nothing: a blank key leaves the JQL as `issue =`, which is
-  // not a query, and a freshly created node must not fire a request that can only fail.
-  const state = useLatestComment(target.trim() ? jql : '');
-
-  const label = target || 'latest comment';
+  const label = target || fallbackLabel;
   const collapsed = isCollapsed(node.id);
 
   return (
-    <div {...hoverProps} data-testid="latest-comment-node" className="flex flex-col print-avoid-break">
+    <div {...hoverProps} data-testid={`${testId}-node`} className="flex flex-col print-avoid-break">
       <NodeRow
         {...rowProps}
         caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
@@ -491,9 +522,59 @@ const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ no
         <CommentRow target={target} />
       </NodeRow>
       <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
-        <CommentBody target={target} state={state} emptyNote="No updates found." testId="latest-comment" />
+        <CommentBody target={target} state={state} emptyNote={emptyNote} testId={testId} />
       </div>
     </div>
+  );
+};
+
+/** The newest comment on a work item, whatever it is and however old. */
+const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
+  const { jql, target } = commentTargetOf(node);
+
+  // Nothing targeted yet means asking Jira nothing: a blank key leaves the JQL as `issue =`, which is
+  // not a query, and a freshly created node must not fire a request that can only fail.
+  const state = useLatestComment(target.trim() ? jql : '');
+
+  return (
+    <CommentReportView
+      node={node}
+      path={path}
+      state={state}
+      target={target}
+      fallbackLabel="latest comment"
+      testId="latest-comment"
+      // "No updates found.", not "no comments": the reader never sees the word "comment" anywhere in
+      // this node, which is named for what they get — the current word on a work item.
+      emptyNote="No updates found."
+    />
+  );
+};
+
+/**
+ * This week's status update on a work item, or the fact that nobody has posted one.
+ *
+ * The same node and the same shell as above; only the rule that picks the comment differs. Saying
+ * _"No status update has been posted yet."_ is the thing Latest Comment structurally cannot say — there,
+ * a three-week-old comment renders identically to one posted this morning, and an unrelated comment
+ * posted after the real update silently displaces it.
+ * See spec/027-status-updates § Context.
+ */
+const StatusUpdateView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
+  const { jql, target } = commentTargetOf(node);
+
+  const state = useStatusUpdate(target.trim() ? jql : '');
+
+  return (
+    <CommentReportView
+      node={node}
+      path={path}
+      state={state}
+      target={target}
+      fallbackLabel="status update"
+      testId="status-update"
+      emptyNote="No status update has been posted yet."
+    />
   );
 };
 
