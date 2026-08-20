@@ -16,7 +16,7 @@ import { useAllReports } from '../../services/reports';
 import { useReportLayout } from '../../services/report-layout';
 import { appendNode, inlineValueNode, savedReportNode, sectionTitleAt, setSectionTitleAt } from './model/sections';
 import { isExpressionError, parseExpression } from './model/expression';
-import { isLatestCommentExpression, issueKeyOf } from './model/accessors';
+import { derivedKindOf, issueKeyOf } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
 import { useInlineExpression, type InlineExpressionState } from './hooks/useInlineExpression';
 import { useLatestComment } from './hooks/useLatestComment';
@@ -156,7 +156,7 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
     // inside `InlineValueView` for the same reason this dispatcher exists at all: the two read
     // different hooks, and a hook can't be called conditionally.
     // See spec/016-report-of-reports/007-latest-comment-report Phase 4.
-    return isLatestCommentExpression(node.params.expression) ? (
+    return derivedKindOf(node.params.expression) === 'latest-comment' ? (
       <LatestCommentView node={node} path={path} />
     ) : (
       <InlineValueView node={node} path={path} />

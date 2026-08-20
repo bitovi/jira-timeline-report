@@ -1,8 +1,8 @@
 /**
  * The field dropdown in the Add Report modal's Work Item Value half, and the expression a pick becomes.
  *
- * Built from Jira's field catalog — the same one `resolveField` resolves against — plus one derived
- * entry for `latestComment`. Deliberately **not** `buildColumnCatalog`: Table's `Computed` and
+ * Built from Jira's field catalog — the same one `resolveField` resolves against — plus the derived
+ * entries, which are not Jira fields at all. Deliberately **not** `buildColumnCatalog`: Table's `Computed` and
  * `Report Fields` columns read `derivedTiming` and normalized rollup values off a `TableIssue`, and an
  * inline value is a raw Jira search response, so offering them here would offer picks that resolve and
  * then render nothing.
@@ -13,7 +13,7 @@
 
 import type { JiraFieldLike } from './resolveField';
 
-import { LATEST_COMMENT_ACCESSOR, latestCommentExpression } from './accessors';
+import { LATEST_COMMENT_ACCESSOR, STATUS_UPDATE_ACCESSOR } from './accessors';
 
 export type FieldGroup = 'Derived' | 'Common' | 'Fields';
 
@@ -25,6 +25,19 @@ export interface FieldOption {
 
 /** Groups render in this order; `Derived` first so `Latest Comment` heads an unfiltered list. */
 export const FIELD_GROUP_ORDER: FieldGroup[] = ['Derived', 'Common', 'Fields'];
+
+/**
+ * The picks that aren't Jira fields, in the order they're offered.
+ *
+ * Latest Comment stays first: it heads an unfiltered list, and it is the older and more general of the
+ * two. Status Update is a sibling preset, not a replacement — the question it answers ("is there one
+ * *this week*?") is narrower, so it sits second.
+ * See spec/027-status-updates § The accessor and the dropdown.
+ */
+const DERIVED_OPTIONS: FieldOption[] = [
+  { id: LATEST_COMMENT_ACCESSOR, label: 'Latest Comment', group: 'Derived' },
+  { id: STATUS_UPDATE_ACCESSOR, label: 'Status Update', group: 'Derived' },
+];
 
 /**
  * Field **ids** a raw search returns directly and that people actually want to quote.
@@ -40,7 +53,7 @@ export const buildFieldOptions = (fields: JiraFieldLike[]): FieldOption[] => {
   const common = new Set(COMMON_FIELD_IDS);
 
   return [
-    { id: LATEST_COMMENT_ACCESSOR, label: 'Latest Comment', group: 'Derived' as const },
+    ...DERIVED_OPTIONS,
     // `COMMON_FIELD_IDS` order, not catalog order: the curated list is curated in its useful order.
     ...COMMON_FIELD_IDS.flatMap((id) => {
       const field = fields.find((candidate) => candidate.id === id);
@@ -55,12 +68,17 @@ export const buildFieldOptions = (fields: JiraFieldLike[]): FieldOption[] => {
 };
 
 /**
- * The expression a work item + field pick stores. The one place that knows `latestComment` is special.
+ * The expression a work item + field pick stores.
  *
  * **Always the field id, never the display name.** Two Jira fields can share a name — `resolveField`
  * refuses such an accessor outright — so a name would let a pick that was never ambiguous store as an
- * error. Nothing displays the expression any more (the node is read-only, see the plan's § The node
- * stops being editable), so the id's unreadability costs nothing and its uniqueness is pure gain.
+ * error. Nothing displays the expression any more (the node is read-only, see 009's § The node stops
+ * being editable), so the id's unreadability costs nothing and its uniqueness is pure gain.
+ *
+ * **The derived ids need no special case, and never did.** This used to route `latestComment` through
+ * `latestCommentExpression`, which produced character-for-character what this line already produces for
+ * that id. A second preset made the dead branch obvious, so it went rather than doubling.
+ * See spec/027-status-updates § The accessor and the dropdown.
  */
 export const buildValueExpression = (issueKey: string, fieldId: string): string =>
-  fieldId === LATEST_COMMENT_ACCESSOR ? latestCommentExpression(issueKey) : `(issue = ${issueKey.trim()}).${fieldId}`;
+  `(issue = ${issueKey.trim()}).${fieldId}`;
