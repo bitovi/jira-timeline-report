@@ -79,14 +79,41 @@ export interface JiraCommentsPage {
  * See spec/016-report-of-reports/007-latest-comment-report Phase 2.
  */
 export function fetchLatestComment(config: Config) {
-  return (issueIdOrKey: string): Promise<JiraCommentsPage> => {
-    const encoded = encodeURIComponent(issueIdOrKey);
-
-    return config.requestHelper(
-      `/api/3/issue/${encoded}/comment?` + new URLSearchParams({ orderBy: '-created', maxResults: '1' }).toString(),
-    ) as unknown as Promise<JiraCommentsPage>;
-  };
+  return (issueIdOrKey: string): Promise<JiraCommentsPage> => fetchComments(config, issueIdOrKey, 1);
 }
+
+/**
+ * How far back a status-update scan looks.
+ *
+ * Jira's comment endpoint documents `orderBy` values of `created` / `-created` / `+created` only —
+ * **there is no `-updated`**. So with `updated` as the filter, a comment created long ago and edited
+ * this week can sit arbitrarily deep in the list, and no ordering Jira offers brings it forward. The
+ * bound is therefore explicit rather than exact: the 100 most recently *created* comments are scanned,
+ * and a status update older than those *and* edited this week is not found.
+ * See spec/027-status-updates § The scan limit.
+ */
+export const COMMENT_SCAN_SIZE = 100;
+
+/**
+ * One page of a work item's newest comments, for the Status Update preset.
+ *
+ * A sibling of {@link fetchLatestComment} rather than a parameter on it: that function's `maxResults: 1`
+ * is the guarantee it was written to provide, and a week needs a page. Both go through the same URL
+ * helper so the query-string shape stays in one place.
+ *
+ * One fixed page, deliberately — no paging loop — which keeps a status-update node at the same single
+ * request per work item as a latest-comment one. See spec/027-status-updates § Fetching.
+ */
+export function fetchRecentComments(config: Config) {
+  return (issueIdOrKey: string, maxResults = COMMENT_SCAN_SIZE): Promise<JiraCommentsPage> =>
+    fetchComments(config, issueIdOrKey, maxResults);
+}
+
+const fetchComments = (config: Config, issueIdOrKey: string, maxResults: number): Promise<JiraCommentsPage> =>
+  config.requestHelper(
+    `/api/3/issue/${encodeURIComponent(issueIdOrKey)}/comment?` +
+      new URLSearchParams({ orderBy: '-created', maxResults: String(maxResults) }).toString(),
+  ) as unknown as Promise<JiraCommentsPage>;
 
 /** One suggestion from the issue picker. `summaryText` is the plain summary; `summary` is HTML. */
 export interface JiraIssuePickerIssue {

@@ -27,6 +27,16 @@ export const jiraKeys = {
    */
   latestComment: (issueKey: string) => [...jiraKeys.all, 'latest-comment', issueKey],
   /**
+   * One work item's recent comments, which a Status Update is picked out of. Keyed by the resolved key
+   * for the same reason {@link latestComment} is.
+   *
+   * **The week is deliberately not in the key.** A week-dependent key would miss the cache on every
+   * Monday rollover for no benefit — the page fetched is the same page either way, and which comment in
+   * it counts as this week's is decided in the hook.
+   * See spec/027-status-updates § Fetching.
+   */
+  recentComments: (issueKey: string) => [...jiraKeys.all, 'recent-comments', issueKey],
+  /**
    * One page of work-item typeahead suggestions. Keyed by the debounced query, so re-typing a query
    * already asked replays from cache rather than asking Jira again — which is most of why the picker
    * goes through React Query rather than `AsyncSelect`'s `loadOptions`.
