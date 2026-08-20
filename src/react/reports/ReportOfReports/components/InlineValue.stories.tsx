@@ -81,7 +81,8 @@ export const UnsupportedType: Story = {
 
 /**
  * `.comment` is a real field, so it resolves — and then dead-ends, because a page of comments isn't a
- * value. The message is the only signpost to `.latestComment`, which can't be found in Jira's fields.
+ * value. The message is the only signpost to `.latestComment` and `.statusUpdate`, neither of which can
+ * be found in Jira's fields.
  */
 export const CommentsPage: Story = {
   args: {

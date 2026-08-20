@@ -4,7 +4,7 @@ import type { InlineExpressionState } from '../hooks/useInlineExpression';
 import React from 'react';
 
 import { formatFieldValue } from '../model/formatFieldValue';
-import { LATEST_COMMENT_ACCESSOR } from '../model/accessors';
+import { LATEST_COMMENT_ACCESSOR, STATUS_UPDATE_ACCESSOR } from '../model/accessors';
 
 export interface InlineValueProps {
   /** The stored expression. Named in error states so the document stays diagnosable. */
@@ -49,14 +49,16 @@ export const InlineValue: FC<InlineValueProps> = ({ expression, state }) => {
 
   if (text === null) {
     // `.comment` resolves — it's a real Jira field — and then dead-ends here, because a page of
-    // comments is not a value. Rather than leave that as a dead end, point at the accessor that does
+    // comments is not a value. Rather than leave that as a dead end, point at the accessors that do
     // what someone typing `.comment` almost certainly wanted. It is the only signpost to the
-    // pseudo-accessor, which by definition can't be found in Jira's field list.
-    // See spec/016-report-of-reports/007-latest-comment-report Phase 4.
+    // pseudo-accessors, which by definition can't be found in Jira's field list — and it names both,
+    // because which one they meant depends on what they're writing.
+    // See spec/016-report-of-reports/007-latest-comment-report Phase 4 and spec/027-status-updates.
     return (
       <Problem expression={expression}>
         {state.field.id === 'comment'
-          ? `Comments can't show as a value — use .${LATEST_COMMENT_ACCESSOR} for the newest one.`
+          ? `Comments can't show as a value — use .${LATEST_COMMENT_ACCESSOR} for the newest one, ` +
+            `or .${STATUS_UPDATE_ACCESSOR} for this week's update.`
           : `"${state.field.name}" holds a ${state.field.schema.type ?? 'value'} this can't show as text yet.`}
       </Problem>
     );

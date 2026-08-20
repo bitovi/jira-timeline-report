@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from 'react';
-import type { LatestCommentState } from '../hooks/useLatestComment';
+import type { CommentReportState } from '../hooks/useCommentReport';
 
 import React from 'react';
 
@@ -8,11 +8,11 @@ import { AdfDocument } from '../../../components/AdfDocument';
 /** What an untargeted node shows in place of a key — see the read view below. */
 export const KEY_PLACEHOLDER = 'ABC-1';
 
-export interface LatestCommentProps {
+export interface CommentRowProps {
   /** The work item key, or the whole JQL when the query is one a key can't represent. */
   target: string;
   // No `state`: the row is the key, and every fetched thing — author, comment, timestamp — is
-  // `LatestCommentBody`'s. The row used to take one and never read it.
+  // `CommentBody`'s. The row used to take one and never read it.
 }
 
 // Local time, deliberately: a comment's timestamp is read by a person wondering how recent it is, and
@@ -35,7 +35,7 @@ export const formatCommentTime = (timestamp: string): string => {
 };
 
 /**
- * The newest comment on one work item, in a document.
+ * The row of a comment report — Latest Comment or Status Update — in a document.
  *
  * Pure and prop-driven — the fetched state arrives as a prop, so every branch stories and unit-tests
  * with no Jira behind it. The split `InlineValue` established.
@@ -44,11 +44,11 @@ export const formatCommentTime = (timestamp: string): string => {
  * comment beneath it at the same indent. The caret, the controls, and the collapse belong to the
  * container, which is why this renders the key and the body and nothing else.
  *
- * **There is no "Latest comment" label.** It was a muted prefix on the row, which spent the node's
+ * **There is no kind label on the row.** It was a muted "Latest comment" prefix, which spent the node's
  * heading on saying what kind of node it is, and read as chrome above content that already announces
  * itself — an author, a comment, a timestamp. So the key gets the row and the `text-base font-semibold`
  * every other row-owning node uses (`ReportOfReports.tsx:369`), and the node reads as *the work item*
- * with its latest comment under it.
+ * with its comment under it. Both presets share that, which is why nothing here names either of them.
  *
  * **What that costs, stated plainly:** collapsed, the node is a bare `▸ ABC-1` and nothing says it is a
  * comment. That is the same trade a collapsed report card makes — its row is `▸ Alpha` — so the node is
@@ -59,9 +59,10 @@ export const formatCommentTime = (timestamp: string): string => {
  * See spec/016-report-of-reports/009-value-report-modal § The node stops being editable.
  *
  * It's content, not chrome, so nothing here is `print-hidden`.
- * See spec/016-report-of-reports/007-latest-comment-report § The row is the key.
+ * See spec/016-report-of-reports/007-latest-comment-report § The row is the key, and
+ * spec/027-status-updates § The view for the rename that made it serve both presets.
  */
-export const LatestComment: FC<LatestCommentProps> = ({ target }) => (
+export const CommentRow: FC<CommentRowProps> = ({ target }) => (
   // An untargeted node shows the placeholder key in the muted italic `SectionTitle` gives an untitled
   // section, so "not filled in yet" doesn't read as "a work item called ABC-1". Only a document saved
   // before the modal existed can be in that state.
@@ -74,10 +75,17 @@ export const LatestComment: FC<LatestCommentProps> = ({ target }) => (
   </h3>
 );
 
-export interface LatestCommentBodyProps {
+export interface CommentBodyProps {
   /** `''` while nothing is targeted yet — checked before `state`, which can't tell that from loading. */
   target: string;
-  state: LatestCommentState;
+  state: CommentReportState;
+  /**
+   * What the `empty` state says. The one piece of copy the two presets don't share: Latest Comment
+   * reports that there is no comment at all, Status Update that nobody has posted *this week's*.
+   */
+  emptyNote: string;
+  /** `latest-comment` or `status-update` — this and `${testId}-error` are what a test finds. */
+  testId: string;
 }
 
 /**
@@ -89,8 +97,11 @@ export interface LatestCommentBodyProps {
  * **The blank target is checked here, not in the hook.** A disabled `useQuery` reports `isPending`,
  * so "nothing typed yet" and "loading" are indistinguishable from the state alone — exactly the check
  * `InlineValue`'s read view makes before consulting its own state.
+ *
+ * Shared by both comment presets, which differ only in `emptyNote` and `testId` — everything else about
+ * rendering a comment is the same question with the same answer.
  */
-export const LatestCommentBody: FC<LatestCommentBodyProps> = ({ target, state }) => {
+export const CommentBody: FC<CommentBodyProps> = ({ target, state, emptyNote, testId }) => {
   if (!target.trim()) {
     // A statement of fact, not an instruction: there is no longer a field to enter a key into. Only a
     // document saved before the Add Report modal took over authoring can reach this.
@@ -103,17 +114,17 @@ export const LatestCommentBody: FC<LatestCommentBodyProps> = ({ target, state })
 
   if (state.status === 'error') {
     return (
-      <Note testId="latest-comment-error">
+      <Note testId={`${testId}-error`}>
         <span>{state.message}</span> <code className="font-mono text-sm">{target}</code>
       </Note>
     );
   }
 
   if (state.status === 'empty') {
-    // "No updates found.", not "no comments": the reader never sees the word "comment" anywhere in this
-    // node, which is named for what they get — the current word on a work item — rather than for the
-    // Jira object it comes from.
-    return <Note>No updates found.</Note>;
+    // The caller's copy, and in both presets it avoids the word "comment": the reader never sees the
+    // Jira object's name anywhere in this node, which is named for what they get — the current word on a
+    // work item, or this week's status update — rather than for where it came from.
+    return <Note>{emptyNote}</Note>;
   }
 
   if (isEmptyDocument(state.body)) {
@@ -124,7 +135,7 @@ export const LatestCommentBody: FC<LatestCommentBodyProps> = ({ target, state })
   // so they sit under the text as one muted two-line footer rather than as a byline above it. The reader
   // arrives at the comment immediately and finds out whose and how stale it is on the way out.
   return (
-    <div data-testid="latest-comment" className="flex flex-col gap-1">
+    <div data-testid={testId} className="flex flex-col gap-1">
       {/* The body goes to `AdfDocument` whole, rather than through the local walker first: a comment
           that is only a table or only an emoji produces no walker blocks but is not empty, and gating
           on the walker's output would have hidden exactly the content the real renderer was added for. */}
@@ -167,4 +178,4 @@ const Note: FC<{ children: ReactNode; testId?: string }> = ({ children, testId }
   </p>
 );
 
-export default LatestComment;
+export default CommentRow;

@@ -1,16 +1,31 @@
 import { describe, it, expect } from 'vitest';
 
-import { derivedAccessor, issueKeyOf, latestCommentExpression, LATEST_COMMENT_ACCESSOR } from './accessors';
+import {
+  derivedAccessor,
+  derivedKindOf,
+  issueKeyOf,
+  LATEST_COMMENT_ACCESSOR,
+  STATUS_UPDATE_ACCESSOR,
+} from './accessors';
 
 describe('derivedAccessor', () => {
   it('matches latestComment', () => {
     expect(derivedAccessor('latestComment')).toEqual({ kind: 'latest-comment', label: 'Latest comment' });
   });
 
+  // See spec/027-status-updates § The accessor and the dropdown.
+  it('matches statusUpdate', () => {
+    expect(derivedAccessor('statusUpdate')).toEqual({ kind: 'status-update', label: 'Status update' });
+  });
+
   it('matches case-insensitively and ignores surrounding space, as resolveField does for names', () => {
     expect(derivedAccessor('latestcomment')?.kind).toBe('latest-comment');
     expect(derivedAccessor('LatestComment')?.kind).toBe('latest-comment');
     expect(derivedAccessor('  latestComment  ')?.kind).toBe('latest-comment');
+    // Lower-cased keying gives the second accessor the same tolerance for free.
+    expect(derivedAccessor('statusupdate')?.kind).toBe('status-update');
+    expect(derivedAccessor('STATUSUPDATE')?.kind).toBe('status-update');
+    expect(derivedAccessor('  statusUpdate  ')?.kind).toBe('status-update');
   });
 
   it('leaves real Jira fields alone, so they still resolve through resolveField', () => {
@@ -20,6 +35,10 @@ describe('derivedAccessor', () => {
     expect(derivedAccessor('comment')).toBeUndefined();
     expect(derivedAccessor('comments')).toBeUndefined();
     expect(derivedAccessor('Story points')).toBeUndefined();
+    // Near-misses of the second accessor, which is a literal key like any other.
+    expect(derivedAccessor('status')).toBeUndefined();
+    expect(derivedAccessor('statusUpdates')).toBeUndefined();
+    expect(derivedAccessor('status update')).toBeUndefined();
   });
 
   it('does not match an empty accessor', () => {
@@ -27,17 +46,39 @@ describe('derivedAccessor', () => {
   });
 });
 
-describe('latestCommentExpression', () => {
-  it('writes the canonical accessor', () => {
-    expect(latestCommentExpression('ABC-1')).toBe('(issue = ABC-1).latestComment');
+/**
+ * The kind, not a boolean: there are three outcomes now, and the dispatcher has to tell the two presets
+ * apart as well as from an ordinary field. See spec/027-status-updates § The accessor and the dropdown.
+ */
+describe('derivedKindOf', () => {
+  it('names the canonical accessors', () => {
     expect(LATEST_COMMENT_ACCESSOR).toBe('latestComment');
+    expect(STATUS_UPDATE_ACCESSOR).toBe('statusUpdate');
   });
 
-  it('accepts a blank key — the shape the Add button seeds', () => {
-    expect(latestCommentExpression('')).toBe('(issue = ).latestComment');
+  it('reads each preset out of an expression', () => {
+    expect(derivedKindOf('(issue = ABC-1).latestComment')).toBe('latest-comment');
+    expect(derivedKindOf('(issue = ABC-1).statusUpdate')).toBe('status-update');
   });
 
-  it('round-trips through issueKeyOf', () => {
+  it('is undefined for an ordinary field, so the node renders as a value', () => {
+    expect(derivedKindOf('(issue = ABC-1).summary')).toBeUndefined();
+    expect(derivedKindOf('(issue = ABC-1).comment')).toBeUndefined();
+    expect(derivedKindOf('(issue = ABC-1).customfield_10014')).toBeUndefined();
+  });
+
+  it('is undefined for an expression that does not parse, rather than throwing', () => {
+    expect(derivedKindOf('')).toBeUndefined();
+    expect(derivedKindOf('issue = ABC-1')).toBeUndefined();
+    expect(derivedKindOf('(issue = ABC-1)')).toBeUndefined();
+  });
+
+  it('reads a hand-written query and a case-varied accessor', () => {
+    expect(derivedKindOf('(project = A AND status = Done).STATUSUPDATE')).toBe('status-update');
+    expect(derivedKindOf('  (issue = ABC-1).statusupdate  ')).toBe('status-update');
+  });
+
+  it('round-trips the expression the Add button writes', () => {
     expect(issueKeyOf('issue = ABC-1')).toBe('ABC-1');
   });
 });
