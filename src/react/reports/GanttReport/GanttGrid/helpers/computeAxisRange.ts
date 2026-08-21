@@ -1,3 +1,4 @@
+import type { DateRangeFilter } from '../../../shared/timeline/helpers/dateRangeFilter';
 import type { IssueOrRelease } from '../types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -15,18 +16,33 @@ const mergeStartAndDue = (rollups: { start?: Date | null; due?: Date | null }[])
 /**
  * Reproduce the legacy `quartersAndMonths` range computation, including its defaults.
  *
- * DECISION (plan §Known issues #1): the axis intentionally starts at TODAY — the Gantt is a
- * future-looking timeline. `start` is computed for the default/clamp math only; it is NOT the
- * axis start. Isolating this here makes the choice explicit and easy to revisit.
+ * DECISION (spec/028-fix-gantt-date-filters/plan.md, narrowing spec/005-gantt-rewrite §Known
+ * issues #1): the axis starts at TODAY *by default* — the Gantt is a future-looking timeline —
+ * but yields to an explicitly-chosen due-date window. With no `range`, `axisStart === today` and
+ * this reduces exactly to the pre-028 behavior. `start` is computed for the default/clamp math
+ * only; it is NOT the axis start.
  *
  * Replaces gantt-grid.js's `quartersAndMonths` getter (range portion).
  */
-export const computeAxisRange = (issues: IssueOrRelease[], today = new Date()): { axisStart: Date; axisEnd: Date } => {
+export const computeAxisRange = (
+  issues: IssueOrRelease[],
+  today = new Date(),
+  range: DateRangeFilter = {},
+): { axisStart: Date; axisEnd: Date } => {
+  const axisStart = range.from ?? today;
+
+  // An explicit upper bound wins outright. The `>= axisStart` guard rejects an inverted window
+  // (the two date inputs are independent, so `from > to` is easy to type) rather than handing
+  // `getQuartersAndMonths` a negative span, which yields zero month columns.
+  if (range.to && range.to >= axisStart) {
+    return { axisStart, axisEnd: range.to };
+  }
+
   const rollups = issues.map((i) => i.rollupStatuses.rollup);
   let { start, due } = mergeStartAndDue(rollups);
-  if (!start) start = today;
+  if (!start) start = axisStart;
   if (!due) due = new Date(start.getTime() + 90 * DAY_MS); // default +90d
-  if (due < today) due = new Date(today.getTime() + 90 * DAY_MS); // clamp past-due
+  if (due < axisStart) due = new Date(axisStart.getTime() + 90 * DAY_MS); // clamp past-due
 
-  return { axisStart: today, axisEnd: due };
+  return { axisStart, axisEnd: due };
 };
