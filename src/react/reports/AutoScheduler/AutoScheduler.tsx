@@ -22,11 +22,7 @@ import { bestFitRanges } from '../../../utils/date/best-fit-ranges';
 import routeData from '../../../canjs/routing/route-data/index';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 import { CriticalPath } from './CriticalPath';
-// Paused: the spec/024-critical-path POC is unmounted while its ranking model is reworked. Left
-// commented rather than deleted so the work can resume; keeping the import out means Vite
-// tree-shakes CriticalPathsReport and build-critical-paths out of the bundle entirely.
-// See spec/024-critical-path/issues-and-concerns.md.
-// import { CriticalPathsReport } from './CriticalPathsReport';
+import { CriticalPathsReport } from './CriticalPathsReport';
 import { CriticalPathEpicsReport } from './CriticalPathEpicsReport';
 import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
@@ -340,13 +336,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
         workItemsToHighlight={workItemsToHighlight}
         setWorkItemsToHighlight={setWorkItemsToHighlight}
       />
-      {/* Critical Paths Report (POC of spec/024-critical-path) — paused, see the import above.
+      {/* Critical Paths Report (POC of spec/024-critical-path) */}
       <CriticalPathsReport
         uiData={uiData}
         workItemsToHighlight={workItemsToHighlight}
         setWorkItemsToHighlight={setWorkItemsToHighlight}
       />
-      */}
       {/* Epics on the critical path (spec/024-critical-path) */}
       <CriticalPathEpicsReport
         uiData={uiData}
