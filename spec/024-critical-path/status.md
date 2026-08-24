@@ -100,6 +100,12 @@ Because the data is always present, `StatsUIData['criticalPath']` is non-nullabl
 
 The manual check is the last step of the plan and needs `npm run dev` plus real credentials.
 
+> **Heads up: an unrelated test is flaky.** `ReportOfReports.test.tsx` ("expected [] to deeply equal
+> ['month', 'week']", around line 671) fails intermittently in full-suite runs and passes in isolation.
+> It is ordering- or timing-dependent and has nothing to do with this branch, but because the husky
+> pre-commit hook runs the whole suite, it can block a commit spuriously. Re-run rather than reaching
+> for `--no-verify`.
+
 ---
 
 ## Open questions
