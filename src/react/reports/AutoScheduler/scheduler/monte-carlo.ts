@@ -5,6 +5,8 @@ import { resetLinkedIssue, linkIssues } from './link-issues';
 import { scheduleIssues } from './schedule';
 import { traceDrivingChain, type TraceLinkedIssue } from './critical-path-trace';
 import { CriticalityAccumulator } from './criticality-accumulator';
+import { findLongestPath } from './longest-path';
+import { CriticalPathAccumulator } from './critical-path-accumulator';
 
 export function runMonteCarlo(
   issues: DerivedIssue[],
@@ -75,6 +77,7 @@ export type BatchDatas = {
   batchIssueData: BatchIssueData[];
   lastDays: number[];
   criticalityAccumulator: CriticalityAccumulator;
+  criticalPathAccumulator: CriticalPathAccumulator;
 };
 
 function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: number }): BatchDatas {
@@ -88,12 +91,23 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
 
   const lastDays: number[] = [];
   const criticalityAccumulator = new CriticalityAccumulator();
+  const criticalPathAccumulator = new CriticalPathAccumulator();
 
   for (let i = 0; i < batchSize; i++) {
     // Reset state
     for (const linkedIssue of linkedIssues) {
       resetLinkedIssue(linkedIssue);
     }
+
+    // Runs on the freshly sampled durations and before scheduling, because the critical path
+    // deliberately ignores team capacity — it is the finish this plan would reach if nothing ever
+    // waited for a free track. See spec/024-critical-path/dependency-floor.md.
+    //
+    // Unconditional. It has to happen here — `onBatch` sorts each epic's `daysOfWork` independently,
+    // which destroys the per-iteration alignment this needs — and measured overhead is ~13% of a
+    // batch (36ms/287ms/605ms on a 10,000-run simulation at 50/200/500 epics). Gating it behind a
+    // flag would mean re-running the whole simulation to switch on, which costs 100% instead.
+    criticalPathAccumulator.addIteration(findLongestPath(linkedIssues));
 
     const teamWork = scheduleIssues(linkedIssues);
 
@@ -134,5 +148,5 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     }
   }
 
-  return { batchIssueData: items, lastDays, criticalityAccumulator };
+  return { batchIssueData: items, lastDays, criticalityAccumulator, criticalPathAccumulator };
 }

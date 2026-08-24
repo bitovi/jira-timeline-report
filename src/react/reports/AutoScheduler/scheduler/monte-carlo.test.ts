@@ -78,6 +78,25 @@ describe('runMonteCarlo', () => {
     expect(onBatch).not.toHaveBeenCalled();
     expect(onComplete).not.toHaveBeenCalled();
   });
+
+  it('records one critical path iteration per run', () => {
+    const onBatch = vi.fn();
+    const onComplete = vi.fn();
+
+    const { runBatchAndLoop } = runMonteCarlo(noIssues, {
+      onBatch,
+      onComplete,
+      batches: 1,
+      batchSize: 3,
+      timeBetweenBatches: 1,
+    });
+
+    runBatchAndLoop();
+
+    const { batchData } = onBatch.mock.calls[0][0];
+    expect(batchData.criticalPathAccumulator.iterations).toBe(3);
+    expect(batchData.criticalPathAccumulator.meanPathLength()).toBe(0); // no issues, no path
+  });
 });
 
 function makeTeam(name: string) {
@@ -212,5 +231,71 @@ describe('runBatch criticality accumulation (via runMonteCarlo)', () => {
     const totalQueued = issues.reduce((sum, issue) => sum + acc.meanQueuedDays(issue.key), 0);
 
     expect(totalQueued).toBeGreaterThan(0);
+  });
+});
+
+describe('runBatch critical path accumulation (via runMonteCarlo)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('walks the blocking chain and keeps days added additive against the path length', () => {
+    // A is blocked by B, so every iteration's longest chain is B → A regardless of the sampled
+    // durations. Both epics share a one-track team, but the critical path ignores that entirely.
+    const blocker: DerivedIssue = makeDerivedIssue({ key: 'B' });
+    const blocked: DerivedIssue = makeDerivedIssue({
+      key: 'A',
+      issue: { fields: { 'Linked Issues': [{ type: { name: 'Blocks' }, outwardIssue: { key: 'B' } }] } },
+    } as any);
+
+    const onBatch = vi.fn();
+    const { runBatchAndLoop } = runMonteCarlo([blocked, blocker], {
+      onBatch,
+      onComplete: vi.fn(),
+      batches: 1,
+      batchSize: 10,
+      timeBetweenBatches: 1,
+    });
+
+    runBatchAndLoop();
+    vi.advanceTimersByTime(10);
+
+    const { batchData } = onBatch.mock.calls[0][0];
+    const acc = batchData.criticalPathAccumulator;
+
+    expect(acc.iterations).toBe(10);
+    expect(acc.onPathIndex('A')).toBe(1);
+    expect(acc.onPathIndex('B')).toBe(1);
+    expect(acc.topPaths(1)[0].keys).toEqual(['A', 'B']);
+    // The identity the whole report rests on: per-epic days added sum to the mean path length.
+    expect(acc.daysAdded('A') + acc.daysAdded('B')).toBeCloseTo(acc.meanPathLength(), 10);
+  });
+
+  it('ignores team contention, so the critical path is at most the scheduled finish', () => {
+    // Twelve unlinked epics on one one-track team. Nothing blocks anything, so the longest chain is
+    // a single epic, while the schedule has to queue all twelve end to end.
+    const issues = Array.from({ length: 12 }, (_, i) => makeDerivedIssue({ key: `LEAF-${i}` }));
+
+    const onBatch = vi.fn();
+    const { runBatchAndLoop } = runMonteCarlo(issues, {
+      onBatch,
+      onComplete: vi.fn(),
+      batches: 1,
+      batchSize: 10,
+      timeBetweenBatches: 1,
+    });
+
+    runBatchAndLoop();
+    vi.advanceTimersByTime(10);
+
+    const { batchData } = onBatch.mock.calls[0][0];
+    const acc = batchData.criticalPathAccumulator;
+    const meanScheduledFinish = batchData.lastDays.reduce((sum: number, day: number) => sum + day, 0) / 10;
+
+    expect(acc.topPaths(1)[0].keys).toHaveLength(1);
+    expect(acc.meanPathLength()).toBeLessThan(meanScheduledFinish);
   });
 });

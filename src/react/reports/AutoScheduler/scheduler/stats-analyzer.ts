@@ -7,6 +7,7 @@ import type { LinkedIssue } from './link-issues';
 
 import { fitLognormal } from './fit-lognormal';
 import { CriticalityAccumulator } from './criticality-accumulator';
+import { CriticalPathAccumulator } from './critical-path-accumulator';
 
 import {
   insertSortedArrayInPlace,
@@ -46,6 +47,7 @@ export class StatsAnalyzer {
   setUIState: (data: StatsUIData) => void;
   _teardown: () => void;
   criticalityAccumulator = new CriticalityAccumulator();
+  criticalPathAccumulator = new CriticalPathAccumulator();
   constructor({
     issues,
     uncertaintyWeight,
@@ -97,6 +99,7 @@ export class StatsAnalyzer {
     }
     insertSortedArrayInPlace(this.lastDays, batchData.lastDays);
     this.criticalityAccumulator.merge(batchData.criticalityAccumulator);
+    this.criticalPathAccumulator.merge(batchData.criticalPathAccumulator);
 
     this.setUIState(this.dataForUI());
   }
@@ -126,6 +129,8 @@ export class StatsAnalyzer {
         criticalityIndex: this.criticalityAccumulator.criticalityIndex(key),
         meanWorkDays: this.criticalityAccumulator.meanWorkDays(key),
         meanQueuedDays: this.criticalityAccumulator.meanQueuedDays(key),
+        sequencingDaysAdded: this.criticalPathAccumulator.daysAdded(key),
+        sequencingCriticalityIndex: this.criticalPathAccumulator.onPathIndex(key),
       };
     });
 
@@ -154,6 +159,15 @@ export class StatsAnalyzer {
       };
     });
 
+    // `topPaths` is a thunk, not an array: `dataForUI` runs once per batch and the routes card shows
+    // five rows, so sorting the whole path map here would throw away 499 of every 500 results.
+    const criticalPath = {
+      meanLength: this.criticalPathAccumulator.meanPathLength(),
+      iterations: this.criticalPathAccumulator.iterations,
+      distinctPathCount: this.criticalPathAccumulator.pathCount,
+      topPaths: (limit: number) => this.criticalPathAccumulator.topPaths(limit),
+    };
+
     return {
       percentComplete: this.percentComplete,
       uncertaintyWeight: this.uncertaintyWeight,
@@ -161,6 +175,7 @@ export class StatsAnalyzer {
       overallConfidence,
       simulationIssueResults,
       teams,
+      criticalPath,
     };
   }
   teardown() {

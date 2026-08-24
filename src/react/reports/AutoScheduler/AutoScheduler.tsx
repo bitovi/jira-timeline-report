@@ -27,6 +27,7 @@ import { CriticalPath } from './CriticalPath';
 // tree-shakes CriticalPathsReport and build-critical-paths out of the bundle entirely.
 // See spec/024-critical-path/issues-and-concerns.md.
 // import { CriticalPathsReport } from './CriticalPathsReport';
+import { CriticalPathEpicsReport } from './CriticalPathEpicsReport';
 import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
 
@@ -68,6 +69,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   // state for which work items to highlight
   const [workItemsToHighlight, setWorkItemsToHighlight] = useState<Set<string> | null>(null);
+
+  // Collapsed by default purely to save vertical space — the critical path data is computed on
+  // every run regardless, so expanding is instant and costs nothing.
+  const [criticalPathEpicsExpanded, setCriticalPathEpicsExpanded] = useState(false);
 
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
@@ -342,6 +347,14 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
         setWorkItemsToHighlight={setWorkItemsToHighlight}
       />
       */}
+      {/* Epics on the critical path (spec/024-critical-path) */}
+      <CriticalPathEpicsReport
+        uiData={uiData}
+        expanded={criticalPathEpicsExpanded}
+        onExpandedChange={setCriticalPathEpicsExpanded}
+        workItemsToHighlight={workItemsToHighlight}
+        setWorkItemsToHighlight={setWorkItemsToHighlight}
+      />
     </div>
   );
 };
