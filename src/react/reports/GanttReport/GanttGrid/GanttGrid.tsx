@@ -9,6 +9,7 @@ import {
   calculateTodayMargin,
   filterIssuesKeepingUndated,
   parseISODateRangeBoundary,
+  DateRangeEmptyState,
 } from '../../shared/timeline';
 import {
   computeAxisRange,
@@ -95,12 +96,19 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
     }),
     [dateRangeStart, dateRangeEnd],
   );
+  // A range is "active" once either side is populated, even if unparseable — an invalid string
+  // still means "the user set something", exactly as the Scatter Plot treats it.
+  const hasDateRange = dateRangeStart !== '' || dateRangeEnd !== '';
   // Issues without a due date are always kept — the range only judges dated issues (mirrors
   // the Scatter Plot's "N without dates" vs. "N outside date range" distinction).
   const primaryIssues = useMemo(
     () => filterIssuesKeepingUndated(rawPrimaryIssues, dateRangeFilter),
     [rawPrimaryIssues, dateRangeFilter],
   );
+  // The bounded window can exclude every issue — show a friendly empty state instead of a bare
+  // axis with no rows. Gated on `rawPrimaryIssues` rather than the Scatter's `datedIssues`: the
+  // Gantt keeps undated issues inline, so an empty result already implies no undated survivors.
+  const showEmptyRangeState = hasDateRange && rawPrimaryIssues.length > 0 && primaryIssues.length === 0;
 
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const isExpanded = (key: string) => expandedKeys.has(key);
@@ -120,7 +128,10 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const [modalIssue, setModalIssue] = useState<IssueOrRelease | null>(null);
 
   const getChildren = useMemo(() => makeGetChildren(allIssues), [allIssues]);
-  const { axisStart, axisEnd } = useMemo(() => computeAxisRange(primaryIssues), [primaryIssues]);
+  const { axisStart, axisEnd } = useMemo(
+    () => computeAxisRange(primaryIssues, new Date(), dateRangeFilter),
+    [primaryIssues, dateRangeFilter],
+  );
   const qam = useMemo(() => computeQuartersAndMonths(axisStart, axisEnd), [axisStart, axisEnd]);
   const isDense = computeDensity(primaryIssues.length, breakdown);
   const extraColumns = showPercentComplete ? 1 : 0;
@@ -158,53 +169,57 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
 
   return (
     <div className="p-2 mb-10" style={{ overflow: 'hidden' }} data-testid="gantt-grid">
-      <div
-        style={{
-          display: 'grid',
-          width: '100%',
-          gridTemplateColumns,
-          gridTemplateRows: `auto auto repeat(${rows.length}, auto)`,
-        }}
-      >
-        <QuarterAndMonthHeaders quarters={qam.quarters} months={qam.months} columnOffset={gutter} />
-        <TodayLine
-          marginLeftPercent={todayMargin}
-          monthCount={monthCount}
-          rowCount={rows.length}
-          columnOffset={gutter}
-        />
-        <GridLines monthCount={monthCount} rowCount={rows.length} columnOffset={gutter} />
+      {showEmptyRangeState ? (
+        <DateRangeEmptyState />
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            width: '100%',
+            gridTemplateColumns,
+            gridTemplateRows: `auto auto repeat(${rows.length}, auto)`,
+          }}
+        >
+          <QuarterAndMonthHeaders quarters={qam.quarters} months={qam.months} columnOffset={gutter} />
+          <TodayLine
+            marginLeftPercent={todayMargin}
+            monthCount={monthCount}
+            rowCount={rows.length}
+            columnOffset={gutter}
+          />
+          <GridLines monthCount={monthCount} rowCount={rows.length} columnOffset={gutter} />
 
-        {rows.map((row, index) => {
-          const gridRow = index + 3;
-          if (row.type === 'group') {
-            return <GroupRow key={`group-${row.issue.key}`} group={row.issue} gridRow={gridRow} />;
-          }
-          return (
-            <IssueRow
-              key={row.issue.key}
-              issue={row.issue}
-              depth={row.depth}
-              isShowingChildren={row.isShowingChildren}
-              hasChildren={row.issue.reportingHierarchy.childKeys.length > 0}
-              anyExpanded={anyExpanded}
-              onToggle={toggle}
-              showPercentComplete={showPercentComplete}
-              onPercentCompleteClick={setModalIssue}
-              range={range}
-              roundTo={roundTo}
-              isDense={isDense}
-              isBreakdown={breakdown}
-              workTypesWithWork={workTypesWithWork}
-              textSizeClass={density.textSize}
-              expandPaddingClass={density.expandPadding}
-              gridRow={gridRow}
-              timelineGridColumn={timelineGridColumn}
-              striped={index % 2 === 1}
-            />
-          );
-        })}
-      </div>
+          {rows.map((row, index) => {
+            const gridRow = index + 3;
+            if (row.type === 'group') {
+              return <GroupRow key={`group-${row.issue.key}`} group={row.issue} gridRow={gridRow} />;
+            }
+            return (
+              <IssueRow
+                key={row.issue.key}
+                issue={row.issue}
+                depth={row.depth}
+                isShowingChildren={row.isShowingChildren}
+                hasChildren={row.issue.reportingHierarchy.childKeys.length > 0}
+                anyExpanded={anyExpanded}
+                onToggle={toggle}
+                showPercentComplete={showPercentComplete}
+                onPercentCompleteClick={setModalIssue}
+                range={range}
+                roundTo={roundTo}
+                isDense={isDense}
+                isBreakdown={breakdown}
+                workTypesWithWork={workTypesWithWork}
+                textSizeClass={density.textSize}
+                expandPaddingClass={density.expandPadding}
+                gridRow={gridRow}
+                timelineGridColumn={timelineGridColumn}
+                striped={index % 2 === 1}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {modalIssue && (
         <PercentCompleteModal

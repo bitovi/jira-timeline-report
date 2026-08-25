@@ -21,6 +21,7 @@ import {
   TodayLine,
   GridLines,
   StatusLegend,
+  DateRangeEmptyState,
 } from '../shared/timeline';
 import type { GroupByOption, AncestorRef } from '../shared/timeline';
 import { useMeasuredTextWidths } from './hooks/useMeasuredTextWidths';
@@ -259,9 +260,7 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
     // context and paint over body-portaled overlays like the Saved Reports page (z-50).
     <div ref={containerRef} className="p-2 mb-10 isolate" style={{ overflow: 'hidden' }}>
       {showEmptyRangeState ? (
-        <div className="flex items-center justify-center text-center text-neutral-500 text-sm py-16 border border-dashed border-neutral-80 rounded">
-          No issues are due in the selected date range.
-        </div>
+        <DateRangeEmptyState />
       ) : (
         <div
           style={{

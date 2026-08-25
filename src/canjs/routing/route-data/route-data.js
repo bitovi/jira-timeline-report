@@ -1070,9 +1070,10 @@ export class RouteData extends ObservableObject {
       booleanParsing,
     ),
 
-    // Scatter Plot (`due` report) — due-date range filter. Empty string means unbounded on
-    // that side. Namespaced `scatter*` because the range is scatter-only for now (see
-    // spec/004-scatter-improvements/date-range.md).
+    // Due-date range filter, shared by the Scatter Plot (`due`) and Gantt Chart (`start-due`)
+    // reports. Empty string means unbounded on that side. The `scatter*` names are kept for
+    // URL/back-compat from when the filter was scatter-only (see
+    // spec/004-scatter-improvements/date-range.md, spec/028-fix-gantt-date-filters/plan.md).
     scatterDateRangeStart: saveJSONToUrlButAlsoLookAtReport_DataWrapper('scatterDateRangeStart', '', String, {
       parse: (x) => (isValidIsoDateString('' + x) ? '' + x : ''),
       stringify: (x) => '' + x,
