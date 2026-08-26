@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
-import { isWithinWeek, startOfWeekUTC, weekContaining } from './currentWeek';
+import { isWithinWeek, previousWeekContaining, startOfWeekUTC, weekContaining } from './currentWeek';
 
 const at = (iso: string) => Date.parse(iso);
 
 // 2026-08-17 is a Monday; 2026-08-23 the Sunday that closes its week.
 const MONDAY = '2026-08-17T00:00:00.000Z';
 const NEXT_MONDAY = '2026-08-24T00:00:00.000Z';
+const PREVIOUS_MONDAY = '2026-08-10T00:00:00.000Z';
 
 // See spec/027-status-updates § The week.
 describe('startOfWeekUTC', () => {
@@ -47,6 +48,29 @@ describe('weekContaining', () => {
     const week = weekContaining(at(MONDAY));
 
     expect(weekContaining(at('2026-08-23T23:59:59.999Z'))).toEqual(week);
+  });
+});
+
+describe('previousWeekContaining', () => {
+  it('is the Monday before the current week, to the Monday that opens it', () => {
+    expect(previousWeekContaining(at('2026-08-20T13:45:00.000Z'))).toEqual({
+      start: at(PREVIOUS_MONDAY),
+      end: at(MONDAY),
+    });
+  });
+
+  it('gives the same window for every instant in the current week', () => {
+    const week = previousWeekContaining(at(MONDAY));
+
+    expect(previousWeekContaining(at('2026-08-23T23:59:59.999Z'))).toEqual(week);
+  });
+
+  it('crosses a month boundary', () => {
+    // A time in the week starting Monday 2026-08-31 has a previous week starting Monday 2026-08-24.
+    expect(previousWeekContaining(at('2026-09-02T09:00:00.000Z'))).toEqual({
+      start: at('2026-08-24T00:00:00.000Z'),
+      end: at('2026-08-31T00:00:00.000Z'),
+    });
   });
 });
 

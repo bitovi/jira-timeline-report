@@ -182,6 +182,11 @@ isn't, which is what makes this tight.
 
 If a real work item does take 100+ comments in a week, § Open questions has the escalation.
 
+`spec/029-status-updates-refactor` moved the matched window to the previous week rather than the
+current one; the same page of 100 now has to cover both the (ignored) current week's comments and the
+previous week's, so the bound is looser in practice than a single week's worth of activity, though the
+membership guarantee itself is unchanged.
+
 ---
 
 ## The hook

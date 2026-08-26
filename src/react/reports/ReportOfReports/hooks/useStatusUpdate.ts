@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { useJira, jiraKeys } from '../../../services/jira';
-import { weekContaining } from '../model/currentWeek';
+import { previousWeekContaining } from '../model/currentWeek';
 import { pickStatusUpdate } from '../model/statusUpdate';
 import { useResolvedIssueKey, type CommentReportState } from './useCommentReport';
 
 /**
- * This week's status update on the one work item a JQL matches, if anyone posted one.
+ * Last week's status update on the one work item a JQL matches, if anyone posted one.
  *
  * Step 1 is `useResolvedIssueKey`, shared verbatim with `useLatestComment`. Step 2 differs in both
  * halves: it asks for a *page* of comments rather than one, and the answer is chosen by a rule rather
@@ -40,9 +40,9 @@ export const useStatusUpdate = (jql: string): CommentReportState => {
     return { status: 'loading' };
   }
 
-  const match = pickStatusUpdate(comments.data.comments ?? [], weekContaining(Date.now()));
+  const match = pickStatusUpdate(comments.data.comments ?? [], previousWeekContaining(Date.now()));
 
-  // One `empty` for both "no comments this week" and "comments, but none of them an update" — the
+  // One `empty` for both "no comments last week" and "comments, but none of them an update" — the
   // reader is told the same true thing either way, and the view has one note to render.
   if (!match) {
     return { status: 'empty' };

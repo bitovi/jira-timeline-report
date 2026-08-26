@@ -95,6 +95,14 @@ export function fetchLatestComment(config: Config) {
  * there is no `-updated`. That would have mattered had membership been decided by the edit date; it
  * isn't, which is what makes this bound tight.)
  * See spec/027-status-updates § The scan limit.
+ *
+ * CAVEAT: this is not a real date-range query — Jira's comment endpoint has no such filter. It's a flat
+ * page filtered by week client-side in `pickStatusUpdate`/`isWithinWeek`, so the bound above is a sized
+ * guess, not a guarantee. `spec/029-status-updates-refactor` moved the matched window back one week,
+ * which already widened the guess (two weeks of activity now share this one page instead of one); a
+ * work item with 100+ comments across the covered weeks can silently lose a real match to the empty
+ * state. Gets worse if a configurable multi-week span ever ships (see that spec's Future work) — revisit
+ * by scaling this constant with the span or replacing the flat fetch with real pagination.
  */
 export const COMMENT_SCAN_SIZE = 100;
 

@@ -552,13 +552,13 @@ const LatestCommentView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ no
 };
 
 /**
- * This week's status update on a work item, or the fact that nobody has posted one.
+ * Last week's status update on a work item, or the fact that nobody has posted one.
  *
  * The same node and the same shell as above; only the rule that picks the comment differs. Saying
- * _"No status update has been posted yet."_ is the thing Latest Comment structurally cannot say — there,
+ * _"No status update was posted last week."_ is the thing Latest Comment structurally cannot say — there,
  * a three-week-old comment renders identically to one posted this morning, and an unrelated comment
  * posted after the real update silently displaces it.
- * See spec/027-status-updates § Context.
+ * See spec/027-status-updates § Context, spec/029-status-updates-refactor.
  */
 const StatusUpdateView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
   const { jql, target } = commentTargetOf(node);
@@ -573,7 +573,7 @@ const StatusUpdateView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ nod
       target={target}
       fallbackLabel="status update"
       testId="status-update"
-      emptyNote="No status update has been posted yet."
+      emptyNote="No status update was posted last week."
     />
   );
 };

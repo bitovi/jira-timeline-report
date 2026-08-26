@@ -1347,14 +1347,17 @@ describe('<ReportOfReports>', () => {
       ({ type: 'inline-value', params: { expression: `(issue = ${issueKey}).latestComment` } }) as StoredNode;
 
     /**
-     * Fixture times built off the current week rather than a mocked clock: the Monday that opens this
-     * week is always in it, and a millisecond before that Monday never is. Which spares this suite —
-     * whose typeahead debounces real time — from fake timers. The boundary itself is pinned with
-     * `vi.setSystemTime` in `useStatusUpdate.test.tsx`.
+     * Fixture times built off the previous week rather than a mocked clock: the Monday that opens the
+     * week before this one is always in it, and a millisecond before that Monday never is. Which spares
+     * this suite — whose typeahead debounces real time — from fake timers. The boundary itself is pinned
+     * with `vi.setSystemTime` in `useStatusUpdate.test.tsx`.
      */
-    const weekStart = () => startOfWeekUTC(Date.now());
-    const inWeek = (offsetMs = 0) => new Date(weekStart() + offsetMs).toISOString();
-    const beforeWeek = () => new Date(weekStart() - 1).toISOString();
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const previousWeekStart = () => startOfWeekUTC(Date.now()) - WEEK_MS;
+    const inWeek = (offsetMs = 0) => new Date(previousWeekStart() + offsetMs).toISOString();
+    const beforeWeek = () => new Date(previousWeekStart() - 1).toISOString();
+    /** The current week, now ignored — see the flip test below. */
+    const inCurrentWeek = (offsetMs = 0) => new Date(previousWeekStart() + WEEK_MS + offsetMs).toISOString();
 
     const commentAt = (text: string, created: string) => ({
       body: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] },
@@ -1365,7 +1368,7 @@ describe('<ReportOfReports>', () => {
 
     const body = () => screen.findByTestId('status-update');
 
-    it('renders this week update, then who updated it and when', async () => {
+    it("renders last week's update, then who updated it and when", async () => {
       searchResult = [{ key: 'ABC-1', fields: {} }];
       recentCommentsResult = { comments: [commentAt('Status Update: cert rotation lands Thursday.', inWeek(60_000))] };
       renderReport({ savedSections: [storedUpdate('ABC-1')] });
@@ -1423,20 +1426,31 @@ describe('<ReportOfReports>', () => {
       expect(await screen.findByTestId('latest-comment')).toHaveTextContent('can you rebase this?');
     });
 
-    // The thing Latest Comment structurally cannot say. One note for both nothings — no comments this
+    // The thing Latest Comment structurally cannot say. One note for both nothings — no comments last
     // week, and comments but no update — because the reader is told the same true thing either way.
     it('says nobody has posted one yet, rather than showing a stale update', async () => {
       searchResult = [{ key: 'ABC-1', fields: {} }];
       recentCommentsResult = {
-        comments: [commentAt('Status Update: last week.', beforeWeek()), commentAt('merged', inWeek(60_000))],
+        comments: [commentAt('Status Update: two weeks ago.', beforeWeek()), commentAt('merged', inWeek(60_000))],
       };
       renderReport({ savedSections: [storedUpdate('ABC-1'), stored('a')] });
 
-      expect(await screen.findByText('No status update has been posted yet.')).toBeInTheDocument();
+      expect(await screen.findByText('No status update was posted last week.')).toBeInTheDocument();
       expect(screen.queryByText('No updates found.')).not.toBeInTheDocument();
       expect(screen.queryByTestId('status-update')).not.toBeInTheDocument();
       // And the document around it keeps rendering.
       expect(cardNames()).toEqual(['Alpha']);
+    });
+
+    // The flip spec/029-status-updates-refactor made: a comment posted this week is not yet the match —
+    // only last week's is. Mirrors the created-vs-updated flip commit 1568d1b1 made.
+    it('ignores a status update posted this week, before last week is checked', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: posted this morning.', inCurrentWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('ABC-1')] });
+
+      expect(await screen.findByText('No status update was posted last week.')).toBeInTheDocument();
+      expect(screen.queryByTestId('status-update')).not.toBeInTheDocument();
     });
 
     it('is added from the Add Report modal, into the section it was opened from', async () => {

@@ -18,12 +18,13 @@ const adf = (text: string) => ({
   content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
 });
 
-// Thursday of the week the clock is pinned to — Monday 2026-08-17 to Monday 2026-08-24, UTC.
-const THIS_WEEK = '2026-08-20T14:22:00.000+0000';
-const LAST_WEEK = '2026-08-13T14:22:00.000+0000';
+// The clock is pinned to Thursday of the current week — Monday 2026-08-17 to Monday 2026-08-24, UTC.
+// The hook matches the week before that: Monday 2026-08-10 to Monday 2026-08-17.
+const CURRENT_WEEK = '2026-08-20T14:22:00.000+0000';
+const PREVIOUS_WEEK = '2026-08-13T14:22:00.000+0000';
 
 const comment = (text: string, times: { created?: string; updated?: string } = {}) => {
-  const created = times.created ?? THIS_WEEK;
+  const created = times.created ?? PREVIOUS_WEEK;
 
   return { body: adf(text), author: { displayName: 'Dana Ruiz' }, created, updated: times.updated ?? created };
 };
@@ -103,8 +104,8 @@ describe('useStatusUpdate', () => {
   beforeEach(() => {
     searches = [];
     commentKeys = [];
-    // The one place a clock is read — `weekContaining(Date.now())`. `shouldAdvanceTime` keeps React
-    // Query's own timers and `waitFor` running in real time while the date is pinned.
+    // The one place a clock is read — `previousWeekContaining(Date.now())`. `shouldAdvanceTime` keeps
+    // React Query's own timers and `waitFor` running in real time while the date is pinned.
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-08-20T12:00:00.000Z'));
   });
@@ -113,14 +114,14 @@ describe('useStatusUpdate', () => {
     vi.useRealTimers();
   });
 
-  it("resolves this week's status update through the key the search found", async () => {
+  it("resolves last week's status update through the key the search found", async () => {
     renderHook('issue = ABC-1', makeJira({}));
 
     const settledState = await settled();
 
     expect(settledState).toHaveAttribute('data-status', 'ok');
     expect(settledState).toHaveTextContent('Dana Ruiz');
-    expect(settledState).toHaveTextContent(THIS_WEEK);
+    expect(settledState).toHaveTextContent(PREVIOUS_WEEK);
     expect(settledState).toHaveTextContent('Status Update: shipped the auth refactor');
   });
 
@@ -146,8 +147,8 @@ describe('useStatusUpdate', () => {
     const comments = {
       // `-created` order, as Jira returns it.
       comments: [
-        comment('can you rebase this?', { created: '2026-08-21T09:00:00.000+0000' }),
-        comment('Status Update: still on the cert', { created: '2026-08-19T09:00:00.000+0000' }),
+        comment('can you rebase this?', { created: '2026-08-14T09:00:00.000+0000' }),
+        comment('Status Update: still on the cert', { created: '2026-08-12T09:00:00.000+0000' }),
       ],
     };
 
@@ -162,10 +163,10 @@ describe('useStatusUpdate', () => {
   it('prefers the update with the newer updated, not the newer created', async () => {
     const comments = {
       comments: [
-        comment('Status Update: first draft', { created: '2026-08-20T09:00:00.000+0000' }),
+        comment('Status Update: first draft', { created: '2026-08-13T09:00:00.000+0000' }),
         comment('Status Update: corrected', {
-          created: '2026-08-18T09:00:00.000+0000',
-          updated: '2026-08-21T09:00:00.000+0000',
+          created: '2026-08-11T09:00:00.000+0000',
+          updated: '2026-08-14T09:00:00.000+0000',
         }),
       ],
     };
@@ -175,11 +176,13 @@ describe('useStatusUpdate', () => {
     expect(await settled()).toHaveTextContent('Status Update: corrected');
   });
 
-  // Membership is `created`: editing an old update doesn't move it into this week. `updated` only
+  // Membership is `created`: editing an old update doesn't move it into last week. `updated` only
   // chooses between the updates the week already has.
-  it('ignores an old comment edited into this week', async () => {
+  it('ignores an old comment edited into last week', async () => {
     const comments = {
-      comments: [comment('Status Update: revised', { created: '2026-06-01T09:00:00.000+0000', updated: THIS_WEEK })],
+      comments: [
+        comment('Status Update: revised', { created: '2026-06-01T09:00:00.000+0000', updated: PREVIOUS_WEEK }),
+      ],
     };
 
     renderHook('issue = ABC-1', makeJira({ comments }));
@@ -188,12 +191,12 @@ describe('useStatusUpdate', () => {
   });
 
   // The mirror: posted in the week, corrected after it — still the week's update.
-  it('keeps an update posted this week and edited later', async () => {
+  it('keeps an update posted last week and edited later', async () => {
     const comments = {
       comments: [
         comment('Status Update: corrected', {
-          created: '2026-08-19T09:00:00.000+0000',
-          updated: '2026-08-27T09:00:00.000+0000',
+          created: '2026-08-12T09:00:00.000+0000',
+          updated: '2026-08-20T09:00:00.000+0000',
         }),
       ],
     };
@@ -204,15 +207,15 @@ describe('useStatusUpdate', () => {
   });
 
   // One `empty` for both nothings: the reader is told the same true thing either way.
-  it('is empty when the only matching update is from last week', async () => {
-    const comments = { comments: [comment('Status Update: last week', { created: LAST_WEEK })] };
+  it('is empty when the only matching update is from the current week', async () => {
+    const comments = { comments: [comment('Status Update: this week', { created: CURRENT_WEEK })] };
 
     renderHook('issue = ABC-1', makeJira({ comments }));
 
     expect(await settled()).toHaveAttribute('data-status', 'empty');
   });
 
-  it('is empty when this week has comments but none of them is an update', async () => {
+  it('is empty when last week has comments but none of them is an update', async () => {
     const comments = { comments: [comment('looks good'), comment('merged')] };
 
     renderHook('issue = ABC-1', makeJira({ comments }));
@@ -273,7 +276,9 @@ describe('useStatusUpdate', () => {
   });
 
   it('names Unknown rather than leaving the author line blank', async () => {
-    const comments = { comments: [{ body: adf('Status Update: fine'), created: THIS_WEEK, updated: THIS_WEEK }] };
+    const comments = {
+      comments: [{ body: adf('Status Update: fine'), created: PREVIOUS_WEEK, updated: PREVIOUS_WEEK }],
+    };
 
     renderHook('issue = ABC-1', makeJira({ comments }));
 

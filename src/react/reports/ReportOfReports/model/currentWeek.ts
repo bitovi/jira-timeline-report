@@ -1,14 +1,15 @@
 /**
- * The week a Status Update has to fall in.
+ * The weeks a Status Update has to fall in.
  *
- * Monday 00:00 UTC to the following Monday 00:00 UTC, half-open — `start` is in the week, `end` is the
- * next week's Monday. UTC rather than local so every viewer of a shared report agrees on which week a
- * comment belongs to; the cost is that `formatCommentTime` renders local, so a late-Sunday comment in a
- * western timezone shows a Sunday date and counts as the following week.
+ * Both `weekContaining` and `previousWeekContaining` return Monday 00:00 UTC to the following Monday
+ * 00:00 UTC, half-open — `start` is in the week, `end` is the next week's Monday. UTC rather than local
+ * so every viewer of a shared report agrees on which week a comment belongs to; the cost is that
+ * `formatCommentTime` renders local, so a late-Sunday comment in a western timezone shows a Sunday date
+ * and counts as the following week.
  * See spec/027-status-updates § Known trade-offs.
  *
- * Pure and clock-free: `weekContaining(Date.now())` is called by the hook, so every test here drives
- * the boundary with an explicit number.
+ * Pure and clock-free: `previousWeekContaining(Date.now())` is called by the hook, so every test here
+ * drives the boundary with an explicit number.
  */
 
 /** Half-open: `start` is in the week, `end` is the next week's Monday. */
@@ -39,6 +40,13 @@ export const weekContaining = (time: number): WeekWindow => {
   const start = startOfWeekUTC(time);
 
   return { start, end: start + WEEK_MS };
+};
+
+/** The week immediately before the one containing `time`. See spec/029-status-updates-refactor. */
+export const previousWeekContaining = (time: number): WeekWindow => {
+  const end = startOfWeekUTC(time);
+
+  return { start: end - WEEK_MS, end };
 };
 
 /**
