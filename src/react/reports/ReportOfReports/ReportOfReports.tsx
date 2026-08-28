@@ -28,12 +28,11 @@ import { ChildReport } from './components/ChildReport';
 import { ChildQueryGroupsProvider } from './components/ChildQueryGroups';
 import { CollapseToggle } from './components/CollapseToggle';
 import { DocumentEditingProvider, useDocumentEditing, useNodeRow } from './components/DocumentEditing';
-import { IndentLevel } from './components/IndentLevel';
 import { InlineValue } from './components/InlineValue';
 import { CommentBody, CommentRow } from './components/CommentReport';
 import { MissingReportNote } from './components/MissingReportNote';
 import { NodeControls } from './components/NodeControls';
-import { NodeRow } from './components/NodeRow';
+import { NodeRow, reportTitleClassName, reportTitleColorClassName } from './components/NodeRow';
 import { SectionTitle, UNTITLED_SECTION } from './components/SectionTitle';
 import type { ChildReportProps } from './components/ChildReport';
 
@@ -101,9 +100,11 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
        See spec/016-report-of-reports/005-optimize/001-request-dedupe. */
     <ChildQueryGroupsProvider sections={sections} reports={reports}>
       {/* `ror-document` is a styling hook, not a layout class: fullscreen.css uses it to keep the
-          document off the screen edges once `.fullish-vh`'s gutter is reclaimed. */}
+          document off the screen edges once `.fullish-vh`'s gutter is reclaimed.
+          `gap-5` (20px) is the sibling spacing for the document's own top-level nodes — cards and any
+          bare top-level report alike. See spec/029-report-of-reports-redesign §1. */}
       <div
-        className="ror-document flex flex-col py-4"
+        className="ror-document flex flex-col gap-5 py-4"
         onMouseOver={() => hoverNode(null)}
         onMouseLeave={() => hoverNode(null)}
       >
@@ -183,58 +184,114 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
 };
 
 /**
+ * Depth-conditional accent for a section's own wrapper — the redesign's "one accent per level type"
+ * rule (spec/029-report-of-reports-redesign §§1-2, "Rules to hold to" #1-3): a top-level section is a
+ * card (elevation, no border), its own direct children are a rail that starts at their title and
+ * breaks between siblings, and everything past that is unadorned and just spaced off its predecessor.
+ * No `rounded` on the rail itself — a radius on a `border-l` bends the corners of what has to read as
+ * one straight line; depth 3+ keeps a small radius since it carries no border to clash with, so the
+ * add-target tint there still doesn't square off.
+ *
+ * The rail (depth 2) is an inset box-shadow rather than a real `border-left` — a real border shaves
+ * layout space off the nested content it wraps, walking every deeper level's content a couple of
+ * pixels further in. `shadow-[inset_2px_0_0_...]` reads identically but takes no layout space, and its
+ * color is themeable (Theme panel → Report of Reports → "Border", `--section-border-color`).
+ *
+ * The `pl-4` here is this level's own indent contribution, per `levelIndentClassName` below — a
+ * section is not a special case, it just happens to be the element that also carries the rail at depth
+ * 2. See §6, "indent and size are driven by level, not by node kind".
+ */
+const sectionAccentClassName = (depth: number): string => {
+  if (depth <= 1) {
+    return 'rounded-2xl overflow-hidden shadow-[0_1px_2px_-1px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.10)]';
+  }
+
+  if (depth === 2) {
+    return 'pl-4 shadow-[inset_2px_0_0_var(--section-border-color)]';
+  }
+
+  return 'rounded pl-4 mt-[10px]';
+};
+
+/**
+ * Vertical rhythm below the rail. A depth-1 node is spaced by the document root's own `gap-5`, and a
+ * depth-2 node by its card body's `gap-[34px]` — neither wraps its own margin here. Everything past
+ * that has no shared `gap` container left to rely on, so each node supplies its own `mt-[10px]`
+ * instead. See spec/029-report-of-reports-redesign §2, rule 6.
+ */
+const siblingSpacing = (depth: number): string => (depth >= 3 ? 'mt-[10px]' : '');
+
+/**
+ * Every wrapper past level 1 adds a flat 16px of its own indent — identical whether the node underneath
+ * it is a section or a report, since indent is a function of level, not of node kind (§6). Nesting
+ * stacks these for free: an L3 report sitting inside an L2 section's own `pl-4` reads at 32px total,
+ * the same a sibling L3 section reaches from that parent — nothing here computes an absolute offset
+ * per level, each wrapper just contributes its own 16px.
+ */
+const levelIndentClassName = (depth: number): string => (depth >= 2 ? 'pl-4' : '');
+
+/**
  * One section: a row carrying its caret, editable title, and controls, then its children and its own
- * add row indented one level beneath it.
+ * add row beneath it.
  *
  * No `print-avoid-break` here, deliberately — a section can easily be taller than a page, and
  * `break-inside: avoid` on something page-sized is worse than nothing. It stays on the reports.
  *
- * While an "Add Report" / "Add Section" button somewhere in the document is pointed at, the section
- * that button adds into is tinted — the whole of it, so what's about to gain a node is what lights
- * up. Indent alone stops answering "where does this land?" once sections nest, and the two buttons
- * of a deep section sit a few pixels from the ones belonging to its parent. It's a background rather
- * than a border for the reason nothing else here has one: the only frames on the page belong to the
- * embedded reports (.../004-redesign §1). Nothing tints for the document root's own pair — the whole
- * page is not a highlight, and "no section lit" is exactly what adding at the top level means.
- *
  * `color-bg-section` carries the themeable section background (Theme panel → Report of Reports),
  * defaulting to white so sections still read as unframed. Every section reads the same variable, so
- * a nested one repaints its parent's color rather than showing depth — depth is the indent rails'
- * job. The add-target tint above still wins, since Tailwind's utilities layer comes after colors.css.
- * See spec/016-report-of-reports/008-theme.
+ * a nested one repaints its parent's color rather than showing depth — depth is the card/rail/flush
+ * accent's job. See spec/016-report-of-reports/008-theme.
+ *
+ * **Hovering anywhere inside a section tints the whole of it** — a themeable color (Theme panel →
+ * Report of Reports → "Section Hover", `--section-hover-color`). `isContainerHovered(path)` is already
+ * the *innermost* container the pointer is in (`DocumentEditing`'s own doc comment), so only one
+ * section tints at a time however deeply the document nests — no extra state needed here. Pointing at
+ * an "Add Report" / "Add Section" button is just pointing inside the section it belongs to, so it
+ * tints the same way; nothing button-specific is needed. See spec/029-report-of-reports-redesign,
+ * "hover reveals the section you're in".
  */
 const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, path, reports, childReportProps }) => {
   const { sections, setSections } = useReportLayout();
-  const { editingNodeId, beginEditing, endEditing, isCollapsed, toggleCollapsed, isAddTarget } = useDocumentEditing();
+  const { editingNodeId, beginEditing, endEditing, isCollapsed, toggleCollapsed, isContainerHovered } =
+    useDocumentEditing();
   const { hoverProps, rowProps } = useNodeRow(node, path);
 
   const label = node.params.title || 'section';
   const collapsed = isCollapsed(node.id);
   const count = node.children.length;
-  const isTarget = isAddTarget(path);
+  const isSectionHovered = isContainerHovered(path);
+  const depth = path.length;
+  const isTopLevel = depth === 1;
+
+  // A top-level card's body carries its own padding and the 34px gap between its direct children
+  // (§2: the rail belongs to each child, not to their shared parent, so this container draws none of
+  // its own). Every deeper level has no such container — each child spaces itself off the one before
+  // it, via `sectionAccentClassName`/the report views' own `mt-[10px]`.
+  const childrenClassName = isTopLevel ? 'flex flex-col gap-[34px] pr-6 pb-[22px] pl-8' : 'flex flex-col';
 
   return (
     <section
-      data-add-target={isTarget}
-      className={`color-bg-section flex flex-col rounded transition-colors duration-150 ${
-        isTarget ? 'bg-blue-101' : ''
+      className={`color-bg-section flex flex-col transition-colors duration-150 ${sectionAccentClassName(depth)} ${
+        isSectionHovered ? 'bg-[var(--section-hover-color)]' : ''
       }`}
       {...hoverProps}
     >
       <NodeRow
         {...rowProps}
+        isTopLevel={isTopLevel}
         caret={
           <CollapseToggle
             isCollapsed={collapsed}
             label={node.params.title || UNTITLED_SECTION}
             onToggle={() => toggleCollapsed(node.id)}
+            isRowActive={rowProps.isHovered}
           />
         }
-        controls={<NodeControls path={path} label={label} nodeId={node.id} hasChildren={count > 0} />}
+        controls={<NodeControls path={path} label={label} hasChildren={count > 0} />}
       >
         <SectionTitle
           title={node.params.title}
-          depth={path.length}
+          depth={depth}
           isEditing={editingNodeId === node.id}
           onEdit={() => beginEditing(node.id)}
           onConfirm={(title) => {
@@ -243,24 +300,31 @@ const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, pa
             setSections(setSectionTitleAt(sections, path, title));
           }}
           onCancel={endEditing}
+          isRowHovered={rowProps.isHovered}
         />
       </NodeRow>
       {/* Collapsed content stays mounted and is hidden in CSS: unmounting would remount every
           ChildReport inside, and a remounted child refetches from Jira. It also lets print unhide it
           (src/css/print.css), so collapsing to tidy up doesn't silently drop content from the PDF. */}
       <div className={collapsed ? 'collapsed-content' : ''} hidden={collapsed}>
-        <IndentLevel>
-          {node.children.map((child, index) => (
-            <LayoutNodeView
-              key={child.id}
-              node={child}
-              path={[...path, index]}
-              reports={reports}
-              childReportProps={childReportProps}
-            />
-          ))}
+        <div className={childrenClassName}>
+          {count === 0 ? (
+            // Always visible — unlike `AddContentRow`'s own "Nothing here yet.", which is edit-only
+            // chrome hidden in fullscreen and print. See spec/029-report-of-reports-redesign §5.
+            <p className="mt-2 text-[12px] text-[#4C5B5C]">No reports in this section.</p>
+          ) : (
+            node.children.map((child, index) => (
+              <LayoutNodeView
+                key={child.id}
+                node={child}
+                path={[...path, index]}
+                reports={reports}
+                childReportProps={childReportProps}
+              />
+            ))
+          )}
           <AddContentRow path={path} label={label} isEmpty={count === 0} />
-        </IndentLevel>
+        </div>
       </div>
     </section>
   );
@@ -304,6 +368,7 @@ const SavedReportView: FC<LayoutNodeViewProps & { node: SavedReportNode }> = ({
   // reports have to be tellable apart.
   const label = report ? report.name : `missing report ${reportId}`;
   const collapsed = isCollapsed(node.id);
+  const depth = path.length;
 
   return (
     <div
@@ -311,18 +376,26 @@ const SavedReportView: FC<LayoutNodeViewProps & { node: SavedReportNode }> = ({
       {...(report
         ? { 'data-testid': 'report-card', 'data-report-name': report.name }
         : { 'data-testid': 'missing-report', 'data-report-id': reportId })}
-      className="flex flex-col print-avoid-break"
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
     >
       <NodeRow
         {...rowProps}
+        isTopLevel={depth === 1}
         caret={
           report && (
-            <CollapseToggle isCollapsed={collapsed} label={report.name} onToggle={() => toggleCollapsed(node.id)} />
+            <CollapseToggle
+              isCollapsed={collapsed}
+              label={report.name}
+              onToggle={() => toggleCollapsed(node.id)}
+              isRowActive={rowProps.isHovered}
+            />
           )
         }
-        controls={<NodeControls path={path} label={label} nodeId={node.id} />}
+        controls={<NodeControls path={path} label={label} />}
       >
-        <h3 className={`truncate text-base font-semibold ${report ? '' : 'text-slate-500'}`}>
+        <h3
+          className={`${reportTitleClassName(depth)} ${report ? reportTitleColorClassName(rowProps.isHovered) : 'text-slate-500'}`}
+        >
           {report ? report.name : 'Report not found'}
         </h3>
       </NodeRow>
@@ -392,15 +465,29 @@ const InlineReportView: FC<{
 
   const label = inlineReportLabel(node.params.query);
   const collapsed = isCollapsed(node.id);
+  const depth = path.length;
 
   return (
-    <div {...hoverProps} data-testid="report-card" data-report-name={label} className="flex flex-col print-avoid-break">
+    <div
+      {...hoverProps}
+      data-testid="report-card"
+      data-report-name={label}
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+    >
       <NodeRow
         {...rowProps}
-        caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
-        controls={<NodeControls path={path} label={label} nodeId={node.id} />}
+        isTopLevel={depth === 1}
+        caret={
+          <CollapseToggle
+            isCollapsed={collapsed}
+            label={label}
+            onToggle={() => toggleCollapsed(node.id)}
+            isRowActive={rowProps.isHovered}
+          />
+        }
+        controls={<NodeControls path={path} label={label} />}
       >
-        <h3 className="truncate text-base font-semibold">{label}</h3>
+        <h3 className={`${reportTitleClassName(depth)} ${reportTitleColorClassName(rowProps.isHovered)}`}>{label}</h3>
       </NodeRow>
       <div className={`pb-4 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
         <ChildReport inlineQuery={node.params.query} onParamChange={onParamChange} {...childReportProps} />
@@ -443,11 +530,17 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
   const state = useInlineExpression(node.params.expression);
 
   const label = inlineValueLabel(node.params.expression, state);
+  const depth = path.length;
 
   return (
-    <div className="flex flex-col" {...hoverProps}>
-      <NodeRow {...rowProps} controls={<NodeControls path={path} label={label} nodeId={node.id} />}>
-        <InlineValue expression={node.params.expression} state={state} />
+    <div className={`flex flex-col ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`} {...hoverProps}>
+      <NodeRow {...rowProps} isTopLevel={depth === 1} controls={<NodeControls path={path} label={label} />}>
+        <InlineValue
+          expression={node.params.expression}
+          state={state}
+          depth={depth}
+          isRowHovered={rowProps.isHovered}
+        />
       </NodeRow>
     </div>
   );
@@ -511,17 +604,32 @@ const CommentReportView: FC<CommentReportViewProps> = ({
 
   const label = target || fallbackLabel;
   const collapsed = isCollapsed(node.id);
+  const depth = path.length;
 
   return (
-    <div {...hoverProps} data-testid={`${testId}-node`} className="flex flex-col print-avoid-break">
+    <div
+      {...hoverProps}
+      data-testid={`${testId}-node`}
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+    >
       <NodeRow
         {...rowProps}
-        caret={<CollapseToggle isCollapsed={collapsed} label={label} onToggle={() => toggleCollapsed(node.id)} />}
-        controls={<NodeControls path={path} label={label} nodeId={node.id} />}
+        isTopLevel={depth === 1}
+        caret={
+          <CollapseToggle
+            isCollapsed={collapsed}
+            label={label}
+            onToggle={() => toggleCollapsed(node.id)}
+            isRowActive={rowProps.isHovered}
+          />
+        }
+        controls={<NodeControls path={path} label={label} />}
       >
-        <CommentRow target={target} />
+        <CommentRow target={target} depth={depth} isRowHovered={rowProps.isHovered} />
       </NodeRow>
-      <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+      {/* `mt-2` (8px), flush under the row on the same indent — not a `pb-*` on the row above, which
+          used to align the body to the page rather than to its own title. See §5. */}
+      <div className={`mt-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
         <CommentBody target={target} state={state} emptyNote={emptyNote} testId={testId} />
       </div>
     </div>
@@ -586,11 +694,17 @@ const UnknownView: FC<{ node: Extract<LayoutNode, { type: 'unknown' }>; path: La
   const { hoverProps, rowProps } = useNodeRow(node, path);
 
   const originalType = node.params.originalType || 'unknown';
+  const depth = path.length;
 
   return (
-    <div {...hoverProps} data-testid="report-card" data-report-name="" className="flex flex-col print-avoid-break">
-      <NodeRow {...rowProps} controls={<NodeControls path={path} label={originalType} nodeId={node.id} />}>
-        <h3 className="truncate text-base font-semibold text-slate-500">{`Unsupported content (${originalType})`}</h3>
+    <div
+      {...hoverProps}
+      data-testid="report-card"
+      data-report-name=""
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+    >
+      <NodeRow {...rowProps} isTopLevel={depth === 1} controls={<NodeControls path={path} label={originalType} />}>
+        <h3 className={`${reportTitleClassName(depth)} text-slate-500`}>{`Unsupported content (${originalType})`}</h3>
       </NodeRow>
     </div>
   );

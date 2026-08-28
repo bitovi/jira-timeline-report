@@ -94,12 +94,13 @@ const Node = ({
             isCollapsed={collapsed}
             label={target || fallbackLabel}
             onToggle={() => setCollapsed(!collapsed)}
+            isRowActive
           />
         }
       >
         <CommentRow target={target} />
       </NodeRow>
-      <div className={`pb-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+      <div className={`mt-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
         <CommentBody target={target} state={state} emptyNote={emptyNote} testId={testId} />
       </div>
     </div>

@@ -506,44 +506,29 @@ describe('<ReportOfReports>', () => {
       expect(controlsOn(row)).toBe('true');
     });
 
-    // Clicking pins the row: the touch and keyboard path to controls that otherwise need a pointer.
-    it('keeps a clicked row’s controls up after the pointer leaves', async () => {
-      renderReport({ savedSections: threeReports });
-
-      const row = await rowFor('Move Alpha up');
-
-      await userEvent.click(row);
-      await userEvent.unhover(row);
-
-      expect(controlsOn(row)).toBe('true');
-    });
-
-    // The pin is keyed by node id, not by path, so it follows the node it was put on.
-    it('keeps a row pinned through the move it was clicked to make', async () => {
+    // The row itself is the click target for collapse now — not just the caret. See
+    // spec/029-report-of-reports-redesign § chevron visibility / row-click-to-collapse.
+    it('toggles collapse when the row itself is clicked, not just the caret', async () => {
       renderReport({ savedSections: threeReports });
 
       await userEvent.click(await rowFor('Move Alpha up'));
-      await clickControl('Move Alpha up');
 
-      expect(cardNames()).toEqual(['Alpha', 'Gamma', 'Beta']);
+      expect(await screen.findByRole('button', { name: 'Expand Alpha' })).toBeInTheDocument();
 
-      const moved = await rowFor('Move Alpha up');
+      await userEvent.click(await rowFor('Move Alpha up'));
 
-      await userEvent.unhover(moved);
-      expect(controlsOn(moved)).toBe('true');
+      expect(await screen.findByRole('button', { name: 'Collapse Alpha' })).toBeInTheDocument();
     });
 
-    it('drops the pin on Escape', async () => {
+    // `NodeRow` stops a click on a control from bubbling to the row — without that, "Move Up" (which
+    // has always bubbled, so a click on it also does whatever the row's own click does) would collapse
+    // the row it just moved, as a side effect of reordering rather than of anyone asking to collapse it.
+    it('does not toggle collapse as a side effect of clicking a control button', async () => {
       renderReport({ savedSections: threeReports });
 
-      const row = await rowFor('Move Alpha up');
+      await clickControl('Move Alpha up');
 
-      await userEvent.click(row);
-      await userEvent.unhover(row);
-
-      await userEvent.keyboard('{Escape}');
-
-      expect(controlsOn(row)).toBe('false');
+      expect(screen.getByRole('button', { name: 'Collapse Alpha' })).toBeInTheDocument();
     });
 
     // Exactly one row at a time, however deep the document goes. `stopPropagation` is what does it:
@@ -696,12 +681,24 @@ describe('<ReportOfReports>', () => {
       { type: 'section', params: { title }, children: [stored('a')] },
     ];
 
-    it('opens the title field when the title is clicked, focused and ready to type', async () => {
+    // Editing starts from the pencil beside the title, not from clicking the title text itself — the
+    // row now toggles its own collapse on click, and the two can't both mean "click the title".
+    it('opens the title field when the edit pencil is clicked, focused and ready to type', async () => {
       renderReport({ savedSections: withSection('Q3') });
 
       await userEvent.click(await sectionTitle('Q3'));
 
       expect(await screen.findByRole('textbox')).toHaveFocus();
+    });
+
+    // The pencil's click must not also bubble to the row and toggle its collapse.
+    it('does not toggle collapse when the edit pencil is clicked', async () => {
+      renderReport({ savedSections: withSection('Q3') });
+
+      await userEvent.click(await sectionTitle('Q3'));
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(screen.getByRole('button', { name: 'Collapse Q3' })).toBeInTheDocument();
     });
 
     it('renders the confirmed title', async () => {
@@ -872,96 +869,6 @@ describe('<ReportOfReports>', () => {
       expect(await screen.findByRole('button', { name: 'Add Report to Three' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Add Section to Three' })).not.toBeInTheDocument();
     });
-
-    // Indent alone stops answering "where will this land?" once sections nest: a deep section's two
-    // buttons sit a few pixels from its parent's, and both rows read the same. Pointing at one tints
-    // the container it adds into, so what is about to gain a node is what lights up.
-    describe('showing which container an add button belongs to', () => {
-      const nested = () => renderReport({ savedSections: [nest('One', [nest('Two', [stored('a')])])] });
-
-      /** The tint is a class; the attribute is how it is asserted, for the reason hover is state. */
-      const targeted = (section: HTMLElement) => section.getAttribute('data-add-target');
-
-      it('tints the section the pointer’s Add Report adds into, and no other', async () => {
-        nested();
-
-        const outer = await sectionFor('One');
-        const inner = await sectionFor('Two');
-
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report to Two' }));
-
-        expect(targeted(inner)).toBe('true');
-        expect(targeted(outer)).toBe('false');
-      });
-
-      it('tints it for Add Section the same way', async () => {
-        nested();
-
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Section to Two' }));
-
-        expect(targeted(await sectionFor('Two'))).toBe('true');
-        expect(targeted(await sectionFor('One'))).toBe('false');
-      });
-
-      // Both buttons add into the same container, so crossing between them must not clear the tint —
-      // it would go out and come back within a frame, which reads as a flicker rather than a cue.
-      it('holds the tint while the pointer crosses from one button to the other', async () => {
-        nested();
-
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report to Two' }));
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Section to Two' }));
-
-        expect(targeted(await sectionFor('Two'))).toBe('true');
-      });
-
-      it('drops the tint once the pointer leaves the row', async () => {
-        nested();
-
-        const button = await screen.findByRole('button', { name: 'Add Report to Two' });
-
-        await userEvent.hover(button);
-        await userEvent.unhover(button);
-
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-
-      // The buttons reveal themselves on `focus-within`, so a keyboard user meets the same puzzle a
-      // pointer user does: a pair of buttons, and nothing saying whose they are.
-      it('tints for the keyboard too, and clears when focus leaves', async () => {
-        nested();
-
-        const button = await screen.findByRole('button', { name: 'Add Report to Two' });
-
-        await act(async () => button.focus());
-        expect(targeted(await sectionFor('Two'))).toBe('true');
-
-        await act(async () => button.blur());
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-
-      // The root's pair adds at the top level. Tinting "the document" would be the whole page, and
-      // nothing lit is already what top-level means — every section stays untinted instead.
-      it('tints nothing for the document root’s own buttons', async () => {
-        nested();
-
-        // The root's buttons carry the bare label, so this finds the root row and not one of the two
-        // sections' — see the innermost-container case above.
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report' }));
-
-        expect(targeted(await sectionFor('One'))).toBe('false');
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-
-      // The picker covers the document and the pointer never moves, so a tint left set would sit
-      // behind the modal and outlive the choice that closed it.
-      it('drops the tint when the picker opens', async () => {
-        nested();
-
-        await userEvent.click(await screen.findByRole('button', { name: 'Add Report to Two' }));
-
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-    });
   });
 
   // See spec/016-report-of-reports/003-self-reports.
@@ -1118,8 +1025,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [storedComment('ABC-1')] });
 
       expect(await body()).toHaveTextContent('Blocked on the SSO cert rotation.');
-      expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
-      expect(screen.getByText(/^Last updated: /)).toBeInTheDocument();
+      expect(screen.getByText(/^Updated by Dana Ruiz · /)).toBeInTheDocument();
     });
 
     // The row is the key as the node's heading — no "Latest comment" prefix, and never the raw
@@ -1371,8 +1277,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [storedUpdate('ABC-1')] });
 
       expect(await body()).toHaveTextContent('Status Update: cert rotation lands Thursday.');
-      expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
-      expect(screen.getByText(/^Last updated: /)).toBeInTheDocument();
+      expect(screen.getByText(/^Updated by Dana Ruiz · /)).toBeInTheDocument();
     });
 
     // The row is the key, exactly as its sibling's is — the shell is shared, and nothing on the row

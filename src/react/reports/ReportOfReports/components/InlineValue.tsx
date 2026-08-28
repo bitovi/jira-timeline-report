@@ -5,12 +5,17 @@ import React from 'react';
 
 import { formatFieldValue } from '../model/formatFieldValue';
 import { LATEST_COMMENT_ACCESSOR, STATUS_UPDATE_ACCESSOR } from '../model/accessors';
+import { reportTitleClassName, reportTitleColorClassName } from './NodeRow';
 
 export interface InlineValueProps {
   /** The stored expression. Named in error states so the document stays diagnosable. */
   expression: string;
   /** Everything already resolved — see `useInlineExpression`. */
   state: InlineExpressionState;
+  /** `path.length` — the field name plays the same "row title" role every other report row's does. */
+  depth?: number;
+  /** Whether the row this belongs to is hovered — darkens the field name, the row-scope hover signal. */
+  isRowHovered?: boolean;
 }
 
 /**
@@ -28,7 +33,7 @@ export interface InlineValueProps {
  * A wrong node is deleted and re-added.
  * See spec/016-report-of-reports/009-value-report-modal § The node stops being editable.
  */
-export const InlineValue: FC<InlineValueProps> = ({ expression, state }) => {
+export const InlineValue: FC<InlineValueProps> = ({ expression, state, depth = 1, isRowHovered }) => {
   if (!expression.trim()) {
     // Nothing to say. A blank value renders as an empty row rather than instructions — the height keeps
     // the row hoverable so its delete control stays reachable, since a zero-height row would be an
@@ -65,11 +70,14 @@ export const InlineValue: FC<InlineValueProps> = ({ expression, state }) => {
   }
 
   // A value row sits below sections and reports in the type hierarchy, so the label stays light and
-  // the value itself is what carries weight — a small neutral pill rather than bold text.
+  // the value itself is what carries weight — a small neutral pill rather than bold text. The label
+  // uses the same report-title scale every other row-owning node's title does.
   return (
-    <p data-testid="inline-value" className="flex min-w-0 grow items-baseline gap-2 text-sm">
-      <span className="shrink-0 text-slate-500">{state.field.name}</span>
-      <span className="truncate rounded bg-neutral-201 px-1.5 py-0.5 text-neutral-800">{text || '—'}</span>
+    <p data-testid="inline-value" className="flex min-w-0 grow items-baseline gap-2">
+      <span className={`shrink-0 ${reportTitleClassName(depth)} ${reportTitleColorClassName(isRowHovered)}`}>
+        {state.field.name}
+      </span>
+      <span className="truncate rounded bg-neutral-201 px-1.5 py-0.5 text-sm text-neutral-800">{text || '—'}</span>
     </p>
   );
 };

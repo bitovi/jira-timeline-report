@@ -258,7 +258,7 @@ export const ScatterTimeline: React.FC<ScatterTimelineProps> = (props) => {
     // `isolate` keeps the report's internal layering (group bands at 0/5, issue markers at 100/101)
     // inside its own stacking context. Without it those z-indexes resolve against the root stacking
     // context and paint over body-portaled overlays like the Saved Reports page (z-50).
-    <div ref={containerRef} className="p-2 mb-10 isolate" style={{ overflow: 'hidden' }}>
+    <div ref={containerRef} className="p-2 isolate" style={{ overflow: 'hidden' }}>
       {showEmptyRangeState ? (
         <DateRangeEmptyState />
       ) : (

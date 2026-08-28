@@ -4,6 +4,7 @@ import type { CommentReportState } from '../hooks/useCommentReport';
 import React from 'react';
 
 import { AdfDocument } from '../../../components/AdfDocument';
+import { reportTitleClassName, reportTitleColorClassName } from './NodeRow';
 
 /** What an untargeted node shows in place of a key — see the read view below. */
 export const KEY_PLACEHOLDER = 'ABC-1';
@@ -13,6 +14,10 @@ export interface CommentRowProps {
   target: string;
   // No `state`: the row is the key, and every fetched thing — author, comment, timestamp — is
   // `CommentBody`'s. The row used to take one and never read it.
+  /** `path.length` — picks the report-title scale's 13px-vs-12.5px step. See `reportTitleClassName`. */
+  depth?: number;
+  /** Whether the row this belongs to is hovered — darkens the key, the row-scope hover signal. */
+  isRowHovered?: boolean;
 }
 
 // Local time, deliberately: a comment's timestamp is read by a person wondering how recent it is, and
@@ -46,9 +51,9 @@ export const formatCommentTime = (timestamp: string): string => {
  *
  * **There is no kind label on the row.** It was a muted "Latest comment" prefix, which spent the node's
  * heading on saying what kind of node it is, and read as chrome above content that already announces
- * itself — an author, a comment, a timestamp. So the key gets the row and the `text-base font-semibold`
- * every other row-owning node uses (`ReportOfReports.tsx:369`), and the node reads as *the work item*
- * with its comment under it. Both presets share that, which is why nothing here names either of them.
+ * itself — an author, a comment, a timestamp. So the key gets the row and the same report-title scale
+ * (`reportTitleClassName`) every other row-owning node uses, and the node reads as *the work item* with
+ * its comment under it. Both presets share that, which is why nothing here names either of them.
  *
  * **What that costs, stated plainly:** collapsed, the node is a bare `▸ ABC-1` and nothing says it is a
  * comment. That is the same trade a collapsed report card makes — its row is `▸ Alpha` — so the node is
@@ -62,7 +67,7 @@ export const formatCommentTime = (timestamp: string): string => {
  * See spec/016-report-of-reports/007-latest-comment-report § The row is the key, and
  * spec/027-status-updates § The view for the rename that made it serve both presets.
  */
-export const CommentRow: FC<CommentRowProps> = ({ target }) => (
+export const CommentRow: FC<CommentRowProps> = ({ target, depth = 1, isRowHovered }) => (
   // An untargeted node shows the placeholder key in the muted italic `SectionTitle` gives an untitled
   // section, so "not filled in yet" doesn't read as "a work item called ABC-1". Only a document saved
   // before the modal existed can be in that state.
@@ -70,7 +75,11 @@ export const CommentRow: FC<CommentRowProps> = ({ target }) => (
   // A hand-written query, also only reachable from such a document, titles the row as-is in the same
   // style. It used to be monospaced, but that branch existed to match the edit field's mode; with no
   // field to match, one row style is the honest simplification.
-  <h3 className={`min-w-0 grow truncate text-base font-semibold ${target ? '' : 'font-normal italic text-slate-500'}`}>
+  <h3
+    className={`min-w-0 grow ${reportTitleClassName(depth)} ${
+      target ? reportTitleColorClassName(isRowHovered) : 'font-normal italic text-slate-500'
+    }`}
+  >
     {target || KEY_PLACEHOLDER}
   </h3>
 );
@@ -132,28 +141,68 @@ export const CommentBody: FC<CommentBodyProps> = ({ target, state, emptyNote, te
   }
 
   // **The comment first, its provenance after.** Who wrote it and when are attribution, not the point —
-  // so they sit under the text as one muted two-line footer rather than as a byline above it. The reader
-  // arrives at the comment immediately and finds out whose and how stale it is on the way out.
+  // so they sit under the text as one muted footer rather than as a byline above it. The reader arrives
+  // at the comment immediately and finds out whose and how stale it is on the way out.
   return (
-    <div data-testid={testId} className="flex flex-col gap-1">
+    <div data-testid={testId} className="comment-report-body flex flex-col gap-1">
+      {/* Scoped to `.comment-report-body` rather than Tailwind utilities, following the pattern
+          TableReport.tsx uses for its own table (TableReport.tsx:289-373): this is a status-update ADF
+          table, not that shared report type, and the scoping keeps the rule from leaking into it.
+          See spec/029-report-of-reports-redesign §5. */}
+      <style>{COMMENT_TABLE_STYLES}</style>
       {/* The body goes to `AdfDocument` whole, rather than through the local walker first: a comment
           that is only a table or only an emoji produces no walker blocks but is not empty, and gating
           on the walker's output would have hidden exactly the content the real renderer was added for. */}
-      <AdfDocument
-        document={state.body}
-        fallbackClassName="prose prose-sm prose-neutral max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0"
-      />
-      <div className="text-xs text-slate-500">
-        {/* One template string per line, not `Updated by: {author}` — a split text node would make the
-            line unfindable by its own text, which is how these are asserted and how a reader reads it. */}
-        <p className="truncate">{`Updated by: ${state.author}`}</p>
-        {/* Absent rather than blank when Jira sends no timestamp: "Last updated:" with nothing after it
-            is worse than no line. */}
-        {state.updated ? <p>{`Last updated: ${formatCommentTime(state.updated)}`}</p> : null}
+      <AdfDocument document={state.body} fallbackClassName={STATUS_UPDATE_PROSE_CLASSNAME} />
+      <div className="mt-[10px] text-[11px] text-[#4C5B5C]">
+        {/* One line, not two: "Updated by … · date" — combined per spec/029-report-of-reports-redesign
+            §5. The date half is dropped rather than left blank when Jira sends no timestamp. */}
+        <p className="truncate">
+          {state.updated
+            ? `Updated by ${state.author} · ${formatCommentTime(state.updated)}`
+            : `Updated by ${state.author}`}
+        </p>
       </div>
     </div>
   );
 };
+
+/**
+ * Prose overrides for the status-update body: list padding/gap and the shared text scale on `p`, `ul`,
+ * and `li`. See spec/029-report-of-reports-redesign §5.
+ */
+const STATUS_UPDATE_PROSE_CLASSNAME =
+  'prose prose-sm prose-neutral max-w-none ' +
+  'prose-p:my-1 prose-p:text-[13px] prose-p:leading-[1.55] prose-p:text-[#023538] ' +
+  'prose-ul:my-1 prose-ul:flex prose-ul:flex-col prose-ul:gap-[6px] prose-ul:pl-[18px] ' +
+  'prose-ul:text-[13px] prose-ul:leading-[1.55] prose-ul:text-[#023538] ' +
+  'prose-ol:my-1 ' +
+  'prose-li:my-0 prose-li:text-[13px] prose-li:leading-[1.55] prose-li:text-[#023538]';
+
+/**
+ * Table chrome for an ADF table inside a status-update/comment body — not `TableReport.tsx`'s own
+ * table, which is a different, shared report type (Stats/TimeInStatus/FlowMetrics/IssueDebugModal) and
+ * stays out of scope here. See spec/029-report-of-reports-redesign §5.
+ */
+const COMMENT_TABLE_STYLES = `
+.comment-report-body table { width: 100%; border-collapse: collapse; }
+.comment-report-body th {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #687879;
+  border-bottom: 1px solid #DFE2E2;
+  text-align: left;
+}
+.comment-report-body td {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #023538;
+  border-bottom: 1px solid #DFE2E2;
+}
+`;
 
 /**
  * A document with nothing in it at all — not "nothing this renderer handles". Jira can return one for a
