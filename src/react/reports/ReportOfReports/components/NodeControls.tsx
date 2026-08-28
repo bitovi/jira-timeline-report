@@ -19,8 +19,6 @@ export interface NodeControlsProps {
    * buttons a screen reader (or a test) can't tell apart.
    */
   label: string;
-  /** The node's id. The pin is keyed by id so it survives the very move it was clicked to make. */
-  nodeId: string;
   /** Whether the node holds anything, which changes what the delete confirm says. */
   hasChildren?: boolean;
 }
@@ -33,22 +31,22 @@ export interface NodeControlsProps {
  * without threading callbacks through the recursive renderer. Moves are confined to the node's own
  * container, so the arrows are disabled at either end rather than silently re-parenting.
  *
- * Invisible at rest: revealed while the pointer is anywhere in the node (its chart included), while
- * the row is pinned, or while the confirm popover is up. Opacity rather than mounting, so nothing on
- * the row moves as it appears and the cluster's width is reserved either way. Keyboard users get it
- * from `focus-within`, which is CSS — there's nothing to make stateful about tabbing into it.
+ * Invisible at rest: revealed while the pointer is anywhere in the node (its chart included), or while
+ * the confirm popover is up. Opacity rather than mounting, so nothing on the row moves as it appears
+ * and the cluster's width is reserved either way. Keyboard users get it from `focus-within`, which is
+ * CSS — there's nothing to make stateful about tabbing into it.
  *
  * `report-chrome-hidden` (print.css and fullscreen.css) takes it out of the printed page and out of
  * on-screen focus mode. Hover-revealed isn't quiet enough for fullscreen: reading a document there
  * still means moving the pointer down it, and arrows and a trash can surfacing under it read as an
  * invitation to edit a report that is being presented.
  */
-export const NodeControls: FC<NodeControlsProps> = ({ path, label, nodeId, hasChildren = false }) => {
+export const NodeControls: FC<NodeControlsProps> = ({ path, label, hasChildren = false }) => {
   const { sections, setSections } = useReportLayout();
-  const { isHovered, isPinned } = useDocumentEditing();
+  const { isHovered } = useDocumentEditing();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const isVisible = isHovered(path) || isPinned(nodeId) || isConfirmOpen;
+  const isVisible = isHovered(path) || isConfirmOpen;
 
   return (
     <div
