@@ -37,6 +37,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@atlaskit/editor-wikimarkup-transformer": "^12.1.0",
     "@sentry/node": "^8.51.0",
     "@sentry/profiling-node": "^8.51.0",
     "axios": "^1.1.2",

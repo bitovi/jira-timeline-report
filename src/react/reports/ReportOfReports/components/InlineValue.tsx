@@ -3,9 +3,11 @@ import type { InlineExpressionState } from '../hooks/useInlineExpression';
 
 import React from 'react';
 
-import { formatFieldValue } from '../model/formatFieldValue';
+import { AdfDocument, WikiAdfDocument } from '../../../components/AdfDocument';
+import { classifyFieldValue } from '../model/formatFieldValue';
 import { LATEST_COMMENT_ACCESSOR, STATUS_UPDATE_ACCESSOR } from '../model/accessors';
 import { reportTitleClassName, reportTitleColorClassName } from './NodeRow';
+import { RICH_TEXT_BODY_CLASSNAME, RICH_TEXT_PROSE_CLASSNAME, RICH_TEXT_TABLE_STYLES } from './richTextStyles';
 
 export interface InlineValueProps {
   /** The stored expression. Named in error states so the document stays diagnosable. */
@@ -23,9 +25,14 @@ export interface InlineValueProps {
  * prop, so this stories and unit-tests with no Jira behind it.
  * See spec/016-report-of-reports/003-self-reports Phase 4.
  *
- * It renders the label of a row and nothing else: the row itself, and the controls on it, belong to
- * `NodeRow`. The row carries the field's name beside its value, because a document holding three bare
- * strings gives a reader no way to tell what any of them is.
+ * For a plain value it renders the label of a row and nothing else: the row itself, and the controls on
+ * it, belong to `NodeRow`. The row carries the field's name beside its value, because a document holding
+ * three bare strings gives a reader no way to tell what any of them is.
+ *
+ * **Rich content (ADF/wiki markup) is the one case that doesn't fit that shape** — it renders only the
+ * content block, with no title of its own. `InlineValueView` (`ReportOfReports.tsx`) is what notices a
+ * value classifies as rich and switches the surrounding layout to match: a one-line title inside
+ * `NodeRow`, this block as a sibling beneath it. See spec/030-inline-custom-field-report.
  *
  * **Read-only.** Both halves of a value — the work item and the field — are chosen in the Add Report
  * modal, which validates them; a raw expression field here would be a second, worse authoring path for
@@ -50,9 +57,9 @@ export const InlineValue: FC<InlineValueProps> = ({ expression, state, depth = 1
     return <Problem expression={expression}>{state.message}</Problem>;
   }
 
-  const text = formatFieldValue(state.value, state.field.schema);
+  const display = classifyFieldValue(state.value, state.field.schema);
 
-  if (text === null) {
+  if (display.kind === 'unsupported') {
     // `.comment` resolves — it's a real Jira field — and then dead-ends here, because a page of
     // comments is not a value. Rather than leave that as a dead end, point at the accessors that do
     // what someone typing `.comment` almost certainly wanted. It is the only signpost to the
@@ -68,6 +75,27 @@ export const InlineValue: FC<InlineValueProps> = ({ expression, state, depth = 1
       </Problem>
     );
   }
+
+  if (display.kind === 'adf' || display.kind === 'wiki') {
+    // Rich content — a heading, list, or table — can't fit a single-line truncated pill. Unlike the pill
+    // below, this doesn't carry its own row title: the caller (`InlineValueView`) switches to the
+    // row-plus-block layout `CommentRow`/`CommentBody` established for Latest Comment/Status Update,
+    // putting a one-line title in `NodeRow` itself and rendering this block beneath it, at the same
+    // indent, exactly like `CommentBody` does.
+    // See spec/030-inline-custom-field-report § InlineValue: row + block for rich content.
+    return (
+      <div data-testid="inline-value" className={RICH_TEXT_BODY_CLASSNAME}>
+        <style>{RICH_TEXT_TABLE_STYLES}</style>
+        {display.kind === 'adf' ? (
+          <AdfDocument document={display.document} fallbackClassName={RICH_TEXT_PROSE_CLASSNAME} />
+        ) : (
+          <WikiAdfDocument markup={display.markup} fallbackClassName={RICH_TEXT_PROSE_CLASSNAME} />
+        )}
+      </div>
+    );
+  }
+
+  const text = display.kind === 'text' ? display.text : '';
 
   // A value row sits below sections and reports in the type hierarchy, so the label stays light and
   // the value itself is what carries weight — a small neutral pill rather than bold text. The label

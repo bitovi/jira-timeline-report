@@ -23,6 +23,14 @@ vi.mock('../../services/jira/useJiraIssueFields', () => ({
     // `comment` is here because it's real: it resolves, and then dead-ends in the formatter, which is
     // where the signpost to `.latestComment` lives. See .../007-latest-comment-report.
     { id: 'comment', name: 'Comment', schema: { type: 'comments-page' }, clauseNames: ['comment'] },
+    // An ADF-bearing custom field — exercises the row-plus-block layout `InlineValueView` switches to
+    // for rich content. See spec/030-inline-custom-field-report.
+    {
+      id: 'customfield_10001',
+      name: 'Acceptance Criteria',
+      schema: { type: 'string' },
+      clauseNames: ['customfield_10001'],
+    },
   ],
 }));
 
@@ -992,6 +1000,56 @@ describe('<ReportOfReports>', () => {
         "Comments can't show as a value — use .latestComment for the newest one, or .statusUpdate for this week's update.",
       );
     });
+
+    /**
+     * Rich content (ADF/wiki) doesn't fit `NodeRow`'s single-line `children` slot the way a plain value
+     * does, so `InlineValueView` switches layout: a one-line title in the row, the content as a sibling
+     * block beneath it — the same shape `latestComment`/`statusUpdate` already use. Getting this wrong
+     * once put the whole block inside `NodeRow`, which floated the controls beside the block instead of
+     * a title and dropped the issue key from the row entirely.
+     * See spec/030-inline-custom-field-report.
+     */
+    describe('rich-text field values', () => {
+      const doc = (text: string) => ({
+        type: 'doc',
+        version: 1,
+        content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+      });
+
+      it('titles the row with the work item and field, not the field alone', async () => {
+        searchResult = [{ key: 'ABC-1', fields: { 'Acceptance Criteria': doc('Ship behind a flag.') } }];
+        renderReport({ savedSections: [storedValue('(issue = ABC-1).customfield_10001')] });
+
+        expect(await value()).toHaveTextContent('Ship behind a flag.');
+        expect(screen.getByRole('heading', { name: 'ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+      });
+
+      it('gives the row a caret that collapses the content beneath it', async () => {
+        searchResult = [{ key: 'ABC-1', fields: { 'Acceptance Criteria': doc('Ship behind a flag.') } }];
+        renderReport({ savedSections: [storedValue('(issue = ABC-1).customfield_10001')] });
+
+        await value();
+
+        const toggle = screen.getByRole('button', { name: 'Collapse ABC-1 Acceptance Criteria' });
+        await userEvent.click(toggle);
+
+        expect(screen.getByRole('button', { name: 'Expand ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+        // Stays mounted (so print can restore it) but hidden — the same choice `CommentReportView`
+        // makes for a collapsed comment body.
+        expect(screen.getByTestId('inline-value')).not.toBeVisible();
+        // The title survives collapse — only the content beneath it hides.
+        expect(screen.getByRole('heading', { name: 'ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+      });
+
+      it('still names itself by work item and field in its controls', async () => {
+        searchResult = [{ key: 'ABC-1', fields: { 'Acceptance Criteria': doc('Ship behind a flag.') } }];
+        renderReport({ savedSections: [storedValue('(issue = ABC-1).customfield_10001')] });
+
+        await value();
+
+        expect(screen.getByRole('button', { name: 'Remove ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+      });
+    });
   });
 
   /**
@@ -1344,7 +1402,11 @@ describe('<ReportOfReports>', () => {
       expect(cardNames()).toEqual(['Alpha']);
     });
 
-    it('is added from the Add Report modal, into the section it was opened from', async () => {
+    // Temporarily withdrawn from the Add Report modal's dropdown — see `DERIVED_OPTIONS`' comment in
+    // fieldCatalog.ts — because its label collided with the real "Status Update" custom field now
+    // offered under `Fields`. An already-saved `.statusUpdate` node still renders (the tests above cover
+    // that); only picking it new, from this modal, is disabled.
+    it.skip('is added from the Add Report modal, into the section it was opened from', async () => {
       searchResult = [{ key: 'ABC-1', fields: {} }];
       recentCommentsResult = { comments: [commentAt('Status Update: added from the modal.', inWeek(60_000))] };
       renderReport({ savedSections: [nest('Q3', [])] });
