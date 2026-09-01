@@ -1,4 +1,4 @@
-import { formatFieldValue } from './formatFieldValue';
+import { classifyFieldValue, formatFieldValue } from './formatFieldValue';
 
 describe('formatFieldValue', () => {
   it('renders a string', () => {
@@ -66,6 +66,69 @@ describe('formatFieldValue', () => {
 
     it('refuses an unparseable date', () => {
       expect(formatFieldValue('not a date', { type: 'date' })).toBeNull();
+    });
+  });
+});
+
+describe('classifyFieldValue', () => {
+  // Jira reports `schema.type: "string"` for a plain text field and a wiki-markup paragraph field
+  // alike — `schema.custom` is the only signal that tells them apart. See
+  // spec/030-inline-custom-field-report.
+  const wikiSchema = { type: 'string', custom: 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' };
+
+  it('classifies a plain string as text, unaffected by this change', () => {
+    expect(classifyFieldValue('Migrate auth to OIDC', { type: 'string' })).toEqual({
+      kind: 'text',
+      text: 'Migrate auth to OIDC',
+    });
+  });
+
+  it('classifies a string field whose custom type is a paragraph field as wiki markup', () => {
+    const markup =
+      'h1. Status\n\n* Shipped the migration\n* Rolled back the old endpoint\n\n' +
+      '||Env||State||\n|prod|green|\n|staging|green|\n';
+
+    expect(classifyFieldValue(markup, wikiSchema)).toEqual({ kind: 'wiki', markup });
+  });
+
+  it('does not classify a plain string field as wiki markup just because it contains markup-like text', () => {
+    // Only `schema.custom` decides this — a Summary containing literal asterisks stays plain text.
+    expect(classifyFieldValue('h1. not actually a heading', { type: 'string' })).toEqual({
+      kind: 'text',
+      text: 'h1. not actually a heading',
+    });
+  });
+
+  it('classifies an ADF document instead of refusing it', () => {
+    const description = { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [] }] };
+
+    expect(classifyFieldValue(description, { type: 'string' })).toEqual({ kind: 'adf', document: description });
+  });
+
+  it('classifies an empty value as empty, unaffected by this change', () => {
+    expect(classifyFieldValue(null, { type: 'string' })).toEqual({ kind: 'empty' });
+    expect(classifyFieldValue(undefined, { type: 'number' })).toEqual({ kind: 'empty' });
+    expect(classifyFieldValue('', wikiSchema)).toEqual({ kind: 'empty' });
+    // An empty array classifies as empty text, not the `empty` kind itself — it's still an array of
+    // (zero) members, each of which would be text, not nothing. `formatFieldValue` maps both to `''`.
+    expect(classifyFieldValue([], { type: 'array', items: 'string' })).toEqual({ kind: 'text', text: '' });
+  });
+
+  it('classifies an array by joining its members as text, unaffected by this change', () => {
+    expect(classifyFieldValue(['api', 'auth'], { type: 'array', items: 'string' })).toEqual({
+      kind: 'text',
+      text: 'api, auth',
+    });
+  });
+
+  it('classifies a date as text, unaffected by this change', () => {
+    expect(classifyFieldValue('2026-08-14', { type: 'date' })).toEqual({ kind: 'text', text: '2026-08-14' });
+  });
+
+  it('classifies an object with no label as unsupported, unaffected by this change', () => {
+    expect(classifyFieldValue({ shape: 'unexpected' }, { type: 'any' })).toEqual({
+      kind: 'unsupported',
+      schemaType: 'any',
     });
   });
 });

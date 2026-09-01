@@ -5,6 +5,7 @@ import React from 'react';
 
 import { AdfDocument } from '../../../components/AdfDocument';
 import { reportTitleClassName, reportTitleColorClassName } from './NodeRow';
+import { RICH_TEXT_BODY_CLASSNAME, RICH_TEXT_PROSE_CLASSNAME, RICH_TEXT_TABLE_STYLES } from './richTextStyles';
 
 /** What an untargeted node shows in place of a key — see the read view below. */
 export const KEY_PLACEHOLDER = 'ABC-1';
@@ -144,16 +145,16 @@ export const CommentBody: FC<CommentBodyProps> = ({ target, state, emptyNote, te
   // so they sit under the text as one muted footer rather than as a byline above it. The reader arrives
   // at the comment immediately and finds out whose and how stale it is on the way out.
   return (
-    <div data-testid={testId} className="comment-report-body flex flex-col gap-1">
-      {/* Scoped to `.comment-report-body` rather than Tailwind utilities, following the pattern
+    <div data-testid={testId} className={`${RICH_TEXT_BODY_CLASSNAME} flex flex-col gap-1`}>
+      {/* Scoped to `RICH_TEXT_BODY_CLASSNAME` rather than Tailwind utilities, following the pattern
           TableReport.tsx uses for its own table (TableReport.tsx:289-373): this is a status-update ADF
           table, not that shared report type, and the scoping keeps the rule from leaking into it.
           See spec/029-report-of-reports-redesign §5. */}
-      <style>{COMMENT_TABLE_STYLES}</style>
+      <style>{RICH_TEXT_TABLE_STYLES}</style>
       {/* The body goes to `AdfDocument` whole, rather than through the local walker first: a comment
           that is only a table or only an emoji produces no walker blocks but is not empty, and gating
           on the walker's output would have hidden exactly the content the real renderer was added for. */}
-      <AdfDocument document={state.body} fallbackClassName={STATUS_UPDATE_PROSE_CLASSNAME} />
+      <AdfDocument document={state.body} fallbackClassName={RICH_TEXT_PROSE_CLASSNAME} />
       <div className="mt-[10px] text-[11px] text-[#4C5B5C]">
         {/* One line, not two: "Updated by … · date" — combined per spec/029-report-of-reports-redesign
             §5. The date half is dropped rather than left blank when Jira sends no timestamp. */}
@@ -166,43 +167,6 @@ export const CommentBody: FC<CommentBodyProps> = ({ target, state, emptyNote, te
     </div>
   );
 };
-
-/**
- * Prose overrides for the status-update body: list padding/gap and the shared text scale on `p`, `ul`,
- * and `li`. See spec/029-report-of-reports-redesign §5.
- */
-const STATUS_UPDATE_PROSE_CLASSNAME =
-  'prose prose-sm prose-neutral max-w-none ' +
-  'prose-p:my-1 prose-p:text-[13px] prose-p:leading-[1.55] prose-p:text-[#023538] ' +
-  'prose-ul:my-1 prose-ul:flex prose-ul:flex-col prose-ul:gap-[6px] prose-ul:pl-[18px] ' +
-  'prose-ul:text-[13px] prose-ul:leading-[1.55] prose-ul:text-[#023538] ' +
-  'prose-ol:my-1 ' +
-  'prose-li:my-0 prose-li:text-[13px] prose-li:leading-[1.55] prose-li:text-[#023538]';
-
-/**
- * Table chrome for an ADF table inside a status-update/comment body — not `TableReport.tsx`'s own
- * table, which is a different, shared report type (Stats/TimeInStatus/FlowMetrics/IssueDebugModal) and
- * stays out of scope here. See spec/029-report-of-reports-redesign §5.
- */
-const COMMENT_TABLE_STYLES = `
-.comment-report-body table { width: 100%; border-collapse: collapse; }
-.comment-report-body th {
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: #687879;
-  border-bottom: 1px solid #DFE2E2;
-  text-align: left;
-}
-.comment-report-body td {
-  padding: 10px 12px;
-  font-size: 13px;
-  color: #023538;
-  border-bottom: 1px solid #DFE2E2;
-}
-`;
 
 /**
  * A document with nothing in it at all — not "nothing this renderer handles". Jira can return one for a

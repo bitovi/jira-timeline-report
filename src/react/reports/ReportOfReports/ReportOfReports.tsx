@@ -19,6 +19,7 @@ import { isExpressionError, parseExpression } from './model/expression';
 import { derivedKindOf, issueKeyOf } from './model/accessors';
 import { selectableReports } from './model/selectable-reports';
 import { useInlineExpression, type InlineExpressionState } from './hooks/useInlineExpression';
+import { classifyFieldValue } from './model/formatFieldValue';
 import { type CommentReportState } from './hooks/useCommentReport';
 import { useLatestComment } from './hooks/useLatestComment';
 import { useStatusUpdate } from './hooks/useStatusUpdate';
@@ -519,18 +520,69 @@ const inlineValueLabel = (expression: string, state: InlineExpressionState): str
 };
 
 /**
- * One inline value: the expression is resolved by `useInlineExpression` and handed to `InlineValue`,
- * which stays pure and renders only the row's label.
+ * One inline value: the expression is resolved by `useInlineExpression` and handed to `InlineValue`.
  *
- * It's content, not chrome, so nothing here is `print-hidden` (the controls hide themselves).
+ * Two shapes, chosen once `state` resolves enough to classify the value:
+ *
+ * - **Plain value** (the common case): `InlineValue` stays pure and renders the whole row's content —
+ *   field name and value together, one line — inside `NodeRow`. This is unchanged from before rich
+ *   content existed.
+ * - **Rich content** (ADF or wiki markup): a heading, list, or table doesn't fit a single-line row, so
+ *   this switches to the row-plus-block layout `CommentReportView`/`InlineReportView` already use —
+ *   `NodeRow` gets just a one-line title (`label`, the same "key + field name" string the controls'
+ *   aria-labels already used) and a caret, and `InlineValue` renders only the content block, as a
+ *   sibling `<div>` beneath `NodeRow` rather than inside it. Getting this wrong — nesting the block
+ *   inside `NodeRow`'s single-line `children` slot — is what made the controls float beside the whole
+ *   block instead of a title, and left the row not naming which work item the value belonged to.
+ *   See spec/030-inline-custom-field-report § InlineValue: row + block for rich content.
+ *
+ * It's content, not chrome, so nothing here is `print-hidden` (the controls and caret hide themselves).
  * See spec/016-report-of-reports/003-self-reports.
  */
 const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node, path }) => {
   const { hoverProps, rowProps } = useNodeRow(node, path);
+  const { isCollapsed, toggleCollapsed } = useDocumentEditing();
   const state = useInlineExpression(node.params.expression);
 
   const label = inlineValueLabel(node.params.expression, state);
   const depth = path.length;
+  const display = state.status === 'ok' ? classifyFieldValue(state.value, state.field.schema) : null;
+  const isRichContent = display?.kind === 'adf' || display?.kind === 'wiki';
+
+  if (isRichContent) {
+    const collapsed = isCollapsed(node.id);
+
+    return (
+      <div
+        {...hoverProps}
+        className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+      >
+        <NodeRow
+          {...rowProps}
+          isTopLevel={depth === 1}
+          caret={
+            <CollapseToggle
+              isCollapsed={collapsed}
+              label={label}
+              onToggle={() => toggleCollapsed(node.id)}
+              isRowActive={rowProps.isHovered}
+            />
+          }
+          controls={<NodeControls path={path} label={label} />}
+        >
+          <h3 className={`${reportTitleClassName(depth)} ${reportTitleColorClassName(rowProps.isHovered)}`}>{label}</h3>
+        </NodeRow>
+        <div className={`mt-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+          <InlineValue
+            expression={node.params.expression}
+            state={state}
+            depth={depth}
+            isRowHovered={rowProps.isHovered}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`} {...hoverProps}>
