@@ -1,7 +1,7 @@
 import { router, view } from '@forge/bridge';
 
 import mainHelper from './shared/main-helper.js';
-import { createForgeStorage } from './jira/storage/index.web';
+import { createForgeConnectStorage } from './jira/storage/index.forge';
 import { createForgeLinkBuilder, createForgeRouting } from './routing/index.forge';
 import { getForgeRequestHelper } from './request-helpers/forge-request-helper';
 import { interceptExternalLinkClicks, setExternalOpener } from './shared/open-external';
@@ -98,7 +98,9 @@ export default async function main() {
     {
       host: 'forge',
       createRequestHelper: getForgeRequestHelper,
-      createStorage: createForgeStorage,
+      // Connect app properties, not the configuration issue — this is what makes the cutover
+      // invisible to existing customers. See jira/storage/index.forge.ts.
+      createStorage: createForgeConnectStorage,
       configureRouting: (
         route: {
           start: () => void;

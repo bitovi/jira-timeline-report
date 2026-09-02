@@ -239,12 +239,6 @@ export const createWebAppStorage: StorageFactory = createConfigurationIssueStora
 );
 
 /**
- * The Forge app. Jira authenticates the iframe, so there is no logged-out state to guard against —
- * a Forge site needs a configuration work item exactly like the website does.
- */
-export const createForgeStorage: StorageFactory = createConfigurationIssueStorage(() => true);
-
-/**
  * Below is special temporary logic to keep the Tabular data in sync with app data.
  * This is to allow the auto scheduler to be configured using the team configuration
  * section of the timeline reporter. For more information see
