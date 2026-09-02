@@ -16,6 +16,21 @@ describe('buildFieldOptions', () => {
     expect(buildFieldOptions(catalog)[0]).toEqual({ id: 'latestComment', label: 'Latest Comment', group: 'Derived' });
   });
 
+  // A sibling preset, not a replacement — so Latest Comment keeps the head of the list and Status
+  // Update follows it. See spec/027-status-updates § The accessor and the dropdown.
+  //
+  // Temporarily withdrawn — see `DERIVED_OPTIONS`' comment in fieldCatalog.ts — because its label
+  // collided with the real "Status Update" custom field now offered under `Fields`. Restore this test
+  // alongside uncommenting that entry.
+  it.skip('offers Status Update second, also under Derived', () => {
+    const derived = buildFieldOptions(catalog).filter((option) => option.group === 'Derived');
+
+    expect(derived).toEqual([
+      { id: 'latestComment', label: 'Latest Comment', group: 'Derived' },
+      { id: 'statusUpdate', label: 'Status Update', group: 'Derived' },
+    ]);
+  });
+
   it('promotes a curated id to Common and does not also list it under Fields', () => {
     const options = buildFieldOptions(catalog);
 
@@ -42,13 +57,17 @@ describe('buildFieldOptions', () => {
   it('skips a curated id the catalog does not have', () => {
     const options = buildFieldOptions([field('summary', 'Summary')]);
 
+    // No 'statusUpdate' — temporarily withdrawn, see `DERIVED_OPTIONS`' comment in fieldCatalog.ts.
     expect(options.map((option) => option.id)).toEqual(['latestComment', 'summary']);
   });
 });
 
 describe('buildValueExpression', () => {
-  it('routes the derived id through latestCommentExpression', () => {
+  // No special case for either derived id — the generic line already produced exactly this, which is
+  // why the branch that used to be here went. See spec/027-status-updates § The accessor and the dropdown.
+  it('writes a derived id the same way as any other accessor', () => {
     expect(buildValueExpression('ABC-1', 'latestComment')).toBe('(issue = ABC-1).latestComment');
+    expect(buildValueExpression('ABC-1', 'statusUpdate')).toBe('(issue = ABC-1).statusUpdate');
   });
 
   it('writes the field id for an ordinary field, never its name', () => {

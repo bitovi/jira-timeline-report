@@ -13,7 +13,9 @@ const meta: Meta<typeof SectionTitle> = {
       </div>
     ),
   ],
-  args: { title: 'Q3 Planning', depth: 1, isEditing: false },
+  // `isRowHovered: true` so the edit pencil shows up without having to hover the canvas — these
+  // stories are about what the read view looks like, pencil included.
+  args: { title: 'Q3 Planning', depth: 1, isEditing: false, isRowHovered: true },
 };
 export default meta;
 

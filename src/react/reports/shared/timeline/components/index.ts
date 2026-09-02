@@ -6,3 +6,4 @@ export { GridLines } from './GridLines';
 export type { GridLinesProps } from './GridLines';
 export { StatusLegend } from './StatusLegend';
 export type { StatusLegendProps } from './StatusLegend';
+export { DateRangeEmptyState } from './DateRangeEmptyState';

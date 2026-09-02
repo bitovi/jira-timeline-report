@@ -1,6 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { fetchJqlAutocompleteData, fetchJqlAutocompleteSuggestions, fetchLatestComment } from './jira';
+import {
+  COMMENT_SCAN_SIZE,
+  fetchJqlAutocompleteData,
+  fetchJqlAutocompleteSuggestions,
+  fetchLatestComment,
+  fetchRecentComments,
+} from './jira';
 import { Config } from './types';
 
 // Minimal config whose requestHelper just records the path it was called with.
@@ -65,5 +71,35 @@ describe('fetchLatestComment', () => {
     await fetchLatestComment(config)('SYSTEMS-918');
 
     expect(requestHelper).toHaveBeenCalledWith('/api/3/issue/SYSTEMS-918/comment?orderBy=-created&maxResults=1');
+  });
+});
+
+// See spec/027-status-updates § Fetching.
+describe('fetchRecentComments', () => {
+  // Same URL shape as its sibling above and the same ordering, differing only in the page size — which
+  // is the whole reason it is a second function rather than an argument on the first.
+  it('asks for a page of comments, newest first', async () => {
+    const { config, requestHelper } = makeConfig();
+
+    await fetchRecentComments(config)('ABC-1');
+
+    expect(requestHelper).toHaveBeenCalledWith('/api/3/issue/ABC-1/comment?orderBy=-created&maxResults=100');
+    expect(COMMENT_SCAN_SIZE).toBe(100);
+  });
+
+  it('takes a smaller page when a caller asks for one', async () => {
+    const { config, requestHelper } = makeConfig();
+
+    await fetchRecentComments(config)('ABC-1', 5);
+
+    expect(requestHelper).toHaveBeenCalledWith('/api/3/issue/ABC-1/comment?orderBy=-created&maxResults=5');
+  });
+
+  it('escapes a key into the path', async () => {
+    const { config, requestHelper } = makeConfig();
+
+    await fetchRecentComments(config)('a/b');
+
+    expect(requestHelper).toHaveBeenCalledWith('/api/3/issue/a%2Fb/comment?orderBy=-created&maxResults=100');
   });
 });

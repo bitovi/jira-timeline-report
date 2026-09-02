@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ObservableObject, value } from '../../../can';
 import { ReportOfReports } from './ReportOfReports';
+import { startOfWeekUTC } from './model/currentWeek';
 import { StorageProvider } from '../../services/storage';
 import { JiraProvider } from '../../services/jira';
 import { ReportLayoutProvider } from '../../services/report-layout';
@@ -22,6 +23,14 @@ vi.mock('../../services/jira/useJiraIssueFields', () => ({
     // `comment` is here because it's real: it resolves, and then dead-ends in the formatter, which is
     // where the signpost to `.latestComment` lives. See .../007-latest-comment-report.
     { id: 'comment', name: 'Comment', schema: { type: 'comments-page' }, clauseNames: ['comment'] },
+    // An ADF-bearing custom field — exercises the row-plus-block layout `InlineValueView` switches to
+    // for rich content. See spec/030-inline-custom-field-report.
+    {
+      id: 'customfield_10001',
+      name: 'Acceptance Criteria',
+      schema: { type: 'string' },
+      clauseNames: ['customfield_10001'],
+    },
   ],
 }));
 
@@ -57,6 +66,13 @@ let searchResult: Array<{ key?: string; fields: Record<string, unknown> }> = [];
 const commentRequests: string[] = [];
 let commentResult: unknown = { comments: [] };
 
+/**
+ * The page endpoint a status-update value reaches — a second fetcher, because a week needs a page and
+ * `fetchLatestComment` asks for exactly one comment. See spec/027-status-updates § Fetching.
+ */
+const recentCommentRequests: string[] = [];
+let recentCommentsResult: unknown = { comments: [] };
+
 const jira = {
   fetchJiraIssuesWithJQLWithNamedFields: async (params: any) => {
     searches.push(params);
@@ -71,6 +87,15 @@ const jira = {
     }
 
     return commentResult;
+  },
+  fetchRecentComments: async (issueKey: string) => {
+    recentCommentRequests.push(issueKey);
+
+    if (recentCommentsResult instanceof Error) {
+      throw recentCommentsResult;
+    }
+
+    return recentCommentsResult;
   },
   // The Add Report modal's work-item typeahead. Echoing the query back as a suggestion means a test
   // can "pick" any key it likes without a fixture per key. The empty query — which the picker asks on
@@ -275,6 +300,8 @@ describe('<ReportOfReports>', () => {
     searchResult = [];
     commentRequests.length = 0;
     commentResult = { comments: [] };
+    recentCommentRequests.length = 0;
+    recentCommentsResult = { comments: [] };
     mounts.length = 0;
     // Editing the document writes a `sections` param, which would otherwise seed the next test.
     window.history.replaceState({}, '', '/');
@@ -487,44 +514,29 @@ describe('<ReportOfReports>', () => {
       expect(controlsOn(row)).toBe('true');
     });
 
-    // Clicking pins the row: the touch and keyboard path to controls that otherwise need a pointer.
-    it('keeps a clicked row’s controls up after the pointer leaves', async () => {
-      renderReport({ savedSections: threeReports });
-
-      const row = await rowFor('Move Alpha up');
-
-      await userEvent.click(row);
-      await userEvent.unhover(row);
-
-      expect(controlsOn(row)).toBe('true');
-    });
-
-    // The pin is keyed by node id, not by path, so it follows the node it was put on.
-    it('keeps a row pinned through the move it was clicked to make', async () => {
+    // The row itself is the click target for collapse now — not just the caret. See
+    // spec/029-report-of-reports-redesign § chevron visibility / row-click-to-collapse.
+    it('toggles collapse when the row itself is clicked, not just the caret', async () => {
       renderReport({ savedSections: threeReports });
 
       await userEvent.click(await rowFor('Move Alpha up'));
-      await clickControl('Move Alpha up');
 
-      expect(cardNames()).toEqual(['Alpha', 'Gamma', 'Beta']);
+      expect(await screen.findByRole('button', { name: 'Expand Alpha' })).toBeInTheDocument();
 
-      const moved = await rowFor('Move Alpha up');
+      await userEvent.click(await rowFor('Move Alpha up'));
 
-      await userEvent.unhover(moved);
-      expect(controlsOn(moved)).toBe('true');
+      expect(await screen.findByRole('button', { name: 'Collapse Alpha' })).toBeInTheDocument();
     });
 
-    it('drops the pin on Escape', async () => {
+    // `NodeRow` stops a click on a control from bubbling to the row — without that, "Move Up" (which
+    // has always bubbled, so a click on it also does whatever the row's own click does) would collapse
+    // the row it just moved, as a side effect of reordering rather than of anyone asking to collapse it.
+    it('does not toggle collapse as a side effect of clicking a control button', async () => {
       renderReport({ savedSections: threeReports });
 
-      const row = await rowFor('Move Alpha up');
+      await clickControl('Move Alpha up');
 
-      await userEvent.click(row);
-      await userEvent.unhover(row);
-
-      await userEvent.keyboard('{Escape}');
-
-      expect(controlsOn(row)).toBe('false');
+      expect(screen.getByRole('button', { name: 'Collapse Alpha' })).toBeInTheDocument();
     });
 
     // Exactly one row at a time, however deep the document goes. `stopPropagation` is what does it:
@@ -677,12 +689,24 @@ describe('<ReportOfReports>', () => {
       { type: 'section', params: { title }, children: [stored('a')] },
     ];
 
-    it('opens the title field when the title is clicked, focused and ready to type', async () => {
+    // Editing starts from the pencil beside the title, not from clicking the title text itself — the
+    // row now toggles its own collapse on click, and the two can't both mean "click the title".
+    it('opens the title field when the edit pencil is clicked, focused and ready to type', async () => {
       renderReport({ savedSections: withSection('Q3') });
 
       await userEvent.click(await sectionTitle('Q3'));
 
       expect(await screen.findByRole('textbox')).toHaveFocus();
+    });
+
+    // The pencil's click must not also bubble to the row and toggle its collapse.
+    it('does not toggle collapse when the edit pencil is clicked', async () => {
+      renderReport({ savedSections: withSection('Q3') });
+
+      await userEvent.click(await sectionTitle('Q3'));
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(screen.getByRole('button', { name: 'Collapse Q3' })).toBeInTheDocument();
     });
 
     it('renders the confirmed title', async () => {
@@ -853,96 +877,6 @@ describe('<ReportOfReports>', () => {
       expect(await screen.findByRole('button', { name: 'Add Report to Three' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Add Section to Three' })).not.toBeInTheDocument();
     });
-
-    // Indent alone stops answering "where will this land?" once sections nest: a deep section's two
-    // buttons sit a few pixels from its parent's, and both rows read the same. Pointing at one tints
-    // the container it adds into, so what is about to gain a node is what lights up.
-    describe('showing which container an add button belongs to', () => {
-      const nested = () => renderReport({ savedSections: [nest('One', [nest('Two', [stored('a')])])] });
-
-      /** The tint is a class; the attribute is how it is asserted, for the reason hover is state. */
-      const targeted = (section: HTMLElement) => section.getAttribute('data-add-target');
-
-      it('tints the section the pointer’s Add Report adds into, and no other', async () => {
-        nested();
-
-        const outer = await sectionFor('One');
-        const inner = await sectionFor('Two');
-
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report to Two' }));
-
-        expect(targeted(inner)).toBe('true');
-        expect(targeted(outer)).toBe('false');
-      });
-
-      it('tints it for Add Section the same way', async () => {
-        nested();
-
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Section to Two' }));
-
-        expect(targeted(await sectionFor('Two'))).toBe('true');
-        expect(targeted(await sectionFor('One'))).toBe('false');
-      });
-
-      // Both buttons add into the same container, so crossing between them must not clear the tint —
-      // it would go out and come back within a frame, which reads as a flicker rather than a cue.
-      it('holds the tint while the pointer crosses from one button to the other', async () => {
-        nested();
-
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report to Two' }));
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Section to Two' }));
-
-        expect(targeted(await sectionFor('Two'))).toBe('true');
-      });
-
-      it('drops the tint once the pointer leaves the row', async () => {
-        nested();
-
-        const button = await screen.findByRole('button', { name: 'Add Report to Two' });
-
-        await userEvent.hover(button);
-        await userEvent.unhover(button);
-
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-
-      // The buttons reveal themselves on `focus-within`, so a keyboard user meets the same puzzle a
-      // pointer user does: a pair of buttons, and nothing saying whose they are.
-      it('tints for the keyboard too, and clears when focus leaves', async () => {
-        nested();
-
-        const button = await screen.findByRole('button', { name: 'Add Report to Two' });
-
-        await act(async () => button.focus());
-        expect(targeted(await sectionFor('Two'))).toBe('true');
-
-        await act(async () => button.blur());
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-
-      // The root's pair adds at the top level. Tinting "the document" would be the whole page, and
-      // nothing lit is already what top-level means — every section stays untinted instead.
-      it('tints nothing for the document root’s own buttons', async () => {
-        nested();
-
-        // The root's buttons carry the bare label, so this finds the root row and not one of the two
-        // sections' — see the innermost-container case above.
-        await userEvent.hover(await screen.findByRole('button', { name: 'Add Report' }));
-
-        expect(targeted(await sectionFor('One'))).toBe('false');
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-
-      // The picker covers the document and the pointer never moves, so a tint left set would sit
-      // behind the modal and outlive the choice that closed it.
-      it('drops the tint when the picker opens', async () => {
-        nested();
-
-        await userEvent.click(await screen.findByRole('button', { name: 'Add Report to Two' }));
-
-        expect(targeted(await sectionFor('Two'))).toBe('false');
-      });
-    });
   });
 
   // See spec/016-report-of-reports/003-self-reports.
@@ -1063,8 +997,58 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [storedValue('(issue = ABC-1).comment')] });
 
       expect(await screen.findByTestId('inline-value-error')).toHaveTextContent(
-        "Comments can't show as a value — use .latestComment for the newest one.",
+        "Comments can't show as a value — use .latestComment for the newest one, or .statusUpdate for this week's update.",
       );
+    });
+
+    /**
+     * Rich content (ADF/wiki) doesn't fit `NodeRow`'s single-line `children` slot the way a plain value
+     * does, so `InlineValueView` switches layout: a one-line title in the row, the content as a sibling
+     * block beneath it — the same shape `latestComment`/`statusUpdate` already use. Getting this wrong
+     * once put the whole block inside `NodeRow`, which floated the controls beside the block instead of
+     * a title and dropped the issue key from the row entirely.
+     * See spec/030-inline-custom-field-report.
+     */
+    describe('rich-text field values', () => {
+      const doc = (text: string) => ({
+        type: 'doc',
+        version: 1,
+        content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+      });
+
+      it('titles the row with the work item and field, not the field alone', async () => {
+        searchResult = [{ key: 'ABC-1', fields: { 'Acceptance Criteria': doc('Ship behind a flag.') } }];
+        renderReport({ savedSections: [storedValue('(issue = ABC-1).customfield_10001')] });
+
+        expect(await value()).toHaveTextContent('Ship behind a flag.');
+        expect(screen.getByRole('heading', { name: 'ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+      });
+
+      it('gives the row a caret that collapses the content beneath it', async () => {
+        searchResult = [{ key: 'ABC-1', fields: { 'Acceptance Criteria': doc('Ship behind a flag.') } }];
+        renderReport({ savedSections: [storedValue('(issue = ABC-1).customfield_10001')] });
+
+        await value();
+
+        const toggle = screen.getByRole('button', { name: 'Collapse ABC-1 Acceptance Criteria' });
+        await userEvent.click(toggle);
+
+        expect(screen.getByRole('button', { name: 'Expand ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+        // Stays mounted (so print can restore it) but hidden — the same choice `CommentReportView`
+        // makes for a collapsed comment body.
+        expect(screen.getByTestId('inline-value')).not.toBeVisible();
+        // The title survives collapse — only the content beneath it hides.
+        expect(screen.getByRole('heading', { name: 'ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+      });
+
+      it('still names itself by work item and field in its controls', async () => {
+        searchResult = [{ key: 'ABC-1', fields: { 'Acceptance Criteria': doc('Ship behind a flag.') } }];
+        renderReport({ savedSections: [storedValue('(issue = ABC-1).customfield_10001')] });
+
+        await value();
+
+        expect(screen.getByRole('button', { name: 'Remove ABC-1 Acceptance Criteria' })).toBeInTheDocument();
+      });
     });
   });
 
@@ -1099,8 +1083,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [storedComment('ABC-1')] });
 
       expect(await body()).toHaveTextContent('Blocked on the SSO cert rotation.');
-      expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
-      expect(screen.getByText(/^Last updated: /)).toBeInTheDocument();
+      expect(screen.getByText(/^Updated by Dana Ruiz · /)).toBeInTheDocument();
     });
 
     // The row is the key as the node's heading — no "Latest comment" prefix, and never the raw
@@ -1310,6 +1293,160 @@ describe('<ReportOfReports>', () => {
 
       expect(screen.queryByTestId('latest-comment')).not.toBeInTheDocument();
       expect(cardNames()).toEqual(['Alpha']);
+    });
+  });
+
+  /**
+   * The third preset of the same `inline-value` node: `statusUpdate`. It shares the shell, the row, and
+   * every failure message with Latest Comment, so what's asserted here is only what differs — the rule
+   * that picks the comment, and the note when nothing does.
+   * See spec/027-status-updates.
+   */
+  describe('status update values', () => {
+    const storedUpdate = (issueKey: string): StoredNode =>
+      ({ type: 'inline-value', params: { expression: `(issue = ${issueKey}).statusUpdate` } }) as StoredNode;
+
+    /** Its sibling preset, for the one test that puts both on the same work item. */
+    const storedLatest = (issueKey: string): StoredNode =>
+      ({ type: 'inline-value', params: { expression: `(issue = ${issueKey}).latestComment` } }) as StoredNode;
+
+    /**
+     * Fixture times built off the current week rather than a mocked clock: the Monday that opens this
+     * week is always in it, and a millisecond before that Monday never is. Which spares this suite —
+     * whose typeahead debounces real time — from fake timers. The boundary itself is pinned with
+     * `vi.setSystemTime` in `useStatusUpdate.test.tsx`.
+     */
+    const weekStart = () => startOfWeekUTC(Date.now());
+    const inWeek = (offsetMs = 0) => new Date(weekStart() + offsetMs).toISOString();
+    const beforeWeek = () => new Date(weekStart() - 1).toISOString();
+
+    const commentAt = (text: string, created: string) => ({
+      body: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] },
+      author: { displayName: 'Dana Ruiz' },
+      created,
+      updated: created,
+    });
+
+    const body = () => screen.findByTestId('status-update');
+
+    it('renders this week update, then who updated it and when', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: cert rotation lands Thursday.', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('ABC-1')] });
+
+      expect(await body()).toHaveTextContent('Status Update: cert rotation lands Thursday.');
+      expect(screen.getByText(/^Updated by Dana Ruiz · /)).toBeInTheDocument();
+    });
+
+    // The row is the key, exactly as its sibling's is — the shell is shared, and nothing on the row
+    // says which preset this is.
+    it('heads the node with the key, not the expression', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: fine', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('ABC-1')] });
+
+      await body();
+
+      expect(screen.getByRole('heading', { name: 'ABC-1' })).toBeInTheDocument();
+      expect(screen.queryByText('(issue = ABC-1).statusUpdate')).not.toBeInTheDocument();
+    });
+
+    // A page, through the second fetcher — not the single-comment one Latest Comment uses.
+    it('reaches the page endpoint through the key the search found', async () => {
+      searchResult = [{ key: 'SYSTEMS-918', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: fine', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('SYSTEMS-918')] });
+
+      await body();
+
+      expect(searches).toEqual([
+        expect.objectContaining({ jql: 'issue = SYSTEMS-918', fields: ['summary'], maxResults: 2 }),
+      ]);
+      expect(recentCommentRequests).toEqual(['SYSTEMS-918']);
+      expect(commentRequests).toEqual([]);
+    });
+
+    /**
+     * **The behaviour the feature exists for.** Both presets on one work item, one document: an
+     * unrelated comment posted after the update becomes the latest comment, and the status update
+     * doesn't move.
+     */
+    it('does not follow a newer unrelated comment, where latest comment does', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      commentResult = { comments: [commentAt('can you rebase this?', inWeek(120_000))] };
+      recentCommentsResult = {
+        comments: [
+          commentAt('can you rebase this?', inWeek(120_000)),
+          commentAt('Status Update: still on the cert.', inWeek(60_000)),
+        ],
+      };
+      renderReport({ savedSections: [storedUpdate('ABC-1'), storedLatest('ABC-1')] });
+
+      expect(await body()).toHaveTextContent('Status Update: still on the cert.');
+      expect(await screen.findByTestId('latest-comment')).toHaveTextContent('can you rebase this?');
+    });
+
+    // The thing Latest Comment structurally cannot say. One note for both nothings — no comments this
+    // week, and comments but no update — because the reader is told the same true thing either way.
+    it('says nobody has posted one yet, rather than showing a stale update', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = {
+        comments: [commentAt('Status Update: last week.', beforeWeek()), commentAt('merged', inWeek(60_000))],
+      };
+      renderReport({ savedSections: [storedUpdate('ABC-1'), stored('a')] });
+
+      expect(await screen.findByText('No status update has been posted yet.')).toBeInTheDocument();
+      expect(screen.queryByText('No updates found.')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('status-update')).not.toBeInTheDocument();
+      // And the document around it keeps rendering.
+      expect(cardNames()).toEqual(['Alpha']);
+    });
+
+    // Temporarily withdrawn from the Add Report modal's dropdown — see `DERIVED_OPTIONS`' comment in
+    // fieldCatalog.ts — because its label collided with the real "Status Update" custom field now
+    // offered under `Fields`. An already-saved `.statusUpdate` node still renders (the tests above cover
+    // that); only picking it new, from this modal, is disabled.
+    it.skip('is added from the Add Report modal, into the section it was opened from', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: added from the modal.', inWeek(60_000))] };
+      renderReport({ savedSections: [nest('Q3', [])] });
+
+      await addValue('Add Report to Q3', 'ABC-1', 'Status Update');
+
+      const section = (await sectionTitle('Q3')).closest('section') as HTMLElement;
+
+      expect(await within(section).findByTestId('status-update')).toHaveTextContent(
+        'Status Update: added from the modal.',
+      );
+    });
+
+    it('asks Jira nothing for a node with no work item set', async () => {
+      renderReport({ savedSections: [storedUpdate('')] });
+
+      expect(await screen.findByText('No work item set.')).toBeInTheDocument();
+      expect(searches).toEqual([]);
+      expect(recentCommentRequests).toEqual([]);
+    });
+
+    it('reports a key that matched nothing with the same message its sibling gives', async () => {
+      searchResult = [];
+      renderReport({ savedSections: [storedUpdate('NOPE-1')] });
+
+      expect(await screen.findByTestId('status-update-error')).toHaveTextContent('No work item matched.');
+      expect(recentCommentRequests).toEqual([]);
+    });
+
+    // The shared shell's caret, and the body that stays mounted so print restores it.
+    it('offers a caret that hides the update and leaves the row', async () => {
+      searchResult = [{ key: 'ABC-1', fields: {} }];
+      recentCommentsResult = { comments: [commentAt('Status Update: fine', inWeek(60_000))] };
+      renderReport({ savedSections: [storedUpdate('ABC-1')] });
+
+      await body();
+      await userEvent.click(screen.getByRole('button', { name: 'Collapse ABC-1' }));
+
+      expect(screen.getByTestId('status-update').closest('[hidden]')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'ABC-1' })).toBeInTheDocument();
     });
   });
 

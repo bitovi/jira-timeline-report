@@ -43,6 +43,16 @@ export default defineConfig({
   base: './',
   plugins: [react(), copyImages()],
   publicDir: false,
+  resolve: {
+    // `forge/index.html`'s entry script is `../src/forge.main.ts` — relative to the *document*, not
+    // `root`. Since the doc is served at `/` (root is `forge/`), the browser clamps `..` at the site
+    // root before the request ever reaches Vite, landing on `/src/forge.main.ts`. This alias sends
+    // that literal (clamped) path back to the real `src/` outside `root`, which `server.fs.allow`
+    // above permits reading from.
+    alias: {
+      '/src': resolve(__dirname, 'src'),
+    },
+  },
   // Same rationale as vite.config.ts: some transitive Atlaskit editor deps read `process.env.CI`
   // at module scope, and Vite only substitutes `NODE_ENV`.
   define: {

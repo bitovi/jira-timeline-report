@@ -67,21 +67,77 @@ export const AmbiguousField: Story = {
   },
 };
 
-/** A rich-text field, which has no text rendering yet. */
+/** An object shape `formatFieldValue` still refuses — no ADF `doc`, no recognizable label. */
 export const UnsupportedType: Story = {
+  args: {
+    expression: '(issue = ABC-1).customfield_99999',
+    state: {
+      status: 'ok',
+      value: { shape: 'unexpected' },
+      field: { id: 'customfield_99999', name: 'Mystery Field', schema: { type: 'string' } },
+    },
+  },
+};
+
+/**
+ * An ADF-bearing field — `description`, or any other rich-text field — rendered through `AdfDocument`,
+ * the generic fix that isn't specific to wiki markup. See spec/030-inline-custom-field-report.
+ */
+export const AdfValue: Story = {
   args: {
     expression: '(issue = ABC-1).description',
     state: {
       status: 'ok',
-      value: { type: 'doc', version: 1, content: [] },
+      value: {
+        type: 'doc',
+        version: 1,
+        content: [
+          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Rollout plan' }] },
+          {
+            type: 'bulletList',
+            content: [
+              {
+                type: 'listItem',
+                content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ship behind a flag' }] }],
+              },
+              {
+                type: 'listItem',
+                content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Remove the flag' }] }],
+              },
+            ],
+          },
+        ],
+      },
       field: { id: 'description', name: 'Description', schema: { type: 'string' } },
     },
   },
 };
 
 /**
+ * A wiki-markup field — e.g. the "Status Update" custom field (`customfield_10844`) the bug report was
+ * filed against — converted to ADF and rendered the same way. `schema.custom` is what marks it as such;
+ * `schema.type` alone (`"string"`) can't tell it apart from a plain text field.
+ * See spec/030-inline-custom-field-report.
+ */
+export const WikiMarkupValue: Story = {
+  args: {
+    expression: '(issue = SUNNYSUSHI-54).customfield_10844',
+    state: {
+      status: 'ok',
+      value: 'h1. Status\n\n* Shipped the migration\n* Rolled back the old endpoint\n\n||Env||State||\n|prod|green|\n',
+      field: {
+        id: 'customfield_10844',
+        name: 'Status Update',
+        schema: { type: 'string', custom: 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' },
+      },
+    },
+  },
+};
+
+/**
  * `.comment` is a real field, so it resolves — and then dead-ends, because a page of comments isn't a
- * value. The message is the only signpost to `.latestComment`, which can't be found in Jira's fields.
+ * value. The message is the only signpost to `.latestComment` and `.statusUpdate`, neither of which can
+ * be found in Jira's fields.
  */
 export const CommentsPage: Story = {
   args: {

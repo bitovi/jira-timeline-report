@@ -1,10 +1,12 @@
-import type { LatestCommentState } from '../hooks/useLatestComment';
+import type { FC } from 'react';
+import type { CommentReportState } from '../hooks/useCommentReport';
+import type { CommentBodyProps } from './CommentReport';
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
-import { LatestComment, LatestCommentBody, formatCommentTime } from './LatestComment';
+import { CommentBody, CommentRow, formatCommentTime } from './CommentReport';
 
 /**
  * Stub `AdfDocument` with its own `Suspense` fallback — the local walker, synchronously — so this suite
@@ -26,17 +28,26 @@ vi.mock('../../../components/AdfDocument', async () => {
 const doc = (...content: unknown[]) => ({ type: 'doc', version: 1, content });
 const text = (value: string) => [{ type: 'text', text: value }];
 
-const ok = (body: unknown): LatestCommentState => ({
+const ok = (body: unknown): CommentReportState => ({
   status: 'ok',
   body,
   author: 'Dana Ruiz',
   updated: '2026-08-04T14:22:00.000Z',
 });
 
-const renderRow = (target: string) => render(<LatestComment target={target} />);
+const renderRow = (target: string) => render(<CommentRow target={target} />);
+
+/**
+ * The body carrying the Latest Comment preset's two strings, so the cases below read as they did before
+ * `CommentReport` was generalized — every one of them is about rendering a comment, which is the same
+ * question for both presets. The two strings that aren't get their own cases at the end.
+ */
+const LatestCommentBody: FC<Omit<CommentBodyProps, 'emptyNote' | 'testId'>> = (props) => (
+  <CommentBody {...props} emptyNote="No updates found." testId="latest-comment" />
+);
 
 // See spec/016-report-of-reports/007-latest-comment-report § The row is the key.
-describe('LatestComment row', () => {
+describe('CommentRow', () => {
   // The row is the key and nothing else — no "Latest comment" prefix. See § The row is the key for why
   // the label went, and what collapsing costs without it.
   it('is the work item key, as the node’s heading', () => {
@@ -69,7 +80,7 @@ describe('LatestComment row', () => {
   });
 });
 
-describe('LatestCommentBody', () => {
+describe('CommentBody', () => {
   // The comment leads; who updated it and when close it out. Order matters as much as presence, so this
   // asserts the document order rather than just that all three are somewhere on screen.
   it('renders the comment, then who updated it and when', () => {
@@ -79,14 +90,14 @@ describe('LatestCommentBody', () => {
 
     expect(screen.getByTestId('latest-comment')).toBeInTheDocument();
     expect(screen.getByText('Blocked.')).toBeInTheDocument();
-    expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+
+    const meta = `Updated by Dana Ruiz · ${formatCommentTime('2026-08-04T14:22:00.000Z')}`;
+
+    expect(screen.getByText(meta)).toBeInTheDocument();
 
     const lines = [...container.querySelectorAll('p')].map((node) => node.textContent);
 
-    expect(lines.indexOf('Blocked.')).toBeLessThan(lines.indexOf('Updated by: Dana Ruiz'));
-    expect(lines.indexOf('Updated by: Dana Ruiz')).toBeLessThan(
-      lines.findIndex((line) => line?.startsWith('Last updated: ')),
-    );
+    expect(lines.indexOf('Blocked.')).toBeLessThan(lines.indexOf(meta));
   });
 
   // The formatting a real comment carries. Flattening dropped all of this, which is what made a comment
@@ -137,14 +148,16 @@ describe('LatestCommentBody', () => {
   });
 
   // Timezone-agnostic: the same formatter the component uses, so this passes wherever it runs.
-  it('closes with when the comment was last updated', () => {
+  it('combines the author and the update time into one line', () => {
     render(<LatestCommentBody target="ABC-1" state={ok(doc({ type: 'paragraph', content: text('Hi') }))} />);
 
-    expect(screen.getByText(`Last updated: ${formatCommentTime('2026-08-04T14:22:00.000Z')}`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`Updated by Dana Ruiz · ${formatCommentTime('2026-08-04T14:22:00.000Z')}`),
+    ).toBeInTheDocument();
   });
 
-  // "Last updated:" with nothing after it is worse than no line at all.
-  it('drops the timestamp line rather than labelling a missing timestamp', () => {
+  // "Updated by Dana Ruiz · " with nothing after it is worse than no date at all.
+  it('drops the date half of the meta line rather than labelling a missing timestamp', () => {
     render(
       <LatestCommentBody
         target="ABC-1"
@@ -157,8 +170,8 @@ describe('LatestCommentBody', () => {
       />,
     );
 
-    expect(screen.queryByText(/Last updated/)).not.toBeInTheDocument();
-    expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+    expect(screen.getByText('Updated by Dana Ruiz')).toBeInTheDocument();
+    expect(screen.queryByText(/·/)).not.toBeInTheDocument();
   });
 
   // A statement of fact rather than an instruction: with the node read-only there is nowhere to enter a
@@ -205,10 +218,56 @@ describe('LatestCommentBody', () => {
 
     expect(screen.queryByText('This comment has no content.')).not.toBeInTheDocument();
     expect(screen.getByTestId('latest-comment')).toBeInTheDocument();
-    expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+    expect(screen.getByText(/^Updated by Dana Ruiz · /)).toBeInTheDocument();
   });
 
   it('shows Jira own string rather than "Invalid Date" for an unparseable timestamp', () => {
     expect(formatCommentTime('not a date')).toBe('not a date');
+  });
+});
+
+/**
+ * The two things a preset owns. Everything else above is shared, which is the point of the rename.
+ * See spec/027-status-updates § The view.
+ */
+describe('CommentBody, per preset', () => {
+  it('says what the caller says for empty, so each preset states its own true thing', () => {
+    render(
+      <CommentBody
+        target="ABC-1"
+        state={{ status: 'empty' }}
+        emptyNote="No status update has been posted yet."
+        testId="status-update"
+      />,
+    );
+
+    expect(screen.getByText('No status update has been posted yet.')).toBeInTheDocument();
+    expect(screen.queryByText('No updates found.')).not.toBeInTheDocument();
+  });
+
+  it('keys the body and the error line by the caller testId, so two presets are findable apart', () => {
+    const { unmount } = render(
+      <CommentBody
+        target="ABC-1"
+        state={ok(doc({ type: 'paragraph', content: text('Shipped.') }))}
+        emptyNote="No status update has been posted yet."
+        testId="status-update"
+      />,
+    );
+
+    expect(screen.getByTestId('status-update')).toHaveTextContent('Shipped.');
+    expect(screen.queryByTestId('latest-comment')).not.toBeInTheDocument();
+
+    unmount();
+    render(
+      <CommentBody
+        target="NOPE-1"
+        state={{ status: 'error', message: 'No work item matched.' }}
+        emptyNote="No status update has been posted yet."
+        testId="status-update"
+      />,
+    );
+
+    expect(screen.getByTestId('status-update-error')).toHaveTextContent('No work item matched.');
   });
 });

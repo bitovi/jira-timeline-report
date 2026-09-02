@@ -74,102 +74,158 @@ function findTeamTable(document: any): Array<Record<'team' | 'velocity' | 'track
  * `fetchJiraIssuesWithJQLWithNamedFields` and `editJiraIssueWithNamedFields`, both of which the
  * request helper has already made host-appropriate. The one host-specific question — "is there a
  * session to read with?" — is injected.
+ *
+ * Every key this storage handles (theme, saved-reports, all-team-data, features, reports-config)
+ * persists together as one JSON blob in a single "configuration issue"'s Description field. Reading
+ * it fresh via JQL search (`getConfigurationIssue`) on every call is unsafe in a way that silently
+ * loses writes:
+ *
+ * 1. The write goes through `PUT /issue/:id`, but the read goes through `/search/jql`, which serves
+ *    an index that can lag the write by a few seconds — a read shortly after a write can still come
+ *    back with the pre-write blob.
+ * 2. Two independent `update()` calls for two *different* keys (e.g. resetting the theme, then
+ *    saving a report moments later) each do their own fetch → merge-in-their-own-key → write-the-
+ *    whole-blob-back. If the second call's fetch happens before the first call's write has landed —
+ *    or after, but the search index hasn't caught up (see #1) — its merge starts from the stale
+ *    blob, so its write clobbers the first call's change in full when it lands: the second key saves
+ *    correctly, but the first key reverts to whatever it was before, as if the first save never
+ *    happened. This is exactly what a theme reset silently losing to a report save moments later
+ *    looks like.
+ *
+ * Caching the issue after the first read, updating it optimistically after every write this
+ * instance makes, and serializing every call through `queue` (so no two calls can be mid-flight
+ * against a not-yet-updated cache at once) closes both gaps: every call after the first always
+ * merges against what THIS page actually last wrote, never a re-fetched value.
+ *
+ * This does not protect against a second browser tab, or another user, editing the same
+ * configuration issue at the same time — only against races within one loaded page, which is what
+ * two settings actions in the same session actually are. Applies equally to Forge: a Forge report
+ * saving its config and a settings change moments later hit the exact same race.
  */
 const createConfigurationIssueStorage =
   (canReadJira: CanReadJira): StorageFactory =>
   (jiraHelpers) => {
+    let cachedIssue: StorageIssue | null | undefined;
+    let queue: Promise<unknown> = Promise.resolve();
+
+    const readIssue = async (): Promise<StorageIssue | null> => {
+      if (cachedIssue === undefined) {
+        cachedIssue = await getConfigurationIssue(jiraHelpers, canReadJira);
+      }
+
+      return cachedIssue;
+    };
+
+    /** Runs `fn` after every call queued before it, whether they resolved or rejected. */
+    const enqueue = <TResult>(fn: () => Promise<TResult>): Promise<TResult> => {
+      const result = queue.then(fn, fn);
+
+      queue = result.then(
+        () => undefined,
+        () => undefined,
+      );
+
+      return result;
+    };
+
     return {
       storageInitialized: async () => {
-        const configurationIssue = await getConfigurationIssue(jiraHelpers, canReadJira);
+        const configurationIssue = await readIssue();
         return !!configurationIssue;
       },
-      get: async function <TData>(key: string, defaultShape: unknown = {}): Promise<TData | null> {
-        const configurationIssue = await getConfigurationIssue(jiraHelpers, canReadJira);
+      get: function <TData>(key: string, defaultShape: unknown = {}): Promise<TData | null> {
+        return enqueue(async () => {
+          const configurationIssue = await readIssue();
 
-        if (!configurationIssue) {
-          return null;
-        }
+          if (!configurationIssue) {
+            return null;
+          }
 
-        let storeContent = configurationIssue.fields.Description.content.find(
-          (content) => content.type === 'codeBlock',
-        );
+          let storeContent = configurationIssue.fields.Description.content.find(
+            (content) => content.type === 'codeBlock',
+          );
 
-        if (!storeContent) {
-          storeContent = createCodeBlock(JSON.stringify({ [key]: defaultShape }));
-        }
+          if (!storeContent) {
+            storeContent = createCodeBlock(JSON.stringify({ [key]: defaultShape }));
+          }
 
-        const [stringifiedStore] = storeContent.content;
-        const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
+          const [stringifiedStore] = storeContent.content;
+          const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-        return store[key];
+          return store[key];
+        });
       },
-      update: async function <TData>(key: string, value: TData) {
-        const configurationIssue = await getConfigurationIssue(jiraHelpers, canReadJira);
+      update: function <TData>(key: string, value: TData) {
+        return enqueue(async () => {
+          const configurationIssue = await readIssue();
 
-        if (!configurationIssue) {
-          throw new Error('[Storage Error]: update (web-app) needs a configuration issue');
-        }
+          if (!configurationIssue) {
+            throw new Error('[Storage Error]: update (web-app) needs a configuration issue');
+          }
 
-        let storeContent = configurationIssue.fields.Description.content.find(
-          (content) => content.type === 'codeBlock',
-        );
+          let storeContent = configurationIssue.fields.Description.content.find(
+            (content) => content.type === 'codeBlock',
+          );
 
-        if (!storeContent) {
-          storeContent = createCodeBlock();
-        }
+          if (!storeContent) {
+            storeContent = createCodeBlock();
+          }
 
-        /**
-         * Temporary special logic, see below
-         */
-        const teamTable = findTeamTable(configurationIssue);
+          /**
+           * Temporary special logic, see below
+           */
+          const teamTable = findTeamTable(configurationIssue);
 
-        let newTeamsTable: Table | undefined;
+          let newTeamsTable: Table | undefined;
 
-        if (!!teamTable && key === 'all-team-data') {
-          newTeamsTable = getUpdatedTeamTable(value as AllTeamData, teamTable);
-        }
-        /**
-         * End special logic
-         */
+          if (!!teamTable && key === 'all-team-data') {
+            newTeamsTable = getUpdatedTeamTable(value as AllTeamData, teamTable);
+          }
+          /**
+           * End special logic
+           */
 
-        const [stringifiedStore] = storeContent.content;
-        const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
+          const [stringifiedStore] = storeContent.content;
+          const store = JSON.parse(stringifiedStore.text) as Record<string, TData>;
 
-        const newContent: Array<StorageIssueContent> = [createCodeBlock(JSON.stringify({ ...store, [key]: value }))];
+          const newContent: Array<StorageIssueContent> = [createCodeBlock(JSON.stringify({ ...store, [key]: value }))];
 
-        /**
-         * Temporary special logic, see below
-         */
-        if (newTeamsTable) {
-          newContent.unshift(newTeamsTable);
-        }
-        /**
-         * End special logic
-         */
+          /**
+           * Temporary special logic, see below
+           */
+          if (newTeamsTable) {
+            newContent.unshift(newTeamsTable);
+          }
+          /**
+           * End special logic
+           */
 
-        return jiraHelpers
-          .editJiraIssueWithNamedFields(configurationIssue.id, {
-            Description: {
-              ...configurationIssue.fields.Description,
-              content: [
-                ...configurationIssue.fields.Description.content.filter((content) => {
-                  /**
-                   * Temporary special logic, see below
-                   */
-                  if (!!newTeamsTable) {
-                    return content.type !== 'codeBlock' && content.type !== 'table';
-                  }
-                  /**
-                   * End special logic
-                   */
+          const description = {
+            ...configurationIssue.fields.Description,
+            content: [
+              ...configurationIssue.fields.Description.content.filter((content) => {
+                /**
+                 * Temporary special logic, see below
+                 */
+                if (!!newTeamsTable) {
+                  return content.type !== 'codeBlock' && content.type !== 'table';
+                }
+                /**
+                 * End special logic
+                 */
 
-                  return content.type !== 'codeBlock';
-                }),
-                ...newContent,
-              ],
-            },
-          })
-          .then();
+                return content.type !== 'codeBlock';
+              }),
+              ...newContent,
+            ],
+          };
+
+          await jiraHelpers.editJiraIssueWithNamedFields(configurationIssue.id, { Description: description });
+
+          // Optimistic: the next call in (or after) this queue merges against what we just wrote,
+          // instead of re-fetching a search index that may not have caught up yet.
+          cachedIssue = { ...configurationIssue, fields: { ...configurationIssue.fields, Description: description } };
+        });
       },
     };
   };

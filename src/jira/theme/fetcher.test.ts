@@ -39,7 +39,7 @@ describe('getTheme', () => {
     const section = theme.find(({ label }) => label === 'Section');
 
     expect(section).toBeDefined();
-    expect(section?.backgroundColor).toBe('#FFFFFF');
+    expect(section?.backgroundColor).toBe('#FBFCFC');
     expect(section?.group).toBe('reportOfReports');
     expect(section?.backgroundCssVar).toBe('--section-color');
   });
