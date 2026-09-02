@@ -195,7 +195,14 @@ is a different resource.
 
 **Spike question 5 is answered, conditionally.** A Forge app _can_ access Connect app properties —
 but only "as long as they are stored against the same `app.connect.key`."
-— [Extending your app with Forge](https://developer.atlassian.com/platform/adopting-forge-from-connect/extending-your-app/)
+
+> **Confirmed empirically, 2 Sep 2026.** Not just readable — **read and write**, from a Custom UI
+> front end via `@forge/bridge`'s `requestJira`, with no resolver and no `@forge/api`. Verified on
+> the Marketplace app's `prodcheck` environment against `bitovi.status-report`. The shipping app
+> keeps `app.connect.key`, so the "Unreachable" row below applies only to the standalone sandbox,
+> not to the app that ships. See
+> [next-steps/status-2026-09-02.md](./next-steps/status-2026-09-02.md).
+> — [Extending your app with Forge](https://developer.atlassian.com/platform/adopting-forge-from-connect/extending-your-app/)
 
 So the answer turns entirely on app identity:
 

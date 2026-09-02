@@ -17,6 +17,10 @@ app itself is not the thing that ships.
 
 ## The one decision that gates everything
 
+> **Settled (19 Aug 2026): we converted the existing app.** Phase A shipped against the existing
+> app key; production is now Connect-on-Forge. The table below is kept as the reasoning, not as an
+> open question. See [status-2026-09-02.md](./status-2026-09-02.md).
+
 **Do we convert the existing Marketplace app, or list a new one?**
 
 |                          | Convert the existing app<br>("incremental adoption") | List a new app<br>("successor app")            |
@@ -57,6 +61,11 @@ Submitting a version, editing the listing, and reading install data all need par
 find out now rather than at submission time.
 
 ### 3. Can a Forge app read Connect app properties? — _engineering, ~1 hour_
+
+> **Answered 2 Sep 2026: yes — read _and_ write, from the front end, with no resolver**, as long as
+> the app declares the same `app.connect.key`. Verified on `prodcheck`; full evidence in
+> [status-2026-09-02.md](./status-2026-09-02.md). The cutover is therefore seamless: customers keep
+> the store they already have, and `resolver-storage/plan.md` is unblocked by not being needed.
 
 This is a technical question with a big product consequence, so it belongs on the list.
 
@@ -198,6 +207,12 @@ Atlassian-side breakage becomes our problem with no recourse.
 
 Phase A (Step 2) is what decouples us from that date, and it is cheap. Worth doing regardless of how
 long Step 3 takes.
+
+> **Correction (2 Sep 2026): Phase A does not clear this exposure.** Jira's Connected apps page
+> badges an app **LEGACY** — "unsupported after December 2026" — based on the presence of Connect
+> modules, not on whether a Forge manifest wraps them. The Connect-on-Forge app and the hybrid are
+> both badged; only the fully-Forge sandbox is not. **Step 3 is what clears it.** See
+> [status-2026-09-02.md](./status-2026-09-02.md).
 
 ## Useful commands
 
