@@ -80,6 +80,13 @@ app:
   #
   # `forge deploy` with no `-e` deploys to PRODUCTION. Use `-e prodcheck` for anything exploratory.
   id: ari:cloud:ecosystem::app/12573c92-9009-45d3-ab51-46f65ffa1ba1
+  # REQUIRED — this is a paid app. Omitting this block ships licensing DISABLED, which is what
+  # happened to production major version 3 (deployed 3 Sep, `License: false` in
+  # `forge version list -e production`, against `true` on v2). With no license on the view context,
+  # `getLicensing()` in src/forge.main.ts takes its "absent means allowed" branch and every install
+  # runs unlicensed. Do not remove this.
+  licensing:
+    enabled: true
   connect:
     # NOT a Connect module — an identity claim, and the thing that grants access to existing
     # customers' saved reports. If any forge command offers to delete this key, answer N.

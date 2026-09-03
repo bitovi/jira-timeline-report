@@ -161,8 +161,27 @@ npx forge deploy -e production --approve MAJOR_VERSION_RULE
 deletion prompt.
 
 ```bash
-npx forge version list -e production   # confirm the new major version is listed
+npx forge version list -e production
 ```
+
+**Check every column of the new row, not just that it appeared.** Expected:
+
+| Column         | Expected                                    | Why it matters                                                   |
+| -------------- | ------------------------------------------- | ---------------------------------------------------------------- |
+| `Egress`       | empty                                       | any value means an egress permission customers see at install    |
+| `Policies`     | `styles: 1`                                 | the Atlaskit `unsafe-inline`                                     |
+| `Scopes`       | `4`                                         | all four are required (Step 3)                                   |
+| `Connect keys` | `2`                                         | the key survived — this is what reaches customers' saved reports |
+| `Remotes`      | `0`                                         | a remote disqualifies Runs on Atlassian                          |
+| `Modules`      | `jira:globalPage: 1`, `jira:projectPage: 1` | native Forge, no `connect-jira:*`                                |
+| **`License`**  | **`true`**                                  | **`false` means the app ships unlicensed — see below**           |
+
+The deploy output should also end with _"is eligible for the Runs on Atlassian program"_.
+
+⚠️ **`License: false` bit us on 3 Sep.** Major version 3 deployed with licensing off because
+`manifest.yml` had no `app.licensing` block, and nothing failed — `getLicensing()`
+(`src/forge.main.ts:28`) treats an absent license as allowed, so every install would have run
+unlicensed. v4 fixed it. This column is the only place that mistake is visible.
 
 ---
 
