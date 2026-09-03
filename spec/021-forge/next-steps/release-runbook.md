@@ -146,6 +146,17 @@ Everything so far is reversible. From Step 6 it is not.
 
 ## Step 6 — Deploy to `production` ⚠️ point of no return
 
+> **Read the whole step before running it.** "Point of no return" is literal in a way that is easy to
+> underestimate: Marketplace detects a production deploy within minutes and files it as a version
+> awaiting approval, and **the partner console cannot withdraw a pending version.** Only Atlassian
+> can reject one. There is no undo, and no "deploy again quickly enough" — deploying the fix creates
+> a _second_ pending version and leaves the bad one in the queue.
+>
+> This is exactly what happened on 3 Sep: major version 3 went out with licensing disabled, 4 fixed
+> it five minutes later, and the console ended up holding **both** 3.0.0 (Free) and 4.0.0 (Paid) as
+> pending, with support the only route to removing 3.0.0. **Check `manifest.yml` against the expected
+> table below _before_ deploying, not after.**
+
 This removes the Connect modules from the production environment and causes Marketplace to create a
 new version within minutes.
 
@@ -179,9 +190,19 @@ npx forge version list -e production
 The deploy output should also end with _"is eligible for the Runs on Atlassian program"_.
 
 ⚠️ **`License: false` bit us on 3 Sep.** Major version 3 deployed with licensing off because
-`manifest.yml` had no `app.licensing` block, and nothing failed — `getLicensing()`
+`manifest.yml` had no `app.licensing` block, and nothing failed — `forge lint` passed, the deploy
+succeeded, it even reported Runs on Atlassian eligibility. `getLicensing()`
 (`src/forge.main.ts:28`) treats an absent license as allowed, so every install would have run
-unlicensed. v4 fixed it. This column is the only place that mistake is visible.
+unlicensed. v4 fixed it five minutes later.
+
+**Marketplace noticed inside those five minutes.** Atlassian Marketplace Support replied on the
+approval thread: _"The newly submitted version for this app has its payment model set to Free, the
+previous version was Paid via Atlassian. Can you confirm if this was your intention?"_ So the
+consequence is not hypothetical — a bad deploy reaches Marketplace within minutes and lands in the
+review queue as a Free version. Answer that the omission was unintentional and point the reviewer at
+the corrected version.
+
+This column is the only place the mistake is visible from the CLI.
 
 ---
 
