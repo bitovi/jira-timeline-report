@@ -1,6 +1,7 @@
 import mainHelper from './shared/main-helper.js';
 import { createWebAppStorage } from './jira/storage/index.web';
 import { createWebLinkBuilder } from './routing/index.web';
+import { getHostedRequestHelper } from './request-helpers/hosted-request-helper';
 
 async function main() {
   return mainHelper(
@@ -16,6 +17,7 @@ async function main() {
     },
     {
       host: 'hosted',
+      createRequestHelper: getHostedRequestHelper,
       createStorage: createWebAppStorage,
       configureRouting: (route: { start: () => void }, { beforeRouteStart }: { beforeRouteStart: () => void }) => {
         // No container to reconcile against on the web host, so the URL is already final here. Still

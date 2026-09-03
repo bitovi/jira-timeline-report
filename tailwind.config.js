@@ -1,5 +1,5 @@
 module.exports = {
-  content: ['./src/**/*.{js,tsx,ts}', './**.html'],
+  content: ['./src/**/*.{js,tsx,ts}', './**.html', './forge/*.html'],
   safelist: ['pl-2', 'pl-4', 'pl-6', 'pl-8', 'border-neutral-301'],
   theme: {
     fontFamily: {

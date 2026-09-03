@@ -5,6 +5,28 @@ walks the six places where host knowledge currently escapes the seam.
 
 Read [README.md](./README.md) first for why. This is the how.
 
+> **Status: deferred, but still the design of record.**
+>
+> [plan.md](./plan.md) adds Forge as a third host _without_ introducing this port — a new
+> `forge.main.ts` alongside `plugin.main.ts` and `web.main.ts`, following the pattern already in the
+> repo. That gets a working Forge app in days instead of weeks, at the cost of three parallel host
+> implementations that can drift. This document is what consolidating them later looks like.
+>
+> Four of the six leaks get closed on the way to Forge anyway, because Forge breaks without them:
+>
+> | Leak                                                | Fate under plan.md                                                                       |
+> | --------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+> | 1 — `requestHelper` chosen by host string           | Closed. The host object gains `createRequestHelper`.                                     |
+> | 2 — `AP` sniffing in `editJiraIssueWithNamedFields` | **Must** be closed — Forge writes fail otherwise.                                        |
+> | 3 — module-scope `AP` sniff in `Link`               | **Must** be closed — wrong answer under Forge.                                           |
+> | 4 — `config.host === 'jira'` field gate             | Closed as `!== 'hosted'`. Not the port, but correct.                                     |
+> | 5 — localStorage token check inside web storage     | Closed as an injected predicate, so Forge reuses the backend verbatim.                   |
+> | 6 — host branching in `mainHelper`                  | Closed. The login-button hide becomes `!== 'hosted'`; the temporary domain POST is gone. |
+>
+> So the residual debt is narrower than it looks: mainly the absence of a _named_ port and its
+> contract test suite. The § history port section below is now load-bearing rather than speculative
+> — plan.md Phase 4 implements exactly it.
+
 ## The shape we already have
 
 `mainHelper` is already a host-adapter consumer — it just takes its adapter as five loose arguments
@@ -19,8 +41,6 @@ export default async function mainHelper(
   let requestHelper;                                    // ← leak: the host should have supplied this
   if (host === 'jira') { requestHelper = getConnectRequestHelper(); }
   else                 { requestHelper = getHostedRequestHelper(config); }
-  ...
-  if (host === 'hosted') { /* temporary domain-reporting POST */ }
   ...
   if (host === 'jira')   { login.style.display = 'none'; }
 }
@@ -191,11 +211,15 @@ A storage backend knowing how the web host stores OAuth tokens is what makes it 
 when it isn't. Replace with `auth.isAuthenticated()`; the backend becomes genuinely host-neutral and
 Forge can reuse it as-is.
 
-### 6. Host branching in `mainHelper` — `:51-63`, `:164-166`
+### 6. Host branching in `mainHelper` — `:164-166`
 
-The login-button hide becomes `chrome.showLoginButton`. The temporary domain-reporting POST is marked
-"will be removed in two weeks" and is dated — check whether it can just go; if not, it belongs in the
-web adapter's construction, not in shared bootstrap.
+The login-button hide becomes `chrome.showLoginButton`.
+
+The other half of this leak — a `host === 'hosted'` block that POSTed the user's Jira site URL to the
+auth server's `/domain` route for CloudWatch logging — is gone. It was marked "will be removed in two
+weeks" in May 2025 and answered its own question: it could just go. Its `accessible-resources` call
+was redundant with `src/jira-oidc-helpers/jira.ts` anyway, so removal also dropped a duplicate
+round-trip from every web boot.
 
 ## The history port, in detail
 
@@ -257,9 +281,11 @@ Because `view.createHistory()` is async and `AP.history` isn't, the Forge adapte
 constructed with an `await` before `configureRouting` runs. That's a change to the bootstrap's shape,
 not just its contents — worth knowing before Phase B1 starts.
 
-**Open, and the subject of spike question 3:** the docs demonstrate `createHistory` with pathnames
-and confirm `location.search` is populated (that's how the `x_atlassian_cf` Connect-redirect param is
-read), but they don't state a length ceiling. Report URLs here are long. Measure it.
+**Still open, and the first thing [plan.md](./plan.md) Phase 4 measures:** the docs demonstrate
+`createHistory` with pathnames and confirm `location.search` is populated (that's how the
+`x_atlassian_cf` Connect-redirect param is read), but they don't state a length ceiling. Report URLs
+here are long. If they don't fit, the fallback is to mirror a short opaque key and keep the payload
+in storage.
 
 ## Proposed layout
 

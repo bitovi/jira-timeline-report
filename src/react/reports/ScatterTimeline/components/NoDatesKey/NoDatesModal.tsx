@@ -42,7 +42,7 @@ export const NoDatesModal: React.FC<NoDatesModalProps> = ({ issues, isOpen, onCl
                   <span
                     className={`empty-set-glyph inline-flex items-center justify-center rounded-full w-4 h-4 shrink-0 ${getStatusColorClass(issue.status ?? issue.rollupStatuses?.rollup?.status ?? 'unknown')}`}
                   >
-                    <img className="w-3 h-3" src="/images/empty-set.svg" alt="" />
+                    <img className="w-3 h-3" src="./images/empty-set.svg" alt="" />
                   </span>
                   <span className="font-semibold text-blue-600 shrink-0">{issue.key}</span>
                   <span className="truncate">{issue.summary}</span>
