@@ -90,10 +90,22 @@ export default async function main() {
       JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
       COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA,
       STATUS_REPORTS_ENV: import.meta.env.VITE_STATUS_REPORTS_ENV,
-      // Deliberately left unset for the Forge build: `initSentry` sets `enabled:
-      // !!FRONTEND_SENTRY_DSN` (shared/sentry.js:14), so Sentry disables itself and the app needs
-      // no egress declaration — which would otherwise be a permission customers see at install.
-      FRONTEND_SENTRY_DSN: import.meta.env.VITE_FRONTEND_SENTRY_DSN,
+      // Hardcoded empty, NOT read from the environment. `initSentry` sets
+      // `enabled: !!FRONTEND_SENTRY_DSN` (shared/sentry.js:13), so this is what keeps Sentry off on
+      // Forge — and Forge is the one host where it must stay off: a live DSN means egress, which
+      // means an `egress` manifest block customers see at install and the loss of Runs on Atlassian
+      // eligibility.
+      //
+      // Reading `import.meta.env.VITE_FRONTEND_SENTRY_DSN` here would leave that guarantee resting
+      // on the ambient environment. `scripts/generate-build-env.sh` writes a `.env` containing that
+      // variable and Vite loads `.env` automatically, so one run of that script — by a developer or
+      // by a future CI job — would silently give the Forge bundle a working DSN with nothing
+      // failing. The app's URLs carry report state including JQL, and browser tracing runs at
+      // `tracesSampleRate: 1.0`, so "silently" would mean customer JQL leaving Jira.
+      //
+      // The website and Connect builds are unaffected: they set this from the environment in
+      // `web.main.ts` and `plugin.main.ts`.
+      FRONTEND_SENTRY_DSN: '',
     },
     {
       host: 'forge',

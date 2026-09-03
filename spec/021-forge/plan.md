@@ -400,6 +400,10 @@ without redeploying. This is the loop to work in for Phases 2–5.
 
 ## Phase 7 — CI, in two stages
 
+> **Superseded for the fully-Forge app by [next-steps/ci-cd.md](./next-steps/ci-cd.md).** This section was written while Forge was a
+> third host alongside the website and Connect. Once Forge is the host customers use, Stage 2's
+> "the Forge job must not gate the others" is backwards. The two-stage shape below still holds.
+
 Deliberately staged: automating a deploy path that hasn't been proven by hand just moves the
 debugging into GitHub Actions, where the feedback loop is minutes instead of seconds. But leaving it
 manual permanently guarantees drift between the three hosts, which defeats the point of host parity.
