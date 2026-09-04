@@ -243,8 +243,23 @@ been open all along.
 
 - `forge version bulk-upgrade` — Atlassian's table lists this as required when the Connect remote is
   removed, independent of admin approval. Confirm it is needed before running it.
-- **Release notes** — still unwritten; listed as outstanding in
-  [status-2026-09-02.md](./status-2026-09-02.md).
+- **Release notes** — **can only be written after approval.** Marketplace auto-generates the release
+  summary from the delta against the previous version, and a version pending approval reports _"This
+  version is pending approval and cannot be edited"_. Confirmed 4 Sep that the notes are editable
+  once the version is approved. Known platform gap, tracked as **FRGE-842**; Atlassian:
+  _"There is currently no way to avoid this currently. The marketplace team is working to fill this
+  gap."_
+  ([community thread](https://community.developer.atlassian.com/t/how-to-update-forge-app-with-release-notes-in-the-markteplace/62037))
+
+  Two consequences worth planning around:
+
+  1. **Watcher notification emails go out with the auto-generated text and cannot be recalled.** For
+     4.0.0 that text is _"App is now paid via Atlassian"_ — the delta against 3.0.0, i.e. a
+     description of undoing our own licensing mistake rather than of the release. Some customers of
+     a paid app will see that phrasing no matter what is fixed afterwards.
+  2. **Never redeploy to correct a release summary.** It creates another pending version and leaves
+     the wrong one in the queue — exactly the v3 → v4 trap.
+
 - **Security questionnaire** — the answers attached to the pending versions are wrong for this
   release in both directions. See
   [status-2026-09-02.md](./status-2026-09-02.md#also-worth-fixing-unrelated-to-the-code). The
