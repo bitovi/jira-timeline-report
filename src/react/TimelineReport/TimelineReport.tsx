@@ -27,7 +27,7 @@ import SavedReports from '../SaveReports';
 import SampleDataNotice from '../SampleDataNotice';
 import SettingsSidebar from '../SettingsSidebar';
 import ViewReports from '../ViewReports';
-import ReportFooter from '../ReportFooter/ReportFooter';
+import ReportFooter, { reportNeedsFooterClearance } from '../ReportFooter/ReportFooter';
 import PrintHeader from '../PrintHeader';
 
 import { reportComponents } from '../reports/shellRegistry';
@@ -248,7 +248,11 @@ export const TimelineReport: FC<TimelineReportProps> = ({
           </div>
 
           {PrimaryReport && (
-            <div id="react-report-container">
+            // `mb-10`, only when the sticky footer below actually needs the clearance — see
+            // `reportNeedsFooterClearance`'s own doc comment. Lives here rather than on each report
+            // component so GanttGrid/ScatterTimeline/TableReport don't each carry their own copy of a
+            // margin that, for two of the three, isn't protecting against anything.
+            <div id="react-report-container" className={reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : ''}>
               <QueryClientProvider client={queryClient}>
                 <JiraProvider jira={rd.jiraHelpers}>
                   <PrimaryReport key={primaryReportType} {...baseProps} />

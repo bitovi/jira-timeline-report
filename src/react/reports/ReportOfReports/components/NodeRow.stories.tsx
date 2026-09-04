@@ -5,7 +5,6 @@ import ArrowDownIcon from '@atlaskit/icon/core/arrow-down';
 import DeleteIcon from '@atlaskit/icon/core/delete';
 
 import { CollapseToggle } from './CollapseToggle';
-import { IndentLevel } from './IndentLevel';
 import { NodeRow } from './NodeRow';
 import { RowButton } from './RowButton';
 
@@ -49,21 +48,26 @@ export const Rest: Story = {
   args: { controls: <Controls /> },
 };
 
+/**
+ * Hovering no longer tints the row itself — "you're on this row" is the title/chevron darkening to
+ * `#002A2D` (its caller's job, `reportTitleColorClassName`/`isRowActive`) and "you're in this section"
+ * is the section's own ring, drawn on its wrapper rather than the row. See
+ * spec/029-report-of-reports-redesign, "hover reveals the section you're in".
+ */
 export const Hovered: Story = {
-  args: { isHovered: true, controls: <Controls isVisible /> },
+  args: {
+    caret: <CollapseToggle isCollapsed={false} label="Alpha" onToggle={() => {}} isRowActive />,
+    children: <h3 className="truncate text-base font-semibold text-[#002A2D]">Alpha</h3>,
+    controls: <Controls isVisible />,
+  },
 };
 
-/** Pinned by a click — the design's "selected". The touch and keyboard path to the controls. */
-export const Pinned: Story = {
-  args: { isPinned: true, controls: <Controls isVisible /> },
-};
-
-/** A section: the caret is the only thing that occupies the leading slot. */
+/** A top-level section: the wider top-level padding, with the caret trailing on the right. */
 export const Section: Story = {
   args: {
-    caret: <CollapseToggle isCollapsed={false} label="Q3 Planning" onToggle={() => {}} />,
-    children: <h2 className="truncate text-lg font-bold">Q3 Planning</h2>,
-    isHovered: true,
+    caret: <CollapseToggle isCollapsed={false} label="Q3 Planning" onToggle={() => {}} isRowActive />,
+    children: <h2 className="truncate text-[20px] font-bold text-[#002A2D]">Q3 Planning</h2>,
+    isTopLevel: true,
     controls: <Controls isVisible />,
   },
 };
@@ -72,7 +76,8 @@ export const Section: Story = {
 export const Collapsed: Story = {
   args: {
     caret: <CollapseToggle isCollapsed label="Q3 Planning" onToggle={() => {}} />,
-    children: <h2 className="truncate text-lg font-bold">Q3 Planning</h2>,
+    children: <h2 className="truncate text-[20px] font-bold text-[#002A2D]">Q3 Planning</h2>,
+    isTopLevel: true,
     controls: <Controls />,
   },
 };
@@ -87,7 +92,6 @@ export const Value: Story = {
         <span className="truncate rounded bg-neutral-201 px-1.5 py-0.5 text-neutral-800">Migrate auth to OIDC</span>
       </p>
     ),
-    isHovered: true,
     controls: <Controls isVisible />,
   },
 };
@@ -100,28 +104,37 @@ export const LongLabel: Story = {
         Q3 delivery plan for the platform migration, including every dependent team
       </h3>
     ),
-    isHovered: true,
     controls: <Controls isVisible />,
   },
 };
 
+/** The section-hover tint, matching `--section-hover-color`'s default in `primitives.css`. */
+const HOVER_BG = 'bg-[#F4F5F5]';
+
+/** Which section a hovered id's tint belongs to — a report's own container, or a section's own path. */
+const containerOf: Record<string, string> = { alpha: 'delivery', beta: 'q3', delivery: 'delivery', q3: 'q3' };
+
 /**
- * A document, as the pieces assemble: rows at three depths, each nested level drawing its own rail.
- * Hovering a row is the whole interaction — the pointer state is the caller's, as in the real
- * document.
+ * A document, as the pieces assemble: a top-level card, a level-2 rail that breaks between siblings,
+ * and a level-3 report, indented one step further than its section parent and carrying no rail of its
+ * own. "Beta", a report hanging directly off the card (level 2, same as "Delivery"), reads at
+ * "Delivery"'s own size (17px) rather than a small fixed report size — indent and size are a function
+ * of level only; only weight, color, and tracking mark it as a report rather than a section.
+ *
+ * Hovering tints the *innermost section* the pointer is in — "alpha" (a report) tints "delivery", not
+ * itself, since only a section carries the tint — and darkens that row's own title and chevron, the
+ * two signals `NodeRow`/`CollapseToggle` no longer draw as a shared row background.
+ * See spec/029-report-of-reports-redesign, "hover reveals the section you're in" and "indent and size
+ * are driven by level, not by node kind".
  */
 export const Document: Story = {
   render: () => {
     const [hovered, setHovered] = useState<string | null>(null);
     const [collapsed, setCollapsed] = useState(false);
+    const tinted = hovered ? containerOf[hovered] : null;
 
-    const row = (id: string, label: React.ReactNode, caret?: React.ReactNode) => (
-      <NodeRow
-        caret={caret}
-        isHovered={hovered === id}
-        isPinned={id === 'beta' && hovered === null}
-        controls={<Controls isVisible={hovered === id || (id === 'beta' && hovered === null)} />}
-      >
+    const row = (id: string, label: React.ReactNode, caret?: React.ReactNode, isTopLevel?: boolean) => (
+      <NodeRow caret={caret} isTopLevel={isTopLevel} controls={<Controls isVisible={hovered === id} />}>
         {label}
       </NodeRow>
     );
@@ -139,59 +152,92 @@ export const Document: Story = {
       </div>
     );
 
+    // Section text defaults are level-specific (Theme panel → "L1/L2/L3 Section Text"); report titles
+    // share one color at every level. Full class literals, not interpolated — Tailwind's static scanner
+    // only picks up complete strings in source.
+    const sectionRestColor: Record<string, string> = { q3: 'text-[#002A2D]', delivery: 'text-[#00464A]' };
+    const titleColor = (id: string) => (hovered === id ? 'text-[#002A2D]' : sectionRestColor[id]);
+    const reportColor = (id: string) => (hovered === id ? 'text-[#002A2D]' : 'text-[#4C5B5C]');
+
     return (
       <div className="flex flex-col" onMouseOver={() => setHovered(null)} onMouseLeave={() => setHovered(null)}>
-        {hoverable(
-          'q3',
-          <>
-            {row(
+        <section
+          className={`color-bg-section flex flex-col rounded-2xl overflow-hidden shadow-[0_1px_2px_-1px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.10)] ${
+            tinted === 'q3' ? HOVER_BG : ''
+          }`}
+        >
+          {hoverable(
+            'q3',
+            row(
               'q3',
-              <h2 className="truncate text-lg font-bold">Q3 Planning</h2>,
-              <CollapseToggle isCollapsed={collapsed} label="Q3 Planning" onToggle={() => setCollapsed(!collapsed)} />,
-            )}
-            {!collapsed && (
-              <IndentLevel>
+              <h2 className={`truncate text-[20px] font-bold ${titleColor('q3')}`}>Q3 Planning</h2>,
+              <CollapseToggle
+                isCollapsed={collapsed}
+                label="Q3 Planning"
+                onToggle={() => setCollapsed(!collapsed)}
+                isRowActive={hovered === 'q3'}
+              />,
+              true,
+            ),
+          )}
+          {!collapsed && (
+            <div className="flex flex-col gap-[34px] pr-6 pb-[22px] pl-8">
+              <div className={`pl-4 shadow-[inset_2px_0_0_#DFE2E2] ${tinted === 'delivery' ? HOVER_BG : ''}`}>
                 {hoverable(
                   'delivery',
-                  <>
-                    {row(
-                      'delivery',
-                      <h3 className="truncate text-base font-semibold">Delivery</h3>,
-                      <CollapseToggle isCollapsed={false} label="Delivery" onToggle={() => {}} />,
-                    )}
-                    <IndentLevel>
-                      {hoverable(
-                        'alpha',
-                        <>
-                          {row(
-                            'alpha',
-                            <h3 className="truncate text-base font-semibold">Alpha</h3>,
-                            <CollapseToggle isCollapsed={false} label="Alpha" onToggle={() => {}} />,
-                          )}
-                          <div className="h-16 rounded bg-neutral-20 text-sm text-slate-500 grid place-items-center">
-                            the embedded report
-                          </div>
-                        </>,
-                      )}
-                    </IndentLevel>
-                  </>,
+                  row(
+                    'delivery',
+                    <h3 className={`truncate text-[17px] font-bold ${titleColor('delivery')}`}>Delivery</h3>,
+                    <CollapseToggle
+                      isCollapsed={false}
+                      label="Delivery"
+                      onToggle={() => {}}
+                      isRowActive={hovered === 'delivery'}
+                    />,
+                  ),
                 )}
                 {hoverable(
-                  'beta',
-                  row(
+                  'alpha',
+                  <div className="pl-4 mt-[10px]">
+                    {row(
+                      'alpha',
+                      <h4 className={`truncate text-[13.5px] font-semibold tracking-[0.045em] ${reportColor('alpha')}`}>
+                        Alpha
+                      </h4>,
+                      <CollapseToggle
+                        isCollapsed={false}
+                        label="Alpha"
+                        onToggle={() => {}}
+                        isRowActive={hovered === 'alpha'}
+                      />,
+                    )}
+                    <div className="mt-[10px] h-16 rounded bg-neutral-20 text-sm text-slate-500 grid place-items-center">
+                      the embedded report
+                    </div>
+                  </div>,
+                )}
+              </div>
+              {hoverable(
+                'beta',
+                <div className="pl-4">
+                  {row(
                     'beta',
-                    <p className="flex items-baseline gap-2 text-sm">
-                      <span className="shrink-0 text-slate-500">Summary</span>
-                      <span className="truncate rounded bg-neutral-201 px-1.5 py-0.5 text-neutral-800">
+                    <p className="flex items-baseline gap-2">
+                      <span
+                        className={`shrink-0 truncate text-[17px] font-semibold tracking-[0.045em] ${reportColor('beta')}`}
+                      >
+                        Summary
+                      </span>
+                      <span className="truncate rounded bg-neutral-201 px-1.5 py-0.5 text-sm text-neutral-800">
                         Migrate auth to OIDC
                       </span>
                     </p>,
-                  ),
-                )}
-              </IndentLevel>
-            )}
-          </>,
-        )}
+                  )}
+                </div>,
+              )}
+            </div>
+          )}
+        </section>
       </div>
     );
   },

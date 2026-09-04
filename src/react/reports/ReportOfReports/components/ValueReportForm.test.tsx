@@ -125,7 +125,10 @@ describe('<ValueReportForm>', () => {
   // The second derived entry, offered from the same dropdown and stored the same way — the accessor is
   // the whole of what makes the node a status-update one.
   // See spec/027-status-updates § The accessor and the dropdown.
-  it('emits the status-update expression for the second derived entry', async () => {
+  //
+  // Temporarily withdrawn from the dropdown — see `DERIVED_OPTIONS`' comment in fieldCatalog.ts —
+  // because its label collided with the real "Status Update" custom field now offered under `Fields`.
+  it.skip('emits the status-update expression for the second derived entry', async () => {
     const { onAdd } = renderForm();
 
     await pickWorkItem();

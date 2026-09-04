@@ -53,7 +53,7 @@ export const useStatusUpdate = (jql: string): CommentReportState => {
     body: match.body,
     author: match.author?.displayName ?? 'Unknown',
     // `updated`, not the `created` the week was decided by: it is the field that chose this comment over
-    // the week's other updates, and the footer labels it "Last updated".
+    // the week's other updates, and the meta line's date half is this.
     updated: match.updated ?? match.created ?? '',
   };
 };

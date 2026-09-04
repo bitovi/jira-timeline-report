@@ -1,7 +1,7 @@
 import type { FC, MouseEvent, ReactNode } from 'react';
 import type { LayoutNode, LayoutPath } from '../model/sections';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 
 export interface DocumentEditingContextValue {
   /**
@@ -45,27 +45,8 @@ export interface DocumentEditingContextValue {
    */
   hoverNode: (path: LayoutPath | null, isContainer?: boolean) => void;
   /**
-   * Whether the container at `path` is the one whose "Add Report" / "Add Section" button is under the
-   * pointer (or focused). Backs the tint that answers "where will this land?" — three levels down,
-   * two buttons a few pixels apart belong to different sections, and nothing on the button says which.
-   *
-   * Separate from `isContainerHovered`: that one is about *revealing* a container's add row (the
-   * pointer being anywhere inside the container), this one about *committing* to it (the pointer
-   * being on the button itself).
-   */
-  isAddTarget: (path: LayoutPath) => boolean;
-  /** Records the container whose add button the pointer or focus is on; `null` clears it. */
-  markAddTarget: (path: LayoutPath | null) => void;
-  /**
-   * The click-pinned row — what the redesign calls "selected". Keyed by node id rather than path so
-   * a pin survives the move it was clicked to make. One at a time; Escape or a pointer press outside
-   * it clears.
-   */
-  isPinned: (id: string) => boolean;
-  pin: (id: string) => void;
-  /**
-   * Sections the user has collapsed. By node id for the pin's reason and more so: keyed by path,
-   * collapsing a section and then reordering its siblings would collapse the wrong one.
+   * Sections (and reports) the user has collapsed. By node id rather than path: collapsing a node and
+   * then reordering its siblings would otherwise collapse whichever node landed in its place.
    *
    * Deliberately not persisted — the stored document is unchanged by this redesign, so a reload
    * opens everything expanded.
@@ -78,9 +59,9 @@ const DocumentEditingContext = createContext<DocumentEditingContextValue | null>
 
 /**
  * Transient editing state for one report-of-reports document: which node is open for editing, where
- * the report picker would add, and the three pieces of pointer state the row list needs (hover, pin,
- * collapse). None of it is part of the document, so it never reaches `ReportLayoutProvider` (which
- * holds the tree itself) and nothing here is saved.
+ * the report picker would add, and the pointer/collapse state the row list needs (hover, collapse).
+ * None of it is part of the document, so it never reaches `ReportLayoutProvider` (which holds the tree
+ * itself) and nothing here is saved.
  *
  * It's a context rather than props for the reason `NodeControls` documents: the document renders
  * recursively, and this state has to be reachable at any depth without threading callbacks through
@@ -112,40 +93,7 @@ export const DocumentEditingProvider: FC<{ children: ReactNode }> = ({ children 
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [pickerPath, setPickerPath] = useState<LayoutPath | null>(null);
   const [hovered, setHovered] = useState<Hover | null>(null);
-  const [addTargetPath, setAddTargetPath] = useState<LayoutPath | null>(null);
-  const [pinnedNodeId, setPinnedNodeId] = useState<string | null>(null);
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(() => new Set());
-
-  // Escape, or a press anywhere outside the pinned row, drops the pin. Nothing is listening while
-  // nothing is pinned. `mousedown` rather than `click` so the row's own handlers still see the click
-  // that re-pins it, and capture-phase so a stopped click can't strand a pin.
-  useEffect(() => {
-    if (pinnedNodeId === null) {
-      return;
-    }
-
-    const clearOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setPinnedNodeId(null);
-      }
-    };
-
-    const clearOnOutsidePress = (event: Event) => {
-      const row = document.querySelector(`[data-node-id="${pinnedNodeId}"]`);
-
-      if (!row || !(event.target instanceof Node) || !row.contains(event.target)) {
-        setPinnedNodeId(null);
-      }
-    };
-
-    document.addEventListener('keydown', clearOnEscape);
-    document.addEventListener('mousedown', clearOnOutsidePress, true);
-
-    return () => {
-      document.removeEventListener('keydown', clearOnEscape);
-      document.removeEventListener('mousedown', clearOnOutsidePress, true);
-    };
-  }, [pinnedNodeId]);
 
   const value = useMemo<DocumentEditingContextValue>(
     () => ({
@@ -174,12 +122,6 @@ export const DocumentEditingProvider: FC<{ children: ReactNode }> = ({ children 
           // value, a chart — puts the pointer in whatever container holds it.
           return { path, container: isContainer ? path : path.slice(0, -1) };
         }),
-      // `null` is not a container, so nothing is a target while nothing is pointed at — `samePath`
-      // answers false for it rather than matching the root's `[]`.
-      isAddTarget: (path) => samePath(addTargetPath, path),
-      markAddTarget: (path) => setAddTargetPath(path),
-      isPinned: (id) => pinnedNodeId === id,
-      pin: (id) => setPinnedNodeId(id),
       isCollapsed: (id) => collapsedIds.has(id),
       toggleCollapsed: (id) =>
         setCollapsedIds((current) => {
@@ -192,7 +134,7 @@ export const DocumentEditingProvider: FC<{ children: ReactNode }> = ({ children 
           return next;
         }),
     }),
-    [editingNodeId, pickerPath, hovered, addTargetPath, pinnedNodeId, collapsedIds],
+    [editingNodeId, pickerPath, hovered, collapsedIds],
   );
 
   return <DocumentEditingContext.Provider value={value}>{children}</DocumentEditingContext.Provider>;
@@ -216,9 +158,9 @@ export const useNodeRow = (
   path: LayoutPath,
 ): {
   hoverProps: { onMouseOver: (event: MouseEvent) => void };
-  rowProps: { nodeId: string; isHovered: boolean; isPinned: boolean; onClick: () => void };
+  rowProps: { nodeId: string; isHovered: boolean; onClick: () => void };
 } => {
-  const { isHovered, hoverNode, isPinned, pin } = useDocumentEditing();
+  const { isHovered, hoverNode, toggleCollapsed } = useDocumentEditing();
 
   return {
     hoverProps: {
@@ -232,9 +174,12 @@ export const useNodeRow = (
     rowProps: {
       nodeId: node.id,
       isHovered: isHovered(path),
-      isPinned: isPinned(node.id),
-      // Pins rather than toggles: a click on Move Up bubbles to here, and the pin has to survive it.
-      onClick: () => pin(node.id),
+      // Clicking anywhere on the row toggles collapse — `NodeRow` stops a click on `controls`/`caret`
+      // from bubbling here, so this only fires for the rest of the row (including the title, now that
+      // `SectionTitle` no longer makes the title itself a click-to-edit trigger). A no-op for a node
+      // type with nothing to collapse (a value, an unknown node): `toggleCollapsed` just records an id
+      // nothing ever reads back.
+      onClick: () => toggleCollapsed(node.id),
     },
   };
 };

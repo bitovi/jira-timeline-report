@@ -10,6 +10,10 @@
 export interface FieldSchema {
   type?: string;
   items?: string;
+  /** Jira's field-type identifier, e.g. `...customfieldtypes:textarea` — the only signal that tells a
+   * wiki-markup-rendered paragraph field apart from a plain text field, since both report `type: "string"`.
+   * See `formatFieldValue.ts`'s `classifyFieldValue`. */
+  custom?: string;
 }
 
 /** The slice of a Jira field this needs — compatible with `useJiraIssueFields()`' entries. */
@@ -38,7 +42,7 @@ export const isFieldError = (result: FieldResult): result is FieldError => 'erro
 const resolved = (field: JiraFieldLike): ResolvedField => {
   const schema = (field.schema ?? {}) as FieldSchema;
 
-  return { id: field.id, name: field.name, schema: { type: schema.type, items: schema.items } };
+  return { id: field.id, name: field.name, schema: { type: schema.type, items: schema.items, custom: schema.custom } };
 };
 
 /**

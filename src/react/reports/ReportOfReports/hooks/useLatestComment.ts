@@ -43,10 +43,10 @@ export const useLatestComment = (jql: string): CommentReportState => {
     return { status: 'empty' };
   }
 
-  // `updated` rather than `created`, because the view labels this line "Last updated" — and Jira sets
-  // `updated` equal to `created` on a comment nobody has edited, so it is the honest field for that
-  // label either way. It stays Jira's raw ISO string: formatting here would put locale knowledge in the
-  // hook, where the view is the only thing that should have it.
+  // `updated` rather than `created`, because the view's meta line reports this as when it was last
+  // updated — and Jira sets `updated` equal to `created` on a comment nobody has edited, so it is the
+  // honest field either way. It stays Jira's raw ISO string: formatting here would put locale knowledge
+  // in the hook, where the view is the only thing that should have it.
   return {
     status: 'ok',
     body: newest.body,

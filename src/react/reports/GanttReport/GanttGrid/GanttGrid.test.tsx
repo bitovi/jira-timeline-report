@@ -99,6 +99,33 @@ describe('GanttGrid', () => {
       expect(screen.queryByText('Due in March')).not.toBeInTheDocument();
     });
 
+    it('moves the axis to the selected window instead of pinning it to today', () => {
+      renderGrid({
+        primaryIssuesOrReleasesObs: obs([inRange, outOfRange]),
+        allIssuesOrReleasesObs: obs([inRange, outOfRange]),
+        dateRangeStartObs: obs('2025-01-01'),
+        dateRangeEndObs: obs('2025-03-31'),
+      });
+      // Q1 2025 exactly — `getQuartersAndMonths` snaps the chosen window out to whole quarters.
+      expect(screen.getByText('Jan')).toBeInTheDocument();
+      expect(screen.getByText('Feb')).toBeInTheDocument();
+      expect(screen.getByText('Mar')).toBeInTheDocument();
+      expect(screen.queryByText('Apr')).not.toBeInTheDocument();
+    });
+
+    it('explains an empty window instead of rendering a bare axis', () => {
+      renderGrid({
+        primaryIssuesOrReleasesObs: obs([inRange, outOfRange]),
+        allIssuesOrReleasesObs: obs([inRange, outOfRange]),
+        dateRangeStartObs: obs('2025-06-01'),
+        dateRangeEndObs: obs('2025-06-30'),
+      });
+      expect(screen.getByText('No issues are due in the selected date range.')).toBeInTheDocument();
+      // The grid itself is replaced, not merely emptied.
+      expect(screen.queryByTestId('today-line')).not.toBeInTheDocument();
+      expect(screen.queryByText('Due in January')).not.toBeInTheDocument();
+    });
+
     it('renders every issue when the range is empty (default/no filter)', () => {
       renderGrid({
         primaryIssuesOrReleasesObs: obs([inRange, outOfRange]),

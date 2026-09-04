@@ -1000,7 +1000,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const showStats = isHierarchy && FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES();
 
   return (
-    <div className="p-2 mb-10" data-testid="table-report">
+    <div className="p-2" data-testid="table-report">
       <style>{TABLE_STYLES}</style>
       {/* The PRIMARY controls (Rows / Group by / 2D dimension / Fields axis / Add column) live in the
           shared Report-type control row via <TableReportControls /> — they write the same route-data

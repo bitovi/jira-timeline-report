@@ -90,14 +90,14 @@ describe('CommentBody', () => {
 
     expect(screen.getByTestId('latest-comment')).toBeInTheDocument();
     expect(screen.getByText('Blocked.')).toBeInTheDocument();
-    expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+
+    const meta = `Updated by Dana Ruiz · ${formatCommentTime('2026-08-04T14:22:00.000Z')}`;
+
+    expect(screen.getByText(meta)).toBeInTheDocument();
 
     const lines = [...container.querySelectorAll('p')].map((node) => node.textContent);
 
-    expect(lines.indexOf('Blocked.')).toBeLessThan(lines.indexOf('Updated by: Dana Ruiz'));
-    expect(lines.indexOf('Updated by: Dana Ruiz')).toBeLessThan(
-      lines.findIndex((line) => line?.startsWith('Last updated: ')),
-    );
+    expect(lines.indexOf('Blocked.')).toBeLessThan(lines.indexOf(meta));
   });
 
   // The formatting a real comment carries. Flattening dropped all of this, which is what made a comment
@@ -148,14 +148,16 @@ describe('CommentBody', () => {
   });
 
   // Timezone-agnostic: the same formatter the component uses, so this passes wherever it runs.
-  it('closes with when the comment was last updated', () => {
+  it('combines the author and the update time into one line', () => {
     render(<LatestCommentBody target="ABC-1" state={ok(doc({ type: 'paragraph', content: text('Hi') }))} />);
 
-    expect(screen.getByText(`Last updated: ${formatCommentTime('2026-08-04T14:22:00.000Z')}`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`Updated by Dana Ruiz · ${formatCommentTime('2026-08-04T14:22:00.000Z')}`),
+    ).toBeInTheDocument();
   });
 
-  // "Last updated:" with nothing after it is worse than no line at all.
-  it('drops the timestamp line rather than labelling a missing timestamp', () => {
+  // "Updated by Dana Ruiz · " with nothing after it is worse than no date at all.
+  it('drops the date half of the meta line rather than labelling a missing timestamp', () => {
     render(
       <LatestCommentBody
         target="ABC-1"
@@ -168,8 +170,8 @@ describe('CommentBody', () => {
       />,
     );
 
-    expect(screen.queryByText(/Last updated/)).not.toBeInTheDocument();
-    expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+    expect(screen.getByText('Updated by Dana Ruiz')).toBeInTheDocument();
+    expect(screen.queryByText(/·/)).not.toBeInTheDocument();
   });
 
   // A statement of fact rather than an instruction: with the node read-only there is nowhere to enter a
@@ -216,7 +218,7 @@ describe('CommentBody', () => {
 
     expect(screen.queryByText('This comment has no content.')).not.toBeInTheDocument();
     expect(screen.getByTestId('latest-comment')).toBeInTheDocument();
-    expect(screen.getByText('Updated by: Dana Ruiz')).toBeInTheDocument();
+    expect(screen.getByText(/^Updated by Dana Ruiz · /)).toBeInTheDocument();
   });
 
   it('shows Jira own string rather than "Invalid Date" for an unparseable timestamp', () => {

@@ -18,7 +18,11 @@ describe('buildFieldOptions', () => {
 
   // A sibling preset, not a replacement — so Latest Comment keeps the head of the list and Status
   // Update follows it. See spec/027-status-updates § The accessor and the dropdown.
-  it('offers Status Update second, also under Derived', () => {
+  //
+  // Temporarily withdrawn — see `DERIVED_OPTIONS`' comment in fieldCatalog.ts — because its label
+  // collided with the real "Status Update" custom field now offered under `Fields`. Restore this test
+  // alongside uncommenting that entry.
+  it.skip('offers Status Update second, also under Derived', () => {
     const derived = buildFieldOptions(catalog).filter((option) => option.group === 'Derived');
 
     expect(derived).toEqual([
@@ -53,7 +57,8 @@ describe('buildFieldOptions', () => {
   it('skips a curated id the catalog does not have', () => {
     const options = buildFieldOptions([field('summary', 'Summary')]);
 
-    expect(options.map((option) => option.id)).toEqual(['latestComment', 'statusUpdate', 'summary']);
+    // No 'statusUpdate' — temporarily withdrawn, see `DERIVED_OPTIONS`' comment in fieldCatalog.ts.
+    expect(options.map((option) => option.id)).toEqual(['latestComment', 'summary']);
   });
 });
 

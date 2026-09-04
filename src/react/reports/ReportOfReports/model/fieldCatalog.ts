@@ -13,7 +13,7 @@
 
 import type { JiraFieldLike } from './resolveField';
 
-import { LATEST_COMMENT_ACCESSOR, STATUS_UPDATE_ACCESSOR } from './accessors';
+import { LATEST_COMMENT_ACCESSOR /* , STATUS_UPDATE_ACCESSOR */ } from './accessors';
 
 export type FieldGroup = 'Derived' | 'Common' | 'Fields';
 
@@ -33,10 +33,17 @@ export const FIELD_GROUP_ORDER: FieldGroup[] = ['Derived', 'Common', 'Fields'];
  * two. Status Update is a sibling preset, not a replacement — the question it answers ("is there one
  * *this week*?") is narrower, so it sits second.
  * See spec/027-status-updates § The accessor and the dropdown.
+ *
+ * **Status Update temporarily withdrawn from this list** — its label collides with the real "Status
+ * Update" custom field now offered under `Fields` (same display name, distinguished only by the group
+ * header), which was confusing enough post-spec/030-inline-custom-field-report to pull it here
+ * for now rather than rename either. The accessor, `StatusUpdateView`, and `useStatusUpdate` are all
+ * untouched — an already-saved `.statusUpdate` node keeps rendering exactly as before; only *picking it
+ * new* from this dropdown is disabled. Restore by uncommenting the entry below.
  */
 const DERIVED_OPTIONS: FieldOption[] = [
   { id: LATEST_COMMENT_ACCESSOR, label: 'Latest Comment', group: 'Derived' },
-  { id: STATUS_UPDATE_ACCESSOR, label: 'Status Update', group: 'Derived' },
+  // { id: STATUS_UPDATE_ACCESSOR, label: 'Status Update', group: 'Derived' },
 ];
 
 /**

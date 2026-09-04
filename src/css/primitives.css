@@ -33,10 +33,19 @@
   --new-color: #8f7ee7;
   --new-text-color: #fff;
 
-  /* Report-of-reports section banding. White is a no-op against the page, which is what keeps
-     sections looking unframed until someone picks a color. */
-  --section-color: #ffffff;
+  /* Report-of-reports section banding. */
+  --section-color: #fbfcfc;
   --section-text-color: #000;
+
+  /* Report-of-reports accents: the resting left rail, each heading kind's text color, and the
+     background tint for whichever section the pointer is in. See spec/029-report-of-reports-redesign
+     "hover reveals the section you're in" § Colour. */
+  --section-border-color: #f5532d;
+  --section-l1-text-color: #002a2d;
+  --section-l2-text-color: #00464a;
+  --section-l3-text-color: #04646a;
+  --report-title-text-color: #4c5b5c;
+  --section-hover-color: #f4f5f5;
 
   --white-color: rgb(255 255 255);
   --black-color: rgb(0 0 0);
