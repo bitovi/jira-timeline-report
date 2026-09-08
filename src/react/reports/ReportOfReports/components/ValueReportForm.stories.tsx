@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Button from '@atlaskit/button/new';
+import Modal, { ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
 
 import type { Jira } from '../../../../jira-oidc-helpers';
 import type { JiraIssuePickerResponse } from '../../../../jira-oidc-helpers/jira';
@@ -92,18 +94,38 @@ export const NoResults: Story = {
 };
 
 /**
- * **Both menus have to paint above a modal.** These stories render the form on a bare page, where a
- * clipped or under-layered menu still looks right — so review this one inside the real Add Report modal
- * too. See the `menuAboveModal` styles for what goes wrong without them.
+ * **Everything this form opens has to paint above a modal, and a real one.** The three overlays —
+ * the work-item menu, the field menu, and the field picker's popover — each lose a different fight
+ * inside `@atlaskit/modal-dialog`: a stacking layer at `z-index: 510`, a `react-focus-lock` that
+ * pulls focus back out of anything portalled, and (historically) a clipping scroll container.
+ *
+ * This story used to be a plain `<div>` with `shadow-lg`, which has none of those: no stacking
+ * layer, no focus lock, no `@atlaskit/layering`. It therefore showed a perfectly working popover
+ * while the real modal was broken — worse than having no story, because it looked like a check.
+ * It is a real `<Modal>` now. See spec/031-column-select-redesign § 8.
+ *
+ * Review at 1440 / 1280 / 1024: the expanded picker panel is 640px against a 600px dialog, so this
+ * is also where `fallbackPlacements` earns its keep. What to look for is in § 13.
  */
 export const InAModal: Story = {
   decorators: [
     withJira(makeJira(async () => suggestions)),
     (Story) => (
-      <div className="rounded border border-neutral-301 bg-neutral-100 p-4 shadow-lg">
-        <h2 className="pb-3 text-lg font-semibold">Add Report</h2>
-        <Story />
-      </div>
+      <ModalTransition>
+        <Modal onClose={() => {}}>
+          <ModalHeader>
+            <ModalTitle>Add Report</ModalTitle>
+          </ModalHeader>
+          {/* Not `ModalBody` — that is itself a scroll container, and `AddReportModal` deliberately
+              does not use one either (see its docblock). Padding matched to the real dialog's band. */}
+          <div className="border-y border-neutral-301 px-6 py-4">
+            <Story />
+          </div>
+          <ModalFooter>
+            <Button appearance="subtle">Cancel</Button>
+          </ModalFooter>
+        </Modal>
+      </ModalTransition>
     ),
   ],
 };
