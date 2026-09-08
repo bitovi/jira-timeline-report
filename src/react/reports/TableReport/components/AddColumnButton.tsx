@@ -7,6 +7,10 @@
  * The popover itself is {@link SearchablePicker}, shared with Report of Reports' field picker
  * (spec/016-report-of-reports/009-value-report-modal, Phase 1). This file is what remains that is
  * Table-specific: the group order, the copy, the `table-add-column*` test ids, and the trigger.
+ *
+ * It inherited the two-layout grouped grid for free (spec/031-column-select-redesign). No
+ * `shouldRenderToParent` and no `role`/`label`: this toolbar is not inside a dialog, so the popover
+ * keeps the portal path exactly as it always had.
  */
 import React, { useMemo } from 'react';
 
@@ -24,6 +28,16 @@ interface AddColumnButtonProps {
 // per-issue values plus the estimation parity columns), then the raw Jira fields, then computed.
 const GROUP_ORDER: ColumnGroup[] = ['Common', 'Identity', 'Report Fields', 'Fields', 'Computed'];
 
+/**
+ * The three groups `buildColumnCatalog` curates in a deliberate order, so the picker must not sort
+ * them: `identity` is a hand-written array, `builtin` follows `BUILTIN_CONCEPTS`, and `reportFields`
+ * follows `REPORT_FIELD_FACETS` plus the four estimation columns (`buildColumnCatalog.ts:226-271`).
+ *
+ * `Fields` is left to sort — `useJiraIssueFields` already returns it name-sorted, so this only
+ * guarantees it. `Computed` is currently unpopulated.
+ */
+const UNSORTED_GROUPS: ColumnGroup[] = ['Common', 'Identity', 'Report Fields'];
+
 export const AddColumnButton: React.FC<AddColumnButtonProps> = ({ catalog, shownColumnIds, onAdd }) => {
   const items = useMemo<PickerItem[]>(
     () => catalog.map((column) => ({ id: column.id, label: column.label, group: column.group })),
@@ -35,9 +49,12 @@ export const AddColumnButton: React.FC<AddColumnButtonProps> = ({ catalog, shown
       items={items}
       groupOrder={GROUP_ORDER}
       excludeIds={shownColumnIds}
+      unsortedGroups={UNSORTED_GROUPS}
       placeholder="Search columns…"
       emptyMessage="No columns to add."
       testIdPrefix="table-add-column"
+      // Its own key, so expanding here does not also expand Report of Reports' field picker.
+      layoutStorageKey="table-add-column-layout"
       onSelect={onAdd}
       trigger={(triggerProps, toggle) => (
         <button
