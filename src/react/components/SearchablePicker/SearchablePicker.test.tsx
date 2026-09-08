@@ -109,4 +109,50 @@ describe('<SearchablePicker>', () => {
     expect(screen.getByTestId('picker-search')).toHaveValue('');
     expect(screen.getAllByTestId('picker-option')).toHaveLength(3);
   });
+
+  // The trigger is a combobox over a listbox, from us; `ref`, `aria-expanded` and `aria-controls`
+  // come from Popup (`popup.js:126-131`). Callers just spread `triggerProps`.
+  // See spec/031-column-select-redesign § 7.
+  it('gives the trigger combobox semantics and a deterministic aria-controls', () => {
+    renderPicker();
+
+    const trigger = screen.getByTestId('picker');
+
+    expect(trigger).toHaveAttribute('role', 'combobox');
+    expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    // Generated ids are unassertable (`popup.js:88` falls back to `useId`), so the popup is given one.
+    expect(trigger).not.toHaveAttribute('aria-controls');
+
+    open();
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(trigger).toHaveAttribute('aria-controls', 'picker-popup');
+  });
+
+  // `shouldRenderToParent` exists for one caller — ROR's, inside a modal, where a portalled panel
+  // loses focus to `react-focus-lock`. Table must keep the portal path exactly as it is, so the
+  // default has to be provably off. See spec/031-column-select-redesign § 8.
+  describe('shouldRenderToParent', () => {
+    // `.atlaskit-portal` is the class `@atlaskit/portal`'s `createContainer` sets
+    // (`portal-dom-utils.js:14-18`), so it is the honest test for "did this go through the portal".
+    const popoverIsPortalled = () => screen.getByTestId('picker-popover').closest('.atlaskit-portal') !== null;
+
+    it('portals by default, as Table needs', () => {
+      renderPicker();
+      open();
+
+      expect(popoverIsPortalled()).toBe(true);
+    });
+
+    it('renders beside the trigger when asked, as a caller inside a dialog needs', () => {
+      renderPicker({ shouldRenderToParent: true });
+      open();
+
+      expect(popoverIsPortalled()).toBe(false);
+      // Beside the trigger, not merely un-portalled: `popup.js:128` skips the portal branch and the
+      // panel becomes a sibling under react-popper's `Manager`.
+      expect(screen.getByTestId('picker').parentElement).toContainElement(screen.getByTestId('picker-popover'));
+    });
+  });
 });
