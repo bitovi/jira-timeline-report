@@ -44,6 +44,13 @@ export interface SearchablePickerProps {
   groupOrder: readonly string[];
   /** Ids to hide — Table's "already shown" filter. */
   excludeIds?: readonly string[];
+  /**
+   * Groups whose items keep the order the caller passed; everything else sorts by `localeCompare`.
+   *
+   * Sorted is the default because a 3-column grid is only scannable sorted. The opt-out exists
+   * because some groups are curated in their useful order on purpose.
+   */
+  unsortedGroups?: readonly string[];
   placeholder: string;
   emptyMessage: string;
   /** `foo` yields `foo`, `foo-popover`, `foo-search`, and `foo-option` test ids. */
@@ -93,6 +100,7 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
   items,
   groupOrder,
   excludeIds,
+  unsortedGroups,
   placeholder,
   emptyMessage,
   testIdPrefix,
@@ -137,6 +145,7 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
           items={items}
           groupOrder={groupOrder}
           excludeIds={excludeIds}
+          unsortedGroups={unsortedGroups}
           placeholder={placeholder}
           emptyMessage={emptyMessage}
           testIdPrefix={testIdPrefix}

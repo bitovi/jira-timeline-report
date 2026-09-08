@@ -344,3 +344,240 @@ describe('<SearchablePicker> the group-header traversal other suites depend on',
     });
   });
 });
+
+// ---------------------------------------------------------------------------------------------------
+// Keyboard navigation. See spec/031-column-select-redesign § 6.
+//
+// Every label carries "Date" so a single query can leave the whole grid matching — which is what
+// lets the "←/→ are the caret's while there is text to move through" case be tested at all.
+// ---------------------------------------------------------------------------------------------------
+
+const gridItems: PickerItem[] = [
+  { id: 'g1', label: 'Created Date', group: 'Common' },
+  { id: 'g2', label: 'Due Date', group: 'Common' },
+  { id: 'g3', label: 'End Date', group: 'Fields' },
+  { id: 'g4', label: 'Resolved Date', group: 'Fields' },
+  { id: 'g5', label: 'Start Date', group: 'Fields' },
+  { id: 'g6', label: 'Target Date', group: 'Fields' },
+  { id: 'g7', label: 'Updated Date', group: 'Fields' },
+];
+
+describe('<SearchablePicker> keyboard navigation', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  // 3 columns over groups of 2 and 5, so the rows are [g1 g2] [g3 g4 g5] [g6 g7] — a group boundary
+  // that is also a row boundary, and a ragged last row.
+  const renderGrid = (props: Partial<React.ComponentProps<typeof SearchablePicker>> = {}) =>
+    renderPicker({ items: gridItems, groupOrder: ['Common', 'Fields'], ...props });
+
+  const searchField = () => screen.getByTestId('picker-search') as HTMLInputElement;
+  const active = () => searchField().getAttribute('aria-activedescendant');
+  const press = (key: string) => fireEvent.keyDown(searchField(), { key });
+  /** ←/→ only reach the grid at a collapsed caret on a text boundary, so tests have to say where it is. */
+  const putCaretAt = (at: number) => searchField().setSelectionRange(at, at);
+
+  it('starts on the first option', () => {
+    renderGrid();
+    open();
+
+    expect(active()).toBe('picker-option-g1');
+  });
+
+  it('moves down and up one visual row, keeping the column', () => {
+    renderGrid();
+    open();
+
+    press('ArrowDown');
+    expect(active()).toBe('picker-option-g3');
+
+    press('ArrowDown');
+    expect(active()).toBe('picker-option-g6');
+
+    press('ArrowUp');
+    expect(active()).toBe('picker-option-g3');
+  });
+
+  it('clamps at both ends rather than wrapping', () => {
+    renderGrid();
+    open();
+
+    press('ArrowUp');
+    expect(active()).toBe('picker-option-g1');
+
+    press('ArrowDown');
+    press('ArrowDown');
+    press('ArrowDown');
+    expect(active()).toBe('picker-option-g6');
+  });
+
+  describe('left and right', () => {
+    it('walk the grid in reading order when the caret has nowhere to go', () => {
+      renderGrid();
+      open();
+
+      press('ArrowRight');
+      expect(active()).toBe('picker-option-g2');
+
+      // Off the end of the *group*, which is also the end of the row — no special case for either.
+      press('ArrowRight');
+      expect(active()).toBe('picker-option-g3');
+
+      press('ArrowLeft');
+      expect(active()).toBe('picker-option-g2');
+    });
+
+    it('are left to the caret while there is text to move through', () => {
+      renderGrid();
+      open();
+      search('date');
+      putCaretAt(2);
+
+      press('ArrowRight');
+      press('ArrowLeft');
+
+      // Still the first match — the search box has to stay editable.
+      expect(active()).toBe('picker-option-g1');
+    });
+
+    it('are ignored entirely in the compact layout, which has no second axis', () => {
+      renderGrid();
+      open();
+      fireEvent.click(screen.getByTestId('picker-layout-toggle'));
+
+      press('ArrowRight');
+
+      expect(active()).toBe('picker-option-g1');
+    });
+  });
+
+  it('keeps the same option active across a layout toggle', () => {
+    renderGrid();
+    open();
+    press('ArrowDown');
+    expect(active()).toBe('picker-option-g3');
+
+    fireEvent.click(screen.getByTestId('picker-layout-toggle'));
+
+    // Flat reading order is layout-independent, so this costs no bookkeeping. And compact is one
+    // column, so from here Down is +1.
+    expect(active()).toBe('picker-option-g3');
+
+    press('ArrowDown');
+    expect(active()).toBe('picker-option-g4');
+  });
+
+  it('selects the active option on Enter and closes', () => {
+    const onSelect = vi.fn();
+    renderGrid({ onSelect });
+    open();
+
+    press('ArrowDown');
+    press('Enter');
+
+    expect(onSelect).toHaveBeenCalledWith('g3');
+    expect(screen.queryByTestId('picker-popover')).not.toBeInTheDocument();
+  });
+
+  it('does nothing on Enter with no matches', () => {
+    const onSelect = vi.fn();
+    renderGrid({ onSelect });
+    open();
+    search('nothing matches this');
+
+    press('Enter');
+
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getByTestId('picker-popover')).toBeInTheDocument();
+  });
+
+  it('resets to the first match on a new query', () => {
+    renderGrid();
+    open();
+    press('ArrowDown');
+    press('ArrowRight');
+    expect(active()).toBe('picker-option-g4');
+
+    search('start');
+
+    expect(active()).toBe('picker-option-g5');
+  });
+
+  it('follows the mouse, so hover and the keyboard cannot disagree', () => {
+    renderGrid();
+    open();
+
+    fireEvent.mouseEnter(screen.getByText('Target Date'));
+
+    expect(active()).toBe('picker-option-g6');
+  });
+
+  // Popup closes on Escape from a **window** keydown listener and refocuses the trigger itself
+  // (`use-close-manager.js:163-186`). This asserts we did not swallow it: a `stopPropagation` in the
+  // panel's own handler would stop the event ever reaching `window` — breaking the very close it
+  // would have been meant to scope. See § 6's warning.
+  it('lets Escape close the popover, and selects nothing', () => {
+    const onSelect = vi.fn();
+    renderGrid({ onSelect });
+    open();
+
+    press('Escape');
+
+    expect(screen.queryByTestId('picker-popover')).not.toBeInTheDocument();
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Scrolling the active row into view writes `container.scrollTop` directly. `scrollIntoView()`
+   * scrolls **every** scrollable ancestor including the page, so inside a modal it drags the dialog
+   * — and jsdom does not implement it at all, so a stray call would throw here rather than in a
+   * browser.
+   */
+  it('never calls scrollIntoView', () => {
+    const scrollIntoView = vi.fn();
+    // jsdom omits it entirely, so this is an addition, not an override — hence the explicit delete.
+    (Element.prototype as unknown as { scrollIntoView: () => void }).scrollIntoView = scrollIntoView;
+
+    try {
+      renderGrid();
+      open();
+      press('ArrowDown');
+      press('ArrowRight');
+      press('ArrowUp');
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    } finally {
+      delete (Element.prototype as unknown as { scrollIntoView?: () => void }).scrollIntoView;
+    }
+  });
+});
+
+// See spec/031-column-select-redesign § 4.
+describe('<SearchablePicker> sorting', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  const curated: PickerItem[] = [
+    { id: 'z', label: 'Zulu', group: 'Common' },
+    { id: 'a', label: 'Alpha', group: 'Common' },
+    { id: 'y', label: 'Yankee', group: 'Fields' },
+    { id: 'b', label: 'Bravo', group: 'Fields' },
+  ];
+
+  const labels = () => screen.getAllByTestId('picker-option').map((option) => option.textContent);
+
+  it('sorts within each group by default, because a 3-column grid is only scannable sorted', () => {
+    renderPicker({ items: curated, groupOrder: ['Common', 'Fields'] });
+    open();
+
+    expect(labels()).toEqual(['Alpha', 'Zulu', 'Bravo', 'Yankee']);
+  });
+
+  it('leaves a listed group in the order the caller passed', () => {
+    renderPicker({ items: curated, groupOrder: ['Common', 'Fields'], unsortedGroups: ['Common'] });
+    open();
+
+    // `Common` is curated in its useful order on purpose (`fieldCatalog.ts:57-68`); `Fields` is not.
+    expect(labels()).toEqual(['Zulu', 'Alpha', 'Bravo', 'Yankee']);
+  });
+});

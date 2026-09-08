@@ -30,6 +30,8 @@ export interface PickerPanelProps {
   items: PickerItem[];
   groupOrder: readonly string[];
   excludeIds?: readonly string[];
+  /** Groups whose items keep the order the caller passed. Everything else sorts by `localeCompare`. */
+  unsortedGroups?: readonly string[];
   placeholder: string;
   emptyMessage: string;
   testIdPrefix: string;
@@ -54,6 +56,7 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
   items,
   groupOrder,
   excludeIds,
+  unsortedGroups,
   placeholder,
   emptyMessage,
   testIdPrefix,
@@ -77,6 +80,7 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
   const optionId = (id: string) => `${testIdPrefix}-option-${id}`;
 
   const excluded = useMemo(() => new Set(excludeIds ?? []), [excludeIds]);
+  const unsorted = useMemo(() => new Set(unsortedGroups ?? []), [unsortedGroups]);
 
   const sections = useMemo<PickerSection[]>(() => {
     const needle = search.trim().toLowerCase();
@@ -85,12 +89,20 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
     );
 
     return groupOrder
-      .map((group) => ({
-        group,
-        items: available.filter((item) => item.group === group),
-      }))
+      .map((group) => {
+        const inGroup = available.filter((item) => item.group === group);
+
+        // A 3-column grid is only scannable if it is sorted — but some groups are curated in their
+        // useful order on purpose (`fieldCatalog.ts:57-68`, `buildColumnCatalog.ts:226-271`), so the
+        // opt-out honours both. Copy before sorting: `filter` returns a fresh array today, but that
+        // is an implementation detail worth not depending on.
+        return {
+          group,
+          items: unsorted.has(group) ? inGroup : [...inGroup].sort((a, b) => a.label.localeCompare(b.label)),
+        };
+      })
       .filter((section) => section.items.length > 0);
-  }, [items, excluded, search, groupOrder]);
+  }, [items, excluded, unsorted, search, groupOrder]);
 
   const { activeId, indexById, setActiveIndex, resetActiveIndex, handleKeyDown } = usePickerKeyboard({
     sections,
