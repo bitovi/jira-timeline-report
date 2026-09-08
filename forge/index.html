@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Status Reports for Jira</title>
+
+    <!--
+      Differences from connect.html, all forced by the Forge platform (see
+      spec/021-forge/platform-constraints.md):
+
+      - No `all.js`. There is no `AP` global on Forge; @forge/bridge replaces it.
+      - No Google Tag Manager and no gtag. Re-adding either means declaring an analytics egress
+        permission that customers see at install time, *and* a major-version upgrade. Product call.
+      - No Google Fonts <link>. External styles are blocked by Forge's CSP unless declared.
+      - Assets are referenced relatively. Forge serves the bundle from a path prefix, not an
+        origin root, so a leading-slash href resolves outside the app.
+    -->
+    <link rel="icon" type="image/png" href="./images/favicon.png" />
+    <link href="./production.css" rel="stylesheet" />
+  </head>
+
+  <body class="overflow-hidden">
+    <!--
+      #mainContent, #login and #loadingJira are read as implicit globals by
+      src/shared/main-helper.js (:144, :163, :169) — they are load-bearing, not layout.
+      #select-cloud is deliberately absent: the site picker no-ops without it (main-helper.js:120),
+      which is what we want, since Forge already knows which site it is running on.
+    -->
+    <div id="mainContent" class="flex flex-col w-screen h-screen overflow-hidden">
+      <div id="login"></div>
+
+      <div id="loadingJira" class="place-center">
+        <p class="my-2">Loading the Jira Timeline Report ...</p>
+      </div>
+    </div>
+
+    <script type="module" src="../src/forge.main.ts"></script>
+  </body>
+</html>

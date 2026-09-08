@@ -40,7 +40,7 @@ export const StatusCircle: React.FC<StatusCircleProps> = ({ variant, status, isD
         className={`${getStatusColorClass(circleStatus)} w-4 h-4 text-xs rounded-full flex items-center justify-center relative z-30`}
         data-testid="status-circle"
       >
-        {variant === 'empty-set-current' ? <img src="/images/empty-set.svg" alt="" /> : '←'}
+        {variant === 'empty-set-current' ? <img src="./images/empty-set.svg" alt="" /> : '←'}
       </span>
     </div>
   );

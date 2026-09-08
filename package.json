@@ -13,6 +13,12 @@
     "dev:js": "vite",
     "dev:css": "tailwindcss -i ./src/css/status-reports.css -o ./dist/production.css --watch",
     "dev": "concurrently --kill-others --names \" CSS \",\" JS \",\" SERVER \" -c yellow,blue,green \"npm:dev:css\" \"npm:dev:js\" \"npm:start-local\"",
+    "build:css:forge": "tailwindcss -i ./src/css/status-reports.css -o ./forge/production.css --minify",
+    "build:forge": "npm run build:css:forge && vite build --config vite.forge.config.ts",
+    "dev:css:forge": "tailwindcss -i ./src/css/status-reports.css -o ./forge/production.css --watch",
+    "dev:js:forge": "vite --config vite.forge.config.ts",
+    "dev:forge": "concurrently --kill-others --names \" CSS \",\" JS \" -c yellow,blue \"npm:dev:css:forge\" \"npm:dev:js:forge\"",
+    "deploy:forge": "npm run build:forge && forge deploy",
     "test": "vitest --watch=false --exclude '**/playwright'",
     "test:watch": "vitest --exclude '**/playwright'",
     "test:e2e": "playwright test",
@@ -44,9 +50,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "jstat": "^1.9.6",
-    "winston": "^3.17.0",
-    "winston-cloudwatch": "^6.3.0"
+    "jstat": "^1.9.6"
   },
   "devDependencies": {
     "@atlaskit/badge": "^16.4.3",
@@ -84,6 +88,8 @@
     "@atlaskit/visually-hidden": "^1.6.0",
     "@babel/preset-env": "^7.25.7",
     "@babel/preset-react": "^7.25.7",
+    "@forge/bridge": "^6.2.0",
+    "@forge/cli": "^13.3.0",
     "@playwright/test": "^1.51.1",
     "@sentry/react": "^8.52.1",
     "@storybook/addon-docs": "^10.4.6",

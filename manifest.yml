@@ -1,0 +1,97 @@
+modules:
+  # Module keys are `main` and `project` — deliberately NOT descriptive names like
+  # `status-reports-global`. Forge's Connect URL persistence matches on `{addonKey}__{moduleKey}`,
+  # so an old Connect URL only forwards to its Forge replacement when the keys are identical:
+  #
+  #   https://<site>.atlassian.net/plugins/servlet/ac/bitovi.status-report/main
+  #
+  # is what a customer gets when they open the app today and copy the address bar, so it is what is
+  # in their bookmarks and in every link they have pasted anywhere. Renaming these keys after the
+  # cutover cannot recover the window in which those URLs 404.
+  # https://developer.atlassian.com/platform/adopting-forge-from-connect/migrate-page-module-urls/
+  #
+  # Forge redirects such a URL with the whole original (path, query, fragment) base64-encoded into
+  # an `x_atlassian_cf` query param, readable from `view.createHistory()`. Nothing decodes it yet,
+  # so a forwarded bookmark lands on the app unconfigured rather than restoring its report state.
+  # See spec/021-forge/next-steps/status-2026-09-02.md.
+  jira:globalPage:
+    - key: main
+      resource: main
+      title: Status Reports for Jira
+      layout: blank
+  jira:projectPage:
+    - key: project
+      resource: main
+      title: Status Reports for Jira
+      layout: blank
+
+  # No `deeplink`. The Connect descriptor declares a third generalPage with `location: none` whose
+  # URL carries nine `{ac.bitovi.status-report.*}` placeholders
+  # (scripts/atlassian-connect/index.ts:105). Nothing in this repo has ever generated a URL to it,
+  # it is not documented publicly, and it is not needed to remove the last Connect module — so it is
+  # deliberately dropped rather than ported. Adding it back later means a `jira:globalPage` keyed
+  # `deeplink`, which Forge would also show in the Apps nav: there is no Forge equivalent of
+  # `location: none` on a global page.
+
+resources:
+  - key: main
+    path: dist-forge
+    # `forge tunnel` proxies to the Vite dev server (`npm run dev:forge`) instead of the
+    # uploaded bundle, so the app hot-reloads inside real Jira without a redeploy.
+    tunnel:
+      port: 5173
+
+# Deliberately no `function` module and no `resolver`: this app has no backend. Every Jira call
+# goes through @forge/bridge's requestJira straight from the iframe, which is what keeps it off
+# the Forge invocation quota — and what makes `asApp()` unreachable, so the app cannot escalate
+# beyond the current user's permissions.
+
+# Deliberately no `remotes`. The UI is served from Atlassian's CDN out of `dist-forge`, not from
+# statusreports.bitovi.com. A remote is what `forge eligibility` names as disqualifying for the
+# Runs on Atlassian program; `app.connect.key` below is not.
+
+permissions:
+  scopes:
+    # Ordinary Jira REST through `requestJira` — issue search, field lookup, project reads, writes.
+    #
+    # TESTED 2 Sep on prodcheck: the two `*:connect-jira` scopes below are NOT sufficient on their
+    # own. Deployed without these two, reading a Reports Space failed at
+    # `react/services/reports-storage/useSpaceIssueTypes.ts:62` ("Could not read \"REPTEST\"") —
+    # that hook calls `fetchProjectIssueTypes`, a plain Jira project read. Saved reports did not load
+    # either. So the legacy Connect compatibility scopes cover the Connect endpoints, not the Jira
+    # REST API, and this release genuinely increases the declared scope set.
+    - read:jira-work
+    - write:jira-work
+    # Reaches the Connect app properties where existing customers' saved reports already live.
+    # See src/jira/storage/index.forge.ts — this is what makes the cutover need no migration.
+    - read:connect-jira
+    - write:connect-jira
+  content:
+    styles:
+      # Atlaskit is Emotion-based and injects <style> tags at runtime.
+      # Note: changing this line is a MAJOR version — CSP options count, not just scopes.
+      - unsafe-inline
+
+app:
+  # The MARKETPLACE app in the Bitovi space — the real, licensed listing. This file used to point at
+  # the throwaway sandbox (916b1dfd-cb45-4322-96cc-daa9462036e3), which has no Connect linkage and
+  # so cannot read customer app properties at all. The sandbox is obsolete; `prodcheck` is the test
+  # rig. See spec/021-forge/next-steps/status-2026-09-02.md.
+  #
+  # `forge deploy` with no `-e` deploys to PRODUCTION. Use `-e prodcheck` for anything exploratory.
+  id: ari:cloud:ecosystem::app/12573c92-9009-45d3-ab51-46f65ffa1ba1
+  # REQUIRED — this is a paid app. Omitting this block ships licensing DISABLED, which is what
+  # happened to production major version 3 (deployed 3 Sep, `License: false` in
+  # `forge version list -e production`, against `true` on v2). With no license on the view context,
+  # `getLicensing()` in src/forge.main.ts takes its "absent means allowed" branch and every install
+  # runs unlicensed. Do not remove this.
+  licensing:
+    enabled: true
+  connect:
+    # NOT a Connect module — an identity claim, and the thing that grants access to existing
+    # customers' saved reports. If any forge command offers to delete this key, answer N.
+    key: bitovi.status-report
+  # Required by the CLI even though this app ships no functions — see the note above `permissions`.
+  # Nothing executes on it, so the choice is inert; it tracks the repo's own Node (.nvmrc).
+  runtime:
+    name: nodejs22.x

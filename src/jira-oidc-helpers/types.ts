@@ -87,6 +87,19 @@ export type RequestHelper = <TValues = any[], TIssues = OidcJiraIssue[] | JiraIs
   },
 ) => Promise<RequestHelperResponse<TValues, TIssues>>;
 
+/**
+ * Which build the app is running as.
+ *
+ * - `jira` — the Connect app embedded in Jira, talking to the REST API over the `AP` bridge.
+ * - `hosted` — the standalone OAuth website, talking to `api.atlassian.com` with a bearer token.
+ * - `forge` — the Forge Custom UI app, talking to Jira through `@forge/bridge`'s `requestJira`.
+ *
+ * `hosted` is the one that carries a user-held access token; the other two are authenticated by
+ * the iframe container. Most host branches in the app are really asking that question, so they
+ * read `host !== 'hosted'` rather than enumerating the embedded hosts.
+ */
+export type Host = 'jira' | 'hosted' | 'forge';
+
 export type Config = {
   env: {
     JIRA_CLIENT_ID: string;
@@ -97,7 +110,7 @@ export type Config = {
   };
   requestHelper: RequestHelper;
   fieldsRequest: () => FieldsRequest;
-  host: 'jira' | 'hosted';
+  host: Host;
 };
 
 /**

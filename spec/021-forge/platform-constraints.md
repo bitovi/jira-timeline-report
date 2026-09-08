@@ -86,7 +86,21 @@ minus `offline_access`, which is OAuth-only.
 
 ## Static resource quotas
 
-Weekly, per production deployment. Development and staging are unmetered.
+There are **two** separate limit sets, and conflating them overstates the problem.
+
+**Structural limits** — hard ceilings on what a resource bundle may contain, identical across
+environments and app tiers.
+— [Resource limits](https://developer.atlassian.com/platform/forge/limits-resource/)
+
+|                         |               |
+| ----------------------- | ------------- |
+| Files per bundle        | 5,000         |
+| Size per bundle         | 100 MB        |
+| Bundles per app         | 50            |
+| Cumulative files / size | 25,000 / 1 GB |
+
+**Weekly production upload quota** — metered per deployment to _production_ only. Development and
+staging are unmetered.
 — [Custom UI](https://developer.atlassian.com/platform/forge/custom-ui/)
 
 |                     | Paid   | Free / distributed |
@@ -94,8 +108,10 @@ Weekly, per production deployment. Development and staging are unmetered.
 | Total file capacity | 150 MB | 75 MB              |
 | Files per upload    | 500    | 250                |
 
-**`dist/` as it stands today would fail this** — 806 files, 60 MB — for three reasons, none of them
-about the app itself:
+**`dist/` as it stands today clears the structural limits comfortably** (806 files / 60 MB against
+5,000 / 100 MB) and is unmetered in development, so it is not the blocker an earlier draft of this
+document implied. It would, however, consume the entire weekly production allowance in one deploy,
+and it is a cold-load problem regardless — for three reasons, none of them about the app itself:
 
 | What's in `dist/`                                                 | Files | Size   | Ships to Forge? |
 | ----------------------------------------------------------------- | ----- | ------ | --------------- |
@@ -108,10 +124,10 @@ The `tsc` spill is the surprising one: `tsconfig.json:7` sets `"outDir": "./dist
 `noEmit`, so `npm run typecheck` writes ~700 compiled modules into the build directory, and
 `vite.dev.config.ts` sets `emptyOutDir: false` so nothing ever clears them.
 
-Phase B2 therefore needs a dedicated, clean resource directory rather than pointing
-`resources.path` at `dist/`. Once curated it's roughly **75 files / 29 MB** — inside the paid quota,
-tight against the free one. Separately, `index-*.js` alone is 15 MB, which is a load-time problem on
-Forge's CDN in the same way it's a load-time problem today, just more visible.
+The build therefore needs a dedicated, clean resource directory rather than pointing
+`resources.path` at `dist/`. Once curated it's roughly **75 files / 29 MB** — inside the paid weekly
+quota, tight against the free one. Separately, `index-*.js` alone is 15 MB, which is a load-time
+problem on Forge's CDN in the same way it's a load-time problem today, just more visible.
 
 ## Calling Jira
 
@@ -174,11 +190,30 @@ query, 25 operations / 4 MB per transaction. Genuinely record-oriented — the n
 spec/020's `RecordStore` — and also resolver-bound and Forge-only.
 
 **App properties**: Forge apps use `/rest/forge/1/app/properties/{key}` and it is `asApp()`-only,
-i.e. also resolver-bound. Connect's `/rest/atlassian-connect/1/addons/{addonKey}/properties/{key}` is
-a different resource; the docs state Connect apps cannot use the Forge one, and are silent on the
-reverse. **Whether a Forge app can read its own Connect-era app properties is the single most
-important unknown in this investigation** — it decides whether embedded customers keep their saved
-reports across the cutover. Spike question 5.
+i.e. also resolver-bound. Connect's `/rest/atlassian-connect/1/addons/{addonKey}/properties/{key}`
+is a different resource.
+
+**Spike question 5 is answered, conditionally.** A Forge app _can_ access Connect app properties —
+but only "as long as they are stored against the same `app.connect.key`."
+
+> **Confirmed empirically, 2 Sep 2026.** Not just readable — **read and write**, from a Custom UI
+> front end via `@forge/bridge`'s `requestJira`, with no resolver and no `@forge/api`. Verified on
+> the Marketplace app's `prodcheck` environment against `bitovi.status-report`. The shipping app
+> keeps `app.connect.key`, so the "Unreachable" row below applies only to the standalone sandbox,
+> not to the app that ships. See
+> [next-steps/status-2026-09-02.md](./next-steps/status-2026-09-02.md).
+> — [Extending your app with Forge](https://developer.atlassian.com/platform/adopting-forge-from-connect/extending-your-app/)
+
+So the answer turns entirely on app identity:
+
+| Path                                                                     | Connect-era app properties |
+| ------------------------------------------------------------------------ | -------------------------- |
+| Adopt the existing Connect app (`app.connect.key: bitovi.status-report`) | Readable                   |
+| Register a brand-new standalone Forge app                                | **Unreachable**            |
+
+[plan.md](./plan.md) takes the second path deliberately, which means Connect users' saved settings
+do not carry over to the Forge host. That is the main thing the standalone decision trades away,
+and the reason to revisit identity if Forge ever becomes the shipping app rather than a third host.
 
 What Atlassian _does_ say about sharing data across the boundary: an app "has no direct communication
 path between the Forge and Connect parts, although they may share data via entity or content
@@ -200,13 +235,13 @@ be both correct and simpler.
 
 ## Confirmed vs. unverified
 
-| Claim                                                                   | Status                                               |
-| ----------------------------------------------------------------------- | ---------------------------------------------------- |
-| `localStorage` works (sandbox has `allow-same-origin`)                  | Documented; verify in spike                          |
-| `window.open` blocked (no `allow-popups`)                               | Documented                                           |
-| `requestJira` accepts arbitrary Jira REST paths as the current user     | Documented                                           |
-| `location.search` exists on the Forge history object                    | Documented (used by Atlassian's own migration guide) |
-| Long query strings round-trip through Forge history                     | **Unverified** — spike 3                             |
-| Atlaskit renders under Forge CSP with `content.styles: [unsafe-inline]` | **Unverified** — spike 1                             |
-| CanJS `RoutePushstate` works on the iframe's own history                | **Unverified** — spike 4                             |
-| A Forge app can read Connect-era app properties                         | **Unverified, highest stakes** — spike 5             |
+| Claim                                                                   | Status                                                                                                                             |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `localStorage` works (sandbox has `allow-same-origin`)                  | Documented; verify on first boot                                                                                                   |
+| `window.open` blocked (no `allow-popups`)                               | Documented                                                                                                                         |
+| `requestJira` accepts arbitrary Jira REST paths as the current user     | Documented                                                                                                                         |
+| `location.search` exists on the Forge history object                    | Documented (used by Atlassian's own migration guide)                                                                               |
+| A Forge app can read Connect-era app properties                         | **Documented — but only with a shared `app.connect.key`.** See § Storage. Moot for the standalone app [plan.md](./plan.md) builds. |
+| Long query strings round-trip through Forge history                     | **Unverified** — [plan.md](./plan.md) Phase 4 tests this first                                                                     |
+| Atlaskit renders under Forge CSP with `content.styles: [unsafe-inline]` | **Unverified** — surfaces in Phase 1                                                                                               |
+| CanJS `RoutePushstate` works on the iframe's own history                | **Unverified** — surfaces in Phase 4                                                                                               |

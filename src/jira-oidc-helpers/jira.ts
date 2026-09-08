@@ -3,7 +3,6 @@
  */
 import chunkArray from '../utils/array/chunk-array';
 import mapIdsToNames from '../utils/object/map-ids-to-names';
-import { responseToText } from '../utils/fetch/response-to-text';
 import { RequestHelperResponse, SearchJiraResponse } from '../shared/types';
 import { FetchJiraIssuesParams } from '../jira/shared/types';
 import {
@@ -18,7 +17,6 @@ import {
   IssueChangelogMap,
   History,
 } from './types';
-import { fetchFromLocalStorage } from './storage';
 import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from './fetchAllJiraIssuesWithJQLAndFetchAllChangelog';
 import { uniqueKeys } from '../utils/array/unique';
 
@@ -738,102 +736,34 @@ export function fetchDeepChildren(config: Config) {
   };
 }
 
+/**
+ * Writes go through `config.requestHelper` like every read does.
+ *
+ * This used to branch on a `!!(AP?.history?.getState)` probe — "am I a Connect app?" — with a
+ * hand-rolled `AP.request` on one side and a bearer-token `fetch` on the other. That probe answers
+ * **wrong** under Forge: it is an embedded iframe, but there is no `AP`, so it fell through to the
+ * OAuth path and built a URL from a `localStorage.scopeId` that does not exist. Since every
+ * configuration-issue storage write lands here, saving was dead on Forge.
+ *
+ * `returnIssue=true` is load-bearing: without it Jira answers 204 with no body and the helpers,
+ * which all parse JSON, would have nothing to parse.
+ */
 export function editJiraIssueWithNamedFields(config: Config) {
   return async (issueId: string, fields: Record<string, any>) => {
     const fieldMapping = await config.fieldsRequest();
 
     const editBody = fieldsToEditBody(fields, fieldMapping);
 
-    /**
-     * Quick and dirty fix while gwe work on getting a more robust
-     * request helper / jira client
-     */
-
-    const isPlugin = isConnectHost();
-
-    if (isPlugin) {
-      return AP?.request(`/rest/api/3/issue/${issueId}?returnIssue=true` + '' /*new URLSearchParams(params)*/, {
-        type: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify(editBody),
-      }).then((response) => {
-        const casted = response as APResponse;
-
-        return JSON.parse(casted.body) as unknown;
-      });
-    }
-
-    /**
-     * End quick and dirty fix below is the original logic
-     */
-
-    const scopeIdForJira = fetchFromLocalStorage('scopeId');
-    const accessToken = fetchFromLocalStorage('accessToken');
-
-    return fetch(
-      `${config.env.JIRA_API_URL}/${scopeIdForJira}/rest/api/3/issue/${issueId}?returnIssue=true` +
-        '' /*new URLSearchParams(params)*/,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editBody),
+    return config.requestHelper(`/api/3/issue/${issueId}?returnIssue=true`, {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
-    ).then(responseToText);
+      body: JSON.stringify(editBody),
+    });
   };
 }
-
-/**
- * True when this page is running inside Jira as a Connect app, where writes go over the `AP` bridge
- * instead of a bearer-token `fetch`.
- *
- * Same probe `editJiraIssueWithNamedFields` uses above — `AP` itself is stubbed to `{}` in tests, so
- * the presence of the *history* API is what actually distinguishes the host.
- */
-const isConnectHost = (): boolean => !!(AP?.history?.getState ?? false);
-
-interface APResponse {
-  body: string;
-  xhr: { status: number; statusText: string };
-}
-
-/** `${JIRA_API_URL}/${cloudId}/rest` — the base every non-Connect write goes through. */
-const hostedRestUrl = (config: Config, path: string): string => {
-  return `${config.env.JIRA_API_URL}/${fetchFromLocalStorage('scopeId')}/rest${path}`;
-};
-
-const hostedWriteHeaders = (): Record<string, string> => ({
-  Authorization: `Bearer ${fetchFromLocalStorage('accessToken')}`,
-  Accept: 'application/json',
-  'Content-Type': 'application/json',
-});
-
-/**
- * `AP.request` rejects with `{err}` — a JSON *string*, not an `Error` — so an unwrapped bridge
- * failure reaches the UI as a bare "Something went wrong".
- *
- * Worth the unwrapping here in particular: a Connect app's `DELETE` scope is **separate from
- * `write`**, so deleting a work item fails on a descriptor asking only for `["read", "write"]`, and
- * "you don't have permission" is a very different message from "something went wrong".
- */
-const apRequestError = (operation: string, error: unknown): Error => {
-  const raw = (error as { err?: unknown })?.err;
-
-  if (typeof raw === 'string') {
-    try {
-      const { statusCode, message } = JSON.parse(raw) as { statusCode?: number; message?: string };
-
-      return new Error(`${operation} failed${statusCode ? ` (HTTP ${statusCode})` : ''}: ${message ?? raw}`);
-    } catch {
-      return new Error(`${operation} failed: ${raw}`);
-    }
-  }
-
-  return error instanceof Error ? error : new Error(`${operation} failed`);
-};
 
 export interface CreatedJiraIssue {
   id: string;
@@ -851,30 +781,14 @@ export interface CreatedJiraIssue {
  */
 export function createJiraIssue(config: Config) {
   return async (fields: Record<string, unknown>): Promise<CreatedJiraIssue> => {
-    const body = JSON.stringify({ fields });
-
-    if (isConnectHost()) {
-      return AP!
-        .request(`/rest/api/3/issue`, {
-          type: 'POST',
-          contentType: 'application/json',
-          data: body,
-        })
-        .then(
-          (response) => JSON.parse((response as APResponse).body) as CreatedJiraIssue,
-          (error) => {
-            throw apRequestError('Creating a work item', error);
-          },
-        );
-    }
-
-    return fetch(hostedRestUrl(config, '/api/3/issue'), {
+    return config.requestHelper(`/api/3/issue`, {
       method: 'POST',
-      headers: hostedWriteHeaders(),
-      body,
-    })
-      .then(responseToText)
-      .then((text) => JSON.parse(text) as CreatedJiraIssue);
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fields }),
+    }) as unknown as Promise<CreatedJiraIssue>;
   };
 }
 
