@@ -3,12 +3,13 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Button from '@atlaskit/button/new';
 import Modal, { ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
+import Select from '@atlaskit/select';
 
 import type { Jira } from '../../../../jira-oidc-helpers';
 import type { JiraIssuePickerResponse } from '../../../../jira-oidc-helpers/jira';
 import { JiraProvider } from '../../../services/jira/JiraProvider';
 import { jiraKeys } from '../../../services/jira/key-factory';
-import { ValueReportForm } from './ValueReportForm';
+import { FieldTrigger, ValueReportForm } from './ValueReportForm';
 
 // ---------------------------------------------------------------------------------------------------
 // Both of this component's fetches, faked — Storybook has no credentials and can't `vi.mock`.
@@ -160,4 +161,70 @@ export const Interactive: Story = {
       </div>
     );
   },
+};
+
+// ---------------------------------------------------------------------------------------------------
+// The Field trigger, beside a real select. See spec/031-column-select-redesign § 9 and Risk 1.
+// ---------------------------------------------------------------------------------------------------
+
+/** `ValueReportForm`'s own row, so the two controls are measured against each other, not in isolation. */
+const TriggerRow: React.FC<{ note: string; children: React.ReactNode }> = ({ note, children }) => (
+  <div>
+    <p className="pb-1 text-xs text-slate-400">{note}</p>
+    <div className="grid grid-cols-[1.3fr_1fr_auto] items-end gap-2">
+      <div className="min-w-0">
+        <span className="mb-1 block text-xs font-medium text-neutral-801">Work item</span>
+        <Select placeholder="Search work items…" options={[]} />
+      </div>
+      <div className="min-w-0">
+        <span className="mb-1 block text-xs font-medium text-neutral-801">Field</span>
+        {children}
+      </div>
+      <div className="[&>button]:h-10 [&>button]:items-center">
+        <Button appearance="primary" isDisabled>
+          Add
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
+/**
+ * **Where § 9's pixel values converge, and the only thing that keeps them converged.**
+ *
+ * `FieldTrigger` matches an emotion-styled react-select by copying values out of
+ * `@atlaskit/select/dist/cjs/styles.js` — a private file. A minor version bump can drift the pair
+ * and no test will catch it, so the mitigation is this story with a **real** select in it, and
+ * someone looking at it. That is a recurring cost, not a one-time one (Risk 1).
+ *
+ * Check, at 1440 / 1280 / 1024: the two boxes are the same height and the same 3px radius; the
+ * resting fill is the same grey (`#F4F5F7`, *not* Tailwind's `neutral-20` `#F1F2F4`); the carets are
+ * the same glyph at the same size and colour; hover darkens both the same way; the placeholder grey
+ * matches; and a long value truncates rather than growing the box.
+ *
+ * Hover and focus are real states, so hover each pair and Tab through them rather than reading a
+ * screenshot. Note the one deliberate divergence documented on `FieldTrigger`: the select rings on a
+ * click, this rings only on `:focus-visible`.
+ */
+export const FieldTriggerStates: Story = {
+  decorators: [withJira(makeJira(async () => suggestions))],
+  render: () => (
+    <div className="flex flex-col gap-5">
+      <TriggerRow note="Resting, no value — the placeholder grey.">
+        <FieldTrigger id="trigger-resting" label={null} />
+      </TriggerRow>
+      <TriggerRow note="With a value — the value grey, and the caret unchanged.">
+        <FieldTrigger id="trigger-value" label="Story points" />
+      </TriggerRow>
+      <TriggerRow note="Disabled and loading — the Suspense fallback, in a byte-identically sized 40px box.">
+        <FieldTrigger id="trigger-loading" label={null} isDisabled isLoading />
+      </TriggerRow>
+      <TriggerRow note="Disabled with a value.">
+        <FieldTrigger id="trigger-disabled" label="Story points" isDisabled />
+      </TriggerRow>
+      <TriggerRow note="A custom-field name far longer than the column — must truncate, never grow.">
+        <FieldTrigger id="trigger-long" label="Original story point estimate for the delivery workstream" />
+      </TriggerRow>
+    </div>
+  ),
 };

@@ -4,6 +4,10 @@ import type { StylesConfig } from '@atlaskit/select';
 import React, { Suspense, useMemo, useState } from 'react';
 import Select from '@atlaskit/select';
 import Button from '@atlaskit/button/new';
+import Spinner from '@atlaskit/spinner';
+import ChevronDownIcon from '@atlaskit/icon/utility/migration/chevron-down';
+
+import type { PickerTriggerProps } from '../../../components/SearchablePicker';
 
 import { useJiraIssueFields } from '../../../services/jira/useJiraIssueFields';
 import { useWorkItemSearch } from '../hooks/useWorkItemSearch';
@@ -166,6 +170,117 @@ const Field: FC<{ htmlFor: string; label: string; children: ReactNode }> = ({ ht
     </label>
     {children}
   </div>
+);
+
+/**
+ * The Field control's button, styled to be indistinguishable from the `@atlaskit/select` it sits
+ * beside in the same grid row.
+ *
+ * **Tailwind arbitrary values wrapping the select's own CSS variables** — not the Tailwind palette,
+ * and not `token()`.
+ *
+ * *Not the Tailwind palette*, because it almost works, which is the trap: `neutral.100` = `#7A869A`
+ * = N100 ✓, `neutral.200` = `#6B778C` = N200 ✓, `neutral.800` = `#172B4D` = N800 ✓, `blue.200` =
+ * `#4C9AFF` = B100 ✓ — but `neutral.20` = `#F1F2F4` while the select's resting fill is N20 =
+ * `#F4F5F7` ✗. Four of five match, so it looks right until you look at the fill. And a hardcoded hex
+ * cannot follow `--ds-*`, so the pair would diverge under any non-default theme — and this app has
+ * one (spec/016-report-of-reports/008-theme).
+ *
+ * *Not `token()`*, because it emits the same `var(--ds-…, fallback)` string but only through a
+ * `style` prop or emotion, and mixing that into a Tailwind-classed component recreates exactly the
+ * specificity fight the `Add` button's comment below already documents.
+ *
+ * Every value below is read from `@atlaskit/select/dist/cjs/styles.js` — a **private** file, not a
+ * public entry point, so a minor bump can drift the pair silently and no test will catch it. The
+ * only mitigation that works is keeping the `FieldTriggerStates` story (which puts a real select
+ * beside this) and looking at it. See spec/031-column-select-redesign § 9 and Risk 1.
+ *
+ * `h-10`, not `min-h-10`: the select's `minHeight: 40` (`styles.js:79`) never actually grows,
+ * because its value never wraps — so neither must this, or the pair can differ in height on a long
+ * field name. Hence `truncate` too.
+ *
+ * **One deliberate divergence.** The select rings on `:focus-within` (`styles.js:76-78`), which
+ * fires on a mouse click as well; this rings on `:focus-visible`. It cannot be otherwise: clicking
+ * this trigger opens a popover that takes focus into its own search field, so the trigger is not
+ * focused while its list is open — where clicking the select leaves focus in the select. That is
+ * inherent to a popover-with-search versus an inline combobox input, not something a CSS variant
+ * fixes. Converge the rest by eye in the story.
+ */
+const FIELD_TRIGGER_CLASS_NAME = [
+  // layout — `styles.js:79` (minHeight 40), `:104-107` (valueContainer padding), `:20` (container font)
+  'group flex h-10 w-full items-center justify-between',
+  'px-[6px] py-[2px] text-sm font-normal leading-5',
+  // box — `styles.js:72-74`
+  'rounded-[var(--ds-border-radius-100,3px)] border-[length:var(--ds-border-width,1px)] border-solid',
+  'border-[var(--ds-border-input,#7A869A)]',
+  // fill and hover — `styles.js:36`, `:37`, `:93`
+  'cursor-pointer bg-[var(--ds-background-input,#F4F5F7)]',
+  'hover:bg-[var(--ds-background-input-hovered,#EBECF0)]',
+  // focus — `styles.js:34`, `:36`, `:76-78` (`inset 0 0 0 1px <borderColor>`)
+  'focus-visible:border-[var(--ds-border-focused,#4C9AFF)]',
+  'focus-visible:bg-[var(--ds-background-input-pressed,#FFFFFF)]',
+  'focus-visible:shadow-[inset_0_0_0_var(--ds-border-width,1px)_var(--ds-border-focused,#4C9AFF)]',
+  'focus-visible:outline-none',
+  // `styles.js:80`
+  'transition-[background-color,border-color] duration-200 ease-in-out',
+  // `styles.js:40-43`; the text colour is `singleValue`'s disabled branch (`:196`)
+  'disabled:cursor-not-allowed disabled:border-[var(--ds-background-disabled,#F4F5F7)]',
+  'disabled:bg-[var(--ds-background-disabled,#F4F5F7)] disabled:text-[var(--ds-text-disabled,#A5ADBA)]',
+].join(' ');
+
+export interface FieldTriggerProps {
+  /** The picked field's name; `null` shows the placeholder. */
+  label: string | null;
+  isDisabled?: boolean;
+  isLoading?: boolean;
+  /**
+   * From `SearchablePicker`'s `trigger` render prop. Absent for the Suspense fallback, which is the
+   * whole reason this is a component rather than JSX inside `FieldPicker` — the fallback has to
+   * render the same 40px box with no picker behind it.
+   */
+  triggerProps?: PickerTriggerProps;
+  onClick?: () => void;
+  /**
+   * What `<label htmlFor>` points at. Defaults to the form's own id and should stay that way in the
+   * form — the Suspense fallback carries it too, so the label is never dangling mid-suspense (no
+   * duplicate-id risk: Suspense swaps the two, it does not render both). Overridable only so the
+   * `FieldTriggerStates` story can show several of these at once without colliding ids.
+   */
+  id?: string;
+}
+
+export const FieldTrigger: FC<FieldTriggerProps> = ({
+  label,
+  isDisabled,
+  isLoading,
+  triggerProps,
+  onClick,
+  id = 'ror-value-field',
+}) => (
+  <button
+    {...triggerProps}
+    id={id}
+    type="button"
+    disabled={isDisabled}
+    // `styles.js:196` (value) and `:189` (placeholder). On the button rather than the inner span so
+    // the `disabled:` variant above can win, and so the caret can inherit through `group-disabled`.
+    className={`${FIELD_TRIGGER_CLASS_NAME} ${
+      label ? 'text-[var(--ds-text,#172B4D)]' : 'text-[var(--ds-text-subtlest,#6B778C)]'
+    }`}
+    onClick={onClick}
+  >
+    <span className="min-w-0 flex-1 truncate text-left">{label ?? 'Field'}</span>
+    {/* `styles.js:133` (`dropdownIndicator`), whose `:126-131` padding is 2px each side. */}
+    <span className="flex flex-none items-center px-[2px] text-[var(--ds-text-subtle,#42526E)] group-disabled:text-[var(--ds-text-disabled,#A5ADBA)]">
+      {isLoading ? (
+        <Spinner size="small" label="Loading fields" />
+      ) : (
+        // The same module the select imports (`select/.../indicators.js:12`, rendered at `:56-62`
+        // with `color="currentColor"`), so the glyph and its size are identical by construction.
+        <ChevronDownIcon label="" color="currentColor" />
+      )}
+    </span>
+  </button>
 );
 
 /**
