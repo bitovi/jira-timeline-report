@@ -15,6 +15,9 @@ import Popup, { type TriggerProps } from '@atlaskit/popup';
 import type { Placement } from '@atlaskit/popper';
 
 import { PickerPanel } from './PickerPanel';
+import { usePickerLayout, type PickerLayout } from './usePickerLayout';
+
+export type { PickerLayout };
 
 export interface PickerItem {
   id: string;
@@ -47,6 +50,15 @@ export interface SearchablePickerProps {
   testIdPrefix: string;
   trigger: (triggerProps: PickerTriggerProps, toggle: () => void) => ReactNode;
   onSelect: (id: string) => void;
+
+  /** The currently picked item. Gets a check on the right of its row. Single-select. */
+  selectedId?: string | null;
+  /**
+   * `localStorage` key for the expand/collapse choice. Omit and the choice is per-mount only.
+   *
+   * Each caller passes **its own** key, so expanding in one picker does not also expand the other.
+   */
+  layoutStorageKey?: string;
 
   /**
    * Render the panel as a DOM sibling of the trigger instead of portalling it.
@@ -86,12 +98,17 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
   testIdPrefix,
   trigger,
   onSelect,
+  selectedId,
+  layoutStorageKey,
   shouldRenderToParent,
   role,
   label,
   fallbackPlacements,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  // Here rather than in the panel: the panel unmounts on every close, so the choice would not
+  // survive close/reopen if it lived there — which is visible even with no storage key.
+  const [layout, setLayout] = usePickerLayout(layoutStorageKey);
 
   return (
     <Popup
@@ -115,7 +132,7 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
       // the search field would close the panel), and `appearance` (`vitest.setup.ts:4-12` mocks
       // `matchMedia().matches` as a *function*, hence truthy, so every jsdom test would take the
       // small-viewport sheet branch and no browser would). See § 8.
-      content={() => (
+      content={({ update }) => (
         <PickerPanel
           items={items}
           groupOrder={groupOrder}
@@ -123,6 +140,11 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
           placeholder={placeholder}
           emptyMessage={emptyMessage}
           testIdPrefix={testIdPrefix}
+          selectedId={selectedId}
+          label={label}
+          layout={layout}
+          onToggleLayout={() => setLayout(layout === 'expanded' ? 'compact' : 'expanded')}
+          repositionPopup={update}
           onSelect={(id) => {
             onSelect(id);
             setIsOpen(false);
