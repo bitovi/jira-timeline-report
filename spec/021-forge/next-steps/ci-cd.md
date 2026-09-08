@@ -87,7 +87,7 @@ independently.
 Either way, `forge version bulk-upgrade` is part of this release's runbook, because removing the
 Connect remote requires it regardless.
 
-## What blocks Forge CI today (one down, two left)
+## What blocks Forge CI today (one down, three left)
 
 1. ~~**The root `manifest.yml` points at the sandbox app.**~~ **Done 2 Sep.** The repo's
    `manifest.yml` is now the Marketplace app (`12573c92-9009-45d3-ab51-46f65ffa1ba1`) with
@@ -99,6 +99,71 @@ Connect remote requires it regardless.
    `node-version-file: .nvmrc` so the pin is stated once, in the file that already says `v22.23.2`.
 3. **`FORGE_EMAIL` and `FORGE_API_TOKEN` as repository secrets.** 👤 Human step. The CLI picks them
    up automatically, so no `forge login` in the pipeline.
+4. **`@forge/cli` is in `devDependencies` and is breaking CI right now.** See
+   [The Forge CLI does not belong in `package.json`](#the-forge-cli-does-not-belong-in-packagejson)
+   below — it must come out before any of this works.
+
+## The Forge CLI does not belong in `package.json`
+
+**This is breaking CI today**, on the `feature/forge` branch, and it is worth understanding before
+the deploy job is written — the same trap is waiting there.
+
+`dc5a7a5e` added `@forge/cli@^13.3.0` to **`devDependencies`** (it is not on `main`). That pulls in
+[`keytar`](https://www.npmjs.com/package/keytar), a native module binding the OS keychain, marked
+`hasInstallScript: true` and **not** optional — so a failed build is fatal to the whole install. Its
+install script is `prebuild-install || npm run build`: fetch a prebuilt binary, otherwise compile.
+
+On a GitHub runner that compile cannot succeed:
+
+```
+npm error prebuild-install warn install Request timed out
+npm error Package libsecret-1 was not found in the pkg-config search path.
+npm error gyp ERR! not ok
+npm error code 1
+```
+
+Note the first line. keytar 7.9.0 **does** publish a prebuilt linux-x64 binary — it did not fail to
+exist, the download **timed out**. So this is a flaky network failure that falls back to a compile
+the runner cannot do, which is also the likeliest reason the `e2e-test` job fails while `unit-test`
+passes: luck, not structure. Do not go looking for a deeper difference between the two jobs without
+evidence from the passing job's install log.
+
+### The fix: install it globally, in the one job that needs it
+
+Atlassian's own [CI/CD guide](https://developer.atlassian.com/platform/forge/set-up-cicd/) installs
+the CLI as a **pipeline step**, never as a project dependency:
+
+```yaml
+- npm install --global @forge/cli
+```
+
+> "While we use the following command for simplicity in our guide `npm install --global
+@forge/cli`, we recommend that you **pin the CLI major version** in your CI/CD pipeline to avoid
+> breaking changes interfering with your pipelines."
+
+To be clear, because it is easy to misread: Atlassian **does** recommend running `forge deploy` and
+`forge install` from CI. The whole guide is about that. What it does not do is put the CLI in
+`package.json`.
+
+So:
+
+```bash
+npm uninstall @forge/cli          # remove from devDependencies
+npm i -g @forge/cli@13            # developers install once, globally
+```
+
+Right now **no CI job invokes forge at all**, so the devDependency buys nothing and costs a native
+compile on every install — in `unit-test`, in `e2e-test`, and on every developer's `npm ci`.
+
+Two consequences to carry forward:
+
+1. **The runbook's commands change** from `npx forge …` to `forge …` once the CLI is global. Without
+   the devDependency `npx forge` still works, but it re-resolves the CLI unpinned each time.
+2. **The future deploy job installs the CLI, so it inherits the same keytar risk.** Add
+   `sudo apt-get install -y libsecret-1-dev` to that job as cheap insurance against the
+   `prebuild-install` timeout. That is the right place for it — one job that genuinely needs the
+   CLI, rather than every job that runs `npm ci`. CI authenticates with `FORGE_EMAIL` /
+   `FORGE_API_TOKEN`, so keytar's actual purpose — local credential storage — is never used there.
 
 ## The workflow changes
 
