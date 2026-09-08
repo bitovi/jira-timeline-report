@@ -10,10 +10,11 @@
  * `trigger` is a render prop because the two callers want different buttons: Table's is a fixed
  * `+ Add column`, ROR's shows the field currently picked. Everything inside the popover is shared.
  */
-import React, { useMemo, useState, type ReactNode } from 'react';
+import React, { useState, type ReactNode } from 'react';
 import Popup, { type TriggerProps } from '@atlaskit/popup';
 import type { Placement } from '@atlaskit/popper';
-import Textfield from '@atlaskit/textfield';
+
+import { PickerPanel } from './PickerPanel';
 
 export interface PickerItem {
   id: string;
@@ -91,30 +92,13 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
   fallbackPlacements,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-
-  const excluded = useMemo(() => new Set(excludeIds ?? []), [excludeIds]);
-
-  const grouped = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    const available = items.filter(
-      (item) => !excluded.has(item.id) && (needle === '' || item.label.toLowerCase().includes(needle)),
-    );
-    return groupOrder
-      .map((group) => ({
-        group,
-        items: available.filter((item) => item.group === group),
-      }))
-      .filter((section) => section.items.length > 0);
-  }, [items, excluded, search, groupOrder]);
 
   return (
     <Popup
       isOpen={isOpen}
-      onClose={() => {
-        setIsOpen(false);
-        setSearch('');
-      }}
+      // No `setSearch('')` to go with this: the panel holds the query and `Popup` renders nothing
+      // when closed, so closing unmounts it and the query goes with it.
+      onClose={() => setIsOpen(false)}
       placement="bottom-start"
       // Deterministic rather than generated (`popup.js:88`), so the trigger's `aria-controls` is
       // assertable and stable across renders.
@@ -132,38 +116,18 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
       // `matchMedia().matches` as a *function*, hence truthy, so every jsdom test would take the
       // small-viewport sheet branch and no browser would). See § 8.
       content={() => (
-        <div className="p-3 w-72 flex flex-col gap-2" data-testid={`${testIdPrefix}-popover`}>
-          <Textfield
-            testId={`${testIdPrefix}-search`}
-            placeholder={placeholder}
-            value={search}
-            autoFocus
-            onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
-          />
-          <div className="max-h-72 overflow-auto flex flex-col gap-2">
-            {grouped.length === 0 && <div className="text-neutral-801 text-xs px-1">{emptyMessage}</div>}
-            {grouped.map((section) => (
-              <div key={section.group} className="flex flex-col">
-                <span className="text-xs font-semibold text-neutral-801 px-1 py-1">{section.group}</span>
-                {section.items.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    data-testid={`${testIdPrefix}-option`}
-                    className="text-left text-sm px-2 py-1 rounded hover:bg-neutral-201"
-                    onClick={() => {
-                      onSelect(item.id);
-                      setSearch('');
-                      setIsOpen(false);
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+        <PickerPanel
+          items={items}
+          groupOrder={groupOrder}
+          excludeIds={excludeIds}
+          placeholder={placeholder}
+          emptyMessage={emptyMessage}
+          testIdPrefix={testIdPrefix}
+          onSelect={(id) => {
+            onSelect(id);
+            setIsOpen(false);
+          }}
+        />
       )}
       trigger={(triggerProps) =>
         trigger({ ...triggerProps, role: 'combobox', 'aria-haspopup': 'listbox' }, () => setIsOpen((open) => !open))
