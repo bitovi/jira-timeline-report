@@ -43,23 +43,34 @@ const suggestions: JiraIssuePickerResponse = {
   ],
 };
 
-const makeJira = (respond: () => Promise<JiraIssuePickerResponse>): Jira =>
-  ({ fetchJiraFields: async () => mockFields, fetchIssuePickerSuggestions: respond }) as unknown as Jira;
+const makeJira = (
+  respond: () => Promise<JiraIssuePickerResponse>,
+  fetchJiraFields: () => Promise<typeof mockFields> = async () => mockFields,
+): Jira => ({ fetchJiraFields, fetchIssuePickerSuggestions: respond }) as unknown as Jira;
 
-const withJira = (jira: Jira) => (Story: React.FC) => {
-  const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
-  // Both modes: the catalog hook keys on login state, which Storybook doesn't control.
-  client.setQueryData(jiraKeys.issueFields('auth'), mockFields);
-  client.setQueryData(jiraKeys.issueFields('sample'), mockFields);
+/**
+ * `seedCatalog: false` leaves the `useSuspenseQuery` to actually run, which is what makes the
+ * Suspense fallback reviewable — see `FieldCatalogLoading`.
+ */
+const withJira =
+  (jira: Jira, { seedCatalog = true }: { seedCatalog?: boolean } = {}) =>
+  (Story: React.FC) => {
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
 
-  return (
-    <QueryClientProvider client={client}>
-      <JiraProvider jira={jira}>
-        <Story />
-      </JiraProvider>
-    </QueryClientProvider>
-  );
-};
+    if (seedCatalog) {
+      // Both modes: the catalog hook keys on login state, which Storybook doesn't control.
+      client.setQueryData(jiraKeys.issueFields('auth'), mockFields);
+      client.setQueryData(jiraKeys.issueFields('sample'), mockFields);
+    }
+
+    return (
+      <QueryClientProvider client={client}>
+        <JiraProvider jira={jira}>
+          <Story />
+        </JiraProvider>
+      </QueryClientProvider>
+    );
+  };
 
 const meta: Meta<typeof ValueReportForm> = {
   title: 'Reports/ReportOfReports/ValueReportForm',
@@ -227,4 +238,26 @@ export const FieldTriggerStates: Story = {
       </TriggerRow>
     </div>
   ),
+};
+
+/**
+ * **The Suspense fallback, beside the real work-item select.** The catalog seeds are dropped so the
+ * suspense query actually runs, and `fetchJiraFields` never resolves, so the fallback holds.
+ *
+ * What to check is the claim jsdom cannot check: **nothing moves when the catalog arrives.** The
+ * fallback is `FieldTrigger` disabled and loading, in the same 40px box with the same border and the
+ * same grid column, so the row must not shift, resize or reflow at the moment it swaps. Compare its
+ * disabled greys against the work-item select's by disabling that one too if needed.
+ */
+export const FieldCatalogLoading: Story = {
+  decorators: [
+    withJira(
+      makeJira(
+        async () => suggestions,
+        // Never lands, so the boundary never resolves.
+        () => new Promise(() => {}),
+      ),
+      { seedCatalog: false },
+    ),
+  ],
 };

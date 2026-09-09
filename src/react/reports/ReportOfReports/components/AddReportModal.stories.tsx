@@ -17,12 +17,31 @@ const mockFields = [
   { name: 'Story points', key: 'customfield_10014', schema: { type: 'number' }, id: 'customfield_10014', custom: true },
 ];
 
-const jira = {
-  fetchJiraFields: async () => mockFields,
-  fetchIssuePickerSuggestions: async (query: string) => ({
-    sections: [{ id: 'cs', issues: [{ key: `${query.toUpperCase()}-1`, summaryText: 'Migrate auth to OIDC' }] }],
-  }),
-} as unknown as Jira;
+/**
+ * Sixty fields, which is what the Field picker's three columns and scroll region actually need to be
+ * reviewable — `mockFields`' three cannot fill one row. Still short of a real instance's 180+; that
+ * case lives in `SearchablePicker.stories.tsx`, which does not need a modal to show it.
+ */
+const manyMockFields = [
+  ...mockFields,
+  ...Array.from({ length: 57 }, (_, at) => ({
+    name: `Custom Field ${at + 1}`,
+    key: `customfield_2${String(at).padStart(4, '0')}`,
+    schema: { type: 'string' },
+    id: `customfield_2${String(at).padStart(4, '0')}`,
+    custom: true,
+  })),
+];
+
+const makeJira = (fields: typeof mockFields) =>
+  ({
+    fetchJiraFields: async () => fields,
+    fetchIssuePickerSuggestions: async (query: string) => ({
+      sections: [{ id: 'cs', issues: [{ key: `${query.toUpperCase()}-1`, summaryText: 'Migrate auth to OIDC' }] }],
+    }),
+  }) as unknown as Jira;
+
+const jira = makeJira(mockFields);
 
 const TYPES = ['start-due', 'due', 'table', 'scatter-plot'];
 
@@ -36,19 +55,21 @@ const many = (count: number): Report[] =>
     )}`,
   }));
 
-const withJira = (Story: React.FC) => {
+const withFields = (fields: typeof mockFields) => (Story: React.FC) => {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
-  client.setQueryData(jiraKeys.issueFields('auth'), mockFields);
-  client.setQueryData(jiraKeys.issueFields('sample'), mockFields);
+  client.setQueryData(jiraKeys.issueFields('auth'), fields);
+  client.setQueryData(jiraKeys.issueFields('sample'), fields);
 
   return (
     <QueryClientProvider client={client}>
-      <JiraProvider jira={jira}>
+      <JiraProvider jira={makeJira(fields)}>
         <Story />
       </JiraProvider>
     </QueryClientProvider>
   );
 };
+
+const withJira = withFields(mockFields);
 
 const meta: Meta<typeof AddReportModal> = {
   title: 'Reports/ReportOfReports/AddReportModal',
@@ -94,4 +115,27 @@ export const FewReports: Story = {
  */
 export const NoSavedReports: Story = {
   args: { reports: [] },
+};
+
+/**
+ * **The field picker inside the real dialog — the check § 8's whole argument rests on.** Sixty
+ * fields, so the three columns and the scroll region are both exercised. Open the Field control and
+ * check, at 1440 / 1280 / 1024:
+ *
+ * 1. The panel paints **above** the dialog, not behind it. (`shouldRenderToParent` puts it inside
+ *    the modal positioner's stacking context; nothing here sets a `zIndex`, and one would be ignored.)
+ * 2. It is **not clipped** by the dialog, including while the saved-reports list scrolls under it.
+ * 3. Focus lands in the panel's search field **and stays there** — this is the `react-focus-lock`
+ *    case, the reason the portal path was rejected, and the one that looks fine in every story that
+ *    is not a real modal.
+ * 4. **One** Escape closes the panel and leaves the dialog open; a second closes the dialog.
+ * 5. Focus returns to the Field trigger on close, inside the dialog.
+ * 6. The expanded panel is 640px against a 600px dialog anchored ~300px in, so watch which way it
+ *    aligns: flip should pick `bottom-end` before `preventOverflow` has to shift it. A shifted panel
+ *    stops reading as anchored to the field. If it still reads badly the fallbacks are
+ *    `<Modal width="large">` or a narrower expanded panel in the modal case only.
+ * 7. The Field trigger is indistinguishable from the Work item select beside it.
+ */
+export const ManyFields: Story = {
+  decorators: [withFields(manyMockFields)],
 };

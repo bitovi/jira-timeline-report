@@ -179,12 +179,15 @@ updated `InlineValue.tsx` import the same constants instead of duplicating CSS.
   string value (must stay `text`, not `wiki`), and the existing empty/array/date/label cases (must be
   unchanged). Add/extend `InlineValue.stories.tsx` with an ADF-value story and a wiki-markup-value story.
 
-## Explicitly deferred to a future `spec/031-*/plan.md`
+## Explicitly deferred to a future `spec/032-*/plan.md`
 
 Rollback/"as of a past date" support (picking a field's value as it stood on an earlier day) was originally
 scoped into this plan, which is why this spec was briefly named with a `-rollback` suffix. It's been pulled
 out entirely: this plan and its directory now cover only the rich-text rendering fix above, and everything
-below is notes to seed a **separate, later spec** (`spec/031-*`, name TBD) — not a section of this one.
+below is notes to seed a **separate, later spec** (`spec/032-*`, name TBD) — not a section of this one.
+
+> **Renumbered from `031`.** `spec/031-column-select-redesign/` took that number at Arthur's request, so
+> the rollback / "as of a past date" work — and the three open questions below — is now `032`.
 
 - An interactive slider (à la Gantt's `CompareSlider` / `useCompareTo`, see
   `src/react/ReportControls/components/CompareSlider/`) to pick an "as of" date for Report of Reports
@@ -198,10 +201,10 @@ below is notes to seed a **separate, later spec** (`spec/031-*`, name TBD) — n
   dedicated resolver scoped to one issue + one field id (via `fetchBulkChangelogs({ issueIdsOrKeys: [key],
 fieldIds: [id] })`, sorting `created` ascending itself rather than trusting API order) is the likely
   shape — conceptually the same walk as `poc.go`'s `findValueAsOf`, minus its live per-page REST calls. Left
-  for the `031` plan, along with the hardcoded-date stopgap ("last Friday") the user suggested trying
+  for the `032` plan, along with the hardcoded-date stopgap ("last Friday") the user suggested trying
   before building the real slider.
 
-### Open questions the `031` plan must resolve before implementation
+### Open questions the `032` plan must resolve before implementation
 
 Grounded in how RoR's node types actually work today (confirmed by reading the code, not assumed):
 
@@ -225,7 +228,7 @@ to it is never written back onto the node — because parsing a picked date into
 collapses to a relative "N days ago" offset, not an absolute date, the same lossiness `CompareSlider`
 itself has to manage via `useTimeSliderValue`'s piecewise mapping). Removing that exclusion is a real but
 bounded chunk of work, not an open-ended one. **Decide:** is lifting that exclusion (making each embedded
-report's `compareTo` independently overridable from the RoR document) in scope for the `031` plan, or
+report's `compareTo` independently overridable from the RoR document) in scope for the `032` plan, or
 should that plan explicitly restrict itself to inline-value nodes only and leave saved/inline reports
 alone?
 
