@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 import { SearchablePicker, type PickerItem } from './SearchablePicker';
 
@@ -382,6 +382,32 @@ describe('<SearchablePicker> keyboard navigation', () => {
     open();
 
     expect(active()).toBe('picker-option-g1');
+  });
+
+  /**
+   * **The keyboard handler is on the search input, so focus landing there is what makes every case
+   * below reachable at all.**
+   *
+   * The mechanism is `ContentProps.setInitialFocusRef`, threaded to the field's `ref`, because
+   * `use-focus-manager.js` builds its trap with `initialFocus: initialFocusRef || popupRef` — so
+   * without it focus-trap focuses the popup's own root `<div tabIndex={0}>` and no arrow key ever
+   * reaches the input. That was measured in a real browser, where React's `autoFocus` lost to the
+   * trap's later frame.
+   *
+   * **What this test does and does not prove, checked by trying both:** it fails if the field has no
+   * focus mechanism at all, and it passes either way with `autoFocus` *or* the ref — jsdom does not
+   * discriminate, because focus-trap does not take focus back here. So it guards the crude
+   * regression only; the browser is the only place the real one shows, hence the story.
+   *
+   * Every other case in this block drives the field with `fireEvent` on the node directly, which
+   * needs no focus — which is exactly how the whole keyboard story passed green while being dead.
+   */
+  it('puts the caret in the search field, not on the popup root', async () => {
+    renderGrid();
+    open();
+
+    // The trap activates in an animation frame, so it is not focused synchronously on open.
+    await waitFor(() => expect(searchField()).toHaveFocus());
   });
 
   it('moves down and up one visual row, keeping the column', () => {

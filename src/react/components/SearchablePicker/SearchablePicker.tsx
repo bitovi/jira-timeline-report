@@ -219,7 +219,7 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
       // the search field would close the panel), and `appearance` (`vitest.setup.ts:4-12` mocks
       // `matchMedia().matches` as a *function*, hence truthy, so every jsdom test would take the
       // small-viewport sheet branch and no browser would). See § 8.
-      content={({ update }) => (
+      content={({ update, setInitialFocusRef }) => (
         <PickerPanel
           items={items}
           groupOrder={groupOrder}
@@ -233,6 +233,7 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
           layout={layout}
           onToggleLayout={() => setLayout(layout === 'expanded' ? 'compact' : 'expanded')}
           repositionPopup={update}
+          setInitialFocusRef={setInitialFocusRef}
           onSelect={(id) => {
             onSelect(id);
             setIsOpen(false);

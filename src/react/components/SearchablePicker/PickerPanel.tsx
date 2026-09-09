@@ -17,8 +17,8 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Textfield from '@atlaskit/textfield';
-import GrowHorizontalIcon from '@atlaskit/icon/core/grow-horizontal';
-import ShrinkHorizontalIcon from '@atlaskit/icon/core/shrink-horizontal';
+import GrowDiagonalIcon from '@atlaskit/icon/core/grow-diagonal';
+import ShrinkDiagonalIcon from '@atlaskit/icon/core/shrink-diagonal';
 import CheckMarkIcon from '@atlaskit/icon/utility/check-mark';
 
 import type { PickerItem } from './SearchablePicker';
@@ -48,6 +48,20 @@ export interface PickerPanelProps {
    * the panel stays positioned for the width it used to have.
    */
   repositionPopup: () => Promise<unknown>;
+  /**
+   * `ContentProps.setInitialFocusRef` — handed straight to the search field as its `ref`.
+   *
+   * **Not optional, and jsdom cannot show why.** `use-focus-manager.js` builds its focus trap with
+   * `initialFocus: initialFocusRef || popupRef`, so without this focus-trap focuses the popup's own
+   * root `<div tabIndex={0}>` instead of the input. Measured in a real browser: the caret went to
+   * `#…-popup`, so typing did nothing and the arrow keys — whose handler is on the input — never
+   * fired at all. React's `autoFocus` does not survive it; the trap activates in a later animation
+   * frame and takes focus back.
+   *
+   * Every unit test drives the field with `fireEvent` on the node directly, which needs no focus, so
+   * the whole keyboard story passed green while being dead in a browser.
+   */
+  setInitialFocusRef: (element: HTMLElement | null) => void;
   /** The popup's accessible name when the caller gave one; names the listbox. */
   label?: string;
 }
@@ -65,6 +79,7 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
   layout,
   onToggleLayout,
   repositionPopup,
+  setInitialFocusRef,
   label,
 }) => {
   const [search, setSearch] = useState('');
@@ -191,7 +206,10 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
         testId={`${testIdPrefix}-search`}
         placeholder={placeholder}
         value={search}
-        autoFocus
+        // `Textfield` forwards its ref to the `<input>` (`text-field.js:94-104,149`), so this hands
+        // popup's focus manager the input itself. See the prop's docblock — without it the caret
+        // lands on the popup root and the keyboard navigation below is unreachable.
+        ref={setInitialFocusRef}
         // It has no accessible name otherwise — a placeholder is not one.
         aria-label={placeholder}
         aria-controls={listboxId}
@@ -267,7 +285,13 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
           onMouseDown={(event) => event.preventDefault()}
           onClick={onToggleLayout}
         >
-          {isGrid ? <ShrinkHorizontalIcon label="" /> : <GrowHorizontalIcon label="" />}
+          {/* Diagonal, not the horizontal pair: an angled arrow reads as "resize" where ← →
+              reads as "move", which is the wrong promise for a button that changes the panel's
+              shape. Neither of these is deprecated, unlike `core/collapse` — which
+              `collapse.js:16-17` supersedes with `shrink-horizontal`, making `expand`/`collapse` a
+              half-deprecated pair. (`grow-diagonal`'s axis is SW–NE; the design system ships no
+              NW–SE arrow pair, only the boxed `maximize` glyph.) */}
+          {isGrid ? <ShrinkDiagonalIcon label="" /> : <GrowDiagonalIcon label="" />}
           {isGrid ? 'Collapse' : 'Expand'}
         </button>
       </div>

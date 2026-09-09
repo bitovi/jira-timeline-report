@@ -268,6 +268,20 @@ describe('<AddReportModal> and the field picker inside it', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  /**
+   * The other half of that contract, and the regression `useCloseOnEscapeBeforeAnyLayer` could
+   * cause: its `window` listener is installed **only while the panel is open**, so with the panel
+   * closed Escape has to reach the dialog exactly as it always did.
+   */
+  it('still closes the dialog on Escape when the field panel is not open', async () => {
+    const { onClose } = renderModal();
+
+    await screen.findByLabelText('Field');
+    fireEvent.keyDown(screen.getByPlaceholderText('Search reports by name or type…'), { key: 'Escape' });
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
   // Deliberately **not** tested: "↑/↓ still work in the reports search while the panel is open".
   // With focus held inside the panel the reports search never receives the event, so such a test
   // would only prove the harness dispatched to a node of its own choosing. What actually keeps the
