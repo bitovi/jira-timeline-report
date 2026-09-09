@@ -33,12 +33,18 @@ interface SelectOption {
 }
 
 /**
- * Both menus render into `document.body` above the modal's own layer.
+ * The work-item menu renders into `document.body` above the modal's own layer.
  *
  * A menu that renders inline is clipped by the modal body's scroll container; one that portals without
  * a `zIndex` paints *behind* the modal, because `@atlaskit/modal-dialog` establishes a stacking layer
- * of its own and react-select's portal defaults to `z-index: 1`. Both were live defects here — see
- * spec/016-report-of-reports/009-value-report-modal.
+ * of its own (`layers.modal()` = 510) and react-select's portal defaults to `z-index: 1`. Both were
+ * live defects here — see spec/016-report-of-reports/009-value-report-modal.
+ *
+ * **Still needed, and now for one control rather than two.** The Field half is a `SearchablePicker`
+ * as of spec/031 and solves the same problem the other way round: it does *not* portal
+ * (`shouldRenderToParent`), which puts it inside the modal positioner's own stacking context where
+ * no `zIndex` is required at all. That route is only open to it because it owns its layout; a
+ * react-select menu rendered inline is back to being clipped.
  */
 const menuAboveModal: StylesConfig<SelectOption, false> = {
   menuPortal: (base) => ({ ...base, zIndex: 9999 }),
@@ -62,17 +68,36 @@ const SEARCH_ONLY = { DropdownIndicator: null, IndicatorSeparator: null };
  * catalog) where the saved-report half is entirely prop-driven, which is why it is its own component
  * rather than more JSX in `AddReportModal`.
  *
- * **Two `@atlaskit/select`s rather than one select and one popover.** The field half was first built on
- * `SearchablePicker`, the control lifted out of Table's `+ Add column` — same searchable, grouped list,
- * one component for both. Inside a modal it was the wrong choice twice over: a Tailwind-styled trigger
- * sitting next to an Atlaskit select does not read as its sibling, and `@atlaskit/popup` renders under
- * the modal. Two selects are consistent by construction and layer correctly.
+ * **One `@atlaskit/select` and one popover — and what had to be true for that.** The Field half was
+ * built on `SearchablePicker` (Table's `+ Add column`), then reverted to a second select for two
+ * stated reasons, then rebuilt on it in spec/031. Both original objections were real; each has an
+ * answer now, and one third reason nobody had written down turned out to be the important one:
+ *
+ * - *"`@atlaskit/popup` renders under the modal."* True — its default `zIndex` is `layers.layer()` =
+ *   400 against the modal's 510. `shouldRenderToParent` sidesteps it entirely by not portalling: the
+ *   panel becomes a DOM sibling of its trigger, inside the positioner's `position: fixed; z-index:
+ *   510` stacking context, where the popup root's own 400 beats its `auto` siblings.
+ * - *"A Tailwind-styled trigger beside an Atlaskit select does not read as its sibling."* Also true,
+ *   and no `Popup` prop answers it. `FieldTrigger` does, by wrapping the select's own `--ds-*`
+ *   variables in Tailwind arbitrary values rather than approximating them from the Tailwind palette.
+ *   That is real coupling to a private file, and the `FieldTriggerStates` story is what holds it.
+ * - *The unwritten one:* raising the portal's `zIndex` — the obvious fix, and what the work-item
+ *   select does — would have layered correctly and **then failed anyway**. The modal wraps its
+ *   children in `react-focus-lock`, which pulls focus back inside whenever it lands outside the
+ *   locked node, and a portalled panel is outside it. That is invisible until a focusable input goes
+ *   in the popover, which is exactly what this redesign does. `shouldRenderToParent` is what makes
+ *   `focusInside` true and the lock a no-op — so the same prop answers both the first and third
+ *   reasons, which is why it is the decision rather than portal-plus-`zIndex`.
+ *
+ * The reason for going back is the one `SearchablePicker`'s own docblock was written to serve: a real
+ * `Fields` group is 180+ entries, and one control that makes that scannable is better than two that
+ * drift. See spec/031-column-select-redesign § 8 and § 9.
  *
  * **`+` staying disabled until both halves are chosen is the only validation there is**, because a node
  * cannot be corrected once added — the trade the plan's § The node stops being editable accepts. It has
  * to actually hold.
  *
- * See spec/016-report-of-reports/009-value-report-modal Phase 4.
+ * See spec/016-report-of-reports/009-value-report-modal Phase 4, and spec/031-column-select-redesign.
  */
 export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   const [inputValue, setInputValue] = useState('');

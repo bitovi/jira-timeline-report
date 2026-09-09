@@ -1,14 +1,21 @@
 /**
- * A searchable, grouped popover list — pick one item out of a catalog.
+ * A searchable, grouped popover list — pick one item out of a catalog, in one of two layouts.
  *
- * Lifted verbatim out of Table's `+ Add column` button (spec/012-table-and-grouper, Phase 1) so that
- * Report of Reports' field picker can be the same control rather than a second one that drifts
- * (spec/016-report-of-reports/009-value-report-modal, Phase 1). The DOM, the class names, and the
- * filtering behaviour are unchanged from that original; only the item type and the test ids are
- * parameterised.
+ * Lifted out of Table's `+ Add column` button (spec/012-table-and-grouper, Phase 1) so that Report of
+ * Reports' field picker can be the same control rather than a second one that drifts
+ * (spec/016-report-of-reports/009-value-report-modal, Phase 1), and redesigned into an expandable
+ * three-column grid in spec/031-column-select-redesign — because against a real Jira instance the
+ * `Fields` group is 180+ entries, which one per row in a 288px column is not a list anyone can scan.
  *
- * `trigger` is a render prop because the two callers want different buttons: Table's is a fixed
- * `+ Add column`, ROR's shows the field currently picked. Everything inside the popover is shared.
+ * `trigger` is a render prop for **three** reasons now. The two callers want different buttons
+ * (Table's is a fixed `+ Add column`; ROR's shows the field currently picked and has to pass for an
+ * `@atlaskit/select`), and ROR's Suspense fallback has to render that same button with no picker
+ * behind it at all — so the trigger cannot be something this component owns.
+ *
+ * **This is conditional sharing, and that is the standing risk.** There is a portal path (Table) and
+ * an inline path (ROR) differing in focus, stacking, and whether the popup root scrolls, and four of
+ * the props below exist for one caller. If a third divergence appears, the honest move is two
+ * components over a shared `PickerPanel` rather than a fifth flag. See § Risks 4.
  */
 import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Popup, { type TriggerProps } from '@atlaskit/popup';
@@ -78,8 +85,22 @@ export interface SearchablePickerProps {
    * (`positioner.js:31-38`), which is why no `zIndex` is needed — and `zIndex` is *ignored* on this
    * path, so passing it would be actively misleading.
    *
-   * Safe only while nothing in the ancestry has a `transform`; a second stacked modal has one
-   * (`positioner.js:76-77`). See spec/031-column-select-redesign § 8 and Risk 2.
+   * **Safe only while nothing in the ancestry has a `transform`.** A transformed ancestor makes the
+   * panel positioned relative to it *and clipped by it*, and a second **stacked modal** has one:
+   * `positioner.js` applies `transform: translateY(...)` at `stackIndex > 0`. Checked for ROR — the
+   * only other overlay in that island, `DeleteConfirm`, is itself a `Popup`, not a `Modal`, and it
+   * opens from a node row the Add Report dialog covers, so `stackIndex` cannot leave 0 today. It
+   * would stop being safe the moment a second `Modal` can stack, or someone puts a CSS transition on
+   * the modal; the fallbacks then are the portal path plus `data-no-focus-lock` on the panel, or a
+   * `focusLockAllowlist` on `<Modal>`.
+   *
+   * **And every focus conclusion here rests on `platform_dst_popup-disable-focuslock` resolving
+   * `false`**, which it does because no feature-flag resolver is installed. `@atlaskit/popup` has two
+   * entirely separate focus code paths behind that flag (`use-focus-manager.js`,
+   * `use-close-manager.js`), so one `setBooleanFeatureFlagResolver` call anywhere in this app — or a
+   * default flip in a version bump — changes popup-in-modal focus wholesale.
+   *
+   * See spec/031-column-select-redesign § 8 and Risks 2 and 3.
    */
   shouldRenderToParent?: boolean;
   /** Forwarded to Popup. `'dialog'` announces the panel; must come with `label`. */
