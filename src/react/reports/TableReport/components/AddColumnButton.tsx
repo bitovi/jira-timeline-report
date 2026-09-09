@@ -53,7 +53,8 @@ export const AddColumnButton: React.FC<AddColumnButtonProps> = ({ catalog, shown
       placeholder="Search columns…"
       emptyMessage="No columns to add."
       testIdPrefix="table-add-column"
-      // Its own key, so expanding here does not also expand Report of Reports' field picker.
+      // Its own key, so expanding here would not also expand Report of Reports' field picker.
+      // **Inert while the expand/collapse toggle is parked** — see `PickerPanel`'s footer comment.
       layoutStorageKey="table-add-column-layout"
       onSelect={onAdd}
       trigger={(triggerProps, toggle) => (

@@ -162,8 +162,49 @@ describe('<SearchablePicker>', () => {
   });
 });
 
-// See spec/031-column-select-redesign § 5 and § 3.
-describe('<SearchablePicker> layout', () => {
+// The one layout assertion that still describes today's behaviour.
+describe('<SearchablePicker> AlwaysExpanded', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  it('opens expanded and offers no way to collapse', () => {
+    renderPicker();
+    open();
+
+    expect(screen.getByTestId('picker-popover')).toHaveAttribute('data-picker-layout', 'expanded');
+    expect(screen.queryByTestId('picker-layout-toggle')).not.toBeInTheDocument();
+  });
+
+  // The guard that makes the constant worth having over the hook: a `"compact"` left behind by an
+  // earlier build must not strand anyone in a layout with no control to get out of it.
+  it('ignores a compact value left in storage, which nothing can now undo', () => {
+    localStorage.setItem('picker-layout', '"compact"');
+    renderPicker({ layoutStorageKey: 'picker-layout' });
+    open();
+
+    expect(screen.getByTestId('picker-popover')).toHaveAttribute('data-picker-layout', 'expanded');
+  });
+
+  it('writes nothing to storage, since there is no choice to remember', () => {
+    renderPicker({ layoutStorageKey: 'picker-layout' });
+    open();
+    fireEvent.click(screen.getByText('Assignee'));
+
+    expect(localStorage.length).toBe(0);
+  });
+});
+
+/**
+ * **The panel is always expanded and the toggle is parked** — see `PickerPanel`'s commented-out
+ * footer for why and how to restore it. So this whole suite is skipped rather than deleted: it is
+ * the spec for the layout choice, and it should come back with the control.
+ *
+ * What stays live is `AlwaysExpanded` below, plus `picker-grid.test.ts`'s one-column cases (pure
+ * math, still correct) and `usePickerLayout.test.ts`'s `parseLayout` guards (that code is untouched).
+ *
+ * See spec/031-column-select-redesign § 5 and § 3.
+ */
+describe.skip('<SearchablePicker> layout', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());
 
@@ -320,7 +361,9 @@ describe('<SearchablePicker> the group-header traversal other suites depend on',
     expect(optionInFieldsGroup()).toBeInTheDocument();
   });
 
-  it('lands on the element that also holds that group’s options, compact', () => {
+  // Parked with the toggle. The expanded case above is the one that runs in production, and it is
+  // the harder of the two — it has a grid wrapper between the band and its options.
+  it.skip('lands on the element that also holds that group’s options, compact', () => {
     renderPicker();
     open();
     fireEvent.click(screen.getByTestId('picker-layout-toggle'));
@@ -466,7 +509,9 @@ describe('<SearchablePicker> keyboard navigation', () => {
       expect(active()).toBe('picker-option-g1');
     });
 
-    it('are ignored entirely in the compact layout, which has no second axis', () => {
+    // Parked with the toggle — there is no way to reach the compact layout from the UI today.
+    // `picker-grid.test.ts` still covers one-column movement as pure math.
+    it.skip('are ignored entirely in the compact layout, which has no second axis', () => {
       renderGrid();
       open();
       fireEvent.click(screen.getByTestId('picker-layout-toggle'));
@@ -477,7 +522,9 @@ describe('<SearchablePicker> keyboard navigation', () => {
     });
   });
 
-  it('keeps the same option active across a layout toggle', () => {
+  // Parked with the toggle. The property it asserts is structural — `activeIndex` indexes the flat
+  // list, which is layout-independent — so it costs nothing while the toggle is away.
+  it.skip('keeps the same option active across a layout toggle', () => {
     renderGrid();
     open();
     press('ArrowDown');

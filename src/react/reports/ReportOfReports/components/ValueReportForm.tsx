@@ -350,7 +350,8 @@ const FieldPicker: FC<{ value: FieldOption | null; onChange: (option: FieldOptio
       emptyMessage="No fields match."
       testIdPrefix="ror-field"
       selectedId={value?.id ?? null}
-      // Its own key, so expanding here does not also expand Table's `+ Add column`.
+      // Its own key, so expanding here would not also expand Table's `+ Add column`.
+      // **Inert while the expand/collapse toggle is parked** — see `PickerPanel`'s footer comment.
       layoutStorageKey="ror-field-picker-layout"
       // **The three props that make a popover with a search field work inside a modal.** See
       // spec/031-column-select-redesign § 8: `shouldRenderToParent` for both the stacking context

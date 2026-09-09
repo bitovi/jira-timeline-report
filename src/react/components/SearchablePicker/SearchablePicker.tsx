@@ -22,7 +22,7 @@ import Popup, { type TriggerProps } from '@atlaskit/popup';
 import type { Placement } from '@atlaskit/popper';
 
 import { PickerPanel } from './PickerPanel';
-import { usePickerLayout, type PickerLayout } from './usePickerLayout';
+import { DEFAULT_LAYOUT, type PickerLayout } from './usePickerLayout';
 
 export type { PickerLayout };
 
@@ -70,7 +70,10 @@ export interface SearchablePickerProps {
   /**
    * `localStorage` key for the expand/collapse choice. Omit and the choice is per-mount only.
    *
-   * Each caller passes **its own** key, so expanding in one picker does not also expand the other.
+   * **Currently inert** — the panel is always expanded and the toggle is parked, so nothing reads or
+   * writes this. Kept in the signature because both callers already pass their own key (each its
+   * own, so expanding in one picker would not also expand the other), and those are the two lines
+   * that make restoring the toggle work again.
    */
   layoutStorageKey?: string;
 
@@ -178,7 +181,6 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
   trigger,
   onSelect,
   selectedId,
-  layoutStorageKey,
   shouldRenderToParent,
   role,
   label,
@@ -190,9 +192,22 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
 
   useCloseOnEscapeBeforeAnyLayer(isOpen, close);
 
-  // Here rather than in the panel: the panel unmounts on every close, so the choice would not
-  // survive close/reopen if it lived there — which is visible even with no storage key.
-  const [layout, setLayout] = usePickerLayout(layoutStorageKey);
+  /**
+   * **Always expanded; the layout choice is parked.** Arthur's call after seeing the panel against a
+   * real instance: get the expanded layout right before offering a control for a second one. The
+   * footer toggle in `PickerPanel` is commented out to match.
+   *
+   * Deliberately a constant rather than the hook, so a `"compact"` left in `localStorage` by an
+   * earlier build cannot strand anyone in a layout with no way back out of it. `usePickerLayout`,
+   * `parseLayout` and their tests are all still here; restoring is swapping this line back to
+   *
+   *     const [layout, setLayout] = usePickerLayout(layoutStorageKey);
+   *
+   * and passing `layout` plus `onToggleLayout` to the panel again. It belongs here rather than in
+   * the panel because the panel unmounts on every close, so the choice would not survive
+   * close/reopen if it lived there — true even with no storage key.
+   */
+  const layout: PickerLayout = DEFAULT_LAYOUT;
 
   return (
     <Popup
@@ -231,7 +246,6 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
           selectedId={selectedId}
           label={label}
           layout={layout}
-          onToggleLayout={() => setLayout(layout === 'expanded' ? 'compact' : 'expanded')}
           repositionPopup={update}
           setInitialFocusRef={setInitialFocusRef}
           onSelect={(id) => {

@@ -88,7 +88,8 @@ export default meta;
 
 type Story = StoryObj<typeof SearchablePicker>;
 
-const COMPACT_SEED_KEY = 'story-picker-compact-seed';
+// Parked with the `Compact` story below.
+// const COMPACT_SEED_KEY = 'story-picker-compact-seed';
 
 /**
  * **The default review story.** Open it and check, in this order:
@@ -99,26 +100,27 @@ const COMPACT_SEED_KEY = 'story-picker-compact-seed';
  * 3. Scroll: each group's header sticks to the top of the scrollport and the rows pass **under** it,
  *    not over it. The header's background must be opaque for the whole scrollport width — no sliver
  *    of a row visible beside it.
- * 4. The footer says "Collapse", collapses to a 288px single column, and back. The panel repositions
- *    itself both ways rather than staying anchored for the width it used to have.
- * 5. Arrow keys move a blue highlight in reading order; ↑/↓ keep the column and clamp into the
+ * 4. Arrow keys move a blue highlight in reading order; ↑/↓ keep the column and clamp into the
  *    ragged last row of a group; the search field keeps focus and the caret throughout, and ←/→ move
  *    the caret first while there is text to move through.
- * 6. Toggling the layout mid-navigation keeps the **same** option highlighted.
+ *
+ * There is no expand/collapse footer: the panel is always expanded (see `PickerPanel`'s
+ * commented-out footer). The compact branch is still live code, reviewable via the parked `Compact`
+ * story below.
  */
 export const Expanded: Story = { render: () => <Picker /> };
 
 /**
- * Opens collapsed, which is what a stored `"compact"` produces — one option per row in 288px, the
- * layout this control has always had. Also the persistence review: toggle it, reload the page, and
- * the choice has to survive; the other stories here must not follow it, because they pass no key.
- */
+ * **Parked with the toggle.** The panel is always expanded — see `PickerPanel`'s commented-out
+ * footer. Left here because the compact branch is still live code (`layout`/`isGrid` drive it, and
+ * `picker-grid.ts` treats one column as the same code path), so this is the story that reviews it
+ * the day the control comes back. Uncomment then.
+ *
 export const Compact: Story = {
   decorators: [
     (Story) => {
-      // In a decorator, not `play`: `play` runs *after* the story mounts, and the layout is read
-      // once when `SearchablePicker` mounts. Seeded only when absent, so a toggle here persists
-      // rather than being overwritten on the next render.
+      // In a decorator, not `play`: `play` runs after the story mounts, and the layout is read once
+      // when `SearchablePicker` mounts. Seeded only when absent, so a toggle here persists.
       if (window.localStorage.getItem(COMPACT_SEED_KEY) === null) {
         window.localStorage.setItem(COMPACT_SEED_KEY, '"compact"');
       }
@@ -128,6 +130,7 @@ export const Compact: Story = {
   ],
   render: () => <Picker layoutStorageKey={COMPACT_SEED_KEY} />,
 };
+ */
 
 /** The check sits at the right of its row and must not push the label into the next column. */
 export const WithSelection: Story = {

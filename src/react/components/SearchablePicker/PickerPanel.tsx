@@ -17,8 +17,9 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Textfield from '@atlaskit/textfield';
-import GrowDiagonalIcon from '@atlaskit/icon/core/grow-diagonal';
-import ShrinkDiagonalIcon from '@atlaskit/icon/core/shrink-diagonal';
+// Parked with the footer toggle below, which is the only thing that used them.
+// import GrowDiagonalIcon from '@atlaskit/icon/core/grow-diagonal';
+// import ShrinkDiagonalIcon from '@atlaskit/icon/core/shrink-diagonal';
 import CheckMarkIcon from '@atlaskit/icon/utility/check-mark';
 
 import type { PickerItem } from './SearchablePicker';
@@ -40,7 +41,12 @@ export interface PickerPanelProps {
   /** Gets a check on the right of its row. Single-select; `AddColumnButton` passes none. */
   selectedId?: string | null;
   layout: PickerLayout;
-  onToggleLayout: () => void;
+  /**
+   * **Parked.** The footer toggle that called this is commented out below, so nothing passes it
+   * today. Kept in the signature (and optional) so restoring the toggle is uncommenting, not
+   * rebuilding. See the footer's comment.
+   */
+  onToggleLayout?: () => void;
   /**
    * `ContentProps.update` (`popup/dist/types/types.d.ts:19-23`).
    *
@@ -77,7 +83,6 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
   onSelect,
   selectedId,
   layout,
-  onToggleLayout,
   repositionPopup,
   setInitialFocusRef,
   label,
@@ -274,27 +279,38 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
           </div>
         ))}
       </div>
+      {/*
+        **The expand/collapse footer is parked, not deleted — the panel is always expanded.**
+
+        Arthur's call after seeing it against a real instance: settle the expanded layout first, and
+        do not offer a control for a second one until that is right. Everything it needs is still
+        here and still tested — `layout`/`isGrid` drive both branches above, `picker-grid.ts` handles
+        one column as the same code path, and `usePickerLayout`'s persistence has its own tests — so
+        restoring this is uncommenting it plus handing `layout`/`onToggleLayout` back to
+        `SearchablePicker` (one commented line there too).
+
+        Notes worth not re-deriving when it comes back: the `onMouseDown` preventDefault is what
+        stops the click stealing focus off the search input (without it the arrow keys die right
+        after a toggle, and no ref-and-refocus dance is needed); and the icons are the **diagonal**
+        pair because an angled arrow reads as "resize" where ← → reads as "move". `grow-diagonal` /
+        `shrink-diagonal` are also the only non-deprecated pair — `core/collapse.js:16-17` supersedes
+        `collapse` with `shrink-horizontal`, making `expand`/`collapse` half-deprecated. Its axis is
+        SW–NE; the design system ships no NW–SE arrow pair, only the boxed `maximize` glyph.
+
       <div className="flex justify-end border-t border-neutral-301 pt-2">
         <button
           type="button"
           data-testid={`${testIdPrefix}-layout-toggle`}
           aria-label={isGrid ? 'Collapse field list' : 'Expand field list'}
           className="inline-flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-sm text-neutral-801 hover:bg-neutral-201"
-          // Clicking must not take focus off the search input, or the arrow keys stop working right
-          // after a toggle. Preventing the default mousedown is all it takes — no ref-and-refocus.
           onMouseDown={(event) => event.preventDefault()}
           onClick={onToggleLayout}
         >
-          {/* Diagonal, not the horizontal pair: an angled arrow reads as "resize" where ← →
-              reads as "move", which is the wrong promise for a button that changes the panel's
-              shape. Neither of these is deprecated, unlike `core/collapse` — which
-              `collapse.js:16-17` supersedes with `shrink-horizontal`, making `expand`/`collapse` a
-              half-deprecated pair. (`grow-diagonal`'s axis is SW–NE; the design system ships no
-              NW–SE arrow pair, only the boxed `maximize` glyph.) */}
           {isGrid ? <ShrinkDiagonalIcon label="" /> : <GrowDiagonalIcon label="" />}
           {isGrid ? 'Collapse' : 'Expand'}
         </button>
       </div>
+      */}
     </div>
   );
 };
