@@ -512,11 +512,12 @@ describe('<SearchablePicker> keyboard navigation', () => {
     expect(active()).toBe('picker-option-g6');
   });
 
-  // Popup closes on Escape from a **window** keydown listener and refocuses the trigger itself
-  // (`use-close-manager.js:163-186`). This asserts we did not swallow it: a `stopPropagation` in the
-  // panel's own handler would stop the event ever reaching `window` — breaking the very close it
-  // would have been meant to scope. See § 6's warning.
-  it('lets Escape close the popover, and selects nothing', () => {
+  // Escape is intercepted by `useCloseOnEscapeBeforeAnyLayer`, a capture-phase `window` listener, and
+  // stopped there — because `@atlaskit/popup` and `@atlaskit/modal-dialog` resolve two separate
+  // copies of `@atlaskit/layering`, so the library's own level coordination cannot scope the press.
+  // The dialog half of that contract is asserted in `AddReportModal.test.tsx`; this is the half that
+  // says the panel still closes, and that closing is not a selection.
+  it('closes the popover on Escape, and selects nothing', () => {
     const onSelect = vi.fn();
     renderGrid({ onSelect });
     open();

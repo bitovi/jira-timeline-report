@@ -112,9 +112,10 @@ export const usePickerKeyboard = ({ sections, columns, onActivate }: UsePickerKe
 
     const direction = ARROW_DIRECTIONS[event.key];
 
-    // Everything else — Escape above all — is left strictly alone. `Popup` closes on Escape from a
-    // **`window`** keydown listener (`use-close-manager.js:163-176`), so a handler here that called
-    // `stopPropagation` would break the very close it was meant to scope. See § 6's warning.
+    // Everything else — Escape above all — is left strictly alone. Escape is handled far earlier, by
+    // a capture-phase `window` listener in `SearchablePicker`; a React handler here fires between
+    // the two library `window` listeners' phases, which is much too late to scope the press to one
+    // layer. See `useCloseOnEscapeBeforeAnyLayer` for why that matters.
     if (!direction) return;
 
     if (direction === 'left' || direction === 'right') {

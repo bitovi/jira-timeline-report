@@ -10,7 +10,7 @@
  * `trigger` is a render prop because the two callers want different buttons: Table's is a fixed
  * `+ Add column`, ROR's shows the field currently picked. Everything inside the popover is shared.
  */
-import React, { useState, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Popup, { type TriggerProps } from '@atlaskit/popup';
 import type { Placement } from '@atlaskit/popper';
 
@@ -96,6 +96,56 @@ export interface SearchablePickerProps {
   fallbackPlacements?: Placement[];
 }
 
+/**
+ * Close on Escape ourselves, from a **capture-phase `window` listener that stops the event there**.
+ *
+ * `@atlaskit/popup` already closes itself on Escape, and `@atlaskit/layering` is supposed to be what
+ * stops the same press *also* closing an enclosing `@atlaskit/modal-dialog`: the modal wraps in a
+ * `<Layering>` (level 1), the open popup wraps its content in another (level 2), and the modal's
+ * `useCloseOnEscapePress` bails on `isLayerDisabled()`.
+ *
+ * **In this install that coordination does not happen, and cannot.** `@atlaskit/popup` resolves
+ * `@atlaskit/layering` to its own nested copy (0.8.0) and `@atlaskit/modal-dialog` to its own
+ * (0.7.3) — verified with `require.resolve`. Two copies of the module are two distinct React
+ * contexts, so the popup's level push is written into a `TopLevelContext` the modal never reads. The
+ * modal therefore still sees level 1, `isLayerDisabled()` returns `false`, and **one Escape closes
+ * both the panel and the dialog** — which is how spec/031 phase 8's layering test first failed.
+ *
+ * Both library listeners are bubble-phase on `window` (`use-close-manager.js`'s `bindAll`, and
+ * layering's `useCloseOnEscapePress`), so a capture-phase listener on `window` runs before either of
+ * them and before the event even reaches the search input. Stopping propagation there is what keeps
+ * the press scoped to one layer without depending on which copy of `layering` won.
+ *
+ * This is why nothing else writes an Escape handler: a React `onKeyDown` on the search input would
+ * be far too late — it fires between the two window listeners' phases — and `stopPropagation` from
+ * there is at the mercy of where React attached its root listener.
+ *
+ * Closing by flipping `isOpen` keeps focus return intact: `Popup` unmounts its content and
+ * `focus-trap`'s `returnFocusOnDeactivate` puts the cursor back on the trigger, exactly as it does
+ * when an option is clicked.
+ *
+ * See spec/031-column-select-redesign § 6 and § 11 — this **supersedes** their conclusion that the
+ * layering chain handles it.
+ */
+const useCloseOnEscapeBeforeAnyLayer = (isOpen: boolean, close: () => void) => {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      // `Esc` as well as `Escape`: `use-close-manager.js` accepts both, so this has to shadow both.
+      if (event.key !== 'Escape' && event.key !== 'Esc') return;
+
+      event.stopPropagation();
+      event.preventDefault();
+      close();
+    };
+
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+
+    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
+  }, [isOpen, close]);
+};
+
 export const SearchablePicker: React.FC<SearchablePickerProps> = ({
   items,
   groupOrder,
@@ -114,6 +164,11 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
   fallbackPlacements,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const close = useCallback(() => setIsOpen(false), []);
+
+  useCloseOnEscapeBeforeAnyLayer(isOpen, close);
+
   // Here rather than in the panel: the panel unmounts on every close, so the choice would not
   // survive close/reopen if it lived there — which is visible even with no storage key.
   const [layout, setLayout] = usePickerLayout(layoutStorageKey);
@@ -123,7 +178,10 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
       isOpen={isOpen}
       // No `setSearch('')` to go with this: the panel holds the query and `Popup` renders nothing
       // when closed, so closing unmounts it and the query goes with it.
-      onClose={() => setIsOpen(false)}
+      //
+      // Still wired even though Escape is intercepted above — this is also Popup's outside-click
+      // close, which is untouched.
+      onClose={close}
       placement="bottom-start"
       // Deterministic rather than generated (`popup.js:88`), so the trigger's `aria-controls` is
       // assertable and stable across renders.

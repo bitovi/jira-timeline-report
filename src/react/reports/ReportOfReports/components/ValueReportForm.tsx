@@ -7,11 +7,20 @@ import Button from '@atlaskit/button/new';
 import Spinner from '@atlaskit/spinner';
 import ChevronDownIcon from '@atlaskit/icon/utility/migration/chevron-down';
 
+import type { FieldGroup, FieldOption } from '../model/fieldCatalog';
 import type { PickerTriggerProps } from '../../../components/SearchablePicker';
 
+import { SearchablePicker } from '../../../components/SearchablePicker';
 import { useJiraIssueFields } from '../../../services/jira/useJiraIssueFields';
 import { useWorkItemSearch } from '../hooks/useWorkItemSearch';
 import { buildFieldOptions, buildValueExpression, FIELD_GROUP_ORDER } from '../model/fieldCatalog';
+
+/**
+ * `Common` is curated in its useful order on purpose — `fieldCatalog.ts:57-68` promotes eight ids so
+ * an unfiltered list leads with Summary / Status / Assignee. `Derived` has one entry, and `Fields`
+ * arrives name-sorted from `useJiraIssueFields`, so sorting it only guarantees what is already true.
+ */
+const UNSORTED_FIELD_GROUPS: FieldGroup[] = ['Common'];
 
 export interface ValueReportFormProps {
   /** Receives the built expression; the caller turns it into a node. */
@@ -68,7 +77,9 @@ const SEARCH_ONLY = { DropdownIndicator: null, IndicatorSeparator: null };
 export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   const [inputValue, setInputValue] = useState('');
   const [workItem, setWorkItem] = useState<SelectOption | null>(null);
-  const [field, setField] = useState<SelectOption | null>(null);
+  // The `FieldOption` itself, not a `{ value, label }` round-trip: the trigger needs the label and
+  // `buildValueExpression` needs the id, and both are already on the catalog entry.
+  const [field, setField] = useState<FieldOption | null>(null);
 
   const { suggestions, isLoading, isTooShort } = useWorkItemSearch(inputValue);
 
@@ -82,7 +93,7 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   const handleAdd = () => {
     if (!workItem || !field) return;
 
-    onAdd(buildValueExpression(workItem.value, field.value));
+    onAdd(buildValueExpression(workItem.value, field.id));
     setWorkItem(null);
     setField(null);
     setInputValue('');
@@ -120,10 +131,11 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
         />
       </Field>
       <Field htmlFor="ror-value-field" label="Field">
-        <Suspense
-          fallback={<Select<SelectOption> inputId="ror-value-field" placeholder="Field" isDisabled isLoading />}
-        >
-          <FieldSelect value={field} onChange={setField} />
+        {/* The fallback is the same control, disabled and loading, in a byte-identically sized 40px
+            box — so nothing moves when the catalog arrives. That is the whole reason `FieldTrigger`
+            is a component of its own rather than JSX inside `FieldPicker`. */}
+        <Suspense fallback={<FieldTrigger label={null} isDisabled isLoading />}>
+          <FieldPicker value={field} onChange={setField} />
         </Suspense>
       </Field>
       {/* A labelled button rather than a bare `+`. An unlabelled icon has to be guessed at, and its
@@ -290,31 +302,44 @@ export const FieldTrigger: FC<FieldTriggerProps> = ({
  * they add their first value — so without a nearer boundary, opening the modal would blank the whole
  * document to `Loading…` and rebuild it. Suspending this subtree instead means only the dropdown waits,
  * and the fallback is the same control disabled, so nothing moves when it arrives.
+ *
+ * **No regrouping.** `buildFieldOptions` already returns `{ id, label, group }[]`, which *is*
+ * `PickerItem`, and `SearchablePicker` does its own grouping, ordering and empty-group dropping with
+ * identical `groupOrder` semantics. The `useMemo` that used to rebuild react-select's
+ * `{ label, options }` shape here was pure duplication.
  */
-const FieldSelect: FC<{ value: SelectOption | null; onChange: (option: SelectOption | null) => void }> = ({
+const FieldPicker: FC<{ value: FieldOption | null; onChange: (option: FieldOption | null) => void }> = ({
   value,
   onChange,
 }) => {
   const fields = useJiraIssueFields();
 
-  const groups = useMemo(() => {
-    const options = buildFieldOptions(fields);
-
-    return FIELD_GROUP_ORDER.map((group) => ({
-      label: group,
-      options: options.filter((option) => option.group === group).map(({ id, label }) => ({ value: id, label })),
-    })).filter((group) => group.options.length > 0);
-  }, [fields]);
+  const options = useMemo(() => buildFieldOptions(fields), [fields]);
 
   return (
-    <Select<SelectOption>
-      inputId="ror-value-field"
-      placeholder="Field"
-      options={groups}
-      value={value}
-      onChange={onChange}
-      menuPortalTarget={document.body}
-      styles={menuAboveModal}
+    <SearchablePicker
+      items={options}
+      groupOrder={FIELD_GROUP_ORDER}
+      unsortedGroups={UNSORTED_FIELD_GROUPS}
+      placeholder="Search fields…"
+      emptyMessage="No fields match."
+      testIdPrefix="ror-field"
+      selectedId={value?.id ?? null}
+      // Its own key, so expanding here does not also expand Table's `+ Add column`.
+      layoutStorageKey="ror-field-picker-layout"
+      // **The three props that make a popover with a search field work inside a modal.** See
+      // spec/031-column-select-redesign § 8: `shouldRenderToParent` for both the stacking context
+      // and `react-focus-lock`, and `fallbackPlacements` because `@atlaskit/popper` hardcodes
+      // `flipVariations: false`, so a 640px panel anchored 300px into a 600px dialog would never try
+      // right-aligning itself without this list.
+      shouldRenderToParent
+      fallbackPlacements={['bottom-end', 'top-start', 'top-end']}
+      role="dialog"
+      label="Choose a field"
+      onSelect={(id) => onChange(options.find((option) => option.id === id) ?? null)}
+      trigger={(triggerProps, toggle) => (
+        <FieldTrigger label={value?.label ?? null} triggerProps={triggerProps} onClick={toggle} />
+      )}
     />
   );
 };

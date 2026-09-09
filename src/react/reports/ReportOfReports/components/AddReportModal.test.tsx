@@ -3,7 +3,7 @@ import type { Report } from '../../../../jira/reports';
 import type { Jira } from '../../../../jira-oidc-helpers';
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -233,4 +233,44 @@ describe('<AddReportModal> layout', () => {
     expect(list).not.toContainElement(reportSearch());
     expect(list).not.toContainElement(screen.getByTestId('ror-value-add'));
   });
+});
+
+/**
+ * **The layering contract, and the only automated check on it.**
+ *
+ * The Field control is a `@atlaskit/popup` holding a focusable search field, opened from inside
+ * `@atlaskit/modal-dialog`. Three separate mechanisms have to cooperate for that to work at all —
+ * a stacking layer, `react-focus-lock`, and `@atlaskit/layering` — and only the third leaves a trace
+ * jsdom can see. See spec/031-column-select-redesign § 8 and § 11.
+ *
+ * **Honest caveat: jsdom can tell you Escape did not close the modal, not that the panel painted
+ * above it.** Z-order is Storybook-only (§ 13).
+ */
+describe('<AddReportModal> and the field picker inside it', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  it('opens the field panel, and one Escape closes the panel without closing the dialog', async () => {
+    const { onClose } = renderModal();
+
+    await userEvent.click(await screen.findByLabelText('Field'));
+
+    expect(screen.getByTestId('ror-field-popover')).toBeInTheDocument();
+
+    // `Popup` closes on Escape from a **window** keydown listener, and `@atlaskit/layering` is what
+    // stops the same press also closing the dialog: `Modal` wraps in `<Layering>` (level 1) and
+    // `Popup` wraps its open content in another (level 2), so the modal's `useCloseOnEscapePress`
+    // bails on `isLayerDisabled()`. The panel's own handler deliberately writes no Escape case and
+    // above all no `stopPropagation` — that would stop the event ever reaching `window`.
+    fireEvent.keyDown(screen.getByTestId('ror-field-search'), { key: 'Escape' });
+
+    expect(screen.queryByTestId('ror-field-popover')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  // Deliberately **not** tested: "↑/↓ still work in the reports search while the panel is open".
+  // With focus held inside the panel the reports search never receives the event, so such a test
+  // would only prove the harness dispatched to a node of its own choosing. What actually keeps the
+  // two keyboard flows apart is structural: `useReportSearch`'s handler is a React `onKeyDown` on
+  // the reports `<Textfield>`, and the panel is a sibling subtree, not a descendant of it.
 });
