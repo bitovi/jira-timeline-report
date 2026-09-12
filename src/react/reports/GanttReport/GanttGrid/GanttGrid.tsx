@@ -168,7 +168,7 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const childIssues = modalIssue ? getChildren(modalIssue) : [];
 
   return (
-    <div className="p-2" style={{ overflow: 'hidden' }} data-testid="gantt-grid">
+    <div style={{ overflow: 'hidden' }} data-testid="gantt-grid">
       {showEmptyRangeState ? (
         <DateRangeEmptyState />
       ) : (

@@ -140,7 +140,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   }
 
   return (
-    <div className="relative py-2">
+    <div className="relative">
       {/* Progress Bar */}
       <div
         className={` h-1 bg-orange-400 transition-opacity duration-500 ${

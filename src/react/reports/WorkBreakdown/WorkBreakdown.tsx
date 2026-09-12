@@ -93,7 +93,7 @@ export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
   );
 
   return (
-    <div className="flex flex-wrap items-start gap-3 px-2 py-2">
+    <div className="flex flex-wrap items-start gap-3">
       {board.cards.length === 0 && board.planning.length === 0 ? (
         <div className="rounded border border-neutral-40 overflow-hidden bg-white">
           <div className="color-text-and-bg-unknown rounded-t px-2.5 py-1.5 font-semibold">
