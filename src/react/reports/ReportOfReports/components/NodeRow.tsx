@@ -17,9 +17,10 @@ export interface NodeRowProps {
   /** The reorder / remove cluster. It hides itself — the row only places it. */
   controls?: ReactNode;
   /**
-   * A depth-1 node's own row — the document's own top-level header, which is simply taller.
-   * Everything else, including a depth-1 report at the document root, gets the nested row's tighter
-   * vertical padding.
+   * A depth-1 node's own row — the document's top-level header, section or report alike. It is simply
+   * taller. With the horizontal padding gone this is vertical rhythm only, so it follows level
+   * (`path.length === 1`) and never node kind: a report at the document root is an L1 heading at 20px
+   * (`levelFontSizeClassName`) and takes the same taller row a section there does.
    */
   isTopLevel?: boolean;
   /** Clicking anywhere on the row (outside `controls`/`caret`) fires this — toggling collapse. */
