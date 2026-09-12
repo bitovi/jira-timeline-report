@@ -1000,9 +1000,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const showStats = isHierarchy && FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES();
 
   return (
-    // The div stays even with no classes left on it: TABLE_STYLES below is scoped to this
-    // `data-testid`. Its `p-2` moved to `#react-report-container` (TimelineReport.tsx) — embedded
-    // in a document there is no shell, and the padding read as a stray indent on the table.
+    // Keep this div even with no classes on it — TABLE_STYLES below is scoped to its `data-testid`.
     <div data-testid="table-report">
       <style>{TABLE_STYLES}</style>
       {/* The PRIMARY controls (Rows / Group by / 2D dimension / Fields axis / Add column) live in the

@@ -60,11 +60,8 @@ export const SectionTitle: FC<SectionTitleProps> = ({
   if (!isEditing) {
     return (
       <div className="flex min-w-0 items-center gap-1">
-        {/* The untitled placeholder is muted with opacity rather than a separate fixed color, so it
-            stays legibly dimmer than every depth's own color without a fourth color to maintain. It
-            no longer forces `font-normal`: Tailwind emits weights in a fixed order, so that class
-            beat `font-light` on source order and made an untitled L2 *heavier* than a titled one.
-            Italic and opacity carry "not filled in yet" on their own. */}
+        {/* Muted with opacity rather than its own color. Deliberately no `font-normal` — it would beat
+            `font-light` on Tailwind's source order and make an untitled L2 heavier than a titled one. */}
         <Heading className={`${className} min-w-0 truncate ${title ? '' : 'italic opacity-60'}`}>{label}</Heading>
         {/* `report-chrome-hidden` (print.css/fullscreen.css) matches every other editing affordance on
             the row — renaming a report that's being presented is not on offer there either. */}
@@ -119,15 +116,10 @@ export const SectionTitle: FC<SectionTitleProps> = ({
  * whether the node is a section or a report. See spec/029-report-of-reports-redesign, "indent and size
  * are driven by level, not by node kind".
  *
- * Weight alternates rather than holding constant, which is the one place this departs from §4's
- * "section weight stays constant across every level". L1 and L3 are bold; L2 is light. The reason is
- * that L2 no longer has an accent of its own — the card moved to L3 and the rail went with it — so
- * weight is what's left to keep an L2 label from competing with the bold title above it and the bold
- * card title below it. It reads as a divider between two bold things rather than as a third one.
- *
- * `font-light` is 300, which several of the Theme panel's font stacks don't ship (Poppins is loaded
- * at 500/700 only), so it degrades to the nearest available weight rather than rendering hairline.
- * That's the intended floor: L2 must be *no heavier* than its neighbours, not a specific weight.
+ * Weight alternates: L1 and L3 bold, L2 light. L2 has no accent of its own, so weight is what keeps
+ * its label from competing with the bold titles above and below it. (`font-light` is 300, which some
+ * theme font stacks don't ship — it degrades to the nearest weight, which is fine: the point is that
+ * L2 is no *heavier* than its neighbours.)
  *
  * Color is themeable per level — the
  * Theme panel's "L1/L2/L3 Section Text" rows (defaulting to `#002A2D`/`#00464A`/`#04646A`, a dark-to-teal

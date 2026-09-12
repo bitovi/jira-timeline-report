@@ -140,8 +140,6 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   }
 
   return (
-    // `py-2` dropped — the shared gutter on `#react-report-container` (TimelineReport.tsx) supplies
-    // exactly that on the report page, and a document supplies its own rhythm.
     <div className="relative">
       {/* Progress Bar */}
       <div

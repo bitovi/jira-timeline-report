@@ -264,8 +264,6 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = (props) => {
   const handleSleExceedingClick = openWipModal;
 
   return (
-    // Gutter dropped — see `#react-report-container` in TimelineReport.tsx. This report used `p-4`
-    // where most used `p-2`; the shared gutter is 8px.
     <div className="flex flex-col gap-y-6">
       <FlowCharts
         doneIssues={cycleTimeIssues}

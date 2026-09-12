@@ -93,7 +93,6 @@ export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
   );
 
   return (
-    // Gutter dropped — see `#react-report-container` in TimelineReport.tsx.
     <div className="flex flex-wrap items-start gap-3">
       {board.cards.length === 0 && board.planning.length === 0 ? (
         <div className="rounded border border-neutral-40 overflow-hidden bg-white">

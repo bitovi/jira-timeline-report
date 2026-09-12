@@ -72,10 +72,6 @@ export const EstimateAnalysis: FC<{
   const teamTimings = getTeamTimingData(primary);
 
   return (
-    // The `pb-8` here was trailing space at the end of a long scrolling report, added before
-    // documents existed (7cae072d, "some light refactoring") — never a gutter, and this report
-    // never had a horizontal one. Dropped with the rest; the shared gutter is on
-    // `#react-report-container` (TimelineReport.tsx).
     <div>
       <h2 className="text-xl font-bold mb-2">Team Estimation Table</h2>
       <p className="py-1">The following table shows how many estimated "team days" per day each team completed.</p>
