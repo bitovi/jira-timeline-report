@@ -1,8 +1,10 @@
 import type { FC } from 'react';
 
 import React from 'react';
-import ChevronDownIcon from '@atlaskit/icon/glyph/chevron-down';
-import ChevronRightIcon from '@atlaskit/icon/glyph/chevron-right';
+// Chevrons live under `utility/`, not `core/` where the row's other icons come from.
+// `spacing="compact"` seats a 12px utility glyph in the 16px box those core icons use.
+import ChevronDownIcon from '@atlaskit/icon/utility/chevron-down';
+import ChevronRightIcon from '@atlaskit/icon/utility/chevron-right';
 
 export interface CollapseToggleProps {
   isCollapsed: boolean;
@@ -66,7 +68,7 @@ export const CollapseToggle: FC<CollapseToggleProps> = ({ isCollapsed, label, on
         : 'opacity-0 pointer-events-none focus-visible:opacity-100 focus-visible:pointer-events-auto',
     ].join(' ')}
   >
-    {isCollapsed ? <ChevronRightIcon label="" size="small" /> : <ChevronDownIcon label="" size="small" />}
+    {isCollapsed ? <ChevronRightIcon label="" spacing="compact" /> : <ChevronDownIcon label="" spacing="compact" />}
   </button>
 );
 

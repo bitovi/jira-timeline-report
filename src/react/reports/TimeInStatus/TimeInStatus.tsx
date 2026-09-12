@@ -645,7 +645,9 @@ export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-y-8">
+    // Gutter dropped — see `#react-report-container` in TimelineReport.tsx. This report used `p-4`
+    // where most used `p-2`; the shared gutter is 8px.
+    <div className="flex flex-col gap-y-8">
       <div>
         <h2 className="text-lg font-semibold mb-1">Time in Status</h2>
         <p className="text-sm text-neutral-600">

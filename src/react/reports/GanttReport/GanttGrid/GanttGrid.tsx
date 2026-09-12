@@ -168,7 +168,10 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const childIssues = modalIssue ? getChildren(modalIssue) : [];
 
   return (
-    <div className="p-2" style={{ overflow: 'hidden' }} data-testid="gantt-grid">
+    // No padding: the page gutter lives on `#react-report-container` (TimelineReport.tsx). A report
+    // embedded in a Report of Reports renders with no shell around it, so root padding used to ride
+    // along into the document as a stray indent.
+    <div style={{ overflow: 'hidden' }} data-testid="gantt-grid">
       {showEmptyRangeState ? (
         <DateRangeEmptyState />
       ) : (

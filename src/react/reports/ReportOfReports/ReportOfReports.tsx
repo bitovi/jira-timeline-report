@@ -85,8 +85,8 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
   };
 
   // No frame of any kind: not a box per node, and not one around the whole document either. Nesting
-  // is carried entirely by indent and a hairline rail from here down, so the only borders on the page
-  // belong to the embedded reports themselves. See spec/016-report-of-reports/004-redesign §1.
+  // is carried by the type scale down to L2 and by the L3 card below it — never by indent, which the
+  // document no longer uses at any level. See `sectionAccentClassName`.
   //
   // Nothing is hovered while the pointer is in the document but outside every row — each node's own
   // handler stops the event before it reaches this one, so this only fires in the gaps.
@@ -185,51 +185,71 @@ const LayoutNodeView: FC<LayoutNodeViewProps> = ({ node, path, reports, childRep
 };
 
 /**
- * Depth-conditional accent for a section's own wrapper — the redesign's "one accent per level type"
- * rule (spec/029-report-of-reports-redesign §§1-2, "Rules to hold to" #1-3): a top-level section is a
- * card (elevation, no border), its own direct children are a rail that starts at their title and
- * breaks between siblings, and everything past that is unadorned and just spaced off its predecessor.
- * No `rounded` on the rail itself — a radius on a `border-l` bends the corners of what has to read as
- * one straight line; depth 3+ keeps a small radius since it carries no border to clash with, so the
- * add-target tint there still doesn't square off.
+ * Depth-conditional accent for a section's own wrapper — still "one accent per level type"
+ * (spec/029-report-of-reports-redesign §§1-2), but the card moved down the tree: L1 and L2 carry no
+ * box at all and **L3 is the card**, a filled panel with a thick left rail. An L1 section is a bold
+ * title and nothing else, an L2 section is a light label and nothing else, and an L3 section is the
+ * panel its content sits inside. Nothing nests a filled box inside another filled box, which is what
+ * the rule was always protecting.
  *
- * The rail (depth 2) is an inset box-shadow rather than a real `border-left` — a real border shaves
- * layout space off the nested content it wraps, walking every deeper level's content a couple of
- * pixels further in. `shadow-[inset_2px_0_0_...]` reads identically but takes no layout space, and its
- * color is themeable (Theme panel → Report of Reports → "Border", `--section-border-color`).
+ * L1 and L2 carrying no accent at all is deliberate, not an omission: above the card, the type scale
+ * (20px bold over 17px light) is the whole of the hierarchy, and a divider or a fill at either level
+ * would compete with the card for the reader's eye rather than reinforce it.
  *
- * The `pl-4` here is this level's own indent contribution, per `levelIndentClassName` below — a
- * section is not a special case, it just happens to be the element that also carries the rail at depth
- * 2. See §6, "indent and size are driven by level, not by node kind".
+ * The L3 rail is an inset box-shadow rather than a real `border-left`, for the reason the old L2 rail
+ * was: a real border shaves layout space off the content it wraps, walking every deeper level in by a
+ * few pixels. `shadow-[inset_3px_0_0_...]` reads identically, takes no layout space, and keeps the
+ * color themeable (Theme panel → Report of Reports → "Border", `--section-border-color`).
+ *
+ * A slight radius (`rounded`, 4px) on both painted boxes — the L1 background and the L3 card. Kept
+ * small on purpose: an inset box-shadow follows the border radius, so the card's left rail curves at
+ * its ends by however much this is, and anything larger stops reading as one straight rail. 4px
+ * softens the corner without bending the line enough to notice.
+ *
+ * The card's fill is its own theme entry (Theme panel → Report of Reports → "Card",
+ * `--section-card-color`, defaulting to `#EFF1F1`) — separate from "Section"/`--section-color`,
+ * which is what a *top-level* section paints. Two entries rather than one because they are two
+ * surfaces a theme should be able to set independently: at L3 `SectionView` deliberately drops
+ * `color-bg-section` so the card's fill is the only background on the element.
+ *
+ * **No indent at any level.** Depth is carried by the type scale and by the L3 card; a section and a
+ * report at the same level start at the same x, and the only horizontal offset in the document is the
+ * card's own padding. This replaces the flat-16px-per-level rule of §6.
+ *
+ * L1's `-mx-4 px-4` is the one apparent exception, and it indents nothing: the two cancel, so every
+ * descendant — title, L2 labels, cards, rails — lands exactly where it would with neither. All it
+ * does is widen the *painted* box by 16px on each side, because `color-bg-section` (L1 is the only
+ * depth that paints it) otherwise stops dead at the text and a themed color reads as a band jammed
+ * against its own heading.
+ *
+ * 16px is inside the budget, with room to spare: there is 24px of ancestor gutter in both modes —
+ * normally `#react-report-container`'s `p-2` (8px) plus `.fullish-vh`'s `pl-4 pr-4` (16px), and in
+ * fullscreen the same 24px rebalanced as `.ror-document`'s 1rem plus that same `p-2`
+ * (src/css/fullscreen.css). So the bleed leaves 8px of page margin either way and cannot introduce
+ * horizontal scroll. Going past 24px would.
  */
 const sectionAccentClassName = (depth: number): string => {
   if (depth <= 1) {
-    return 'rounded-2xl overflow-hidden shadow-[0_1px_2px_-1px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.10)]';
+    return 'rounded -mx-4 px-4';
   }
 
   if (depth === 2) {
-    return 'pl-4 shadow-[inset_2px_0_0_var(--section-border-color)]';
+    return '';
   }
 
-  return 'rounded pl-4 mt-[10px]';
+  return `mt-[10px] rounded px-5 py-3 ${SECTION_CARD_FILL} shadow-[inset_3px_0_0_var(--section-border-color)]`;
 };
 
-/**
- * Vertical rhythm below the rail. A depth-1 node is spaced by the document root's own `gap-5`, and a
- * depth-2 node by its card body's `gap-[34px]` — neither wraps its own margin here. Everything past
- * that has no shared `gap` container left to rely on, so each node supplies its own `mt-[10px]`
- * instead. See spec/029-report-of-reports-redesign §2, rule 6.
- */
-const siblingSpacing = (depth: number): string => (depth >= 3 ? 'mt-[10px]' : '');
+/** The L3 card's fill — Theme panel → Report of Reports → "Card". See `sectionAccentClassName`. */
+const SECTION_CARD_FILL = 'bg-[var(--section-card-color)]';
 
 /**
- * Every wrapper past level 1 adds a flat 16px of its own indent — identical whether the node underneath
- * it is a section or a report, since indent is a function of level, not of node kind (§6). Nesting
- * stacks these for free: an L3 report sitting inside an L2 section's own `pl-4` reads at 32px total,
- * the same a sibling L3 section reaches from that parent — nothing here computes an absolute offset
- * per level, each wrapper just contributes its own 16px.
+ * Vertical rhythm. A depth-1 node is spaced by the document root's own `gap-5` and a depth-2 node by
+ * its L1 parent's body `gap`; neither wraps its own margin here. Everything past that has no shared
+ * `gap` container left to rely on, so each node supplies its own `mt-[10px]` instead.
+ * See spec/029-report-of-reports-redesign §2, rule 6.
  */
-const levelIndentClassName = (depth: number): string => (depth >= 2 ? 'pl-4' : '');
+const siblingSpacing = (depth: number): string => (depth >= 3 ? 'mt-[10px]' : '');
 
 /**
  * One section: a row carrying its caret, editable title, and controls, then its children and its own
@@ -239,9 +259,16 @@ const levelIndentClassName = (depth: number): string => (depth >= 2 ? 'pl-4' : '
  * `break-inside: avoid` on something page-sized is worse than nothing. It stays on the reports.
  *
  * `color-bg-section` carries the themeable section background (Theme panel → Report of Reports),
- * defaulting to white so sections still read as unframed. Every section reads the same variable, so
- * a nested one repaints its parent's color rather than showing depth — depth is the card/rail/flush
- * accent's job. See spec/016-report-of-reports/008-theme.
+ * defaulting to near-white so sections still read as unframed. **Only a top-level section paints
+ * it**; every nested section is transparent and shows whatever its ancestor painted.
+ *
+ * That is a fix, not just a simplification. It used to go on every section, on the reasoning that a
+ * nested one repainting its parent's color was a harmless no-op — true only while the parent is also
+ * `--section-color`. On hover the parent isn't: the tint below lands on exactly one element, so every
+ * nested section repainted opaque `--section-color` over it and read as a white hole punched through
+ * the hovered region (and, since a section's box wraps its children too, the hole ran the full height
+ * of its subtree). Transparent nested sections inherit the tint for free. Depth is the card/rail
+ * accent's job, never the fill's. See spec/016-report-of-reports/008-theme.
  *
  * **Hovering anywhere inside a section tints the whole of it** — a themeable color (Theme panel →
  * Report of Reports → "Section Hover", `--section-hover-color`). `isContainerHovered(path)` is already
@@ -264,17 +291,30 @@ const SectionView: FC<LayoutNodeViewProps & { node: SectionNode }> = ({ node, pa
   const depth = path.length;
   const isTopLevel = depth === 1;
 
-  // A top-level card's body carries its own padding and the 34px gap between its direct children
-  // (§2: the rail belongs to each child, not to their shared parent, so this container draws none of
-  // its own). Every deeper level has no such container — each child spaces itself off the one before
-  // it, via `sectionAccentClassName`/the report views' own `mt-[10px]`.
-  const childrenClassName = isTopLevel ? 'flex flex-col gap-[34px] pr-6 pb-[22px] pl-8' : 'flex flex-col';
+  // A top-level section's body owns the gap between its direct children — no horizontal padding,
+  // since nothing indents any more. Every deeper level has no such container: each child spaces
+  // itself off the one before it, via `sectionAccentClassName`/the report views' own `mt-[10px]`.
+  //
+  // `pb-3` is the section's bottom padding, and it lives *here* rather than on the `<section>` so it
+  // cancels itself across collapse. The L1 section has no `py` of its own: expanded, nothing bounded
+  // the bottom of its fill, which ended wherever the last child happened to — flush against an empty
+  // section's note (0px), 5px under a collapsed child's `py-[5px]` row — against 12px of `py-3` at
+  // the top. The wrapper above this one carries `hidden={collapsed}`/`.collapsed-content`, so
+  // collapsed this contributes nothing and the header row's own `py-3` is both edges (the one state
+  // that already looked right); expanded, this supplies the 12px that mirrors it. Putting the same
+  // `pb-3` on the `<section>` instead would stack with that row and make every *collapsed* section
+  // bottom-heavy — trading the good state for the bad one.
+  const childrenClassName = isTopLevel ? 'flex flex-col gap-[22px] pb-3' : 'flex flex-col';
 
   return (
     <section
-      className={`color-bg-section flex flex-col transition-colors duration-150 ${sectionAccentClassName(depth)} ${
-        isSectionHovered ? 'bg-[var(--section-hover-color)]' : ''
-      }`}
+      // Only L1 paints `color-bg-section`. A nested section stays transparent so an ancestor's hover
+      // tint shows through it (see the doc comment above), and the L3 card brings its own fixed fill
+      // — two opaque fills on one element would resolve by whichever Tailwind emits last rather than
+      // by intent.
+      className={`${depth <= 1 ? 'color-bg-section' : ''} flex flex-col transition-colors duration-150 ${sectionAccentClassName(
+        depth,
+      )} ${isSectionHovered ? 'bg-[var(--section-hover-color)]' : ''}`}
       {...hoverProps}
     >
       <NodeRow
@@ -377,7 +417,7 @@ const SavedReportView: FC<LayoutNodeViewProps & { node: SavedReportNode }> = ({
       {...(report
         ? { 'data-testid': 'report-card', 'data-report-name': report.name }
         : { 'data-testid': 'missing-report', 'data-report-id': reportId })}
-      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)}`}
     >
       <NodeRow
         {...rowProps}
@@ -473,7 +513,7 @@ const InlineReportView: FC<{
       {...hoverProps}
       data-testid="report-card"
       data-report-name={label}
-      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)}`}
     >
       <NodeRow
         {...rowProps}
@@ -553,10 +593,7 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
     const collapsed = isCollapsed(node.id);
 
     return (
-      <div
-        {...hoverProps}
-        className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
-      >
+      <div {...hoverProps} className={`flex flex-col print-avoid-break ${siblingSpacing(depth)}`}>
         <NodeRow
           {...rowProps}
           isTopLevel={depth === 1}
@@ -572,7 +609,8 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
         >
           <h3 className={`${reportTitleClassName(depth)} ${reportTitleColorClassName(rowProps.isHovered)}`}>{label}</h3>
         </NodeRow>
-        <div className={`mt-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+        {/* `mt-1` — see `CommentReportView`'s copy of this for why it is 4px and not 8px. */}
+        <div className={`mt-1 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
           <InlineValue
             expression={node.params.expression}
             state={state}
@@ -585,7 +623,7 @@ const InlineValueView: FC<{ node: InlineValueNode; path: LayoutPath }> = ({ node
   }
 
   return (
-    <div className={`flex flex-col ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`} {...hoverProps}>
+    <div className={`flex flex-col ${siblingSpacing(depth)}`} {...hoverProps}>
       <NodeRow {...rowProps} isTopLevel={depth === 1} controls={<NodeControls path={path} label={label} />}>
         <InlineValue
           expression={node.params.expression}
@@ -662,7 +700,7 @@ const CommentReportView: FC<CommentReportViewProps> = ({
     <div
       {...hoverProps}
       data-testid={`${testId}-node`}
-      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)}`}
     >
       <NodeRow
         {...rowProps}
@@ -679,9 +717,14 @@ const CommentReportView: FC<CommentReportViewProps> = ({
       >
         <CommentRow target={target} depth={depth} isRowHovered={rowProps.isHovered} />
       </NodeRow>
-      {/* `mt-2` (8px), flush under the row on the same indent — not a `pb-*` on the row above, which
-          used to align the body to the page rather than to its own title. See §5. */}
-      <div className={`mt-2 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
+      {/* `mt-1` (4px), flush under the row on the same indent — not a `pb-*` on the row above, which
+          used to align the body to the page rather than to its own title. See §5.
+          4px rather than the 8px this used to be, so a comment sits under its title at the same
+          distance an embedded report does under its own. A report's content div carries no top margin
+          at all, and the first thing inside it supplies the gap — a table's `th` padding, 8px. Here
+          the body's own `prose-p:my-1` supplies 4px, so 4px more lands the text in the same place.
+          At 8px the update read as detached from the work item it belonged to. */}
+      <div className={`mt-1 ${collapsed ? 'collapsed-content' : ''}`} hidden={collapsed}>
         <CommentBody target={target} state={state} emptyNote={emptyNote} testId={testId} />
       </div>
     </div>
@@ -753,7 +796,7 @@ const UnknownView: FC<{ node: Extract<LayoutNode, { type: 'unknown' }>; path: La
       {...hoverProps}
       data-testid="report-card"
       data-report-name=""
-      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)} ${levelIndentClassName(depth)}`}
+      className={`flex flex-col print-avoid-break ${siblingSpacing(depth)}`}
     >
       <NodeRow {...rowProps} isTopLevel={depth === 1} controls={<NodeControls path={path} label={originalType} />}>
         <h3 className={`${reportTitleClassName(depth)} text-slate-500`}>{`Unsupported content (${originalType})`}</h3>

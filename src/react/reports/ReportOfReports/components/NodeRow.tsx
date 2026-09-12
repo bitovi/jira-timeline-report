@@ -17,8 +17,9 @@ export interface NodeRowProps {
   /** The reorder / remove cluster. It hides itself — the row only places it. */
   controls?: ReactNode;
   /**
-   * A depth-1 node's own row — the card's header. Everything else (including a depth-1 report at the
-   * document root) gets the nested row's tighter padding. See spec/029-report-of-reports-redesign §3.
+   * A depth-1 node's own row — the document's own top-level header, which is simply taller.
+   * Everything else, including a depth-1 report at the document root, gets the nested row's tighter
+   * vertical padding.
    */
   isTopLevel?: boolean;
   /** Clicking anywhere on the row (outside `controls`/`caret`) fires this — toggling collapse. */
@@ -26,8 +27,8 @@ export interface NodeRowProps {
 }
 
 /**
- * One row of the document outline: a title flush on its indent, a control cluster, and the caret last
- * and right-aligned.
+ * One row of the document outline: a title flush on its container's left edge, a control cluster, and
+ * the caret last and right-aligned.
  *
  * Every node in the document gets exactly one of these, and it's the whole of the node's *chrome* —
  * a report's chart and a section's children render beneath it, not inside it. Pure and prop-driven
@@ -56,8 +57,13 @@ export const NodeRow: FC<NodeRowProps> = ({ nodeId, caret, children, controls, i
     data-node-id={nodeId}
     onClick={onClick}
     className={[
-      'flex items-center rounded-lg transition-colors duration-150 cursor-pointer',
-      isTopLevel ? 'gap-[10px] px-6 py-4' : 'gap-[9px] px-2 py-[5px] -ml-2',
+      'flex items-center transition-colors duration-150 cursor-pointer',
+      // Vertical rhythm only. Horizontal padding (and the `-ml-2` that used to pull the row back out
+      // of it) is gone with the indents: a title has to start at its container's own left edge, and
+      // the only container that offsets anything now is the L3 card, whose padding does it once for
+      // the row and its content alike. The row is still a full-width hit target — it's `flex` with a
+      // `grow` title — it just no longer bleeds 8px past the text column.
+      isTopLevel ? 'gap-[10px] py-3' : 'gap-[9px] py-[5px]',
     ].join(' ')}
   >
     <div className="min-w-0 grow">{children}</div>

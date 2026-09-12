@@ -140,7 +140,9 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   }
 
   return (
-    <div className="relative py-2">
+    // `py-2` dropped — the shared gutter on `#react-report-container` (TimelineReport.tsx) supplies
+    // exactly that on the report page, and a document supplies its own rhythm.
+    <div className="relative">
       {/* Progress Bar */}
       <div
         className={` h-1 bg-orange-400 transition-opacity duration-500 ${
