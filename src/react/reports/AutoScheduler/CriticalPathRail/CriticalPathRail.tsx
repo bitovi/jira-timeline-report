@@ -2,7 +2,7 @@ import type { FloorSummary } from './dependency-floor';
 
 import React from 'react';
 import Tooltip from '@atlaskit/tooltip';
-import { useRailWidth } from './useRailWidth';
+import { RAIL_MAX_WIDTH, RAIL_MIN_WIDTH, useRailWidth } from './useRailWidth';
 
 export interface CriticalPathRailProps {
   floor: FloorSummary;
@@ -56,6 +56,11 @@ export const CriticalPathRail: React.FC<CriticalPathRailProps> = ({ floor, open,
       <div
         role="separator"
         aria-orientation="vertical"
+        aria-label="Resize the critical path panel"
+        aria-valuenow={width}
+        aria-valuemin={RAIL_MIN_WIDTH}
+        aria-valuemax={RAIL_MAX_WIDTH}
+        tabIndex={0}
         title="Drag to resize · click to collapse"
         {...dividerProps}
         className={`relative w-[5px] shrink-0 cursor-col-resize bg-neutral-30 print:hidden ${
@@ -72,7 +77,7 @@ export const CriticalPathRail: React.FC<CriticalPathRailProps> = ({ floor, open,
         style={{ width, maxHeight: 'calc(100vh - var(--fullish-document-top))' }}
         // Sticky because the grid scrolls inside `.fullish-vh` — a static rail scrolls out of view
         // and forty epics down the Gantt the tables are off screen.
-        className="shrink-0 sticky top-0 flex flex-col overflow-y-auto border-l border-neutral-30 bg-neutral-10 print:static print:w-full print:max-h-none print:border-l-0"
+        className="critical-path-rail shrink-0 sticky top-0 flex flex-col overflow-y-auto border-l border-neutral-30 bg-neutral-10"
       >
         <header className="flex items-start gap-1.5 border-b border-neutral-30 bg-white px-2 py-1.5 text-[11px]">
           <div className="min-w-0 flex-1">
@@ -99,7 +104,7 @@ export const CriticalPathRail: React.FC<CriticalPathRailProps> = ({ floor, open,
             ×
           </button>
         </header>
-        <div className="flex min-h-0 flex-col gap-2 p-2">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-2 p-2">{children}</div>
       </aside>
     </>
   );

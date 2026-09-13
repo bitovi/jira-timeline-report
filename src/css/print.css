@@ -105,4 +105,19 @@
     break-inside: avoid;
     page-break-inside: avoid;
   }
+
+  /* The Auto-Scheduler's critical-path rail sits beside the Gantt on screen. On paper the Gantt
+     needs the full page width, so the rail drops out of the flex row and flows underneath it.
+     `max-height` is set inline (it reads `--fullish-document-top`), and the two tables carry their
+     own scroll caps, so all three need neutralising or the tables print clipped mid-row. */
+  .critical-path-rail {
+    position: static !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .critical-path-rail [data-scroll-area] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }

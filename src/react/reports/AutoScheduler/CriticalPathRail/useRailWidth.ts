@@ -6,6 +6,10 @@ export const RAIL_DEFAULT_WIDTH = 340;
 
 /** Below this the press is a click on the grip, not a resize. */
 const CLICK_SLOP = 3;
+/** Keyboard resize increment, so the rail is adjustable without a pointer. */
+const KEY_STEP = 16;
+
+const clamp = (width: number) => Math.min(RAIL_MAX_WIDTH, Math.max(RAIL_MIN_WIDTH, width));
 
 interface Drag {
   startX: number;
@@ -39,7 +43,7 @@ export function useRailWidth(options: { onCollapse: () => void }) {
     const delta = event.clientX - drag.startX;
     drag.travelled = Math.max(drag.travelled, Math.abs(delta));
     // The rail is on the right, so dragging left (a negative delta) makes it wider.
-    setWidth(Math.min(RAIL_MAX_WIDTH, Math.max(RAIL_MIN_WIDTH, drag.startWidth - delta)));
+    setWidth(clamp(drag.startWidth - delta));
   }, []);
 
   const onPointerUp = React.useCallback(
@@ -57,9 +61,16 @@ export function useRailWidth(options: { onCollapse: () => void }) {
     [onCollapse],
   );
 
+  const onKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+    const step = event.key === 'ArrowLeft' ? KEY_STEP : event.key === 'ArrowRight' ? -KEY_STEP : 0;
+    if (step === 0) return;
+    event.preventDefault();
+    setWidth((current) => clamp(current + step));
+  }, []);
+
   return {
     width,
     isDragging,
-    dividerProps: { onPointerDown, onPointerMove, onPointerUp },
+    dividerProps: { onPointerDown, onPointerMove, onPointerUp, onKeyDown },
   };
 }

@@ -23,6 +23,13 @@ export const CriticalPathRoutesTable: React.FC<CriticalPathRoutesTableProps> = (
   onSelectRoute,
 }) => {
   const [expanded, setExpanded] = React.useState(false);
+  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+
+  // On a short viewport the other table is below the fold, so a selection made there would
+  // otherwise light rows nobody can see.
+  React.useEffect(() => {
+    scrollAreaRef.current?.querySelector('[data-lit]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [selection]);
 
   const hidden = routes.slice(ROUTE_ROWS_SHOWN);
   const shown = expanded ? routes : routes.slice(0, ROUTE_ROWS_SHOWN);
@@ -46,7 +53,11 @@ export const CriticalPathRoutesTable: React.FC<CriticalPathRoutesTableProps> = (
         <span className="w-9 shrink-0">Share</span>
         <span className="flex-1">Chain</span>
       </div>
-      <div className="min-h-[58px] max-h-[190px] flex-1 overflow-y-auto overscroll-contain px-1 pb-1">
+      <div
+        ref={scrollAreaRef}
+        data-scroll-area=""
+        className="min-h-[58px] max-h-[190px] flex-1 overflow-y-auto overscroll-contain px-1 pb-1"
+      >
         {shown.map((route) => {
           const id = routeId(route.keys);
           const lit = isRouteLit(selection, route);

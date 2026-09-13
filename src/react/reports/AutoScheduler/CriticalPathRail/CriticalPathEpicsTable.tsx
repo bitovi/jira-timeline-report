@@ -22,6 +22,12 @@ export const CriticalPathEpicsTable: React.FC<CriticalPathEpicsTableProps> = ({
   onSelectEpic,
 }) => {
   const [expanded, setExpanded] = React.useState(false);
+  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+
+  // See the routes table: the responding table can sit below the fold on a short viewport.
+  React.useEffect(() => {
+    scrollAreaRef.current?.querySelector('[data-lit]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [selection]);
 
   const hidden = rows.slice(EPIC_ROWS_SHOWN);
   const shown = expanded ? rows : rows.slice(0, EPIC_ROWS_SHOWN);
@@ -40,7 +46,11 @@ export const CriticalPathEpicsTable: React.FC<CriticalPathEpicsTableProps> = ({
         <span className="w-11 shrink-0 text-right">Days added</span>
         <span className="w-9 shrink-0 text-right">On path</span>
       </div>
-      <div className="min-h-[58px] max-h-[232px] flex-1 overflow-y-auto overscroll-contain px-1 pb-1">
+      <div
+        ref={scrollAreaRef}
+        data-scroll-area=""
+        className="min-h-[58px] max-h-[232px] flex-1 overflow-y-auto overscroll-contain px-1 pb-1"
+      >
         {shown.map((row) => {
           const lit = isEpicLit(selection, row.key, routes);
           return (

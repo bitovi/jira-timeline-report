@@ -23,6 +23,11 @@ function setup() {
   return { onCollapse, ...rendered };
 }
 
+function keyEvent(key: string) {
+  const event = { key, preventDefault: vi.fn() };
+  return event as unknown as React.KeyboardEvent<HTMLElement> & { preventDefault: ReturnType<typeof vi.fn> };
+}
+
 describe('useRailWidth', () => {
   it('starts at the default width', () => {
     const { result } = setup();
@@ -89,5 +94,25 @@ describe('useRailWidth', () => {
     act(() => result.current.dividerProps.onPointerUp(pointerEvent(900)));
     expect(onCollapse).toHaveBeenCalledTimes(1);
     expect(result.current.width).toBe(RAIL_DEFAULT_WIDTH + 100);
+  });
+
+  it('resizes from the keyboard, left to grow and right to shrink', () => {
+    const { result } = setup();
+    act(() => result.current.dividerProps.onKeyDown(keyEvent('ArrowLeft')));
+    expect(result.current.width).toBe(RAIL_DEFAULT_WIDTH + 16);
+    act(() => result.current.dividerProps.onKeyDown(keyEvent('ArrowRight')));
+    act(() => result.current.dividerProps.onKeyDown(keyEvent('ArrowRight')));
+    expect(result.current.width).toBe(RAIL_DEFAULT_WIDTH - 16);
+  });
+
+  it('clamps keyboard resizing and ignores other keys', () => {
+    const { result } = setup();
+    for (let i = 0; i < 40; i++) act(() => result.current.dividerProps.onKeyDown(keyEvent('ArrowLeft')));
+    expect(result.current.width).toBe(RAIL_MAX_WIDTH);
+
+    const unrelated = keyEvent('Enter');
+    act(() => result.current.dividerProps.onKeyDown(unrelated));
+    expect(unrelated.preventDefault).not.toHaveBeenCalled();
+    expect(result.current.width).toBe(RAIL_MAX_WIDTH);
   });
 });

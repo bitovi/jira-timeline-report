@@ -59,6 +59,16 @@ describe('CriticalPathRail', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('exposes the divider as a focusable, keyboard-resizable separator', async () => {
+    renderRail({ open: true });
+    const divider = screen.getByRole('separator');
+    expect(divider).toHaveAttribute('tabindex', '0');
+    const before = Number(divider.getAttribute('aria-valuenow'));
+    divider.focus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(Number(divider.getAttribute('aria-valuenow'))).toBe(before + 16);
+  });
+
   it('states the queueing gap when it is comparable', () => {
     renderRail({ open: true });
     expect(screen.getByText(/queueing/i)).toBeInTheDocument();
