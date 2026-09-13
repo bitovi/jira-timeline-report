@@ -5,7 +5,7 @@ import type { BatchDatas, BatchIssueData } from './monte-carlo';
 
 import type { LinkedIssue } from './link-issues';
 
-import { fitLognormal } from './fit-lognormal';
+import { computeLogSpread } from './log-spread';
 import { CriticalityAccumulator } from './criticality-accumulator';
 import { CriticalPathAccumulator } from './critical-path-accumulator';
 
@@ -136,13 +136,9 @@ export class StatsAnalyzer {
 
     const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
 
-    // Fit a lognormal to the whole-plan completion distribution so we can report a single
-    // composite confidence alongside the per-issue ones. `lastDays` is kept sorted ascending.
-    const fit = fitLognormal(this.lastDays);
-    const overallConfidence = fit && {
-      confidence: fit.confidence,
-      isFitGood: fit.isFitGood,
-    };
+    // Multiplicative spread of the whole-plan completion distribution, reported alongside the
+    // per-issue confidences. `lastDays` is kept sorted ascending.
+    const planSpread = computeLogSpread(this.lastDays);
 
     // lets get it ready for teams ...
     const teamGroups = groupBy(
@@ -172,7 +168,7 @@ export class StatsAnalyzer {
       percentComplete: this.percentComplete,
       uncertaintyWeight: this.uncertaintyWeight,
       endDaySimulationResult,
-      overallConfidence,
+      planSpread,
       simulationIssueResults,
       teams,
       criticalPath,

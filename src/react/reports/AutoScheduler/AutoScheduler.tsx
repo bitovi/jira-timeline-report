@@ -4,11 +4,13 @@ import type {
   SimulationIssueResult,
   MinimalSimulationIssueResult,
 } from './scheduler/stats-analyzer';
+import type { LogSpread } from './scheduler/log-spread';
 import type { DerivedIssue } from '../../../jira/derived/derive';
 
 import React, { FC, useEffect, useState, useRef, useCallback } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';
+import Tooltip from '@atlaskit/tooltip';
 import { IssueSimulationRow } from './IssueSimulationRow';
 import UpdateModal from './components/UpdateModal/UpdateModal';
 import { StatsAnalyzer } from './scheduler/stats-analyzer';
@@ -38,6 +40,42 @@ interface AutoSchedulerProps {
   primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>;
   allIssuesOrReleasesObs: ObservableOfIssues;
 }
+
+// The quartile range is quoted empirically rather than as `median ×÷ gsd`, which would assert a
+// lognormal shape the plan finish (a maximum over competing chains) does not have.
+const PlanSpreadSummary: FC<{ spread: LogSpread }> = ({ spread }) => {
+  const gsd = roundTo(spread.gsd, 2);
+  // Dotted underline is the `<abbr>` convention for "this term has a definition", and `tabIndex`
+  // makes the tooltip reachable by keyboard — Atlaskit only opens on focus for focusable children.
+  const hint = 'underline decoration-dotted underline-offset-2 cursor-help';
+  return (
+    <>
+      <Tooltip content="The same spread expressed on the 0–100 scale used for per-issue confidence.">
+        <div className={`text-neutral-500 ${hint}`} tabIndex={0}>
+          Confidence: {roundTo(spread.confidence, 0)}%
+        </div>
+      </Tooltip>
+      <Tooltip
+        content={
+          <div className="grid gap-1">
+            <div className="font-semibold">Geometric standard deviation</div>
+            <div>
+              The multiplicative spread of simulated finish dates — ×÷ {gsd} around the median, the multiplicative
+              analogue of ±.
+            </div>
+            <div>
+              The middle 50% of runs finish in {Math.round(spread.q25)}–{Math.round(spread.q75)} working days.
+            </div>
+          </div>
+        }
+      >
+        <div className={hint} tabIndex={0}>
+          GSD {gsd}
+        </div>
+      </Tooltip>
+    </>
+  );
+};
 
 const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, allIssuesOrReleasesObs }) => {
   const primaryRaw = useCanObservable(primaryIssuesOrReleasesObs);
@@ -232,27 +270,18 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
           <div className="text-base grow font-semibold">Summary</div>
         </div>
 
-        {uiData.overallConfidence && (
-          <div
-            className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
-            style={{
-              gridRow: `2 / span 1`,
-              gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
-            }}
-          >
-            {uiData.overallConfidence.isFitGood ? (
-              <div>Confidence: {roundTo(uiData.overallConfidence.confidence, 0)}%</div>
-            ) : (
-              <div
-                className="text-neutral-500"
-                title="The plan's completion times aren't well described by a single distribution (e.g. competing critical paths), so a composite confidence would be misleading."
-              >
-                Confidence: n/a
-              </div>
-            )}
-            <div>{planEstimateText}</div>
-          </div>
-        )}
+        {/* `relative z-30` lifts this above the `#dependencies` SVG, which covers row 2 and would
+            otherwise swallow the hover that opens the spread tooltips. */}
+        <div
+          className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2 relative z-30"
+          style={{
+            gridRow: `2 / span 1`,
+            gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
+          }}
+        >
+          {uiData.planSpread && <PlanSpreadSummary spread={uiData.planSpread} />}
+          <div>{planEstimateText}</div>
+        </div>
 
         <IssueSimulationRow
           issue={uiData.endDaySimulationResult}

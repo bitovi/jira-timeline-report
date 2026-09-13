@@ -1,6 +1,6 @@
 import React from 'react';
 import type { StatsUIData } from '../scheduler/stats-analyzer';
-import { buildCriticalPathEpics, highlightKeysFor } from './build-critical-path-epics';
+import { buildCriticalPathEpics, highlightKeysFor } from '../CriticalPathRail/build-critical-path-epics';
 
 interface CriticalPathEpicsReportProps {
   uiData: StatsUIData;
