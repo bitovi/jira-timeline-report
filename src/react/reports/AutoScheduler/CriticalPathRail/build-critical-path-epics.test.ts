@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCriticalPathEpics, highlightKeysFor } from './build-critical-path-epics';
+import { buildCriticalPathEpics } from './build-critical-path-epics';
 import type { StatsUIData } from '../scheduler/stats-analyzer';
 
 function uiDataWith(
@@ -62,25 +62,5 @@ describe('buildCriticalPathEpics', () => {
     ]);
 
     expect(buildCriticalPathEpics(uiData).map((row) => row.key)).toEqual(['ALPHA', 'ZULU']);
-  });
-});
-
-describe('highlightKeysFor', () => {
-  const paths = [
-    { keys: ['IDENTITY', 'CHECKOUT', 'PAYMENTS'], count: 41 },
-    { keys: ['SELLER', 'SEARCH'], count: 26 },
-    { keys: ['IDENTITY', 'CHECKOUT', 'FRAUD'], count: 18 },
-  ];
-
-  it('returns every epic on every path containing the clicked epic', () => {
-    expect(highlightKeysFor(paths, 'CHECKOUT')).toEqual(new Set(['IDENTITY', 'CHECKOUT', 'PAYMENTS', 'FRAUD']));
-  });
-
-  it('returns just the one path when the epic sits on only one', () => {
-    expect(highlightKeysFor(paths, 'SEARCH')).toEqual(new Set(['SELLER', 'SEARCH']));
-  });
-
-  it('falls back to the epic alone when it is never on a critical path', () => {
-    expect(highlightKeysFor(paths, 'RATINGS')).toEqual(new Set(['RATINGS']));
   });
 });

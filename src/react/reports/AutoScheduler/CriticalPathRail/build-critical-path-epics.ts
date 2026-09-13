@@ -1,5 +1,4 @@
 import type { StatsUIData } from '../scheduler/stats-analyzer';
-import type { PathFrequency } from '../scheduler/critical-path-accumulator';
 
 export type CriticalPathEpicRow = {
   key: string;
@@ -28,19 +27,4 @@ export function buildCriticalPathEpics(uiData: StatsUIData): CriticalPathEpicRow
       onPathIndex: result.sequencingCriticalityIndex,
     }))
     .sort((a, b) => (b.daysAdded !== a.daysAdded ? b.daysAdded - a.daysAdded : a.key < b.key ? -1 : 1));
-}
-
-/**
- * The epics to show in the Gantt when a row is clicked: everything that shared a critical path
- * with the clicked epic in at least one simulation run. An epic that never reached the critical
- * path highlights only itself, so the grid never blanks out.
- */
-export function highlightKeysFor(paths: PathFrequency[], issueKey: string): Set<string> {
-  const keys = new Set<string>();
-  for (const path of paths) {
-    if (!path.keys.includes(issueKey)) continue;
-    for (const key of path.keys) keys.add(key);
-  }
-  if (keys.size === 0) keys.add(issueKey);
-  return keys;
 }

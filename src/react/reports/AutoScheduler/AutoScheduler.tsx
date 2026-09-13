@@ -6,8 +6,9 @@ import type {
 } from './scheduler/stats-analyzer';
 import type { LogSpread } from './scheduler/log-spread';
 import type { DerivedIssue } from '../../../jira/derived/derive';
+import type { CriticalPathSelection } from './CriticalPathRail';
 
-import React, { FC, useEffect, useState, useRef, useCallback } from 'react';
+import React, { FC, useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';
 import Tooltip from '@atlaskit/tooltip';
@@ -25,7 +26,14 @@ import routeData from '../../../canjs/routing/route-data/index';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
 import { CriticalPath } from './CriticalPath';
 import { CriticalPathsReport } from './CriticalPathsReport';
-import { CriticalPathEpicsReport } from './CriticalPathEpicsReport';
+import {
+  buildCriticalPathEpics,
+  CriticalPathEpicsTable,
+  CriticalPathRail,
+  CriticalPathRoutesTable,
+  highlightKeysForSelection,
+  summariseFloor,
+} from './CriticalPathRail';
 import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
 
@@ -104,9 +112,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   // state for which work items to highlight
   const [workItemsToHighlight, setWorkItemsToHighlight] = useState<Set<string> | null>(null);
 
-  // Collapsed by default purely to save vertical space — the critical path data is computed on
-  // every run regardless, so expanding is instant and costs nothing.
-  const [criticalPathEpicsExpanded, setCriticalPathEpicsExpanded] = useState(false);
+  // The rail is the sole writer of `workItemsToHighlight`, so the selection is the single source of
+  // truth and the highlight set is derived from it — no reconciliation ref is needed.
+  const [selection, setSelection] = useState<CriticalPathSelection>(null);
+  const [railOpen, setRailOpen] = useState(false);
 
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
@@ -138,18 +147,58 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   useEffect(updateBlockers, [uiData?.percentComplete === 100, uiData]);
 
   useEffect(() => {
-    const observer = new ResizeObserver(updateBlockers);
+    // Dragging the rail divider resizes the grid on every `pointermove`, and each redraw rebuilds
+    // every SVG path after a `querySelectorAll`. Coalesce to one redraw per frame.
+    let frame = 0;
+    const scheduleRedraw = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        updateBlockers();
+      });
+    };
+
+    const observer = new ResizeObserver(scheduleRedraw);
     const container = svgRef.current;
     if (container) observer.observe(container);
 
-    window.addEventListener('resize', updateBlockers);
+    window.addEventListener('resize', scheduleRedraw);
     updateBlockers(); // initial draw
 
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       observer.disconnect();
-      window.removeEventListener('resize', updateBlockers);
+      window.removeEventListener('resize', scheduleRedraw);
     };
   }, [updateBlockers]);
+
+  // Every route, not the top five: an epic can sit on a rarely-winning route and would otherwise
+  // highlight only itself while still reporting a non-zero share.
+  const routes = useMemo(() => uiData?.criticalPath?.topPaths(Number.POSITIVE_INFINITY) ?? [], [uiData]);
+  const epicRows = useMemo(() => (uiData ? buildCriticalPathEpics(uiData) : []), [uiData]);
+  // Routes carry keys only, so readable labels have to come back from the simulation results.
+  const routeLabel = useMemo(() => {
+    const summaryByKey = new Map(
+      (uiData?.simulationIssueResults ?? []).map((result) => [result.linkedIssue.key, result.linkedIssue.summary]),
+    );
+    return (keys: string[]) => keys.map((key) => summaryByKey.get(key) ?? key).join(' → ');
+  }, [uiData]);
+
+  const applySelection = useCallback(
+    (next: CriticalPathSelection) => {
+      setSelection(next);
+      setWorkItemsToHighlight(highlightKeysForSelection(next, routes));
+    },
+    [routes],
+  );
+  const onSelectEpic = useCallback(
+    (key: string) => applySelection(selection?.kind === 'epic' && selection.key === key ? null : { kind: 'epic', key }),
+    [applySelection, selection],
+  );
+  const onSelectRoute = useCallback(
+    (id: string) => applySelection(selection?.kind === 'route' && selection.id === id ? null : { kind: 'route', id }),
+    [applySelection, selection],
+  );
 
   if (!allIssues?.length) {
     return <div>Loading ...</div>;
@@ -178,6 +227,13 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
     planEstimateText = `${planBottomDays}–${planTopDays} working days`;
   }
 
+  const floor = summariseFloor({
+    meanPathLength: uiData.criticalPath.meanLength,
+    uncertaintyWeight,
+    planBottomDays,
+    planTopDays,
+  });
+
   return (
     <div className="relative py-2">
       {/* Progress Bar */}
@@ -192,172 +248,191 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
       <UpdateModal startDate={selectedStartDate} issues={uiData} />
 
-      {/* Simulation Grid */}
-      <div
-        className="grid bg-white relative border border-neutral-30 rounded shadow-sm"
-        style={{
-          gridTemplateColumns: `[what] auto repeat(${gridData.gridNumberOfDays}, 1fr)`,
-          gridTemplateRows: 'auto',
-        }}
-      >
-        {/* Background SVG Layer */}
-        <div
-          className="relative z-1"
-          style={{
-            gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
-            gridRow: `2 / span ${gridData.rowsCount - 1}`,
-          }}
-          id="dependencies"
-        >
-          <svg
-            ref={svgRef}
-            xmlns="http://www.w3.org/2000/svg"
-            className="absolute"
-            width="100%"
-            height="100%"
-            preserveAspectRatio="none"
-          />
-        </div>
-
-        {/* Placeholder for row height */}
-        <div className="text-xs" style={{ gridRow: '1 / span 1', gridColumn: '1 / span 1' }}>
-          &nbsp;
-        </div>
-
-        {gridData.timeRanges.map((range, i) => {
-          return (
+      <div className="flex items-stretch print:block">
+        <div className="min-w-0 flex-1">
+          {/* Simulation Grid */}
+          <div
+            className="grid bg-white relative border border-neutral-30 rounded shadow-sm"
+            style={{
+              gridTemplateColumns: `[what] auto repeat(${gridData.gridNumberOfDays}, 1fr)`,
+              gridTemplateRows: 'auto',
+            }}
+          >
+            {/* Background SVG Layer */}
             <div
-              key={'time' + i}
+              className="relative z-1"
               style={{
-                gridRow: `1 / span 1`,
-                gridColumn: `${1 + range.startDay} / span ${range.days}`,
-              }}
-              className="border-neutral-30 border-solid border-x px-1 text-xs truncate sticky top-0 bg-white z-40"
-            >
-              {range.prettyStart}
-            </div>
-          );
-        })}
-        {gridData.timeRanges.map((range, i) => {
-          return (
-            <div
-              key={'time' + i}
-              style={{
+                gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
                 gridRow: `2 / span ${gridData.rowsCount - 1}`,
-                gridColumn: `${1 + range.startDay} / span ${range.days}`,
               }}
-              className="border-neutral-30 border-solid border-x px-1"
-            ></div>
-          );
-        })}
+              id="dependencies"
+            >
+              <svg
+                ref={svgRef}
+                xmlns="http://www.w3.org/2000/svg"
+                className="absolute"
+                width="100%"
+                height="100%"
+                preserveAspectRatio="none"
+              />
+            </div>
 
-        <div
-          className="bg-neutral-20 pt-2 pb-1 "
-          style={{
-            gridRow: `2 / span 1`,
-            gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
-          }}
-        />
-        <div
-          className="bg-neutral-20 pt-2 pb-1 "
-          style={{
-            gridRow: `2 / span 1`,
-            gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
-          }}
-        />
+            {/* Placeholder for row height */}
+            <div className="text-xs" style={{ gridRow: '1 / span 1', gridColumn: '1 / span 1' }}>
+              &nbsp;
+            </div>
 
-        <div className="pl-2 pt-2 pb-1 pr-1 flex " style={{ gridRow: 2, gridColumnStart: 'what' }}>
-          <div className="text-base grow font-semibold">Summary</div>
-        </div>
+            {gridData.timeRanges.map((range, i) => {
+              return (
+                <div
+                  key={'time' + i}
+                  style={{
+                    gridRow: `1 / span 1`,
+                    gridColumn: `${1 + range.startDay} / span ${range.days}`,
+                  }}
+                  className="border-neutral-30 border-solid border-x px-1 text-xs truncate sticky top-0 bg-white z-40"
+                >
+                  {range.prettyStart}
+                </div>
+              );
+            })}
+            {gridData.timeRanges.map((range, i) => {
+              return (
+                <div
+                  key={'time' + i}
+                  style={{
+                    gridRow: `2 / span ${gridData.rowsCount - 1}`,
+                    gridColumn: `${1 + range.startDay} / span ${range.days}`,
+                  }}
+                  className="border-neutral-30 border-solid border-x px-1"
+                ></div>
+              );
+            })}
 
-        {/* `relative z-30` lifts this above the `#dependencies` SVG, which covers row 2 and would
+            <div
+              className="bg-neutral-20 pt-2 pb-1 "
+              style={{
+                gridRow: `2 / span 1`,
+                gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
+              }}
+            />
+            <div
+              className="bg-neutral-20 pt-2 pb-1 "
+              style={{
+                gridRow: `2 / span 1`,
+                gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
+              }}
+            />
+
+            <div className="pl-2 pt-2 pb-1 pr-1 flex " style={{ gridRow: 2, gridColumnStart: 'what' }}>
+              <div className="text-base grow font-semibold">Summary</div>
+            </div>
+
+            {/* `relative z-30` lifts this above the `#dependencies` SVG, which covers row 2 and would
             otherwise swallow the hover that opens the spread tooltips. */}
-        <div
-          className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2 relative z-30"
-          style={{
-            gridRow: `2 / span 1`,
-            gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
-          }}
-        >
-          {uiData.planSpread && <PlanSpreadSummary spread={uiData.planSpread} />}
-          <div>{planEstimateText}</div>
+            <div
+              className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2 relative z-30"
+              style={{
+                gridRow: `2 / span 1`,
+                gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
+              }}
+            >
+              {uiData.planSpread && <PlanSpreadSummary spread={uiData.planSpread} />}
+              <div>{planEstimateText}</div>
+            </div>
+
+            <IssueSimulationRow
+              issue={uiData.endDaySimulationResult}
+              gridRowStart={3}
+              gridData={gridData}
+              selectedStartDate={selectedStartDate}
+              uncertaintyWeight={uncertaintyWeight}
+            />
+
+            {/* Team Tracks */}
+            {gridData.gridifiedTeams.map((team, teamIdx) => (
+              <React.Fragment key={`team-${teamIdx}`}>
+                {/* Only show team if it has visible tracks/issues */}
+                {team.gridifiedTracks.length > 0 && (
+                  <>
+                    {/* The stripe background for the team*/}
+                    <div
+                      className="bg-neutral-20 pt-2 pb-1 "
+                      style={{
+                        gridRow: `${team.style.gridRowStart} / span 1`,
+                        gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
+                      }}
+                    />
+
+                    <div
+                      className="pl-2 pt-2 pb-1 pr-1 flex sticky top-0 bg-neutral-20"
+                      style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
+                    >
+                      <div className="text-base grow font-semibold">{team.team}</div>
+                    </div>
+                    <div
+                      className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
+                      style={{
+                        gridRow: `${team.style.gridRowStart} / span 1`,
+                        gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
+                      }}
+                    >
+                      <div>
+                        {team.teamData.parallelWorkLimit === 1
+                          ? `Points / Day: ${roundTo(team.teamData.pointsPerDayPerTrack, 2)}`
+                          : `Points / Day / Track ${team.teamData.pointsPerDayPerTrack}`}
+                      </div>
+                      <div>
+                        Total Working Days: {roundTo(totalWorkingDays(team) / team.teamData.parallelWorkLimit, 0)},
+                      </div>
+                    </div>
+
+                    {team.gridifiedTracks.map(
+                      (gridifiedTrack, trackIdx) =>
+                        gridifiedTrack.issues.length > 0 && (
+                          <React.Fragment key={`track-${teamIdx}-${trackIdx}`}>
+                            <div
+                              className="pl-4 flex pt-0.5 pr-1"
+                              style={{
+                                gridRow: `${gridifiedTrack.style.gridRowStart} / span 1`,
+                                gridColumnStart: 'what',
+                              }}
+                            >
+                              <div className="text-xs grow">Track {trackIdx + 1}</div>
+                            </div>
+
+                            {gridifiedTrack.issues.map((issue, issueIdx) => (
+                              <IssueSimulationRow
+                                key={`issue-${teamIdx}-${trackIdx}-${issueIdx}`}
+                                issue={issue}
+                                gridRowStart={gridifiedTrack.style.gridRowStart + issueIdx + 1}
+                                gridData={gridData}
+                                selectedStartDate={selectedStartDate}
+                                uncertaintyWeight={uncertaintyWeight}
+                              />
+                            ))}
+                          </React.Fragment>
+                        ),
+                    )}
+                  </>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
-        <IssueSimulationRow
-          issue={uiData.endDaySimulationResult}
-          gridRowStart={3}
-          gridData={gridData}
-          selectedStartDate={selectedStartDate}
-          uncertaintyWeight={uncertaintyWeight}
-        />
-
-        {/* Team Tracks */}
-        {gridData.gridifiedTeams.map((team, teamIdx) => (
-          <React.Fragment key={`team-${teamIdx}`}>
-            {/* Only show team if it has visible tracks/issues */}
-            {team.gridifiedTracks.length > 0 && (
-              <>
-                {/* The stripe background for the team*/}
-                <div
-                  className="bg-neutral-20 pt-2 pb-1 "
-                  style={{
-                    gridRow: `${team.style.gridRowStart} / span 1`,
-                    gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
-                  }}
-                />
-
-                <div
-                  className="pl-2 pt-2 pb-1 pr-1 flex sticky top-0 bg-neutral-20"
-                  style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
-                >
-                  <div className="text-base grow font-semibold">{team.team}</div>
-                </div>
-                <div
-                  className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
-                  style={{
-                    gridRow: `${team.style.gridRowStart} / span 1`,
-                    gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
-                  }}
-                >
-                  <div>
-                    {team.teamData.parallelWorkLimit === 1
-                      ? `Points / Day: ${roundTo(team.teamData.pointsPerDayPerTrack, 2)}`
-                      : `Points / Day / Track ${team.teamData.pointsPerDayPerTrack}`}
-                  </div>
-                  <div>Total Working Days: {roundTo(totalWorkingDays(team) / team.teamData.parallelWorkLimit, 0)},</div>
-                </div>
-
-                {team.gridifiedTracks.map(
-                  (gridifiedTrack, trackIdx) =>
-                    gridifiedTrack.issues.length > 0 && (
-                      <React.Fragment key={`track-${teamIdx}-${trackIdx}`}>
-                        <div
-                          className="pl-4 flex pt-0.5 pr-1"
-                          style={{
-                            gridRow: `${gridifiedTrack.style.gridRowStart} / span 1`,
-                            gridColumnStart: 'what',
-                          }}
-                        >
-                          <div className="text-xs grow">Track {trackIdx + 1}</div>
-                        </div>
-
-                        {gridifiedTrack.issues.map((issue, issueIdx) => (
-                          <IssueSimulationRow
-                            key={`issue-${teamIdx}-${trackIdx}-${issueIdx}`}
-                            issue={issue}
-                            gridRowStart={gridifiedTrack.style.gridRowStart + issueIdx + 1}
-                            gridData={gridData}
-                            selectedStartDate={selectedStartDate}
-                            uncertaintyWeight={uncertaintyWeight}
-                          />
-                        ))}
-                      </React.Fragment>
-                    ),
-                )}
-              </>
-            )}
-          </React.Fragment>
-        ))}
+        {/* Routes first: the panel is labelled "Critical path", so the first thing under that
+            label must be critical paths. */}
+        <CriticalPathRail floor={floor} open={railOpen} onOpenChange={setRailOpen}>
+          <CriticalPathRoutesTable
+            routes={routes}
+            iterations={uiData.criticalPath.iterations}
+            labelFor={routeLabel}
+            selection={selection}
+            onSelectRoute={onSelectRoute}
+          />
+          <CriticalPathEpicsTable rows={epicRows} routes={routes} selection={selection} onSelectEpic={onSelectEpic} />
+        </CriticalPathRail>
       </div>
       {/* Critical Path Report */}
       <CriticalPath
@@ -368,14 +443,6 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
       {/* Critical Paths Report (POC of spec/024-critical-path) */}
       <CriticalPathsReport
         uiData={uiData}
-        workItemsToHighlight={workItemsToHighlight}
-        setWorkItemsToHighlight={setWorkItemsToHighlight}
-      />
-      {/* Epics on the critical path (spec/024-critical-path) */}
-      <CriticalPathEpicsReport
-        uiData={uiData}
-        expanded={criticalPathEpicsExpanded}
-        onExpandedChange={setCriticalPathEpicsExpanded}
         workItemsToHighlight={workItemsToHighlight}
         setWorkItemsToHighlight={setWorkItemsToHighlight}
       />
