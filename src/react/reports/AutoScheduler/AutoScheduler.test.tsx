@@ -104,9 +104,9 @@ beforeEach(() => {
 });
 
 describe('AutoScheduler critical-path rail', () => {
-  it('starts closed, behind a spine that still reports the floor', async () => {
+  it('starts closed, behind a labelled spine', async () => {
     renderScheduler();
-    expect(screen.getByRole('button', { expanded: false })).toHaveTextContent('floor 53.8 d');
+    expect(screen.getByRole('button', { expanded: false })).toHaveTextContent('Plan analysis');
     expect(screen.queryByText('Most common critical paths')).not.toBeInTheDocument();
   });
 

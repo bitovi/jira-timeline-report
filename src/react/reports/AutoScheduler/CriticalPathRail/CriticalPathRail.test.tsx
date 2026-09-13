@@ -29,10 +29,14 @@ describe('CriticalPathRail', () => {
     expect(screen.queryByText('rail contents')).not.toBeInTheDocument();
   });
 
-  it('shows the floor on the spine so closing costs no information', () => {
+  it('labels the spine so the collapsed rail is still identifiable', () => {
     renderRail();
-    expect(spine()).toHaveTextContent('Critical path');
-    expect(spine()).toHaveTextContent('floor 53.8 d');
+    expect(spine()).toHaveTextContent('Plan analysis');
+  });
+
+  it('states the average-case scope so the numbers are not read against the confidence slider', () => {
+    renderRail({ open: true });
+    expect(screen.getByText('· average case')).toBeInTheDocument();
   });
 
   it('opens when the spine is clicked', async () => {
@@ -49,7 +53,7 @@ describe('CriticalPathRail', () => {
 
   it('closes from the header close button', async () => {
     const { onOpenChange } = renderRail({ open: true });
-    await userEvent.click(screen.getByRole('button', { name: /close critical path/i }));
+    await userEvent.click(screen.getByRole('button', { name: /close plan analysis/i }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
@@ -69,15 +73,15 @@ describe('CriticalPathRail', () => {
     expect(Number(divider.getAttribute('aria-valuenow'))).toBe(before + 16);
   });
 
-  it('states the queueing gap when it is comparable', () => {
+  it('states the queueing gap alongside the floor', () => {
     renderRail({ open: true });
     expect(screen.getByText(/queueing/i)).toBeInTheDocument();
     expect(screen.getByText(/37\.2 d/)).toBeInTheDocument();
   });
 
-  it('omits the queueing clause when the gap is not comparable', () => {
-    renderRail({ open: true, floor: { floorDays: 53.8, queueingDays: null } });
-    expect(screen.getByText(/dependency floor/i)).toBeInTheDocument();
-    expect(screen.queryByText(/queueing/i)).not.toBeInTheDocument();
+  it('still states queueing when there is none, rather than dropping the clause', () => {
+    renderRail({ open: true, floor: { floorDays: 53.8, queueingDays: 0 } });
+    expect(screen.getByText(/queueing/i)).toBeInTheDocument();
+    expect(screen.getByText(/0\.0 d/)).toBeInTheDocument();
   });
 });

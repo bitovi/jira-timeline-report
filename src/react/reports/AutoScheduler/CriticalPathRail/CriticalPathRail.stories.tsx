@@ -26,25 +26,23 @@ const Filler: React.FC<{ label: string; rows: number }> = ({ label, rows }) => (
 /** Mirrors the real mount: the caller owns the flex row and the grid beside the rail. */
 const Shell: React.FC<{
   initiallyOpen: boolean;
-  queueingDays: number | null;
+  queueingDays: number;
   heightBudget?: string;
 }> = ({ initiallyOpen, queueingDays, heightBudget = '600px' }) => {
   const [open, setOpen] = useState(initiallyOpen);
   return (
-    <div style={{ ['--fullish-document-top' as string]: `calc(100vh - ${heightBudget})` }}>
-      <div className="flex items-stretch border border-neutral-30" style={{ height: heightBudget }}>
-        <div className="min-w-0 flex-1 overflow-y-auto bg-white p-2 text-xs">
-          {Array.from({ length: 40 }, (_, i) => (
-            <div key={i} className="border-b border-neutral-20 py-2">
-              Gantt row {i + 1}
-            </div>
-          ))}
-        </div>
-        <CriticalPathRail floor={{ floorDays: 53.8, queueingDays }} open={open} onOpenChange={setOpen}>
-          <Filler label="Most common critical paths" rows={6} />
-          <Filler label="Epics on the critical path" rows={11} />
-        </CriticalPathRail>
+    <div className="flex items-stretch border border-neutral-30" style={{ height: heightBudget }}>
+      <div className="min-w-0 flex-1 overflow-y-auto bg-white p-2 text-xs">
+        {Array.from({ length: 40 }, (_, i) => (
+          <div key={i} className="border-b border-neutral-20 py-2">
+            Gantt row {i + 1}
+          </div>
+        ))}
       </div>
+      <CriticalPathRail floor={{ floorDays: 53.8, queueingDays }} open={open} onOpenChange={setOpen}>
+        <Filler label="Most common critical paths" rows={6} />
+        <Filler label="Epics on the critical path" rows={11} />
+      </CriticalPathRail>
     </div>
   );
 };
@@ -57,9 +55,9 @@ export const Open: Story = {
   render: () => <Shell initiallyOpen queueingDays={37.2} />,
 };
 
-/** At any percentile the plan finish is a range, so the gap is not a quantity and is omitted. */
+/** A plan that never waits for a free track: the clause stays, reading 0.0 d. */
 export const OpenWithoutQueueingGap: Story = {
-  render: () => <Shell initiallyOpen queueingDays={null} />,
+  render: () => <Shell initiallyOpen queueingDays={0} />,
 };
 
 export const OpenOnAShortViewport: Story = {

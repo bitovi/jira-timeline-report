@@ -168,6 +168,9 @@ export class StatsAnalyzer {
       percentComplete: this.percentComplete,
       uncertaintyWeight: this.uncertaintyWeight,
       endDaySimulationResult,
+      // Unconditionally a mean, unlike `endDaySimulationResult`, so it stays comparable to
+      // `criticalPath.meanLength` at every slider position.
+      meanPlanFinishDays: average(this.lastDays),
       planSpread,
       simulationIssueResults,
       teams,

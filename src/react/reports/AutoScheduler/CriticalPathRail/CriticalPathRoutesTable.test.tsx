@@ -54,9 +54,10 @@ describe('CriticalPathRoutesTable', () => {
     expect(screen.getByText('0%')).toBeInTheDocument();
   });
 
-  it('counts every route in the caption', () => {
+  it('explains the chains in a tooltip instead of a caption', () => {
     renderTable();
-    expect(screen.getByText(/9 routes/)).toBeInTheDocument();
+    expect(screen.queryByText(/How often each chain was the longest one/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText('About most common critical paths')).toBeInTheDocument();
   });
 
   it('emits the joined route id when a row is clicked', async () => {

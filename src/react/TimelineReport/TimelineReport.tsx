@@ -37,6 +37,11 @@ import { ReportLayoutProvider } from '../services/report-layout';
 // Reports that own their own data instead of consuming the shell's single JQL-driven request.
 const SELF_MANAGED_REPORT_TYPES = new Set(['report-of-reports']);
 
+// Reports that fill the viewport and scroll internally, instead of growing the page. Opt-in: every
+// other report assumes `.fullish-vh` is the scroll container (TableReport's frozen column sticks to
+// it, print.css un-clamps it), so clamping the report block globally would regress them.
+const REPORT_TYPES_FILLING_HEIGHT = new Set(['auto-scheduler']);
+
 // Every report type the shell can render. `registry.test.ts` pins these keys to `configuration/
 // reports.ts`, so anything outside this list is a key no build of this app ever had — or no longer
 // has. See unsupportedReportType.ts.
@@ -172,6 +177,8 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 
   const PrimaryReport = primaryReportType ? reportComponents[primaryReportType] : undefined;
 
+  const fillsHeight = REPORT_TYPES_FILLING_HEIGHT.has(primaryReportType);
+
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
@@ -242,6 +249,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
           primaryIssuesCount={primaryIssuesOrReleases.length}
           selfManagesData={SELF_MANAGED_REPORT_TYPES.has(primaryReportType)}
           unsupportedReportType={deadReportType}
+          fillsHeight={fillsHeight}
         >
           <div id="print-header">
             <PrintHeader />
@@ -252,7 +260,19 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             // `reportNeedsFooterClearance`'s own doc comment. Lives here rather than on each report
             // component so GanttGrid/ScatterTimeline/TableReport don't each carry their own copy of a
             // margin that, for two of the three, isn't protecting against anything.
-            <div id="react-report-container" className={reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : ''}>
+            //
+            // `min-h-0` is load-bearing for the fill-height branch: a flex item's automatic minimum
+            // size is its content, so without it the container grows past the viewport and the
+            // report scrolls the page again instead of scrolling itself.
+            <div
+              id="react-report-container"
+              className={[
+                reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : '',
+                fillsHeight ? 'flex min-h-0 flex-1 flex-col' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
               <QueryClientProvider client={queryClient}>
                 <JiraProvider jira={rd.jiraHelpers}>
                   <PrimaryReport key={primaryReportType} {...baseProps} />

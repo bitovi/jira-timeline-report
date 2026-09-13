@@ -66,9 +66,10 @@ describe('CriticalPathEpicsTable', () => {
     expect(screen.queryByText(/critical path length/i)).not.toBeInTheDocument();
   });
 
-  it('names the floor in the caption without repeating the number', () => {
+  it('explains the floor in a tooltip instead of a caption', () => {
     renderTable();
-    expect(screen.getByText('Days each epic adds to the dependency floor')).toBeInTheDocument();
+    expect(screen.queryByText('Days each epic adds to the dependency floor')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('About epics on the critical path')).toBeInTheDocument();
   });
 
   it('emits the epic key when a row is clicked', async () => {

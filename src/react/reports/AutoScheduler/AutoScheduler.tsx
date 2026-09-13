@@ -227,16 +227,16 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   const floor = summariseFloor({
     meanPathLength: uiData.criticalPath.meanLength,
-    uncertaintyWeight,
-    planBottomDays,
-    planTopDays,
+    meanPlanFinishDays: uiData.meanPlanFinishDays,
   });
 
   return (
-    <div className="relative py-2">
+    // The shell hands this report the viewport's leftover height (`REPORT_TYPES_FILLING_HEIGHT`), so
+    // the grid and the rail each scroll themselves rather than scrolling the page.
+    <div className="relative flex min-h-0 flex-1 flex-col py-2 print:block">
       {/* Progress Bar */}
       <div
-        className={` h-1 bg-orange-400 transition-opacity duration-500 ${
+        className={` h-1 shrink-0 bg-blue-300 transition-opacity duration-500 ${
           uiData.percentComplete === 100 ? 'opacity-0' : ''
         }`}
         style={{ width: `${uiData.percentComplete}%`, top: '' }}
@@ -246,14 +246,19 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
       <UpdateModal startDate={selectedStartDate} issues={uiData} />
 
-      <div className="flex items-stretch print:block">
-        <div className="min-w-0 flex-1">
+      {/* The frame lives here, not on the grid, so the grid and the rail read as one panel. */}
+      <div className="flex min-h-0 flex-1 items-stretch overflow-hidden rounded border border-neutral-30 bg-white shadow-sm print:block print:overflow-visible">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Simulation Grid */}
           <div
-            className="grid bg-white relative border border-neutral-30 rounded shadow-sm"
+            className="auto-scheduler-grid grid min-h-0 flex-1 overflow-auto bg-white relative"
             style={{
               gridTemplateColumns: `[what] auto repeat(${gridData.gridNumberOfDays}, 1fr)`,
               gridTemplateRows: 'auto',
+              // Load-bearing: this is a `flex-1` box with a definite height, so the default
+              // stretching align-content inflates every auto row to fill it whenever the rows are
+              // shorter than the viewport — which is what a critical-path filter produces.
+              alignContent: 'start',
             }}
           >
             {/* Background SVG Layer */}
@@ -329,7 +334,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
             {/* `relative z-30` lifts this above the `#dependencies` SVG, which covers row 2 and would
             otherwise swallow the hover that opens the spread tooltips. */}
             <div
-              className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2 relative z-30"
+              className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2 relative z-30"
               style={{
                 gridRow: `2 / span 1`,
                 gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
@@ -369,7 +374,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                       <div className="text-base grow font-semibold">{team.team}</div>
                     </div>
                     <div
-                      className="pl-2 pt-3 pb-1 pr-2 text-xs flex flex-row-reverse gap-2"
+                      className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2"
                       style={{
                         gridRow: `${team.style.gridRowStart} / span 1`,
                         gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
@@ -419,8 +424,8 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
           </div>
         </div>
 
-        {/* Routes first: the panel is labelled "Critical path", so the first thing under that
-            label must be critical paths. */}
+        {/* Routes first: the panel leads with the critical path, so the first thing under the
+            heading must be critical paths. */}
         <CriticalPathRail floor={floor} open={railOpen} onOpenChange={setRailOpen}>
           <CriticalPathRoutesTable
             routes={routes}
