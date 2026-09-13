@@ -172,8 +172,13 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   // Every route, not the top five: an epic can sit on a rarely-winning route and would otherwise
   // highlight only itself while still reporting a non-zero share.
-  const routes = useMemo(() => uiData?.criticalPath?.topPaths(Number.POSITIVE_INFINITY) ?? [], [uiData]);
-  const epicRows = useMemo(() => (uiData ? buildCriticalPathEpics(uiData) : []), [uiData]);
+  // `topPaths` sorts the whole distinct-path map, so only pay for it while the rail is open —
+  // `uiData` gets a new reference on every simulation batch (up to hundreds per run).
+  const routes = useMemo(
+    () => (railOpen ? (uiData?.criticalPath?.topPaths(Number.POSITIVE_INFINITY) ?? []) : []),
+    [uiData, railOpen],
+  );
+  const epicRows = useMemo(() => (railOpen && uiData ? buildCriticalPathEpics(uiData) : []), [uiData, railOpen]);
   // Routes carry keys only, so readable labels have to come back from the simulation results.
   const routeLabel = useMemo(() => {
     const summaryByKey = new Map(
@@ -511,9 +516,6 @@ const SimulationData: React.FC<{
       </div>
       <div
         className="relative block py-1 z-30"
-        onMouseEnter={() => {
-          console.log(issue);
-        }}
         style={{
           gridRow: `${gridRowStart} / span 1`,
           gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
