@@ -54,6 +54,7 @@ const args = {
   labelFor: (keys: string[]) => keys.map((key) => SUMMARIES[key] ?? key).join(' → '),
   selection: null,
   onSelectRoute: () => {},
+  disabled: false,
 };
 
 export const NoSelection: Story = { args };

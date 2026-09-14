@@ -26,6 +26,7 @@ function renderTable(overrides: Partial<React.ComponentProps<typeof CriticalPath
       routes={[]}
       selection={null}
       onSelectEpic={onSelectEpic}
+      disabled={false}
       {...overrides}
     />,
   );
@@ -51,6 +52,19 @@ describe('CriticalPathEpicsTable', () => {
     // makeRows(16) gives the last six 3, 2.5, 2, 1.5, 1 and 0.5 days.
     renderTable();
     expect(screen.getByRole('button', { name: /6 other epics/ })).toHaveTextContent('10.5');
+  });
+
+  it('disables row selection while the simulation is still running, and does not call onSelectEpic', async () => {
+    const { onSelectEpic } = renderTable({ disabled: true });
+    expect(epicRows().every((row) => row.hasAttribute('disabled'))).toBe(true);
+
+    await userEvent.click(epicRows()[0]);
+    expect(onSelectEpic).not.toHaveBeenCalled();
+  });
+
+  it('re-enables row selection once the simulation completes', () => {
+    renderTable({ disabled: false });
+    expect(epicRows().every((row) => row.hasAttribute('disabled'))).toBe(false);
   });
 
   it('expands and collapses the residual in place', async () => {

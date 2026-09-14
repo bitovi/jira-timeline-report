@@ -109,6 +109,8 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     // flag would mean re-running the whole simulation to switch on, which costs 100% instead.
     criticalPathAccumulator.addIteration(findLongestPath(linkedIssues));
 
+    // Schedules against these same samples — `scheduleIssues` must not reset `daysOfWork` again,
+    // or the critical path above and the scheduled finish below would be drawn from different runs.
     const teamWork = scheduleIssues(linkedIssues);
 
     Object.values(teamWork).forEach((team) => {

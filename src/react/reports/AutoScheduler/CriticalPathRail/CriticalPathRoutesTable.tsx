@@ -14,6 +14,8 @@ export interface CriticalPathRoutesTableProps {
   labelFor: (keys: string[]) => string;
   selection: CriticalPathSelection;
   onSelectRoute: (id: string) => void;
+  /** True while the simulation is still running — rankings only stop shifting once it completes. */
+  disabled: boolean;
 }
 
 export const CriticalPathRoutesTable: React.FC<CriticalPathRoutesTableProps> = ({
@@ -22,6 +24,7 @@ export const CriticalPathRoutesTable: React.FC<CriticalPathRoutesTableProps> = (
   labelFor,
   selection,
   onSelectRoute,
+  disabled,
 }) => {
   const [expanded, setExpanded] = React.useState(false);
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
@@ -73,10 +76,11 @@ export const CriticalPathRoutesTable: React.FC<CriticalPathRoutesTableProps> = (
               type="button"
               data-route-row=""
               data-lit={lit || undefined}
+              disabled={disabled}
               onClick={() => onSelectRoute(id)}
               // Dim, never filter: the comparison the user clicked in order to make only survives
               // if the routes they did not pick stay on screen.
-              className={`flex w-full gap-2 rounded px-1 py-1 text-left text-xs leading-snug hover:bg-neutral-20 ${
+              className={`flex w-full gap-2 rounded px-1 py-1 text-left text-xs leading-snug hover:bg-neutral-20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
                 lit ? 'bg-blue-101' : ''
               } ${selection && !lit ? 'opacity-40' : ''}`}
             >

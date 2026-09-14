@@ -14,6 +14,8 @@ export interface CriticalPathEpicsTableProps {
   routes: PathFrequency[];
   selection: CriticalPathSelection;
   onSelectEpic: (key: string) => void;
+  /** True while the simulation is still running — rankings only stop shifting once it completes. */
+  disabled: boolean;
 }
 
 export const CriticalPathEpicsTable: React.FC<CriticalPathEpicsTableProps> = ({
@@ -21,6 +23,7 @@ export const CriticalPathEpicsTable: React.FC<CriticalPathEpicsTableProps> = ({
   routes,
   selection,
   onSelectEpic,
+  disabled,
 }) => {
   const [expanded, setExpanded] = React.useState(false);
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
@@ -41,8 +44,8 @@ export const CriticalPathEpicsTable: React.FC<CriticalPathEpicsTableProps> = ({
         <div className="flex items-center gap-1 text-xs font-bold">
           <span>Epics on the critical path</span>
           <InfoTooltip label="About epics on the critical path">
-            Every epic that was on the longest chain in at least one run, ranked by how much schedule it is responsible
-            for.
+            Every epic in this plan, ranked by how much schedule it is responsible for. Epics that never reached the
+            longest chain in any run sort to the bottom, at zero.
           </InfoTooltip>
         </div>
       </div>
@@ -71,10 +74,11 @@ export const CriticalPathEpicsTable: React.FC<CriticalPathEpicsTableProps> = ({
               type="button"
               data-epic-row=""
               data-lit={lit || undefined}
+              disabled={disabled}
               onClick={() => onSelectEpic(row.key)}
               // Dimmed only for a route selection. An epic selection must not dim this table: it is
               // a ranking, and dimming destroys the comparison the click was made to read.
-              className={`flex w-full gap-2 rounded px-1 py-1 text-left text-xs leading-snug hover:bg-neutral-20 ${
+              className={`flex w-full gap-2 rounded px-1 py-1 text-left text-xs leading-snug hover:bg-neutral-20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
                 lit ? 'bg-blue-101' : ''
               } ${selection?.kind === 'route' && !lit ? 'opacity-40' : ''}`}
             >

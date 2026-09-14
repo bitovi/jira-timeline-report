@@ -12,9 +12,12 @@ import React, { FC, useEffect, useMemo, useState, useRef, useCallback } from 're
 import { QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';
 import Tooltip from '@atlaskit/tooltip';
+import SectionMessage from '@atlaskit/section-message';
+import Link from '@atlaskit/link';
 import { IssueSimulationRow } from './IssueSimulationRow';
 import UpdateModal from './components/UpdateModal/UpdateModal';
 import { StatsAnalyzer } from './scheduler/stats-analyzer';
+import { BlocksCycleError } from './scheduler/link-issues';
 import { CanObservable } from '../../hooks/useCanObservable/useCanObservable.js';
 import { useCanObservable } from '../../hooks/useCanObservable';
 import { useUncertaintyWeight } from '../../hooks/useUncertaintyWeight/useUncertaintyWeight.js';
@@ -83,6 +86,29 @@ const PlanSpreadSummary: FC<{ spread: LogSpread }> = ({ spread }) => {
   );
 };
 
+const BlocksCycleMessage: FC<{ cycle: BlocksCycleError['cycle'] }> = ({ cycle }) => (
+  <div className="p-4">
+    <SectionMessage title="This plan can't be simulated" appearance="error">
+      <p>
+        Each issue below <code>Blocks</code> the next, and the last blocks the first again — a cycle with no
+        well-defined schedule. Fix any one of these links in Jira, then reload.
+      </p>
+      {/* `cycle`'s last entry repeats the first, so the numbered list visibly loops back to where it
+          started instead of just trailing off. */}
+      <ol className="list-decimal pl-5">
+        {cycle.map((issue, i) => (
+          <li key={i}>
+            <Link href={issue.url} target="_blank">
+              {issue.key}
+            </Link>{' '}
+            — {issue.summary}
+          </li>
+        ))}
+      </ol>
+    </SectionMessage>
+  </div>
+);
+
 const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, allIssuesOrReleasesObs }) => {
   const primaryRaw = useCanObservable(primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(allIssuesOrReleasesObs);
@@ -107,25 +133,39 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   const [selectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight] = useUncertaintyWeight();
 
-  // state for which work items to highlight
-  const [workItemsToHighlight, setWorkItemsToHighlight] = useState<Set<string> | null>(null);
-
-  // The rail is the sole writer of `workItemsToHighlight`, so the selection is the single source of
-  // truth and the highlight set is derived from it — no reconciliation ref is needed.
+  // `workItemsToHighlight` is derived below (from `selection` and `routes`), not stored, so it can
+  // never go stale relative to the live simulation data.
   const [selection, setSelection] = useState<CriticalPathSelection>(null);
   const [railOpen, setRailOpen] = useState(false);
 
   // stuff to get the monte-carlo data going
   const statsAnalyzerRef = useRef<StatsAnalyzer>();
   const [uiData, setUIData] = useState<StatsUIData | null>(null);
+  const [cycleError, setCycleError] = useState<BlocksCycleError | null>(null);
   useEffect(() => {
-    const statsAnalyzer = new StatsAnalyzer({
-      issues: primary,
-      uncertaintyWeight: uncertaintyWeight,
-      setUIState: (newUIData) => {
-        setUIData(newUIData);
-      },
-    });
+    setCycleError(null);
+    // A selection describes "what am I looking at" for the *previous* dataset — carrying it over
+    // would keep filtering the Gantt to issue keys that may not exist in the new one, silently
+    // emptying the report instead of showing the new plan.
+    setSelection(null);
+    let statsAnalyzer: StatsAnalyzer;
+    try {
+      statsAnalyzer = new StatsAnalyzer({
+        issues: primary,
+        uncertaintyWeight: uncertaintyWeight,
+        setUIState: (newUIData) => {
+          setUIData(newUIData);
+        },
+      });
+    } catch (error) {
+      // A contradictory `Blocks` graph can't be simulated at all; surface it instead of leaving the
+      // report stuck on "Starting ...." forever with no `uiData` ever arriving.
+      if (error instanceof BlocksCycleError) {
+        setCycleError(error);
+        return;
+      }
+      throw error;
+    }
     statsAnalyzerRef.current = statsAnalyzer;
 
     return () => {
@@ -172,12 +212,16 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   // Every route, not the top five: an epic can sit on a rarely-winning route and would otherwise
   // highlight only itself while still reporting a non-zero share.
-  // `topPaths` sorts the whole distinct-path map, so only pay for it while the rail is open —
-  // `uiData` gets a new reference on every simulation batch (up to hundreds per run).
+  // `topPaths` sorts the whole distinct-path map, so only pay for it while the rail is open, or a
+  // selection needs it to keep highlighting after the rail closes — `uiData` gets a new reference
+  // on every simulation batch (up to hundreds per run).
   const routes = useMemo(
-    () => (railOpen ? (uiData?.criticalPath?.topPaths(Number.POSITIVE_INFINITY) ?? []) : []),
-    [uiData, railOpen],
+    () => (railOpen || selection ? (uiData?.criticalPath?.topPaths(Number.POSITIVE_INFINITY) ?? []) : []),
+    [uiData, railOpen, selection],
   );
+  // Recomputed from the current `routes` on every render, so a still-converging simulation can't
+  // leave this highlighting a route/epic set that a later batch has already superseded.
+  const workItemsToHighlight = useMemo(() => highlightKeysForSelection(selection, routes), [selection, routes]);
   const epicRows = useMemo(() => (railOpen && uiData ? buildCriticalPathEpics(uiData) : []), [uiData, railOpen]);
   // Routes carry keys only, so readable labels have to come back from the simulation results.
   const routeLabel = useMemo(() => {
@@ -187,13 +231,9 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
     return (keys: string[]) => keys.map((key) => summaryByKey.get(key) ?? key).join(' → ');
   }, [uiData]);
 
-  const applySelection = useCallback(
-    (next: CriticalPathSelection) => {
-      setSelection(next);
-      setWorkItemsToHighlight(highlightKeysForSelection(next, routes));
-    },
-    [routes],
-  );
+  const applySelection = useCallback((next: CriticalPathSelection) => {
+    setSelection(next);
+  }, []);
   const onSelectEpic = useCallback(
     (key: string) => applySelection(selection?.kind === 'epic' && selection.key === key ? null : { kind: 'epic', key }),
     [applySelection, selection],
@@ -205,6 +245,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   if (!allIssues?.length) {
     return <div>Loading ...</div>;
+  }
+
+  if (cycleError) {
+    return <BlocksCycleMessage cycle={cycleError.cycle} />;
   }
 
   if (!uiData) {
@@ -438,8 +482,15 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
             labelFor={routeLabel}
             selection={selection}
             onSelectRoute={onSelectRoute}
+            disabled={uiData.percentComplete !== 100}
           />
-          <CriticalPathEpicsTable rows={epicRows} routes={routes} selection={selection} onSelectEpic={onSelectEpic} />
+          <CriticalPathEpicsTable
+            rows={epicRows}
+            routes={routes}
+            selection={selection}
+            onSelectEpic={onSelectEpic}
+            disabled={uiData.percentComplete !== 100}
+          />
         </CriticalPathRail>
       </div>
     </div>

@@ -52,7 +52,7 @@ const ROWS: CriticalPathEpicRow[] = SUMMARIES.map((summary, i) => ({
 
 const ROUTE: PathFrequency = { keys: ['EPIC-3', 'EPIC-4', 'EPIC-0', 'EPIC-1'], count: 6500 };
 
-const args = { rows: ROWS, routes: [ROUTE], selection: null, onSelectEpic: () => {} };
+const args = { rows: ROWS, routes: [ROUTE], selection: null, onSelectEpic: () => {}, disabled: false };
 
 export const NoSelection: Story = { args };
 

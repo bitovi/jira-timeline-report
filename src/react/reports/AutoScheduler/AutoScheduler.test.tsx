@@ -8,9 +8,11 @@ import AutoScheduler from './AutoScheduler';
 
 // The simulation itself is out of scope here — this exercises the rail's wiring to the grid.
 const setUIStates: Array<(data: StatsUIData) => void> = [];
+let throwOnConstruct: Error | null = null;
 vi.mock('./scheduler/stats-analyzer', () => ({
   StatsAnalyzer: class {
     constructor({ setUIState }: { setUIState: (data: StatsUIData) => void }) {
+      if (throwOnConstruct) throw throwOnConstruct;
       setUIStates.push(setUIState);
     }
     updateUncertaintyWeight() {}
@@ -85,10 +87,11 @@ const UI_DATA = {
 
 function renderScheduler() {
   const issues = EPICS.map((key) => ({ key })) as never;
-  render(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />);
+  const view = render(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />);
   act(() => {
     for (const setUIState of setUIStates) setUIState(UI_DATA);
   });
+  return view;
 }
 
 /** The plan-finish row is not a team track, so it is never filtered — exclude it from the check. */
@@ -101,6 +104,32 @@ const openRail = () => userEvent.click(screen.getByRole('button', { expanded: fa
 
 beforeEach(() => {
   setUIStates.length = 0;
+  throwOnConstruct = null;
+});
+
+describe('AutoScheduler contradictory Blocks links', () => {
+  it("shows the numbered cycle, closing the loop back to item 1, instead of hanging on 'Starting'", async () => {
+    const { BlocksCycleError } = await import('./scheduler/link-issues');
+    throwOnConstruct = new BlocksCycleError([
+      { key: 'STORE-17', summary: 'Summary of STORE-17', url: '#STORE-17' },
+      { key: 'ORDER-23', summary: 'Summary of ORDER-23', url: '#ORDER-23' },
+      { key: 'STORE-17', summary: 'Summary of STORE-17', url: '#STORE-17' },
+    ]);
+
+    renderScheduler();
+
+    expect(screen.getByText("This plan can't be simulated")).toBeInTheDocument();
+    // The closing entry repeats STORE-17, so the numbered list visibly loops back to item 1.
+    const items = screen.getAllByRole('listitem').map((item) => item.textContent);
+    expect(items).toHaveLength(3);
+    expect(items[0]).toContain('STORE-17');
+    expect(items[0]).toContain('Summary of STORE-17');
+    expect(items[1]).toContain('ORDER-23');
+    expect(items[1]).toContain('Summary of ORDER-23');
+    expect(items[2]).toContain('STORE-17');
+    const links = screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('#'));
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['#STORE-17', '#ORDER-23', '#STORE-17']);
+  });
 });
 
 describe('AutoScheduler critical-path rail', () => {
@@ -108,6 +137,23 @@ describe('AutoScheduler critical-path rail', () => {
     renderScheduler();
     expect(screen.getByRole('button', { expanded: false })).toHaveTextContent('Plan analysis');
     expect(screen.queryByText('Most common critical paths')).not.toBeInTheDocument();
+  });
+
+  it('disables epic and route rows while the simulation is still running', async () => {
+    render(
+      <AutoScheduler
+        primaryIssuesOrReleasesObs={EPICS.map((key) => ({ key })) as never}
+        allIssuesOrReleasesObs={EPICS.map((key) => ({ key })) as never}
+      />,
+    );
+    act(() => {
+      setUIStates[setUIStates.length - 1]({ ...UI_DATA, percentComplete: 60 });
+    });
+    await openRail();
+
+    const rows = screen.getAllByRole('button').filter((button) => button.hasAttribute('data-epic-row'));
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => row.hasAttribute('disabled'))).toBe(true);
   });
 
   it('shows both tables once opened, routes first', async () => {
@@ -154,6 +200,32 @@ describe('AutoScheduler critical-path rail', () => {
     expect(new Set(gridIssueNames())).toEqual(new Set(['STORE-17', 'MARKETING-5']));
   });
 
+  it('updates the highlight when a later batch reveals a new route through the selection, instead of freezing it at click-time', async () => {
+    renderScheduler();
+    await openRail();
+
+    const epicRow = screen
+      .getAllByRole('button')
+      .find((button) => button.dataset.epicRow !== undefined && button.textContent?.includes('Summary of STORE-17'))!;
+    await userEvent.click(epicRow);
+    expect(new Set(gridIssueNames())).toEqual(new Set(['STORE-17', 'ORDER-23', 'MARKETING-5']));
+
+    // Simulates the Monte Carlo simulation converging further: a chain through STORE-17 that
+    // hadn't won any iteration yet now has, so it's a brand-new entry in `topPaths`.
+    const laterUiData = {
+      ...UI_DATA,
+      criticalPath: {
+        ...UI_DATA.criticalPath,
+        topPaths: () => [...ROUTES, { keys: ['STORE-17', 'MARKETING-6'], count: 1 }],
+      },
+    } as unknown as StatsUIData;
+    act(() => {
+      setUIStates[setUIStates.length - 1](laterUiData);
+    });
+
+    expect(new Set(gridIssueNames())).toEqual(new Set(['STORE-17', 'ORDER-23', 'MARKETING-5', 'MARKETING-6']));
+  });
+
   it('clears the selection when the lit row is clicked again', async () => {
     renderScheduler();
     await openRail();
@@ -164,5 +236,25 @@ describe('AutoScheduler critical-path rail', () => {
 
     await userEvent.click(routeRows()[0]);
     expect(new Set(gridIssueNames())).toEqual(new Set(EPICS));
+  });
+
+  it('clears a stale selection when the dataset changes, instead of filtering the new plan to nothing', async () => {
+    const { rerender } = renderScheduler();
+    await openRail();
+
+    const routeRows = () => screen.getAllByRole('button').filter((button) => button.dataset.routeRow !== undefined);
+    await userEvent.click(routeRows()[0]);
+    expect(gridIssueNames()).toHaveLength(2);
+
+    // A new array of issue objects, as a real JQL/team change would produce — the `[primary]`
+    // effect tears down and restarts the simulation for it.
+    const newIssues = EPICS.map((key) => ({ key })) as never;
+    rerender(<AutoScheduler primaryIssuesOrReleasesObs={newIssues} allIssuesOrReleasesObs={newIssues} />);
+    act(() => {
+      setUIStates[setUIStates.length - 1](UI_DATA);
+    });
+
+    expect(new Set(gridIssueNames())).toEqual(new Set(EPICS));
+    expect(screen.getAllByRole('button').some((button) => button.hasAttribute('data-lit'))).toBe(false);
   });
 });

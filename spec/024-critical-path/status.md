@@ -23,20 +23,20 @@ or reassigning rather than by cutting scope. See [dependency-floor.md](dependenc
 
 ### New
 
-| File                                                                                   | Purpose                                                                | Tests |
-| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----- |
-| `src/react/reports/AutoScheduler/scheduler/longest-path.ts`                            | Longest dependency chain through the `Blocks` graph, ignoring capacity | 9     |
-| `src/react/reports/AutoScheduler/scheduler/critical-path-accumulator.ts`               | Tallies path membership and days added across all simulation runs      | 10    |
-| `src/react/reports/AutoScheduler/CriticalPathEpicsReport/build-critical-path-epics.ts` | Turns tallies into sorted rows; computes highlight sets                | 7     |
-| `src/react/reports/AutoScheduler/CriticalPathEpicsReport/CriticalPathEpicsReport.tsx`  | The collapsible report                                                 | 11    |
-| `src/react/reports/AutoScheduler/CriticalPathEpicsReport/index.ts`                     | Barrel export                                                          | —     |
+| File                                                                            | Purpose                                                                | Tests |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----- |
+| `src/react/reports/AutoScheduler/scheduler/longest-path.ts`                     | Longest dependency chain through the `Blocks` graph, ignoring capacity | 9     |
+| `src/react/reports/AutoScheduler/scheduler/critical-path-accumulator.ts`        | Tallies path membership and days added across all simulation runs      | 10    |
+| `src/react/reports/AutoScheduler/CriticalPathRail/build-critical-path-epics.ts` | Turns tallies into sorted rows; computes highlight sets                | 7     |
+| `src/react/reports/AutoScheduler/CriticalPathRail/CriticalPathRail.tsx`         | The collapsible rail: routes table, epics table, resize/collapse       | 11    |
+| `src/react/reports/AutoScheduler/CriticalPathRail/index.ts`                     | Barrel export                                                          | —     |
 
 ### Modified
 
 - `scheduler/monte-carlo.ts` — runs the longest-path pass once per iteration; carries a `CriticalPathAccumulator` on `BatchDatas`
 - `scheduler/monte-carlo.test.ts` — coverage for the above
 - `scheduler/stats-analyzer.ts` — merges per-batch accumulators; exposes `criticalPath` on `StatsUIData`
-- `AutoScheduler.tsx` — mounts the report; also un-pauses `CriticalPathsReport` (see open questions)
+- `AutoScheduler.tsx` — mounts the rail; a later commit on this branch removes the superseded `CriticalPathsReport` instead of un-pausing it (see open questions)
 
 ---
 
@@ -112,11 +112,10 @@ The manual check is the last step of the plan and needs `npm run dev` plus real 
 
 ### 1. Should `CriticalPathsReport` stay un-paused?
 
-`AutoScheduler.tsx` currently re-enables the older `CriticalPathsReport`, which commit `926daf19`
-deliberately disabled with the note _"paused while its ranking model is reworked."_ That rework did not
-happen — this branch built a different, new report instead.
-
-It is isolated in its own commit so it can be dropped without touching anything else. **Decide before merging.**
+**Resolved.** `AutoScheduler.tsx` briefly re-enabled the older `CriticalPathsReport` (which commit
+`926daf19` had disabled with the note _"paused while its ranking model is reworked"_), but a later commit
+on this branch removed `CriticalPathsReport` entirely in favor of the `CriticalPathRail` this report
+ships instead.
 
 ### 2. 10,000 runs, or 1,000?
 

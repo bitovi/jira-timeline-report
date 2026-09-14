@@ -298,4 +298,26 @@ describe('runBatch critical path accumulation (via runMonteCarlo)', () => {
     expect(acc.topPaths(1)[0].keys).toHaveLength(1);
     expect(acc.meanPathLength()).toBeLessThan(meanScheduledFinish);
   });
+
+  it('schedules using the exact durations the critical path was computed from, not a resample', () => {
+    // A single unlinked epic on a one-track team: with no blocking and no contention, its scheduled
+    // finish day is exactly its own sampled `daysOfWork` — the same sample the critical path used.
+    // If `scheduleIssues` resampled instead of reusing it, these would almost never be equal.
+    const issue: DerivedIssue = makeDerivedIssue({ key: 'A' });
+
+    const onBatch = vi.fn();
+    const { runBatchAndLoop } = runMonteCarlo([issue], {
+      onBatch,
+      onComplete: vi.fn(),
+      batches: 1,
+      batchSize: 1,
+      timeBetweenBatches: 1,
+    });
+
+    runBatchAndLoop();
+    vi.advanceTimersByTime(10);
+
+    const { batchData } = onBatch.mock.calls[0][0];
+    expect(batchData.criticalPathAccumulator.meanPathLength()).toBe(batchData.lastDays[0]);
+  });
 });

@@ -20,6 +20,7 @@ function renderTable(overrides: Partial<React.ComponentProps<typeof CriticalPath
       labelFor={(keys) => keys.join(' → ')}
       selection={null}
       onSelectRoute={onSelectRoute}
+      disabled={false}
       {...overrides}
     />,
   );
@@ -39,6 +40,19 @@ describe('CriticalPathRoutesTable', () => {
     renderTable({ routes: makeRoutes(5) });
     expect(routeRows()).toHaveLength(5);
     expect(screen.queryByText(/other routes/)).not.toBeInTheDocument();
+  });
+
+  it('disables row selection while the simulation is still running, and does not call onSelectRoute', async () => {
+    const { onSelectRoute } = renderTable({ disabled: true });
+    expect(routeRows().every((row) => row.hasAttribute('disabled'))).toBe(true);
+
+    await userEvent.click(routeRows()[0]);
+    expect(onSelectRoute).not.toHaveBeenCalled();
+  });
+
+  it('re-enables row selection once the simulation completes', () => {
+    renderTable({ disabled: false });
+    expect(routeRows().every((row) => row.hasAttribute('disabled'))).toBe(false);
   });
 
   it('expands and collapses the residual in place', async () => {
