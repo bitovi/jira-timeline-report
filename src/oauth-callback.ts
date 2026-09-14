@@ -1,4 +1,15 @@
 import jiraOIDCHelpers from './jira-oidc-helpers';
+import { RequestHelper } from './jira-oidc-helpers/types';
+
+/**
+ * The callback page has no authenticated request helper — it exists precisely to obtain the token
+ * that would make one possible, and the only helper it calls, `fetchAccessTokenWithAuthCode`, talks
+ * to our own auth server rather than Jira. Anything that reaches for this is asking Jira for data
+ * before the handshake has finished, so say so instead of failing as "not a function".
+ */
+const requestHelperUnavailable: RequestHelper = () => {
+  throw new Error('The OAuth callback page has no Jira request helper; the access token is not exchanged yet.');
+};
 
 export default function oauthCallback() {
   const environment = {
@@ -9,8 +20,10 @@ export default function oauthCallback() {
     JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
   };
 
-  //@ts-expect-error
-  const jiraHelpers = jiraOIDCHelpers(environment);
+  // `host` has to be named explicitly here: this is the one caller that builds its helpers directly
+  // rather than through `main-helper`. Leaving it undefined made `makeFieldsRequest`'s
+  // `host !== 'hosted'` check pass, firing a Jira request this page cannot make.
+  const jiraHelpers = jiraOIDCHelpers(environment, requestHelperUnavailable, 'hosted');
 
   const queryParams = new URLSearchParams(window.location.search);
   const queryCode = queryParams.get('code');
