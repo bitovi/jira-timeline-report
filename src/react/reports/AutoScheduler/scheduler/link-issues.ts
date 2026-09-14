@@ -30,6 +30,19 @@ export type LinkedIssue = DerivedIssue & {
 type LinkedIssueBuilderIndex = Record<string, LinkedIssueBuilder>;
 type LinkedIssueIndex = Record<string, LinkedIssue>;
 
+export type BlocksCycleIssue = { key: string; summary: string; url: string };
+
+/** Thrown when the `Blocks` graph contains a cycle — the links contradict each other, so there is
+ * no well-defined schedule. Carries the chain so the UI can name the issues that need fixing. */
+export class BlocksCycleError extends Error {
+  readonly cycle: BlocksCycleIssue[];
+  constructor(cycle: BlocksCycleIssue[]) {
+    super(`Contradictory "Blocks" links form a cycle: ${cycle.map((issue) => issue.key).join(' \u2192 ')}`);
+    this.name = 'BlocksCycleError';
+    this.cycle = cycle;
+  }
+}
+
 export function linkIssues(issues: DerivedIssue[], probablisticallySelectIssueTiming: boolean): LinkedIssue[] {
   const clones = issues.map((issue) => {
     return {
@@ -52,10 +65,47 @@ export function linkIssues(issues: DerivedIssue[], probablisticallySelectIssueTi
   linkParentAndChildren(clones, issueByKey);
   linkDirectBlocks(clones, issueByKey);
 
+  const cycle = findBlocksCycle(clones);
+  if (cycle) {
+    throw new BlocksCycleError(cycle.map((issue) => ({ key: issue.key, summary: issue.summary, url: issue.url })));
+  }
+
   clones.forEach(setBlocksWorkDepthDeterministically);
   clones.sort((iA, iB) => iB.blocksWorkDepth - iA.blocksWorkDepth);
 
   return clones as LinkedIssue[];
+}
+
+/** Depth-first search over `linkedBlocks`, returning the first cycle found as the ordered chain of
+ * issues that closes the loop (last entry repeats the first), or `null` if the graph is acyclic. */
+function findBlocksCycle(issues: LinkedIssueBuilder[]): LinkedIssueBuilder[] | null {
+  const visited = new Set<string>();
+  const onStack = new Set<string>();
+  const stack: LinkedIssueBuilder[] = [];
+
+  function visit(issue: LinkedIssueBuilder): LinkedIssueBuilder[] | null {
+    if (visited.has(issue.key)) return null;
+    if (onStack.has(issue.key)) {
+      const start = stack.findIndex((stacked) => stacked.key === issue.key);
+      return [...stack.slice(start), issue];
+    }
+    onStack.add(issue.key);
+    stack.push(issue);
+    for (const blocked of issue.linkedBlocks) {
+      const cycle = visit(blocked);
+      if (cycle) return cycle;
+    }
+    stack.pop();
+    onStack.delete(issue.key);
+    visited.add(issue.key);
+    return null;
+  }
+
+  for (const issue of issues) {
+    const cycle = visit(issue);
+    if (cycle) return cycle;
+  }
+  return null;
 }
 
 export function resetLinkedIssue(issue: LinkedIssue) {
@@ -64,6 +114,8 @@ export function resetLinkedIssue(issue: LinkedIssue) {
   issue.mutableWorkItem.daysOfWork = getEstimationData(issue, {}).probablisticTotalDaysOfWork;
 }
 
+// `findBlocksCycle` in `linkIssues` guarantees the graph is acyclic before this ever runs, so it
+// doesn't need its own cycle guard.
 function setBlocksWorkDepthDeterministically(issue: LinkedIssueBuilder): number {
   if (issue.blocksWorkDepth !== -1) {
     return issue.blocksWorkDepth;

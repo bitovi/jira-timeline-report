@@ -5,8 +5,9 @@ import type { BatchDatas, BatchIssueData } from './monte-carlo';
 
 import type { LinkedIssue } from './link-issues';
 
-import { fitLognormal } from './fit-lognormal';
+import { computeLogSpread } from './log-spread';
 import { CriticalityAccumulator } from './criticality-accumulator';
+import { CriticalPathAccumulator } from './critical-path-accumulator';
 
 import {
   insertSortedArrayInPlace,
@@ -46,6 +47,7 @@ export class StatsAnalyzer {
   setUIState: (data: StatsUIData) => void;
   _teardown: () => void;
   criticalityAccumulator = new CriticalityAccumulator();
+  criticalPathAccumulator = new CriticalPathAccumulator();
   constructor({
     issues,
     uncertaintyWeight,
@@ -97,6 +99,7 @@ export class StatsAnalyzer {
     }
     insertSortedArrayInPlace(this.lastDays, batchData.lastDays);
     this.criticalityAccumulator.merge(batchData.criticalityAccumulator);
+    this.criticalPathAccumulator.merge(batchData.criticalPathAccumulator);
 
     this.setUIState(this.dataForUI());
   }
@@ -126,18 +129,16 @@ export class StatsAnalyzer {
         criticalityIndex: this.criticalityAccumulator.criticalityIndex(key),
         meanWorkDays: this.criticalityAccumulator.meanWorkDays(key),
         meanQueuedDays: this.criticalityAccumulator.meanQueuedDays(key),
+        sequencingDaysAdded: this.criticalPathAccumulator.daysAdded(key),
+        sequencingCriticalityIndex: this.criticalPathAccumulator.onPathIndex(key),
       };
     });
 
     const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
 
-    // Fit a lognormal to the whole-plan completion distribution so we can report a single
-    // composite confidence alongside the per-issue ones. `lastDays` is kept sorted ascending.
-    const fit = fitLognormal(this.lastDays);
-    const overallConfidence = fit && {
-      confidence: fit.confidence,
-      isFitGood: fit.isFitGood,
-    };
+    // Multiplicative spread of the whole-plan completion distribution, reported alongside the
+    // per-issue confidences. `lastDays` is kept sorted ascending.
+    const planSpread = computeLogSpread(this.lastDays);
 
     // lets get it ready for teams ...
     const teamGroups = groupBy(
@@ -154,13 +155,26 @@ export class StatsAnalyzer {
       };
     });
 
+    // `topPaths` is a thunk, not an array: `dataForUI` runs once per batch and the routes card shows
+    // five rows, so sorting the whole path map here would throw away 499 of every 500 results.
+    const criticalPath = {
+      meanLength: this.criticalPathAccumulator.meanPathLength(),
+      iterations: this.criticalPathAccumulator.iterations,
+      distinctPathCount: this.criticalPathAccumulator.pathCount,
+      topPaths: (limit: number) => this.criticalPathAccumulator.topPaths(limit),
+    };
+
     return {
       percentComplete: this.percentComplete,
       uncertaintyWeight: this.uncertaintyWeight,
       endDaySimulationResult,
-      overallConfidence,
+      // Unconditionally a mean, unlike `endDaySimulationResult`, so it stays comparable to
+      // `criticalPath.meanLength` at every slider position.
+      meanPlanFinishDays: average(this.lastDays),
+      planSpread,
       simulationIssueResults,
       teams,
+      criticalPath,
     };
   }
   teardown() {
