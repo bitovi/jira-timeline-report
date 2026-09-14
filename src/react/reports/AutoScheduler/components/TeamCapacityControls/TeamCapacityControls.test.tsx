@@ -4,22 +4,25 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const commit = vi.fn();
-vi.mock('./useTeamCommit', () => ({ useTeamCommit: () => ({ commit, isSaving: false }) }));
+let isSaving = false;
+let isBlocked = false;
+vi.mock('./useTeamCommit', () => ({ useTeamCommit: () => ({ commit, isSaving, isBlocked }) }));
 
 import { CapacityOverridesProvider } from '../../../../services/capacity-overrides';
 import { TeamCapacityInputs } from './TeamCapacityControls';
 
-const renderInputs = (props: { savedVelocityPerSprint?: number; savedTracks?: number } = {}) =>
-  render(
-    <CapacityOverridesProvider>
-      <TeamCapacityInputs
-        teamName="ORDER"
-        hierarchyLevel={7}
-        savedVelocityPerSprint={props.savedVelocityPerSprint ?? 21}
-        savedTracks={props.savedTracks ?? 1}
-      />
-    </CapacityOverridesProvider>,
-  );
+const inputs = (props: { savedVelocityPerSprint?: number; savedTracks?: number } = {}) => (
+  <CapacityOverridesProvider>
+    <TeamCapacityInputs
+      teamName="ORDER"
+      hierarchyLevel={7}
+      savedVelocityPerSprint={props.savedVelocityPerSprint ?? 21}
+      savedTracks={props.savedTracks ?? 1}
+    />
+  </CapacityOverridesProvider>
+);
+
+const renderInputs = (props: { savedVelocityPerSprint?: number; savedTracks?: number } = {}) => render(inputs(props));
 
 /** The `onSuccess` the row hands the commit hook, which only a successful save is meant to run. */
 const commitSucceeds = () => act(() => commit.mock.calls[0][3].onSuccess());
@@ -30,7 +33,11 @@ const setCapacity = async (next: string) => {
   await userEvent.type(screen.getByRole('spinbutton'), `${next}{Enter}`);
 };
 
-beforeEach(() => commit.mockClear());
+beforeEach(() => {
+  commit.mockClear();
+  isSaving = false;
+  isBlocked = false;
+});
 
 describe('TeamCapacityInputs', () => {
   it('shows the saved values with no commit controls at rest', () => {
@@ -120,6 +127,52 @@ describe('TeamCapacityInputs', () => {
 
     expect(await screen.findByText('2 tracks')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
+  });
+
+  // The commit captures its values at click time, so an edit landing before the write returns would
+  // be thrown away by the success handler with no sign it ever existed.
+  describe('while the commit is in flight', () => {
+    const startCommit = async () => {
+      const { rerender } = renderInputs();
+
+      await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+      await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+      isSaving = true;
+      rerender(inputs());
+    };
+
+    it('disables every control on the row', async () => {
+      await startCommit();
+
+      expect(screen.getByRole('button', { name: /add a parallel work track/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /remove a work track/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Reset' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Commit' })).toBeDisabled();
+    });
+
+    it('refuses to open the capacity editor', async () => {
+      await startCommit();
+
+      await userEvent.click(screen.getByRole('button', { name: /points per sprint/i }));
+
+      expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    });
+  });
+
+  // Every write replaces the whole team-data value from a render-time snapshot, so a second commit
+  // overlapping the first would carry pre-first state and win.
+  it('will not commit while another team is being saved, but stays editable', async () => {
+    const { rerender } = renderInputs();
+
+    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+
+    isBlocked = true;
+    rerender(inputs());
+
+    expect(screen.getByRole('button', { name: 'Commit' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /add a parallel work track/i })).toBeEnabled();
   });
 
   it('does not fall back to the overridden value when the pipeline has already re-derived', async () => {

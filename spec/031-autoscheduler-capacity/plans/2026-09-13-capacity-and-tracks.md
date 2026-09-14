@@ -41,7 +41,9 @@ and `src/jira/derived/work-timing/work-timing.ts:88` turns that into duration:
 storyPointsDaysOfWork = issuePoints / pointsPerDayPerTrack
 ```
 
-**Adding a track does not add capacity.** `totalPointsPerDay` is untouched by `tracks`. Two tracks means each epic takes twice as long and two run side by side. The tooltip in Task 5 must say this.
+**Adding a track does not add capacity.** `totalPointsPerDay` is untouched by `tracks`. Two tracks means each _estimated_ epic takes twice as long and two run side by side. The tooltip in Task 5 must say this.
+
+Unestimated epics are the exception, and the tooltip must not overstate it: `getDefaultStoryPointsDefault` is `velocity / tracks`, so `defaultPoints / pointsPerDayPerTrack = (velocity / tracks) / (velocity / daysPerSprint / tracks) = daysPerSprint`. The `tracks` cancel — changing tracks moves the synthetic point estimate but leaves an unestimated epic's duration at one sprint.
 
 ### Where the stored values come from
 
@@ -52,6 +54,8 @@ This plan overrides those two functions rather than rebuilding `AllTeamData` —
 ### Hierarchy level decision
 
 Team config is keyed `allData[teamKey][hierarchyLevel]`, and `'defaults'` is a valid key. **Commit writes to the team's `defaults`**, because the header row shows one capacity for the whole team and `applyInheritance` propagates `defaults` down to every level. If this turns out to be wrong, the only line to change is the `hierarchyLevel: 'defaults'` argument in Task 6.
+
+> **Superseded during implementation.** Always writing `defaults` would silently strand a team that had set a level-specific capacity: the commit would land on `defaults` and be shadowed by the level value, so the plan would appear not to change. `useTeamCommit` instead targets **per field**: the scheduled hierarchy level when the team's own saved data already defines that field there, `defaults` otherwise (including when the value is inherited from `__GLOBAL__`). The two fields may target different levels, so a commit may touch both. Task 6's steps below still read `defaults`-only.
 
 ---
 

@@ -5,6 +5,7 @@ import React from 'react';
 interface TrackStepperProps {
   value: number;
   onChange: (next: number) => void;
+  isDisabled?: boolean;
 }
 
 const stepButton =
@@ -16,12 +17,12 @@ const stepButton =
  * the first track's label row. That row is not rendered when a track has no work — exactly when you
  * would want to remove it.
  */
-export const TrackStepper: FC<TrackStepperProps> = ({ value, onChange }) => (
+export const TrackStepper: FC<TrackStepperProps> = ({ value, onChange, isDisabled = false }) => (
   <span className="inline-flex h-[22px] items-stretch overflow-hidden rounded-[3px] border border-neutral-40 bg-white">
     <button
       type="button"
       className={stepButton}
-      disabled={value <= 1}
+      disabled={isDisabled || value <= 1}
       title="Remove a work track for this team."
       aria-label="Remove a work track for this team"
       onClick={() => onChange(value - 1)}
@@ -38,6 +39,7 @@ export const TrackStepper: FC<TrackStepperProps> = ({ value, onChange }) => (
     <button
       type="button"
       className={stepButton}
+      disabled={isDisabled}
       title="Add a parallel work track for this team."
       aria-label="Add a parallel work track for this team"
       onClick={() => onChange(value + 1)}

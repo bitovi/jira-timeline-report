@@ -64,17 +64,26 @@ storyPointsDaysOfWork = issuePoints / pointsPerDayPerTrack
 Two consequences the control has to make legible:
 
 **Adding a track does not add capacity.** `totalPointsPerDay` is untouched by `tracks`; only
-`pointsPerDayPerTrack` moves. Two tracks means each epic takes twice as long and two run side by
-side. Team throughput is identical. Tracks trade _latency on one chain_ for _parallelism across
-chains_ — they help only when the plan is wide, and do nothing when it is a single dependency
+`pointsPerDayPerTrack` moves. Two tracks means each _estimated_ epic takes twice as long and two run
+side by side. Team throughput is identical. Tracks trade _latency on one chain_ for _parallelism
+across chains_ — they help only when the plan is wide, and do nothing when it is a single dependency
 chain. This is the same point [`dependency-floor.md`](../024-critical-path/dependency-floor.md)
 makes about the earliest-finish gap: "It is tempting to read a large gap as 'add tracks until it
 closes.' That is wrong."
 
-**Tracks silently move unestimated issues.** [`getDefaultStoryPointsDefault`](../../src/jira/derived/work-timing/work-timing.ts)
-is `team.velocity / team.parallelWorkLimit`, so an issue with no estimate gets a _smaller_ default
-when you add a track. Changing tracks therefore changes durations for two different reasons at once.
-Worth a footnote in the tooltip; not worth changing the model in this spec.
+**Unestimated issues are the exception, and the tooltip must not overstate it.**
+[`getDefaultStoryPointsDefault`](../../src/jira/derived/work-timing/work-timing.ts) is
+`team.velocity / team.parallelWorkLimit`, so an issue with no estimate gets a _smaller_ default when
+you add a track — divided by the same `tracks` that `pointsPerDayPerTrack` is divided by:
+
+```
+defaultPoints / pointsPerDayPerTrack = (velocity / tracks) / (velocity / sprintLength / tracks)
+                                     = sprintLength
+```
+
+The two effects cancel exactly. Changing tracks moves an unestimated issue's synthetic point
+estimate but leaves its duration at one sprint. Worth a footnote in the tooltip — stated as the
+cancellation it is, not as a second duration effect.
 
 ---
 
@@ -274,8 +283,11 @@ already there.
 2. **Which hierarchy level?** Team config is keyed by `[teamKey][hierarchyLevel]`. The Auto-Scheduler
    schedules epics, so the override presumably writes the epic level — but **Commit**
    then writes a level-specific value from a screen that does not show levels.
-   _Plan's answer:_ write the team's `defaults` and let `applyInheritance` propagate it, since the
-   row shows one capacity for the whole team. Revisit if per-level capacity turns out to matter.
+   _Answered, per field:_ Commit writes to the scheduled hierarchy level when the team's own saved
+   data already defines that field there, and to the team's `defaults` otherwise — which is also
+   where a value inherited from `__GLOBAL__` lands. The two fields can therefore target different
+   levels. Nothing is ever removed from a level Commit is not targeting, and `__GLOBAL__` is never
+   written. See [`useTeamCommit.ts`](../../src/react/reports/AutoScheduler/components/TeamCapacityControls/useTeamCommit.ts).
 3. **Global default teams.** A team with no saved config inherits `__GLOBAL__.defaults`. Editing it
    inline should create a team-specific override, not move the global default — needs to be explicit
    in the save path.

@@ -7,6 +7,7 @@ import Textfield from '@atlaskit/textfield';
 interface CapacityFieldProps {
   value: number;
   onChange: (next: number) => void;
+  isDisabled?: boolean;
 }
 
 // InlineEdit's outer margin and Textfield's 40px default height would both grow the team header row
@@ -26,14 +27,15 @@ const compactEdit = [
  * model: `InlineEdit`'s own read view is the click target, which works here because the team header
  * row has no click handler of its own competing for the gesture.
  */
-export const CapacityField: FC<CapacityFieldProps> = ({ value, onChange }) => {
+export const CapacityField: FC<CapacityFieldProps> = ({ value, onChange, isDisabled = false }) => {
   const [isEditing, setIsEditing] = useState(false);
 
   return (
     <div className={compactEdit}>
       <InlineEdit<string>
         isEditing={isEditing}
-        onEdit={() => setIsEditing(true)}
+        // `InlineEdit` has no disabled state, so refusing to enter edit mode is the whole of it.
+        onEdit={() => setIsEditing(!isDisabled)}
         defaultValue={String(value)}
         editButtonLabel={`Capacity, ${value} points per sprint`}
         // `Number('1e999')` is `Infinity`, which survives `> 0` and then `JSON.stringify`s to `null` —

@@ -32,7 +32,7 @@ interface TeamCapacityInputsProps {
 
 const buttonClasses =
   'rounded-[3px] border border-neutral-40 bg-white px-2.5 py-[3px] text-xs font-semibold text-slate-600 ' +
-  'hover:bg-neutral-20';
+  'hover:bg-neutral-20 disabled:cursor-not-allowed disabled:text-neutral-50';
 
 /**
  * The left, editable half of a team header row: tracks, capacity, and — only while the team is
@@ -47,7 +47,7 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
 }) => {
   const { overrides, savedCapacity, setTeamOverride, clearTeamOverride, rememberSavedCapacity, commitSavedCapacity } =
     useCapacityOverrides();
-  const { commit, isSaving } = useTeamCommit();
+  const { commit, isSaving, isBlocked } = useTeamCommit();
 
   const override = overrides[teamName] ?? {};
   const isDirty = useTeamIsDirty(teamName);
@@ -79,25 +79,37 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
       {/* Tooltip clones its child to attach handlers and a ref, so it needs a host element. */}
       <Tooltip content={trackTooltip(tracks, velocityPerSprint)}>
         <span className="inline-flex">
-          <TrackStepper value={tracks} onChange={(next) => change({ tracks: next })} />
+          <TrackStepper value={tracks} isDisabled={isSaving} onChange={(next) => change({ tracks: next })} />
         </span>
       </Tooltip>
 
       <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
         <span className="text-neutral-500">Capacity</span>
-        <CapacityField value={velocityPerSprint} onChange={(next) => change({ velocityPerSprint: next })} />
+        <CapacityField
+          value={velocityPerSprint}
+          isDisabled={isSaving}
+          onChange={(next) => change({ velocityPerSprint: next })}
+        />
         <span className="text-[11px] text-neutral-500">pts / sprint</span>
       </span>
 
       {isDirty && (
         <span className="inline-flex gap-1.5">
-          <button type="button" className={buttonClasses} onClick={() => clearTeamOverride(teamName)}>
+          {/* The whole row freezes mid-commit: the values were captured at click time, so an edit
+              landing before the write returns would be dropped by the success handler. */}
+          <button
+            type="button"
+            className={buttonClasses}
+            disabled={isSaving}
+            onClick={() => clearTeamOverride(teamName)}
+          >
             Reset
           </button>
           <button
             type="button"
-            className="rounded-[3px] border border-blue-600 bg-blue-600 px-2.5 py-[3px] text-xs font-semibold text-white hover:bg-blue-700"
-            disabled={isSaving}
+            className="rounded-[3px] border border-blue-600 bg-blue-600 px-2.5 py-[3px] text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-blue-300 disabled:bg-blue-300"
+            disabled={isSaving || isBlocked}
+            title={isBlocked ? 'Another team is being saved. Wait for it to finish.' : undefined}
             onClick={() => {
               // Only on success: a failed write rolls the save back, and dropping the override here
               // would throw the what-if away with nothing saved in its place.
@@ -142,9 +154,13 @@ function trackTooltip(tracks: number, velocityPerSprint: number) {
       <div>Parallel work streams inside this team. Each track works one epic at a time.</div>
       <div>
         Adding a track does <strong>not</strong> add capacity. The team still delivers {velocityPerSprint} points per
-        sprint; each track gets a share of it, so every epic takes proportionally longer and more run at once.
+        sprint; each track gets a share of it, so every <em>estimated</em> epic takes proportionally longer and more run
+        at once.
       </div>
-      <div>Epics with no estimate also shrink — their default estimate is capacity ÷ tracks.</div>
+      <div>
+        Epics with <em>no</em> estimate are the exception: their default estimate is capacity ÷ tracks, which shrinks by
+        exactly the same factor as each track&rsquo;s throughput, so their duration does not move at all.
+      </div>
     </div>
   );
 }

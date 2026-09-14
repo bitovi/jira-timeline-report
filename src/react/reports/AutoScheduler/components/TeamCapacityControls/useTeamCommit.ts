@@ -1,10 +1,12 @@
 import type { TeamCapacityOverride } from '../../../../services/capacity-overrides';
+import type { NormalizeIssueConfig } from '../../../../../jira/normalized/normalize';
 import type {
   AllTeamData,
   Configuration,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+import { useIsMutating } from '@tanstack/react-query';
 
 import { useCapacityOverrides } from '../../../../services/capacity-overrides';
 import { useJiraIssueFields } from '../../../../services/jira';
@@ -14,6 +16,7 @@ import {
   useSaveAllTeamData,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 import { sanitizeAllTeamData } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/hooks/sanitizeAllTeamData';
+import { updateTeamConfigurationKeys } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/key-factory';
 
 const CAPACITY_FIELDS = ['velocityPerSprint', 'tracks'] as const;
 
@@ -37,9 +40,20 @@ export const useTeamCommit = () => {
   const jiraFields = useJiraIssueFields();
   const { savedUserAllTeamData } = useAllTeamData(jiraFields);
   const { onTeamDataSaved } = useCapacityOverrides();
-  // Without this seam the shell keeps deriving from the pre-commit configuration, so dropping the
-  // override after a successful save snaps the plan back to the old capacity until a reload.
-  const { save, isSaving } = useSaveAllTeamData({ onUpdate: onTeamDataSaved });
+  // `useSaveAllTeamData` runs `onUpdate` from `onSettled`, so it fires for a rejected write too, with
+  // the configuration that was never saved. Park it here and let only `onSuccess` hand it to the
+  // shell — otherwise a failed Commit leaves the shell deriving from a value storage never accepted.
+  const savedConfig = useRef<Partial<NormalizeIssueConfig> | undefined>(undefined);
+  const { save, isSaving } = useSaveAllTeamData({
+    onUpdate: (config) => {
+      savedConfig.current = config;
+    },
+  });
+  // Each row owns its own mutation but `savedUserAllTeamData` is a render-time snapshot, so two
+  // commits started before the first lands would each PUT the whole value and the later would win.
+  // Counted globally rather than latched in the provider, so nothing stays stuck if a row unmounts
+  // mid-write — and so a Teams-sidebar save blocks a commit too.
+  const isWritingTeamData = useIsMutating({ mutationKey: updateTeamConfigurationKeys.allTeamData }) > 0;
 
   const commit = useCallback(
     (team: string, hierarchyLevel: number, values: TeamCapacityOverride, options?: { onSuccess?: () => void }) => {
@@ -67,10 +81,19 @@ export const useTeamCommit = () => {
         return sanitizeAllTeamData(data, team, target, configuration);
       }, savedUserAllTeamData);
 
-      save(allTeamData, { onSuccess: options?.onSuccess });
+      save(allTeamData, {
+        onSuccess: () => {
+          // Before the caller's own handler: it drops the override, which re-derives from this base.
+          if (savedConfig.current) onTeamDataSaved?.(savedConfig.current);
+          options?.onSuccess?.();
+        },
+        onSettled: () => {
+          savedConfig.current = undefined;
+        },
+      });
     },
-    [save, savedUserAllTeamData],
+    [save, savedUserAllTeamData, onTeamDataSaved],
   );
 
-  return { commit, isSaving };
+  return { commit, isSaving, isBlocked: !isSaving && isWritingTeamData };
 };

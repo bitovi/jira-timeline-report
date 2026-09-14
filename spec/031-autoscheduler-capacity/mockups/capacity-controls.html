@@ -831,9 +831,11 @@
 
     <div class="note warn">
       <strong>Adding a track does not add capacity.</strong> <code>totalPointsPerDay</code> is unchanged by
-      <code>tracks</code>; only <code>pointsPerDayPerTrack</code> moves. Two tracks means each epic takes twice as long
-      and two run side by side. Tracks trade latency on one chain for parallelism across chains — they help a wide plan
-      and do nothing for a single dependency chain.
+      <code>tracks</code>; only <code>pointsPerDayPerTrack</code> moves. Two tracks means each <em>estimated</em> epic
+      takes twice as long and two run side by side. Tracks trade latency on one chain for parallelism across chains —
+      they help a wide plan and do nothing for a single dependency chain. Unestimated epics are the exception: their
+      default estimate is <code>velocity / tracks</code>, which divides by the same <code>tracks</code> that
+      <code>pointsPerDayPerTrack</code> does, so the two cancel and their duration is unchanged.
     </div>
 
     <h3>The tooltips that have to say so</h3>
@@ -843,10 +845,12 @@
         Parallel work streams inside this team. Each track works one epic at a time.
         <div style="margin-top: 6px" class="dim">
           Adding a track does <strong style="color: #fff">not</strong> add capacity. The team still delivers 2.1
-          points/day; each track now gets 1.05, so every epic takes about twice as long and two run at once.
+          points/day; each track now gets 1.05, so every <em>estimated</em> epic takes about twice as long and two run
+          at once.
         </div>
         <div style="margin-top: 6px" class="dim">
-          Epics with no estimate also shrink — their default estimate is capacity ÷ tracks.
+          Epics with <em>no</em> estimate are the exception: their default estimate is capacity ÷ tracks, which shrinks
+          by exactly the same factor as each track&rsquo;s throughput, so their duration does not move at all.
         </div>
       </div>
       <div class="tip">

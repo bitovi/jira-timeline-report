@@ -1,6 +1,7 @@
 import type { AllTeamData } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 
 import React, { Suspense } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -67,15 +68,20 @@ const renderProbe = (
   props: { hierarchyLevel?: number; onSuccess?: () => void; onTeamDataSaved?: () => void } = {},
 ) =>
   render(
-    <CapacityOverridesProvider onTeamDataSaved={props.onTeamDataSaved}>
-      <Suspense fallback="loading">
-        <Probe team={team} hierarchyLevel={props.hierarchyLevel} onSuccess={props.onSuccess} />
-      </Suspense>
-    </CapacityOverridesProvider>,
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <CapacityOverridesProvider onTeamDataSaved={props.onTeamDataSaved}>
+        <Suspense fallback="loading">
+          <Probe team={team} hierarchyLevel={props.hierarchyLevel} onSuccess={props.onSuccess} />
+        </Suspense>
+      </CapacityOverridesProvider>
+    </QueryClientProvider>,
   );
 
 const savedPayload = () => save.mock.calls[0][0] as AllTeamData;
-const saveOptions = () => save.mock.calls[0][1] as { onSuccess?: () => void };
+const saveOptions = () => save.mock.calls[0][1] as { onSuccess?: () => void; onSettled?: () => void };
+
+/** What `useSaveAllTeamData` hands back through `onUpdate` once a write settles — saved or not. */
+const settleWith = (config: unknown) => saveConfigs.at(-1)?.onUpdate?.(config);
 
 beforeEach(() => {
   save.mockClear();
@@ -157,11 +163,33 @@ describe('useTeamCommit', () => {
     expect(savedPayload().ORDER?.['9']).toEqual(savedUserAllTeamData.ORDER['9']);
   });
 
-  it("hands the mutation the provider's save-completed handler", () => {
+  it("refreshes the shell's base configuration once the write succeeds", async () => {
     const onTeamDataSaved = vi.fn();
     renderProbe('ORDER', { onTeamDataSaved });
+    await userEvent.click(screen.getByText('commit'));
 
-    expect(saveConfigs.at(-1)?.onUpdate).toBe(onTeamDataSaved);
+    const config = { getVelocity: () => 35 };
+    settleWith(config);
+
+    expect(onTeamDataSaved).not.toHaveBeenCalled();
+
+    saveOptions().onSuccess?.();
+
+    expect(onTeamDataSaved).toHaveBeenCalledWith(config);
+  });
+
+  // `onUpdate` fires from `onSettled`, so it also delivers the configuration of a rejected write.
+  // Letting that reach the shell leaves a value storage never accepted as the base a later Reset
+  // falls back to — the row goes clean while the failed capacity stays in the plan.
+  it("leaves the shell's base configuration alone when the write fails", async () => {
+    const onTeamDataSaved = vi.fn();
+    renderProbe('ORDER', { onTeamDataSaved });
+    await userEvent.click(screen.getByText('commit'));
+
+    settleWith({ getVelocity: () => 35 });
+    saveOptions().onSettled?.();
+
+    expect(onTeamDataSaved).not.toHaveBeenCalled();
   });
 
   it("runs the caller's onSuccess through the mutation rather than in the same tick", async () => {
