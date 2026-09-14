@@ -12,6 +12,7 @@ import type { GridUIData } from './AutoScheduler';
 
 import { IssueSimulationDays } from './IssueSimulationDays';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days';
+import { gridLayer } from './z-layers';
 
 function isFullSimulationResult(
   issue: MinimalSimulationIssueResult | SimulationIssueResult,
@@ -115,7 +116,7 @@ export const IssueSimulationRow: React.FC<{
           />
         )}
 
-        <div className="relative block py-0.5 z-30">
+        <div className="relative block py-0.5" style={{ zIndex: gridLayer.row }}>
           {!isFullSimulationResult(issue) ? (
             <div
               id={issue.linkedIssue.key}

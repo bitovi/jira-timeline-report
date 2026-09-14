@@ -38,6 +38,7 @@ import {
 } from './CriticalPathRail';
 import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
+import { gridLayer } from './z-layers';
 import { StorageProvider } from '../../services/storage';
 import { TeamCapacityInputs, TeamCapacityOutputs, useTeamIsDirty } from './components/TeamCapacityControls';
 
@@ -315,8 +316,9 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
           >
             {/* Background SVG Layer */}
             <div
-              className="relative z-1"
+              className="relative"
               style={{
+                zIndex: gridLayer.dependencies,
                 gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
                 gridRow: `2 / span ${gridData.rowsCount - 1}`,
               }}
@@ -342,10 +344,11 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                 <div
                   key={'time' + i}
                   style={{
+                    zIndex: gridLayer.dateHeader,
                     gridRow: `1 / span 1`,
                     gridColumn: `${1 + range.startDay} / span ${range.days}`,
                   }}
-                  className="border-neutral-30 border-solid border-x px-1 text-xs truncate sticky top-0 bg-white z-40"
+                  className="border-neutral-30 border-solid border-x px-1 text-xs truncate sticky top-0 bg-white"
                 >
                   {range.prettyStart}
                 </div>
@@ -383,11 +386,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
               <div className="text-base grow font-semibold">Summary</div>
             </div>
 
-            {/* `relative z-30` lifts this above the `#dependencies` SVG, which covers row 2 and would
-            otherwise swallow the hover that opens the spread tooltips. */}
+            {/* Lifted above the `#dependencies` SVG, which covers row 2 and would otherwise swallow
+            the hover that opens the spread tooltips. */}
             <div
-              className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2 relative z-30"
+              className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2 relative"
               style={{
+                zIndex: gridLayer.row,
                 gridRow: `2 / span 1`,
                 gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
               }}
@@ -511,11 +515,12 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
         <div className="text-base grow font-semibold">{team.team}</div>
       </div>
 
-      {/* `relative z-30` lifts the row above `#dependencies`, which would otherwise swallow every
-          click on the capacity read view and the stepper. */}
+      {/* Above `#dependencies`, which would otherwise swallow every click on the capacity read view
+          and the stepper, and above the rows below, which the open capacity editor overflows into. */}
       <div
-        className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex items-center justify-between gap-4 relative z-30"
+        className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex items-center justify-between gap-4 relative"
         style={{
+          zIndex: gridLayer.teamHeader,
           gridRow: `${team.style.gridRowStart} / span 1`,
           gridColumn: `2 / span ${gridNumberOfDays}`,
         }}
@@ -598,8 +603,9 @@ const SimulationData: React.FC<{
         </div>
       </div>
       <div
-        className="relative block py-1 z-30"
+        className="relative block py-1"
         style={{
+          zIndex: gridLayer.row,
           gridRow: `${gridRowStart} / span 1`,
           gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
         }}
