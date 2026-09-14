@@ -6,3 +6,12 @@ export type TeamCapacityOverride = {
 
 /** Keyed by the team key `getTeamKey` returns for an issue. */
 export type CapacityOverrides = Record<string, TeamCapacityOverride>;
+
+/** One team's scheduling inputs as saved — the baseline an override is measured against. */
+export type TeamCapacity = {
+  velocityPerSprint: number;
+  tracks: number;
+};
+
+/** Keyed by the team key `getTeamKey` returns for an issue. */
+export type SavedTeamCapacities = Record<string, TeamCapacity>;

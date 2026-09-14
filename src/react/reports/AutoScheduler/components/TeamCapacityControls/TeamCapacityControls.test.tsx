@@ -139,4 +139,25 @@ describe('TeamCapacityInputs', () => {
     expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
     expect(screen.getByText('1 track')).toBeInTheDocument();
   });
+
+  it('keeps the saved baseline when the report re-derives and remounts the row', async () => {
+    // A re-derive tears the whole grid down and rebuilds it, so the row loses any state of its own.
+    const harness = (mounted: boolean, velocityPerSprint: number) => (
+      <CapacityOverridesProvider>
+        {mounted && <TeamCapacityInputs teamName="ORDER" savedVelocityPerSprint={velocityPerSprint} savedTracks={1} />}
+      </CapacityOverridesProvider>
+    );
+
+    const { rerender } = render(harness(true, 21));
+
+    await setCapacity('35');
+
+    rerender(harness(false, 21));
+    rerender(harness(true, 35));
+
+    await setCapacity('21');
+
+    expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
+  });
 });

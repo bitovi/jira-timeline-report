@@ -6,15 +6,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { CapacityOverridesProvider, useCapacityOverrides } from './CapacityOverridesProvider';
 
 const Probe = () => {
-  const { overrides, setTeamOverride, clearTeamOverride } = useCapacityOverrides();
+  const { overrides, savedCapacity, setTeamOverride, clearTeamOverride, rememberSavedCapacity, commitSavedCapacity } =
+    useCapacityOverrides();
 
   return (
     <div>
       <output>{JSON.stringify(overrides)}</output>
+      <pre data-testid="saved">{JSON.stringify(savedCapacity)}</pre>
       <button onClick={() => setTeamOverride('ORDER', { velocityPerSprint: 35 })}>set capacity</button>
       <button onClick={() => setTeamOverride('ORDER', { tracks: 2 })}>set tracks</button>
       <button onClick={() => setTeamOverride('ORDER', { velocityPerSprint: undefined })}>unset capacity</button>
       <button onClick={() => clearTeamOverride('ORDER')}>clear</button>
+      <button onClick={() => rememberSavedCapacity('ORDER', { velocityPerSprint: 21, tracks: 1 })}>remember 21</button>
+      <button onClick={() => rememberSavedCapacity('ORDER', { velocityPerSprint: 35, tracks: 2 })}>remember 35</button>
+      <button onClick={() => commitSavedCapacity('ORDER', { velocityPerSprint: 35, tracks: 2 })}>commit 35</button>
     </div>
   );
 };
@@ -25,6 +30,8 @@ const renderProbe = () =>
       <Probe />
     </CapacityOverridesProvider>,
   );
+
+const savedCapacity = () => screen.getByTestId('saved');
 
 describe('CapacityOverridesProvider', () => {
   it('starts with no overrides', () => {
@@ -78,6 +85,30 @@ describe('CapacityOverridesProvider', () => {
     );
 
     expect(screen.getByRole('status')).toHaveTextContent('function');
+  });
+
+  it('records a saved baseline for a team', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByText('remember 21'));
+    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"velocityPerSprint":21,"tracks":1}}');
+  });
+
+  it('ignores a baseline offered while the team is overridden, since it would be the override itself', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByText('remember 21'));
+    await userEvent.click(screen.getByText('set capacity'));
+    await userEvent.click(screen.getByText('remember 35'));
+    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"velocityPerSprint":21,"tracks":1}}');
+  });
+
+  it('moves the baseline to the committed values and drops the override', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByText('remember 21'));
+    await userEvent.click(screen.getByText('set capacity'));
+    await userEvent.click(screen.getByText('commit 35'));
+
+    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"velocityPerSprint":35,"tracks":2}}');
+    expect(screen.getByRole('status')).toHaveTextContent('{}');
   });
 
   it('throws when used outside its provider', () => {

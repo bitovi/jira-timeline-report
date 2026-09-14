@@ -1,6 +1,7 @@
 import type { FC } from 'react';
+import type { TeamCapacity } from '../../../../services/capacity-overrides';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import Tooltip from '@atlaskit/tooltip';
 
 import { useCapacityOverrides } from '../../../../services/capacity-overrides';
@@ -37,13 +38,20 @@ const buttonClasses =
  * and the output columns never shift.
  */
 export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({ teamName, savedVelocityPerSprint, savedTracks }) => {
-  const { overrides, setTeamOverride, clearTeamOverride } = useCapacityOverrides();
+  const { overrides, savedCapacity, setTeamOverride, clearTeamOverride, rememberSavedCapacity, commitSavedCapacity } =
+    useCapacityOverrides();
   const { commit, isSaving } = useTeamCommit();
 
   const override = overrides[teamName] ?? {};
   const isDirty = useTeamIsDirty(teamName);
 
-  const [saved, setSaved] = useSavedCapacity(savedVelocityPerSprint, savedTracks, isDirty);
+  // The values passed in come from the derived pipeline, so they are the saved ones only until an
+  // override lands. The provider keeps the baseline — this row is remounted on every re-derive.
+  useEffect(() => {
+    rememberSavedCapacity(teamName, { velocityPerSprint: savedVelocityPerSprint, tracks: savedTracks });
+  }, [rememberSavedCapacity, teamName, savedVelocityPerSprint, savedTracks]);
+
+  const saved = savedCapacity[teamName] ?? { velocityPerSprint: savedVelocityPerSprint, tracks: savedTracks };
 
   const velocityPerSprint = override.velocityPerSprint ?? saved.velocityPerSprint;
   const tracks = override.tracks ?? saved.tracks;
@@ -87,10 +95,7 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({ teamName, save
               // Only on success: a failed write rolls the save back, and dropping the override here
               // would throw the what-if away with nothing saved in its place.
               commit(teamName, override, {
-                onSuccess: () => {
-                  setSaved({ velocityPerSprint, tracks });
-                  clearTeamOverride(teamName);
-                },
+                onSuccess: () => commitSavedCapacity(teamName, { velocityPerSprint, tracks }),
               });
             }}
           >
@@ -101,37 +106,6 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({ teamName, save
     </span>
   );
 };
-
-interface TeamCapacity {
-  velocityPerSprint: number;
-  tracks: number;
-}
-
-/**
- * The team's values as saved. The effective values passed in come from the derived pipeline, which
- * rewrites them to the overridden numbers once an override lands — so they are only a usable baseline
- * until the first override. After that the baseline moves only when a commit writes a new one.
- */
-function useSavedCapacity(effectiveVelocityPerSprint: number, effectiveTracks: number, isDirty: boolean) {
-  const [saved, setSaved] = useState<TeamCapacity>({
-    velocityPerSprint: effectiveVelocityPerSprint,
-    tracks: effectiveTracks,
-  });
-  const hasBeenOverridden = useRef(false);
-
-  useEffect(() => {
-    if (isDirty) {
-      hasBeenOverridden.current = true;
-      return;
-    }
-
-    if (hasBeenOverridden.current) return;
-
-    setSaved({ velocityPerSprint: effectiveVelocityPerSprint, tracks: effectiveTracks });
-  }, [isDirty, effectiveVelocityPerSprint, effectiveTracks]);
-
-  return [saved, setSaved] as const;
-}
 
 interface TeamCapacityOutputsProps {
   pointsPerDay: number;
