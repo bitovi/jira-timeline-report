@@ -1,11 +1,11 @@
-import type { FC, ComponentType, MutableRefObject } from 'react';
+import type { FC, ComponentType } from 'react';
 import type { CanObservable } from '../hooks/useCanObservable';
 import type { AppStorage } from '../../jira/storage/common';
 import type { LinkBuilderFactory } from '../../routing/common';
 import type { ReportLoadingState } from './hooks/useReportLoadingState';
 import type { NormalizeIssueConfig } from '../../jira/normalized/normalize';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { value, queues } from '../../can';
@@ -34,11 +34,8 @@ import PrintHeader from '../PrintHeader';
 import { reportComponents } from '../reports/shellRegistry';
 import { propsFor } from '../reports/reportProps';
 import { ReportLayoutProvider } from '../services/report-layout';
-import {
-  CapacityOverridesProvider,
-  applyCapacityOverrides,
-  useCapacityOverrides,
-} from '../services/capacity-overrides';
+import { CapacityOverridesProvider } from '../services/capacity-overrides';
+import { CapacityOverrideApplier } from './components/CapacityOverrideApplier';
 
 // Reports that own their own data instead of consuming the shell's single JQL-driven request.
 const SELF_MANAGED_REPORT_TYPES = new Set(['report-of-reports']);
@@ -52,10 +49,6 @@ const REPORT_TYPES_FILLING_HEIGHT = new Set(['auto-scheduler']);
 // reports.ts`, so anything outside this list is a key no build of this app ever had — or no longer
 // has. See unsupportedReportType.ts.
 const KNOWN_REPORT_TYPES = Object.keys(reportComponents);
-
-// Long enough that clicking the track stepper three times is one simulation, short enough that a
-// single edit still feels immediate.
-const CAPACITY_OVERRIDE_DEBOUNCE_MS = 300;
 
 // The `routeData` default export carries placeholder (.js) types; cast the observables/props we
 // read off it, mirroring the pattern in SelectCloudWrapper.tsx.
@@ -147,8 +140,11 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   // The last team configuration as saved, before any what-if override is layered on. Kept so an
   // override can be recomputed from a clean base instead of wrapping an already-wrapped config.
   const baseNormalizeOptionsRef = useRef<Partial<NormalizeIssueConfig> | null>(null);
+  // Bumped alongside the ref: a live override has to be re-wrapped onto the new base, or the save
+  // silently drops it from the pipeline while the row still reads dirty.
+  const [baseNormalizeOptionsVersion, setBaseNormalizeOptionsVersion] = useState(0);
 
-  const onUpdateTeamsConfiguration = ({ fields, ...configuration }: any) => {
+  const onUpdateTeamsConfiguration = useCallback(({ fields, ...configuration }: any) => {
     // A save that could not derive its config passes `{}` (see useSaveAllTeamData's guards), so
     // `fields` is undefined. Writing that through clears `fieldsToRequest`, which makes
     // `getRawIssues` return undefined and leaves the report on `derivedIssuesPromise`'s
@@ -166,12 +162,18 @@ export const TimelineReport: FC<TimelineReportProps> = ({
     }
 
     baseNormalizeOptionsRef.current = configuration;
+    setBaseNormalizeOptionsVersion((version) => version + 1);
 
     queues.batch.start();
     rd.fieldsToRequest = fields;
     rd.normalizeOptions = configuration;
     queues.batch.stop();
-  };
+  }, []);
+
+  const readNormalizeOptions = useCallback(() => rd.normalizeOptions as Partial<NormalizeIssueConfig> | undefined, []);
+  const writeNormalizeOptions = useCallback((config: Partial<NormalizeIssueConfig>) => {
+    rd.normalizeOptions = config;
+  }, []);
 
   // The report type the config actually asked for, when this build cannot render it. Derived through
   // a CanJS observation rather than a `useQueryParams` subscription so the shell re-renders only when
@@ -198,8 +200,13 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
-    <CapacityOverridesProvider>
-      <CapacityOverrideApplier baseRef={baseNormalizeOptionsRef} />
+    <CapacityOverridesProvider onTeamDataSaved={onUpdateTeamsConfiguration}>
+      <CapacityOverrideApplier
+        baseRef={baseNormalizeOptionsRef}
+        baseVersion={baseNormalizeOptionsVersion}
+        readNormalizeOptions={readNormalizeOptions}
+        writeNormalizeOptions={writeNormalizeOptions}
+      />
       {/* Holds the report-of-reports document tree. Mounted here because its consumers are sibling
           subtrees: the report body below renders it, and SaveReports persists it (spec/016 Phase 3). */}
       <ReportLayoutProvider savedReport={openReport}>
@@ -310,35 +317,6 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 };
 
 export default TimelineReport;
-
-/**
- * Re-derives the whole pipeline when a what-if capacity override changes. Overrides deliberately do
- * not travel through the URL: `AutoScheduler` keeps the previous `primaryIssuesOrReleases` array
- * whenever the issue objects are identical, so a URL-only change would be swallowed. Going through
- * `normalizeOptions` produces genuinely new issue objects, which is what restarts the simulation.
- */
-const CapacityOverrideApplier: FC<{ baseRef: MutableRefObject<Partial<NormalizeIssueConfig> | null> }> = ({
-  baseRef,
-}) => {
-  const { overrides } = useCapacityOverrides();
-
-  useEffect(() => {
-    // Each assignment re-runs normalize → derive → rollup and restarts the Monte Carlo, so coalesce
-    // a burst of stepper clicks into one run.
-    const timer = setTimeout(() => {
-      // Seed from whatever the route-data promise chain resolved, the first time an override lands.
-      const base = baseRef.current ?? rd.normalizeOptions;
-      if (!base) return;
-      baseRef.current = base;
-
-      rd.normalizeOptions = applyCapacityOverrides(base, overrides);
-    }, CAPACITY_OVERRIDE_DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [overrides, baseRef]);
-
-  return null;
-};
 
 function getElementPosition(el: Element | null) {
   const rect = el?.getBoundingClientRect();

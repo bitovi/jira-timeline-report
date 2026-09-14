@@ -36,7 +36,12 @@ vi.mock('../../hooks/useUncertaintyWeight/useUncertaintyWeight.js', () => ({
 vi.mock('./components/TeamCapacityControls/useTeamCommit', () => ({
   useTeamCommit: () => ({ commit: vi.fn(), isSaving: false }),
 }));
-vi.mock('../../services/storage', () => ({ StorageProvider: ({ children }: { children: ReactNode }) => children }));
+// `routeData.storage` is undefined here, so only the provider is stubbed — the rest of the module
+// stays real, since replacing it wholesale would undefine `useStorage` for anything reaching for it.
+vi.mock('../../services/storage', async () => ({
+  ...(await vi.importActual<typeof import('../../services/storage')>('../../services/storage')),
+  StorageProvider: ({ children }: { children: ReactNode }) => children,
+}));
 
 const ROUTES = [
   { keys: ['STORE-17', 'ORDER-23'], count: 60 },

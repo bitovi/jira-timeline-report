@@ -10,6 +10,7 @@ import type { CriticalPathSelection } from './CriticalPathRail';
 
 import React, { FC, Suspense, useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from '@sentry/react';
 import { FlagsProvider } from '@atlaskit/flag';
 import Tooltip from '@atlaskit/tooltip';
 import SectionMessage from '@atlaskit/section-message';
@@ -520,14 +521,17 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
         }}
       >
         {/* Scoped tightly to the inputs: `useTeamCommit` suspends on the team-configuration and
-            field queries, and a boundary any higher would unmount the running simulation. */}
-        <Suspense fallback={<span className="inline-flex h-[22px]" />}>
-          <TeamCapacityInputs
-            teamName={team.team}
-            savedVelocityPerSprint={team.teamData.velocity}
-            savedTracks={team.teamData.parallelWorkLimit}
-          />
-        </Suspense>
+            field queries, and a boundary any higher would unmount the running simulation. A failed
+            query degrades the row to its read-only half rather than taking the report down. */}
+        <ErrorBoundary fallback={() => <></>}>
+          <Suspense fallback={<span className="inline-flex h-[22px]" />}>
+            <TeamCapacityInputs
+              teamName={team.team}
+              savedVelocityPerSprint={team.teamData.velocity}
+              savedTracks={team.teamData.parallelWorkLimit}
+            />
+          </Suspense>
+        </ErrorBoundary>
         <TeamCapacityOutputs
           pointsPerDay={team.teamData.totalPointsPerDay}
           totalWorkingDays={totalWorkingDays(team) / team.teamData.parallelWorkLimit}

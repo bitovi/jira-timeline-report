@@ -43,4 +43,9 @@ describe('TrackStepper', () => {
     render(<TrackStepper value={99} onChange={vi.fn()} />);
     expect(screen.getByRole('button', { name: /add a parallel work track/i })).toBeEnabled();
   });
+
+  it('announces the count, so stepping is audible to a screen reader', () => {
+    render(<TrackStepper value={2} onChange={vi.fn()} />);
+    expect(screen.getByText('2 tracks')).toHaveAttribute('aria-live', 'polite');
+  });
 });

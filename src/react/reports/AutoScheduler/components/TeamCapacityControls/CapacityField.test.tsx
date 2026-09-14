@@ -52,4 +52,15 @@ describe('CapacityField', () => {
 
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('rejects a capacity that parses to Infinity', async () => {
+    const onChange = vi.fn();
+    render(<CapacityField value={21} onChange={onChange} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /21 points per sprint/i }));
+    await userEvent.clear(screen.getByRole('spinbutton'));
+    await userEvent.type(screen.getByRole('spinbutton'), '1e999{Enter}');
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

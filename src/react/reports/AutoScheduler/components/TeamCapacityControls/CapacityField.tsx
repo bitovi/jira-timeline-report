@@ -26,18 +26,24 @@ export const CapacityField: FC<CapacityFieldProps> = ({ value, onChange }) => {
         onEdit={() => setIsEditing(true)}
         defaultValue={String(value)}
         editButtonLabel={`Capacity, ${value} points per sprint`}
-        validate={(next) => (Number(next) > 0 ? undefined : 'Enter a number greater than 0')}
+        // `Number('1e999')` is `Infinity`, which survives `> 0` and then `JSON.stringify`s to `null` —
+        // a committed capacity that reads as unset.
+        validate={(next) => (isCapacity(Number(next)) ? undefined : 'Enter a number greater than 0')}
         onConfirm={(next) => {
           setIsEditing(false);
           const parsed = Number(next);
-          if (parsed > 0 && parsed !== value) onChange(parsed);
+          if (isCapacity(parsed) && parsed !== value) onChange(parsed);
         }}
         onCancel={() => setIsEditing(false)}
         editView={({ errorMessage, ...fieldProps }) => (
-          <Textfield {...fieldProps} type="number" min={1} autoFocus width={72} />
+          <Textfield {...fieldProps} type="number" min={0} autoFocus width={72} />
         )}
         readView={() => <span className="font-semibold tabular-nums">{value}</span>}
       />
     </div>
   );
 };
+
+function isCapacity(parsed: number) {
+  return Number.isFinite(parsed) && parsed > 0;
+}

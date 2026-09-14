@@ -28,7 +28,10 @@ export const TrackStepper: FC<TrackStepperProps> = ({ value, onChange }) => (
     >
       −
     </button>
-    <span className="inline-flex min-w-[56px] items-center justify-center whitespace-nowrap border-x border-neutral-30 px-1 text-[11px] font-semibold text-slate-600">
+    <span
+      aria-live="polite"
+      className="inline-flex min-w-[56px] items-center justify-center whitespace-nowrap border-x border-neutral-30 px-1 text-[11px] font-semibold text-slate-600"
+    >
       {value} {value === 1 ? 'track' : 'tracks'}
     </span>
     {/* No upper bound: how many streams a team runs is a fact about the team, not ours to cap. */}
