@@ -8,6 +8,11 @@ export const gridLayer = {
   dependencies: 1,
   /** Epic bars, their day columns, and the summary metrics. */
   row: 30,
+  /**
+   * The team header's opaque band. Above the arrows so they stop at the row rather than striking
+   * through its labels, which have no background of their own to hide behind.
+   */
+  teamHeaderBackground: 34,
   /** Team headers, whose editable controls overflow downward across the rows beneath them. */
   teamHeader: 35,
   /** The date scale, which stays legible over rows scrolled under it. */

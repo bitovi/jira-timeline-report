@@ -501,8 +501,9 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
       <div
         data-team-row={team.team}
         data-dirty={isDirty}
-        className={`pt-2 pb-1 ${isDirty ? 'bg-[#fff3eb] shadow-[inset_3px_0_0_#b65c02]' : 'bg-neutral-20'}`}
+        className={`relative pt-2 pb-1 ${isDirty ? 'bg-[#fff3eb] shadow-[inset_3px_0_0_#b65c02]' : 'bg-neutral-20'}`}
         style={{
+          zIndex: gridLayer.teamHeaderBackground,
           gridRow: `${team.style.gridRowStart} / span 1`,
           gridColumn: `1 / span ${gridNumberOfDays + 1}`,
         }}
@@ -510,7 +511,7 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
 
       <div
         className={`pl-2 pt-2 pb-1 pr-1 flex sticky top-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
-        style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
+        style={{ zIndex: gridLayer.teamHeader, gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
       >
         <div className="text-base grow font-semibold">{team.team}</div>
       </div>
