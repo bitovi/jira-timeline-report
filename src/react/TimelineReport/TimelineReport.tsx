@@ -1,10 +1,11 @@
-import type { FC, ComponentType } from 'react';
+import type { FC, ComponentType, MutableRefObject } from 'react';
 import type { CanObservable } from '../hooks/useCanObservable';
 import type { AppStorage } from '../../jira/storage/common';
 import type { LinkBuilderFactory } from '../../routing/common';
 import type { ReportLoadingState } from './hooks/useReportLoadingState';
+import type { NormalizeIssueConfig } from '../../jira/normalized/normalize';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { value, queues } from '../../can';
@@ -33,6 +34,11 @@ import PrintHeader from '../PrintHeader';
 import { reportComponents } from '../reports/shellRegistry';
 import { propsFor } from '../reports/reportProps';
 import { ReportLayoutProvider } from '../services/report-layout';
+import {
+  CapacityOverridesProvider,
+  applyCapacityOverrides,
+  useCapacityOverrides,
+} from '../services/capacity-overrides';
 
 // Reports that own their own data instead of consuming the shell's single JQL-driven request.
 const SELF_MANAGED_REPORT_TYPES = new Set(['report-of-reports']);
@@ -46,6 +52,10 @@ const REPORT_TYPES_FILLING_HEIGHT = new Set(['auto-scheduler']);
 // reports.ts`, so anything outside this list is a key no build of this app ever had — or no longer
 // has. See unsupportedReportType.ts.
 const KNOWN_REPORT_TYPES = Object.keys(reportComponents);
+
+// Long enough that clicking the track stepper three times is one simulation, short enough that a
+// single edit still feels immediate.
+const CAPACITY_OVERRIDE_DEBOUNCE_MS = 300;
 
 // The `routeData` default export carries placeholder (.js) types; cast the observables/props we
 // read off it, mirroring the pattern in SelectCloudWrapper.tsx.
@@ -134,6 +144,10 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   // `routeData`; embedded children build the same bag from their own config (spec/016 Phase 2).
   const baseProps = useMemo(() => propsFor(vm, routeData), [vm]);
 
+  // The last team configuration as saved, before any what-if override is layered on. Kept so an
+  // override can be recomputed from a clean base instead of wrapping an already-wrapped config.
+  const baseNormalizeOptionsRef = useRef<Partial<NormalizeIssueConfig> | null>(null);
+
   const onUpdateTeamsConfiguration = ({ fields, ...configuration }: any) => {
     // A save that could not derive its config passes `{}` (see useSaveAllTeamData's guards), so
     // `fields` is undefined. Writing that through clears `fieldsToRequest`, which makes
@@ -150,6 +164,8 @@ export const TimelineReport: FC<TimelineReportProps> = ({
       );
       return;
     }
+
+    baseNormalizeOptionsRef.current = configuration;
 
     queues.batch.start();
     rd.fieldsToRequest = fields;
@@ -182,115 +198,147 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
-    // Holds the report-of-reports document tree. Mounted here because its consumers are sibling
-    // subtrees: the report body below renders it, and SaveReports persists it (spec/016 Phase 3).
-    <ReportLayoutProvider savedReport={openReport}>
-      {showingConfiguration && (
-        <div
-          id="timeline-configuration"
-          className="app-chrome-hidden border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0"
-        >
-          <SettingsSidebar
-            showSidebarBranding={showSidebarBranding}
-            linkBuilder={linkBuilder}
-            onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
-          />
-        </div>
-      )}
+    <CapacityOverridesProvider>
+      <CapacityOverrideApplier baseRef={baseNormalizeOptionsRef} />
+      {/* Holds the report-of-reports document tree. Mounted here because its consumers are sibling
+          subtrees: the report body below renders it, and SaveReports persists it (spec/016 Phase 3). */}
+      <ReportLayoutProvider savedReport={openReport}>
+        {showingConfiguration && (
+          <div
+            id="timeline-configuration"
+            className="app-chrome-hidden border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0"
+          >
+            <SettingsSidebar
+              showSidebarBranding={showSidebarBranding}
+              linkBuilder={linkBuilder}
+              onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
+            />
+          </div>
+        )}
 
-      <div className="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
-        <div id="view-reports" className="app-chrome-hidden">
-          <ViewReports
-            onBackButtonClicked={() => {
-              rd.showSettings = '';
-            }}
-          />
-        </div>
+        <div className="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
+          <div id="view-reports" className="app-chrome-hidden">
+            <ViewReports
+              onBackButtonClicked={() => {
+                rd.showSettings = '';
+              }}
+            />
+          </div>
 
-        <div id="sample-data-notice" className="app-chrome-hidden pt-4">
-          <SampleDataNotice
-            shouldHideNoticeObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
-            onLoginClicked={() => loginComponent.login()}
-          />
-        </div>
+          <div id="sample-data-notice" className="app-chrome-hidden pt-4">
+            <SampleDataNotice
+              shouldHideNoticeObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
+              onLoginClicked={() => loginComponent.login()}
+            />
+          </div>
 
-        <div id="saved-reports" className="py-4">
-          <SavedReports
-            queryParamObservable={pushStateObservable as unknown as CanObservable<string>}
-            storage={storage}
-            linkBuilder={linkBuilder}
-            shouldShowReportsObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
-            onViewReportsButtonClicked={() => {
-              rd.showSettings = 'REPORTS';
-            }}
-          />
-        </div>
+          <div id="saved-reports" className="py-4">
+            <SavedReports
+              queryParamObservable={pushStateObservable as unknown as CanObservable<string>}
+              storage={storage}
+              linkBuilder={linkBuilder}
+              shouldShowReportsObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
+              onViewReportsButtonClicked={() => {
+                rd.showSettings = 'REPORTS';
+              }}
+            />
+          </div>
 
-        <div id="report-controls" className="app-chrome-hidden flex gap-1">
-          {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
+          <div id="report-controls" className="app-chrome-hidden flex gap-1">
+            {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
               that fetch Jira data — e.g. the Table report's TableReportControls calling
               useJiraIssueFields — work here too. queryClient is a shared singleton, so the fields
               query is deduped with the body rather than fetched twice. */}
-          <QueryClientProvider client={queryClient}>
-            <JiraProvider jira={rd.jiraHelpers}>
-              <ReportControlsAny
-                rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs}
-                primaryIssuesOrReleasesObs={baseProps.primaryIssuesOrReleasesObs}
-              />
-            </JiraProvider>
-          </QueryClientProvider>
-        </div>
-
-        <ReportArea
-          loadingState={loadingState}
-          isLoggedIn={isLoggedIn}
-          jql={jql}
-          primaryIssueType={primaryIssueType}
-          primaryIssuesCount={primaryIssuesOrReleases.length}
-          selfManagesData={SELF_MANAGED_REPORT_TYPES.has(primaryReportType)}
-          unsupportedReportType={deadReportType}
-          fillsHeight={fillsHeight}
-        >
-          <div id="print-header">
-            <PrintHeader />
+            <QueryClientProvider client={queryClient}>
+              <JiraProvider jira={rd.jiraHelpers}>
+                <ReportControlsAny
+                  rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs}
+                  primaryIssuesOrReleasesObs={baseProps.primaryIssuesOrReleasesObs}
+                />
+              </JiraProvider>
+            </QueryClientProvider>
           </div>
 
-          {PrimaryReport && (
-            // `mb-10`, only when the sticky footer below actually needs the clearance — see
-            // `reportNeedsFooterClearance`'s own doc comment. Lives here rather than on each report
-            // component so GanttGrid/ScatterTimeline/TableReport don't each carry their own copy of a
-            // margin that, for two of the three, isn't protecting against anything.
-            //
-            // `min-h-0` is load-bearing for the fill-height branch: a flex item's automatic minimum
-            // size is its content, so without it the container grows past the viewport and the
-            // report scrolls the page again instead of scrolling itself.
-            <div
-              id="react-report-container"
-              className={[
-                reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : '',
-                fillsHeight ? 'flex min-h-0 flex-1 flex-col' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <QueryClientProvider client={queryClient}>
-                <JiraProvider jira={rd.jiraHelpers}>
-                  <PrimaryReport key={primaryReportType} {...baseProps} />
-                </JiraProvider>
-              </QueryClientProvider>
+          <ReportArea
+            loadingState={loadingState}
+            isLoggedIn={isLoggedIn}
+            jql={jql}
+            primaryIssueType={primaryIssueType}
+            primaryIssuesCount={primaryIssuesOrReleases.length}
+            selfManagesData={SELF_MANAGED_REPORT_TYPES.has(primaryReportType)}
+            unsupportedReportType={deadReportType}
+            fillsHeight={fillsHeight}
+          >
+            <div id="print-header">
+              <PrintHeader />
             </div>
-          )}
 
-          <div id="report-footer" className="sticky bottom-0 z-40">
-            <ReportFooter />
-          </div>
-        </ReportArea>
-      </div>
-    </ReportLayoutProvider>
+            {PrimaryReport && (
+              // `mb-10`, only when the sticky footer below actually needs the clearance — see
+              // `reportNeedsFooterClearance`'s own doc comment. Lives here rather than on each report
+              // component so GanttGrid/ScatterTimeline/TableReport don't each carry their own copy of a
+              // margin that, for two of the three, isn't protecting against anything.
+              //
+              // `min-h-0` is load-bearing for the fill-height branch: a flex item's automatic minimum
+              // size is its content, so without it the container grows past the viewport and the
+              // report scrolls the page again instead of scrolling itself.
+              <div
+                id="react-report-container"
+                className={[
+                  reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : '',
+                  fillsHeight ? 'flex min-h-0 flex-1 flex-col' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <QueryClientProvider client={queryClient}>
+                  <JiraProvider jira={rd.jiraHelpers}>
+                    <PrimaryReport key={primaryReportType} {...baseProps} />
+                  </JiraProvider>
+                </QueryClientProvider>
+              </div>
+            )}
+
+            <div id="report-footer" className="sticky bottom-0 z-40">
+              <ReportFooter />
+            </div>
+          </ReportArea>
+        </div>
+      </ReportLayoutProvider>
+    </CapacityOverridesProvider>
   );
 };
 
 export default TimelineReport;
+
+/**
+ * Re-derives the whole pipeline when a what-if capacity override changes. Overrides deliberately do
+ * not travel through the URL: `AutoScheduler` keeps the previous `primaryIssuesOrReleases` array
+ * whenever the issue objects are identical, so a URL-only change would be swallowed. Going through
+ * `normalizeOptions` produces genuinely new issue objects, which is what restarts the simulation.
+ */
+const CapacityOverrideApplier: FC<{ baseRef: MutableRefObject<Partial<NormalizeIssueConfig> | null> }> = ({
+  baseRef,
+}) => {
+  const { overrides } = useCapacityOverrides();
+
+  useEffect(() => {
+    // Each assignment re-runs normalize → derive → rollup and restarts the Monte Carlo, so coalesce
+    // a burst of stepper clicks into one run.
+    const timer = setTimeout(() => {
+      // Seed from whatever the route-data promise chain resolved, the first time an override lands.
+      const base = baseRef.current ?? rd.normalizeOptions;
+      if (!base) return;
+      baseRef.current = base;
+
+      rd.normalizeOptions = applyCapacityOverrides(base, overrides);
+    }, CAPACITY_OVERRIDE_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [overrides, baseRef]);
+
+  return null;
+};
 
 function getElementPosition(el: Element | null) {
   const rect = el?.getBoundingClientRect();
