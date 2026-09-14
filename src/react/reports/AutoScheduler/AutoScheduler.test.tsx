@@ -98,6 +98,7 @@ const UI_DATA = {
         velocity: 21,
         daysPerSprint: 10,
       },
+      hierarchyLevel: 7,
       tracks: [EPICS.map((key, i) => issueResult(key, 10 - i))],
     },
   ],

@@ -532,6 +532,7 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
           <Suspense fallback={<span className="inline-flex h-[22px]" />}>
             <TeamCapacityInputs
               teamName={team.team}
+              hierarchyLevel={team.hierarchyLevel}
               savedVelocityPerSprint={team.teamData.velocity}
               savedTracks={team.teamData.parallelWorkLimit}
             />

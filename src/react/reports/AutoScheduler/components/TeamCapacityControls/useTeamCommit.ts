@@ -2,7 +2,6 @@ import type { TeamCapacityOverride } from '../../../../services/capacity-overrid
 import type {
   AllTeamData,
   Configuration,
-  TeamConfiguration,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 
 import { useCallback } from 'react';
@@ -24,8 +23,11 @@ type CapacityField = (typeof CAPACITY_FIELDS)[number];
  * Writes a team's what-if capacity and tracks through to saved team settings, using the same
  * mutation the Teams sidebar uses.
  *
- * Targets the team's `defaults` rather than a specific hierarchy level: the Auto-Scheduler shows one
- * capacity per team, and `applyInheritance` propagates `defaults` down to every level.
+ * Writes each field to wherever the team's own saved data already holds it: the scheduled hierarchy
+ * level if the team set it there, otherwise the team's `defaults` — which is also where a value
+ * inherited from `__GLOBAL__` lands, so one team's commit never changes another team's capacity.
+ * The two fields can target different levels, so a commit may touch both; nothing is ever removed
+ * from a level it is not targeting.
  *
  * Uses `useSaveAllTeamData` rather than `useSaveTeamData`: the latter closes over its `teamName` at
  * render time, so a row that names its team and commits in the same tick would save the team named
@@ -40,47 +42,35 @@ export const useTeamCommit = () => {
   const { save, isSaving } = useSaveAllTeamData({ onUpdate: onTeamDataSaved });
 
   const commit = useCallback(
-    (team: string, values: TeamCapacityOverride, options?: { onSuccess?: () => void }) => {
-      const saved = savedUserAllTeamData[team]?.defaults ?? createEmptyConfiguration();
+    (team: string, hierarchyLevel: number, values: TeamCapacityOverride, options?: { onSuccess?: () => void }) => {
+      // The issue carries a number; `AllTeamData` keys its levels as numeric strings.
+      const level = String(hierarchyLevel);
+      const savedTeamData = savedUserAllTeamData[team];
       const changed = CAPACITY_FIELDS.filter((field) => values[field] !== undefined);
 
-      const configuration: Configuration = {
-        ...saved,
-        ...Object.fromEntries(changed.map((field) => [field, values[field]])),
-      };
+      const fieldsByTargetLevel = changed.reduce<Record<string, CapacityField[]>>((byLevel, field) => {
+        const target = savedTeamData?.[level]?.[field] != null ? level : 'defaults';
 
-      const allTeamData = clearLevelSpecificValues(savedUserAllTeamData, team, changed);
+        return { ...byLevel, [target]: [...(byLevel[target] ?? []), field] };
+      }, {});
 
-      save(sanitizeAllTeamData(allTeamData, team, 'defaults', configuration), { onSuccess: options?.onSuccess });
+      // One pass per target level: `createUpdatedTeamData` replaces a level wholesale, so each pass
+      // merges onto what that level already holds and feeds its result to the next.
+      const allTeamData = Object.entries(fieldsByTargetLevel).reduce<AllTeamData>((data, [target, fields]) => {
+        const saved = data[team]?.[target] ?? createEmptyConfiguration();
+
+        const configuration: Configuration = {
+          ...saved,
+          ...Object.fromEntries(fields.map((field) => [field, values[field]])),
+        };
+
+        return sanitizeAllTeamData(data, team, target, configuration);
+      }, savedUserAllTeamData);
+
+      save(allTeamData, { onSuccess: options?.onSuccess });
     },
     [save, savedUserAllTeamData],
   );
 
   return { commit, isSaving };
 };
-
-/**
- * `createNormalizeConfiguration` resolves `allData[team][hierarchyLevel]` after inheritance, so a
- * value set from the Teams sidebar's per-level panel out-ranks the `defaults` a commit writes and
- * would make the commit a silent no-op.
- */
-function clearLevelSpecificValues(
-  allTeamData: AllTeamData,
-  team: string,
-  fields: ReadonlyArray<CapacityField>,
-): AllTeamData {
-  const teamConfiguration = allTeamData[team];
-
-  if (!teamConfiguration || fields.length === 0) return allTeamData;
-
-  const cleared = Object.fromEntries(
-    Object.entries(teamConfiguration).map(([level, configuration]) => {
-      if (level === 'defaults' || !configuration) return [level, configuration];
-
-      // `sanitizeAllTeamData` strips nulls, so this removes the value rather than storing a null.
-      return [level, { ...configuration, ...Object.fromEntries(fields.map((field) => [field, null])) }];
-    }),
-  ) as TeamConfiguration;
-
-  return { ...allTeamData, [team]: cleared };
-}

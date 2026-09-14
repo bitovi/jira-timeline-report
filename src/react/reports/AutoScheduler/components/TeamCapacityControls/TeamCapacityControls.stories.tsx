@@ -16,7 +16,7 @@ const Row = () => (
   <div className="flex max-w-[1080px] items-center justify-between bg-neutral-20 px-2 py-1.5 text-xs text-slate-600">
     <span className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
       ORDER
-      <TeamCapacityInputs teamName="ORDER" savedVelocityPerSprint={21} savedTracks={1} />
+      <TeamCapacityInputs teamName="ORDER" hierarchyLevel={7} savedVelocityPerSprint={21} savedTracks={1} />
     </span>
     <TeamCapacityOutputs pointsPerDay={2.1} totalWorkingDays={38} />
   </div>

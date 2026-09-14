@@ -9,9 +9,13 @@ const save = vi.fn();
 const saveConfigs: Array<{ onUpdate?: (config: unknown) => void } | undefined> = [];
 
 const savedUserAllTeamData = {
-  __GLOBAL__: { defaults: { estimateField: 'Story points' } },
-  ORDER: { defaults: { sprintLength: 10, velocityPerSprint: 21, tracks: 1, estimateField: 'Story points' } },
+  __GLOBAL__: { defaults: { estimateField: 'Story points', velocityPerSprint: 13, tracks: 3 } },
+  ORDER: {
+    defaults: { sprintLength: 10, velocityPerSprint: 21, tracks: 1, estimateField: 'Story points' },
+    '9': { velocityPerSprint: 99, tracks: 9 },
+  },
   STORE: { defaults: { sprintLength: 10 }, '7': { velocityPerSprint: 55, tracks: 4, estimateField: 'Days estimate' } },
+  SPLIT: { defaults: { sprintLength: 10, tracks: 2 }, '7': { velocityPerSprint: 55 } },
 };
 
 // Only the two data hooks are mocked. `createEmptyConfiguration` and `sanitizeAllTeamData` stay real so
@@ -41,16 +45,31 @@ vi.mock('../../../../services/jira', () => ({ useJiraIssueFields: () => [] }));
 import { CapacityOverridesProvider } from '../../../../services/capacity-overrides';
 import { useTeamCommit } from './useTeamCommit';
 
-const Probe = ({ team, onSuccess }: { team: string; onSuccess?: () => void }) => {
+const Probe = ({
+  team,
+  hierarchyLevel,
+  onSuccess,
+}: {
+  team: string;
+  hierarchyLevel?: number;
+  onSuccess?: () => void;
+}) => {
   const { commit } = useTeamCommit();
-  return <button onClick={() => commit(team, { velocityPerSprint: 35, tracks: 2 }, { onSuccess })}>commit</button>;
+  return (
+    <button onClick={() => commit(team, hierarchyLevel ?? 7, { velocityPerSprint: 35, tracks: 2 }, { onSuccess })}>
+      commit
+    </button>
+  );
 };
 
-const renderProbe = (team = 'ORDER', props: { onSuccess?: () => void; onTeamDataSaved?: () => void } = {}) =>
+const renderProbe = (
+  team = 'ORDER',
+  props: { hierarchyLevel?: number; onSuccess?: () => void; onTeamDataSaved?: () => void } = {},
+) =>
   render(
     <CapacityOverridesProvider onTeamDataSaved={props.onTeamDataSaved}>
       <Suspense fallback="loading">
-        <Probe team={team} onSuccess={props.onSuccess} />
+        <Probe team={team} hierarchyLevel={props.hierarchyLevel} onSuccess={props.onSuccess} />
       </Suspense>
     </CapacityOverridesProvider>,
   );
@@ -64,7 +83,7 @@ beforeEach(() => {
 });
 
 describe('useTeamCommit', () => {
-  it("writes the new values to the named team's defaults", async () => {
+  it("writes the new values to the named team's defaults when it has none of its own at that level", async () => {
     renderProbe();
     await userEvent.click(screen.getByText('commit'));
 
@@ -91,6 +110,13 @@ describe('useTeamCommit', () => {
     expect(savedPayload().MARKETING?.defaults).toEqual({ velocityPerSprint: 35, tracks: 2 });
   });
 
+  it('leaves __GLOBAL__ untouched when the team was inheriting its capacity from there', async () => {
+    renderProbe('MARKETING');
+    await userEvent.click(screen.getByText('commit'));
+
+    expect(savedPayload().__GLOBAL__).toEqual(savedUserAllTeamData.__GLOBAL__);
+  });
+
   it('leaves every other team untouched', async () => {
     renderProbe('MARKETING');
     await userEvent.click(screen.getByText('commit'));
@@ -98,12 +124,37 @@ describe('useTeamCommit', () => {
     expect(savedPayload().ORDER?.defaults).toEqual(savedUserAllTeamData.ORDER.defaults);
   });
 
-  it('drops level-specific values that would out-rank the committed defaults', async () => {
+  it('writes to the scheduled hierarchy level when the team has its own values there', async () => {
     renderProbe('STORE');
     await userEvent.click(screen.getByText('commit'));
 
-    expect(savedPayload().STORE?.defaults).toEqual({ sprintLength: 10, velocityPerSprint: 35, tracks: 2 });
-    expect(savedPayload().STORE?.['7']).toEqual({ estimateField: 'Days estimate' });
+    expect(savedPayload().STORE?.['7']).toEqual({
+      velocityPerSprint: 35,
+      tracks: 2,
+      estimateField: 'Days estimate',
+    });
+  });
+
+  it("leaves the team's defaults alone when the scheduled level is the target", async () => {
+    renderProbe('STORE');
+    await userEvent.click(screen.getByText('commit'));
+
+    expect(savedPayload().STORE?.defaults).toEqual(savedUserAllTeamData.STORE.defaults);
+  });
+
+  it('sends each field to the level that field is actually resolved from', async () => {
+    renderProbe('SPLIT');
+    await userEvent.click(screen.getByText('commit'));
+
+    expect(savedPayload().SPLIT?.['7']).toEqual({ velocityPerSprint: 35 });
+    expect(savedPayload().SPLIT?.defaults).toEqual({ sprintLength: 10, tracks: 2 });
+  });
+
+  it('never removes a value at a level it is not targeting', async () => {
+    renderProbe('ORDER');
+    await userEvent.click(screen.getByText('commit'));
+
+    expect(savedPayload().ORDER?.['9']).toEqual(savedUserAllTeamData.ORDER['9']);
   });
 
   it("hands the mutation the provider's save-completed handler", () => {

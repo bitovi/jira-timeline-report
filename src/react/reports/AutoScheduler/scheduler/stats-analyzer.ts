@@ -151,6 +151,8 @@ export class StatsAnalyzer {
       return {
         team: teamName,
         teamData: firstIssue.linkedIssue.team,
+        // The level of the issues being scheduled, which is the level a capacity commit targets.
+        hierarchyLevel: firstIssue.linkedIssue.hierarchyLevel,
         tracks: tracks,
       };
     });

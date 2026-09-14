@@ -14,6 +14,7 @@ const renderInputs = (props: { savedVelocityPerSprint?: number; savedTracks?: nu
     <CapacityOverridesProvider>
       <TeamCapacityInputs
         teamName="ORDER"
+        hierarchyLevel={7}
         savedVelocityPerSprint={props.savedVelocityPerSprint ?? 21}
         savedTracks={props.savedTracks ?? 1}
       />
@@ -21,7 +22,7 @@ const renderInputs = (props: { savedVelocityPerSprint?: number; savedTracks?: nu
   );
 
 /** The `onSuccess` the row hands the commit hook, which only a successful save is meant to run. */
-const commitSucceeds = () => act(() => commit.mock.calls[0][2].onSuccess());
+const commitSucceeds = () => act(() => commit.mock.calls[0][3].onSuccess());
 
 const setCapacity = async (next: string) => {
   await userEvent.click(screen.getByRole('button', { name: /points per sprint/i }));
@@ -97,7 +98,7 @@ describe('TeamCapacityInputs', () => {
     await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
-    expect(commit).toHaveBeenCalledWith('ORDER', { tracks: 2 }, expect.anything());
+    expect(commit).toHaveBeenCalledWith('ORDER', 7, { tracks: 2 }, expect.anything());
   });
 
   it('keeps the override until the commit succeeds', async () => {
@@ -130,7 +131,7 @@ describe('TeamCapacityInputs', () => {
     // What the derived pipeline reports once the override has been applied to it.
     rerender(
       <CapacityOverridesProvider>
-        <TeamCapacityInputs teamName="ORDER" savedVelocityPerSprint={35} savedTracks={2} />
+        <TeamCapacityInputs teamName="ORDER" hierarchyLevel={7} savedVelocityPerSprint={35} savedTracks={2} />
       </CapacityOverridesProvider>,
     );
 
@@ -144,7 +145,14 @@ describe('TeamCapacityInputs', () => {
     // A re-derive tears the whole grid down and rebuilds it, so the row loses any state of its own.
     const harness = (mounted: boolean, velocityPerSprint: number) => (
       <CapacityOverridesProvider>
-        {mounted && <TeamCapacityInputs teamName="ORDER" savedVelocityPerSprint={velocityPerSprint} savedTracks={1} />}
+        {mounted && (
+          <TeamCapacityInputs
+            teamName="ORDER"
+            hierarchyLevel={7}
+            savedVelocityPerSprint={velocityPerSprint}
+            savedTracks={1}
+          />
+        )}
       </CapacityOverridesProvider>
     );
 

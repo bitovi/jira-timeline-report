@@ -24,6 +24,8 @@ export const useTeamIsDirty = (teamName: string) => {
 
 interface TeamCapacityInputsProps {
   teamName: string;
+  /** The hierarchy level of the issues being scheduled — where a commit writes. */
+  hierarchyLevel: number;
   savedVelocityPerSprint: number;
   savedTracks: number;
 }
@@ -37,7 +39,12 @@ const buttonClasses =
  * dirty — Reset and Commit. The buttons live at the end of the input group so the row grows leftward
  * and the output columns never shift.
  */
-export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({ teamName, savedVelocityPerSprint, savedTracks }) => {
+export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
+  teamName,
+  hierarchyLevel,
+  savedVelocityPerSprint,
+  savedTracks,
+}) => {
   const { overrides, savedCapacity, setTeamOverride, clearTeamOverride, rememberSavedCapacity, commitSavedCapacity } =
     useCapacityOverrides();
   const { commit, isSaving } = useTeamCommit();
@@ -94,7 +101,7 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({ teamName, save
             onClick={() => {
               // Only on success: a failed write rolls the save back, and dropping the override here
               // would throw the what-if away with nothing saved in its place.
-              commit(teamName, override, {
+              commit(teamName, hierarchyLevel, override, {
                 onSuccess: () => commitSavedCapacity(teamName, { velocityPerSprint, tracks }),
               });
             }}
