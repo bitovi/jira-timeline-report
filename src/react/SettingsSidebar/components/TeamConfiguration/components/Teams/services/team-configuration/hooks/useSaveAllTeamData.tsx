@@ -31,6 +31,9 @@ export const useSaveAllTeamData: UseSaveAllTeamData = (config) => {
   const { showFlag } = useFlags();
 
   const { mutate, isPending } = useMutation({
+    // Every save replaces the whole `all-team-data` value, so callers need to be able to see that
+    // one is already in flight and not build a payload from a snapshot it is about to invalidate.
+    mutationKey: updateTeamConfigurationKeys.allTeamData,
     mutationFn: (values: AllTeamData) => {
       return updateAllTeamData(storage, values);
     },

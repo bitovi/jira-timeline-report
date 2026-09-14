@@ -8,8 +8,9 @@ import type { LogSpread } from './scheduler/log-spread';
 import type { DerivedIssue } from '../../../jira/derived/derive';
 import type { CriticalPathSelection } from './CriticalPathRail';
 
-import React, { FC, useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import React, { FC, Suspense, useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from '@sentry/react';
 import { FlagsProvider } from '@atlaskit/flag';
 import Tooltip from '@atlaskit/tooltip';
 import SectionMessage from '@atlaskit/section-message';
@@ -37,6 +38,9 @@ import {
 } from './CriticalPathRail';
 import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
+import { gridLayer } from './z-layers';
+import { StorageProvider } from '../../services/storage';
+import { TeamCapacityInputs, TeamCapacityOutputs, useTeamIsDirty } from './components/TeamCapacityControls';
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -312,8 +316,9 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
           >
             {/* Background SVG Layer */}
             <div
-              className="relative z-1"
+              className="relative"
               style={{
+                zIndex: gridLayer.dependencies,
                 gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
                 gridRow: `2 / span ${gridData.rowsCount - 1}`,
               }}
@@ -339,10 +344,11 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                 <div
                   key={'time' + i}
                   style={{
+                    zIndex: gridLayer.dateHeader,
                     gridRow: `1 / span 1`,
                     gridColumn: `${1 + range.startDay} / span ${range.days}`,
                   }}
-                  className="border-neutral-30 border-solid border-x px-1 text-xs truncate sticky top-0 bg-white z-40"
+                  className="border-neutral-30 border-solid border-x px-1 text-xs truncate sticky top-0 bg-white"
                 >
                   {range.prettyStart}
                 </div>
@@ -380,11 +386,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
               <div className="text-base grow font-semibold">Summary</div>
             </div>
 
-            {/* `relative z-30` lifts this above the `#dependencies` SVG, which covers row 2 and would
-            otherwise swallow the hover that opens the spread tooltips. */}
+            {/* Lifted above the `#dependencies` SVG, which covers row 2 and would otherwise swallow
+            the hover that opens the spread tooltips. */}
             <div
-              className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2 relative z-30"
+              className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2 relative"
               style={{
+                zIndex: gridLayer.row,
                 gridRow: `2 / span 1`,
                 gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
               }}
@@ -407,37 +414,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                 {/* Only show team if it has visible tracks/issues */}
                 {team.gridifiedTracks.length > 0 && (
                   <>
-                    {/* The stripe background for the team*/}
-                    <div
-                      className="bg-neutral-20 pt-2 pb-1 "
-                      style={{
-                        gridRow: `${team.style.gridRowStart} / span 1`,
-                        gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
-                      }}
-                    />
-
-                    <div
-                      className="pl-2 pt-2 pb-1 pr-1 flex sticky top-0 bg-neutral-20"
-                      style={{ gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
-                    >
-                      <div className="text-base grow font-semibold">{team.team}</div>
-                    </div>
-                    <div
-                      className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2"
-                      style={{
-                        gridRow: `${team.style.gridRowStart} / span 1`,
-                        gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
-                      }}
-                    >
-                      <div>
-                        {team.teamData.parallelWorkLimit === 1
-                          ? `Points / Day: ${roundTo(team.teamData.pointsPerDayPerTrack, 2)}`
-                          : `Points / Day / Track ${team.teamData.pointsPerDayPerTrack}`}
-                      </div>
-                      <div>
-                        Total Working Days: {roundTo(totalWorkingDays(team) / team.teamData.parallelWorkLimit, 0)},
-                      </div>
-                    </div>
+                    <TeamHeaderRow team={team} gridNumberOfDays={gridData.gridNumberOfDays} />
 
                     {team.gridifiedTracks.map(
                       (gridifiedTrack, trackIdx) =>
@@ -501,13 +478,75 @@ export default function AutoSchedulerWrapper(props: AutoSchedulerProps) {
   return (
     <FlagsProvider>
       <JiraProvider jira={routeData.jiraHelpers}>
-        <QueryClientProvider client={queryClient}>
-          <AutoScheduler {...props} />
-        </QueryClientProvider>
+        {/* `useTeamCommit` reaches the same team-configuration store the Teams sidebar writes. */}
+        <StorageProvider storage={routeData.storage}>
+          <QueryClientProvider client={queryClient}>
+            <AutoScheduler {...props} />
+          </QueryClientProvider>
+        </StorageProvider>
       </JiraProvider>
     </FlagsProvider>
   );
 }
+
+/**
+ * A team's header row. Split out because the dirty treatment needs `useTeamIsDirty`, and a hook
+ * cannot be called inside the `gridifiedTeams.map` in `AutoScheduler`'s body.
+ */
+const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> = ({ team, gridNumberOfDays }) => {
+  const isDirty = useTeamIsDirty(team.team);
+
+  return (
+    <>
+      <div
+        data-team-row={team.team}
+        data-dirty={isDirty}
+        className={`relative pt-2 pb-1 ${isDirty ? 'bg-[#fff3eb] shadow-[inset_3px_0_0_#b65c02]' : 'bg-neutral-20'}`}
+        style={{
+          zIndex: gridLayer.teamHeaderBackground,
+          gridRow: `${team.style.gridRowStart} / span 1`,
+          gridColumn: `1 / span ${gridNumberOfDays + 1}`,
+        }}
+      />
+
+      <div
+        className={`pl-2 pt-2 pb-1 pr-1 flex sticky top-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
+        style={{ zIndex: gridLayer.teamHeader, gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
+      >
+        <div className="text-base grow font-semibold">{team.team}</div>
+      </div>
+
+      {/* Above `#dependencies`, which would otherwise swallow every click on the capacity read view
+          and the stepper, and above the rows below, which the open capacity editor overflows into. */}
+      <div
+        className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex items-center justify-between gap-4 relative"
+        style={{
+          zIndex: gridLayer.teamHeader,
+          gridRow: `${team.style.gridRowStart} / span 1`,
+          gridColumn: `2 / span ${gridNumberOfDays}`,
+        }}
+      >
+        {/* Scoped tightly to the inputs: `useTeamCommit` suspends on the team-configuration and
+            field queries, and a boundary any higher would unmount the running simulation. A failed
+            query degrades the row to its read-only half rather than taking the report down. */}
+        <ErrorBoundary fallback={() => <></>}>
+          <Suspense fallback={<span className="inline-flex h-[22px]" />}>
+            <TeamCapacityInputs
+              teamName={team.team}
+              hierarchyLevel={team.hierarchyLevel}
+              savedVelocityPerSprint={team.teamData.velocity}
+              savedTracks={team.teamData.parallelWorkLimit}
+            />
+          </Suspense>
+        </ErrorBoundary>
+        <TeamCapacityOutputs
+          pointsPerDay={team.teamData.totalPointsPerDay}
+          totalWorkingDays={totalWorkingDays(team) / team.teamData.parallelWorkLimit}
+        />
+      </div>
+    </>
+  );
+};
 
 function hasUrl(issue: MinimalSimulationIssueResult | SimulationIssueResult): issue is SimulationIssueResult {
   return 'url' in issue.linkedIssue && typeof issue.linkedIssue.url === 'string';
@@ -566,8 +605,9 @@ const SimulationData: React.FC<{
         </div>
       </div>
       <div
-        className="relative block py-1 z-30"
+        className="relative block py-1"
         style={{
+          zIndex: gridLayer.row,
           gridRow: `${gridRowStart} / span 1`,
           gridColumn: `2 / span ${gridData.gridNumberOfDays}`,
         }}

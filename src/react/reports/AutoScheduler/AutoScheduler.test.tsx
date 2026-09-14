@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { StatsUIData } from './scheduler/stats-analyzer';
 
 import React from 'react';
@@ -5,6 +6,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AutoScheduler from './AutoScheduler';
+import { CapacityOverridesProvider } from '../../services/capacity-overrides';
 
 // The simulation itself is out of scope here — this exercises the rail's wiring to the grid.
 const setUIStates: Array<(data: StatsUIData) => void> = [];
@@ -29,6 +31,16 @@ vi.mock('../../hooks/useSelectedStartDate/useSelectedStartDate.js', () => ({
 }));
 vi.mock('../../hooks/useUncertaintyWeight/useUncertaintyWeight.js', () => ({
   useUncertaintyWeight: () => ['average'],
+}));
+// Committing reaches storage through suspense queries; the row's wiring is what's under test here.
+vi.mock('./components/TeamCapacityControls/useTeamCommit', () => ({
+  useTeamCommit: () => ({ commit: vi.fn(), isSaving: false }),
+}));
+// `routeData.storage` is undefined here, so only the provider is stubbed — the rest of the module
+// stays real, since replacing it wholesale would undefine `useStorage` for anything reaching for it.
+vi.mock('../../services/storage', async () => ({
+  ...(await vi.importActual<typeof import('../../services/storage')>('../../services/storage')),
+  StorageProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
 const ROUTES = [
@@ -79,15 +91,27 @@ const UI_DATA = {
   teams: [
     {
       team: 'ORDER',
-      teamData: { parallelWorkLimit: 1, pointsPerDayPerTrack: 1 },
+      teamData: {
+        parallelWorkLimit: 1,
+        pointsPerDayPerTrack: 1,
+        totalPointsPerDay: 1,
+        velocity: 21,
+        daysPerSprint: 10,
+      },
+      hierarchyLevel: 7,
       tracks: [EPICS.map((key, i) => issueResult(key, 10 - i))],
     },
   ],
 } as unknown as StatsUIData;
 
+/** In the app the provider is mounted by the shell (`TimelineReport`), above every report. */
+const withOverrides = (ui: ReactNode) => <CapacityOverridesProvider>{ui}</CapacityOverridesProvider>;
+
 function renderScheduler() {
   const issues = EPICS.map((key) => ({ key })) as never;
-  const view = render(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />);
+  const view = render(
+    withOverrides(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />),
+  );
   act(() => {
     for (const setUIState of setUIStates) setUIState(UI_DATA);
   });
@@ -141,10 +165,12 @@ describe('AutoScheduler critical-path rail', () => {
 
   it('disables epic and route rows while the simulation is still running', async () => {
     render(
-      <AutoScheduler
-        primaryIssuesOrReleasesObs={EPICS.map((key) => ({ key })) as never}
-        allIssuesOrReleasesObs={EPICS.map((key) => ({ key })) as never}
-      />,
+      withOverrides(
+        <AutoScheduler
+          primaryIssuesOrReleasesObs={EPICS.map((key) => ({ key })) as never}
+          allIssuesOrReleasesObs={EPICS.map((key) => ({ key })) as never}
+        />,
+      ),
     );
     act(() => {
       setUIStates[setUIStates.length - 1]({ ...UI_DATA, percentComplete: 60 });
@@ -249,12 +275,45 @@ describe('AutoScheduler critical-path rail', () => {
     // A new array of issue objects, as a real JQL/team change would produce — the `[primary]`
     // effect tears down and restarts the simulation for it.
     const newIssues = EPICS.map((key) => ({ key })) as never;
-    rerender(<AutoScheduler primaryIssuesOrReleasesObs={newIssues} allIssuesOrReleasesObs={newIssues} />);
+    rerender(
+      withOverrides(<AutoScheduler primaryIssuesOrReleasesObs={newIssues} allIssuesOrReleasesObs={newIssues} />),
+    );
     act(() => {
       setUIStates[setUIStates.length - 1](UI_DATA);
     });
 
     expect(new Set(gridIssueNames())).toEqual(new Set(EPICS));
     expect(screen.getAllByRole('button').some((button) => button.hasAttribute('data-lit'))).toBe(false);
+  });
+});
+
+describe('AutoScheduler team capacity row', () => {
+  it('renders capacity as an editable read view and the outputs as text', () => {
+    renderScheduler();
+
+    expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByText('Points / Day')).toBeInTheDocument();
+    expect(screen.getByText('Total Working Days')).toBeInTheDocument();
+  });
+
+  it('shows the track stepper for the team', () => {
+    renderScheduler();
+
+    expect(screen.getByText('1 track')).toBeInTheDocument();
+  });
+
+  it('has no commit controls until something changes', () => {
+    renderScheduler();
+
+    expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
+  });
+
+  it('marks the row dirty and offers Reset once a track is added', async () => {
+    renderScheduler();
+
+    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
+    expect(document.querySelector('[data-team-row="ORDER"][data-dirty="true"]')).toBeInTheDocument();
   });
 });

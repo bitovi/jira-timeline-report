@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import type { StatsUIData, SimulationIssueResult, MinimalSimulationIssueResult } from './scheduler/stats-analyzer';
 import type { GridUIData } from './AutoScheduler';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days';
+import { gridLayer } from './z-layers';
 
 import { Popper } from '@atlaskit/popper';
 import { set } from 'react-hook-form';
@@ -80,7 +81,8 @@ function SimulationDay({
           setDataElement(e.currentTarget);
         }}
         onMouseLeave={() => setDataElement(null)}
-        className="flex h-full group hover:bg-neutral-30 transition-colors z-30"
+        className="flex h-full group hover:bg-neutral-30 transition-colors"
+        style={{ zIndex: gridLayer.row }}
       >
         <div
           className={`${
@@ -108,7 +110,7 @@ function SimulationDay({
             const color = startOrDue === 'start' ? 'bg-blue-500' : 'bg-green-500';
 
             return (
-              <div ref={ref} style={style} className="z-50 p-2">
+              <div ref={ref} style={{ ...style, zIndex: gridLayer.popup }} className="p-2">
                 <div className="p-2">
                   <div className={`${color} rounded text-white text-center p-1`}>
                     <h5>{toFixed(probability, 1)}% chance</h5>
