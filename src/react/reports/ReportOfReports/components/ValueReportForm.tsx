@@ -41,7 +41,7 @@ interface SelectOption {
  * live defects here — see spec/016-report-of-reports/009-value-report-modal.
  *
  * **Still needed, and now for one control rather than two.** The Field half is a `SearchablePicker`
- * as of spec/031 and solves the same problem the other way round: it does *not* portal
+ * as of spec/033 and solves the same problem the other way round: it does *not* portal
  * (`shouldRenderToParent`), which puts it inside the modal positioner's own stacking context where
  * no `zIndex` is required at all. That route is only open to it because it owns its layout; a
  * react-select menu rendered inline is back to being clipped.
@@ -70,7 +70,7 @@ const SEARCH_ONLY = { DropdownIndicator: null, IndicatorSeparator: null };
  *
  * **One `@atlaskit/select` and one popover — and what had to be true for that.** The Field half was
  * built on `SearchablePicker` (Table's `+ Add column`), then reverted to a second select for two
- * stated reasons, then rebuilt on it in spec/031. Both original objections were real; each has an
+ * stated reasons, then rebuilt on it in spec/033. Both original objections were real; each has an
  * answer now, and one third reason nobody had written down turned out to be the important one:
  *
  * - *"`@atlaskit/popup` renders under the modal."* True — its default `zIndex` is `layers.layer()` =
@@ -91,13 +91,13 @@ const SEARCH_ONLY = { DropdownIndicator: null, IndicatorSeparator: null };
  *
  * The reason for going back is the one `SearchablePicker`'s own docblock was written to serve: a real
  * `Fields` group is 180+ entries, and one control that makes that scannable is better than two that
- * drift. See spec/031-column-select-redesign § 8 and § 9.
+ * drift. See spec/033-column-select-redesign § 8 and § 9.
  *
  * **`+` staying disabled until both halves are chosen is the only validation there is**, because a node
  * cannot be corrected once added — the trade the plan's § The node stops being editable accepts. It has
  * to actually hold.
  *
- * See spec/016-report-of-reports/009-value-report-modal Phase 4, and spec/031-column-select-redesign.
+ * See spec/016-report-of-reports/009-value-report-modal Phase 4, and spec/033-column-select-redesign.
  */
 export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   const [inputValue, setInputValue] = useState('');
@@ -230,7 +230,7 @@ const Field: FC<{ htmlFor: string; label: string; children: ReactNode }> = ({ ht
  * Every value below is read from `@atlaskit/select/dist/cjs/styles.js` — a **private** file, not a
  * public entry point, so a minor bump can drift the pair silently and no test will catch it. The
  * only mitigation that works is keeping the `FieldTriggerStates` story (which puts a real select
- * beside this) and looking at it. See spec/031-column-select-redesign § 9 and Risk 1.
+ * beside this) and looking at it. See spec/033-column-select-redesign § 9 and Risk 1.
  *
  * `h-10`, not `min-h-10`: the select's `minHeight: 40` (`styles.js:79`) never actually grows,
  * because its value never wraps — so neither must this, or the pair can differ in height on a long
@@ -354,7 +354,7 @@ const FieldPicker: FC<{ value: FieldOption | null; onChange: (option: FieldOptio
       // **Inert while the expand/collapse toggle is parked** — see `PickerPanel`'s footer comment.
       layoutStorageKey="ror-field-picker-layout"
       // **The three props that make a popover with a search field work inside a modal.** See
-      // spec/031-column-select-redesign § 8: `shouldRenderToParent` for both the stacking context
+      // spec/033-column-select-redesign § 8: `shouldRenderToParent` for both the stacking context
       // and `react-focus-lock`, and `fallbackPlacements` because `@atlaskit/popper` hardcodes
       // `flipVariations: false`, so a 640px panel anchored 300px into a 600px dialog would never try
       // right-aligning itself without this list.

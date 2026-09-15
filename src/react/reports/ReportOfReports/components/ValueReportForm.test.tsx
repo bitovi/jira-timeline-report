@@ -75,7 +75,7 @@ const pickWorkItem = async () => {
   fireEvent.click(await screen.findByText('ABC-1 — Migrate auth to OIDC', undefined, { timeout: 3000 }));
 };
 
-// The *locator* has not changed across spec/031's swap from an `@atlaskit/select` to a
+// The *locator* has not changed across spec/033's swap from an `@atlaskit/select` to a
 // `SearchablePicker`: `getByLabelText('Field')` still resolves, now to the trigger `<button>`, via
 // `HTMLButtonElement.labels` (`@testing-library/dom/.../label-helpers.js:29-37`, whose
 // `formControlSelector` includes `button`). Only the interaction did — a click, not ArrowDown.
@@ -119,7 +119,7 @@ describe('<ValueReportForm>', () => {
     // Also proves the label association survived the swap to a `<button>` trigger: a native
     // `<label htmlFor>` reaches a button through `element.labels`. What does *not* work is
     // `getByRole('button', { name: 'Field' })` — a `<label>` contributes nothing to a button's
-    // accessible name. See spec/031-column-select-redesign § 9.
+    // accessible name. See spec/033-column-select-redesign § 9.
     expect(screen.getByLabelText('Field')).toBeInTheDocument();
   });
 
@@ -176,7 +176,7 @@ describe('<ValueReportForm>', () => {
 
     await waitFor(() => expect(addButton()).toBeDisabled());
     // Both halves are back to their placeholders — neither the picked field nor the picked work item
-    // is still displayed anywhere. Since spec/031 this is a *stronger* assertion than it was: the
+    // is still displayed anywhere. Since spec/033 this is a *stronger* assertion than it was: the
     // field trigger renders the picked label as its own text, where the old closed react-select
     // rendered it only inside a menu that was unmounted anyway.
     expect(screen.queryByText('Summary')).not.toBeInTheDocument();
@@ -197,7 +197,7 @@ describe('<ValueReportForm>', () => {
     expect(queries).toEqual([]);
   });
 
-  // See spec/031-column-select-redesign § 10.
+  // See spec/033-column-select-redesign § 10.
   describe('the field trigger', () => {
     it('shows the placeholder, then the field that was picked', () => {
       renderForm();
@@ -221,7 +221,7 @@ describe('<ValueReportForm>', () => {
     });
 
     /**
-     * The Suspense fallback, which nothing covered before spec/031 even though it is the entire
+     * The Suspense fallback, which nothing covered before spec/033 even though it is the entire
      * reason `FieldPicker` is split out of this form. What it must hold is the *label association*:
      * the fallback carries `id="ror-value-field"` too, so `<label htmlFor>` is never dangling
      * mid-suspense.

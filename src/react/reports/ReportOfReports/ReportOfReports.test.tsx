@@ -224,7 +224,7 @@ const addValue = async (opener: string, key: string, field: string) => {
   // in a pre-commit run and passed on every re-run, which is the signature.
   await userEvent.click(await screen.findByText(`${key} — ${key} summary`, undefined, { timeout: 3000 }));
 
-  // Since spec/031 the Field control is a `SearchablePicker`, so a click opens it rather than
+  // Since spec/033 the Field control is a `SearchablePicker`, so a click opens it rather than
   // ArrowDown — `getByLabelText('Field')` still resolves, now to the trigger `<button>`, through
   // `HTMLButtonElement.labels`. Scoped with `within` because the trigger renders the picked label too.
   await userEvent.click(screen.getByLabelText('Field'));

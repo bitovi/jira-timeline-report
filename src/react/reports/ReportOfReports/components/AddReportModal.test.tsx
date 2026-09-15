@@ -241,7 +241,7 @@ describe('<AddReportModal> layout', () => {
  * The Field control is a `@atlaskit/popup` holding a focusable search field, opened from inside
  * `@atlaskit/modal-dialog`. Three separate mechanisms have to cooperate for that to work at all —
  * a stacking layer, `react-focus-lock`, and `@atlaskit/layering` — and only the third leaves a trace
- * jsdom can see. See spec/031-column-select-redesign § 8 and § 11.
+ * jsdom can see. See spec/033-column-select-redesign § 8 and § 11.
  *
  * **Honest caveat: jsdom can tell you Escape did not close the modal, not that the panel painted
  * above it.** Z-order is Storybook-only (§ 13).

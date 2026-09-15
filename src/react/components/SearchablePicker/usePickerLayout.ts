@@ -1,7 +1,7 @@
 /**
  * The picker's expanded/compact choice, optionally remembered.
  *
- * See spec/031-column-select-redesign § 3.
+ * See spec/033-column-select-redesign § 3.
  */
 import { useState } from 'react';
 

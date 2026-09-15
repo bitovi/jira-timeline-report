@@ -1,6 +1,6 @@
 import { parseLayout } from './usePickerLayout';
 
-// See spec/031-column-select-redesign § 3.
+// See spec/033-column-select-redesign § 3.
 describe('parseLayout', () => {
   it('defaults to expanded on the empty string, without throwing', () => {
     // This is the missing-key case: `useLocalStorage.ts:11` calls `deserialize(getItem(key) ?? '')`,

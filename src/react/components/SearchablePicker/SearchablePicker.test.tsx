@@ -117,7 +117,7 @@ describe('<SearchablePicker>', () => {
 
   // The trigger is a combobox over a listbox, from us; `ref`, `aria-expanded` and `aria-controls`
   // come from Popup (`popup.js:126-131`). Callers just spread `triggerProps`.
-  // See spec/031-column-select-redesign § 7.
+  // See spec/033-column-select-redesign § 7.
   it('gives the trigger combobox semantics and a deterministic aria-controls', () => {
     renderPicker();
 
@@ -137,7 +137,7 @@ describe('<SearchablePicker>', () => {
 
   // `shouldRenderToParent` exists for one caller — ROR's, inside a modal, where a portalled panel
   // loses focus to `react-focus-lock`. Table must keep the portal path exactly as it is, so the
-  // default has to be provably off. See spec/031-column-select-redesign § 8.
+  // default has to be provably off. See spec/033-column-select-redesign § 8.
   describe('shouldRenderToParent', () => {
     // `.atlaskit-portal` is the class `@atlaskit/portal`'s `createContainer` sets
     // (`portal-dom-utils.js:14-18`), so it is the honest test for "did this go through the portal".
@@ -202,7 +202,7 @@ describe('<SearchablePicker> AlwaysExpanded', () => {
  * What stays live is `AlwaysExpanded` below, plus `picker-grid.test.ts`'s one-column cases (pure
  * math, still correct) and `usePickerLayout.test.ts`'s `parseLayout` guards (that code is untouched).
  *
- * See spec/031-column-select-redesign § 5 and § 3.
+ * See spec/033-column-select-redesign § 5 and § 3.
  */
 describe.skip('<SearchablePicker> layout', () => {
   beforeEach(() => localStorage.clear());
@@ -389,7 +389,7 @@ describe('<SearchablePicker> the group-header traversal other suites depend on',
 });
 
 // ---------------------------------------------------------------------------------------------------
-// Keyboard navigation. See spec/031-column-select-redesign § 6.
+// Keyboard navigation. See spec/033-column-select-redesign § 6.
 //
 // Every label carries "Date" so a single query can leave the whole grid matching — which is what
 // lets the "←/→ are the caret's while there is text to move through" case be tested at all.
@@ -626,7 +626,7 @@ describe('<SearchablePicker> keyboard navigation', () => {
   });
 });
 
-// See spec/031-column-select-redesign § 4.
+// See spec/033-column-select-redesign § 4.
 describe('<SearchablePicker> sorting', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());

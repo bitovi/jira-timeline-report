@@ -13,7 +13,7 @@
  * on the previous group's line — the requirement falls out of the structure — and the bands stay in
  * `groupOrder` DOM order, which `SearchablePicker.test.tsx:61-71` asserts.
  *
- * See spec/031-column-select-redesign § 2 and § 5.
+ * See spec/033-column-select-redesign § 2 and § 5.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Textfield from '@atlaskit/textfield';
@@ -135,6 +135,44 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
   useEffect(() => {
     void repositionPopup();
   }, [layout, sections.length, repositionPopup]);
+
+  /**
+   * Reposition once any ancestor's CSS motion finishes.
+   *
+   * `Popup` positions with `strategy: 'fixed'` (`@atlaskit/popper`'s default — `popper.js:56`), and a
+   * `transform` on an ancestor makes that ancestor the containing block for a fixed descendant. The
+   * Add Report modal has exactly that for its first ~700ms: `ModalTransition` runs
+   * `@atlaskit/motion`'s `fade-in`, whose keyframes are `translate3d(...)` on the dialog
+   * (`fade-in.js:17-26`). Open the picker inside that window and the panel is laid out against the
+   * dialog; when the animation ends and the transform goes back to `none`, the containing block
+   * reverts to the viewport and the panel jumps — measured at 77px across and 60px up, which puts it
+   * over the row holding its own trigger.
+   *
+   * Popper's `eventListeners` modifier watches scroll and resize, not an ancestor's transform, so
+   * nothing re-runs it. The panel then stays wrong until something else calls `update()` — which is
+   * why typing a character appeared to "fix" it: that changes `sections.length` and fires the effect
+   * above.
+   *
+   * Capture-phase on `window` so it catches motion on any ancestor without this component needing to
+   * know which one is animating — the modal today, anything else later. Infinite animations (the
+   * `Spinner` in the Suspense fallback) never fire `animationend`, and a stray `transitionend` from a
+   * hover somewhere costs one popper recompute.
+   *
+   * See spec/033-column-select-redesign § 8 — this is the same `position: fixed`-under-a-transform
+   * hazard `SearchablePicker`'s `shouldRenderToParent` docblock flags for a *stacked* modal, arriving
+   * through the entrance animation instead.
+   */
+  useEffect(() => {
+    const reposition = () => void repositionPopup();
+
+    window.addEventListener('animationend', reposition, true);
+    window.addEventListener('transitionend', reposition, true);
+
+    return () => {
+      window.removeEventListener('animationend', reposition, true);
+      window.removeEventListener('transitionend', reposition, true);
+    };
+  }, [repositionPopup]);
 
   /**
    * Keep the active row visible **by writing `scrollTop`**, never with `scrollIntoView()` — that

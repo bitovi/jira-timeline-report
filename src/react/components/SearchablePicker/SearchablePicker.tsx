@@ -4,7 +4,7 @@
  * Lifted out of Table's `+ Add column` button (spec/012-table-and-grouper, Phase 1) so that Report of
  * Reports' field picker can be the same control rather than a second one that drifts
  * (spec/016-report-of-reports/009-value-report-modal, Phase 1), and redesigned into an expandable
- * three-column grid in spec/031-column-select-redesign — because against a real Jira instance the
+ * three-column grid in spec/033-column-select-redesign — because against a real Jira instance the
  * `Fields` group is 180+ entries, which one per row in a 288px column is not a list anyone can scan.
  *
  * `trigger` is a render prop for **three** reasons now. The two callers want different buttons
@@ -103,7 +103,7 @@ export interface SearchablePickerProps {
    * `use-close-manager.js`), so one `setBooleanFeatureFlagResolver` call anywhere in this app — or a
    * default flip in a version bump — changes popup-in-modal focus wholesale.
    *
-   * See spec/031-column-select-redesign § 8 and Risks 2 and 3.
+   * See spec/033-column-select-redesign § 8 and Risks 2 and 3.
    */
   shouldRenderToParent?: boolean;
   /** Forwarded to Popup. `'dialog'` announces the panel; must come with `label`. */
@@ -133,7 +133,7 @@ export interface SearchablePickerProps {
  * (0.7.3) — verified with `require.resolve`. Two copies of the module are two distinct React
  * contexts, so the popup's level push is written into a `TopLevelContext` the modal never reads. The
  * modal therefore still sees level 1, `isLayerDisabled()` returns `false`, and **one Escape closes
- * both the panel and the dialog** — which is how spec/031 phase 8's layering test first failed.
+ * both the panel and the dialog** — which is how spec/033 phase 8's layering test first failed.
  *
  * Both library listeners are bubble-phase on `window` (`use-close-manager.js`'s `bindAll`, and
  * layering's `useCloseOnEscapePress`), so a capture-phase listener on `window` runs before either of
@@ -148,7 +148,7 @@ export interface SearchablePickerProps {
  * `focus-trap`'s `returnFocusOnDeactivate` puts the cursor back on the trigger, exactly as it does
  * when an option is clicked.
  *
- * See spec/031-column-select-redesign § 6 and § 11 — this **supersedes** their conclusion that the
+ * See spec/033-column-select-redesign § 6 and § 11 — this **supersedes** their conclusion that the
  * layering chain handles it.
  */
 const useCloseOnEscapeBeforeAnyLayer = (isOpen: boolean, close: () => void) => {

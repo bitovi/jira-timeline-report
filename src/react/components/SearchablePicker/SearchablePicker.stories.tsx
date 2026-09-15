@@ -8,7 +8,7 @@
  * about the inert observer stubs. Everything in `SearchablePicker.test.tsx` is a proxy for what is
  * checked here by eye.
  *
- * See spec/031-column-select-redesign § 13.
+ * See spec/033-column-select-redesign § 13.
  */
 import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';

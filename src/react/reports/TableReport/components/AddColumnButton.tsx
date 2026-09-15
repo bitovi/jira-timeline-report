@@ -8,7 +8,7 @@
  * (spec/016-report-of-reports/009-value-report-modal, Phase 1). This file is what remains that is
  * Table-specific: the group order, the copy, the `table-add-column*` test ids, and the trigger.
  *
- * It inherited the two-layout grouped grid for free (spec/031-column-select-redesign). No
+ * It inherited the two-layout grouped grid for free (spec/033-column-select-redesign). No
  * `shouldRenderToParent` and no `role`/`label`: this toolbar is not inside a dialog, so the popover
  * keeps the portal path exactly as it always had.
  */

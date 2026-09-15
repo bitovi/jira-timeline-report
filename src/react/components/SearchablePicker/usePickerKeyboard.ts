@@ -5,7 +5,7 @@
  * so focus never leaves the field and typing never breaks. Rows are `aria-activedescendant` targets
  * rather than tab stops.
  *
- * See spec/031-column-select-redesign § 6.
+ * See spec/033-column-select-redesign § 6.
  */
 import type { KeyboardEvent } from 'react';
 import type { PickerItem } from './SearchablePicker';

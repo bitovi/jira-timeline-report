@@ -1,13 +1,17 @@
-# 031 — Expandable grouped field picker
+# 033 — Expandable grouped field picker
 
 Redesign the shared searchable field/column picker into a two-layout (expanded / compact) grouped grid,
 and put it back into the Add Report modal's Field control. Presentation only — no catalog changes, no
 column reordering, no new modal.
 
-> **Numbering.** `spec/030-inline-custom-field-report/plan.md` § _Explicitly deferred to a future
-> `spec/031-*/plan.md`_ already soft-reserves this number ("name TBD") for the "as-of a past date" /
-> rollback-slider work, and poses three open questions for it. This folder took `031` at Arthur's
-> request; **030's forward reference should be repointed to `032`** so the link isn't dangling.
+> **Numbering.** This folder was `031` while the work sat on a branch cut from `feature/forge`. Rebasing
+> that branch onto `main` put it beside [031 — autoscheduler capacity](../031-autoscheduler-capacity/README.md)
+> and [032 — team save drops `getUrl`](../032-team-save-drops-geturl/README.md), which had taken both
+> numbers in the meantime, so it moved to `033`.
+>
+> `spec/030-inline-custom-field-report/plan.md` § _Explicitly deferred to a future `spec/034-*/plan.md`_
+> holds the "as-of a past date" / rollback-slider work ("name TBD") and the three open questions for it.
+> That forward reference has been repointed to `034`; nothing here is dangling.
 
 ## Context
 

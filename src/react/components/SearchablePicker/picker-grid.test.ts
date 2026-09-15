@@ -19,7 +19,7 @@ const move = (counts: readonly number[], columns: number, from: number, directio
 
 const DIRECTIONS: MoveDirection[] = ['up', 'down', 'left', 'right'];
 
-// See spec/031-column-select-redesign § 6.
+// See spec/033-column-select-redesign § 6.
 describe('buildRows', () => {
   it('chunks per group, so a group never continues on another group’s row', () => {
     expect(buildRows([2, 4], 3)).toEqual([[0, 1], [2, 3, 4], [5]]);

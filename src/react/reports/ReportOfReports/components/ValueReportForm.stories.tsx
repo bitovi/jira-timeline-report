@@ -114,7 +114,7 @@ export const NoResults: Story = {
  * This story used to be a plain `<div>` with `shadow-lg`, which has none of those: no stacking
  * layer, no focus lock, no `@atlaskit/layering`. It therefore showed a perfectly working popover
  * while the real modal was broken — worse than having no story, because it looked like a check.
- * It is a real `<Modal>` now. See spec/031-column-select-redesign § 8.
+ * It is a real `<Modal>` now. See spec/033-column-select-redesign § 8.
  *
  * Review at 1440 / 1280 / 1024: the expanded picker panel is 640px against a 600px dialog, so this
  * is also where `fallbackPlacements` earns its keep. What to look for is in § 13.
@@ -175,7 +175,7 @@ export const Interactive: Story = {
 };
 
 // ---------------------------------------------------------------------------------------------------
-// The Field trigger, beside a real select. See spec/031-column-select-redesign § 9 and Risk 1.
+// The Field trigger, beside a real select. See spec/033-column-select-redesign § 9 and Risk 1.
 // ---------------------------------------------------------------------------------------------------
 
 /** `ValueReportForm`'s own row, so the two controls are measured against each other, not in isolation. */

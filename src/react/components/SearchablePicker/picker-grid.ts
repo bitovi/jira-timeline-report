@@ -11,7 +11,7 @@
  * of needing a rule — and it is why group boundaries need no special case anywhere below: a group
  * boundary just *is* a row boundary.
  *
- * See spec/031-column-select-redesign § 6.
+ * See spec/033-column-select-redesign § 6.
  */
 
 export type MoveDirection = 'up' | 'down' | 'left' | 'right';
