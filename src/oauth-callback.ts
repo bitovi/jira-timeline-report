@@ -1,27 +1,30 @@
-import jiraOIDCHelpers from './jira-oidc-helpers';
+/**
+ * The OAuth callback page. Its only job is to trade the `code` query param for tokens and bounce
+ * back to the app.
+ *
+ * It deliberately does NOT build the full jiraHelpers object. That factory needs a `requestHelper`
+ * and a `host`, neither of which this page has, and it eagerly kicks off a fields request
+ * (makeFieldsRequest) before returning. Calling it with just the env threw
+ * "requestHelper is not a function" *before* the token exchange could run, stranding anyone whose
+ * localStorage still held an accessToken when they re-authed. `fetchAccessTokenWithAuthCode` is a
+ * standalone export that takes no config, so import it directly.
+ */
+import { fetchAccessTokenWithAuthCode } from './jira-oidc-helpers/auth';
 
 export default function oauthCallback() {
-  const environment = {
-    JIRA_CLIENT_ID: import.meta.env.VITE_JIRA_CLIENT_ID,
-    JIRA_SCOPE: import.meta.env.VITE_JIRA_SCOPE,
-    JIRA_CALLBACK_URL: import.meta.env.VITE_JIRA_CALLBACK_URL,
-    JIRA_API_URL: import.meta.env.VITE_JIRA_API_URL,
-    JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
-  };
+  const queryCode = new URLSearchParams(window.location.search).get('code');
 
-  //@ts-expect-error
-  const jiraHelpers = jiraOIDCHelpers(environment);
-
-  const queryParams = new URLSearchParams(window.location.search);
-  const queryCode = queryParams.get('code');
   if (!queryCode) {
-    // @ts-expect-error
-    //handle error properly to ensure good feedback
-    mainElement.innerHTML = `<p>Invalid code provided. <a href="/" class="link">Click here to return to the Timeline Report</a></p>`;
-    // Todo
-  } else {
-    jiraHelpers.fetchAccessTokenWithAuthCode(queryCode);
+    const mainElement = document.getElementById('mainElement');
+
+    if (mainElement) {
+      mainElement.innerHTML = `<p>Invalid code provided. <a href="/" class="link">Click here to return to the Timeline Report</a></p>`;
+    }
+
+    return;
   }
+
+  fetchAccessTokenWithAuthCode(queryCode);
 }
 
 oauthCallback();
