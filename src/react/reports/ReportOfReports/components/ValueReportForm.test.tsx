@@ -117,9 +117,14 @@ describe('<ValueReportForm>', () => {
     expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
     expect(screen.getByLabelText('Work item')).toBeInTheDocument();
     // Also proves the label association survived the swap to a `<button>` trigger: a native
-    // `<label htmlFor>` reaches a button through `element.labels`. What does *not* work is
-    // `getByRole('button', { name: 'Field' })` — a `<label>` contributes nothing to a button's
-    // accessible name. See spec/033-column-select-redesign § 9.
+    // `<label htmlFor>` reaches a button through `element.labels`.
+    //
+    // `getByRole('button', { name: 'Field' })` does not find it — because the trigger's role is
+    // `combobox`, **not** because the label is missing from its accessible name. The label is the
+    // name: measured in Chrome, the trigger reports name `Field` (source: the related `<label>`) and
+    // value `Story Points`, i.e. `Field, Story Points, combobox`. That split is exactly why the role
+    // stays `combobox` — as a plain `button` the value goes to `(none)` and the selection stops being
+    // announced. See `PickerTriggerProps` and spec/033-column-select-redesign § 9.
     expect(screen.getByLabelText('Field')).toBeInTheDocument();
   });
 

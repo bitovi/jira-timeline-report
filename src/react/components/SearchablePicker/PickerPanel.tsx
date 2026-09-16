@@ -131,7 +131,16 @@ export const PickerPanel: React.FC<PickerPanelProps> = ({
   });
 
   // Popper does not observe the panel's own size, so a width change has to be announced.
-  // `sections.length` too: filtering shortens the panel, which moves its bottom edge.
+  //
+  // `sections.length` is **not** here because filtering moves an anchored edge — it doesn't. Popper's
+  // `computeStyles` is adaptive: it pins whichever CSS edge faces the trigger (`inset: auto auto 0 0`
+  // plus a negative translate at `top-*`), so the anchored edge holds however tall the content is.
+  // Measured with this effect suppressed: 332px → 208px of panel, anchor error 0 throughout.
+  //
+  // What it is here for is *flip*. Placement is chosen against the size popper last measured, so a
+  // panel that flipped to `top-start` at full height would stay flipped after filtering down to a few
+  // rows, where `bottom-start` fits again. Keyed on the count rather than on `sections` itself so this
+  // is one recompute per group appearing or disappearing, not one per keystroke over 180 items.
   useEffect(() => {
     void repositionPopup();
   }, [layout, sections.length, repositionPopup]);

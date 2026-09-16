@@ -56,6 +56,12 @@ export const AddColumnButton: React.FC<AddColumnButtonProps> = ({ catalog, shown
       // Its own key, so expanding here would not also expand Report of Reports' field picker.
       // **Inert while the expand/collapse toggle is parked** — see `PickerPanel`'s footer comment.
       layoutStorageKey="table-add-column-layout"
+      // The trigger says `aria-haspopup="dialog"` and Popup points its `aria-controls` here, so the
+      // panel root has to actually be one — without this it was a roleless `<div>`, and the reference
+      // resolved to nothing an assistive technology could name. Unlike Report of Reports, this caller
+      // needs no `shouldRenderToParent`: it is not inside a modal, so the portal path is fine.
+      role="dialog"
+      label="Add a column"
       onSelect={onAdd}
       trigger={(triggerProps, toggle) => (
         <button

@@ -60,6 +60,11 @@ const Picker: React.FC<Partial<React.ComponentProps<typeof SearchablePicker>>> =
         placeholder="Search fields…"
         emptyMessage="No fields match."
         testIdPrefix="story-picker"
+        // The trigger advertises `aria-haspopup="dialog"` and Popup aims its `aria-controls` at this
+        // root, so the root has to carry the role or the reference lands on a bare `<div>`. Set here
+        // too because this story is the copy-paste reference for new callers.
+        role="dialog"
+        label="Choose a field"
         onSelect={setPicked}
         trigger={(triggerProps, toggle) => (
           <button

@@ -36,13 +36,27 @@ export interface PickerItem {
  * What the `trigger` render prop receives. Callers keep writing `<button {...triggerProps}>` and get
  * combobox semantics for free.
  *
+ * **`aria-haspopup` is `'dialog'`, not `'listbox'`, and that is load-bearing.** Popup points the
+ * trigger's `aria-controls` at the panel *root* (`popup.js:126-131`), and the root is the thing this
+ * component renders `role` onto — a dialog holding a search field, a listbox, and (when it comes back)
+ * a footer button. The listbox is a `${testIdPrefix}-listbox` node nested inside it. Announcing
+ * `listbox` therefore describes a node the trigger does not control, which is the false
+ * combobox-to-listbox relationship a review caught. ARIA 1.2 lists `dialog` among the values a
+ * combobox may take, so naming the popup honestly costs nothing.
+ *
+ * **`role: 'combobox'` stays**, and it is not decoration. Measured in Chrome on the ROR trigger: as a
+ * combobox its accessible name is `Field` (from the native `<label htmlFor>`) and its accessible
+ * *value* is the picked field — `Field, Story Points, combobox`. Drop the role and it degrades to a
+ * plain button whose value is **`(none)`**: the selection stops being announced at all, because
+ * `button` takes its name from content and exposes no value. See § 7.
+ *
  * `Omit` rather than `extends`: `TriggerProps['aria-haspopup']` is `boolean | 'dialog'`
  * (`popup/dist/types/types.d.ts:9`), so narrowing it in an interface extension is an illegal
  * override. Spread Popup's own props, overwrite that one key, add `role`.
  */
 export type PickerTriggerProps = Omit<TriggerProps, 'aria-haspopup'> & {
   role: 'combobox';
-  'aria-haspopup': 'listbox';
+  'aria-haspopup': 'dialog';
 };
 
 export interface SearchablePickerProps {
@@ -106,7 +120,15 @@ export interface SearchablePickerProps {
    * See spec/033-column-select-redesign § 8 and Risks 2 and 3.
    */
   shouldRenderToParent?: boolean;
-  /** Forwarded to Popup. `'dialog'` announces the panel; must come with `label`. */
+  /**
+   * Forwarded to Popup as the panel root's role. `'dialog'` announces the panel; must come with
+   * `label`.
+   *
+   * **Every caller should pass `'dialog'`.** The trigger advertises `aria-haspopup="dialog"` and
+   * Popup aims its `aria-controls` at this root, so leaving the role off points that reference at a
+   * roleless `<div>` — the trigger then promises a dialog and controls nothing identifiable. Kept
+   * optional only because it is Popup's own prop shape; there is no case for omitting it.
+   */
   role?: string;
   /** Forwarded to Popup as the panel's accessible name. Required whenever `role` is set. */
   label?: string;
@@ -255,7 +277,7 @@ export const SearchablePicker: React.FC<SearchablePickerProps> = ({
         />
       )}
       trigger={(triggerProps) =>
-        trigger({ ...triggerProps, role: 'combobox', 'aria-haspopup': 'listbox' }, () => setIsOpen((open) => !open))
+        trigger({ ...triggerProps, role: 'combobox', 'aria-haspopup': 'dialog' }, () => setIsOpen((open) => !open))
       }
     />
   );

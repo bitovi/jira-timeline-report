@@ -115,8 +115,12 @@ describe('<SearchablePicker>', () => {
     expect(screen.getAllByTestId('picker-option')).toHaveLength(3);
   });
 
-  // The trigger is a combobox over a listbox, from us; `ref`, `aria-expanded` and `aria-controls`
+  // The trigger is a combobox over a *dialog*, from us; `ref`, `aria-expanded` and `aria-controls`
   // come from Popup (`popup.js:126-131`). Callers just spread `triggerProps`.
+  //
+  // `aria-haspopup` is `dialog` because that is what `aria-controls` resolves to: Popup aims it at the
+  // panel root, and the root carries the `role` this component is given, with the listbox nested
+  // inside. Saying `listbox` named a node the trigger does not control.
   // See spec/033-column-select-redesign § 7.
   it('gives the trigger combobox semantics and a deterministic aria-controls', () => {
     renderPicker();
@@ -124,7 +128,7 @@ describe('<SearchablePicker>', () => {
     const trigger = screen.getByTestId('picker');
 
     expect(trigger).toHaveAttribute('role', 'combobox');
-    expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
     // Generated ids are unassertable (`popup.js:88` falls back to `useId`), so the popup is given one.
     expect(trigger).not.toHaveAttribute('aria-controls');
@@ -133,6 +137,27 @@ describe('<SearchablePicker>', () => {
 
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(trigger).toHaveAttribute('aria-controls', 'picker-popup');
+  });
+
+  // The half the attribute assertions above cannot state on their own: `aria-haspopup` is only true if
+  // the node `aria-controls` names is really a dialog. It was not — the panel root carried no role at
+  // all until a caller passed one, so the trigger promised a popup type and then pointed at a bare
+  // `<div>`. Resolving the reference is what makes this a regression guard rather than a spelling
+  // check. See spec/033-column-select-redesign § 7.
+  it('points aria-controls at a node whose role matches the advertised popup type', () => {
+    renderPicker({ role: 'dialog', label: 'Choose a field' });
+
+    open();
+
+    const trigger = screen.getByTestId('picker');
+    const controlled = document.getElementById(trigger.getAttribute('aria-controls') as string);
+
+    expect(controlled).not.toBeNull();
+    expect(controlled).toHaveAttribute('role', trigger.getAttribute('aria-haspopup'));
+    expect(controlled).toHaveAttribute('aria-label', 'Choose a field');
+    // And the listbox is a *descendant*, not the controlled node — which is why `listbox` was the
+    // wrong value for `aria-haspopup`.
+    expect(controlled?.querySelector('#picker-listbox')).not.toBeNull();
   });
 
   // `shouldRenderToParent` exists for one caller — ROR's, inside a modal, where a portalled panel
