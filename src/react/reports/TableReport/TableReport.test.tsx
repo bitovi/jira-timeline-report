@@ -312,6 +312,41 @@ describe('TableReport (hierarchy body)', () => {
     expect(within(bodyRows[1] as HTMLElement).queryByTestId('table-tree-caret')).not.toBeInTheDocument();
   });
 
+  test('leaf rows reserve the caret slot so their text aligns with parent rows', () => {
+    renderHierarchy();
+
+    const bodyRows = screen.getByRole('table').querySelectorAll('tbody tr');
+    // The child has no caret, but the tree DOES nest here, so it must hold the caret's width open
+    // or its summary would sit 1.25rem left of the parent's.
+    const treeCell = (bodyRows[1] as HTMLElement).querySelector('td div.flex')!;
+    expect(treeCell.querySelector('span.w-4')).toBeInTheDocument();
+  });
+
+  test('a single-level hierarchy (Epic -> Epic) drops the caret slot entirely', () => {
+    // Nothing in the table can ever expand, so reserving caret width would indent every row to
+    // align with a caret that never appears.
+    const lonely = makeRollup('AAA-1', 'Only');
+    render(
+      <TableReport
+        filteredDerivedIssuesObs={obs([])}
+        rollupTimingLevelsAndCalculationsObs={obs([{ hierarchyLevel: 1 }])}
+        primaryIssuesOrReleasesObs={obs([lonely])}
+        allIssuesOrReleasesObs={obs([lonely])}
+        {...(makeTableObs() as any)}
+        tableSortColumnObs={obs('identity:summary')}
+        tableSortDirObs={obs('tree')}
+      />,
+    );
+
+    const bodyRows = screen.getByRole('table').querySelectorAll('tbody tr');
+    expect(bodyRows).toHaveLength(1);
+    // Still a hierarchy sort (the tree cell wrapper is there), but no caret and no spacer.
+    const treeCell = (bodyRows[0] as HTMLElement).querySelector('td div.flex')!;
+    expect(treeCell).toBeInTheDocument();
+    expect(screen.queryByTestId('table-tree-caret')).not.toBeInTheDocument();
+    expect(treeCell.querySelector('span.w-4')).toBeNull();
+  });
+
   test('collapsing a parent hides its descendants', () => {
     renderHierarchy();
     fireEvent.click(screen.getByTestId('table-tree-caret'));

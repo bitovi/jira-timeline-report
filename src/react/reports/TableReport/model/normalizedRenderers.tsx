@@ -61,3 +61,29 @@ export function labelsRender(value: unknown): React.ReactNode {
     </span>
   );
 }
+
+/**
+ * Render an assignee as their avatar + display name (spec/034). The column's value is the display
+ * NAME (so sorting, select-filter options, the `distinct` reducer and group labels all read a
+ * person, not a URL — §3); the avatar URL is read off the raw field object on `ctx.issue`, exactly
+ * as the Icon & Summary column reads its issue-type icon. Unassigned renders blank, like every
+ * other empty value in the table.
+ */
+export function assigneeAvatarRender(value: unknown, ctx: RenderContext): React.ReactNode {
+  if (value == null || value === '') return '';
+  const assignee = ctx.issue?.fields?.['Assignee'] as { avatarUrls?: Record<string, string> } | undefined;
+  // 24×24 is closest to the 16px we render; 48×48 is what the fixtures carry, so both paths matter.
+  const src = assignee?.avatarUrls?.['24x24'] ?? assignee?.avatarUrls?.['48x48'];
+  const name = String(value);
+  // A real `flex` row (not `inline-flex`) so it fills the cell's actual width, giving the name's
+  // `min-w-0`/`truncate` something concrete to shrink against; the avatar is `flex-none` so it is
+  // never the thing that shrinks. `alt=""` because the name is right there in the same cell.
+  return (
+    <span className="flex items-center min-w-0">
+      {src && <img src={src} alt="" width={16} height={16} className="mr-1.5 flex-none rounded-full" />}
+      <span className="truncate min-w-0" title={name}>
+        {name}
+      </span>
+    </span>
+  );
+}
