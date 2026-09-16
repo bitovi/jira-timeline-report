@@ -80,9 +80,10 @@ export function assigneeAvatarRender(value: unknown, ctx: RenderContext): React.
   // never the thing that shrinks. `alt=""` because the name is right there in the same cell.
   return (
     <span className="flex items-center min-w-0">
-      {src && <img src={src} alt="" width={16} height={16} className="mr-1.5 flex-none rounded-full" />}
+      {src && (
+        <img src={src} alt="" width={16} height={16} loading="lazy" decoding="async" className="mr-1.5 flex-none rounded-full" />
+      )}
       <span className="truncate min-w-0" title={name}>
-        {name}
       </span>
     </span>
   );

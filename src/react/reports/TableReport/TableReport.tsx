@@ -862,7 +862,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // can never nest: `isHierarchy` is true, but nothing has children. The caret column only earns its
   // width when some row actually has a caret for the others to align against, so hold the slot open
   // only then — otherwise every row indents by 1.25rem to align with nothing.
-  const anyExpandable = useMemo(() => rows.some((row) => row.hasChildren), [rows]);
+const anyExpandable = useMemo(() => (isHierarchy ? rows.some((row) => row.hasChildren) : false), [isHierarchy, rows]);
 
   // --- Phase 3 grouping ------------------------------------------------------
   // Grouping and hierarchy are mutually exclusive (design/tree-column-brainstorm §3): grouping only
