@@ -5,6 +5,7 @@ import { createForgeConnectStorage } from './jira/storage/index.forge';
 import { createForgeLinkBuilder, createForgeRouting } from './routing/index.forge';
 import { getForgeRequestHelper } from './request-helpers/forge-request-helper';
 import { interceptExternalLinkClicks, setExternalOpener } from './shared/open-external';
+import { setAppReloader } from './shared/reload-app';
 
 import type { RoutingConfiguration } from './routing/common';
 
@@ -72,8 +73,24 @@ const installExternalOpener = (): void => {
   interceptExternalLinkClicks();
 };
 
+/**
+ * A self-reload of the Custom UI iframe never gets its bridge handshake back, so the app comes back
+ * hung. `router.reload()` reloads the *container*, which rebuilds the frame properly — the same
+ * thing a user pressing refresh does. See `shared/reload-app.ts`.
+ *
+ * Fire-and-forget, like the external opener: nothing can be awaited across a page reload anyway.
+ */
+const installAppReloader = (): void => {
+  setAppReloader(() => {
+    void router.reload().catch((err) => {
+      console.error('Could not reload the page through the Forge container', err);
+    });
+  });
+};
+
 export default async function main() {
   installExternalOpener();
+  installAppReloader();
 
   // Awaited before `mainHelper`, not inside `configureRouting`: `view.createHistory()` is async and
   // `AP.history` is not, so this is the one place the Forge bootstrap genuinely differs in shape
