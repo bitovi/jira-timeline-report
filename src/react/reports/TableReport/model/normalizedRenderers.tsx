@@ -81,9 +81,18 @@ export function assigneeAvatarRender(value: unknown, ctx: RenderContext): React.
   return (
     <span className="flex items-center min-w-0">
       {src && (
-        <img src={src} alt="" width={16} height={16} loading="lazy" decoding="async" className="mr-1.5 flex-none rounded-full" />
+        <img
+          src={src}
+          alt=""
+          width={16}
+          height={16}
+          loading="lazy"
+          decoding="async"
+          className="mr-1.5 flex-none rounded-full"
+        />
       )}
       <span className="truncate min-w-0" title={name}>
+        {name}
       </span>
     </span>
   );
