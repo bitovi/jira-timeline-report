@@ -590,8 +590,10 @@ export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
     });
   }, [rows, sortCol, sortDir]);
 
-  if (!allIssues) return <div className="p-4 text-neutral-600">Loading...</div>;
-  if (!issues.length) return <div className="p-4 text-neutral-600">No issues to display.</div>;
+  // Unpadded like the report body below — the gutter is on `#react-report-container`. Keeping `p-4`
+  // here would indent an embedded report while it loads and snap it flush once the data lands.
+  if (!allIssues) return <div className="text-neutral-600">Loading...</div>;
+  if (!issues.length) return <div className="text-neutral-600">No issues to display.</div>;
 
   const fixedColumns = [
     { key: '__key__', label: 'Key', sticky: true },
@@ -645,7 +647,7 @@ export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-y-8">
+    <div className="flex flex-col gap-y-8">
       <div>
         <h2 className="text-lg font-semibold mb-1">Time in Status</h2>
         <p className="text-sm text-neutral-600">

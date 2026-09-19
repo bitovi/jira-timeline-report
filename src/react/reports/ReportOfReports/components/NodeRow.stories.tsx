@@ -62,7 +62,7 @@ export const Hovered: Story = {
   },
 };
 
-/** A top-level section: the wider top-level padding, with the caret trailing on the right. */
+/** A top-level row: taller than a nested one, with the caret trailing on the right. */
 export const Section: Story = {
   args: {
     caret: <CollapseToggle isCollapsed={false} label="Q3 Planning" onToggle={() => {}} isRowActive />,
@@ -108,24 +108,35 @@ export const LongLabel: Story = {
   },
 };
 
-/** The section-hover tint, matching `--section-hover-color`'s default in `primitives.css`. */
-const HOVER_BG = 'bg-[#F4F5F5]';
-
-/** Which section a hovered id's tint belongs to — a report's own container, or a section's own path. */
-const containerOf: Record<string, string> = { alpha: 'delivery', beta: 'q3', delivery: 'delivery', q3: 'q3' };
+/** The section-hover tint — the same themeable value `SectionView` paints. */
+const HOVER_BG = 'bg-[var(--section-hover-color)]';
 
 /**
- * A document, as the pieces assemble: a top-level card, a level-2 rail that breaks between siblings,
- * and a level-3 report, indented one step further than its section parent and carrying no rail of its
- * own. "Beta", a report hanging directly off the card (level 2, same as "Delivery"), reads at
- * "Delivery"'s own size (17px) rather than a small fixed report size — indent and size are a function
- * of level only; only weight, color, and tracking mark it as a report rather than a section.
+ * Which section a hovered id's tint belongs to — the innermost section the pointer is in, which is
+ * what `isContainerHovered` resolves to in the document. A report tints its container, never itself.
+ */
+const containerOf: Record<string, string> = {
+  q3: 'q3',
+  delivery: 'delivery',
+  alpha: 'alpha',
+  cycle: 'alpha',
+  summary: 'q3',
+};
+
+/**
+ * A document, as the pieces assemble. **Nothing indents at any level** — a section and a report at the
+ * same level start at the same x. Hierarchy is the type scale down to L2 (20px bold over 17px light)
+ * and then the L3 card: a filled panel with a left rail, the one box in the document. L1 paints a
+ * background and L2 paints nothing at all, so no filled box ever nests inside another.
  *
- * Hovering tints the *innermost section* the pointer is in — "alpha" (a report) tints "delivery", not
- * itself, since only a section carries the tint — and darkens that row's own title and chevron, the
- * two signals `NodeRow`/`CollapseToggle` no longer draw as a shared row background.
- * See spec/029-report-of-reports-redesign, "hover reveals the section you're in" and "indent and size
- * are driven by level, not by node kind".
+ * "Summary", a value hanging directly off L1, is level 2 and so reads at an L2 section's own 17px —
+ * size is a function of level only; weight, color, and tracking are the only things node kind changes.
+ *
+ * Hovering tints the *innermost section* the pointer is in — "Cycle time" (a report) tints the "Alpha"
+ * card, not itself — and darkens that row's own title and chevron, the two signals `NodeRow`/
+ * `CollapseToggle` no longer draw as a shared row background.
+ * See spec/029-report-of-reports-redesign, "hover reveals the section you're in", and
+ * `sectionAccentClassName` in `ReportOfReports.tsx` for the accent this mirrors.
  */
 export const Document: Story = {
   render: () => {
@@ -152,20 +163,30 @@ export const Document: Story = {
       </div>
     );
 
-    // Section text defaults are level-specific (Theme panel → "L1/L2/L3 Section Text"); report titles
-    // share one color at every level. Full class literals, not interpolated — Tailwind's static scanner
-    // only picks up complete strings in source.
-    const sectionRestColor: Record<string, string> = { q3: 'text-[#002A2D]', delivery: 'text-[#00464A]' };
+    // Read from the theme exactly as the document reads it — section text is level-specific (Theme
+    // panel → "L1/L2/L3 Section Text"), report titles share one color at every level, and hover
+    // overrides both with the same darken. Full class literals, not interpolated: Tailwind's static
+    // scanner only picks up complete strings in source.
+    const sectionRestColor: Record<string, string> = {
+      q3: 'text-[var(--section-l1-text-color)]',
+      delivery: 'text-[var(--section-l2-text-color)]',
+      alpha: 'text-[var(--section-l3-text-color)]',
+    };
     const titleColor = (id: string) => (hovered === id ? 'text-[#002A2D]' : sectionRestColor[id]);
-    const reportColor = (id: string) => (hovered === id ? 'text-[#002A2D]' : 'text-[#4C5B5C]');
+    const reportColor = (id: string) => (hovered === id ? 'text-[#002A2D]' : 'text-[var(--report-title-text-color)]');
 
     return (
-      <div className="flex flex-col" onMouseOver={() => setHovered(null)} onMouseLeave={() => setHovered(null)}>
-        <section
-          className={`color-bg-section flex flex-col rounded-2xl overflow-hidden shadow-[0_1px_2px_-1px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.10)] ${
-            tinted === 'q3' ? HOVER_BG : ''
-          }`}
-        >
+      // `px-4` stands in for the page gutter the document sits in (`#react-report-container` plus
+      // `.fullish-vh`): L1's `-mx-4` bleeds its paint into it, and with no gutter here the card would
+      // hang off the decorator's edge rather than widening inside it.
+      <div
+        className="flex flex-col gap-5 px-4"
+        onMouseOver={() => setHovered(null)}
+        onMouseLeave={() => setHovered(null)}
+      >
+        {/* L1: no box. A painted background whose `-mx-4 px-4` cancel out — they widen the paint 16px
+            each way so it doesn't stop dead at the text, and indent nothing. */}
+        <section className={`color-bg-section flex flex-col rounded -mx-4 px-4 ${tinted === 'q3' ? HOVER_BG : ''}`}>
           {hoverable(
             'q3',
             row(
@@ -181,13 +202,15 @@ export const Document: Story = {
             ),
           )}
           {!collapsed && (
-            <div className="flex flex-col gap-[34px] pr-6 pb-[22px] pl-8">
-              <div className={`pl-4 shadow-[inset_2px_0_0_#DFE2E2] ${tinted === 'delivery' ? HOVER_BG : ''}`}>
+            <div className="flex flex-col gap-[22px] pb-3">
+              {/* L2: no accent of any kind — `font-light` at 17px is the whole of it, so it doesn't
+                  compete with the bold levels above and below. */}
+              <section className={`flex flex-col ${tinted === 'delivery' ? HOVER_BG : ''}`}>
                 {hoverable(
                   'delivery',
                   row(
                     'delivery',
-                    <h3 className={`truncate text-[17px] font-bold ${titleColor('delivery')}`}>Delivery</h3>,
+                    <h3 className={`truncate text-[17px] font-light ${titleColor('delivery')}`}>Delivery</h3>,
                     <CollapseToggle
                       isCollapsed={false}
                       label="Delivery"
@@ -196,35 +219,66 @@ export const Document: Story = {
                     />,
                   ),
                 )}
-                {hoverable(
-                  'alpha',
-                  <div className="pl-4 mt-[10px]">
-                    {row(
+                <div className="flex flex-col">
+                  {/* L3: the card. Its `px-5` is the only horizontal offset in the document, and it
+                      offsets the row and its content alike. The rail is an inset shadow so it takes
+                      no layout space. */}
+                  <section
+                    className={`mt-[10px] flex flex-col rounded px-5 py-3 bg-[var(--section-card-color)] shadow-[inset_3px_0_0_var(--section-border-color)] ${
+                      tinted === 'alpha' ? HOVER_BG : ''
+                    }`}
+                  >
+                    {hoverable(
                       'alpha',
-                      <h4 className={`truncate text-[13.5px] font-semibold tracking-[0.045em] ${reportColor('alpha')}`}>
-                        Alpha
-                      </h4>,
-                      <CollapseToggle
-                        isCollapsed={false}
-                        label="Alpha"
-                        onToggle={() => {}}
-                        isRowActive={hovered === 'alpha'}
-                      />,
+                      row(
+                        'alpha',
+                        <h4 className={`truncate text-[13.5px] font-bold ${titleColor('alpha')}`}>Alpha</h4>,
+                        <CollapseToggle
+                          isCollapsed={false}
+                          label="Alpha"
+                          onToggle={() => {}}
+                          isRowActive={hovered === 'alpha'}
+                        />,
+                      ),
                     )}
-                    <div className="mt-[10px] h-16 rounded bg-neutral-20 text-sm text-slate-500 grid place-items-center">
-                      the embedded report
+                    <div className="flex flex-col">
+                      {hoverable(
+                        'cycle',
+                        <div className="mt-[10px] flex flex-col">
+                          {row(
+                            'cycle',
+                            <h3
+                              className={`truncate text-[12.5px] font-semibold tracking-[0.045em] ${reportColor('cycle')}`}
+                            >
+                              Cycle time
+                            </h3>,
+                            <CollapseToggle
+                              isCollapsed={false}
+                              label="Cycle time"
+                              onToggle={() => {}}
+                              isRowActive={hovered === 'cycle'}
+                            />,
+                          )}
+                          {/* Rows sit flush — they're a list. A chart is content and needs the air. */}
+                          <div className="pb-4">
+                            <div className="h-16 rounded bg-neutral-20 text-sm text-slate-500 grid place-items-center">
+                              the embedded report
+                            </div>
+                          </div>
+                        </div>,
+                      )}
                     </div>
-                  </div>,
-                )}
-              </div>
+                  </section>
+                </div>
+              </section>
               {hoverable(
-                'beta',
-                <div className="pl-4">
+                'summary',
+                <div className="flex flex-col">
                   {row(
-                    'beta',
+                    'summary',
                     <p className="flex items-baseline gap-2">
                       <span
-                        className={`shrink-0 truncate text-[17px] font-semibold tracking-[0.045em] ${reportColor('beta')}`}
+                        className={`shrink-0 truncate text-[17px] font-semibold tracking-[0.045em] ${reportColor('summary')}`}
                       >
                         Summary
                       </span>

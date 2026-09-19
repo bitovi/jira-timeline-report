@@ -285,8 +285,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   return (
     // The shell hands this report the viewport's leftover height (`REPORT_TYPES_FILLING_HEIGHT`), so
-    // the grid and the rail each scroll themselves rather than scrolling the page.
-    <div className="relative flex min-h-0 flex-1 flex-col py-2 print:block">
+    // the grid and the rail each scroll themselves rather than scrolling the page. Padding comes
+    // from the shell's `#react-report-container` gutter — the report carries none of its own, so an
+    // embedded copy in a Report of Reports isn't double-indented.
+    <div className="relative flex min-h-0 flex-1 flex-col print:block">
       {/* Progress Bar */}
       <div
         className={` h-1 shrink-0 bg-blue-300 transition-opacity duration-500 ${

@@ -281,10 +281,19 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             </div>
 
             {PrimaryReport && (
-              // `mb-10`, only when the sticky footer below actually needs the clearance — see
-              // `reportNeedsFooterClearance`'s own doc comment. Lives here rather than on each report
-              // component so GanttGrid/ScatterTimeline/TableReport don't each carry their own copy of a
-              // margin that, for two of the three, isn't protecting against anything.
+              // `p-2` is **the** report gutter, for every report type. It lives here because this div
+              // is the report page's mount point and nothing else renders through it: a report
+              // embedded in a Report of Reports goes through `ChildReport`, which renders
+              // `<PrimaryReport />` bare, so it inherits none of this. Reports used to each carry
+              // their own root padding and it rode along into documents, indenting every embedded
+              // chart inside a layout that had already positioned it.
+              //
+              // One value rather than a per-type lookup: the nine reports had `p-2` (4), `p-4` (2) and
+              // nothing at all (3), which is drift rather than nine decisions worth preserving. 8px is
+              // the plurality and what the three most-used visual reports already used.
+              //
+              // `mb-10`, by contrast, stays keyed by report type — it's genuinely report-specific. See
+              // `reportNeedsFooterClearance`'s own doc comment.
               //
               // `min-h-0` is load-bearing for the fill-height branch: a flex item's automatic minimum
               // size is its content, so without it the container grows past the viewport and the
@@ -292,6 +301,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               <div
                 id="react-report-container"
                 className={[
+                  'p-2',
                   reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : '',
                   fillsHeight ? 'flex min-h-0 flex-1 flex-col' : '',
                 ]

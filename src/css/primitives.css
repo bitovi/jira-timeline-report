@@ -33,9 +33,14 @@
   --new-color: #8f7ee7;
   --new-text-color: #fff;
 
-  /* Report-of-reports section banding. */
+  /* Report-of-reports section banding. `--section-color` is painted by top-level sections only;
+     a nested one is transparent so an ancestor's hover tint shows through it. */
   --section-color: #fbfcfc;
   --section-text-color: #000;
+
+  /* The L3 card's fill — the one section depth that is a filled panel rather than a bare heading. */
+  --section-card-color: #eff1f1;
+  --section-card-text-color: #000;
 
   /* Report-of-reports accents: the resting left rail, each heading kind's text color, and the
      background tint for whichever section the pointer is in. See spec/029-report-of-reports-redesign
