@@ -1,4 +1,6 @@
-import { requestJira } from '@forge/bridge';
+import { invoke, requestJira } from '@forge/bridge';
+
+import { STORAGE_GET, STORAGE_SET } from '../../forge-resolver/contract';
 
 import type { StorageFactory } from './common';
 
@@ -75,5 +77,61 @@ export const createForgeConnectStorage: StorageFactory = (jiraHelpers) => {
     },
 
     update,
+  };
+};
+
+/**
+ * The resolver answers in an envelope rather than returning the value bare, so that "the key holds
+ * `undefined`" and "the key was never written" cannot be confused on the way back across `invoke`.
+ */
+interface KvsReadResponse<TData = unknown> {
+  value: TData | undefined;
+}
+
+/**
+ * The Forge host's storage, backed by **Forge's own Key-Value Store**.
+ *
+ * The alternative to `createForgeConnectStorage` above, and the reason both exist: that one reads
+ * the Connect app properties existing customers' data already lives in (32 KB per value), this one
+ * reads KVS (240 KiB per value, no Connect dependency). See
+ * spec/021-forge/resolver-storage/plan.md.
+ *
+ * `@forge/kvs` only runs server-side and `@forge/bridge` exports no key-value API, so every call
+ * here crosses `invoke()` to the resolver in `src/forge-resolver/index.ts`. That indirection is the
+ * whole reason this app has a backend at all.
+ *
+ * Takes no `jiraHelpers`: unlike the Connect store there is no `appKey` to address, because KVS is
+ * already namespaced to this app installation.
+ */
+export const createForgeKvsStorage: StorageFactory = () => {
+  return {
+    // Nothing to provision — KVS exists as soon as something writes to it, so a fresh install has
+    // no setup step. This `true` is what the whole resolver exists to make possible.
+    storageInitialized: async () => true,
+
+    get: async function <TData>(key: string, defaultShape: unknown = {}): Promise<TData | null> {
+      // `invoke` is declared `Promise<T | { body: T; metadata }>`. The second shape only happens
+      // when a `metadata` argument is passed, which this never does — hence the narrowing cast
+      // rather than a branch that could never run.
+      const { value } = (await invoke<{ key: string }, KvsReadResponse<TData>>(STORAGE_GET, {
+        key,
+      })) as KvsReadResponse<TData>;
+
+      // Deliberately unlike the Connect store, which PUTs the default back on a 404. There is no
+      // container to create, and a write on every cold read is the expensive KVS operation.
+      //
+      // Note this only catches a *missing* key: a failed read rejects out of `invoke` and is left
+      // to propagate. Collapsing the two would look like "no reports yet" and hand the user an
+      // empty app, whose next save overwrites reports that were there all along.
+      if (value === undefined) {
+        return defaultShape as TData;
+      }
+
+      return value;
+    },
+
+    update: async function <TData>(key: string, value: TData): Promise<void> {
+      await invoke(STORAGE_SET, { key, value });
+    },
   };
 };

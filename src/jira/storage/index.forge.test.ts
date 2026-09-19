@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { requestJira } from '@forge/bridge';
+import { invoke, requestJira } from '@forge/bridge';
 
-import { createForgeConnectStorage } from './index.forge';
+import { createForgeConnectStorage, createForgeKvsStorage } from './index.forge';
 
 import type { StorageFactory } from './common';
 
 vi.mock('@forge/bridge', () => ({
   requestJira: vi.fn(),
+  invoke: vi.fn(),
 }));
 
 const APP_KEY = 'bitovi.status-report';
@@ -102,6 +103,83 @@ describe('createForgeConnectStorage', () => {
   describe('storageInitialized', () => {
     it('is always true', async () => {
       await expect(storage().storageInitialized()).resolves.toBe(true);
+    });
+  });
+});
+
+describe('createForgeKvsStorage', () => {
+  const kvs = () => createForgeKvsStorage({} as Parameters<StorageFactory>[number]);
+
+  beforeEach(() => {
+    vi.mocked(invoke).mockReset();
+  });
+
+  describe('get', () => {
+    it('returns the value the resolver holds for the key', async () => {
+      vi.mocked(invoke).mockResolvedValueOnce({ value: { tableReport: true } });
+
+      await expect(kvs().get('features')).resolves.toEqual({ tableReport: true });
+    });
+
+    it('asks the resolver for that key', async () => {
+      vi.mocked(invoke).mockResolvedValueOnce({ value: [] });
+
+      await kvs().get('theme');
+
+      expect(vi.mocked(invoke)).toHaveBeenCalledWith('storage.get', { key: 'theme' });
+    });
+
+    // KVS has no envelope and no 404 — a key that was never written simply resolves to nothing.
+    it('returns the default shape when the key has never been written', async () => {
+      vi.mocked(invoke).mockResolvedValueOnce({ value: undefined });
+
+      await expect(kvs().get('saved-reports', {})).resolves.toEqual({});
+    });
+
+    // Deliberately unlike createForgeConnectStorage, which seeds the store on a 404. A write is the
+    // expensive KVS operation and there is nothing to provision — see the plan, § Behaviour.
+    it('writes nothing when the key has never been written', async () => {
+      vi.mocked(invoke).mockResolvedValueOnce({ value: undefined });
+
+      await kvs().get('saved-reports', { seeded: true });
+
+      expect(vi.mocked(invoke)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith('storage.set', expect.anything());
+    });
+
+    // The load-bearing one. A failure that reads as "no reports yet" hands the user an empty app,
+    // and the next save overwrites reports that were there all along.
+    it('throws when the resolver fails rather than returning the default shape', async () => {
+      vi.mocked(invoke).mockRejectedValueOnce(new Error('resolver exploded'));
+
+      await expect(kvs().get('saved-reports', {})).rejects.toThrow(/resolver exploded/);
+    });
+  });
+
+  describe('update', () => {
+    it('sends the key and value to the resolver', async () => {
+      vi.mocked(invoke).mockResolvedValueOnce(undefined);
+
+      await kvs().update('theme', [{ name: 'dark' }]);
+
+      expect(vi.mocked(invoke)).toHaveBeenCalledWith('storage.set', {
+        key: 'theme',
+        value: [{ name: 'dark' }],
+      });
+    });
+
+    it('throws when the write is rejected', async () => {
+      vi.mocked(invoke).mockRejectedValueOnce(new Error('write refused'));
+
+      await expect(kvs().update('theme', [])).rejects.toThrow(/write refused/);
+    });
+  });
+
+  describe('storageInitialized', () => {
+    it('is always true without calling the resolver', async () => {
+      await expect(kvs().storageInitialized()).resolves.toBe(true);
+
+      expect(vi.mocked(invoke)).not.toHaveBeenCalled();
     });
   });
 });

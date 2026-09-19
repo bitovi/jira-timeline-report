@@ -1,7 +1,7 @@
 import { router, view } from '@forge/bridge';
 
 import mainHelper from './shared/main-helper.js';
-import { createForgeConnectStorage } from './jira/storage/index.forge';
+import { createForgeKvsStorage } from './jira/storage/index.forge';
 import { createForgeLinkBuilder, createForgeRouting } from './routing/index.forge';
 import { getForgeRequestHelper } from './request-helpers/forge-request-helper';
 import { interceptExternalLinkClicks, setExternalOpener } from './shared/open-external';
@@ -127,9 +127,15 @@ export default async function main() {
     {
       host: 'forge',
       createRequestHelper: getForgeRequestHelper,
-      // Connect app properties, not the configuration issue — this is what makes the cutover
-      // invisible to existing customers. See jira/storage/index.forge.ts.
-      createStorage: createForgeConnectStorage,
+      // Forge's own Key-Value Store, through the `storage-resolver` function — 240 KiB per value
+      // against the 32 KB of a Connect app property, and no dependency on a Connect API outliving
+      // Connect. See jira/storage/index.forge.ts and spec/021-forge/resolver-storage/plan.md.
+      //
+      // **This does not read the Connect app properties existing customers' data lives in.**
+      // `createForgeConnectStorage` is still exported and is still the only thing that can; moving
+      // that data into KVS is a separate migration the plan leaves out of scope. Swapping this line
+      // back is the whole rollback.
+      createStorage: createForgeKvsStorage,
       configureRouting: (
         route: {
           start: () => void;
