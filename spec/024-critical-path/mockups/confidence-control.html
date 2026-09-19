@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confidence control — compact alternatives to the Median…90% slider</title>
+    <style>
+      :root {
+        /* Same Atlaskit-derived token set as critical-paths.html / earliest-finish.html / placement.html */
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-hover: #0055cc;
+        --brand-bg: #e9f2ff;
+        --success: #22a06b;
+        --danger: #ae2e24;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+        --series-wait: #b65c02;
+        --series-wait-bg: #fff3eb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 120px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 44px 0 2px;
+        padding-top: 14px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 22px 0 8px;
+        color: var(--slate);
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 980px;
+        margin: 6px 0 10px;
+        font-size: 13px;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 4px 0 14px;
+        max-width: 980px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: var(--slate-bg);
+        color: var(--slate);
+        vertical-align: middle;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+      .badge.rec {
+        background: #dcfff1;
+        color: #216e4e;
+      }
+      .badge.maybe {
+        background: var(--series-wait-bg);
+        color: var(--series-wait);
+      }
+      .badge.no {
+        background: #ffeceb;
+        color: var(--danger);
+      }
+      .note {
+        border-left: 3px solid var(--brand);
+        background: var(--brand-bg);
+        padding: 10px 14px;
+        margin: 14px 0;
+        font-size: 13px;
+        max-width: 980px;
+        border-radius: 0 3px 3px 0;
+      }
+      .note.warn {
+        border-left-color: var(--series-wait);
+        background: var(--series-wait-bg);
+      }
+      .note p {
+        margin: 0 0 6px;
+      }
+      .note p:last-child {
+        margin-bottom: 0;
+      }
+      ul.tight {
+        margin: 6px 0;
+        padding-left: 20px;
+        max-width: 980px;
+        font-size: 13px;
+      }
+      ul.tight li {
+        margin-bottom: 5px;
+      }
+      .good {
+        color: #216e4e;
+      }
+      .bad {
+        color: var(--danger);
+      }
+      table.cmp {
+        border-collapse: collapse;
+        font-size: 12.5px;
+        margin: 10px 0 4px;
+        max-width: 1080px;
+        width: 100%;
+      }
+      table.cmp th,
+      table.cmp td {
+        border: 1px solid var(--border);
+        padding: 7px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      table.cmp th {
+        background: var(--neutral-20);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--slate);
+      }
+      table.cmp td.w {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---------- fake controls row (mirrors ReportControls.tsx) ---------- */
+      .wire {
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+        padding: 10px 12px;
+        max-width: 1000px;
+      }
+      .row {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+      .field-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .ctrl {
+        font-size: 12px;
+        padding: 5px 9px;
+        border-radius: 3px;
+        background: #fff;
+        border: 1px solid var(--border);
+        color: var(--text);
+        white-space: nowrap;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ctrl.primary {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+        font-weight: 500;
+      }
+      .ctrl.secondary {
+        background: var(--neutral-20);
+        border-color: transparent;
+      }
+      .spacer {
+        flex: 1;
+        min-width: 8px;
+      }
+      .measure {
+        font-size: 11px;
+        color: var(--subtle);
+        margin-top: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---------- the current (baseline) horizontal slider ---------- */
+      .cur-slider {
+        flex: 1;
+        min-width: 280px;
+        padding: 0 6px;
+      }
+      .cur-slider input[type='range'] {
+        width: 100%;
+        margin: 0;
+        accent-color: var(--brand);
+      }
+      .cur-ticks {
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        font-size: 10px;
+        color: var(--subtle);
+        text-align: center;
+        margin-top: 2px;
+      }
+
+      /* ---------- option cards ---------- */
+      .cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: flex-start;
+        margin-top: 8px;
+      }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #fff;
+        padding: 16px 18px 18px;
+        width: 320px;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+      }
+      .card h4 {
+        margin: 0 0 2px;
+        font-size: 13px;
+      }
+      .card .sub {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin: 0 0 14px;
+        min-height: 32px;
+      }
+      .demo {
+        background: var(--neutral-10);
+        border: 1px dashed var(--border);
+        border-radius: 4px;
+        padding: 18px 14px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        min-height: 92px;
+      }
+      .readout {
+        margin-top: 10px;
+        font-size: 11.5px;
+        color: var(--subtle);
+        font-variant-numeric: tabular-nums;
+      }
+      .readout b {
+        color: var(--text);
+      }
+      .pros {
+        font-size: 11.5px;
+        margin: 10px 0 0;
+        padding-left: 16px;
+      }
+      .pros li {
+        margin-bottom: 3px;
+      }
+
+      /* ---------- shared widget chrome ---------- */
+      .trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 9px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 3px;
+        font: inherit;
+        font-size: 12px;
+        color: var(--text);
+        cursor: ns-resize;
+        user-select: none;
+        touch-action: none;
+        white-space: nowrap;
+      }
+      .trigger:hover {
+        background: var(--neutral-20);
+      }
+      .trigger.open {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 2px var(--brand-bg);
+      }
+      .trigger .val {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .trigger .caret {
+        color: var(--subtle);
+        font-size: 9px;
+      }
+
+      /* vertical slider popover */
+      .vpop {
+        position: fixed;
+        z-index: 50;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        box-shadow:
+          0 8px 16px -4px rgba(9, 30, 66, 0.25),
+          0 0 1px rgba(9, 30, 66, 0.31);
+        padding: 8px 10px;
+        display: none;
+        user-select: none;
+        touch-action: none;
+      }
+      .vpop.show {
+        display: block;
+      }
+      .vtrack {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 96px;
+      }
+      .vstop {
+        height: 26px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+      }
+      .vstop .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--neutral-30);
+        flex-shrink: 0;
+      }
+      .vstop.filled .dot {
+        background: #b3d4ff;
+      }
+      .vstop:hover {
+        background: var(--neutral-20);
+      }
+      .vstop.hot {
+        background: var(--brand-bg);
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .vstop.hot .dot {
+        background: var(--brand);
+        box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.18);
+      }
+      .vpop-head {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--subtle);
+        font-weight: 600;
+        padding: 0 6px 6px;
+      }
+
+      /* real vertical rail (option B) */
+      .rail-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .rail {
+        position: relative;
+        width: 22px;
+        height: 64px;
+        border-radius: 11px;
+        background: var(--neutral-30);
+        cursor: ns-resize;
+        touch-action: none;
+      }
+      .rail .fill {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--brand);
+        border-radius: 11px;
+      }
+      .rail .thumb {
+        position: absolute;
+        left: 50%;
+        width: 18px;
+        height: 18px;
+        margin-left: -9px;
+        margin-top: -9px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid var(--brand);
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.3);
+        pointer-events: none;
+      }
+      .rail-labels {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 64px;
+        font-size: 10px;
+        color: var(--subtle);
+      }
+      .rail-value {
+        font-size: 12px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        min-width: 52px;
+      }
+
+      /* scrub chip (option C) */
+      .scrub {
+        display: inline-flex;
+        align-items: center;
+        height: 30px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: #fff;
+        overflow: hidden;
+      }
+      .scrub .grip {
+        padding: 0 10px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        cursor: ew-resize;
+        font-size: 12px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        user-select: none;
+        touch-action: none;
+        min-width: 62px;
+        justify-content: center;
+      }
+      .scrub .grip:hover {
+        background: var(--brand-bg);
+        color: var(--brand);
+      }
+      .scrub .step {
+        width: 20px;
+        height: 15px;
+        border: none;
+        border-left: 1px solid var(--border);
+        background: var(--neutral-10);
+        color: var(--subtle);
+        font-size: 8px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0;
+      }
+      .scrub .step:hover {
+        background: var(--brand-bg);
+        color: var(--brand);
+      }
+      .scrub .steps {
+        display: flex;
+        flex-direction: column;
+      }
+      .scrub .step + .step {
+        border-top: 1px solid var(--border);
+      }
+
+      /* segmented strip (option D) */
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+        height: 30px;
+        touch-action: none;
+        user-select: none;
+        cursor: pointer;
+      }
+      .seg .cell {
+        min-width: 26px;
+        padding: 0 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: var(--muted);
+        background: #fff;
+        font-variant-numeric: tabular-nums;
+      }
+      .seg .cell + .cell {
+        border-left: 1px solid var(--neutral-30);
+      }
+      .seg .cell.on {
+        background: var(--brand);
+        color: #fff;
+        font-weight: 600;
+      }
+      .seg .cell.pre {
+        background: var(--brand-bg);
+        color: var(--brand);
+      }
+
+      /* horizontal popover slider (option E) */
+      .hpop {
+        position: fixed;
+        z-index: 50;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        box-shadow:
+          0 8px 16px -4px rgba(9, 30, 66, 0.25),
+          0 0 1px rgba(9, 30, 66, 0.31);
+        padding: 12px 14px 8px;
+        display: none;
+        width: 300px;
+        user-select: none;
+        touch-action: none;
+      }
+      .hpop.show {
+        display: block;
+      }
+      .hpop input[type='range'] {
+        width: 100%;
+        margin: 0;
+        accent-color: var(--brand);
+      }
+      .hpop .ticks {
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        font-size: 10px;
+        color: var(--subtle);
+        text-align: center;
+        margin-top: 2px;
+      }
+
+      .tag {
+        display: inline-block;
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: var(--neutral-20);
+        color: var(--slate);
+        margin-right: 4px;
+      }
+      .tag.ok {
+        background: #dcfff1;
+        color: #216e4e;
+      }
+      .tag.warn {
+        background: var(--series-wait-bg);
+        color: var(--series-wait);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Confidence control — compact alternatives to the Median…90% slider</h1>
+    <p class="intro">
+      The Auto-Scheduler controls row currently gives the uncertainty slider <code>flex-grow</code>, so it eats every
+      pixel left over after <em>Report on</em>, <em>Report type</em>, <em>Start date</em> and
+      <em>Update Epic Dates</em>. There is nowhere to put a <strong>Critical path</strong> button. These options all
+      shrink the control to a fixed, small footprint.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Hard requirement carried through every option:</strong> once the pointer goes down, the user can keep
+        changing the value <em>without releasing</em>. Every widget below is drag-live — press, move, watch the number
+        change, release to finish. Nothing requires a click-then-click-again.
+      </p>
+      <p>
+        All nine stops are preserved: <code>Median (50)</code>, <code>Average (55)</code>, then
+        <code>60 / 65 / 70 / 75 / 80 / 85 / 90</code>.
+      </p>
+    </div>
+
+    <h2>Baseline — what exists today</h2>
+    <div class="wire">
+      <div class="row">
+        <div class="field"><span class="field-label">Report on</span><span class="ctrl">Epics ▾</span></div>
+        <div class="field"><span class="field-label">Report type</span><span class="ctrl">Auto Scheduler ▾</span></div>
+        <div class="cur-slider">
+          <input type="range" min="50" max="90" step="5" value="80" id="baseline" />
+          <div class="cur-ticks">
+            <span>Median</span><span>Avg</span><span>60%</span><span>65%</span><span>70%</span><span>75%</span
+            ><span>80%</span><span>85%</span><span>90%</span>
+          </div>
+        </div>
+        <div class="field"><span class="field-label">Start date</span><span class="ctrl">2026-09-12</span></div>
+        <div class="field"><span class="ctrl primary">Update Epic Dates</span></div>
+      </div>
+      <div class="measure">Slider footprint: <b>flexible, ~300–600px</b> · no room left for anything else.</div>
+    </div>
+
+    <h2>Option A — Press-and-hold vertical slider <span class="badge rec">recommended</span></h2>
+    <p class="caption">
+      A 96px trigger button, driveable two ways.
+      <strong>Press and hold</strong> — the popover appears with the current stop already under your cursor, so you are
+      mid-drag the instant it opens; move up/down, release to commit. Or <strong>click to open</strong> and it stays up
+      — and because the open popover is itself a slider, you can then press anywhere in it and keep dragging without
+      releasing. Neither path ever forces a release mid-adjustment.
+    </p>
+    <div class="cards">
+      <div class="card" style="width: 360px">
+        <h4>Press-and-hold (scrubbing popover)</h4>
+        <p class="sub">Zero-release interaction: pointerdown opens it <em>and</em> starts the drag in one gesture.</p>
+        <div class="demo" data-demo="A"></div>
+        <div class="readout">Value: <b class="out">80%</b> · trigger width <b>~96px</b></div>
+        <ul class="pros">
+          <li class="good">Smallest always-on footprint of any option that still shows the value.</li>
+          <li class="good">One uninterrupted gesture — satisfies the hard requirement literally.</li>
+          <li class="good">Once open, the list is still a slider — press and drag anywhere inside it.</li>
+          <li class="good">Vertical list has room for the full word labels (“Median”, “Average”).</li>
+          <li class="bad">Popover overlays the report while dragging.</li>
+        </ul>
+      </div>
+      <div class="card" style="width: 360px">
+        <h4>Resulting controls row</h4>
+        <p class="sub">
+          Same row, with the freed space spent on <em>Critical path</em> and a <em>Blockers</em> toggle.
+        </p>
+        <div class="demo" style="display: block; padding: 12px">
+          <div class="row" style="flex-wrap: wrap; gap: 8px">
+            <div class="field"><span class="field-label">Report on</span><span class="ctrl">Epics ▾</span></div>
+            <div class="field"><span class="field-label">Type</span><span class="ctrl">Auto Scheduler ▾</span></div>
+            <div class="field">
+              <span class="field-label">Confidence</span>
+              <span data-demo="A2"></span>
+            </div>
+            <div class="field"><span class="field-label">Start</span><span class="ctrl">2026-09-12</span></div>
+            <div class="field"><span class="ctrl secondary">⤳ Critical path</span></div>
+            <div class="field"><span class="ctrl primary">Update Epic Dates</span></div>
+          </div>
+        </div>
+        <div class="readout">Reclaimed: <b>~250–500px</b></div>
+      </div>
+    </div>
+
+    <h2>Option B — Always-visible vertical rail</h2>
+    <p class="caption">
+      No popover, no click-to-reveal. A 22 × 64px vertical track sits inline in the controls row. Press anywhere on it
+      and drag — it snaps to the nine stops. Roughly <strong>110px</strong> wide including the value label.
+    </p>
+    <div class="cards">
+      <div class="card">
+        <h4>Inline vertical rail</h4>
+        <p class="sub">Everything is visible and directly manipulable — no reveal step at all.</p>
+        <div class="demo" data-demo="B"></div>
+        <div class="readout">Value: <b class="out">80%</b> · footprint <b>~110 × 64px</b></div>
+        <ul class="pros">
+          <li class="good">Nothing is hidden; discoverable at a glance.</li>
+          <li class="good">Drag starts immediately, never occludes the report.</li>
+          <li class="bad">64px tall — forces the controls row taller than 30px.</li>
+          <li class="bad">Too short to label all nine stops; only ends get labels.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Rail, laid down in the row</h4>
+        <p class="sub">Shown at true scale next to the other controls to judge the height cost.</p>
+        <div class="demo" style="display: block; padding: 12px">
+          <div class="row" style="flex-wrap: wrap; gap: 10px">
+            <div class="field"><span class="field-label">Report on</span><span class="ctrl">Epics ▾</span></div>
+            <div class="field"><span class="field-label">Confidence</span><span data-demo="B2"></span></div>
+            <div class="field"><span class="ctrl secondary">⤳ Critical path</span></div>
+            <div class="field"><span class="ctrl primary">Update Epic Dates</span></div>
+          </div>
+        </div>
+        <div class="readout">Row height grows from <b>~52px</b> to <b>~84px</b></div>
+      </div>
+    </div>
+
+    <h2>Option C — Scrubbable number (Figma-style)</h2>
+    <p class="caption">
+      The value itself is the control. Press on <code>80%</code> and drag horizontally; every ~20px advances one stop.
+      Arrow steppers on the right for keyboard/precision users. <strong>~84px</strong> total, the most compact option
+      here.
+    </p>
+    <div class="cards">
+      <div class="card">
+        <h4>Drag-to-scrub value</h4>
+        <p class="sub">Familiar from design tools; no popover, no extra chrome, infinite drag range.</p>
+        <div class="demo" data-demo="C"></div>
+        <div class="readout">Value: <b class="out">80%</b> · footprint <b>~84 × 30px</b></div>
+        <ul class="pros">
+          <li class="good">Tiniest footprint; fits in a 30px-tall row.</li>
+          <li class="good">Drag never ends — you can keep scrubbing past the edge of the widget.</li>
+          <li class="bad">Not discoverable — nothing signals “draggable” but the cursor.</li>
+          <li class="bad">No sense of where 80% sits in the range.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Scrub + mini rail hint</h4>
+        <p class="sub">Same scrub, plus a 3px progress bar underneath so position in the range stays legible.</p>
+        <div class="demo" data-demo="C2"></div>
+        <div class="readout">Value: <b class="out">80%</b> · footprint <b>~84 × 34px</b></div>
+        <ul class="pros">
+          <li class="good">Recovers the “where am I in the range” signal for 4 extra pixels.</li>
+          <li class="bad">Still relies on hover to teach the interaction.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Option D — Drag-across segmented strip</h2>
+    <p class="caption">
+      A native <code>&lt;select&gt;</code>-like row of nine cells. Press on any cell and slide across the others — the
+      value follows the pointer, release commits. It is a horizontal slider with the ticks <em>as</em> the track, so it
+      costs <strong>~230px</strong> instead of 600.
+    </p>
+    <div class="cards">
+      <div class="card" style="width: 360px">
+        <h4>Segmented, drag-enabled</h4>
+        <p class="sub">Reads as a set of choices, behaves as a slider.</p>
+        <div class="demo" data-demo="D"></div>
+        <div class="readout">Value: <b class="out">80%</b> · footprint <b>~230 × 30px</b></div>
+        <ul class="pros">
+          <li class="good">All nine stops visible and single-click reachable.</li>
+          <li class="good">Fixed width — no <code>flex-grow</code>, so the row layout stops fighting.</li>
+          <li class="bad">Still the widest of the compact options.</li>
+          <li class="bad">Nine 26px cells are tight click targets.</li>
+        </ul>
+      </div>
+      <div class="card" style="width: 360px">
+        <h4>Segmented, collapsed to 5 stops</h4>
+        <p class="sub">Median / Avg / 70 / 80 / 90 only — the values people actually pick. ~150px.</p>
+        <div class="demo" data-demo="D2"></div>
+        <div class="readout">Value: <b class="out">80%</b> · footprint <b>~150 × 30px</b></div>
+        <ul class="pros">
+          <li class="good">Halves the width and doubles the hit target.</li>
+          <li class="bad">Drops 60/65/75/85 — needs product sign-off that nobody uses them.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Option E — Press-and-hold horizontal popover (vertical/horizontal A–B)</h2>
+    <p class="caption">
+      Identical interaction to Option A, but the popover holds the existing horizontal slider. Included so the
+      vertical-vs-horizontal choice can be judged on feel rather than argued.
+    </p>
+    <div class="cards">
+      <div class="card" style="width: 360px">
+        <h4>Horizontal slider in a popover</h4>
+        <p class="sub">Zero code change to the slider itself — it just moves into an overlay.</p>
+        <div class="demo" data-demo="E"></div>
+        <div class="readout">Value: <b class="out">80%</b> · trigger width <b>~96px</b></div>
+        <ul class="pros">
+          <li class="good">Reuses the existing <code>UncertaintySlider</code> markup verbatim.</li>
+          <li class="bad">
+            Press-and-hold can't align the thumb under the cursor horizontally without the popover jumping sideways —
+            the gesture is less natural than vertical.
+          </li>
+          <li class="bad">Still needs ~300px of popover width for the nine labels.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Side by side</h2>
+    <table class="cmp">
+      <thead>
+        <tr>
+          <th>Option</th>
+          <th class="w">Row footprint</th>
+          <th>Drag without releasing</th>
+          <th>Discoverable</th>
+          <th>Occludes report</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Today — horizontal slider</td>
+          <td class="w">300–600 × 52px</td>
+          <td class="good">Yes</td>
+          <td class="good">Yes</td>
+          <td class="good">No</td>
+          <td>Blocks the critical-path button</td>
+        </tr>
+        <tr>
+          <td><b>A — vertical popover</b></td>
+          <td class="w"><b>96 × 30px</b></td>
+          <td class="good">Yes — opens mid-drag, and drags once open</td>
+          <td class="good">Yes (value + caret)</td>
+          <td class="bad">While dragging</td>
+          <td><span class="tag ok">recommended</span></td>
+        </tr>
+        <tr>
+          <td>B — inline vertical rail</td>
+          <td class="w">110 × 64px</td>
+          <td class="good">Yes</td>
+          <td class="good">Yes</td>
+          <td class="good">No</td>
+          <td><span class="tag warn">grows row height</span></td>
+        </tr>
+        <tr>
+          <td>C — scrub number</td>
+          <td class="w">84 × 30px</td>
+          <td class="good">Yes — unbounded</td>
+          <td class="bad">No</td>
+          <td class="good">No</td>
+          <td><span class="tag warn">pair with a tooltip</span></td>
+        </tr>
+        <tr>
+          <td>D — segmented drag</td>
+          <td class="w">230 × 30px (150 at 5 stops)</td>
+          <td class="good">Yes</td>
+          <td class="good">Yes</td>
+          <td class="good">No</td>
+          <td><span class="tag ok">safe fallback</span></td>
+        </tr>
+        <tr>
+          <td>E — horizontal popover</td>
+          <td class="w">96 × 30px</td>
+          <td class="warn">Awkward</td>
+          <td class="good">Yes</td>
+          <td class="bad">While dragging</td>
+          <td><span class="tag warn">A is strictly better</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Recommendation</h2>
+    <ul class="tight">
+      <li>
+        <strong>Ship Option A.</strong> It is the only design that is both small enough to free ~400px and honours the
+        press-once-and-keep-adjusting requirement without compromise — pointerdown opens the popover already positioned
+        so the current stop is under the cursor, which means the drag has effectively begun before the user notices the
+        popover appeared.
+      </li>
+      <li>
+        <strong>Keep Option D as the fallback</strong> if overlay-while-dragging tests badly. It is a drop-in
+        fixed-width replacement with no hidden state.
+      </li>
+      <li>
+        Option A should still support <em>click → stays open → click a stop</em> and arrow-key adjustment, so it
+        degrades to a normal dropdown for keyboard and touch users.
+      </li>
+      <li>
+        Whichever wins, the control needs a <code>Confidence</code> label — today the tick labels carry that meaning and
+        they disappear in every compact option.
+      </li>
+    </ul>
+
+    <script>
+      const STOPS = [
+        { v: 50, label: 'Median', short: 'Med' },
+        { v: 55, label: 'Average', short: 'Avg' },
+        { v: 60, label: '60%', short: '60' },
+        { v: 65, label: '65%', short: '65' },
+        { v: 70, label: '70%', short: '70' },
+        { v: 75, label: '75%', short: '75' },
+        { v: 80, label: '80%', short: '80' },
+        { v: 85, label: '85%', short: '85' },
+        { v: 90, label: '90%', short: '90' },
+      ];
+      const N = STOPS.length;
+      const clamp = (i) => Math.max(0, Math.min(N - 1, i));
+
+      // Every demo in a card reports back to that card's `.readout b.out`.
+      function reporter(el) {
+        const card = el.closest('.card');
+        const out = card && card.querySelector('.out');
+        return (i) => {
+          if (out) out.textContent = STOPS[i].label;
+        };
+      }
+
+      /* ---------------- Option A: press-and-hold vertical slider ---------------- */
+      function makeVerticalPopover(host, { horizontal = false } = {}) {
+        let index = 6; // 80%
+        const report = reporter(host);
+
+        const trigger = document.createElement('button');
+        trigger.className = 'trigger';
+        trigger.innerHTML = `<span class="val"></span><span class="caret">▲▼</span>`;
+
+        const pop = document.createElement('div');
+        pop.className = horizontal ? 'hpop' : 'vpop';
+
+        let stops = [];
+        let range = null;
+
+        if (horizontal) {
+          pop.innerHTML =
+            `<div class="vpop-head">Confidence</div>` +
+            `<input type="range" min="0" max="${N - 1}" step="1" value="${index}">` +
+            `<div class="ticks">${STOPS.map((s) => `<span>${s.short}</span>`).join('')}</div>`;
+          range = pop.querySelector('input');
+          range.addEventListener('input', () => set(+range.value));
+        } else {
+          const head = document.createElement('div');
+          head.className = 'vpop-head';
+          head.textContent = 'Confidence';
+          const track = document.createElement('div');
+          track.className = 'vtrack';
+          // Highest confidence on top reads like "more certain = higher".
+          for (let i = N - 1; i >= 0; i--) {
+            const s = document.createElement('div');
+            s.className = 'vstop';
+            s.innerHTML = `<span class="dot"></span><span>${STOPS[i].label}</span>`;
+            s.dataset.i = i;
+            track.appendChild(s);
+            stops[i] = s;
+          }
+          pop.append(head, track);
+          pop.__track = track;
+        }
+
+        document.body.appendChild(pop);
+        host.appendChild(trigger);
+
+        function paint() {
+          trigger.querySelector('.val').textContent = STOPS[index].label;
+          if (horizontal) {
+            range.value = index;
+          } else {
+            stops.forEach((el, i) => {
+              el.classList.toggle('hot', i === index);
+              el.classList.toggle('filled', i < index);
+            });
+          }
+        }
+        function set(i) {
+          i = clamp(i);
+          if (i === index) return;
+          index = i;
+          paint();
+          report(index);
+        }
+
+        let dragging = false,
+          moved = false,
+          sticky = false,
+          startY = 0,
+          // How far the popover had to be nudged to stay on screen. Added back when mapping
+          // pointer Y to a stop so the drag still tracks the cursor 1:1 after clamping.
+          clampShift = 0;
+
+        function open(pointerY) {
+          pop.classList.add('show');
+          trigger.classList.add('open');
+          const t = trigger.getBoundingClientRect();
+          pop.style.left = Math.max(8, t.left) + 'px';
+          if (horizontal) {
+            pop.style.top = t.bottom + 6 + 'px';
+            return;
+          }
+          // Place the popover so the *current* stop lands under the pointer — the drag
+          // is therefore already in progress the moment the popover appears.
+          pop.style.top = '0px';
+          const cur = stops[index].getBoundingClientRect();
+          const popTop = pop.getBoundingClientRect().top;
+          const wanted = pointerY - (cur.top - popTop) - cur.height / 2;
+          const top = Math.max(8, Math.min(window.innerHeight - pop.offsetHeight - 8, wanted));
+          clampShift = top - wanted;
+          pop.style.top = top + 'px';
+        }
+        function close() {
+          pop.classList.remove('show');
+          trigger.classList.remove('open');
+          sticky = false;
+        }
+        function fromY(y) {
+          if (horizontal) return;
+          const r = pop.__track.getBoundingClientRect();
+          const row = Math.floor(((y - r.top + clampShift) / r.height) * N);
+          set(N - 1 - clamp(row));
+        }
+
+        trigger.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          if (sticky) {
+            close();
+            return;
+          }
+          dragging = true;
+          moved = false;
+          startY = e.clientY;
+          open(e.clientY);
+          trigger.setPointerCapture(e.pointerId);
+        });
+        trigger.addEventListener('pointermove', (e) => {
+          if (!dragging) return;
+          if (Math.abs(e.clientY - startY) > 4) moved = true;
+          if (moved) fromY(e.clientY);
+        });
+        trigger.addEventListener('pointerup', (e) => {
+          if (!dragging) return;
+          dragging = false;
+          trigger.releasePointerCapture(e.pointerId);
+          // Dragged → commit and close. Tapped → leave open so it also works as a menu.
+          if (moved) close();
+          else sticky = true;
+        });
+        trigger.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp' || e.key === 'ArrowRight') set(index + 1);
+          if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') set(index - 1);
+        });
+
+        // The open popover is a slider too, so click-to-open then press-and-drag behaves
+        // identically to press-and-hold. A plain click is just a zero-distance drag.
+        if (!horizontal) {
+          const track = pop.__track;
+          let popDrag = false;
+          track.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            popDrag = true;
+            clampShift = 0; // inside the popover, the stop under the cursor is the value
+            track.setPointerCapture(e.pointerId);
+            fromY(e.clientY);
+          });
+          track.addEventListener('pointermove', (e) => {
+            if (popDrag) fromY(e.clientY);
+          });
+          track.addEventListener('pointerup', (e) => {
+            if (!popDrag) return;
+            popDrag = false;
+            track.releasePointerCapture(e.pointerId);
+            close();
+          });
+        }
+
+        document.addEventListener('pointerdown', (e) => {
+          if (sticky && !pop.contains(e.target) && e.target !== trigger) close();
+        });
+
+        paint();
+        report(index);
+      }
+
+      /* ---------------- Option B: inline vertical rail ---------------- */
+      function makeRail(host) {
+        let index = 6;
+        const report = reporter(host);
+        const wrap = document.createElement('div');
+        wrap.className = 'rail-wrap';
+        wrap.innerHTML = `
+          <div class="rail"><div class="fill"></div><div class="thumb"></div></div>
+          <div class="rail-labels"><span>90%</span><span>Median</span></div>
+          <div class="rail-value"></div>`;
+        const rail = wrap.querySelector('.rail');
+        const fill = wrap.querySelector('.fill');
+        const thumb = wrap.querySelector('.thumb');
+        const value = wrap.querySelector('.rail-value');
+
+        function paint() {
+          const pct = index / (N - 1);
+          fill.style.height = pct * 100 + '%';
+          thumb.style.top = (1 - pct) * 100 + '%';
+          value.textContent = STOPS[index].label;
+        }
+        function set(i) {
+          i = clamp(i);
+          if (i === index) return;
+          index = i;
+          paint();
+          report(index);
+        }
+        function fromY(y) {
+          const r = rail.getBoundingClientRect();
+          set(Math.round((1 - (y - r.top) / r.height) * (N - 1)));
+        }
+        rail.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          rail.setPointerCapture(e.pointerId);
+          fromY(e.clientY);
+          rail.__drag = true;
+        });
+        rail.addEventListener('pointermove', (e) => {
+          if (rail.__drag) fromY(e.clientY);
+        });
+        rail.addEventListener('pointerup', () => (rail.__drag = false));
+
+        host.appendChild(wrap);
+        paint();
+        report(index);
+      }
+
+      /* ---------------- Option C: scrubbable number ---------------- */
+      function makeScrub(host, { hint = false } = {}) {
+        let index = 6;
+        const report = reporter(host);
+        const outer = document.createElement('div');
+        const el = document.createElement('div');
+        el.className = 'scrub';
+        el.innerHTML = `<div class="grip"></div><div class="steps">
+            <button class="step up">▲</button><button class="step down">▼</button></div>`;
+        const grip = el.querySelector('.grip');
+        outer.appendChild(el);
+
+        let bar = null;
+        if (hint) {
+          bar = document.createElement('div');
+          bar.style.cssText = 'height:3px;background:var(--neutral-30);border-radius:2px;margin-top:4px;width:84px';
+          bar.innerHTML = `<div style="height:100%;background:var(--brand);border-radius:2px"></div>`;
+          outer.appendChild(bar);
+        }
+
+        function paint() {
+          grip.textContent = STOPS[index].label;
+          if (bar) bar.firstElementChild.style.width = (index / (N - 1)) * 100 + '%';
+        }
+        function set(i) {
+          i = clamp(i);
+          if (i === index) return;
+          index = i;
+          paint();
+          report(index);
+        }
+
+        let startX = 0,
+          startIndex = 0,
+          drag = false;
+        grip.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          drag = true;
+          startX = e.clientX;
+          startIndex = index;
+          grip.setPointerCapture(e.pointerId);
+        });
+        grip.addEventListener('pointermove', (e) => {
+          if (!drag) return;
+          set(startIndex + Math.round((e.clientX - startX) / 20));
+        });
+        grip.addEventListener('pointerup', (e) => {
+          drag = false;
+          grip.releasePointerCapture(e.pointerId);
+        });
+        el.querySelector('.up').addEventListener('click', () => set(index + 1));
+        el.querySelector('.down').addEventListener('click', () => set(index - 1));
+
+        host.appendChild(outer);
+        paint();
+        report(index);
+      }
+
+      /* ---------------- Option D: drag-across segmented strip ---------------- */
+      function makeSegmented(host, subset) {
+        const items = subset ? subset.map((v) => STOPS.findIndex((s) => s.v === v)) : STOPS.map((_, i) => i);
+        let pos = items.indexOf(6);
+        const report = reporter(host);
+
+        const el = document.createElement('div');
+        el.className = 'seg';
+        el.innerHTML = items.map((i) => `<div class="cell">${STOPS[i].short}</div>`).join('');
+        const cells = [...el.children];
+
+        function paint() {
+          cells.forEach((c, p) => c.classList.toggle('on', p === pos));
+        }
+        function set(p) {
+          p = Math.max(0, Math.min(cells.length - 1, p));
+          if (p === pos) return;
+          pos = p;
+          paint();
+          report(items[pos]);
+        }
+        function fromX(x) {
+          const r = el.getBoundingClientRect();
+          set(Math.floor(((x - r.left) / r.width) * cells.length));
+        }
+        el.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          el.setPointerCapture(e.pointerId);
+          el.__drag = true;
+          fromX(e.clientX);
+        });
+        el.addEventListener('pointermove', (e) => {
+          if (el.__drag) fromX(e.clientX);
+        });
+        el.addEventListener('pointerup', () => (el.__drag = false));
+
+        host.appendChild(el);
+        paint();
+        report(items[pos]);
+      }
+
+      const q = (name) => document.querySelector(`[data-demo="${name}"]`);
+      makeVerticalPopover(q('A'));
+      makeVerticalPopover(q('A2'));
+      makeRail(q('B'));
+      makeRail(q('B2'));
+      makeScrub(q('C'));
+      makeScrub(q('C2'), { hint: true });
+      makeSegmented(q('D'));
+      makeSegmented(q('D2'), [50, 55, 70, 80, 90]);
+      makeVerticalPopover(q('E'), { horizontal: true });
+    </script>
+  </body>
+</html>

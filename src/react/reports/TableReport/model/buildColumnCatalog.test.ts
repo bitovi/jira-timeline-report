@@ -291,6 +291,36 @@ describe('buildColumnCatalog', () => {
     expect(ids).not.toContain('field:project');
   });
 
+  test('Assignee & Avatar appears only when the Assignee field is loadable, and KEEPS the bare field:assignee', () => {
+    // Assignee is not in CORE_FIELDS and the shared `fields` fixture has no Assignee entry, so the
+    // availability gate correctly withholds the facet here.
+    const base = buildColumnCatalog(fields).map((c) => c.id);
+    expect(base).not.toContain('builtin:assignee:avatar');
+
+    const withAssignee: IssueFields = [
+      ...fields,
+      { name: 'Assignee', key: 'assignee', schema: { type: 'user' }, id: 'assignee', custom: false },
+    ];
+    const catalogWithAssignee = buildColumnCatalog(withAssignee);
+    const ids = catalogWithAssignee.map((c) => c.id);
+
+    expect(ids).toContain('builtin:assignee:avatar');
+    // Unlike every other concept, `assignee` claims nothing — so the bare duplicate SURVIVES on
+    // purpose, keeping saved reports that already use it working (spec/034 "keep both").
+    expect(ids).toContain('field:assignee');
+
+    const avatar = catalogWithAssignee.find((c) => c.id === 'builtin:assignee:avatar')!;
+    expect(avatar.group).toBe('Common');
+    expect(avatar.label).toBe('Assignee & Avatar');
+    // The display name, not the avatar URL — see spec/034 §3.
+    expect(
+      avatar.getValue({ fields: { Assignee: { displayName: 'Arthur Pankiewicz' } } } as unknown as TableIssue),
+    ).toBe('Arthur Pankiewicz');
+
+    const bare = catalogWithAssignee.find((c) => c.id === 'field:assignee')!;
+    expect(bare.group).toBe('Fields');
+  });
+
   test('built-in facet getValue reads derived (Project Key) vs raw object (Project Name)', () => {
     const withProject: IssueFields = [
       { name: 'Project', key: 'project', schema: { type: 'project' }, id: 'project', custom: false },
