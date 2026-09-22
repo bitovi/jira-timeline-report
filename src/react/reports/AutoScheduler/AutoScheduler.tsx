@@ -47,7 +47,9 @@ type RolledUpIssue = DerivedIssue & {
 };
 
 type ObservableOfIssues = CanObservable<Array<RolledUpIssue>>;
-export type GridUIData = ReturnType<typeof gridUIData>;
+// `gridUIData` returns null when there are no time ranges to build a grid from; the report
+// early-returns a message in that case, so everything downstream only ever sees the real grid.
+export type GridUIData = NonNullable<ReturnType<typeof gridUIData>>;
 
 interface AutoSchedulerProps {
   primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>;
@@ -109,6 +111,17 @@ const BlocksCycleMessage: FC<{ cycle: BlocksCycleError['cycle'] }> = ({ cycle })
           </li>
         ))}
       </ol>
+    </SectionMessage>
+  </div>
+);
+
+const EmptyTimeRangeMessage: FC = () => (
+  <div className="p-4">
+    <SectionMessage title="There's no timeline to show" appearance="warning">
+      <p>
+        Every work item in this plan finishes on or before the report's start date, so there are no days to lay a
+        timeline out across. Move the start date earlier, or widen the report to include more work.
+      </p>
     </SectionMessage>
   </div>
 );
@@ -261,6 +274,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   // converts the stats into data for a grid
   const gridData = gridUIData(uiData, selectedStartDate, workItemsToHighlight);
+
+  if (!gridData) {
+    return <EmptyTimeRangeMessage />;
+  }
 
   // Plan-level estimate for the Summary row. Mirrors the slider exactly: a single value for
   // median/average, a range for a percentile band. `dueDay*` are business-day counts.
@@ -644,7 +661,15 @@ function gridUIData(statsUIData: StatsUIData, startDate: Date, workItemsToHighli
     prettyStart: String;
   }>;
 
+  // `bestFitRanges` can legitimately come back empty — a span containing no business days at all
+  // (a weekend start date with a plan that finishes the same day) has nothing to label. There are
+  // no columns to size the grid from, so bail out and let the caller show a message rather than
+  // reaching into an empty array.
   const last = timeRanges[timeRanges.length - 1];
+  if (!last) {
+    return null;
+  }
+
   const startingRows = 4;
   const gridifiedTeams = gridifyStatsUIData(statsUIData, 4, workItemsToHighlight);
   const lastTeam = gridifiedTeams[gridifiedTeams.length - 1] || {
