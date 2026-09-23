@@ -133,7 +133,7 @@ interface TeamCapacityOutputsProps {
 
 /** The right, read-only half: a unit conversion of capacity, and a result of the simulation. */
 export const TeamCapacityOutputs: FC<TeamCapacityOutputsProps> = ({ pointsPerDay, totalWorkingDays }) => (
-  <span className="inline-flex items-center gap-3.5">
+  <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">
     <Tooltip content="Capacity ÷ sprint length. Change capacity to move this — it is a readout, not a setting.">
       <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap" tabIndex={0}>
         <span className="text-neutral-500">Points / Day</span>

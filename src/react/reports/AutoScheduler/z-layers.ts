@@ -9,14 +9,30 @@ export const gridLayer = {
   /** Epic bars, their day columns, and the summary metrics. */
   row: 30,
   /**
+   * The pinned `what` column. Above the bars and the day-column rules, which slide under it when the
+   * grid is scrolled sideways; below the team header, whose own name cell is pinned on both axes.
+   */
+  labelColumn: 32,
+  /**
    * The team header's opaque band. Above the arrows so they stop at the row rather than striking
    * through its labels, which have no background of their own to hide behind.
    */
   teamHeaderBackground: 34,
   /** Team headers, whose editable controls overflow downward across the rows beneath them. */
   teamHeader: 35,
+  /**
+   * The pinned team name. A layer of its own rather than sharing `teamHeader` with the capacity
+   * controls beside it: at equal z-index the later element in the DOM wins, and the controls row
+   * would paint over the name once the grid is scrolled sideways.
+   */
+  teamHeaderLabel: 36,
   /** The date scale, which stays legible over rows scrolled under it. */
   dateHeader: 40,
+  /**
+   * The grid's top-left cell, pinned on both axes. Above the date scale, which is the one thing that
+   * would otherwise slide over the label column when the grid is scrolled sideways.
+   */
+  gridCorner: 45,
   /** Hover tooltips and popups, above every part of the grid. */
   popup: 50,
 } as const;

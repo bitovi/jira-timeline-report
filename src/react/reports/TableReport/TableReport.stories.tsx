@@ -449,8 +449,9 @@ import { TableReportControls } from './components/TableReportControls';
 export const ControlsBar: StoryObj = {
   render: () => (
     <div className="p-4">
-      {/* Mimic the real #report-controls row (flex gap-1) with sibling controls for alignment context. */}
-      <div className="flex gap-1">
+      {/* Mimic the real #report-controls row (a wrapping flex container) with sibling controls for
+          alignment context. The real row is also `@container/controls`, but nothing here reads it. */}
+      <div className="flex flex-wrap gap-x-1 gap-y-2">
         <div className="pt-1 flex flex-col items-start">
           <span className="text-sm font-semibold text-neutral-801">Report type</span>
           <button className="border border-neutral-301 rounded px-2 py-1 text-sm bg-neutral-201">Table (beta) ▾</button>

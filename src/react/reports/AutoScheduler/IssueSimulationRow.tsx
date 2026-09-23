@@ -13,6 +13,7 @@ import type { GridUIData } from './AutoScheduler';
 import { IssueSimulationDays } from './IssueSimulationDays';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days';
 import { gridLayer } from './z-layers';
+import { IssueSummaryLabel } from './IssueSummaryLabel';
 
 function isFullSimulationResult(
   issue: MinimalSimulationIssueResult | SimulationIssueResult,
@@ -73,20 +74,13 @@ export const IssueSimulationRow: React.FC<{
 
   return (
     <>
-      <div
-        className="pl-5 self-center pr-2 truncate max-w-sm"
-        style={{ gridRow: gridRowStart, gridColumnStart: 'what' }}
-      >
-        <div className="text-gray-600 pointer hover:underline">
-          {isFullSimulationResult(issue) ? (
-            <a href={issue.linkedIssue.url} target="_blank">
-              {issue.linkedIssue.summary}
-            </a>
-          ) : (
-            <div>{issue.linkedIssue.summary}</div>
-          )}
-        </div>
-      </div>
+      <IssueSummaryLabel
+        summary={issue.linkedIssue.summary}
+        url={isFullSimulationResult(issue) ? issue.linkedIssue.url : undefined}
+        openInNewTab
+        textClassName="pointer hover:underline"
+        gridRowStart={gridRowStart}
+      />
 
       {/* The Chart */}
       <div
