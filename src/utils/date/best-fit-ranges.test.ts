@@ -102,6 +102,29 @@ describe('bestFitRanges — coarser granularities still drop one-day stubs', () 
   });
 });
 
+describe('bestFitRanges — spans starting on a weekend', () => {
+  // A weekend start rolls the range's start forward to Monday while the clamped end rolls back to
+  // the preceding Friday, producing a range that ends before it begins. Those were emitted as
+  // `days: 0` columns. At day granularity the phantom shared its `startDay` with the real Monday
+  // column, so the grid drew two columns into one slot.
+  test('a weekend-only span yields no columns at all', () => {
+    // Sat Sep 26 -> Sun Sep 27 2026 contains no business days.
+    expect(ranges(utc(2026, 9, 26), utc(2026, 9, 27))).toEqual([]);
+  });
+
+  test('a span from Saturday to Monday yields exactly one column for the Monday', () => {
+    expect(labels(utc(2026, 9, 26), utc(2026, 9, 28))).toEqual(['Sep 28']);
+  });
+
+  test('no column is zero-width and no two columns share a startDay', () => {
+    const result = ranges(utc(2026, 9, 26), utc(2026, 9, 29));
+
+    expect(result.map((r) => r.prettyStart)).toEqual(['Sep 28', 'Sep 29']);
+    expect(result.every((r) => r.days > 0)).toBe(true);
+    expect(new Set(result.map((r) => r.startDay)).size).toBe(result.length);
+  });
+});
+
 describe('bestFitRanges — degenerate spans', () => {
   // These are the cases `gridUIData` handles by returning null and rendering a message instead of
   // a grid. They are legitimately uncolumnable, so the contract is an empty array rather than a throw.
@@ -117,10 +140,10 @@ describe('bestFitRanges — degenerate spans', () => {
 });
 
 /**
- * Not covered here: a separate, pre-existing bug where a coarse span emits a trailing column whose
- * end precedes its start (`days: 0`). `getPreviousBusinessDay` and the weekly `getStartOfNextRange`
- * step with local `getDate`/`setDate` while every caller works in UTC, so west of UTC they land a
- * day early. It reproduces in `America/*` and not in UTC or east of it, which makes it unassertable
- * without pinning the suite's timezone. Fixing the local/UTC mixing is the real remedy; tightening
- * the single-day filter from `!== 0` to `> 0` only hides the symptom.
+ * Still latent, and deliberately not asserted here: `getPreviousBusinessDay` and the weekly
+ * `getStartOfNextRange` step with local `getDate`/`setDate` while every caller works in UTC. West of
+ * UTC that lands a day early, so a handful of spans bucket differently there than they do in UTC or
+ * east of it — which is why these tests pin dates with `Date.UTC` and assert on UTC-formatted
+ * labels. Rejecting inverted ranges keeps the mixing from reaching the grid, but the underlying
+ * local/UTC inconsistency is unfixed.
  */

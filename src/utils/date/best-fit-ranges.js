@@ -128,7 +128,12 @@ const makeDateRanges = function (startDate, endDate) {
     // below, every bucket collapses (the next-business-day step forward and the previous-business-day
     // step back land on the same date) and this function returns [] for any span short enough to
     // select day granularity — roughly a week and a half.
-    if (this.name === 'days' || endDay - startDay !== 0) {
+    // `startBusinessDayOfRange <= endBusinessDayOfRange` rejects inverted ranges. They arise when
+    // the span starts on a weekend: the start rolls forward to Monday while the clamped end rolls
+    // back to the preceding Friday, giving a range that ends before it begins and reports `days: 0`.
+    // At day granularity that phantom would sit alongside the real Monday column at the same
+    // `startDay`, and the grid would draw two columns in one slot.
+    if (startBusinessDayOfRange <= endBusinessDayOfRange && (this.name === 'days' || endDay - startDay !== 0)) {
       ranges.push({
         startBusinessDay: startBusinessDayOfRange,
         prettyStart: this.prettyDate(startBusinessDayOfRange),

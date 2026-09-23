@@ -119,8 +119,10 @@ const EmptyTimeRangeMessage: FC = () => (
   <div className="p-4">
     <SectionMessage title="There's no timeline to show" appearance="warning">
       <p>
-        Every work item in this plan finishes on or before the report's start date, so there are no days to lay a
-        timeline out across. Move the start date earlier, or widen the report to include more work.
+        The report couldn't work out a range of days to lay this plan across. That usually means the selected start date
+        leaves the plan no working days to span — a start date on a weekend with everything finishing immediately — or
+        that a team's sprint length or capacity is blank or non-numeric, which leaves the schedule without a usable end
+        date.
       </p>
     </SectionMessage>
   </div>
