@@ -39,6 +39,7 @@ import {
 import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
 import { gridLayer } from './z-layers';
+import { IssueSummaryLabel } from './IssueSummaryLabel';
 import { StorageProvider } from '../../services/storage';
 import { TeamCapacityInputs, TeamCapacityOutputs, useTeamIsDirty } from './components/TeamCapacityControls';
 
@@ -55,6 +56,13 @@ interface AutoSchedulerProps {
   primaryIssuesOrReleasesObs: CanObservable<Array<RolledUpIssue>>;
   allIssuesOrReleasesObs: ObservableOfIssues;
 }
+
+/**
+ * The timeline never compresses below this, however narrow the report gets — past it the grid
+ * scrolls horizontally instead. A total rather than a per-column minimum: a per-column floor would
+ * force a 120-day plan to scroll on a screen that fits it today.
+ */
+const MIN_TIMELINE_WIDTH = 480;
 
 // The quartile range is quoted empirically rather than as `median ×÷ gsd`, which would assert a
 // lognormal shape the plan finish (a maximum over competing chains) does not have.
@@ -327,7 +335,14 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
           <div
             className="auto-scheduler-grid grid min-h-0 flex-1 overflow-auto bg-white relative"
             style={{
-              gridTemplateColumns: `[what] auto repeat(${gridData.gridNumberOfDays}, 1fr)`,
+              // `fit-content(40%)`: the labels size to their content but never take more than 40% of
+              // the grid, so the bars stop losing every pixel a panel takes. The day columns carry a
+              // minimum that adds up to `MIN_TIMELINE_WIDTH` whatever the plan's length — below that
+              // the grid scrolls, which is what the pinned label column below keeps readable.
+              gridTemplateColumns: `[what] fit-content(40%) repeat(${gridData.gridNumberOfDays}, minmax(${roundTo(
+                MIN_TIMELINE_WIDTH / gridData.gridNumberOfDays,
+                2,
+              )}px, 1fr))`,
               gridTemplateRows: 'auto',
               // Load-bearing: this is a `flex-1` box with a definite height, so the default
               // stretching align-content inflates every auto row to fill it whenever the rows are
@@ -355,8 +370,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
               />
             </div>
 
-            {/* Placeholder for row height */}
-            <div className="text-xs" style={{ gridRow: '1 / span 1', gridColumn: '1 / span 1' }}>
+            {/* Placeholder for row height. Pinned on both axes so the date scale slides under the
+                label column rather than over it when the grid is scrolled sideways. */}
+            <div
+              className="text-xs sticky left-0 top-0 bg-white"
+              style={{ zIndex: gridLayer.gridCorner, gridRow: '1 / span 1', gridColumn: '1 / span 1' }}
+            >
               &nbsp;
             </div>
 
@@ -403,14 +422,17 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
               }}
             />
 
-            <div className="pl-2 pt-2 pb-1 pr-1 flex " style={{ gridRow: 2, gridColumnStart: 'what' }}>
+            <div
+              className="pl-2 pt-2 pb-1 pr-1 flex sticky left-0 bg-neutral-20"
+              style={{ zIndex: gridLayer.labelColumn, gridRow: 2, gridColumnStart: 'what' }}
+            >
               <div className="text-base grow font-semibold">Summary</div>
             </div>
 
             {/* Lifted above the `#dependencies` SVG, which covers row 2 and would otherwise swallow
             the hover that opens the spread tooltips. */}
             <div
-              className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-row-reverse gap-2 relative"
+              className="pl-2 pt-3 pb-1 pr-5 text-xs flex flex-wrap flex-row-reverse justify-start gap-x-2 gap-y-1 relative"
               style={{
                 zIndex: gridLayer.row,
                 gridRow: `2 / span 1`,
@@ -442,8 +464,9 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                         gridifiedTrack.issues.length > 0 && (
                           <React.Fragment key={`track-${teamIdx}-${trackIdx}`}>
                             <div
-                              className="pl-4 flex pt-0.5 pr-1"
+                              className="pl-4 flex pt-0.5 pr-1 sticky left-0 bg-white"
                               style={{
+                                zIndex: gridLayer.labelColumn,
                                 gridRow: `${gridifiedTrack.style.gridRowStart} / span 1`,
                                 gridColumnStart: 'what',
                               }}
@@ -531,8 +554,8 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
       />
 
       <div
-        className={`pl-2 pt-2 pb-1 pr-1 flex sticky top-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
-        style={{ zIndex: gridLayer.teamHeader, gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
+        className={`pl-2 pt-2 pb-1 pr-1 flex sticky top-0 left-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
+        style={{ zIndex: gridLayer.teamHeaderLabel, gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
       >
         <div className="text-base grow font-semibold">{team.team}</div>
       </div>
@@ -540,7 +563,7 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
       {/* Above `#dependencies`, which would otherwise swallow every click on the capacity read view
           and the stepper, and above the rows below, which the open capacity editor overflows into. */}
       <div
-        className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex items-center justify-between gap-4 relative"
+        className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-1 relative"
         style={{
           zIndex: gridLayer.teamHeader,
           gridRow: `${team.style.gridRowStart} / span 1`,
@@ -613,18 +636,11 @@ const SimulationData: React.FC<{
 
   return (
     <>
-      <div
-        className="pl-5 self-center pr-2 truncate max-w-sm"
-        style={{ gridRow: gridRowStart, gridColumnStart: 'what' }}
-      >
-        <div className="text-gray-600">
-          {hasUrl(issue) ? (
-            <a href={issue.linkedIssue.url}>{issue.linkedIssue.summary}</a>
-          ) : (
-            <div>{issue.linkedIssue.summary}</div>
-          )}
-        </div>
-      </div>
+      <IssueSummaryLabel
+        summary={issue.linkedIssue.summary}
+        url={hasUrl(issue) ? issue.linkedIssue.url : undefined}
+        gridRowStart={gridRowStart}
+      />
       <div
         className="relative block py-1"
         style={{

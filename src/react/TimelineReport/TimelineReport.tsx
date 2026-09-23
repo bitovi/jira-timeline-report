@@ -251,7 +251,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             />
           </div>
 
-          <div id="report-controls" className="app-chrome-hidden flex gap-1">
+          <div id="report-controls" className="app-chrome-hidden flex flex-wrap gap-x-1 gap-y-2 @container/controls">
             {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
               that fetch Jira data — e.g. the Table report's TableReportControls calling
               useJiraIssueFields — work here too. queryClient is a shared singleton, so the fields

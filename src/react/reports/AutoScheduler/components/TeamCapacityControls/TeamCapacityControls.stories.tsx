@@ -12,13 +12,21 @@ import { StorageProvider } from '../../../../services/storage';
 import { updateTeamConfigurationKeys } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
 
-const Row = () => (
-  <div className="flex max-w-[1080px] items-center justify-between bg-neutral-20 px-2 py-1.5 text-xs text-slate-600">
-    <span className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
-      ORDER
-      <TeamCapacityInputs teamName="ORDER" hierarchyLevel={7} savedVelocityPerSprint={21} savedTracks={1} />
-    </span>
-    <TeamCapacityOutputs pointsPerDay={2.1} totalWorkingDays={38} />
+/**
+ * A stand-in for `TeamHeaderRow`'s controls row in `AutoScheduler.tsx` — the real one is a grid item,
+ * which there is no way to render here. Its classes are kept in step with the real row so the wrap
+ * behaviour the stories demonstrate is the behaviour the report has; `width` stands in for the grid
+ * track, which is what actually squeezes in the app.
+ */
+const Row = ({ width }: { width: number }) => (
+  <div className="bg-neutral-20" style={{ maxWidth: width }}>
+    <div className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-1 relative">
+      <span className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
+        ORDER
+        <TeamCapacityInputs teamName="ORDER" hierarchyLevel={7} savedVelocityPerSprint={21} savedTracks={1} />
+      </span>
+      <TeamCapacityOutputs pointsPerDay={2.1} totalWorkingDays={38} />
+    </div>
   </div>
 );
 
@@ -47,6 +55,7 @@ const storage: AppStorage = {
 const meta: Meta<typeof Row> = {
   title: 'reports/AutoScheduler/TeamCapacityControls',
   component: Row,
+  args: { width: 1080 },
   decorators: [
     (Story) => (
       <FlagsProvider>
@@ -70,3 +79,6 @@ export default meta;
 
 /** At rest: no commit controls, capacity reads as plain text until hovered. */
 export const Clean: StoryObj<typeof Row> = {};
+
+/** The squeezed case: the outputs drop to a second line instead of painting over the inputs. */
+export const Narrow: StoryObj<typeof Row> = { args: { width: 420 } };
