@@ -2,6 +2,7 @@ import type { DerivedIssue } from '../../../../jira/derived/derive';
 
 import { partition, indexByKey, groupBy } from '../../../../utils/array/array-helpers';
 import { getEstimationData } from '../../../../jira/derived/work-timing/work-timing';
+import { getBlocksKeys } from '../../../../jira/linked-issue/blocks-links';
 
 type Mutable<T> = {
   -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer U>
@@ -149,20 +150,9 @@ function linkParentAndChildren(issues: LinkedIssueBuilder[], issueByKey: LinkedI
   }
 }
 
-function getBlockingKeys(issue: LinkedIssueBuilder) {
-  const linkedIssues = issue.issue.fields['Linked Issues'];
-  if (linkedIssues) {
-    return linkedIssues
-      .filter((link) => link.type.name === 'Blocks' && link.outwardIssue)
-      .map((link) => link.outwardIssue.key);
-  } else {
-    return [];
-  }
-}
-
 function linkDirectBlocks(issues: LinkedIssueBuilder[], issueByKey: LinkedIssueBuilderIndex) {
   issues.forEach((issue) => {
-    const issueBlocks = getBlockingKeys(issue)
+    const issueBlocks = getBlocksKeys(issue.issue.fields['Linked Issues'])
       .filter((blockedKey) => {
         const blocked = issueByKey[blockedKey];
         if (blocked && blocked.type !== issue.type) {

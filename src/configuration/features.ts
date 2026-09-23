@@ -27,6 +27,19 @@ export const nonReportsFeatures: Feature[] = [
     featureFlag: 'reportsStorage',
     onByDefault: false,
   },
+  // Gates the Sources tab's "Load all blockers recursively" checkbox. The loader itself always
+  // ships; a URL that already carries `loadBlockers=true` keeps working with the flag off, the
+  // same way a flagged-off report still renders when the URL names it.
+  //
+  // The flag is `recursiveBlockers`, deliberately NOT `loadBlockers` — that is the route-data param,
+  // and two different things sharing a name across two stores would be a trap.
+  // See spec/036-load-blockers-recursiveley.
+  {
+    name: 'Recursive Blockers',
+    subtitle: 'Load the work items blocking your JQL results, transitively.',
+    featureFlag: 'recursiveBlockers',
+    onByDefault: false,
+  },
 ] as const;
 
 export const features = reports

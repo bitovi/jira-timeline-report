@@ -9,9 +9,11 @@ type Overrides = {
   storage: AppStorage;
   jiraHelpers: Jira;
   loadChildren: boolean;
+  loadBlockers: boolean;
   normalizeOptions: Partial<NormalizeIssueConfig>;
   timingCalculations: Record<string, string>;
   childJQL: string;
+  blockerJQL: string;
   jql: string;
   statusesToExclude: string[];
   primaryIssueType: string;

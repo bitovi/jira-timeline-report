@@ -26,7 +26,7 @@ export function csvToRawIssues(csvIssues) {
 }
 
 export function rawIssuesRequestData(
-  { jql, childJQL, isLoggedIn, loadChildren, jiraHelpers, fields },
+  { jql, childJQL, isLoggedIn, loadChildren, blockerJQL, loadBlockers, jiraHelpers, fields },
   { listenTo, resolve },
 ) {
   const progressData = value.with(null);
@@ -37,9 +37,11 @@ export function rawIssuesRequestData(
       {
         isLoggedIn: isLoggedIn.value,
         loadChildren: loadChildren.value,
+        loadBlockers: loadBlockers.value,
         jiraHelpers,
         jql: jql.value,
         childJQL: childJQL.value,
+        blockerJQL: blockerJQL.value,
         fields: fields.value,
       },
       {

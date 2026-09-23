@@ -57,6 +57,8 @@ describe('rawIssuesCacheKey', () => {
       ['jql', { jql: 'project = OTHER' }],
       ['childJQL', { childJQL: 'type = Bug' }],
       ['loadChildren', { loadChildren: true }],
+      ['blockerJQL', { blockerJQL: 'type = Bug' }],
+      ['loadBlockers', { loadBlockers: true }],
       ['isLoggedIn', { isLoggedIn: false }],
     ])('changing %s changes the key', (_label, overrides) => {
       expect(key(overrides)).not.toBe(key());
@@ -77,6 +79,8 @@ describe('queryKeyOf', () => {
     ['jql', { jql: 'project = OTHER' }],
     ['childJQL', { childJQL: 'type = Bug' }],
     ['loadChildren', { loadChildren: true }],
+    ['blockerJQL', { blockerJQL: 'type = Bug' }],
+    ['loadBlockers', { loadBlockers: true }],
   ])('changing %s changes the key', (_label, overrides) => {
     const base = { jql: 'project = ORDER', childJQL: '', loadChildren: false };
     expect(queryKeyOf({ ...base, ...overrides })).not.toBe(queryKeyOf(base));

@@ -61,9 +61,22 @@ export interface IssueFields extends BaseFields {
   issuelinks?: IssueLink[];
 }
 
+export interface LinkedIssueRef {
+  id: string;
+  key: string;
+  fields: { summary: string };
+}
+
+/**
+ * One end of a Jira issue link. Exactly one of `outwardIssue` / `inwardIssue` is present: Jira puts
+ * the *other* issue on the entry, and which slot it lands in is what encodes the direction. For the
+ * `Blocks` type, `outwardIssue` reads "this blocks that" and `inwardIssue` reads "this is blocked by
+ * that". Read them through `jira/linked-issue/blocks-links.ts` rather than reaching in here.
+ */
 export interface IssueLink {
   id: string;
-  outwardIssue: { id: string; key: string; fields: { summary: string } };
+  outwardIssue?: LinkedIssueRef;
+  inwardIssue?: LinkedIssueRef;
   type: { id: string; inward: string; name: string; outward: string };
 }
 

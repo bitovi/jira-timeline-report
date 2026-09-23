@@ -14,6 +14,7 @@ const features = [
   // See spec/018-card-report/alt-plan.md.
   { title: 'Cards', subtitle: 'Status and work-breakdown cards, one per issue' },
   { title: 'Work Breakdowns', subtitle: '' },
+  { title: 'Recursive Blockers', subtitle: 'Load the work items blocking your JQL results, transitively.' },
 ];
 
 import { StorageProvider } from '../../../services/storage';

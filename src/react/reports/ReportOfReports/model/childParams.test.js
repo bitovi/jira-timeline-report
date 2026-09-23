@@ -38,6 +38,9 @@ describe('parseChildQuery agrees with ChildReportConfig', () => {
     'loadChildren on': 'jql=project%20%3D%20ORDER&loadChildren=true',
     'loadChildren off, explicitly': 'jql=project%20%3D%20ORDER&loadChildren=false',
     'loadChildren valueless': 'jql=project%20%3D%20ORDER&loadChildren',
+    'jql + blockerJQL': 'jql=project%20%3D%20ORDER&blockerJQL=type%20%3D%20Bug',
+    'loadBlockers on': 'jql=project%20%3D%20ORDER&loadBlockers=true',
+    'both expansions on': 'jql=project%20%3D%20ORDER&loadChildren=true&loadBlockers=true',
     'table columns': 'tableColumns=' + encodeURIComponent(JSON.stringify([{ sourceId: 'field:customfield_1' }])),
     'unrelated params only': 'primaryReportType=table&roundTo=week',
     // A malformed param must not take down a document that renders several reports — the child
@@ -53,6 +56,8 @@ describe('parseChildQuery agrees with ChildReportConfig', () => {
       jql: config.jql,
       childJQL: config.childJQL,
       loadChildren: config.loadChildren,
+      blockerJQL: config.blockerJQL,
+      loadBlockers: config.loadBlockers,
       tableColumns: config.tableColumns,
     });
   });
