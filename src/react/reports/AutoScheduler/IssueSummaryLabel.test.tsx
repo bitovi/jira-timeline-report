@@ -70,4 +70,35 @@ describe('IssueSummaryLabel', () => {
 
     expect(await screen.findByRole('tooltip')).toHaveTextContent(SUMMARY);
   });
+
+  it('reaches a clipped plain-text summary by keyboard', async () => {
+    setClipped(true);
+    render(<IssueSummaryLabel summary={SUMMARY} gridRowStart={4} />);
+
+    await userEvent.tab();
+
+    expect(screen.getByText(SUMMARY)).toHaveFocus();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(SUMMARY);
+  });
+
+  it('leaves a linked summary to the anchor rather than adding a second tab stop', async () => {
+    setClipped(true);
+    render(<IssueSummaryLabel summary={SUMMARY} url="https://jira.example/browse/ORDER-1" gridRowStart={4} />);
+
+    await userEvent.tab();
+
+    // One tab stop, the anchor — and its focus still opens the tooltip, because React's `onFocus`
+    // is `focusin`, which bubbles to the trigger wrapping it.
+    expect(screen.getByRole('link')).toHaveFocus();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(SUMMARY);
+  });
+
+  it('adds no tab stop to a plain-text summary that is not clipped', async () => {
+    setClipped(false);
+    render(<IssueSummaryLabel summary={SUMMARY} gridRowStart={4} />);
+
+    await userEvent.tab();
+
+    expect(screen.getByText(SUMMARY)).not.toHaveFocus();
+  });
 });

@@ -58,9 +58,12 @@ export const IssueSummaryLabel: FC<IssueSummaryLabelProps> = ({
     >
       {/* `content` is nulled rather than the Tooltip being dropped entirely: Atlaskit renders
           nothing for falsy content, so the trigger stays mounted and keeps its measurement instead
-          of remounting every time the column crosses the clipping threshold. The render-prop form
-          is what stops Atlaskit wrapping the trigger in a `div` of its own, which would put a box
-          between the cell and the text and break the truncation. */}
+          of remounting every time the column crosses the clipping threshold.
+
+          The render-prop form of `children` (`@atlaskit/tooltip` 18.8.3, `TriggerProps`) hands the
+          trigger props straight to the element being measured. Passing the element directly would
+          also work — Atlaskit would wrap it in an unstyled `div` — but then its ref lands on that
+          wrapper rather than on the text, and this needs the ref and the truncation on one element. */}
       <Tooltip content={isClipped ? summary : null}>
         {({ ref, ...triggerProps }) => (
           <div
@@ -69,6 +72,12 @@ export const IssueSummaryLabel: FC<IssueSummaryLabelProps> = ({
               textRef.current = node;
               ref(node);
             }}
+            // Atlaskit only opens on focus for focusable children. A linked summary already has one
+            // — the anchor — and React's `onFocus` is `focusin`, which bubbles up to this handler,
+            // so only the plain-text case needs a tab stop of its own. Gated on `isClipped` as well
+            // because an unclipped row has no tooltip to reveal, and a plan is mostly unclipped
+            // rows: without the gate every one of them becomes a tab stop that does nothing.
+            tabIndex={!url && isClipped ? 0 : undefined}
             className={['text-gray-600 truncate', textClassName].filter(Boolean).join(' ')}
           >
             {url ? (
