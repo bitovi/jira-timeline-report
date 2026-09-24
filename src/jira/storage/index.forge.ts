@@ -81,6 +81,40 @@ export const createForgeConnectStorage: StorageFactory = (jiraHelpers) => {
 };
 
 /**
+ * Reads one Connect app property **without seeding it** — `undefined` when it was never written.
+ *
+ * Standalone rather than a `StorageFactory` method, because only the one-time Connect→KVS migration
+ * needs it (spec/021-forge/resolver-storage/migration-option.plan.md). It exists because
+ * `createForgeConnectStorage().get()` PUTs `defaultShape` back on a 404: probing with that would
+ * *create* the property, and every fresh install would be offered a migration of the defaults it
+ * had just written.
+ *
+ * The same 404-vs-error split as `get()` above: only a missing property is "nothing there". Any
+ * other failure throws, so an outage cannot pass for "nothing to migrate".
+ */
+export const peekConnectProperty = async <TData>(appKey: string, key: string): Promise<TData | undefined> => {
+  // Without this, `/addons/undefined/...` 404s and reads as "never written" — a missing app key
+  // would silently look like an install with nothing to migrate.
+  if (!appKey) {
+    throw new Error(`[Storage Error]: cannot read "${key}" from app properties without an app key`);
+  }
+
+  const response = await requestJira(propertyPath(appKey, key));
+
+  if (response.status === 404) {
+    return undefined;
+  }
+
+  if (!response.ok) {
+    throw new Error(`[Storage Error]: could not read "${key}" from app properties (${response.status})`);
+  }
+
+  const parsed = (await response.json()) as AppPropertyResponse<TData>;
+
+  return parsed.value;
+};
+
+/**
  * The resolver answers in an envelope rather than returning the value bare, so that "the key holds
  * `undefined`" and "the key was never written" cannot be confused on the way back across `invoke`.
  */

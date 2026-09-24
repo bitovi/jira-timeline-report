@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { invoke, requestJira } from '@forge/bridge';
 
-import { createForgeConnectStorage, createForgeKvsStorage } from './index.forge';
+import { createForgeConnectStorage, createForgeKvsStorage, peekConnectProperty } from './index.forge';
 
 import type { StorageFactory } from './common';
 
@@ -181,5 +181,37 @@ describe('createForgeKvsStorage', () => {
 
       expect(vi.mocked(invoke)).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('peekConnectProperty', () => {
+  it('unwraps the value from the app-property envelope', async () => {
+    respondWith(json(200, { key: 'theme', value: { primary: '#000' }, self: 'https://x' }));
+
+    await expect(peekConnectProperty(APP_KEY, 'theme')).resolves.toEqual({ primary: '#000' });
+    expect(vi.mocked(requestJira).mock.calls[0][0]).toBe(propertyPath('theme'));
+  });
+
+  // The whole reason this exists instead of `get()`: probing with a seeding read would create the
+  // property, and every fresh install would be offered a migration of the defaults it just wrote.
+  it('returns undefined on a 404 and writes nothing', async () => {
+    respondWith(notFound());
+
+    await expect(peekConnectProperty(APP_KEY, 'saved-reports')).resolves.toBeUndefined();
+
+    expect(requestJira).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(requestJira).mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false);
+  });
+
+  // A missing app key 404s on `/addons/undefined/...`, which would read as an empty install.
+  it('refuses to read without an app key', async () => {
+    await expect(peekConnectProperty('', 'saved-reports')).rejects.toThrow(/without an app key/);
+    expect(requestJira).not.toHaveBeenCalled();
+  });
+
+  it('throws on any other failure, so an outage cannot pass for "nothing to migrate"', async () => {
+    respondWith(json(403, { message: 'Forbidden' }));
+
+    await expect(peekConnectProperty(APP_KEY, 'features')).rejects.toThrow(/403/);
   });
 });

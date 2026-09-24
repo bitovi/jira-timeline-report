@@ -75,8 +75,9 @@ function findTeamTable(document: any): Array<Record<'team' | 'velocity' | 'track
  * request helper has already made host-appropriate. The one host-specific question — "is there a
  * session to read with?" — is injected.
  *
- * Every key this storage handles (theme, saved-reports, all-team-data, features, reports-config)
- * persists together as one JSON blob in a single "configuration issue"'s Description field. Reading
+ * Every key this storage handles (theme, themeFont, saved-reports, all-team-data, features,
+ * reports-storage-config — plus `connect-migration`, which only the Forge host's KVS store ever
+ * writes; see react/services/reports-storage/connect-migration.ts) persists together as one JSON blob in a single "configuration issue"'s Description field. Reading
  * it fresh via JQL search (`getConfigurationIssue`) on every call is unsafe in a way that silently
  * loses writes:
  *

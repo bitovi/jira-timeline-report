@@ -104,7 +104,14 @@ export default async function main() {
       JIRA_SCOPE: import.meta.env.VITE_JIRA_SCOPE,
       JIRA_CALLBACK_URL: import.meta.env.VITE_JIRA_CALLBACK_URL,
       JIRA_API_URL: import.meta.env.VITE_JIRA_API_URL,
-      JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
+      // Hardcoded, NOT read from the environment: it must equal `app.connect.key` in manifest.yml,
+      // which is fixed. `vite.forge.config.ts` sets `root: 'forge'`, so Vite never sees the repo's
+      // `.env` and `import.meta.env.VITE_JIRA_APP_KEY` compiled to `undefined` — and the repo's
+      // `.env` holds the *local Connect* key anyway. With it undefined, every Connect app-property
+      // read went to `/addons/undefined/...` and 404'd, which the Connect→KVS migration reads as
+      // "nothing to migrate". Only that migration uses this on Forge (KVS storage and the link
+      // builder ignore it).
+      JIRA_APP_KEY: 'bitovi.status-report',
       COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA,
       STATUS_REPORTS_ENV: import.meta.env.VITE_STATUS_REPORTS_ENV,
       // Hardcoded empty, NOT read from the environment. `initSentry` sets

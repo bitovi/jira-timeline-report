@@ -22,6 +22,7 @@ import { unsupportedReportType } from './unsupportedReportType';
 import { JiraProvider } from '../services/jira';
 import { queryClient } from '../services/query';
 
+import ConnectMigrationBanner from '../ConnectMigrationBanner';
 import ReportControls from '../ReportControls';
 import SavedReports from '../SaveReports';
 import SampleDataNotice from '../SampleDataNotice';
@@ -199,6 +200,11 @@ export const TimelineReport: FC<TimelineReportProps> = ({
       )}
 
       <div className="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
+        {/* Forge only — the one-time Connect→KVS copy. See spec/021-forge/resolver-storage/migration-option.plan.md. */}
+        <div id="connect-migration-banner" className="app-chrome-hidden">
+          <ConnectMigrationBanner storage={storage} jira={rd.jiraHelpers} />
+        </div>
+
         <div id="view-reports" className="app-chrome-hidden">
           <ViewReports
             onBackButtonClicked={() => {
