@@ -1,7 +1,7 @@
 import { router, view } from '@forge/bridge';
 
 import mainHelper from './shared/main-helper.js';
-import { createForgeConnectStorage } from './jira/storage/index.forge';
+import { createForgeKvsStorage } from './jira/storage/index.forge';
 import { createForgeLinkBuilder, createForgeRouting } from './routing/index.forge';
 import { getForgeRequestHelper } from './request-helpers/forge-request-helper';
 import { interceptExternalLinkClicks, setExternalOpener } from './shared/open-external';
@@ -104,7 +104,14 @@ export default async function main() {
       JIRA_SCOPE: import.meta.env.VITE_JIRA_SCOPE,
       JIRA_CALLBACK_URL: import.meta.env.VITE_JIRA_CALLBACK_URL,
       JIRA_API_URL: import.meta.env.VITE_JIRA_API_URL,
-      JIRA_APP_KEY: import.meta.env.VITE_JIRA_APP_KEY,
+      // Hardcoded, NOT read from the environment: it must equal `app.connect.key` in manifest.yml,
+      // which is fixed. `vite.forge.config.ts` sets `root: 'forge'`, so Vite never sees the repo's
+      // `.env` and `import.meta.env.VITE_JIRA_APP_KEY` compiled to `undefined` — and the repo's
+      // `.env` holds the *local Connect* key anyway. With it undefined, every Connect app-property
+      // read went to `/addons/undefined/...` and 404'd, which the Connect→KVS migration reads as
+      // "nothing to migrate". Only that migration uses this on Forge (KVS storage and the link
+      // builder ignore it).
+      JIRA_APP_KEY: 'bitovi.status-report',
       COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA,
       STATUS_REPORTS_ENV: import.meta.env.VITE_STATUS_REPORTS_ENV,
       // Hardcoded empty, NOT read from the environment. `initSentry` sets
@@ -127,9 +134,15 @@ export default async function main() {
     {
       host: 'forge',
       createRequestHelper: getForgeRequestHelper,
-      // Connect app properties, not the configuration issue — this is what makes the cutover
-      // invisible to existing customers. See jira/storage/index.forge.ts.
-      createStorage: createForgeConnectStorage,
+      // Forge's own Key-Value Store, through the `storage-resolver` function — 240 KiB per value
+      // against the 32 KB of a Connect app property, and no dependency on a Connect API outliving
+      // Connect. See jira/storage/index.forge.ts and spec/021-forge/resolver-storage/plan.md.
+      //
+      // **This does not read the Connect app properties existing customers' data lives in.**
+      // `createForgeConnectStorage` is still exported and is still the only thing that can; moving
+      // that data into KVS is a separate migration the plan leaves out of scope. Swapping this line
+      // back is the whole rollback.
+      createStorage: createForgeKvsStorage,
       configureRouting: (
         route: {
           start: () => void;
