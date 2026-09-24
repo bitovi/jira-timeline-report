@@ -7,6 +7,13 @@ type Feature = {
   onByDefault: boolean;
 };
 
+/**
+ * Named rather than spelled out at each use: the Features tab and the Storage panel both have to
+ * recognise this one flag to put a confirm in front of it, and a typo in either would silently drop
+ * the confirm rather than fail.
+ */
+export const REPORTS_STORAGE_FEATURE_FLAG = 'reportsStorage';
+
 export const nonReportsFeatures: Feature[] = [
   // `secondaryReport` used to live here. The slot it gated is gone, and its report is now the
   // `cards` entry in `reports.ts` — which derives the `cardsReport` flag below. Anyone who had the
@@ -24,7 +31,7 @@ export const nonReportsFeatures: Feature[] = [
   {
     name: 'Reports Storage',
     subtitle: 'Choose where saved reports are stored, including one Jira work item per report.',
-    featureFlag: 'reportsStorage',
+    featureFlag: REPORTS_STORAGE_FEATURE_FLAG,
     onByDefault: false,
   },
   // Gates the Sources tab's "Load all blockers recursively" checkbox. The loader itself always

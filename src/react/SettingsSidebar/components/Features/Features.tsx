@@ -1,14 +1,15 @@
 import type { FC } from 'react';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Heading from '@atlaskit/heading';
 import Spinner from '@atlaskit/spinner';
 
 import FeatureToggle from './components/FeatureToggle';
+import StorageCautionModal from '../StorageCautionModal';
 import { useFeatures, useUpdateFeatures } from '../../../services/features';
 import { FeatureFlags } from '../../../../jira/features';
 
-import { featureMap, features as FEATURES } from '../../../../configuration/features';
+import { featureMap, features as FEATURES, REPORTS_STORAGE_FEATURE_FLAG } from '../../../../configuration/features';
 
 const removePreviousFeatures = (features: FeatureFlags) => {
   return Object.entries(features).reduce((filtered, [key, value]) => {
@@ -26,6 +27,12 @@ const FeaturesView: FC = () => {
   const cleansedFeatures = removePreviousFeatures(features);
 
   const { update, isUpdating } = useUpdateFeatures();
+
+  /**
+   * Held back rather than applied and undone: `update` writes the whole flag set to storage, so
+   * flipping it on to ask the question would already have committed the thing being asked about.
+   */
+  const [isConfirmingReportsStorage, setIsConfirmingReportsStorage] = useState(false);
 
   return (
     <div className="flex flex-col gap-y-4">
@@ -45,6 +52,14 @@ const FeaturesView: FC = () => {
                   disabled={isUpdating}
                   checked={cleansedFeatures[feature.featureFlag] ?? feature.onByDefault}
                   onChange={(newValue) => {
+                    // Only on the way on. Turning it back off hides the panel and leaves the
+                    // storage pointer exactly where it is, so there is nothing to warn about.
+                    if (newValue && feature.featureFlag === REPORTS_STORAGE_FEATURE_FLAG) {
+                      setIsConfirmingReportsStorage(true);
+
+                      return;
+                    }
+
                     update({ ...cleansedFeatures, [feature.featureFlag]: newValue });
                   }}
                 />
@@ -59,6 +74,18 @@ const FeaturesView: FC = () => {
           </a>
         </p>
       </div>
+
+      <StorageCautionModal
+        isOpen={isConfirmingReportsStorage}
+        title="Turn on Reports Storage?"
+        onCancel={() => setIsConfirmingReportsStorage(false)}
+        onConfirm={() => {
+          setIsConfirmingReportsStorage(false);
+          update({ ...cleansedFeatures, [REPORTS_STORAGE_FEATURE_FLAG]: true });
+        }}
+      >
+        This adds a Storage panel to these settings, where you choose where this site&rsquo;s saved reports live.
+      </StorageCautionModal>
     </div>
   );
 };
