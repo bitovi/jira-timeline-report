@@ -17,6 +17,7 @@ import { ErrorMessage, HelperMessage, Label } from '@atlaskit/form';
 
 import StorageCard from './components/StorageCard';
 import MigrateReportsModal from './components/MigrateReportsModal';
+import StorageCautionModal from '../StorageCautionModal';
 import { useJira } from '../../../services/jira';
 import {
   useMigrateReports,
@@ -70,6 +71,7 @@ const StorageView: FC = () => {
   const [spaceType, setSpaceType] = useState(config.kind === 'space' ? config.spaceType : '');
   const [validation, setValidation] = useState<string | null>(null);
   const [pendingMigration, setPendingMigration] = useState<{ reportCount: number } | null>(null);
+  const [isConfirmingSpace, setIsConfirmingSpace] = useState(false);
 
   // Every distinct key is its own query, so an undebounced field asks Jira once per keystroke.
   // `useDebounce` seeds itself with the initial value, so an already-configured space resolves its
@@ -85,6 +87,24 @@ const StorageView: FC = () => {
    * not evidence against a type that is already configured.
    */
   const knownSpaceType = !issueTypes.length || issueTypes.some(({ name }) => name === spaceType) ? spaceType : '';
+
+  /**
+   * Asked at the radio rather than at Save, so the space fields the choice reveals are only ever
+   * filled in by someone who has already said yes to what filling them in means. Nothing is written
+   * here either way — Save still does that — so cancelling is simply not moving the radio.
+   *
+   * One direction only: moving *off* a space stops listing what is in it and needs no permission
+   * the app doesn't already hold, and the warning about that is already on the panel itself.
+   */
+  const handleSelect = (value: StorageOptionValue) => {
+    if (value === 'space' && kind !== 'space') {
+      setIsConfirmingSpace(true);
+
+      return;
+    }
+
+    setKind(value);
+  };
 
   const trimmedSpaceName = spaceName.trim();
   const isBusy = isSaving || progress.isMigrating;
@@ -177,7 +197,7 @@ const StorageView: FC = () => {
           selected={isConnect ? kind : null}
           disabled={!isConnect}
           note={isConnect ? undefined : 'Change these settings from the Status Reports app in Jira.'}
-          onSelect={setKind}
+          onSelect={handleSelect}
         >
           <SpaceFields
             spaceNameId={spaceNameId}
@@ -200,7 +220,7 @@ const StorageView: FC = () => {
           selected={isConnect ? null : kind}
           disabled={isConnect}
           note={isConnect ? 'Change these settings from the standalone web app.' : undefined}
-          onSelect={setKind}
+          onSelect={handleSelect}
         >
           <SpaceFields
             spaceNameId={spaceNameId}
@@ -259,6 +279,19 @@ const StorageView: FC = () => {
         onStartEmpty={() => commit()}
         onClose={() => setPendingMigration(null)}
       />
+
+      <StorageCautionModal
+        isOpen={isConfirmingSpace}
+        title="Store saved reports in a Jira space?"
+        onCancel={() => setIsConfirmingSpace(false)}
+        onConfirm={() => {
+          setIsConfirmingSpace(false);
+          setKind('space');
+        }}
+      >
+        This points this site&rsquo;s saved reports at a space you nominate, writing one work item per report instead of
+        keeping them in {legacyLabel}.
+      </StorageCautionModal>
     </div>
   );
 };
