@@ -243,6 +243,15 @@ export class RouteData extends ObservableObject {
       parse: (x) => '' + x,
       stringify: (x) => '' + x,
     }),
+    // Walk "is blocked by" links upstream from the JQL results. See spec/036-load-blockers-recursiveley.
+    // The Sources-tab checkbox is behind the `recursiveBlockers` feature flag, but this param is not —
+    // a URL that carries it loads blockers with the flag off, the same way a flagged-off report still
+    // renders when the URL names it.
+    loadBlockers: saveJSONToUrlButAlsoLookAtReport_DataWrapper('loadBlockers', false, Boolean, booleanParsing),
+    blockerJQL: saveJSONToUrlButAlsoLookAtReport_DataWrapper('blockerJQL', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
 
     roundTo: saveJSONToUrlButAlsoLookAtReport_DataWrapper('roundTo', 'day', String, {
       parse: function (x) {
@@ -304,6 +313,8 @@ export class RouteData extends ObservableObject {
             jql: value.from(this, 'jql'),
             childJQL: value.from(this, 'childJQL'),
             loadChildren: value.from(this, 'loadChildren'),
+            blockerJQL: value.from(this, 'blockerJQL'),
+            loadBlockers: value.from(this, 'loadBlockers'),
             isLoggedIn: this.isLoggedInObservable,
             jiraHelpers: this.jiraHelpers,
             fields: value.from(this, 'allFieldsToRequest'),

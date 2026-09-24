@@ -43,6 +43,7 @@ import { fetchAllJiraIssuesWithJQLAndFetchAllChangelog } from './fetchAllJiraIss
 import { fetchJiraFields, makeFieldsRequest } from './fields';
 import { _cachedServerInfoPromise, getServerInfo } from './serverInfo.js';
 import { makeDeepChildrenLoaderUsingNamedFields } from './makeDeepChildrenLoaderUsingNamedFields';
+import { makeDeepBlockersLoaderUsingNamedFields } from './makeDeepBlockersLoaderUsingNamedFields';
 
 export { nativeFetchJSON } from './fetch';
 
@@ -84,6 +85,7 @@ export default function createJiraHelpers(
   };
 
   const makeDeep = makeDeepChildrenLoaderUsingNamedFields(config);
+  const makeBlockers = makeDeepBlockersLoaderUsingNamedFields(config);
 
   const jiraHelpers = {
     appKey: JIRA_APP_KEY,
@@ -125,6 +127,15 @@ export default function createJiraHelpers(
       fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config),
     ),
     fetchAllJiraIssuesAndDeepChildrenWithJQLUsingNamedFields: makeDeep(fetchAllJiraIssuesWithJQL(config)),
+    // The two blocker compositions of spec/036 §2. Blockers-only wraps the FLAT named-fields loader;
+    // blockers-and-children wraps the deep-children one, which is what gives the full closure
+    // (children of blockers, blockers of children) with no bespoke alternating loop.
+    fetchAllJiraIssuesAndDeepBlockersWithJQLAndFetchAllChangelogUsingNamedFields: makeBlockers(
+      fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(config),
+    ),
+    fetchAllJiraIssuesAndDeepChildrenAndBlockersWithJQLAndFetchAllChangelogUsingNamedFields: makeBlockers(
+      makeDeep(fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)),
+    ),
     fetchChildrenResponses: fetchChildrenResponses(config),
     fetchDeepChildren: fetchDeepChildren(config),
     fetchJiraFields: fetchJiraFields(config),
@@ -149,6 +160,14 @@ export default function createJiraHelpers(
 
   jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields = makeDeep(
     jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers),
+  );
+
+  jiraHelpers.fetchAllJiraIssuesAndDeepBlockersWithJQLAndFetchAllChangelogUsingNamedFields = makeBlockers(
+    jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers),
+  );
+
+  jiraHelpers.fetchAllJiraIssuesAndDeepChildrenAndBlockersWithJQLAndFetchAllChangelogUsingNamedFields = makeBlockers(
+    makeDeep(jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelog.bind(jiraHelpers)),
   );
 
   return jiraHelpers;

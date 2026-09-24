@@ -666,12 +666,14 @@ export function fetchRemainingChangelogsForIssue(config: Config) {
 // this could do each response incrementally, but I'm being lazy
 export const fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields =
   (config: Config) =>
-  async (params: { fields: string[]; [key: string]: any }, progress: (data: ProgressData) => void = () => {}) => {
+  async (params: { fields?: string[]; [key: string]: any }, progress: (data: ProgressData) => void = () => {}) => {
     const fields = await config.fieldsRequest();
 
+    // `fields` is optional so this composes as a `RootMethod` under the deep-blockers decorator
+    // (spec/036), whose `Params` has it optional. Matches `fetchAllJiraIssuesWithJQLUsingNamedFields`.
     const newParams = {
       ...params,
-      fields: params.fields.map((f) => fields?.nameMap[f] || f),
+      fields: params.fields?.map((f) => fields?.nameMap[f] || f),
     };
     const response = await fetchAllJiraIssuesWithJQLAndFetchAllChangelog(config)(newParams, progress);
 

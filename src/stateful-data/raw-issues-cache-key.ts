@@ -19,6 +19,8 @@ export interface QueryKeyInput {
   jql?: string | null;
   childJQL?: string | null;
   loadChildren?: boolean | null;
+  blockerJQL?: string | null;
+  loadBlockers?: boolean | null;
 }
 
 export interface CacheKeyInput extends QueryKeyInput {
@@ -33,8 +35,11 @@ export interface CacheKeyInput extends QueryKeyInput {
  * `isLoggedIn` is deliberately excluded. It is global to the page, so it cannot distinguish two
  * children of one document, and the document-layer grouping has no use for it.
  */
-export function queryKeyOf({ jql, childJQL, loadChildren }: QueryKeyInput): string {
-  return JSON.stringify([jql ?? '', childJQL ?? '', loadChildren ? 1 : 0]);
+export function queryKeyOf({ jql, childJQL, loadChildren, blockerJQL, loadBlockers }: QueryKeyInput): string {
+  // Positional. Append only — an existing position changing meaning would silently merge two
+  // different questions. `blockerJQL` is included unconditionally (not only when `loadBlockers`)
+  // for the same reason `childJQL` is: the value round-trips through the URL either way.
+  return JSON.stringify([jql ?? '', childJQL ?? '', loadChildren ? 1 : 0, blockerJQL ?? '', loadBlockers ? 1 : 0]);
 }
 
 /**
@@ -61,14 +66,14 @@ export function queryKeyOf({ jql, childJQL, loadChildren }: QueryKeyInput): stri
  * physically cannot reach another site's entries.
  */
 export function rawIssuesCacheKey(
-  { isLoggedIn, loadChildren, jql, childJQL, fields }: CacheKeyInput,
+  { isLoggedIn, loadChildren, jql, childJQL, fields, blockerJQL, loadBlockers }: CacheKeyInput,
   maps?: FieldMaps,
 ): string {
   const canonicalFields = [...canonicalFieldIdSet([...(fields ?? []), ...CORE_FIELDS], maps)].sort();
 
   return JSON.stringify([
     isLoggedIn === false ? 'sample' : 'jira',
-    queryKeyOf({ jql, childJQL, loadChildren }),
+    queryKeyOf({ jql, childJQL, loadChildren, blockerJQL, loadBlockers }),
     canonicalFields,
   ]);
 }

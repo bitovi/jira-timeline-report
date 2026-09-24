@@ -47,12 +47,19 @@ export type Params = {
   fields?: string[];
   /** Set by the deep-children loader on child batches to skip their opening approximate-count request. */
   skipApproximateCount?: boolean;
+  /** Optional JQL appended to each `key in (...)` blocker batch, mirroring `childJQL`. */
+  blockerJQL?: string;
 };
 
 /**
  * Which part of the load a shared `progress.data` is currently in. `'history'` is intentionally NOT
  * a value — the history/changelog phase is derived from the `changeLogs*` counts, which run
- * concurrently with the others. Stays `undefined` on the no-children path.
+ * concurrently with the others. Stays `undefined` when nothing expands the root result set.
+ *
+ * `'children'` is the generic **expansion** phase: blocker loading reuses it rather than adding a
+ * third value. A sequential third phase would make the primary step un-complete mid-load, and the
+ * union is hardcoded in three files rather than imported. Which expansions are running is reported
+ * by the `expandsChildren` / `expandsBlockers` booleans instead — they only pick the step's label.
  */
 export type LoadProgressPhase = 'primary' | 'children';
 
@@ -62,11 +69,22 @@ export type ProgressData = {
   changeLogsRequested: number;
   changeLogsReceived: number;
   keysWhoseChildrenWeAreAlreadyLoading: Set<string>;
+  /**
+   * Every key the blocker loader already has or has already asked for. Deliberately separate from
+   * `keysWhoseChildrenWeAreAlreadyLoading`: "already expanded for children" and "already requested as
+   * a blocker" are different questions, and conflating them would suppress legitimate fetches.
+   * See spec/036-load-blockers-recursiveley §3.
+   */
+  keysAlreadyRequestedAsBlockers: Set<string>;
   phase?: LoadProgressPhase;
   /** Top-level parents whose children are being loaded (set when the children phase starts). */
   parentsToProcess?: number;
   /** Top-level parents whose entire subtree has finished loading. Grows as batches complete. */
   parentsProcessed?: number;
+  /** The deep-children loader is in the composition. Labels the expansion step. */
+  expandsChildren?: boolean;
+  /** The deep-blockers loader is in the composition. Labels the expansion step. */
+  expandsBlockers?: boolean;
 };
 
 export type Progress = {

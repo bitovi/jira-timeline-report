@@ -98,13 +98,21 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
         changeLogsRequested: 0,
         changeLogsReceived: 0,
         keysWhoseChildrenWeAreAlreadyLoading: new Set<string>(),
+        keysAlreadyRequestedAsBlockers: new Set<string>(),
         phase: 'primary',
         parentsToProcess: 0,
         parentsProcessed: 0,
       };
+      progress.data.expandsChildren = true;
+
+      // Under the full closure of spec/036 this whole function runs once per blocker round, nested
+      // inside the blocker loader. Only the very first pass may reset the phase and the counters — a
+      // later pass doing so would rewind the stepper's primary step to "active" mid-load, and would
+      // throw away the parents already counted. Later passes accumulate instead.
+      const isFirstPass = progress.data.phase !== 'children';
 
       // The root-JQL fetch is the "primary work items" phase.
-      if (progress.data) progress.data.phase = 'primary';
+      if (isFirstPass) progress.data.phase = 'primary';
       const parentIssues = await rootMethod(newParams, progress);
 
       // Deep-children discovery is where the total grows. Flip to the "children" phase and emit so the
@@ -113,8 +121,8 @@ export function makeDeepChildrenLoaderUsingNamedFields(config: Config) {
       // for all the concurrent/recursive child `rootMethod` calls that follow.
       if (progress.data) {
         progress.data.phase = 'children';
-        progress.data.parentsToProcess = parentIssues.length;
-        progress.data.parentsProcessed = 0;
+        progress.data.parentsToProcess = (progress.data.parentsToProcess || 0) + parentIssues.length;
+        if (isFirstPass) progress.data.parentsProcessed = 0;
         progress(progress.data);
       }
       const allChildrenIssues = await fetchDeepChildren(newParams, parentIssues, progress, true);

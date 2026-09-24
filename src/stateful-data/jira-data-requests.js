@@ -97,7 +97,7 @@ export { CORE_FIELDS };
  *   know about the cache.
  */
 export function getRawIssues(
-  { isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL },
+  { isLoggedIn, loadChildren, loadBlockers, jiraHelpers, jql, fields, childJQL, blockerJQL },
   { progressUpdate, owner },
 ) {
   // console.log("REQUESTING", { isLoggedIn, loadChildren, jiraHelpers, jql, fields, childJQL })
@@ -120,14 +120,24 @@ export function getRawIssues(
   const request = {
     jql: jql,
     childJQL: childJQL ? ' and ' + childJQL : '',
+    blockerJQL: blockerJQL ? ' and ' + blockerJQL : '',
     fields: fieldsToLoad,
     expand: ['changelog'],
   };
 
   const startLoad = (progress) => {
+    // The four cells of spec/036 §2. Both expansions are decorators of the same shape, so "children
+    // and blockers" is just the two composed — which is what makes the closure (children of blockers,
+    // blockers of children) fall out with no bespoke alternating loop.
     const loadIssues = loadChildren
-      ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
-      : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
+      ? loadBlockers
+        ? jiraHelpers.fetchAllJiraIssuesAndDeepChildrenAndBlockersWithJQLAndFetchAllChangelogUsingNamedFields.bind(
+            jiraHelpers,
+          )
+        : jiraHelpers.fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
+      : loadBlockers
+        ? jiraHelpers.fetchAllJiraIssuesAndDeepBlockersWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers)
+        : jiraHelpers.fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields.bind(jiraHelpers);
 
     return loadIssues(request, progress);
   };
@@ -142,7 +152,10 @@ export function getRawIssues(
   // Dedupe on what will actually be SENT, resolved by the same rule the senders use: the maps come
   // off `jiraHelpers.fields` (undefined until the field request resolves, which can only miss a
   // dedupe, never create a false one). See raw-issues-cache-key.ts.
-  const key = rawIssuesCacheKey({ isLoggedIn, loadChildren, jql, childJQL, fields }, jiraHelpers.fields);
+  const key = rawIssuesCacheKey(
+    { isLoggedIn, loadChildren, loadBlockers, jql, childJQL, blockerJQL, fields },
+    jiraHelpers.fields,
+  );
 
   return withSharedRawIssues({ jiraHelpers, key, owner, progressUpdate }, startLoad);
 }
