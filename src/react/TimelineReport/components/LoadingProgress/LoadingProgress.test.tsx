@@ -108,6 +108,29 @@ describe('computeSteps (step-state logic)', () => {
     expect(history.detail).toBe('1,282 histories');
   });
 
+  it.each([
+    { flags: { expandsChildren: true }, label: 'Loading children', noun: 'children' },
+    { flags: { expandsBlockers: true }, label: 'Loading blockers', noun: 'blockers' },
+    {
+      flags: { expandsChildren: true, expandsBlockers: true },
+      label: 'Loading children and blockers',
+      noun: 'children and blockers',
+    },
+  ])('labels the expansion step "$label" for $flags', ({ flags, label, noun }) => {
+    const counts = { phase: 'children' as const, primaryRequested: 342, primaryReceived: 342, ...flags };
+
+    const active = byKey(
+      computeSteps({ ...counts, status: 'pending', issuesRequested: 342, issuesReceived: 474 }),
+    ).children;
+    expect(active.label).toBe(label);
+
+    const done = byKey(
+      computeSteps({ ...counts, status: 'resolved', issuesRequested: 1282, issuesReceived: 1282 }),
+    ).children;
+    expect(done.label).toBe(label);
+    expect(done.detail).toBe(`940 ${noun}`);
+  });
+
   it('shows two done steps when resolved on the no-children path', () => {
     const steps = computeSteps({
       status: 'resolved',
