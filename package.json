@@ -40,7 +40,7 @@
     "@atlaskit/editor-wikimarkup-transformer": "^12.1.0",
     "@sentry/node": "^8.51.0",
     "@sentry/profiling-node": "^8.51.0",
-    "axios": "^1.1.2",
+    "axios": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
