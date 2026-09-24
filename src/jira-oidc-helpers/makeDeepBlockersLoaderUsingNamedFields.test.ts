@@ -231,33 +231,25 @@ describe('makeDeepBlockersLoaderUsingNamedFields', () => {
     });
   });
 
-  // `key in (...)` ERRORS on a key that does not resolve, unlike `parent in (...)`, so one stale link
-  // would otherwise take down its whole 40-key batch.
+  // Matches the deep-children loader, which has no error handling at all: a failing batch rejects the
+  // whole load and `ReportArea` renders Jira's `errorMessages`. Resolving to a partial blocker graph
+  // would look like success, and a blanket catch here could not tell an unresolved key from a
+  // malformed `blockerJQL`, a 429, or an auth failure.
   describe('a batch that errors', () => {
-    it('bisects to isolate the bad key and keeps the rest of the batch', async () => {
+    it('propagates the failure instead of resolving to a partial graph', async () => {
       const graph: Graph = { A: ['B', 'C', 'BAD', 'D'], B: [], C: [], D: [] };
       const fake = makeFakeRoot(graph, ['A'], { poison: ['BAD'] });
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      const result = await loadBlockers(fake.root)({ jql: 'key = A' });
-
-      expect(keysOf(result)).toEqual(['A', 'B', 'C', 'D']);
-      // The whole batch, then its two halves, then the halves of the failing half.
-      expect(fake.batchedKeys()).toEqual([['B', 'C', 'BAD', 'D'], ['B', 'C'], ['BAD', 'D'], ['BAD'], ['D']]);
-      expect(warn).toHaveBeenCalledOnce();
-
-      warn.mockRestore();
+      await expect(loadBlockers(fake.root)({ jql: 'key = A' })).rejects.toThrow(/unresolvable key/);
     });
 
-    it('drops only the failing key when every key in the batch is bad', async () => {
-      const graph: Graph = { A: ['BAD1', 'BAD2'], BAD1: [], BAD2: [] };
-      const fake = makeFakeRoot(graph, ['A'], { poison: ['BAD1', 'BAD2'] });
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('does not retry the failing batch', async () => {
+      const graph: Graph = { A: ['BAD'], BAD: [] };
+      const fake = makeFakeRoot(graph, ['A'], { poison: ['BAD'] });
 
-      const result = await loadBlockers(fake.root)({ jql: 'key = A' });
+      await expect(loadBlockers(fake.root)({ jql: 'key = A' })).rejects.toThrow();
 
-      expect(keysOf(result)).toEqual(['A']);
-      warn.mockRestore();
+      expect(fake.batchedKeys()).toEqual([['BAD']]);
     });
   });
 
@@ -338,15 +330,17 @@ describe('composed with the deep-children loader', () => {
       'parent in (P-1) ': [{ id: '2', key: 'P-1-C', blockedBy: ['B-2'] }],
       'parent in (P-1-C) ': [],
 
-      // Round 1: the root's blocker — and the children loader immediately pulls ITS child.
-      'key in (B-1) ': [{ id: '3', key: 'B-1' }],
-      'parent in (B-1) ': [{ id: '4', key: 'B-1-C' }],
+      // ONE blocker round covers both. The root call returns the whole child cascade, so blocker
+      // extraction runs over P-1 *and* P-1-C together — B-2, the child's blocker, is found in the
+      // same pass as B-1 and batched with it.
+      'key in (B-1, B-2) ': [
+        { id: '3', key: 'B-1' },
+        { id: '4', key: 'B-2' },
+      ],
+      // ...and because that batch goes THROUGH the children loader, the blockers' own children
+      // arrive with them, with no second blocker round needed.
+      'parent in (B-1, B-2) ': [{ id: '5', key: 'B-1-C' }],
       'parent in (B-1-C) ': [],
-
-      // Round 2: the blocker of the root's CHILD, discovered only because blocker extraction runs
-      // over everything the children cascade returned.
-      'key in (B-2) ': [{ id: '5', key: 'B-2' }],
-      'parent in (B-2) ': [],
     });
 
     const load = makeDeepBlockersLoaderUsingNamedFields(config)(

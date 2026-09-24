@@ -57,34 +57,27 @@ function emptyProgressData(): ProgressData {
 export function makeDeepBlockersLoaderUsingNamedFields(_config: Config) {
   return (rootMethod: RootMethod) => {
     /**
-     * One `key in (...)` batch, with a single bisect-and-retry.
+     * One `key in (...)` batch.
      *
-     * Unlike `parent in (...)`, JQL `key in (...)` **errors** on a key that does not resolve — a
-     * deleted issue, a stale link, a key in a project the user cannot see. Without this, one bad
-     * link would take down its whole 40-key batch and, in the composed case, that batch's entire
-     * subtree. On a rejection we split once and retry the halves, dropping a half that still fails
-     * at size 1. The rest of the batch survives.
+     * **No error handling, deliberately** — a rejection propagates, exactly as it does in the
+     * deep-children loader, which has no `try`/`catch` either and lets a failing batch reject its
+     * `Promise.all`. The load then surfaces through `ReportArea`'s rejected state with Jira's own
+     * `errorMessages`, rather than resolving to a quietly incomplete graph.
+     *
+     * This is a sharp edge worth knowing about: unlike `parent in (...)`, JQL `key in (...)` errors
+     * on a key that does not resolve, so one stale link fails the whole load. An earlier draft
+     * bisected the batch to isolate such a key, but that `catch` could not tell an unresolved key
+     * from a malformed `blockerJQL`, a 429, or an auth failure — it swallowed all of them, and on a
+     * rate-limit error it turned one failed batch into ~79 retries. Silent partial data was the
+     * worse failure. If stale links prove common in practice, the fix is a predicate narrow enough
+     * to name that one Jira error, not a blanket catch.
      */
-    async function fetchBlockerBatch(keys: string[], params: Params, progress: Progress): Promise<Issue[]> {
+    function fetchBlockerBatch(keys: string[], params: Params, progress: Progress): Promise<Issue[]> {
       const jql = `key in (${keys.join(', ')}) ${params.blockerJQL || ''}`;
 
-      try {
-        // Same `skipApproximateCount` rationale as the child batches: the count's only product is a
-        // denominator the smoothed projection doesn't read.
-        return await rootMethod({ ...params, jql, skipApproximateCount: true }, progress);
-      } catch (error) {
-        if (keys.length === 1) {
-          console.warn(`Could not load blocker ${keys[0]}; skipping it.`, error);
-          return [];
-        }
-
-        const middle = Math.ceil(keys.length / 2);
-        const halves = await Promise.all([
-          fetchBlockerBatch(keys.slice(0, middle), params, progress),
-          fetchBlockerBatch(keys.slice(middle), params, progress),
-        ]);
-        return halves.flat();
-      }
+      // Same `skipApproximateCount` rationale as the child batches: the count's only product is a
+      // denominator the smoothed projection doesn't read.
+      return rootMethod({ ...params, jql, skipApproximateCount: true }, progress);
     }
 
     return async function fetchAllDeepBlockers(params: Params, progress: Progress = (() => {}) as any) {

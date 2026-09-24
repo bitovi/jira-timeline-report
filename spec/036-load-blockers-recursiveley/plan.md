@@ -41,15 +41,16 @@ This feature closes that gap by actually fetching the missing upstream issues.
 
 ## Decisions (locked with Arthur)
 
-| Decision                        | Choice                                                                                 | Why                                                |
-| ------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Direction                       | **"is blocked by" only** — walk upstream                                               | The asked-for semantics; "what is holding this up" |
-| Interaction with `loadChildren` | **Full closure** — children of blockers load, blockers of children load, to a fixpoint | §2 shows this falls out of composition for free    |
-| `blockerJQL` filter             | **Yes**, mirroring `childJQL`                                                          | Consistency with the existing control              |
-| Bounding                        | **Seen-set only** — no depth or issue cap                                              | Matches the children loader. §3                    |
-| Rollout                         | **Features-tab toggle**, `onByDefault: false`                                          | §5                                                 |
-| Flag scope                      | Gates the **UI control only**; a URL carrying `loadBlockers=true` still loads          | §5. Matches the flagged-off-report precedent       |
-| Sample-data fixture             | **Out of scope**                                                                       | §8                                                 |
+| Decision                        | Choice                                                                                 | Why                                                 |
+| ------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Direction                       | **"is blocked by" only** — walk upstream                                               | The asked-for semantics; "what is holding this up"  |
+| Interaction with `loadChildren` | **Full closure** — children of blockers load, blockers of children load, to a fixpoint | §2 shows this falls out of composition for free     |
+| `blockerJQL` filter             | **Yes**, mirroring `childJQL`                                                          | Consistency with the existing control               |
+| Bounding                        | **Seen-set only** — no depth or issue cap                                              | Matches the children loader. §3                     |
+| Rollout                         | **Features-tab toggle**, `onByDefault: false`                                          | §5                                                  |
+| Flag scope                      | Gates the **UI control only**; a URL carrying `loadBlockers=true` still loads          | §5. Matches the flagged-off-report precedent        |
+| Sample-data fixture             | **Out of scope**                                                                       | §8                                                  |
+| Batch-fetch errors              | **Propagate** — no catch, matching the children loader                                 | §4. Amended in review; a blanket catch hid too much |
 
 ---
 
@@ -181,10 +182,32 @@ makeDeepBlockersLoaderUsingNamedFields(config) → (rootMethod) → async (param
 rationale as the child batches
 ([`makeDeepChildrenLoaderUsingNamedFields.ts:41-43`](../../src/jira-oidc-helpers/makeDeepChildrenLoaderUsingNamedFields.ts)).
 
-**One resilience measure, worth the ~15 lines.** Unlike `parent in (…)`, JQL `key in (…)` _errors_ on
-a key that does not resolve — a deleted issue, a stale link — which would take down the whole 40-key
-batch. On a rejected batch, bisect once and retry the halves, dropping a half that still fails at
-size 1. Cover it with a test.
+**Errors propagate — no batch-level recovery.** Unlike `parent in (…)`, JQL `key in (…)` _errors_ on
+a key that does not resolve — a deleted issue, a stale link — and that takes down the whole 40-key
+batch, and in the composed case its subtree. We accept that, because the loader matches the
+deep-children loader exactly: no `try`/`catch`, a failing batch rejects its `Promise.all`, and the
+load surfaces through `ReportArea`'s rejected state with Jira's own `errorMessages`
+([`ReportArea.tsx:99`](../../src/react/TimelineReport/components/ReportArea.tsx)).
+
+> **Amended 2026-09-23, in review.** This section originally specified a bisect-and-retry: split a
+> rejected batch, retry the halves, drop a half still failing at size 1. It was built that way and
+> then removed. The `catch` could not tell an unresolved key from a malformed `blockerJQL`, a 429, an
+> auth failure, or a changelog error — it swallowed all of them, resolving to a quietly incomplete
+> blocker graph that looks like success. On a rate-limit error it also turned one failed batch into
+> ~79 retries, against an instance already returning 429s
+> (`spec/016-report-of-reports/005-optimize/001-request-dedupe`). Silent partial data was judged the
+> worse failure, and the children loader's propagate-everything posture is the house style.
+>
+> Removing it immediately caught a real bug in the composed test, whose fixture assumed two blocker
+> rounds where there is only one; the `catch` had been bisecting around the fixture's own error and
+> the test passed while asserting a request pattern that never occurs.
+>
+> If stale links prove common against a real instance, the fix is a predicate narrow enough to name
+> that one Jira error — not a blanket catch. Note `err.status` is **not** available: both request
+> helpers funnel through
+> [`responseToJSON`](../../src/utils/fetch/response-to-json.ts), whose `Object.assign(err, response)`
+> copies no prototype getters, so the status survives only inside `err.message`. Connect's
+> `AP.request` branch rejects with a different shape again and carries no `errorMessages`.
 
 `uniqueKeys` keeps the **first** occurrence, so an issue reachable both as a child and as a blocker
 keeps whichever copy was fetched first. Harmless: both fetches request the same field set.
@@ -354,9 +377,11 @@ a duplicate fetch fails the test:
   later rounds — rule 2.
 - Root keys seeded: a root that is also somebody's blocker is not re-fetched — rule 1.
 - Batching at 40; `blockerJQL` appended at every level; `skipApproximateCount` set.
-- Bisect-on-error isolates one bad key without losing the rest of the batch.
+- A rejected batch **propagates** rather than resolving to a partial graph, and is not retried.
 - **Composed** with the children loader: children of blockers and blockers of children both load, and
-  the cascade reaches a fixpoint.
+  the cascade reaches a fixpoint. Note the closure needs only **one** blocker round here — the root
+  call returns the whole child cascade, so a child's blocker is extracted in the same pass as the
+  root's and batched with it.
 
 Existing suites to extend — the first two **fail the build the moment the route-data prop is added**,
 by design:
