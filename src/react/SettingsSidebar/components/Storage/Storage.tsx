@@ -45,8 +45,8 @@ type IssueTypeOption = { label: string; value: string };
 /**
  * Where this site's saved reports live.
  *
- * Two cards, one per host, and only the card for the host you are running in is editable — the web
- * build cannot read a Connect app property, so the other card documents rather than reports. Point
+ * Only the host you are running in is shown — the web build cannot read a Connect app property, so
+ * there is no live state to show for the other host, and its settings are changed from there. Point
  * both hosts at the same space and they share the same saved reports, which is the one arrangement
  * where a report saved in Jira is visible from the standalone app.
  *
@@ -189,53 +189,31 @@ const StorageView: FC = () => {
         <Heading size="medium">Storage {isBusy && <Spinner size="small" />}</Heading>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <StorageCard
-          title="Connect"
-          groupTitle="Reports storage"
-          options={CONNECT_OPTIONS}
-          selected={isConnect ? kind : null}
-          disabled={!isConnect}
-          note={isConnect ? undefined : 'Change these settings from the Status Reports app in Jira.'}
-          onSelect={handleSelect}
-        >
-          <SpaceFields
-            spaceNameId={spaceNameId}
-            spaceTypeId={spaceTypeId}
-            spaceName={spaceName}
-            spaceType={knownSpaceType}
-            options={issueTypeOptions}
-            isLoadingIssueTypes={isLoadingIssueTypes}
-            issueTypesError={issueTypesError}
-            isDisabled={isBusy}
-            onSpaceNameChange={setSpaceName}
-            onSpaceTypeChange={setSpaceType}
-          />
-        </StorageCard>
-
-        <StorageCard
-          title="Web"
-          groupTitle="Reports storage"
-          options={WEB_OPTIONS}
-          selected={isConnect ? null : kind}
-          disabled={isConnect}
-          note={isConnect ? 'Change these settings from the standalone web app.' : undefined}
-          onSelect={handleSelect}
-        >
-          <SpaceFields
-            spaceNameId={spaceNameId}
-            spaceTypeId={spaceTypeId}
-            spaceName={spaceName}
-            spaceType={knownSpaceType}
-            options={issueTypeOptions}
-            isLoadingIssueTypes={isLoadingIssueTypes}
-            issueTypesError={issueTypesError}
-            isDisabled={isBusy}
-            onSpaceNameChange={setSpaceName}
-            onSpaceTypeChange={setSpaceType}
-          />
-        </StorageCard>
-      </div>
+      <StorageCard
+        title={isConnect ? 'Connect' : 'Web'}
+        groupTitle="Reports storage"
+        options={isConnect ? CONNECT_OPTIONS : WEB_OPTIONS}
+        selected={kind}
+        note={
+          isConnect
+            ? 'Changes here apply to Status Reports in Jira. To point the standalone web app at the same Reports Space, open the web app and go to Settings → Storage.'
+            : 'Changes here apply to the standalone web app. To point Status Reports in Jira at the same Reports Space, open the app in Jira and go to Settings → Storage.'
+        }
+        onSelect={handleSelect}
+      >
+        <SpaceFields
+          spaceNameId={spaceNameId}
+          spaceTypeId={spaceTypeId}
+          spaceName={spaceName}
+          spaceType={knownSpaceType}
+          options={issueTypeOptions}
+          isLoadingIssueTypes={isLoadingIssueTypes}
+          issueTypesError={issueTypesError}
+          isDisabled={isBusy}
+          onSpaceNameChange={setSpaceName}
+          onSpaceTypeChange={setSpaceType}
+        />
+      </StorageCard>
 
       {/*
         Shown only when it is actually true — the saved setting is a space and you have just picked

@@ -33,7 +33,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
 
   return (
     <div className="w-full h-full flex">
-      <div className="w-60 border-r border-neutral-30 px-6 py-2 flex flex-col">
+      <div className="w-64 border-r border-neutral-30 px-4 py-2 flex flex-col">
         <SidebarButton onClick={onBackButtonClicked}>
           <ArrowLeftCircleIcon label="go back" />
           Go back

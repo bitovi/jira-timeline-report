@@ -68,7 +68,7 @@ const chooseSpaceType = async (name: string) => {
   await userEvent.click(await screen.findByText(name));
 };
 
-/** Both cards carry a "Reports Space" radio, so every assertion has to say which card it means. */
+/** Scopes an assertion to the one host card on screen. */
 const card = (title: 'Connect' | 'Web') => within(screen.getByRole('region', { name: `${title} storage` }));
 
 /**
@@ -94,19 +94,18 @@ describe('<Storage />', () => {
     warn.mockRestore();
   });
 
-  // The other host's card documents how that host works; it does not show its state. A Connect app
-  // property is a Connect-only resource the web build cannot read, so there is nothing live to show.
-  it('renders both hosts and only lets you change the one you are in', async () => {
+  // Only the host you are running in is shown. A Connect app property is a Connect-only resource the
+  // web build cannot read, so there is no live state to show for the other host — the note says
+  // where to go instead.
+  it('renders only the host you are in, and says where to change the other', async () => {
     renderStorage({ storage: makeStorage({ kind: 'legacy' }), jira: makeJira('jira') });
 
     expect(await screen.findByRole('region', { name: 'Connect storage' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Web storage' })).not.toBeInTheDocument();
 
     expect(card('Connect').getByRole('radio', { name: /Key\/Value/ })).toBeEnabled();
     expect(card('Connect').getByRole('radio', { name: /Key\/Value/ })).toBeChecked();
-
-    expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).toBeDisabled();
-    expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).not.toBeChecked();
-    expect(card('Web').getByRole('radio', { name: /Reports Space/ })).not.toBeChecked();
+    expect(card('Connect').getByText(/Changes here apply to Status Reports in Jira/)).toBeInTheDocument();
   });
 
   // Same stored shape either way — only the label differs, because "app property" and "code block in
@@ -115,8 +114,9 @@ describe('<Storage />', () => {
     renderStorage({ storage: makeStorage({ kind: 'legacy' }), jira: makeJira('hosted') });
 
     expect(await screen.findByRole('region', { name: 'Web storage' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Connect storage' })).not.toBeInTheDocument();
     expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).toBeEnabled();
-    expect(card('Connect').getByRole('radio', { name: /Key\/Value/ })).toBeDisabled();
+    expect(card('Web').getByText(/Changes here apply to the standalone web app/)).toBeInTheDocument();
   });
 
   it('shows the saved space when one is configured', async () => {
