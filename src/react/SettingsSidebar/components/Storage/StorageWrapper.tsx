@@ -41,11 +41,7 @@ const StorageSkeleton: FC = () => {
       <div className="pt-4">
         <Heading size="medium">Storage</Heading>
       </div>
-      <div className="flex flex-col gap-4">
-        {[...Array.from({ length: 2 }).keys()].map((i) => (
-          <Skeleton key={i} height="160px" />
-        ))}
-      </div>
+      <Skeleton height="160px" />
     </div>
   );
 };

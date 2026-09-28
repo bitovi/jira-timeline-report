@@ -7,7 +7,7 @@ import Button from '@atlaskit/button/new';
 import TeamListItem from '../TeamListItem';
 
 /** How many outside-report teams are shown per "Load more" click, and the cap on search results. */
-export const OUTSIDE_REPORT_TEAMS_PAGE_SIZE = 10;
+export const OUTSIDE_REPORT_TEAMS_PAGE_SIZE = 50;
 
 export interface OutsideReportTeamsProps {
   /** Already filtered by the caller's search when `isFiltered` is true. */
