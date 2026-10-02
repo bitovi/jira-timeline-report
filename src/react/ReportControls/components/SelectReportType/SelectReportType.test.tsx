@@ -17,8 +17,14 @@ const savedGantt = {
     '&loadBlockers=true&statusesToExclude=Done&selectedIssueType=Epic',
 };
 
+const savedReportOfReports = {
+  id: 'ror',
+  name: 'Portfolio',
+  queryParams: 'primaryReportType=report-of-reports',
+};
+
 vi.mock('../../../services/reports', () => ({
-  useAllReports: () => ({ [savedGantt.id]: savedGantt }),
+  useAllReports: () => ({ [savedGantt.id]: savedGantt, [savedReportOfReports.id]: savedReportOfReports }),
 }));
 
 /**
@@ -132,6 +138,17 @@ describe('<SelectReportType />', () => {
 
       expect(param('report')).toBe('gantt');
       expect(param('primaryReportType')).toBe('due');
+    });
+
+    // A saved report-of-reports switched to another type and back is still that saved document.
+    it('keeps a saved report-of-reports attached when switching back to it', async () => {
+      setSearch('?report=ror&primaryReportType=start-due');
+      render(<SelectReportType />);
+
+      await pickReportType('Report of Reports');
+
+      expect(param('report')).toBe('ror');
+      expect(param('primaryReportType')).toBe('report-of-reports');
     });
   });
 });

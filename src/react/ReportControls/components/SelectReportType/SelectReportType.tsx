@@ -36,12 +36,19 @@ const SelectReportType: FC = () => {
    * consequence of the URL *being* the document rather than mirroring it — there is nowhere else the
    * live tree is kept.
    *
-   * Moving a saved report of another type *to* report-of-reports is the exception to keeping
+   * Moving a saved report whose record is another type *to* report-of-reports is the exception to keeping
    * everything: it detaches the report and starts from a clean URL (see {@link reportOfReportsSearch}), in one
    * pushed entry so Back returns to the saved report.
    */
   const selectReportType = (reportType: string) => {
-    if (reportType === REPORT_OF_REPORTS && primaryReportType !== REPORT_OF_REPORTS && getReportFromParams(reports)) {
+    // Keyed on the saved record's type, not the one on screen: a saved report-of-reports that was
+    // switched away and back is still its own document and stays attached.
+    const savedReport = getReportFromParams(reports);
+    if (
+      reportType === REPORT_OF_REPORTS &&
+      savedReport &&
+      new URLSearchParams(savedReport.queryParams).get('primaryReportType') !== REPORT_OF_REPORTS
+    ) {
       pushUrlSearch(reportOfReportsSearch(window.location.search));
       return;
     }
