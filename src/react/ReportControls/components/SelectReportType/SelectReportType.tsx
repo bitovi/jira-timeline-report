@@ -6,7 +6,10 @@ import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
 import { getReportTypeOptions } from './utilities';
 import { useAsyncFeatures } from '../../../services/features';
 import { SECTIONS_PARAM } from '../../../reports/ReportOfReports/model/documentParam';
-import { deleteUrlParam } from '../../../../canjs/routing/state-storage';
+import { deleteUrlParam, pushUrlSearch } from '../../../../canjs/routing/state-storage';
+import { useAllReports } from '../../../services/reports';
+import { getReportFromParams } from '../../../SaveReports/hooks/useSelectedReports/utilities';
+import { reportOfReportsSearch } from './reportOfReportsSearch';
 
 import { reports as REPORTS } from '../../../../configuration/reports';
 
@@ -16,6 +19,7 @@ const SelectReportType: FC = () => {
   //const [reports] = useReports();
   const [primaryReportType, setPrimaryReportType] = usePrimaryReportType();
   const { features, isLoading } = useAsyncFeatures();
+  const reports = useAllReports();
 
   /**
    * A report-type switch deliberately leaves every other param in the URL, so the settings reports
@@ -31,8 +35,17 @@ const SelectReportType: FC = () => {
    * "the document is whatever the open report has saved", so an in-progress one is gone. That is the
    * consequence of the URL *being* the document rather than mirroring it — there is nowhere else the
    * live tree is kept.
+   *
+   * Moving a saved report of another type *to* report-of-reports is the exception to keeping
+   * everything: it detaches the report and starts from a clean URL (see {@link reportOfReportsSearch}), in one
+   * pushed entry so Back returns to the saved report.
    */
   const selectReportType = (reportType: string) => {
+    if (reportType === REPORT_OF_REPORTS && primaryReportType !== REPORT_OF_REPORTS && getReportFromParams(reports)) {
+      pushUrlSearch(reportOfReportsSearch(window.location.search));
+      return;
+    }
+
     setPrimaryReportType(reportType);
 
     if (reportType !== REPORT_OF_REPORTS) {

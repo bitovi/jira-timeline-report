@@ -661,6 +661,11 @@ export class RouteData extends ObservableObject {
           resolveCurrentValue && resolveCurrentValue();
         });
 
+        // Switching back to a report that has an issue type is what defaults it again.
+        listenTo('primaryReportType', () => {
+          resolveCurrentValue && resolveCurrentValue();
+        });
+
         const savedReportParam = () => openReportParam(this.reportsData, 'selectedIssueType');
 
         let timers = [];
@@ -686,6 +691,14 @@ export class RouteData extends ObservableObject {
           // hierarchy (simplifiedIssueHierarchy), which may include levels (e.g. Outcomes)
           // that aren't present in the actual query results.
           if (!(this.derivedIssues && this.derivedIssues.length)) {
+            return;
+          }
+
+          // A report-of-reports has no issue type of its own — each section reads its own — so
+          // there is nothing to default or validate. Without this, switching a saved report to one
+          // wrote the old report's top level into the URL: the switch drops the JQL, but
+          // `derivedIssues` still holds the old results when this re-runs on the URL change.
+          if (this.primaryReportType === 'report-of-reports') {
             return;
           }
 
@@ -876,6 +889,14 @@ export class RouteData extends ObservableObject {
           // Wait for derivedIssues before defaulting/validating — same reasoning as
           // selectedIssueType: use the real results-based hierarchy, not Jira metadata.
           if (!(this.derivedIssues && this.derivedIssues.length)) {
+            return;
+          }
+
+          // A report-of-reports has no issue type of its own — each section reads its own — so
+          // there is nothing to default or validate. Without this, switching a saved report to one
+          // wrote the old report's top level into the URL: the switch drops the JQL, but
+          // `derivedIssues` still holds the old results when this re-runs on the URL change.
+          if (this.primaryReportType === 'report-of-reports') {
             return;
           }
 
