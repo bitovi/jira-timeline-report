@@ -1,5 +1,6 @@
-import { describe, test, expect } from 'vitest';
-import { deriveFieldMaps } from './fields';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { deriveFieldMaps, makeFieldsRequest } from './fields';
+import type { Config } from './types';
 
 describe('deriveFieldMaps', () => {
   test('maps each name to a single id and each id to its name', () => {
@@ -38,5 +39,41 @@ describe('deriveFieldMaps', () => {
     ]);
 
     expect(nameMap['Start date']).toBe('global');
+  });
+});
+
+describe('makeFieldsRequest', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  test('fires the request when an access token is present', () => {
+    window.localStorage.setItem('accessToken', 'a-token');
+    const requestHelper = vi.fn(async () => [] as unknown);
+    const setFieldsRequest = vi.fn();
+
+    makeFieldsRequest({ requestHelper, host: 'hosted' } as unknown as Config, setFieldsRequest);
+
+    expect(requestHelper).toHaveBeenCalledWith('/api/3/field');
+    expect(setFieldsRequest).toHaveBeenCalled();
+  });
+
+  test('skips the request when there is no access token', () => {
+    const requestHelper = vi.fn(async () => [] as unknown);
+
+    makeFieldsRequest({ requestHelper, host: 'hosted' } as unknown as Config, vi.fn());
+
+    expect(requestHelper).not.toHaveBeenCalled();
+  });
+
+  // Regression: this used to throw "requestHelper is not a function" from inside
+  // createJiraHelpers, before the factory returned, breaking the OAuth callback page for anyone
+  // re-authing with a leftover accessToken in localStorage.
+  test('does not throw when the config has no requestHelper', () => {
+    window.localStorage.setItem('accessToken', 'a-token');
+    const setFieldsRequest = vi.fn();
+
+    expect(() => makeFieldsRequest({ host: undefined } as unknown as Config, setFieldsRequest)).not.toThrow();
+    expect(setFieldsRequest).not.toHaveBeenCalled();
   });
 });

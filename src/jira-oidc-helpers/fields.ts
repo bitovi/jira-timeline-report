@@ -60,6 +60,14 @@ export function deriveFieldMaps(fields: Array<{ name: string; id: string; scope?
 }
 
 export function makeFieldsRequest(config: Config, setFieldsRequest: (req: FieldsRequest) => void) {
+  // Defense in depth. This runs from inside createJiraHelpers *before* it returns, so a Config
+  // built without a requestHelper crashes the whole factory call and takes down whatever the page
+  // was actually trying to do — which is how the OAuth callback page used to fail before it could
+  // exchange its auth code. Skipping the request degrades gracefully instead.
+  if (typeof config.requestHelper !== 'function') {
+    return;
+  }
+
   // Note: we intentionally check hasAccessToken() (presence) rather than hasValidAccessToken()
   // (presence + not expired). The request helpers (hosted/connect) already refresh an expired
   // token before making the request, so gating on validity here just meant that on page load
