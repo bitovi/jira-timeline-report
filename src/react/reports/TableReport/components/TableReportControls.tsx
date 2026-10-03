@@ -154,7 +154,7 @@ const TableReportControlsInner: FC = () => {
     [columnIds, catalogById],
   );
   const isGrouped = groupBy !== '';
-  const is2D = groupBy !== '' && groupByCol !== '';
+  const is2D = groupByCol !== '';
 
   // How many measures the 2D cross-tab would actually render (mirrors TableReport.tsx's
   // `crossTabMeasures`), so the Fields dropdown only offers "Hidden" when there's a single measure —
@@ -163,9 +163,9 @@ const TableReportControlsInner: FC = () => {
     if (!is2D) return 0;
     const rowColumn = catalogById.get(groupBy) ?? null;
     const colColumn = catalogById.get(groupByCol) ?? null;
-    if (!rowColumn || !colColumn) return 0;
+    if (!colColumn) return 0;
     const measures = selectMeasureColumns(groupableColumns, rowColumn, colColumn);
-    const excluded = new Set([rowColumn.id, colColumn.id]);
+    const excluded = new Set([rowColumn?.id, colColumn.id]);
     const identityFallback = groupableColumns.filter((c) => c.isIdentity && !excluded.has(c.id));
     return effectiveMeasures(measures, identityFallback).length;
   }, [is2D, groupableColumns, catalogById, groupBy, groupByCol]);
@@ -187,8 +187,6 @@ const TableReportControlsInner: FC = () => {
     setGroupBy(value);
     setGroupByGranularity(granularity);
     if (value) clearTreeSort();
-    // Clearing the first group also drops the 2D column dimension (progressive disclosure).
-    else setGroupByCol('');
   };
 
   const handleSelectGroupCol = (value: string, granularity: DateGranularity | '' = '') => {
@@ -245,34 +243,32 @@ const TableReportControlsInner: FC = () => {
           </DropdownMenu>
         </ControlCell>
 
-        {/* Progressive disclosure: the column-dimension (2D) selector appears only once a first
-            group field is chosen. */}
-        {isGrouped && (
-          <ControlCell label="then →">
-            <DropdownMenu
-              testId="table-group-by-col"
-              trigger={groupByCol ? groupLabel(groupByCol, groupByColGranularity) : 'None'}
-            >
-              <DropdownItemGroup>
-                <DropdownItem testId="table-group-by-col-option" onClick={() => handleSelectGroupCol('')}>
-                  None
-                </DropdownItem>
-                {groupableColumns
-                  .filter((c) => c.id !== groupBy)
-                  .map((c) => (
-                    <GroupOption
-                      key={c.id}
-                      column={c}
-                      testId="table-group-by-col-option"
-                      isSelected={groupByCol === c.id}
-                      selectedGranularity={groupByColGranularity}
-                      onSelect={(granularity) => handleSelectGroupCol(c.id, granularity)}
-                    />
-                  ))}
-              </DropdownItemGroup>
-            </DropdownMenu>
-          </ControlCell>
-        )}
+        {/* The column (→) dimension works on its own too: with no row group, every issue lands in a
+            single "All issues" row and the column groups lay out horizontally. */}
+        <ControlCell label={isGrouped ? 'then →' : 'Group by →'}>
+          <DropdownMenu
+            testId="table-group-by-col"
+            trigger={groupByCol ? groupLabel(groupByCol, groupByColGranularity) : 'None'}
+          >
+            <DropdownItemGroup>
+              <DropdownItem testId="table-group-by-col-option" onClick={() => handleSelectGroupCol('')}>
+                None
+              </DropdownItem>
+              {groupableColumns
+                .filter((c) => c.id !== groupBy)
+                .map((c) => (
+                  <GroupOption
+                    key={c.id}
+                    column={c}
+                    testId="table-group-by-col-option"
+                    isSelected={groupByCol === c.id}
+                    selectedGranularity={groupByColGranularity}
+                    onSelect={(granularity) => handleSelectGroupCol(c.id, granularity)}
+                  />
+                ))}
+            </DropdownItemGroup>
+          </DropdownMenu>
+        </ControlCell>
       </div>
 
       {is2D && (

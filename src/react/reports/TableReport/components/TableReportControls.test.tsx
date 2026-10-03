@@ -135,6 +135,31 @@ describe('<TableReportControls /> date-bucket grouping (spec/012-table-and-group
     expect(store.tableGroupBy).toBe('builtin:status:name');
     expect(store.tableGroupByGranularity).toBe('');
   });
+
+  test('the column (→) group can be chosen without a row group', () => {
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by-col--trigger'));
+    fireEvent.click(screen.getByText('Due Date'));
+    fireEvent.click(screen.getByText('Month'));
+    expect(store.tableGroupBy).toBe('');
+    expect(store.tableGroupByCol).toBe('field:duedate');
+    expect(store.tableGroupByColGranularity).toBe('month');
+  });
+
+  test('clearing the row group keeps the column group', () => {
+    store.tableColumns = [
+      { sourceId: 'identity:key' },
+      { sourceId: 'builtin:status:name' },
+      { sourceId: 'field:duedate' },
+    ];
+    store.tableGroupBy = 'builtin:status:name';
+    store.tableGroupByCol = 'field:duedate';
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by--trigger'));
+    fireEvent.click(screen.getAllByTestId('table-group-by-option')[0]);
+    expect(store.tableGroupBy).toBe('');
+    expect(store.tableGroupByCol).toBe('field:duedate');
+  });
 });
 
 describe('<TableReportControls /> Fields axis (2D cross-tab)', () => {

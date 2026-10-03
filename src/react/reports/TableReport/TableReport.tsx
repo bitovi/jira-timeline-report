@@ -58,7 +58,15 @@ import {
 } from './model/grouping';
 import { aggregations, isNumericAggregation } from './model/aggregations';
 import { bucketedDateColumn, DATE_GRANULARITIES } from './model/dateBucketing';
-import { buildCrossTab, cellMembers, cellValue, effectiveMeasures, TOTAL_KEY, TOTAL_LABEL } from './model/crosstab';
+import {
+  ALL_ISSUES_ROW_COLUMN,
+  buildCrossTab,
+  cellMembers,
+  cellValue,
+  effectiveMeasures,
+  TOTAL_KEY,
+  TOTAL_LABEL,
+} from './model/crosstab';
 import { isNumericColumn } from './model/columns';
 import { fieldValueText } from './model/fieldValueText';
 import { ColumnHeaderMenu } from './components/ColumnHeaderMenu';
@@ -323,7 +331,7 @@ const TABLE_STYLES = `
    (overflow-x:auto) is, per the CSS spec, also a scroll container in the block axis (computed
    overflow-y becomes auto) and therefore TRAPS descendant position:sticky in BOTH axes -- which is
    why a bounded-height inner-scroll wrapper gives the dreaded double scrollbar. Setting
-   overflow:visible keeps the wrapper out of the way, so the sticky top:0 header cells + the
+   overflow:clip keeps the wrapper out of the way, so the sticky top:0 header cells + the
    sticky-left frozen column stick to the nearest REAL scroll container: the app's .fullish-vh page
    region (the same ancestor the report footer's sticky bottom-0 sticks to).
 
@@ -337,7 +345,8 @@ const TABLE_STYLES = `
   border: 1px solid #dfe1e6;
   border-radius: 8px;
   background: #fff;
-  overflow: visible;
+  /* clip (unlike hidden/auto) rounds the sticky cells' corners without becoming a scroll container. */
+  overflow: clip;
   width: max-content;
   min-width: 100%;
 }
@@ -791,7 +800,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // Row ordering is a property of the tree column's sort (design/tree-column-brainstorm §3/§4): the
   // table nests when a tree-capable column holds the `tree` sort AND we aren't grouping (grouping and
   // hierarchy are mutually exclusive). `activeTreeId` is the column that owns the indent + caret.
-  const isHierarchy = isHierarchySort(sort, TREE_CAPABLE_IDS) && groupBy == null;
+  const isHierarchy = isHierarchySort(sort, TREE_CAPABLE_IDS) && groupBy == null && groupByCol == null;
   const activeTreeId = isHierarchy ? sort!.columnId : null;
 
   // Ephemeral UI toggles — deliberately NOT persisted (pure expand/collapse view state + modal).
@@ -883,8 +892,10 @@ const TableReportInner: React.FC<TableReportProps> = ({
       : 'day';
     return bucketedDateColumn(base, granularity);
   };
-  const groupColumn = resolveGroupColumn(groupBy, groupByGranularityRaw);
   const groupColColumn = resolveGroupColumn(groupByCol, groupByColGranularityRaw);
+  // A column (→) group alone still renders as a cross-tab, with every issue in a single row.
+  const groupColumn =
+    resolveGroupColumn(groupBy, groupByGranularityRaw) ?? (groupColColumn ? ALL_ISSUES_ROW_COLUMN : null);
   // 2D cross-tab needs both group columns (and flat ordering); 1D needs only the row group column.
   const is2D = groupColumn != null && groupColColumn != null && !isHierarchy;
   const isGrouped = groupColumn != null && !is2D && !isHierarchy;

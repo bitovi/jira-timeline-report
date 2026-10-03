@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>scratch — render.js check</title>
+    <link rel="stylesheet" href="render.css" />
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 20px 28px 80px;
+        background: #fafbfc;
+        color: #172b4d;
+        font-size: 14px;
+      }
+      h2 {
+        font-size: 14px;
+        margin: 26px 0 6px;
+      }
+      .bar-ctl {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 10px;
+        border: 1px solid #dfe1e6;
+        background: #fff;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      button.on {
+        background: #0c66e4;
+        color: #fff;
+        border-color: #0c66e4;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid #ebecf0;
+        border-radius: 4px;
+        padding: 16px 18px 22px;
+        margin-bottom: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar-ctl">
+      <span>ramp</span>
+      <button data-ramp="purple" class="on">purple</button>
+      <button data-ramp="grey">grey</button>
+      <span style="margin-left: 16px">source</span>
+      <button data-src="none">none</button>
+      <button data-src="border" class="on">border</button>
+      <button data-src="anchor">anchor</button>
+      <button data-src="bracket">bracket</button>
+    </div>
+
+    <div class="panel"><div id="main"></div></div>
+
+    <h2>all four sourceEncoding modes, side by side</h2>
+    <div class="panel">
+      <div>none</div>
+      <div id="m-none"></div>
+    </div>
+    <div class="panel">
+      <div>border</div>
+      <div id="m-border"></div>
+    </div>
+    <div class="panel">
+      <div>anchor</div>
+      <div id="m-anchor"></div>
+    </div>
+    <div class="panel">
+      <div>bracket</div>
+      <div id="m-bracket"></div>
+    </div>
+
+    <h2>missing generator — error path</h2>
+    <div class="panel"><div id="err"></div></div>
+
+    <script src="generator.js"></script>
+    <script src="render.js"></script>
+    <script>
+      var data = window.PlanningData.generatePortfolio({});
+      var main = document.getElementById('main');
+      window.PlanningRender.render(data, main, { ramp: 'purple', sourceEncoding: 'border' });
+
+      ['none', 'border', 'anchor', 'bracket'].forEach(function (m) {
+        window.PlanningRender.render(window.PlanningData.generatePortfolio({}), document.getElementById('m-' + m), {
+          sourceEncoding: m,
+        });
+      });
+
+      var stash = window.PlanningData;
+      window.PlanningData = undefined;
+      window.PlanningRender.render(null, document.getElementById('err'));
+      window.PlanningData = stash;
+
+      document.querySelectorAll('[data-ramp]').forEach(function (b) {
+        b.onclick = function () {
+          document.querySelectorAll('[data-ramp]').forEach(function (x) {
+            x.classList.remove('on');
+          });
+          b.classList.add('on');
+          window.PlanningRender.setRamp(main, b.dataset.ramp);
+        };
+      });
+      document.querySelectorAll('[data-src]').forEach(function (b) {
+        b.onclick = function () {
+          document.querySelectorAll('[data-src]').forEach(function (x) {
+            x.classList.remove('on');
+          });
+          b.classList.add('on');
+          window.PlanningRender.setSourceEncoding(main, b.dataset.src);
+        };
+      });
+    </script>
+  </body>
+</html>
