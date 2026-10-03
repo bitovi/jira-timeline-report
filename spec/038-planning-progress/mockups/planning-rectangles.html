@@ -1,0 +1,2184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planning Progress — fractal rectangles, timeline placement, contradiction encoding</title>
+    <style>
+      :root {
+        /* Atlaskit-derived token set, same as spec/024 + spec/031 mockups. */
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --neutral-40: #dcdfe4;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --success-bg: #dcfff1;
+        --success-text: #216e4e;
+        --danger: #ae2e24;
+        --danger-bg: #ffeceb;
+        --warn: #b65c02;
+        --warn-bg: #fff3eb;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+
+        /* Two candidate planning ramps. Both stay clear of Jira's blue (In Progress) and
+           green (Done). The toggle at top-right swaps between them live. */
+        --r0: #f1f2f4;
+        --r0-text: #8590a2;
+
+        /* Grey — planning rungs as a subdivision of statusCategory "To Do".
+           There is deliberately no step 3: "Broken down" is shown structurally by the
+           presence of nested children, never by colour. */
+        --g1: #dcdfe4;
+        --g1t: #626f86;
+        --g2: #b3b9c4;
+        --g2t: #2c3e5d;
+        --g4: #626f86;
+        --g4t: #ffffff;
+
+        /* Purple — planning as its own category. Unclaimed in Jira's status vocabulary. */
+        --u1: #f3e7fc;
+        --u1t: #5e3a78;
+        --u2: #d9a8f2;
+        --u2t: #44205c;
+        --u4: #8341ad;
+        --u4t: #ffffff;
+
+        /* Execution state — Jira semantics, untouched. */
+        --prog: #0c66e4;
+        --prog-soft: #cce0ff;
+        --prog-text: #05388c;
+        --done: #1f845a;
+        --done-soft: #baf3db;
+        --done-text: #164b35;
+      }
+
+      /* Purple is active; .grey-ramp on <body> swaps in the neutral ramp. */
+      body {
+        --r1: var(--u1);
+        --r1-text: var(--u1t);
+        --r2: var(--u2);
+        --r2-text: var(--u2t);
+        --r4: var(--u4);
+        --r4-text: var(--u4t);
+      }
+      body.grey-ramp {
+        --r1: var(--g1);
+        --r1-text: var(--g1t);
+        --r2: var(--g2);
+        --r2-text: var(--g2t);
+        --r4: var(--g4);
+        --r4-text: var(--g4t);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 140px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 52px 0 2px;
+        padding-top: 16px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 26px 0 8px;
+        color: var(--slate);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 1000px;
+        margin: 6px 0 10px;
+        font-size: 13px;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 6px 0 16px;
+        max-width: 1000px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .note {
+        border-left: 3px solid var(--brand);
+        background: var(--brand-bg);
+        padding: 10px 14px;
+        margin: 14px 0;
+        font-size: 13px;
+        max-width: 1000px;
+        border-radius: 0 3px 3px 0;
+      }
+      .note.warn {
+        border-left-color: var(--warn);
+        background: var(--warn-bg);
+      }
+      .note.q {
+        border-left-color: var(--slate);
+        background: var(--slate-bg);
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: var(--slate-bg);
+        color: var(--slate);
+        vertical-align: middle;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+      .badge.rec {
+        background: var(--success-bg);
+        color: var(--success-text);
+      }
+      .badge.no {
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.12);
+        max-width: 1120px;
+        padding: 18px 20px 20px;
+        margin-bottom: 10px;
+      }
+
+      /* ============================================================
+         THE LADDER / LEGEND
+         ============================================================ */
+      .ladder {
+        display: flex;
+        gap: 0;
+        max-width: 1120px;
+        margin: 10px 0 4px;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .rung {
+        flex: 1;
+        padding: 9px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        position: relative;
+      }
+      .rung small {
+        display: block;
+        font-weight: 400;
+        font-size: 11px;
+        opacity: 0.85;
+        margin-top: 2px;
+      }
+      .rung.l0 {
+        background: var(--r0);
+        color: var(--r0-text);
+      }
+      .rung.l4 {
+        background: var(--r4);
+        color: var(--r4-text);
+      }
+      .rung.lp {
+        background: var(--prog);
+        color: #fff;
+      }
+      .rung.ld {
+        background: var(--done);
+        color: #fff;
+      }
+      .rung.l1 {
+        background: var(--r1);
+        color: var(--r1-text);
+      }
+      .rung.l2 {
+        background: var(--r2);
+        color: var(--r2-text);
+      }
+      .ladder .divider {
+        flex: none;
+        width: 3px;
+        background: var(--text);
+      }
+
+      /* ============================================================
+         FRACTAL (ICICLE / PARTITION) RECTANGLES
+         Each .branch is a column sized as a % of its parent.
+         .kids is a flex row of branches. Truly recursive.
+         ============================================================ */
+      .tree {
+        max-width: 1060px;
+      }
+      .branch {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .kids {
+        display: flex;
+        align-items: flex-start;
+        gap: 2px;
+        margin-top: 2px;
+        min-width: 0;
+      }
+      .node {
+        height: 34px;
+        border-radius: 2px;
+        padding: 0 7px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        min-width: 0;
+        border: 2px solid transparent;
+      }
+      .node .nm {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .node .pts {
+        font-variant-numeric: tabular-nums;
+        opacity: 0.75;
+        font-weight: 500;
+        flex: none;
+      }
+      .node.sm {
+        height: 26px;
+        font-size: 11px;
+      }
+      .node.xs {
+        height: 20px;
+        font-size: 10px;
+        padding: 0 5px;
+      }
+      .r0 {
+        background: var(--r0);
+        color: var(--r0-text);
+      }
+      .r1 {
+        background: var(--r1);
+        color: var(--r1-text);
+      }
+      .r2 {
+        background: var(--r2);
+        color: var(--r2-text);
+      }
+      .r4 {
+        background: var(--r4);
+        color: var(--r4-text);
+      }
+
+      /* Breakdown depth, for the flat views (§F, §G, §H) where nesting isn't drawn.
+         One bar per level the plan reaches below this item. */
+      .depth {
+        display: inline-flex;
+        flex-direction: column;
+        gap: 1.5px;
+        margin-left: 6px;
+        flex: none;
+        opacity: 0.8;
+      }
+      .depth i {
+        display: block;
+        width: 11px;
+        height: 2px;
+        border-radius: 1px;
+        background: currentColor;
+      }
+      /* Execution states supersede the planning ramp. */
+      .prog {
+        background: var(--prog);
+        color: #fff;
+      }
+      .done {
+        background: var(--done);
+        color: #fff;
+      }
+      .prog-soft {
+        background: var(--prog-soft);
+        color: var(--prog-text);
+      }
+      .done-soft {
+        background: var(--done-soft);
+        color: var(--done-text);
+      }
+      /* Static swatches for the side-by-side ramp comparison in §0b — these ignore the toggle. */
+      .sg1 {
+        background: var(--g1);
+        color: var(--g1t);
+      }
+      .sg2 {
+        background: var(--g2);
+        color: var(--g2t);
+      }
+      .sg4 {
+        background: var(--g4);
+        color: var(--g4t);
+      }
+      .su1 {
+        background: var(--u1);
+        color: var(--u1t);
+      }
+      .su2 {
+        background: var(--u2);
+        color: var(--u2t);
+      }
+      .su4 {
+        background: var(--u4);
+        color: var(--u4t);
+      }
+      /* "Started before it was planned" — the strongest contradiction we can detect. */
+      .unplanned {
+        box-shadow: inset 0 0 0 2px var(--danger);
+      }
+
+      /* ---------- ramp toggle ---------- */
+      .rampswitch {
+        position: fixed;
+        top: 12px;
+        right: 16px;
+        z-index: 999;
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(9, 30, 66, 0.2);
+        padding: 7px 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--subtle);
+      }
+      .rampswitch button {
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid var(--neutral-40);
+        border-radius: 3px;
+        padding: 4px 10px;
+        background: var(--r4);
+        color: var(--r4-text);
+        min-width: 74px;
+      }
+      .swatchrow {
+        display: flex;
+        gap: 3px;
+      }
+      .swatchrow i {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+        display: block;
+      }
+
+      /* Undiscovered scope: the part of the parent's rough estimate that no child
+         accounts for. Deliberately not a rung colour — it is absence, not a state. */
+      .gap {
+        height: 34px;
+        border-radius: 2px;
+        border: 1px dashed #b3bac5;
+        background: repeating-linear-gradient(
+          -45deg,
+          transparent,
+          transparent 5px,
+          rgba(9, 30, 66, 0.06) 5px,
+          rgba(9, 30, 66, 0.06) 10px
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        color: var(--subtle);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .gap.sm {
+        height: 26px;
+      }
+
+      /* Overflow: children sum to more than the parent's own estimate. */
+      .over {
+        background: repeating-linear-gradient(
+          -45deg,
+          var(--danger-bg),
+          var(--danger-bg) 5px,
+          #ffd5d2 5px,
+          #ffd5d2 10px
+        );
+        border: 1px solid var(--danger);
+        color: var(--danger);
+      }
+
+      /* ---------- contradiction encodings ---------- */
+      /* E1: outline = claim, fill = evidence. A hollow promise literally looks hollow. */
+      .claim4 {
+        border-color: var(--r4);
+      }
+      .claim3 {
+        border-color: var(--r2);
+      }
+      .claim2 {
+        border-color: var(--r2);
+      }
+      /* E2: corner flag */
+      .flag {
+        position: relative;
+      }
+      .flag::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        border-width: 0 10px 10px 0;
+        border-style: solid;
+        border-color: transparent var(--warn) transparent transparent;
+      }
+      /* E3: hatch overlay on the contradicted node */
+      .hatched {
+        background-image: repeating-linear-gradient(
+          45deg,
+          rgba(182, 92, 2, 0.28),
+          rgba(182, 92, 2, 0.28) 3px,
+          transparent 3px,
+          transparent 7px
+        );
+      }
+      /* E4: claim ghost — a dotted extension showing how far the status claims to reach */
+      .ghost {
+        height: 34px;
+        border: 1px dotted var(--warn);
+        border-left: none;
+        border-radius: 0 2px 2px 0;
+        background: rgba(182, 92, 2, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: var(--warn);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      /* ============================================================
+         TIMELINE
+         ============================================================ */
+      .tl {
+        position: relative;
+        max-width: 1060px;
+      }
+      .tlhead {
+        display: grid;
+        grid-template-columns: 150px 1fr 150px;
+        gap: 0;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .months {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+      }
+      .months span {
+        padding: 3px 5px;
+        border-left: 1px solid var(--neutral-30);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .tlbody {
+        display: grid;
+        grid-template-columns: 150px 1fr 150px;
+        align-items: stretch;
+      }
+      .lane {
+        position: relative;
+        min-height: 36px;
+        background-image: repeating-linear-gradient(
+          to right,
+          var(--neutral-30),
+          var(--neutral-30) 1px,
+          transparent 1px,
+          transparent 12.5%
+        );
+        padding: 3px 0;
+      }
+      .rowlbl {
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 7px 10px 0 0;
+        text-align: right;
+        color: var(--slate);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .rowlbl.ind {
+        padding-left: 14px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      /* The off-timeline gutter: undated work parked to the right of "today + horizon". */
+      .gutter {
+        background: var(--neutral-10);
+        border-left: 2px solid var(--neutral-40);
+        padding: 3px 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        align-content: flex-start;
+      }
+      .gutterhead {
+        background: var(--neutral-20);
+        border-left: 2px solid var(--neutral-40);
+        padding: 3px 6px;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+      }
+
+      /* ---------- §C: full-width timeline, no gutter ---------- */
+      .tl2 .tlhead,
+      .tl2 .tlbody {
+        grid-template-columns: 186px 1fr;
+      }
+      /* C1 drops the label column entirely — the staircase identifies the levels. */
+      .tl2.nolbl .tlhead,
+      .tl2.nolbl .tlbody {
+        grid-template-columns: 1fr;
+      }
+      /* §C packs to the same density as the icicle in §A — 2px between rows, nothing else. */
+      .tl2 .tlbody {
+        row-gap: 2px;
+      }
+      .lane.tight {
+        padding: 0;
+      }
+      .tl2 .rowlbl {
+        padding-top: 3px;
+        line-height: 1.15;
+      }
+      .bar.xs {
+        height: 18px;
+        font-size: 10px;
+        padding: 0 5px;
+        border-width: 1px;
+      }
+      /* One size per hierarchy level — each level is visibly smaller than its parent, so
+         depth reads as a staircase even before you look at colour. */
+      .bar.lv1 {
+        height: 26px;
+        font-size: 11.5px;
+      }
+      .bar.lv2 {
+        height: 18px;
+        font-size: 10.5px;
+        padding: 0 5px;
+        border-width: 1px;
+      }
+      .bar.lv3 {
+        height: 12px;
+        border-width: 1px;
+        border-radius: 2px;
+      }
+      .bar.lv4 {
+        height: 8px;
+        border-radius: 1px;
+        /* A white hairline keeps a run of 18 stories countable instead of fusing into one block. */
+        border: 1px solid rgba(255, 255, 255, 0.92);
+      }
+      .bar.lv4.projected {
+        border-style: dashed;
+      }
+      .gap.lv3 {
+        height: 12px;
+      }
+      .gap.lv4 {
+        height: 8px;
+      }
+      .grouptop {
+        margin-top: 12px;
+      }
+      /* Below the top level the blocks carry no text — shape is the message. The name
+         is revealed on hover, so overflow has to escape the bar. */
+      .mute {
+        overflow: visible;
+      }
+      .mute:hover {
+        filter: brightness(1.12);
+        box-shadow: 0 0 0 2px var(--text);
+        z-index: 50;
+      }
+      .mute[data-nm]:hover::after {
+        content: attr(data-nm);
+        position: absolute;
+        left: 0;
+        bottom: calc(100% + 5px);
+        background: var(--text);
+        color: #fff;
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 3px 7px;
+        border-radius: 3px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 60;
+      }
+      .months12 {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+      }
+      .months12 span {
+        padding: 3px 5px;
+        border-left: 1px solid var(--neutral-30);
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .lane12 {
+        background-image: repeating-linear-gradient(
+          to right,
+          var(--neutral-30),
+          var(--neutral-30) 1px,
+          transparent 1px,
+          transparent 8.3333%
+        );
+      }
+      .rowlbl.ind2 {
+        padding-left: 26px;
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .rowlbl.ind3 {
+        padding-left: 40px;
+        font-weight: 400;
+        font-size: 10.5px;
+        color: var(--subtle);
+      }
+      /* Where real dates run out and the rank-ordered queue begins. */
+      .frontier {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        border-left: 2px solid var(--warn);
+        z-index: 6;
+      }
+      .frontier::after {
+        content: attr(data-lbl);
+        position: absolute;
+        top: -18px;
+        left: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--warn);
+        background: #fff;
+        padding: 0 4px;
+        border-radius: 2px;
+        white-space: nowrap;
+        z-index: 7;
+      }
+      .frontier.tall::after {
+        top: 4px;
+      }
+      /* Label parked under the last lane so it never collides with the month headers. */
+      .frontier.low::after {
+        top: auto;
+        bottom: -3px;
+      }
+      /* Jira Rank, shown only on projected items since rank is what orders them. */
+      .rank {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 0 3px;
+        border-radius: 2px;
+        background: rgba(9, 30, 66, 0.14);
+        margin-right: 5px;
+        flex: none;
+      }
+      .nominal {
+        outline: 1px dotted var(--danger);
+        outline-offset: -3px;
+      }
+      .chip {
+        height: 20px;
+        border-radius: 2px;
+        padding: 0 6px;
+        font-size: 10px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+      .bar {
+        position: absolute;
+        height: 28px;
+        border-radius: 2px;
+        padding: 0 7px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        border: 2px solid transparent;
+      }
+      .bar.sm {
+        height: 20px;
+        font-size: 10px;
+        padding: 0 5px;
+      }
+      /* Projected placement: queued by rank rather than committed to a date. */
+      .projected {
+        opacity: 0.9;
+        border-style: dashed !important;
+        border-color: #8993a4 !important;
+        background-image: repeating-linear-gradient(
+          -45deg,
+          rgba(255, 255, 255, 0.45),
+          rgba(255, 255, 255, 0.45) 4px,
+          transparent 4px,
+          transparent 9px
+        );
+      }
+      .today {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--danger);
+        opacity: 0.55;
+        z-index: 5;
+      }
+
+      /* ---------- squeeze: representative by default, true time on hover ----------
+         Each bar carries both geometries as custom properties. --sl/--sw is the squeezed
+         slot; --tl/--tw is where the real dates put it. Hover swaps one for the other and
+         lifts the bar above its siblings. */
+      .squeeze {
+        left: var(--sl);
+        width: var(--sw);
+        z-index: 2;
+        cursor: pointer;
+        transition:
+          left 0.18s cubic-bezier(0.2, 0, 0, 1),
+          width 0.18s cubic-bezier(0.2, 0, 0, 1),
+          box-shadow 0.18s ease,
+          opacity 0.18s ease;
+      }
+      .squeeze:hover {
+        left: var(--tl);
+        width: var(--tw);
+        z-index: 40;
+        box-shadow: 0 6px 14px rgba(9, 30, 66, 0.35);
+      }
+      /* Siblings recede so the expanded bar is legible against them. */
+      .lane:has(.squeeze:hover) .squeeze:not(:hover) {
+        opacity: 0.35;
+      }
+      /* The vacated slot, revealed only for the bar you're hovering. */
+      .ghostslot {
+        position: absolute;
+        height: 28px;
+        border: 1px dashed #8993a4;
+        border-radius: 2px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease;
+        z-index: 1;
+      }
+      .ghostslot.sm {
+        height: 20px;
+      }
+      .squeeze:hover + .ghostslot {
+        opacity: 1;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--brand);
+        font-weight: 600;
+        margin: 0 0 6px;
+      }
+      .horizon {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        border-left: 2px dashed var(--success-text);
+        z-index: 5;
+      }
+      .horizon::after {
+        content: attr(data-lbl);
+        position: absolute;
+        top: -18px;
+        left: 3px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--success-text);
+        white-space: nowrap;
+        background: #fff;
+        padding: 0 4px;
+        border-radius: 2px;
+        z-index: 6;
+      }
+
+      /* ============================================================
+         WEDGE (depth vs time)
+         ============================================================ */
+      .wedge {
+        display: grid;
+        grid-template-columns: 150px repeat(6, 1fr);
+        gap: 2px;
+        max-width: 1000px;
+        font-size: 11px;
+      }
+      .wedge .hd {
+        font-weight: 700;
+        color: var(--subtle);
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 4px;
+      }
+      .wedge .rl {
+        font-weight: 600;
+        padding: 6px 8px 0 0;
+        text-align: right;
+        color: var(--slate);
+      }
+      .cell {
+        height: 30px;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        font-weight: 700;
+      }
+      .cell.bad {
+        box-shadow: inset 0 0 0 2px var(--danger);
+      }
+      .cell.waste {
+        box-shadow: inset 0 0 0 2px var(--warn);
+      }
+
+      /* ============================================================
+         MOVEMENT
+         ============================================================ */
+      .movebar {
+        display: flex;
+        height: 28px;
+        border-radius: 2px;
+        overflow: hidden;
+        max-width: 560px;
+      }
+      .movebar div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        font-weight: 700;
+      }
+      .wasnow {
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        gap: 4px 10px;
+        align-items: center;
+        max-width: 640px;
+        margin-bottom: 4px;
+      }
+      .wasnow .k {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--subtle);
+        text-align: right;
+        text-transform: uppercase;
+      }
+      .delta {
+        font-size: 11px;
+        color: var(--success-text);
+        font-weight: 700;
+      }
+      .delta.neg {
+        color: var(--danger);
+      }
+
+      .cols2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        max-width: 1120px;
+      }
+      .cols3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+        max-width: 1120px;
+      }
+      .mini h4 {
+        font-size: 12px;
+        margin: 0 0 6px;
+        color: var(--text);
+      }
+      .mini p {
+        font-size: 11.5px;
+        color: var(--subtle);
+        margin: 8px 0 0;
+      }
+      .toc {
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        padding: 12px 18px;
+        max-width: 1120px;
+        margin: 16px 0 8px;
+        font-size: 13px;
+        columns: 2;
+      }
+      .toc a {
+        color: var(--brand);
+        text-decoration: none;
+        display: block;
+        padding: 2px 0;
+      }
+      .toc a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="rampswitch">
+      <span>Planning ramp</span>
+      <div class="swatchrow"><i class="r1"></i><i class="r2"></i><i class="r4"></i></div>
+      <button id="rampbtn" type="button">Purple</button>
+    </div>
+    <h1>Planning Progress — visual explorations</h1>
+    <p class="intro">
+      Mockups for turning the Estimation Progress report into a <strong>planning progress</strong> report. Every idea
+      below renders the same example portfolio so they can be compared directly. Nothing here is decided — these are
+      options to react to.
+    </p>
+
+    <div class="toc">
+      <a href="#ladder">0 · The rung ladder (shared vocabulary)</a>
+      <a href="#exec">0b · Work that has already started</a>
+      <a href="#a">A · Fractal rectangles — size = estimate</a>
+      <a href="#b">B · Encoding claim vs. evidence</a>
+      <a href="#c">C · Timeline placement — the rank-ordered queue</a>
+      <a href="#d">D · The squeeze — hover for true dates</a>
+      <a href="#e">E · Giving scale to unsized work</a>
+      <a href="#f">F · The wedge — depth vs. time distance</a>
+      <a href="#g">G · Movement since the compare date</a>
+      <a href="#h">H · Portfolio roll-up (many rows)</a>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="ladder">0 · The rung ladder</h2>
+    <p class="caption">
+      One ladder, applied at every level of the hierarchy.
+      <strong>Every planning rung is still <code>statusCategory: To&nbsp;Do</code></strong> — so the planning ramp lives
+      entirely inside Atlaskit's neutral band, deepening as readiness increases. Blue and green keep their Jira meanings
+      and sit past the divider. <code>Refined</code> is status-only — no Jira field proves a solution is specified
+      enough to size.
+    </p>
+    <div class="ladder">
+      <div class="rung l0">0 · Unknown<small>Exists, nothing else</small></div>
+      <div class="rung l1">1 · Refined<small>Status-mapped only</small></div>
+      <div class="rung l2">2 · Sized<small>Own estimate + confidence</small></div>
+      <div class="rung l4">3 · Scheduled<small>Dates / sprint / release</small></div>
+      <div class="divider"></div>
+      <div class="rung lp">In Progress<small>statusCategory</small></div>
+      <div class="rung ld">Done<small>statusCategory</small></div>
+    </div>
+    <p class="caption">
+      Left of the divider is <em>planning</em> — all of it still To&nbsp;Do in Jira's eyes, which is exactly why a muted
+      ramp is the honest encoding rather than a stylistic choice. Right of the divider is <em>execution</em>, and the
+      planning questions stop applying.
+    </p>
+    <div class="note">
+      <strong>"Broken down" is not a colour.</strong> It was a rung in an earlier draft, but in a fractal the children
+      are drawn <em>underneath</em> the parent — so breakdown is already visible as structure, and colouring it too
+      would say the same thing twice. Dropping it leaves the ramp meaning exactly one thing:
+      <strong>the item's own readiness</strong>, which is self-evidence and nothing else. Breakdown is the one property
+      that describes a relationship to children, and structure is the right encoding for it.
+    </div>
+    <div class="note">
+      <strong>Rung × depth.</strong> "Sized" and "all children sized" are the same rung at different depths. Planning
+      depth is now literally <em>how many rows of rectangles you can see</em>. Where nesting isn't drawn (§F, §G, §H) it
+      appears as a stacked-bar glyph —
+      <span class="depth" style="display: inline-flex; vertical-align: middle"><i></i><i></i><i></i></span>
+      meaning the plan reaches three levels down.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="exec">0b · Work that has already started</h2>
+    <p class="intro">
+      Execution is not rung 5. An epic can be <strong>In Progress without ever having been sized</strong> — and when
+      that happens it is the loudest finding the report can produce. So planning rung and execution state are two
+      independent axes, collapsed to one colour for display, with the disagreement flagged.
+    </p>
+
+    <h3>The collapse rule</h3>
+    <div class="panel">
+      <p class="caption" style="margin-top: 0">
+        If <code>statusCategory</code> is In Progress or Done, that wins the fill colour — planning readiness is moot
+        once the work is underway. Otherwise the planning rung supplies the fill.
+      </p>
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div class="node sm r2"><span class="nm">1st store</span><span class="pts">Outcome</span></div>
+          <div class="kids">
+            <div class="branch" style="width: 20%">
+              <div class="node xs done"><span class="nm">Digital menu · done</span></div>
+            </div>
+            <div class="branch" style="width: 16%">
+              <div class="node xs done"><span class="nm">Employee login</span></div>
+            </div>
+            <div class="branch" style="width: 18%">
+              <div class="node xs prog"><span class="nm">Connect to KDS</span></div>
+            </div>
+            <div class="branch" style="width: 11%">
+              <div class="node xs prog unplanned"><span class="nm">Drawer</span></div>
+            </div>
+            <div class="branch" style="width: 13%">
+              <div class="node xs r4"><span class="nm">Promotions</span></div>
+            </div>
+            <div class="branch" style="width: 22%"><div class="gap sm" style="height: 20px">undiscovered</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">
+        One bar now carries the whole lifecycle:
+        <strong>36% done, 29% in flight, 13% planned, 22% never discovered</strong>. The red-ringed segment is "Connect
+        to drawer" — In&nbsp;Progress with no estimate and no dates. Work started on something that was never planned.
+      </p>
+    </div>
+
+    <h3>Why it can't just be rungs 5 and 6</h3>
+    <div class="cols2">
+      <div class="panel mini">
+        <h4>Linear ladder — what it would claim</h4>
+        <div class="tree">
+          <div class="branch" style="width: 100%">
+            <div class="node sm prog"><span class="nm">Connect to drawer — In Progress</span></div>
+          </div>
+        </div>
+        <p>
+          A linear reading implies everything below was satisfied: refined, sized, broken down, scheduled. For this epic
+          none of that is true. The ladder would be quietly lying.
+        </p>
+      </div>
+      <div class="panel mini">
+        <h4>Two axes — what's actually true <span class="badge rec">recommended</span></h4>
+        <div class="tree">
+          <div class="branch" style="width: 100%">
+            <div class="node sm prog unplanned">
+              <span class="nm">Connect to drawer</span><span class="pts">In Progress · rung 0</span>
+            </div>
+          </div>
+        </div>
+        <p>
+          Fill = execution, ring = highest planning rung reached. Reuses exactly the same ring mechanism as §B's
+          claim-vs-evidence, so there's one visual language for "these two sources disagree."
+        </p>
+      </div>
+    </div>
+
+    <h3>Alternate planning ramp — purple instead of grey</h3>
+    <div class="panel">
+      <div class="ladder" style="margin-top: 0">
+        <div class="rung l0">0 · Unknown</div>
+        <div class="rung su1">1 · Refined</div>
+        <div class="rung su2">2 · Sized</div>
+        <div class="rung su4">3 · Scheduled</div>
+        <div class="divider"></div>
+        <div class="rung lp">In Progress</div>
+        <div class="rung ld">Done</div>
+      </div>
+      <div class="ladder" style="margin-top: 6px">
+        <div class="rung l0">0 · Unknown</div>
+        <div class="rung sg1">1 · Refined</div>
+        <div class="rung sg2">2 · Sized</div>
+        <div class="rung sg4">3 · Scheduled</div>
+        <div class="divider"></div>
+        <div class="rung lp">In Progress</div>
+        <div class="rung ld">Done</div>
+      </div>
+      <p class="caption">
+        Purple (top) is unclaimed in Jira's status vocabulary and separates the rungs far better than five shades of
+        grey (bottom) — which matters on a projector and for anyone with low-contrast vision. Grey is the more
+        semantically honest encoding, since every planning rung really is To&nbsp;Do.
+        <strong>Use the toggle at top-right to flip the whole page between them</strong> rather than judging from
+        swatches.
+      </p>
+    </div>
+
+    <div class="note q">
+      <strong>Open question.</strong> Should <em>Done</em> work still show an undiscovered-scope gap? If an outcome
+      finished at 60 points against an 80-point rough estimate, the remaining 20 isn't missing work — the estimate was
+      just high. Probably the gap should be suppressed once a parent is Done, and reinterpreted as estimate error.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="a">A · Fractal rectangles — width = estimate</h2>
+    <p class="intro">
+      Your sketch. The parent's width is <em>its own rough estimate</em>. Children tile underneath. Because people
+      rough-size before breaking down, <strong>the unfilled remainder is the undiscovered scope</strong> — completeness
+      becomes something you see rather than something we infer.
+    </p>
+
+    <h3>A1 · Healthy subtree</h3>
+    <div class="panel">
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div class="node r4">
+            <span class="nm">NPS — ave 8</span><span class="pts">Outcome · ≈ 16 weeks of team time</span>
+          </div>
+          <div class="kids">
+            <div class="branch" style="width: 31%">
+              <div class="node sm r4"><span class="nm">Order Playback</span><span class="pts">estimated</span></div>
+              <div class="kids">
+                <div class="branch" style="width: 40%">
+                  <div class="node xs r4"><span class="nm">Playback API</span></div>
+                </div>
+                <div class="branch" style="width: 36%">
+                  <div class="node xs r4"><span class="nm">Playback UI</span></div>
+                </div>
+                <div class="branch" style="width: 24%">
+                  <div class="node xs r4"><span class="nm">QA</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="branch" style="width: 25%">
+              <div class="node sm r4"><span class="nm">Favorite Sharing</span><span class="pts">estimated</span></div>
+              <div class="kids">
+                <div class="branch" style="width: 55%">
+                  <div class="node xs r4"><span class="nm">Share links</span></div>
+                </div>
+                <div class="branch" style="width: 45%">
+                  <div class="node xs r4"><span class="nm">Perms</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="branch" style="width: 22%">
+              <div class="node sm r2">
+                <span class="nm">Internationalization</span><span class="pts">estimated</span>
+              </div>
+              <div class="kids">
+                <div class="branch" style="width: 50%">
+                  <div class="node xs r2"><span class="nm">Lang packs</span></div>
+                </div>
+                <div class="branch" style="width: 50%">
+                  <div class="node xs r0"><span class="nm">?</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="branch" style="width: 22%">
+              <div class="node sm r2"><span class="nm">Pets Corner</span><span class="pts">estimated</span></div>
+              <div class="kids">
+                <div class="gap sm" style="width: 100%">not broken down</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      Reads left-to-right as a gradient from dark (planned) to light (not). Depth of nesting <em>is</em> planning depth
+      — "Pets Corner" is visibly one level shallower than its siblings.
+    </p>
+
+    <h3>A2 · Undiscovered scope — children don't fill the parent</h3>
+    <div class="panel">
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div class="node r2">
+            <span class="nm">Returning Customers — 4% increase</span
+            ><span class="pts">Outcome · ≈ 16 weeks estimated at this level</span>
+          </div>
+          <div class="kids">
+            <div class="branch" style="width: 24%">
+              <div class="node sm r4"><span class="nm">Group Ordering</span><span class="pts">estimated</span></div>
+            </div>
+            <div class="branch" style="width: 14%">
+              <div class="node sm r4"><span class="nm">Upsell Recs</span><span class="pts"></span></div>
+            </div>
+            <div class="branch" style="width: 10%">
+              <div class="node sm r2"><span class="nm">Happy Hour</span><span class="pts"></span></div>
+            </div>
+            <div class="branch" style="width: 52%">
+              <div class="gap sm">≈ 8 weeks of team time no child accounts for</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      <strong>This is the whole argument for the icicle.</strong> A bar chart would say "3 of 3 epics sized — 100%." The
+      rectangle says "you've discovered 38 of 80 points." Same data, opposite conclusion.
+    </p>
+
+    <h3>A3 · Overflow — children exceed the parent's estimate</h3>
+    <div class="panel">
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div class="node r2">
+            <span class="nm">1st store</span><span class="pts">Outcome · ≈ 8 weeks estimated at this level</span>
+          </div>
+          <div class="kids">
+            <div class="branch" style="width: 38%">
+              <div class="node sm r4"><span class="nm">Digital menu board</span><span class="pts">estimated</span></div>
+            </div>
+            <div class="branch" style="width: 30%">
+              <div class="node sm r4"><span class="nm">Connect to KDS</span><span class="pts">estimated</span></div>
+            </div>
+            <div class="branch" style="width: 32%">
+              <div class="node sm r4"><span class="nm">Employee login</span><span class="pts">estimated</span></div>
+            </div>
+            <div class="branch" style="width: 25%">
+              <div class="node sm over"><span class="nm">▸ ≈ 2 weeks beyond the rough estimate</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      The children now total 50 against a 40-point parent. Either the rough estimate is stale or the scope grew. Both
+      are worth a conversation, and neither is visible in today's report.
+    </p>
+
+    <div class="note q">
+      <strong>Open question.</strong> When a parent has <em>no</em> rough estimate, there is no denominator and no gap
+      can be drawn. Do we (i) fall back to the sum of children and lose the undiscovered-scope signal entirely, (ii)
+      infer a denominator from sibling medians, or (iii) render the row in a visibly degraded "no yardstick" style?
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="b">B · Encoding claim vs. evidence</h2>
+    <p class="intro">
+      You said you'd trust the claim over the evidence for now, but want the contradiction highlighted. Four ways to
+      carry both values in one rectangle. In all four, the example is the same: an initiative whose
+      <strong>status says Scheduled</strong> but whose epics are <strong>barely sized</strong>.
+    </p>
+
+    <div class="cols2">
+      <div class="panel mini">
+        <h4>B1 · Outline = claim, fill = evidence <span class="badge rec">favourite</span></h4>
+        <div class="tree">
+          <div class="branch" style="width: 100%">
+            <div class="node r2 claim4">
+              <span class="nm">Pets Corner</span><span class="pts">claims Scheduled</span>
+            </div>
+            <div class="kids">
+              <div class="branch" style="width: 34%">
+                <div class="node xs r2"><span class="nm">Pets Menu</span></div>
+              </div>
+              <div class="branch" style="width: 66%"><div class="gap sm" style="height: 20px">no children</div></div>
+            </div>
+          </div>
+        </div>
+        <p>
+          A dark ring around a pale fill reads instinctively as a hollow promise. Costs no extra space, scales to
+          hundreds of rows, and when claim and evidence agree the ring disappears into the fill — so only problems draw
+          attention.
+        </p>
+      </div>
+
+      <div class="panel mini">
+        <h4>B2 · Corner flag</h4>
+        <div class="tree">
+          <div class="branch" style="width: 100%">
+            <div class="node r2 flag"><span class="nm">Pets Corner</span><span class="pts">estimated</span></div>
+            <div class="kids">
+              <div class="branch" style="width: 34%">
+                <div class="node xs r2"><span class="nm">Pets Menu</span></div>
+              </div>
+              <div class="branch" style="width: 66%"><div class="gap sm" style="height: 20px">no children</div></div>
+            </div>
+          </div>
+        </div>
+        <p>
+          Conventional and unmistakable, but binary — it tells you something is wrong without saying how far apart the
+          claim and the evidence are.
+        </p>
+      </div>
+
+      <div class="panel mini">
+        <h4>B3 · Hatch the contradicted node</h4>
+        <div class="tree">
+          <div class="branch" style="width: 100%">
+            <div class="node r2 hatched"><span class="nm">Pets Corner</span><span class="pts">estimated</span></div>
+            <div class="kids">
+              <div class="branch" style="width: 34%">
+                <div class="node xs r2"><span class="nm">Pets Menu</span></div>
+              </div>
+              <div class="branch" style="width: 66%"><div class="gap sm" style="height: 20px">no children</div></div>
+            </div>
+          </div>
+        </div>
+        <p>
+          Loud, which is good for a rare event and terrible if contradictions turn out to be the norm in real data.
+          Worth testing against an actual instance before committing.
+        </p>
+      </div>
+
+      <div class="panel mini">
+        <h4>B4 · Claim ghost</h4>
+        <div class="tree">
+          <div class="branch" style="width: 100%">
+            <div style="display: flex">
+              <div class="node r2" style="width: 45%; border-radius: 2px 0 0 2px">
+                <span class="nm">Pets Corner</span>
+              </div>
+              <div class="ghost" style="width: 55%">status claims this far →</div>
+            </div>
+            <div class="kids">
+              <div class="branch" style="width: 34%">
+                <div class="node xs r2"><span class="nm">Pets Menu</span></div>
+              </div>
+              <div class="branch" style="width: 66%"><div class="gap sm" style="height: 20px">no children</div></div>
+            </div>
+          </div>
+        </div>
+        <p>
+          The only encoding that shows the <em>magnitude</em> of the gap. But it distorts width, which already means
+          estimate — two meanings on one axis is a real cost.
+        </p>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="c">C · Timeline placement — the rank-ordered queue</h2>
+    <p class="intro">
+      Dated work sits on its real dates. Everything else
+      <strong>queues to the right of it in Jira <code>Rank</code> order</strong>, sized by whatever estimate exists.
+      Nothing is unplaceable and there is no gutter — the plan simply keeps extending rightward, and how far right it
+      reaches <em>is</em> the forward visibility.
+    </p>
+
+    <div class="note">
+      <strong>The placement rule, in full.</strong>
+      <br />1 · An item with dates sits on those dates. <br />2 · The
+      <strong style="color: var(--warn)">frontier</strong> is the latest end date among dated items in that subtree.
+      <br />3 · Undated siblings queue to the right of the frontier in <code>Rank</code> order, butted end to end.
+      <br />4 · Width is the estimate converted to team-time via <code>points ÷ pointsPerDayPerTrack</code>. An
+      unestimated item gets a nominal width and is marked as such. <br />5 · Recurse — children follow the same rule
+      inside their parent's span.
+    </div>
+
+    <h3>C1 · Three outcomes, four levels deep <span class="badge rec">this is the one</span></h3>
+    <div class="panel">
+      <div class="tl tl2 nolbl">
+        <div class="tlhead">
+          <div class="months12">
+            <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span
+            ><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span>
+          </div>
+        </div>
+        <div class="tlbody">
+          <!-- ===== Outcome 1: healthy. Deep near-term, tapering with distance. ===== -->
+          <div class="lane lane12 tight" style="min-height: 26px">
+            <div class="today" style="left: 1%"></div>
+            <div class="frontier" style="left: 41.67%"></div>
+            <div class="bar lv1 r4" style="left: 0%; width: 41.4%; top: 0">NPS — ave 8</div>
+            <div class="bar lv1 r2 projected" style="left: 41.9%; width: 41.4%; top: 0"></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="frontier" style="left: 41.67%"></div>
+            <div
+              class="bar lv2 r4 mute"
+              data-nm="Order Playback · Oct–Dec · 3 epics"
+              style="left: 0%; width: 24.6%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r4 mute"
+              data-nm="Favorite Sharing · Jan–Feb · 2 epics"
+              style="left: 25%; width: 16.2%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r2 projected mute"
+              data-nm="Internationalization · #3 · sized"
+              style="left: 41.9%; width: 16.1%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r0 projected nominal mute"
+              data-nm="Pets Corner · #4 · no estimate"
+              style="left: 58.4%; width: 12.2%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r1 projected mute"
+              data-nm="Digital Channel · #5 · refined"
+              style="left: 71%; width: 12.3%; top: 0"
+            ></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 12px">
+            <div class="frontier" style="left: 41.67%"></div>
+            <div
+              class="bar lv3 done mute"
+              data-nm="Playback API · Done · 6 stories, all done"
+              style="left: 0%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 prog mute"
+              data-nm="Playback UI · In Progress · 18 stories: 7 done, 3 in progress, 4 scheduled, 2 sized, 2 unrefined"
+              style="left: 8.3%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 prog mute"
+              data-nm="Playback QA · In Progress · 4 stories: 1 done, 2 in progress, 1 sized"
+              style="left: 16.6%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r4 mute"
+              data-nm="Share links · Scheduled · 9 stories: 2 already in progress, 3 scheduled, 2 sized, 2 unrefined"
+              style="left: 25%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r2 mute"
+              data-nm="Perms · Sized only · 2 stories, neither scheduled"
+              style="left: 33.3%; width: 7.9%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r2 projected mute"
+              data-nm="Lang packs · sized · no stories"
+              style="left: 41.9%; width: 7.9%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r0 projected nominal mute"
+              data-nm="Unnamed epic · no estimate"
+              style="left: 50.1%; width: 7.9%; top: 0"
+            ></div>
+            <div class="gap lv3" style="position: absolute; left: 58.4%; width: 24.9%; top: 0"></div>
+          </div>
+          <div class="lane lane12 tight" id="s1" style="min-height: 8px">
+            <div class="frontier" style="left: 41.67%"></div>
+            <div class="gap lv4" style="position: absolute; left: 41.9%; width: 41.4%; top: 0"></div>
+          </div>
+
+          <!-- ===== Outcome 2: dates run out in December and the staircase collapses. ===== -->
+          <div class="lane lane12 tight grouptop" style="min-height: 26px">
+            <div class="frontier" style="left: 25%"></div>
+            <div class="bar lv1 r4" style="left: 0%; width: 24.6%; top: 0">1st store</div>
+            <div class="bar lv1 r2 projected" style="left: 25%; width: 45.6%; top: 0"></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="frontier" style="left: 25%"></div>
+            <div
+              class="bar lv2 r4 mute"
+              data-nm="Digital menu board · Oct–Dec · 3 epics"
+              style="left: 0%; width: 24.6%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r2 projected mute"
+              data-nm="Connect to KDS · #2 · sized"
+              style="left: 25%; width: 16.2%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r0 projected nominal mute"
+              data-nm="Employee login · #3 · no estimate"
+              style="left: 41.6%; width: 12.4%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r1 projected mute"
+              data-nm="Promotions · #4 · refined"
+              style="left: 54.4%; width: 16.2%; top: 0"
+            ></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 12px">
+            <div class="frontier" style="left: 25%"></div>
+            <div
+              class="bar lv3 done mute"
+              data-nm="Board hardware · Done · 12 stories, all done"
+              style="left: 0%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 prog mute"
+              data-nm="Board firmware · In Progress · 5 stories: 1 done, 2 in progress, 2 unrefined"
+              style="left: 8.3%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 prog mute"
+              data-nm="Menu sync · In Progress · NO stories at all"
+              style="left: 16.6%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r2 projected mute"
+              data-nm="KDS adapter · sized · no stories"
+              style="left: 25%; width: 8%; top: 0"
+            ></div>
+            <div class="gap lv3" style="position: absolute; left: 33.3%; width: 37.3%; top: 0"></div>
+          </div>
+          <div class="lane lane12 tight" id="s2" style="min-height: 8px">
+            <div class="frontier" style="left: 25%"></div>
+            <div class="gap lv4" style="position: absolute; left: 16.6%; width: 8%; top: 0"></div>
+            <div class="gap lv4" style="position: absolute; left: 25%; width: 45.6%; top: 0"></div>
+          </div>
+
+          <!-- ===== Outcome 3: no dates anywhere, so the frontier sits at today. ===== -->
+          <div class="lane lane12 tight grouptop" style="min-height: 26px">
+            <div class="frontier" style="left: 0.5%"></div>
+            <div class="bar lv1 r0 projected nominal" style="left: 0.8%; width: 49%; top: 0">
+              Agentic FNOL — nothing scheduled
+            </div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="frontier" style="left: 0.5%"></div>
+            <div
+              class="bar lv2 r0 projected nominal mute"
+              data-nm="Single car FNOL · #1 · no estimate"
+              style="left: 0.8%; width: 16%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r0 projected nominal mute"
+              data-nm="Multi car FNOL · #2 · no estimate"
+              style="left: 17.2%; width: 16%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r1 projected mute"
+              data-nm="Claims triage · #3 · refined"
+              style="left: 33.6%; width: 16.2%; top: 0"
+            ></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 12px">
+            <div class="frontier" style="left: 0.5%"></div>
+            <div class="gap lv3" style="position: absolute; left: 0.8%; width: 49%; top: 0"></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 8px">
+            <div class="frontier low" style="left: 0.5%" data-lbl="no dates anywhere — the queue starts at today"></div>
+            <div class="gap lv4" style="position: absolute; left: 0.8%; width: 49%; top: 0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      No axis labels on the left — the staircase identifies the levels on its own. Only the top level carries text;
+      everything below is shape, with names on hover. Child counts and states both vary the way they really do: one epic
+      here has 18 stories spread across five different states, its neighbour has 2.
+    </p>
+    <div class="note">
+      <strong>What the three groups tell you.</strong> <strong>NPS</strong> is the healthy shape — four solid levels
+      near term, tapering to three, then two, then nothing as you look right. That taper is correct, not a gap.
+      <strong>1st store</strong> loses its dates in December and collapses almost immediately after; note the scheduled
+      epic in Dec with <em>no stories under it at all</em>, which is the kind of thing this view is for.
+      <strong>Agentic FNOL</strong> has no dates anywhere, so its frontier sits at today and every level below the
+      outcome is hatched — an outcome that exists on paper and nowhere else. The amber line lands in a different place
+      in each group because the frontier is computed per subtree.
+    </div>
+
+    <h3>C2 · What the marks mean</h3>
+    <div class="panel">
+      <div class="tl tl2">
+        <div class="tlbody">
+          <div class="rowlbl">Real dates</div>
+          <div class="lane lane12" style="min-height: 30px">
+            <div class="bar sm r4" style="left: 0%; width: 20%; top: 4px">solid fill, solid edge</div>
+          </div>
+          <div class="rowlbl">Projected, estimated</div>
+          <div class="lane lane12" style="min-height: 30px">
+            <div class="bar sm r2 projected" style="left: 0%; width: 20%; top: 4px">hatched, dashed edge</div>
+          </div>
+          <div class="rowlbl">Projected, no estimate</div>
+          <div class="lane lane12" style="min-height: 30px">
+            <div class="bar sm r0 projected nominal" style="left: 0%; width: 20%; top: 4px">
+              + red dotted inner rule
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        The third case is the one to be careful about: its <em>width is fictional</em>, so the red inner rule says "this
+        bar's length means nothing." Everything downstream of it in the queue inherits that uncertainty, which argues
+        for fading the queue progressively the further right it runs.
+      </p>
+    </div>
+
+    <h3>C3 · The gutter alternative <span class="badge no">rejected</span></h3>
+    <div class="panel">
+      <div class="tl">
+        <div class="tlhead">
+          <div></div>
+          <div class="months">
+            <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span
+            ><span>Apr</span><span>May</span>
+          </div>
+          <div class="gutterhead">No dates</div>
+        </div>
+        <div class="tlbody">
+          <div class="rowlbl">NPS — ave 8</div>
+          <div class="lane">
+            <div class="today" style="left: 2%"></div>
+            <div class="bar r4" style="left: 2%; width: 30%">Order Playback</div>
+            <div class="bar r4" style="left: 34%; width: 16%">Favorite Sharing</div>
+          </div>
+          <div class="gutter"><span class="chip r2">Intl'ization</span><span class="chip r0">Pets Corner</span></div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        Parking undated work in a sidebar makes it a pile with no duration and no order, so you can't tell whether it's
+        two weeks or two years of work. The queue answers that; the gutter can't.
+      </p>
+    </div>
+
+    <div class="note warn">
+      <strong>The honest caveat.</strong> The queue is only as good as its assumptions — it implies strict sequential
+      delivery with no parallelism, so the projected tail is a worst case rather than a forecast. Re-ranking a backlog
+      silently reshuffles everything right of the frontier. That's defensible if the projected region is permanently and
+      visibly marked as inferred, which is what the hatching is for.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="d">D · The squeeze — overlapping children</h2>
+    <p class="intro">
+      Real children overlap in time, so they can't tile cleanly under a parent bar. The resolution: bars sit in
+      <em>representative</em> slots by default, and on hover a bar expands to its true dates and rises above its
+      siblings. The axis is never actually broken — it's just deferred until you ask.
+    </p>
+
+    <h3>D1 · Squeeze with hover-to-true-time <span class="badge rec">recommended</span></h3>
+    <div class="panel">
+      <p class="hint">
+        → Hover any bar. It snaps to its real span, lifts above its neighbours, and the dashed outline shows the slot it
+        came from.
+      </p>
+      <div class="tl">
+        <div class="tlhead">
+          <div></div>
+          <div class="months">
+            <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span
+            ><span>Apr</span><span>May</span>
+          </div>
+          <div class="gutterhead">No dates</div>
+        </div>
+        <div class="tlbody">
+          <div class="rowlbl">Order Playback</div>
+          <div class="lane" style="min-height: 42px">
+            <div class="today" style="left: 2%"></div>
+            <div class="bar done squeeze" style="--sl: 1%; --sw: 23%; --tl: 1%; --tw: 30%; top: 5px">Playback API</div>
+            <div class="ghostslot" style="left: 1%; width: 23%; top: 5px"></div>
+            <div class="bar prog squeeze" style="--sl: 25%; --sw: 26%; --tl: 22%; --tw: 34%; top: 5px">Playback UI</div>
+            <div class="ghostslot" style="left: 25%; width: 26%; top: 5px"></div>
+            <div class="bar r4 squeeze" style="--sl: 52%; --sw: 21%; --tl: 26%; --tw: 28%; top: 5px">Menu board</div>
+            <div class="ghostslot" style="left: 52%; width: 21%; top: 5px"></div>
+            <div class="bar r4 squeeze" style="--sl: 74%; --sw: 25%; --tl: 58%; --tw: 30%; top: 5px">Playback QA</div>
+            <div class="ghostslot" style="left: 74%; width: 25%; top: 5px"></div>
+          </div>
+          <div class="gutter"><span class="chip r0">Analytics</span></div>
+        </div>
+      </div>
+      <p class="caption">
+        Four epics, three of which genuinely overlap through Dec–Jan. Squeezed, the row reads as a clean left-to-right
+        density of planning. Hovered, it tells the truth. The transition itself is the explanation — you watch the bar
+        move from its slot to its date, so nobody has to be told the default is approximate.
+      </p>
+    </div>
+
+    <h3>D2 · The same row, drawn honestly</h3>
+    <div class="panel">
+      <div class="tl">
+        <div class="tlhead">
+          <div></div>
+          <div class="months">
+            <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span
+            ><span>Apr</span><span>May</span>
+          </div>
+          <div class="gutterhead">No dates</div>
+        </div>
+        <div class="tlbody">
+          <div class="rowlbl">Order Playback</div>
+          <div class="lane" style="min-height: 100px">
+            <div class="today" style="left: 2%"></div>
+            <div class="bar sm done" style="left: 1%; width: 30%; top: 4px">Playback API</div>
+            <div class="bar sm prog" style="left: 22%; width: 34%; top: 28px">Playback UI</div>
+            <div class="bar sm r4" style="left: 26%; width: 28%; top: 52px">Menu board</div>
+            <div class="bar sm r4" style="left: 58%; width: 30%; top: 76px">Playback QA</div>
+          </div>
+          <div class="gutter"><span class="chip r0">Analytics</span></div>
+        </div>
+      </div>
+      <p class="caption">
+        Truthful, and four times taller for one initiative. At thirty rows this is a scrolling exercise rather than a
+        report — which is the argument for D1 as the default view, not a compromise.
+      </p>
+    </div>
+
+    <h3>D3 · Squeeze inside the parent's span</h3>
+    <div class="panel">
+      <p class="caption" style="margin-top: 0">
+        The fractal version: children are squeezed into the horizontal extent of the <em>parent</em> bar rather than the
+        full axis, so nesting still reads as containment. Hover behaves the same.
+      </p>
+      <div class="tl">
+        <div class="tlhead">
+          <div></div>
+          <div class="months">
+            <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span
+            ><span>Apr</span><span>May</span>
+          </div>
+          <div class="gutterhead">No dates</div>
+        </div>
+        <div class="tlbody">
+          <div class="rowlbl">NPS — ave 8</div>
+          <div class="lane" style="min-height: 62px">
+            <div class="today" style="left: 2%"></div>
+            <div class="horizon" style="left: 62%" data-lbl="planned through Mar"></div>
+            <div class="bar r4" style="left: 1%; width: 61%; top: 4px; opacity: 0.35">
+              Order Playback → Favorite Sharing
+            </div>
+            <div class="bar sm done squeeze" style="--sl: 2%; --sw: 18%; --tl: 1%; --tw: 30%; top: 34px">
+              Playback API
+            </div>
+            <div class="ghostslot sm" style="left: 2%; width: 18%; top: 34px"></div>
+            <div class="bar sm prog squeeze" style="--sl: 21%; --sw: 20%; --tl: 22%; --tw: 34%; top: 34px">
+              Playback UI
+            </div>
+            <div class="ghostslot sm" style="left: 21%; width: 20%; top: 34px"></div>
+            <div class="bar sm r4 squeeze" style="--sl: 42%; --sw: 19%; --tl: 26%; --tw: 28%; top: 34px">
+              Share links
+            </div>
+            <div class="ghostslot sm" style="left: 42%; width: 19%; top: 34px"></div>
+          </div>
+          <div class="gutter"><span class="chip r2">Intl'ization</span><span class="chip r0">Pets</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note q">
+      <strong>Remaining wrinkle.</strong> Hover doesn't exist on touch, and it doesn't survive a PDF export — and this
+      report already has a print path. The squeezed layout would be what gets printed, so the printed version needs
+      either a visible "positions are approximate" caveat or a fallback to D2's stacked rows.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="e">E · Giving scale to unsized work</h2>
+    <p class="intro">
+      An unestimated item has width 0 and vanishes — exactly backwards, since unestimated work is what the report exists
+      to surface. Four ways to give it presence.
+    </p>
+
+    <div class="panel">
+      <h3 style="margin-top: 0">E1 · Minimum width stub</h3>
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div class="node sm r2">
+            <span class="nm">Traffic capacity — 25% more</span><span class="pts">≈ 6 weeks</span>
+          </div>
+          <div class="kids">
+            <div class="branch" style="width: 40%">
+              <div class="node xs r4"><span class="nm">Rate limiting</span></div>
+            </div>
+            <div class="branch" style="width: 27%">
+              <div class="node xs r4"><span class="nm">Autoscaling</span></div>
+            </div>
+            <div class="branch" style="width: 5%">
+              <div class="node xs r0"><span class="nm">?</span></div>
+            </div>
+            <div class="branch" style="width: 5%">
+              <div class="node xs r0"><span class="nm">?</span></div>
+            </div>
+            <div class="branch" style="width: 23%"><div class="gap sm" style="height: 20px">undiscovered</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">Visible but deliberately small — honest that we don't know, without letting it dominate.</p>
+
+      <h3>E2 · Sibling-median placeholder</h3>
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div class="node sm r2">
+            <span class="nm">Traffic capacity — 25% more</span><span class="pts">≈ 6 weeks</span>
+          </div>
+          <div class="kids">
+            <div class="branch" style="width: 32%">
+              <div class="node xs r4"><span class="nm">Rate limiting</span></div>
+            </div>
+            <div class="branch" style="width: 21%">
+              <div class="node xs r4"><span class="nm">Autoscaling</span></div>
+            </div>
+            <div class="branch" style="width: 23%">
+              <div class="node xs r0 projected"><span class="nm">? ≈ sibling median</span></div>
+            </div>
+            <div class="branch" style="width: 24%">
+              <div class="node xs r0 projected"><span class="nm">? ≈ sibling median</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">
+        Sized at the median of its sized siblings and marked as inferred. Makes totals meaningful, at the cost of
+        inventing a number — and the queue in §C already has to invent a width for these same items, so the two should
+        use one rule rather than disagreeing.
+      </p>
+
+      <h3>E3 · Count-weighted instead of points-weighted</h3>
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div class="node sm r2">
+            <span class="nm">Traffic capacity — 25% more</span><span class="pts">4 children</span>
+          </div>
+          <div class="kids">
+            <div class="branch" style="width: 25%">
+              <div class="node xs r4"><span class="nm">Rate limiting</span></div>
+            </div>
+            <div class="branch" style="width: 25%">
+              <div class="node xs r4"><span class="nm">Autoscaling</span></div>
+            </div>
+            <div class="branch" style="width: 25%">
+              <div class="node xs r0"><span class="nm">Perf testing</span></div>
+            </div>
+            <div class="branch" style="width: 25%">
+              <div class="node xs r0"><span class="nm">DB optimisation</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">
+        Every child equal width. No invented numbers and nothing hides — but a 1-point chore now looks as important as a
+        40-point epic, and the undiscovered-scope gap can no longer be drawn at all.
+      </p>
+    </div>
+
+    <div class="note q">
+      <strong>Open question.</strong> Does width mean <em>points</em> or <em>time</em>? A2's undiscovered-scope gap
+      needs points. C's timeline needs time. If one view uses both we'll need an explicit toggle rather than a silent
+      switch.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="f">F · The wedge — depth vs. time distance</h2>
+    <p class="intro">
+      The guidance that falls out of the fractal: planning depth should <em>decrease</em> with time distance. Near work
+      deep, far work shallow. Each cell carries two things — <strong>colour</strong> is the dominant readiness of work
+      scheduled into that window, and the <strong>glyph</strong> is how many levels down the breakdown reaches. This is
+      the one place both are needed, because there's no nesting here to show depth on its own.
+    </p>
+
+    <div class="panel">
+      <div class="wedge">
+        <div class="hd"></div>
+        <div class="hd">Oct–Nov</div>
+        <div class="hd">Dec–Jan</div>
+        <div class="hd">Feb–Mar</div>
+        <div class="hd">Apr–May</div>
+        <div class="hd">Jun–Jul</div>
+        <div class="hd">Aug+</div>
+
+        <div class="rl">NPS — ave 8</div>
+        <div class="cell r4">
+          Scheduled<span class="depth"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cell r4">
+          Scheduled<span class="depth"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cell r4">
+          Scheduled<span class="depth"><i></i><i></i></span>
+        </div>
+        <div class="cell r2">
+          Sized<span class="depth"><i></i></span>
+        </div>
+        <div class="cell r1">Refined</div>
+        <div class="cell r0">—</div>
+
+        <div class="rl">1st store</div>
+        <div class="cell r4">
+          Scheduled<span class="depth"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cell r4">
+          Scheduled<span class="depth"><i></i><i></i></span>
+        </div>
+        <div class="cell r2">
+          Sized<span class="depth"><i></i></span>
+        </div>
+        <div class="cell r0">—</div>
+        <div class="cell r0">—</div>
+        <div class="cell r0">—</div>
+
+        <div class="rl">Returning Customers</div>
+        <div class="cell r2 bad">
+          Sized<span class="depth"><i></i></span>
+        </div>
+        <div class="cell r1 bad">Refined</div>
+        <div class="cell r0">—</div>
+        <div class="cell r0">—</div>
+        <div class="cell r0">—</div>
+        <div class="cell r0">—</div>
+
+        <div class="rl">Agentic FNOL</div>
+        <div class="cell r0">—</div>
+        <div class="cell r0">—</div>
+        <div class="cell r4 waste">
+          Scheduled<span class="depth"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cell r4 waste">
+          Scheduled<span class="depth"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cell r4 waste">
+          Scheduled<span class="depth"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cell r4 waste">
+          Scheduled<span class="depth"><i></i><i></i><i></i></span>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      Rows 1–2 fade correctly — that's a healthy wedge. Row 3 is
+      <strong style="color: var(--danger)">under-planned</strong>
+      (red): work starts in weeks and nothing is broken down. Row 4 is
+      <strong style="color: var(--warn)">over-planned</strong> (amber): detailed to story depth two years out, which is
+      churn waiting to be re-done. Two named failure modes instead of one vague "incomplete".
+    </p>
+
+    <!-- ============================================================ -->
+    <h2 id="g">G · Movement since the compare date</h2>
+    <p class="intro">
+      Shape Up's insight: a dot that doesn't move is a raised hand. Reuse the existing compare-to slider to show what
+      climbed the ladder — and what didn't.
+    </p>
+
+    <div class="cols2">
+      <div class="panel mini">
+        <h4>G1 · Was / now bars</h4>
+        <div class="wasnow">
+          <div class="k">6 wks ago</div>
+          <div class="movebar">
+            <div class="r0" style="width: 46%">Unknown 46%</div>
+            <div class="r1" style="width: 16%">Refined</div>
+            <div class="r2" style="width: 30%">Sized 30%</div>
+            <div class="r4" style="width: 8%"></div>
+          </div>
+          <div class="k">Now</div>
+          <div class="movebar">
+            <div class="r0" style="width: 28%">Unknown 28%</div>
+            <div class="r1" style="width: 14%">Refined</div>
+            <div class="r2" style="width: 26%">Sized 26%</div>
+            <div class="r4" style="width: 32%">Scheduled 32%</div>
+          </div>
+        </div>
+        <p class="delta">▲ 18% of scope climbed at least one rung · planned-through moved Dec → Feb</p>
+        <p>Simple, and directly answers "are we planning faster than we're consuming the plan?"</p>
+      </div>
+
+      <div class="panel mini">
+        <h4>G2 · The stuck list <span class="badge rec">highest signal</span></h4>
+        <div class="tree">
+          <div class="branch" style="width: 100%">
+            <div class="node sm r0 claim3">
+              <span class="nm">Pets Corner</span><span class="pts">no movement · 11 wks</span>
+            </div>
+            <div class="node sm r0 claim3" style="margin-top: 3px">
+              <span class="nm">Live chat</span><span class="pts">no movement · 9 wks</span>
+            </div>
+            <div class="node sm r2 claim4" style="margin-top: 3px">
+              <span class="nm">Happy Hour pricing</span><span class="pts">no movement · 8 wks</span>
+            </div>
+          </div>
+        </div>
+        <p>
+          Items whose rung hasn't changed since the compare date, sorted by how long they've been frozen — and still
+          carrying their claim ring, so "stale <em>and</em> overclaimed" stands out. This is probably the single most
+          actionable view in the whole report.
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Corroboration, not just progress.</strong> Stillness cuts both ways: no new children in 11 weeks means the
+      breakdown has probably settled (good for completeness) <em>or</em> that nobody is working on it (bad for
+      progress). The status claim is what disambiguates — which is the clearest argument for keeping signal (b).
+    </div>
+
+    <!-- ============================================================ -->
+    <h2 id="h">H · Portfolio roll-up — does it survive many rows?</h2>
+    <p class="intro">
+      Every idea above looks good with four items. The real test is thirty. Here the fractal collapses to one row per
+      top-level item, with ring = claim and fill = evidence.
+    </p>
+
+    <div class="panel">
+      <div class="tree">
+        <div class="branch" style="width: 100%">
+          <div style="display: flex; gap: 2px; margin-bottom: 3px">
+            <div class="node xs r4" style="width: 44%"><span class="nm">NPS — ave 8</span></div>
+            <div class="node xs r2" style="width: 18%"><span class="nm"></span></div>
+            <div class="node xs r2" style="width: 14%"><span class="nm"></span></div>
+            <div class="gap sm" style="height: 20px; width: 24%">undiscovered</div>
+          </div>
+          <div style="display: flex; gap: 2px; margin-bottom: 3px">
+            <div class="node xs r4" style="width: 30%"><span class="nm">1st store</span></div>
+            <div class="node xs r2" style="width: 26%"><span class="nm"></span></div>
+            <div class="node xs r0" style="width: 10%"><span class="nm"></span></div>
+            <div class="gap sm" style="height: 20px; width: 34%">undiscovered</div>
+          </div>
+          <div style="display: flex; gap: 2px; margin-bottom: 3px">
+            <div class="node xs r2 claim4" style="width: 22%"><span class="nm">Returning Customers</span></div>
+            <div class="node xs r0" style="width: 18%"><span class="nm"></span></div>
+            <div class="gap sm" style="height: 20px; width: 60%">undiscovered</div>
+          </div>
+          <div style="display: flex; gap: 2px; margin-bottom: 3px">
+            <div class="node xs r4" style="width: 58%"><span class="nm">Onboarding costs — 30% reduction</span></div>
+            <div class="node xs r2" style="width: 12%"><span class="nm"></span></div>
+            <div class="gap sm" style="height: 20px; width: 30%">undiscovered</div>
+          </div>
+          <div style="display: flex; gap: 2px; margin-bottom: 3px">
+            <div class="node xs r0 claim3" style="width: 16%"><span class="nm">Agentic FNOL</span></div>
+            <div class="gap sm" style="height: 20px; width: 84%">undiscovered</div>
+          </div>
+          <div style="display: flex; gap: 2px">
+            <div class="node xs r4" style="width: 72%"><span class="nm">hosting costs — 10% reduction</span></div>
+            <div class="gap sm" style="height: 20px; width: 28%">undiscovered</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      Sorted by how much is planned. The hatched tails line up into a visible "unknown frontier" down the right side,
+      and the two ringed rows are the overclaims. Scans at thirty rows; drilling a row expands it into the full A1
+      fractal.
+    </p>
+
+    <div class="note q">
+      <strong>Biggest unresolved question.</strong> A2/A3 require parents to hold a meaningful rough estimate
+      <em>after</em>
+      they've been broken down. If Jira rollup overwrites it, or teams stop maintaining it, the undiscovered-scope gap —
+      the best idea on this page — silently becomes zero everywhere. Worth checking against a real instance before any
+      of this is specced.
+    </div>
+
+    <script>
+      const btn = document.getElementById('rampbtn');
+      btn.addEventListener('click', () => {
+        const grey = document.body.classList.toggle('grey-ramp');
+        btn.textContent = grey ? 'Grey' : 'Purple';
+      });
+
+      // Story rows are generated rather than hand-written: a single epic can carry 20 stories,
+      // and each epic holds a mix of states rather than one uniform colour.
+      function fillStories(laneId, epics) {
+        const lane = document.getElementById(laneId);
+        for (const epic of epics) {
+          const total = epic.mix.reduce((sum, [, n]) => sum + n, 0);
+          const slot = epic.w / total;
+          let i = 0;
+          for (const [cls, n] of epic.mix) {
+            for (let k = 0; k < n; k++, i++) {
+              const bar = document.createElement('div');
+              bar.className = 'bar lv4 mute ' + cls;
+              bar.style.left = (epic.l + i * slot).toFixed(3) + '%';
+              bar.style.width = Math.max(slot * 0.86, 0.2).toFixed(3) + '%';
+              bar.style.top = '0';
+              bar.dataset.nm = epic.nm + ' · story ' + (i + 1) + ' of ' + total + ' · ' + LABEL[cls];
+              lane.appendChild(bar);
+            }
+          }
+        }
+      }
+
+      const LABEL = {
+        done: 'Done',
+        prog: 'In Progress',
+        r4: 'Scheduled',
+        r2: 'Sized',
+        r1: 'Refined',
+        r0: 'Unrefined',
+      };
+
+      fillStories('s1', [
+        { l: 0, w: 8, nm: 'Playback API', mix: [['done', 6]] },
+        {
+          l: 8.3,
+          w: 8,
+          nm: 'Playback UI',
+          mix: [
+            ['done', 7],
+            ['prog', 3],
+            ['r4', 4],
+            ['r2', 2],
+            ['r0', 2],
+          ],
+        },
+        {
+          l: 16.6,
+          w: 8,
+          nm: 'Playback QA',
+          mix: [
+            ['done', 1],
+            ['prog', 2],
+            ['r2', 1],
+          ],
+        },
+        {
+          l: 25,
+          w: 8,
+          nm: 'Share links',
+          mix: [
+            ['prog', 2],
+            ['r4', 3],
+            ['r2', 2],
+            ['r0', 2],
+          ],
+        },
+        {
+          l: 33.3,
+          w: 7.9,
+          nm: 'Perms',
+          mix: [
+            ['r2', 1],
+            ['r0', 1],
+          ],
+        },
+      ]);
+
+      fillStories('s2', [
+        { l: 0, w: 8, nm: 'Board hardware', mix: [['done', 12]] },
+        {
+          l: 8.3,
+          w: 8,
+          nm: 'Board firmware',
+          mix: [
+            ['done', 1],
+            ['prog', 2],
+            ['r0', 2],
+          ],
+        },
+      ]);
+    </script>
+  </body>
+</html>
