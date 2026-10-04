@@ -20,6 +20,7 @@ import DropdownMenu, { DropdownItem, DropdownItemCheckbox, DropdownItemGroup } f
 import ChevronRightIcon from '@atlaskit/icon/utility/chevron-right';
 
 import { useRouteData } from '../../../hooks/useRouteData';
+import { useSubmenuSafeDropdown } from '../../../hooks/useSubmenuSafeDropdown';
 import { useJiraIssueFields } from '../../../services/jira/useJiraIssueFields';
 import { buildColumnCatalog } from '../model/buildColumnCatalog';
 import { addColumn } from '../model/applyView';
@@ -145,6 +146,9 @@ const TableReportControlsInner: FC = () => {
 
   const columnIds = useMemo(() => entriesToColumnIds(columns), [columns]);
 
+  const { triggerContainerRef: rowMenuRef, ...rowMenu } = useSubmenuSafeDropdown();
+  const { triggerContainerRef: colMenuRef, ...colMenu } = useSubmenuSafeDropdown();
+
   // Group/dimension options are ALL the columns the user has ADDED, not the whole catalog
   // (issues.md — "Group By should show all fields being shown to the user"). Identity columns
   // (Issue Type, Key, Summary) are included too: grouping by e.g. Issue Type is meaningful, and the
@@ -183,13 +187,23 @@ const TableReportControlsInner: FC = () => {
   // `granularity` is only meaningful for date-typed group columns (spec/012-table-and-grouper/
   // date-bucket-grouping.md); non-date columns always clear it so a stale granularity from a
   // previously-grouped date column never leaks onto the next selection.
+  // Picking the field the other axis uses swaps the axes (pivot-table style), so the same field is
+  // never on both axes.
   const handleSelectGroup = (value: string, granularity: DateGranularity | '' = '') => {
+    if (value && value === groupByCol) {
+      setGroupByCol(groupBy);
+      setGroupByColGranularity(groupByGranularity);
+    }
     setGroupBy(value);
     setGroupByGranularity(granularity);
     if (value) clearTreeSort();
   };
 
   const handleSelectGroupCol = (value: string, granularity: DateGranularity | '' = '') => {
+    if (value && value === groupBy) {
+      setGroupBy(groupByCol);
+      setGroupByGranularity(groupByColGranularity);
+    }
     setGroupByCol(value);
     setGroupByColGranularity(granularity);
     if (value) clearTreeSort();
@@ -224,39 +238,45 @@ const TableReportControlsInner: FC = () => {
 
       <div className="ml-4 flex gap-1">
         <ControlCell label="Group by ↓">
-          <DropdownMenu testId="table-group-by" trigger={isGrouped ? groupLabel(groupBy, groupByGranularity) : 'None'}>
-            <DropdownItemGroup>
-              <DropdownItem testId="table-group-by-option" onClick={() => handleSelectGroup('')}>
-                None
-              </DropdownItem>
-              {groupableColumns.map((c) => (
-                <GroupOption
-                  key={c.id}
-                  column={c}
-                  testId="table-group-by-option"
-                  isSelected={groupBy === c.id}
-                  selectedGranularity={groupByGranularity}
-                  onSelect={(granularity) => handleSelectGroup(c.id, granularity)}
-                />
-              ))}
-            </DropdownItemGroup>
-          </DropdownMenu>
+          <div ref={rowMenuRef}>
+            <DropdownMenu
+              testId="table-group-by"
+              trigger={isGrouped ? groupLabel(groupBy, groupByGranularity) : 'None'}
+              {...rowMenu}
+            >
+              <DropdownItemGroup>
+                <DropdownItem testId="table-group-by-option" onClick={() => handleSelectGroup('')}>
+                  None
+                </DropdownItem>
+                {groupableColumns.map((c) => (
+                  <GroupOption
+                    key={c.id}
+                    column={c}
+                    testId="table-group-by-option"
+                    isSelected={groupBy === c.id}
+                    selectedGranularity={groupByGranularity}
+                    onSelect={(granularity) => handleSelectGroup(c.id, granularity)}
+                  />
+                ))}
+              </DropdownItemGroup>
+            </DropdownMenu>
+          </div>
         </ControlCell>
 
         {/* The column (→) dimension works on its own too: with no row group, every issue lands in a
             single "All issues" row and the column groups lay out horizontally. */}
         <ControlCell label={isGrouped ? 'then →' : 'Group by →'}>
-          <DropdownMenu
-            testId="table-group-by-col"
-            trigger={groupByCol ? groupLabel(groupByCol, groupByColGranularity) : 'None'}
-          >
-            <DropdownItemGroup>
-              <DropdownItem testId="table-group-by-col-option" onClick={() => handleSelectGroupCol('')}>
-                None
-              </DropdownItem>
-              {groupableColumns
-                .filter((c) => c.id !== groupBy)
-                .map((c) => (
+          <div ref={colMenuRef}>
+            <DropdownMenu
+              testId="table-group-by-col"
+              trigger={groupByCol ? groupLabel(groupByCol, groupByColGranularity) : 'None'}
+              {...colMenu}
+            >
+              <DropdownItemGroup>
+                <DropdownItem testId="table-group-by-col-option" onClick={() => handleSelectGroupCol('')}>
+                  None
+                </DropdownItem>
+                {groupableColumns.map((c) => (
                   <GroupOption
                     key={c.id}
                     column={c}
@@ -266,8 +286,9 @@ const TableReportControlsInner: FC = () => {
                     onSelect={(granularity) => handleSelectGroupCol(c.id, granularity)}
                   />
                 ))}
-            </DropdownItemGroup>
-          </DropdownMenu>
+              </DropdownItemGroup>
+            </DropdownMenu>
+          </div>
         </ControlCell>
       </div>
 

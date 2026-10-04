@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 
 import type { IssueFields } from '../model/buildColumnCatalog';
 
@@ -159,6 +159,100 @@ describe('<TableReportControls /> date-bucket grouping (spec/012-table-and-group
     fireEvent.click(screen.getAllByTestId('table-group-by-option')[0]);
     expect(store.tableGroupBy).toBe('');
     expect(store.tableGroupByCol).toBe('field:duedate');
+  });
+});
+
+describe('<TableReportControls /> picking the other axis field swaps the axes', () => {
+  const option = (testId: string, label: string) =>
+    screen.getAllByTestId(testId).find((el) => el.textContent?.startsWith(label)) as HTMLElement;
+
+  beforeEach(() => {
+    store.tableColumns = [
+      { sourceId: 'builtin:status:name' },
+      { sourceId: 'field:priority' },
+      { sourceId: 'field:duedate' },
+    ];
+  });
+
+  test('choosing the → field in ↓ swaps rows and columns', () => {
+    store.tableGroupBy = 'builtin:status:name';
+    store.tableGroupByCol = 'field:priority';
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by--trigger'));
+    fireEvent.click(option('table-group-by-option', 'Priority'));
+    expect(store.tableGroupBy).toBe('field:priority');
+    expect(store.tableGroupByCol).toBe('builtin:status:name');
+  });
+
+  test('choosing the ↓ field in → moves it when → was None', () => {
+    store.tableGroupBy = 'builtin:status:name';
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by-col--trigger'));
+    fireEvent.click(option('table-group-by-col-option', 'Status'));
+    expect(store.tableGroupBy).toBe('');
+    expect(store.tableGroupByCol).toBe('builtin:status:name');
+  });
+
+  test('granularities travel with their fields on a swap', () => {
+    store.tableGroupBy = 'field:duedate';
+    store.tableGroupByGranularity = 'month';
+    store.tableGroupByCol = 'builtin:status:name';
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by-col--trigger'));
+    fireEvent.click(screen.getByText('Due Date'));
+    fireEvent.click(screen.getByText('Year'));
+    expect(store.tableGroupByCol).toBe('field:duedate');
+    expect(store.tableGroupByColGranularity).toBe('year');
+    expect(store.tableGroupBy).toBe('builtin:status:name');
+    expect(store.tableGroupByGranularity).toBe('');
+  });
+
+  test('opening one Group by menu closes the other, even with a date submenu open', () => {
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by--trigger'));
+    fireEvent.click(screen.getByText('Due Date'));
+    expect(screen.getByText('Quarter')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('table-group-by-col--trigger'));
+    expect(screen.queryByTestId('table-group-by--content')).not.toBeInTheDocument();
+    expect(screen.getByTestId('table-group-by-col--content')).toBeInTheDocument();
+  });
+
+  test('choosing a granularity closes the whole Group by menu', () => {
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by--trigger'));
+    fireEvent.click(screen.getByText('Due Date'));
+    fireEvent.click(screen.getByText('Month'));
+    expect(store.tableGroupBy).toBe('field:duedate');
+    expect(screen.queryByTestId('table-group-by--content')).not.toBeInTheDocument();
+  });
+
+  test('opening Group by closes an open Hierarchy popup', async () => {
+    store.issueHierarchy = [
+      { name: 'Epic', hierarchyLevel: 1 },
+      { name: 'Story', hierarchyLevel: 0 },
+    ];
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('hierarchy-trigger'));
+    expect(screen.getByTestId('hierarchy-popover')).toBeInTheDocument();
+    // A native click (outside act) lets React re-render between listeners, as in the browser.
+    screen.getByTestId('table-group-by--trigger').click();
+    await act(async () => {});
+    expect(screen.queryByTestId('hierarchy-popover')).not.toBeInTheDocument();
+    expect(screen.getByTestId('table-group-by--content')).toBeInTheDocument();
+  });
+
+  test('opening Hierarchy closes Group by, even with a date submenu open', () => {
+    store.issueHierarchy = [
+      { name: 'Epic', hierarchyLevel: 1 },
+      { name: 'Story', hierarchyLevel: 0 },
+    ];
+    render(<TableReportControls />);
+    fireEvent.click(screen.getByTestId('table-group-by--trigger'));
+    fireEvent.click(screen.getByText('Due Date'));
+    expect(screen.getByText('Quarter')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('hierarchy-trigger'));
+    expect(screen.queryByTestId('table-group-by--content')).not.toBeInTheDocument();
+    expect(screen.getByTestId('hierarchy-popover')).toBeInTheDocument();
   });
 });
 
