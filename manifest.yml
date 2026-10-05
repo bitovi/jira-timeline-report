@@ -17,13 +17,31 @@ modules:
   jira:globalPage:
     - key: main
       resource: main
+      resolver:
+        function: storage-resolver
       title: Status Reports for Jira
       layout: blank
   jira:projectPage:
     - key: project
       resource: main
+      resolver:
+        function: storage-resolver
       title: Status Reports for Jira
       layout: blank
+
+  # The app's only backend, and the only thing that runs on `app.runtime` below.
+  #
+  # It exists because `@forge/kvs` is server-side only and `@forge/bridge` exports no key-value API,
+  # so reaching Forge's Key-Value Store and having a resolver are the same decision. Everything else
+  # still calls Jira straight from the iframe through `requestJira`. See
+  # spec/021-forge/resolver-storage/plan.md and src/forge-resolver/index.ts.
+  #
+  # `handler` resolves as `<path>.<export>` relative to `src/`, so this is `src/forge-resolver/
+  # index.ts`'s `handler` export. Forge bundles that itself — it does not use this repo's Vite
+  # configs, and nothing under `src/forge-resolver/` is reachable from the frontend entry.
+  function:
+    - key: storage-resolver
+      handler: forge-resolver/index.handler
 
   # No `deeplink`. The Connect descriptor declares a third generalPage with `location: none` whose
   # URL carries nine `{ac.bitovi.status-report.*}` placeholders
@@ -41,10 +59,11 @@ resources:
     tunnel:
       port: 5173
 
-# Deliberately no `function` module and no `resolver`: this app has no backend. Every Jira call
-# goes through @forge/bridge's requestJira straight from the iframe, which is what keeps it off
-# the Forge invocation quota — and what makes `asApp()` unreachable, so the app cannot escalate
-# beyond the current user's permissions.
+# The `function` module above is the app's ONLY backend, and it does nothing but read and write the
+# Key-Value Store. Every Jira call still goes through @forge/bridge's requestJira straight from the
+# iframe, which is what keeps this off the Forge invocation quota — and what keeps `asApp()` out of
+# the codebase, so the app cannot escalate beyond the current user's permissions. Adding a Jira call
+# to the resolver would give up both properties.
 
 # Deliberately no `remotes`. The UI is served from Atlassian's CDN out of `dist-forge`, not from
 # statusreports.bitovi.com. A remote is what `forge eligibility` names as disqualifying for the
@@ -66,6 +85,9 @@ permissions:
     # See src/jira/storage/index.forge.ts — this is what makes the cutover need no migration.
     - read:connect-jira
     - write:connect-jira
+    # Forge's own Key-Value Store, reached only from the `storage-resolver` function.
+    # See src/forge-resolver/index.ts.
+    - storage:app
   content:
     styles:
       # Atlaskit is Emotion-based and injects <style> tags at runtime.
@@ -91,7 +113,7 @@ app:
     # NOT a Connect module — an identity claim, and the thing that grants access to existing
     # customers' saved reports. If any forge command offers to delete this key, answer N.
     key: bitovi.status-report
-  # Required by the CLI even though this app ships no functions — see the note above `permissions`.
-  # Nothing executes on it, so the choice is inert; it tracks the repo's own Node (.nvmrc).
+  # No longer inert: the `storage-resolver` function above runs on this. Tracks the repo's own Node
+  # (.nvmrc), which is also what the resolver's tests run under.
   runtime:
     name: nodejs22.x

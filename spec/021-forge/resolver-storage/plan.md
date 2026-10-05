@@ -8,9 +8,9 @@ Connect's **32 KB per-value limit** remains ([why](#why-kvs-is-still-on-the-tabl
 have a way around it — Forge and Connect both support **Reports Spaces**, one Jira work item per
 report — but team settings, theme and feature flags are each still stuck in a single 32 KB property.
 
-Forge's own Key-Value Store removes that ceiling outright: 240 KiB per value, no cap on the number of
-keys, and no Connect dependency. This plan is how we get there once the fully-Forge release has
-shipped — it needs a backend resolver, the `storage:app` scope, and a new storage factory
+Forge's own Key-Value Store raises it 7.5×: 240 KiB per value — roughly 550 saved reports instead of
+73 — with no cap on the number of keys and no Connect dependency. This plan is how we get there once
+the fully-Forge release has shipped: a backend resolver, the `storage:app` scope, and a new factory
 ([what gets built](#what-gets-built)). The costs are smaller than they look: no Atlassian review, one
 customer admin-approval round ([approvals](#the-scope-and-who-has-to-approve-it)), and single-digit
 dollars a month in usage ([metering](#metering)). We are not starting it until the fully-Forge release
@@ -58,7 +58,7 @@ Because moving to Forge bought zero extra storage space.
 | Connect app property   | 32 KB                  | 100 per site      | **~73**         |
 | Config work item (web) | ~32 KB across all keys | 1 issue           | worse           |
 | Reports Space          | ~32 KB per report      | unlimited issues  | none            |
-| **Forge KVS**          | **240 KiB**            | no documented cap | none            |
+| **Forge KVS**          | **240 KiB**            | no documented cap | **~550**        |
 
 `saved-reports` holds the whole collection in one value (`src/jira/reports/backend/legacy.ts`), so we
 die on value size, not property count — we use ~6 of 100. That is the 32 KB ceiling
@@ -128,9 +128,7 @@ Developer Space. At $1.09/GB writes and $0.055/GB reads:
 - 1000 customers, 15M page loads ≈ **$33/month** in reads
 
 **Cost is not a reason to avoid KVS.** The per-app denominator looks alarming until it is modelled;
-modelled, it is single-digit dollars. Sharding one key per report cuts writes ~50× further — writing a
-5 KB report instead of rewriting the whole collection on every save — and removes the ceiling at the
-same time.
+modelled, it is single-digit dollars.
 
 Caveat: request sizes round up to the nearest 10 KB for rate-limit accounting; whether billing rounds
 the same way is unconfirmed. At this scale it does not change the conclusion.
@@ -172,6 +170,35 @@ KVS maps onto it almost exactly — `kvs.get(key)` / `kvs.set(key, value)` — a
 `storageInitialized: async () => true`, matching what `createForgeConnectStorage` already returns. So
 the frontend change is one new factory, `createForgeKvsStorage`, calling `invoke()`. Nothing above
 `AppStorage` changes, and neither web nor Connect is touched.
+
+### One value per key, not one key per report
+
+This plan swaps the storage engine and nothing else. `saved-reports` stays a single value holding the
+whole collection, exactly as `src/jira/reports/backend/legacy.ts` writes it today — the value just
+gets a 240 KiB allowance instead of 32 KB, which takes a site from ~73 saved reports to **~550**.
+
+Splitting the collection into one key per report would remove the ceiling outright and cut write
+volume by roughly 50×, but it cannot live in `StorageFactory`: that seam is get/update on an opaque
+key, so per-report writes mean a new `ReportsBackend` alongside `legacy` and `space`, not a new
+storage factory. **Deliberately deferred** — ~550 reports is plenty of headroom, and this is a
+follow-up of the same shape as the Reports Space backend. See
+[Explicitly out of scope](#explicitly-out-of-scope).
+
+### Behaviour of the new factory
+
+Two choices the `StorageFactory` signature does not settle. Both mirror `createForgeConnectStorage`
+except where noted:
+
+| Case               | Behaviour                                                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Key does not exist | Return `defaultShape`. **Do not write it back.** `createForgeConnectStorage` seeds the store on a 404; KVS has no need to, and a write on every cold read is the expensive operation. |
+| Any other failure  | **Throw.** Must not be collapsed into the empty case.                                                                                                                                 |
+
+The second one is the load-bearing rule. A permissions failure or outage that reads as "no reports
+yet" hands the user an empty app, and the next save overwrites reports that were there all along —
+the same hazard `index.forge.ts` calls out in its 404 branch. The resolver has to preserve the
+distinction across `invoke()`, so a KVS miss and a KVS error cannot arrive at the frontend looking
+alike.
 
 ### Files
 
@@ -251,7 +278,10 @@ Unit:
 
 - `createForgeKvsStorage` round-trips a value through a mocked `invoke`
 - `storageInitialized()` returns `true` without touching Jira
-- an unknown key returns the `defaultShape`, matching the other factories
+- an unknown key returns the `defaultShape` **and writes nothing** — assert the mock was not called
+  with a write
+- a failing `invoke` **throws** rather than returning the `defaultShape`. This is the one that
+  protects against silent data loss, so it is not optional.
 
 End to end, on a real site:
 
@@ -266,5 +296,12 @@ End to end, on a real site:
 ## Explicitly out of scope
 
 Custom entities and the query API, the secret store, and any change to how web or Connect store
-anything. **Migrating existing Connect app-property data into KVS is out of scope here** — it is the
-deadline item above, and needs its own plan.
+anything.
+
+Two follow-ups that this plan deliberately leaves alone:
+
+- **One key per report.** Takes the ceiling from ~550 to uncapped and cuts write volume ~50×. A new
+  `ReportsBackend`, not a storage factory — see
+  [One value per key](#one-value-per-key-not-one-key-per-report). Nice-to-have; nothing depends on it.
+- **Migrating existing Connect app-property data into KVS.** This is the deadline item if app
+  properties do not survive Connect EOS, and it needs its own plan.
