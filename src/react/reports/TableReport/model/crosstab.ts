@@ -45,6 +45,20 @@ export const ISSUE_COUNT_MEASURE: ColumnDefinition = {
 };
 
 /**
+ * Synthetic row dimension used when only a column (→) group is chosen: every issue falls into one
+ * "All issues" row, so the cross-tab lays the column groups out horizontally on their own.
+ */
+export const ALL_ISSUES_ROW_COLUMN: ColumnDefinition = {
+  id: 'computed:allIssues',
+  label: '',
+  group: 'Computed',
+  source: { kind: 'computed', computedId: 'allIssues' },
+  getValue: () => 'All issues',
+  render: (value) => value as string,
+  compare: () => 0,
+};
+
+/**
  * The measures actually rendered in the cross-tab cells. Prefer the caller-selected `measures` (the
  * shown non-identity columns). When there are none — e.g. only "Icon & Summary" is shown while
  * grouping Status × Project Key — fall back to the shown `identityFallback` columns so each cell

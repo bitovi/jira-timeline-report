@@ -1,0 +1,1691 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forge navigation — killing the double sidebar</title>
+    <style>
+      :root {
+        /* Same Atlaskit-derived token set as spec/024 and spec/031 mockups. */
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --neutral-40: #dcdfe4;
+        --brand: #0c66e4;
+        --brand-hover: #0055cc;
+        --brand-bg: #e9f2ff;
+        --success: #22a06b;
+        --success-bg: #dcfff1;
+        --success-text: #216e4e;
+        --danger: #ae2e24;
+        --danger-bg: #ffeceb;
+        --warn: #b65c02;
+        --warn-bg: #fff3eb;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+        --purple: #8270db;
+        --teal: #1d7f8c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 140px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 52px 0 2px;
+        padding-top: 14px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 28px 0 8px;
+        color: var(--slate);
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 980px;
+        margin: 6px 0 10px;
+        font-size: 13px;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 4px 0 14px;
+        max-width: 1000px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      pre {
+        background: var(--neutral-10);
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        padding: 12px 14px;
+        font-size: 12px;
+        line-height: 1.5;
+        max-width: 720px;
+        overflow-x: auto;
+      }
+      .note {
+        border-left: 3px solid var(--brand);
+        background: var(--brand-bg);
+        padding: 10px 14px;
+        margin: 14px 0;
+        font-size: 13px;
+        max-width: 1000px;
+        border-radius: 0 3px 3px 0;
+      }
+      .note.warn {
+        border-left-color: var(--warn);
+        background: var(--warn-bg);
+      }
+      .note.bad {
+        border-left-color: var(--danger);
+        background: var(--danger-bg);
+      }
+      .note.good {
+        border-left-color: var(--success);
+        background: var(--success-bg);
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: var(--slate-bg);
+        color: var(--slate);
+        vertical-align: middle;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+      .badge.rec {
+        background: var(--success-bg);
+        color: var(--success-text);
+      }
+      .badge.no {
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
+      .badge.maybe {
+        background: var(--warn-bg);
+        color: var(--warn);
+      }
+      table.cmp {
+        border-collapse: collapse;
+        font-size: 13px;
+        margin: 12px 0 4px;
+        max-width: 1000px;
+      }
+      table.cmp th,
+      table.cmp td {
+        border: 1px solid var(--neutral-30);
+        padding: 7px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      table.cmp th {
+        background: var(--neutral-10);
+        font-size: 12px;
+        color: var(--slate);
+      }
+
+      /* ================= the product frame ================= */
+      .frame {
+        position: relative;
+        display: flex;
+        background: #fff;
+        border: 1px solid var(--neutral-40);
+        border-radius: 6px;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.12);
+        max-width: 1120px;
+        overflow: hidden;
+        font-size: 13px;
+      }
+      .frame.tall .app-body {
+        min-height: 300px;
+      }
+
+      /* ---- Jira's own nav (nav4) ---- */
+      .jira-nav {
+        flex: 0 0 216px;
+        width: 216px;
+        border-right: 1px solid var(--border);
+        background: #fff;
+        padding: 8px 0 14px;
+      }
+      .jira-nav .brandbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 2px 12px 10px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 12px;
+        margin: 1px 8px;
+        border-radius: 3px;
+        color: var(--slate);
+        cursor: default;
+        white-space: nowrap;
+      }
+      .nav-item .label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .nav-item.active {
+        background: var(--brand-bg);
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .nav-item.hover {
+        background: var(--neutral-20);
+      }
+      .nav-item.sub {
+        padding-left: 30px;
+      }
+      .nav-item.sub.active {
+        font-weight: 600;
+      }
+      .nav-section {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--subtle);
+        font-weight: 700;
+        padding: 12px 12px 3px 30px;
+      }
+      .nav-section.top {
+        padding-left: 20px;
+      }
+      .nav-rule {
+        height: 1px;
+        background: var(--neutral-30);
+        margin: 8px 12px;
+      }
+      .chev {
+        width: 12px;
+        flex: 0 0 12px;
+        color: var(--subtle);
+        font-size: 10px;
+      }
+      .ico {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 16px;
+        color: currentColor;
+      }
+      .app-dot {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        background: var(--purple);
+        display: inline-block;
+      }
+
+      /* ---- our old in-app sidebar ---- */
+      .app-sidebar {
+        flex: 0 0 168px;
+        width: 168px;
+        border-right: 1px solid var(--border);
+        background: #fff;
+        padding: 12px 0 10px;
+        display: flex;
+        flex-direction: column;
+      }
+      .app-sidebar .logo {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 0 14px 12px;
+        font-weight: 700;
+        font-size: 12px;
+        line-height: 1.15;
+      }
+      .side-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 14px;
+        color: var(--slate);
+      }
+      .side-links {
+        margin-top: auto;
+        padding: 10px 8px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--brand);
+      }
+
+      /* ---- app content ---- */
+      .app-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px 10px;
+        border-bottom: 1px solid var(--neutral-30);
+      }
+      .page-header .title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .page-header .crumb {
+        font-size: 11px;
+        color: var(--subtle);
+        margin-bottom: 2px;
+      }
+      .spacer {
+        margin-left: auto;
+      }
+      .controls {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--neutral-30);
+        flex-wrap: wrap;
+      }
+      .ctl {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .ctl .lbl {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .sel,
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--neutral-20);
+        border: none;
+        border-radius: 3px;
+        padding: 4px 8px;
+        color: var(--text);
+        font-size: 13px;
+        font-family: inherit;
+        cursor: default;
+        white-space: nowrap;
+      }
+      .btn.subtle {
+        background: transparent;
+      }
+      .btn.primary {
+        background: var(--brand);
+        color: #fff;
+      }
+      .btn.active {
+        background: var(--brand-bg);
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .btn.disabled {
+        background: var(--neutral-20);
+        color: #a5adba;
+      }
+      .inp {
+        border: 1px solid var(--neutral-40);
+        border-radius: 3px;
+        padding: 4px 8px;
+        font-size: 13px;
+        background: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--text);
+      }
+      .inp.mono {
+        font-size: 12px;
+      }
+      .slider {
+        flex: 1;
+        min-width: 140px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--brand);
+        position: relative;
+        margin-bottom: 8px;
+      }
+      .slider::after {
+        content: '';
+        position: absolute;
+        right: 8%;
+        top: -5px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--brand);
+      }
+      .app-body {
+        flex: 1;
+        padding: 14px 16px 18px;
+        min-height: 230px;
+        background: #fff;
+      }
+
+      /* ---- fake gantt ---- */
+      .gantt {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .g-axis {
+        display: flex;
+        font-size: 10px;
+        color: var(--subtle);
+        border-bottom: 1px solid var(--neutral-30);
+        padding-bottom: 4px;
+        margin-bottom: 4px;
+      }
+      .g-axis span {
+        flex: 1;
+      }
+      .g-axis .name {
+        flex: 0 0 150px;
+      }
+      .g-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .g-name {
+        flex: 0 0 150px;
+        font-size: 12px;
+        color: var(--slate);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .g-track {
+        flex: 1;
+        height: 14px;
+        background: var(--neutral-10);
+        border-radius: 2px;
+        position: relative;
+      }
+      .g-bar {
+        position: absolute;
+        top: 2px;
+        height: 10px;
+        border-radius: 5px;
+      }
+      .g-bar.ok {
+        background: var(--success);
+      }
+      .g-bar.warn {
+        background: #f5a623;
+      }
+      .g-bar.bad {
+        background: #e2483d;
+      }
+      .g-bar.neu {
+        background: #8993a4;
+      }
+
+      /* ---- drawer / popover / scrim ---- */
+      .drawer {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 370px;
+        background: #fff;
+        border-left: 1px solid var(--neutral-40);
+        box-shadow: -10px 0 22px rgba(9, 30, 66, 0.1);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: hidden;
+      }
+      .drawer.left {
+        right: auto;
+        left: 216px;
+        border-left: none;
+        border-right: 1px solid var(--neutral-40);
+        box-shadow: 10px 0 22px rgba(9, 30, 66, 0.1);
+      }
+      .drawer-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .popover {
+        position: absolute;
+        background: #fff;
+        border: 1px solid var(--neutral-40);
+        border-radius: 4px;
+        box-shadow: 0 8px 16px -4px rgba(9, 30, 66, 0.25);
+        padding: 14px;
+        width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 3;
+      }
+      .fld {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .fld .lbl {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--slate);
+      }
+      .ta {
+        border: 1px solid var(--neutral-40);
+        border-radius: 3px;
+        padding: 6px 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11.5px;
+        color: var(--text);
+        background: #fff;
+        min-height: 48px;
+        line-height: 1.45;
+      }
+      .ta.small {
+        min-height: 30px;
+      }
+      .chk {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        color: var(--slate);
+      }
+      .box {
+        width: 13px;
+        height: 13px;
+        border: 1px solid #8993a4;
+        border-radius: 2px;
+        flex: 0 0 13px;
+      }
+      .box.on {
+        background: var(--brand);
+        border-color: var(--brand);
+        position: relative;
+      }
+      .box.on::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 4px;
+        height: 7px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .row-end {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 2px;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--neutral-20);
+        border-radius: 3px;
+        padding: 2px 7px;
+        font-size: 12px;
+        color: var(--slate);
+      }
+      .jql-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--neutral-30);
+        background: var(--neutral-10);
+      }
+      .jql-bar .inp {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .dim {
+        color: var(--subtle);
+      }
+      .anno {
+        position: absolute;
+        font-size: 11px;
+        color: var(--danger);
+        font-weight: 600;
+        background: #fff;
+        border: 1px dashed var(--danger);
+        border-radius: 3px;
+        padding: 1px 6px;
+        z-index: 5;
+      }
+      .stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute">
+      <symbol id="i-search" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="7" cy="7" r="4.2" />
+        <path d="M10.2 10.2 L14 14" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-cal" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="3.2" width="12" height="11" rx="1.5" />
+        <path d="M2 6.6h12M5.4 1.8v2.6M10.6 1.8v2.6" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-team" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6" cy="5.2" r="2.4" />
+        <path d="M1.8 13c0-2.3 1.9-3.7 4.2-3.7S10.2 10.7 10.2 13" stroke-linecap="round" />
+        <circle cx="11.6" cy="5.8" r="1.8" />
+        <path d="M11.2 9.5c1.9 0 3 1.3 3 3.2" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-spark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M8 1.6l1.5 4.2 4.2 1.5-4.2 1.5L8 13l-1.5-4.2L2.3 7.3l4.2-1.5z" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="i-brush" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path
+          d="M13.6 2.4 6.8 9.2M6.2 9.8c-1.4-.2-2.6.6-3 1.9-.2.7-.7 1.3-1.4 1.6 1.3 1 3.2.9 4.3-.3.8-.9.8-2.2.1-3.2z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="i-db" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <ellipse cx="8" cy="3.8" rx="5.2" ry="2.2" />
+        <path d="M2.8 3.8v8.4c0 1.2 2.3 2.2 5.2 2.2s5.2-1 5.2-2.2V3.8M2.8 8c0 1.2 2.3 2.2 5.2 2.2S13.2 9.2 13.2 8" />
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M2 13.2h12M4.4 13.2V7M8 13.2V3.4M11.6 13.2V9.2" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-help" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="8" cy="8" r="6.2" />
+        <path d="M6.4 6.2c0-.9.7-1.6 1.6-1.6s1.6.7 1.6 1.6c0 1.2-1.6 1.2-1.6 2.4M8 11.3v.1" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round" />
+      </symbol>
+    </svg>
+
+    <h1>Forge navigation — killing the double sidebar</h1>
+    <p class="intro">
+      Jira's nav4 gives every app a persistent left sidebar. Ours renders a second one inside the iframe, so users get
+      two vertical rails and about 390&nbsp;px of chrome before the report starts. Forge's
+      <code>jira:globalPage</code> can host sub-pages in Jira's own sidebar — so the fix is to hand our settings pages
+      to Jira and keep only <strong>Sources</strong> in the report, where it belongs.
+    </p>
+
+    <div class="note">
+      <strong>Platform reality check.</strong> Sub-pages are a <em>Forge-only</em> capability.
+      <code>jira:globalPage</code> accepts <code>pages</code> (flat) or <code>sections</code> (grouped with headers);
+      Connect's <code>generalPages</code> has only <code>location</code> + <code>weight</code> and cannot nest. Connect
+      is also end-of-support. So this design lands with the Forge migration (<a href="../../021-forge/"
+        >spec/021-forge</a
+      >) and Connect keeps today's in-app sidebar unchanged.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>1 — Today</h2>
+    <p class="caption">
+      Jira's rail, then our rail, then the report. The two rails do unrelated jobs but look like peers, and nothing in
+      Jira's rail tells you where you are inside the app.
+    </p>
+
+    <div class="frame tall">
+      <div class="jira-nav">
+        <div class="brandbar"><span class="app-dot" style="background: #1868db"></span> Jira</div>
+        <div class="nav-item">
+          <svg class="ico"><use href="#i-chart" /></svg><span class="label">For you</span>
+        </div>
+        <div class="nav-item">
+          <svg class="ico"><use href="#i-cal" /></svg><span class="label">Recent</span>
+        </div>
+        <div class="nav-item">
+          <svg class="ico"><use href="#i-spark" /></svg><span class="label">Starred</span>
+        </div>
+        <div class="nav-rule"></div>
+        <div class="nav-section top">Your apps</div>
+        <div class="nav-item">
+          <span class="app-dot" style="background: #2684ff"></span><span class="label">Backbone Work Sync</span>
+        </div>
+        <div class="nav-item active">
+          <span class="app-dot"></span><span class="label">Status Reports for Jira</span>
+        </div>
+        <div class="nav-item">
+          <span class="app-dot" style="background: #36b37e"></span><span class="label">Sync by Unito</span>
+        </div>
+      </div>
+
+      <div class="app-sidebar" style="padding-top: 34px">
+        <div class="logo">
+          <span class="app-dot" style="flex: 0 0 18px; width: 18px; height: 18px"></span> Status<br />Reports
+        </div>
+        <div class="nav-section" style="padding-left: 14px">Report settings</div>
+        <div class="side-item">
+          <svg class="ico"><use href="#i-search" /></svg> Sources
+        </div>
+        <div class="side-item">
+          <svg class="ico"><use href="#i-cal" /></svg> Timing
+        </div>
+        <div class="nav-section" style="padding-left: 14px">Global settings</div>
+        <div class="side-item">
+          <svg class="ico"><use href="#i-team" /></svg> Teams
+        </div>
+        <div class="side-item">
+          <svg class="ico"><use href="#i-spark" /></svg> Features
+        </div>
+        <div class="side-item">
+          <svg class="ico"><use href="#i-brush" /></svg> Theme
+        </div>
+        <div class="side-links">
+          <span>Read the guides</span><span>APM Training</span><span>Report a bug</span><span>Write a review</span>
+        </div>
+      </div>
+
+      <div class="app-content">
+        <div class="controls">
+          <div class="ctl"><span class="lbl">Report type</span><span class="sel">Gantt Chart ▾</span></div>
+          <div class="ctl"><span class="lbl">Report on</span><span class="sel">▾</span></div>
+          <div class="ctl"><span class="lbl">Compare to</span><span class="inp">09/12/2026</span></div>
+          <div class="slider"></div>
+          <span class="sel">Filters ▾</span>
+          <span class="sel">View settings ▾</span>
+        </div>
+        <div class="app-body">
+          <div class="gantt">
+            <div class="g-axis">
+              <span class="name"></span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Checkout rewrite</span
+              ><span class="g-track"><span class="g-bar ok" style="left: 2%; width: 40%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Payments API</span
+              ><span class="g-track"><span class="g-bar warn" style="left: 18%; width: 46%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Search relevance</span
+              ><span class="g-track"><span class="g-bar bad" style="left: 30%; width: 58%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Mobile onboarding</span
+              ><span class="g-track"><span class="g-bar neu" style="left: 52%; width: 30%"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="anno" style="left: 224px; top: 6px">our second rail</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>2 — What Forge gives us</h2>
+    <p class="caption">
+      <code>jira:globalPage</code> renders sub-items under the app's entry in Jira's rail. Each <code>route</code> is
+      appended to <code>/jira/apps/{appId}/{envId}</code> and we resolve it internally with
+      <code>view.createHistory()</code>. Two shapes are available.
+    </p>
+
+    <div class="note warn">
+      <strong>The parent item is the report.</strong> Clicking <em>Status Reports</em> goes to the global page root; a
+      <code>Report</code> sub-page would be a second route to the same destination. Jira's own Spaces nav doesn't do
+      this — "Itsy Marketplace" <em>is</em> the link to the space, the chevron is a separate expand control, and the
+      children are boards. Ours matches: no <code>Report</code> child.
+    </div>
+
+    <div class="stack">
+      <div>
+        <h3>2a — Flat <code>pages</code></h3>
+        <div class="frame" style="max-width: 300px">
+          <div class="jira-nav" style="flex: 0 0 300px; width: 300px">
+            <div class="nav-section top">Your apps</div>
+            <div class="nav-item active">
+              <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-search" /></svg> Sources
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-cal" /></svg> Timing
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-team" /></svg> Teams
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-spark" /></svg> Features
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-brush" /></svg> Theme
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-db" /></svg> Storage
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-help" /></svg> Help &amp; feedback
+            </div>
+          </div>
+        </div>
+        <p class="caption" style="max-width: 300px">
+          Seven peers, no grouping. Nothing signals that Sources and Timing behave differently from Teams and Theme —
+          which, under the rule below, they do.
+        </p>
+      </div>
+
+      <div>
+        <h3>2b — Grouped <code>sections</code> <span class="badge rec">recommended</span></h3>
+        <div class="frame" style="max-width: 300px">
+          <div class="jira-nav" style="flex: 0 0 300px; width: 300px">
+            <div class="nav-item active">
+              <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+            </div>
+            <div class="nav-section">
+              Report settings <span class="dim" style="text-transform: none; letter-spacing: 0">— opens a rail</span>
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-search" /></svg> Sources
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-cal" /></svg> Timing
+            </div>
+            <div class="nav-section">
+              Global settings <span class="dim" style="text-transform: none; letter-spacing: 0">— full page</span>
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-team" /></svg> Teams
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-spark" /></svg> Features
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-brush" /></svg> Theme
+            </div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-db" /></svg> Storage
+            </div>
+            <div class="nav-section">Help</div>
+            <div class="nav-item sub">
+              <svg class="ico"><use href="#i-help" /></svg> Guides &amp; support
+            </div>
+          </div>
+        </div>
+        <p class="caption" style="max-width: 300px">
+          The two headers now name a real behavioural split, not just a topic. Both sections are still plain Forge
+          routes — the difference is what <em>we</em> render for them.
+        </p>
+      </div>
+    </div>
+
+    <pre>
+modules:
+  jira:globalPage:
+    - key: status-reports
+      resource: main
+      render: native
+      layout: native
+      title: Status Reports          # route "" — the report itself
+      sections:
+        - header: Report settings    # we render these OVER the report
+          pages:
+            - { title: Sources, route: sources, icon: .../search.svg }
+            - { title: Timing,  route: timing,  icon: .../calendar.svg }
+        - header: Global settings    # we render these INSTEAD OF the report
+          pages:
+            - { title: Teams,    route: teams,    icon: .../team.svg }
+            - { title: Features, route: features, icon: .../spark.svg }
+            - { title: Theme,    route: theme,    icon: .../brush.svg }
+            - { title: Storage,  route: storage,  icon: .../db.svg }
+        - header: Help
+          pages:
+            - { title: Guides &amp; support, route: help, icon: .../help.svg }</pre
+    >
+
+    <div class="note good">
+      <strong>The rule: report settings open over the report, global settings replace it.</strong> Forge only gives us
+      routes — it has no opinion about what a route renders. So <code>/sources</code> and <code>/timing</code> render
+      the report <em>with a rail open</em>, while <code>/teams</code> and friends render a page. Sources is the panel
+      you touch every session and its whole job is to change what you're looking at; losing the report to edit it is the
+      thing we're fixing. Timing has the same character, so it gets the same treatment.
+    </div>
+
+    <div class="note">
+      This makes the second rail <strong>transient</strong> rather than permanent — which was the actual problem.
+      Sections 3 and 4 are the placements for that rail, plus the alternative of not having one at all.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>3 — Option A: Sources opens over the report</h2>
+    <p class="caption">
+      The report stays mounted and visible; Sources is a transient rail you open, edit, Apply, and dismiss. Three
+      placements, differing mainly in <em>what opens it</em>. A3 is the recommendation — read A1 and A2 first for the
+      contrast.
+    </p>
+
+    <h3>A1 — Right drawer, opened from the controls bar <span class="badge maybe">fallback</span></h3>
+    <div class="frame tall">
+      <div class="jira-nav">
+        <div class="nav-section top">Your apps</div>
+        <div class="nav-item active">
+          <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+        </div>
+        <div class="nav-section">Report settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-cal" /></svg> Timing
+        </div>
+        <div class="nav-section">Global settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-team" /></svg> Teams
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-spark" /></svg> Features
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-brush" /></svg> Theme
+        </div>
+      </div>
+      <div class="app-content">
+        <div class="page-header">
+          <div>
+            <div class="crumb">Apps / Status Reports</div>
+            <div class="title">Report</div>
+          </div>
+          <span class="spacer"></span>
+          <span class="btn subtle">Saved reports ▾</span>
+          <span class="btn subtle">Print</span>
+        </div>
+        <div class="controls">
+          <span class="btn active"
+            ><svg class="ico"><use href="#i-search" /></svg> Sources</span
+          >
+          <div class="ctl"><span class="lbl">Report type</span><span class="sel">Gantt Chart ▾</span></div>
+          <div class="ctl"><span class="lbl">Report on</span><span class="sel">Epics ▾</span></div>
+          <div class="ctl"><span class="lbl">Compare to</span><span class="inp">09/12/2026</span></div>
+          <div class="slider"></div>
+          <span class="sel">Filters ▾</span>
+          <span class="sel">View settings ▾</span>
+        </div>
+        <div class="app-body">
+          <div class="gantt">
+            <div class="g-axis">
+              <span class="name"></span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Checkout rewrite</span
+              ><span class="g-track"><span class="g-bar ok" style="left: 2%; width: 40%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Payments API</span
+              ><span class="g-track"><span class="g-bar warn" style="left: 18%; width: 46%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Search relevance</span
+              ><span class="g-track"><span class="g-bar bad" style="left: 30%; width: 58%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Mobile onboarding</span
+              ><span class="g-track"><span class="g-bar neu" style="left: 52%; width: 30%"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer">
+        <div class="drawer-head">
+          <svg class="ico"><use href="#i-search" /></svg> Issue Source
+          <span class="spacer"></span>
+          <svg class="ico" style="color: var(--subtle)"><use href="#i-close" /></svg>
+        </div>
+        <p class="caption" style="margin: 0">Specify a JQL that loads all the issues needed for your report.</p>
+        <div class="fld">
+          <span class="lbl">JQL</span>
+          <div class="ta">issueType in (Epic, Initiative) AND project = "Itsy Marketplace" ORDER BY Rank</div>
+          <span class="caption" style="margin: 0">Loaded 214 issues</span>
+        </div>
+        <div class="chk"><span class="box on"></span> Load children</div>
+        <div class="ta small" style="margin-left: 20px">status != Done</div>
+        <div class="chk"><span class="box"></span> Load blockers recursively</div>
+        <div class="fld">
+          <span class="lbl">Exclude statuses</span>
+          <div class="inp" style="font-family: inherit">
+            <span class="tag">Done ✕</span> <span class="tag">Cancelled ✕</span>
+          </div>
+        </div>
+        <div class="row-end"><span class="btn subtle">Cancel</span><span class="btn primary">Apply</span></div>
+      </div>
+    </div>
+    <p class="caption">
+      Report never unmounts, so you can compare before/after by toggling the drawer. Wide enough for the JQL textareas.
+      Costs ~370&nbsp;px of report width while open — acceptable because it's transient.
+    </p>
+
+    <h3>A2 — Popover anchored to the Sources button</h3>
+    <div class="frame tall">
+      <div class="jira-nav">
+        <div class="nav-section top">Your apps</div>
+        <div class="nav-item active">
+          <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+        </div>
+        <div class="nav-section">Report settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-cal" /></svg> Timing
+        </div>
+        <div class="nav-section">Global settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-team" /></svg> Teams
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-spark" /></svg> Features
+        </div>
+      </div>
+      <div class="app-content">
+        <div class="controls">
+          <span class="btn active"
+            ><svg class="ico"><use href="#i-search" /></svg> Sources</span
+          >
+          <span class="sel">Gantt Chart ▾</span>
+          <span class="sel">Epics ▾</span>
+          <div class="slider"></div>
+          <span class="sel">Filters ▾</span>
+          <span class="sel">View settings ▾</span>
+        </div>
+        <div class="app-body">
+          <div class="gantt">
+            <div class="g-axis">
+              <span class="name"></span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Checkout rewrite</span
+              ><span class="g-track"><span class="g-bar ok" style="left: 2%; width: 40%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Payments API</span
+              ><span class="g-track"><span class="g-bar warn" style="left: 18%; width: 46%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Search relevance</span
+              ><span class="g-track"><span class="g-bar bad" style="left: 30%; width: 58%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Mobile onboarding</span
+              ><span class="g-track"><span class="g-bar neu" style="left: 52%; width: 30%"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="popover" style="left: 228px; top: 46px">
+        <div class="fld">
+          <span class="lbl">JQL</span>
+          <div class="ta">issueType in (Epic, Initiative) AND project = "Itsy Marketplace" ORDER BY Rank</div>
+        </div>
+        <div class="chk"><span class="box on"></span> Load children</div>
+        <div class="ta small" style="margin-left: 20px">status != Done</div>
+        <div class="chk"><span class="box"></span> Load blockers recursively</div>
+        <div class="fld">
+          <span class="lbl">Exclude statuses</span>
+          <div class="inp" style="font-family: inherit">
+            <span class="tag">Done ✕</span> <span class="tag">Cancelled ✕</span>
+          </div>
+        </div>
+        <div class="row-end"><span class="btn primary">Apply</span></div>
+      </div>
+    </div>
+    <p class="caption">
+      Cheapest to build and visually lightest. But click-outside-to-dismiss is hostile to a long multi-field form with
+      an explicit Apply — one stray click loses the edit. Would need dismiss-on-outside-click disabled, at which point
+      it is a drawer with worse ergonomics.
+    </p>
+
+    <h3>A3 — Left rail, opened from the nav <span class="badge rec">recommended</span></h3>
+    <p class="caption">
+      No button in the controls bar at all. <code>Sources</code> is a nav item; clicking it routes to
+      <code>/sources</code>, which we render as the report with a rail open flush against Jira's own. The nav item
+      highlights, so the rail visibly belongs to the thing you clicked.
+    </p>
+    <div class="frame tall">
+      <div class="jira-nav">
+        <div class="nav-item">
+          <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+        </div>
+        <div class="nav-section">Report settings</div>
+        <div class="nav-item sub active">
+          <svg class="ico"><use href="#i-search" /></svg> Sources
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-cal" /></svg> Timing
+        </div>
+        <div class="nav-section">Global settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-team" /></svg> Teams
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-spark" /></svg> Features
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-brush" /></svg> Theme
+        </div>
+      </div>
+      <div class="app-content">
+        <div class="controls">
+          <div class="ctl"><span class="lbl">Report type</span><span class="sel">Gantt Chart ▾</span></div>
+          <div class="ctl"><span class="lbl">Report on</span><span class="sel">Epics ▾</span></div>
+          <div class="ctl"><span class="lbl">Compare to</span><span class="inp">09/12/2026</span></div>
+          <div class="slider"></div>
+          <span class="sel">Filters ▾</span>
+          <span class="sel">View settings ▾</span>
+        </div>
+        <div class="app-body">
+          <div class="gantt">
+            <div class="g-axis">
+              <span class="name"></span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Checkout rewrite</span
+              ><span class="g-track"><span class="g-bar ok" style="left: 2%; width: 40%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Payments API</span
+              ><span class="g-track"><span class="g-bar warn" style="left: 18%; width: 46%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Search relevance</span
+              ><span class="g-track"><span class="g-bar bad" style="left: 30%; width: 58%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Mobile onboarding</span
+              ><span class="g-track"><span class="g-bar neu" style="left: 52%; width: 30%"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="drawer left">
+        <div class="drawer-head">
+          <svg class="ico"><use href="#i-search" /></svg> Issue Source
+          <span class="spacer"></span>
+          <svg class="ico" style="color: var(--subtle)"><use href="#i-close" /></svg>
+        </div>
+        <p class="caption" style="margin: 0">Specify a JQL that loads all the issues needed for your report.</p>
+        <div class="fld">
+          <span class="lbl">JQL</span>
+          <div class="ta">issueType in (Epic, Initiative) AND project = "Itsy Marketplace" ORDER BY Rank</div>
+          <span class="caption" style="margin: 0">Loaded 214 issues</span>
+        </div>
+        <div class="chk"><span class="box on"></span> Load children</div>
+        <div class="ta small" style="margin-left: 20px">status != Done</div>
+        <div class="chk"><span class="box"></span> Load blockers recursively</div>
+        <div class="fld">
+          <span class="lbl">Exclude statuses</span>
+          <div class="inp" style="font-family: inherit">
+            <span class="tag">Done ✕</span> <span class="tag">Cancelled ✕</span>
+          </div>
+        </div>
+        <div class="row-end"><span class="btn subtle">Cancel</span><span class="btn primary">Apply</span></div>
+      </div>
+    </div>
+
+    <table class="cmp">
+      <tr>
+        <th style="width: 130px">vs. A1</th>
+        <th>Why A3 wins</th>
+        <th>What it costs</th>
+      </tr>
+      <tr>
+        <td><strong>Discovery</strong></td>
+        <td>
+          Sources sits with Timing/Teams/Theme where people already look for configuration, instead of being a lone
+          button hiding among report controls.
+        </td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Consistency</strong></td>
+        <td>
+          All six settings are nav items. The Report-settings group shares a behaviour (opens a rail), not just a
+          header.
+        </td>
+        <td>
+          Two nav items in the same list behave differently — Sources keeps your report, Teams replaces it. The section
+          headers have to carry that.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Controls bar</strong></td>
+        <td>Stays clean. No seventh control competing with Filters and View settings.</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>The seam</strong> <span class="badge maybe">risk</span></td>
+        <td>—</td>
+        <td>
+          Jira's rail and our rail are in different documents. Background, top alignment, borders and shadows have to
+          line up or it reads as two competing rails again — the exact thing we're removing. We only control our half.
+          A1's right drawer is bounded by our own iframe edge and has no seam.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Spike dependency</strong> <span class="badge no">risk</span></td>
+        <td>—</td>
+        <td>
+          A1's trigger is in-app: no route change, works regardless of what Forge does on navigation. A3 makes the
+          control you touch every session a <em>route change</em>. If sidebar navigation remounts the app (§7), A3 is
+          dead and A1 is not.
+        </td>
+      </tr>
+    </table>
+
+    <div class="note">
+      <strong>Both are transient.</strong> Neither A1 nor A3 shows a second rail at rest — that was the real problem,
+      and both solve it. The choice between them is placement and risk, not permanence.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>4 — Option B: Sources lives in the page</h2>
+    <p class="caption">
+      JQL is promoted to permanent page furniture rather than something you open. Nothing to discover, and the query
+      driving the report is always legible. The risk is the other three fields — child JQL, blocker JQL, excluded
+      statuses — which have nowhere good to sit.
+    </p>
+
+    <h3>B1 — Persistent JQL bar, advanced options in a popover</h3>
+    <div class="frame tall">
+      <div class="jira-nav">
+        <div class="nav-section top">Your apps</div>
+        <div class="nav-item active">
+          <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+        </div>
+        <div class="nav-section">Report settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-cal" /></svg> Timing
+        </div>
+        <div class="nav-section">Global settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-team" /></svg> Teams
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-spark" /></svg> Features
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-brush" /></svg> Theme
+        </div>
+      </div>
+      <div class="app-content">
+        <div class="jql-bar">
+          <svg class="ico" style="color: var(--subtle)"><use href="#i-search" /></svg>
+          <span class="inp">issueType in (Epic, Initiative) AND project = "Itsy Marketplace" ORDER BY Rank</span>
+          <span class="btn subtle">Options ▾</span>
+          <span class="btn primary">Apply</span>
+        </div>
+        <div class="controls">
+          <div class="ctl"><span class="lbl">Report type</span><span class="sel">Gantt Chart ▾</span></div>
+          <div class="ctl"><span class="lbl">Report on</span><span class="sel">Epics ▾</span></div>
+          <div class="ctl"><span class="lbl">Compare to</span><span class="inp">09/12/2026</span></div>
+          <div class="slider"></div>
+          <span class="sel">Filters ▾</span>
+          <span class="sel">View settings ▾</span>
+        </div>
+        <div class="app-body">
+          <div class="gantt">
+            <div class="g-axis">
+              <span class="name"></span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Checkout rewrite</span
+              ><span class="g-track"><span class="g-bar ok" style="left: 2%; width: 40%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Payments API</span
+              ><span class="g-track"><span class="g-bar warn" style="left: 18%; width: 46%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Search relevance</span
+              ><span class="g-track"><span class="g-bar bad" style="left: 30%; width: 58%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Mobile onboarding</span
+              ><span class="g-track"><span class="g-bar neu" style="left: 52%; width: 30%"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="popover" style="right: 16px; top: 38px; width: 330px">
+        <div class="chk"><span class="box on"></span> Load children</div>
+        <div class="ta small" style="margin-left: 20px">status != Done</div>
+        <div class="chk"><span class="box"></span> Load blockers recursively</div>
+        <div class="fld">
+          <span class="lbl">Exclude statuses</span>
+          <div class="inp" style="font-family: inherit">
+            <span class="tag">Done ✕</span> <span class="tag">Cancelled ✕</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note warn">
+      One form, two surfaces, one Apply button that commits both. The Apply in the bar has to also commit edits made in
+      the popover, which is the kind of thing that reads fine in a mockup and confuses people in practice.
+    </div>
+
+    <h3>B2 — Collapsed query chip that expands in place</h3>
+    <div class="frame tall">
+      <div class="jira-nav">
+        <div class="nav-section top">Your apps</div>
+        <div class="nav-item active">
+          <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+        </div>
+        <div class="nav-section">Report settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-cal" /></svg> Timing
+        </div>
+        <div class="nav-section">Global settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-team" /></svg> Teams
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-spark" /></svg> Features
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-brush" /></svg> Theme
+        </div>
+      </div>
+      <div class="app-content">
+        <div class="jql-bar" style="background: #fff">
+          <svg class="ico" style="color: var(--subtle)"><use href="#i-search" /></svg>
+          <span class="tag" style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px">
+            issueType in (Epic, Initiative) AND project = "Itsy Marketplace"…
+          </span>
+          <span class="tag">+ children</span>
+          <span class="tag">− Done, Cancelled</span>
+          <span class="btn subtle">Edit</span>
+          <span class="spacer"></span>
+          <span class="caption" style="margin: 0">214 issues</span>
+        </div>
+        <div class="controls">
+          <div class="ctl"><span class="lbl">Report type</span><span class="sel">Gantt Chart ▾</span></div>
+          <div class="ctl"><span class="lbl">Report on</span><span class="sel">Epics ▾</span></div>
+          <div class="ctl"><span class="lbl">Compare to</span><span class="inp">09/12/2026</span></div>
+          <div class="slider"></div>
+          <span class="sel">Filters ▾</span>
+          <span class="sel">View settings ▾</span>
+        </div>
+        <div class="app-body">
+          <div class="gantt">
+            <div class="g-axis">
+              <span class="name"></span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Checkout rewrite</span
+              ><span class="g-track"><span class="g-bar ok" style="left: 2%; width: 40%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Payments API</span
+              ><span class="g-track"><span class="g-bar warn" style="left: 18%; width: 46%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Search relevance</span
+              ><span class="g-track"><span class="g-bar bad" style="left: 30%; width: 58%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Mobile onboarding</span
+              ><span class="g-track"><span class="g-bar neu" style="left: 52%; width: 30%"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">Collapsed: the whole source config is one readable line of chips. "Edit" expands it:</p>
+
+    <div class="frame tall">
+      <div class="jira-nav">
+        <div class="nav-section top">Your apps</div>
+        <div class="nav-item active">
+          <span class="chev">▾</span><span class="app-dot"></span><span class="label">Status Reports</span>
+        </div>
+        <div class="nav-section">Report settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-cal" /></svg> Timing
+        </div>
+        <div class="nav-section">Global settings</div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-team" /></svg> Teams
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-spark" /></svg> Features
+        </div>
+        <div class="nav-item sub">
+          <svg class="ico"><use href="#i-brush" /></svg> Theme
+        </div>
+      </div>
+      <div class="app-content">
+        <div style="padding: 12px 16px; border-bottom: 1px solid var(--neutral-30); background: var(--neutral-10)">
+          <div style="display: flex; flex-direction: column; gap: 10px; max-width: 620px">
+            <div class="fld">
+              <span class="lbl">JQL</span>
+              <div class="ta" style="background: #fff">
+                issueType in (Epic, Initiative) AND project = "Itsy Marketplace" ORDER BY Rank
+              </div>
+            </div>
+            <div style="display: flex; gap: 28px">
+              <div style="flex: 1">
+                <div class="chk"><span class="box on"></span> Load children</div>
+                <div class="ta small" style="margin: 4px 0 0 20px; background: #fff">status != Done</div>
+              </div>
+              <div style="flex: 1">
+                <div class="chk"><span class="box"></span> Load blockers recursively</div>
+              </div>
+            </div>
+            <div class="fld">
+              <span class="lbl">Exclude statuses</span>
+              <div class="inp" style="font-family: inherit; background: #fff">
+                <span class="tag">Done ✕</span> <span class="tag">Cancelled ✕</span>
+              </div>
+            </div>
+            <div class="row-end"><span class="btn subtle">Cancel</span><span class="btn primary">Apply</span></div>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="ctl"><span class="lbl">Report type</span><span class="sel">Gantt Chart ▾</span></div>
+          <div class="ctl"><span class="lbl">Report on</span><span class="sel">Epics ▾</span></div>
+          <div class="slider"></div>
+          <span class="sel">Filters ▾</span>
+        </div>
+        <div class="app-body" style="min-height: 120px">
+          <div class="gantt">
+            <div class="g-axis">
+              <span class="name"></span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Checkout rewrite</span
+              ><span class="g-track"><span class="g-bar ok" style="left: 2%; width: 40%"></span></span>
+            </div>
+            <div class="g-row">
+              <span class="g-name">Payments API</span
+              ><span class="g-track"><span class="g-bar warn" style="left: 18%; width: 46%"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      Whole form in one surface, full page width so the fields sit side by side, and the collapsed state doubles as a
+      summary of what you're looking at. Cost: expanding shoves the report down — and on a Gantt that means the chart
+      you're reasoning about scrolls out of view while you edit.
+    </p>
+
+    <h3>B3 — Everything inline, always</h3>
+    <div class="note bad">
+      Not mocked. Four fields plus Apply permanently above the report is ~140&nbsp;px of chrome on every page load, for
+      settings most users change once a week. This is the failure mode B1/B2 are avoiding.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>5 — The bits with no home</h2>
+    <p class="caption">Three things currently live in our sidebar and have to land somewhere.</p>
+    <table class="cmp">
+      <tr>
+        <th style="width: 170px">Today</th>
+        <th>Proposal</th>
+      </tr>
+      <tr>
+        <td><strong>Branding</strong><br /><span class="dim">Status Reports logo, top of sidebar</span></td>
+        <td>
+          Drop it in Forge. Jira renders the app name and icon in its own rail and in the page header with
+          <code>layout: native</code>. Repeating it inside the iframe is the thing that makes the app look bolted on.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <strong>Footer links</strong><br /><span class="dim"
+            >Guides, APM Training, Report a bug, Request a feature, Write a review…</span
+          >
+        </td>
+        <td>
+          A <strong>Help &amp; feedback</strong> sub-page (section 2b) or a <code>?</code> menu in the page header.
+          Sub-page is better: these are long-tail links and today they get clipped by the shrinking footer (<a
+            href="../../025-sidebar-footer-links-shrink/"
+            >spec/025</a
+          >) — a real page has room for all of them plus descriptions.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Login / cloud selector</strong><br /><span class="dim">web mode only</span></td>
+        <td>Unaffected. Forge and Connect are always authenticated; this chrome is standalone-web only.</td>
+      </tr>
+    </table>
+
+    <!-- ============================================================ -->
+    <h2>6 — Side by side</h2>
+    <table class="cmp">
+      <tr>
+        <th></th>
+        <th>A3 nav → left rail</th>
+        <th>A1 right drawer</th>
+        <th>A2 popover</th>
+        <th>B1 JQL bar + popover</th>
+        <th>B2 collapse/expand</th>
+      </tr>
+      <tr>
+        <td>Second rail at rest</td>
+        <td>None</td>
+        <td>None</td>
+        <td>None</td>
+        <td>None</td>
+        <td>None</td>
+      </tr>
+      <tr>
+        <td>Report stays visible while editing</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Partly — pushed down</td>
+      </tr>
+      <tr>
+        <td>Sources discoverable with other settings</td>
+        <td>Yes</td>
+        <td>No</td>
+        <td>No</td>
+        <td>n/a</td>
+        <td>n/a</td>
+      </tr>
+      <tr>
+        <td>Current query visible at a glance</td>
+        <td>No</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>All four fields in one surface</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Accidental-dismiss risk</td>
+        <td>Low</td>
+        <td>Low</td>
+        <td>High</td>
+        <td>Medium</td>
+        <td>Low</td>
+      </tr>
+      <tr>
+        <td>Permanent vertical chrome</td>
+        <td>0</td>
+        <td>0</td>
+        <td>0</td>
+        <td>~38&nbsp;px</td>
+        <td>~38&nbsp;px</td>
+      </tr>
+      <tr>
+        <td>Reuses today's <code>IssueSource</code></td>
+        <td>As-is</td>
+        <td>As-is</td>
+        <td>As-is</td>
+        <td>Splits it</td>
+        <td>Relayout</td>
+      </tr>
+      <tr>
+        <td>Survives if navigation remounts</td>
+        <td><strong>No</strong></td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+    </table>
+
+    <div class="note good">
+      <strong>Recommendation: 2b + A3, with A1 as the fallback.</strong> Grouped Forge sections where Report settings
+      open a rail over the report and Global settings replace it. Sources and Timing live in the nav with everything
+      else, the controls bar stays clean, and the second rail appears only while you're configuring. <br /><br />
+      A1 is the same panel on the other side, triggered in-app. It is strictly more robust — no seam, no route change —
+      so if the §7 spike shows navigation remounts the app, fall back to A1 and leave Sources out of the nav. B2's
+      collapsed chip row remains a good later addition to either: a one-line summary of the active query above the
+      controls bar, whose "Edit" opens the same rail.
+    </div>
+
+    <h2>7 — Verify before building</h2>
+    <div class="note bad">
+      <strong
+        >The whole design rests on one unverified assumption: clicking a sub-page must not remount the app.</strong
+      >
+      Our report costs a full issue load — tens of seconds on a large JQL. If sidebar navigation reloads the iframe, A3
+      is dead (its trigger <em>is</em> a route change), and every settings panel becomes an in-app drawer over a single
+      report page — A1, extended to all six. Prove this with a throwaway Forge app on a dev site <em>before</em> any of
+      this is planned.
+    </div>
+
+    <table class="cmp">
+      <tr>
+        <th style="width: 250px">Question</th>
+        <th>What the docs imply</th>
+        <th>How to prove it</th>
+      </tr>
+      <tr>
+        <td><strong>Does a sidebar click remount the iframe?</strong></td>
+        <td>
+          No. <code>view.createHistory()</code> returns a <code>listen(location, action)</code> callback, which is
+          pointless across a reload; the global page doc says the sidebar "will only change the global page URL, you
+          will need to handle routes inside your app"; the official tutorial feeds <code>listen</code> into React
+          Router's <code>&lt;Router&gt;</code> and only unsubscribes on <code>window.unload</code>, described as the
+          user leaving the app entirely.
+        </td>
+        <td>
+          Module-scope <code>let mounts = 0; mounts++</code> plus a <code>console.log</code> in
+          <code>history.listen</code>. Click between two sub-pages: the counter must stay at 1 and the listener must
+          fire.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Does the query string survive?</strong> <span class="badge no">highest risk</span></td>
+        <td>
+          Unknown. <code>LocationDescriptor</code> is <code>{ pathname, search, hash, state }</code>, but a sidebar
+          click almost certainly pushes only a <code>pathname</code>. Our entire report state lives in query params — if
+          <code>search</code> is dropped, a round trip to Teams silently wipes the user's report. That is worse than a
+          reload: it's data loss, not latency.
+        </td>
+        <td>
+          Load a sub-page with <code>?foo=bar</code>, click to another sub-page and back, and log
+          <code>history.location.search</code> at each step.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Do we remount ourselves?</strong></td>
+        <td>
+          Our problem, not Forge's. If each route mounts its own React tree, the <code>QueryClient</code> must live
+          <em>above</em> the router or returning to Report refetches everything regardless of what the iframe does.
+        </td>
+        <td>Architecture review; not a platform question.</td>
+      </tr>
+      <tr>
+        <td><strong>Is the parent item clickable?</strong></td>
+        <td>
+          Unknown. Jira's Spaces nav gives the parent a link <em>and</em> a separate chevron. If Forge's parent only
+          expands, we're forced to add a <code>Report</code> sub-page back and live with the redundancy.
+        </td>
+        <td>Deploy <code>sections</code> and click the parent row and its chevron.</td>
+      </tr>
+      <tr>
+        <td><strong>Can the rail meet Jira's cleanly?</strong></td>
+        <td>
+          Unknown, and A3-specific. Our iframe's top edge, background and border have to align with Jira's rail or the
+          two read as competing rails. We only control our half.
+        </td>
+        <td>
+          Render a plain left-flush panel in the dev app and look at the seam, in both light and dark theme, at a couple
+          of window widths.
+        </td>
+      </tr>
+    </table>
+
+    <h2>8 — Open questions</h2>
+    <ul class="intro">
+      <li>
+        <strong>Recent reports in the nav?</strong> Not possible. <code>pages</code> and <code>sections</code> are
+        declared in <code>manifest.yml</code> and are static at deploy time; <code>displayConditions</code> only toggles
+        visibility, it can't render a per-user list. The module that <em>can</em> do this, <code>global:ui</code>, is
+        EAP, UI&nbsp;Kit-only, contractually barred from production, and moves the app out of Jira's nav into the site
+        app switcher entirely. So recents belong in the existing <strong>Saved reports</strong>
+        menu — and the parent nav item should resume your last-viewed report rather than landing on an empty "Configure
+        a JQL" state.
+      </li>
+      <li>
+        <strong>Report-scoped vs. global settings.</strong> Sources and Timing are per-report; Teams/Features/Theme/
+        Storage are per-instance. The rail-vs-page split communicates this, but does a settings page also need a "for:
+        &lt;saved report&gt;" indicator?
+      </li>
+      <li>
+        <strong>Does Connect diverge or freeze?</strong> Cheapest path is to leave Connect on today's in-app sidebar and
+        build the new shell Forge-only, accepting two layouts until Connect sunsets.
+      </li>
+    </ul>
+  </body>
+</html>

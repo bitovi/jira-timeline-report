@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planning Progress — prototype</title>
+    <link rel="stylesheet" href="render.css" />
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --neutral-40: #dcdfe4;
+        --brand: #0c66e4;
+        --danger: #ae2e24;
+        --warn: #b65c02;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 20px 24px 80px;
+        background: #fafbfc;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      .intro {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 0 0 14px;
+        max-width: 1000px;
+      }
+      .controls {
+        position: sticky;
+        top: 0;
+        z-index: 200;
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(9, 30, 66, 0.14);
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .ctl {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--subtle);
+      }
+      .ctl label {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 10.5px;
+      }
+      select,
+      input[type='number'] {
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 7px;
+        border: 1px solid var(--neutral-40);
+        border-radius: 3px;
+        background: #fff;
+        color: var(--text);
+      }
+      input[type='number'] {
+        width: 92px;
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 13px;
+        border: 1px solid transparent;
+        border-radius: 3px;
+        background: var(--brand);
+        color: #fff;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: var(--neutral-20);
+        color: var(--text);
+        border-color: var(--neutral-40);
+      }
+      button:hover {
+        filter: brightness(1.08);
+      }
+      .stats {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--subtle);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        line-height: 1.5;
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+        font-size: 11px;
+        color: var(--subtle);
+        margin: 0 0 12px;
+        padding: 8px 12px;
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+      }
+      .legend b {
+        color: var(--text);
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+      }
+      .sw {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sw i {
+        width: 15px;
+        height: 11px;
+        border-radius: 2px;
+        display: block;
+        border: 1px solid rgba(9, 30, 66, 0.12);
+      }
+      .hatchdemo {
+        background-image: repeating-linear-gradient(
+          -45deg,
+          rgba(255, 255, 255, 0.55),
+          rgba(255, 255, 255, 0.55) 3px,
+          transparent 3px,
+          transparent 7px
+        );
+        background-color: #d9a8f2;
+        border: 1px dashed #8993a4 !important;
+      }
+      .nomdemo {
+        background: #f1f2f4;
+        outline: 1px dotted var(--danger);
+        outline-offset: -2px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Planning Progress — prototype</h1>
+    <p class="intro">
+      Randomly generated but <strong>correlated</strong> portfolio data, drawn as a rank-ordered icicle. Regenerate to
+      see different portfolio shapes; the seed is reproducible. Hover any block for its full record — status, claimed
+      vs. evidenced rung, own vs. rolled-up estimate and dates.
+    </p>
+
+    <div class="controls">
+      <div class="ctl">
+        <label for="seed">Seed</label>
+        <input type="number" id="seed" value="1337" />
+      </div>
+      <div class="ctl">
+        <label for="count">Outcomes</label>
+        <select id="count">
+          <option>2</option>
+          <option selected>4</option>
+          <option>6</option>
+          <option>8</option>
+        </select>
+      </div>
+      <button id="regen">Regenerate</button>
+      <button class="secondary" id="reroll">Random seed</button>
+      <div class="ctl">
+        <label for="ramp">Ramp</label>
+        <select id="ramp">
+          <option value="purple" selected>Purple</option>
+          <option value="grey">Grey</option>
+        </select>
+      </div>
+      <div class="ctl">
+        <label for="enc">Own vs rolled</label>
+        <select id="enc">
+          <option value="bracket" selected>Bracket</option>
+          <option value="anchor">Anchor</option>
+          <option value="border">Border</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="legend">
+      <span><b>Execution</b></span>
+      <span class="sw"><i style="background: #1f845a"></i>Done</span>
+      <span class="sw"><i style="background: #0c66e4"></i>In Progress</span>
+      <span><b>Planning</b></span>
+      <span class="sw"><i style="background: #f1f2f4"></i>Unknown</span>
+      <span class="sw"><i style="background: #f3e7fc"></i>Refined</span>
+      <span class="sw"><i style="background: #d9a8f2"></i>Sized</span>
+      <span class="sw"><i style="background: #8341ad"></i>Scheduled</span>
+      <span><b>Marks</b></span>
+      <span class="sw"><i class="hatchdemo"></i>projected (queued by rank)</span>
+      <span class="sw"><i class="nomdemo"></i>no estimate — width is fictional</span>
+    </div>
+
+    <div id="chart"></div>
+
+    <script src="generator.js"></script>
+    <script src="render.js"></script>
+    <script>
+      const el = (id) => document.getElementById(id);
+      const chart = el('chart');
+
+      function countNodes(nodes, fn) {
+        let total = 0;
+        const walk = (list) => {
+          for (const n of list) {
+            if (fn(n)) total++;
+            walk(n.children);
+          }
+        };
+        walk(nodes);
+        return total;
+      }
+
+      function draw() {
+        const seed = Number(el('seed').value) || 1;
+        const portfolio = window.PlanningData.generatePortfolio({
+          seed,
+          outcomeCount: Number(el('count').value),
+        });
+
+        window.PlanningRender.render(portfolio, chart, {
+          ramp: el('ramp').value,
+          sourceEncoding: el('enc').value,
+        });
+
+        // Per level: averaging the rolled-up rate across all levels hides it, because
+        // stories are never rolled and always dominate the node count.
+        const byLevel = {};
+        const walk = (list) => {
+          for (const n of list) {
+            const b = (byLevel[n.level] = byLevel[n.level] || { n: 0, rolled: 0 });
+            b.n++;
+            if (n.estimateSource === 'rolled') b.rolled++;
+            walk(n.children);
+          }
+        };
+        walk(portfolio.outcomes);
+
+        const all = countNodes(portfolio.outcomes, () => true);
+        const contra = countNodes(portfolio.outcomes, (n) => n.claimedRung > n.evidencedRung);
+        const ghost = countNodes(portfolio.outcomes, (n) => n.exec !== 'todo' && n.rollupEstimate === 0);
+        const rolledPct = (lvl) =>
+          byLevel[lvl] ? Math.round((byLevel[lvl].rolled / byLevel[lvl].n) * 100) + '%' : '—';
+
+        el('stats').innerHTML =
+          `${all} issues · rolled-up estimates: ` +
+          `outcome ${rolledPct('outcome')} · initiative ${rolledPct('initiative')} · epic ${rolledPct('epic')}<br>` +
+          `${Math.round((contra / all) * 100)}% claim&nbsp;&gt;&nbsp;evidence · ${ghost} started with nothing planned anywhere`;
+      }
+
+      el('regen').addEventListener('click', draw);
+      el('ramp').addEventListener('change', () => window.PlanningRender.setRamp(chart, el('ramp').value));
+      el('enc').addEventListener('change', () => window.PlanningRender.setSourceEncoding(chart, el('enc').value));
+      el('count').addEventListener('change', draw);
+      el('seed').addEventListener('change', draw);
+      el('reroll').addEventListener('click', () => {
+        el('seed').value = Math.floor(Math.random() * 100000);
+        draw();
+      });
+
+      draw();
+    </script>
+  </body>
+</html>
