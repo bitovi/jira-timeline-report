@@ -1,0 +1,2547 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Placing the critical-path tables — options</title>
+    <style>
+      :root {
+        /* Atlaskit-derived tokens, same set as critical-paths.html and earliest-finish.html */
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --link: #0c66e4;
+        --success: #22a06b;
+        --danger: #ae2e24;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+
+        /* Reuses the validated pair; no new hues introduced. */
+        --series-work: #0c66e4;
+        --series-work-bg: #e9f2ff;
+        --series-wait: #b65c02;
+        --series-wait-bg: #fff3eb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 90px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 40px 0 2px;
+        padding-top: 14px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 24px 0 8px;
+        color: var(--slate);
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 960px;
+        margin: 6px 0 8px;
+        font-size: 13px;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 2px 0 16px;
+        max-width: 960px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .stage {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+      }
+
+      /* ---------- annotations ---------- */
+      .note {
+        border-left: 3px solid var(--brand);
+        background: var(--brand-bg);
+        padding: 10px 14px;
+        margin: 14px 0;
+        font-size: 13px;
+        max-width: 960px;
+        border-radius: 0 3px 3px 0;
+      }
+      .note.warn {
+        border-left-color: var(--series-wait);
+        background: var(--series-wait-bg);
+      }
+      .note.bad {
+        border-left-color: var(--danger);
+        background: #ffeceb;
+      }
+      .note p {
+        margin: 0 0 6px;
+      }
+      .note p:last-child {
+        margin-bottom: 0;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: var(--slate-bg);
+        color: var(--slate);
+        vertical-align: middle;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+      .badge.rec {
+        background: #dcfff1;
+        color: #216e4e;
+      }
+      .badge.no {
+        background: #ffeceb;
+        color: var(--danger);
+      }
+      ul.tight {
+        margin: 6px 0;
+        padding-left: 20px;
+        max-width: 960px;
+        font-size: 13px;
+      }
+      ul.tight li {
+        margin-bottom: 5px;
+      }
+      .notes {
+        font-size: 12px;
+        color: var(--muted);
+        max-width: 780px;
+      }
+      .notes ul {
+        margin: 8px 0;
+        padding-left: 18px;
+      }
+      .notes li {
+        margin-bottom: 4px;
+      }
+      .tradeoff {
+        margin: 9px 0 0;
+        font-size: 12px;
+      }
+      .good {
+        color: #216e4e;
+      }
+      .bad {
+        color: var(--danger);
+      }
+
+      /* ---------- page wireframe ----------
+         Mirrors the real Auto-Scheduler chrome: a saved-reports row, the controls row
+         (two dropdowns, the confidence slider, start date, Update Epic Dates), then the
+         grid with its Summary band and per-team bands. */
+      .wire {
+        width: 820px;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+      }
+      .wire-top {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        padding: 6px 9px;
+      }
+      .wire-controls {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        padding: 2px 9px 8px;
+        border-bottom: 1px solid var(--neutral-30);
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+      .field-label {
+        font-size: 9px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .pill {
+        font-size: 10px;
+        padding: 3px 7px;
+        border-radius: 3px;
+        background: var(--neutral-20);
+        border: 1px solid transparent;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      .pill.input {
+        background: #fff;
+        border-color: var(--border);
+      }
+      .pill.primary {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+      }
+      .pill.active {
+        background: var(--brand-bg);
+        border-color: var(--brand);
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .pill.ghost {
+        background: #fff;
+        border-color: var(--border);
+        color: var(--muted);
+      }
+
+      /* confidence slider */
+      .slider {
+        flex: 1;
+        min-width: 0;
+        padding: 0 6px 2px;
+      }
+      .slider-track {
+        position: relative;
+        height: 3px;
+        background: var(--neutral-30);
+        border-radius: 2px;
+        margin-bottom: 4px;
+      }
+      .slider-track i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 12%;
+        background: var(--brand);
+        border-radius: 2px;
+      }
+      .slider-thumb {
+        position: absolute;
+        left: 12%;
+        top: -3px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--brand);
+      }
+      .slider-ticks {
+        display: flex;
+        justify-content: space-between;
+        font-size: 8px;
+        color: var(--subtle);
+      }
+
+      /* grid */
+      .wire-grid {
+        margin: 8px 9px 10px;
+        border: 1px solid var(--neutral-30);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .wire-band {
+        display: flex;
+        align-items: center;
+        font-size: 10px;
+        font-weight: 600;
+        background: var(--neutral-20);
+        padding: 4px 7px;
+      }
+      .wt-right {
+        margin-left: auto;
+        font-weight: 400;
+        color: var(--subtle);
+        font-size: 9px;
+      }
+      .wire-issue {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 16px;
+        padding: 0 7px;
+      }
+      .wire-issue .nm {
+        font-size: 10px;
+        color: var(--text);
+        width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .wire-issue .track {
+        position: relative;
+        flex: 1;
+        height: 100%;
+        border-left: 1px solid var(--neutral-20);
+      }
+      .wire-issue .b {
+        position: absolute;
+        top: 4px;
+        height: 8px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #1d4ed8 0%, #1d4ed8 45%, #15803d 55%, #15803d 100%);
+      }
+      .wire-issue .b.hot {
+        outline: 2px solid #f79009;
+      }
+      .wire-issue.faded {
+        opacity: 0.3;
+      }
+      .scrollcut {
+        text-align: center;
+        font-size: 10px;
+        color: var(--subtle);
+        border-top: 1px dashed var(--border);
+        padding: 4px;
+        background: var(--neutral-10);
+      }
+
+      /* ---------- vertical budget demo ----------
+         Each table is capped at a row count and scrolls inside that cap, so neither can be starved
+         by the other. They shrink proportionally only once the rail is smaller than both floors. */
+      .raildemo {
+        width: 330px;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        background: var(--neutral-10);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .raildemo .rail-head {
+        flex: 0 0 auto;
+      }
+      /* `.mini` sets `overflow: hidden`, which resets a flex item's automatic minimum size to 0 — so
+         without explicit minimums the cards clip silently instead of overflowing to the rail. */
+      .raildemo .mini {
+        flex: 0 1 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .raildemo .epics {
+        min-height: 100px;
+      }
+      .raildemo .routes {
+        min-height: 80px;
+      }
+      .raildemo .mini-head,
+      .raildemo .mrow.head {
+        flex: 0 0 auto;
+      }
+      .raildemo .scrolls {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        min-height: 58px;
+      }
+      .raildemo .epics .scrolls {
+        max-height: 232px; /* 10 rows + residual */
+      }
+      .raildemo .routes .scrolls {
+        max-height: 190px; /* 5 wrapped chains + residual */
+      }
+      .mrow.expander,
+      .route-mini.expander {
+        color: var(--link);
+        cursor: pointer;
+        user-select: none;
+      }
+      .mrow.expander:hover,
+      .route-mini.expander:hover {
+        background: var(--brand-bg);
+      }
+      .vh-label {
+        font-size: 11px;
+        color: var(--subtle);
+        margin-bottom: 5px;
+      }
+
+      /* ---------- combined option: toggleable, resizable rail ---------- */
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+        user-select: none;
+      }
+      .seg i {
+        font-style: normal;
+        font-size: 9px;
+        padding: 3px 6px;
+        color: var(--muted);
+        border-right: 1px solid var(--neutral-30);
+        cursor: col-resize;
+        background: #fff;
+      }
+      .seg i:last-child {
+        border-right: none;
+      }
+      .seg i.on {
+        background: var(--brand);
+        color: #fff;
+      }
+      .combo-body {
+        display: flex;
+        align-items: stretch;
+        min-height: 210px;
+      }
+      .combo-grid {
+        flex: 1;
+        min-width: 0;
+      }
+      .divider {
+        width: 5px;
+        flex-shrink: 0;
+        background: var(--neutral-20);
+        border-left: 1px solid var(--neutral-30);
+        border-right: 1px solid var(--neutral-30);
+        cursor: col-resize;
+        position: relative;
+      }
+      .divider:hover,
+      .divider.dragging {
+        background: var(--brand);
+      }
+      /* The grip overflows the 5px divider, so the collapse target costs no layout width. */
+      .divider-grip {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 13px;
+        height: 28px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: #fff;
+        color: var(--subtle);
+        font-size: 9px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+      }
+      .combo.grip .divider-grip {
+        display: flex;
+      }
+      .divider:hover .divider-grip {
+        color: var(--brand);
+        border-color: var(--brand);
+      }
+      /* Option 1: the spine exists only while the rail is shut. */
+      .combo.spine-when-closed:not(.rail-closed) .spine {
+        display: none;
+      }
+      .combo-rail {
+        width: 320px;
+        flex-shrink: 0;
+        background: var(--neutral-10);
+        overflow: hidden;
+      }
+      .combo.rail-closed .divider,
+      .combo.rail-closed .combo-rail {
+        display: none;
+      }
+      .combo.rail-closed .js-toggle.pill {
+        background: #fff;
+        border-color: var(--border);
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .rail-head {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--neutral-30);
+        font-size: 11px;
+        background: #fff;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .rail-head > div {
+        flex: 1;
+        min-width: 0;
+      }
+      .rail-close {
+        flex-shrink: 0;
+        cursor: pointer;
+        color: var(--subtle);
+        font-size: 13px;
+        line-height: 1;
+        padding: 1px 4px;
+        border-radius: 3px;
+        user-select: none;
+      }
+      .rail-close:hover {
+        background: var(--neutral-20);
+        color: var(--text);
+      }
+      .rail-stat {
+        display: block;
+        color: var(--series-wait);
+        font-size: 10px;
+        font-variant-numeric: tabular-nums;
+      }
+      .rail-stat dfn {
+        font-style: normal;
+        color: var(--subtle);
+      }
+      .mini-sub {
+        font-size: 9px;
+        color: var(--subtle);
+        padding: 3px 7px 0;
+      }
+      .mrow.head {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--subtle);
+        font-weight: 600;
+        align-items: flex-end;
+        background: var(--neutral-10);
+      }
+      .mrow.head .m-num,
+      .mrow.head .m-pct {
+        white-space: normal;
+        line-height: 1.15;
+        font-weight: 600;
+      }
+      .m-num {
+        font-variant-numeric: tabular-nums;
+        width: 42px;
+        text-align: right;
+        font-weight: 600;
+      }
+      .m-pct {
+        font-variant-numeric: tabular-nums;
+        width: 40px;
+        text-align: right;
+        color: var(--muted);
+        font-weight: 400;
+      }
+
+      /* the always-visible labelled spine */
+      .spine {
+        width: 26px;
+        flex-shrink: 0;
+        border-left: 1px solid var(--neutral-30);
+        background: var(--neutral-10);
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        writing-mode: vertical-rl;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--brand);
+        padding: 8px 0;
+      }
+      .spine:hover {
+        background: var(--brand-bg);
+      }
+      .spine .spine-stat {
+        font-weight: 400;
+        color: var(--subtle);
+        font-variant-numeric: tabular-nums;
+      }
+      /* The spine stays put; only its label and arrow change, so the hit target never moves. */
+      .combo:not(.rail-closed) .spine-closed-only {
+        display: none;
+      }
+      .combo.rail-closed .spine-open-only {
+        display: none;
+      }
+      .combo:not(.rail-closed) .spine {
+        color: var(--subtle);
+        border-left-color: var(--neutral-30);
+      }
+      .route-mini.wrap {
+        white-space: normal;
+        line-height: 1.35;
+      }
+      .js-toggle {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      /* ---------- the summary bar ---------- */
+      .sumbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--neutral-30);
+        background: #fff;
+        font-size: 11px;
+      }
+      .sumbar.sticky-bottom {
+        border-bottom: none;
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -2px 6px rgba(9, 30, 66, 0.1);
+      }
+      .sb-label {
+        font-weight: 600;
+      }
+      .sb-stat {
+        color: var(--muted);
+      }
+      .sb-stat b {
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-gap {
+        color: var(--series-wait);
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-right {
+        margin-left: auto;
+        color: var(--link);
+      }
+      .sb-caret {
+        color: var(--subtle);
+      }
+
+      /* ---------- embedded panel (both tables) ---------- */
+      .panel {
+        border-bottom: 1px solid var(--neutral-30);
+        background: var(--neutral-10);
+        padding: 8px 10px 10px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .panel.stacked {
+        flex-direction: column;
+      }
+      .mini {
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 3px;
+        overflow: hidden;
+        flex: 1;
+        min-width: 0;
+      }
+      .mini-head {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 5px 7px;
+        border-bottom: 1px solid var(--neutral-30);
+        color: var(--slate);
+        display: flex;
+      }
+      .mini-head .sub {
+        margin-left: auto;
+        font-weight: 400;
+        color: var(--subtle);
+      }
+      .mrow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        padding: 3px 7px;
+        border-bottom: 1px solid var(--neutral-20);
+      }
+      .mrow:last-child {
+        border-bottom: none;
+      }
+      .mrow.sel {
+        background: var(--brand-bg);
+      }
+      .mrow.foot {
+        background: var(--neutral-10);
+        font-weight: 600;
+      }
+      .m-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .m-team {
+        color: var(--subtle);
+      }
+      .m-bar {
+        width: 46px;
+        height: 6px;
+        background: var(--neutral-20);
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+      .m-bar i {
+        display: block;
+        height: 100%;
+        background: var(--series-work);
+        border-radius: 2px;
+      }
+      .rail {
+        width: 260px;
+        flex-shrink: 0;
+      }
+      .route-mini {
+        font-size: 10px;
+        padding: 4px 7px;
+        border-bottom: 1px solid var(--neutral-20);
+        color: var(--muted);
+        display: flex;
+        gap: 6px;
+      }
+      .route-mini:last-child {
+        border-bottom: none;
+      }
+      .route-mini b {
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+        width: 26px;
+        text-align: right;
+      }
+      .route-mini.dim {
+        opacity: 0.34;
+      }
+
+      /* ---------- dropdown ---------- */
+      .dd {
+        position: absolute;
+        top: 92px;
+        left: 190px;
+        width: 340px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        box-shadow: 0 6px 18px rgba(9, 30, 66, 0.22);
+        z-index: 5;
+        overflow: hidden;
+      }
+      .dd-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--neutral-30);
+        background: var(--neutral-10);
+      }
+      .dd-tab {
+        font-size: 10px;
+        padding: 6px 10px;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+      }
+      .dd-tab.on {
+        color: var(--brand);
+        border-bottom-color: var(--brand);
+        background: #fff;
+        font-weight: 600;
+      }
+      .dd-foot {
+        padding: 6px 8px;
+        border-top: 1px solid var(--neutral-30);
+        background: var(--neutral-10);
+      }
+      .btn {
+        font-size: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 3px;
+        padding: 3px 8px;
+        color: var(--link);
+        cursor: pointer;
+      }
+
+      /* ---------- merged table option ---------- */
+      .merged {
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        width: 560px;
+        overflow: hidden;
+      }
+      .mg-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--neutral-20);
+      }
+      .mg-row.head {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        font-weight: 600;
+        background: var(--neutral-10);
+      }
+      .mg-row.open {
+        background: var(--brand-bg);
+      }
+      .mg-detail {
+        padding: 6px 10px 9px 30px;
+        background: var(--brand-bg);
+        border-bottom: 1px solid var(--neutral-20);
+        font-size: 11px;
+      }
+      .mg-detail .dl {
+        color: var(--subtle);
+        font-size: 10px;
+        margin-bottom: 3px;
+      }
+      .chip {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 1px 6px;
+        font-size: 10px;
+      }
+      .arrow {
+        color: var(--subtle);
+        font-size: 10px;
+      }
+      .caret {
+        color: var(--subtle);
+        width: 10px;
+        flex-shrink: 0;
+      }
+
+      /* ---------- comparison table ---------- */
+      table.cmp {
+        border-collapse: collapse;
+        font-size: 12px;
+        max-width: 960px;
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+      }
+      table.cmp th,
+      table.cmp td {
+        border: 1px solid var(--neutral-30);
+        padding: 7px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      table.cmp th {
+        background: var(--neutral-10);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+      }
+      .yes {
+        color: #216e4e;
+        font-weight: 600;
+      }
+      .no {
+        color: var(--danger);
+        font-weight: 600;
+      }
+      .mid {
+        color: var(--series-wait);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Placing the critical-path tables</h1>
+    <p class="intro">
+      Follow-on to <code>earliest-finish.html</code>, which settled <em>what</em> the two tables show but left
+      <em>where they live</em> open. <code>critical-paths.html</code> section 3 answered that question for the
+      capacity-aware report and chose a controls dropdown — but that dropdown was designed around a single list of
+      paths, and we now have two tables that need to coexist. This page re-opens the placement question with that
+      constraint in hand.
+    </p>
+    <p class="intro">
+      All sample data is the real <code>IMP-99, IMP-100</code> plan: 91-working-day finish, 53.8-day critical path,
+      ORDER-Team 87 days on one track.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>1 · The problem, stated precisely</h2>
+    <p class="caption">Three requirements that pull against each other. Any option has to be scored on all three.</p>
+
+    <ul class="tight">
+      <li>
+        <b>Discoverability.</b> Both tables currently sit below the Gantt. In a 200-epic plan that is several screens
+        down. People do not find them.
+      </li>
+      <li>
+        <b>Two peer tables.</b> The epics table ranks <em>what to shorten</em>. The routes table shows
+        <em>how likely any given chain is to be the one that matters</em> — which is how you judge whether an
+        intervention has leverage at all. <code>earliest-finish.html</code> called routes "context only"; that is wrong,
+        and this page treats them as equals.
+      </li>
+      <li>
+        <b>Co-visibility with the grid.</b> Clicking an epic row highlights it in the Gantt. That interaction is
+        pointless if the grid is off-screen when you click.
+      </li>
+    </ul>
+
+    <div class="note warn">
+      <p>
+        <b>The third requirement is the one that kills most layouts.</b> It rules out any full-page mode switch, and it
+        means "scroll down to the tables, click, scroll back up" is a broken loop. The tables and the grid have to share
+        a viewport.
+      </p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>2 · The one line that should always be visible</h2>
+    <p class="caption">
+      Independent of which option wins. <code>earliest-finish.html</code> section 7 moved the contention gap out of this
+      report and into the capacity-aware one — but that report may not ship, so the number currently appears nowhere. It
+      is the most decision-relevant figure on the page: it says whether to cut scope or add capacity.
+    </p>
+
+    <div class="stage">
+      <div class="wire" style="width: 780px">
+        <div class="sumbar" style="white-space: nowrap">
+          <span class="sb-label">Critical path</span>
+          <span class="sb-stat"><b>53.8 d</b> of <b>91 d</b> finish</span>
+          <span class="sb-gap">· 37.2 d is queueing, not dependencies</span>
+          <span class="sb-stat">· top epic <b>Add promotion to cart</b> 35.4 d</span>
+          <span class="sb-right">Details <span class="sb-caret">▾</span></span>
+        </div>
+      </div>
+      <div class="notes">
+        <p>
+          Roughly 28px. Read left to right it is a complete diagnosis: the dependency floor, the actual finish, the gap
+          between them, and the single epic most worth shortening.
+        </p>
+        <p style="margin-top: 8px">
+          Every option below assumes this bar exists. The options differ only in what happens when you expand it.
+        </p>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>3 · Placement options</h2>
+
+    <!-- OPTION A -->
+    <h3>A · Sticky bar under the controls, expands in place</h3>
+    <div class="stage">
+      <div class="wire">
+        <div class="wire-top">
+          <span class="pill primary">Create new report</span><span class="pill ghost">Saved reports ▾</span
+          ><span class="pill ghost">⛶</span>
+        </div>
+        <div class="wire-controls">
+          <div class="field">
+            <span class="field-label">Report type</span><span class="pill">Auto-Scheduler ▾</span>
+          </div>
+          <div class="field"><span class="field-label">Report on</span><span class="pill">Epic ▾</span></div>
+          <div class="slider">
+            <div class="slider-track"><i></i><span class="slider-thumb"></span></div>
+            <div class="slider-ticks">
+              <span>Median</span><span>Average</span><span>60%</span><span>65%</span><span>70%</span><span>75%</span
+              ><span>80%</span><span>85%</span><span>90%</span>
+            </div>
+          </div>
+          <div class="field"><span class="field-label">Start date</span><span class="pill input">09/12/2026</span></div>
+          <span class="pill primary">Update Epic Dates</span>
+        </div>
+        <div class="sumbar">
+          <span class="sb-label">Critical path</span>
+          <span class="sb-stat"><b>53.8 d</b> of <b>91 d</b></span>
+          <span class="sb-gap">· 37.2 d queueing</span>
+          <span class="sb-stat">· top epic <b>Add promotion to cart</b> 35.4 d</span>
+          <span class="sb-right">Hide <span class="sb-caret">▴</span></span>
+        </div>
+        <div class="panel">
+          <div class="mini">
+            <div class="mini-head">Epics on the critical path <span class="sub">days added · 16 epics</span></div>
+            <div class="mrow sel">
+              <span class="m-name">Add promotion to cart <span class="m-team">· ORDER</span></span>
+              <span class="m-bar"><i style="width: 100%"></i></span>
+              <span class="m-num">35.4</span><span class="m-pct">83%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Wrong promotion entered <span class="m-team">· ORDER</span></span>
+              <span class="m-bar"><i style="width: 21%"></i></span>
+              <span class="m-num">7.3</span><span class="m-pct">65%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Promotion end-date error handling <span class="m-team">· ORDER</span></span>
+              <span class="m-bar"><i style="width: 6%"></i></span>
+              <span class="m-num">2.3</span><span class="m-pct">16%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Create promotion 100 <span class="m-team">· MARKETING</span></span>
+              <span class="m-bar"><i style="width: 5%"></i></span>
+              <span class="m-num">1.8</span><span class="m-pct">4%</span>
+            </div>
+            <div class="mrow" style="color: var(--subtle)">
+              <span class="m-name">6 other epics</span>
+              <span class="m-bar"></span>
+              <span class="m-num">0.7</span><span class="m-pct"></span>
+            </div>
+            <div class="mrow foot">
+              <span class="m-name">Critical path length</span>
+              <span class="m-bar"></span>
+              <span class="m-num">53.8</span><span class="m-pct"></span>
+            </div>
+          </div>
+          <div class="mini rail">
+            <div class="mini-head">Most common critical paths <span class="sub">9 routes</span></div>
+            <div class="route-mini"><b>65%</b><span>Create a promotion → … → Wrong promotion entered</span></div>
+            <div class="route-mini"><b>16%</b><span>Create a promotion → … → end-date handling</span></div>
+            <div class="route-mini dim"><b>4%</b><span>Create a promotion 100 → Create promotion 100</span></div>
+            <div class="route-mini dim"><b>3%</b><span>Create and publish ad</span></div>
+            <div class="route-mini dim"><b>12%</b><span>5 other routes</span></div>
+          </div>
+        </div>
+        <div class="wire-grid">
+          <div class="wire-band">
+            Summary <span class="wt-right">91 working days · average · GSD 1.33 · Confidence: 80%</span>
+          </div>
+          <div class="wire-band">ORDER-Team <span class="wt-right">Total Working Days: 87, Points / Day: 1</span></div>
+          <div class="wire-issue">
+            <span class="nm">Add promotion to cart</span>
+            <span class="track"><i class="b hot" style="left: 2%; width: 41%"></i></span>
+          </div>
+          <div class="wire-issue faded">
+            <span class="nm">Add a promotion to the cart 100</span>
+            <span class="track"><i class="b" style="left: 65%; width: 4%"></i></span>
+          </div>
+          <div class="wire-issue">
+            <span class="nm">Wrong promotion entered</span>
+            <span class="track"><i class="b hot" style="left: 43%; width: 11%"></i></span>
+          </div>
+          <div class="wire-band">STORE-Team <span class="wt-right">Total Working Days: 4, Points / Day: 10</span></div>
+          <div class="wire-issue">
+            <span class="nm">Create a promotion</span>
+            <span class="track"><i class="b hot" style="left: 0%; width: 2%"></i></span>
+          </div>
+        </div>
+        <div class="scrollcut">⋮ grid continues</div>
+      </div>
+      <div class="notes">
+        <ul>
+          <li>Collapsed by default in tall plans, expanded when the plan is short. Or remember the last state.</li>
+          <li>
+            Expanded it is ~150px. The grid is scrollable and already taller than the viewport, so pushing it down costs
+            nothing it did not already cost.
+          </li>
+          <li>
+            The bar itself is <b>sticky</b>: scroll into the grid and the one-line summary stays pinned under the
+            controls, so the entry point is never off-screen.
+          </li>
+          <li>
+            Both tables are on screen together, which is what makes the bidirectional selection in section 4 legible:
+            you click in one and watch the other respond.
+          </li>
+          <li>
+            Clicking an epic row keeps the panel open, lights the routes containing it, and highlights it in the grid.
+            Clicking a route does the mirror image.
+          </li>
+        </ul>
+        <p class="tradeoff">
+          <span class="good"
+            >+ Fixes discoverability with a 28px permanent cost. Both tables keep their designed shape. Grid stays
+            co-visible. Nothing is a mode.</span
+          ><br /><span class="bad"
+            >− Expanded, the grid starts ~180px down. Two scroll regions on one page needs care.</span
+          >
+        </p>
+      </div>
+    </div>
+
+    <!-- OPTION B -->
+    <h3>B · Docked right rail, always open</h3>
+    <div class="stage">
+      <div class="wire">
+        <div class="wire-top">
+          <span class="pill primary">Create new report</span><span class="pill ghost">Saved reports ▾</span
+          ><span class="pill ghost">⛶</span>
+        </div>
+        <div class="wire-controls">
+          <div class="field">
+            <span class="field-label">Report type</span><span class="pill">Auto-Scheduler ▾</span>
+          </div>
+          <div class="field"><span class="field-label">Report on</span><span class="pill">Epic ▾</span></div>
+          <div class="slider">
+            <div class="slider-track"><i></i><span class="slider-thumb"></span></div>
+            <div class="slider-ticks">
+              <span>Median</span><span>Average</span><span>60%</span><span>70%</span><span>80%</span><span>90%</span>
+            </div>
+          </div>
+          <div class="field"><span class="field-label">Start date</span><span class="pill input">09/12/2026</span></div>
+          <span class="pill primary">Update Epic Dates</span>
+        </div>
+        <div style="display: flex">
+          <div style="flex: 1; min-width: 0">
+            <div class="wire-grid">
+              <div class="wire-band">ORDER-Team <span class="wt-right">87 days</span></div>
+              <div class="wire-issue">
+                <span class="nm" style="width: 84px">Add promotion to cart</span>
+                <span class="track"><i class="b hot" style="left: 2%; width: 41%"></i></span>
+              </div>
+              <div class="wire-issue faded">
+                <span class="nm" style="width: 84px">Add a promo 100</span>
+                <span class="track"><i class="b" style="left: 65%; width: 4%"></i></span>
+              </div>
+              <div class="wire-issue">
+                <span class="nm" style="width: 84px">Wrong promo entered</span>
+                <span class="track"><i class="b hot" style="left: 43%; width: 11%"></i></span>
+              </div>
+              <div class="wire-band">STORE-Team <span class="wt-right">4 days</span></div>
+              <div class="wire-issue">
+                <span class="nm" style="width: 84px">Create a promotion</span>
+                <span class="track"><i class="b hot" style="left: 0%; width: 2%"></i></span>
+              </div>
+              <div class="wire-band">MARKETING <span class="wt-right">52 days</span></div>
+              <div class="wire-issue faded">
+                <span class="nm" style="width: 84px">Create promotion</span>
+                <span class="track"><i class="b" style="left: 1%; width: 14%"></i></span>
+              </div>
+            </div>
+          </div>
+          <div style="width: 210px; border-left: 1px solid var(--neutral-30); background: var(--neutral-10)">
+            <div class="panel stacked" style="padding: 7px; border-bottom: none">
+              <div class="mini">
+                <div class="mini-head">Critical path <span class="sub">53.8 / 91 d</span></div>
+                <div class="mrow sel">
+                  <span class="m-name">Add promotion to cart</span><span class="m-num">35.4</span>
+                </div>
+                <div class="mrow"><span class="m-name">Wrong promo entered</span><span class="m-num">7.3</span></div>
+                <div class="mrow"><span class="m-name">End-date handling</span><span class="m-num">2.3</span></div>
+                <div class="mrow"><span class="m-name">Create promotion 100</span><span class="m-num">1.8</span></div>
+                <div class="mrow foot"><span class="m-name">+ 12 more</span><span class="m-num">6.9</span></div>
+              </div>
+              <div class="mini">
+                <div class="mini-head">Routes</div>
+                <div class="route-mini"><b>65%</b><span>Create a promo → … → Wrong promo</span></div>
+                <div class="route-mini"><b>16%</b><span>Create a promo → … → end-date</span></div>
+                <div class="route-mini dim"><b>19%</b><span>7 other routes</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="scrollcut">⋮ grid continues</div>
+      </div>
+      <div class="notes">
+        <ul>
+          <li>Costs horizontal space instead of vertical. The rail scrolls with the page and is never hidden.</li>
+          <li>
+            Stacking the two tables vertically in a narrow column is the only way they both fit, and it destroys both.
+          </li>
+        </ul>
+        <p class="tradeoff">
+          <span class="good">+ Permanently visible without pushing the grid down at all. Both tables always up.</span
+          ><br /><span class="bad"
+            >− The Gantt is the widest thing in the product and 210px hurts it badly on a laptop. Epic names in the
+            table truncate to uselessness at this width — "Promotion end-date error handling" does not fit. Routes,
+            which are chains of names, fit even worse.</span
+          >
+        </p>
+      </div>
+    </div>
+
+    <!-- OPTION C -->
+    <h3>C · Controls dropdown with two tabs <span class="badge">extends the earlier choice</span></h3>
+    <div class="stage">
+      <div class="wire" style="position: relative">
+        <div class="wire-top">
+          <span class="pill primary">Create new report</span><span class="pill ghost">Saved reports ▾</span
+          ><span class="pill ghost">⛶</span>
+        </div>
+        <div class="wire-controls">
+          <div class="field">
+            <span class="field-label">Report type</span><span class="pill">Auto-Scheduler ▾</span>
+          </div>
+          <div class="field"><span class="field-label">Report on</span><span class="pill">Epic ▾</span></div>
+          <div class="field">
+            <span class="field-label">&nbsp;</span><span class="pill active">Critical path ▾</span>
+          </div>
+          <div class="slider">
+            <div class="slider-track"><i></i><span class="slider-thumb"></span></div>
+            <div class="slider-ticks">
+              <span>Median</span><span>Average</span><span>60%</span><span>70%</span><span>80%</span><span>90%</span>
+            </div>
+          </div>
+          <div class="field"><span class="field-label">Start date</span><span class="pill input">09/12/2026</span></div>
+          <span class="pill primary">Update Epic Dates</span>
+        </div>
+        <div class="dd">
+          <div class="dd-tabs">
+            <span class="dd-tab on">Epics</span><span class="dd-tab">Routes</span>
+            <span style="flex: 1"></span>
+            <span class="dd-tab" style="color: var(--subtle)">53.8 / 91 d</span>
+          </div>
+          <div class="mrow sel">
+            <span class="m-name">Add promotion to cart <span class="m-team">· ORDER</span></span>
+            <span class="m-num">35.4</span><span class="m-pct">83%</span>
+          </div>
+          <div class="mrow">
+            <span class="m-name">Wrong promotion entered <span class="m-team">· ORDER</span></span>
+            <span class="m-num">7.3</span><span class="m-pct">65%</span>
+          </div>
+          <div class="mrow">
+            <span class="m-name">Promotion end-date error handling <span class="m-team">· ORDER</span></span>
+            <span class="m-num">2.3</span><span class="m-pct">16%</span>
+          </div>
+          <div class="mrow">
+            <span class="m-name">Create promotion 100 <span class="m-team">· MARKETING</span></span>
+            <span class="m-num">1.8</span><span class="m-pct">4%</span>
+          </div>
+          <div class="dd-foot"><button class="btn">Open full Critical Path report →</button></div>
+        </div>
+        <div class="wire-grid" style="margin-top: 150px">
+          <div class="wire-band">ORDER-Team <span class="wt-right">Total Working Days: 87, Points / Day: 1</span></div>
+          <div class="wire-issue">
+            <span class="nm">Add promotion to cart</span>
+            <span class="track"><i class="b hot" style="left: 2%; width: 41%"></i></span>
+          </div>
+          <div class="wire-issue faded">
+            <span class="nm">Wrong promotion entered</span>
+            <span class="track"><i class="b" style="left: 43%; width: 11%"></i></span>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <ul>
+          <li>
+            The placement chosen in <code>critical-paths.html</code> section 3, with a tab strip added for table 2.
+          </li>
+          <li>Zero layout cost. Overlays the grid rather than displacing it.</li>
+        </ul>
+        <p class="tradeoff">
+          <span class="good">+ Cheapest to build. Keeps the grid at full size.</span><br /><span class="bad"
+            >− Its own recorded downside is our exact complaint: "still a thing you have to know to click." Worse here
+            than before, because the tab strip hides one of the two tables behind a <em>second</em> click. And an open
+            dropdown covers the grid it is supposed to let you click into.</span
+          >
+        </p>
+      </div>
+    </div>
+
+    <!-- OPTION D -->
+    <h3>D · Sticky bar pinned to the bottom of the viewport</h3>
+    <div class="stage">
+      <div class="wire">
+        <div class="wire-top">
+          <span class="pill primary">Create new report</span><span class="pill ghost">Saved reports ▾</span
+          ><span class="pill ghost">⛶</span>
+        </div>
+        <div class="wire-controls">
+          <div class="field">
+            <span class="field-label">Report type</span><span class="pill">Auto-Scheduler ▾</span>
+          </div>
+          <div class="field"><span class="field-label">Report on</span><span class="pill">Epic ▾</span></div>
+          <div class="slider">
+            <div class="slider-track"><i></i><span class="slider-thumb"></span></div>
+            <div class="slider-ticks">
+              <span>Median</span><span>Average</span><span>60%</span><span>65%</span><span>70%</span><span>75%</span
+              ><span>80%</span><span>85%</span><span>90%</span>
+            </div>
+          </div>
+          <div class="field"><span class="field-label">Start date</span><span class="pill input">09/12/2026</span></div>
+          <span class="pill primary">Update Epic Dates</span>
+        </div>
+        <div class="wire-grid">
+          <div class="wire-band">
+            Summary <span class="wt-right">91 working days · average · GSD 1.33 · Confidence: 80%</span>
+          </div>
+          <div class="wire-band">ORDER-Team <span class="wt-right">Total Working Days: 87, Points / Day: 1</span></div>
+          <div class="wire-issue">
+            <span class="nm">Add promotion to cart</span>
+            <span class="track"><i class="b hot" style="left: 2%; width: 41%"></i></span>
+          </div>
+          <div class="wire-issue faded">
+            <span class="nm">Add a promotion to the cart 100</span>
+            <span class="track"><i class="b" style="left: 65%; width: 4%"></i></span>
+          </div>
+          <div class="wire-issue">
+            <span class="nm">Wrong promotion entered</span>
+            <span class="track"><i class="b hot" style="left: 43%; width: 11%"></i></span>
+          </div>
+          <div class="wire-band">MARKETING <span class="wt-right">Total Working Days: 52, Points / Day: 4</span></div>
+          <div class="wire-issue faded">
+            <span class="nm">Create promotion</span>
+            <span class="track"><i class="b" style="left: 1%; width: 14%"></i></span>
+          </div>
+          <div class="wire-issue faded">
+            <span class="nm">Create and publish ad</span>
+            <span class="track"><i class="b" style="left: 42%; width: 13%"></i></span>
+          </div>
+        </div>
+        <div class="sumbar sticky-bottom">
+          <span class="sb-label">Critical path</span>
+          <span class="sb-stat"><b>53.8 d</b> of <b>91 d</b></span>
+          <span class="sb-gap">· 37.2 d queueing</span>
+          <span class="sb-stat">· top <b>Add promotion to cart</b></span>
+          <span class="sb-right">Details <span class="sb-caret">▴</span></span>
+        </div>
+      </div>
+      <div class="notes">
+        <ul>
+          <li>
+            Identical to A, except the bar is fixed to the bottom edge of the viewport rather than under the controls.
+          </li>
+          <li>Expanding lifts the same two-table panel up over the grid.</li>
+        </ul>
+        <p class="tradeoff">
+          <span class="good">+ Never displaces the grid at all; unmissable at any scroll position.</span><br /><span
+            class="bad"
+            >− Expanding upward covers the bottom of the grid, which is exactly where the click target you just selected
+            may be. Also collides with the report footer and the print/PDF path.</span
+          >
+        </p>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>4 · Selection runs both ways</h2>
+    <p class="caption">
+      The two tables answer halves of the same question, so selection has to be symmetric. Pick an epic and you want to
+      know which chains it sits on; pick a chain and you want to know which epics compose it. Today neither direction
+      exists: routes are not clickable at all, and selecting an epic <em>filters</em> the routes list rather than
+      highlighting within it, which throws away the comparison you selected in order to make.
+    </p>
+
+    <div class="stage">
+      <div>
+        <h3 style="margin-top: 0">Selecting an epic &rarr; its routes light up</h3>
+        <div class="panel" style="width: 820px; border: 1px solid var(--neutral-30); border-radius: 4px">
+          <div class="mini">
+            <div class="mini-head">Epics on the critical path <span class="sub">53.8 d total</span></div>
+            <div class="mrow sel">
+              <span class="m-name">Add promotion to cart <span class="m-team">· ORDER-Team</span></span>
+              <span class="m-bar"><i style="width: 100%"></i></span>
+              <span class="m-num">35.4</span><span class="m-pct">83%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Wrong promotion entered <span class="m-team">· ORDER-Team</span></span>
+              <span class="m-bar"><i style="width: 21%"></i></span>
+              <span class="m-num">7.3</span><span class="m-pct">65%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Promotion end-date error handling <span class="m-team">· ORDER-Team</span></span>
+              <span class="m-bar"><i style="width: 6%"></i></span>
+              <span class="m-num">2.3</span><span class="m-pct">16%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Create promotion 100 <span class="m-team">· MARKETING</span></span>
+              <span class="m-bar"><i style="width: 5%"></i></span>
+              <span class="m-num">1.8</span><span class="m-pct">4%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Create a promotion <span class="m-team">· STORE-Team</span></span>
+              <span class="m-bar"><i style="width: 3%"></i></span>
+              <span class="m-num">1.0</span><span class="m-pct">87%</span>
+            </div>
+            <div class="mrow">
+              <span class="m-name">Verify promotion is available <span class="m-team">· STORE-Team</span></span>
+              <span class="m-bar"><i style="width: 2%"></i></span>
+              <span class="m-num">0.5</span><span class="m-pct">83%</span>
+            </div>
+          </div>
+          <div class="mini rail" style="width: 320px">
+            <div class="mini-head">Most common critical paths <span class="sub">9 routes</span></div>
+            <div class="route-mini">
+              <b>65%</b
+              ><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → Wrong promotion</span>
+            </div>
+            <div class="route-mini">
+              <b>16%</b><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → end-date</span>
+            </div>
+            <div class="route-mini dim"><b>4%</b><span>Create a promotion 100 → Create promotion 100</span></div>
+            <div class="route-mini dim"><b>4%</b><span>Create a promotion → Create promotion</span></div>
+            <div class="route-mini dim"><b>3%</b><span>Create and publish ad</span></div>
+            <div class="route-mini dim"><b>8%</b><span>4 other routes</span></div>
+          </div>
+        </div>
+        <p class="caption" style="margin-top: 6px">
+          The two lit routes sum to 81% — close to the epic's own 83%, and the 2% difference is the tail. Dimming rather
+          than filtering is what makes that arithmetic visible.
+        </p>
+      </div>
+    </div>
+
+    <div class="stage" style="margin-top: 18px">
+      <div>
+        <h3 style="margin-top: 0">Selecting a route &rarr; its epics light up</h3>
+        <div class="panel" style="width: 820px; border: 1px solid var(--neutral-30); border-radius: 4px">
+          <div class="mini">
+            <div class="mini-head">Epics on the critical path <span class="sub">4 of 16 on this route</span></div>
+            <div class="mrow sel">
+              <span class="m-name">Add promotion to cart <span class="m-team">· ORDER-Team</span></span>
+              <span class="m-bar"><i style="width: 100%"></i></span>
+              <span class="m-num">35.4</span><span class="m-pct">83%</span>
+            </div>
+            <div class="mrow sel">
+              <span class="m-name">Wrong promotion entered <span class="m-team">· ORDER-Team</span></span>
+              <span class="m-bar"><i style="width: 21%"></i></span>
+              <span class="m-num">7.3</span><span class="m-pct">65%</span>
+            </div>
+            <div class="mrow" style="opacity: 0.34">
+              <span class="m-name">Promotion end-date error handling <span class="m-team">· ORDER-Team</span></span>
+              <span class="m-bar"><i style="width: 6%"></i></span>
+              <span class="m-num">2.3</span><span class="m-pct">16%</span>
+            </div>
+            <div class="mrow" style="opacity: 0.34">
+              <span class="m-name">Create promotion 100 <span class="m-team">· MARKETING</span></span>
+              <span class="m-bar"><i style="width: 5%"></i></span>
+              <span class="m-num">1.8</span><span class="m-pct">4%</span>
+            </div>
+            <div class="mrow sel">
+              <span class="m-name">Create a promotion <span class="m-team">· STORE-Team</span></span>
+              <span class="m-bar"><i style="width: 3%"></i></span>
+              <span class="m-num">1.0</span><span class="m-pct">87%</span>
+            </div>
+            <div class="mrow sel">
+              <span class="m-name">Verify promotion is available <span class="m-team">· STORE-Team</span></span>
+              <span class="m-bar"><i style="width: 2%"></i></span>
+              <span class="m-num">0.5</span><span class="m-pct">83%</span>
+            </div>
+          </div>
+          <div class="mini rail" style="width: 320px">
+            <div class="mini-head">Most common critical paths <span class="sub">9 routes</span></div>
+            <div class="route-mini" style="background: var(--brand-bg)">
+              <b>65%</b><span>Create a promotion → Verify promotion → Add promotion to cart → Wrong promotion</span>
+            </div>
+            <div class="route-mini dim">
+              <b>16%</b><span>Create a promotion → Verify promotion → … → end-date</span>
+            </div>
+            <div class="route-mini dim"><b>4%</b><span>Create a promotion 100 → Create promotion 100</span></div>
+            <div class="route-mini dim"><b>4%</b><span>Create a promotion → Create promotion</span></div>
+            <div class="route-mini dim"><b>3%</b><span>Create and publish ad</span></div>
+            <div class="route-mini dim"><b>8%</b><span>4 other routes</span></div>
+          </div>
+        </div>
+        <p class="caption" style="margin-top: 6px">
+          The four lit epics sum to 44.2 of the route's days — 35.4 + 7.3 + 1.0 + 0.5 — so you can read straight off it
+          that one epic owns 80% of the chain. That is the "which link do I attack" question, and it has no answer
+          today.
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <p><b>The model.</b> One selection, of one of two kinds, driving three surfaces.</p>
+      <ul class="tight" style="margin-top: 6px">
+        <li>
+          <code>{ kind: 'epic', key }</code> — lights the epic row, every route containing it, and the epic in the
+          Gantt.
+        </li>
+        <li>
+          <code>{ kind: 'route', id }</code> — lights the route row, every epic on it, and the whole chain in the Gantt.
+        </li>
+        <li><code>null</code> — nothing dimmed.</li>
+      </ul>
+      <p style="margin-top: 6px">
+        Clicking a lit row again clears the selection. Dim, never filter — the same call
+        <code>critical-paths.html</code> option A made for the grid.
+      </p>
+    </div>
+
+    <div class="note warn">
+      <p>
+        <b>This kills the "merge the two tables" idea</b> that an earlier draft of this page recommended. Folding routes
+        into an expandable detail row under each epic supports epic&nbsp;&rarr;&nbsp;routes and makes
+        route&nbsp;&rarr;&nbsp;epics impossible, because a route no longer has a row to click. Bidirectional selection
+        requires two peer tables, side by side, both on screen at once.
+      </p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>5 · The combination — B with a toggle, plus a compact confidence control</h2>
+    <p class="caption">
+      B's fatal flaw was that a permanent 210px rail wrecks both tables and squeezes the Gantt. Two changes fix it. A
+      toggle on the far right of the controls row makes the rail optional, so the Gantt is full width whenever you are
+      not using it. And replacing the ~600px confidence slider with option D from
+      <code>confidence-control.html</code> — the drag-across segmented strip, ~230px — frees the room the toggle needs
+      to sit in the controls row at all.
+    </p>
+    <p class="caption">
+      <b>Both wireframes below are live.</b> Click <em>Critical path</em> to toggle the rail. Drag the divider between
+      the grid and the rail to resize it.
+    </p>
+
+    <h3>5a · Toggle button in the controls row</h3>
+    <div class="stage">
+      <div class="wire combo" id="combo">
+        <div class="wire-top">
+          <span class="pill primary">Create new report</span><span class="pill ghost">Saved reports ▾</span
+          ><span class="pill ghost">⛶</span>
+        </div>
+        <div class="wire-controls">
+          <div class="field">
+            <span class="field-label">Report type</span><span class="pill">Auto-Scheduler ▾</span>
+          </div>
+          <div class="field"><span class="field-label">Report on</span><span class="pill">Epic ▾</span></div>
+          <div class="field">
+            <span class="field-label">Confidence</span>
+            <span class="seg">
+              <i>Median</i><i>Avg</i><i>60</i><i>65</i><i>70</i><i>75</i><i class="on">80</i><i>85</i><i>90</i>
+            </span>
+          </div>
+          <div class="field"><span class="field-label">Start date</span><span class="pill input">09/12/2026</span></div>
+          <span class="pill primary">Update Epic Dates</span>
+          <span style="flex: 1"></span>
+          <span class="pill active js-toggle">◨ Critical path</span>
+        </div>
+        <div class="combo-body">
+          <div class="combo-grid">
+            <div class="wire-grid" style="margin: 8px">
+              <div class="wire-band">Summary <span class="wt-right">91 working days · average · GSD 1.33</span></div>
+              <div class="wire-band">ORDER-Team <span class="wt-right">Total Working Days: 87</span></div>
+              <div class="wire-issue">
+                <span class="nm">Add promotion to cart</span>
+                <span class="track"><i class="b hot" style="left: 2%; width: 41%"></i></span>
+              </div>
+              <div class="wire-issue faded">
+                <span class="nm">Add a promotion to the cart 100</span>
+                <span class="track"><i class="b" style="left: 65%; width: 4%"></i></span>
+              </div>
+              <div class="wire-issue">
+                <span class="nm">Wrong promotion entered</span>
+                <span class="track"><i class="b hot" style="left: 43%; width: 11%"></i></span>
+              </div>
+              <div class="wire-issue faded">
+                <span class="nm">Remove promotion from cart</span>
+                <span class="track"><i class="b" style="left: 60%; width: 5%"></i></span>
+              </div>
+              <div class="wire-band">STORE-Team <span class="wt-right">Total Working Days: 4</span></div>
+              <div class="wire-issue">
+                <span class="nm">Create a promotion</span>
+                <span class="track"><i class="b hot" style="left: 0%; width: 2%"></i></span>
+              </div>
+              <div class="wire-issue">
+                <span class="nm">Verify promotion is available</span>
+                <span class="track"><i class="b hot" style="left: 1%; width: 2%"></i></span>
+              </div>
+              <div class="wire-band">MARKETING <span class="wt-right">Total Working Days: 52</span></div>
+              <div class="wire-issue faded">
+                <span class="nm">Create promotion</span>
+                <span class="track"><i class="b" style="left: 1%; width: 14%"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="divider js-divider" title="Drag to resize"></div>
+          <div class="combo-rail js-rail">
+            <div class="rail-head">
+              <div>
+                <b>Critical path</b>
+                <span class="rail-stat"> <dfn>Dependency floor</dfn> 53.8 d · <dfn>queueing</dfn> 37.2 d </span>
+              </div>
+              <span class="rail-close js-toggle" title="Close">×</span>
+            </div>
+            <div class="mini" style="margin: 7px">
+              <div class="mini-head">Epics on the critical path</div>
+              <div class="mini-sub">How much each epic adds to the 53.8 d dependency floor</div>
+              <div class="mrow head">
+                <span class="m-name">Epic</span><span class="m-num">Days added</span><span class="m-pct">On path</span>
+              </div>
+              <div class="mrow sel">
+                <span class="m-name">Add promotion to cart</span><span class="m-num">35.4</span
+                ><span class="m-pct">83%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Wrong promotion entered</span><span class="m-num">7.3</span
+                ><span class="m-pct">65%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Promotion end-date error handling</span><span class="m-num">2.3</span
+                ><span class="m-pct">16%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Create promotion 100</span><span class="m-num">1.8</span
+                ><span class="m-pct">4%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Create a promotion</span><span class="m-num">1.0</span
+                ><span class="m-pct">87%</span>
+              </div>
+              <div class="mrow foot">
+                <span class="m-name">Critical path length</span><span class="m-num">53.8</span
+                ><span class="m-pct"></span>
+              </div>
+            </div>
+            <div class="mini" style="margin: 0 7px 7px">
+              <div class="mini-head">Most common critical paths</div>
+              <div class="mini-sub">How often each chain was the longest one · 9 routes</div>
+              <div class="mrow head">
+                <span class="m-name" style="order: 2">Chain</span
+                ><span class="m-pct" style="order: 1; text-align: left">Share</span>
+              </div>
+              <div class="route-mini wrap">
+                <b>65%</b
+                ><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → Wrong promotion</span>
+              </div>
+              <div class="route-mini wrap">
+                <b>16%</b><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → end-date</span>
+              </div>
+              <div class="route-mini wrap dim"><b>4%</b><span>Create a promotion 100 → Create promotion 100</span></div>
+              <div class="route-mini wrap dim"><b>3%</b><span>Create and publish ad</span></div>
+              <div class="route-mini wrap dim"><b>12%</b><span>5 other routes</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="scrollcut">⋮ grid continues</div>
+      </div>
+    </div>
+
+    <div class="notes" style="max-width: 780px">
+      <ul>
+        <li>
+          <b>The toggle is the fix.</b> B's cost only applies while the rail is open, and that is exactly when you want
+          it. Closed, the Gantt is full width and nothing has been taken away.
+        </li>
+        <li>
+          <b>Discoverability survives.</b> A permanent labelled control in the controls row is visible at any scroll
+          position, unlike a card several screens down. It is still "a thing you click", which was option C's flaw — but
+          C hid the entry point in a dropdown menu, while this is a labelled toggle sitting in the open.
+        </li>
+        <li>
+          <b>Resizing rescues the tables.</b> The criticism in section 3 was aimed at a fixed 210px. Dragged to 320px
+          the epic names fit; at 420px the route chains read comfortably.
+        </li>
+        <li>
+          <b>The confidence strip pays for the toggle.</b> Today's slider takes ~600px of flexible width. Option D at
+          ~230px returns roughly 370px — more than enough for the toggle, and it stops the row fighting over
+          <code>flex-grow</code>.
+        </li>
+      </ul>
+    </div>
+
+    <div class="note warn">
+      <p>
+        <b>The one thing this loses.</b> With the rail closed by default, a first-time user still never sees the
+        critical path. Defaulting it <em>open</em> costs first-paint width on every plan, including ones where nobody
+        wants it. A sensible compromise: open by default until the user closes it once, then remember the choice.
+      </p>
+    </div>
+
+    <h3>5b · The same rail, opened from a labelled spine instead <span class="badge rec">better</span></h3>
+    <p class="caption">
+      The toggle above still costs a slot in the controls row, and it sits nowhere near the thing it opens. A spine
+      pinned to the right edge of the report fixes both: it is always visible, it is exactly where the panel will
+      appear, and it costs ~26px of width instead of a control slot. <b>Click the spine to open and close it.</b>
+    </p>
+
+    <div class="stage">
+      <div class="wire combo rail-closed" id="combo2">
+        <div class="wire-top">
+          <span class="pill primary">Create new report</span><span class="pill ghost">Saved reports ▾</span
+          ><span class="pill ghost">⛶</span>
+        </div>
+        <div class="wire-controls">
+          <div class="field">
+            <span class="field-label">Report type</span><span class="pill">Auto-Scheduler ▾</span>
+          </div>
+          <div class="field"><span class="field-label">Report on</span><span class="pill">Epic ▾</span></div>
+          <div class="slider">
+            <div class="slider-track"><i></i><span class="slider-thumb"></span></div>
+            <div class="slider-ticks">
+              <span>Median</span><span>Average</span><span>60%</span><span>65%</span><span>70%</span><span>75%</span
+              ><span>80%</span><span>85%</span><span>90%</span>
+            </div>
+          </div>
+          <div class="field"><span class="field-label">Start date</span><span class="pill input">09/12/2026</span></div>
+          <span class="pill primary">Update Epic Dates</span>
+        </div>
+        <div class="combo-body">
+          <div class="combo-grid">
+            <div class="wire-grid" style="margin: 8px">
+              <div class="wire-band">Summary <span class="wt-right">91 working days · average · GSD 1.33</span></div>
+              <div class="wire-band">ORDER-Team <span class="wt-right">Total Working Days: 87</span></div>
+              <div class="wire-issue">
+                <span class="nm">Add promotion to cart</span>
+                <span class="track"><i class="b hot" style="left: 2%; width: 41%"></i></span>
+              </div>
+              <div class="wire-issue faded">
+                <span class="nm">Add a promotion to the cart 100</span>
+                <span class="track"><i class="b" style="left: 65%; width: 4%"></i></span>
+              </div>
+              <div class="wire-issue">
+                <span class="nm">Wrong promotion entered</span>
+                <span class="track"><i class="b hot" style="left: 43%; width: 11%"></i></span>
+              </div>
+              <div class="wire-band">STORE-Team <span class="wt-right">Total Working Days: 4</span></div>
+              <div class="wire-issue">
+                <span class="nm">Create a promotion</span>
+                <span class="track"><i class="b hot" style="left: 0%; width: 2%"></i></span>
+              </div>
+              <div class="wire-issue">
+                <span class="nm">Verify promotion is available</span>
+                <span class="track"><i class="b hot" style="left: 1%; width: 2%"></i></span>
+              </div>
+              <div class="wire-band">MARKETING <span class="wt-right">Total Working Days: 52</span></div>
+              <div class="wire-issue faded">
+                <span class="nm">Create promotion</span>
+                <span class="track"><i class="b" style="left: 1%; width: 14%"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="divider js-divider" title="Drag to resize"></div>
+          <div class="combo-rail js-rail">
+            <div class="rail-head">
+              <div>
+                <b>Critical path</b>
+                <span class="rail-stat"> <dfn>Dependency floor</dfn> 53.8 d · <dfn>queueing</dfn> 37.2 d </span>
+              </div>
+              <span class="rail-close js-toggle" title="Close">×</span>
+            </div>
+            <div class="mini" style="margin: 7px">
+              <div class="mini-head">Epics on the critical path</div>
+              <div class="mini-sub">How much each epic adds to the 53.8 d dependency floor</div>
+              <div class="mrow head">
+                <span class="m-name">Epic</span><span class="m-num">Days added</span><span class="m-pct">On path</span>
+              </div>
+              <div class="mrow sel">
+                <span class="m-name">Add promotion to cart</span><span class="m-num">35.4</span
+                ><span class="m-pct">83%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Wrong promotion entered</span><span class="m-num">7.3</span
+                ><span class="m-pct">65%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Promotion end-date error handling</span><span class="m-num">2.3</span
+                ><span class="m-pct">16%</span>
+              </div>
+              <div class="mrow foot">
+                <span class="m-name">Critical path length</span><span class="m-num">53.8</span
+                ><span class="m-pct"></span>
+              </div>
+            </div>
+            <div class="mini" style="margin: 0 7px 7px">
+              <div class="mini-head">Most common critical paths</div>
+              <div class="mini-sub">How often each chain was the longest one · 9 routes</div>
+              <div class="mrow head">
+                <span class="m-name" style="order: 2">Chain</span
+                ><span class="m-pct" style="order: 1; text-align: left">Share</span>
+              </div>
+              <div class="route-mini wrap">
+                <b>65%</b
+                ><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → Wrong promotion</span>
+              </div>
+              <div class="route-mini wrap">
+                <b>16%</b><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → end-date</span>
+              </div>
+              <div class="route-mini wrap dim"><b>19%</b><span>7 other routes</span></div>
+            </div>
+          </div>
+          <div class="spine js-toggle">
+            <span class="spine-closed-only">◧ Critical path</span>
+            <span class="spine-closed-only spine-stat">floor 53.8 d</span>
+            <span class="spine-open-only">▸ Critical path</span>
+          </div>
+        </div>
+        <div class="scrollcut">⋮ grid continues</div>
+      </div>
+    </div>
+
+    <div class="notes" style="max-width: 780px">
+      <ul>
+        <li>
+          <b>It answers the "default open or closed" question.</b> Closed is no longer a discoverability failure,
+          because the label is still on screen. So it can default closed and cost nothing.
+        </li>
+        <li>
+          <b>It decouples from the confidence control.</b> The spine needs no room in the controls row, so the segmented
+          strip becomes a good idea on its own merits rather than a prerequisite. The wireframe above keeps today's
+          slider to make that point.
+        </li>
+        <li>
+          <b>It is self-locating.</b> The affordance is physically attached to the panel it opens, so there is no "where
+          did that come from" moment — unlike a button at the opposite end of the controls row.
+        </li>
+        <li>
+          <b>It can carry the headline.</b> <code>53.8 of 91 d</code> fits on the spine, so the single most useful
+          number is visible even while the panel is shut.
+        </li>
+      </ul>
+      <p class="tradeoff">
+        <span class="good"
+          >+ Always visible, zero control-row cost, self-locating, and the closed state still informs.</span
+        ><br /><span class="bad"
+          >− Rotated text is slower to read and is an unusual pattern in this product. Needs a real button element with
+          <code>aria-expanded</code> so the rotation stays purely visual.</span
+        >
+      </p>
+    </div>
+
+    <h3>5c · Reclaiming the spine's 26px while the rail is open</h3>
+    <p class="caption">
+      A permanent spine is dead weight once the panel it opens is already open — 26px of the Gantt spent on a control
+      whose only job is to close something you can see. Four ways out, scored on what the open state costs.
+    </p>
+
+    <table class="cmp" style="margin-bottom: 16px">
+      <thead>
+        <tr>
+          <th style="width: 210px">Option</th>
+          <th>Open state costs</th>
+          <th>Close affordance when open</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>1</b> · Spine always present</td>
+          <td class="no">26px + 5px divider</td>
+          <td>Spine, stable position</td>
+          <td>What 5b does. The 26px is the complaint.</td>
+        </tr>
+        <tr style="background: #f0fdf6">
+          <td><b>2</b> · Spine only while closed; divider grows a grip <span class="badge rec">chosen</span></td>
+          <td class="yes">5px divider only — the grip overflows it</td>
+          <td>Grip on the divider, plus × in the header</td>
+          <td>Zero extra width. The divider already had to be there.</td>
+        </tr>
+        <tr>
+          <td><b>3</b> · Spine only while closed; × in header only</td>
+          <td class="yes">5px divider only</td>
+          <td>× in the header</td>
+          <td>Also free, but the collapse control is far from the edge you drag.</td>
+        </tr>
+        <tr>
+          <td><b>4</b> · Spine floats over the rail</td>
+          <td class="mid">0px of layout, but covers content</td>
+          <td>Floating spine</td>
+          <td>Obscures the table under it and reads as a bug.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="caption">
+      <b>Live.</b> Open it from the spine. Once open the spine is gone; the divider carries a grip — drag it to resize,
+      or click it to collapse. The × in the header does the same.
+    </p>
+
+    <div class="stage">
+      <div class="wire combo rail-closed spine-when-closed grip" id="combo3">
+        <div class="wire-top">
+          <span class="pill primary">Create new report</span><span class="pill ghost">Saved reports ▾</span
+          ><span class="pill ghost">⛶</span>
+        </div>
+        <div class="wire-controls">
+          <div class="field">
+            <span class="field-label">Report type</span><span class="pill">Auto-Scheduler ▾</span>
+          </div>
+          <div class="field"><span class="field-label">Report on</span><span class="pill">Epic ▾</span></div>
+          <div class="slider">
+            <div class="slider-track"><i></i><span class="slider-thumb"></span></div>
+            <div class="slider-ticks">
+              <span>Median</span><span>Average</span><span>60%</span><span>65%</span><span>70%</span><span>75%</span
+              ><span>80%</span><span>85%</span><span>90%</span>
+            </div>
+          </div>
+          <div class="field"><span class="field-label">Start date</span><span class="pill input">09/12/2026</span></div>
+          <span class="pill primary">Update Epic Dates</span>
+        </div>
+        <div class="combo-body">
+          <div class="combo-grid">
+            <div class="wire-grid" style="margin: 8px">
+              <div class="wire-band">Summary <span class="wt-right">91 working days · average · GSD 1.33</span></div>
+              <div class="wire-band">ORDER-Team <span class="wt-right">Total Working Days: 87</span></div>
+              <div class="wire-issue">
+                <span class="nm">Add promotion to cart</span>
+                <span class="track"><i class="b hot" style="left: 2%; width: 41%"></i></span>
+              </div>
+              <div class="wire-issue faded">
+                <span class="nm">Add a promotion to the cart 100</span>
+                <span class="track"><i class="b" style="left: 65%; width: 4%"></i></span>
+              </div>
+              <div class="wire-issue">
+                <span class="nm">Wrong promotion entered</span>
+                <span class="track"><i class="b hot" style="left: 43%; width: 11%"></i></span>
+              </div>
+              <div class="wire-band">STORE-Team <span class="wt-right">Total Working Days: 4</span></div>
+              <div class="wire-issue">
+                <span class="nm">Create a promotion</span>
+                <span class="track"><i class="b hot" style="left: 0%; width: 2%"></i></span>
+              </div>
+              <div class="wire-issue">
+                <span class="nm">Verify promotion is available</span>
+                <span class="track"><i class="b hot" style="left: 1%; width: 2%"></i></span>
+              </div>
+              <div class="wire-band">MARKETING <span class="wt-right">Total Working Days: 52</span></div>
+              <div class="wire-issue faded">
+                <span class="nm">Create promotion</span>
+                <span class="track"><i class="b" style="left: 1%; width: 14%"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="divider js-divider" title="Drag to resize · click to collapse">
+            <span class="divider-grip">▸</span>
+          </div>
+          <div class="combo-rail js-rail">
+            <div class="rail-head">
+              <div>
+                <b>Critical path</b>
+                <span class="rail-stat"> <dfn>Dependency floor</dfn> 53.8 d · <dfn>queueing</dfn> 37.2 d </span>
+              </div>
+              <span class="rail-close js-toggle" title="Close">×</span>
+            </div>
+            <div class="mini" style="margin: 7px">
+              <div class="mini-head">Most common critical paths</div>
+              <div class="mini-sub">How often each chain was the longest one · 9 routes</div>
+              <div class="mrow head">
+                <span class="m-name" style="order: 2">Chain</span
+                ><span class="m-pct" style="order: 1; text-align: left">Share</span>
+              </div>
+              <div class="route-mini wrap">
+                <b>65%</b
+                ><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → Wrong promotion</span>
+              </div>
+              <div class="route-mini wrap">
+                <b>16%</b><span>Create a promotion → Verify promotion → <u>Add promotion to cart</u> → end-date</span>
+              </div>
+              <div class="route-mini wrap dim"><b>19%</b><span>7 other routes</span></div>
+            </div>
+            <div class="mini" style="margin: 0 7px 7px">
+              <div class="mini-head">Epics on the critical path</div>
+              <div class="mini-sub">Days each epic adds to the dependency floor</div>
+              <div class="mrow head">
+                <span class="m-name">Epic</span><span class="m-num">Days added</span><span class="m-pct">On path</span>
+              </div>
+              <div class="mrow sel">
+                <span class="m-name">Add promotion to cart</span><span class="m-num">35.4</span
+                ><span class="m-pct">83%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Wrong promotion entered</span><span class="m-num">7.3</span
+                ><span class="m-pct">65%</span>
+              </div>
+              <div class="mrow">
+                <span class="m-name">Promotion end-date error handling</span><span class="m-num">2.3</span
+                ><span class="m-pct">16%</span>
+              </div>
+              <div class="mrow" style="color: var(--subtle)">
+                <span class="m-name">13 other epics</span><span class="m-num">8.8</span><span class="m-pct"></span>
+              </div>
+            </div>
+          </div>
+          <div class="spine js-toggle">
+            <span class="spine-closed-only">◧ Critical path</span>
+            <span class="spine-closed-only spine-stat">floor 53.8 d</span>
+          </div>
+        </div>
+        <div class="scrollcut">⋮ grid continues</div>
+      </div>
+    </div>
+
+    <div class="notes" style="max-width: 780px">
+      <ul>
+        <li>
+          <b>The grip is free.</b> It is absolutely positioned and overflows the 5px divider, so it occupies no layout
+          width at all. The divider had to exist for the drag regardless.
+        </li>
+        <li>
+          <b>Click versus drag is a distance test.</b> If the pointer never travelled more than 3px between
+          <code>pointerdown</code> and <code>pointerup</code>, treat it as a click and collapse. Four lines.
+        </li>
+        <li>
+          <b>The affordance still does not wander far.</b> Closed, it is the spine at the right edge. Open, it is the
+          grip a few hundred pixels to the left — but it is exactly where the panel boundary now is, which is where you
+          would reach to push it away.
+        </li>
+        <li>
+          <b>Two ways to close is correct here.</b> The × is what most people look for; the grip is what someone already
+          resizing will use without moving their hand.
+        </li>
+      </ul>
+      <p class="tradeoff">
+        <span class="good"
+          >+ Open state costs 5px instead of 31px. Closed state keeps the full label and the floor figure.</span
+        ><br /><span class="bad"
+          >− The toggle target moves between states, so there is no single stable hit point. A click-to-collapse divider
+          is also undiscoverable without the grip, which is why the grip is not optional.</span
+        >
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <b>The "Critical path length" footer is gone, and 5c is the current content treatment</b> — 5a and 5b above
+        still show the old one, because they exist to compare placement rather than content.
+      </p>
+      <p>
+        <code>earliest-finish.html</code> section 7 put the total in the table footer deliberately: "it is a total, not
+        a headline." That was right for a full-width card with no header stat. In the rail it is wrong, because
+        <b>53.8 was appearing three times in one panel</b> — in the header, in the caption under the card title, and
+        again in the footer. Exactly the duplication that got <code>91 d</code> removed.
+      </p>
+      <p>
+        The header keeps it, because it is the one place that pairs it with the queueing gap and stays visible while the
+        list scrolls. The footer is replaced by a residual row, which is strictly more informative: it says the list is
+        truncated, and it still lets you check the arithmetic against the header.
+      </p>
+    </div>
+
+    <div class="note warn">
+      <p>
+        <b>Do not restate the plan finish in the rail.</b> The Summary band at the top of the grid already carries it,
+        two inches away. Repeating <code>91 d</code> in the rail header buys nothing.
+      </p>
+      <p>
+        <b>And restating it would be actively wrong at most slider positions.</b>
+        <code>planEstimateText</code> in <code>AutoScheduler.tsx</code> tracks the confidence slider: a single mean at
+        <em>average</em>, a single value at <em>median</em>, and a <code>planBottomDays–planTopDays</code>
+        <em>range</em> at every percentile. The critical path length does not track it at all —
+        <code>meanPathLength()</code> is unconditionally the mean across iterations, because that is the only statistic
+        for which the per-epic days sum to the total.
+      </p>
+      <p>
+        So at 80% confidence the Summary might read <code>98–112 working days</code> while the floor is still 53.8. A
+        “gap” computed across those is a percentile minus a mean, which is not a quantity. Either the gap is shown
+        <b>only at <em>average</em></b
+        >, or it is labelled as being against the average finish regardless of the slider.
+      </p>
+      <p>
+        <b>Median is not a safe third option either</b>, which an earlier draft of this page got wrong. Two reasons. The
+        plan's median finish and the floor's mean are different statistics, and with <code>GSD 1.33</code> the
+        distribution is right-skewed, so median &lt; mean and the gap would be understated. And the per-epic
+        decomposition fails outright at the median: an epic's contribution is <b>zero</b> on every run it is not on the
+        path, so any epic on the path less than half the time has a median contribution of exactly 0. A median column
+        would read <code>0.0</code> for most of the table.
+      </p>
+    </div>
+
+    <h3>5d · Vertical budget — two capped scroll regions, expandable residuals</h3>
+    <p class="caption">
+      Yes, it depends on browser height — but nothing needs measuring in JS, and the two tables do not need to negotiate
+      for space at all.
+    </p>
+
+    <div class="note">
+      <p>
+        <b>1 · The report area is already a bounded scroll container.</b> <code>TimelineReport.tsx</code> renders
+        <code>&lt;div class="fullish-vh … overflow-y-auto"&gt;</code>, and
+        <code>updateFullishHeightSection()</code> writes its page offset into a CSS variable on
+        <code>&lt;html&gt;</code>, refreshed on <code>load</code> and <code>resize</code>. There is even a utility that
+        consumes it: <code>.height-fullish-vh { height: calc(100vh - var(--fullish-document-top)) }</code>.
+      </p>
+      <p>
+        So the rail's height budget is <b>already computed and published</b>. The rail caps itself with
+        <code>max-height: calc(100vh - var(--fullish-document-top))</code> and needs no <code>ResizeObserver</code> of
+        its own.
+      </p>
+      <p>
+        <b>2 · The rail must be <code>position: sticky; top: 0</code>.</b> This is not cosmetic. The grid scrolls inside
+        that container, so a statically positioned rail scrolls away with it — and forty epics down the Gantt the tables
+        would be off screen, destroying the co-visibility that justified this whole layout in section 1.
+      </p>
+    </div>
+
+    <p class="caption">
+      Within that budget: <b>each table is capped at a row count and scrolls inside its own cap.</b> Epics get 10 rows,
+      routes get 5. Neither can be starved by the other, because neither is claiming the leftovers. The residual row at
+      the bottom of each is a button — click <code>6 other epics</code> and the rest write out in place; click again to
+      collapse.
+    </p>
+
+    <div class="note warn">
+      <p>
+        <b>Two earlier drafts of this section were wrong, in opposite directions.</b>
+      </p>
+      <p>
+        The first gave the epics card the flex remainder and let routes keep their natural height. Measured, the fixed
+        furniture came to ~300px, so at a 300px budget the epics list got <b>0px</b> — present, scrollable, showing
+        nothing. The panel looked broken.
+      </p>
+      <p>
+        The second made the whole rail one scroll region with both tables at natural height. Nothing collapsed, but the
+        routes table could sit entirely below the fold — so selecting an epic would light routes you could not see,
+        firing the section 4 interaction off screen.
+      </p>
+      <p>
+        <b>Two capped scroll regions fixes both.</b> Each table has an intrinsic size, so neither collapses; both are
+        always at least partially on screen, so the bidirectional selection stays legible at any height.
+      </p>
+    </div>
+
+    <div class="stage" id="vbudget"></div>
+
+    <div class="notes" style="max-width: 780px">
+      <ul>
+        <li>
+          <b>Caps, not shares.</b> <code>max-height</code> on each scroll area rather than <code>flex: 1</code>.
+          Measured on the demos above — at 620px neither cap binds; at 420px the cards are 160px and 115px; at 300px
+          they are 88px and 67px. Both stay usable throughout, and the rail itself does not scroll until about
+          <b>250px</b> — roughly a third of the 380px floor the flex version needed.
+        </li>
+        <li>
+          <b>Epics 10, routes 5.</b> Not inconsistent — an epic row is one line, a route row is a wrapped chain two or
+          three lines tall. Ten routes would be ~350px against ~230px for ten epics. Five is also the cap
+          <code>earliest-finish.html</code> already set.
+        </li>
+        <li>
+          <b>The DOM stays small until asked.</b> A 200-epic plan still renders 10 rows plus a residual. Expanding is
+          user-initiated, so the default case needs no virtualisation.
+        </li>
+        <li>
+          <b>Expanding beats a plain "show more".</b> The residual already carries an aggregate — <code>0.7</code> days
+          across 6 epics — so it is informative while collapsed and honest about what is hidden.
+        </li>
+      </ul>
+    </div>
+
+    <div class="note">
+      <p>
+        <b>The cost is nested scrolling, and it is worth naming.</b> Inside a page that already scrolls, the rail can
+        scroll, and inside that each table can scroll. Three levels is enough to feel sticky if the wheel chains badly.
+      </p>
+      <p>
+        In practice it is two levels, not three: the rail only scrolls below ~250px of budget, shorter than any real
+        window. <code>overscroll-behavior: contain</code> on the table scroll areas stops a flick inside the epics list
+        from running away with the page.
+      </p>
+    </div>
+
+    <div class="note bad">
+      <p>
+        <b>One trap this uncovered, which would have shipped silently.</b> <code>.mini</code> sets
+        <code>overflow: hidden</code>, and that resets a flex item's automatic minimum size from min-content to
+        <b>zero</b>. With no explicit <code>min-height</code> the cards kept shrinking past their own headers and
+        <em>clipped</em> their rows rather than overflowing to the rail — the rail reported no scrollbar while content
+        was being cut off invisibly. At a 200px budget it looked fine and was not.
+      </p>
+      <p>
+        The fix is explicit minimums on each card (<code>100px</code> epics, <code>80px</code> routes), after which the
+        rail scrolls as intended below ~250px. Worth remembering for any scrollable card inside a flex column.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <b>Order: routes first, epics second.</b> Swapping them was tested in the browser and
+        <b>changes no heights at all</b> — both cards shrink symmetrically under the capped-scroll model, so
+        routes-on-top does not squeeze the epics ranking the way it would have under the flex model. That leaves the
+        decision entirely to reading order.
+      </p>
+      <p>
+        <b>The panel is labelled "Critical path", so the first thing under that label should be critical paths.</b>
+        Leading with a table of epics makes the panel fail to deliver what its own header and spine promise — a
+        first-glance cost, paid by every user on every open.
+      </p>
+      <p>
+        It also reads in the right order: "here are the chains that decide the date", then "here is which epic inside
+        them to attack". The routes list is the calibration — how likely any chain is to be the one that matters — and
+        the epics ranking is only worth acting on once you have it.
+      </p>
+      <p>
+        <b>What this costs.</b> The header states the dependency floor, and it is the epics column that sums to it; with
+        routes in between, those two are no longer adjacent. The epics caption carries the tie instead — "Days each epic
+        adds to the dependency floor" — which names the relationship without restating the number and re-introducing the
+        duplication removed in 5c.
+      </p>
+    </div>
+
+    <h3>5e · What "dependency floor" means, and the tooltip it needs</h3>
+    <p class="caption">
+      The number is easy to state and easy to misread, so it needs help at the point of use. It is the mean, across
+      simulation runs, of the longest chain of <code>Blocks</code> links weighted by that run's sampled durations, with
+      team queueing removed.
+    </p>
+
+    <div class="note bad">
+      <p><b>Three misreadings to design against:</b></p>
+      <ul class="tight" style="margin-top: 5px">
+        <li>
+          <b>"This is the plan with unlimited people."</b> It is not, and <code>earliest-finish.html</code> section 1
+          already says so: throughput is fixed by <code>velocity</code>, and <code>parallelWorkLimit</code> only divides
+          it into lanes. Each epic still takes as long as its team's configuration says. What is removed is
+          <em>queueing behind other work in this plan</em>
+          — nothing else.
+        </li>
+        <li>
+          <b>"We could finish in 53.8 days."</b> It is an average, so roughly half of runs have a longer chain than
+          that. It is a lower bound on the mean finish, not a target and not a date.
+        </li>
+        <li>
+          <b>"The floor and the gap are separate levers."</b> They are not cleanly separable. Shortening an epic that
+          sits on the bottleneck team shrinks both at once — which is exactly what makes
+          <code>Add promotion to cart</code> worth 35 days in this plan.
+        </li>
+      </ul>
+    </div>
+
+    <div class="note">
+      <p><b>Proposed tooltip copy</b> — on the <code>Dependency floor</code> label in the rail header.</p>
+      <p style="margin-top: 8px">
+        <b>Dependency floor · 53.8 working days</b><br />
+        The average length of the longest chain of <code>Blocks</code> links, if no epic ever waited for a free track.
+      </p>
+      <p>
+        Team velocity still applies — each epic takes as long as its team's throughput allows. Only queueing behind
+        other work in this plan is removed.
+      </p>
+      <p>
+        This plan averages 91 days, so <b>37.2 days are queueing</b>. Lowering the floor means smaller epics or fewer
+        dependencies. Closing the gap means capacity or sequencing.
+      </p>
+      <p><em>Always an average. It does not follow the confidence slider.</em></p>
+    </div>
+
+    <div class="note warn">
+      <p>
+        <b>The name is a risk worth noting.</b> "Floor" correctly implies a bound you cannot get under, but it invites
+        the second misreading above — people hear a floor as something you could stand on. "Earliest finish", the name
+        the original mockup file carries, is worse: it promises a date and a best case, and this is neither.
+      </p>
+      <p>
+        Keeping <code>Dependency floor</code> with the tooltip is the cheapest option. If the tooltip turns out not to
+        be enough, the honest alternative is longer and duller — <em>Dependency-only length (average)</em>.
+      </p>
+    </div>
+
+    <h3>How hard is the draggable divider?</h3>
+    <p class="caption">
+      Easier than it looks, because the two things that usually make Gantt resizing painful are already handled.
+    </p>
+    <ul class="tight">
+      <li>
+        <b>The grid reflows for free.</b>
+        <code>gridTemplateColumns: [what] auto repeat(N, 1fr)</code> — the day columns are fractional and every bar is
+        positioned in <code>%</code>. Narrowing the container rescales the timeline with no JS.
+      </li>
+      <li>
+        <b>The dependency curves already redraw on resize.</b> <code>AutoScheduler.tsx</code> mounts a
+        <code>ResizeObserver</code> on the SVG container plus a <code>window.resize</code> listener, both calling
+        <code>updateBlockers</code>. The SVG paths are rebuilt from live
+        <code>getBoundingClientRect()</code> measurements, so a drag re-draws them with no new code. This is the part
+        that would otherwise be days of work.
+      </li>
+      <li>
+        <b>What you actually write</b> is a pointer-event handler: <code>pointerdown</code> →
+        <code>setPointerCapture</code> → <code>pointermove</code> writes a width to a CSS variable →
+        <code>pointerup</code> persists it. Roughly the amount of code in this mockup's
+        <code>&lt;script&gt;</code> block, which is the working implementation you are dragging right now.
+      </li>
+    </ul>
+
+    <div class="note">
+      <p><b>The real costs are the edges, not the drag:</b></p>
+      <ul class="tight" style="margin-top: 5px">
+        <li>
+          <code>updateBlockers</code> rebuilds every path from scratch and queries the whole document
+          (<code>document.querySelectorAll('.work-item')</code>). Firing that on every <code>pointermove</code> will
+          stutter on a 200-epic plan. Needs <code>requestAnimationFrame</code> coalescing, and possibly redrawing only
+          on <code>pointerup</code> while showing a plain divider line during the drag.
+        </li>
+        <li>
+          The <code>[what]</code> column is <code>auto</code> and the name cells are <code>truncate max-w-sm</code>, so
+          the grid stops shrinking once names hit their max width. The drag needs a minimum, or the name column needs to
+          shrink with the container.
+        </li>
+        <li>Persisting the width — component state, <code>localStorage</code>, or the saved report.</li>
+        <li>Keyboard accessibility: the divider needs <code>role="separator"</code> and arrow-key resizing.</li>
+      </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>6 · Scored against the three requirements</h2>
+
+    <table class="cmp">
+      <thead>
+        <tr>
+          <th style="width: 150px">Option</th>
+          <th>Discoverable</th>
+          <th>Both tables readable</th>
+          <th>Grid co-visible</th>
+          <th>Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>A</b> · sticky bar under controls</td>
+          <td class="yes">Yes — 28px always on screen</td>
+          <td class="yes">Yes — current side-by-side shape preserved</td>
+          <td class="yes">Yes</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><b>B</b> · docked right rail, fixed 210px</td>
+          <td class="yes">Yes</td>
+          <td class="no">No — 210px truncates epic names and destroys routes</td>
+          <td class="mid">Grid permanently squeezed</td>
+          <td>Medium</td>
+        </tr>
+        <tr style="background: #f0fdf6">
+          <td><b>B+</b> · rail, spine-opened and resizable <span class="badge rec">chosen</span></td>
+          <td class="yes">Yes — labelled spine, always on screen</td>
+          <td class="yes">Yes — drag to whatever the content needs</td>
+          <td class="yes">Yes, and full width when closed</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><b>C</b> · controls dropdown + tabs</td>
+          <td class="no">No — must know to click</td>
+          <td class="mid">One at a time, behind a tab</td>
+          <td class="no">Dropdown covers the grid</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td><b>D</b> · sticky bottom bar</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="mid">Expansion covers lower grid</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><b>E</b> · merge into one table</td>
+          <td colspan="4" class="no">Rejected — see section 4. It makes route&nbsp;&rarr;&nbsp;epics impossible.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ============================================================ -->
+    <h2>7 · Recommendation</h2>
+    <ul class="tight">
+      <li>
+        <b>Option B, made toggleable and resizable</b> (section 5). A docked rail holding both tables stacked, opened
+        from an always-visible labelled <b>spine</b> on the right edge (5b), with a draggable divider between the rail
+        and the Gantt.
+      </li>
+      <li>
+        <b>The spine appears only while the rail is shut</b> (5c). Open, the divider carries a grip — drag to resize,
+        click to collapse — and the header carries an ×. The open state spends 5px on chrome instead of 31px.
+      </li>
+      <li>
+        <b>State each number once.</b> The dependency floor lives in the rail header next to the queueing gap; the plan
+        finish stays in the Summary band; the epics table ends in a residual row rather than a repeated total.
+      </li>
+      <li>
+        <b>The segmented confidence strip is no longer a prerequisite</b> — the spine needs no room in the controls row.
+        Option D of <code>confidence-control.html</code> is still worth doing, now on its own merits.
+      </li>
+      <li>
+        <b>Bidirectional selection between the tables</b> (section 4), dimming rather than filtering, with the Gantt as
+        the third surface. This is the substantive behaviour change; placement only exists to make it possible.
+      </li>
+      <li>
+        <b>Do not merge the tables</b>, and stop describing routes as "context only" — both tables carry a ranking, of
+        different things.
+      </li>
+      <li>
+        <b>Drop C</b> as the placement decision, and say so explicitly in <code>critical-paths.html</code> section 5 —
+        it was chosen for a single list, its recorded downside is the problem we are trying to fix, and the controls row
+        it wants to live in is already full.
+      </li>
+      <li>
+        <b>The summary line ships regardless</b>, as the rail header. Even if everything else slips,
+        <code>53.8 d of 91 d · 37.2 d queueing</code> is the highest-value number on this page and the cheapest to add.
+      </li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <h2>8 · Still open</h2>
+    <ul class="tight">
+      <li>
+        Does the rail default open or closed? The spine makes closed safe, so closed is the likely answer — but confirm
+        nobody expects it open.
+      </li>
+      <li>
+        <b>The queueing gap and the confidence slider.</b> Hide the gap at percentile settings, or always compute it
+        against the average finish and say so? See the warning in section 5.
+      </li>
+      <li>Minimum and maximum rail width, and whether the width is per-user or saved with the report.</li>
+      <li>
+        Does <code>updateBlockers</code> run during the drag or only on release? Measure it on a 200-epic plan before
+        deciding.
+      </li>
+      <li>
+        Routes beyond the top five. Selecting an epic can light routes that are inside the "5 other routes" residual
+        row. Does that row expand, or does the residual just report how many of its routes matched?
+      </li>
+      <li>
+        Does selecting a route highlight the epics in the Gantt <em>in chain order</em>, or just tint them? Order is the
+        more useful reading and the harder render.
+      </li>
+      <li>Print/PDF: does the rail print beside the grid, below it, or not at all?</li>
+      <li>
+        Report of Reports: there is no grid there, so co-visibility does not apply. Does the rail still make sense?
+      </li>
+    </ul>
+    <script>
+      // Working implementation of the divider and toggle, so the interaction can be judged by feel.
+      // This is deliberately the whole thing — it is the evidence for the "how hard is it" answer above.
+      document.querySelectorAll('.combo').forEach((combo) => {
+        const rail = combo.querySelector('.js-rail');
+        const divider = combo.querySelector('.js-divider');
+
+        combo.querySelectorAll('.js-toggle').forEach((toggle) => {
+          toggle.addEventListener('click', () => combo.classList.toggle('rail-closed'));
+        });
+
+        let startX = 0;
+        let startWidth = 0;
+        let moved = 0;
+        divider.addEventListener('pointerdown', (event) => {
+          startX = event.clientX;
+          startWidth = rail.getBoundingClientRect().width;
+          moved = 0;
+          divider.setPointerCapture(event.pointerId);
+          divider.classList.add('dragging');
+          event.preventDefault();
+        });
+        divider.addEventListener('pointermove', (event) => {
+          if (!divider.hasPointerCapture(event.pointerId)) return;
+          const delta = event.clientX - startX;
+          moved = Math.max(moved, Math.abs(delta));
+          rail.style.width = Math.min(520, Math.max(200, startWidth - delta)) + 'px';
+        });
+        divider.addEventListener('pointerup', (event) => {
+          divider.releasePointerCapture(event.pointerId);
+          divider.classList.remove('dragging');
+          // A press that never travelled is a click, so the divider doubles as the collapse control.
+          if (moved < 3) combo.classList.add('rail-closed');
+        });
+      });
+
+      // The confidence strip: press and slide across the cells, exactly like option D.
+      document.querySelectorAll('.seg').forEach((seg) => {
+        const cells = [...seg.querySelectorAll('i')];
+        const select = (cell) => cell && cells.forEach((c) => c.classList.toggle('on', c === cell));
+        let scrubbing = false;
+        seg.addEventListener('pointerdown', (event) => {
+          scrubbing = true;
+          select(event.target.closest('i'));
+        });
+        seg.addEventListener('pointermove', (event) => scrubbing && select(event.target.closest('i')));
+        window.addEventListener('pointerup', () => (scrubbing = false));
+      });
+      // Both vertical-budget demos are built from one template, which is the claim being made:
+      // identical markup and identical row counts, only the height budget differs.
+      (function () {
+        const epics = [
+          ['Add promotion to cart', '35.4', '83%', true],
+          ['Wrong promotion entered', '7.3', '65%'],
+          ['Promotion end-date error handling', '2.3', '16%'],
+          ['Create promotion 100', '1.8', '4%'],
+          ['Create promotion', '1.7', '4%'],
+          ['Create and publish ad', '1.6', '3%'],
+          ['Create and publish ad 100', '1.4', '3%'],
+          ['Create a promotion', '1.0', '87%'],
+          ['Verify promotion is available', '0.5', '83%'],
+          ['Promotion end-date error handling 100', '0.2', '1%'],
+        ];
+        const routes = [
+          ['65%', 'Create a promotion → Verify promotion → Add promotion to cart → Wrong promotion'],
+          ['16%', 'Create a promotion → Verify promotion → Add promotion to cart → end-date'],
+          ['4%', 'Create a promotion 100 → Create promotion 100'],
+          ['4%', 'Create a promotion → Create promotion'],
+          ['3%', 'Create and publish ad'],
+        ];
+        const rail = (height, label) => `
+          <div>
+            <p class="vh-label">${label} — rail budget ${height}px</p>
+            <div class="raildemo" style="height:${height}px">
+              <div class="rail-head">
+                <div>
+                  <b>Critical path</b>
+                  <span class="rail-stat"><dfn>Dependency floor</dfn> 53.8 d · <dfn>queueing</dfn> 37.2 d</span>
+                </div>
+                <span class="rail-close" title="Close">×</span>
+              </div>
+              <div class="mini routes" style="margin:7px 7px 0">
+                <div class="mini-head">Most common critical paths</div>
+                <div class="scrolls">
+                  ${routes
+                    .map(([pct, chain]) => `<div class="route-mini wrap"><b>${pct}</b><span>${chain}</span></div>`)
+                    .join('')}
+                  <div class="route-mini wrap expander" data-more="routes"><b>8%</b><span>▸ 4 other routes</span></div>
+                </div>
+              </div>
+              <div class="mini epics" style="margin:7px">
+                <div class="mini-head">Epics on the critical path</div>
+                <div class="mrow head"><span class="m-name">Epic</span><span class="m-num">Days added</span><span class="m-pct">On path</span></div>
+                <div class="scrolls">
+                  ${epics
+                    .map(
+                      ([name, days, pct, sel]) =>
+                        `<div class="mrow${sel ? ' sel' : ''}"><span class="m-name">${name}</span><span class="m-num">${days}</span><span class="m-pct">${pct}</span></div>`,
+                    )
+                    .join('')}
+                  <div class="mrow expander" data-more="epics"><span class="m-name">▸ 6 other epics</span><span class="m-num">0.7</span><span class="m-pct"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        const host = document.getElementById('vbudget');
+        host.innerHTML = rail(300, 'Very short') + rail(420, 'Short viewport') + rail(620, 'Tall viewport');
+
+        // Clicking a residual writes out the rows it was standing in for.
+        const hidden = {
+          epics: [
+            ['Create promotion 50', '0.2', '1%'],
+            ['Verify the promotion is available 100', '0.2', '1%'],
+            ['Add a promotion to the cart 100', '0.1', '1%'],
+            ['Remove promotion from cart', '0.1', '0%'],
+            ['Remove promotion from cart 100', '0.1', '0%'],
+            ['Wrong promotion entered 100', '0.0', '0%'],
+          ],
+          routes: [
+            ['3%', 'Create and publish ad 100'],
+            ['2%', 'Create a promotion 100 → Verify the promotion 100 → Add a promotion to the cart 100'],
+            ['2%', 'Create a promotion → Verify promotion → Add promotion to cart → Remove promotion'],
+            ['1%', 'Create promotion 50'],
+          ],
+        };
+        host.addEventListener('click', (event) => {
+          const row = event.target.closest('.expander');
+          if (!row) return;
+          const kind = row.dataset.more;
+          const open = row.classList.toggle('open');
+          const label = row.querySelector(kind === 'epics' ? '.m-name' : 'span:last-child');
+          label.textContent = label.textContent.replace(open ? '▸' : '▾', open ? '▾' : '▸');
+          if (open) {
+            const markup =
+              kind === 'epics'
+                ? hidden.epics
+                    .map(
+                      ([n, d, p]) =>
+                        `<div class="mrow extra"><span class="m-name">${n}</span><span class="m-num">${d}</span><span class="m-pct">${p}</span></div>`,
+                    )
+                    .join('')
+                : hidden.routes
+                    .map(([p, c]) => `<div class="route-mini wrap extra"><b>${p}</b><span>${c}</span></div>`)
+                    .join('');
+            row.insertAdjacentHTML('afterend', markup);
+          } else {
+            let next = row.nextElementSibling;
+            while (next && next.classList.contains('extra')) {
+              const after = next.nextElementSibling;
+              next.remove();
+              next = after;
+            }
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

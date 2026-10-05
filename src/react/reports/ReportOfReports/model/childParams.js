@@ -22,7 +22,7 @@ function parseChildParam(params, key) {
  * agree.
  *
  * @param {string} queryParams the child's saved query string
- * @returns {{ jql: string, childJQL: string, loadChildren: boolean, tableColumns: Array<{sourceId: string}> }}
+ * @returns {{ jql: string, childJQL: string, loadChildren: boolean, blockerJQL: string, loadBlockers: boolean, tableColumns: Array<{sourceId: string}> }}
  */
 export function parseChildQuery(queryParams) {
   const params = new URLSearchParams(queryParams ?? '');
@@ -31,6 +31,8 @@ export function parseChildQuery(queryParams) {
     jql: parseChildParam(params, 'jql'),
     childJQL: parseChildParam(params, 'childJQL'),
     loadChildren: parseChildParam(params, 'loadChildren'),
+    blockerJQL: parseChildParam(params, 'blockerJQL'),
+    loadBlockers: parseChildParam(params, 'loadBlockers'),
     tableColumns: parseChildParam(params, 'tableColumns'),
   };
 }

@@ -36,6 +36,13 @@ export interface LoadingProgressProps {
    */
   childrenBarValue?: number;
   childrenProjectedTotal?: number;
+  /**
+   * Which expansions are running. The expansion step is one step whichever of them is on — a
+   * sequential third step would un-complete the primary step mid-load (spec/036 §6) — so these only
+   * choose its label. Both absent ⇒ "Loading children", preserving the pre-blockers wording.
+   */
+  expandsChildren?: boolean;
+  expandsBlockers?: boolean;
 }
 
 type StepStatus = 'pending' | 'active' | 'done';
@@ -52,6 +59,22 @@ export interface StepView {
 }
 
 const fmt = (n: number) => Math.round(n).toLocaleString();
+
+/**
+ * The expansion step's label. Neither flag set means the pre-spec/036 deep-children path (nothing
+ * reports `expandsChildren` there until the loader sets it), so it keeps the original wording.
+ */
+function expansionLabel(expandsChildren?: boolean, expandsBlockers?: boolean): string {
+  if (expandsChildren && expandsBlockers) return 'Loading children and blockers';
+  if (expandsBlockers) return 'Loading blockers';
+  return 'Loading children';
+}
+
+function expansionNoun(expandsChildren?: boolean, expandsBlockers?: boolean): string {
+  if (expandsChildren && expandsBlockers) return 'children and blockers';
+  if (expandsBlockers) return 'blockers';
+  return 'children';
+}
 const clampPct = (ratio: number) => Math.min(100, Math.max(0, ratio * 100));
 
 /**
@@ -83,6 +106,8 @@ export function computeSteps(props: LoadingProgressProps): StepView[] {
     primaryReceived,
     childrenBarValue,
     childrenProjectedTotal,
+    expandsChildren,
+    expandsBlockers,
   } = props;
 
   const resolved = status === 'resolved';
@@ -115,13 +140,13 @@ export function computeSteps(props: LoadingProgressProps): StepView[] {
     const childStatus: StepStatus = resolved ? 'done' : 'active';
     steps.push({
       key: 'children',
-      label: 'Loading children',
+      label: expansionLabel(expandsChildren, expandsBlockers),
       status: childStatus,
       // Prefer the container's smoothed projection (bar + estimated total); fall back to
       // received/discovered before the first parent-subtree completes.
       detail:
         childStatus === 'done'
-          ? `${fmt(childRec)} children`
+          ? `${fmt(childRec)} ${expansionNoun(expandsChildren, expandsBlockers)}`
           : childrenProjectedTotal
             ? `${fmt(childRec)} of ~${fmt(childrenProjectedTotal)}`
             : childReq

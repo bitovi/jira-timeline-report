@@ -33,7 +33,7 @@ export interface LoadingProgressContainerProps {
  */
 export const LoadingProgressContainer: FC<LoadingProgressContainerProps> = ({ loadingState }) => {
   const { status, phase, issuesRequested, issuesReceived, changeLogsRequested, changeLogsReceived } = loadingState;
-  const { parentsToProcess, parentsProcessed } = loadingState;
+  const { parentsToProcess, parentsProcessed, expandsChildren, expandsBlockers } = loadingState;
 
   const snapRef = useRef<{
     sawChildren: boolean;
@@ -106,6 +106,8 @@ export const LoadingProgressContainer: FC<LoadingProgressContainerProps> = ({ lo
       primaryReceived={snapRef.current.primaryReceived}
       childrenBarValue={childrenBarValue}
       childrenProjectedTotal={childrenProjectedTotal}
+      expandsChildren={expandsChildren}
+      expandsBlockers={expandsBlockers}
     />
   );
 };

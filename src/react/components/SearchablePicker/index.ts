@@ -1,2 +1,2 @@
 export { SearchablePicker, default } from './SearchablePicker';
-export type { PickerItem, SearchablePickerProps } from './SearchablePicker';
+export type { PickerItem, PickerLayout, PickerTriggerProps, SearchablePickerProps } from './SearchablePicker';

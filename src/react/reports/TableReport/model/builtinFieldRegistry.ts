@@ -64,6 +64,15 @@ function issueTypeIconUrl(issue: TableIssue): unknown {
   return issueType?.iconUrl;
 }
 
+/**
+ * Read the assignee's display name (`issue.fields['Assignee'].displayName`). A Jira user object
+ * labels itself with `displayName`, not the `name` that {@link fieldObjectName} reads.
+ */
+function assigneeName(issue: TableIssue): unknown {
+  const raw = issue.fields?.['Assignee'] as { displayName?: unknown } | undefined;
+  return raw?.displayName;
+}
+
 /** Normalize the raw `Parent` field object (a ParentIssue) into `{ summary, type, key, ... }`. */
 function parent(issue: TableIssue): ReturnType<typeof normalizeParent> | undefined {
   const raw = issue.fields?.['Parent'] as ParentIssue | undefined;
@@ -196,6 +205,30 @@ export const BUILTIN_CONCEPTS: readonly BuiltinConcept[] = [
     concept: 'rank',
     claims: ['Rank'],
     facets: [{ sourceId: 'builtin:rank:value', label: 'Rank', requires: [], get: (issue) => issue.rank }],
+  },
+  {
+    concept: 'assignee',
+    // Deliberately claims NOTHING. Every other concept claims its field to suppress the bare
+    // duplicate; this one WANTS the duplicate — the existing `field:assignee` column stays in the
+    // `Fields` group so saved reports already using it keep working (spec/034 "keep both").
+    claims: [],
+    facets: [
+      {
+        // Assignee is NOT a CORE field, so this facet MUST declare `requires` or the column renders
+        // blank in the real app — it would still pass every unit test, because fixtures hand it an
+        // already-populated field (spec/034 §1). `requires` uses the display name 'Assignee', not
+        // the id 'assignee', for the same reason `builtin:project:name` does: the fetch pipeline
+        // renames every response field key from id -> display name via `mapIdsToNames`.
+        sourceId: 'builtin:assignee:avatar',
+        label: 'Assignee & Avatar',
+        requires: ['Assignee'],
+        // No 'user' entry in the field-type registry, so this falls back to `textEntry` — text
+        // compare via `fieldValueText` plus a `distinct` default aggregation, which is what we want.
+        // The catalog's FACET_PRESENTATION then overrides render/filter for display.
+        schemaType: 'user',
+        get: assigneeName,
+      },
+    ],
   },
 ];
 

@@ -60,11 +60,9 @@ export const SectionTitle: FC<SectionTitleProps> = ({
   if (!isEditing) {
     return (
       <div className="flex min-w-0 items-center gap-1">
-        {/* The untitled placeholder is muted with opacity rather than a separate fixed color, so it
-            stays legibly dimmer than every depth's own color without a fourth color to maintain. */}
-        <Heading className={`${className} min-w-0 truncate ${title ? '' : 'italic font-normal opacity-60'}`}>
-          {label}
-        </Heading>
+        {/* Muted with opacity rather than its own color. Deliberately no `font-normal` — it would beat
+            `font-light` on Tailwind's source order and make an untitled L2 heavier than a titled one. */}
+        <Heading className={`${className} min-w-0 truncate ${title ? '' : 'italic opacity-60'}`}>{label}</Heading>
         {/* `report-chrome-hidden` (print.css/fullscreen.css) matches every other editing affordance on
             the row — renaming a report that's being presented is not on offer there either. */}
         <div
@@ -118,7 +116,12 @@ export const SectionTitle: FC<SectionTitleProps> = ({
  * whether the node is a section or a report. See spec/029-report-of-reports-redesign, "indent and size
  * are driven by level, not by node kind".
  *
- * Weight is constant across every level: a section is always bold. Color is themeable per level — the
+ * Weight alternates: L1 and L3 bold, L2 light. L2 has no accent of its own, so weight is what keeps
+ * its label from competing with the bold titles above and below it. (`font-light` is 300, which some
+ * theme font stacks don't ship — it degrades to the nearest weight, which is fine: the point is that
+ * L2 is no *heavier* than its neighbours.)
+ *
+ * Color is themeable per level — the
  * Theme panel's "L1/L2/L3 Section Text" rows (defaulting to `#002A2D`/`#00464A`/`#04646A`, a dark-to-teal
  * progression that reads as depth on its own) — so each level keeps its own hue until someone picks
  * otherwise. `isRowHovered` overrides the theme color with the same `#002A2D` darken every row's title
@@ -137,8 +140,14 @@ export const SectionTitle: FC<SectionTitleProps> = ({
  */
 const headingFor = (depth: number, isRowHovered?: boolean): { Heading: 'h2' | 'h3' | 'h4'; className: string } => ({
   Heading: depth <= 1 ? 'h2' : depth === 2 ? 'h3' : 'h4',
-  className: `${levelFontSizeClassName(depth)} font-bold ${sectionTextColorClassName(depth, isRowHovered)}`,
+  className: `${levelFontSizeClassName(depth)} ${sectionWeightClassName(depth)} ${sectionTextColorClassName(
+    depth,
+    isRowHovered,
+  )}`,
 });
+
+/** Bold, light, bold — see `headingFor` for why L2 breaks the run. */
+const sectionWeightClassName = (depth: number): string => (depth === 2 ? 'font-light' : 'font-bold');
 
 const sectionTextColorClassName = (depth: number, isRowHovered?: boolean): string => {
   if (isRowHovered) {

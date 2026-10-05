@@ -17,6 +17,7 @@ import { ErrorMessage, HelperMessage, Label } from '@atlaskit/form';
 
 import StorageCard from './components/StorageCard';
 import MigrateReportsModal from './components/MigrateReportsModal';
+import StorageCautionModal from '../StorageCautionModal';
 import { useJira } from '../../../services/jira';
 import {
   useMigrateReports,
@@ -53,16 +54,16 @@ type IssueTypeOption = { label: string; value: string };
 /**
  * Where this site's saved reports live.
  *
- * Two cards, one per *store*, and only the card for the store you are running against is editable —
- * the web build cannot read a Connect app property, so the other card documents rather than reports.
- * Point both at the same space and they share the same saved reports, which is the one arrangement
+ * Only the store you are running against is shown — the web build cannot read a Connect app
+ * property, so there is no live state to show for the other one, and its settings are changed from
+ * there. Point both at the same space and they share the same saved reports, which is the one arrangement
  * where a report saved in Jira is visible from the standalone app.
  *
- * Two cards rather than three because Forge shares Connect's store: it reads and writes the same
- * app property through a shared `app.connect.key` (jira/storage/index.forge.ts), which is what makes
- * the Connect→Forge cutover invisible. So the split is by store, not by host — `hosted` on one side,
- * the two embedded hosts on the other, the same `host !== 'hosted'` question asked in
- * jira-oidc-helpers/types.ts:99.
+ * Forge gets the "In Jira" card, not the Web one, because it shares Connect's store: it reads and
+ * writes the same app property through a shared `app.connect.key` (jira/storage/index.forge.ts),
+ * which is what makes the Connect→Forge cutover invisible. So the split is by store, not by host —
+ * `hosted` on one side, the two embedded hosts on the other, the same `host !== 'hosted'` question
+ * asked in jira-oidc-helpers/types.ts:99.
  *
  * See spec/026-storage-saved-reports/plan.md.
  */
@@ -85,6 +86,7 @@ const StorageView: FC = () => {
   const [spaceType, setSpaceType] = useState(config.kind === 'space' ? config.spaceType : '');
   const [validation, setValidation] = useState<string | null>(null);
   const [pendingMigration, setPendingMigration] = useState<{ reportCount: number } | null>(null);
+  const [isConfirmingSpace, setIsConfirmingSpace] = useState(false);
 
   // Every distinct key is its own query, so an undebounced field asks Jira once per keystroke.
   // `useDebounce` seeds itself with the initial value, so an already-configured space resolves its
@@ -100,6 +102,24 @@ const StorageView: FC = () => {
    * not evidence against a type that is already configured.
    */
   const knownSpaceType = !issueTypes.length || issueTypes.some(({ name }) => name === spaceType) ? spaceType : '';
+
+  /**
+   * Asked at the radio rather than at Save, so the space fields the choice reveals are only ever
+   * filled in by someone who has already said yes to what filling them in means. Nothing is written
+   * here either way — Save still does that — so cancelling is simply not moving the radio.
+   *
+   * One direction only: moving *off* a space stops listing what is in it and needs no permission
+   * the app doesn't already hold, and the warning about that is already on the panel itself.
+   */
+  const handleSelect = (value: StorageOptionValue) => {
+    if (value === 'space' && kind !== 'space') {
+      setIsConfirmingSpace(true);
+
+      return;
+    }
+
+    setKind(value);
+  };
 
   const trimmedSpaceName = spaceName.trim();
   const isBusy = isSaving || progress.isMigrating;
@@ -184,53 +204,31 @@ const StorageView: FC = () => {
         <Heading size="medium">Storage {isBusy && <Spinner size="small" />}</Heading>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <StorageCard
-          title="In Jira"
-          groupTitle="Reports storage"
-          options={CONNECT_OPTIONS}
-          selected={usesConnectStore ? kind : null}
-          disabled={!usesConnectStore}
-          note={usesConnectStore ? undefined : 'Change these settings from the Status Reports app in Jira.'}
-          onSelect={setKind}
-        >
-          <SpaceFields
-            spaceNameId={spaceNameId}
-            spaceTypeId={spaceTypeId}
-            spaceName={spaceName}
-            spaceType={knownSpaceType}
-            options={issueTypeOptions}
-            isLoadingIssueTypes={isLoadingIssueTypes}
-            issueTypesError={issueTypesError}
-            isDisabled={isBusy}
-            onSpaceNameChange={setSpaceName}
-            onSpaceTypeChange={setSpaceType}
-          />
-        </StorageCard>
-
-        <StorageCard
-          title="Web"
-          groupTitle="Reports storage"
-          options={WEB_OPTIONS}
-          selected={usesConnectStore ? null : kind}
-          disabled={usesConnectStore}
-          note={usesConnectStore ? 'Change these settings from the standalone web app.' : undefined}
-          onSelect={setKind}
-        >
-          <SpaceFields
-            spaceNameId={spaceNameId}
-            spaceTypeId={spaceTypeId}
-            spaceName={spaceName}
-            spaceType={knownSpaceType}
-            options={issueTypeOptions}
-            isLoadingIssueTypes={isLoadingIssueTypes}
-            issueTypesError={issueTypesError}
-            isDisabled={isBusy}
-            onSpaceNameChange={setSpaceName}
-            onSpaceTypeChange={setSpaceType}
-          />
-        </StorageCard>
-      </div>
+      <StorageCard
+        title={usesConnectStore ? 'In Jira' : 'Web'}
+        groupTitle="Reports storage"
+        options={usesConnectStore ? CONNECT_OPTIONS : WEB_OPTIONS}
+        selected={kind}
+        note={
+          usesConnectStore
+            ? 'Changes here apply to Status Reports in Jira. To point the standalone web app at the same Reports Space, open the web app and go to Settings → Storage.'
+            : 'Changes here apply to the standalone web app. To point Status Reports in Jira at the same Reports Space, open the app in Jira and go to Settings → Storage.'
+        }
+        onSelect={handleSelect}
+      >
+        <SpaceFields
+          spaceNameId={spaceNameId}
+          spaceTypeId={spaceTypeId}
+          spaceName={spaceName}
+          spaceType={knownSpaceType}
+          options={issueTypeOptions}
+          isLoadingIssueTypes={isLoadingIssueTypes}
+          issueTypesError={issueTypesError}
+          isDisabled={isBusy}
+          onSpaceNameChange={setSpaceName}
+          onSpaceTypeChange={setSpaceType}
+        />
+      </StorageCard>
 
       {/*
         Shown only when it is actually true — the saved setting is a space and you have just picked
@@ -274,6 +272,19 @@ const StorageView: FC = () => {
         onStartEmpty={() => commit()}
         onClose={() => setPendingMigration(null)}
       />
+
+      <StorageCautionModal
+        isOpen={isConfirmingSpace}
+        title="Store saved reports in a Jira space?"
+        onCancel={() => setIsConfirmingSpace(false)}
+        onConfirm={() => {
+          setIsConfirmingSpace(false);
+          setKind('space');
+        }}
+      >
+        This points this site&rsquo;s saved reports at a space you nominate, writing one work item per report instead of
+        keeping them in {legacyLabel}.
+      </StorageCautionModal>
     </div>
   );
 };

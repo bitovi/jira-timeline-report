@@ -14,6 +14,10 @@ function buildExploreUrl(issue: IssueOrRelease): string {
   url.searchParams.set('jql', 'issue = ' + issue.key);
   url.searchParams.set('loadChildren', 'true');
   url.searchParams.set('childJQL', '');
+  // The explore view is scoped to ONE issue's children. Reset the blocker expansion too, or it is
+  // inherited from whatever the current URL carried and drags a whole upstream graph in with it.
+  url.searchParams.set('loadBlockers', 'false');
+  url.searchParams.set('blockerJQL', '');
   url.searchParams.delete('statusesToShow');
   url.searchParams.delete('statusesToRemove');
   url.searchParams.delete('releasesToShow');

@@ -16,6 +16,13 @@ describe('requiredFieldsFor', () => {
     expect(requiredFieldsFor('builtin:project:name')).toEqual(['Project']);
   });
 
+  it('returns the loaded field for the Assignee & Avatar facet', () => {
+    // THE regression guard for spec/034 §1. Assignee is not in CORE_FIELDS, so this facet is the
+    // only thing that makes the field load; if this ever returns [], the column silently renders
+    // blank in the real app while every other test in this file stays green.
+    expect(requiredFieldsFor('builtin:assignee:avatar')).toEqual(['Assignee']);
+  });
+
   it('passes a generic `field:<id>` column through as its id', () => {
     expect(requiredFieldsFor('field:customfield_10234')).toEqual(['customfield_10234']);
   });
@@ -80,6 +87,28 @@ describe('built-in facet accessors', () => {
     const facet = getBuiltinFacet('builtin:project:name')!;
     expect(facet.get({ fields: {} } as unknown as TableIssue)).toBeUndefined();
   });
+
+  it('Assignee & Avatar reads `.displayName` off the raw `Assignee` user object', () => {
+    const facet = getBuiltinFacet('builtin:assignee:avatar')!;
+    const issue = {
+      fields: {
+        Assignee: {
+          accountId: 'abc',
+          displayName: 'Arthur Pankiewicz',
+          avatarUrls: { '48x48': 'https://x/avatar.png' },
+        },
+      },
+    } as unknown as TableIssue;
+    // The NAME, never the avatar URL — sorting, select-filter options, the `distinct` reducer and
+    // group labels all read this value (spec/034 §3). The renderer reaches for the URL separately.
+    expect(facet.get(issue)).toBe('Arthur Pankiewicz');
+  });
+
+  it('Assignee & Avatar is undefined when nobody is assigned', () => {
+    const facet = getBuiltinFacet('builtin:assignee:avatar')!;
+    expect(facet.get({ fields: {} } as unknown as TableIssue)).toBeUndefined();
+    expect(facet.get({ fields: { Assignee: null } } as unknown as TableIssue)).toBeUndefined();
+  });
 });
 
 describe('registry invariants (guard against drift)', () => {
@@ -90,10 +119,24 @@ describe('registry invariants (guard against drift)', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('every concept claims at least one field id', () => {
+  // `assignee` is the one deliberate exception: claiming 'Assignee' would delete the bare
+  // `field:assignee` column via the catalog's set-difference, and spec/034 keeps BOTH so saved
+  // reports already using it keep working. Every other concept must still claim, or its raw field
+  // shows up twice — once curated, once bare.
+  const CLAIMLESS_CONCEPTS = new Set(['assignee']);
+
+  it('every concept claims at least one field id, except the documented claimless ones', () => {
     for (const concept of BUILTIN_CONCEPTS) {
+      if (CLAIMLESS_CONCEPTS.has(concept.concept)) {
+        expect(concept.claims).toEqual([]);
+        continue;
+      }
       expect(concept.claims.length).toBeGreaterThan(0);
     }
+  });
+
+  it('does not claim Assignee, so the bare `field:assignee` column survives', () => {
+    expect(CLAIMED_FIELD_IDS.has('assignee')).toBe(false);
   });
 
   it('every `requires` is an array of non-empty string ids', () => {

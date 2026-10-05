@@ -264,7 +264,7 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = (props) => {
   const handleSleExceedingClick = openWipModal;
 
   return (
-    <div className="p-4 flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <FlowCharts
         doneIssues={cycleTimeIssues}
         allProjectKeys={allProjectKeys}

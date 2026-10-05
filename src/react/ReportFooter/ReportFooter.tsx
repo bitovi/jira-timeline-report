@@ -1,11 +1,9 @@
 import React, { FC } from 'react';
 
 import StatusKey from './components/StatusKey';
-import AutoSchedulerFooter from './components/AutoSchedulerFooter';
 import { PrimaryReportType, usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportType';
 
 const reportFooterMap: Partial<Record<PrimaryReportType, FC>> = {
-  'auto-scheduler': AutoSchedulerFooter,
   'start-due': StatusKey,
 };
 
@@ -18,10 +16,7 @@ const reportFooterMap: Partial<Record<PrimaryReportType, FC>> = {
  * whatever of the report scrolls underneath once it pins to the viewport bottom.
  *
  * Deliberately narrower than "has footer content" (`reportFooterMap`'s own keys): `start-due` (Gantt)
- * is the one report whose own component used to carry a `mb-10` for exactly this. `auto-scheduler`
- * also renders a non-null footer (`AutoSchedulerFooter`) but never had that margin and isn't known to
- * need it — its own report doesn't scroll under the sticky footer the same way — so it's left out
- * rather than assumed to need the same treatment.
+ * is the one report whose own component used to carry a `mb-10` for exactly this.
  */
 const REPORT_TYPES_NEEDING_FOOTER_CLEARANCE = new Set<PrimaryReportType>(['start-due']);
 

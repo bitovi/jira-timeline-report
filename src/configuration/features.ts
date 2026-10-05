@@ -7,6 +7,13 @@ type Feature = {
   onByDefault: boolean;
 };
 
+/**
+ * Named rather than spelled out at each use: the Features tab and the Storage panel both have to
+ * recognise this one flag to put a confirm in front of it, and a typo in either would silently drop
+ * the confirm rather than fail.
+ */
+export const REPORTS_STORAGE_FEATURE_FLAG = 'reportsStorage';
+
 export const nonReportsFeatures: Feature[] = [
   // `secondaryReport` used to live here. The slot it gated is gone, and its report is now the
   // `cards` entry in `reports.ts` — which derives the `cardsReport` flag below. Anyone who had the
@@ -24,7 +31,20 @@ export const nonReportsFeatures: Feature[] = [
   {
     name: 'Reports Storage',
     subtitle: 'Choose where saved reports are stored, including one Jira work item per report.',
-    featureFlag: 'reportsStorage',
+    featureFlag: REPORTS_STORAGE_FEATURE_FLAG,
+    onByDefault: false,
+  },
+  // Gates the Sources tab's "Load all blockers recursively" checkbox. The loader itself always
+  // ships; a URL that already carries `loadBlockers=true` keeps working with the flag off, the
+  // same way a flagged-off report still renders when the URL names it.
+  //
+  // The flag is `recursiveBlockers`, deliberately NOT `loadBlockers` — that is the route-data param,
+  // and two different things sharing a name across two stores would be a trap.
+  // See spec/036-load-blockers-recursiveley.
+  {
+    name: 'Recursive Blockers',
+    subtitle: 'Load the work items blocking your JQL results, transitively.',
+    featureFlag: 'recursiveBlockers',
     onByDefault: false,
   },
 ] as const;

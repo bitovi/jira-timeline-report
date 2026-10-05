@@ -7,14 +7,21 @@ import Heading from '@atlaskit/heading';
 
 import { useJQL } from './hooks/useJQL';
 import { useRawIssuesRequestData } from './hooks/useRawIssueRequestData';
+import { useAsyncFeatures } from '../../../services/features';
 import JQLTextArea from './components/JqlTextArea';
 import LoadChildren from './components/LoadChildren';
+import LoadBlockers from './components/LoadBlockers';
 import ExcludedStatusSelect from './components/ExcludedStatusSelect';
+import Hr from '../../../components/Hr';
 
 interface IssueSourceProps {}
 
 const IssueSource: FC<IssueSourceProps> = () => {
   const issueRequestData = useRawIssuesRequestData();
+  // Non-suspense, matching SettingsSidebar — this subtree must not suspend on a settings panel.
+  // The flag hides the CONTROL only; a URL carrying `loadBlockers=true` still loads blockers.
+  // See spec/036-load-blockers-recursiveley §5.
+  const { features } = useAsyncFeatures();
 
   const {
     jql,
@@ -27,6 +34,10 @@ const IssueSource: FC<IssueSourceProps> = () => {
     setStatusesToExclude,
     applyButtonEnabled,
     setLoadChildren,
+    blockerJql,
+    setBlockerJql,
+    loadBlockers,
+    setLoadBlockers,
   } = useJQL();
 
   const statusesToExcludeOptions = useMemo(() => toOptions(statusesToExclude), [statusesToExclude]);
@@ -43,12 +54,23 @@ const IssueSource: FC<IssueSourceProps> = () => {
       </div>
       <p>Specify a JQL that loads all the issues needed for your report.</p>
       <JQLTextArea jql={jql} setJql={setJql} {...issueRequestData} />
-      <LoadChildren
-        loadChildren={loadChildren}
-        setLoadChildren={setLoadChildren}
-        childJql={childJql}
-        setChildJql={setChildJql}
-      />
+      <div className="flex flex-col gap-3">
+        <LoadChildren
+          loadChildren={loadChildren}
+          setLoadChildren={setLoadChildren}
+          childJql={childJql}
+          setChildJql={setChildJql}
+        />
+        {features?.recursiveBlockers && (
+          <LoadBlockers
+            loadBlockers={loadBlockers}
+            setLoadBlockers={setLoadBlockers}
+            blockerJql={blockerJql}
+            setBlockerJql={setBlockerJql}
+          />
+        )}
+      </div>
+      <Hr className="!my-0" />
       <ExcludedStatusSelect
         label="Exclude statuses"
         placeholder="Select statuses"

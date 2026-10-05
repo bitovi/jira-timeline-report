@@ -41,6 +41,8 @@ test('rawIssuesRequestData', function (assert) {
     }),
     teamData = value.with([{ name: 'JBM', velocity: 13, tracks: 2, sprintLength: 15 }]),
     loadChildren = value.with(true),
+    blockerJQL = value.with(''),
+    loadBlockers = value.with(false),
     jiraHelpers = {
       fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: function () {
         return Promise.resolve([{ key: 'TEST-123' }]);
@@ -60,6 +62,8 @@ test('rawIssuesRequestData', function (assert) {
         serverInfo,
         teamData,
         loadChildren,
+        blockerJQL,
+        loadBlockers,
         jiraHelpers,
         fields,
       },
@@ -154,6 +158,8 @@ describe('two rawIssuesRequestData over identical inputs', () => {
           childJQL: value.with(''),
           isLoggedIn: value.with(true),
           loadChildren: value.with(false),
+          blockerJQL: value.with(''),
+          loadBlockers: value.with(false),
           jiraHelpers,
           fields: value.with([]),
           ...overrides,

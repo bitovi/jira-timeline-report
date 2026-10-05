@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auto-Scheduler — editable capacity and tracks</title>
+    <style>
+      :root {
+        /* Same Atlaskit-derived token set as spec/024's mockups. */
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --neutral-40: #dcdfe4;
+        --brand: #0c66e4;
+        --brand-hover: #0055cc;
+        --brand-bg: #e9f2ff;
+        --success-bg: #dcfff1;
+        --success-text: #216e4e;
+        --danger: #ae2e24;
+        --danger-bg: #ffeceb;
+        --warn: #b65c02;
+        --warn-bg: #fff3eb;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 120px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 44px 0 2px;
+        padding-top: 14px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 24px 0 8px;
+        color: var(--slate);
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 980px;
+        margin: 6px 0 10px;
+        font-size: 13px;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 4px 0 14px;
+        max-width: 980px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .note {
+        border-left: 3px solid var(--brand);
+        background: var(--brand-bg);
+        padding: 10px 14px;
+        margin: 14px 0;
+        font-size: 13px;
+        max-width: 980px;
+        border-radius: 0 3px 3px 0;
+      }
+      .note.warn {
+        border-left-color: var(--warn);
+        background: var(--warn-bg);
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: var(--slate-bg);
+        color: var(--slate);
+        vertical-align: middle;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+      .badge.rec {
+        background: var(--success-bg);
+        color: var(--success-text);
+      }
+      .badge.no {
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
+
+      /* ---------- the report frame ---------- */
+      .panel {
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.12);
+        max-width: 1080px;
+        overflow: hidden;
+        margin-bottom: 8px;
+      }
+      /* The confirm / cancel pair hangs below the row; without this the panel clips it. */
+      .panel.has-open-edit {
+        padding-bottom: 34px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: [what] 210px repeat(12, 1fr);
+        align-content: start;
+      }
+      .timehead {
+        grid-row: 1;
+        border-left: 1px solid var(--neutral-30);
+        border-right: 1px solid var(--neutral-30);
+        padding: 2px 4px;
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      /* ---------- team header row ---------- */
+      .teamstripe {
+        background: var(--neutral-20);
+        grid-column: 1 / -1;
+      }
+      /* One row-level treatment for "this team has uncommitted changes", so capacity and tracks
+         announce themselves identically. */
+      .teamstripe.dirty {
+        background: var(--warn-bg);
+        box-shadow: inset 3px 0 0 var(--warn);
+      }
+      .teamname {
+        grid-column-start: what;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 6px 5px 8px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      /* Inputs pack left against the team name; outputs sit right. */
+      .teammetrics {
+        grid-column: 2 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 6px 12px 5px 0;
+        font-size: 12px;
+        color: var(--slate);
+        position: relative;
+        z-index: 30;
+      }
+      .group {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .metric {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 5px;
+        white-space: nowrap;
+      }
+      .metric .label {
+        color: var(--subtle);
+      }
+      .metric .unit {
+        color: var(--subtle);
+        font-size: 11px;
+      }
+      .readonly {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        padding: 1px 0;
+      }
+
+      /* Atlaskit InlineEdit read view: a borderless button that only reveals a subtle
+         neutral fill on hover. No pencil, no box, no dotted underline. */
+      .editable {
+        border: none;
+        border-radius: 3px;
+        padding: 2px 6px;
+        margin: -2px 0;
+        cursor: pointer;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        text-align: left;
+      }
+      .editable:hover {
+        background: rgba(9, 30, 66, 0.06);
+      }
+      .editable:focus-visible {
+        outline: 2px solid var(--brand);
+        outline-offset: 1px;
+      }
+
+      /* Atlaskit InlineEdit edit view: a Textfield plus the confirm / cancel pair. */
+      .editing {
+        display: inline-flex;
+        flex-direction: column;
+        gap: 4px;
+        vertical-align: top;
+        position: relative;
+      }
+      .editing .field {
+        display: inline-flex;
+        align-items: center;
+        background: #fff;
+        border: 2px solid var(--brand);
+        border-radius: 3px;
+        padding: 0 6px;
+      }
+      .editing input {
+        border: none;
+        outline: none;
+        font: inherit;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        width: 48px;
+        padding: 2px 0;
+        background: transparent;
+        color: var(--text);
+      }
+      .editing .actions {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        display: flex;
+        gap: 4px;
+        z-index: 40;
+      }
+      .editing .actions button {
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 3px;
+        background: #fff;
+        color: var(--slate);
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow:
+          0 0 1px rgba(9, 30, 66, 0.31),
+          0 2px 4px rgba(9, 30, 66, 0.25);
+      }
+      .editing .actions button:hover {
+        background: var(--neutral-20);
+      }
+
+      /* ---------- track stepper ---------- */
+      .stepper {
+        display: inline-flex;
+        align-items: stretch;
+        border: 1px solid var(--neutral-40);
+        border-radius: 3px;
+        background: #fff;
+        height: 22px;
+        overflow: hidden;
+      }
+      .stepper button {
+        border: none;
+        background: #fff;
+        color: var(--slate);
+        width: 22px;
+        font-size: 13px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .stepper button:hover:not(:disabled) {
+        background: var(--neutral-20);
+      }
+      .stepper button:disabled {
+        color: #c1c7d0;
+        cursor: not-allowed;
+      }
+      .stepper .count {
+        min-width: 56px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate);
+        border-left: 1px solid var(--neutral-30);
+        border-right: 1px solid var(--neutral-30);
+        padding: 0 4px;
+        white-space: nowrap;
+      }
+
+      /* ---------- per-team commit controls ---------- */
+      .rowactions {
+        display: inline-flex;
+        gap: 6px;
+      }
+      .btn {
+        border: 1px solid var(--neutral-40);
+        background: #fff;
+        color: var(--slate);
+        border-radius: 3px;
+        padding: 3px 10px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--neutral-20);
+      }
+      .btn.primary {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+      }
+      .btn.primary:hover {
+        background: var(--brand-hover);
+      }
+
+      /* ---------- track + issue rows ---------- */
+      .tracklabel {
+        grid-column-start: what;
+        padding: 3px 6px 3px 22px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .issuename {
+        grid-column-start: what;
+        padding: 3px 8px 3px 30px;
+        font-size: 12px;
+        color: #42526e;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .bars {
+        grid-column: 2 / -1;
+        position: relative;
+        padding: 4px 0;
+      }
+      .bar {
+        position: absolute;
+        height: 14px;
+        border-radius: 3px;
+        background: linear-gradient(to right, #1d7afc 45%, #4bce97 55%);
+        border: 1px solid rgba(9, 30, 66, 0.2);
+        box-sizing: border-box;
+      }
+      .whisker {
+        position: absolute;
+        height: 3px;
+        top: 9px;
+        background: linear-gradient(to right, #b3d4ff 85%, #baf3db 95%);
+        border-radius: 2px;
+      }
+
+      /* ---------- annotation for the inputs / outputs split ---------- */
+      .zones {
+        display: grid;
+        grid-template-columns: 210px 1fr 1fr;
+        max-width: 1080px;
+        font-size: 11px;
+        color: var(--subtle);
+        margin: 2px 0 18px;
+      }
+      .zones span {
+        padding: 2px 8px;
+      }
+      .zones .inputs {
+        grid-column: 1 / span 2;
+        border-top: 2px solid var(--brand);
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .zones .outputs {
+        border-top: 2px solid var(--neutral-40);
+        text-align: right;
+      }
+
+      /* ---------- tooltip mock ---------- */
+      .tip {
+        max-width: 340px;
+        background: #172b4d;
+        color: #fff;
+        border-radius: 4px;
+        padding: 10px 12px;
+        font-size: 12px;
+        line-height: 1.45;
+        box-shadow: 0 4px 8px rgba(9, 30, 66, 0.25);
+      }
+      .tip b {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .tip .dim {
+        color: #b6c2cf;
+      }
+
+      table.cmp {
+        border-collapse: collapse;
+        font-size: 13px;
+        max-width: 980px;
+        margin: 10px 0 4px;
+      }
+      table.cmp th,
+      table.cmp td {
+        border: 1px solid var(--neutral-30);
+        padding: 6px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      table.cmp th {
+        background: var(--neutral-20);
+        font-size: 12px;
+        color: var(--slate);
+      }
+      .row2 {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Auto-Scheduler — editable capacity and tracks</h1>
+    <p class="intro">
+      Mockup for <a href="../README.md">spec/031</a>. The team header row becomes the place you change a plan's
+      assumptions: click capacity to edit it, step the track count in place, and keep the change as a what-if until you
+      commit it. Nothing here is live — it is static HTML showing the states.
+    </p>
+
+    <!-- ================================================================= -->
+    <h2>1 — The team header row</h2>
+
+    <h3>Today</h3>
+    <div class="panel">
+      <div class="grid">
+        <div class="teamstripe" style="grid-row: 1"></div>
+        <div class="teamname" style="grid-row: 1">ORDER</div>
+        <div class="teammetrics" style="grid-row: 1">
+          <span class="group"></span>
+          <span class="group">
+            <span class="metric"><span class="label">Total Working Days:</span> <span class="readonly">38</span></span>
+            <span class="metric"><span class="label">Points / Day:</span> <span class="readonly">2.1</span></span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      Two derived numbers, right-aligned, read-only, in reverse order (the row is <code>flex-row-reverse</code>). To
+      change either one you go to Settings → Teams and come back.
+    </p>
+
+    <h3>Proposed <span class="badge rec">this spec</span></h3>
+    <div class="panel">
+      <div class="grid">
+        <div class="teamstripe" style="grid-row: 1"></div>
+        <div class="teamname" style="grid-row: 1">
+          ORDER
+          <span class="stepper" title="Parallel work tracks for this team">
+            <button disabled title="At the minimum of 1 track">−</button>
+            <span class="count">1 track</span>
+            <button title="Add a parallel work track for this team">+</button>
+          </span>
+        </div>
+        <div class="teammetrics" style="grid-row: 1">
+          <span class="group">
+            <span class="metric">
+              <span class="label">Capacity</span>
+              <button class="editable">21</button>
+              <span class="unit">pts / sprint</span>
+            </span>
+          </span>
+          <span class="group">
+            <span class="metric">
+              <span class="label">Points / Day</span>
+              <span class="readonly">2.1</span>
+            </span>
+            <span class="metric">
+              <span class="label">Total Working Days</span>
+              <span class="readonly">38</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="zones">
+      <span class="inputs">Inputs — what you tell the scheduler</span>
+      <span class="outputs">Outputs — what it tells you</span>
+    </div>
+    <p class="caption">
+      The row splits on the one distinction that matters: everything you can change is on the left, packed against the
+      team name; everything the model computes is on the right. Capacity is an input, so it moves left next to the track
+      stepper. Points / Day is a unit conversion of capacity and Total Working Days is a result of the simulation, so
+      both stay right, read-only.
+    </p>
+
+    <!-- ================================================================= -->
+    <h2>2 — Editing capacity</h2>
+    <p class="intro">
+      <code>pointsPerDay = capacity ÷ sprintLength</code>. Capacity is the input; Points / Day is the readout that
+      follows it.
+    </p>
+
+    <div class="panel has-open-edit">
+      <div class="grid">
+        <div class="teamstripe" style="grid-row: 1"></div>
+        <div class="teamname" style="grid-row: 1">
+          ORDER
+          <span class="stepper">
+            <button disabled>−</button>
+            <span class="count">1 track</span>
+            <button>+</button>
+          </span>
+        </div>
+        <div class="teammetrics" style="grid-row: 1">
+          <span class="group">
+            <span class="metric">
+              <span class="label">Capacity</span>
+              <span class="editing">
+                <span class="field"><input value="30" /></span>
+                <span class="actions">
+                  <button title="Confirm">✓</button>
+                  <button title="Cancel">✕</button>
+                </span>
+              </span>
+              <span class="unit">pts / sprint</span>
+            </span>
+          </span>
+          <span class="group">
+            <span class="metric">
+              <span class="label">Points / Day</span>
+              <span class="readonly">2.1</span>
+            </span>
+            <span class="metric">
+              <span class="label">Total Working Days</span>
+              <span class="readonly">38</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>A standard Jira click-to-edit, not a bespoke one.</strong> The resting state is
+      <code>@atlaskit/inline-edit</code>'s read view: plain text in a borderless button that reveals a subtle neutral
+      fill on hover — no pencil, no box, no dotted underline. Clicking swaps in a <code>@atlaskit/textfield</code> with
+      the standard confirm / cancel pair. Two components already in the app use it:
+      <code>EditableTitle.tsx</code> (saved report name) and <code>SectionTitle.tsx</code> (Report of Reports section
+      title).
+    </div>
+
+    <!-- ================================================================= -->
+    <h2>3 — Uncommitted changes</h2>
+    <p class="intro">
+      A change takes effect in the plan immediately — that is the point of a what-if — but it does not touch your saved
+      team settings until you commit it. One row-level treatment says so, and it is identical whether capacity or tracks
+      moved. Reset and Commit act on inputs, so they join the left group.
+    </p>
+
+    <h3>Capacity changed</h3>
+    <div class="panel">
+      <div class="grid">
+        <div class="teamstripe dirty" style="grid-row: 1"></div>
+        <div class="teamname" style="grid-row: 1">
+          ORDER
+          <span class="stepper">
+            <button disabled>−</button>
+            <span class="count">1 track</span>
+            <button>+</button>
+          </span>
+        </div>
+        <div class="teammetrics" style="grid-row: 1">
+          <span class="group">
+            <span class="metric">
+              <span class="label">Capacity</span>
+              <button class="editable">35</button>
+              <span class="unit">pts / sprint</span>
+            </span>
+            <span class="rowactions">
+              <button class="btn">Reset</button>
+              <button class="btn primary">Commit</button>
+            </span>
+          </span>
+          <span class="group">
+            <span class="metric">
+              <span class="label">Points / Day</span>
+              <span class="readonly">3.5</span>
+            </span>
+            <span class="metric">
+              <span class="label">Total Working Days</span>
+              <span class="readonly">23</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Tracks changed — the same treatment</h3>
+    <div class="panel">
+      <div class="grid">
+        <div class="teamstripe dirty" style="grid-row: 1"></div>
+        <div class="teamname" style="grid-row: 1">
+          ORDER
+          <span class="stepper">
+            <button>−</button>
+            <span class="count">2 tracks</span>
+            <button>+</button>
+          </span>
+        </div>
+        <div class="teammetrics" style="grid-row: 1">
+          <span class="group">
+            <span class="metric">
+              <span class="label">Capacity</span>
+              <button class="editable">21</button>
+              <span class="unit">pts / sprint</span>
+            </span>
+            <span class="rowactions">
+              <button class="btn">Reset</button>
+              <button class="btn primary">Commit</button>
+            </span>
+          </span>
+          <span class="group">
+            <span class="metric">
+              <span class="label">Points / Day</span>
+              <span class="readonly">2.1</span>
+            </span>
+            <span class="metric">
+              <span class="label">Total Working Days</span>
+              <span class="readonly">38</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">
+      The amber fill and left edge mark the <em>row</em>, not the field. That is what makes capacity and tracks behave
+      alike — a dirty-input style would have worked for the one and had no equivalent for the other. The pair of buttons
+      is the second half of the signal: they exist only while something is uncommitted, so their presence is itself the
+      indicator. They appear at the end of the input group, so the row grows leftward and the outputs never move.
+    </p>
+
+    <table class="cmp">
+      <tr>
+        <th>Control</th>
+        <th>Does</th>
+      </tr>
+      <tr>
+        <td><strong>Reset</strong></td>
+        <td>Drops this team's override. The row returns to saved settings and the plan re-solves.</td>
+      </tr>
+      <tr>
+        <td><strong>Commit</strong></td>
+        <td>
+          Writes capacity and tracks through to team settings — the same store Settings → Teams edits — and clears the
+          row treatment. Affects every report.
+        </td>
+      </tr>
+    </table>
+
+    <div class="note">
+      Overrides are session state. They are not written to the URL and not carried by a saved report: a shared link that
+      silently showed a plan built on capacity that does not exist would be a worse bug than losing an uncommitted
+      what-if on reload.
+    </div>
+
+    <h3>Several teams at once</h3>
+    <div class="panel">
+      <div class="grid">
+        <div class="timehead" style="grid-column: 2 / span 4">Mar 2</div>
+        <div class="timehead" style="grid-column: 6 / span 4">Mar 16</div>
+        <div class="timehead" style="grid-column: 10 / span 4">Mar 30</div>
+
+        <div class="teamstripe dirty" style="grid-row: 2"></div>
+        <div class="teamname" style="grid-row: 2">
+          ORDER
+          <span class="stepper">
+            <button>−</button>
+            <span class="count">2 tracks</span>
+            <button>+</button>
+          </span>
+        </div>
+        <div class="teammetrics" style="grid-row: 2">
+          <span class="group">
+            <span class="metric">
+              <span class="label">Capacity</span>
+              <button class="editable">35</button>
+              <span class="unit">pts / sprint</span>
+            </span>
+            <span class="rowactions">
+              <button class="btn">Reset</button>
+              <button class="btn primary">Commit</button>
+            </span>
+          </span>
+          <span class="group">
+            <span class="metric">
+              <span class="label">Points / Day</span>
+              <span class="readonly">3.5</span>
+            </span>
+            <span class="metric">
+              <span class="label">Total Working Days</span>
+              <span class="readonly">23</span>
+            </span>
+          </span>
+        </div>
+
+        <div class="tracklabel" style="grid-row: 3">Track 1</div>
+        <div class="bars" style="grid-row: 3"></div>
+        <div class="issuename" style="grid-row: 4">Checkout rewrite</div>
+        <div class="bars" style="grid-row: 4">
+          <div class="whisker" style="left: 2%; width: 26%"></div>
+          <div class="bar" style="left: 4%; width: 21%"></div>
+        </div>
+        <div class="tracklabel" style="grid-row: 5">Track 2</div>
+        <div class="bars" style="grid-row: 5"></div>
+        <div class="issuename" style="grid-row: 6">Order history API</div>
+        <div class="bars" style="grid-row: 6">
+          <div class="whisker" style="left: 2%; width: 22%"></div>
+          <div class="bar" style="left: 4%; width: 18%"></div>
+        </div>
+
+        <div class="teamstripe" style="grid-row: 7"></div>
+        <div class="teamname" style="grid-row: 7">
+          STORE
+          <span class="stepper">
+            <button disabled>−</button>
+            <span class="count">1 track</span>
+            <button>+</button>
+          </span>
+        </div>
+        <div class="teammetrics" style="grid-row: 7">
+          <span class="group">
+            <span class="metric">
+              <span class="label">Capacity</span>
+              <button class="editable">13</button>
+              <span class="unit">pts / sprint</span>
+            </span>
+          </span>
+          <span class="group">
+            <span class="metric">
+              <span class="label">Points / Day</span>
+              <span class="readonly">1.3</span>
+            </span>
+            <span class="metric">
+              <span class="label">Total Working Days</span>
+              <span class="readonly">44</span>
+            </span>
+          </span>
+        </div>
+        <div class="tracklabel" style="grid-row: 8">Track 1</div>
+        <div class="bars" style="grid-row: 8"></div>
+        <div class="issuename" style="grid-row: 9">Inventory sync</div>
+        <div class="bars" style="grid-row: 9">
+          <div class="whisker" style="left: 20%; width: 50%"></div>
+          <div class="bar" style="left: 24%; width: 42%"></div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      Untouched teams look exactly as they do today — no amber, no buttons. Each team commits or resets on its own; a
+      change to one team is not entangled with a change to another. Because the outputs are right-aligned, they line up
+      into readable columns down the report whether or not a team has pending changes.
+    </p>
+
+    <!-- ================================================================= -->
+    <h2>4 — Tracks</h2>
+    <p class="intro">
+      The stepper sits next to the team name, where the original tool's <code>+</code> was — and, under the new
+      arrangement, at the head of the input group. The original put <code>−</code> on the <em>Track 1</em> label row;
+      putting both in one control means the count is readable at a glance, and it survives the case where a track has no
+      work and its label row is not rendered.
+    </p>
+
+    <div class="row2">
+      <div class="panel" style="max-width: 340px">
+        <div style="padding: 8px 10px; background: var(--neutral-20); display: flex; gap: 8px; align-items: center">
+          <span style="font-weight: 600">ORDER</span>
+          <span class="stepper">
+            <button disabled title="At the minimum of 1 track">−</button>
+            <span class="count">1 track</span>
+            <button>+</button>
+          </span>
+        </div>
+      </div>
+      <div class="panel" style="max-width: 340px">
+        <div style="padding: 8px 10px; background: var(--neutral-20); display: flex; gap: 8px; align-items: center">
+          <span style="font-weight: 600">PLATFORM</span>
+          <span class="stepper">
+            <button>−</button>
+            <span class="count">7 tracks</span>
+            <button>+</button>
+          </span>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      <code>−</code> stops at 1, because a team with zero tracks cannot be scheduled. There is no upper bound — how many
+      streams a team runs is not ours to cap.
+    </p>
+
+    <div class="note warn">
+      <strong>Adding a track does not add capacity.</strong> <code>totalPointsPerDay</code> is unchanged by
+      <code>tracks</code>; only <code>pointsPerDayPerTrack</code> moves. Two tracks means each <em>estimated</em> epic
+      takes twice as long and two run side by side. Tracks trade latency on one chain for parallelism across chains —
+      they help a wide plan and do nothing for a single dependency chain. Unestimated epics are the exception: their
+      default estimate is <code>velocity / tracks</code>, which divides by the same <code>tracks</code> that
+      <code>pointsPerDayPerTrack</code> does, so the two cancel and their duration is unchanged.
+    </div>
+
+    <h3>The tooltips that have to say so</h3>
+    <div class="row2">
+      <div class="tip">
+        <b>Tracks — 2</b>
+        Parallel work streams inside this team. Each track works one epic at a time.
+        <div style="margin-top: 6px" class="dim">
+          Adding a track does <strong style="color: #fff">not</strong> add capacity. The team still delivers 2.1
+          points/day; each track now gets 1.05, so every <em>estimated</em> epic takes about twice as long and two run
+          at once.
+        </div>
+        <div style="margin-top: 6px" class="dim">
+          Epics with <em>no</em> estimate are the exception: their default estimate is capacity ÷ tracks, which shrinks
+          by exactly the same factor as each track&rsquo;s throughput, so their duration does not move at all.
+        </div>
+      </div>
+      <div class="tip">
+        <b>Points / Day — 2.1</b>
+        Capacity ÷ sprint length = 21 ÷ 10 business days.
+        <div style="margin-top: 6px" class="dim">Change capacity to move this. It is a readout, not a setting.</div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <h2>5 — Rejected options</h2>
+    <table class="cmp">
+      <tr>
+        <th>Option</th>
+        <th style="width: 62%">Why not</th>
+      </tr>
+      <tr>
+        <td>Everything right-aligned, as the row is today <span class="badge no">no</span></td>
+        <td>
+          Mixes the two numbers you set with the two the model computes, so nothing on the row tells you which is which.
+          Inputs left, outputs right makes that readable without a single word of explanation.
+        </td>
+      </tr>
+      <tr>
+        <td>A global “2 teams changed — Reset all / Save all” bar <span class="badge no">no</span></td>
+        <td>
+          A second place to commit, far from the thing being committed, and it forces an all-or-nothing decision across
+          teams you changed for unrelated reasons. Per-team Reset / Commit says the same thing next to the change.
+        </td>
+      </tr>
+      <tr>
+        <td>“was 21”, “(1.75 / track)”, before → after diffs on the row <span class="badge no">no</span></td>
+        <td>
+          Noise on a row that already carries four values plus three controls. The amber row says something changed;
+          Reset puts it back. Nobody needs the old number quoted at them to use either.
+        </td>
+      </tr>
+      <tr>
+        <td>A maximum track count <span class="badge no">no</span></td>
+        <td>How many parallel streams a team runs is a fact about that team, not a limit for this tool to impose.</td>
+      </tr>
+      <tr>
+        <td>A bespoke edit affordance — pencil, dotted underline, bordered chip <span class="badge no">no</span></td>
+        <td>
+          Jira has one click-to-edit idiom and this app already uses it twice. Anything else makes capacity look like a
+          different kind of control than every other editable value in the product.
+        </td>
+      </tr>
+      <tr>
+        <td>Editable <em>Points / Day</em> <span class="badge no">no</span></td>
+        <td>
+          Arithmetically it back-solves to <code>capacity = pointsPerDay × sprintLength</code>, but two editable fields
+          bound to one stored value means every edit silently rewrites the other, and rounding makes the round-trip
+          lossy — type <code>2.13</code>, get 21 pts/sprint, see <code>2.1</code>. One input, one readout.
+        </td>
+      </tr>
+      <tr>
+        <td>Editable <em>Total Working Days</em> <span class="badge no">no</span></td>
+        <td>It is an output of the simulation. Back-solving capacity from it is not well defined.</td>
+      </tr>
+      <tr>
+        <td>Overrides in the URL / saved report <span class="badge no">no</span></td>
+        <td>A shared link would silently show a plan built on capacity that does not exist.</td>
+      </tr>
+    </table>
+  </body>
+</html>

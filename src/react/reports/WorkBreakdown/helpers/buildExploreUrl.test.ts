@@ -12,6 +12,16 @@ describe('buildExploreUrl', () => {
     expect(result.searchParams.get('foo')).toBe('bar');
   });
 
+  // The explore view is built from the CURRENT url, so a page loaded with blockers on would drag its
+  // whole upstream graph into a view that is meant to be one issue's children.
+  test('resets the blocker expansion it would otherwise inherit', () => {
+    const url = buildExploreUrl('https://example.com/report?loadBlockers=true&blockerJQL=type%20%3D%20Bug', 'OUT-88');
+    const result = new URL(url);
+
+    expect(result.searchParams.get('loadBlockers')).toBe('false');
+    expect(result.searchParams.get('blockerJQL')).toBe('');
+  });
+
   test('clears filters that would hide the explored children', () => {
     const url = buildExploreUrl(
       'https://example.com/report?statusesToShow=a&statusesToRemove=b&releasesToShow=c&groupBy=team',

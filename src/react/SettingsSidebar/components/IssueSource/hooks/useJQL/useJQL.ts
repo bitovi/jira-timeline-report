@@ -8,11 +8,15 @@ export const useJQL = () => {
   const childJqlFromRouteData = useCanObservable(value.from<string>(routeData, 'childJQL'));
   const statusesToExcludeFromRouteData = useCanObservable(value.from<string[]>(routeData, 'statusesToExclude'));
   const loadChildrenFromRouteData = useCanObservable(value.from<boolean>(routeData, 'loadChildren'));
+  const blockerJqlFromRouteData = useCanObservable(value.from<string>(routeData, 'blockerJQL'));
+  const loadBlockersFromRouteData = useCanObservable(value.from<boolean>(routeData, 'loadBlockers'));
 
   const [statusesToExclude, setStatusesToExclude] = useState<string[]>(statusesToExcludeFromRouteData);
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJql, setChildJql] = useState(childJqlFromRouteData);
   const [loadChildren, setLoadChildren] = useState(loadChildrenFromRouteData);
+  const [blockerJql, setBlockerJql] = useState(blockerJqlFromRouteData);
+  const [loadBlockers, setLoadBlockers] = useState(loadBlockersFromRouteData);
 
   // Keep the textarea in sync when the JQL is updated externally (e.g. by the
   // cycle time slider expanding the date window and writing to routeData.jql).
@@ -26,6 +30,8 @@ export const useJQL = () => {
       childJQL: childJql,
       statusesToExclude,
       loadChildren,
+      blockerJQL: blockerJql,
+      loadBlockers,
     });
   };
 
@@ -43,8 +49,17 @@ export const useJQL = () => {
     statusesToExclude,
     setStatusesToExclude,
     setLoadChildren,
+    blockerJql,
+    setBlockerJql,
+    loadBlockers,
+    setLoadBlockers,
     applyButtonEnabled:
-      (!!jql && (jql !== jqlFromRouteData || childJql !== childJqlFromRouteData || statusesDiffer)) ||
-      loadChildren !== loadChildrenFromRouteData,
+      (!!jql &&
+        (jql !== jqlFromRouteData ||
+          childJql !== childJqlFromRouteData ||
+          blockerJql !== blockerJqlFromRouteData ||
+          statusesDiffer)) ||
+      loadChildren !== loadChildrenFromRouteData ||
+      loadBlockers !== loadBlockersFromRouteData,
   };
 };

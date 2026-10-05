@@ -1,0 +1,522 @@
+/* ==========================================================================
+   spec/038-planning-progress — planning-progress icicle, MOCKUP STYLES
+   Plain CSS. No build step. Loaded with <link rel="stylesheet" href="render.css">.
+   Every selector is namespaced `pp-` so the sheet can be dropped into any
+   scratch page without colliding with that page's own mockup styles.
+   ========================================================================== */
+
+.pp-wrap {
+  /* Atlaskit-derived token set, same values as the other spec mockups. */
+  --pp-text: #172b4d;
+  --pp-muted: #5e6c84;
+  --pp-subtle: #6b778c;
+  --pp-border: #dfe1e6;
+  --pp-n20: #f1f2f4;
+  --pp-n30: #ebecf0;
+  --pp-n40: #dcdfe4;
+  --pp-brand: #0c66e4;
+  --pp-danger: #ae2e24;
+  --pp-warn: #b65c02;
+
+  /* Execution state. Jira semantics, untouched — these always beat the ramp. */
+  --pp-done: #1f845a;
+  --pp-done-text: #ffffff;
+  --pp-prog: #0c66e4;
+  --pp-prog-text: #ffffff;
+
+  /* Inferred / projected placement. */
+  --pp-inferred-bd: #8993a4;
+  /* "own value" border for sourceEncoding:'border'. */
+  --pp-own-bd: rgba(9, 30, 66, 0.62);
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--pp-text);
+  position: relative;
+}
+
+.pp-wrap *,
+.pp-wrap *::before,
+.pp-wrap *::after {
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   PLANNING RAMPS
+   Four rungs only. Neither ramp may use blue or green: in Jira blue already
+   means In Progress and green already means Done, and planning progress is a
+   different question from execution progress.
+   Swapping ramps is a class swap on .pp-wrap — never a re-render.
+   -------------------------------------------------------------------------- */
+.pp-ramp-purple {
+  --pp-r0: #f1f2f4;
+  --pp-r0-text: #8590a2;
+  --pp-r1: #f3e7fc;
+  --pp-r1-text: #5e3a78;
+  --pp-r2: #d9a8f2;
+  --pp-r2-text: #44205c;
+  --pp-r3: #8341ad;
+  --pp-r3-text: #ffffff;
+}
+
+.pp-ramp-grey {
+  --pp-r0: #f1f2f4;
+  --pp-r0-text: #8590a2;
+  --pp-r1: #dcdfe4;
+  --pp-r1-text: #626f86;
+  --pp-r2: #b3b9c4;
+  --pp-r2-text: #2c3e5d;
+  --pp-r3: #626f86;
+  --pp-r3-text: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   MONTH AXIS
+   Months are positioned by true elapsed time, not as 12 equal columns, so a
+   bar's left edge lands on the real date rather than near it.
+   -------------------------------------------------------------------------- */
+.pp-axis {
+  position: relative;
+  height: 20px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--pp-n30);
+}
+
+.pp-month {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: var(--pp-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  border-left: 1px solid var(--pp-n30);
+}
+
+.pp-month.pp-month-year {
+  color: var(--pp-text);
+  font-weight: 600;
+}
+
+.pp-chart {
+  position: relative;
+}
+
+.pp-gridlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pp-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px solid var(--pp-n30);
+}
+
+.pp-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--pp-danger);
+  opacity: 0.55;
+  z-index: 4;
+}
+
+/* --------------------------------------------------------------------------
+   GROUPS AND LANES
+   One lane per hierarchy LEVEL, not per item. Every initiative under one
+   outcome shares a single lane; likewise epics; likewise stories. This is an
+   icicle, not a Gantt chart.
+   -------------------------------------------------------------------------- */
+.pp-group {
+  position: relative;
+  margin-top: 12px;
+}
+
+.pp-group:first-child {
+  margin-top: 0;
+}
+
+.pp-lane {
+  position: relative;
+  margin-top: 2px;
+  /* Tooltips, brackets and hover rings have to escape the lane box. */
+  overflow: visible;
+}
+
+.pp-lane:first-child {
+  margin-top: 0;
+}
+
+/* Each level is drawn shorter than its parent, so depth reads as a staircase
+   before you look at any colour. */
+.pp-lane-0 {
+  height: 26px;
+}
+.pp-lane-1 {
+  height: 18px;
+}
+.pp-lane-2 {
+  height: 12px;
+}
+.pp-lane-3 {
+  height: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   BARS
+   Border colour/width/style run through custom properties so the many
+   independent encodings (level, projected, source, contradiction) can layer
+   without !important. Later rules in this file win ties.
+   -------------------------------------------------------------------------- */
+.pp-bar {
+  --pp-bw: 2px;
+  --pp-bs: solid;
+  --pp-bc: transparent;
+  --pp-fill: var(--pp-r0);
+  --pp-fg: var(--pp-r0-text);
+
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 2px;
+  border: var(--pp-bw) var(--pp-bs) var(--pp-bc);
+  background-color: var(--pp-fill);
+  color: var(--pp-fg);
+  box-shadow: var(--pp-ring, 0 0 0 0 rgba(0, 0, 0, 0));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: default;
+  z-index: 2;
+}
+
+.pp-bar.pp-lv1 {
+  font-size: 10.5px;
+  padding: 0 5px;
+  --pp-bw: 1px;
+}
+.pp-bar.pp-lv2 {
+  --pp-bw: 1px;
+  border-radius: 2px;
+  padding: 0;
+}
+.pp-bar.pp-lv3 {
+  --pp-bw: 1px;
+  border-radius: 1px;
+  padding: 0;
+  /* A white hairline keeps a run of 20 stories countable instead of fusing
+     into one solid block. */
+  --pp-bc: rgba(255, 255, 255, 0.92);
+}
+
+/* Below the top level the blocks carry no text at all — shape is the message,
+   and the name arrives on hover. */
+.pp-bar.pp-mute {
+  padding: 0;
+  font-size: 0;
+}
+
+.pp-rung0 {
+  --pp-fill: var(--pp-r0);
+  --pp-fg: var(--pp-r0-text);
+}
+.pp-rung1 {
+  --pp-fill: var(--pp-r1);
+  --pp-fg: var(--pp-r1-text);
+}
+.pp-rung2 {
+  --pp-fill: var(--pp-r2);
+  --pp-fg: var(--pp-r2-text);
+}
+.pp-rung3 {
+  --pp-fill: var(--pp-r3);
+  --pp-fg: var(--pp-r3-text);
+}
+
+/* Execution state supersedes the planning ramp: once work has started, the
+   planning questions stop applying. */
+.pp-exec-inprogress {
+  --pp-fill: var(--pp-prog);
+  --pp-fg: var(--pp-prog-text);
+}
+.pp-exec-done {
+  --pp-fill: var(--pp-done);
+  --pp-fg: var(--pp-done-text);
+}
+
+/* Queued by rank rather than committed to a date: dashed edge plus a diagonal
+   white hatch, so an inferred position can never be mistaken for a real one. */
+.pp-projected {
+  --pp-bs: dashed;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.45),
+    rgba(255, 255, 255, 0.45) 4px,
+    transparent 4px,
+    transparent 9px
+  );
+}
+
+.pp-projected:not(.pp-lv3) {
+  --pp-bc: var(--pp-inferred-bd);
+}
+
+/* The stretch of a dated parent that exists only to cover its queued children.
+   It is the SAME item as the dated part, so the two segments are joined below
+   rather than being tinted apart. */
+.pp-ext {
+  opacity: 1;
+}
+
+/* A dated parent and its projected overrun are one item split where committed
+   dates run out, not two items. Square off the shared edge and drop both
+   adjoining borders so no seam is drawn — the solid-to-hatched change in the
+   fill is the only marker needed. */
+.pp-bar.pp-join-r {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right-color: transparent;
+}
+.pp-bar.pp-join-l {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left-color: transparent;
+}
+
+/* No estimate anywhere — the width is a fiction and has to say so. */
+.pp-nominal {
+  outline: 1px dotted var(--pp-danger);
+  outline-offset: -3px;
+}
+.pp-nominal.pp-lv2 {
+  outline-offset: -2px;
+}
+.pp-nominal.pp-lv3 {
+  outline-offset: -1px;
+}
+
+/* --------------------------------------------------------------------------
+   "OWN VS ROLLED UP" — four switchable encodings
+   All four are pure class swaps on .pp-wrap; the DOM for every mode is always
+   present and CSS decides what is visible.
+   -------------------------------------------------------------------------- */
+
+/* 'none' — baseline, nothing at all. */
+
+/* 'border' — an item whose value is its OWN gets a solid darker border; a
+   rolled-up item gets none. */
+.pp-wrap.pp-src-border .pp-bar[data-geom-src='own'] {
+  --pp-bw: 2px;
+  --pp-bs: solid;
+  --pp-bc: var(--pp-own-bd);
+}
+
+/* 'anchor' — a solid notch at the left edge marks an item that carries its own
+   value. Rolled items get nothing. Cheapest ink of the four. */
+.pp-anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--pp-own-bd);
+  display: none;
+  pointer-events: none;
+}
+.pp-wrap.pp-src-anchor .pp-bar[data-geom-src='own'] > .pp-anchor {
+  display: block;
+}
+/* Fallback: in 'border' mode a contradicted bar has already spent its border on
+   the claimed rung, so fall back to the anchor there rather than lose the
+   distinction entirely. */
+.pp-wrap.pp-src-border .pp-bar.pp-contra[data-geom-src='own'] > .pp-anchor {
+  display: block;
+}
+
+/* 'bracket' — a rolled-up item gets a thin bracket under it spanning its
+   children's extent, suggesting the value was derived from below. */
+.pp-bracket {
+  position: absolute;
+  height: 3px;
+  bottom: -3px;
+  border: 1px solid rgba(9, 30, 66, 0.55);
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+  display: none;
+  pointer-events: none;
+  /* Must sit above the next lane's bars, since the 2px row gap is all the room
+     there is for it. */
+  z-index: 7;
+}
+.pp-wrap.pp-src-bracket .pp-bracket {
+  display: block;
+}
+
+/* estimateSource and dateSource can disagree on the same item (own dates plus a
+   rolled-up estimate is the common case). The primary encoding always tracks
+   the field that actually produced the geometry you are looking at; this little
+   right-edge tick says "the other field disagrees". */
+.pp-mixed {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(9, 30, 66, 0.28);
+  display: none;
+  pointer-events: none;
+}
+.pp-wrap:not(.pp-src-none) .pp-bar[data-mixed='true'] > .pp-mixed {
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   CONTRADICTION
+   Border = what the status CLAIMS, fill = what the fields EVIDENCE. A hollow
+   promise literally looks hollow. Declared after the source-encoding rules and
+   with an extra class of specificity so it always wins the border channel.
+   -------------------------------------------------------------------------- */
+.pp-wrap .pp-bar.pp-contra {
+  --pp-bw: 2px;
+  --pp-bs: solid;
+  --pp-bc: var(--pp-claim);
+}
+.pp-wrap .pp-bar.pp-contra.pp-lv3 {
+  --pp-bw: 1px;
+}
+
+.pp-claim0 {
+  --pp-claim: var(--pp-r0);
+}
+.pp-claim1 {
+  --pp-claim: var(--pp-r1);
+}
+.pp-claim2 {
+  --pp-claim: var(--pp-r2);
+}
+.pp-claim3 {
+  --pp-claim: var(--pp-r3);
+}
+
+/* Work started on something that was never planned. */
+.pp-redring {
+  --pp-ring: inset 0 0 0 2px var(--pp-danger);
+}
+
+/* --------------------------------------------------------------------------
+   GAPS — a parent with no children at all leaves a visible hole in the lanes
+   below it. Absence of breakdown is information.
+   -------------------------------------------------------------------------- */
+.pp-gap {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 2px;
+  border: 1px dashed #b3bac5;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(9, 30, 66, 0.06) 5px,
+    rgba(9, 30, 66, 0.06) 10px
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   HOVER + TOOLTIP
+   The tooltip is a single element parked on <body>, so no ancestor's overflow
+   or stacking context can clip it.
+   -------------------------------------------------------------------------- */
+.pp-bar:hover {
+  z-index: 60;
+  filter: brightness(1.1);
+  box-shadow:
+    var(--pp-ring, 0 0 0 0 rgba(0, 0, 0, 0)),
+    0 0 0 2px #172b4d;
+}
+
+.pp-tip {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: 340px;
+  background: #172b4d;
+  color: #fff;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11.5px;
+  line-height: 1.45;
+  box-shadow: 0 8px 16px rgba(9, 30, 66, 0.35);
+  pointer-events: none;
+  display: none;
+}
+
+.pp-tip-title {
+  font-weight: 700;
+  font-size: 12.5px;
+  margin-bottom: 4px;
+}
+
+.pp-tip-key {
+  opacity: 0.7;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.pp-tip table {
+  border-collapse: collapse;
+}
+
+.pp-tip th {
+  text-align: left;
+  font-weight: 400;
+  opacity: 0.68;
+  padding: 0 10px 0 0;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.pp-tip td {
+  padding: 0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pp-tip .pp-tip-bad {
+  color: #ff9c8f;
+}
+
+/* --------------------------------------------------------------------------
+   ERROR STATE
+   -------------------------------------------------------------------------- */
+.pp-error {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: #ae2e24;
+  background: #ffeceb;
+  border: 1px solid #ae2e24;
+  border-left-width: 3px;
+  border-radius: 0 3px 3px 0;
+  padding: 12px 16px;
+}
+
+.pp-error strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}

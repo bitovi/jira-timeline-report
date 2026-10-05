@@ -22,6 +22,8 @@ const reports: Reports = {
   table2: report('table2', params({ jql: ORDER_JQL, primaryReportType: 'table', tableColumns: columns('field:cf2') })),
   deepGantt: report('deepGantt', params({ jql: ORDER_JQL, loadChildren: 'true' })),
   childJql: report('childJql', params({ jql: ORDER_JQL, childJQL: 'type = Bug' })),
+  blockerGantt: report('blockerGantt', params({ jql: ORDER_JQL, loadBlockers: 'true' })),
+  blockerJql: report('blockerJql', params({ jql: ORDER_JQL, blockerJQL: 'type = Bug' })),
   billing: report('billing', params({ jql: 'project = BILLING' })),
 };
 
@@ -66,6 +68,8 @@ describe('childQueryGroups', () => {
     it.each([
       ['loadChildren', 'deepGantt'],
       ['childJQL', 'childJql'],
+      ['loadBlockers', 'blockerGantt'],
+      ['blockerJQL', 'blockerJql'],
       ['jql', 'billing'],
     ])('%s splits the group', (_label, otherId) => {
       const groups = childQueryGroups(doc('gantt', otherId), reports);

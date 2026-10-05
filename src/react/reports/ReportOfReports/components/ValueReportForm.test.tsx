@@ -2,7 +2,7 @@ import type { FC, ReactNode } from 'react';
 import type { Jira } from '../../../../jira-oidc-helpers';
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { JiraProvider } from '../../../services/jira';
@@ -13,10 +13,24 @@ const catalog = [
   { id: 'customfield_10014', name: 'Story points' },
 ];
 
+/**
+ * Flipped by the one test that reviews the Suspense fallback.
+ *
+ * `vi.mock` is hoisted and file-wide, so "skip the module mock for this test" is not available —
+ * the mock throws a never-resolving promise instead, which is exactly what a suspended read does.
+ * That exercises the boundary rather than React Query's plumbing, which is the same reason the
+ * catalog is mocked here at all.
+ */
+let suspendCatalog = false;
+
 // `useJiraIssueFields` is a suspense query; stub it so these tests exercise the form rather than
 // React Query's suspense plumbing — the pattern `useInlineExpression.test.tsx` established.
 vi.mock('../../../services/jira/useJiraIssueFields', () => ({
-  useJiraIssueFields: () => catalog,
+  useJiraIssueFields: () => {
+    if (suspendCatalog) throw new Promise(() => {});
+
+    return catalog;
+  },
 }));
 
 /** Every query that actually reached Jira — the "don't ask on one character" assertion reads this. */
@@ -61,16 +75,27 @@ const pickWorkItem = async () => {
   fireEvent.click(await screen.findByText('ABC-1 — Migrate auth to OIDC', undefined, { timeout: 3000 }));
 };
 
+// The *locator* has not changed across spec/033's swap from an `@atlaskit/select` to a
+// `SearchablePicker`: `getByLabelText('Field')` still resolves, now to the trigger `<button>`, via
+// `HTMLButtonElement.labels` (`@testing-library/dom/.../label-helpers.js:29-37`, whose
+// `formControlSelector` includes `button`). Only the interaction did — a click, not ArrowDown.
+//
+// `within` the popover because the trigger now renders the picked label too, so an unscoped
+// `getByText` would match two nodes after the first pick.
 const pickField = (label: string) => {
-  fireEvent.keyDown(screen.getByLabelText('Field'), { key: 'ArrowDown' });
-  fireEvent.click(screen.getByText(label));
+  fireEvent.click(screen.getByLabelText('Field'));
+  fireEvent.click(within(screen.getByTestId('ror-field-popover')).getByText(label));
 };
 
 // See spec/016-report-of-reports/009-value-report-modal Phase 4.
 describe('<ValueReportForm>', () => {
   beforeEach(() => {
     queries = [];
+    // The picker persists its expand/collapse choice; a leaked value would change what these render.
+    localStorage.clear();
   });
+
+  afterEach(() => localStorage.clear());
 
   it('keeps Add disabled until both halves are chosen', async () => {
     renderForm();
@@ -91,6 +116,15 @@ describe('<ValueReportForm>', () => {
 
     expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
     expect(screen.getByLabelText('Work item')).toBeInTheDocument();
+    // Also proves the label association survived the swap to a `<button>` trigger: a native
+    // `<label htmlFor>` reaches a button through `element.labels`.
+    //
+    // `getByRole('button', { name: 'Field' })` does not find it — because the trigger's role is
+    // `combobox`, **not** because the label is missing from its accessible name. The label is the
+    // name: measured in Chrome, the trigger reports name `Field` (source: the related `<label>`) and
+    // value `Story Points`, i.e. `Field, Story Points, combobox`. That split is exactly why the role
+    // stays `combobox` — as a plain `button` the value goes to `(none)` and the selection stops being
+    // announced. See `PickerTriggerProps` and spec/033-column-select-redesign § 9.
     expect(screen.getByLabelText('Field')).toBeInTheDocument();
   });
 
@@ -146,8 +180,10 @@ describe('<ValueReportForm>', () => {
     fireEvent.click(addButton());
 
     await waitFor(() => expect(addButton()).toBeDisabled());
-    // Both selects are back to their placeholders — neither the picked field nor the picked work item
-    // is still displayed anywhere.
+    // Both halves are back to their placeholders — neither the picked field nor the picked work item
+    // is still displayed anywhere. Since spec/033 this is a *stronger* assertion than it was: the
+    // field trigger renders the picked label as its own text, where the old closed react-select
+    // rendered it only inside a menu that was unmounted anyway.
     expect(screen.queryByText('Summary')).not.toBeInTheDocument();
     expect(screen.queryByText(/ABC-1/)).not.toBeInTheDocument();
   });
@@ -164,5 +200,54 @@ describe('<ValueReportForm>', () => {
 
     expect(await screen.findByText('Keep typing…')).toBeInTheDocument();
     expect(queries).toEqual([]);
+  });
+
+  // See spec/033-column-select-redesign § 10.
+  describe('the field trigger', () => {
+    it('shows the placeholder, then the field that was picked', () => {
+      renderForm();
+
+      expect(screen.getByLabelText('Field')).toHaveTextContent('Field');
+
+      pickField('Story points');
+
+      expect(screen.getByLabelText('Field')).toHaveTextContent('Story points');
+    });
+
+    it('closes its popover on select', () => {
+      renderForm();
+
+      fireEvent.click(screen.getByLabelText('Field'));
+      expect(screen.getByTestId('ror-field-popover')).toBeInTheDocument();
+
+      fireEvent.click(within(screen.getByTestId('ror-field-popover')).getByText('Summary'));
+
+      expect(screen.queryByTestId('ror-field-popover')).not.toBeInTheDocument();
+    });
+
+    /**
+     * The Suspense fallback, which nothing covered before spec/033 even though it is the entire
+     * reason `FieldPicker` is split out of this form. What it must hold is the *label association*:
+     * the fallback carries `id="ror-value-field"` too, so `<label htmlFor>` is never dangling
+     * mid-suspense.
+     *
+     * The no-layout-shift half of the claim — that the fallback is a byte-identically sized 40px box
+     * — is not checkable here; jsdom has no layout. That is `FieldCatalogLoading`'s job.
+     */
+    it('renders the same control, disabled, while the catalog is still arriving', () => {
+      suspendCatalog = true;
+
+      try {
+        renderForm();
+
+        const trigger = screen.getByLabelText('Field');
+
+        expect(trigger).toHaveAttribute('id', 'ror-value-field');
+        expect(trigger).toBeDisabled();
+        expect(trigger).toHaveTextContent('Field');
+      } finally {
+        suspendCatalog = false;
+      }
+    });
   });
 });

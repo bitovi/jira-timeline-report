@@ -420,6 +420,8 @@ describe('ChildReportConfig', () => {
       jql: 'project = ORDER',
       childJQL: 'type = Bug',
       loadChildren: 'true',
+      blockerJQL: 'type != Sub-task',
+      loadBlockers: 'true',
       primaryReportType: 'table',
       timingCalculations: 'Epic:childrenFirstThenParent,Story:parentFirstThenChildren',
       statusesToExclude: 'Done,Cancelled',

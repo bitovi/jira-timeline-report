@@ -17,7 +17,12 @@ const AutoSchedulerControls: FC = () => {
 
   return (
     <>
-      <UncertaintySlider uncertaintyWeight={uncertaintyWeight} onChange={setUncertaintyWeight} />
+      {/* Below the threshold the bar cannot hold the slider and the selects on one line, so the
+          slider takes a row of its own. Container-, not viewport-, relative: the squeeze comes from
+          a sidebar panel opening, not from the window resizing. */}
+      <div className="flex order-last w-full @[1000px]/controls:order-none @[1000px]/controls:w-auto @[1000px]/controls:flex-1">
+        <UncertaintySlider uncertaintyWeight={uncertaintyWeight} onChange={setUncertaintyWeight} />
+      </div>
       <div className="flex flex-col items-start pt-1 pl-1">
         <Label htmlFor="auto-scheduler-date-picker">Start date</Label>
         <input

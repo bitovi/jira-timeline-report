@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Epics on the critical path — report mockup</title>
+    <style>
+      :root {
+        /* Atlaskit-derived tokens, same set as critical-paths.html */
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --neutral-30: #ebecf0;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --link: #0c66e4;
+        --success: #22a06b;
+        --danger: #ae2e24;
+        --slate: #44546f;
+        --slate-bg: #eef1f5;
+
+        /* ---- series hues ----
+           Reuses the already-validated pair from critical-paths.html:
+             node scripts/validate_palette.js "#0c66e4,#b65c02" --mode light
+           No new hues are introduced by this mockup, so no re-validation is required.
+           Only --series-work is used here; this report has no second series
+           because queued time is zero by construction. */
+        --series-work: #0c66e4;
+        --series-work-bg: #e9f2ff;
+        --series-wait: #b65c02;
+        --series-wait-bg: #fff3eb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 28px 32px 90px;
+        background: #fafbfc;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 40px 0 2px;
+        padding-top: 14px;
+        border-top: 1px solid var(--neutral-30);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 22px 0 6px;
+        color: var(--slate);
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 940px;
+        margin: 6px 0 8px;
+        font-size: 13px;
+      }
+      .caption {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 2px 0 16px;
+        max-width: 940px;
+      }
+      code {
+        background: var(--neutral-20);
+        padding: 0 4px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .stage {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+      }
+
+      /* ---------- card shell ---------- */
+      .card {
+        background: #fff;
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.08);
+        width: 660px;
+      }
+      .card.narrow {
+        width: 460px;
+      }
+      .card-head {
+        padding: 14px 18px 12px;
+        border-bottom: 1px solid var(--neutral-30);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .card-sub {
+        color: var(--subtle);
+        font-size: 12px;
+        margin: 3px 0 0;
+      }
+      .card-body {
+        padding: 4px 18px 16px;
+      }
+
+      /* ---------- headline strip ---------- */
+      .headline {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        border-bottom: 1px solid var(--neutral-30);
+        background: var(--neutral-10);
+      }
+      .stat {
+        padding: 13px 18px;
+        flex: 1;
+      }
+      .stat + .stat {
+        border-left: 1px solid var(--neutral-30);
+      }
+      .stat-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        margin-bottom: 3px;
+      }
+      .stat-value {
+        font-size: 21px;
+        font-weight: 600;
+        line-height: 1.1;
+      }
+      .stat-note {
+        font-size: 11px;
+        color: var(--subtle);
+        margin-top: 3px;
+      }
+      .stat.accent .stat-value {
+        color: var(--series-wait);
+      }
+
+      /* ---------- tables ---------- */
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+      }
+      th {
+        text-align: left;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+        padding: 12px 8px 6px;
+        border-bottom: 1px solid var(--neutral-30);
+        vertical-align: bottom;
+      }
+      th .sub {
+        display: block;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 400;
+        font-size: 11px;
+        color: var(--subtle);
+        margin-top: 2px;
+      }
+      td {
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--neutral-20);
+        vertical-align: middle;
+      }
+      tbody tr:hover {
+        background: var(--brand-bg);
+        cursor: pointer;
+      }
+      .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .rank {
+        color: var(--subtle);
+        width: 22px;
+        font-variant-numeric: tabular-nums;
+      }
+      .epic {
+        font-weight: 500;
+      }
+      .team {
+        color: var(--subtle);
+        font-size: 12px;
+      }
+      .strong {
+        font-weight: 600;
+      }
+      .zero {
+        color: var(--subtle);
+      }
+      tfoot td {
+        border-bottom: none;
+        border-top: 1px solid var(--neutral-30);
+        font-weight: 600;
+        padding-top: 9px;
+      }
+      .bar-cell {
+        width: 120px;
+      }
+      .bar {
+        height: 8px;
+        background: var(--series-work);
+        border-radius: 2px;
+        min-width: 2px;
+      }
+      .bar-track {
+        background: var(--neutral-20);
+        border-radius: 2px;
+      }
+
+      /* ---------- route list ---------- */
+      .route {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--neutral-20);
+        font-size: 13px;
+      }
+      .route:last-child {
+        border-bottom: none;
+      }
+      .route-share {
+        font-variant-numeric: tabular-nums;
+        color: var(--subtle);
+        width: 38px;
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .chip {
+        background: var(--neutral-20);
+        border-radius: 3px;
+        padding: 2px 7px;
+        font-size: 12px;
+      }
+      .arrow {
+        color: var(--subtle);
+        font-size: 12px;
+      }
+
+      /* ---------- annotations ---------- */
+      .note {
+        border-left: 3px solid var(--brand);
+        background: var(--brand-bg);
+        padding: 10px 14px;
+        margin: 14px 0;
+        font-size: 13px;
+        max-width: 940px;
+        border-radius: 0 3px 3px 0;
+      }
+      .note.warn {
+        border-left-color: var(--series-wait);
+        background: var(--series-wait-bg);
+      }
+      .note.bad {
+        border-left-color: var(--danger);
+        background: #ffeceb;
+      }
+      .note p {
+        margin: 0 0 6px;
+      }
+      .note p:last-child {
+        margin-bottom: 0;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: var(--slate-bg);
+        color: var(--slate);
+        vertical-align: middle;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+      .badge.rec {
+        background: #dcfff1;
+        color: #216e4e;
+      }
+      .badge.no {
+        background: #ffeceb;
+        color: var(--danger);
+      }
+      ul.tight {
+        margin: 6px 0;
+        padding-left: 20px;
+        max-width: 940px;
+        font-size: 13px;
+      }
+      ul.tight li {
+        margin-bottom: 5px;
+      }
+      .opt {
+        border: 1px solid var(--neutral-30);
+        border-radius: 4px;
+        background: #fff;
+        padding: 12px 14px 14px;
+        width: 300px;
+      }
+      .opt-name {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+      .opt table {
+        font-size: 12px;
+      }
+      .opt th {
+        padding: 6px 6px 4px;
+        font-size: 10px;
+      }
+      .opt td {
+        padding: 5px 6px;
+      }
+      .verdict {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 9px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Epics on the critical path</h1>
+    <p class="intro">
+      Mockup for the capacity-blind report described in
+      <code>spec/024-critical-path/dependency-floor.md</code>. Deliberately isolated from
+      <code>critical-paths.html</code>, which mocks the capacity-aware report. Sample data below is internally
+      consistent: every percentage and every day figure reconciles, so the arithmetic can be checked by hand.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>1 · What the report answers</h2>
+    <p class="caption">
+      One question, asked by a program manager: <strong>which epics should I look at first?</strong> The answer is
+      ranked by how many days each epic adds to the longest chain of <code>Blocks</code> links, measured on sampled
+      durations and recomputed every simulation run. Team contention is ignored entirely, so this is about the shape of
+      the plan rather than its staffing.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>It is not &ldquo;the plan with unlimited people.&rdquo;</strong> A team's throughput is fixed by
+        <code>velocity</code>; <code>parallelWorkLimit</code> only divides that throughput into lanes. Hiring lowers
+        this number, adding a track raises it. The number holds each epic's duration as configured and removes only the
+        queueing.
+      </p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>2 · The two numbers, and what to call them</h2>
+    <p class="caption">Every row carries the same two quantities. Only the labels are in question.</p>
+
+    <ul class="tight">
+      <li>
+        <strong>Quantity A</strong> &mdash; the share of simulation runs in which this epic was part of the longest
+        chain. Sample value: <code>68%</code>.
+      </li>
+      <li>
+        <strong>Quantity B</strong> &mdash; A multiplied by the epic's average duration on those runs. Sample value:
+        <code>7.8 d</code>. Across all epics, B sums to exactly the critical path length.
+      </li>
+    </ul>
+
+    <div class="stage">
+      <div class="opt">
+        <div class="opt-name">Option 1 — self-contained <span class="badge rec">chosen</span></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Epic</th>
+              <th class="num">Days added</th>
+              <th class="num">How often<span class="sub">on the critical path</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Checkout rewrite</td>
+              <td class="num strong">7.8</td>
+              <td class="num">68%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="verdict">
+          Neither header depends on the total, so the table stands on its own now that the headline strip is gone. The
+          card title supplies the &ldquo;added to what&rdquo;.
+        </p>
+      </div>
+
+      <div class="opt">
+        <div class="opt-name">Option 2 — action-framed</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Epic</th>
+              <th class="num">Days saved<span class="sub">per 10% cut</span></th>
+              <th class="num">How often<span class="sub">on the critical path</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Checkout rewrite</td>
+              <td class="num strong">0.78</td>
+              <td class="num">68%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="verdict">
+          Directly actionable, no interpretation needed. But the values get small and fiddly, the &ldquo;10%&rdquo; is
+          arbitrary, and the total no longer reads as the finish date.
+        </p>
+      </div>
+
+      <div class="opt">
+        <div class="opt-name">Option 3 — neutral</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Epic</th>
+              <th class="num">Adds</th>
+              <th class="num">On the chain</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Checkout rewrite</td>
+              <td class="num strong">7.8 d</td>
+              <td class="num">68%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="verdict">
+          Shortest. &ldquo;Adds&rdquo; invites the question &ldquo;adds to what?&rdquo;, which a column tooltip would
+          have to answer.
+        </p>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>3 · The report <span class="badge rec">recommended layout</span></h2>
+    <p class="caption">
+      The table is the product. Rows are clickable and highlight the epic in the grid above. The critical path length
+      itself is demoted to the table footer &mdash; it is a total, not a headline.
+    </p>
+
+    <div class="stage">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <p class="card-title">Epics on the critical path</p>
+            <p class="card-sub">Ranked by the days each adds · ignoring team contention · average of 10,000 runs</p>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th class="rank"></th>
+                <th>Epic</th>
+                <th class="num">Days added</th>
+                <th class="num">How often<span class="sub">on the critical path</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="rank">1</td>
+                <td><span class="epic">Payments API</span> <span class="team">· Beta</span></td>
+                <td class="num strong">11.8</td>
+                <td class="num">41%</td>
+              </tr>
+              <tr>
+                <td class="rank">2</td>
+                <td><span class="epic">Checkout rewrite</span> <span class="team">· Alpha</span></td>
+                <td class="num strong">7.8</td>
+                <td class="num">68%</td>
+              </tr>
+              <tr>
+                <td class="rank">3</td>
+                <td><span class="epic">Identity service</span> <span class="team">· Alpha</span></td>
+                <td class="num strong">7.3</td>
+                <td class="num">68%</td>
+              </tr>
+              <tr>
+                <td class="rank">4</td>
+                <td><span class="epic">Search indexing</span> <span class="team">· Gamma</span></td>
+                <td class="num strong">6.0</td>
+                <td class="num">26%</td>
+              </tr>
+              <tr>
+                <td class="rank">5</td>
+                <td><span class="epic">Seller onboarding</span> <span class="team">· Gamma</span></td>
+                <td class="num strong">5.5</td>
+                <td class="num">26%</td>
+              </tr>
+              <tr>
+                <td class="rank">6</td>
+                <td><span class="epic">Fraud rules</span> <span class="team">· Beta</span></td>
+                <td class="num strong">3.1</td>
+                <td class="num">18%</td>
+              </tr>
+              <tr>
+                <td class="rank">7</td>
+                <td><span class="epic">Notifications</span> <span class="team">· Alpha</span></td>
+                <td class="num strong">1.5</td>
+                <td class="num">9%</td>
+              </tr>
+              <tr>
+                <td class="rank">8</td>
+                <td><span class="epic zero">Ratings &amp; reviews</span> <span class="team">· Gamma</span></td>
+                <td class="num zero">0.0</td>
+                <td class="num zero">0%</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="rank"></td>
+                <td>Critical path length</td>
+                <td class="num">43.0</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="card narrow">
+        <div class="card-head">
+          <div>
+            <p class="card-title">Most common critical paths</p>
+            <p class="card-sub">Context only — the table on the left carries the ranking</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="route">
+            <span class="route-share">41%</span>
+            <span class="chip">Identity</span><span class="arrow">&rarr;</span> <span class="chip">Checkout</span
+            ><span class="arrow">&rarr;</span>
+            <span class="chip">Payments</span>
+          </div>
+          <div class="route">
+            <span class="route-share">26%</span>
+            <span class="chip">Seller onboarding</span><span class="arrow">&rarr;</span>
+            <span class="chip">Search indexing</span>
+          </div>
+          <div class="route">
+            <span class="route-share">18%</span>
+            <span class="chip">Identity</span><span class="arrow">&rarr;</span> <span class="chip">Checkout</span
+            ><span class="arrow">&rarr;</span>
+            <span class="chip">Fraud rules</span>
+          </div>
+          <div class="route">
+            <span class="route-share">9%</span>
+            <span class="chip">Identity</span><span class="arrow">&rarr;</span> <span class="chip">Checkout</span
+            ><span class="arrow">&rarr;</span>
+            <span class="chip">Notifications</span>
+          </div>
+          <div class="route">
+            <span class="route-share">6%</span>
+            <span class="team">31 other routes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Why the routes list can be safely truncated.</strong> It carries no ranking, so cutting it at five rows
+        hides nothing a user needs. Notice that <em>Identity</em> and <em>Checkout</em> appear on three separate routes
+        at 41%, 18% and 9% &mdash; a route-ranked table would never show their real 68% anywhere. That splitting is
+        exactly what the epic table exists to undo.
+      </p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>4 · Why rank by days rather than by percentage</h2>
+    <p class="caption">Both orderings, same data. The disagreement is the point.</p>
+
+    <div class="stage">
+      <div class="opt" style="width: 320px">
+        <div class="opt-name">Ranked by days <span class="badge rec">chosen</span></div>
+        <table>
+          <tbody>
+            <tr>
+              <td>Payments API</td>
+              <td class="num strong">11.8</td>
+              <td class="num team">41%</td>
+            </tr>
+            <tr>
+              <td>Checkout rewrite</td>
+              <td class="num strong">7.8</td>
+              <td class="num team">68%</td>
+            </tr>
+            <tr>
+              <td>Identity service</td>
+              <td class="num strong">7.3</td>
+              <td class="num team">68%</td>
+            </tr>
+            <tr>
+              <td>Search indexing</td>
+              <td class="num strong">6.0</td>
+              <td class="num team">26%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="verdict">Payments first: on the chain only 41% of the time, but it is a 29-day epic.</p>
+      </div>
+
+      <div class="opt" style="width: 320px">
+        <div class="opt-name">Ranked by percentage <span class="badge no">rejected</span></div>
+        <table>
+          <tbody>
+            <tr>
+              <td>Checkout rewrite</td>
+              <td class="num team">7.8</td>
+              <td class="num strong">68%</td>
+            </tr>
+            <tr>
+              <td>Identity service</td>
+              <td class="num team">7.3</td>
+              <td class="num strong">68%</td>
+            </tr>
+            <tr>
+              <td>Payments API</td>
+              <td class="num team">11.8</td>
+              <td class="num strong">41%</td>
+            </tr>
+            <tr>
+              <td>Search indexing</td>
+              <td class="num team">6.0</td>
+              <td class="num strong">26%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="verdict">
+          Percentage is blind to size. Checkout is an 11-day epic; trimming it cannot pay what trimming a 29-day one
+          pays. Taken to its limit this ranking puts a 2-day epic that is always on the chain at the top.
+        </p>
+      </div>
+    </div>
+
+    <p class="caption" style="margin-top: 14px">
+      The percentage still earns its column: it separates <em>Search indexing</em> (23 d, rarely on the critical path)
+      from <em>Checkout</em> (11 d, usually on it). Same rough payoff, completely different reasons, and different
+      fixes.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>5 · Bars — three options</h2>
+    <p class="caption">Open question. The table is sorted and the numbers are short, so bars may be earning nothing.</p>
+
+    <h3>5a · Per-row bars <span class="badge">optional</span></h3>
+    <div class="stage">
+      <div class="card" style="width: 480px">
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Epic</th>
+                <th class="bar-cell"></th>
+                <th class="num">Days added</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Payments API</td>
+                <td class="bar-cell"><div class="bar" style="width: 100%"></div></td>
+                <td class="num strong">11.8</td>
+              </tr>
+              <tr>
+                <td>Checkout rewrite</td>
+                <td class="bar-cell"><div class="bar" style="width: 66%"></div></td>
+                <td class="num strong">7.8</td>
+              </tr>
+              <tr>
+                <td>Identity service</td>
+                <td class="bar-cell"><div class="bar" style="width: 62%"></div></td>
+                <td class="num strong">7.3</td>
+              </tr>
+              <tr>
+                <td>Search indexing</td>
+                <td class="bar-cell"><div class="bar" style="width: 51%"></div></td>
+                <td class="num strong">6.0</td>
+              </tr>
+              <tr>
+                <td>Seller onboarding</td>
+                <td class="bar-cell"><div class="bar" style="width: 47%"></div></td>
+                <td class="num strong">5.5</td>
+              </tr>
+              <tr>
+                <td>Fraud rules</td>
+                <td class="bar-cell"><div class="bar" style="width: 26%"></div></td>
+                <td class="num strong">3.1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="max-width: 330px">
+        <p class="caption">
+          Conventional and safe. Adds scannability when the list is long, adds nothing when it is short. Since the list
+          is already sorted descending, the bar is redundant with row order &mdash; it only conveys the
+          <em>gaps</em> between values, e.g. that Payments is far ahead of the pack.
+        </p>
+      </div>
+    </div>
+
+    <h3>5b · One segmented bar of the whole 43 <span class="badge no">rejected</span></h3>
+    <div class="stage">
+      <div class="card" style="width: 480px">
+        <div class="card-body" style="padding-top: 16px">
+          <div style="display: flex; height: 22px; border-radius: 3px; overflow: hidden">
+            <div style="width: 27.4%; background: #0c66e4"></div>
+            <div style="width: 18.1%; background: #1d7afc"></div>
+            <div style="width: 17%; background: #388bff"></div>
+            <div style="width: 14%; background: #579dff"></div>
+            <div style="width: 12.8%; background: #85b8ff"></div>
+            <div style="width: 7.2%; background: #b3d4ff"></div>
+            <div style="width: 3.5%; background: #cce0ff"></div>
+          </div>
+          <p class="caption" style="margin-top: 8px">
+            Segments sum to exactly 43 d, because the decomposition is exact.
+          </p>
+        </div>
+      </div>
+      <div style="max-width: 330px">
+        <div class="note bad">
+          <p>
+            <strong>Do not build this.</strong> It sits directly beneath an actual Gantt chart, so a horizontal bar
+            segmented left-to-right reads as a timeline. It is not one. The segments are expected values averaged across
+            <em>different</em> runs; those epics never run back-to-back in that order in any single run, and several are
+            on different chains entirely.
+          </p>
+          <p>The exactness is real, but it does not license this encoding.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>5c · No bars <span class="badge">viable</span></h3>
+    <p class="caption" style="max-width: 620px">
+      Eight rows of two short numbers. Sorted. The table may simply not need a chart, and the surrounding Auto-Scheduler
+      page is already dense.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>6 · What clicking a row does</h2>
+    <ul class="tight">
+      <li>Highlights that epic in the Auto-Scheduler grid above, reusing the existing highlight wiring.</li>
+      <li>
+        Dims routes in the right-hand card that do not contain it &mdash; showing at a glance whether the epic is a
+        junction (on many routes) or the tail of a single one.
+      </li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <h2>7 · Decisions taken</h2>
+    <ul class="tight">
+      <li>Rank epics, not chains. Chains fragment across forks and hide junction epics.</li>
+      <li>Rank by days, not by percentage. Percentage is size-blind.</li>
+      <li>Routes list is context, capped at five, safely truncatable.</li>
+      <li>No second series. Queued time is zero by construction in this report, so there is no work/wait split.</li>
+      <li>
+        The table is the product, not the total. The three-stat headline strip is gone: a program manager acts on
+        <em>which epics to look at</em>, and the 43 d is only useful as the column total. It sits in the table footer.
+      </li>
+      <li>
+        The contention gap (plan finish minus critical path length) moves to the capacity-aware report, where the remedy
+        lives. Restating the plan finish here duplicated the Gantt and mixed two different statistics.
+      </li>
+      <li>Averages throughout, not percentiles. The per-epic days sum to the total only for the mean.</li>
+      <li>No segmented total bar &mdash; reads as a timeline directly under a real one.</li>
+    </ul>
+
+    <h2>8 · Still open</h2>
+    <ul class="tight">
+      <li>Bars — 5a, 5c, or neither.</li>
+      <li>
+        Does this live as its own entry in the &ldquo;Critical paths&rdquo; dropdown already chosen in
+        <code>critical-paths.html</code> section 3, or as a permanent card?
+      </li>
+      <li>
+        Should clicking a row also reveal the epic&rsquo;s average duration? Today it is only recoverable by dividing
+        days by percentage.
+      </li>
+    </ul>
+  </body>
+</html>

@@ -27,7 +27,7 @@ const TeamListItem: FC<TeamListItemProps> = ({ team, selectedTeam, setSelectedTe
       <div className="[&>span]:!block">
         <PeopleGroupIcon label={`${team} settings`} />
       </div>
-      <div className="flex-1 flex flex-col justify-between items-start">
+      <div className="flex-1 min-w-0 flex flex-col justify-between items-start break-words">
         {team.name}
         {team.status === 'reportOnly' && <Badge>using defaults</Badge>}
       </div>

@@ -1,15 +1,24 @@
 import type { FC } from 'react';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Heading from '@atlaskit/heading';
 import SettingsIcon from '@atlaskit/icon/glyph/settings';
 import ArrowRightCircleIcon from '@atlaskit/icon/glyph/arrow-right-circle';
-import { Label } from '@atlaskit/form';
+import QuestionCircleIcon from '@atlaskit/icon/glyph/question-circle';
+import Tooltip from '@atlaskit/tooltip';
+import Textfield from '@atlaskit/textfield';
+import SearchIcon from '@atlaskit/icon/core/search';
 
 import SidebarButton from '../../../../../components/SidebarButton';
 import { CanObservable, useCanObservable } from '../../../../../hooks/useCanObservable';
 import Hr from '../../../../../components/Hr';
 import TeamListItem from './components/TeamListItem';
+import TeamSection from './components/TeamSection';
+import OutsideReportTeams from './components/OutsideReportTeams';
+
+const OUTSIDE_REPORT_HELP_TEXT =
+  "Not seeing a team? This list only shows teams that have been configured before but aren't in this report. " +
+  "To configure a team that isn't listed, add its work items to this report from the Sources tab.";
 
 export interface TeamSelectorProps {
   teamsFromStorage: string[];
@@ -32,65 +41,89 @@ const TeamSelector: FC<TeamSelectorProps> = ({
     .sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
 
   const groups = Object.groupBy(teams, ({ status }) => status);
+  const inReportTeams = [...(groups.storageAndReport ?? []), ...(groups.reportOnly ?? [])];
+  const outsideReportTeams = groups.storageOnly ?? [];
+
+  const [search, setSearch] = useState('');
+  const query = search.trim().toLowerCase();
+  const isSearching = query.length > 0;
+  const matchesSearch = ({ name }: { name: string }) => name.toLowerCase().includes(query);
+
+  const inReportMatches = inReportTeams.filter(matchesSearch);
+  const outsideReportMatches = outsideReportTeams.filter(matchesSearch);
 
   return (
     <>
       <div className="my-4">
         <Heading size="small">Team Configuration</Heading>
       </div>
-      <Label htmlFor="default-settings">DEFAULT</Label>
+      <p className="text-xs font-semibold text-neutral-500">DEFAULT</p>
       <SidebarButton className="mt-2" isActive={selectedTeam === 'global'} onClick={() => setSelectedTeam('global')}>
         <SettingsIcon label="default settings" />
         <p className="flex-1">Default Settings</p>
         {selectedTeam === 'global' && <ArrowRightCircleIcon label="default settings selected" />}
       </SidebarButton>
       <Hr />
-      {derivedTeams.length === 0 && (
-        <>
-          <Label htmlFor="">TEAMS</Label>
-          <div>Derived Teams Not Found please add an issue source to show teams</div>
-        </>
-      )}
-      <div className="overflow-auto">
-        {(groups.storageAndReport?.length || groups.reportOnly?.length) && (
-          <div className="mt-2">
-            <Label htmlFor="">TEAMS IN REPORT</Label>
-            {groups.storageAndReport?.map((team) => {
-              return (
+      <div className="mt-2 mb-2">
+        <Textfield
+          isCompact
+          placeholder="Find a team"
+          aria-label="Find a team"
+          elemBeforeInput={
+            <span className="flex items-center pl-2">
+              <SearchIcon label="" color="var(--ds-icon-subtle)" />
+            </span>
+          }
+          value={search}
+          onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
+        />
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+        {(!isSearching || inReportMatches.length > 0) && (
+          <TeamSection title="TEAMS IN REPORT" forceOpen={isSearching}>
+            {inReportTeams.length === 0 ? (
+              <p className="mt-2 text-xs text-neutral-500">No teams found. Add an issue source to show teams.</p>
+            ) : (
+              inReportMatches.map((team) => (
                 <TeamListItem
                   key={team.name}
                   team={team}
                   selectedTeam={selectedTeam}
                   setSelectedTeam={setSelectedTeam}
                 />
-              );
-            })}
-            {groups.reportOnly?.map((team) => {
-              return (
-                <TeamListItem
-                  key={team.name}
-                  team={team}
-                  selectedTeam={selectedTeam}
-                  setSelectedTeam={setSelectedTeam}
-                />
-              );
-            })}
-          </div>
+              ))
+            )}
+          </TeamSection>
         )}
-        {groups.storageOnly?.length && (
-          <div className="mt-2">
-            <Label htmlFor="">TEAMS OUTSIDE REPORT</Label>
-            {groups.storageOnly?.map((team) => {
-              return (
-                <TeamListItem
-                  key={team.name}
-                  team={team}
-                  selectedTeam={selectedTeam}
-                  setSelectedTeam={setSelectedTeam}
-                />
-              );
-            })}
-          </div>
+        {outsideReportMatches.length > 0 && (
+          <TeamSection
+            title="TEAMS OUTSIDE REPORT"
+            forceOpen={isSearching}
+            titleAddon={
+              <Tooltip content={OUTSIDE_REPORT_HELP_TEXT}>
+                {(tooltipProps) => (
+                  <button
+                    {...tooltipProps}
+                    type="button"
+                    className="flex shrink-0 items-center text-neutral-400 hover:text-neutral-600"
+                    aria-label="About teams outside report"
+                  >
+                    <QuestionCircleIcon label="" size="small" />
+                  </button>
+                )}
+              </Tooltip>
+            }
+          >
+            <OutsideReportTeams
+              teams={outsideReportMatches}
+              isFiltered={isSearching}
+              selectedTeam={selectedTeam}
+              setSelectedTeam={setSelectedTeam}
+            />
+          </TeamSection>
+        )}
+        {isSearching && inReportMatches.length === 0 && outsideReportMatches.length === 0 && (
+          <p className="mt-2 text-xs text-neutral-500">No teams match "{search.trim()}"</p>
         )}
       </div>
     </>

@@ -1,5 +1,16 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { afterAll, vi } from 'vitest';
+
+/**
+ * CanJS's observable teardown (can-event-queue/can-dom-events) sometimes unwinds a tick after
+ * the test that triggered it finishes — if that lands after Vitest tears down this file's jsdom
+ * `window`, can-dom-events throws `ReferenceError: window is not defined` as an unhandled error
+ * that fails the whole run even though every test passed. Flushing one macrotask here, before
+ * teardown, gives that straggling cleanup a `window` to run against.
+ */
+afterAll(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+});
 
 window.matchMedia = vi.fn().mockImplementation((query) => ({
   matches: vi.fn(),

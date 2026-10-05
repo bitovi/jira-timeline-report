@@ -113,6 +113,8 @@ export const CHILD_PARAMS = {
   jql: string(),
   childJQL: string(),
   loadChildren: boolean(),
+  blockerJQL: string(),
+  loadBlockers: boolean(),
   primaryReportType: {
     parse: (raw) => (REPORTS.find((report) => report.key === raw) ? '' + raw : REPORTS[0].key),
     stringify: fromString,
@@ -487,6 +489,8 @@ export class ChildReportConfig extends ObservableObject {
             jql: value.from(this, 'jql'),
             childJQL: value.from(this, 'childJQL'),
             loadChildren: value.from(this, 'loadChildren'),
+            blockerJQL: value.from(this, 'blockerJQL'),
+            loadBlockers: value.from(this, 'loadBlockers'),
             isLoggedIn: this.isLoggedInObservable,
             jiraHelpers: this.jiraHelpers,
             fields: value.from(this, 'allFieldsToRequest'),

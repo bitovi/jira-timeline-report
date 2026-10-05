@@ -98,8 +98,8 @@ export function childQueryGroups(nodes: LayoutNode[], reports: Reports): ChildQu
   const byQuery = new Map<string, { members: number; fields: Set<string> }>();
 
   for (const queryParams of found) {
-    const { jql, childJQL, loadChildren, tableColumns } = parseChildQuery(queryParams);
-    const key = queryKeyOf({ jql, childJQL, loadChildren });
+    const { jql, childJQL, loadChildren, blockerJQL, loadBlockers, tableColumns } = parseChildQuery(queryParams);
+    const key = queryKeyOf({ jql, childJQL, loadChildren, blockerJQL, loadBlockers });
 
     let group = byQuery.get(key);
 
@@ -133,7 +133,7 @@ export function childQueryGroups(nodes: LayoutNode[], reports: Reports): ChildQu
  * the child's **effective** string — the same one {@link childQueryGroups} grouped on.
  */
 export function overrideFor(groups: ChildQueryGroups, queryParams: string): string[] | null {
-  const { jql, childJQL, loadChildren } = parseChildQuery(queryParams);
+  const { jql, childJQL, loadChildren, blockerJQL, loadBlockers } = parseChildQuery(queryParams);
 
-  return groups.get(queryKeyOf({ jql, childJQL, loadChildren })) ?? null;
+  return groups.get(queryKeyOf({ jql, childJQL, loadChildren, blockerJQL, loadBlockers })) ?? null;
 }

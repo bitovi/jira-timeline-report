@@ -4,10 +4,23 @@ import type { StylesConfig } from '@atlaskit/select';
 import React, { Suspense, useMemo, useState } from 'react';
 import Select from '@atlaskit/select';
 import Button from '@atlaskit/button/new';
+import Spinner from '@atlaskit/spinner';
+import ChevronDownIcon from '@atlaskit/icon/utility/migration/chevron-down';
 
+import type { FieldGroup, FieldOption } from '../model/fieldCatalog';
+import type { PickerTriggerProps } from '../../../components/SearchablePicker';
+
+import { SearchablePicker } from '../../../components/SearchablePicker';
 import { useJiraIssueFields } from '../../../services/jira/useJiraIssueFields';
 import { useWorkItemSearch } from '../hooks/useWorkItemSearch';
 import { buildFieldOptions, buildValueExpression, FIELD_GROUP_ORDER } from '../model/fieldCatalog';
+
+/**
+ * `Common` is curated in its useful order on purpose — `fieldCatalog.ts:57-68` promotes eight ids so
+ * an unfiltered list leads with Summary / Status / Assignee. `Derived` has one entry, and `Fields`
+ * arrives name-sorted from `useJiraIssueFields`, so sorting it only guarantees what is already true.
+ */
+const UNSORTED_FIELD_GROUPS: FieldGroup[] = ['Common'];
 
 export interface ValueReportFormProps {
   /** Receives the built expression; the caller turns it into a node. */
@@ -20,12 +33,18 @@ interface SelectOption {
 }
 
 /**
- * Both menus render into `document.body` above the modal's own layer.
+ * The work-item menu renders into `document.body` above the modal's own layer.
  *
  * A menu that renders inline is clipped by the modal body's scroll container; one that portals without
  * a `zIndex` paints *behind* the modal, because `@atlaskit/modal-dialog` establishes a stacking layer
- * of its own and react-select's portal defaults to `z-index: 1`. Both were live defects here — see
- * spec/016-report-of-reports/009-value-report-modal.
+ * of its own (`layers.modal()` = 510) and react-select's portal defaults to `z-index: 1`. Both were
+ * live defects here — see spec/016-report-of-reports/009-value-report-modal.
+ *
+ * **Still needed, and now for one control rather than two.** The Field half is a `SearchablePicker`
+ * as of spec/033 and solves the same problem the other way round: it does *not* portal
+ * (`shouldRenderToParent`), which puts it inside the modal positioner's own stacking context where
+ * no `zIndex` is required at all. That route is only open to it because it owns its layout; a
+ * react-select menu rendered inline is back to being clipped.
  */
 const menuAboveModal: StylesConfig<SelectOption, false> = {
   menuPortal: (base) => ({ ...base, zIndex: 9999 }),
@@ -49,22 +68,43 @@ const SEARCH_ONLY = { DropdownIndicator: null, IndicatorSeparator: null };
  * catalog) where the saved-report half is entirely prop-driven, which is why it is its own component
  * rather than more JSX in `AddReportModal`.
  *
- * **Two `@atlaskit/select`s rather than one select and one popover.** The field half was first built on
- * `SearchablePicker`, the control lifted out of Table's `+ Add column` — same searchable, grouped list,
- * one component for both. Inside a modal it was the wrong choice twice over: a Tailwind-styled trigger
- * sitting next to an Atlaskit select does not read as its sibling, and `@atlaskit/popup` renders under
- * the modal. Two selects are consistent by construction and layer correctly.
+ * **One `@atlaskit/select` and one popover — and what had to be true for that.** The Field half was
+ * built on `SearchablePicker` (Table's `+ Add column`), then reverted to a second select for two
+ * stated reasons, then rebuilt on it in spec/033. Both original objections were real; each has an
+ * answer now, and one third reason nobody had written down turned out to be the important one:
+ *
+ * - *"`@atlaskit/popup` renders under the modal."* True — its default `zIndex` is `layers.layer()` =
+ *   400 against the modal's 510. `shouldRenderToParent` sidesteps it entirely by not portalling: the
+ *   panel becomes a DOM sibling of its trigger, inside the positioner's `position: fixed; z-index:
+ *   510` stacking context, where the popup root's own 400 beats its `auto` siblings.
+ * - *"A Tailwind-styled trigger beside an Atlaskit select does not read as its sibling."* Also true,
+ *   and no `Popup` prop answers it. `FieldTrigger` does, by wrapping the select's own `--ds-*`
+ *   variables in Tailwind arbitrary values rather than approximating them from the Tailwind palette.
+ *   That is real coupling to a private file, and the `FieldTriggerStates` story is what holds it.
+ * - *The unwritten one:* raising the portal's `zIndex` — the obvious fix, and what the work-item
+ *   select does — would have layered correctly and **then failed anyway**. The modal wraps its
+ *   children in `react-focus-lock`, which pulls focus back inside whenever it lands outside the
+ *   locked node, and a portalled panel is outside it. That is invisible until a focusable input goes
+ *   in the popover, which is exactly what this redesign does. `shouldRenderToParent` is what makes
+ *   `focusInside` true and the lock a no-op — so the same prop answers both the first and third
+ *   reasons, which is why it is the decision rather than portal-plus-`zIndex`.
+ *
+ * The reason for going back is the one `SearchablePicker`'s own docblock was written to serve: a real
+ * `Fields` group is 180+ entries, and one control that makes that scannable is better than two that
+ * drift. See spec/033-column-select-redesign § 8 and § 9.
  *
  * **`+` staying disabled until both halves are chosen is the only validation there is**, because a node
  * cannot be corrected once added — the trade the plan's § The node stops being editable accepts. It has
  * to actually hold.
  *
- * See spec/016-report-of-reports/009-value-report-modal Phase 4.
+ * See spec/016-report-of-reports/009-value-report-modal Phase 4, and spec/033-column-select-redesign.
  */
 export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   const [inputValue, setInputValue] = useState('');
   const [workItem, setWorkItem] = useState<SelectOption | null>(null);
-  const [field, setField] = useState<SelectOption | null>(null);
+  // The `FieldOption` itself, not a `{ value, label }` round-trip: the trigger needs the label and
+  // `buildValueExpression` needs the id, and both are already on the catalog entry.
+  const [field, setField] = useState<FieldOption | null>(null);
 
   const { suggestions, isLoading, isTooShort } = useWorkItemSearch(inputValue);
 
@@ -78,7 +118,7 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
   const handleAdd = () => {
     if (!workItem || !field) return;
 
-    onAdd(buildValueExpression(workItem.value, field.value));
+    onAdd(buildValueExpression(workItem.value, field.id));
     setWorkItem(null);
     setField(null);
     setInputValue('');
@@ -116,10 +156,11 @@ export const ValueReportForm: FC<ValueReportFormProps> = ({ onAdd }) => {
         />
       </Field>
       <Field htmlFor="ror-value-field" label="Field">
-        <Suspense
-          fallback={<Select<SelectOption> inputId="ror-value-field" placeholder="Field" isDisabled isLoading />}
-        >
-          <FieldSelect value={field} onChange={setField} />
+        {/* The fallback is the same control, disabled and loading, in a byte-identically sized 40px
+            box — so nothing moves when the catalog arrives. That is the whole reason `FieldTrigger`
+            is a component of its own rather than JSX inside `FieldPicker`. */}
+        <Suspense fallback={<FieldTrigger label={null} isDisabled isLoading />}>
+          <FieldPicker value={field} onChange={setField} />
         </Suspense>
       </Field>
       {/* A labelled button rather than a bare `+`. An unlabelled icon has to be guessed at, and its
@@ -169,37 +210,162 @@ const Field: FC<{ htmlFor: string; label: string; children: ReactNode }> = ({ ht
 );
 
 /**
+ * The Field control's button, styled to be indistinguishable from the `@atlaskit/select` it sits
+ * beside in the same grid row.
+ *
+ * **Tailwind arbitrary values wrapping the select's own CSS variables** — not the Tailwind palette,
+ * and not `token()`.
+ *
+ * *Not the Tailwind palette*, because it almost works, which is the trap: `neutral.100` = `#7A869A`
+ * = N100 ✓, `neutral.200` = `#6B778C` = N200 ✓, `neutral.800` = `#172B4D` = N800 ✓, `blue.200` =
+ * `#4C9AFF` = B100 ✓ — but `neutral.20` = `#F1F2F4` while the select's resting fill is N20 =
+ * `#F4F5F7` ✗. Four of five match, so it looks right until you look at the fill. And a hardcoded hex
+ * cannot follow `--ds-*`, so the pair would diverge under any non-default theme — and this app has
+ * one (spec/016-report-of-reports/008-theme).
+ *
+ * *Not `token()`*, because it emits the same `var(--ds-…, fallback)` string but only through a
+ * `style` prop or emotion, and mixing that into a Tailwind-classed component recreates exactly the
+ * specificity fight the `Add` button's comment below already documents.
+ *
+ * Every value below is read from `@atlaskit/select/dist/cjs/styles.js` — a **private** file, not a
+ * public entry point, so a minor bump can drift the pair silently and no test will catch it. The
+ * only mitigation that works is keeping the `FieldTriggerStates` story (which puts a real select
+ * beside this) and looking at it. See spec/033-column-select-redesign § 9 and Risk 1.
+ *
+ * `h-10`, not `min-h-10`: the select's `minHeight: 40` (`styles.js:79`) never actually grows,
+ * because its value never wraps — so neither must this, or the pair can differ in height on a long
+ * field name. Hence `truncate` too.
+ *
+ * **One deliberate divergence.** The select rings on `:focus-within` (`styles.js:76-78`), which
+ * fires on a mouse click as well; this rings on `:focus-visible`. It cannot be otherwise: clicking
+ * this trigger opens a popover that takes focus into its own search field, so the trigger is not
+ * focused while its list is open — where clicking the select leaves focus in the select. That is
+ * inherent to a popover-with-search versus an inline combobox input, not something a CSS variant
+ * fixes. Converge the rest by eye in the story.
+ */
+const FIELD_TRIGGER_CLASS_NAME = [
+  // layout — `styles.js:79` (minHeight 40), `:104-107` (valueContainer padding), `:20` (container font)
+  'group flex h-10 w-full items-center justify-between',
+  'px-[6px] py-[2px] text-sm font-normal leading-5',
+  // box — `styles.js:72-74`
+  'rounded-[var(--ds-border-radius-100,3px)] border-[length:var(--ds-border-width,1px)] border-solid',
+  'border-[var(--ds-border-input,#7A869A)]',
+  // fill and hover — `styles.js:36`, `:37`, `:93`
+  'cursor-pointer bg-[var(--ds-background-input,#F4F5F7)]',
+  'hover:bg-[var(--ds-background-input-hovered,#EBECF0)]',
+  // focus — `styles.js:34`, `:36`, `:76-78` (`inset 0 0 0 1px <borderColor>`)
+  'focus-visible:border-[var(--ds-border-focused,#4C9AFF)]',
+  'focus-visible:bg-[var(--ds-background-input-pressed,#FFFFFF)]',
+  'focus-visible:shadow-[inset_0_0_0_var(--ds-border-width,1px)_var(--ds-border-focused,#4C9AFF)]',
+  'focus-visible:outline-none',
+  // `styles.js:80`
+  'transition-[background-color,border-color] duration-200 ease-in-out',
+  // `styles.js:40-43`; the text colour is `singleValue`'s disabled branch (`:196`)
+  'disabled:cursor-not-allowed disabled:border-[var(--ds-background-disabled,#F4F5F7)]',
+  'disabled:bg-[var(--ds-background-disabled,#F4F5F7)] disabled:text-[var(--ds-text-disabled,#A5ADBA)]',
+].join(' ');
+
+export interface FieldTriggerProps {
+  /** The picked field's name; `null` shows the placeholder. */
+  label: string | null;
+  isDisabled?: boolean;
+  isLoading?: boolean;
+  /**
+   * From `SearchablePicker`'s `trigger` render prop. Absent for the Suspense fallback, which is the
+   * whole reason this is a component rather than JSX inside `FieldPicker` — the fallback has to
+   * render the same 40px box with no picker behind it.
+   */
+  triggerProps?: PickerTriggerProps;
+  onClick?: () => void;
+  /**
+   * What `<label htmlFor>` points at. Defaults to the form's own id and should stay that way in the
+   * form — the Suspense fallback carries it too, so the label is never dangling mid-suspense (no
+   * duplicate-id risk: Suspense swaps the two, it does not render both). Overridable only so the
+   * `FieldTriggerStates` story can show several of these at once without colliding ids.
+   */
+  id?: string;
+}
+
+export const FieldTrigger: FC<FieldTriggerProps> = ({
+  label,
+  isDisabled,
+  isLoading,
+  triggerProps,
+  onClick,
+  id = 'ror-value-field',
+}) => (
+  <button
+    {...triggerProps}
+    id={id}
+    type="button"
+    disabled={isDisabled}
+    // `styles.js:196` (value) and `:189` (placeholder). On the button rather than the inner span so
+    // the `disabled:` variant above can win, and so the caret can inherit through `group-disabled`.
+    className={`${FIELD_TRIGGER_CLASS_NAME} ${
+      label ? 'text-[var(--ds-text,#172B4D)]' : 'text-[var(--ds-text-subtlest,#6B778C)]'
+    }`}
+    onClick={onClick}
+  >
+    <span className="min-w-0 flex-1 truncate text-left">{label ?? 'Field'}</span>
+    {/* `styles.js:133` (`dropdownIndicator`), whose `:126-131` padding is 2px each side. */}
+    <span className="flex flex-none items-center px-[2px] text-[var(--ds-text-subtle,#42526E)] group-disabled:text-[var(--ds-text-disabled,#A5ADBA)]">
+      {isLoading ? (
+        <Spinner size="small" label="Loading fields" />
+      ) : (
+        // The same module the select imports (`select/.../indicators.js:12`, rendered at `:56-62`
+        // with `color="currentColor"`), so the glyph and its size are identical by construction.
+        <ChevronDownIcon label="" color="currentColor" />
+      )}
+    </span>
+  </button>
+);
+
+/**
  * The field half, split out for one reason: `useJiraIssueFields` is a suspense query and ROR's only
  * boundary is at the top of the island (`ReportOfReportsWrapper.tsx:34`). A document holding no inline
  * values has never fetched the catalog — and that is exactly the document someone is looking at when
  * they add their first value — so without a nearer boundary, opening the modal would blank the whole
  * document to `Loading…` and rebuild it. Suspending this subtree instead means only the dropdown waits,
  * and the fallback is the same control disabled, so nothing moves when it arrives.
+ *
+ * **No regrouping.** `buildFieldOptions` already returns `{ id, label, group }[]`, which *is*
+ * `PickerItem`, and `SearchablePicker` does its own grouping, ordering and empty-group dropping with
+ * identical `groupOrder` semantics. The `useMemo` that used to rebuild react-select's
+ * `{ label, options }` shape here was pure duplication.
  */
-const FieldSelect: FC<{ value: SelectOption | null; onChange: (option: SelectOption | null) => void }> = ({
+const FieldPicker: FC<{ value: FieldOption | null; onChange: (option: FieldOption | null) => void }> = ({
   value,
   onChange,
 }) => {
   const fields = useJiraIssueFields();
 
-  const groups = useMemo(() => {
-    const options = buildFieldOptions(fields);
-
-    return FIELD_GROUP_ORDER.map((group) => ({
-      label: group,
-      options: options.filter((option) => option.group === group).map(({ id, label }) => ({ value: id, label })),
-    })).filter((group) => group.options.length > 0);
-  }, [fields]);
+  const options = useMemo(() => buildFieldOptions(fields), [fields]);
 
   return (
-    <Select<SelectOption>
-      inputId="ror-value-field"
-      placeholder="Field"
-      options={groups}
-      value={value}
-      onChange={onChange}
-      menuPortalTarget={document.body}
-      styles={menuAboveModal}
+    <SearchablePicker
+      items={options}
+      groupOrder={FIELD_GROUP_ORDER}
+      unsortedGroups={UNSORTED_FIELD_GROUPS}
+      placeholder="Search fields…"
+      emptyMessage="No fields match."
+      testIdPrefix="ror-field"
+      selectedId={value?.id ?? null}
+      // Its own key, so expanding here would not also expand Table's `+ Add column`.
+      // **Inert while the expand/collapse toggle is parked** — see `PickerPanel`'s footer comment.
+      layoutStorageKey="ror-field-picker-layout"
+      // **The three props that make a popover with a search field work inside a modal.** See
+      // spec/033-column-select-redesign § 8: `shouldRenderToParent` for both the stacking context
+      // and `react-focus-lock`, and `fallbackPlacements` because `@atlaskit/popper` hardcodes
+      // `flipVariations: false`, so a 640px panel anchored 300px into a 600px dialog would never try
+      // right-aligning itself without this list.
+      shouldRenderToParent
+      fallbackPlacements={['bottom-end', 'top-start', 'top-end']}
+      role="dialog"
+      label="Choose a field"
+      onSelect={(id) => onChange(options.find((option) => option.id === id) ?? null)}
+      trigger={(triggerProps, toggle) => (
+        <FieldTrigger label={value?.label ?? null} triggerProps={triggerProps} onClick={toggle} />
+      )}
     />
   );
 };

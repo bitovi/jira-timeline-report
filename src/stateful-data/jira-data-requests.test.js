@@ -27,22 +27,24 @@ const deferred = () => {
 const makeHelpers = () => {
   const flat = [];
   const deep = [];
+  const blockers = [];
+  const deepAndBlockers = [];
+
+  const record = (list) => (request, progress) => {
+    const pending = deferred();
+    list.push({ request, progress, ...pending });
+    return pending.promise;
+  };
 
   const helpers = {
     fields: undefined,
-    fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields(request, progress) {
-      const pending = deferred();
-      flat.push({ request, progress, ...pending });
-      return pending.promise;
-    },
-    fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields(request, progress) {
-      const pending = deferred();
-      deep.push({ request, progress, ...pending });
-      return pending.promise;
-    },
+    fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: record(flat),
+    fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: record(deep),
+    fetchAllJiraIssuesAndDeepBlockersWithJQLAndFetchAllChangelogUsingNamedFields: record(blockers),
+    fetchAllJiraIssuesAndDeepChildrenAndBlockersWithJQLAndFetchAllChangelogUsingNamedFields: record(deepAndBlockers),
   };
 
-  return { helpers, flat, deep };
+  return { helpers, flat, deep, blockers, deepAndBlockers };
 };
 
 const baseRequest = { isLoggedIn: true, loadChildren: false, jql: 'project = ORDER', childJQL: '', fields: [] };
@@ -51,9 +53,11 @@ describe('getRawIssues', () => {
   let helpers;
   let flat;
   let deep;
+  let blockers;
+  let deepAndBlockers;
 
   beforeEach(() => {
-    ({ helpers, flat, deep } = makeHelpers());
+    ({ helpers, flat, deep, blockers, deepAndBlockers } = makeHelpers());
     __clearRawIssuesCache();
   });
 
@@ -96,6 +100,7 @@ describe('getRawIssues', () => {
     it.each([
       ['jql', { jql: 'project = BILLING' }],
       ['childJQL', { childJQL: 'type = Bug' }],
+      ['blockerJQL', { blockerJQL: 'type = Bug' }],
       ['a non-core field', { fields: ['customfield_1'] }],
     ])('runs a second load when %s differs', (_label, overrides) => {
       request();
@@ -118,6 +123,46 @@ describe('getRawIssues', () => {
 
       expect(deep).toHaveLength(1);
       expect(flat).toHaveLength(1);
+    });
+
+    it('keeps the blocker loads apart from the others', () => {
+      request({ loadBlockers: true });
+      request({ loadChildren: true, loadBlockers: true });
+
+      expect(blockers).toHaveLength(1);
+      expect(deepAndBlockers).toHaveLength(1);
+      expect(deep).toHaveLength(0);
+      expect(flat).toHaveLength(0);
+    });
+  });
+
+  // All four cells of the loader table in spec/036 §2. Both expansions are decorators of the same
+  // shape, so the "both" cell is a distinct pre-composed helper rather than a runtime special case.
+  describe('which loader runs', () => {
+    it.each([
+      ['neither', { loadChildren: false, loadBlockers: false }, 'flat'],
+      ['loadChildren', { loadChildren: true, loadBlockers: false }, 'deep'],
+      ['loadBlockers', { loadChildren: false, loadBlockers: true }, 'blockers'],
+      ['both', { loadChildren: true, loadBlockers: true }, 'deepAndBlockers'],
+    ])('%s picks the %s loader', (_label, overrides, expected) => {
+      request(overrides);
+
+      const lists = { flat, deep, blockers, deepAndBlockers };
+
+      for (const [name, list] of Object.entries(lists)) {
+        expect([name, list.length]).toEqual([name, name === expected ? 1 : 0]);
+      }
+    });
+
+    // Same `' and '` prefixing convention `childJQL` has used all along — the loaders concatenate
+    // the fragment straight onto their generated `key in (...)` / `parent in (...)` clause.
+    it("prefixes a non-empty blockerJQL with ' and ', and leaves an empty one empty", () => {
+      request({ loadBlockers: true, blockerJQL: 'type = Bug' });
+      expect(blockers[0].request.blockerJQL).toBe(' and type = Bug');
+
+      __clearRawIssuesCache();
+      request({ loadBlockers: true, blockerJQL: '' });
+      expect(blockers[1].request.blockerJQL).toBe('');
     });
 
     it('does not share between two different Jira sites', () => {

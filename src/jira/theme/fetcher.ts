@@ -83,10 +83,20 @@ export const defaultTheme: ThemeItem[] = [
   },
   {
     label: 'Section',
-    description: `Background behind each section in a report of reports`,
+    // Top-level only: a nested section is transparent so an ancestor's hover tint shows through it,
+    // and a level-3 section is a card with its own fill (the next entry).
+    description: `Background behind a top-level section`,
     backgroundColor: '#FBFCFC',
     backgroundCssVar: '--section-color',
     textCssVar: '--section-text-color',
+    group: 'reportOfReports',
+  },
+  {
+    label: 'Card',
+    description: `Background behind a level-3 section's card`,
+    backgroundColor: '#EFF1F1',
+    backgroundCssVar: '--section-card-color',
+    textCssVar: '--section-card-text-color',
     group: 'reportOfReports',
   },
   {

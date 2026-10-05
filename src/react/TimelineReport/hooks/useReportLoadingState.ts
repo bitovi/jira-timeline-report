@@ -25,6 +25,13 @@ export interface ReportLoadingState {
   parentsToProcess?: number;
   /** Top-level parents whose entire subtree has finished — drives the smoothed children bar. */
   parentsProcessed?: number;
+  /**
+   * Which expansions are in the composition. `'children'` is the generic expansion phase (blockers
+   * reuse it rather than adding a third sequential step, which would un-complete the primary step
+   * mid-load), so these two only pick the expansion step's LABEL. See spec/036 §6.
+   */
+  expandsChildren?: boolean;
+  expandsBlockers?: boolean;
   /** Rejection value when `status === 'rejected'` (carries `.type` / `.errorMessages`). */
   rejectReason?: any;
 }
@@ -93,6 +100,18 @@ export function useReportLoadingState(rd: any = defaultRouteData): ReportLoading
   );
   const parentsProcessed = useCanObservable(parentsProcessedObs);
 
+  const expandsChildrenObs = useMemo(
+    () => value.from<boolean | undefined>(rd, 'derivedIssuesRequestData.progressData.value.expandsChildren'),
+    [rd],
+  );
+  const expandsChildren = useCanObservable(expandsChildrenObs);
+
+  const expandsBlockersObs = useMemo(
+    () => value.from<boolean | undefined>(rd, 'derivedIssuesRequestData.progressData.value.expandsBlockers'),
+    [rd],
+  );
+  const expandsBlockers = useCanObservable(expandsBlockersObs);
+
   const [state, setState] = useState<{ status: ReportLoadingState['status']; reason?: any }>({
     status: 'idle',
   });
@@ -122,6 +141,8 @@ export function useReportLoadingState(rd: any = defaultRouteData): ReportLoading
     changeLogsReceived,
     parentsToProcess,
     parentsProcessed,
+    expandsChildren,
+    expandsBlockers,
     rejectReason: state.reason,
   };
 }

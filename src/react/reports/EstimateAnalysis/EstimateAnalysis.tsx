@@ -72,7 +72,7 @@ export const EstimateAnalysis: FC<{
   const teamTimings = getTeamTimingData(primary);
 
   return (
-    <div className="pb-8">
+    <div>
       <h2 className="text-xl font-bold mb-2">Team Estimation Table</h2>
       <p className="py-1">The following table shows how many estimated "team days" per day each team completed.</p>
       <TeamEstimateAccuracyVariance

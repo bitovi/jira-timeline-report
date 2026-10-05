@@ -31,6 +31,12 @@ export interface ReportAreaProps {
    * user gets a Gantt and no explanation.
    */
   unsupportedReportType?: string;
+  /**
+   * The report clamps itself to the viewport and scrolls internally, rather than growing the page.
+   * Makes the report block a `min-h-0` flex column so its child can be given the leftover height.
+   * See `REPORT_TYPES_FILLING_HEIGHT` in TimelineReport.
+   */
+  fillsHeight?: boolean;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */
   children: ReactNode;
 }
@@ -52,6 +58,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
   primaryIssuesCount,
   selfManagesData = false,
   unsupportedReportType,
+  fillsHeight = false,
   children,
 }) => {
   const { status, rejectReason } = loadingState;
@@ -71,7 +78,13 @@ export const ReportArea: FC<ReportAreaProps> = ({
         // `report-font-scope` confines the Theme panel's font choice to the report block. It sits
         // here rather than higher up because everything above — nav, sidebar, saved reports, report
         // controls — is app chrome and keeps the default stack. See src/css/fonts.css.
-        <div className="report-font-scope my-2 border-box color-bg-white flex-1">{children}</div>
+        <div
+          className={`report-font-scope my-2 border-box color-bg-white flex-1 ${
+            fillsHeight ? 'flex min-h-0 flex-col' : ''
+          }`}
+        >
+          {children}
+        </div>
       )}
 
       {!selfManagesData && resolved && primaryIssuesCount === 0 && (

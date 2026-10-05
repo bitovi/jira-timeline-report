@@ -20,7 +20,7 @@ import {
 } from './fieldTypeRegistry';
 import { resolveNormalizedFieldSource } from './normalizedFieldSources';
 import { BUILTIN_CONCEPTS, CLAIMED_FIELD_IDS, REPORT_FIELD_FACETS } from './builtinFieldRegistry';
-import { iconRender, labelsRender, statusRender } from './normalizedRenderers';
+import { assigneeAvatarRender, iconRender, labelsRender, statusRender } from './normalizedRenderers';
 import { compareToLast } from './diffRender';
 import { computePercentComplete } from '../../GanttReport/GanttGrid/helpers/percentComplete';
 
@@ -192,6 +192,10 @@ const FACET_PRESENTATION: Record<string, FacetPresentation> = {
   'builtin:status:name': { render: statusRender, filter: { kind: 'select' } },
   'builtin:status:category': { filter: { kind: 'select' } },
   'builtin:labels:list': { render: labelsRender },
+  // `select` rather than the type registry's `text`, because assignees are a bounded set of people
+  // — the same call as `builtin:status:name`. It also keeps "Distinct list" on the aggregation menu
+  // (`aggregations.distinct.applicableTo` is ['text', 'select']).
+  'builtin:assignee:avatar': { render: assigneeAvatarRender, filter: { kind: 'select' } },
 };
 
 /**

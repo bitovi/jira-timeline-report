@@ -72,11 +72,15 @@
     display: block !important;
   }
 
-  /* Remove scroll/height clamps so the full chart flows onto the page instead of clipping. */
+  /* Remove scroll/height clamps so the full chart flows onto the page instead of clipping.
+     `.report-font-scope` and `.auto-scheduler-grid` are clamped on screen for the fill-height
+     reports (REPORT_TYPES_FILLING_HEIGHT) — on paper the report is as tall as it needs to be. */
   html,
   body,
   #mainContent,
   .fullish-vh,
+  .report-font-scope,
+  .auto-scheduler-grid,
   #react-report-container {
     height: auto !important;
     overflow: visible !important;
@@ -104,5 +108,19 @@
   .print-avoid-break {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  /* The Auto-Scheduler's critical-path rail sits beside the Gantt on screen. On paper the Gantt
+     needs the full page width, so the rail drops out of the flex row and flows underneath it. The
+     rail and its two tables are all height-clamped on screen, so all three need neutralising or the
+     tables print clipped mid-row. */
+  .critical-path-rail {
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .critical-path-rail [data-scroll-area] {
+    max-height: none !important;
+    overflow: visible !important;
   }
 }

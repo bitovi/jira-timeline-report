@@ -68,8 +68,17 @@ const chooseSpaceType = async (name: string) => {
   await userEvent.click(await screen.findByText(name));
 };
 
-/** Both cards carry a "Reports Space" radio, so every assertion has to say which card it means. */
+/** Scopes an assertion to the one host card on screen. */
 const card = (title: 'In Jira' | 'Web') => within(screen.getByRole('region', { name: `${title} storage` }));
+
+/**
+ * Landing on the space option asks first — see `StorageCautionModal`. Every test that ends up there
+ * goes through the confirm, because that is now the only route a user has to it.
+ */
+const chooseReportsSpace = async (title: 'In Jira' | 'Web') => {
+  await userEvent.click(card(title).getByRole('radio', { name: /Reports Space/ }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+};
 
 describe('<Storage />', () => {
   // Restored individually, not through `vi.restoreAllMocks()`: that also resets the global
@@ -85,22 +94,21 @@ describe('<Storage />', () => {
     warn.mockRestore();
   });
 
-  // The other host's card documents how that host works; it does not show its state. A Connect app
-  // property is a Connect-only resource the web build cannot read, so there is nothing live to show.
-  it('renders both hosts and only lets you change the one you are in', async () => {
+  // Only the host you are running in is shown. A Connect app property is a Connect-only resource the
+  // web build cannot read, so there is no live state to show for the other host — the note says
+  // where to go instead.
+  it('renders only the host you are in, and says where to change the other', async () => {
     renderStorage({ storage: makeStorage({ kind: 'legacy' }), jira: makeJira('jira') });
 
     expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Web storage' })).not.toBeInTheDocument();
 
     expect(card('In Jira').getByRole('radio', { name: /Key\/Value/ })).toBeEnabled();
     expect(card('In Jira').getByRole('radio', { name: /Key\/Value/ })).toBeChecked();
-
-    expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).toBeDisabled();
-    expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).not.toBeChecked();
-    expect(card('Web').getByRole('radio', { name: /Reports Space/ })).not.toBeChecked();
+    expect(card('In Jira').getByText(/Changes here apply to Status Reports in Jira/)).toBeInTheDocument();
   });
 
-  // Forge reads and writes the *Connect* app property (jira/storage/index.forge.ts), so the Connect
+  // Forge reads and writes the *Connect* app property (jira/storage/index.forge.ts), so the In Jira
   // card is the one holding its state. Before the Forge host moved onto that store it shared the
   // website's configuration issue, and this panel showed it the Web card — which would now let you
   // edit a pointer the app never reads.
@@ -112,8 +120,7 @@ describe('<Storage />', () => {
     expect(card('In Jira').getByRole('radio', { name: /Key\/Value/ })).toBeEnabled();
     expect(card('In Jira').getByRole('radio', { name: /Key\/Value/ })).toBeChecked();
 
-    expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).toBeDisabled();
-    expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).not.toBeChecked();
+    expect(screen.queryByRole('region', { name: 'Web storage' })).not.toBeInTheDocument();
   });
 
   // Same stored shape either way — only the label differs, because "app property" and "code block in
@@ -122,8 +129,9 @@ describe('<Storage />', () => {
     renderStorage({ storage: makeStorage({ kind: 'legacy' }), jira: makeJira('hosted') });
 
     expect(await screen.findByRole('region', { name: 'Web storage' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'In Jira storage' })).not.toBeInTheDocument();
     expect(card('Web').getByRole('radio', { name: /Configuration Issue/ })).toBeEnabled();
-    expect(card('In Jira').getByRole('radio', { name: /Key\/Value/ })).toBeDisabled();
+    expect(card('Web').getByText(/Changes here apply to the standalone web app/)).toBeInTheDocument();
   });
 
   it('shows the saved space when one is configured', async () => {
@@ -142,7 +150,7 @@ describe('<Storage />', () => {
 
     expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
 
-    await userEvent.click(card('In Jira').getByRole('radio', { name: /Reports Space/ }));
+    await chooseReportsSpace('In Jira');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText(/Enter the key of a space/)).toBeInTheDocument();
@@ -181,7 +189,7 @@ describe('<Storage />', () => {
 
     expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
 
-    await userEvent.click(card('In Jira').getByRole('radio', { name: /Reports Space/ }));
+    await chooseReportsSpace('In Jira');
     await userEvent.type(screen.getByLabelText('Space Name'), 'TYPO');
 
     expect(await screen.findByText(/Could not read "TYPO"/)).toBeInTheDocument();
@@ -209,7 +217,7 @@ describe('<Storage />', () => {
 
     expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
 
-    await userEvent.click(card('In Jira').getByRole('radio', { name: /Reports Space/ }));
+    await chooseReportsSpace('In Jira');
     await userEvent.type(screen.getByLabelText('Space Name'), 'STATREPS');
 
     await waitFor(() => {
@@ -243,7 +251,7 @@ describe('<Storage />', () => {
 
     expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
 
-    await userEvent.click(card('In Jira').getByRole('radio', { name: /Reports Space/ }));
+    await chooseReportsSpace('In Jira');
     await userEvent.click(card('In Jira').getByRole('radio', { name: /Key\/Value/ }));
 
     expect(screen.queryByText(/stay there/)).not.toBeInTheDocument();
@@ -298,7 +306,7 @@ describe('<Storage />', () => {
 
     expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
 
-    await userEvent.click(card('In Jira').getByRole('radio', { name: /Reports Space/ }));
+    await chooseReportsSpace('In Jira');
     await userEvent.type(screen.getByLabelText('Space Name'), 'STATREPS');
     await chooseSpaceType('Story');
 
@@ -309,6 +317,55 @@ describe('<Storage />', () => {
       await screen.findByText('The saved report was already in STATREPS, so nothing was copied.', { exact: false }),
     ).toBeInTheDocument();
     expect(jira.createJiraIssue).not.toHaveBeenCalled();
+  });
+
+  // Pointing a whole site's saved reports at a Jira space needs permissions in that space, so the
+  // panel asks before the space fields are even on screen rather than at Save.
+  it('confirms before selecting a space, and stays put if you cancel', async () => {
+    renderStorage({ storage: makeStorage({ kind: 'legacy' }), jira: makeJira('jira') });
+
+    expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
+
+    await userEvent.click(card('In Jira').getByRole('radio', { name: /Reports Space/ }));
+
+    expect(await screen.findByText('Store saved reports in a Jira space?')).toBeInTheDocument();
+    expect(screen.getByText(/Jira admin/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Space Name')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(card('In Jira').getByRole('radio', { name: /Key\/Value/ })).toBeChecked();
+    });
+    expect(card('In Jira').getByRole('radio', { name: /Reports Space/ })).not.toBeChecked();
+    expect(screen.queryByLabelText('Space Name')).not.toBeInTheDocument();
+  });
+
+  it('selects the space once you continue', async () => {
+    renderStorage({ storage: makeStorage({ kind: 'legacy' }), jira: makeJira('jira') });
+
+    expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
+
+    await chooseReportsSpace('In Jira');
+
+    expect(card('In Jira').getByRole('radio', { name: /Reports Space/ })).toBeChecked();
+    expect(screen.getByLabelText('Space Name')).toBeInTheDocument();
+  });
+
+  // Leaving a space needs no permission the app doesn't already hold, and the panel's own warning
+  // already says what stops being listed.
+  it('does not confirm when moving off a space', async () => {
+    renderStorage({
+      storage: makeStorage({ kind: 'space', spaceName: 'STATREPS', spaceType: 'Story' }),
+      jira: makeJira('jira'),
+    });
+
+    expect(await screen.findByRole('region', { name: 'In Jira storage' })).toBeInTheDocument();
+
+    await userEvent.click(card('In Jira').getByRole('radio', { name: /Key\/Value/ }));
+
+    expect(screen.queryByText('Store saved reports in a Jira space?')).not.toBeInTheDocument();
+    expect(card('In Jira').getByRole('radio', { name: /Key\/Value/ })).toBeChecked();
   });
 
   it('saves a reachable space', async () => {

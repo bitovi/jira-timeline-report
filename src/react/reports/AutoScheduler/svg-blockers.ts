@@ -102,7 +102,7 @@ export function highlightUpstream(linkedIssue: any, highlight = true, visited = 
         document.getElementById(`${blocker.key}-${linkedIssue.key}`) ||
         document.querySelector(`.path-blocker[id='${blocker.key}-${linkedIssue.key}']`);
       if (pathEl) {
-        pathEl.setAttribute('stroke', highlight ? '#ff4444' : '#97a0af'); // red for upstream
+        pathEl.setAttribute('stroke', highlight ? '#BF2600' : '#97a0af'); // red-500 for upstream
         pathEl.setAttribute('stroke-width', highlight ? '3' : '2');
       }
       // Recurse upstream
@@ -122,7 +122,7 @@ export function highlightDownstream(linkedIssue: any, highlight = true, visited 
         document.getElementById(`${linkedIssue.key}-${blocked.key}`) ||
         document.querySelector(`.path-blocker[id='${linkedIssue.key}-${blocked.key}']`);
       if (pathEl) {
-        pathEl.setAttribute('stroke', highlight ? '#f97316' : '#97a0af'); // orange for downstream
+        pathEl.setAttribute('stroke', highlight ? '#0065FF' : '#97a0af'); // blue-300 for downstream
         pathEl.setAttribute('stroke-width', highlight ? '3' : '2');
       }
       // Recurse downstream

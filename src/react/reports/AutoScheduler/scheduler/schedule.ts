@@ -3,7 +3,6 @@ import type { DerivedIssue } from '../../../../jira/derived/derive';
 import { partition, indexByKey, groupBy } from '../../../../utils/array/array-helpers';
 
 import type { LinkedIssue } from './link-issues';
-import { resetLinkedIssue } from './link-issues';
 import { WorkPlans } from './workplan';
 
 type WorkIssue = {
@@ -41,9 +40,9 @@ export function makeTeamWork(linkedIssues: LinkedIssue[]) {
 type TeamWorkIndex = ReturnType<typeof makeTeamWork>;
 
 export function scheduleIssues(sortedLinkedIssues: LinkedIssue[] /*, probablisticallySelectIssueTiming: boolean*/) {
-  // reset linked isues
-  sortedLinkedIssues.forEach(resetLinkedIssue);
-
+  // Callers must reset (and, for `findLongestPath`, sample) `daysOfWork` before calling this —
+  // resetting again here would silently resample against the critical path already computed from
+  // this same iteration's durations. See `runBatch` in monte-carlo.ts.
   const teamWork = makeTeamWork(sortedLinkedIssues);
 
   sortedLinkedIssues.forEach((issue) => {
