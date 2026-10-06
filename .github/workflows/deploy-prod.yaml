@@ -154,6 +154,57 @@ jobs:
         if: ${{ github.ref_name != steps.latest_tag.outputs.latest_tag }}
         run: echo "This is not the latest tag. Deployment skipped."
 
+  # The Forge app every Jira customer runs. A failure here is a failed release, not background noise
+  # — see spec/021-forge/next-steps/ci-cd.md and the by-hand fallback in release-runbook.md.
+  Deploy-Forge:
+    # Only for the output: the latest-tag check, same as the S3 jobs above.
+    needs: Build-Status-Reports
+    # `published` only. The workflow also fires on `created` and `edited`, which is harmless for S3,
+    # but here editing the release notes would redeploy production and can mint a Marketplace version.
+    if: >-
+      github.event.action == 'published' &&
+      github.ref_name == needs.Build-Status-Reports.outputs.latest_tag
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+    concurrency:
+      group: forge-production
+      cancel-in-progress: false
+    env:
+      FORGE_EMAIL: ${{ vars.FORGE_EMAIL }}
+      FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build:forge
+
+      # See the matching step in deploy-staging.yaml. Keep the CLI major the same in both.
+      - name: Install Forge CLI
+        run: |
+          sudo apt-get install -y libsecret-1-dev
+          npm install --global @forge/cli@14
+          forge settings set usage-analytics false
+
+      # Deliberately NO `--approve MAJOR_VERSION_RULE`. A scope, permission or CSP change must stop
+      # here and go through release-runbook.md by hand. `--non-interactive` makes any prompt — a
+      # Connect key change above all — fail the job instead of answering it.
+      - name: Deploy
+        run: forge deploy -e production --non-interactive
+
+      # The License / Scopes / Connect keys columns are the only place a bad release shows from the
+      # CLI (3 Sep: License false). Printed so the run log carries them.
+      - name: Show deployed version
+        run: forge version list -e production
+
   Sentry-Release-Backend:
     needs: Deploy-Auth-Server
     if: ${{ success() }}

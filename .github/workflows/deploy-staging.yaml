@@ -131,6 +131,52 @@ jobs:
           tf_state_bucket_destroy: true
           aws_site_cdn_enabled: true
 
+  # The Forge app on bitovi-training.atlassian.net. Independent of the jobs above: it builds its own
+  # bundle (`dist-forge/`, not the shared `build` artifact) and reads no `.env` — the Forge build
+  # hardcodes its Connect key and Sentry DSN (src/forge.main.ts). See spec/021-forge/next-steps/ci-cd.md.
+  Deploy-Forge:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    # Not the workflow's cancel-in-progress group: a second push must never kill a deploy halfway.
+    concurrency:
+      group: forge-staging
+      cancel-in-progress: false
+    env:
+      FORGE_EMAIL: ${{ vars.FORGE_EMAIL }}
+      FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build:forge
+
+      # Global, never a devDependency. The CLI still pulls in `keytar` (a native module); libsecret
+      # lets its compile fallback succeed when the prebuilt download times out. Keep the major in
+      # step with the one developers install locally.
+      - name: Install Forge CLI
+        run: |
+          sudo apt-get install -y libsecret-1-dev
+          npm install --global @forge/cli@14
+          forge settings set usage-analytics false
+
+      # `-e staging` always — no `-e` means production. `--approve` is staging-only: a major version
+      # here should reach bitovi-training, not stall every merge to main. Never add it to production.
+      - name: Deploy
+        run: forge deploy -e staging --non-interactive --approve MAJOR_VERSION_RULE
+
+      # Minor versions apply on their own; this is what carries a major version onto the site.
+      - name: Upgrade installation
+        run: forge install --upgrade -e staging --site bitovi-training.atlassian.net --product jira --non-interactive
+
   Sentry-Release-Backend:
     needs: Deploy-Auth-Server
     if: ${{ success() }}
