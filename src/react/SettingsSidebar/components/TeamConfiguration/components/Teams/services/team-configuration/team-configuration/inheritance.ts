@@ -99,6 +99,42 @@ export const createFullyInheritedConfig = (
   }, {} as AllTeamData);
 };
 
+/**
+ * What a level would show if every field on it were un-customized — the value the "inherit" toggle
+ * resets to. `inheritedGlobal` must already have inheritance applied, so `inheritedGlobal[level]`
+ * carries the fallback to the global defaults.
+ *
+ * `__GLOBAL__` gets its own rule: running the team chain for it would read back the very
+ * `__GLOBAL__[level]` value being cleared. See spec/039-global-defaults-workitems.
+ */
+export const getParentConfiguration = ({
+  teamName,
+  hierarchyLevel,
+  savedTeamData,
+  inheritedGlobal,
+}: {
+  teamName: string;
+  hierarchyLevel: keyof TeamConfiguration;
+  savedTeamData: TeamConfiguration | undefined;
+  inheritedGlobal: TeamConfiguration;
+}): Configuration => {
+  if (teamName === '__GLOBAL__' || hierarchyLevel === 'defaults') {
+    return { ...createEmptyConfiguration(), ...inheritedGlobal.defaults };
+  }
+
+  const globalLevel = {
+    ...createEmptyConfiguration(),
+    ...inheritedGlobal.defaults,
+    ...inheritedGlobal[hierarchyLevel],
+  };
+
+  return Object.keys(globalLevel).reduce((config, field) => {
+    const key = field as keyof Configuration;
+
+    return { ...config, [key]: savedTeamData?.defaults?.[key] ?? globalLevel[key] };
+  }, {} as Configuration);
+};
+
 export const createTeamFieldLookup = (allTeamData: AllTeamData) => {
   return {
     getFieldFor: ({

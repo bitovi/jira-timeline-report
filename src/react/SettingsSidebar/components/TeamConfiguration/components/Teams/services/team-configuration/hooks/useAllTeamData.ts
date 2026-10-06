@@ -15,7 +15,7 @@ import {
   createEmptyTeamConfiguration,
   fixAnyNonExistingFields,
   getAllTeamData,
-  getInheritedData,
+  getParentConfiguration,
 } from '../../team-configuration';
 import { getSimplifiedIssueHierarchy } from '../../../../../../../../../stateful-data/jira-data-requests';
 import { useJira } from '../../../../../../../../services/jira';
@@ -136,17 +136,15 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
       return issueHeirarchyLevel.name;
     },
     getInheritance: (issueType) => {
-      let empty = createEmptyTeamConfiguration(issueHeirarchy.map((type) => type.hierarchyLevel.toString()));
-
-      if (issueType !== 'defaults') {
-        empty = { ...empty, defaults: { ...inherited.defaults } };
-      }
-
-      return getInheritedData(
-        empty,
-        inheritedAllTeamData,
-        issueHeirarchy.map((level) => level.hierarchyLevel.toString()),
-      );
+      return {
+        ...inherited,
+        [issueType]: getParentConfiguration({
+          teamName,
+          hierarchyLevel: issueType,
+          savedTeamData: savedUserAllTeamData[teamName],
+          inheritedGlobal: inheritedAllTeamData.__GLOBAL__,
+        }),
+      };
     },
   };
 };

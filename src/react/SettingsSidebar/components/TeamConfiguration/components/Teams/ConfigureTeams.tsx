@@ -75,9 +75,8 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({ teamName, jiraFields, onUpdat
     })
     .filter((issueType): issueType is keyof TeamConfiguration => {
       if (teamName === '__GLOBAL__') {
-        // Remove return false and return line 82 once ready to integrate issue types
-        return false;
-        // return issueType !== "defaults";
+        // Global defaults render in ConfigureAllTeams; only the per-type levels belong here.
+        return issueType !== 'defaults';
       }
 
       return true;
