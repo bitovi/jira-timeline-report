@@ -138,10 +138,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-    # Not the workflow's cancel-in-progress group: a second push must never kill a deploy halfway.
-    concurrency:
-      group: forge-staging
-      cancel-in-progress: false
     env:
       FORGE_EMAIL: ${{ vars.FORGE_EMAIL }}
       FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}

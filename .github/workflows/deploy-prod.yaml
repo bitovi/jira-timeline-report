@@ -167,9 +167,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: prod
-    concurrency:
-      group: forge-production
-      cancel-in-progress: false
     env:
       FORGE_EMAIL: ${{ vars.FORGE_EMAIL }}
       FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
