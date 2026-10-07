@@ -100,7 +100,8 @@ app:
   # so cannot read customer app properties at all. The sandbox is obsolete; `prodcheck` is the test
   # rig. See spec/021-forge/next-steps/status-2026-09-02.md.
   #
-  # `forge deploy` with no `-e` deploys to PRODUCTION. Use `-e prodcheck` for anything exploratory.
+  # Always pass `-e` explicitly to `forge deploy` / `forge install`. Use `-e prodcheck` for anything
+  # exploratory.
   id: ari:cloud:ecosystem::app/12573c92-9009-45d3-ab51-46f65ffa1ba1
   # REQUIRED — this is a paid app. Omitting this block ships licensing DISABLED, which is what
   # happened to production major version 3 (deployed 3 Sep, `License: false` in

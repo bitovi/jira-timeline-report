@@ -5,6 +5,8 @@ import { useState } from 'react';
 
 import { useJira } from '../jira';
 import { useStorage } from '../storage';
+import { reportsKey } from '../../../jira/reports/fetcher';
+import { legacyReportsStorageConfig, reportsStorageConfigKey } from '../../../jira/storage/reports-config';
 import { connectMigrationGroups, writeConnectMigration } from './connect-migration';
 
 export type ConnectMigrationOutcome = {
@@ -60,6 +62,20 @@ export const useMigrateConnectData = ({ peek: injectedPeek }: { peek?: PeekConne
       try {
         // Read the whole group before writing any of it, so a failed read leaves nothing half-done.
         const values = await Promise.all(group.keys.map((key) => peek<unknown>(key)));
+
+        // Older Connect installs saved reports without ever writing a pointer, which Connect reads
+        // as `legacy`. Skipping it would leave whatever KVS holds — e.g. a space someone chose on
+        // Forge before migrating — so the copied blob would land but stay hidden. Write the legacy
+        // pointer Connect was effectively on, but only alongside a blob: with neither, there is
+        // nothing to migrate and no reason to move a pointer someone just set.
+        if (group.id === 'reports') {
+          const pointerIndex = group.keys.indexOf(reportsStorageConfigKey);
+          const blobIndex = group.keys.indexOf(reportsKey);
+
+          if (values[pointerIndex] === undefined && values[blobIndex] !== undefined) {
+            values[pointerIndex] = legacyReportsStorageConfig;
+          }
+        }
 
         // Sequential, in `keys` order — for reports that puts the pointer before the blob.
         for (const [index, key] of group.keys.entries()) {

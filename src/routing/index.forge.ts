@@ -64,6 +64,14 @@ export const createForgeRouting = async (): Promise<RoutingConfiguration> => {
      * `replace`, not `push`, matching Connect: an SPA that rewrites the query string on nearly
      * every interaction would otherwise bury the user's real page history under our own entries.
      * The cost is that browser Back does not step through report states at the container level.
+     *
+     * TODO: only `pushState` is mirrored, not `replaceState`. A few writes use replace instead —
+     * `compareTo` and `timeInStatusReorder` (`replaceStateKeys`, canjs/routing/state-storage.js) and
+     * `deleteUrlParam`'s `replaceStateOnce` — so they reach the iframe's URL but not the container's
+     * until the next pushed change carries the whole query string over. Refreshing or copying the
+     * address bar in that window restores the stale value. Low impact, and Connect's mirror
+     * (`index.plugin.ts`) has the same gap. Fix: patch `history.replaceState` here too, **debounced**
+     * — the compare slider replaces on every drag frame, and each mirror is a bridge call.
      */
     syncRouters: () => {
       const originalPushState = history.pushState;

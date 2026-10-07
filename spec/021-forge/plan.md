@@ -161,7 +161,8 @@ the production weekly upload allowance and slows cold loads.
 **Tailwind:** `build:css` writes to `dist/production.css`. Add a Forge variant writing into
 `dist-forge/`, or copy as a post-build step.
 
-**npm scripts:** `build:forge`, `dev:forge`, `deploy:forge`.
+**npm scripts:** `build:forge`, `dev:forge`. No `deploy:forge`: a bare `forge deploy` targets the CLI's
+default environment, so deploys always state `-e` explicitly (CI and the release runbook both do).
 
 ### 👤 You
 

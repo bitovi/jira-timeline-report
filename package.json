@@ -18,7 +18,6 @@
     "dev:css:forge": "tailwindcss -i ./src/css/status-reports.css -o ./forge/production.css --watch",
     "dev:js:forge": "vite --config vite.forge.config.ts",
     "dev:forge": "concurrently --kill-others --names \" CSS \",\" JS \" -c yellow,blue \"npm:dev:css:forge\" \"npm:dev:js:forge\"",
-    "deploy:forge": "npm run build:forge && forge deploy",
     "test": "vitest --watch=false --exclude '**/playwright'",
     "test:watch": "vitest --exclude '**/playwright'",
     "test:e2e": "playwright test",

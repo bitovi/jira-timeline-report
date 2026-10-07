@@ -13,6 +13,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * pointing it at the repo's `public/` would also sweep in `examples/` and the generated
  * `atlassian-connect.json`, neither of which the Forge bundle has any use for. Every byte in
  * `dist-forge` is uploaded on `forge deploy` and counts against the production weekly quota.
+ *
+ * TODO: build-only (`apply: 'build'`), so in dev (`npm run dev:forge` behind `forge tunnel`) nothing
+ * serves `/images/*` — the favicon and every sidebar/report icon load broken. Deployed builds are
+ * fine. Fix: also serve `public/images` at `/images` from `configureServer`, keeping the build copy
+ * restricted to images as it is now.
  */
 const copyImages = (): Plugin => ({
   name: 'forge-copy-images',

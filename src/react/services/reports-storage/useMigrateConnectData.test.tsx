@@ -213,6 +213,38 @@ describe('copying Connect app properties into KVS', () => {
     });
   });
 
+  // Older Connect installs saved reports without ever writing a pointer, which Connect reads as
+  // legacy. Copying only the blob would leave a space chosen on Forge in charge, hiding them.
+  describe('with no pointer in Connect', () => {
+    const { 'reports-storage-config': _, ...withoutPointer } = connectData;
+
+    it('writes the legacy pointer Connect was on, before the blob', async () => {
+      const { data, writes, storage } = makeStorage({ 'reports-storage-config': spacePointer });
+      const { result } = renderMigrateHook({ storage, peek: makePeek(withoutPointer) });
+
+      await act(async () => {
+        await result.current.migrate(['reports']);
+      });
+
+      expect(writes.slice(0, 2)).toEqual(['reports-storage-config', 'saved-reports']);
+      expect(data['reports-storage-config']).toEqual({ kind: 'legacy' });
+      expect(data['saved-reports']).toEqual(connectData['saved-reports']);
+    });
+
+    it('leaves the KVS pointer alone when Connect has no reports either', async () => {
+      const { 'saved-reports': __, ...withNeither } = withoutPointer;
+      const { data, writes, storage } = makeStorage({ 'reports-storage-config': spacePointer });
+      const { result } = renderMigrateHook({ storage, peek: makePeek(withNeither) });
+
+      await act(async () => {
+        await result.current.migrate(['reports']);
+      });
+
+      expect(writes).toEqual([connectMigrationKey]);
+      expect(data['reports-storage-config']).toEqual(spacePointer);
+    });
+  });
+
   it('writes the flag only when nothing failed', async () => {
     const failing = makeStorage();
     failing.storage.update.mockRejectedValueOnce(new Error('KVS hiccup'));

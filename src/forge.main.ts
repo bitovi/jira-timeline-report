@@ -15,12 +15,31 @@ interface LicensingInformation {
 }
 
 /**
- * Forge reports licensing on the view context rather than over REST.
+ * Asks Jira whether this site has paid for the app. An inactive license makes reports show the
+ * "no licensing" error (canjs/controls/timeline-configuration/state-helpers.js).
  *
- * `license` is absent for free apps and for anything running in the development or staging
- * environments, so **an absent license means allowed** — the same bypass `plugin.main.ts:17` makes
- * for Connect staging/local builds. A context read that fails is treated the same way: locking a
- * free app out because a bridge call hiccuped is a worse failure than briefly under-enforcing.
+ * Forge puts licensing on the view context instead of a REST endpoint like Connect's, and has three
+ * outcomes:
+ *
+ * 1. **License present** — use it, exactly as Connect does.
+ * 2. **No license** — allowed. Forge only attaches a license in production; development and staging
+ *    (bitovi-training) get none. This is the Forge version of Connect's free pass for staging/local
+ *    builds (`plugin.main.ts`), which Connect decides from the app key instead — Forge can't, because
+ *    every environment shares the key `bitovi.status-report`.
+ * 3. **The context read fails** — also allowed. **This is where Forge deliberately differs from
+ *    Connect**, which blocks on a failed licensing call. If `view.getContext()` rejects, the bridge
+ *    itself is broken and the rest of the app likely is too; we would rather not show a paying
+ *    customer a license error over that. The cost is that an unpaid site could slip through during
+ *    such a failure — and since this check runs in the browser, it was never tamper-proof anyway.
+ *
+ * TODO: revisit outcome 3. Options, roughly in order of effort:
+ * - Retry `view.getContext()` once or twice before deciding, then fail closed like Connect — a
+ *   one-off hiccup no longer locks anyone out, and a real outage stops granting free access.
+ * - Show a "couldn't verify your license, try reloading" message instead of either silently
+ *   allowing or showing the license error.
+ * - Move the check server-side into the resolver (`src/forge-resolver/`) — the only version a user
+ *   can't bypass from devtools. Check first that the resolver's invocation context carries the
+ *   license for this app.
  */
 const getLicensing = async (): Promise<LicensingInformation> => {
   try {
