@@ -9,13 +9,15 @@ let isBlocked = false;
 vi.mock('./useTeamCommit', () => ({ useTeamCommit: () => ({ commit, isSaving, isBlocked }) }));
 
 import { CapacityOverridesProvider } from '../../../../services/capacity-overrides';
-import { TeamCapacityInputs } from './TeamCapacityControls';
+import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
+import { itemLabelFor } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
 const inputs = (props: { savedVelocityPerSprint?: number; savedTracks?: number } = {}) => (
   <CapacityOverridesProvider>
     <TeamCapacityInputs
       teamName="ORDER"
       hierarchyLevel={7}
+      daysPerSprint={10}
       savedVelocityPerSprint={props.savedVelocityPerSprint ?? 21}
       savedTracks={props.savedTracks ?? 1}
     />
@@ -44,7 +46,7 @@ describe('TeamCapacityInputs', () => {
     renderInputs();
 
     expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
-    expect(screen.getByText('1 track')).toBeInTheDocument();
+    expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
   });
@@ -52,9 +54,9 @@ describe('TeamCapacityInputs', () => {
   it('reveals Reset and Commit once tracks change', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
 
-    expect(screen.getByText('2 tracks')).toBeInTheDocument();
+    expect(screen.getByText('2 work items in parallel')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Commit' })).toBeInTheDocument();
   });
@@ -71,10 +73,10 @@ describe('TeamCapacityInputs', () => {
   it('puts the saved values back on Reset', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
-    expect(screen.getByText('1 track')).toBeInTheDocument();
+    expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
   });
 
@@ -91,18 +93,18 @@ describe('TeamCapacityInputs', () => {
   it('keeps the other field overridden when one is edited back to what is saved', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
     await setCapacity('35');
     await setCapacity('21');
 
-    expect(screen.getByText('2 tracks')).toBeInTheDocument();
+    expect(screen.getByText('2 work items in parallel')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Commit' })).toBeInTheDocument();
   });
 
   it('sends the overridden values to the commit hook', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
     expect(commit).toHaveBeenCalledWith('ORDER', 7, { tracks: 2 }, expect.anything());
@@ -111,21 +113,21 @@ describe('TeamCapacityInputs', () => {
   it('keeps the override until the commit succeeds', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
-    expect(screen.getByText('2 tracks')).toBeInTheDocument();
+    expect(screen.getByText('2 work items in parallel')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Commit' })).toBeInTheDocument();
   });
 
   it('clears the override once the commit succeeds, so the row stops reading as dirty', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
     commitSucceeds();
 
-    expect(await screen.findByText('2 tracks')).toBeInTheDocument();
+    expect(await screen.findByText('2 work items in parallel')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
   });
 
@@ -135,7 +137,7 @@ describe('TeamCapacityInputs', () => {
     const startCommit = async () => {
       const { rerender } = renderInputs();
 
-      await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+      await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
       await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
       isSaving = true;
@@ -145,8 +147,8 @@ describe('TeamCapacityInputs', () => {
     it('disables every control on the row', async () => {
       await startCommit();
 
-      expect(screen.getByRole('button', { name: /add a parallel work track/i })).toBeDisabled();
-      expect(screen.getByRole('button', { name: /remove a work track/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /work on one more work item in parallel/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /work on one fewer work item in parallel/i })).toBeDisabled();
       expect(screen.getByRole('button', { name: 'Reset' })).toBeDisabled();
       expect(screen.getByRole('button', { name: 'Commit' })).toBeDisabled();
     });
@@ -165,33 +167,39 @@ describe('TeamCapacityInputs', () => {
   it('will not commit while another team is being saved, but stays editable', async () => {
     const { rerender } = renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
 
     isBlocked = true;
     rerender(inputs());
 
     expect(screen.getByRole('button', { name: 'Commit' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Reset' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: /add a parallel work track/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /work on one more work item in parallel/i })).toBeEnabled();
   });
 
   it('does not fall back to the overridden value when the pipeline has already re-derived', async () => {
     const { rerender } = renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
     await setCapacity('35');
 
     // What the derived pipeline reports once the override has been applied to it.
     rerender(
       <CapacityOverridesProvider>
-        <TeamCapacityInputs teamName="ORDER" hierarchyLevel={7} savedVelocityPerSprint={35} savedTracks={2} />
+        <TeamCapacityInputs
+          teamName="ORDER"
+          hierarchyLevel={7}
+          daysPerSprint={10}
+          savedVelocityPerSprint={35}
+          savedTracks={2}
+        />
       </CapacityOverridesProvider>,
     );
 
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
     expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
-    expect(screen.getByText('1 track')).toBeInTheDocument();
+    expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
   });
 
   it('keeps the saved baseline when the report re-derives and remounts the row', async () => {
@@ -202,6 +210,7 @@ describe('TeamCapacityInputs', () => {
           <TeamCapacityInputs
             teamName="ORDER"
             hierarchyLevel={7}
+            daysPerSprint={10}
             savedVelocityPerSprint={velocityPerSprint}
             savedTracks={1}
           />
@@ -220,5 +229,87 @@ describe('TeamCapacityInputs', () => {
 
     expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
+  });
+});
+
+// spec/040-update-team-estimation-settings
+describe("TeamCapacityInputs in the team's estimate unit", () => {
+  const renderUnit = (props: Partial<React.ComponentProps<typeof TeamCapacityInputs>>) =>
+    render(
+      <CapacityOverridesProvider>
+        <TeamCapacityInputs
+          teamName="ORDER"
+          hierarchyLevel={7}
+          daysPerSprint={10}
+          savedVelocityPerSprint={21}
+          savedTracks={1}
+          {...props}
+        />
+      </CapacityOverridesProvider>,
+    );
+
+  it('names the scheduled level in the stepper', async () => {
+    renderUnit({ itemLabel: itemLabelFor('Epic'), savedTracks: 2 });
+
+    expect(screen.getByText('2 Epics in parallel')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /work on one fewer Epic in parallel/i }));
+
+    expect(screen.getByText('1 Epic in parallel')).toBeInTheDocument();
+  });
+
+  it('a Story Points team edits velocity per sprint', async () => {
+    renderUnit({ estimateUnit: 'storyPoints' });
+
+    expect(screen.getByText('points / sprint')).toBeInTheDocument();
+    await setCapacity('35');
+    await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+    expect(commit).toHaveBeenCalledWith('ORDER', 7, { velocityPerSprint: 35 }, expect.anything());
+  });
+
+  it('a Dev Days team edits its dev days per day, which are its team members', async () => {
+    // 5 members × 10-day sprint.
+    renderUnit({ estimateUnit: 'devDays', savedVelocityPerSprint: 50 });
+
+    expect(screen.getByText('dev days / day')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Capacity, 5 dev days per day/ }));
+    await userEvent.clear(screen.getByRole('spinbutton'));
+    await userEvent.type(screen.getByRole('spinbutton'), '8{Enter}');
+    await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+    expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 8 }, expect.anything());
+  });
+
+  it('a Team Weeks team has no editable capacity', () => {
+    // Half team, 10-day sprint: V = 10 / (5 × ½) = 4.
+    renderUnit({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half', savedVelocityPerSprint: 4 });
+
+    expect(screen.getByText('half-team weeks / week')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Capacity,/ })).not.toBeInTheDocument();
+  });
+
+  it('a Team Working Days team shows its per-day capacity, read-only', () => {
+    renderUnit({ estimateUnit: 'teamDays', estimateTeamShare: 'half', savedVelocityPerSprint: 20 });
+
+    expect(screen.getByText('half-team days / day')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Capacity,/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('TeamCapacityOutputs', () => {
+  it('shows per-day capacity for a unit with a longer period', () => {
+    render(<TeamCapacityOutputs velocity={20} daysPerSprint={10} totalWorkingDays={34} />);
+
+    expect(screen.getByText('points / day')).toBeInTheDocument();
+    expect(screen.getByText('Total working days')).toBeInTheDocument();
+  });
+
+  it('leaves per-day capacity to the inputs when the period already is a day', () => {
+    render(<TeamCapacityOutputs velocity={50} daysPerSprint={10} estimateUnit="devDays" totalWorkingDays={34} />);
+
+    expect(screen.queryByText('dev days / day')).not.toBeInTheDocument();
   });
 });

@@ -81,7 +81,12 @@ export const CapacityOverridesProvider: FC<CapacityOverridesProviderProps> = ({ 
       if (team in previous.overrides) return previous;
 
       const current = previous.savedCapacity[team];
-      if (current && current.velocityPerSprint === values.velocityPerSprint && current.tracks === values.tracks) {
+      if (
+        current &&
+        current.velocityPerSprint === values.velocityPerSprint &&
+        current.tracks === values.tracks &&
+        current.teamMembers === values.teamMembers
+      ) {
         return previous;
       }
 

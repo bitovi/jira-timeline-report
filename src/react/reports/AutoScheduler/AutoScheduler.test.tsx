@@ -292,14 +292,14 @@ describe('AutoScheduler team capacity row', () => {
     renderScheduler();
 
     expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
-    expect(screen.getByText('Points / Day')).toBeInTheDocument();
-    expect(screen.getByText('Total Working Days')).toBeInTheDocument();
+    expect(screen.getByText('points / day')).toBeInTheDocument();
+    expect(screen.getByText('Total working days')).toBeInTheDocument();
   });
 
   it('shows the track stepper for the team', () => {
     renderScheduler();
 
-    expect(screen.getByText('1 track')).toBeInTheDocument();
+    expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
   });
 
   it('has no commit controls until something changes', () => {
@@ -311,7 +311,7 @@ describe('AutoScheduler team capacity row', () => {
   it('marks the row dirty and offers Reset once a track is added', async () => {
     renderScheduler();
 
-    await userEvent.click(screen.getByRole('button', { name: /add a parallel work track/i }));
+    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
 
     expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
     expect(document.querySelector('[data-team-row="ORDER"][data-dirty="true"]')).toBeInTheDocument();

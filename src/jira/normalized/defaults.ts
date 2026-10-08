@@ -274,3 +274,21 @@ export function getTeamSpreadsEffortAcrossDatesDefault(
 ): NormalizedIssue['team']['spreadEffortAcrossDates'] {
   return false;
 }
+
+type MinimalEstimateUnitIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
+
+export function getEstimateUnitDefault(
+  issue: MinimalEstimateUnitIssue,
+  options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
+): NormalizedIssue['team']['estimateUnit'] {
+  return 'storyPoints';
+}
+
+type MinimalEstimateTeamShareIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
+
+export function getEstimateTeamShareDefault(
+  issue: MinimalEstimateTeamShareIssue,
+  options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
+): NormalizedIssue['team']['estimateTeamShare'] {
+  return 'full';
+}

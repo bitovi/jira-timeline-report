@@ -1,6 +1,8 @@
 import type { NormalizeIssueConfig } from '../../../../../../../jira/normalized/normalize';
 import type { AllTeamData, Configuration } from '../services/team-configuration';
 
+import { getEffectiveVelocity } from './estimation';
+
 const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel?: number): Configuration => {
   const key = teamKey || '';
   const level = typeof heirarchyLevel === 'undefined' ? 0 : heirarchyLevel;
@@ -66,9 +68,23 @@ export const createNormalizeConfiguration = (
         getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).sprintLength,
       );
     },
+    // Effective velocity, in whatever unit the team estimates in — see `estimation.ts`. A config with no
+    // `estimateUnit` resolves to story points, which is `velocityPerSprint` exactly.
     getVelocity: (issue, config) => {
-      return Number(
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).velocityPerSprint,
+      return getEffectiveVelocity(
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)),
+      );
+    },
+    getEstimateUnit: (issue, config) => {
+      return (
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).estimateUnit ??
+        'storyPoints'
+      );
+    },
+    getEstimateTeamShare: (issue, config) => {
+      return (
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).estimateTeamShare ??
+        'full'
       );
     },
     getParallelWorkLimit: (issue, config) => {

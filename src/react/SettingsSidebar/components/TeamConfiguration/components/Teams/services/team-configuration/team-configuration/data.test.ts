@@ -85,6 +85,9 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 1,
+      estimateTeamShare: 'full',
     };
 
     expect(globalDefaults).toEqual(expectedDefaults);
@@ -155,6 +158,9 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 1,
+      estimateTeamShare: 'full',
     };
 
     expect(augmentedData.__GLOBAL__.defaults).toEqual(expectedDefaults);
@@ -200,6 +206,9 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 1,
+      estimateTeamShare: 'full',
     });
 
     expect(inheritedData['Team B']?.['3']).toEqual({
@@ -212,6 +221,9 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 1,
+      estimateTeamShare: 'full',
     });
   });
 });

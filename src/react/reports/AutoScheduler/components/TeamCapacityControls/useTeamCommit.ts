@@ -18,18 +18,18 @@ import {
 import { sanitizeAllTeamData } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/hooks/sanitizeAllTeamData';
 import { updateTeamConfigurationKeys } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/key-factory';
 
-const CAPACITY_FIELDS = ['velocityPerSprint', 'tracks'] as const;
+const CAPACITY_FIELDS = ['velocityPerSprint', 'tracks', 'teamMembers'] as const;
 
 type CapacityField = (typeof CAPACITY_FIELDS)[number];
 
 /**
- * Writes a team's what-if capacity and tracks through to saved team settings, using the same
- * mutation the Teams sidebar uses.
+ * Writes a team's what-if capacity (velocity, or team members for a Dev Days team) and tracks through
+ * to saved team settings, using the same mutation the Teams sidebar uses.
  *
  * Writes each field to wherever the team's own saved data already holds it: the scheduled hierarchy
  * level if the team set it there, otherwise the team's `defaults` — which is also where a value
  * inherited from `__GLOBAL__` lands, so one team's commit never changes another team's capacity.
- * The two fields can target different levels, so a commit may touch both; nothing is ever removed
+ * The fields can target different levels, so a commit may touch both; nothing is ever removed
  * from a level it is not targeting.
  *
  * Uses `useSaveAllTeamData` rather than `useSaveTeamData`: the latter closes over its `teamName` at

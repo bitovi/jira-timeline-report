@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import type { Configuration, IssueFields } from './services/team-configuration';
 import type { NormalizeIssueConfig } from '../../../../../../jira/normalized/normalize';
 import type { Control, UseFormReturn } from 'react-hook-form';
+import type { ItemLabel } from './shared/estimation';
 
 import React from 'react';
 import { Flex } from '@atlaskit/primitives';
@@ -12,6 +13,7 @@ import Hr from '../../../../../components/Hr';
 import InheritanceTextField from './components/InheritanceTextField';
 import InheritanceToggleField from './components/InheritanceToggleField';
 import InheritanceSelect from './components/InheritanceSelect';
+import EstimationQuestions from './components/EstimationQuestions';
 import { RequiredAsterisk } from './components/Label';
 import { buildSelectableFields } from './shared/selectable-fields';
 
@@ -23,6 +25,10 @@ export interface ConfigureTeamsFormProps {
   control: Control<Configuration>;
   update: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
   toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean) => void;
+  /** `null` on a team's defaults; the work item type's name on a per-type accordion. */
+  itemLabel?: ItemLabel | null;
+  /** The `estimationQuestions` feature flag. See spec/040-update-team-estimation-settings. */
+  showEstimationQuestions?: boolean;
 }
 
 export interface FieldUpdates<TProperty extends keyof Configuration> {
@@ -37,6 +43,8 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
   control,
   update,
   toggleInheritance,
+  itemLabel = null,
+  showEstimationQuestions = false,
 }) => {
   const selectableFields = buildSelectableFields(jiraFields);
 
@@ -46,50 +54,79 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         <div className="flex gap-1">
           <RequiredAsterisk /> <p className="text-sm text-slate-300"> indicates a required field</p>
         </div>
-        <InheritanceTextField
-          isInheriting={!savedUserData.velocityPerSprint}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('velocityPerSprint', shouldCustomize)}
-          name="velocityPerSprint"
-          type="number"
-          label="Capacity per sprint"
-          unit="estimating units"
-          min={1}
-          register={register}
-          onSave={update}
-        />
-        <InheritanceTextField
-          isInheriting={!savedUserData.tracks}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('tracks', shouldCustomize)}
-          name="tracks"
-          type="number"
-          label="Tracks"
-          min={1}
-          register={register}
-          onSave={update}
-        />
-        <InheritanceToggleField
-          isInheriting={
-            // Look for undefined and null but not false
-            savedUserData.spreadEffortAcrossDates == null
-          }
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('spreadEffortAcrossDates', shouldCustomize)}
-          name="spreadEffortAcrossDates"
-          control={control}
-          onSave={update}
-          label="Spread effort"
-          description="Spread estimate across dates"
-        />
-        <InheritanceTextField
-          isInheriting={!savedUserData.sprintLength}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('sprintLength', shouldCustomize)}
-          name="sprintLength"
-          type="number"
-          label="Sprint length"
-          unit="business days"
-          min={1}
-          register={register}
-          onSave={update}
-        />
+        {showEstimationQuestions ? (
+          <>
+            <EstimationQuestions
+              mode="inheriting"
+              control={control}
+              register={register}
+              update={update}
+              savedUserData={savedUserData}
+              toggleInheritance={toggleInheritance}
+              itemLabel={itemLabel}
+              estimateFieldOptions={selectableFields}
+            />
+            <InheritanceToggleField
+              isInheriting={
+                // Look for undefined and null but not false
+                savedUserData.spreadEffortAcrossDates == null
+              }
+              onInheritanceChange={(shouldCustomize) => toggleInheritance('spreadEffortAcrossDates', shouldCustomize)}
+              name="spreadEffortAcrossDates"
+              control={control}
+              onSave={update}
+              label="Spread effort"
+              description="Spread estimate across dates"
+            />
+          </>
+        ) : (
+          <>
+            <InheritanceTextField
+              isInheriting={!savedUserData.velocityPerSprint}
+              onInheritanceChange={(shouldCustomize) => toggleInheritance('velocityPerSprint', shouldCustomize)}
+              name="velocityPerSprint"
+              type="number"
+              label="Capacity per sprint"
+              unit="estimating units"
+              min={1}
+              register={register}
+              onSave={update}
+            />
+            <InheritanceTextField
+              isInheriting={!savedUserData.tracks}
+              onInheritanceChange={(shouldCustomize) => toggleInheritance('tracks', shouldCustomize)}
+              name="tracks"
+              type="number"
+              label="Tracks"
+              min={1}
+              register={register}
+              onSave={update}
+            />
+            <InheritanceToggleField
+              isInheriting={
+                // Look for undefined and null but not false
+                savedUserData.spreadEffortAcrossDates == null
+              }
+              onInheritanceChange={(shouldCustomize) => toggleInheritance('spreadEffortAcrossDates', shouldCustomize)}
+              name="spreadEffortAcrossDates"
+              control={control}
+              onSave={update}
+              label="Spread effort"
+              description="Spread estimate across dates"
+            />
+            <InheritanceTextField
+              isInheriting={!savedUserData.sprintLength}
+              onInheritanceChange={(shouldCustomize) => toggleInheritance('sprintLength', shouldCustomize)}
+              name="sprintLength"
+              type="number"
+              label="Sprint length"
+              unit="business days"
+              min={1}
+              register={register}
+              onSave={update}
+            />
+          </>
+        )}
         <Hr />
         <InheritanceSelect
           isInheriting={!savedUserData.estimateField}

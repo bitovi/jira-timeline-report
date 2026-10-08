@@ -8,6 +8,7 @@ import Spinner from '@atlaskit/spinner';
 
 import { Accordion, AccordionContent, AccordionTitle } from '../../../../../components/Accordion';
 import { useSaveTeamData, useTeamData } from './services/team-configuration';
+import { useFeatures } from '../../../../../services/features';
 
 import AllTeamsDefaultForm from './AllTeamsDefaultsForm';
 import ConfigureTeams from './ConfigureTeams';
@@ -19,6 +20,7 @@ export interface ConfigureAllTeamsProps {
 
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
   const { savedUserTeamData, inheritedTeamData } = useTeamData('__GLOBAL__', jiraFields);
+  const { estimationQuestions } = useFeatures();
 
   const { save, isSaving } = useSaveTeamData({
     teamName: '__GLOBAL__',
@@ -43,6 +45,7 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, .
             savedUserData={savedUserTeamData.defaults}
             inheritedData={inheritedTeamData.defaults}
             jiraFields={jiraFields}
+            showEstimationQuestions={!!estimationQuestions}
             {...props}
           />
         </AccordionContent>

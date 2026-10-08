@@ -62,4 +62,19 @@ describe('applyCapacityOverrides', () => {
 
     expect(getVelocity).not.toHaveBeenCalled();
   });
+
+  // spec/040: a Dev Days team's capacity is its headcount, one dev-day per member per working day.
+  it('a team members override gives members × days per sprint', () => {
+    const wrapped = applyCapacityOverrides({ ...base, getDaysPerSprint: () => 15 }, { ORDER: { teamMembers: 4 } });
+
+    expect(wrapped.getVelocity!(issue('ORDER'), config)).toBe(60);
+    expect(wrapped.getVelocity!(issue('STORE'), config)).toBe(21);
+  });
+
+  it('a team members override falls back to the default sprint length when the base has none', () => {
+    const { getDaysPerSprint: _omitted, ...withoutSprintLength } = base;
+    const wrapped = applyCapacityOverrides(withoutSprintLength, { ORDER: { teamMembers: 4 } });
+
+    expect(wrapped.getVelocity!(issue('ORDER'), config)).toBe(40);
+  });
 });

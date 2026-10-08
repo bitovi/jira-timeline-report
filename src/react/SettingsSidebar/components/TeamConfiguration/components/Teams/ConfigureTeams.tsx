@@ -12,6 +12,8 @@ import { useTeamData } from './services/team-configuration';
 import ConfigureTeamsForm from './ConfigureTeamsForm';
 import { useTeamForm } from './useTeamForm';
 import Hr from '../../../../../components/Hr';
+import { useFeatures } from '../../../../../services/features';
+import { itemLabelFor } from './shared/estimation';
 
 interface IssueAccordionProps {
   teamName: string;
@@ -30,6 +32,7 @@ const IssueAccordion: FC<IssueAccordionProps> = ({
   getHierarchyLevelName,
   ...formData
 }) => {
+  const { estimationQuestions } = useFeatures();
   const { isSaving, ...formProps } = useTeamForm({
     hierarchyLevel,
     ...formData,
@@ -50,7 +53,12 @@ const IssueAccordion: FC<IssueAccordionProps> = ({
         )}
       </AccordionTitle>
       <AccordionContent>
-        <ConfigureTeamsForm jiraFields={jiraFields} {...formProps} />
+        <ConfigureTeamsForm
+          jiraFields={jiraFields}
+          itemLabel={hierarchyLevel === 'defaults' ? null : itemLabelFor(getHierarchyLevelName(hierarchyLevel))}
+          showEstimationQuestions={!!estimationQuestions}
+          {...formProps}
+        />
       </AccordionContent>
     </Accordion>
   );
