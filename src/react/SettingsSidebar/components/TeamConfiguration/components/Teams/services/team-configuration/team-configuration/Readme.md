@@ -39,18 +39,25 @@ const withInheritance = applyInheritance('__GLOBAL__', configurationsWithGlobalD
 
 ## Estimate units
 
-Teams answer capacity questions in the unit they estimate in (`estimateUnit`). The scheduler still works from three numbers per issue — velocity, days per sprint and parallel work limit — so each unit only has to produce an **effective velocity**: how many estimate units the whole team finishes per sprint. See `Teams/shared/estimation.ts` and spec/040-update-team-estimation-settings.
+Teams answer capacity questions in the unit they estimate in (`estimateUnit`). The scheduler still works from three numbers per issue — velocity, days per sprint and parallel work limit — whose names predate estimate units. Each unit supplies:
 
-| `estimateUnit`          | Asks for                               | Effective velocity (S = `sprintLength`, f = share) |
-| ----------------------- | -------------------------------------- | -------------------------------------------------- |
-| `storyPoints` (default) | `sprintLength`, `velocityPerSprint`    | `velocityPerSprint`                                |
-| `devDays`               | `teamMembers`                          | `teamMembers × S`                                  |
-| `teamDays`              | `estimateTeamShare`                    | `S / f`                                            |
-| `teamWeeks`             | `estimateTeamShare` (a week is 5 days) | `S / (5 × f)`                                      |
-| `teamSprints`           | `sprintLength`, `estimateTeamShare`    | `1 / f`                                            |
+- a **scheduling period** (the engine's "days per sprint"), in working days, and
+- an **effective velocity** (the engine's "velocity"): estimate units the whole team finishes in that period.
+
+See `Teams/shared/estimation.ts` and spec/040-update-team-estimation-settings.
+
+| `estimateUnit`          | Asks for                               | Period (P)     | Effective velocity (f = share) |
+| ----------------------- | -------------------------------------- | -------------- | ------------------------------ |
+| `storyPoints` (default) | `sprintLength`, `velocityPerSprint`    | `sprintLength` | `velocityPerSprint`            |
+| `devDays`               | `teamMembers`                          | 5 working days | `teamMembers × P`              |
+| `teamDays`              | `estimateTeamShare`                    | 5 working days | `P / f`                        |
+| `teamWeeks`             | `estimateTeamShare` (a week is 5 days) | 5 working days | `P / (5 × f)`                  |
+| `teamSprints`           | `sprintLength`, `estimateTeamShare`    | `sprintLength` | `1 / f`                        |
 
 `tracks` (work items in parallel) is asked for every unit. Shares are `full` = 1, `half` = ½, `third` = ⅓, `quarter` = ¼.
 
-A configuration saved without `estimateUnit` resolves to `storyPoints`, which is the original math exactly, so nothing needs migrating. Every field inherits on its own through the chain above, so a team can inherit its unit from `__GLOBAL__` and still set its own `teamMembers`.
+The period cancels out of every estimated duration. Its one visible effect is the default for an **unestimated item, which always takes exactly one period**: a sprint for the sprint units, and `UNESTIMATED_WORKING_DAYS` (5) for the rest. The form says so under the unit question.
 
-When a unit does not ask for `sprintLength`, the inherited value is still used: it only sets the default estimate for unestimated items (always one sprint per track) and cancels out of every estimated duration.
+**No unit reads a setting its form hides.** A `sprintLength` saved while on Story Points survives a switch to Dev Days, but nothing reads it until the team switches back. Likewise `velocityPerSprint` is ignored by every unit but Story Points, and `teamMembers` by every unit but Dev Days.
+
+A configuration saved without `estimateUnit` resolves to `storyPoints`, which is the original math exactly, so nothing needs migrating. Every field inherits on its own through the chain above, so a team can inherit its unit from `__GLOBAL__` and still set its own `teamMembers`.

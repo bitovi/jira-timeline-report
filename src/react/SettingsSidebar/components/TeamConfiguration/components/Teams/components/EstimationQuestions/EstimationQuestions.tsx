@@ -16,7 +16,7 @@ import TextField from '../TextField';
 import Select from '../Select';
 import InheritanceTextField from '../InheritanceTextField';
 import InheritanceSelect from '../InheritanceSelect';
-import { describeEstimation } from '../../shared/estimation';
+import { describeEstimation, describeUnestimated } from '../../shared/estimation';
 
 export const ESTIMATE_UNIT_OPTIONS: Array<{ value: EstimateUnit; label: string }> = [
   { value: 'storyPoints', label: 'Story Points' },
@@ -106,17 +106,20 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
         <Heading size="xsmall">Estimate units</Heading>
       </div>
       {selectField('estimateUnit', `What units do you use to estimate ${estimateScope}?`, ESTIMATE_UNIT_OPTIONS)}
-      {/* The unit says what the estimate field's numbers mean; it does not convert them. Naming the
-          field here keeps a team from switching units while still reading a story points field. */}
-      <p className="text-xs text-slate-500" data-testid="estimate-field-hint">
-        {estimateField ? (
-          <>
-            Estimate field is currently set to <span className="font-semibold">{estimateField}</span>
-          </>
-        ) : (
-          'Estimate field is not set'
-        )}
-      </p>
+      <div className="grid gap-0.5 text-xs text-slate-500">
+        {/* The unit says what the estimate field's numbers mean; it does not convert them. Naming the
+            field here keeps a team from switching units while still reading a story points field. */}
+        <p data-testid="estimate-field-hint">
+          {estimateField ? (
+            <>
+              Estimate field is currently set to <span className="font-semibold">{estimateField}</span>.
+            </>
+          ) : (
+            'Estimate field is not set.'
+          )}
+        </p>
+        <p data-testid="unestimated-hint">{describeUnestimated(values, items)}</p>
+      </div>
       {ASKS_SPRINT_LENGTH.includes(unit) &&
         numberField('sprintLength', 'How many working days are in a sprint?', 'working days')}
       {ASKS_TEAM_SHARE.includes(unit) &&
@@ -125,7 +128,7 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
           `When estimating, how much of the team do you assume will work on a single ${items.singular}?`,
           ESTIMATE_TEAM_SHARE_OPTIONS,
         )}
-      {unit === 'teamWeeks' && <p className="text-sm text-slate-500">One week is 5 working days.</p>}
+      {unit === 'teamWeeks' && <p className="text-xs text-slate-500">One week is 5 working days.</p>}
 
       <div className="mt-2">
         <Heading size="xsmall">Team capacity</Heading>

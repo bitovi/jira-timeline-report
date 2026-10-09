@@ -12,19 +12,19 @@ import { CapacityOverridesProvider } from '../../../../services/capacity-overrid
 import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
 import { itemLabelFor } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
-const inputs = (props: { savedVelocityPerSprint?: number; savedTracks?: number } = {}) => (
+const inputs = (props: { savedEffectiveVelocity?: number; savedTracks?: number } = {}) => (
   <CapacityOverridesProvider>
     <TeamCapacityInputs
       teamName="ORDER"
       hierarchyLevel={7}
-      daysPerSprint={10}
-      savedVelocityPerSprint={props.savedVelocityPerSprint ?? 21}
+      periodDays={10}
+      savedEffectiveVelocity={props.savedEffectiveVelocity ?? 21}
       savedTracks={props.savedTracks ?? 1}
     />
   </CapacityOverridesProvider>
 );
 
-const renderInputs = (props: { savedVelocityPerSprint?: number; savedTracks?: number } = {}) => render(inputs(props));
+const renderInputs = (props: { savedEffectiveVelocity?: number; savedTracks?: number } = {}) => render(inputs(props));
 
 /** The `onSuccess` the row hands the commit hook, which only a successful save is meant to run. */
 const commitSucceeds = () => act(() => commit.mock.calls[0][3].onSuccess());
@@ -189,8 +189,8 @@ describe('TeamCapacityInputs', () => {
         <TeamCapacityInputs
           teamName="ORDER"
           hierarchyLevel={7}
-          daysPerSprint={10}
-          savedVelocityPerSprint={35}
+          periodDays={10}
+          savedEffectiveVelocity={35}
           savedTracks={2}
         />
       </CapacityOverridesProvider>,
@@ -210,8 +210,8 @@ describe('TeamCapacityInputs', () => {
           <TeamCapacityInputs
             teamName="ORDER"
             hierarchyLevel={7}
-            daysPerSprint={10}
-            savedVelocityPerSprint={velocityPerSprint}
+            periodDays={10}
+            savedEffectiveVelocity={velocityPerSprint}
             savedTracks={1}
           />
         )}
@@ -240,8 +240,8 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
         <TeamCapacityInputs
           teamName="ORDER"
           hierarchyLevel={7}
-          daysPerSprint={10}
-          savedVelocityPerSprint={21}
+          periodDays={10}
+          savedEffectiveVelocity={21}
           savedTracks={1}
           {...props}
         />
@@ -269,8 +269,8 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
   });
 
   it('a Dev Days team edits its dev days per day, which are its team members', async () => {
-    // 5 members × 10-day sprint.
-    renderUnit({ estimateUnit: 'devDays', savedVelocityPerSprint: 50 });
+    // 5 members over the 5-day Dev Days period.
+    renderUnit({ estimateUnit: 'devDays', savedTeamMembers: 5, savedEffectiveVelocity: 25, periodDays: 5 });
 
     expect(screen.getByText('dev days / day')).toBeInTheDocument();
 
@@ -284,7 +284,7 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
 
   it('a Team Weeks team has no editable capacity', () => {
     // Half team, 10-day sprint: V = 10 / (5 × ½) = 4.
-    renderUnit({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half', savedVelocityPerSprint: 4 });
+    renderUnit({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half', savedEffectiveVelocity: 4 });
 
     expect(screen.getByText('half-team weeks / week')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -292,7 +292,7 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
   });
 
   it('a Team Working Days team shows its per-day capacity, read-only', () => {
-    renderUnit({ estimateUnit: 'teamDays', estimateTeamShare: 'half', savedVelocityPerSprint: 20 });
+    renderUnit({ estimateUnit: 'teamDays', estimateTeamShare: 'half', savedEffectiveVelocity: 20 });
 
     expect(screen.getByText('half-team days / day')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Capacity,/ })).not.toBeInTheDocument();
@@ -301,14 +301,14 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
 
 describe('TeamCapacityOutputs', () => {
   it('shows per-day capacity for a unit with a longer period', () => {
-    render(<TeamCapacityOutputs velocity={20} daysPerSprint={10} totalWorkingDays={34} />);
+    render(<TeamCapacityOutputs velocity={20} periodDays={10} totalWorkingDays={34} />);
 
     expect(screen.getByText('points / day')).toBeInTheDocument();
     expect(screen.getByText('Total working days')).toBeInTheDocument();
   });
 
   it('leaves per-day capacity to the inputs when the period already is a day', () => {
-    render(<TeamCapacityOutputs velocity={50} daysPerSprint={10} estimateUnit="devDays" totalWorkingDays={34} />);
+    render(<TeamCapacityOutputs velocity={50} periodDays={10} estimateUnit="devDays" totalWorkingDays={34} />);
 
     expect(screen.queryByText('dev days / day')).not.toBeInTheDocument();
   });

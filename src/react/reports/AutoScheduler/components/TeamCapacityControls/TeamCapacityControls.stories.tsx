@@ -26,9 +26,11 @@ type RowProps = {
   estimateTeamShare?: EstimateTeamShare;
   /** Effective velocity — see `shared/estimation.ts`. */
   velocity?: number;
+  teamMembers?: number;
+  periodDays?: number;
 };
 
-const Row = ({ width, estimateUnit, estimateTeamShare, velocity = 21 }: RowProps) => (
+const Row = ({ width, estimateUnit, estimateTeamShare, velocity = 21, teamMembers, periodDays = 10 }: RowProps) => (
   <div className="bg-neutral-20" style={{ maxWidth: width }}>
     <div className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-1 relative">
       <span className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
@@ -37,16 +39,17 @@ const Row = ({ width, estimateUnit, estimateTeamShare, velocity = 21 }: RowProps
           teamName="ORDER"
           hierarchyLevel={7}
           itemLabel={itemLabelFor('Epic')}
-          daysPerSprint={10}
+          periodDays={periodDays}
           estimateUnit={estimateUnit}
           estimateTeamShare={estimateTeamShare}
-          savedVelocityPerSprint={velocity}
+          savedEffectiveVelocity={velocity}
           savedTracks={1}
+          savedTeamMembers={teamMembers}
         />
       </span>
       <TeamCapacityOutputs
         velocity={velocity}
-        daysPerSprint={10}
+        periodDays={periodDays}
         estimateUnit={estimateUnit}
         estimateTeamShare={estimateTeamShare}
         totalWorkingDays={38}
@@ -108,10 +111,12 @@ export const Clean: StoryObj<typeof Row> = {};
 /** The squeezed case: the outputs drop to a second line instead of painting over the inputs. */
 export const Narrow: StoryObj<typeof Row> = { args: { width: 420 } };
 
-/** Dev Days: capacity is the team's headcount, edited as dev days per day. 5 members × 10 days. */
-export const DevDays: StoryObj<typeof Row> = { args: { estimateUnit: 'devDays', velocity: 50 } };
+/** Dev Days: capacity is the team's headcount, edited as dev days per day. 5 members over a 5-day period. */
+export const DevDays: StoryObj<typeof Row> = {
+  args: { estimateUnit: 'devDays', teamMembers: 5, velocity: 25, periodDays: 5 },
+};
 
-/** Team Weeks at half a team: capacity follows from the share, so it is a readout. */
+/** Team Weeks at half a team: capacity follows from the share, so it is a readout. V = 5 / (5 × ½). */
 export const TeamWeeks: StoryObj<typeof Row> = {
-  args: { estimateUnit: 'teamWeeks', estimateTeamShare: 'half', velocity: 4 },
+  args: { estimateUnit: 'teamWeeks', estimateTeamShare: 'half', velocity: 2, periodDays: 5 },
 };

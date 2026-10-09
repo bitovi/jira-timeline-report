@@ -162,6 +162,9 @@ export interface NormalizedTeam {
   velocity: number;
   estimateUnit: EstimateUnit;
   estimateTeamShare: EstimateTeamShare;
+  /** Dev Days teams only; `null` for every other unit. */
+  teamMembers: number | null;
+  /** Working days in the scheduling period: the sprint for sprint units, else a fixed default. */
   daysPerSprint: number;
   parallelWorkLimit: number;
   totalPointsPerDay: number;

@@ -15,6 +15,8 @@ import { CapacityField } from './CapacityField';
 import { TrackStepper } from './TrackStepper';
 import { useTeamCommit } from './useTeamCommit';
 import {
+  DEFAULT_ESTIMATE_UNIT,
+  DEFAULT_TEAM_SHARE,
   formatCapacity,
   WORK_ITEMS_LABEL,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
@@ -38,10 +40,13 @@ interface TeamCapacityInputsProps {
   teamName: string;
   /** The hierarchy level of the issues being scheduled — where a commit writes. */
   hierarchyLevel: number;
-  /** The team's effective velocity as derived — estimate units per sprint, whatever the unit. */
-  savedVelocityPerSprint: number;
+  /** The team's effective velocity as derived — estimate units per scheduling period, whatever the unit. */
+  savedEffectiveVelocity: number;
   savedTracks: number;
-  daysPerSprint: number;
+  /** Dev Days teams only: their saved headcount. */
+  savedTeamMembers?: number | null;
+  /** Working days in the scheduling period (`NormalizedTeam.daysPerSprint`). */
+  periodDays: number;
   estimateUnit?: EstimateUnit;
   estimateTeamShare?: EstimateTeamShare;
   /** The scheduled level's name, e.g. "Epic" / "Epics". */
@@ -64,11 +69,12 @@ const buttonClasses =
 export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   teamName,
   hierarchyLevel,
-  savedVelocityPerSprint,
+  savedEffectiveVelocity,
   savedTracks,
-  daysPerSprint,
-  estimateUnit = 'storyPoints',
-  estimateTeamShare = 'full',
+  savedTeamMembers: savedTeamMembersProp,
+  periodDays,
+  estimateUnit = DEFAULT_ESTIMATE_UNIT,
+  estimateTeamShare = DEFAULT_TEAM_SHARE,
   itemLabel = WORK_ITEMS_LABEL,
 }) => {
   const { overrides, savedCapacity, setTeamOverride, clearTeamOverride, rememberSavedCapacity, commitSavedCapacity } =
@@ -81,19 +87,18 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   // The values passed in come from the derived pipeline, so they are the saved ones only until an
   // override lands. The provider keeps the baseline — this row is remounted on every re-derive.
   const isDevDays = estimateUnit === 'devDays';
-  // A Dev Days team's effective velocity is members × sprint length, so its headcount is recoverable.
-  const savedTeamMembers = isDevDays ? roundTo(savedVelocityPerSprint / daysPerSprint, 2) : undefined;
+  const savedTeamMembers = isDevDays ? (savedTeamMembersProp ?? undefined) : undefined;
 
   useEffect(() => {
     rememberSavedCapacity(teamName, {
-      velocityPerSprint: savedVelocityPerSprint,
+      velocityPerSprint: savedEffectiveVelocity,
       tracks: savedTracks,
       teamMembers: savedTeamMembers,
     });
-  }, [rememberSavedCapacity, teamName, savedVelocityPerSprint, savedTracks, savedTeamMembers]);
+  }, [rememberSavedCapacity, teamName, savedEffectiveVelocity, savedTracks, savedTeamMembers]);
 
   const saved = savedCapacity[teamName] ?? {
-    velocityPerSprint: savedVelocityPerSprint,
+    velocityPerSprint: savedEffectiveVelocity,
     tracks: savedTracks,
     teamMembers: savedTeamMembers,
   };
@@ -102,8 +107,10 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   const tracks = override.tracks ?? saved.tracks;
   const teamMembers = override.teamMembers ?? saved.teamMembers;
 
-  const effectiveVelocity = isDevDays && teamMembers !== undefined ? teamMembers * daysPerSprint : velocityPerSprint;
-  const capacity = formatCapacity(estimateUnit, estimateTeamShare, effectiveVelocity, daysPerSprint);
+  // `velocityPerSprint` is only ever overridden for Story Points; for every other unit it is the
+  // derived effective velocity, which Dev Days recomputes from an edited headcount.
+  const effectiveVelocity = isDevDays && teamMembers !== undefined ? teamMembers * periodDays : velocityPerSprint;
+  const capacity = formatCapacity(estimateUnit, estimateTeamShare, effectiveVelocity, periodDays);
 
   // `undefined` removes the field, so editing back to the saved value leaves the row clean instead of
   // arming a Commit that would write what is already stored.
@@ -206,9 +213,10 @@ const CapacityReadoutView: FC<{ label: string; children: React.ReactNode }> = ({
 );
 
 interface TeamCapacityOutputsProps {
-  /** Effective velocity: estimate units the whole team finishes per sprint. */
+  /** Effective velocity: estimate units the whole team finishes per scheduling period. */
   velocity: number;
-  daysPerSprint: number;
+  /** Working days in the scheduling period (`NormalizedTeam.daysPerSprint`). */
+  periodDays: number;
   estimateUnit?: EstimateUnit;
   estimateTeamShare?: EstimateTeamShare;
   totalWorkingDays: number;
@@ -221,12 +229,12 @@ interface TeamCapacityOutputsProps {
  */
 export const TeamCapacityOutputs: FC<TeamCapacityOutputsProps> = ({
   velocity,
-  daysPerSprint,
-  estimateUnit = 'storyPoints',
-  estimateTeamShare = 'full',
+  periodDays,
+  estimateUnit = DEFAULT_ESTIMATE_UNIT,
+  estimateTeamShare = DEFAULT_TEAM_SHARE,
   totalWorkingDays,
 }) => {
-  const capacity = formatCapacity(estimateUnit, estimateTeamShare, velocity, daysPerSprint);
+  const capacity = formatCapacity(estimateUnit, estimateTeamShare, velocity, periodDays);
 
   return (
     <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">

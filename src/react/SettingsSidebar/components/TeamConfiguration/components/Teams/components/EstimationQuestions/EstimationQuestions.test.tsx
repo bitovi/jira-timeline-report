@@ -179,7 +179,7 @@ describe('EstimationQuestions', () => {
         />,
       );
 
-      expect(hint()).toBe('Estimate field is currently set to Story points');
+      expect(hint()).toBe('Estimate field is currently set to Story points.');
     });
 
     it('shows the label of a field stored by id', () => {
@@ -190,13 +190,24 @@ describe('EstimationQuestions', () => {
         />,
       );
 
-      expect(hint()).toBe('Estimate field is currently set to Story points (customfield_10020)');
+      expect(hint()).toBe('Estimate field is currently set to Story points (customfield_10020).');
+    });
+
+    it('says how long an unestimated item takes, following the unit', () => {
+      render(<Harness values={resolved({})} />);
+
+      const unestimatedHint = () => screen.getByTestId('unestimated-hint').textContent;
+      expect(unestimatedHint()).toBe('Work items without estimates default to 10 working days.');
+
+      chooseUnit('Dev Days');
+
+      expect(unestimatedHint()).toBe('Work items without estimates default to 5 working days.');
     });
 
     it('says when no field is set', () => {
       render(<Harness values={resolved({ estimateField: null })} />);
 
-      expect(hint()).toBe('Estimate field is not set');
+      expect(hint()).toBe('Estimate field is not set.');
     });
   });
 

@@ -1,7 +1,7 @@
 import type { NormalizeIssueConfig } from '../../../../../../../jira/normalized/normalize';
 import type { AllTeamData, Configuration } from '../services/team-configuration';
 
-import { getEffectiveVelocity } from './estimation';
+import { DEFAULT_ESTIMATE_UNIT, DEFAULT_TEAM_SHARE, getEffectiveVelocity, getSchedulingPeriodDays } from './estimation';
 
 const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel?: number): Configuration => {
   const key = teamKey || '';
@@ -63,13 +63,15 @@ export const createNormalizeConfiguration = (
 
   return {
     fields: neededFields,
+    // The engine's "sprint" is the scheduling period — `sprintLength` only for the units that ask for
+    // it, so a hidden sprint length never changes a schedule. See `estimation.ts`.
     getDaysPerSprint: (issue, config) => {
-      return Number(
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).sprintLength,
+      return getSchedulingPeriodDays(
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)),
       );
     },
-    // Effective velocity, in whatever unit the team estimates in — see `estimation.ts`. A config with no
-    // `estimateUnit` resolves to story points, which is `velocityPerSprint` exactly.
+    // Effective velocity, in whatever unit the team estimates in, per scheduling period. A config with
+    // no `estimateUnit` resolves to story points, which is `velocityPerSprint` exactly.
     getVelocity: (issue, config) => {
       return getEffectiveVelocity(
         getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)),
@@ -78,14 +80,24 @@ export const createNormalizeConfiguration = (
     getEstimateUnit: (issue, config) => {
       return (
         getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).estimateUnit ??
-        'storyPoints'
+        DEFAULT_ESTIMATE_UNIT
       );
     },
     getEstimateTeamShare: (issue, config) => {
       return (
         getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).estimateTeamShare ??
-        'full'
+        DEFAULT_TEAM_SHARE
       );
+    },
+    getTeamMembers: (issue, config) => {
+      const { estimateUnit, teamMembers } = getConfiguration(
+        allData,
+        config?.getTeamKey(issue),
+        config?.getHierarchyLevel(issue),
+      );
+
+      // Only a Dev Days team's headcount means anything to the schedule.
+      return estimateUnit === 'devDays' && teamMembers != null ? Number(teamMembers) : null;
     },
     getParallelWorkLimit: (issue, config) => {
       return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).tracks);

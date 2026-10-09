@@ -292,3 +292,12 @@ export function getEstimateTeamShareDefault(
 ): NormalizedIssue['team']['estimateTeamShare'] {
   return 'full';
 }
+
+type MinimalTeamMembersIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
+
+export function getTeamMembersDefault(
+  issue: MinimalTeamMembersIssue,
+  options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
+): NormalizedIssue['team']['teamMembers'] {
+  return null;
+}

@@ -31,13 +31,24 @@ describe('createNormalizeConfiguration estimate units', () => {
     expect(normalize.getEstimateTeamShare!(issue, forTeam('bitovi'))).toBe('full');
   });
 
-  it('a Dev Days team: members × sprint length', () => {
+  it('a Dev Days team: members × the 5-day period, whatever sprint length is saved', () => {
     const normalize = normalizeFor({
       bitovi: { defaults: { estimateUnit: 'devDays', teamMembers: 6, sprintLength: 15 } },
     } as never);
 
-    expect(normalize.getVelocity!(issue, forTeam('bitovi'))).toBe(90);
+    expect(normalize.getVelocity!(issue, forTeam('bitovi'))).toBe(30);
+    expect(normalize.getDaysPerSprint!(issue, forTeam('bitovi'))).toBe(5);
+    expect(normalize.getTeamMembers!(issue, forTeam('bitovi'))).toBe(6);
     expect(normalize.getEstimateUnit!(issue, forTeam('bitovi'))).toBe('devDays');
+  });
+
+  it('a story points team keeps its sprint length and has no headcount', () => {
+    const normalize = normalizeFor({
+      bitovi: { defaults: { sprintLength: 15, teamMembers: 6 } },
+    } as never);
+
+    expect(normalize.getDaysPerSprint!(issue, forTeam('bitovi'))).toBe(15);
+    expect(normalize.getTeamMembers!(issue, forTeam('bitovi'))).toBeNull();
   });
 
   it('a team inheriting the unit with its own team members', () => {
@@ -46,9 +57,10 @@ describe('createNormalizeConfiguration estimate units', () => {
       bitovi: { [EPIC]: { teamMembers: 8 } },
     } as never);
 
-    expect(normalize.getVelocity!(issue, forTeam('bitovi'))).toBe(80);
+    expect(normalize.getVelocity!(issue, forTeam('bitovi'))).toBe(40);
+    expect(normalize.getTeamMembers!(issue, forTeam('bitovi'))).toBe(8);
     // Another team takes both answers from the global defaults.
-    expect(normalize.getVelocity!(issue, forTeam('other'))).toBe(30);
+    expect(normalize.getVelocity!(issue, forTeam('other'))).toBe(15);
   });
 
   it('a team-time unit inherits its share from the global work item type', () => {
@@ -56,9 +68,9 @@ describe('createNormalizeConfiguration estimate units', () => {
       __GLOBAL__: { defaults: { estimateUnit: 'teamWeeks' }, [EPIC]: { estimateTeamShare: 'half' } },
     } as never);
 
-    expect(normalize.getVelocity!(issue, forTeam('bitovi'))).toBe(4);
+    expect(normalize.getVelocity!(issue, forTeam('bitovi'))).toBe(2);
     expect(normalize.getEstimateTeamShare!(issue, forTeam('bitovi'))).toBe('half');
     // The global default level has no share of its own, so it falls back to the full team.
-    expect(normalize.getVelocity!(issue, forTeam('bitovi', 0))).toBe(2);
+    expect(normalize.getVelocity!(issue, forTeam('bitovi', 0))).toBe(1);
   });
 });

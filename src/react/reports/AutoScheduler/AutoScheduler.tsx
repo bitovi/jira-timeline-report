@@ -586,15 +586,16 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
               itemLabel={team.issueType ? itemLabelFor(team.issueType) : WORK_ITEMS_LABEL}
               estimateUnit={teamData.estimateUnit}
               estimateTeamShare={teamData.estimateTeamShare}
-              daysPerSprint={teamData.daysPerSprint}
-              savedVelocityPerSprint={teamData.velocity}
+              periodDays={teamData.daysPerSprint}
+              savedEffectiveVelocity={teamData.velocity}
               savedTracks={teamData.parallelWorkLimit}
+              savedTeamMembers={teamData.teamMembers}
             />
           </Suspense>
         </ErrorBoundary>
         <TeamCapacityOutputs
           velocity={teamData.velocity}
-          daysPerSprint={teamData.daysPerSprint}
+          periodDays={teamData.daysPerSprint}
           estimateUnit={teamData.estimateUnit}
           estimateTeamShare={teamData.estimateTeamShare}
           totalWorkingDays={totalWorkingDays(team) / teamData.parallelWorkLimit}
