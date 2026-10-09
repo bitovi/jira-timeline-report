@@ -166,6 +166,16 @@ The examples assume a half-team share and a 10-day sprint. Your draft showed `1 
 - **`EstimateBreakdownModal` / `CalculationBreakdown`** show velocity as "points". They stay mathematically correct because they read the effective velocity. Rewording them is out of scope; it's a follow-up.
 - **`src/jira/storage/index.web.ts`** (legacy team table) is left unchanged.
 
+### Follow-up: views that show the raw per-period velocity (not fixed yet)
+
+Dev Days, Team Working Days and Team Weeks schedule against a fixed 5-day period (`UNESTIMATED_WORKING_DAYS` in `Teams/shared/estimation.ts`). That period cancels out of every estimated duration, and its only intended effect is the default for unestimated items. These views print the raw `team.velocity`, the effective velocity _per period_, so the internal 5 leaks into what the user sees. A 5-member Dev Days team shows **25**, labelled as points or as "per sprint":
+
+- **`src/react/reports/TableReport/components/EstimateBreakdownModal/EstimateBreakdownModal.tsx:136, :154`**: shows `issue.team?.velocity` in the breakdown, and the current/previous comparison via `valueKey="team.velocity"`.
+- **`src/react/reports/GanttReport/GanttGrid/components/PercentCompleteModal/CalculationBreakdown.tsx:123`**: `CalculationBox title="Capacity per sprint"` shows `issue.team?.velocity`. For the non-sprint units this is neither a sprint nor points.
+- **`src/react/reports/AutoScheduler/IssueSimulationRow.tsx:184, :189`**: the bar tooltip's "N adjusted points" and "N estimated points". The values are right (they are in the team's unit), but the label always says "points".
+
+Likely fix: show capacity with `formatCapacity` (per day, plus per period only for units that have a real period), and label estimates with the team's unit instead of "points".
+
 ## Feature flag
 
 Put the new form behind a Features-tab toggle, `estimationQuestions` ("Estimation questions", off by default), with one entry in `src/configuration/features.ts`. When it's off, both forms render today's three fields. `getEffectiveVelocity` always runs, because without a saved `estimateUnit` it's identical to the current behavior.
