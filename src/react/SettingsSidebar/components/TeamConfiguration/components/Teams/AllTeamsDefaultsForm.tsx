@@ -12,12 +12,15 @@ import Hr from '../../../../../components/Hr';
 import { FormToggle } from './components/Toggle';
 import { RequiredAsterisk } from './components/Label';
 import { buildSelectableFields } from './shared/selectable-fields';
+import EstimationQuestions from './components/EstimationQuestions';
 
 export interface AllTeamsDefaultFormProps {
   save: (newConfiguration: Configuration) => void;
   jiraFields: IssueFields;
   savedUserData: Configuration;
   inheritedData: Configuration;
+  /** The `estimationQuestions` feature flag. See spec/040-update-team-estimation-settings. */
+  showEstimationQuestions?: boolean;
 }
 
 export interface FieldUpdates<TProperty extends keyof Configuration> {
@@ -25,7 +28,13 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
   value: Configuration[TProperty];
 }
 
-const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData, inheritedData, jiraFields }) => {
+const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
+  save,
+  savedUserData,
+  inheritedData,
+  jiraFields,
+  showEstimationQuestions = false,
+}) => {
   const selectableFields = buildSelectableFields(jiraFields);
 
   const { register, handleSubmit, control } = useForm<Configuration>({
@@ -99,25 +108,39 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData
           onSave={update}
         />
         <Hr />
-        <TextField
-          name="sprintLength"
-          type="number"
-          label="Sprint length"
-          unit="business days"
-          min={1}
-          register={register}
-          onSave={update}
-        />
-        <TextField
-          name="velocityPerSprint"
-          type="number"
-          label="Capacity per sprint"
-          unit="estimating units per sprint"
-          min={1}
-          register={register}
-          onSave={update}
-        />
-        <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
+        {showEstimationQuestions ? (
+          <EstimationQuestions
+            mode="global"
+            control={control}
+            register={register}
+            update={update}
+            savedUserData={savedUserData}
+            itemLabel={null}
+            estimateFieldOptions={selectableFields}
+          />
+        ) : (
+          <>
+            <TextField
+              name="sprintLength"
+              type="number"
+              label="Sprint length"
+              unit="business days"
+              min={1}
+              register={register}
+              onSave={update}
+            />
+            <TextField
+              name="velocityPerSprint"
+              type="number"
+              label="Capacity per sprint"
+              unit="estimating units per sprint"
+              min={1}
+              register={register}
+              onSave={update}
+            />
+            <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
+          </>
+        )}
         <FormToggle
           name="spreadEffortAcrossDates"
           control={control}

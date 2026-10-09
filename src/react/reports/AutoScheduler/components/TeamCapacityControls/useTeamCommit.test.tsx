@@ -1,3 +1,4 @@
+import type { TeamCapacityOverride } from '../../../../services/capacity-overrides';
 import type { AllTeamData } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 
 import React, { Suspense } from 'react';
@@ -17,6 +18,9 @@ const savedUserAllTeamData = {
   },
   STORE: { defaults: { sprintLength: 10 }, '7': { velocityPerSprint: 55, tracks: 4, estimateField: 'Days estimate' } },
   SPLIT: { defaults: { sprintLength: 10, tracks: 2 }, '7': { velocityPerSprint: 55 } },
+  // spec/040: Dev Days teams commit headcount, not velocity.
+  DEVS: { defaults: { estimateUnit: 'devDays', teamMembers: 4 }, '7': { teamMembers: 6 } },
+  DEVS_DEFAULTS: { defaults: { estimateUnit: 'devDays', teamMembers: 4 } },
 };
 
 // Only the two data hooks are mocked. `createEmptyConfiguration` and `sanitizeAllTeamData` stay real so
@@ -50,28 +54,31 @@ const Probe = ({
   team,
   hierarchyLevel,
   onSuccess,
+  values = { velocityPerSprint: 35, tracks: 2 },
 }: {
   team: string;
   hierarchyLevel?: number;
   onSuccess?: () => void;
+  values?: TeamCapacityOverride;
 }) => {
   const { commit } = useTeamCommit();
-  return (
-    <button onClick={() => commit(team, hierarchyLevel ?? 7, { velocityPerSprint: 35, tracks: 2 }, { onSuccess })}>
-      commit
-    </button>
-  );
+  return <button onClick={() => commit(team, hierarchyLevel ?? 7, values, { onSuccess })}>commit</button>;
 };
 
 const renderProbe = (
   team = 'ORDER',
-  props: { hierarchyLevel?: number; onSuccess?: () => void; onTeamDataSaved?: () => void } = {},
+  props: {
+    hierarchyLevel?: number;
+    onSuccess?: () => void;
+    onTeamDataSaved?: () => void;
+    values?: TeamCapacityOverride;
+  } = {},
 ) =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <CapacityOverridesProvider onTeamDataSaved={props.onTeamDataSaved}>
         <Suspense fallback="loading">
-          <Probe team={team} hierarchyLevel={props.hierarchyLevel} onSuccess={props.onSuccess} />
+          <Probe team={team} hierarchyLevel={props.hierarchyLevel} onSuccess={props.onSuccess} values={props.values} />
         </Suspense>
       </CapacityOverridesProvider>
     </QueryClientProvider>,
@@ -154,6 +161,22 @@ describe('useTeamCommit', () => {
 
     expect(savedPayload().SPLIT?.['7']).toEqual({ velocityPerSprint: 35 });
     expect(savedPayload().SPLIT?.defaults).toEqual({ sprintLength: 10, tracks: 2 });
+  });
+
+  it('commits team members to the level that already holds them', async () => {
+    renderProbe('DEVS', { values: { teamMembers: 9 } });
+    await userEvent.click(screen.getByText('commit'));
+
+    expect(savedPayload().DEVS?.['7']).toEqual({ teamMembers: 9 });
+    expect(savedPayload().DEVS?.defaults).toEqual(savedUserAllTeamData.DEVS.defaults);
+  });
+
+  it("commits team members to the team's defaults when the scheduled level has none", async () => {
+    renderProbe('DEVS_DEFAULTS', { values: { teamMembers: 9 } });
+    await userEvent.click(screen.getByText('commit'));
+
+    expect(savedPayload().DEVS_DEFAULTS?.defaults).toEqual({ estimateUnit: 'devDays', teamMembers: 9 });
+    expect(savedPayload().DEVS_DEFAULTS?.['7']).toBeUndefined();
   });
 
   it('never removes a value at a level it is not targeting', async () => {

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Jira } from '../../../../../jira-oidc-helpers';
 import type { AppStorage } from '../../../../../jira/storage/common';
+import type { EstimateTeamShare, EstimateUnit } from '../../../../../jira/shared/types';
 
 import React, { Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,6 +12,7 @@ import { JiraProvider, jiraKeys } from '../../../../services/jira';
 import { StorageProvider } from '../../../../services/storage';
 import { updateTeamConfigurationKeys } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
+import { itemLabelFor } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
 /**
  * A stand-in for `TeamHeaderRow`'s controls row in `AutoScheduler.tsx` — the real one is a grid item,
@@ -18,14 +20,40 @@ import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls'
  * behaviour the stories demonstrate is the behaviour the report has; `width` stands in for the grid
  * track, which is what actually squeezes in the app.
  */
-const Row = ({ width }: { width: number }) => (
+type RowProps = {
+  width: number;
+  estimateUnit?: EstimateUnit;
+  estimateTeamShare?: EstimateTeamShare;
+  /** Effective velocity — see `shared/estimation.ts`. */
+  velocity?: number;
+  teamMembers?: number;
+  periodDays?: number;
+};
+
+const Row = ({ width, estimateUnit, estimateTeamShare, velocity = 21, teamMembers, periodDays = 10 }: RowProps) => (
   <div className="bg-neutral-20" style={{ maxWidth: width }}>
     <div className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-1 relative">
       <span className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
         ORDER
-        <TeamCapacityInputs teamName="ORDER" hierarchyLevel={7} savedVelocityPerSprint={21} savedTracks={1} />
+        <TeamCapacityInputs
+          teamName="ORDER"
+          hierarchyLevel={7}
+          itemLabel={itemLabelFor('Epic')}
+          periodDays={periodDays}
+          estimateUnit={estimateUnit}
+          estimateTeamShare={estimateTeamShare}
+          savedEffectiveVelocity={velocity}
+          savedTracks={1}
+          savedTeamMembers={teamMembers}
+        />
       </span>
-      <TeamCapacityOutputs pointsPerDay={2.1} totalWorkingDays={38} />
+      <TeamCapacityOutputs
+        velocity={velocity}
+        periodDays={periodDays}
+        estimateUnit={estimateUnit}
+        estimateTeamShare={estimateTeamShare}
+        totalWorkingDays={38}
+      />
     </div>
   </div>
 );
@@ -82,3 +110,13 @@ export const Clean: StoryObj<typeof Row> = {};
 
 /** The squeezed case: the outputs drop to a second line instead of painting over the inputs. */
 export const Narrow: StoryObj<typeof Row> = { args: { width: 420 } };
+
+/** Dev Days: capacity is the team's headcount, edited as dev days per day. 5 members over a 5-day period. */
+export const DevDays: StoryObj<typeof Row> = {
+  args: { estimateUnit: 'devDays', teamMembers: 5, velocity: 25, periodDays: 5 },
+};
+
+/** Team Weeks at half a team: capacity follows from the share, so it is a readout. V = 5 / (5 × ½). */
+export const TeamWeeks: StoryObj<typeof Row> = {
+  args: { estimateUnit: 'teamWeeks', estimateTeamShare: 'half', velocity: 2, periodDays: 5 },
+};

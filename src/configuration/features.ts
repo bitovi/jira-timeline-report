@@ -47,6 +47,15 @@ export const nonReportsFeatures: Feature[] = [
     featureFlag: 'recursiveBlockers',
     onByDefault: false,
   },
+  // Gates the Team Configuration questions only. The effective-velocity math always runs — without a
+  // saved `estimateUnit` it is today's story-point math exactly — and so does the AutoScheduler bar's
+  // new wording. See spec/040-update-team-estimation-settings.
+  {
+    name: 'Estimation questions',
+    subtitle: 'Configure team capacity by the units you estimate in: story points, dev days or team time.',
+    featureFlag: 'estimationQuestions',
+    onByDefault: false,
+  },
 ] as const;
 
 export const features = reports

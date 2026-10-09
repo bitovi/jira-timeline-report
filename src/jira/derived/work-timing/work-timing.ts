@@ -53,17 +53,20 @@ export function getDefaultConfidenceDefault(team: NormalizedTeam): number {
 }
 
 /**
+ * The estimate an unestimated item gets, in the team's estimate unit: one scheduling period of one
+ * track's work, so it always takes exactly `team.daysPerSprint` working days. That is a sprint for
+ * the sprint units and a fixed default otherwise — see `Teams/shared/estimation.ts`.
  *
  * @param {NormalizedTeam} team
  * @returns number
  */
-export function getDefaultStoryPointsDefault(team: NormalizedTeam): number {
+export function getDefaultEstimateDefault(team: NormalizedTeam): number {
   return team.velocity / team.parallelWorkLimit;
 }
 
 const defaults = {
   getDefaultConfidenceDefault,
-  getDefaultStoryPointsDefault,
+  getDefaultEstimateDefault,
 };
 
 export type WorkTimingConfig = DefaultsToConfig<typeof defaults>;
@@ -73,7 +76,7 @@ export function getEstimationData(
   normalizedIssue: NormalizedIssue,
   {
     getDefaultConfidence = getDefaultConfidenceDefault,
-    getDefaultStoryPoints = getDefaultStoryPointsDefault,
+    getDefaultEstimate = getDefaultEstimateDefault,
     uncertaintyWeight = 80,
   },
 ) {
@@ -86,7 +89,7 @@ export function getEstimationData(
   const isStoryPointsValid = isStoryPointsValueValid(normalizedIssue.storyPoints);
   const defaultOrStoryPoints = isStoryPointsValid
     ? (normalizedIssue.storyPoints as number)
-    : getDefaultStoryPoints(normalizedIssue.team);
+    : getDefaultEstimate(normalizedIssue.team);
 
   const storyPointsDaysOfWork = defaultOrStoryPoints / normalizedIssue.team.pointsPerDayPerTrack;
 
@@ -94,7 +97,7 @@ export function getEstimationData(
 
   const defaultOrStoryPointsMedian = isStoryPointsMedianValid
     ? (normalizedIssue.storyPointsMedian as number)
-    : getDefaultStoryPoints(normalizedIssue.team);
+    : getDefaultEstimate(normalizedIssue.team);
 
   const storyPointsMedianDaysOfWork = defaultOrStoryPointsMedian / normalizedIssue.team.pointsPerDayPerTrack;
   const deterministicExtraPoints = estimateExtraPoints(defaultOrStoryPointsMedian, usedConfidence, uncertaintyWeight);
@@ -145,7 +148,7 @@ export function deriveWorkTiming(
   normalizedIssue: NormalizedIssue,
   {
     getDefaultConfidence = getDefaultConfidenceDefault,
-    getDefaultStoryPoints = getDefaultStoryPointsDefault,
+    getDefaultEstimate = getDefaultEstimateDefault,
     uncertaintyWeight = 80,
   }: Partial<WorkTimingConfig> & { uncertaintyWeight?: number } = {},
 ): DerivedWorkTiming {
@@ -169,7 +172,7 @@ export function deriveWorkTiming(
     estimatedDaysOfWork,
   } = getEstimationData(normalizedIssue, {
     getDefaultConfidence,
-    getDefaultStoryPoints,
+    getDefaultEstimate,
     uncertaintyWeight,
   });
 

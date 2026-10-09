@@ -54,6 +54,9 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
     getSummary: defaults.getSummaryDefault,
     getStatusSummary: defaults.getStatusSummaryDefault,
     getTeamSpreadsEffortAcrossDates: defaults.getTeamSpreadsEffortAcrossDatesDefault,
+    getEstimateUnit: defaults.getEstimateUnitDefault,
+    getEstimateTeamShare: defaults.getEstimateTeamShareDefault,
+    getTeamMembers: defaults.getTeamMembersDefault,
     getProjectKeyDefault: defaults.getProjectKeyDefault,
     ...options,
   };
@@ -86,6 +89,9 @@ export function normalizeIssue(issue: JiraIssue, options: Partial<NormalizeIssue
     team: {
       name: teamName,
       velocity,
+      estimateUnit: optionsWithDefaults.getEstimateUnit(issue, optionsWithDefaults),
+      estimateTeamShare: optionsWithDefaults.getEstimateTeamShare(issue, optionsWithDefaults),
+      teamMembers: optionsWithDefaults.getTeamMembers(issue, optionsWithDefaults),
       daysPerSprint,
       parallelWorkLimit,
       totalPointsPerDay,

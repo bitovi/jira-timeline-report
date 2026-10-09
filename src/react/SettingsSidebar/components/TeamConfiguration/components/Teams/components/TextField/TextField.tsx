@@ -10,6 +10,9 @@ import { Field } from '@atlaskit/form';
 
 interface TextFieldProps {
   disabled?: boolean;
+  /** Leave the label to the caller, which renders it with `htmlFor={id}` — see `InheritanceTextField`. */
+  hideLabel?: boolean;
+  id?: string;
   type: string;
   name: keyof Configuration;
   label: string;
@@ -24,6 +27,7 @@ export function isFieldUpdate(event: { name: string }): event is { name: keyof C
     'sprintLength',
     'velocityPerSprint',
     'tracks',
+    'teamMembers',
     'estimateField',
     'confidenceField',
     'startDateField',
@@ -32,7 +36,18 @@ export function isFieldUpdate(event: { name: string }): event is { name: keyof C
   ].includes(event.name);
 }
 
-const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, min, unit, disabled = false }) => {
+const TextField: FC<TextFieldProps> = ({
+  register,
+  onSave,
+  type,
+  label,
+  name,
+  min,
+  unit,
+  disabled = false,
+  hideLabel = false,
+  id,
+}) => {
   const handleBlur = (eventTarget: { name: string; value: string }) => {
     if (!isFieldUpdate(eventTarget)) {
       return;
@@ -43,27 +58,32 @@ const TextField: FC<TextFieldProps> = ({ register, onSave, type, label, name, mi
 
   const props = register(name);
 
+  const input = (
+    <AtlasTextField
+      // These classes are needed to make the `elemAfterProp` function the same as the
+      // `slot` prop in figma
+      className="[&>input]:!flex-1 [&>input]:!p-0 !py-2 !px-2 !h-10 no-spin-container"
+      id={id}
+      isDisabled={disabled}
+      type={type}
+      min={min}
+      autoComplete="off"
+      elemAfterInput={unit ? <div>{unit}</div> : null}
+      {...props}
+      onBlur={(e) => {
+        props.onBlur(e);
+        handleBlur(e.target);
+      }}
+    />
+  );
+
+  if (hideLabel) {
+    return input;
+  }
+
   return (
     <Field name="sprintLength" label={label} isRequired>
-      {() => (
-        <>
-          <AtlasTextField
-            // These classes are needed to make the `elemAfterProp` function the same as the
-            // `slot` prop in figma
-            className="[&>input]:!flex-1 [&>input]:!p-0 !py-2 !px-2 !h-10 no-spin-container"
-            isDisabled={disabled}
-            type={type}
-            min={min}
-            autoComplete="off"
-            elemAfterInput={unit ? <div>{unit}</div> : null}
-            {...props}
-            onBlur={(e) => {
-              props.onBlur(e);
-              handleBlur(e.target);
-            }}
-          />
-        </>
-      )}
+      {() => input}
     </Field>
   );
 };

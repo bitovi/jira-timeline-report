@@ -17,6 +17,9 @@ type SelectField = { label: string; value: string };
 
 interface SelectProps {
   disabled?: boolean;
+  /** Leave the label to the caller, which renders it with `htmlFor={id}` — see `InheritanceSelect`. */
+  hideLabel?: boolean;
+  id?: string;
   optional?: boolean;
   control: Control<Configuration>;
   name: keyof Configuration;
@@ -25,8 +28,19 @@ interface SelectProps {
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
-const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave, disabled = false, optional = false }) => {
-  const id = useId();
+const Select: FC<SelectProps> = ({
+  name,
+  control,
+  label,
+  jiraFields,
+  onSave,
+  disabled = false,
+  optional = false,
+  hideLabel = false,
+  id: providedId,
+}) => {
+  const generatedId = useId();
+  const id = providedId ?? generatedId;
 
   return (
     <Controller
@@ -41,13 +55,16 @@ const Select: FC<SelectProps> = ({ name, control, label, jiraFields, onSave, dis
         });
 
         return (
-          <div className="mt-2">
-            <Label htmlFor={id} isRequired={!optional}>
-              {label}
-            </Label>
+          <div className={hideLabel ? undefined : 'mt-2'}>
+            {!hideLabel && (
+              <Label htmlFor={id} isRequired={!optional}>
+                {label}
+              </Label>
+            )}
             <AtlasSelect
               isDisabled={disabled}
-              id={id}
+              // `id` lands on react-select's wrapper div; the label has to point at the input itself.
+              inputId={id}
               name={field.name}
               value={selectedOption}
               options={jiraFields}

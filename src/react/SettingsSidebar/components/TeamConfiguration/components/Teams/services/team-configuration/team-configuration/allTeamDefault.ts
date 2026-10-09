@@ -125,6 +125,12 @@ const nonFieldDefaults: Omit<
   sprintLength: 10,
   velocityPerSprint: 21,
   tracks: 1,
+  // Story points is today's math exactly, so a config saved before spec/040 needs no migration.
+  estimateUnit: 'storyPoints',
+  // Only read once a unit asks for them, but resolved anyway so switching units never lands on an
+  // empty answer (a Dev Days team with no members would never finish anything).
+  teamMembers: 1,
+  estimateTeamShare: 'full',
   spreadEffortAcrossDates: false,
 };
 
@@ -133,6 +139,9 @@ export const getGlobalDefaultData = (allTeamData: AllTeamData, jiraFields: Issue
     sprintLength: allTeamData.__GLOBAL__?.defaults?.sprintLength ?? nonFieldDefaults.sprintLength,
     velocityPerSprint: allTeamData.__GLOBAL__?.defaults?.velocityPerSprint ?? nonFieldDefaults.velocityPerSprint,
     tracks: allTeamData.__GLOBAL__?.defaults?.tracks ?? nonFieldDefaults.tracks,
+    estimateUnit: allTeamData.__GLOBAL__?.defaults?.estimateUnit ?? nonFieldDefaults.estimateUnit,
+    teamMembers: allTeamData.__GLOBAL__?.defaults?.teamMembers ?? nonFieldDefaults.teamMembers,
+    estimateTeamShare: allTeamData.__GLOBAL__?.defaults?.estimateTeamShare ?? nonFieldDefaults.estimateTeamShare,
     spreadEffortAcrossDates:
       allTeamData.__GLOBAL__?.defaults?.spreadEffortAcrossDates ?? nonFieldDefaults.spreadEffortAcrossDates,
     estimateField: getEstimateField(allTeamData.__GLOBAL__?.defaults, jiraFields),

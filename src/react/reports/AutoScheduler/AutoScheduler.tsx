@@ -42,6 +42,10 @@ import { gridLayer } from './z-layers';
 import { IssueSummaryLabel } from './IssueSummaryLabel';
 import { StorageProvider } from '../../services/storage';
 import { TeamCapacityInputs, TeamCapacityOutputs, useTeamIsDirty } from './components/TeamCapacityControls';
+import {
+  itemLabelFor,
+  WORK_ITEMS_LABEL,
+} from '../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
 type RolledUpIssue = DerivedIssue & {
   completionRollup: { totalWorkingDays: number };
@@ -539,6 +543,7 @@ export default function AutoSchedulerWrapper(props: AutoSchedulerProps) {
  */
 const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> = ({ team, gridNumberOfDays }) => {
   const isDirty = useTeamIsDirty(team.team);
+  const { teamData } = team;
 
   return (
     <>
@@ -578,14 +583,22 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
             <TeamCapacityInputs
               teamName={team.team}
               hierarchyLevel={team.hierarchyLevel}
-              savedVelocityPerSprint={team.teamData.velocity}
-              savedTracks={team.teamData.parallelWorkLimit}
+              itemLabel={team.issueType ? itemLabelFor(team.issueType) : WORK_ITEMS_LABEL}
+              estimateUnit={teamData.estimateUnit}
+              estimateTeamShare={teamData.estimateTeamShare}
+              periodDays={teamData.daysPerSprint}
+              savedEffectiveVelocity={teamData.velocity}
+              savedTracks={teamData.parallelWorkLimit}
+              savedTeamMembers={teamData.teamMembers}
             />
           </Suspense>
         </ErrorBoundary>
         <TeamCapacityOutputs
-          pointsPerDay={team.teamData.totalPointsPerDay}
-          totalWorkingDays={totalWorkingDays(team) / team.teamData.parallelWorkLimit}
+          velocity={teamData.velocity}
+          periodDays={teamData.daysPerSprint}
+          estimateUnit={teamData.estimateUnit}
+          estimateTeamShare={teamData.estimateTeamShare}
+          totalWorkingDays={totalWorkingDays(team) / teamData.parallelWorkLimit}
         />
       </div>
     </>
