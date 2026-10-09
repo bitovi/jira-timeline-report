@@ -39,4 +39,22 @@ describe('deriveFieldMaps', () => {
 
     expect(nameMap['Start date']).toBe('global');
   });
+
+  test('pins system fields to the names the app reads, whatever Jira currently calls them', () => {
+    const { nameMap, idMap } = deriveFieldMaps([
+      { name: 'Linked work items', id: 'issuelinks' },
+      { name: 'Work type', id: 'issuetype' },
+      { name: 'Statut', id: 'status' },
+    ]);
+
+    expect(nameMap).toMatchObject({ 'Linked Issues': 'issuelinks', 'Issue Type': 'issuetype', Status: 'status' });
+    expect(idMap).toMatchObject({ issuelinks: 'Linked Issues', issuetype: 'Issue Type', status: 'Status' });
+    expect(nameMap['Linked work items']).toBeUndefined();
+  });
+
+  test('leaves custom field names as Jira reports them', () => {
+    const { idMap } = deriveFieldMaps([{ name: 'Team', id: 'customfield_10001' }]);
+
+    expect(idMap.customfield_10001).toBe('Team');
+  });
 });
