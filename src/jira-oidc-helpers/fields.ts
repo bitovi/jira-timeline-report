@@ -26,6 +26,29 @@ function fieldPriorityOrder(
 }
 
 /**
+ * Stable names for the system fields the app reads by name (`fields['Issue Type']`, etc.), so a Jira
+ * rename (e.g. "Linked Issues" → "Linked work items") or a translated UI can't break those reads.
+ *
+ * Not ideal: this is a patch over reading fields by display name at all. The robust fix is to read
+ * system fields by id (`fields.issuetype`) throughout. It also means field pickers show these names
+ * instead of Jira's current labels. Custom fields (Team, Sprint, Rank, …) have per-site ids and can't
+ * be pinned here.
+ */
+const PINNED_SYSTEM_FIELD_NAMES: Record<string, string> = {
+  summary: 'Summary',
+  description: 'Description',
+  issuetype: 'Issue Type',
+  status: 'Status',
+  parent: 'Parent',
+  created: 'Created',
+  duedate: 'Due date',
+  labels: 'Labels',
+  fixVersions: 'Fix versions',
+  assignee: 'Assignee',
+  issuelinks: 'Linked Issues',
+};
+
+/**
  * Build the name↔id maps from the raw Jira field list.
  *
  * `nameMap` (name → id) collapses each display name to a single id via `fieldPriorityOrder`.
@@ -41,8 +64,9 @@ export function deriveFieldMaps(fields: Array<{ name: string; id: string; scope?
   const ambiguousFieldIds = new Set<string>();
 
   fields.forEach((f) => {
-    idMap[f.id] = f.name;
-    (idToFields[f.name] ??= []).push(f);
+    const name = PINNED_SYSTEM_FIELD_NAMES[f.id] ?? f.name;
+    idMap[f.id] = name;
+    (idToFields[name] ??= []).push(f);
   });
 
   for (const fieldName in idToFields) {
