@@ -38,7 +38,7 @@ export const LabelCell: React.FC<LabelCellProps> = ({
     >
       {hasChildren && (
         <img
-          src={isShowingChildren ? '/images/chevron-down-collapse.svg' : '/images/chevron-right-expand.svg'}
+          src={isShowingChildren ? './images/chevron-down-collapse.svg' : './images/chevron-right-expand.svg'}
           alt=""
           className={`inline ${anyExpanded ? '' : 'invisible group-hover:visible'}`}
         />

@@ -9,7 +9,7 @@ interface GoBackButtonProps {
 
 export const GoBackButton: FC<GoBackButtonProps> = ({ onGoBack }) => (
   <SidebarButton onClick={onGoBack}>
-    <img src="/images/go-back.svg" aria-hidden /> Go back
+    <img src="./images/go-back.svg" aria-hidden /> Go back
   </SidebarButton>
 );
 

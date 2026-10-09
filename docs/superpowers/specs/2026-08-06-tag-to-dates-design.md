@@ -46,7 +46,7 @@ disagrees with its sibling endpoint `dates-to-half-quarter-dates.js` by one day.
 table is the canonical set of boundaries in this repo, consumed via `roundDate.halfQuarter` by the
 Gantt grid, Scatter plot, Report of Reports, and route-data.
 
-`server/server.js` is a small Express app (`/access-token`, `/domain`) deployed to EC2 by
+`server/server.js` is a small Express app (`/access-token`) deployed to EC2 by
 `.github/workflows/deploy-{staging,prod}.yaml`.
 
 ## Decisions
@@ -148,7 +148,7 @@ POST /tag-to-dates
   { "endTag":   "my-tag-25.Q2.T1" } → { "isoDate": "2025-05-14T00:00:00.000Z", "isoDay": "2025-05-14" }
 ```
 
-The route is registered alongside `/access-token` and `/domain`. `app.use(cors())` is already global,
+The route is registered alongside `/access-token`. `app.use(cors())` is already global,
 so the endpoint is public and unauthenticated, matching upstream. It reads no data and touches no
 Jira credentials — it is a pure function of its input.
 

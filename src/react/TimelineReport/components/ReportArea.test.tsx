@@ -68,11 +68,6 @@ describe('<ReportArea>', () => {
     expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
   });
 
-  it('shows the no-license error', () => {
-    renderArea({ status: 'rejected', rejectReason: { type: 'no-licensing' } });
-    expect(screen.getByText(/No license/)).toBeInTheDocument();
-  });
-
   it('shows a generic error with the first error message', () => {
     renderArea({ status: 'rejected', rejectReason: { errorMessages: ['Bad JQL'] } });
     expect(screen.getByText(/There was an error loading from Jira/)).toBeInTheDocument();

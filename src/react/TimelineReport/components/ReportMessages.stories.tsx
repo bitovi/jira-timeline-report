@@ -35,10 +35,5 @@ export const EmptyResult: Story = {
 
 /** Request rejected with a generic Jira error. */
 export const ErrorGeneric: Story = {
-  render: () => <ErrorMessage noLicense={false} errorMessage="Field 'foo' does not exist or is not searchable." />,
-};
-
-/** Request rejected because the account has no license. */
-export const ErrorNoLicense: Story = {
-  render: () => <ErrorMessage noLicense={true} />,
+  render: () => <ErrorMessage errorMessage="Field 'foo' does not exist or is not searchable." />,
 };

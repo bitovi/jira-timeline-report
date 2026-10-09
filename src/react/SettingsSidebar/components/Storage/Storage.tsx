@@ -26,6 +26,15 @@ import {
   useSpaceIssueTypes,
 } from '../../../services/reports-storage';
 
+/**
+ * The embedded hosts' options. Named for the store — a Connect app property — which is what both the
+ * Connect and Forge hosts read (jira/storage/index.forge.ts).
+ *
+ * The card itself is titled "In Jira", not "Connect", deliberately. Connect is an implementation
+ * detail a Jira admin cannot see or act on, and once `connectModules` are gone there is no Connect
+ * app on the site for the word to refer to — while the reports stay exactly where they are. The
+ * user-facing distinction that survives is *where* the reports live: in Jira, or on the website.
+ */
 const CONNECT_OPTIONS: StorageOption[] = [
   { value: 'legacy', label: 'Key/Value', description: 'One app property holding every saved report.' },
   { value: 'space', label: 'Reports Space', description: 'One Jira work item per saved report.' },
@@ -45,18 +54,24 @@ type IssueTypeOption = { label: string; value: string };
 /**
  * Where this site's saved reports live.
  *
- * Only the host you are running in is shown — the web build cannot read a Connect app property, so
- * there is no live state to show for the other host, and its settings are changed from there. Point
- * both hosts at the same space and they share the same saved reports, which is the one arrangement
+ * Only the store you are running against is shown — the web build cannot read a Connect app
+ * property, so there is no live state to show for the other one, and its settings are changed from
+ * there. Point both at the same space and they share the same saved reports, which is the one arrangement
  * where a report saved in Jira is visible from the standalone app.
+ *
+ * Forge gets the "In Jira" card, not the Web one, because it shares Connect's store: it reads and
+ * writes the same app property through a shared `app.connect.key` (jira/storage/index.forge.ts),
+ * which is what makes the Connect→Forge cutover invisible. So the split is by store, not by host —
+ * `hosted` on one side, the two embedded hosts on the other, the same `host !== 'hosted'` question
+ * asked in jira-oidc-helpers/types.ts:99.
  *
  * See spec/026-storage-saved-reports/plan.md.
  */
 const StorageView: FC = () => {
   const jira = useJira();
-  const isConnect = jira.host === 'jira';
+  const usesConnectStore = jira.host !== 'hosted';
   /** Same stored shape on both hosts; only what each host's users would recognise differs. */
-  const legacyLabel = isConnect ? CONNECT_OPTIONS[0].label : WEB_OPTIONS[0].label;
+  const legacyLabel = usesConnectStore ? CONNECT_OPTIONS[0].label : WEB_OPTIONS[0].label;
 
   const { showFlag } = useFlags();
   const config = useReportsStorageConfig();
@@ -190,12 +205,12 @@ const StorageView: FC = () => {
       </div>
 
       <StorageCard
-        title={isConnect ? 'Connect' : 'Web'}
+        title={usesConnectStore ? 'In Jira' : 'Web'}
         groupTitle="Reports storage"
-        options={isConnect ? CONNECT_OPTIONS : WEB_OPTIONS}
+        options={usesConnectStore ? CONNECT_OPTIONS : WEB_OPTIONS}
         selected={kind}
         note={
-          isConnect
+          usesConnectStore
             ? 'Changes here apply to Status Reports in Jira. To point the standalone web app at the same Reports Space, open the web app and go to Settings → Storage.'
             : 'Changes here apply to the standalone web app. To point Status Reports in Jira at the same Reports Space, open the app in Jira and go to Settings → Storage.'
         }

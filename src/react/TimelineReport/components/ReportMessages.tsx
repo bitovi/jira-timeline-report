@@ -48,7 +48,6 @@ export const EmptyResultMessage: FC<EmptyResultMessageProps> = ({ count, primary
 );
 
 export interface ErrorMessageProps {
-  noLicense: boolean;
   errorMessage?: string;
 }
 
@@ -75,20 +74,14 @@ export const UnsupportedReportTypeMessage: FC<UnsupportedReportTypeMessageProps>
   </div>
 );
 
-/** Shown when the request rejected — either a licensing error or a generic Jira error. */
-export const ErrorMessage: FC<ErrorMessageProps> = ({ noLicense, errorMessage }) => (
+/**
+ * Shown when the request rejected. Licensing never lands here — an unlicensed site still gets its
+ * report, and the sidebar's Eggbert shows it instead (Branding.tsx).
+ */
+export const ErrorMessage: FC<ErrorMessageProps> = ({ errorMessage }) => (
   <div className="my-2 p-2 h-780 border-box block overflow-hidden color-text-and-bg-blocked">
-    {noLicense ? (
-      <>
-        <h2>No license</h2>
-        <p>You must have a license to use this application</p>
-      </>
-    ) : (
-      <>
-        <p>There was an error loading from Jira!</p>
-        <p>Error message: {errorMessage}</p>
-        <p>Please check your JQL is correct!</p>
-      </>
-    )}
+    <p>There was an error loading from Jira!</p>
+    <p>Error message: {errorMessage}</p>
+    <p>Please check your JQL is correct!</p>
   </div>
 );

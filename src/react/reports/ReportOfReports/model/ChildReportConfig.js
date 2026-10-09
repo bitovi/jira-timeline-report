@@ -415,7 +415,6 @@ export class ChildReportConfig extends ObservableObject {
     // --- shared global -------------------------------------------------------------------------
     jiraHelpers: sharedFromParent('jiraHelpers'),
     isLoggedInObservable: sharedFromParent('isLoggedInObservable'),
-    licensingPromise: sharedFromParent('licensingPromise'),
     normalizeOptions: sharedFromParent('normalizeOptions'),
     simplifiedIssueHierarchy: sharedFromParent('simplifiedIssueHierarchy'),
     fieldsToRequest: sharedFromParent('fieldsToRequest'),
@@ -506,7 +505,6 @@ export class ChildReportConfig extends ObservableObject {
           {
             rawIssuesRequestData: value.from(this, 'rawIssuesRequestData'),
             configurationPromise: value.from(this, 'normalizeOptions'),
-            licensingPromise: value.from(this, 'licensingPromise'),
           },
           { listenTo, resolve },
         );

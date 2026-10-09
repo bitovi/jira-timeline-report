@@ -7,6 +7,7 @@ import type {
   TeamTimings,
 } from '../../../jira/rollup/historical-adjusted-estimated-time/actual-vs-estimated';
 import { roundTo } from '../../../utils/number/number';
+import { openExternal } from '../../../shared/open-external';
 
 import {
   ScatterChart,
@@ -111,7 +112,9 @@ export function EpicEstimatesScatter({ teamTimings, team, setTeam }: Props) {
             data={data.historic.filter((d) => d.issue.team.name === team)}
             fill={colorByTeam(team)}
             onClick={(event) => {
-              window.open(event.payload.issue.url, '_blank');
+              // Not an anchor, so the delegated `target="_blank"` handler can't reach it — this is
+              // a Recharts callback. `openExternal` is a no-op change on web and Connect.
+              openExternal(event.payload.issue.url);
             }}
           />
         ))}
