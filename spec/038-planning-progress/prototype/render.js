@@ -7,7 +7,7 @@
    Public API:
      window.PlanningRender.render(portfolio, rootEl, options)
      window.PlanningRender.setRamp(rootEl, 'purple'|'grey')
-     window.PlanningRender.setSourceEncoding(rootEl, 'none'|'border'|'anchor'|'bracket')
+     window.PlanningRender.setSourceEncoding(rootEl, 'none'|'border'|'anchor'|'bracket'|'ends')
      window.PlanningRender.defaults
 
    `render` is idempotent: it wipes rootEl and redraws from scratch.
@@ -18,20 +18,24 @@
   'use strict';
 
   var DAY = 86400000;
-  var LEVELS = ['outcome', 'initiative', 'epic', 'story'];
+  var LEVELS = ['direction', 'increment', 'epic', 'story'];
   var RUNG_NAMES = ['Unknown', 'Refined', 'Sized', 'Scheduled'];
   /* Minimum rendered width in px, per level. A story that is one day long must
      still be clickable and countable. */
   var MIN_PX = [8, 6, 4, 3];
-  /* Last-resort nominal duration when nothing in the portfolio has an estimate:
-     three weeks, i.e. the length of a typical sprint-and-a-half. */
-  var FALLBACK_NOMINAL_DAYS = 21;
+  /* Queued items with no estimate are drawn as a dot. A dot claims no duration,
+     so it occupies its own diameter plus a gap in PIXELS, not time. */
+  var DOT_PX = [18, 14, 11, 9];
+  var DOT_GAP_PX = 3;
+  var SOURCE_MODES = ['none', 'border', 'anchor', 'bracket', 'ends'];
 
   var DEFAULTS = {
     ramp: 'purple',
-    sourceEncoding: 'border',
+    sourceEncoding: 'ends',
     monthsBack: 3,
     monthsForward: 14,
+    /* Fixed px per month; the page scrolls horizontally when the axis outgrows it. */
+    monthWidth: 150,
   };
 
   /* ---------------------------------------------------------------- utils */
@@ -58,15 +62,6 @@
     return v < lo ? lo : v > hi ? hi : v;
   }
 
-  function median(nums) {
-    if (!nums.length) return null;
-    var s = nums.slice().sort(function (a, b) {
-      return a - b;
-    });
-    var m = Math.floor(s.length / 2);
-    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-  }
-
   function el(tag, cls) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -79,6 +74,10 @@
 
   function isNum(v) {
     return typeof v === 'number' && isFinite(v);
+  }
+
+  function isoOf(ms) {
+    return new Date(ms).toISOString().slice(0, 10);
   }
 
   /* ------------------------------------------------------------- the axis */
@@ -127,61 +126,26 @@
     return Math.max(points / pointsPerDay, 1);
   }
 
-  function collectLevelMedians(outcomes) {
-    var byLevel = {};
-    (function walk(nodes) {
-      nodes.forEach(function (n) {
-        (byLevel[n.level] = byLevel[n.level] || []).push(n.rollupEstimate);
-        if (n.children && n.children.length) walk(n.children);
-      });
-    })(outcomes);
-    var out = {};
-    Object.keys(byLevel).forEach(function (lvl) {
-      out[lvl] = median(
-        byLevel[lvl].filter(function (v) {
-          return isNum(v) && v > 0;
-        }),
-      );
-    });
-    return out;
-  }
-
-  /* Nominal width, in order of preference:
-       1. the median estimate of this item's own SIBLINGS — the most local,
-          most defensible "what does one of these usually cost here"
-       2. the median estimate of everything at the same LEVEL portfolio-wide
-       3. three calendar weeks
-     Anything that falls through to 1/2/3 is flagged `fictionalWidth` and gets
-     the red dotted inner rule, because its width is invented, not measured. */
-  function annotate(portfolio) {
+  /* Shape says what we know: box = dates + estimate, I-beam = dates only,
+     hatched box = estimate only, dot = neither. `msPerPx` sizes the dots. */
+  function annotate(portfolio, msPerPx) {
     var pointsPerDay = (portfolio.conversion && Number(portfolio.conversion.pointsPerDayPerTrack)) || 1;
-    var levelMedians = collectLevelMedians(portfolio.outcomes);
 
     (function walk(siblings) {
-      var sibMedian = median(
-        siblings
-          .map(function (n) {
-            return n.rollupEstimate;
-          })
-          .filter(function (v) {
-            return isNum(v) && v > 0;
-          }),
-      );
-
       siblings.forEach(function (n) {
         n._startMs = parseISO(n.rollupStart);
         n._dueMs = parseISO(n.rollupDue);
         n._dated = n._startMs !== null && n._dueMs !== null && n._dueMs >= n._startMs;
 
         var est = isNum(n.rollupEstimate) ? n.rollupEstimate : 0;
-        if (est > 0) {
+        n._noEst = !(est > 0);
+        if (!n._noEst) {
           n._natMs = daysForPoints(est, pointsPerDay) * DAY;
-          n._fictionalWidth = false;
         } else {
-          var standIn = sibMedian || levelMedians[n.level] || null;
-          n._natMs = standIn ? daysForPoints(standIn, pointsPerDay) * DAY : FALLBACK_NOMINAL_DAYS * DAY;
-          n._fictionalWidth = true;
+          var depth = Math.max(LEVELS.indexOf(n.level), 0);
+          n._natMs = (DOT_PX[depth] + DOT_GAP_PX) * msPerPx;
         }
+        n._shape = n._noEst ? (n._dated ? 'ibeam' : 'dot') : 'box';
 
         /* The encoding has to describe the provenance of the geometry actually
            on screen. A bar placed on dates is a statement about dateSource; a
@@ -190,10 +154,19 @@
            what you see. The field that lost is surfaced by `_mixed`. */
         n._geomSource = n._dated ? n.dateSource : n.estimateSource;
         n._mixed = n.dateSource !== n.estimateSource;
+        n._startSrc = n.startSource || n.dateSource;
+        n._dueSrc = n.dueSource || n.dateSource;
 
         if (n.children && n.children.length) walk(n.children);
+
+        /* Latest real due date anywhere in the subtree; past this node's own due it is an overrun. */
+        n._deepDueMs = n._dated ? n._dueMs : null;
+        (n.children || []).forEach(function (k) {
+          if (k._deepDueMs !== null && (n._deepDueMs === null || k._deepDueMs > n._deepDueMs))
+            n._deepDueMs = k._deepDueMs;
+        });
       });
-    })(portfolio.outcomes);
+    })(portfolio.directions);
   }
 
   /* ---------------------------------------------------- pass 2: placement */
@@ -249,20 +222,27 @@
     }
 
     node._x1 = maxChildEnd;
+    /* Dated work underneath running past this node's OWN due is a committed conflict, drawn
+       amber; a rolled due made no promise, so the conflict belongs to the child that did. */
+    node._ovrTo =
+      node._dated && node._dueSrc === 'own' && node._deepDueMs !== null && node._deepDueMs > ownEnd
+        ? Math.min(node._deepDueMs, node._x1)
+        : null;
+    var committedEnd = node._ovrTo !== null ? node._ovrTo : ownEnd;
     /* Only a DATED node shows a separate extension bar; an undated node is
        already drawn as one projected block, so it just gets wider. */
-    node._extFrom = node._dated && node._x1 > ownEnd ? ownEnd : null;
+    node._extFrom = node._dated && node._x1 > committedEnd ? committedEnd : null;
     return node;
   }
 
   function layout(portfolio, axis) {
-    var outcomes = portfolio.outcomes.slice().sort(function (a, b) {
+    var directions = portfolio.directions.slice().sort(function (a, b) {
       return (a.rank || 0) - (b.rank || 0);
     });
-    var dated = outcomes.filter(function (o) {
+    var dated = directions.filter(function (o) {
       return o._dated;
     });
-    var undated = outcomes.filter(function (o) {
+    var undated = directions.filter(function (o) {
       return !o._dated;
     });
 
@@ -272,14 +252,14 @@
       place(o, o._startMs, axis);
     });
 
-    /* Outcomes are the one level that does NOT queue: each gets its own band of
-       lanes, so there is no shared row to butt up against. An outcome with
+    /* Directions are the one level that does NOT queue: each gets its own band of
+       lanes, so there is no shared row to butt up against. A direction with
        nothing dated anywhere simply starts at today. */
     undated.forEach(function (o) {
       place(o, todayMs, axis);
     });
 
-    return outcomes;
+    return directions;
   }
 
   /* ------------------------------------------------------- pass 3: draw */
@@ -292,10 +272,9 @@
     else if (node.exec === 'inprogress') c.push('pp-exec-inprogress');
     else c.push('pp-rung' + clamp(node.evidencedRung | 0, 0, 3));
 
-    if (!node._dated) {
-      c.push('pp-projected');
-      if (node._fictionalWidth) c.push('pp-nominal');
-    }
+    if (node._shape === 'ibeam') c.push('pp-ibeam');
+    else if (node._shape === 'dot') c.push('pp-dot');
+    else if (!node._dated) c.push('pp-projected');
 
     /* Status claims more than the fields can evidence: fill is the evidence,
        border is the claim, so the promise reads as hollow. */
@@ -308,14 +287,30 @@
     return c.join(' ');
   }
 
+  /* Per-END date source for the 'ends' encoding. Leaves are skipped: their dates can only be their own. */
+  function endClasses(node) {
+    if (!node._dated || !(node.children && node.children.length)) return '';
+    var c = '';
+    if (node._startSrc === 'own') c += ' pp-own-s';
+    else if (node._startSrc === 'rolled') c += ' pp-roll-s';
+    if (node._dueSrc === 'own') c += ' pp-own-d';
+    else if (node._dueSrc === 'rolled') c += ' pp-roll-d';
+    return c;
+  }
+
   function makeBar(node, depth, axis) {
-    var extended = node._extFrom !== null;
-    var b = el('div', barClasses(node, depth) + (extended ? ' pp-join-r' : ''));
+    var joined = node._ovrTo !== null || node._extFrom !== null;
+    var b = el('div', barClasses(node, depth) + endClasses(node) + (joined ? ' pp-join-r' : ''));
     var l = axis.frac(node._x0);
-    var r = axis.frac(extended ? node._extFrom : node._x1);
+    var r = axis.frac(joined ? node._ownX1 : node._x1);
     b.style.left = pct(l);
-    b.style.width = pct(Math.max(r - l, 0));
-    b.style.minWidth = MIN_PX[depth] + 'px';
+    if (node._shape === 'dot') {
+      b.style.width = DOT_PX[depth] + 'px';
+      b._ppLeft = l;
+    } else {
+      b.style.width = pct(Math.max(r - l, 0));
+      b.style.minWidth = MIN_PX[depth] + 'px';
+    }
 
     b.setAttribute('data-geom-src', node._geomSource || 'none');
     b.setAttribute('data-mixed', node._mixed ? 'true' : 'false');
@@ -336,28 +331,52 @@
     return b;
   }
 
+  function makeOverrunBar(node, depth, axis) {
+    var b = el(
+      'div',
+      'pp-bar pp-lv' +
+        depth +
+        (depth > 0 ? ' pp-mute' : '') +
+        ' pp-overrun pp-join-l' +
+        (node._extFrom !== null ? ' pp-join-r' : ''),
+    );
+    var l = axis.frac(node._ownX1);
+    var r = axis.frac(node._ovrTo);
+    b.style.left = pct(l);
+    b.style.width = pct(Math.max(r - l, 0));
+    b.style.minWidth = MIN_PX[depth] + 'px';
+    b.setAttribute('data-geom-src', 'none');
+    b.setAttribute('data-mixed', 'false');
+    var weeks = Math.round((node._ovrTo - node._ownX1) / (7 * DAY));
+    if (depth === 0 && weeks >= 3) {
+      var label = el('span');
+      label.textContent = '+' + weeks + 'w';
+      b.appendChild(label);
+    }
+    b._ppNode = node;
+    b._ppOvr = true;
+    return b;
+  }
+
   function makeExtBar(node, depth, axis) {
-    var b = el('div', barClasses(node, depth).replace('pp-contra', '') + ' pp-projected pp-ext pp-join-l');
+    /* Interlocks on the diagonal when the segment before it ends on a rolled (slanted) date. */
+    var seam = node._ovrTo === null && node._dueSrc === 'rolled';
+    /* An I-beam's tail has no estimate either, so it continues as a bare dotted line, not a hatched block. */
+    var tail = node._shape === 'ibeam' ? ' pp-ext-line' : ' pp-projected' + (seam ? ' pp-seam' : '');
+    var b = el(
+      'div',
+      barClasses(node, depth).replace('pp-contra', '').replace('pp-ibeam', '') + ' pp-ext pp-join-l' + tail,
+    );
     var l = axis.frac(node._extFrom);
     var r = axis.frac(node._x1);
     b.style.left = pct(l);
-    b.style.width = pct(Math.max(r - l, 0));
+    b.style.setProperty('--pp-w', pct(Math.max(r - l, 0)));
     b.style.minWidth = MIN_PX[depth] + 'px';
     b.setAttribute('data-geom-src', 'none');
     b.setAttribute('data-mixed', 'false');
     b._ppNode = node;
     b._ppExt = true;
     return b;
-  }
-
-  function makeGap(node, depth, axis) {
-    var g = el('div', 'pp-gap');
-    var l = axis.frac(node._x0);
-    var r = axis.frac(node._x1);
-    g.style.left = pct(l);
-    g.style.width = pct(Math.max(r - l, 0));
-    g.style.minWidth = MIN_PX[depth] + 'px';
-    return g;
   }
 
   function makeBracket(node, depth, axis) {
@@ -378,7 +397,7 @@
     return br;
   }
 
-  function drawGroup(outcome, axis, todayMs) {
+  function drawGroup(direction, axis, todayMs) {
     var group = el('div', 'pp-group');
     var lanes = LEVELS.map(function (_, i) {
       var lane = el('div', 'pp-lane pp-lane-' + i);
@@ -386,11 +405,23 @@
       return lane;
     });
 
-    (function walk(node, depth) {
+    (function walk(node, depth, parent) {
       if (depth > 3) return;
       var lane = lanes[depth];
-      lane.appendChild(makeBar(node, depth, axis));
-      if (node._extFrom !== null) lane.appendChild(makeExtBar(node, depth, axis));
+      var bar = makeBar(node, depth, axis);
+      lane.appendChild(bar);
+      node._parent = parent;
+      node._bars = [bar];
+      if (node._ovrTo !== null) {
+        var ovr = makeOverrunBar(node, depth, axis);
+        lane.appendChild(ovr);
+        node._bars.push(ovr);
+      }
+      if (node._extFrom !== null) {
+        var ext = makeExtBar(node, depth, axis);
+        lane.appendChild(ext);
+        node._bars.push(ext);
+      }
 
       /* A rolled-up value is a claim about what is underneath it, so the
          bracket spans the children that produced it. */
@@ -400,15 +431,32 @@
       }
 
       var kids = node.children || [];
-      if (!kids.length) {
-        /* No breakdown at all: leave a visible hole in every lane below. */
-        for (var d = depth + 1; d <= 3; d++) lanes[d].appendChild(makeGap(node, d, axis));
-        return;
-      }
       kids.forEach(function (k) {
-        walk(k, depth + 1);
+        walk(k, depth + 1, node);
       });
-    })(outcome, 0);
+    })(direction, 0, null);
+
+    /* Queues from overlapping parents share one lane, so their dots can land on each other.
+       Colliding dots fan out like an avatar stack (half a dot apart, each haloed) rather than
+       being pushed a full step, so a dense run drifts half as far from where it was queued. */
+    lanes.forEach(function (lane, depth) {
+      var step = (DOT_PX[depth] * 0.5) / axis.widthPx;
+      var next = -Infinity;
+      [].slice
+        .call(lane.children)
+        .filter(function (b) {
+          return b._ppLeft !== undefined;
+        })
+        .sort(function (a, b) {
+          return a._ppLeft - b._ppLeft;
+        })
+        .forEach(function (b, i) {
+          var l = Math.max(b._ppLeft, next);
+          b.style.left = pct(l);
+          b.style.zIndex = 3 + i;
+          next = l + step;
+        });
+    });
 
     return group;
   }
@@ -441,7 +489,7 @@
     );
   }
 
-  function tipHTML(node, isExt) {
+  function tipHTML(node, isExt, isOvr) {
     var contra = (node.claimedRung | 0) > (node.evidencedRung | 0);
     var html =
       '<div class="pp-tip-title"><span class="pp-tip-key">' +
@@ -460,23 +508,52 @@
     html += row('Estimate source', node.estimateSource);
     html += row('Dates — own', (node.ownStart || '—') + ' → ' + (node.ownDue || '—'));
     html += row('Dates — rollup', (node.rollupStart || '—') + ' → ' + (node.rollupDue || '—'));
-    html += row('Date source', node.dateSource);
+    html += row(
+      'Date source',
+      node.dateSource + (node.startSource ? ' (start ' + node.startSource + ' · due ' + node.dueSource + ')' : ''),
+    );
+    if (node._ovrTo !== null && node._ovrTo !== undefined)
+      html += row('Work underneath ends', isoOf(node._deepDueMs) + ' — past this due date', true);
     html += row(
       'Placement',
-      node._dated ? 'real dates' : node._fictionalWidth ? 'queued · nominal width' : 'queued by rank',
-      !node._dated,
+      node._dated
+        ? 'real dates' + (node._noEst ? ' · no estimate (I-beam)' : '')
+        : node._noEst
+          ? 'queued · no estimate (dot, takes no time)'
+          : 'queued by rank',
+      !node._dated || node._noEst,
     );
+    if (isOvr) html += row('This block', "dated work underneath runs past this item's due");
     if (isExt) html += row('This block', 'queued children overrunning the parent');
     html += '</table>';
     return html;
+  }
+
+  /* Hovering a block lifts its whole ancestor chain and dims the rest, so the
+     hierarchy above a tiny story is readable without hunting for it. */
+  function setFocus(wrap, node) {
+    wrap.querySelectorAll('.pp-focus, .pp-ancestor').forEach(function (b) {
+      b.classList.remove('pp-focus', 'pp-ancestor');
+    });
+    wrap.classList.toggle('pp-focusing', !!node);
+    if (!node) return;
+    (node._bars || []).forEach(function (b) {
+      b.classList.add('pp-focus');
+    });
+    for (var p = node._parent; p; p = p._parent) {
+      (p._bars || []).forEach(function (b) {
+        b.classList.add('pp-ancestor');
+      });
+    }
   }
 
   function wireTooltip(wrap) {
     function show(e) {
       var bar = e.target.closest ? e.target.closest('.pp-bar') : null;
       if (!bar || !bar._ppNode || !wrap.contains(bar)) return;
+      setFocus(wrap, bar._ppNode);
       var t = tooltip();
-      t.innerHTML = tipHTML(bar._ppNode, !!bar._ppExt);
+      t.innerHTML = tipHTML(bar._ppNode, !!bar._ppExt, !!bar._ppOvr);
       t.style.display = 'block';
       move(e);
     }
@@ -494,12 +571,14 @@
     function hide(e) {
       var to = e.relatedTarget;
       if (to && to.closest && to.closest('.pp-bar')) return;
+      setFocus(wrap, null);
       if (tipEl) tipEl.style.display = 'none';
     }
     wrap.addEventListener('mouseover', show);
     wrap.addEventListener('mousemove', move);
     wrap.addEventListener('mouseout', hide);
     wrap.addEventListener('mouseleave', function () {
+      setFocus(wrap, null);
       if (tipEl) tipEl.style.display = 'none';
     });
   }
@@ -517,7 +596,7 @@
   }
 
   function validPortfolio(p) {
-    return !!(p && p.outcomes && Object.prototype.toString.call(p.outcomes) === '[object Array]');
+    return !!(p && p.directions && Object.prototype.toString.call(p.directions) === '[object Array]');
   }
 
   function render(portfolio, rootEl, options) {
@@ -533,7 +612,7 @@
       errorBox(
         rootEl,
         'No planning data to render.',
-        'window.PlanningData was not found (or did not return a { outcomes: [...] } portfolio). ' +
+        'window.PlanningData was not found (or did not return a { directions: [...] } portfolio). ' +
           'Load the generator before render.js, or pass a portfolio object as the first argument.',
       );
       return null;
@@ -546,12 +625,15 @@
 
     var todayMs = parseISO(portfolio.today) || monthFloor(Date.now());
     var axis = buildAxis(todayMs, opts.monthsBack, opts.monthsForward);
+    var widthPx = axis.months.length * opts.monthWidth;
+    axis.widthPx = widthPx;
 
-    annotate(portfolio);
-    var outcomes = layout(portfolio, axis);
+    annotate(portfolio, axis.spanMs / widthPx);
+    var directions = layout(portfolio, axis);
 
     rootEl.innerHTML = '';
     var wrap = el('div', 'pp-wrap');
+    wrap.style.width = widthPx + 'px';
     rootEl.appendChild(wrap);
     setRamp(rootEl, opts.ramp);
     setSourceEncoding(rootEl, opts.sourceEncoding);
@@ -581,7 +663,7 @@
     grid.appendChild(today);
     chart.appendChild(grid);
 
-    outcomes.forEach(function (o) {
+    directions.forEach(function (o) {
       chart.appendChild(drawGroup(o, axis, todayMs));
     });
 
@@ -607,10 +689,10 @@
   function setSourceEncoding(rootEl, mode) {
     var w = wrapOf(rootEl);
     if (!w) return;
-    ['none', 'border', 'anchor', 'bracket'].forEach(function (m) {
+    SOURCE_MODES.forEach(function (m) {
       w.classList.remove('pp-src-' + m);
     });
-    w.classList.add('pp-src-' + (['none', 'border', 'anchor', 'bracket'].indexOf(mode) >= 0 ? mode : 'none'));
+    w.classList.add('pp-src-' + (SOURCE_MODES.indexOf(mode) >= 0 ? mode : 'none'));
     if (rootEl._ppState) rootEl._ppState.options.sourceEncoding = mode;
   }
 

@@ -18,28 +18,28 @@
  *
  *   p = archetypeBase * rankDecay(rank) * parentFactor(parentRung) * timeFactor(start)
  *
- *   1. archetypeBase  — each OUTCOME is sampled an archetype (healthy /
+ *   1. archetypeBase  — each DIRECTION is sampled an archetype (healthy /
  *      thinning / unplanned / overplanned) which sets the base level and the
  *      steepness of the rank decay for everything beneath it.
  *   2. rankDecay      — rank 1-2 siblings are far more planned than rank 5-6.
- *      `thinning` outcomes decay hard (good first initiative, then nothing).
+ *      `thinning` directions decay hard (good first increment, then nothing).
  *   3. parentFactor   — a child of a rung-0 parent is heavily (but NEVER
  *      absolutely) discouraged from reaching rung 3. This is a probability
  *      skew on purpose: the contradictions it leaks through are the signal the
  *      report is supposed to surface.
  *   4. timeFactor     — work starting soon is planned; work 9 months out is
- *      not. `overplanned` outcomes ignore this (that's what makes them waste).
+ *      not. `overplanned` directions ignore this (that's what makes them waste).
  *
  * `p` then drives: the rung, whether the item is broken down at all, how many
  * children it gets, and (via its time window) its execution state.
  *
  * Time is modelled as integer DAY OFFSETS from `today` (2026-10-01), and every
- * node is allocated a window strictly NESTED inside its parent's window, with
- * rank controlling the offset inside that window. This guarantees a parent's
- * rollup dates always bracket every descendant.
+ * node is allocated a window nested inside its parent's window, with rank
+ * controlling the offset inside that window. The exception is OVERRUN_P, which
+ * lets children run past a parent's own due date on purpose.
  *
  * `own` vs `rolled`: separately from the rung, parents frequently carry NO
- * fields of their own (initiatives ~65%, outcomes ~80%) and derive everything
+ * fields of their own (increments ~65%, directions ~80%) and derive everything
  * from children. That is the single biggest source of realistic
  * `claimedRung > evidencedRung` contradictions.
  */
@@ -93,7 +93,17 @@
   // --- tuning knobs ---------------------------------------------------------
 
   /** P(parent defers entirely to its children) given it HAS children. */
-  var ROLLED_PREFERENCE = { outcome: 0.86, initiative: 0.93, epic: 0.68, story: 0 };
+  var ROLLED_PREFERENCE = { direction: 0.86, increment: 0.93, epic: 0.68, story: 0 };
+
+  /** P(a parent that rolls up its estimate still sets its own dates) — roadmap dates on increments. */
+  var DATED_ROLLUP_P = { direction: 0.3, increment: 0.45, epic: 0.35, story: 0 };
+
+  /** P(a parent with own dates set only ONE of them, leaving the other end to its children). */
+  var PARTIAL_DATES_P = 0.2;
+
+  /** P(a dated parent's children may run past its own due date), and by how many days. */
+  var OVERRUN_P = 0.3;
+  var OVERRUN_DAYS = { direction: [20, 70], increment: [10, 40], epic: [4, 14], story: [0, 0] };
 
   /** P(status over-claims relative to the fields actually present). */
   var OVERCLAIM_P = 0.15;
@@ -110,8 +120,8 @@
   /** How willing each archetype is to break work down at all. */
   var ARCHETYPE_BREAKDOWN = { healthy: 1, thinning: 0.95, unplanned: 0.52, overplanned: 1 };
 
-  /** Initiatives nearly always have at least one epic; epics vary far more. */
-  var LEVEL_BREAKDOWN = { initiative: 1.1, epic: 0.9 };
+  /** Increments nearly always have at least one epic; epics vary far more. */
+  var LEVEL_BREAKDOWN = { increment: 1.1, epic: 0.9 };
 
   /**
    * Day-offset window each archetype's work tends to live in. Healthy work is
@@ -125,25 +135,25 @@
   };
 
   var SPAN_DAYS = {
-    outcome: [60, 260],
-    initiative: [30, 120],
+    direction: [60, 260],
+    increment: [30, 120],
     epic: [10, 45],
     story: [2, 14],
   };
 
   var POINT_POOLS = {
-    outcome: [89, 144, 144, 233],
-    initiative: [21, 34, 34, 55, 89],
+    direction: [89, 144, 144, 233],
+    increment: [21, 34, 34, 55, 89],
     epic: [5, 8, 8, 13, 13, 21, 21, 34, 55],
     story: [1, 1, 2, 2, 2, 3, 3, 3, 5, 5, 8, 13],
   };
 
-  var LEVELS = ['outcome', 'initiative', 'epic', 'story'];
+  var LEVELS = ['direction', 'increment', 'epic', 'story'];
 
   var PROJECTS = [
     {
       prefix: 'ECOM',
-      outcomes: [
+      directions: [
         'Grow self-serve revenue',
         'Cut checkout abandonment in half',
         'Make the storefront fast on mobile',
@@ -151,7 +161,7 @@
         'Raise repeat-purchase rate',
         'Reduce fulfilment cost per order',
       ],
-      initiatives: [
+      increments: [
         'Unified payments platform',
         'Headless storefront migration',
         'Personalised merchandising',
@@ -192,7 +202,7 @@
     },
     {
       prefix: 'POS',
-      outcomes: [
+      directions: [
         'Open 40 new restaurant locations',
         'Cut table turn time by 15%',
         'Make offline service bulletproof',
@@ -200,7 +210,7 @@
         'Reduce support tickets per store',
         'Unify franchise reporting',
       ],
-      initiatives: [
+      increments: [
         'Offline-first order capture',
         'Kitchen display system',
         'Tableside payments',
@@ -241,7 +251,7 @@
     },
     {
       prefix: 'CLM',
-      outcomes: [
+      directions: [
         'Settle simple claims in under 48 hours',
         'Remove manual re-keying from intake',
         'Lower fraud leakage by 20%',
@@ -249,7 +259,7 @@
         'Improve adjuster capacity',
         'Raise first-contact resolution',
       ],
-      initiatives: [
+      increments: [
         'Straight-through processing',
         'Document intake automation',
         'Fraud scoring platform',
@@ -290,7 +300,7 @@
     },
     {
       prefix: 'PAY',
-      outcomes: [
+      directions: [
         'Reach 99.99% authorisation uptime',
         'Add three new payout corridors',
         'Pass PCI re-certification early',
@@ -298,7 +308,7 @@
         'Shorten merchant onboarding to a day',
         'Eliminate manual reconciliation',
       ],
-      initiatives: [
+      increments: [
         'Ledger re-architecture',
         'Global payouts network',
         'Risk and sanctions screening',
@@ -339,7 +349,7 @@
     },
     {
       prefix: 'MOBI',
-      outcomes: [
+      directions: [
         'Double weekly active users',
         'Ship the tablet experience',
         'Cut crash-free sessions below 0.2%',
@@ -347,7 +357,7 @@
         'Support offline use end to end',
         'Unify iOS and Android release trains',
       ],
-      initiatives: [
+      increments: [
         'Design system adoption',
         'Offline sync engine',
         'Push notification platform',
@@ -480,11 +490,11 @@
       return name + ' (phase ' + used[name] + ')';
     }
     return {
-      outcome: function (proj) {
-        return unique(R.pick(proj.outcomes));
+      direction: function (proj) {
+        return unique(R.pick(proj.directions));
       },
-      initiative: function (proj) {
-        return unique(R.pick(proj.initiatives));
+      increment: function (proj) {
+        return unique(R.pick(proj.increments));
       },
       epic: function (proj) {
         return unique(R.pick(proj.epicVerbs) + ' ' + R.pick(proj.epicNouns));
@@ -555,8 +565,8 @@
 
   function sampleChildCount(R, level, archetype, p, startOffset) {
     if (level === 'story') return 0;
-    if (level === 'outcome') {
-      // An outcome always has at least one initiative under it.
+    if (level === 'direction') {
+      // A direction always has at least one increment under it.
       return R.weighted([
         [1, 0.1],
         [2, 0.2],
@@ -580,7 +590,7 @@
     );
     if (!R.chance(breakdown)) return 0;
 
-    if (level === 'initiative') {
+    if (level === 'increment') {
       return R.weighted([
         [1, 0.14],
         [2, 0.22],
@@ -633,7 +643,7 @@
 
   /**
    * Evidence comes from the ROLLED-UP values, not just the item's own fields.
-   * An initiative with no dates of its own whose epics are all scheduled really is
+   * An increment with no dates of its own whose epics are all scheduled really is
    * scheduled — the plan exists, it just lives one level down. Provenance (own vs
    * inherited) is carried separately by `estimateSource` / `dateSource`.
    * Must run after rollUp().
@@ -675,6 +685,12 @@
         ownStartOffset = win.start + R.int(0, Math.max(0, available - length));
         ownDueOffset = ownStartOffset + length;
       }
+    } else if (rungTarget >= 2 && R.chance(DATED_ROLLUP_P[level])) {
+      var spanR = SPAN_DAYS[level];
+      var availableR = win.end - win.start;
+      var lengthR = Math.max(1, Math.min(R.int(spanR[0], spanR[1]), availableR));
+      ownStartOffset = win.start + R.int(0, Math.max(0, availableR - lengthR));
+      ownDueOffset = ownStartOffset + lengthR;
     }
 
     // --- execution --------------------------------------------------------
@@ -698,6 +714,10 @@
 
     var status = pickStatus(R, exec, fieldsRung, rungTarget);
 
+    // Only a parent can leave an end blank: the missing end rolls up from its children.
+    var keep = 'both';
+    if (hasOwnDates && childCount > 0 && R.chance(PARTIAL_DATES_P)) keep = R.chance(0.5) ? 'start' : 'due';
+
     var node = {
       key: ctx.nextKey(ctx.project.prefix),
       name: ctx.namer[level](ctx.project),
@@ -708,22 +728,32 @@
       evidencedRung: 0, // filled in by rollUp(), which needs the children first
       exec: exec,
       ownEstimate: ownEstimate,
-      ownStart: hasOwnDates ? offsetToISO(ownStartOffset) : null,
-      ownDue: hasOwnDates ? offsetToISO(ownDueOffset) : null,
+      ownStart: hasOwnDates && keep !== 'due' ? offsetToISO(ownStartOffset) : null,
+      ownDue: hasOwnDates && keep !== 'start' ? offsetToISO(ownDueOffset) : null,
       rollupEstimate: 0,
       rollupStart: null,
       rollupDue: null,
       estimateSource: 'none',
       dateSource: 'none',
+      startSource: 'none',
+      dueSource: 'none',
       children: [],
     };
-    if (level === 'outcome') node.archetype = archetype;
+    if (level === 'direction') node.archetype = archetype;
 
     // --- children ---------------------------------------------------------
     // Children live inside this node's OWN dates when it has them, otherwise
-    // inside its tentative window. Either way: strictly nested.
+    // inside its tentative window. The one deliberate leak: OVERRUN lets them
+    // run past the parent's own due, which is the date conflict the view shows.
     if (childCount > 0) {
-      var childWin = hasOwnDates ? makeWindow(ownStartOffset, ownDueOffset) : win;
+      var childWin = win;
+      if (keep === 'start') childWin = makeWindow(ownStartOffset, win.end);
+      else if (keep === 'due') childWin = makeWindow(win.start, ownDueOffset);
+      else if (hasOwnDates) {
+        var od = OVERRUN_DAYS[level];
+        var overrun = R.chance(OVERRUN_P) ? R.int(od[0], od[1]) : 0;
+        childWin = makeWindow(ownStartOffset, ownDueOffset + overrun);
+      }
       var childLevel = LEVELS[LEVELS.indexOf(level) + 1];
       var spread = archetype === 'overplanned' ? 0.95 : 0.8;
       for (var i = 0; i < childCount; i++) {
@@ -758,22 +788,24 @@
       node.estimateSource = sum > 0 ? 'rolled' : 'none';
     }
 
-    if (node.ownStart !== null) {
-      node.rollupStart = node.ownStart;
-      node.rollupDue = node.ownDue;
-      node.dateSource = 'own';
-    } else {
-      var min = null;
-      var max = null;
-      for (var j = 0; j < node.children.length; j++) {
-        var c = node.children[j];
-        if (c.rollupStart !== null && (min === null || c.rollupStart < min)) min = c.rollupStart;
-        if (c.rollupDue !== null && (max === null || c.rollupDue > max)) max = c.rollupDue;
-      }
-      node.rollupStart = min;
-      node.rollupDue = max;
-      node.dateSource = min !== null ? 'rolled' : 'none';
+    // parentFirstThenChildren, per END: each end is own if set, else rolled from children.
+    var min = null;
+    var max = null;
+    for (var j = 0; j < node.children.length; j++) {
+      var c = node.children[j];
+      if (c.rollupStart !== null && (min === null || c.rollupStart < min)) min = c.rollupStart;
+      if (c.rollupDue !== null && (max === null || c.rollupDue > max)) max = c.rollupDue;
     }
+    node.rollupStart = node.ownStart !== null ? node.ownStart : min;
+    node.rollupDue = node.ownDue !== null ? node.ownDue : max;
+    node.startSource = node.ownStart !== null ? 'own' : min !== null ? 'rolled' : 'none';
+    node.dueSource = node.ownDue !== null ? 'own' : max !== null ? 'rolled' : 'none';
+    node.dateSource =
+      node.startSource === 'none' || node.dueSource === 'none'
+        ? 'none'
+        : node.startSource === node.dueSource
+          ? node.startSource
+          : 'mixed';
 
     node.evidencedRung = evidenceRung(node);
   }
@@ -785,24 +817,24 @@
   function generatePortfolio(opts) {
     opts = opts || {};
     var seed = typeof opts.seed === 'number' && isFinite(opts.seed) ? opts.seed >>> 0 : (Date.now() ^ 0x9e3779b9) >>> 0;
-    var outcomeCount = typeof opts.outcomeCount === 'number' ? Math.max(1, opts.outcomeCount | 0) : 4;
+    var directionCount = typeof opts.directionCount === 'number' ? Math.max(1, opts.directionCount | 0) : 4;
 
     var R = createRandom(seed);
     var namer = createNamer(R);
     var nextKey = createKeyer(R);
 
-    var outcomes = [];
-    for (var i = 0; i < outcomeCount; i++) {
+    var directions = [];
+    for (var i = 0; i < directionCount; i++) {
       var rank = i + 1;
       var archetype = sampleArchetype(R, rank);
       var base = ARCHETYPE_WINDOW[archetype];
-      // Lower-ranked outcomes start a little later than higher-ranked ones.
+      // Lower-ranked directions start a little later than higher-ranked ones.
       var shift = (rank - 1) * 12;
       var win = makeWindow(clamp(base[0] + shift, -90, 400), clamp(base[1] + shift, -89, 430));
 
-      outcomes.push(
+      directions.push(
         buildNode(R, {
-          level: 'outcome',
+          level: 'direction',
           rank: rank,
           archetype: archetype,
           parentRung: null,
@@ -818,7 +850,7 @@
       seed: seed,
       today: TODAY_ISO,
       conversion: { pointsPerDayPerTrack: POINTS_PER_DAY_PER_TRACK },
-      outcomes: outcomes,
+      directions: directions,
     };
   }
 

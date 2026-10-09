@@ -25,9 +25,12 @@
   --pp-prog-text: #ffffff;
 
   /* Inferred / projected placement. */
-  --pp-inferred-bd: #8993a4;
   /* "own value" border for sourceEncoding:'border'. */
   --pp-own-bd: rgba(9, 30, 66, 0.62);
+  /* Own-date end cap for sourceEncoding:'ends'. */
+  --pp-pin: #091e42;
+  --pp-warn-bg: #fff3eb;
+  --pp-overrun-stripe: #ffd9b8;
 
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
@@ -131,13 +134,13 @@
 
 /* --------------------------------------------------------------------------
    GROUPS AND LANES
-   One lane per hierarchy LEVEL, not per item. Every initiative under one
-   outcome shares a single lane; likewise epics; likewise stories. This is an
+   One lane per hierarchy LEVEL, not per item. Every increment under one
+   direction shares a single lane; likewise epics; likewise stories. This is an
    icicle, not a Gantt chart.
    -------------------------------------------------------------------------- */
 .pp-group {
   position: relative;
-  margin-top: 12px;
+  margin-top: 18px;
 }
 
 .pp-group:first-child {
@@ -146,7 +149,7 @@
 
 .pp-lane {
   position: relative;
-  margin-top: 2px;
+  margin-top: 4px;
   /* Tooltips, brackets and hover rings have to escape the lane box. */
   overflow: visible;
 }
@@ -158,16 +161,16 @@
 /* Each level is drawn shorter than its parent, so depth reads as a staircase
    before you look at any colour. */
 .pp-lane-0 {
-  height: 26px;
+  height: 34px;
 }
 .pp-lane-1 {
-  height: 18px;
+  height: 24px;
 }
 .pp-lane-2 {
-  height: 12px;
+  height: 16px;
 }
 .pp-lane-3 {
-  height: 8px;
+  height: 11px;
 }
 
 /* --------------------------------------------------------------------------
@@ -182,6 +185,8 @@
   --pp-bc: transparent;
   --pp-fill: var(--pp-r0);
   --pp-fg: var(--pp-r0-text);
+  /* Slant width of a rolled-up end in 'ends' mode. */
+  --pp-sl: 8px;
 
   position: absolute;
   top: 0;
@@ -207,9 +212,11 @@
   font-size: 10.5px;
   padding: 0 5px;
   --pp-bw: 1px;
+  --pp-sl: 6px;
 }
 .pp-bar.pp-lv2 {
   --pp-bw: 1px;
+  --pp-sl: 4px;
   border-radius: 2px;
   padding: 0;
 }
@@ -232,18 +239,22 @@
 .pp-rung0 {
   --pp-fill: var(--pp-r0);
   --pp-fg: var(--pp-r0-text);
+  --pp-line: var(--pp-r0-text);
 }
 .pp-rung1 {
   --pp-fill: var(--pp-r1);
   --pp-fg: var(--pp-r1-text);
+  --pp-line: var(--pp-r1-text);
 }
 .pp-rung2 {
   --pp-fill: var(--pp-r2);
   --pp-fg: var(--pp-r2-text);
+  --pp-line: var(--pp-r2-text);
 }
 .pp-rung3 {
   --pp-fill: var(--pp-r3);
   --pp-fg: var(--pp-r3-text);
+  --pp-line: var(--pp-r3);
 }
 
 /* Execution state supersedes the planning ramp: once work has started, the
@@ -251,16 +262,21 @@
 .pp-exec-inprogress {
   --pp-fill: var(--pp-prog);
   --pp-fg: var(--pp-prog-text);
+  --pp-line: var(--pp-prog);
 }
 .pp-exec-done {
   --pp-fill: var(--pp-done);
   --pp-fg: var(--pp-done-text);
+  --pp-line: var(--pp-done);
 }
 
-/* Queued by rank rather than committed to a date: dashed edge plus a diagonal
-   white hatch, so an inferred position can never be mistaken for a real one. */
+/* Queued by rank rather than committed to a date: a diagonal white hatch, so an
+   inferred position can never be mistaken for a real one. */
 .pp-projected {
   --pp-bs: dashed;
+  /* Without this the hatch tile restarts under the border, so a transparent
+     (joined) edge shows a mismatched strip that reads as a vertical border. */
+  background-origin: border-box;
   background-image: repeating-linear-gradient(
     -45deg,
     rgba(255, 255, 255, 0.45),
@@ -268,10 +284,6 @@
     transparent 4px,
     transparent 9px
   );
-}
-
-.pp-projected:not(.pp-lv3) {
-  --pp-bc: var(--pp-inferred-bd);
 }
 
 /* The stretch of a dated parent that exists only to cover its queued children.
@@ -294,18 +306,6 @@
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-left-color: transparent;
-}
-
-/* No estimate anywhere — the width is a fiction and has to say so. */
-.pp-nominal {
-  outline: 1px dotted var(--pp-danger);
-  outline-offset: -3px;
-}
-.pp-nominal.pp-lv2 {
-  outline-offset: -2px;
-}
-.pp-nominal.pp-lv3 {
-  outline-offset: -1px;
 }
 
 /* --------------------------------------------------------------------------
@@ -379,8 +379,63 @@
   display: none;
   pointer-events: none;
 }
-.pp-wrap:not(.pp-src-none) .pp-bar[data-mixed='true'] > .pp-mixed {
+.pp-wrap:not(.pp-src-none):not(.pp-src-ends) .pp-bar[data-mixed='true'] > .pp-mixed {
   display: block;
+}
+
+/* 'ends' — date source marked per END, since start and due can come from different
+   places. Own date = hard dark cap. Rolled date = slanted end, wider at the bottom,
+   draped over the children that supplied it. Leaves never get either (see endClasses). */
+.pp-wrap.pp-src-ends .pp-bar.pp-own-s {
+  border-left: 3px solid var(--pp-pin);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-own-d {
+  border-right: 3px solid var(--pp-pin);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-lv2.pp-own-s {
+  border-left-width: 2px;
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-lv2.pp-own-d {
+  border-right-width: 2px;
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-roll-s {
+  clip-path: polygon(var(--pp-sl) 0, 100% 0, 100% 100%, 0 100%);
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-roll-d {
+  clip-path: polygon(0 0, calc(100% - var(--pp-sl)) 0, 100% 100%, 0 100%);
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-roll-s.pp-roll-d {
+  clip-path: polygon(var(--pp-sl) 0, calc(100% - var(--pp-sl)) 0, 100% 100%, 0 100%);
+}
+
+/* The projected extension's width lives in a variable so the seam can widen it. */
+.pp-ext {
+  width: var(--pp-w);
+}
+.pp-wrap.pp-src-ends .pp-ext.pp-seam {
+  margin-left: calc(-1 * var(--pp-sl));
+  width: calc(var(--pp-w) + var(--pp-sl));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, var(--pp-sl) 100%);
+}
+
+/* Dated work underneath runs past this item's own due. Amber, not the grey hatch:
+   committed dates disagreeing, not queued guesswork. Shown in every mode. */
+.pp-bar.pp-overrun {
+  --pp-bw: 1px;
+  --pp-bs: solid;
+  --pp-bc: var(--pp-warn);
+  background-color: var(--pp-warn-bg);
+  background-origin: border-box;
+  background-image: repeating-linear-gradient(-45deg, var(--pp-overrun-stripe) 0 4px, transparent 4px 8px);
+  color: var(--pp-warn);
+  justify-content: center;
+  padding: 0 2px;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 /* --------------------------------------------------------------------------
@@ -417,24 +472,126 @@
 }
 
 /* --------------------------------------------------------------------------
-   GAPS — a parent with no children at all leaves a visible hole in the lanes
-   below it. Absence of breakdown is information.
+   SHAPE = WHAT WE KNOW
+   Ends = when (dates). Filled length = how much (estimate). An item with dates
+   but no estimate is an I-beam; one with neither is a dot. Declared after the
+   border-channel rules so they can't draw a box around either shape.
    -------------------------------------------------------------------------- */
-.pp-gap {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  border-radius: 2px;
-  border: 1px dashed #b3bac5;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 5px,
-    rgba(9, 30, 66, 0.06) 5px,
-    rgba(9, 30, 66, 0.06) 10px
+.pp-wrap .pp-bar.pp-ibeam,
+.pp-wrap .pp-bar.pp-dot,
+.pp-wrap .pp-bar.pp-ext-line {
+  border: 0;
+  border-radius: 0;
+  clip-path: none;
+  background-color: transparent;
+  overflow: visible;
+  color: var(--pp-line);
+}
+.pp-wrap .pp-bar.pp-ibeam {
+  --pp-lw: 2px;
+  --pp-sw: 3px;
+  --pp-dw: 3px;
+  --pp-sh: 100%;
+  --pp-dh: 100%;
+  --pp-sc: var(--pp-line);
+  --pp-dc: var(--pp-line);
+  --pp-lc: var(--pp-line);
+  justify-content: center;
+  background-image:
+    linear-gradient(var(--pp-sc), var(--pp-sc)), linear-gradient(var(--pp-dc), var(--pp-dc)),
+    linear-gradient(var(--pp-lc), var(--pp-lc));
+  background-position:
+    left bottom,
+    right bottom,
+    center;
+  background-size:
+    var(--pp-sw) var(--pp-sh),
+    var(--pp-dw) var(--pp-dh),
+    100% var(--pp-lw);
+  background-repeat: no-repeat;
+}
+.pp-wrap .pp-bar.pp-ibeam.pp-lv2,
+.pp-wrap .pp-bar.pp-ibeam.pp-lv3 {
+  --pp-lw: 1px;
+  --pp-sw: 2px;
+  --pp-dw: 2px;
+}
+/* 'ends' mode: own date = dark cap; rolled date = half-height cap resting on the children. */
+.pp-wrap.pp-src-ends .pp-bar.pp-ibeam.pp-own-s {
+  --pp-sc: var(--pp-pin);
+  --pp-sw: 4px;
+  border-left: 0;
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-ibeam.pp-own-d {
+  --pp-dc: var(--pp-pin);
+  --pp-dw: 4px;
+  border-right: 0;
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-ibeam.pp-roll-s {
+  --pp-sh: 50%;
+  clip-path: none;
+}
+.pp-wrap.pp-src-ends .pp-bar.pp-ibeam.pp-roll-d {
+  --pp-dh: 50%;
+  clip-path: none;
+}
+/* Claim vs. evidence moves from the border to the line: the hollow promise looks hollow. */
+.pp-wrap .pp-bar.pp-ibeam.pp-contra {
+  --pp-lc: var(--pp-claim);
+  --pp-lw: 4px;
+}
+.pp-wrap .pp-bar.pp-ibeam.pp-contra.pp-lv2,
+.pp-wrap .pp-bar.pp-ibeam.pp-contra.pp-lv3 {
+  --pp-lw: 3px;
+}
+/* The inset red ring would draw a box, so started-but-unplanned turns the line red instead. */
+.pp-wrap .pp-bar.pp-ibeam.pp-redring {
+  --pp-ring: 0 0 0 0 transparent;
+  --pp-lc: var(--pp-danger);
+}
+
+.pp-wrap .pp-bar.pp-dot {
+  --pp-ring-c: var(--pp-line);
+  padding: 0;
+  /* Outer white halo keeps a dot legible where it sits on top of another item's bar. */
+  background-image: radial-gradient(
+    circle closest-side,
+    var(--pp-line) 0 40%,
+    var(--pp-ring-c) 44% 74%,
+    #fff 76% 98%,
+    transparent 100%
   );
-  z-index: 1;
-  pointer-events: none;
+  background-position: center;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-origin: border-box;
+}
+.pp-wrap .pp-bar.pp-dot.pp-contra {
+  --pp-ring-c: var(--pp-claim);
+}
+.pp-wrap .pp-bar.pp-dot.pp-redring {
+  --pp-ring: 0 0 0 0 transparent;
+  --pp-ring-c: var(--pp-danger);
+}
+
+/* An I-beam parent's queued overrun: still no estimate, so a bare dotted line. */
+.pp-wrap .pp-bar.pp-ext-line {
+  background-image: repeating-linear-gradient(to right, var(--pp-line) 0 2px, transparent 2px 5px);
+  background-position: center;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+
+.pp-bar.pp-ibeam > span,
+.pp-bar.pp-dot > span {
+  background: #fff;
+  color: var(--pp-line);
+  padding: 0 5px;
+  border-radius: 2px;
+  line-height: 1.3;
+}
+.pp-bar.pp-dot > span {
+  margin-left: calc(100% + 3px);
 }
 
 /* --------------------------------------------------------------------------
@@ -447,7 +604,20 @@
   filter: brightness(1.1);
   box-shadow:
     var(--pp-ring, 0 0 0 0 rgba(0, 0, 0, 0)),
-    0 0 0 2px #172b4d;
+    0 3px 6px rgba(9, 30, 66, 0.35);
+}
+
+/* Ancestors of the hovered block: lifted, ringed and shadowed above the dimmed
+   rest of the chart. */
+.pp-wrap.pp-focusing .pp-bar:not(.pp-focus):not(.pp-ancestor) {
+  opacity: 0.4;
+}
+.pp-bar.pp-ancestor {
+  z-index: 55;
+  transform: translateY(-2px);
+  box-shadow:
+    var(--pp-ring, 0 0 0 0 rgba(0, 0, 0, 0)),
+    0 6px 10px rgba(9, 30, 66, 0.4);
 }
 
 .pp-tip {

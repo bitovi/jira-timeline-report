@@ -789,6 +789,224 @@
         opacity: 0.55;
         z-index: 5;
       }
+      /* Dated part + projected tail of ONE item: no gap, no seam border. */
+      .bar.join-r {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      .bar.join-l {
+        border-left-width: 0;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+      }
+
+      /* ---------- §C4/§C5: date source, marked per END rather than per bar ----------
+         Own end = a hard dark cap. Rolled end = slanted, wider at the bottom, so the bar
+         drapes over the children that supplied the date. Leaves never get either. */
+      .c4 .bar {
+        --pin: #091e42;
+        --sl: 8px;
+      }
+      .c4 .bar.lv2 {
+        --sl: 6px;
+      }
+      .c4 .bar.lv3 {
+        --sl: 4px;
+      }
+      .c4 .bar.own-s {
+        border-left: 4px solid var(--pin);
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+      }
+      .c4 .bar.own-d {
+        border-right: 4px solid var(--pin);
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      .c4 .bar.lv2.own-s,
+      .c4 .bar.lv3.own-s {
+        border-left-width: 3px;
+      }
+      .c4 .bar.lv2.own-d,
+      .c4 .bar.lv3.own-d {
+        border-right-width: 3px;
+      }
+      .c4 .bar.roll-s {
+        clip-path: polygon(var(--sl) 0, 100% 0, 100% 100%, 0 100%);
+      }
+      .c4 .bar.roll-d {
+        clip-path: polygon(0 0, calc(100% - var(--sl)) 0, 100% 100%, 0 100%);
+      }
+      .c4 .bar.roll-s.roll-d {
+        clip-path: polygon(var(--sl) 0, calc(100% - var(--sl)) 0, 100% 100%, 0 100%);
+      }
+      /* Projected tail of a bar whose dated part ends on a rolled (slanted) due: interlock on the diagonal. */
+      .c4 .bar.seam-s {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, var(--sl) 100%);
+      }
+      /* Children's dates reach past the parent's own commitment. Amber, not the grey
+         projected hatch: this is committed dates disagreeing, not queued guesswork. */
+      .c4 .overrun {
+        background: repeating-linear-gradient(-45deg, #ffd9b8 0 4px, var(--warn-bg) 4px 8px);
+        border: 1px solid var(--warn);
+        border-left: none;
+        border-radius: 0;
+        color: var(--warn);
+        font-size: 10px;
+        font-weight: 700;
+        justify-content: center;
+      }
+      /* Where the item's own due date sat before widest-range stretched past it. */
+      .c4 .owndue {
+        position: absolute;
+        top: 0;
+        width: 2px;
+        background: var(--warn);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+        z-index: 3;
+      }
+      .c4 .rowlbl small {
+        display: block;
+        font-weight: 400;
+        font-size: 10.5px;
+        color: var(--subtle);
+      }
+
+      /* ---------- §E4–E7: shape = what we know ----------
+         Ends = when (dates). Filled length = how much (estimate). An item missing one loses that part. */
+      .bar.ibeam,
+      .bar.pip {
+        border: 0;
+        padding: 0;
+        overflow: visible;
+      }
+      .bar.ibeam {
+        --lw: 2px;
+        --sw: 3px;
+        --dw: 3px;
+        --sh: 100%;
+        --dh: 100%;
+        --sc: currentColor;
+        --dc: currentColor;
+        --lc: currentColor;
+        justify-content: center;
+        background:
+          linear-gradient(var(--sc), var(--sc)) left bottom / var(--sw) var(--sh) no-repeat,
+          linear-gradient(var(--dc), var(--dc)) right bottom / var(--dw) var(--dh) no-repeat,
+          linear-gradient(var(--lc), var(--lc)) center / 100% var(--lw) no-repeat;
+      }
+      .bar.ibeam.lv3,
+      .bar.ibeam.lv4 {
+        --lw: 1px;
+        --sw: 2px;
+        --dw: 2px;
+      }
+      /* Own date = dark cap, as in C4. Rolled date = half-height cap resting on the children. */
+      .bar.ibeam.ib-own-s {
+        --sc: #091e42;
+        --sw: 4px;
+      }
+      .bar.ibeam.ib-own-d {
+        --dc: #091e42;
+        --dw: 4px;
+      }
+      .bar.ibeam.ib-roll-s {
+        --sh: 50%;
+      }
+      .bar.ibeam.ib-roll-d {
+        --dh: 50%;
+      }
+      .bar.pip {
+        --d: 12px;
+        --tw: 2px;
+        --ring: currentColor;
+        justify-content: flex-start;
+        background:
+          radial-gradient(circle closest-side, currentColor 0 48%, var(--ring) 52% 92%, transparent 100%) left center /
+            var(--d) var(--d) no-repeat,
+          repeating-linear-gradient(to right, currentColor 0 2px, transparent 2px 5px) right center /
+            calc(100% - var(--d)) var(--tw) no-repeat;
+      }
+      .bar.pip.lv1 {
+        --d: 16px;
+      }
+      .bar.pip.lv2 {
+        --d: 12px;
+      }
+      .bar.pip.lv3 {
+        --d: 9px;
+        --tw: 1px;
+      }
+      .bar.pip.lv4 {
+        --d: 7px;
+        --tw: 1px;
+      }
+      /* Outline = claim, centre = evidence (§B), applied to the line or the dot. */
+      .bar.ibeam.ib-claim2 {
+        --lc: var(--r2);
+        --lw: 4px;
+      }
+      .bar.ibeam.ib-claim4 {
+        --lc: var(--r4);
+        --lw: 4px;
+      }
+      .bar.ibeam.lv3.ib-claim2,
+      .bar.ibeam.lv4.ib-claim2 {
+        --lw: 3px;
+      }
+      .bar.pip.ib-claim2 {
+        --ring: var(--r2);
+      }
+      .bar.pip.ib-claim4 {
+        --ring: var(--r4);
+      }
+      .bar.ibeam.ib-unplanned {
+        --lc: var(--danger);
+      }
+      /* The line is drawn in the rung's TEXT colour; r4 and execution states have white text. */
+      .bar.ibeam.r4,
+      .bar.pip.r4 {
+        color: var(--r4);
+      }
+      .bar.ibeam.prog,
+      .bar.pip.prog {
+        color: var(--prog);
+      }
+      .bar.ibeam.done,
+      .bar.pip.done {
+        color: var(--done);
+      }
+      .bar.ibeam > span,
+      .bar.pip > span {
+        background: #fff;
+        padding: 0 5px;
+        border-radius: 2px;
+        line-height: 1.3;
+      }
+      .bar.pip > span {
+        margin-left: calc(var(--d) + 3px);
+      }
+      /* Dot only: the bar is exactly one dot wide, so the tail layer has zero width. */
+      .bar.pip.dot {
+        width: var(--d);
+      }
+      /* Once shape carries "queued" and "no estimate", the dashed edge and red dotted rule are redundant. */
+      .quiet .bar.projected:not(.lv4) {
+        border-color: transparent !important;
+      }
+      .colhd {
+        position: relative;
+        height: 18px;
+      }
+      .colhd span {
+        position: absolute;
+        top: 0;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--subtle);
+      }
 
       /* ---------- squeeze: representative by default, true time on hover ----------
          Each bar carries both geometries as custom properties. --sl/--sw is the squeezed
@@ -1419,8 +1637,8 @@
           <div class="lane lane12 tight" style="min-height: 26px">
             <div class="today" style="left: 1%"></div>
             <div class="frontier" style="left: 41.67%"></div>
-            <div class="bar lv1 r4" style="left: 0%; width: 41.4%; top: 0">NPS — ave 8</div>
-            <div class="bar lv1 r2 projected" style="left: 41.9%; width: 41.4%; top: 0"></div>
+            <div class="bar lv1 r4 join-r" style="left: 0%; width: 41.4%; top: 0">NPS — ave 8</div>
+            <div class="bar lv1 r2 projected join-l" style="left: 41.4%; width: 41.9%; top: 0"></div>
           </div>
           <div class="lane lane12 tight" style="min-height: 18px">
             <div class="frontier" style="left: 41.67%"></div>
@@ -1497,8 +1715,8 @@
           <!-- ===== Outcome 2: dates run out in December and the staircase collapses. ===== -->
           <div class="lane lane12 tight grouptop" style="min-height: 26px">
             <div class="frontier" style="left: 25%"></div>
-            <div class="bar lv1 r4" style="left: 0%; width: 24.6%; top: 0">1st store</div>
-            <div class="bar lv1 r2 projected" style="left: 25%; width: 45.6%; top: 0"></div>
+            <div class="bar lv1 r4 join-r" style="left: 0%; width: 24.6%; top: 0">1st store</div>
+            <div class="bar lv1 r2 projected join-l" style="left: 24.6%; width: 46%; top: 0"></div>
           </div>
           <div class="lane lane12 tight" style="min-height: 18px">
             <div class="frontier" style="left: 25%"></div>
@@ -1665,6 +1883,234 @@
       visibly marked as inferred, which is what the hatching is for.
     </div>
 
+    <h3>C4 · Own dates vs. rolled-up dates — mark each end <span class="badge">proposal</span></h3>
+    <div class="note">
+      <strong>Why per end, not per bar.</strong> The rollup tracks a source for each end separately (<code
+        >rollupDates.startFrom</code
+      >
+      / <code>dueTo</code>), so one bar can start on its own date and end on a child's. <br />▐
+      <strong>Square dark end</strong> — this item's own date. <br />◢
+      <strong>Slanted end, wider at the bottom</strong> — the date came from the children below. <br />Leaves never get
+      either mark: a story's dates can only be its own, so marking them would just be noise.
+    </div>
+    <div class="panel">
+      <div class="tl tl2 c4">
+        <div class="tlhead">
+          <div></div>
+          <div class="months12">
+            <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span
+            ><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span>
+          </div>
+        </div>
+        <div class="tlbody">
+          <!-- 1 · own dates, children inside -->
+          <div class="rowlbl">Own dates<small>children fit inside</small></div>
+          <div class="lane lane12 tight" style="min-height: 26px">
+            <div class="bar lv1 r4 own-s own-d" style="left: 0%; width: 41.6%; top: 0">Order Playback</div>
+          </div>
+          <div></div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="bar lv2 r4" style="left: 2%; width: 12%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 14.3%; width: 15.7%; top: 0"></div>
+            <div class="bar lv2 r2" style="left: 30.3%; width: 9.7%; top: 0"></div>
+          </div>
+
+          <!-- 2 · rolled only -->
+          <div class="rowlbl grouptop">Rolled up<small>no own dates</small></div>
+          <div class="lane lane12 tight grouptop" style="min-height: 26px">
+            <div class="bar lv1 r2 roll-s roll-d" style="left: 8.3%; width: 41.7%; top: 0">Favorite Sharing</div>
+          </div>
+          <div></div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="bar lv2 r4" style="left: 8.3%; width: 11.7%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 20.3%; width: 15.7%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 36.3%; width: 13.7%; top: 0"></div>
+          </div>
+
+          <!-- 3 · mixed: own start, rolled due -->
+          <div class="rowlbl grouptop">Own start, rolled due<small>only Start date set</small></div>
+          <div class="lane lane12 tight grouptop" style="min-height: 26px">
+            <div class="bar lv1 r4 own-s roll-d" style="left: 4%; width: 42%; top: 0">Internationalization</div>
+          </div>
+          <div></div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="bar lv2 r4" style="left: 4%; width: 14%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 18.3%; width: 14.7%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 33.3%; width: 12.7%; top: 0"></div>
+          </div>
+
+          <!-- 4 · own dates, children overrun, parent wins -->
+          <div class="rowlbl grouptop">Children overrun<small>parent first, then children</small></div>
+          <div class="lane lane12 tight grouptop" style="min-height: 26px">
+            <div class="bar lv1 r4 own-s own-d" style="left: 0%; width: 33.3%; top: 0">Digital menu board</div>
+            <div class="bar lv1 overrun roll-d" style="left: 33.3%; width: 11.7%; top: 0">+6 wk</div>
+          </div>
+          <div></div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="bar lv2 r4" style="left: 1%; width: 11%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 12.3%; width: 15%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 27.6%; width: 17.4%; top: 0"></div>
+          </div>
+
+          <!-- 5 · same data, widest range -->
+          <div class="rowlbl grouptop">Children overrun<small>widest range</small></div>
+          <div class="lane lane12 tight grouptop" style="min-height: 26px">
+            <div class="bar lv1 r4 own-s roll-d" style="left: 0%; width: 45%; top: 0">Digital menu board</div>
+            <div class="owndue" style="left: 33.3%; height: 26px" title="own due date"></div>
+          </div>
+          <div></div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="bar lv2 r4" style="left: 1%; width: 11%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 12.3%; width: 15%; top: 0"></div>
+            <div class="bar lv2 r4" style="left: 27.6%; width: 17.4%; top: 0"></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        Rows 4 and 5 use the same data with different rollup methods. With <em>parent first</em>, the bar stays on the
+        parent's own dates. The dark cap marks that commitment, and the amber overrun shows how far the children
+        actually run past it. With <em>widest range</em>, the bar stretches, its end becomes slanted (the date now comes
+        from a child), and an amber tick stays where the parent's own due date was. Either way, the conflict stays
+        visible. Row 2 is drawn in a lighter rung: <code>evidencedRung</code> only counts the item's own fields, and its
+        dates belong to its children.
+      </p>
+    </div>
+
+    <h3>C5 · C1's first outcome, with end marks</h3>
+    <div class="panel">
+      <div class="tl tl2 nolbl c4">
+        <div class="tlhead">
+          <div class="months12">
+            <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span
+            ><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span>
+          </div>
+        </div>
+        <div class="tlbody">
+          <div class="lane lane12 tight" style="min-height: 26px">
+            <div class="today" style="left: 1%"></div>
+            <div class="frontier" style="left: 41.67%"></div>
+            <div
+              class="bar lv1 r2 roll-s roll-d"
+              title="NPS — ave 8 · no own dates · Oct–Feb rolled up from initiatives"
+              style="left: 0%; width: 41.4%; top: 0"
+            >
+              NPS — ave 8
+            </div>
+            <div
+              class="bar lv1 r2 projected join-l seam-s"
+              style="left: calc(41.4% - 8px); width: calc(41.9% + 8px); top: 0"
+            ></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 18px">
+            <div class="frontier" style="left: 41.67%"></div>
+            <div
+              class="bar lv2 r4 own-s own-d"
+              title="Order Playback · own dates Oct–Dec · 3 epics inside"
+              style="left: 0%; width: 24.6%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r4 own-s own-d"
+              title="Favorite Sharing · own dates Jan–mid Feb"
+              style="left: 25%; width: 12.5%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 overrun roll-d"
+              title="Favorite Sharing · Perms epic runs 2 wk past the own due date"
+              style="left: 37.5%; width: 3.9%; top: 0"
+            >
+              +2w
+            </div>
+            <div
+              class="bar lv2 r2 projected"
+              title="Internationalization · #3 · sized"
+              style="left: 41.9%; width: 16.1%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r0 projected nominal"
+              title="Pets Corner · #4 · no estimate"
+              style="left: 58.4%; width: 12.2%; top: 0"
+            ></div>
+            <div
+              class="bar lv2 r1 projected"
+              title="Digital Channel · #5 · refined"
+              style="left: 71%; width: 12.3%; top: 0"
+            ></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 12px">
+            <div class="frontier" style="left: 41.67%"></div>
+            <div
+              class="bar lv3 done own-s own-d"
+              title="Playback API · own dates · Done"
+              style="left: 0%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 prog roll-s roll-d"
+              title="Playback UI · no own dates · rolled up from stories"
+              style="left: 8.3%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 prog own-s own-d"
+              title="Playback QA · own dates"
+              style="left: 16.6%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r4 own-s roll-d"
+              title="Share links · own start, due rolled up from last story"
+              style="left: 25%; width: 8%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r4 own-s own-d"
+              title="Perms · own dates · ends after its initiative's own due"
+              style="left: 33.3%; width: 8.1%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r2 projected"
+              title="Lang packs · sized · no stories"
+              style="left: 41.9%; width: 7.9%; top: 0"
+            ></div>
+            <div
+              class="bar lv3 r0 projected nominal"
+              title="Unnamed epic · no estimate"
+              style="left: 50.1%; width: 7.9%; top: 0"
+            ></div>
+            <div class="gap lv3" style="position: absolute; left: 58.4%; width: 24.9%; top: 0"></div>
+          </div>
+          <div class="lane lane12 tight" style="min-height: 8px">
+            <div class="frontier" style="left: 41.67%"></div>
+            <div class="bar lv4 done" style="left: 0%; width: 2.6%; top: 0"></div>
+            <div class="bar lv4 done" style="left: 2.7%; width: 2.6%; top: 0"></div>
+            <div class="bar lv4 done" style="left: 5.4%; width: 2.6%; top: 0"></div>
+            <div class="bar lv4 done" style="left: 8.3%; width: 1.7%; top: 0"></div>
+            <div class="bar lv4 done" style="left: 10.1%; width: 1.9%; top: 0"></div>
+            <div class="bar lv4 prog" style="left: 12.1%; width: 2.4%; top: 0"></div>
+            <div class="bar lv4 r4" style="left: 14.6%; width: 1.7%; top: 0"></div>
+            <div class="bar lv4 done" style="left: 16.6%; width: 2.4%; top: 0"></div>
+            <div class="bar lv4 prog" style="left: 19.1%; width: 2.7%; top: 0"></div>
+            <div class="bar lv4 r4" style="left: 21.9%; width: 2.7%; top: 0"></div>
+            <div class="bar lv4 r4" style="left: 25%; width: 3%; top: 0"></div>
+            <div class="bar lv4 r4" style="left: 28.1%; width: 4.9%; top: 0"></div>
+            <div class="bar lv4 r2 projected" style="left: 33.3%; width: 4%; top: 0"></div>
+            <div class="bar lv4 r2 projected" style="left: 37.4%; width: 4%; top: 0"></div>
+            <div class="gap lv4" style="position: absolute; left: 41.9%; width: 41.4%; top: 0"></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        The outcome has no dates of its own, so it is slanted at both ends and drapes over its initiatives. Favorite
+        Sharing committed to mid-February, but its Perms epic runs two weeks past that, and the amber overrun shows it
+        without anyone having to open the issue. Projected (hatched) bars get no end marks because they have no dates;
+        their position comes from the queue. Hover any bar for its record.
+      </p>
+    </div>
+
+    <div class="note q">
+      <strong>Channel budget.</strong> Fill = rung or execution state. Border colour = the status's claim (§B). Hatch =
+      projected. Red dotted outline = made-up width. <strong>End shape = date source</strong> is the only channel left
+      that doesn't compete with those. One collision to accept: an own-date cap darkens the left or right edge of a bar
+      whose border is already showing a contradiction. The cap wins that edge; the claim colour still shows on the top
+      and bottom.
+    </div>
+
     <!-- ============================================================ -->
     <h2 id="d">D · The squeeze — overlapping children</h2>
     <p class="intro">
@@ -1791,7 +2237,7 @@
     <h2 id="e">E · Giving scale to unsized work</h2>
     <p class="intro">
       An unestimated item has width 0 and vanishes — exactly backwards, since unestimated work is what the report exists
-      to surface. Four ways to give it presence.
+      to surface. Three ways to give it presence (E1–E3), then a proposal to change its shape instead (E4–E7).
     </p>
 
     <div class="panel">
@@ -1880,6 +2326,321 @@
       <strong>Open question.</strong> Does width mean <em>points</em> or <em>time</em>? A2's undiscovered-scope gap
       needs points. C's timeline needs time. If one view uses both we'll need an explicit toggle rather than a silent
       switch.
+    </div>
+
+    <h3>E4 · Shape = what we know <span class="badge">proposal</span></h3>
+    <div class="note">
+      <strong>A box makes two claims at once:</strong> when the work happens (its ends) and how much work it is (its
+      filled length). Those come from different fields, so draw them as different parts of the shape, and let an item
+      that is missing one simply lose that part. <br />▐█▌ <strong>Box</strong> — dates and an estimate. <br />├─┤
+      <strong>I-beam</strong> — real dates, no estimate. The ends are true; what's inside is unknown. <br />▨
+      <strong>Hatched box</strong> — an estimate, no dates. The size is true; the position is queued. <br />●┈┈
+      <strong>Dot + dotted tail</strong> — neither. The dot says it exists; the tail only holds its place in the queue,
+      and claims no size.
+    </div>
+    <div class="panel">
+      <div class="tl tl2 c4 quiet">
+        <div class="tlbody">
+          <div class="rowlbl">Dates + estimate</div>
+          <div class="lane lane12" style="min-height: 30px">
+            <div class="bar sm r4" style="left: 0%; width: 30%; top: 5px">Order Playback</div>
+          </div>
+          <div class="rowlbl">Dates, no estimate</div>
+          <div class="lane lane12" style="min-height: 30px">
+            <div class="bar sm ibeam r1" style="left: 0%; width: 30%; top: 5px"><span>Pets Corner</span></div>
+          </div>
+          <div class="rowlbl">Queued, estimated</div>
+          <div class="lane lane12" style="min-height: 30px">
+            <div class="bar sm r2 projected" style="left: 0%; width: 30%; top: 5px">Internationalization</div>
+          </div>
+          <div class="rowlbl">Queued, no estimate</div>
+          <div class="lane lane12" style="min-height: 30px">
+            <div class="bar sm pip r0" style="left: 0%; width: 30%; top: 5px"><span>Unnamed epic</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        Compare with C2. The dashed edge and the red dotted rule are gone because the shape now says both things. That
+        frees the border for the claim (§B) again. Fill still means rung or execution state. An I-beam and a dot have
+        almost no fill, but an item without an estimate can only be Unknown or Refined, so the line just needs to show
+        two colours. It is drawn in the rung's text colour.
+      </p>
+    </div>
+
+    <h3>E5 · At every level</h3>
+    <div class="panel">
+      <div class="tl tl2 c4 quiet">
+        <div class="tlhead">
+          <div></div>
+          <div class="colhd">
+            <span style="left: 0%">Box</span><span style="left: 25%">I-beam</span><span style="left: 50%">Hatched</span
+            ><span style="left: 75%">Dot + tail</span>
+          </div>
+        </div>
+        <div class="tlbody">
+          <div class="rowlbl">Outcome · 26px</div>
+          <div class="lane lane12" style="min-height: 34px">
+            <div class="bar lv1 r4" style="left: 0%; width: 21%; top: 4px">NPS — ave 8</div>
+            <div class="bar lv1 ibeam r1" style="left: 25%; width: 21%; top: 4px"><span>Traffic +25%</span></div>
+            <div class="bar lv1 r2 projected" style="left: 50%; width: 21%; top: 4px">Loyalty</div>
+            <div class="bar lv1 pip r0" style="left: 75%; width: 21%; top: 4px"><span>New market</span></div>
+          </div>
+          <div class="rowlbl">Initiative · 18px</div>
+          <div class="lane lane12" style="min-height: 26px">
+            <div class="bar lv2 r4" style="left: 0%; width: 21%; top: 4px"></div>
+            <div class="bar lv2 ibeam r1" style="left: 25%; width: 21%; top: 4px"></div>
+            <div class="bar lv2 r2 projected" style="left: 50%; width: 21%; top: 4px"></div>
+            <div class="bar lv2 pip r0" style="left: 75%; width: 21%; top: 4px"></div>
+          </div>
+          <div class="rowlbl">Epic · 12px</div>
+          <div class="lane lane12" style="min-height: 20px">
+            <div class="bar lv3 r4" style="left: 0%; width: 10%; top: 4px"></div>
+            <div class="bar lv3 r4" style="left: 10.3%; width: 10.7%; top: 4px"></div>
+            <div class="bar lv3 ibeam r1" style="left: 25%; width: 10%; top: 4px"></div>
+            <div class="bar lv3 ibeam r0" style="left: 35.3%; width: 10.7%; top: 4px"></div>
+            <div class="bar lv3 r2 projected" style="left: 50%; width: 10%; top: 4px"></div>
+            <div class="bar lv3 r2 projected" style="left: 60.3%; width: 10.7%; top: 4px"></div>
+            <div class="bar lv3 pip r0" style="left: 75%; width: 10%; top: 4px"></div>
+            <div class="bar lv3 pip r1" style="left: 85.3%; width: 10.7%; top: 4px"></div>
+          </div>
+          <div class="rowlbl">Story · 8px</div>
+          <div class="lane lane12" style="min-height: 16px">
+            <div class="bar lv4 r4" style="left: 0%; width: 5%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 5.2%; width: 7%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 12.4%; width: 4%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 16.6%; width: 4.4%; top: 4px"></div>
+            <div class="bar lv4 ibeam r0" style="left: 25%; width: 5%; top: 4px"></div>
+            <div class="bar lv4 ibeam r0" style="left: 30.2%; width: 7%; top: 4px"></div>
+            <div class="bar lv4 ibeam r1" style="left: 37.4%; width: 4%; top: 4px"></div>
+            <div class="bar lv4 ibeam r0" style="left: 41.6%; width: 4.4%; top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: 50%; width: 5%; top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: 55.2%; width: 7%; top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: 62.4%; width: 4%; top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: 66.6%; width: 4.4%; top: 4px"></div>
+            <div class="bar lv4 pip r0" style="left: 75%; width: 5%; top: 4px"></div>
+            <div class="bar lv4 pip r0" style="left: 80.2%; width: 7%; top: 4px"></div>
+            <div class="bar lv4 pip r1" style="left: 87.4%; width: 4%; top: 4px"></div>
+            <div class="bar lv4 pip r0" style="left: 91.6%; width: 4.4%; top: 4px"></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        The test is the story row. At 8px tall, a run of I-beams has to stay countable without the white hairline that
+        separates boxes. Each one brings its own caps, so it does. A run of dots also stays countable because each dot
+        marks where an item starts.
+      </p>
+    </div>
+
+    <h3>E6 · The awkward cases</h3>
+    <div class="panel">
+      <div class="tl tl2 c4">
+        <div class="tlhead">
+          <div></div>
+          <div class="colhd"><span style="left: 0%">Today (C2 / C4)</span><span style="left: 50%">Proposed</span></div>
+        </div>
+        <div class="tlbody">
+          <div class="rowlbl">Claims Sized<small>no estimate on it</small></div>
+          <div class="lane lane12" style="min-height: 36px">
+            <div class="bar lv1 r0" style="left: 0%; width: 40%; top: 5px; border-color: var(--r2)">Pets Corner</div>
+            <div class="bar lv1 ibeam r0 ib-claim2" style="left: 50%; width: 40%; top: 5px">
+              <span>Pets Corner</span>
+            </div>
+          </div>
+          <div class="rowlbl">Own start, rolled due<small>no estimate</small></div>
+          <div class="lane lane12" style="min-height: 36px">
+            <div class="bar lv1 r1 own-s roll-d" style="left: 0%; width: 40%; top: 5px">Digital Channel</div>
+            <div class="bar lv1 ibeam r1 ib-own-s ib-roll-d" style="left: 50%; width: 40%; top: 5px">
+              <span>Digital Channel</span>
+            </div>
+          </div>
+          <div class="rowlbl">In progress<small>nothing planned</small></div>
+          <div class="lane lane12" style="min-height: 36px">
+            <div class="bar lv1 prog unplanned" style="left: 0%; width: 40%; top: 5px">Hotfix train</div>
+            <div class="bar lv1 ibeam prog ib-unplanned" style="left: 50%; width: 40%; top: 5px">
+              <span>Hotfix train</span>
+            </div>
+          </div>
+          <div class="rowlbl">Queued, claims Sized<small>no estimate on it</small></div>
+          <div class="lane lane12" style="min-height: 36px">
+            <div
+              class="bar lv1 r0 projected nominal"
+              style="left: 0%; width: 40%; top: 5px; border-color: var(--r2) !important; border-style: solid !important"
+            >
+              Unnamed epic
+            </div>
+            <div class="bar lv1 pip r0 ib-claim2" style="left: 50%; width: 40%; top: 5px">
+              <span>Unnamed epic</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        <strong>Claims Sized:</strong> the status promises a size, but the I-beam is visibly empty. Drawing the claimed
+        rung's colour on the line makes the hollow promise look hollow, which is §B's rule moved from the border to the
+        line. <strong>Own vs. rolled ends:</strong> an I-beam has no slanted end to borrow, so a rolled-up date becomes
+        a half-height cap that rests on the children, and an own date keeps C4's dark cap.
+        <strong>In progress, nothing planned:</strong> the red inset ring would draw a box around the I-beam, so the red
+        moves onto the line instead (blue ends, red inside). <strong>Parents:</strong> a parent whose estimate rolls up
+        from its children has an estimate, so it stays a box. I-beams and dots mostly appear on epics and stories.
+      </p>
+    </div>
+
+    <h3>E7 · The row that started this — before and after</h3>
+    <div class="panel">
+      <div class="tl tl2 c4">
+        <div class="tlbody">
+          <div class="rowlbl">Today<small>queued, no estimates</small></div>
+          <div class="lane lane12" style="min-height: 26px">
+            <div class="bar lv2 done" style="left: 0%; width: 7%; top: 4px"></div>
+            <div
+              class="bar lv2 r0 projected nominal"
+              style="
+                left: 7.3%;
+                width: 7%;
+                top: 4px;
+                border-color: var(--r2) !important;
+                border-style: solid !important;
+              "
+            ></div>
+            <div
+              class="bar lv2 r0 projected nominal"
+              style="
+                left: 14.6%;
+                width: 7%;
+                top: 4px;
+                border-color: var(--r2) !important;
+                border-style: solid !important;
+              "
+            ></div>
+            <div class="bar lv2 r1 projected nominal" style="left: 21.9%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 r1 projected nominal" style="left: 29.2%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 r0 projected nominal" style="left: 36.5%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 r0 projected nominal" style="left: 43.8%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 r1 projected nominal" style="left: 51.1%; width: 7%; top: 4px"></div>
+          </div>
+          <div class="rowlbl">Proposed</div>
+          <div class="lane lane12" style="min-height: 26px">
+            <div class="bar lv2 done" style="left: 0%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0 ib-claim2" style="left: 7.3%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0 ib-claim2" style="left: 14.6%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r1" style="left: 21.9%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r1" style="left: 29.2%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0" style="left: 36.5%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0" style="left: 43.8%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r1" style="left: 51.1%; width: 7%; top: 4px"></div>
+          </div>
+
+          <div class="rowlbl grouptop">Today<small>dated, mixed</small></div>
+          <div class="lane lane12 grouptop" style="min-height: 20px">
+            <div class="bar lv3 done" style="left: 0%; width: 6%; top: 4px"></div>
+            <div class="bar lv3 r4" style="left: 6.3%; width: 8%; top: 4px"></div>
+            <div class="bar lv3 r0" style="left: 14.6%; width: 10%; top: 4px"></div>
+            <div class="bar lv3 r4" style="left: 24.9%; width: 6%; top: 4px"></div>
+            <div class="bar lv3 r1" style="left: 31.2%; width: 9%; top: 4px"></div>
+            <div class="bar lv3 r2" style="left: 40.5%; width: 7%; top: 4px"></div>
+            <div class="bar lv3 r0" style="left: 47.8%; width: 8%; top: 4px"></div>
+          </div>
+          <div class="rowlbl">Proposed</div>
+          <div class="lane lane12" style="min-height: 20px">
+            <div class="bar lv3 done" style="left: 0%; width: 6%; top: 4px"></div>
+            <div class="bar lv3 r4" style="left: 6.3%; width: 8%; top: 4px"></div>
+            <div class="bar lv3 ibeam r0" style="left: 14.6%; width: 10%; top: 4px"></div>
+            <div class="bar lv3 r4" style="left: 24.9%; width: 6%; top: 4px"></div>
+            <div class="bar lv3 ibeam r1" style="left: 31.2%; width: 9%; top: 4px"></div>
+            <div class="bar lv3 r2" style="left: 40.5%; width: 7%; top: 4px"></div>
+            <div class="bar lv3 ibeam r0" style="left: 47.8%; width: 8%; top: 4px"></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        Top pair: the prototype screenshot. Seven boxes, each carrying a hatch, a dashed edge, a red dotted rule and
+        sometimes a claim border, become seven dots. Bottom pair: dated epics where an estimate is missing. Today they
+        are just paler boxes, and you only notice them if you can tell Unknown grey from Refined lilac. Proposed, they
+        are hollow.
+      </p>
+    </div>
+
+    <h3>E8 · Dot only — no tail <span class="badge rec">recommended</span></h3>
+    <div class="panel">
+      <div class="tl tl2 c4 quiet">
+        <div class="tlbody">
+          <div class="rowlbl">Dot + tail<small>E7, for comparison</small></div>
+          <div class="lane lane12" style="min-height: 26px">
+            <div class="bar lv2 done" style="left: 0%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0 ib-claim2" style="left: 7.3%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0 ib-claim2" style="left: 14.6%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r1" style="left: 21.9%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r1" style="left: 29.2%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0" style="left: 36.5%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r0" style="left: 43.8%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip r1" style="left: 51.1%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 r2 projected" style="left: 58.4%; width: 14%; top: 4px"></div>
+          </div>
+          <div class="rowlbl">Dot only</div>
+          <div class="lane lane12" style="min-height: 26px">
+            <div class="bar lv2 done" style="left: 0%; width: 7%; top: 4px"></div>
+            <div class="bar lv2 pip dot r0 ib-claim2" style="left: calc(7.3% + 2px); top: 4px"></div>
+            <div class="bar lv2 pip dot r0 ib-claim2" style="left: calc(7.3% + 17px); top: 4px"></div>
+            <div class="bar lv2 pip dot r1" style="left: calc(7.3% + 32px); top: 4px"></div>
+            <div class="bar lv2 pip dot r1" style="left: calc(7.3% + 47px); top: 4px"></div>
+            <div class="bar lv2 pip dot r0" style="left: calc(7.3% + 62px); top: 4px"></div>
+            <div class="bar lv2 pip dot r0" style="left: calc(7.3% + 77px); top: 4px"></div>
+            <div class="bar lv2 pip dot r1" style="left: calc(7.3% + 92px); top: 4px"></div>
+            <div class="bar lv2 r2 projected" style="left: calc(7.3% + 107px); width: 14%; top: 4px"></div>
+          </div>
+
+          <div class="rowlbl grouptop">Epics<small>dots between sized work</small></div>
+          <div class="lane lane12 grouptop" style="min-height: 20px">
+            <div class="bar lv3 done" style="left: 0%; width: 8%; top: 4px"></div>
+            <div class="bar lv3 r4" style="left: 8.3%; width: 10%; top: 4px"></div>
+            <div class="bar lv3 ibeam r0" style="left: 18.6%; width: 9%; top: 4px"></div>
+            <div class="bar lv3 r4" style="left: 27.9%; width: 12%; top: 4px"></div>
+            <div class="bar lv3 r2 projected" style="left: 40.2%; width: 6%; top: 4px"></div>
+            <div class="bar lv3 pip dot r0" style="left: calc(46.2% + 2px); top: 4px"></div>
+            <div class="bar lv3 r2 projected" style="left: calc(46.2% + 13px); width: 5%; top: 4px"></div>
+            <div class="bar lv3 pip dot r1" style="left: calc(51.2% + 15px); top: 4px"></div>
+            <div class="bar lv3 pip dot r0" style="left: calc(51.2% + 26px); top: 4px"></div>
+            <div class="bar lv3 r1 projected" style="left: calc(51.2% + 37px); width: 7%; top: 4px"></div>
+          </div>
+          <div class="rowlbl">Stories</div>
+          <div class="lane lane12" style="min-height: 16px">
+            <div class="bar lv4 done" style="left: 0%; width: 3%; top: 4px"></div>
+            <div class="bar lv4 done" style="left: 3.2%; width: 2.6%; top: 4px"></div>
+            <div class="bar lv4 prog" style="left: 6%; width: 2.4%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 8.6%; width: 4%; top: 4px"></div>
+            <div class="bar lv4 ibeam r0" style="left: 12.8%; width: 3%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 16%; width: 2.8%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 19%; width: 3.4%; top: 4px"></div>
+            <div class="bar lv4 ibeam r1" style="left: 22.6%; width: 4%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 26.8%; width: 3%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 30%; width: 4.2%; top: 4px"></div>
+            <div class="bar lv4 r4" style="left: 34.4%; width: 5.4%; top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: 40.2%; width: 3%; top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: 43.4%; width: 2.8%; top: 4px"></div>
+            <div class="bar lv4 pip dot r0" style="left: calc(46.2% + 2px); top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: calc(46.2% + 11px); width: 2.6%; top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: calc(49% + 11px); width: 2.2%; top: 4px"></div>
+            <div class="bar lv4 pip dot r0" style="left: calc(51.2% + 13px); top: 4px"></div>
+            <div class="bar lv4 pip dot r0" style="left: calc(51.2% + 22px); top: 4px"></div>
+            <div class="bar lv4 pip dot r1" style="left: calc(51.2% + 31px); top: 4px"></div>
+            <div class="bar lv4 pip dot r0" style="left: calc(51.2% + 40px); top: 4px"></div>
+            <div class="bar lv4 r2 projected" style="left: calc(51.2% + 49px); width: 3.4%; top: 4px"></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" style="margin-bottom: 0">
+        Each unestimated, undated item is one dot. It takes up a few pixels, not a stretch of time, so a run of them
+        doesn't overlap, and the work queued after them moves up by those pixels instead of by a made-up duration. The
+        dot claims nothing about size, which is all we actually know.
+      </p>
+    </div>
+
+    <div class="note">
+      <strong>Decided: dot only.</strong> Without the tail the queue reads a little optimistic, because unestimated work
+      takes up no time. That's acceptable. If it starts to matter, space the dots wider first. If it still matters, give
+      each dot a width from the average size of its estimated siblings, the same fallback
+      <code>percent-complete</code> already uses for unestimated children. Drawn that way it would need its own mark,
+      because the width would be borrowed.
     </div>
 
     <!-- ============================================================ -->
