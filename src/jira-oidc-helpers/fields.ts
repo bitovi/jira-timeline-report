@@ -26,6 +26,22 @@ function fieldPriorityOrder(
 }
 
 /**
+ * System fields the app reads by display name, pinned to the name the code expects. Jira's
+ * "issues → work items" rename changes these display names per site (e.g. `issuelinks` became
+ * "Linked work items"), which silently dropped the field from requests and responses.
+ */
+const CANONICAL_SYSTEM_FIELD_NAMES: Record<string, string> = {
+  issuelinks: 'Linked Issues',
+  issuetype: 'Issue Type',
+  parent: 'Parent',
+  status: 'Status',
+  created: 'Created',
+  labels: 'Labels',
+  fixVersions: 'Fix versions',
+  duedate: 'Due date',
+};
+
+/**
  * Build the name↔id maps from the raw Jira field list.
  *
  * `nameMap` (name → id) collapses each display name to a single id via `fieldPriorityOrder`.
@@ -52,6 +68,27 @@ export function deriveFieldMaps(fields: Array<{ name: string; id: string; scope?
     if (idToFields[fieldName].length > 1) {
       for (const f of idToFields[fieldName]) {
         ambiguousFieldIds.add(f.id);
+      }
+    }
+  }
+
+  // The site's current display name stays in `nameMap` as an alias.
+  for (const f of fields) {
+    const canonicalName = CANONICAL_SYSTEM_FIELD_NAMES[f.id];
+    if (canonicalName) {
+      idMap[f.id] = canonicalName;
+      nameMap[canonicalName] = f.id;
+
+      // Another field already displayed under the canonical name (e.g. a custom "Linked Issues"
+      // once `issuelinks` is "Linked work items") is a name collision: both keep their raw-id slot,
+      // and the system field owns the name — the other field drops out of `idMap` so it can't
+      // overwrite it in `mapIdsToNames`.
+      for (const other of idToFields[canonicalName] ?? []) {
+        if (other.id !== f.id) {
+          ambiguousFieldIds.add(f.id);
+          ambiguousFieldIds.add(other.id);
+          delete idMap[other.id];
+        }
       }
     }
   }
