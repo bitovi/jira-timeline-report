@@ -481,7 +481,6 @@ export class RouteData extends ObservableObject {
           {
             rawIssuesRequestData: value.from(this, 'rawIssuesRequestData'),
             configurationPromise: value.from(this, 'normalizeOptions'),
-            licensingPromise: value.from(this, 'licensingPromise'),
           },
           { listenTo, resolve },
         );

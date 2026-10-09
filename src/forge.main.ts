@@ -15,8 +15,8 @@ interface LicensingInformation {
 }
 
 /**
- * Asks Jira whether this site has paid for the app. An inactive license makes reports show the
- * "no licensing" error (canjs/controls/timeline-configuration/state-helpers.js).
+ * Asks Jira whether this site has paid for the app. An inactive license no longer blocks reports —
+ * it turns the sidebar's Eggbert red and frowning, with a subscribe tooltip (Branding.tsx).
  *
  * Forge puts licensing on the view context instead of a REST endpoint like Connect's, and has three
  * outcomes:

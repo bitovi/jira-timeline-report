@@ -187,12 +187,7 @@ const ChildReportView: FC<ChildReportProps> = ({
   }
 
   if (loadingState.status === 'rejected') {
-    return (
-      <ErrorMessage
-        noLicense={loadingState.rejectReason?.type === 'no-licensing'}
-        errorMessage={loadingState.rejectReason?.errorMessages?.[0]}
-      />
-    );
+    return <ErrorMessage errorMessage={loadingState.rejectReason?.errorMessages?.[0]} />;
   }
 
   if (loadingState.status === 'pending') {
