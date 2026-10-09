@@ -6,6 +6,7 @@ import {
   fetchJqlAutocompleteSuggestions,
   fetchLatestComment,
   fetchRecentComments,
+  searchAllJiraIssuesWithJQL,
 } from './jira';
 import { Config } from './types';
 
@@ -101,5 +102,23 @@ describe('fetchRecentComments', () => {
     await fetchRecentComments(config)('a/b');
 
     expect(requestHelper).toHaveBeenCalledWith('/api/3/issue/a%2Fb/comment?orderBy=-created&maxResults=100');
+  });
+});
+
+describe('searchAllJiraIssuesWithJQL', () => {
+  it('asks for the approximate count through requestHelper, so it carries the cloud id and auth', async () => {
+    const { config, requestHelper } = makeConfig();
+    requestHelper.mockImplementation((async (url: string) =>
+      url.includes('approximate-count') ? { count: 3 } : { issues: [], isLast: true }) as any);
+    const onProgress = vi.fn();
+
+    await searchAllJiraIssuesWithJQL(config)({ jql: 'issue = A-1' }, onProgress);
+
+    expect(requestHelper).toHaveBeenCalledWith('/api/3/search/approximate-count', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jql: 'issue = A-1' }),
+    });
+    expect(onProgress).toHaveBeenCalledWith(0, 3);
   });
 });

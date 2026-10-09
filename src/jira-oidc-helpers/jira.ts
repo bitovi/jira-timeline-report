@@ -263,16 +263,16 @@ export function searchAllJiraIssuesWithJQL(config: Config) {
 
     // Run count + first page in parallel for better performance
     const countPromise = params.jql
-      ? fetch(`${config.env.JIRA_API_URL}/rest/api/3/search/approximate-count`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jql: params.jql }),
+      ? (
+          config.requestHelper('/api/3/search/approximate-count', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jql: params.jql }),
+          }) as unknown as Promise<{ count: number }>
+        ).catch((error) => {
+          console.warn('Could not get approximate count:', error);
+          return { count: 0 };
         })
-          .then((res) => res.json())
-          .catch((error) => {
-            console.warn('Could not get approximate count:', error);
-            return { count: 0 };
-          })
       : Promise.resolve({ count: 0 });
 
     const firstPageSize = Math.min(limit || MAX_RESULTS, MAX_RESULTS);
