@@ -31,6 +31,20 @@ describe('deriveFieldMaps', () => {
     expect(ambiguousFieldIds.size).toBe(0);
   });
 
+  test('keeps the canonical name for system fields Jira has renamed (issues → work items)', () => {
+    const { nameMap, idMap } = deriveFieldMaps([
+      { name: 'Linked work items', id: 'issuelinks' },
+      { name: 'Work type', id: 'issuetype' },
+    ]);
+
+    expect(idMap.issuelinks).toBe('Linked Issues');
+    expect(nameMap['Linked Issues']).toBe('issuelinks');
+    expect(idMap.issuetype).toBe('Issue Type');
+    expect(nameMap['Issue Type']).toBe('issuetype');
+    // the site's current display name still resolves
+    expect(nameMap['Linked work items']).toBe('issuelinks');
+  });
+
   test('prefers a field without a scope over one with a scope when resolving a name to an id', () => {
     const { nameMap } = deriveFieldMaps([
       { name: 'Start date', id: 'scoped', scope: 'PROJECT' },
