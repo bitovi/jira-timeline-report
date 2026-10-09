@@ -78,6 +78,18 @@ export function deriveFieldMaps(fields: Array<{ name: string; id: string; scope?
     if (canonicalName) {
       idMap[f.id] = canonicalName;
       nameMap[canonicalName] = f.id;
+
+      // Another field already displayed under the canonical name (e.g. a custom "Linked Issues"
+      // once `issuelinks` is "Linked work items") is a name collision: both keep their raw-id slot,
+      // and the system field owns the name — the other field drops out of `idMap` so it can't
+      // overwrite it in `mapIdsToNames`.
+      for (const other of idToFields[canonicalName] ?? []) {
+        if (other.id !== f.id) {
+          ambiguousFieldIds.add(f.id);
+          ambiguousFieldIds.add(other.id);
+          delete idMap[other.id];
+        }
+      }
     }
   }
 
