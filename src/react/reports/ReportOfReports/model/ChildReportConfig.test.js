@@ -369,7 +369,6 @@ describe('ChildReportConfig', () => {
         // Exactly what the shell passes: route-data.js wires `configurationPromise` to
         // `normalizeOptions` too, not to state-helpers' `configurationPromise`.
         normalizeOptions: {},
-        licensingPromise: Promise.resolve({ active: true }),
         fieldsToRequest: ['Status'],
       });
 
@@ -388,7 +387,6 @@ describe('ChildReportConfig', () => {
         },
         // The bootstrap state: metadata hasn't landed, so `normalizeOptions` is still null.
         normalizeOptions: null,
-        licensingPromise: Promise.resolve({ active: true }),
       });
 
       const config = new ChildReportConfig({ queryParams: 'jql=project%20%3D%20ONE', parent });

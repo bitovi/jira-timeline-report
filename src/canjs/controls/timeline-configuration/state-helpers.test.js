@@ -98,7 +98,6 @@ test('derivedIssuesRequestData', async function (assert) {
       {
         rawIssuesRequestData,
         configurationPromise,
-        licensingPromise: value.with({ active: true }),
       },
       hooks,
     );
@@ -234,7 +233,6 @@ describe('two rawIssuesRequestData over identical inputs', () => {
           {
             rawIssuesRequestData: shared,
             configurationPromise: configuration,
-            licensingPromise: value.with({ active: true }),
           },
           hooks,
         );

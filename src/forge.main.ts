@@ -1,0 +1,200 @@
+import { router, view } from '@forge/bridge';
+
+import mainHelper from './shared/main-helper.js';
+import { createForgeKvsStorage } from './jira/storage/index.forge';
+import { createForgeLinkBuilder, createForgeRouting } from './routing/index.forge';
+import { getForgeRequestHelper } from './request-helpers/forge-request-helper';
+import { interceptExternalLinkClicks, setExternalOpener } from './shared/open-external';
+import { setAppReloader } from './shared/reload-app';
+
+import type { RoutingConfiguration } from './routing/common';
+
+interface LicensingInformation {
+  active: boolean;
+  evaluation: boolean;
+}
+
+/**
+ * Asks Jira whether this site has paid for the app. An inactive license no longer blocks reports —
+ * it turns the sidebar's Eggbert red and frowning, with a subscribe tooltip (Branding.tsx).
+ *
+ * Forge puts licensing on the view context instead of a REST endpoint like Connect's, and has three
+ * outcomes:
+ *
+ * 1. **License present** — use it, exactly as Connect does.
+ * 2. **No license** — allowed. Forge only attaches a license in production; development and staging
+ *    (bitovi-training) get none. This is the Forge version of Connect's free pass for staging/local
+ *    builds (`plugin.main.ts`), which Connect decides from the app key instead — Forge can't, because
+ *    every environment shares the key `bitovi.status-report`.
+ * 3. **The context read fails** — also allowed. **This is where Forge deliberately differs from
+ *    Connect**, which blocks on a failed licensing call. If `view.getContext()` rejects, the bridge
+ *    itself is broken and the rest of the app likely is too; we would rather not show a paying
+ *    customer a license error over that. The cost is that an unpaid site could slip through during
+ *    such a failure — and since this check runs in the browser, it was never tamper-proof anyway.
+ *
+ * TODO: revisit outcome 3. Options, roughly in order of effort:
+ * - Retry `view.getContext()` once or twice before deciding, then fail closed like Connect — a
+ *   one-off hiccup no longer locks anyone out, and a real outage stops granting free access.
+ * - Show a "couldn't verify your license, try reloading" message instead of either silently
+ *   allowing or showing the license error.
+ * - Move the check server-side into the resolver (`src/forge-resolver/`) — the only version a user
+ *   can't bypass from devtools. Check first that the resolver's invocation context carries the
+ *   license for this app.
+ */
+const getLicensing = async (): Promise<LicensingInformation> => {
+  try {
+    const { license } = await view.getContext();
+
+    if (!license) {
+      return { active: true, evaluation: false };
+    }
+
+    return { active: license.active, evaluation: license.isEvaluation };
+  } catch (err) {
+    console.error('Error reading Forge licensing information', err);
+
+    return { active: true, evaluation: false };
+  }
+};
+
+/**
+ * The URL mirror, or `null` if the bridge could not give us one.
+ *
+ * Degrading rather than throwing is deliberate: without the mirror the app still boots, reads and
+ * writes — it just loses state on refresh. Letting a failed `view.createHistory()` reject would
+ * take the whole app down over the one feature that is only a convenience.
+ */
+const getRouting = async (): Promise<RoutingConfiguration | null> => {
+  try {
+    return await createForgeRouting();
+  } catch (err) {
+    console.error('Could not create the Forge history mirror; URL state will not survive a refresh', err);
+
+    return null;
+  }
+};
+
+/**
+ * The Forge sandbox has no `allow-popups`, so every `target="_blank"` link in a report — which is
+ * how a user gets from a chart to the underlying work item — silently does nothing. `router.open`
+ * asks the container to open it instead.
+ *
+ * Installed before `mainHelper` so it is in place ahead of the first render, and fire-and-forget
+ * because `router.open` returns a promise no caller waits on.
+ */
+const installExternalOpener = (): void => {
+  setExternalOpener((url) => {
+    void router.open(url).catch((err) => {
+      console.error(`Could not open ${url} outside the app`, err);
+    });
+  });
+
+  interceptExternalLinkClicks();
+};
+
+/**
+ * A self-reload of the Custom UI iframe never gets its bridge handshake back, so the app comes back
+ * hung. `router.reload()` reloads the *container*, which rebuilds the frame properly — the same
+ * thing a user pressing refresh does. See `shared/reload-app.ts`.
+ *
+ * Fire-and-forget, like the external opener: nothing can be awaited across a page reload anyway.
+ */
+const installAppReloader = (): void => {
+  setAppReloader(() => {
+    void router.reload().catch((err) => {
+      console.error('Could not reload the page through the Forge container', err);
+    });
+  });
+};
+
+export default async function main() {
+  installExternalOpener();
+  installAppReloader();
+
+  // Awaited before `mainHelper`, not inside `configureRouting`: `view.createHistory()` is async and
+  // `AP.history` is not, so this is the one place the Forge bootstrap genuinely differs in shape
+  // from the Connect one. `configureRouting` is called synchronously by `mainHelper`, so the
+  // history object has to already exist by then.
+  const routing = await getRouting();
+
+  return mainHelper(
+    {
+      JIRA_CLIENT_ID: import.meta.env.VITE_JIRA_CLIENT_ID,
+      JIRA_SCOPE: import.meta.env.VITE_JIRA_SCOPE,
+      JIRA_CALLBACK_URL: import.meta.env.VITE_JIRA_CALLBACK_URL,
+      JIRA_API_URL: import.meta.env.VITE_JIRA_API_URL,
+      // Hardcoded, NOT read from the environment: it must equal `app.connect.key` in manifest.yml,
+      // which is fixed. `vite.forge.config.ts` sets `root: 'forge'`, so Vite never sees the repo's
+      // `.env` and `import.meta.env.VITE_JIRA_APP_KEY` compiled to `undefined` — and the repo's
+      // `.env` holds the *local Connect* key anyway. With it undefined, every Connect app-property
+      // read went to `/addons/undefined/...` and 404'd, which the Connect→KVS migration reads as
+      // "nothing to migrate". Only that migration uses this on Forge (KVS storage and the link
+      // builder ignore it).
+      JIRA_APP_KEY: 'bitovi.status-report',
+      COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA,
+      STATUS_REPORTS_ENV: import.meta.env.VITE_STATUS_REPORTS_ENV,
+      // Hardcoded empty, NOT read from the environment. `initSentry` sets
+      // `enabled: !!FRONTEND_SENTRY_DSN` (shared/sentry.js:13), so this is what keeps Sentry off on
+      // Forge — and Forge is the one host where it must stay off: a live DSN means egress, which
+      // means an `egress` manifest block customers see at install and the loss of Runs on Atlassian
+      // eligibility.
+      //
+      // Reading `import.meta.env.VITE_FRONTEND_SENTRY_DSN` here would leave that guarantee resting
+      // on the ambient environment. `scripts/generate-build-env.sh` writes a `.env` containing that
+      // variable and Vite loads `.env` automatically, so one run of that script — by a developer or
+      // by a future CI job — would silently give the Forge bundle a working DSN with nothing
+      // failing. The app's URLs carry report state including JQL, and browser tracing runs at
+      // `tracesSampleRate: 1.0`, so "silently" would mean customer JQL leaving Jira.
+      //
+      // The website and Connect builds are unaffected: they set this from the environment in
+      // `web.main.ts` and `plugin.main.ts`.
+      FRONTEND_SENTRY_DSN: '',
+    },
+    {
+      host: 'forge',
+      createRequestHelper: getForgeRequestHelper,
+      // Forge's own Key-Value Store, through the `storage-resolver` function — 240 KiB per value
+      // against the 32 KB of a Connect app property, and no dependency on a Connect API outliving
+      // Connect. See jira/storage/index.forge.ts and spec/021-forge/resolver-storage/plan.md.
+      //
+      // **This does not read the Connect app properties existing customers' data lives in.**
+      // `createForgeConnectStorage` is still exported and is still the only thing that can; moving
+      // that data into KVS is a separate migration the plan leaves out of scope. Swapping this line
+      // back is the whole rollback.
+      createStorage: createForgeKvsStorage,
+      configureRouting: (
+        route: {
+          start: () => void;
+          _onStartComplete: unknown;
+        },
+        { beforeRouteStart }: { beforeRouteStart: () => void },
+      ) => {
+        // Three ordering constraints, all of them load-bearing — the same set documented at
+        // plugin.main.ts:58 and in jira/reports/migrations/url.ts. Getting any of them wrong loses
+        // state silently rather than failing.
+        //
+        // 1. `reconcileRoutingState()` first: it replaces the *entire* search string with the
+        //    container's params, so anything written before it is discarded.
+        routing?.reconcileRoutingState();
+
+        // 2. The legacy-param rewrite after that reconcile but before `route.start()` — after the
+        //    start it would be invisible to `pushStateObservable`.
+        beforeRouteStart();
+
+        // 3. `syncRouters` after start, via `_onStartComplete`: it patches `history.pushState` to
+        //    echo into the container, and there is nothing to echo until the router is running.
+        if (routing) {
+          route._onStartComplete = routing.syncRouters;
+        }
+
+        route.start();
+      },
+      createLinkBuilder: createForgeLinkBuilder,
+      showSidebarBranding: true,
+      isAlwaysLoggedIn: true,
+      licensingPromise: getLicensing(),
+    },
+  );
+}
+
+main();

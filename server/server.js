@@ -6,7 +6,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { fetchTokenWithAccessCode } from './helper.js';
 import cors from 'cors';
-import { logger } from './logger.js';
 import tagToDates from './tag-to-dates.js';
 import adjustedStoryPoints from './adjusted-story-points.js';
 import datesToHalfQuarterDates from './dates-to-half-quarter-dates.js';
@@ -60,12 +59,6 @@ app.get('/access-token', async (req, res) => {
       message: `${error.message}`,
     });
   }
-});
-
-app.post('/domain', async (req, res) => {
-  logger.info(`[domain] - ${req.body.domain}`);
-
-  res.status(204).send();
 });
 
 app.post('/tag-to-dates', tagToDates);

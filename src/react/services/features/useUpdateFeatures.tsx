@@ -6,6 +6,7 @@ import { Text } from '@atlaskit/primitives';
 import { token } from '@atlaskit/tokens';
 
 import { FeatureFlags, updateFeatures } from '../../../jira/features';
+import { reloadApp } from '../../../shared/reload-app';
 import { useStorage } from '../storage';
 
 export const useUpdateFeatures = () => {
@@ -15,7 +16,9 @@ export const useUpdateFeatures = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: (updates: FeatureFlags) => updateFeatures(storage, updates),
     onSuccess: () => {
-      window.location.reload();
+      // Not `window.location.reload()`: on Forge that reloads the Custom UI iframe out from under
+      // its bridge handshake and the app comes back hung. See `shared/reload-app.ts`.
+      reloadApp();
     },
     onError: (error) => {
       let description = error?.message;

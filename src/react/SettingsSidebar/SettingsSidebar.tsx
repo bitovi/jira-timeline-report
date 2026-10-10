@@ -14,6 +14,7 @@ import { value } from '../../can';
 import routeData from '../../canjs/routing/route-data';
 import { CanObservable } from '../hooks/useCanObservable';
 import { useRouteData } from '../hooks/useRouteData';
+import { useIsUnlicensed } from '../hooks/useIsUnlicensed';
 import { NormalizeIssueConfig } from '../../jira/normalized/normalize';
 
 export interface SettingsSidebarProps {
@@ -24,6 +25,7 @@ export interface SettingsSidebarProps {
 const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpdateTeamsConfiguration }) => {
   const [showSettings] = useRouteData<string>('showSettings');
   const { features } = useAsyncFeatures();
+  const unlicensed = useIsUnlicensed();
   const derivedIssuesObservable: CanObservable<{ status: string; team: { name: string } }[]> = value.from(
     routeData,
     'derivedIssues',
@@ -42,6 +44,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpda
           showSidebarBranding={showSidebarBranding}
           changeSettings={changeSettings}
           showStorage={!!features?.reportsStorage}
+          unlicensed={unlicensed}
         />
       )}
       {showSettings === 'SOURCES' && (

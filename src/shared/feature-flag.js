@@ -1,3 +1,5 @@
+import { reloadApp } from './reload-app';
+
 const flags = {};
 function toBoolean(b) {
   return !!b;
@@ -25,7 +27,7 @@ ${description}
       } else {
         localStorage.setItem(key, defaultValue);
       }
-      window.location.reload();
+      reloadApp();
     },
   });
 

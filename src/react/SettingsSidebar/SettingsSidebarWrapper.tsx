@@ -16,14 +16,16 @@ import routeData from '../../canjs/routing/route-data';
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
   linkBuilder: ReturnType<LinkBuilderFactory>;
+  /** See `Routing.interceptLinkClicks`. Defaults off, which is what Storybook and tests want. */
+  interceptLinkClicks?: boolean;
   onUpdateTeamsConfiguration: (overrides: Partial<NormalizeIssueConfig & { fields: string[] }>) => void;
 }
 
-const SettingsSidebarWrapper: FC<SettingsSidebarProps> = ({ linkBuilder, ...props }) => {
+const SettingsSidebarWrapper: FC<SettingsSidebarProps> = ({ linkBuilder, interceptLinkClicks, ...props }) => {
   return (
     <FlagsProvider>
       <ErrorBoundary>
-        <RoutingProvider routing={{ linkBuilder }}>
+        <RoutingProvider routing={{ linkBuilder, interceptLinkClicks }}>
           <StorageProvider storage={routeData.storage}>
             <JiraProvider jira={routeData.jiraHelpers}>
               <QueryClientProvider client={queryClient}>

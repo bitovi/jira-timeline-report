@@ -136,30 +136,20 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
   );
 }
 
-export function derivedIssuesRequestData(
-  { rawIssuesRequestData, configurationPromise, licensingPromise },
-  { listenTo, resolve },
-) {
+export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPromise }, { listenTo, resolve }) {
   const promise = value.returnedBy(function derivedIssuesPromise() {
     if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
-      return Promise.all([
-        rawIssuesRequestData.value.issuesPromise,
-        configurationPromise.value,
-        licensingPromise.value,
-      ]).then(([rawIssues, configuration, licensing]) => {
-        if (!licensing.active) {
-          const error = new Error('no licensing');
-          error.type = 'no-licensing';
-
-          throw error;
-        }
-
-        return rawIssues.map((issue) => {
-          const normalized = normalizeIssue(issue, configuration);
-          const derived = deriveIssue(normalized, configuration);
-          return derived;
-        });
-      });
+      // Licensing is deliberately not checked here: an unlicensed site still gets its reports, and
+      // the sidebar's Eggbert turns red and frowns instead (Branding.tsx, useIsUnlicensed).
+      return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
+        ([rawIssues, configuration]) => {
+          return rawIssues.map((issue) => {
+            const normalized = normalizeIssue(issue, configuration);
+            const derived = deriveIssue(normalized, configuration);
+            return derived;
+          });
+        },
+      );
     } else {
       // This promise NEVER settles, so the report sits on its loading screen until some other
       // input changes. That is intended while the page is still waiting for a JQL, but it also
