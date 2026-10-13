@@ -26,6 +26,22 @@ function fieldPriorityOrder(
 }
 
 /**
+ * System fields the app reads by display name, pinned to the name the code expects. Jira's
+ * "issues → work items" rename changes these display names per site (e.g. `issuelinks` became
+ * "Linked work items"), which silently dropped the field from requests and responses.
+ */
+const CANONICAL_SYSTEM_FIELD_NAMES: Record<string, string> = {
+  issuelinks: 'Linked Issues',
+  issuetype: 'Issue Type',
+  parent: 'Parent',
+  status: 'Status',
+  created: 'Created',
+  labels: 'Labels',
+  fixVersions: 'Fix versions',
+  duedate: 'Due date',
+};
+
+/**
  * Build the name↔id maps from the raw Jira field list.
  *
  * `nameMap` (name → id) collapses each display name to a single id via `fieldPriorityOrder`.
@@ -56,6 +72,27 @@ export function deriveFieldMaps(fields: Array<{ name: string; id: string; scope?
     }
   }
 
+  // The site's current display name stays in `nameMap` as an alias.
+  for (const f of fields) {
+    const canonicalName = CANONICAL_SYSTEM_FIELD_NAMES[f.id];
+    if (canonicalName) {
+      idMap[f.id] = canonicalName;
+      nameMap[canonicalName] = f.id;
+
+      // Another field already displayed under the canonical name (e.g. a custom "Linked Issues"
+      // once `issuelinks` is "Linked work items") is a name collision: both keep their raw-id slot,
+      // and the system field owns the name — the other field drops out of `idMap` so it can't
+      // overwrite it in `mapIdsToNames`.
+      for (const other of idToFields[canonicalName] ?? []) {
+        if (other.id !== f.id) {
+          ambiguousFieldIds.add(f.id);
+          ambiguousFieldIds.add(other.id);
+          delete idMap[other.id];
+        }
+      }
+    }
+  }
+
   return { nameMap, idMap, ambiguousFieldIds };
 }
 
@@ -65,7 +102,12 @@ export function makeFieldsRequest(config: Config, setFieldsRequest: (req: Fields
   // token before making the request, so gating on validity here just meant that on page load
   // with an expired-but-refreshable token, this request would never even be kicked off, leaving
   // fieldsRequest permanently undefined until the next full page load. See mapIdsToNames crash.
-  if (config.host === 'jira' || hasAccessToken()) {
+  //
+  // The host check is `!== 'hosted'` rather than `=== 'jira'` because it is really asking "is this
+  // iframe already authenticated by its container?", which is true of Connect *and* Forge. Left as
+  // an equality test, `fieldsRequest` stays permanently undefined on Forge and every field lookup
+  // crashes in `mapIdsToNames`.
+  if (config.host !== 'hosted' || hasAccessToken()) {
     const req = fetchJiraFields(config)().then((fieldsPassed) => {
       const fields = fieldsPassed as unknown as Array<{ name: string; id: string }>;
 

@@ -16,9 +16,16 @@ interface ReportSettingsProps {
    * outside any provider in its own test, so it takes the answer rather than asking for it.
    */
   showStorage?: boolean;
+  /** The host reported an inactive license; resolved by the parent for the same reason. */
+  unlicensed?: boolean;
 }
 
-const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBranding, showStorage = false }) => {
+const ReportSettings: FC<ReportSettingsProps> = ({
+  changeSettings,
+  showSidebarBranding,
+  showStorage = false,
+  unlicensed = false,
+}) => {
   const [isFeedbackFormOpen, setIsFeedbackFormOpen] = useState(false);
   const [isBugFormOpen, setIsBugFormOpen] = useState(false);
 
@@ -27,18 +34,18 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
     // buttons instead of overlapping them via `position: fixed` (the previous approach).
     <div className="flex h-full flex-col overflow-hidden px-6 pt-6 pb-2">
       <div className="shrink-0">
-        {showSidebarBranding && <Branding />}
+        {showSidebarBranding && <Branding unlicensed={unlicensed} />}
         <div className="pb-1">
           <Heading size="xsmall">
             <span className="uppercase">Report Settings</span>
           </Heading>
         </div>
         <SidebarButton onClick={() => changeSettings('SOURCES')}>
-          <img src="/images/magnifying-glass.svg" aria-hidden />
+          <img src="./images/magnifying-glass.svg" aria-hidden />
           Sources
         </SidebarButton>
         <SidebarButton onClick={() => changeSettings('TIMING')}>
-          <img src="/images/calendar.svg" aria-hidden />
+          <img src="./images/calendar.svg" aria-hidden />
           Timing
         </SidebarButton>
 
@@ -49,20 +56,20 @@ const ReportSettings: FC<ReportSettingsProps> = ({ changeSettings, showSidebarBr
         </div>
 
         <SidebarButton onClick={() => changeSettings('TEAMS')}>
-          <img src="/images/team.svg" aria-hidden />
+          <img src="./images/team.svg" aria-hidden />
           Teams
         </SidebarButton>
         <SidebarButton onClick={() => changeSettings('FEATURES')}>
-          <img src="/images/features.svg" aria-hidden />
+          <img src="./images/features.svg" aria-hidden />
           Features
         </SidebarButton>
         <SidebarButton onClick={() => changeSettings('THEME')}>
-          <img src="/images/theme.svg" className="w-[18px]" aria-hidden />
+          <img src="./images/theme.svg" className="w-[18px]" aria-hidden />
           Theme
         </SidebarButton>
         {showStorage && (
           <SidebarButton onClick={() => changeSettings('STORAGE')}>
-            <img src="/images/storage.svg" className="w-[18px]" aria-hidden />
+            <img src="./images/storage.svg" className="w-[18px]" aria-hidden />
             Storage
           </SidebarButton>
         )}

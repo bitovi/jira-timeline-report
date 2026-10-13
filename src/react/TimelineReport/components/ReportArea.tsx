@@ -93,12 +93,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
 
       {!selfManagesData && jql && pending && <LoadingProgressContainer loadingState={loadingState} />}
 
-      {rejected && (
-        <ErrorMessage
-          noLicense={rejectReason?.type === 'no-licensing'}
-          errorMessage={rejectReason?.errorMessages?.[0]}
-        />
-      )}
+      {rejected && <ErrorMessage errorMessage={rejectReason?.errorMessages?.[0]} />}
     </>
   );
 };

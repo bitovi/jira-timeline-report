@@ -57,20 +57,10 @@ export const createPluginLinkBuilder: LinkBuilderFactory = (appKey?: string) => 
 
     const currentParams = new URLSearchParams(containerSearch);
 
-    // Jira adds these params when you load a jira application
-    const projectId = currentParams.get('project.id');
-    const projectKey = currentParams.get('project.key');
-
-    if (!projectId) {
-      throw new Error('could not find projectId');
-    }
-
-    if (!projectKey) {
-      throw new Error('could not find projectKey');
-    }
-
-    prefixedParams['project.id'] = projectId;
-    prefixedParams['project.key'] = projectKey;
+    // Jira adds these params from the last visited project when opening the app from the top nav.
+    // They only carry that context forward, so they're dropped when absent (e.g. a hand-trimmed URL).
+    prefixedParams['project.id'] = currentParams.get('project.id') ?? undefined;
+    prefixedParams['project.key'] = currentParams.get('project.key') ?? undefined;
 
     return baseUrl + '?' + objectToQueryString(prefixedParams);
   };

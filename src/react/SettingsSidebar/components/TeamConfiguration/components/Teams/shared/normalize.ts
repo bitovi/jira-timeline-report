@@ -5,7 +5,10 @@ const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel
   const key = teamKey || '';
   const level = typeof heirarchyLevel === 'undefined' ? 0 : heirarchyLevel;
 
-  return allData[key]?.[level] || allData.__GLOBAL__.defaults;
+  // A team nobody has configured is absent from `allData` (sanitizeAllTeamData drops empty teams),
+  // so it must still fall through the global per-type level before the global defaults.
+  // See spec/039-global-defaults-workitems.
+  return allData[key]?.[level] ?? allData[key]?.defaults ?? allData.__GLOBAL__[level] ?? allData.__GLOBAL__.defaults;
 };
 
 const defaults = [

@@ -4,6 +4,7 @@ import { Label } from '@atlaskit/form';
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 import ChevronRightIcon from '@atlaskit/icon/utility/chevron-right';
 import { useRouteData } from '../../../hooks/useRouteData';
+import { useSubmenuSafeDropdown } from '../../../hooks/useSubmenuSafeDropdown';
 
 type IssueHierarchy = {
   name: string;
@@ -47,6 +48,7 @@ const SelectIssueTypeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 
 const SelectIssueType: FC = () => {
   const { issueHierarchy, selectedIssueType, handleSelectedIssueTypeChange } = useSelectedIssueType();
+  const { triggerContainerRef, ...menu } = useSubmenuSafeDropdown();
 
   const title = formatTitle(selectedIssueType, issueHierarchy);
 
@@ -60,31 +62,33 @@ const SelectIssueType: FC = () => {
 
   return (
     <SelectIssueTypeWrapper>
-      <DropdownMenu trigger={title}>
-        <DropdownItemGroup>
-          {issueHierarchy.map((item) => (
-            <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange(item.name)}>
-              {item.name}
-            </DropdownItem>
-          ))}
-        </DropdownItemGroup>
-        <DropdownItemGroup>
-          <DropdownMenu
-            placement="right-end"
-            trigger={({ triggerRef, ...props }) => (
-              <DropdownItem ref={triggerRef} elemAfter={<ChevronRightIcon label="open releases" />} {...props}>
-                Releases
-              </DropdownItem>
-            )}
-          >
+      <div ref={triggerContainerRef}>
+        <DropdownMenu trigger={title} {...menu}>
+          <DropdownItemGroup>
             {issueHierarchy.map((item) => (
-              <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange('Release', item.name)}>
+              <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange(item.name)}>
                 {item.name}
               </DropdownItem>
             ))}
-          </DropdownMenu>
-        </DropdownItemGroup>
-      </DropdownMenu>
+          </DropdownItemGroup>
+          <DropdownItemGroup>
+            <DropdownMenu
+              placement="right-end"
+              trigger={({ triggerRef, ...props }) => (
+                <DropdownItem ref={triggerRef} elemAfter={<ChevronRightIcon label="open releases" />} {...props}>
+                  Releases
+                </DropdownItem>
+              )}
+            >
+              {issueHierarchy.map((item) => (
+                <DropdownItem key={item.name} onClick={() => handleSelectedIssueTypeChange('Release', item.name)}>
+                  {item.name}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </DropdownItemGroup>
+        </DropdownMenu>
+      </div>
     </SelectIssueTypeWrapper>
   );
 };

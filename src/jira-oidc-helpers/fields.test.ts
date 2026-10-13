@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { deriveFieldMaps } from './fields';
+import mapIdsToNames from '../utils/object/map-ids-to-names';
 
 describe('deriveFieldMaps', () => {
   test('maps each name to a single id and each id to its name', () => {
@@ -29,6 +30,39 @@ describe('deriveFieldMaps', () => {
     ]);
 
     expect(ambiguousFieldIds.size).toBe(0);
+  });
+
+  test('keeps the canonical name for system fields Jira has renamed (issues → work items)', () => {
+    const { nameMap, idMap } = deriveFieldMaps([
+      { name: 'Linked work items', id: 'issuelinks' },
+      { name: 'Work type', id: 'issuetype' },
+    ]);
+
+    expect(idMap.issuelinks).toBe('Linked Issues');
+    expect(nameMap['Linked Issues']).toBe('issuelinks');
+    expect(idMap.issuetype).toBe('Issue Type');
+    expect(nameMap['Issue Type']).toBe('issuetype');
+    // the site's current display name still resolves
+    expect(nameMap['Linked work items']).toBe('issuelinks');
+  });
+
+  test('a custom field named like a canonical name keeps its raw id and yields the name to the system field', () => {
+    const fieldMaps = deriveFieldMaps([
+      { name: 'Linked work items', id: 'issuelinks' },
+      { name: 'Linked Issues', id: 'customfield_10500' },
+    ]);
+
+    expect(fieldMaps.nameMap['Linked Issues']).toBe('issuelinks');
+    expect(fieldMaps.ambiguousFieldIds).toEqual(new Set(['issuelinks', 'customfield_10500']));
+
+    // whichever order Jira returns the fields in, the system field owns 'Linked Issues'
+    const links = [{ id: '1' }];
+    expect(mapIdsToNames({ customfield_10500: 'custom', issuelinks: links }, fieldMaps)).toEqual({
+      'Linked Issues': links,
+      issuelinks: links,
+      customfield_10500: 'custom',
+    });
+    expect(mapIdsToNames({ issuelinks: links, customfield_10500: 'custom' }, fieldMaps)['Linked Issues']).toBe(links);
   });
 
   test('prefers a field without a scope over one with a scope when resolving a name to an id', () => {

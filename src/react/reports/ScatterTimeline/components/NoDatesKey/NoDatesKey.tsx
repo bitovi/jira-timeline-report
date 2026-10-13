@@ -26,7 +26,7 @@ export const NoDatesKey: React.FC<NoDatesKeyProps> = ({ issues }) => {
       <Button appearance="subtle" onClick={() => setIsOpen(true)}>
         <span className="inline-flex items-center gap-2">
           <span className="color-text-and-bg-unknown w-4 h-4 shrink-0 rounded-full inline-flex items-center justify-center">
-            <img className="w-3 h-3" src="/images/empty-set.svg" alt="" />
+            <img className="w-3 h-3" src="./images/empty-set.svg" alt="" />
           </span>
           {issues.length} without dates
         </span>

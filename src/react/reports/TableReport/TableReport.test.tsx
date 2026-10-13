@@ -702,6 +702,26 @@ describe('TableReport (2D cross-tab body)', () => {
     ).toEqual(['5', '5', '10']);
   });
 
+  test('a column group alone renders a single "All issues" row across the column values', () => {
+    const tableObs = makeTableObs();
+    tableObs.tableColumnsObs.set([{ sourceId: 'field:customfield_1' }]);
+    tableObs.tableGroupByColObs.set('field:priority');
+    renderReport(twoDIssues, tableObs);
+
+    const table = screen.getByTestId('table-crosstab');
+    expect(within(table).getByText('High')).toBeInTheDocument();
+    expect(within(table).getByText('Low')).toBeInTheDocument();
+    const rows = within(table).getAllByTestId('table-crosstab-row');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain('All issues');
+    // [High, Low] → 3 + 2 = 5, 5.
+    expect(
+      within(rows[0])
+        .getAllByTestId('table-crosstab-cell')
+        .map((c) => c.textContent),
+    ).toEqual(['5', '5']);
+  });
+
   test('totals are OFF by default: no total row/column and no "Total" text at all', () => {
     const tableObs = makeTableObs();
     tableObs.tableColumnsObs.set([{ sourceId: 'field:customfield_1' }]);

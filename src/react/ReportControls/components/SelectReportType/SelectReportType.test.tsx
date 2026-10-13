@@ -9,6 +9,24 @@ import { defaultFeatures } from '../../../../jira/features';
 import * as Features from '../../../services/features';
 import { pushStateObservable } from '../../../../canjs/routing/state-storage';
 
+const savedGantt = {
+  id: 'gantt',
+  name: 'Q3 Roadmap',
+  queryParams:
+    'primaryReportType=start-due&jql=project%3DORDER&childJQL=type%3DStory&loadChildren=true' +
+    '&loadBlockers=true&statusesToExclude=Done&selectedIssueType=Epic',
+};
+
+const savedReportOfReports = {
+  id: 'ror',
+  name: 'Portfolio',
+  queryParams: 'primaryReportType=report-of-reports',
+};
+
+vi.mock('../../../services/reports', () => ({
+  useAllReports: () => ({ [savedGantt.id]: savedGantt, [savedReportOfReports.id]: savedReportOfReports }),
+}));
+
 /**
  * Points the URL at `search` and notifies, which under vitest has to be done by hand — see the same
  * helper in `ReportLayoutProvider.test.tsx` for why (`PushstateObservable.onBound` bails out when
@@ -94,6 +112,43 @@ describe('<SelectReportType />', () => {
       await pickReportType('Report of Reports');
 
       expect(param('sections')).toBe(encodedDocument);
+    });
+  });
+
+  // A saved report of another type can't become a report-of-reports in place, so the switch
+  // detaches it and starts from a clean URL. See `reportOfReportsSearch`.
+  describe('turning a saved report into a report-of-reports', () => {
+    beforeEach(() => {
+      setSearch('?report=gantt');
+    });
+
+    it('detaches the saved report and starts from a clean URL', async () => {
+      render(<SelectReportType />);
+
+      await pickReportType('Report of Reports');
+
+      expect(param('report')).toBeNull();
+      expect(window.location.search).toBe('?primaryReportType=report-of-reports');
+    });
+
+    it('keeps the saved report when switching to any other type', async () => {
+      render(<SelectReportType />);
+
+      await pickReportType('Scatter Plot');
+
+      expect(param('report')).toBe('gantt');
+      expect(param('primaryReportType')).toBe('due');
+    });
+
+    // A saved report-of-reports switched to another type and back is still that saved document.
+    it('keeps a saved report-of-reports attached when switching back to it', async () => {
+      setSearch('?report=ror&primaryReportType=start-due');
+      render(<SelectReportType />);
+
+      await pickReportType('Report of Reports');
+
+      expect(param('report')).toBe('ror');
+      expect(param('primaryReportType')).toBe('report-of-reports');
     });
   });
 });

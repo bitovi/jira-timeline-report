@@ -23,6 +23,7 @@ import { unsupportedReportType } from './unsupportedReportType';
 import { JiraProvider } from '../services/jira';
 import { queryClient } from '../services/query';
 
+import ConnectMigrationBanner from '../ConnectMigrationBanner';
 import ReportControls from '../ReportControls';
 import SavedReports from '../SaveReports';
 import SampleDataNotice from '../SampleDataNotice';
@@ -58,6 +59,11 @@ export interface TimelineReportProps {
   loginComponent: { isLoggedIn: boolean; login: () => void };
   storage: AppStorage;
   linkBuilder: ReturnType<LinkBuilderFactory>;
+  /**
+   * See `Routing.interceptLinkClicks` — true for the embedded hosts (Connect, Forge). Optional so
+   * tests and stories, which want the browser's own navigation, get it by default.
+   */
+  interceptLinkClicks?: boolean;
   showSidebarBranding: boolean;
   /**
    * Injectable for tests (default-prop dependency injection) — defaults to the real routeData-backed
@@ -78,6 +84,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   loginComponent,
   storage,
   linkBuilder,
+  interceptLinkClicks,
   showSidebarBranding,
   useReportLoadingState = defaultUseReportLoadingState,
 }) => {
@@ -218,12 +225,18 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             <SettingsSidebar
               showSidebarBranding={showSidebarBranding}
               linkBuilder={linkBuilder}
+              interceptLinkClicks={interceptLinkClicks}
               onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
             />
           </div>
         )}
 
         <div className="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
+          {/* Forge only — the one-time Connect→KVS copy. See spec/021-forge/resolver-storage/migration-option.plan.md. */}
+          <div id="connect-migration-banner" className="app-chrome-hidden">
+            <ConnectMigrationBanner storage={storage} jira={rd.jiraHelpers} />
+          </div>
+
           <div id="view-reports" className="app-chrome-hidden">
             <ViewReports
               onBackButtonClicked={() => {
@@ -244,6 +257,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               queryParamObservable={pushStateObservable as unknown as CanObservable<string>}
               storage={storage}
               linkBuilder={linkBuilder}
+              interceptLinkClicks={interceptLinkClicks}
               shouldShowReportsObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
               onViewReportsButtonClicked={() => {
                 rd.showSettings = 'REPORTS';

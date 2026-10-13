@@ -9,8 +9,6 @@ import { Login } from '../stateful-data/login.js';
 import LoginButton from '../react/LoginButton';
 import SelectCloudWrapper from '../react/SelectCloud';
 import JiraOIDCHelpers from '../jira-oidc-helpers';
-import { getHostedRequestHelper } from '../request-helpers/hosted-request-helper';
-import { getConnectRequestHelper } from '../request-helpers/connect-request-helper';
 
 import { migrateUrlParams } from '../jira/reports/migrations/url';
 import { route, value, domMutateDomEvents, domEvents } from '../can';
@@ -27,7 +25,16 @@ domEvents.addEvent(domMutateDomEvents.inserted);
 
 export default async function mainHelper(
   config,
-  { host, createStorage, configureRouting, showSidebarBranding, isAlwaysLoggedIn, createLinkBuilder, licensingPromise },
+  {
+    host,
+    createRequestHelper,
+    createStorage,
+    configureRouting,
+    showSidebarBranding,
+    isAlwaysLoggedIn,
+    createLinkBuilder,
+    licensingPromise,
+  },
 ) {
   initSentry(config);
 
@@ -40,30 +47,11 @@ export default async function mainHelper(
 
   console.log('Loaded version of the Timeline Reporter: ' + config?.COMMIT_SHA);
 
-  let requestHelper;
-  if (host === 'jira') {
-    requestHelper = getConnectRequestHelper();
-  } else {
-    requestHelper = getHostedRequestHelper(config);
-  }
+  // Which helper to use is the host's own business — it used to be decided here by branching on
+  // `host`, which meant every new host had to edit shared code to get its transport wired up.
+  const requestHelper = createRequestHelper(config);
 
   const jiraHelpers = JiraOIDCHelpers(config, requestHelper, host);
-
-  // Temporary will be removed in two weeks
-  if (host === 'hosted') {
-    requestHelper('https://api.atlassian.com/oauth/token/accessible-resources')
-      .then(([request]) => {
-        return fetch(`${import.meta.env.VITE_AUTH_SERVER_URL}/domain`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-          body: JSON.stringify({ domain: request.url }),
-        });
-      })
-      .catch(console.warn);
-  }
-  //
 
   const storage = createStorage(jiraHelpers);
   const linkBuilder = createLinkBuilder(jiraHelpers.appKey);
@@ -148,6 +136,9 @@ export default async function mainHelper(
           loginComponent: loginStore,
           storage,
           linkBuilder,
+          // Embedded hosts build *container* URLs, so following one would navigate the whole page
+          // out from under the iframe; the click has to become an SPA route change instead.
+          interceptLinkClicks: host !== 'hosted',
           showSidebarBranding,
         }),
       );
@@ -173,7 +164,9 @@ export default async function mainHelper(
       isPendingObservable: value.from(loginStore, 'isPending'),
     }),
   );
-  if (host === 'jira') {
+  // The embedded hosts (Connect, Forge) are authenticated by their container, so there is nothing
+  // for a login button to do. Only the standalone website has a session the user can start.
+  if (host !== 'hosted') {
     login.style.display = 'none';
   }
 
