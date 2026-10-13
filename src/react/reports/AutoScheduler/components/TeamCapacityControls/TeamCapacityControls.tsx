@@ -263,7 +263,7 @@ const SHARE_OF_TEAM: Record<EstimateTeamShare, string> = {
 
 /** Where a team-time capacity comes from, and where to change it. */
 function teamShareTooltip(share: EstimateTeamShare, item: ItemLabel) {
-  return `Estimates assume ${SHARE_OF_TEAM[share]} works on each ${item.singular}. Change this in Team Configuration.`;
+  return `Estimates assume ${SHARE_OF_TEAM[share]} works on each ${item.singular}. Change this in Team Settings.`;
 }
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);

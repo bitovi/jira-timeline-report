@@ -4,9 +4,12 @@ import type { Configuration } from '../../services/team-configuration';
 import type { FieldUpdates } from '../../ConfigureTeamsForm';
 
 import React, { useId } from 'react';
+import { useWatch } from 'react-hook-form';
+
 import Select from '../Select';
-import ToggleButton from '../../../../../../../components/ToggleButton';
-import Label from '../Label';
+import InheritanceRow from '../InheritanceRow';
+
+type Option = { label: string; value: string };
 
 interface SelectProps {
   isInheriting: boolean;
@@ -15,32 +18,31 @@ interface SelectProps {
   name: keyof Configuration;
   label: string;
   optional?: boolean;
-  jiraFields:
-    | Array<{ label: string; value: string }>
-    | Array<{ label: string; options: Array<{ label: string; value: string }> }>;
+  jiraFields: Array<Option> | Array<{ label: string; options: Array<Option> }>;
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
+const optionLabel = (options: SelectProps['jiraFields'], value: unknown) =>
+  options
+    .flatMap((option): Option[] => ('options' in option ? option.options : [option]))
+    .find((option) => option.value === value)?.label;
+
 const InheritanceSelect: FC<SelectProps> = ({ isInheriting, onInheritanceChange, ...selectProps }) => {
   const id = useId();
+  const value = useWatch({ control: selectProps.control, name: selectProps.name });
 
   return (
-    // The label is its own row across both columns, so a long question wraps over the toggle rather
-    // than being squeezed into the input's width.
-    <div className="mt-2 grid grid-cols-[1fr_auto] items-end gap-x-1">
-      <div className="col-span-2">
-        <Label htmlFor={id} isRequired={!selectProps.optional}>
-          {selectProps.label}
-        </Label>
-      </div>
-      <Select disabled={isInheriting} hideLabel id={id} {...selectProps} />
-      <ToggleButton
-        active={!isInheriting}
-        onActiveChange={onInheritanceChange}
-        inactiveLabel={isInheriting ? 'inheriting' : 'inherit'}
-        activeLabel={isInheriting ? 'customize' : 'customized'}
-      />
-    </div>
+    <InheritanceRow
+      id={id}
+      label={selectProps.label}
+      isRequired={!selectProps.optional}
+      isInheriting={isInheriting}
+      onInheritanceChange={onInheritanceChange}
+      // A field missing from the list (renamed, or deleted in Jira) still shows what is stored.
+      inheritedValue={optionLabel(selectProps.jiraFields, value) ?? (value ? String(value) : 'Not set')}
+    >
+      <Select hideLabel id={id} {...selectProps} />
+    </InheritanceRow>
   );
 };
 

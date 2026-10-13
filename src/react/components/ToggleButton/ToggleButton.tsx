@@ -9,34 +9,34 @@ interface ToggleButtonProps {
   inactiveLabel: string;
 }
 
-const getButtonClasses = () => {
-  return ['uppercase', 'font-bold', 'rounded-sm', 'text-xs', 'p-1'];
-};
+const segmentClasses = 'rounded-sm px-2 text-xs font-semibold';
 
-const getInactiveButtonStyles = (isInactive: boolean) => {
-  return [...getButtonClasses(), isInactive ? 'bg-gray-200' : '', !isInactive ? 'text-zinc-400' : '']
-    .filter(Boolean)
-    .join(' ');
-};
+const getInactiveButtonStyles = (isSelected: boolean) =>
+  [segmentClasses, isSelected ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'].join(' ');
 
-const getActiveButtonStyles = (isActive: boolean) => {
-  return [
-    ...getButtonClasses(),
-    isActive ? 'bg-blue-50' : '',
-    isActive ? 'text-blue-700' : '',
-    !isActive ? 'text-zinc-400' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
-};
+const getActiveButtonStyles = (isSelected: boolean) =>
+  [
+    segmentClasses,
+    isSelected ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-400' : 'text-slate-500 hover:text-slate-700',
+  ].join(' ');
 
 const ToggleButton: FC<ToggleButtonProps> = ({ active, onActiveChange, inactiveLabel, activeLabel }) => {
   return (
-    <div className="bg-gray-100 p-1 rounded-sm grid grid-cols-2 h-10 w-48">
-      <button className={getInactiveButtonStyles(!active)} disabled={!active} onClick={() => onActiveChange(!active)}>
+    <div className="grid h-9 w-48 shrink-0 grid-cols-2 gap-1 rounded-md bg-slate-100 p-1">
+      <button
+        type="button"
+        className={getInactiveButtonStyles(!active)}
+        disabled={!active}
+        onClick={() => onActiveChange(!active)}
+      >
         {inactiveLabel}
       </button>
-      <button className={getActiveButtonStyles(active)} disabled={active} onClick={() => onActiveChange(!active)}>
+      <button
+        type="button"
+        className={getActiveButtonStyles(active)}
+        disabled={active}
+        onClick={() => onActiveChange(!active)}
+      >
         {activeLabel}
       </button>
     </div>

@@ -37,6 +37,11 @@ export const useTeamForm = ({
     save({ ...savedUserTeamData[hierarchyLevel]!, [name]: value });
   }
 
+  /** Several fields in one write: separate `update`s would each spread the same saved snapshot. */
+  function updateFields(patch: Partial<Configuration>) {
+    save({ ...savedUserTeamData[hierarchyLevel]!, ...patch });
+  }
+
   const toggleInheritance = (field: keyof Configuration, shouldCustomize: boolean) => {
     if (shouldCustomize) {
       update({ name: field, value: inheritedTeamData[hierarchyLevel]![field] });
@@ -54,6 +59,8 @@ export const useTeamForm = ({
     control,
     isSaving,
     update,
+    updateFields,
+    setValue,
     savedUserData: savedUserTeamData[hierarchyLevel] || createEmptyConfiguration(),
     inheritedUserData: inheritedTeamData[hierarchyLevel] || createEmptyConfiguration(),
   };

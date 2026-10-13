@@ -8,12 +8,11 @@ import type { ItemLabel } from './shared/estimation';
 import React from 'react';
 import { Flex } from '@atlaskit/primitives';
 
-import Hr from '../../../../../components/Hr';
-
 import InheritanceTextField from './components/InheritanceTextField';
 import InheritanceToggleField from './components/InheritanceToggleField';
 import InheritanceSelect from './components/InheritanceSelect';
 import EstimationQuestions from './components/EstimationQuestions';
+import AdvancedSettings from './components/AdvancedSettings';
 import { RequiredAsterisk } from './components/Label';
 import { buildSelectableFields } from './shared/selectable-fields';
 
@@ -24,6 +23,8 @@ export interface ConfigureTeamsFormProps {
   register: UseFormReturn<Configuration>['register'];
   control: Control<Configuration>;
   update: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
+  updateFields: (patch: Partial<Configuration>) => void;
+  setValue: UseFormReturn<Configuration>['setValue'];
   toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean) => void;
   /** `null` on a team's defaults; the work item type's name on a per-type accordion. */
   itemLabel?: ItemLabel | null;
@@ -42,6 +43,8 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
   register,
   control,
   update,
+  updateFields,
+  setValue,
   toggleInheritance,
   itemLabel = null,
   showEstimationQuestions = false,
@@ -51,34 +54,22 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
   return (
     <div className="py-2">
       <Flex direction="column" gap="space.100">
-        <div className="flex gap-1">
-          <RequiredAsterisk /> <p className="text-sm text-slate-300"> indicates a required field</p>
-        </div>
+        <span className="text-xs text-slate-500">
+          <RequiredAsterisk /> indicates a required field
+        </span>
         {showEstimationQuestions ? (
-          <>
-            <EstimationQuestions
-              mode="inheriting"
-              control={control}
-              register={register}
-              update={update}
-              savedUserData={savedUserData}
-              toggleInheritance={toggleInheritance}
-              itemLabel={itemLabel}
-              estimateFieldOptions={selectableFields}
-            />
-            <InheritanceToggleField
-              isInheriting={
-                // Look for undefined and null but not false
-                savedUserData.spreadEffortAcrossDates == null
-              }
-              onInheritanceChange={(shouldCustomize) => toggleInheritance('spreadEffortAcrossDates', shouldCustomize)}
-              name="spreadEffortAcrossDates"
-              control={control}
-              onSave={update}
-              label="Spread effort"
-              description="Spread estimate across dates"
-            />
-          </>
+          <EstimationQuestions
+            mode="inheriting"
+            control={control}
+            register={register}
+            update={update}
+            updateFields={updateFields}
+            setValue={setValue}
+            savedUserData={savedUserData}
+            toggleInheritance={toggleInheritance}
+            itemLabel={itemLabel}
+            estimateFieldOptions={selectableFields}
+          />
         ) : (
           <>
             <InheritanceTextField
@@ -89,6 +80,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
               label="Capacity per sprint"
               unit="estimating units"
               min={1}
+              control={control}
               register={register}
               onSave={update}
             />
@@ -99,20 +91,9 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
               type="number"
               label="Tracks"
               min={1}
+              control={control}
               register={register}
               onSave={update}
-            />
-            <InheritanceToggleField
-              isInheriting={
-                // Look for undefined and null but not false
-                savedUserData.spreadEffortAcrossDates == null
-              }
-              onInheritanceChange={(shouldCustomize) => toggleInheritance('spreadEffortAcrossDates', shouldCustomize)}
-              name="spreadEffortAcrossDates"
-              control={control}
-              onSave={update}
-              label="Spread effort"
-              description="Spread estimate across dates"
             />
             <InheritanceTextField
               isInheriting={!savedUserData.sprintLength}
@@ -122,55 +103,69 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
               label="Sprint length"
               unit="business days"
               min={1}
+              control={control}
               register={register}
               onSave={update}
             />
           </>
         )}
-        <Hr />
-        <InheritanceSelect
-          isInheriting={!savedUserData.estimateField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('estimateField', shouldCustomize)}
-          name="estimateField"
-          label="Estimate Field"
-          jiraFields={selectableFields}
-          control={control}
-          onSave={update}
-        />
-        <InheritanceSelect
-          optional
-          isInheriting={!savedUserData.confidenceField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('confidenceField', shouldCustomize)}
-          name="confidenceField"
-          label="Confidence field"
-          jiraFields={[
-            {
-              label: '',
-              options: [{ value: 'confidence-not-used', label: "Don't use confidence" }],
-            },
-            { label: 'Fields', options: selectableFields },
-          ]}
-          control={control}
-          onSave={update}
-        />
-        <InheritanceSelect
-          isInheriting={!savedUserData.startDateField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('startDateField', shouldCustomize)}
-          name="startDateField"
-          label="Start date field"
-          jiraFields={selectableFields}
-          control={control}
-          onSave={update}
-        />
-        <InheritanceSelect
-          isInheriting={!savedUserData.dueDateField}
-          onInheritanceChange={(shouldCustomize) => toggleInheritance('dueDateField', shouldCustomize)}
-          name="dueDateField"
-          label="End date field"
-          jiraFields={selectableFields}
-          control={control}
-          onSave={update}
-        />
+        <AdvancedSettings>
+          <InheritanceSelect
+            isInheriting={!savedUserData.estimateField}
+            onInheritanceChange={(shouldCustomize) => toggleInheritance('estimateField', shouldCustomize)}
+            name="estimateField"
+            label="Estimate Field"
+            jiraFields={selectableFields}
+            control={control}
+            onSave={update}
+          />
+          <InheritanceSelect
+            optional
+            isInheriting={!savedUserData.confidenceField}
+            onInheritanceChange={(shouldCustomize) => toggleInheritance('confidenceField', shouldCustomize)}
+            name="confidenceField"
+            label="Confidence field"
+            jiraFields={[
+              {
+                label: '',
+                options: [{ value: 'confidence-not-used', label: "Don't use confidence" }],
+              },
+              { label: 'Fields', options: selectableFields },
+            ]}
+            control={control}
+            onSave={update}
+          />
+          <InheritanceSelect
+            isInheriting={!savedUserData.startDateField}
+            onInheritanceChange={(shouldCustomize) => toggleInheritance('startDateField', shouldCustomize)}
+            name="startDateField"
+            label="Start date field"
+            jiraFields={selectableFields}
+            control={control}
+            onSave={update}
+          />
+          <InheritanceSelect
+            isInheriting={!savedUserData.dueDateField}
+            onInheritanceChange={(shouldCustomize) => toggleInheritance('dueDateField', shouldCustomize)}
+            name="dueDateField"
+            label="End date field"
+            jiraFields={selectableFields}
+            control={control}
+            onSave={update}
+          />
+          <InheritanceToggleField
+            isInheriting={
+              // Look for undefined and null but not false
+              savedUserData.spreadEffortAcrossDates == null
+            }
+            onInheritanceChange={(shouldCustomize) => toggleInheritance('spreadEffortAcrossDates', shouldCustomize)}
+            name="spreadEffortAcrossDates"
+            control={control}
+            onSave={update}
+            label="Spread effort"
+            description="Spread estimate across dates"
+          />
+        </AdvancedSettings>
       </Flex>
     </div>
   );

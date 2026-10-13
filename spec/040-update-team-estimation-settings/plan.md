@@ -104,11 +104,11 @@ Parallel is asked for every unit. Your summary examples include it for Story Poi
 
 A muted line under both subsections that shows `describeEstimation(watchedValues, itemsLabel)` and updates live:
 
-- Story Points: "40 story points per 10-day sprint. Up to 2 work items in parallel."
-- Dev Days: "10 full-time team members. Up to 3 work items in parallel."
-- Team Working Days: "Estimates are based on working days and assume the full team. Up to 2 work items in parallel."
-- Team Weeks: "Estimates are based on weeks and assume one-third of the team. Up to 4 work items in parallel."
-- Team Sprints: "Estimates are based on 10-day sprints and assume half the team. Up to 2 work items in parallel."
+- Story Points: "40 story points per 10-day sprint. With 2 work items in parallel."
+- Dev Days: "10 full-time team members. With 3 work items in parallel."
+- Team Working Days: "Estimates are based on working days and assume the full team. With 2 work items in parallel."
+- Team Weeks: "Estimates are based on weeks and assume one-third of the team. With 4 work items in parallel."
+- Team Sprints: "Estimates are based on 10-day sprints and assume half the team. With 2 work items in parallel."
 
 When parallel = 1, the last sentence reads "One work item at a time."
 

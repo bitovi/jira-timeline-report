@@ -7,9 +7,11 @@ import {
   describeUnestimated,
   formatCapacity,
   getEffectiveVelocity,
+  getDefaultTracks,
   getSchedulingPeriodDays,
   itemLabelFor,
   pluralize,
+  sprintWeeks,
   UNESTIMATED_WORKING_DAYS,
   WORK_ITEMS_LABEL,
 } from './estimation';
@@ -145,22 +147,28 @@ describe('getEffectiveVelocity', () => {
 });
 
 describe('describeEstimation', () => {
+  it('names a one-week sprint in the singular', () => {
+    expect(describeEstimation(inputs({ sprintLength: 5 }), WORK_ITEMS_LABEL)).toBe(
+      '21 story points per 1-week sprint. One work item at a time.',
+    );
+  });
+
   it('Story Points', () => {
     expect(
       describeEstimation(inputs({ estimateUnit: 'storyPoints', velocityPerSprint: 40, tracks: 2 }), WORK_ITEMS_LABEL),
-    ).toBe('40 story points per 10-day sprint. Up to 2 work items in parallel.');
+    ).toBe('40 story points per 2-week sprint. With 2 work items in parallel.');
   });
 
   it('Dev Days', () => {
     expect(describeEstimation(inputs({ estimateUnit: 'devDays', teamMembers: 10, tracks: 3 }), WORK_ITEMS_LABEL)).toBe(
-      '10 full-time team members. Up to 3 work items in parallel.',
+      '10 full-time team members. With 3 work items in parallel.',
     );
   });
 
   it('Team Working Days', () => {
     expect(
       describeEstimation(inputs({ estimateUnit: 'teamDays', estimateTeamShare: 'full', tracks: 2 }), WORK_ITEMS_LABEL),
-    ).toBe('Estimates are based on working days and assume the full team. Up to 2 work items in parallel.');
+    ).toBe('Estimates are based on working days and assume the full team. With 2 work items in parallel.');
   });
 
   it('Team Weeks', () => {
@@ -169,7 +177,7 @@ describe('describeEstimation', () => {
         inputs({ estimateUnit: 'teamWeeks', estimateTeamShare: 'third', tracks: 4 }),
         WORK_ITEMS_LABEL,
       ),
-    ).toBe('Estimates are based on weeks and assume one-third of the team. Up to 4 work items in parallel.');
+    ).toBe('Estimates are based on weeks and assume one-third of the team. With 4 work items in parallel.');
   });
 
   it('Team Sprints', () => {
@@ -178,21 +186,21 @@ describe('describeEstimation', () => {
         inputs({ estimateUnit: 'teamSprints', estimateTeamShare: 'half', tracks: 2 }),
         WORK_ITEMS_LABEL,
       ),
-    ).toBe('Estimates are based on 10-day sprints and assume half the team. Up to 2 work items in parallel.');
+    ).toBe('Estimates are based on 2-week sprints and assume half the team. With 2 work items in parallel.');
   });
 
   it('one at a time when parallel is 1', () => {
     expect(describeEstimation(inputs({ velocityPerSprint: 40, tracks: 1 }), WORK_ITEMS_LABEL)).toBe(
-      '40 story points per 10-day sprint. One work item at a time.',
+      '40 story points per 2-week sprint. One work item at a time.',
     );
   });
 
   it('names the work item type on a per-type form', () => {
     expect(describeEstimation(inputs({ tracks: 2 }), itemLabelFor('Epic'))).toBe(
-      '21 story points per 10-day sprint. Up to 2 Epics in parallel.',
+      '21 story points per 2-week sprint. With 2 Epics in parallel.',
     );
     expect(describeEstimation(inputs({ tracks: 1 }), itemLabelFor('Epic'))).toBe(
-      '21 story points per 10-day sprint. One Epic at a time.',
+      '21 story points per 2-week sprint. One Epic at a time.',
     );
   });
 
@@ -204,7 +212,7 @@ describe('describeEstimation', () => {
 });
 
 describe('formatCapacity', () => {
-  // V is the effective velocity for a half-team share and a 10-day sprint.
+  // V is the effective velocity for a half-team share and a 2-week sprint.
   it('Story Points', () => {
     expect(formatCapacity('storyPoints', 'full', 20, 10)).toEqual({
       perPeriod: { value: 20, label: 'points / sprint' },
@@ -266,7 +274,56 @@ describe('pluralize', () => {
   });
 });
 
+describe('getDefaultTracks', () => {
+  it.each([
+    ['teamDays', 'full', 1],
+    ['teamDays', 'half', 2],
+    ['teamWeeks', 'third', 3],
+    ['teamSprints', 'quarter', 4],
+  ] as const)('%s with a %s share → %i', (unit, share, tracks) => {
+    expect(getDefaultTracks(inputs({ estimateUnit: unit, estimateTeamShare: share }))).toBe(tracks);
+  });
+
+  it('a team-time unit with no share is the full team', () => {
+    expect(getDefaultTracks(inputs({ estimateUnit: 'teamWeeks' }))).toBe(1);
+  });
+
+  it.each([
+    [6, 6],
+    ['4', 4],
+    [2.5, 2],
+    [0.5, 1],
+  ])('Dev Days with %s members → %i', (members, tracks) => {
+    expect(getDefaultTracks(inputs({ estimateUnit: 'devDays', teamMembers: members as number }))).toBe(tracks);
+  });
+
+  it.each([null, 0, -1])('Dev Days with no usable headcount (%s) implies nothing', (members) => {
+    expect(getDefaultTracks(inputs({ estimateUnit: 'devDays', teamMembers: members }))).toBeNull();
+  });
+
+  it.each([null, 'storyPoints'] as const)('Story Points implies nothing (unit %s)', (unit) => {
+    expect(getDefaultTracks(inputs({ estimateUnit: unit, estimateTeamShare: 'half', teamMembers: 6 }))).toBeNull();
+  });
+});
+
+describe('sprintWeeks', () => {
+  it.each([
+    [10, 2],
+    [5, 1],
+    [15, 3],
+    [7, 1.4],
+  ])('%i working days is %d weeks', (days, weeks) => {
+    expect(sprintWeeks(days)).toBe(weeks);
+  });
+});
+
 describe('describeUnestimated', () => {
+  const unestimatedSentence = (...args: Parameters<typeof describeUnestimated>) => {
+    const { items, period } = describeUnestimated(...args);
+
+    return `${items} without estimates default to ${period}.`;
+  };
+
   it.each([
     ['storyPoints', 10],
     ['teamSprints', 10],
@@ -274,31 +331,31 @@ describe('describeUnestimated', () => {
     ['teamDays', 5],
     ['teamWeeks', 5],
   ] as const)('%s: one scheduling period', (unit, days) => {
-    expect(describeUnestimated(inputs({ estimateUnit: unit }), WORK_ITEMS_LABEL)).toBe(
+    expect(unestimatedSentence(inputs({ estimateUnit: unit }), WORK_ITEMS_LABEL)).toBe(
       `Work items without estimates default to ${days} working days.`,
     );
   });
 
   it('follows the sprint length for a sprint unit', () => {
-    expect(describeUnestimated(inputs({ sprintLength: 15 }), WORK_ITEMS_LABEL)).toBe(
+    expect(unestimatedSentence(inputs({ sprintLength: 15 }), WORK_ITEMS_LABEL)).toBe(
       'Work items without estimates default to 15 working days.',
     );
   });
 
   it('a hidden sprint length does not leak in', () => {
-    expect(describeUnestimated(inputs({ estimateUnit: 'devDays', sprintLength: 15 }), WORK_ITEMS_LABEL)).toBe(
+    expect(unestimatedSentence(inputs({ estimateUnit: 'devDays', sprintLength: 15 }), WORK_ITEMS_LABEL)).toBe(
       'Work items without estimates default to 5 working days.',
     );
   });
 
   it('names the work item type on a per-type form', () => {
-    expect(describeUnestimated(inputs({}), itemLabelFor('Epic'))).toBe(
+    expect(unestimatedSentence(inputs({}), itemLabelFor('Epic'))).toBe(
       'Epics without estimates default to 10 working days.',
     );
   });
 
   it('a one-day sprint reads "1 working day"', () => {
-    expect(describeUnestimated(inputs({ sprintLength: 1 }), WORK_ITEMS_LABEL)).toBe(
+    expect(unestimatedSentence(inputs({ sprintLength: 1 }), WORK_ITEMS_LABEL)).toBe(
       'Work items without estimates default to 1 working day.',
     );
   });

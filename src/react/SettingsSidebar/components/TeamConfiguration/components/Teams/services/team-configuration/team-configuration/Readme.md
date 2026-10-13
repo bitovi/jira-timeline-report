@@ -54,7 +54,11 @@ See `Teams/shared/estimation.ts` and spec/040-update-team-estimation-settings.
 | `teamWeeks`             | `estimateTeamShare` (a week is 5 days) | 5 working days | `P / (5 × f)`                  |
 | `teamSprints`           | `sprintLength`, `estimateTeamShare`    | `sprintLength` | `1 / f`                        |
 
-`tracks` (work items in parallel) is asked for every unit. Shares are `full` = 1, `half` = ½, `third` = ⅓, `quarter` = ¼.
+`sprintLength` is stored in working days but asked in weeks (one week = `DAYS_PER_WEEK` = 5 working days), so the form shows `sprintLength / 5` and saves `weeks × 5`. Everything that reads it — the scheduler, the legacy form, saved configs — keeps working in days.
+
+`tracks` (work items in parallel) and `teamMembers` are asked for every unit, but only Dev Days turns `teamMembers` into capacity. Shares are `full` = 1, `half` = ½, `third` = ⅓, `quarter` = ¼.
+
+**The parallel count follows the other answers** (`getDefaultTracks`). Changing the unit, the share (team-time units) or the headcount (Dev Days) also saves `tracks` at the same level, in the same write: one item per developer for Dev Days, and full 1 / half 2 / third 3 / quarter 4 for the shares. It overwrites any hand-typed value, and the team can edit it afterwards. Story Points implies nothing, so switching to it leaves `tracks` alone.
 
 The period cancels out of every estimated duration. Its one visible effect is the default for an **unestimated item, which always takes exactly one period**: a sprint for the sprint units, and `UNESTIMATED_WORKING_DAYS` (5) for the rest. The form says so under the unit question.
 

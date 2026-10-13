@@ -29,8 +29,8 @@ export const DEFAULT_TEAM_SHARE: EstimateTeamShare = 'full';
 
 const SHARE: Record<EstimateTeamShare, number> = { full: 1, half: 1 / 2, third: 1 / 3, quarter: 1 / 4 };
 
-/** "One week is 5 working days." */
-const DAYS_PER_WEEK = 5;
+/** "One week is 5 working days." Also how the form's sprint length, asked in weeks, is stored in days. */
+export const DAYS_PER_WEEK = 5;
 
 /**
  * Working days an unestimated item takes, for the units that don't ask for a sprint length. The
@@ -64,7 +64,15 @@ export function itemLabelFor(levelName: string): ItemLabel {
   return { singular: levelName, plural: pluralize(levelName) };
 }
 
-/** Does this unit ask "How many working days are in a sprint?" */
+/**
+ * A stored `sprintLength` (working days) as the weeks the form asks for. The setting stays in days so
+ * the scheduler, the legacy form and every saved config read it unchanged.
+ */
+export function sprintWeeks(sprintLengthDays: number): number {
+  return roundTo(sprintLengthDays / DAYS_PER_WEEK, 2);
+}
+
+/** Does this unit ask "How many weeks are in a sprint?" */
 export function usesSprintLength(unit: EstimateUnit): unit is 'storyPoints' | 'teamSprints' {
   return unit === 'storyPoints' || unit === 'teamSprints';
 }
@@ -77,6 +85,33 @@ export function getSchedulingPeriodDays(config: Pick<EstimationInputs, 'estimate
   const unit = config.estimateUnit ?? DEFAULT_ESTIMATE_UNIT;
 
   return usesSprintLength(unit) ? Number(config.sprintLength) : UNESTIMATED_WORKING_DAYS[unit];
+}
+
+/**
+ * The parallel count ("tracks") implied by the other answers, or `null` when they imply none:
+ *
+ * - Dev Days: one item per developer — `teamMembers`, rounded down, at least 1.
+ * - Team Working Days, Weeks and Sprints: as many items as the share fits into the team — full 1,
+ *   half 2, third 3, quarter 4.
+ * - Story Points: nothing to derive from.
+ *
+ * The form applies it whenever the unit, the share or the headcount changes, overwriting whatever
+ * parallel count was there; the team can still edit it afterwards.
+ */
+export function getDefaultTracks(
+  config: Pick<EstimationInputs, 'estimateUnit' | 'estimateTeamShare' | 'teamMembers'>,
+): number | null {
+  const unit = config.estimateUnit ?? DEFAULT_ESTIMATE_UNIT;
+
+  if (unit === 'storyPoints') return null;
+
+  if (unit === 'devDays') {
+    const members = Number(config.teamMembers);
+
+    return Number.isFinite(members) && members > 0 ? Math.max(1, Math.floor(members)) : null;
+  }
+
+  return Math.round(1 / SHARE[config.estimateTeamShare ?? DEFAULT_TEAM_SHARE]);
 }
 
 /** Estimate units the whole team finishes in one scheduling period (`getSchedulingPeriodDays`). */
@@ -111,25 +146,28 @@ const plural = (count: number, singular: string, many: string) => (count === 1 ?
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 function describeParallel(tracks: number, item: ItemLabel) {
-  return tracks === 1 ? `One ${item.singular} at a time.` : `Up to ${tracks} ${item.plural} in parallel.`;
+  return tracks === 1 ? `One ${item.singular} at a time.` : `With ${tracks} ${item.plural} in parallel.`;
 }
 
-/** The unit question's second hint, e.g. "Work items without estimates default to 5 working days." */
-export function describeUnestimated(config: EstimationInputs, item: ItemLabel): string {
+/**
+ * The variable parts of the unit question's second hint, "{items} without estimates default to
+ * {period}." — returned apart so the hint can emphasize them.
+ */
+export function describeUnestimated(config: EstimationInputs, item: ItemLabel): { items: string; period: string } {
   const days = getSchedulingPeriodDays(config);
 
-  return `${capitalize(item.plural)} without estimates default to ${days} working ${plural(days, 'day', 'days')}.`;
+  return { items: capitalize(item.plural), period: `${days} working ${plural(days, 'day', 'days')}` };
 }
 
 function describeUnit(config: EstimationInputs) {
-  const sprintLength = Number(config.sprintLength);
+  const weeks = sprintWeeks(Number(config.sprintLength));
   const share = SHARE_PHRASE[config.estimateTeamShare ?? DEFAULT_TEAM_SHARE];
 
   switch (config.estimateUnit ?? DEFAULT_ESTIMATE_UNIT) {
     case 'storyPoints': {
       const velocity = Number(config.velocityPerSprint);
 
-      return `${velocity} story ${plural(velocity, 'point', 'points')} per ${sprintLength}-day sprint.`;
+      return `${velocity} story ${plural(velocity, 'point', 'points')} per ${weeks}-week sprint.`;
     }
     case 'devDays': {
       const members = Number(config.teamMembers);
@@ -141,11 +179,11 @@ function describeUnit(config: EstimationInputs) {
     case 'teamWeeks':
       return `Estimates are based on weeks and assume ${share}.`;
     case 'teamSprints':
-      return `Estimates are based on ${sprintLength}-day sprints and assume ${share}.`;
+      return `Estimates are based on ${weeks}-week sprints and assume ${share}.`;
   }
 }
 
-/** The summary under the estimation questions, e.g. "40 story points per 10-day sprint. Up to 2 work items in parallel." */
+/** The summary under the estimation questions, e.g. "40 story points per 2-week sprint. With 2 work items in parallel." */
 export function describeEstimation(config: EstimationInputs, item: ItemLabel): string {
   return `${describeUnit(config)} ${describeParallel(Number(config.tracks), item)}`;
 }
