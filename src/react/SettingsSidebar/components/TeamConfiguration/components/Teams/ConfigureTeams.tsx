@@ -16,7 +16,6 @@ import { updateTeamConfigurationKeys } from './services/team-configuration/key-f
 import ConfigureTeamsForm from './ConfigureTeamsForm';
 import { useTeamForm } from './useTeamForm';
 import { useResetTeamSettings } from './useResetTeamSettings';
-import { useFeatures } from '../../../../../services/features';
 import { itemLabelFor } from './shared/estimation';
 import ScrollableTabList from './components/ScrollableTabList';
 import CustomSettingsDot from '../CustomSettingsDot';
@@ -37,14 +36,12 @@ interface LevelFormProps {
 }
 
 const LevelForm: FC<LevelFormProps> = ({ hierarchyLevel, jiraFields, getHierarchyLevelName, ...formData }) => {
-  const { estimationQuestions } = useFeatures();
   const { isSaving: _isSaving, ...formProps } = useTeamForm({ hierarchyLevel, ...formData });
 
   return (
     <ConfigureTeamsForm
       jiraFields={jiraFields}
       itemLabel={hierarchyLevel === 'defaults' ? null : itemLabelFor(getHierarchyLevelName(hierarchyLevel))}
-      showEstimationQuestions={!!estimationQuestions}
       {...formProps}
     />
   );

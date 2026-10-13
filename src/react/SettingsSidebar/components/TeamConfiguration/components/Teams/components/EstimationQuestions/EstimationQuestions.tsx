@@ -195,7 +195,7 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
           'story points',
         )}
       {/* Asked for every unit, but only Dev Days turns it into capacity; the others ignore it. */}
-      {numberField('teamMembers', 'How many full-time team members are working on your team?', 'members')}
+      {numberField('teamMembers', 'How many full-time developers are working on your team?', 'developers')}
       {numberField('tracks', `How many ${items.plural} can your team work on in parallel, on average?`)}
       {showsOverstaffWarning && (
         <SectionMessage appearance="warning">

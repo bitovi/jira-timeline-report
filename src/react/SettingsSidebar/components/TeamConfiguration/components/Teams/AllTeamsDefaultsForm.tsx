@@ -6,7 +6,6 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Flex } from '@atlaskit/primitives';
 
-import TextField from './components/TextField';
 import Select from './components/Select';
 import { FormToggle } from './components/Toggle';
 import { RequiredAsterisk } from './components/Label';
@@ -19,8 +18,6 @@ export interface AllTeamsDefaultFormProps {
   jiraFields: IssueFields;
   savedUserData: Configuration;
   inheritedData: Configuration;
-  /** The `estimationQuestions` feature flag. See spec/040-update-team-estimation-settings. */
-  showEstimationQuestions?: boolean;
 }
 
 export interface FieldUpdates<TProperty extends keyof Configuration> {
@@ -28,13 +25,7 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
   value: Configuration[TProperty];
 }
 
-const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
-  save,
-  savedUserData,
-  inheritedData,
-  jiraFields,
-  showEstimationQuestions = false,
-}) => {
+const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData, inheritedData, jiraFields }) => {
   const selectableFields = buildSelectableFields(jiraFields);
 
   const { register, handleSubmit, control, setValue } = useForm<Configuration>({
@@ -63,41 +54,17 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({
         <span className="text-xs text-slate-500">
           <RequiredAsterisk /> indicates a required field
         </span>
-        {showEstimationQuestions ? (
-          <EstimationQuestions
-            mode="global"
-            control={control}
-            register={register}
-            update={update}
-            updateFields={updateFields}
-            setValue={setValue}
-            savedUserData={savedUserData}
-            itemLabel={null}
-            estimateFieldOptions={selectableFields}
-          />
-        ) : (
-          <>
-            <TextField
-              name="sprintLength"
-              type="number"
-              label="Sprint length"
-              unit="business days"
-              min={1}
-              register={register}
-              onSave={update}
-            />
-            <TextField
-              name="velocityPerSprint"
-              type="number"
-              label="Capacity per sprint"
-              unit="estimating units per sprint"
-              min={1}
-              register={register}
-              onSave={update}
-            />
-            <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
-          </>
-        )}
+        <EstimationQuestions
+          mode="global"
+          control={control}
+          register={register}
+          update={update}
+          updateFields={updateFields}
+          setValue={setValue}
+          savedUserData={savedUserData}
+          itemLabel={null}
+          estimateFieldOptions={selectableFields}
+        />
         <AdvancedSettings>
           <Select
             name="estimateField"

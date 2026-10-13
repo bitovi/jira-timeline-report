@@ -37,9 +37,9 @@ export const DAYS_PER_WEEK = 5;
  * sprint units (Story Points, Team Sprints) use their sprint length instead.
  */
 export const UNESTIMATED_WORKING_DAYS: Record<Exclude<EstimateUnit, 'storyPoints' | 'teamSprints'>, number> = {
-  devDays: 5,
-  teamDays: 5,
-  teamWeeks: 5,
+  devDays: 10,
+  teamDays: 10,
+  teamWeeks: 10,
 };
 
 export type EstimationInputs = Pick<
@@ -172,7 +172,7 @@ function describeUnit(config: EstimationInputs) {
     case 'devDays': {
       const members = Number(config.teamMembers);
 
-      return `${members} full-time team ${plural(members, 'member', 'members')}.`;
+      return `${members} full-time ${plural(members, 'developer', 'developers')}.`;
     }
     case 'teamDays':
       return `Estimates are based on working days and assume ${share}.`;

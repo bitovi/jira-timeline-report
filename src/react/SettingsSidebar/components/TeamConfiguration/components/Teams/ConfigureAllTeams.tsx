@@ -5,7 +5,6 @@ import type { IssueFields } from './services/team-configuration';
 import React from 'react';
 
 import { useSaveTeamData, useTeamData } from './services/team-configuration';
-import { useFeatures } from '../../../../../services/features';
 
 import AllTeamsDefaultForm from './AllTeamsDefaultsForm';
 import ConfigureTeams from './ConfigureTeams';
@@ -17,7 +16,6 @@ export interface ConfigureAllTeamsProps {
 
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
   const { savedUserTeamData, inheritedTeamData } = useTeamData('__GLOBAL__', jiraFields);
-  const { estimationQuestions } = useFeatures();
 
   const { save } = useSaveTeamData({
     teamName: '__GLOBAL__',
@@ -39,7 +37,6 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, .
           savedUserData={savedUserTeamData.defaults}
           inheritedData={inheritedTeamData.defaults}
           jiraFields={jiraFields}
-          showEstimationQuestions={!!estimationQuestions}
           {...props}
         />
       }

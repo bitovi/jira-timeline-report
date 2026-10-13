@@ -26,7 +26,7 @@ export type Configuration = {
   tracks: number | null;
   /** `null` resolves to `storyPoints`, which is how every config saved before spec/040 behaves. */
   estimateUnit: EstimateUnit | null;
-  /** Full-time team members (Dev Days only). */
+  /** Full-time developers */
   teamMembers: number | null;
   /** Team Working Days, Weeks and Sprints only. */
   estimateTeamShare: EstimateTeamShare | null;

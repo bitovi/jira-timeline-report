@@ -16,7 +16,7 @@ const SPRINT_QUESTION = 'How many weeks are in a sprint?';
 const SHARE_QUESTION = /how much of the team do you assume will work on a single/;
 const WEEK_NOTE = 'One week is 5 working days.';
 const POINTS_QUESTION = 'On average, how many story points does your team complete per sprint?';
-const MEMBERS_QUESTION = 'How many full-time team members are working on your team?';
+const MEMBERS_QUESTION = 'How many full-time developers are working on your team?';
 const PARALLEL_QUESTION = /can your team work on in parallel, on average\?/;
 const WARNING = /Team members will need to split their time across multiple/;
 
@@ -136,7 +136,7 @@ describe('EstimationQuestions', () => {
     expect(updateFields).toHaveBeenCalledWith({ estimateUnit: 'devDays', tracks: 1 });
     expect(screen.getByText(MEMBERS_QUESTION)).toBeInTheDocument();
     expect(screen.queryByText(POINTS_QUESTION)).not.toBeInTheDocument();
-    expect(summary()).toBe('1 full-time team member. One work item at a time.');
+    expect(summary()).toBe('1 full-time developer. One work item at a time.');
   });
 
   describe('the parallel count follows the other answers', () => {
@@ -360,7 +360,7 @@ describe('EstimationQuestions', () => {
       render(<Harness values={resolved({ velocityPerSprint: 40, teamMembers: 6, tracks: 2 })} />);
 
       expect(screen.getByLabelText(/how many story points/)).toHaveValue(40);
-      expect(screen.getByLabelText(/How many full-time team members/)).toHaveValue(6);
+      expect(screen.getByLabelText(/How many full-time developers/)).toHaveValue(6);
       expect(screen.getByLabelText(/can your team work on in parallel/)).toHaveValue(2);
     });
 
@@ -376,7 +376,7 @@ describe('EstimationQuestions', () => {
       render(<Harness mode="inheriting" values={resolved({ estimateUnit: 'devDays', teamMembers: 1 })} />);
 
       const membersRow = screen.getByText(MEMBERS_QUESTION).closest('.grid') as HTMLElement;
-      expect(within(membersRow).getByTestId('inherited-value')).toHaveTextContent(/^1 member$/);
+      expect(within(membersRow).getByTestId('inherited-value')).toHaveTextContent(/^1 developer$/);
     });
 
     it('shows the input once the level customizes it', () => {
@@ -442,14 +442,14 @@ describe('EstimationQuestions', () => {
     });
 
     it('says how long an unestimated item takes, following the unit', () => {
-      render(<Harness values={resolved({})} />);
+      render(<Harness values={resolved({ sprintLength: 15 })} />);
 
       const unestimatedHint = () => screen.getByTestId('unestimated-hint').textContent;
-      expect(unestimatedHint()).toBe('Work items without estimates default to 10 working days.');
+      expect(unestimatedHint()).toBe('Work items without estimates default to 15 working days.');
 
       chooseUnit('Dev Days');
 
-      expect(unestimatedHint()).toBe('Work items without estimates default to 5 working days.');
+      expect(unestimatedHint()).toBe('Work items without estimates default to 10 working days.');
     });
   });
 
@@ -477,7 +477,7 @@ describe('EstimationQuestions', () => {
       expect(screen.getByText('What units do you use to estimate Epics?')).toBeInTheDocument();
       expect(screen.getByText('How many Epics can your team work on in parallel, on average?')).toBeInTheDocument();
       expect(screen.getByText('Team members will need to split their time across multiple Epics.')).toBeInTheDocument();
-      expect(summary()).toBe('1 full-time team member. With 2 Epics in parallel.');
+      expect(summary()).toBe('1 full-time developer. With 2 Epics in parallel.');
     });
   });
 

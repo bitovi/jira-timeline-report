@@ -93,7 +93,7 @@ Wording: `<as a team | issue type>` is **"as a team"** on `defaults` accordions 
 | Question                                                                      | Field               | Shown when   |
 | ----------------------------------------------------------------------------- | ------------------- | ------------ |
 | How many story points does your team complete per sprint?                     | `velocityPerSprint` | Story Points |
-| How many full-time team members are working on your team?                     | `teamMembers`       | Dev Days     |
+| How many full-time developers are working on your team?                       | `teamMembers`       | Dev Days     |
 | How many {work items \| Epics} can your team work on in parallel, on average? | `tracks`            | always       |
 
 Parallel is asked for every unit. Your summary examples include it for Story Points and Dev Days, and the Dev Days warning compares it to team size.
@@ -105,7 +105,7 @@ Parallel is asked for every unit. Your summary examples include it for Story Poi
 A muted line under both subsections that shows `describeEstimation(watchedValues, itemsLabel)` and updates live:
 
 - Story Points: "40 story points per 10-day sprint. With 2 work items in parallel."
-- Dev Days: "10 full-time team members. With 3 work items in parallel."
+- Dev Days: "10 full-time developers. With 3 work items in parallel."
 - Team Working Days: "Estimates are based on working days and assume the full team. With 2 work items in parallel."
 - Team Weeks: "Estimates are based on weeks and assume one-third of the team. With 4 work items in parallel."
 - Team Sprints: "Estimates are based on 10-day sprints and assume half the team. With 2 work items in parallel."
@@ -168,7 +168,7 @@ The examples assume a half-team share and a 10-day sprint. Your draft showed `1 
 
 ### Follow-up: views that show the raw per-period velocity (not fixed yet)
 
-Dev Days, Team Working Days and Team Weeks schedule against a fixed 5-day period (`UNESTIMATED_WORKING_DAYS` in `Teams/shared/estimation.ts`). That period cancels out of every estimated duration, and its only intended effect is the default for unestimated items. These views print the raw `team.velocity`, the effective velocity _per period_, so the internal 5 leaks into what the user sees. A 5-member Dev Days team shows **25**, labelled as points or as "per sprint":
+Dev Days, Team Working Days and Team Weeks schedule against a fixed 10-day period (`UNESTIMATED_WORKING_DAYS` in `Teams/shared/estimation.ts`). That period cancels out of every estimated duration, and its only intended effect is the default for unestimated items. These views print the raw `team.velocity`, the effective velocity _per period_, so the internal 10 leaks into what the user sees. A 5-member Dev Days team shows **50**, labelled as points or as "per sprint":
 
 - **`src/react/reports/TableReport/components/EstimateBreakdownModal/EstimateBreakdownModal.tsx:136, :154`**: shows `issue.team?.velocity` in the breakdown, and the current/previous comparison via `valueKey="team.velocity"`.
 - **`src/react/reports/GanttReport/GanttGrid/components/PercentCompleteModal/CalculationBreakdown.tsx:123`**: `CalculationBox title="Capacity per sprint"` shows `issue.team?.velocity`. For the non-sprint units this is neither a sprint nor points.
@@ -178,7 +178,7 @@ Likely fix: show capacity with `formatCapacity` (per day, plus per period only f
 
 ## Feature flag
 
-Put the new form behind a Features-tab toggle, `estimationQuestions` ("Estimation questions", off by default), with one entry in `src/configuration/features.ts`. When it's off, both forms render today's three fields. `getEffectiveVelocity` always runs, because without a saved `estimateUnit` it's identical to the current behavior.
+The new form is always on. It first shipped behind a Features-tab toggle, `estimationQuestions`, which was removed along with the old three-field forms. `getEffectiveVelocity` always runs; without a saved `estimateUnit` it's identical to the old behavior.
 
 ## Steps
 

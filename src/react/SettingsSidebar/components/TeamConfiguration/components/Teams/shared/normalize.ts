@@ -90,14 +90,11 @@ export const createNormalizeConfiguration = (
       );
     },
     getTeamMembers: (issue, config) => {
-      const { estimateUnit, teamMembers } = getConfiguration(
-        allData,
-        config?.getTeamKey(issue),
-        config?.getHierarchyLevel(issue),
-      );
+      const { teamMembers } = getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue));
 
-      // Only a Dev Days team's headcount means anything to the schedule.
-      return estimateUnit === 'devDays' && teamMembers != null ? Number(teamMembers) : null;
+      // Every unit's headcount, for the AutoScheduler's people-per-track readout. Only Dev Days turns
+      // it into capacity, and that happens in `getVelocity`, not here.
+      return teamMembers != null ? Number(teamMembers) : null;
     },
     getParallelWorkLimit: (issue, config) => {
       return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).tracks);

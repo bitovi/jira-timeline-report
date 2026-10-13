@@ -162,7 +162,7 @@ export interface NormalizedTeam {
   velocity: number;
   estimateUnit: EstimateUnit;
   estimateTeamShare: EstimateTeamShare;
-  /** Dev Days teams only; `null` for every other unit. */
+  /** Headcount for every unit; only Dev Days turns it into capacity. `null` when nothing resolves. */
   teamMembers: number | null;
   /** Working days in the scheduling period: the sprint for sprint units, else a fixed default. */
   daysPerSprint: number;

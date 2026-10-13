@@ -43,15 +43,15 @@ describe('getSchedulingPeriodDays', () => {
   });
 
   it.each(['devDays', 'teamDays', 'teamWeeks'] as const)('%s ignores the hidden sprint length', (unit) => {
-    expect(getSchedulingPeriodDays(inputs({ estimateUnit: unit, sprintLength: 15 }))).toBe(5);
+    expect(getSchedulingPeriodDays(inputs({ estimateUnit: unit, sprintLength: 15 }))).toBe(10);
   });
 
   it('a config with no unit is story points, so it uses its sprint length', () => {
     expect(getSchedulingPeriodDays(inputs({ sprintLength: 15 }))).toBe(15);
   });
 
-  it('the fixed defaults are 5 working days', () => {
-    expect(UNESTIMATED_WORKING_DAYS).toEqual({ devDays: 5, teamDays: 5, teamWeeks: 5 });
+  it('the fixed defaults are 10 working days', () => {
+    expect(UNESTIMATED_WORKING_DAYS).toEqual({ devDays: 10, teamDays: 10, teamWeeks: 10 });
   });
 });
 
@@ -64,24 +64,24 @@ describe('getEffectiveVelocity', () => {
     expect(getEffectiveVelocity(inputs({ velocityPerSprint: '40' as never, estimateUnit: 'storyPoints' }))).toBe(40);
   });
 
-  it('Dev Days: one dev-day per member per working day of the 5-day period', () => {
-    expect(getEffectiveVelocity(inputs({ estimateUnit: 'devDays', teamMembers: 10 }))).toBe(50);
+  it('Dev Days: one dev-day per member per working day of the 10-day period', () => {
+    expect(getEffectiveVelocity(inputs({ estimateUnit: 'devDays', teamMembers: 10 }))).toBe(100);
   });
 
   it.each([
-    ['full', 5],
-    ['half', 10],
-    ['third', 15],
-    ['quarter', 20],
+    ['full', 10],
+    ['half', 20],
+    ['third', 30],
+    ['quarter', 40],
   ] as const)('Team Working Days with a %s share', (share, velocity) => {
     expect(getEffectiveVelocity(inputs({ estimateUnit: 'teamDays', estimateTeamShare: share }))).toBeCloseTo(velocity);
   });
 
   it.each([
-    ['full', 1],
-    ['half', 2],
-    ['third', 3],
-    ['quarter', 4],
+    ['full', 2],
+    ['half', 4],
+    ['third', 6],
+    ['quarter', 8],
   ] as const)('Team Weeks with a %s share', (share, velocity) => {
     expect(getEffectiveVelocity(inputs({ estimateUnit: 'teamWeeks', estimateTeamShare: share }))).toBeCloseTo(velocity);
   });
@@ -98,7 +98,7 @@ describe('getEffectiveVelocity', () => {
   });
 
   it('treats a missing share as the full team', () => {
-    expect(getEffectiveVelocity(inputs({ estimateUnit: 'teamDays' }))).toBe(5);
+    expect(getEffectiveVelocity(inputs({ estimateUnit: 'teamDays' }))).toBe(10);
   });
 
   describe('end to end through pointsPerDayPerTrack', () => {
@@ -117,9 +117,9 @@ describe('getEffectiveVelocity', () => {
     it.each([
       [inputs({ estimateUnit: 'storyPoints', velocityPerSprint: 40, tracks: 3 }), 10],
       [inputs({ estimateUnit: 'teamSprints', estimateTeamShare: 'quarter', tracks: 1 }), 10],
-      [inputs({ estimateUnit: 'devDays', teamMembers: 7, tracks: 2 }), 5],
-      [inputs({ estimateUnit: 'teamDays', estimateTeamShare: 'third', tracks: 4 }), 5],
-      [inputs({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half', tracks: 2 }), 5],
+      [inputs({ estimateUnit: 'devDays', teamMembers: 7, tracks: 2 }), 10],
+      [inputs({ estimateUnit: 'teamDays', estimateTeamShare: 'third', tracks: 4 }), 10],
+      [inputs({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half', tracks: 2 }), 10],
     ])('an unestimated item takes one scheduling period (%o → %i days)', (config, days) => {
       expect(unestimatedDays(config)).toBeCloseTo(days);
     });
@@ -133,7 +133,7 @@ describe('getEffectiveVelocity', () => {
       const withHiddenSprintLength = { ...config, sprintLength: 15 };
 
       expect(daysOfWork(20, withHiddenSprintLength)).toBeCloseTo(daysOfWork(20, config));
-      expect(unestimatedDays(withHiddenSprintLength)).toBeCloseTo(5);
+      expect(unestimatedDays(withHiddenSprintLength)).toBeCloseTo(10);
     });
 
     it('a full-team week is 5 working days', () => {
@@ -161,7 +161,7 @@ describe('describeEstimation', () => {
 
   it('Dev Days', () => {
     expect(describeEstimation(inputs({ estimateUnit: 'devDays', teamMembers: 10, tracks: 3 }), WORK_ITEMS_LABEL)).toBe(
-      '10 full-time team members. With 3 work items in parallel.',
+      '10 full-time developers. With 3 work items in parallel.',
     );
   });
 
@@ -206,7 +206,7 @@ describe('describeEstimation', () => {
 
   it('singular member', () => {
     expect(describeEstimation(inputs({ estimateUnit: 'devDays', teamMembers: 1 }), WORK_ITEMS_LABEL)).toBe(
-      '1 full-time team member. One work item at a time.',
+      '1 full-time developer. One work item at a time.',
     );
   });
 });
@@ -327,9 +327,9 @@ describe('describeUnestimated', () => {
   it.each([
     ['storyPoints', 10],
     ['teamSprints', 10],
-    ['devDays', 5],
-    ['teamDays', 5],
-    ['teamWeeks', 5],
+    ['devDays', 10],
+    ['teamDays', 10],
+    ['teamWeeks', 10],
   ] as const)('%s: one scheduling period', (unit, days) => {
     expect(unestimatedSentence(inputs({ estimateUnit: unit }), WORK_ITEMS_LABEL)).toBe(
       `Work items without estimates default to ${days} working days.`,
@@ -344,7 +344,7 @@ describe('describeUnestimated', () => {
 
   it('a hidden sprint length does not leak in', () => {
     expect(unestimatedSentence(inputs({ estimateUnit: 'devDays', sprintLength: 15 }), WORK_ITEMS_LABEL)).toBe(
-      'Work items without estimates default to 5 working days.',
+      'Work items without estimates default to 10 working days.',
     );
   });
 

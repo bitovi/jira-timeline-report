@@ -111,9 +111,9 @@ export const Clean: StoryObj<typeof Row> = {};
 /** The squeezed case: the outputs drop to a second line instead of painting over the inputs. */
 export const Narrow: StoryObj<typeof Row> = { args: { width: 420 } };
 
-/** Dev Days: capacity is the team's headcount, edited as dev days per day. 5 members over a 5-day period. */
+/** Dev Days: capacity is the team's headcount, edited as dev days per day. 5 members over a 10-day period. */
 export const DevDays: StoryObj<typeof Row> = {
-  args: { estimateUnit: 'devDays', teamMembers: 5, velocity: 25, periodDays: 5 },
+  args: { estimateUnit: 'devDays', teamMembers: 5, velocity: 50, periodDays: 10 },
 };
 
 /** Team Weeks at half a team: capacity follows from the share, so it is a readout. V = 5 / (5 × ½). */

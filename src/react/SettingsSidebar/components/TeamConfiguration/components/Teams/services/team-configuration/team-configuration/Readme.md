@@ -46,13 +46,13 @@ Teams answer capacity questions in the unit they estimate in (`estimateUnit`). T
 
 See `Teams/shared/estimation.ts` and spec/040-update-team-estimation-settings.
 
-| `estimateUnit`          | Asks for                               | Period (P)     | Effective velocity (f = share) |
-| ----------------------- | -------------------------------------- | -------------- | ------------------------------ |
-| `storyPoints` (default) | `sprintLength`, `velocityPerSprint`    | `sprintLength` | `velocityPerSprint`            |
-| `devDays`               | `teamMembers`                          | 5 working days | `teamMembers × P`              |
-| `teamDays`              | `estimateTeamShare`                    | 5 working days | `P / f`                        |
-| `teamWeeks`             | `estimateTeamShare` (a week is 5 days) | 5 working days | `P / (5 × f)`                  |
-| `teamSprints`           | `sprintLength`, `estimateTeamShare`    | `sprintLength` | `1 / f`                        |
+| `estimateUnit`          | Asks for                               | Period (P)      | Effective velocity (f = share) |
+| ----------------------- | -------------------------------------- | --------------- | ------------------------------ |
+| `storyPoints` (default) | `sprintLength`, `velocityPerSprint`    | `sprintLength`  | `velocityPerSprint`            |
+| `devDays`               | `teamMembers`                          | 10 working days | `teamMembers × P`              |
+| `teamDays`              | `estimateTeamShare`                    | 10 working days | `P / f`                        |
+| `teamWeeks`             | `estimateTeamShare` (a week is 5 days) | 10 working days | `P / (5 × f)`                  |
+| `teamSprints`           | `sprintLength`, `estimateTeamShare`    | `sprintLength`  | `1 / f`                        |
 
 `sprintLength` is stored in working days but asked in weeks (one week = `DAYS_PER_WEEK` = 5 working days), so the form shows `sprintLength / 5` and saves `weeks × 5`. Everything that reads it — the scheduler, the legacy form, saved configs — keeps working in days.
 

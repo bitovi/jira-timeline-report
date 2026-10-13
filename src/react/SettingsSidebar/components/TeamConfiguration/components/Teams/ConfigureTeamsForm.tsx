@@ -8,7 +8,6 @@ import type { ItemLabel } from './shared/estimation';
 import React from 'react';
 import { Flex } from '@atlaskit/primitives';
 
-import InheritanceTextField from './components/InheritanceTextField';
 import InheritanceToggleField from './components/InheritanceToggleField';
 import InheritanceSelect from './components/InheritanceSelect';
 import EstimationQuestions from './components/EstimationQuestions';
@@ -28,8 +27,6 @@ export interface ConfigureTeamsFormProps {
   toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean) => void;
   /** `null` on a team's defaults; the work item type's name on a per-type accordion. */
   itemLabel?: ItemLabel | null;
-  /** The `estimationQuestions` feature flag. See spec/040-update-team-estimation-settings. */
-  showEstimationQuestions?: boolean;
 }
 
 export interface FieldUpdates<TProperty extends keyof Configuration> {
@@ -47,7 +44,6 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
   setValue,
   toggleInheritance,
   itemLabel = null,
-  showEstimationQuestions = false,
 }) => {
   const selectableFields = buildSelectableFields(jiraFields);
 
@@ -57,58 +53,18 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
         <span className="text-xs text-slate-500">
           <RequiredAsterisk /> indicates a required field
         </span>
-        {showEstimationQuestions ? (
-          <EstimationQuestions
-            mode="inheriting"
-            control={control}
-            register={register}
-            update={update}
-            updateFields={updateFields}
-            setValue={setValue}
-            savedUserData={savedUserData}
-            toggleInheritance={toggleInheritance}
-            itemLabel={itemLabel}
-            estimateFieldOptions={selectableFields}
-          />
-        ) : (
-          <>
-            <InheritanceTextField
-              isInheriting={!savedUserData.velocityPerSprint}
-              onInheritanceChange={(shouldCustomize) => toggleInheritance('velocityPerSprint', shouldCustomize)}
-              name="velocityPerSprint"
-              type="number"
-              label="Capacity per sprint"
-              unit="estimating units"
-              min={1}
-              control={control}
-              register={register}
-              onSave={update}
-            />
-            <InheritanceTextField
-              isInheriting={!savedUserData.tracks}
-              onInheritanceChange={(shouldCustomize) => toggleInheritance('tracks', shouldCustomize)}
-              name="tracks"
-              type="number"
-              label="Tracks"
-              min={1}
-              control={control}
-              register={register}
-              onSave={update}
-            />
-            <InheritanceTextField
-              isInheriting={!savedUserData.sprintLength}
-              onInheritanceChange={(shouldCustomize) => toggleInheritance('sprintLength', shouldCustomize)}
-              name="sprintLength"
-              type="number"
-              label="Sprint length"
-              unit="business days"
-              min={1}
-              control={control}
-              register={register}
-              onSave={update}
-            />
-          </>
-        )}
+        <EstimationQuestions
+          mode="inheriting"
+          control={control}
+          register={register}
+          update={update}
+          updateFields={updateFields}
+          setValue={setValue}
+          savedUserData={savedUserData}
+          toggleInheritance={toggleInheritance}
+          itemLabel={itemLabel}
+          estimateFieldOptions={selectableFields}
+        />
         <AdvancedSettings>
           <InheritanceSelect
             isInheriting={!savedUserData.estimateField}

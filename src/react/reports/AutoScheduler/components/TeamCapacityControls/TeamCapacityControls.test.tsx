@@ -9,7 +9,7 @@ let isBlocked = false;
 vi.mock('./useTeamCommit', () => ({ useTeamCommit: () => ({ commit, isSaving, isBlocked }) }));
 
 import { CapacityOverridesProvider } from '../../../../services/capacity-overrides';
-import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
+import { peoplePerTrack, TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
 import { itemLabelFor } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
 const inputs = (props: { savedEffectiveVelocity?: number; savedTracks?: number } = {}) => (
@@ -291,6 +291,40 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
     expect(screen.queryByRole('button', { name: /^Capacity,/ })).not.toBeInTheDocument();
   });
 
+  it('splits the headcount across the tracks, following the stepper', async () => {
+    renderUnit({ estimateUnit: 'teamSprints', savedTeamMembers: 10, savedTracks: 2, itemLabel: itemLabelFor('Epic') });
+
+    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(5 people each)');
+
+    await userEvent.click(screen.getByRole('button', { name: /work on one more Epic in parallel/i }));
+
+    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(3.3 people each)');
+  });
+
+  it("follows a Dev Days team's edited headcount", async () => {
+    renderUnit({
+      estimateUnit: 'devDays',
+      savedTeamMembers: 4,
+      savedTracks: 4,
+      savedEffectiveVelocity: 20,
+      periodDays: 5,
+    });
+
+    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(1 person each)');
+
+    await userEvent.click(screen.getByRole('button', { name: /Capacity, 4 dev days per day/ }));
+    await userEvent.clear(screen.getByRole('spinbutton'));
+    await userEvent.type(screen.getByRole('spinbutton'), '8{Enter}');
+
+    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(2 people each)');
+  });
+
+  it('shows no split without a headcount', () => {
+    renderUnit({ estimateUnit: 'teamWeeks' });
+
+    expect(screen.queryByTestId('people-per-track')).not.toBeInTheDocument();
+  });
+
   it('a Team Working Days team shows its per-day capacity, read-only', () => {
     renderUnit({ estimateUnit: 'teamDays', estimateTeamShare: 'half', savedEffectiveVelocity: 20 });
 
@@ -311,5 +345,16 @@ describe('TeamCapacityOutputs', () => {
     render(<TeamCapacityOutputs velocity={50} periodDays={10} estimateUnit="devDays" totalWorkingDays={34} />);
 
     expect(screen.queryByText('dev days / day')).not.toBeInTheDocument();
+  });
+});
+
+describe('peoplePerTrack', () => {
+  it.each([
+    [10, 2, '5 people'],
+    [10, 3, '3.3 people'],
+    [4, 4, '1 person'],
+    [1, 2, '0.5 people'],
+  ])('%i members across %i tracks is %s', (members, tracks, expected) => {
+    expect(peoplePerTrack(members, tracks)).toBe(expected);
   });
 });

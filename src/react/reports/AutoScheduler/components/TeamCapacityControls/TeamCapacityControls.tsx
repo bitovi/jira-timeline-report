@@ -43,7 +43,7 @@ interface TeamCapacityInputsProps {
   /** The team's effective velocity as derived — estimate units per scheduling period, whatever the unit. */
   savedEffectiveVelocity: number;
   savedTracks: number;
-  /** Dev Days teams only: their saved headcount. */
+  /** The team's saved headcount, whatever the unit. Only Dev Days edits it here. */
   savedTeamMembers?: number | null;
   /** Working days in the scheduling period (`NormalizedTeam.daysPerSprint`). */
   periodDays: number;
@@ -111,6 +111,8 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   // derived effective velocity, which Dev Days recomputes from an edited headcount.
   const effectiveVelocity = isDevDays && teamMembers !== undefined ? teamMembers * periodDays : velocityPerSprint;
   const capacity = formatCapacity(estimateUnit, estimateTeamShare, effectiveVelocity, periodDays);
+  // Dev Days can edit its headcount on this row; every other unit shows the saved one.
+  const headcount = isDevDays ? teamMembers : (savedTeamMembersProp ?? undefined);
 
   // `undefined` removes the field, so editing back to the saved value leaves the row clean instead of
   // arming a Commit that would write what is already stored.
@@ -127,16 +129,23 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   return (
     <span className="inline-flex min-w-0 items-center gap-3.5">
       {/* Tooltip clones its child to attach handlers and a ref, so it needs a host element. */}
-      <Tooltip content={trackTooltip(tracks, capacity.perPeriod ?? capacity.perDay, itemLabel)}>
-        <span className="inline-flex">
-          <TrackStepper
-            value={tracks}
-            itemLabel={itemLabel}
-            isDisabled={isSaving}
-            onChange={(next) => change({ tracks: next })}
-          />
-        </span>
-      </Tooltip>
+      <span className="inline-flex items-center gap-1.5">
+        <Tooltip content={trackTooltip(tracks, capacity.perPeriod ?? capacity.perDay, itemLabel)}>
+          <span className="inline-flex">
+            <TrackStepper
+              value={tracks}
+              itemLabel={itemLabel}
+              isDisabled={isSaving}
+              onChange={(next) => change({ tracks: next })}
+            />
+          </span>
+        </Tooltip>
+        {headcount !== undefined && (
+          <span className="whitespace-nowrap text-[11px] text-neutral-500" data-testid="people-per-track">
+            ({peoplePerTrack(headcount, tracks)} each)
+          </span>
+        )}
+      </span>
 
       {estimateUnit === 'storyPoints' && capacity.perPeriod && (
         <CapacityReadoutView label={capacity.perPeriod.label}>
@@ -264,6 +273,13 @@ const SHARE_OF_TEAM: Record<EstimateTeamShare, string> = {
 /** Where a team-time capacity comes from, and where to change it. */
 function teamShareTooltip(share: EstimateTeamShare, item: ItemLabel) {
   return `Estimates assume ${SHARE_OF_TEAM[share]} works on each ${item.singular}. Change this in Team Settings.`;
+}
+
+/** "5 people", "1 person", "0.5 people" — the team's headcount split evenly across its tracks. */
+export function peoplePerTrack(teamMembers: number, tracks: number) {
+  const people = roundTo(teamMembers / tracks, 1);
+
+  return `${people} ${people === 1 ? 'person' : 'people'}`;
 }
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
