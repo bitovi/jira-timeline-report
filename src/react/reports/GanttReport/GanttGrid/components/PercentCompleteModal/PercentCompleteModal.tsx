@@ -4,6 +4,7 @@ import CrossIcon from '@atlaskit/icon/glyph/cross';
 import { IconButton } from '@atlaskit/button/new';
 import { computePercentComplete } from '../../helpers/percentComplete';
 import { SelfCalculationBox } from './CalculationBreakdown';
+import { JiraImage } from '../../../../../components/JiraImage';
 import type { IssueOrRelease } from '../../types';
 
 export interface PercentCompleteModalProps {
@@ -75,7 +76,7 @@ export const PercentCompleteModal: React.FC<PercentCompleteModalProps> = ({ isOp
             <div>
               <p className="py-2 flex gap-1 text-xs items-center">
                 {issue.issue?.fields?.['Issue Type']?.iconUrl ? (
-                  <img src={issue.issue.fields['Issue Type'].iconUrl} alt="" />
+                  <JiraImage src={issue.issue.fields['Issue Type'].iconUrl} alt="" />
                 ) : (
                   issue.type
                 )}

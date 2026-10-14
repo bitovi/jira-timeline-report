@@ -3,6 +3,7 @@ import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle, ModalTransition
 import CrossIcon from '@atlaskit/icon/glyph/cross';
 import { IconButton } from '@atlaskit/button/new';
 import { getPath, round, formatPercent, usedStoryPointsMedian, teamsAreTheSame } from '../../model/breakdown';
+import { JiraImage } from '../../../../components/JiraImage';
 import type { EstimationIssue } from '../../model/estimationTypes';
 
 /** The "Current: / Last:" label gutter repeated before each equation row. */
@@ -188,7 +189,7 @@ export const EstimateBreakdownModal: FC<EstimateBreakdownModalProps> = ({ issue,
             <div>
               <p className="py-2 flex gap-1 text-xs items-center">
                 {issue.issue?.fields?.['Issue Type']?.iconUrl && (
-                  <img src={issue.issue?.fields?.['Issue Type']?.iconUrl} alt="" />
+                  <JiraImage src={issue.issue?.fields?.['Issue Type']?.iconUrl} alt="" />
                 )}
                 {issue.url ? (
                   <a href={issue.url} className="hover:underline" target="_blank" rel="noreferrer">
