@@ -16,6 +16,22 @@ export type Report = {
    * See spec/016-report-of-reports.
    */
   sections?: StoredNode[];
+  /**
+   * The Jira `accountId` of whoever created the report — never an email or name, and never stored
+   * alongside one (a bare account id isn't personal data; a name next to it would be). Set by the
+   * client on create, kept on update. Reports saved before spec/041 have none.
+   *
+   * **Advisory, not a security boundary.** Both backends are written whole by the browser, so
+   * nothing stops a client writing any value here. Hiding delete on other people's reports is a UI
+   * convenience; in a Reports Space, Jira's issue permissions are what actually govern deletion.
+   */
+  ownerId?: string;
+  /**
+   * Read-only, never meaningful to write: the account id of the Reports Space work item's
+   * `creator`, filled in by the space backend on read so a report with no `ownerId` can still show
+   * an owner. The space backend strips it on write. See spec/041-saved-reports-redesign § 4.
+   */
+  creatorId?: string;
 };
 
 export type Reports = Partial<Record<string, Report>>;
@@ -30,7 +46,7 @@ export const reportsKey = 'saved-reports';
  * Every writer of the `saved-reports` React Query cache has to call this. The two stores hold the
  * same data, and opening a saved report collapses the URL to `?report=<id>` — so a `reportsData`
  * that lags the cache means the settings for the open report resolve to their *defaults*, and an
- * empty `jql` renders as "Configure a JQL in the sidebar" over a report that has one.
+ * empty `jql` renders the no-report home page over a report that has one.
  */
 export const publishReportsToRouteData = (reports: Reports): void => {
   (routeData as unknown as { reportsData: Reports }).reportsData = reports;

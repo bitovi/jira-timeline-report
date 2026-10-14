@@ -40,13 +40,15 @@ interface SearchedIssue {
   fields?: {
     summary?: string;
     description?: unknown;
+    creator?: { accountId?: string } | null;
   };
 }
 
 /** JQL string literals are double-quoted, so a key containing one would otherwise break the query. */
 const escapeJqlValue = (value: string): string => value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
-const buildDescription = (report: StoredReport) => ({
+/** `creatorId` is derived from the work item on read, so it never goes back into the payload. */
+const buildDescription = ({ creatorId: _creatorId, ...report }: StoredReport) => ({
   type: 'doc',
   version: 1,
   content: [createParagraph(GENERATED_BANNER), createCodeBlock(JSON.stringify(report, null, 2))],
@@ -123,10 +125,18 @@ export const createSpaceReportsBackend = (
 
     // The payload is authoritative — it is what round-trips. Summary and `queryParams` are only
     // backstops for a record someone assembled by hand.
+    //
+    // `creatorId` only stands in for a missing `ownerId`. Not `reporter`, which anyone with edit
+    // permission can change. A report a migration moved into the space has the *migrator* as
+    // creator, which is why an `ownerId`, when present, always wins.
+    const creatorId = issue.fields?.creator?.accountId;
+    const { creatorId: _stale, ...stored } = report;
+
     return {
-      ...report,
+      ...stored,
       name: report.name || issue.fields?.summary || report.id,
       queryParams: report.queryParams ?? '',
+      ...(!report.ownerId && creatorId ? { creatorId } : {}),
     };
   };
 
@@ -136,7 +146,7 @@ export const createSpaceReportsBackend = (
       // Raw field ids rather than the named-field variant the configuration issue uses: `summary`
       // and `description` are system fields whose ids are the same on every site, so this needs
       // nothing from the field catalog to have loaded.
-      fields: ['summary', 'description'],
+      fields: ['summary', 'description', 'creator'],
     })) as SearchedIssue[];
 
     issueKeyById.clear();

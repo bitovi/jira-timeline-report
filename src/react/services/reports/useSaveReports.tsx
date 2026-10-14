@@ -43,7 +43,7 @@ const useSaveReport = () => {
       // cache — not on the next fetch, which the comment below explains never comes. Both callers
       // collapse the URL to `?report=<id>` on success, at which point every setting for the open
       // report resolves through `reportsData`: a map that predates the save has no record for a
-      // just-created id (so the report renders as "Configure a JQL in the sidebar" until something
+      // just-created id (so the report renders as the no-report home page until something
       // refetches) and the pre-update record for a just-updated one (so the save silently reverts).
       publishReportsToRouteData(toSave);
 

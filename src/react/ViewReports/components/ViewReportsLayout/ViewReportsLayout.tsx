@@ -9,10 +9,12 @@ import Heading from '@atlaskit/heading';
 interface ViewReportsLayoutProps {
   onBackButtonClicked: () => void;
   reportInfo?: ReactNode;
+  /** Buttons on the right of the title row, e.g. "Create new report". */
+  actions?: ReactNode;
   children?: ReactNode;
 }
 
-const ViewReportsLayout: FC<ViewReportsLayoutProps> = ({ onBackButtonClicked, reportInfo, children }) => {
+const ViewReportsLayout: FC<ViewReportsLayoutProps> = ({ onBackButtonClicked, reportInfo, actions, children }) => {
   return (
     <div className="p-6 flex flex-col h-screen">
       <SidebarButton className="flex items-center" onClick={onBackButtonClicked}>
@@ -22,8 +24,9 @@ const ViewReportsLayout: FC<ViewReportsLayoutProps> = ({ onBackButtonClicked, re
           {reportInfo}
         </div>
       </SidebarButton>
-      <div className="py-4 flex justify-between">
+      <div className="py-4 flex items-center justify-between gap-4">
         <Heading size="large">Saved Reports</Heading>
+        {actions}
       </div>
       {children}
     </div>

@@ -4,6 +4,7 @@ import type { CanObservable } from '../hooks/useCanObservable';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Button from '@atlaskit/button/new';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useAllReports, useCreateReport, useRecentReports } from '../services/reports';
 import SaveReportModal from './components/SaveReportModal';
@@ -16,6 +17,7 @@ import { useQueryParams } from '../hooks/useQueryParams';
 import { useSelectedReport } from './hooks/useSelectedReports';
 import { usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportType';
 import { useReportLayout } from '../services/report-layout';
+import { currentAccountIdQuery, useUserServices } from '../services/user';
 import { toStoredSections } from '../reports/ReportOfReports/model/sections';
 import { storedQueryParams } from './storedQueryParams';
 import { detachedSearch } from './detachedSearch';
@@ -38,6 +40,8 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const { sections, resetSections } = useReportLayout();
 
   const { createReport, isCreating } = useCreateReport();
+  const queryClient = useQueryClient();
+  const { readCurrentAccountId } = useUserServices();
   const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
     reports,
     queryParamObservable,
@@ -78,7 +82,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     };
   };
 
-  const handleCreate = (name: string) => {
+  const handleCreate = async (name: string) => {
     const id = uuidv4();
     const params = new URLSearchParams({
       ...(storedQueryParams(routeData.serialize()) as Record<string, string>),
@@ -89,8 +93,19 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     // type, which has none. See spec/016-report-of-reports Phase 3.
     const storedSections = toStoredSections(sections);
 
+    // Read after the report's state is captured above, so nothing can change under the await.
+    // Whoever creates the report owns it — "Copy report" comes through here too, so a copy belongs
+    // to whoever copied it. Advisory only; see `Report.ownerId`. Omitted when nobody is signed in.
+    const ownerId = await queryClient.fetchQuery(currentAccountIdQuery(readCurrentAccountId));
+
     createReport(
-      { id, name, queryParams: params.toString(), ...(storedSections.length ? { sections: storedSections } : {}) },
+      {
+        id,
+        name,
+        queryParams: params.toString(),
+        ...(storedSections.length ? { sections: storedSections } : {}),
+        ...(ownerId ? { ownerId } : {}),
+      },
       {
         onSuccess: () => {
           closeModal();

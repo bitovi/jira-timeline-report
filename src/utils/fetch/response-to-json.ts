@@ -9,6 +9,9 @@ export function responseToJSON<TData = object>(response: Response): Promise<Json
       const err = new Error('HTTP status code: ' + response.status);
       Object.assign(err, payload);
       Object.assign(err, response);
+      // `status` is a getter on `Response.prototype`, so the assign above never copies it. Set it
+      // explicitly so callers can branch on it (e.g. useUsers telling a 401/403 from an outage).
+      Object.assign(err, { status: response.status });
       throw err;
     });
   }

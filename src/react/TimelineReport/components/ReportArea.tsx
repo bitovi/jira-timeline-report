@@ -2,7 +2,7 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import type { ReportLoadingState } from '../hooks/useReportLoadingState';
-import { NoJqlMessage, EmptyResultMessage, ErrorMessage, UnsupportedReportTypeMessage } from './ReportMessages';
+import { EmptyResultMessage, ErrorMessage, UnsupportedReportTypeMessage } from './ReportMessages';
 import { LoadingProgressContainer } from './LoadingProgress';
 
 export interface ReportAreaProps {
@@ -37,12 +37,30 @@ export interface ReportAreaProps {
    * See `REPORT_TYPES_FILLING_HEIGHT` in TimelineReport.
    */
   fillsHeight?: boolean;
+  /**
+   * What to show with no JQL and no self-managed report: the home page (recent reports, create
+   * buttons). A slot so this component stays pure — the home page reads storage and Jira, this
+   * doesn't. Never rendered for a logged-out (sample data) session. See spec/041 § 7.
+   */
+  home?: ReactNode;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */
   children: ReactNode;
 }
 
 /**
- * Pure view-state selector for the report area — decides which of {report / no-JQL / loading /
+ * Whether the report area is showing home. Shared with `TimelineReport`, which hides the report
+ * controls row while it is.
+ */
+export const isShowingHome = ({
+  jql,
+  isLoggedIn,
+  selfManagesData = false,
+  unsupportedReportType,
+}: Pick<ReportAreaProps, 'jql' | 'isLoggedIn' | 'selfManagesData' | 'unsupportedReportType'>): boolean =>
+  !unsupportedReportType && !jql && isLoggedIn && !selfManagesData;
+
+/**
+ * Pure view-state selector for the report area — decides which of {report / home / loading /
  * empty / error} renders, from explicit props. No routeData/vm dependency, so every state
  * (including the pending LoadingProgress stepper with its growing counts) is unit-testable by
  * passing props. The report block itself is supplied as `children` and mounted only in the
@@ -59,6 +77,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
   selfManagesData = false,
   unsupportedReportType,
   fillsHeight = false,
+  home,
   children,
 }) => {
   const { status, rejectReason } = loadingState;
@@ -72,7 +91,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
 
   return (
     <>
-      {!jql && isLoggedIn && !selfManagesData && <NoJqlMessage />}
+      {isShowingHome({ jql, isLoggedIn, selfManagesData }) && home}
 
       {((selfManagesData && !rejected) || (resolved && primaryIssuesCount > 0)) && (
         // `report-font-scope` confines the Theme panel's font choice to the report block. It sits

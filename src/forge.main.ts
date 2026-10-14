@@ -1,4 +1,4 @@
-import { router, view } from '@forge/bridge';
+import { invoke, router, view } from '@forge/bridge';
 
 import mainHelper from './shared/main-helper.js';
 import { createForgeKvsStorage } from './jira/storage/index.forge';
@@ -6,6 +6,8 @@ import { createForgeLinkBuilder, createForgeRouting } from './routing/index.forg
 import { getForgeRequestHelper } from './request-helpers/forge-request-helper';
 import { interceptExternalLinkClicks, setExternalOpener } from './shared/open-external';
 import { setAppReloader } from './shared/reload-app';
+import { createForgeAccountIdReader } from './react/services/user/identity';
+import { createForgeStarsStore } from './react/services/reports/stars-store';
 
 import type { RoutingConfiguration } from './routing/common';
 
@@ -193,6 +195,13 @@ export default async function main() {
       showSidebarBranding: true,
       isAlwaysLoggedIn: true,
       licensingPromise: getLicensing(),
+      // The view context names the viewing user — no scope, no Jira call. Stars live in KVS, keyed
+      // by the resolver from the invocation context. No `reauthorize`: the manifest grants every
+      // scope, so there is nothing for a user to re-consent to. See spec/041-saved-reports-redesign.
+      createUserServices: () => ({
+        readCurrentAccountId: createForgeAccountIdReader(view),
+        starsStore: createForgeStarsStore((functionKey, payload) => invoke(functionKey, payload)),
+      }),
     },
   );
 }

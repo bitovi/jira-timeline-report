@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import React from 'react';
 
-import { NoJqlMessage, LoadingMessage, EmptyResultMessage, ErrorMessage } from './ReportMessages';
+import { LoadingMessage, EmptyResultMessage, ErrorMessage } from './ReportMessages';
 
 // Credential-free coverage of the report shell's non-report view states. The live app can't easily
 // be driven into the error/licensing states, so they're documented here.
@@ -12,11 +12,6 @@ const meta: Meta = {
 export default meta;
 
 type Story = StoryObj;
-
-/** Logged in, no JQL configured yet. */
-export const NoJql: Story = {
-  render: () => <NoJqlMessage />,
-};
 
 /** Request pending, progress not yet known. */
 export const Loading: Story = {

@@ -55,8 +55,8 @@ describe('saving a report', () => {
 
   // Saving points the URL at `?report=<id>` and nothing refetches (see the `onSettled` note in
   // useSaveReports.tsx), so a `reportsData` left behind by the save is what the report renders
-  // from: no record at all for a new id, which resolves `jql` to '' — "Configure a JQL in the
-  // sidebar" over a report that was just saved with one.
+  // from: no record at all for a new id, which resolves `jql` to '' — the no-report home page
+  // over a report that was just saved with one.
   it('publishes a created report to routeData before anything can read it back', async () => {
     const created = { id: 'new-report', name: 'New', queryParams: 'report=new-report&jql=project%3DECOM' };
     const { result } = renderSaveHook(() => useCreateReport());
@@ -79,6 +79,22 @@ describe('saving a report', () => {
 
     await waitFor(() => {
       expect(reportDataFor('existing')?.queryParams).toBe('report=existing&jql=project%3DECOM');
+    });
+  });
+
+  // spec/041: the owner is set once, on create. Renaming or re-saving someone's report must not
+  // drop it, which is what replacing the stored report from form state would do.
+  it('keeps the stored ownerId on update', async () => {
+    const { result, queryClient } = renderSaveHook(() => useUpdateReport());
+    queryClient.setQueryData<Reports>(reportKeys.allReports, { existing: { ...existing, ownerId: 'owner-1' } });
+
+    result.current.updateReport('existing', { name: 'Renamed' });
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData<Reports>(reportKeys.allReports)?.existing).toMatchObject({
+        name: 'Renamed',
+        ownerId: 'owner-1',
+      });
     });
   });
 

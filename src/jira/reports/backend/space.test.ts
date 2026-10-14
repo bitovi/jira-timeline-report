@@ -69,7 +69,44 @@ describe('the reports space backend', () => {
 
     expect(jira.fetchAllJiraIssuesWithJQL).toHaveBeenCalledWith({
       jql: 'project = "STATREPS" AND issuetype = "Story" ORDER BY updated DESC',
-      fields: ['summary', 'description'],
+      fields: ['summary', 'description', 'creator'],
+    });
+  });
+
+  // spec/041 § 4: a report saved before `ownerId` existed still gets an owner in a space.
+  describe("the work item's creator", () => {
+    const withCreator = (key: string, report: Report, accountId: string) => {
+      const issue = issueFor(key, report);
+
+      return { ...issue, fields: { ...issue.fields, creator: { accountId } } };
+    };
+
+    it('stands in for a missing ownerId', async () => {
+      const jira = makeJira([withCreator('STATREPS-1', gantt, 'creator-1')]);
+
+      await expect(createSpaceReportsBackend(jira, config).readAll()).resolves.toEqual({
+        gantt: { ...gantt, creatorId: 'creator-1' },
+      });
+    });
+
+    // A migration into the space makes the migrator the creator, so the stored owner always wins.
+    it('is ignored when the report has an ownerId', async () => {
+      const owned = { ...gantt, ownerId: 'owner-1' };
+      const jira = makeJira([withCreator('STATREPS-1', owned, 'migrator-1')]);
+
+      await expect(createSpaceReportsBackend(jira, config).readAll()).resolves.toEqual({ gantt: owned });
+    });
+
+    it('is never written back into the payload', async () => {
+      const jira = makeJira([withCreator('STATREPS-1', gantt, 'creator-1')]);
+      const backend = createSpaceReportsBackend(jira, config);
+      const { gantt: read } = await backend.readAll();
+
+      await backend.upsert(read!, { gantt: read });
+
+      const [, fields] = jira.editJiraIssueWithNamedFields.mock.calls[0] as [string, any];
+
+      expect(writtenReport(fields.Description)).toEqual(gantt);
     });
   });
 

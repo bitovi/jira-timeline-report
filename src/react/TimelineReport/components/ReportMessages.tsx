@@ -3,17 +3,10 @@ import React from 'react';
 
 /**
  * Presentational view-state messages for the report shell — the non-report states from the old
- * `<timeline-report>` template (no-JQL / loading / empty / error). Pure markup with explicit props
+ * `<timeline-report>` template (loading / empty / error). Pure markup with explicit props
  * so they can be storied credential-free (the live shell can't easily reach the error states).
  * Markup + classes are copied verbatim from the StacheElement template.
  */
-
-/** Shown when logged in but no JQL is configured yet. */
-export const NoJqlMessage: FC = () => (
-  <div className="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">
-    Configure a JQL in the sidebar on the left to get started.
-  </div>
-);
 
 export interface LoadingMessageProps {
   issuesRequested?: number;

@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import type { LinkBuilderFactory } from '../../routing/common';
 
 import React, { Suspense, useMemo } from 'react';
 
@@ -14,15 +15,24 @@ import LinkButton from '../components/LinkButton';
 import Skeleton from '../components/Skeleton';
 import { queryClient } from '../services/query';
 import { StorageProvider } from '../services/storage';
+import { RoutingProvider } from '../services/routing';
+import { JiraProvider } from '../services/jira';
+import { useUserServices } from '../services/user';
 import { useRouteData } from '../hooks/useRouteData';
 import routeData from '../../canjs/routing/route-data';
 
 interface ViewReportsWrapperProps {
   onBackButtonClicked: () => void;
+  /** Builds each report row's link. Absent in tests and stories, which want plain hrefs. */
+  linkBuilder?: ReturnType<LinkBuilderFactory>;
+  /** See `Routing.interceptLinkClicks`. */
+  interceptLinkClicks?: boolean;
 }
 
-const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
+const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ linkBuilder, interceptLinkClicks, ...viewReportProps }) => {
   const [showSettings] = useRouteData<string>('showSettings');
+  // Only the web host provides this; see `UserServices.reauthorize`.
+  const { reauthorize } = useUserServices();
 
   if (showSettings !== 'REPORTS') {
     return null;
@@ -30,17 +40,21 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = (viewReportProps) => {
 
   return createPortal(
     <StorageProvider storage={routeData.storage}>
-      <FlagsProvider>
-        <QueryClientProvider client={queryClient}>
-          <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>
-            <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-              <div className="absolute top-0 left-0 right-0 bottom-0 bg-white z-50">
-                <ViewReports {...viewReportProps} />
-              </div>
-            </Suspense>
-          </ErrorBoundary>
-        </QueryClientProvider>
-      </FlagsProvider>
+      <RoutingProvider routing={{ linkBuilder: linkBuilder ?? ((query) => query), interceptLinkClicks }}>
+        <FlagsProvider>
+          <QueryClientProvider client={queryClient}>
+            <JiraProvider jira={(routeData as any).jiraHelpers}>
+              <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>
+                <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
+                  <div className="absolute top-0 left-0 right-0 bottom-0 bg-neutral-20 z-50">
+                    <ViewReports {...viewReportProps} onReauthorize={reauthorize} />
+                  </div>
+                </Suspense>
+              </ErrorBoundary>
+            </JiraProvider>
+          </QueryClientProvider>
+        </FlagsProvider>
+      </RoutingProvider>
     </StorageProvider>,
     document.body,
   );

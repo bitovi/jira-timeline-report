@@ -2,6 +2,8 @@ import mainHelper from './shared/main-helper.js';
 import { createWebAppStorage } from './jira/storage/index.web';
 import { createWebLinkBuilder } from './routing/index.web';
 import { getHostedRequestHelper } from './request-helpers/hosted-request-helper';
+import { createWebAccountIdReader } from './react/services/user/identity';
+import { createLocalStarsStore } from './react/services/reports/stars-store';
 
 async function main() {
   return mainHelper(
@@ -32,6 +34,18 @@ async function main() {
         active: true,
         evaluation: false,
       }),
+      // The account id comes from the access token's `sub`, so it works even on a token issued
+      // before `read:jira-user` was added. Stars are per browser, like recents. `reauthorize` is the
+      // way out for such a token: refreshing never asks for new scopes. See spec/041.
+      createUserServices: (jiraHelpers: { fetchAuthorizationCode: () => void }) => {
+        const readCurrentAccountId = createWebAccountIdReader();
+
+        return {
+          readCurrentAccountId,
+          starsStore: createLocalStarsStore(readCurrentAccountId),
+          reauthorize: () => jiraHelpers.fetchAuthorizationCode(),
+        };
+      },
     },
   );
 }

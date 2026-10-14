@@ -28,4 +28,11 @@ describe('describeReport', () => {
     expect(d.typeName).toBe('grouper');
     expect(d.tone).toBe('neutral');
   });
+
+  it('is unaffected by an ownerId', () => {
+    const d = describeReport({ ...report('primaryReportType=table&jql=a'), ownerId: '557058:abc' });
+    expect(d.typeName).toBe('Table');
+    expect(d.jql).toBe('a');
+    expect(d.report.ownerId).toBe('557058:abc');
+  });
 });

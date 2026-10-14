@@ -17,7 +17,7 @@ import { useRouteData } from '../hooks/useRouteData';
 
 import { TimelineReportViewModel } from './timeline-report-view-model';
 import { useReportLoadingState as defaultUseReportLoadingState } from './hooks/useReportLoadingState';
-import { ReportArea } from './components/ReportArea';
+import { ReportArea, isShowingHome } from './components/ReportArea';
 import { unsupportedReportType } from './unsupportedReportType';
 
 import { JiraProvider } from '../services/jira';
@@ -29,6 +29,7 @@ import SavedReports from '../SaveReports';
 import SampleDataNotice from '../SampleDataNotice';
 import SettingsSidebar from '../SettingsSidebar';
 import ViewReports from '../ViewReports';
+import { ReportHomeContainer } from '../ReportHome';
 import ReportFooter, { reportNeedsFooterClearance } from '../ReportFooter/ReportFooter';
 import PrintHeader from '../PrintHeader';
 
@@ -204,6 +205,18 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 
   const fillsHeight = REPORT_TYPES_FILLING_HEIGHT.has(primaryReportType);
 
+  const selfManagesData = SELF_MANAGED_REPORT_TYPES.has(primaryReportType);
+
+  // Home has its own way into each report type, so the controls row (report type picker, view
+  // settings) would only be noise above it. Hidden rather than unmounted, so the controls keep their
+  // state for when a report opens.
+  const showingHome = isShowingHome({
+    jql,
+    isLoggedIn,
+    selfManagesData,
+    unsupportedReportType: deadReportType,
+  });
+
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
@@ -239,6 +252,8 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 
           <div id="view-reports" className="app-chrome-hidden">
             <ViewReports
+              linkBuilder={linkBuilder}
+              interceptLinkClicks={interceptLinkClicks}
               onBackButtonClicked={() => {
                 rd.showSettings = '';
               }}
@@ -265,7 +280,10 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             />
           </div>
 
-          <div id="report-controls" className="app-chrome-hidden flex flex-wrap gap-x-1 gap-y-2 @container/controls">
+          <div
+            id="report-controls"
+            className={`app-chrome-hidden ${showingHome ? 'hidden' : 'flex'} flex-wrap gap-x-1 gap-y-2 @container/controls`}
+          >
             {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
               that fetch Jira data — e.g. the Table report's TableReportControls calling
               useJiraIssueFields — work here too. queryClient is a shared singleton, so the fields
@@ -286,9 +304,16 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             jql={jql}
             primaryIssueType={primaryIssueType}
             primaryIssuesCount={primaryIssuesOrReleases.length}
-            selfManagesData={SELF_MANAGED_REPORT_TYPES.has(primaryReportType)}
+            selfManagesData={selfManagesData}
             unsupportedReportType={deadReportType}
             fillsHeight={fillsHeight}
+            home={
+              <ReportHomeContainer
+                storage={storage}
+                linkBuilder={linkBuilder}
+                interceptLinkClicks={interceptLinkClicks}
+              />
+            }
           >
             <div id="print-header">
               <PrintHeader />

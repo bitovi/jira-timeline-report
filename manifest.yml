@@ -81,6 +81,10 @@ permissions:
     # REST API, and this release genuinely increases the declared scope set.
     - read:jira-work
     - write:jira-work
+    # Owner names on saved reports: `/rest/api/3/user/bulk` turns the `ownerId` account ids into
+    # display names (src/react/services/user/useUsers.ts). Adding this scope made spec/041 a MAJOR
+    # version — every site admin approves the upgrade before their site sees the owner column.
+    - read:jira-user
     # Reaches the Connect app properties where existing customers' saved reports already live.
     # See src/jira/storage/index.forge.ts — this is what makes the cutover need no migration.
     - read:connect-jira
