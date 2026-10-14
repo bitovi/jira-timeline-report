@@ -13,6 +13,7 @@ import { createElement } from 'react';
 
 import { defaultAggregationForType } from './aggregations';
 import { fieldValueText } from './fieldValueText';
+import { JiraImage } from '../../../components/JiraImage';
 
 import type { ReactNode } from 'react';
 import type { AggregationId } from './aggregations';
@@ -250,7 +251,7 @@ export function treeSummaryColumn(): ColumnDefinition<string | undefined> {
       // summary's `min-w-0`/`truncate` something concrete to shrink against. The icon is `flex-none`
       // so it never shrinks; the summary is the flexible, truncating sibling.
       const icon = iconUrl
-        ? createElement('img', {
+        ? createElement(JiraImage, {
             src: iconUrl,
             alt: 'Issue type',
             width: 16,
@@ -281,7 +282,8 @@ export function issueTypeColumn(): ColumnDefinition<string | undefined> {
     source: { kind: 'field', fieldKey: 'Issue Type', schemaType: 'string' },
     isIdentity: true,
     getValue: (issue) => issueTypeIconUrl(issue),
-    render: (value) => (value ? createElement('img', { src: value, alt: 'Issue type', width: 16, height: 16 }) : ''),
+    render: (value) =>
+      value ? createElement(JiraImage, { src: value, alt: 'Issue type', width: 16, height: 16 }) : '',
     compare: (a, b) => textEntry.compare(a, b),
     filter: { kind: 'select' },
   };
