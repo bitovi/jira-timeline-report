@@ -34,6 +34,7 @@ const Row = (props: Partial<ReportTableRowProps>) => {
     <ReportTableRow
       described={describeReport(report)}
       ownerId={SAMPLE_ACCOUNT_IDS.grace}
+      updatedAt={report.updatedAt}
       href={`?report=${report.id}`}
       {...props}
       isStarred={isStarred}
@@ -50,7 +51,10 @@ const story = (props: Partial<ReportTableRowProps>): Story => ({
   ),
 });
 
-export const Plain = story({});
+/** Stories render against a fixed "now" so the relative times don't drift. */
+const NOW = new Date('2026-10-15T12:00:00.000Z');
+
+export const Plain = story({ updatedAt: '2026-10-12T09:30:00.000Z', now: NOW });
 
 export const Starred = story({ isStarred: true });
 
@@ -62,6 +66,11 @@ export const SomeoneElses = story({ ownerId: SAMPLE_ACCOUNT_IDS.ada });
 
 /** Saved before owners were recorded: "—", and anyone may delete it. */
 export const NoOwner = story({ ownerId: undefined, onDelete: () => {} });
+
+export const UpdatedJustNow = story({ updatedAt: '2026-10-15T11:59:30.000Z', now: NOW });
+
+/** Saved before "Last updated" was kept, in legacy storage: no timestamp at all. */
+export const NeverUpdated = story({ updatedAt: undefined });
 
 /** The home page's recents card. */
 export const Compact = story({ compact: true });
@@ -79,6 +88,7 @@ export const EveryReportType: Story = {
           key={report.id}
           described={describeReport(report)}
           ownerId={report.ownerId}
+          updatedAt={report.updatedAt}
           isMine={report.ownerId === SAMPLE_ACCOUNT_IDS.me}
           isStarred={report.id === '1'}
           onToggleStar={() => {}}

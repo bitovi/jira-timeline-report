@@ -18,6 +18,7 @@ import { useAllReports, useDeleteReport, useRecentReports, useStarredReports } f
 import { useReportsStorageConfig } from '../services/reports-storage';
 import { canDeleteReport, effectiveOwnerId, isOwnedBy, useCurrentAccountId } from '../services/user';
 import routeData from '../../canjs/routing/route-data';
+import { lastUpdatedAt } from '../../jira/reports';
 
 type Tab = 'starred' | 'mine' | 'all';
 
@@ -290,6 +291,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportC
                       described={described}
                       ownerId={effectiveOwnerId(report)}
                       isMine={isMine(report)}
+                      updatedAt={lastUpdatedAt(report)}
                       isStarred={starredIds.has(report.id)}
                       onToggleStar={() => toggleStar(report.id, report.name)}
                       href={'?report=' + report.id}

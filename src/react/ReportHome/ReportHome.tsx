@@ -8,6 +8,7 @@ import Heading from '@atlaskit/heading';
 import LinkButton from '../components/LinkButton';
 import { ReportTableHeader, ReportTableRow, describeReport } from '../components/ReportListing';
 import { effectiveOwnerId, isOwnedBy } from '../services/user';
+import { lastUpdatedAt } from '../../jira/reports';
 
 export interface ReportHomeProps {
   /** Most recent first; already narrowed to reports that still exist. Only the first 5 are shown. */
@@ -79,6 +80,7 @@ export const ReportHome: FC<ReportHomeProps> = ({
                 described={describeReport(report)}
                 ownerId={effectiveOwnerId(report)}
                 isMine={isOwnedBy(report, currentAccountId)}
+                updatedAt={lastUpdatedAt(report)}
                 isStarred={starredIds.has(report.id)}
                 onToggleStar={() => onToggleStar(report)}
                 href={`?report=${report.id}`}

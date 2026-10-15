@@ -69,7 +69,7 @@ describe('the reports space backend', () => {
 
     expect(jira.fetchAllJiraIssuesWithJQL).toHaveBeenCalledWith({
       jql: 'project = "STATREPS" AND issuetype = "Story" ORDER BY updated DESC',
-      fields: ['summary', 'description', 'creator'],
+      fields: ['summary', 'description', 'creator', 'updated'],
     });
   });
 
@@ -99,6 +99,49 @@ describe('the reports space backend', () => {
 
     it('is never written back into the payload', async () => {
       const jira = makeJira([withCreator('STATREPS-1', gantt, 'creator-1')]);
+      const backend = createSpaceReportsBackend(jira, config);
+      const { gantt: read } = await backend.readAll();
+
+      await backend.upsert(read!, { gantt: read });
+
+      const [, fields] = jira.editJiraIssueWithNamedFields.mock.calls[0] as [string, any];
+
+      expect(writtenReport(fields.Description)).toEqual(gantt);
+    });
+  });
+
+  // spec/041 phase 1 § 3: "Last updated" for a report saved before `updatedAt` existed.
+  describe("the work item's updated time", () => {
+    const withUpdated = (key: string, report: Report, updated: string) => {
+      const issue = issueFor(key, report);
+
+      return { ...issue, fields: { ...issue.fields, updated } };
+    };
+
+    it('stands in for a missing updatedAt, normalized to UTC', async () => {
+      const jira = makeJira([withUpdated('STATREPS-1', gantt, '2026-10-14T08:12:14.000-0700')]);
+
+      await expect(createSpaceReportsBackend(jira, config).readAll()).resolves.toEqual({
+        gantt: { ...gantt, workItemUpdatedAt: '2026-10-14T15:12:14.000Z' },
+      });
+    });
+
+    it('is ignored when the report has its own updatedAt', async () => {
+      const stamped = { ...gantt, updatedAt: '2026-01-01T00:00:00.000Z' };
+      const jira = makeJira([withUpdated('STATREPS-1', stamped, '2026-10-14T08:12:14.000-0700')]);
+
+      await expect(createSpaceReportsBackend(jira, config).readAll()).resolves.toEqual({ gantt: stamped });
+    });
+
+    it('is ignored when Jira sends something unparseable', async () => {
+      const jira = makeJira([withUpdated('STATREPS-1', gantt, 'not a date')]);
+
+      await expect(createSpaceReportsBackend(jira, config).readAll()).resolves.toEqual({ gantt });
+    });
+
+    // Otherwise the migration write-back would freeze it into the payload as if it were a user edit.
+    it('is never written back into the payload', async () => {
+      const jira = makeJira([withUpdated('STATREPS-1', gantt, '2026-10-14T08:12:14.000-0700')]);
       const backend = createSpaceReportsBackend(jira, config);
       const { gantt: read } = await backend.readAll();
 

@@ -2,7 +2,7 @@ import type { Report } from '../../../jira/reports';
 import type { ReportTableRowProps } from './ReportTableRow';
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { describeReport } from './describe-report';
@@ -23,6 +23,11 @@ const renderRow = (props: Partial<ReportTableRowProps> = {}) =>
       />
     </div>,
   );
+
+/** The row's cells, in column order: star, name, owner, last updated, type, delete. */
+const cell = (index: number) => screen.getAllByRole('cell')[index];
+const OWNER = 2;
+const UPDATED = 3;
 
 describe('<ReportTableRow>', () => {
   it('renders the name as a link, the jql and the type badge', () => {
@@ -100,7 +105,32 @@ describe('<ReportTableRow>', () => {
     it('shows a dash for a report with no recorded owner', () => {
       renderRow();
 
-      expect(screen.getByText('—')).toBeInTheDocument();
+      expect(cell(OWNER)).toHaveTextContent('—');
+    });
+  });
+
+  describe('last updated', () => {
+    const now = new Date('2026-10-15T12:00:00.000Z');
+
+    it('shows how long ago, with the exact timestamp on the <time> element', () => {
+      renderRow({ updatedAt: '2026-10-12T09:30:00.000Z', now });
+
+      const time = within(cell(UPDATED)).getByText('3 days ago');
+
+      expect(time.tagName).toBe('TIME');
+      expect(time).toHaveAttribute('dateTime', '2026-10-12T09:30:00.000Z');
+    });
+
+    it('shows a dash for a report saved before it was kept', () => {
+      renderRow({ now });
+
+      expect(cell(UPDATED)).toHaveTextContent('—');
+    });
+
+    it('shows a dash rather than "Invalid Date" for a mangled timestamp', () => {
+      renderRow({ updatedAt: 'garbage', now });
+
+      expect(cell(UPDATED)).toHaveTextContent('—');
     });
   });
 });

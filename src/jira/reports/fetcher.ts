@@ -32,7 +32,28 @@ export type Report = {
    * an owner. The space backend strips it on write. See spec/041-saved-reports-redesign/phase1.md § 3.
    */
   creatorId?: string;
+  /**
+   * When a user last created or edited the report, as an ISO 8601 UTC timestamp. Stamped by the
+   * create and update hooks (`useSaveReports`), never by the migration write-back. Client-set like
+   * `ownerId`, so it trusts the writer's clock. Reports saved before spec/041 have none.
+   */
+  updatedAt?: string;
+  /**
+   * Read-only, never meaningful to write: the Reports Space work item's `updated` timestamp, filled
+   * in by the space backend on read so a report with no `updatedAt` can still show one. The space
+   * backend strips it on write. Use `lastUpdatedAt` rather than reading either field directly.
+   */
+  workItemUpdatedAt?: string;
 };
+
+/**
+ * When the report was last changed, as far as anyone can tell: its own `updatedAt`, else (Reports
+ * Space only) its work item's. A migration write-back edits the work item, so for an old report the
+ * fallback can be the migration's time — fine for a fallback. See
+ * spec/041-saved-reports-redesign/phase1.md § 3.
+ */
+export const lastUpdatedAt = (report: Report): string | undefined =>
+  report.updatedAt || report.workItemUpdatedAt || undefined;
 
 export type Reports = Partial<Record<string, Report>>;
 

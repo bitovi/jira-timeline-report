@@ -91,6 +91,11 @@ const tab = (name: RegExp) => screen.findByRole('tab', { name });
 const rows = () => within(screen.getByRole('table')).getAllByRole('link');
 const rowNames = () => rows().map((link) => link.getAttribute('aria-label'));
 const search = () => screen.findByRole('textbox', { name: 'Search reports' });
+/** A row's cells, in column order: star, name, owner, last updated, type, delete. */
+const cellsOf = (name: string) =>
+  within(screen.getByRole('link', { name }).closest('[role="row"]') as HTMLElement).getAllByRole('cell');
+const ownerOf = (name: string) => cellsOf(name)[2];
+const updatedOf = (name: string) => cellsOf(name)[3];
 
 const MIXED = [
   report('1', 'Alpha', { ownerId: ME, queryParams: 'primaryReportType=due&jql=project%3DECOM' }),
@@ -127,8 +132,24 @@ describe('ViewReports', () => {
     expect(await screen.findAllByText('Scatter Plot')).toHaveLength(5);
     expect(screen.getAllByText('You')).toHaveLength(2);
     expect(screen.getAllByText('Someone else')).toHaveLength(2);
-    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(ownerOf('Gamma')).toHaveTextContent('—');
     expect(noJiraRequests).not.toHaveBeenCalled();
+  });
+
+  it('shows when each report was last updated, falling back to its work item', async () => {
+    renderPage({
+      reports: [
+        report('1', 'Alpha', { updatedAt: '2026-10-14T09:00:00.000Z' }),
+        report('2', 'Beta', { workItemUpdatedAt: '2026-10-13T09:00:00.000Z' }),
+        report('3', 'Gamma'),
+      ],
+    });
+
+    await screen.findByRole('link', { name: 'Alpha' });
+
+    expect(updatedOf('Alpha').querySelector('time')).toHaveAttribute('dateTime', '2026-10-14T09:00:00.000Z');
+    expect(updatedOf('Beta').querySelector('time')).toHaveAttribute('dateTime', '2026-10-13T09:00:00.000Z');
+    expect(updatedOf('Gamma')).toHaveTextContent('—');
   });
 
   describe('tabs', () => {

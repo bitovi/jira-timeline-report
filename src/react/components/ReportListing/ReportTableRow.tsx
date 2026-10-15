@@ -8,11 +8,13 @@ import PersonIcon from '@atlaskit/icon/core/person';
 import StarStarredIcon from '@atlaskit/icon/core/star-starred';
 import StarUnstarredIcon from '@atlaskit/icon/core/star-unstarred';
 import { token } from '@atlaskit/tokens';
+import Tooltip from '@atlaskit/tooltip';
 
 import Link from '../../services/routing/Link';
 import { ReportTypeIcon } from '../ReportTypeIcon';
 import { HighlightedText } from './HighlightedText';
 import { REPORT_TABLE_GRID } from './ReportTableHeader';
+import { formatRelativeTime } from '../../../utils/date/format-relative-time';
 
 export interface ReportTableRowProps {
   described: DescribedReport;
@@ -20,6 +22,10 @@ export interface ReportTableRowProps {
   ownerId?: string;
   /** The owner is the current user — shown as "You". */
   isMine?: boolean;
+  /** ISO timestamp of the last edit (`lastUpdatedAt`). Absent for reports saved before it was kept. */
+  updatedAt?: string;
+  /** "Now", for the relative time. Injectable for tests and stories; defaults to the real clock. */
+  now?: Date;
   isStarred: boolean;
   onToggleStar: () => void;
   href: string;
@@ -64,8 +70,25 @@ const OwnerCell: FC<{ ownerId?: string; isMine: boolean }> = ({ ownerId, isMine 
   </span>
 );
 
+/** "3 days ago", with the full local date and time on hover; "—" when there's no timestamp. */
+const UpdatedCell: FC<{ updatedAt?: string; now?: Date }> = ({ updatedAt, now }) => {
+  const relative = updatedAt ? formatRelativeTime(updatedAt, now) : null;
+
+  if (!updatedAt || !relative) {
+    return <span className="text-sm text-neutral-300">—</span>;
+  }
+
+  return (
+    <Tooltip content={new Date(updatedAt).toLocaleString()}>
+      <time dateTime={updatedAt} className="block truncate text-sm text-neutral-801">
+        {relative}
+      </time>
+    </Tooltip>
+  );
+};
+
 /**
- * One saved report in the saved-reports table: star, type icon + name (+ JQL), owner, type badge,
+ * One saved report in the saved-reports table: star, type icon + name (+ JQL), owner, last updated, type badge,
  * and a delete button that shows on hover. See spec/041-saved-reports-redesign/phase1.md § 6.
  *
  * Only the name is the link. The star and delete buttons are its siblings, never its children, so
@@ -77,6 +100,8 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
   described,
   ownerId,
   isMine = false,
+  updatedAt,
+  now,
   isStarred,
   onToggleStar,
   href,
@@ -125,6 +150,9 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
       </span>
       <span role="cell" className="min-w-0">
         <OwnerCell ownerId={ownerId} isMine={isMine} />
+      </span>
+      <span role="cell" className="min-w-0">
+        <UpdatedCell updatedAt={updatedAt} now={now} />
       </span>
       <span role="cell" className="min-w-0">
         {typeName && (
