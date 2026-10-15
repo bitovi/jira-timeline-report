@@ -62,7 +62,7 @@ export const AddReportModal: FC<AddReportModalProps> = ({
     reports,
     { onActivate: (report) => onSelect(report.id), onEscape: onClose },
   );
-  const [listRef, hasMoreBelow] = useHasMoreBelow(filtered.length);
+  const [listRef, hasMoreBelow] = useHasMoreBelow(filtered);
 
   return (
     <ModalTransition>
@@ -185,7 +185,7 @@ export const AddReportModal: FC<AddReportModalProps> = ({
 /**
  * Whether a scroll container has content below its visible area — the condition the list's bottom fade
  * hints at. A callback ref because the list mounts and unmounts with the modal and the empty-results
- * state. Re-measured on scroll, on resize, and when `contentKey` changes (the filtered row count), since
+ * state. Re-measured on scroll, on resize, and when `contentKey` changes (the filtered results), since
  * filtering changes the content height without a scroll or resize event. The 1px slack absorbs
  * fractional `scrollTop` at the bottom on zoomed/HiDPI displays.
  */
