@@ -83,6 +83,50 @@ export function serverInfoPromise({ jiraHelpers, isLoggedIn }) {
   return getServerInfo({ jiraHelpers, isLoggedIn: resolve(isLoggedIn) });
 }
 
+/**
+ * Layers the server-derived defaults onto team settings: `getUrl` (which needs the site's
+ * `baseUrl`) and the fallbacks to the default velocity and track count when a team has none.
+ *
+ * Applied on the read side — by `derivedIssuesRequestData` and route-data's `normalizeConfiguration`
+ * — never by whoever writes `normalizeOptions`. A Teams save and a what-if capacity override both
+ * write raw team settings, and when this used to be applied only on the initial load, a save
+ * silently dropped `getUrl` and every work-item link became `javascript://`.
+ */
+export function withServerDefaults(serverInfo, normalizeOptions) {
+  const { getVelocity, getParallelWorkLimit, ...otherNormalizeParams } = normalizeOptions ?? {};
+  return {
+    getUrl({ key }) {
+      return serverInfo.baseUrl + '/browse/' + key;
+    },
+    getVelocity(team, config) {
+      const methodsToTry = [getVelocity, getVelocityDefault];
+      for (let method of methodsToTry) {
+        let value;
+        if (method) {
+          value = method(team, config);
+        }
+        if (value != null) {
+          return value;
+        }
+      }
+    },
+    getParallelWorkLimit(team, config) {
+      const methodsToTry = [getParallelWorkLimit, getParallelWorkLimitDefault];
+      for (let method of methodsToTry) {
+        let value;
+        if (method) {
+          value = method(team, config);
+        }
+
+        if (value != null) {
+          return value;
+        }
+      }
+    },
+    ...otherNormalizeParams,
+  };
+}
+
 export function configurationPromise({ serverInfoPromise, normalizeObservable }) {
   // we will give pending until we have both promises
 
@@ -93,63 +137,33 @@ export function configurationPromise({ serverInfoPromise, normalizeObservable })
     return new Promise(() => {});
   }
 
-  return Promise.all([info]).then(
-    /**
-     *
-     * @param {[Object, TeamConfiguration]} param0
-     * @returns
-     */
-    ([serverInfo]) => {
-      const { getVelocity, getParallelWorkLimit, ...otherNormalizeParams } = normalizeOptions ?? {};
-      return {
-        getUrl({ key }) {
-          return serverInfo.baseUrl + '/browse/' + key;
-        },
-        getVelocity(team, config) {
-          const methodsToTry = [getVelocity, getVelocityDefault];
-          for (let method of methodsToTry) {
-            let value;
-            if (method) {
-              value = method(team, config);
-            }
-            if (value != null) {
-              return value;
-            }
-          }
-        },
-        getParallelWorkLimit(team, config) {
-          const methodsToTry = [getParallelWorkLimit, getParallelWorkLimitDefault];
-          for (let method of methodsToTry) {
-            let value;
-            if (method) {
-              value = method(team, config);
-            }
-
-            if (value != null) {
-              return value;
-            }
-          }
-        },
-        ...otherNormalizeParams,
-      };
-    },
-  );
+  return Promise.resolve(info).then((serverInfo) => withServerDefaults(serverInfo, normalizeOptions));
 }
 
-export function derivedIssuesRequestData({ rawIssuesRequestData, configurationPromise }, { listenTo, resolve }) {
+/**
+ * `normalizeOptions` is team settings only; the server-derived defaults are added here (see
+ * `withServerDefaults`), so it does not matter which writer set it last.
+ */
+export function derivedIssuesRequestData(
+  { rawIssuesRequestData, serverInfoPromise, normalizeOptions },
+  { listenTo, resolve },
+) {
   const promise = value.returnedBy(function derivedIssuesPromise() {
-    if (rawIssuesRequestData.value.issuesPromise && configurationPromise.value) {
+    if (rawIssuesRequestData.value.issuesPromise && serverInfoPromise.value && normalizeOptions.value) {
       // Licensing is deliberately not checked here: an unlicensed site still gets its reports, and
       // the sidebar's Eggbert turns red and frowns instead (Branding.tsx, useIsUnlicensed).
-      return Promise.all([rawIssuesRequestData.value.issuesPromise, configurationPromise.value]).then(
-        ([rawIssues, configuration]) => {
-          return rawIssues.map((issue) => {
-            const normalized = normalizeIssue(issue, configuration);
-            const derived = deriveIssue(normalized, configuration);
-            return derived;
-          });
-        },
-      );
+      return Promise.all([
+        rawIssuesRequestData.value.issuesPromise,
+        serverInfoPromise.value,
+        normalizeOptions.value,
+      ]).then(([rawIssues, serverInfo, teamOptions]) => {
+        const configuration = withServerDefaults(serverInfo, teamOptions);
+        return rawIssues.map((issue) => {
+          const normalized = normalizeIssue(issue, configuration);
+          const derived = deriveIssue(normalized, configuration);
+          return derived;
+        });
+      });
     } else {
       // This promise NEVER settles, so the report sits on its loading screen until some other
       // input changes. That is intended while the page is still waiting for a JQL, but it also

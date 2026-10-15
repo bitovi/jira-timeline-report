@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react';
 import type { Report } from '../../../../jira/reports';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Button, { IconButton } from '@atlaskit/button/new';
 import CrossIcon from '@atlaskit/icon/glyph/cross';
 import Modal, { ModalFooter, ModalHeader, ModalTitle, ModalTransition } from '@atlaskit/modal-dialog';
@@ -62,6 +62,7 @@ export const AddReportModal: FC<AddReportModalProps> = ({
     reports,
     { onActivate: (report) => onSelect(report.id), onEscape: onClose },
   );
+  const [listRef, hasMoreBelow] = useHasMoreBelow(filtered);
 
   return (
     <ModalTransition>
@@ -137,7 +138,7 @@ export const AddReportModal: FC<AddReportModalProps> = ({
                   // `relative` so the fade can sit over the scroll area's bottom edge rather than
                   // scrolling with it, and the hairline separates the list from the footer.
                   <div className="relative min-h-0 flex-1 border-b border-neutral-301">
-                    <ul data-testid="add-report-list" className="h-full overflow-y-auto px-6 py-1">
+                    <ul ref={listRef} data-testid="add-report-list" className="h-full overflow-y-auto px-6 py-1">
                       {filtered.map((d, index) => (
                         <li key={d.report.id}>
                           <ReportRow
@@ -150,16 +151,20 @@ export const AddReportModal: FC<AddReportModalProps> = ({
                         </li>
                       ))}
                     </ul>
-                    {/* The surface token rather than a hard white, so the fade still disappears into
-                        the dialog under a theme that isn't white. `pointer-events-none` keeps the rows
-                        underneath clickable. */}
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute inset-x-0 bottom-0 h-8"
-                      style={{
-                        background: 'linear-gradient(to bottom, transparent, var(--ds-surface-overlay, #fff))',
-                      }}
-                    />
+                    {/* Only while rows remain below the fold — drawn unconditionally it dimmed the last
+                        row of a short, filtered list that had nothing more to hint at. The surface token
+                        rather than a hard white, so the fade still disappears into the dialog under a
+                        theme that isn't white. `pointer-events-none` keeps the rows underneath clickable. */}
+                    {hasMoreBelow && (
+                      <div
+                        aria-hidden
+                        data-testid="add-report-list-fade"
+                        className="pointer-events-none absolute inset-x-0 bottom-0 h-8"
+                        style={{
+                          background: 'linear-gradient(to bottom, transparent, var(--ds-surface-overlay, #fff))',
+                        }}
+                      />
+                    )}
                   </div>
                 )}
               </>
@@ -175,6 +180,40 @@ export const AddReportModal: FC<AddReportModalProps> = ({
       )}
     </ModalTransition>
   );
+};
+
+/**
+ * Whether a scroll container has content below its visible area — the condition the list's bottom fade
+ * hints at. A callback ref because the list mounts and unmounts with the modal and the empty-results
+ * state. Re-measured on scroll, on resize, and when `contentKey` changes (the filtered results), since
+ * filtering changes the content height without a scroll or resize event. The 1px slack absorbs
+ * fractional `scrollTop` at the bottom on zoomed/HiDPI displays.
+ */
+const useHasMoreBelow = (contentKey: unknown) => {
+  const [element, setElement] = useState<HTMLElement | null>(null);
+  const [hasMoreBelow, setHasMoreBelow] = useState(false);
+
+  useEffect(() => {
+    if (!element) {
+      setHasMoreBelow(false);
+      return;
+    }
+
+    const measure = () => setHasMoreBelow(element.scrollHeight - element.scrollTop - element.clientHeight > 1);
+    measure();
+
+    element.addEventListener('scroll', measure, { passive: true });
+    // Absent in jsdom.
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure);
+    observer?.observe(element);
+
+    return () => {
+      element.removeEventListener('scroll', measure);
+      observer?.disconnect();
+    };
+  }, [element, contentKey]);
+
+  return [setElement, hasMoreBelow] as const;
 };
 
 /**

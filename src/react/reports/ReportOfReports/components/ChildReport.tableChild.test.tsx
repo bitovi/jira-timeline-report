@@ -93,6 +93,8 @@ class FakeParent extends ObservableObjectClass {
     isLoggedInObservable: { default: null },
     licensingPromise: { default: null },
     normalizeOptions: { default: null },
+    normalizeConfiguration: { default: null },
+    serverInfoPromise: { default: null },
     simplifiedIssueHierarchy: {
       get default() {
         // The child picks its top level out of the hierarchy: an empty one leaves it with no
@@ -122,7 +124,9 @@ const makeParent = () => {
 
   parent.isLoggedInObservable = valueAny.with(true);
   parent.licensingPromise = Promise.resolve({ active: true });
-  parent.normalizeOptions = { getUrl: ({ key }: any) => `/browse/${key}` };
+  parent.serverInfoPromise = Promise.resolve({ baseUrl: '' });
+  parent.normalizeOptions = {};
+  parent.normalizeConfiguration = { getUrl: ({ key }: any) => `/browse/${key}` };
   parent.jiraHelpers = {
     fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: fetch,
     fetchAllJiraIssuesAndDeepChildrenWithJQLAndFetchAllChangelogUsingNamedFields: fetch,
