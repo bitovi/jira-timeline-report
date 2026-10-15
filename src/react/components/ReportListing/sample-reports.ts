@@ -18,7 +18,6 @@ export const SAMPLE_ACCOUNT_IDS = {
   me: '557058:me',
   ada: '557058:ada',
   grace: '557058:grace',
-  former: '557058:former',
 };
 
 export const SAMPLE_REPORTS: Report[] = [
@@ -32,15 +31,8 @@ export const SAMPLE_REPORTS: Report[] = [
     SAMPLE_ACCOUNT_IDS.grace,
   ),
   sampleReport('4', 'Arthur simple table', 'table', '', SAMPLE_ACCOUNT_IDS.me),
-  sampleReport('5', 'Q3 Flow Metrics', 'flow-metrics', 'project = ECOM', SAMPLE_ACCOUNT_IDS.former),
+  sampleReport('5', 'Q3 Flow Metrics', 'flow-metrics', 'project = ECOM', SAMPLE_ACCOUNT_IDS.ada),
   sampleReport('6', 'Cycle time by status', 'time-in-status'),
   sampleReport('7', 'arthur test report of reports', 'report-of-reports', '', SAMPLE_ACCOUNT_IDS.me),
   sampleReport('8', 'Retired grouper view', 'grouper'),
 ];
-
-export const SAMPLE_OWNERS = {
-  [SAMPLE_ACCOUNT_IDS.me]: { accountId: SAMPLE_ACCOUNT_IDS.me, displayName: 'Arthur Pankiewicz', active: true },
-  [SAMPLE_ACCOUNT_IDS.ada]: { accountId: SAMPLE_ACCOUNT_IDS.ada, displayName: 'Ada Lovelace', active: true },
-  [SAMPLE_ACCOUNT_IDS.grace]: { accountId: SAMPLE_ACCOUNT_IDS.grace, displayName: 'Grace Hopper', active: true },
-  [SAMPLE_ACCOUNT_IDS.former]: { accountId: SAMPLE_ACCOUNT_IDS.former, displayName: 'Former Person', active: false },
-};

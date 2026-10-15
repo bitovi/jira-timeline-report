@@ -5,7 +5,6 @@ import type { DescribedReport, ExtraHaystack } from '../components/ReportListing
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Button from '@atlaskit/button/new';
 import Textfield from '@atlaskit/textfield';
-import SectionMessage, { SectionMessageAction } from '@atlaskit/section-message';
 import FolderClosedIcon from '@atlaskit/icon/core/folder-closed';
 import PersonIcon from '@atlaskit/icon/core/person';
 import SearchIcon from '@atlaskit/icon/core/search';
@@ -17,7 +16,7 @@ import Skeleton from '../components/Skeleton';
 import { ReportTableHeader, ReportTableRow, useReportSearch } from '../components/ReportListing';
 import { useAllReports, useDeleteReport, useRecentReports, useStarredReports } from '../services/reports';
 import { useReportsStorageConfig } from '../services/reports-storage';
-import { canDeleteReport, effectiveOwnerId, useCurrentAccountId, useReportOwners } from '../services/user';
+import { canDeleteReport, effectiveOwnerId, isOwnedBy, useCurrentAccountId } from '../services/user';
 import routeData from '../../canjs/routing/route-data';
 
 type Tab = 'starred' | 'mine' | 'all';
@@ -44,12 +43,6 @@ interface ViewReportProps {
   onBackButtonClicked: () => void;
   /** "Create new report" — opens Sources by default, as home does. Injectable for tests. */
   onCreateReportClicked?: () => void;
-  /**
-   * Sends the user back through Atlassian's consent screen. Passed only by the web host: on Forge
-   * the manifest grants every scope, so a 401/403 there is a real error, not an old token, and the
-   * sign-in banner never renders.
-   */
-  onReauthorize?: () => void;
 }
 
 const EmptyState: FC<{ icon: ReactNode; title: string; children: ReactNode }> = ({ icon, title, children }) => (
@@ -64,13 +57,9 @@ const EmptyState: FC<{ icon: ReactNode; title: string; children: ReactNode }> = 
 
 /**
  * Every saved report: Starred / My reports / All reports tabs, search, and a table with stars,
- * owners and delete. See spec/041-saved-reports-redesign § 8.
+ * owners and delete. See spec/041-saved-reports-redesign/phase1.md § 8.
  */
-const ViewReports: FC<ViewReportProps> = ({
-  onBackButtonClicked,
-  onCreateReportClicked = openSources,
-  onReauthorize,
-}) => {
+const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportClicked = openSources }) => {
   const reports = useAllReports();
   // Read here rather than in the modal: this component already suspends on `useAllReports`, so the
   // config resolves alongside the list instead of suspending the modal open.
@@ -89,17 +78,7 @@ const ViewReports: FC<ViewReportProps> = ({
     [reports],
   );
 
-  const { owners, needsReauth } = useReportOwners(sortedReports);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-
-  const isMine = useCallback(
-    (report: Report) => {
-      const ownerId = effectiveOwnerId(report);
-
-      return !!currentAccountId && ownerId === currentAccountId;
-    },
-    [currentAccountId],
-  );
+  const isMine = useCallback((report: Report) => isOwnedBy(report, currentAccountId), [currentAccountId]);
 
   const reportsByTab = useMemo(
     () => ({
@@ -123,14 +102,7 @@ const ViewReports: FC<ViewReportProps> = ({
 
   const tab = chosenTab ?? 'all';
 
-  const extraHaystack = useCallback<ExtraHaystack>(
-    ({ jql, report }: DescribedReport) => {
-      const ownerId = effectiveOwnerId(report);
-
-      return [jql, ownerId ? owners[ownerId]?.displayName : undefined];
-    },
-    [owners],
-  );
+  const extraHaystack = useCallback<ExtraHaystack>(({ jql }: DescribedReport) => [jql], []);
 
   const tableRef = useRef<HTMLDivElement>(null);
 
@@ -218,7 +190,7 @@ const ViewReports: FC<ViewReportProps> = ({
     if (filtered.length === 0) {
       return (
         <EmptyState icon={<SearchIcon label="" />} title={`No reports match "${query}"`}>
-          Try a different name, JQL, or owner.
+          Try a different name or JQL.
         </EmptyState>
       );
     }
@@ -273,7 +245,7 @@ const ViewReports: FC<ViewReportProps> = ({
           </div>
           <div className="w-full max-w-xs pb-2">
             <Textfield
-              placeholder="Search by name, JQL, or owner"
+              placeholder="Search by name or JQL"
               aria-label="Search reports"
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
@@ -286,25 +258,6 @@ const ViewReports: FC<ViewReportProps> = ({
             />
           </div>
         </div>
-
-        {needsReauth && onReauthorize && !bannerDismissed && (
-          <div className="pt-4">
-            <SectionMessage
-              appearance="information"
-              title="Sign in again to see who owns each report"
-              actions={[
-                <SectionMessageAction key="sign-in" onClick={onReauthorize}>
-                  Sign in
-                </SectionMessageAction>,
-                <SectionMessageAction key="dismiss" onClick={() => setBannerDismissed(true)}>
-                  Dismiss
-                </SectionMessageAction>,
-              ]}
-            >
-              Status Reports can now show report owners, but your sign-in is from before it asked to read user names.
-            </SectionMessage>
-          </div>
-        )}
 
         <div
           ref={panelRef}
@@ -330,23 +283,17 @@ const ViewReports: FC<ViewReportProps> = ({
               {emptyState ??
                 visible.map((described, index) => {
                   const { report } = described;
-                  const ownerId = effectiveOwnerId(report);
-                  const owner = ownerId ? (owners[ownerId] ?? { accountId: ownerId }) : undefined;
 
                   return (
                     <ReportTableRow
                       key={report.id}
                       described={described}
-                      owner={owner}
+                      ownerId={effectiveOwnerId(report)}
                       isMine={isMine(report)}
                       isStarred={starredIds.has(report.id)}
                       onToggleStar={() => toggleStar(report.id, report.name)}
                       href={'?report=' + report.id}
-                      onDelete={
-                        canDeleteReport(report, currentAccountId, owners[ownerId ?? ''])
-                          ? () => setManagedReport(report)
-                          : undefined
-                      }
+                      onDelete={canDeleteReport(report, currentAccountId) ? () => setManagedReport(report) : undefined}
                       query={query}
                       isActive={index === activeIndex}
                       onMouseEnter={() => setActiveIndex(index)}

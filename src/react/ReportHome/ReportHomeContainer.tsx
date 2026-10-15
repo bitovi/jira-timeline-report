@@ -16,7 +16,7 @@ import { StorageProvider } from '../services/storage';
 import { RoutingProvider } from '../services/routing';
 import { JiraProvider } from '../services/jira';
 import { useAllReports, useRecentReports, useStarredReports } from '../services/reports';
-import { useCurrentAccountId, useReportOwners } from '../services/user';
+import { useCurrentAccountId } from '../services/user';
 
 /** The `routeData` keys home writes. Typed narrowly so the actions are testable with a plain object. */
 export interface HomeRouteTarget {
@@ -50,7 +50,6 @@ export const createHomeActions = (target: HomeRouteTarget) => ({
 
 type HomeActions = ReturnType<typeof createHomeActions>;
 
-const NO_OWNERS = {};
 const NO_STARS = new Set<string>();
 
 const ConnectedReportHome: FC<{ actions: HomeActions }> = ({ actions }) => {
@@ -65,13 +64,10 @@ const ConnectedReportHome: FC<{ actions: HomeActions }> = ({ actions }) => {
     [recentIds, reports],
   );
 
-  const { owners } = useReportOwners(recentReports);
-
   return (
     <ReportHome
       {...actions}
       recentReports={recentReports}
-      owners={owners}
       currentAccountId={currentAccountId}
       starredIds={starredIds}
       onToggleStar={(report) => toggleStar(report.id, report.name)}
@@ -81,14 +77,7 @@ const ConnectedReportHome: FC<{ actions: HomeActions }> = ({ actions }) => {
 
 /** Saved reports failed to load: still let the user start a report. */
 const ReportHomeFallback: FC<{ actions: HomeActions }> = ({ actions }) => (
-  <ReportHome
-    {...actions}
-    recentReports={[]}
-    owners={NO_OWNERS}
-    currentAccountId={null}
-    starredIds={NO_STARS}
-    onToggleStar={() => {}}
-  />
+  <ReportHome {...actions} recentReports={[]} currentAccountId={null} starredIds={NO_STARS} onToggleStar={() => {}} />
 );
 
 const ReportHomeSkeleton: FC = () => (

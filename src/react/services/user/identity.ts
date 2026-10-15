@@ -1,7 +1,7 @@
 /**
  * Who is using the app, as a Jira `accountId` — the only user identifier this app ever stores (see
- * spec/041-saved-reports-redesign/plan.md § Decisions). Names are looked up at render time through
- * `useUsers`, never stored next to the id.
+ * spec/041-saved-reports-redesign/phase1.md § Decisions). Never stored next to a name, email or
+ * avatar — that would make it personal data.
  *
  * Each host has its own way of knowing, so the reader is chosen by the host entry point
  * (`forge.main.ts` / `web.main.ts`) and handed down through `UserServicesProvider` rather than
@@ -45,8 +45,9 @@ export const readSubFromJwt = (token: string | null | undefined): string | null 
 /**
  * The website: Atlassian 3LO access tokens are JWTs whose `sub` is the account id.
  *
- * Preferred over `/myself` because it needs no scope — it works for a user still on a token issued
- * before `read:jira-user` was added, so their `ownerId` and "My reports" work immediately.
+ * Preferred over `/myself` because it needs no scope (`/myself` needs `read:jira-user`), so
+ * `ownerId` and "My reports" work with the scopes every signed-in user already has. Atlassian
+ * documents the token as opaque, so this is observed behavior (verified 2026-10-14), not a contract.
  */
 export const createWebAccountIdReader =
   (storage: Pick<Storage, 'getItem'> = window.localStorage): ReadCurrentAccountId =>

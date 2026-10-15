@@ -1,6 +1,5 @@
 import type { FC } from 'react';
 import type { Report } from '../../jira/reports';
-import type { JiraUser } from '../services/user';
 
 import React from 'react';
 import Button from '@atlaskit/button/new';
@@ -8,12 +7,11 @@ import Heading from '@atlaskit/heading';
 
 import LinkButton from '../components/LinkButton';
 import { ReportTableHeader, ReportTableRow, describeReport } from '../components/ReportListing';
-import { effectiveOwnerId } from '../services/user';
+import { effectiveOwnerId, isOwnedBy } from '../services/user';
 
 export interface ReportHomeProps {
   /** Most recent first; already narrowed to reports that still exist. Only the first 5 are shown. */
   recentReports: Report[];
-  owners: Record<string, JiraUser>;
   currentAccountId: string | null;
   starredIds: Set<string>;
   onToggleStar: (report: Report) => void;
@@ -28,11 +26,10 @@ export const MAX_RECENT_ON_HOME = 5;
 /**
  * What you see with no report open: recent reports and the ways to start a new one. Replaces the
  * old one-line "Configure a JQL in the sidebar" prompt. Presentational — `ReportHomeContainer`
- * reads the data and wires the actions. See spec/041-saved-reports-redesign § 7.
+ * reads the data and wires the actions. See spec/041-saved-reports-redesign/phase1.md § 7.
  */
 export const ReportHome: FC<ReportHomeProps> = ({
   recentReports,
-  owners,
   currentAccountId,
   starredIds,
   onToggleStar,
@@ -75,22 +72,18 @@ export const ReportHome: FC<ReportHomeProps> = ({
             className="rounded-xl border border-neutral-41 bg-white shadow-sm"
           >
             <ReportTableHeader className="rounded-t-xl" />
-            {recents.map((report) => {
-              const ownerId = effectiveOwnerId(report);
-
-              return (
-                <ReportTableRow
-                  key={report.id}
-                  compact
-                  described={describeReport(report)}
-                  owner={ownerId ? (owners[ownerId] ?? { accountId: ownerId }) : undefined}
-                  isMine={!!ownerId && ownerId === currentAccountId}
-                  isStarred={starredIds.has(report.id)}
-                  onToggleStar={() => onToggleStar(report)}
-                  href={`?report=${report.id}`}
-                />
-              );
-            })}
+            {recents.map((report) => (
+              <ReportTableRow
+                key={report.id}
+                compact
+                described={describeReport(report)}
+                ownerId={effectiveOwnerId(report)}
+                isMine={isOwnedBy(report, currentAccountId)}
+                isStarred={starredIds.has(report.id)}
+                onToggleStar={() => onToggleStar(report)}
+                href={`?report=${report.id}`}
+              />
+            ))}
           </div>
         </section>
       ) : (

@@ -14,7 +14,7 @@ import { STARS_GET, STARS_SET, STORAGE_GET, STORAGE_SET } from './contract';
  * The second reason is per-user data. Starred reports (`stars.get` / `stars.set`) are keyed by the
  * invocation context's `accountId`, which only the resolver can be trusted to supply — a key built
  * from the browser's payload would let anyone read or write anyone's stars. See
- * spec/041-saved-reports-redesign/plan.md § 5.
+ * spec/041-saved-reports-redesign/phase1.md § 5.
  *
  * Deliberately thin. Everything else in this app still talks to Jira straight from the iframe
  * through `requestJira`, which is what keeps it off the Forge invocation quota and what makes
@@ -72,7 +72,7 @@ export const MAX_STARRED_REPORTS = 1000;
  * edit of everyone's.
  *
  * Stores bare account ids only. Never put a name, email or avatar next to one — that would make it
- * personal data. See spec/041-saved-reports-redesign/plan.md § Decisions.
+ * personal data. See spec/041-saved-reports-redesign/phase1.md § Decisions.
  */
 const starsKey = (context: unknown): string => {
   const accountId = (context as { accountId?: unknown } | undefined)?.accountId;

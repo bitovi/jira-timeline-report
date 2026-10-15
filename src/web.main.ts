@@ -34,16 +34,14 @@ async function main() {
         active: true,
         evaluation: false,
       }),
-      // The account id comes from the access token's `sub`, so it works even on a token issued
-      // before `read:jira-user` was added. Stars are per browser, like recents. `reauthorize` is the
-      // way out for such a token: refreshing never asks for new scopes. See spec/041.
-      createUserServices: (jiraHelpers: { fetchAuthorizationCode: () => void }) => {
+      // The account id comes from the access token's `sub` — no scope, no Jira call. Stars are per
+      // browser, like recents. See spec/041-saved-reports-redesign/phase1.md § 2.
+      createUserServices: () => {
         const readCurrentAccountId = createWebAccountIdReader();
 
         return {
           readCurrentAccountId,
           starsStore: createLocalStarsStore(readCurrentAccountId),
-          reauthorize: () => jiraHelpers.fetchAuthorizationCode(),
         };
       },
     },

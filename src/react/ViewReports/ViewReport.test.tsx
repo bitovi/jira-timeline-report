@@ -18,7 +18,7 @@ import { UserServicesProvider } from '../services/user';
 
 const ME = 'acct-me';
 const ADA = 'acct-ada';
-const GONE = 'acct-gone';
+const GRACE = 'acct-grace';
 
 const report = (id: string, name: string, extra: Partial<Report> = {}): Report => ({
   id,
@@ -29,17 +29,12 @@ const report = (id: string, name: string, extra: Partial<Report> = {}): Report =
 
 const toMap = (reports: Report[]) => Object.fromEntries(reports.map((r) => [r.id, r]));
 
-const USERS: Record<string, object> = {
-  [ME]: { accountId: ME, displayName: 'Arthur Me', active: true },
-  [ADA]: { accountId: ADA, displayName: 'Ada Lovelace', active: true },
-  [GONE]: { accountId: GONE, displayName: 'Gone Person', active: false },
-};
-
-/** `/user/bulk`, answered from `USERS`. */
-const usersRequester = vi.fn(async (url: string) => {
-  const ids = new URLSearchParams(url.split('?')[1]).getAll('accountId');
-
-  return { values: ids.map((id) => USERS[id]).filter(Boolean) };
+/**
+ * Phase 1 makes no Jira calls from this page — names would need `read:jira-user` (spec/041 phase 2).
+ * Any request fails the test.
+ */
+const noJiraRequests = vi.fn(async (url: string) => {
+  throw new Error(`unexpected Jira request: ${url}`);
 });
 
 const memoryStars = (initial: string[] = []): StarsStore & { ids: string[] } => {
@@ -58,12 +53,11 @@ interface RenderConfig {
   reports: Report[];
   stars: string[];
   props: Partial<ComponentProps<typeof ViewReports>>;
-  requester: (url: string) => Promise<unknown>;
   update: AppStorage['update'];
 }
 
 const renderPage = (config: Partial<RenderConfig> = {}) => {
-  const { reports = [], stars = [], props = {}, requester = usersRequester } = config;
+  const { reports = [], stars = [], props = {} } = config;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const starsStore = memoryStars(stars);
   const update = vi.fn(config.update ?? (async () => {}));
@@ -76,7 +70,7 @@ const renderPage = (config: Partial<RenderConfig> = {}) => {
 
   render(
     <UserServicesProvider services={{ readCurrentAccountId: async () => ME, starsStore }}>
-      <JiraProvider jira={{ requester } as unknown as Jira}>
+      <JiraProvider jira={{ requester: noJiraRequests } as unknown as Jira}>
         <Suspense fallback="loading">
           <FlagsProvider>
             <StorageProvider storage={storage}>
@@ -102,11 +96,14 @@ const MIXED = [
   report('1', 'Alpha', { ownerId: ME, queryParams: 'primaryReportType=due&jql=project%3DECOM' }),
   report('2', 'Beta', { ownerId: ADA }),
   report('3', 'Gamma'),
-  report('4', 'Delta', { ownerId: GONE }),
+  report('4', 'Delta', { ownerId: GRACE }),
+  // A Reports Space report saved before `ownerId` existed: its work item's creator stands in.
+  report('5', 'Epsilon', { creatorId: ME }),
 ];
 
 describe('ViewReports', () => {
   beforeEach(() => {
+    noJiraRequests.mockClear();
     window.localStorage.clear();
     window.env = { ...(window.env ?? {}), JIRA_APP_KEY: 'test-app' } as typeof window.env;
   });
@@ -117,21 +114,21 @@ describe('ViewReports', () => {
 
     expect(await screen.findByText('Back to report')).toBeInTheDocument();
     expect(screen.getByText('Saved Reports')).toBeInTheDocument();
-    expect(await search()).toHaveAttribute('placeholder', 'Search by name, JQL, or owner');
+    expect(await search()).toHaveAttribute('placeholder', 'Search by name or JQL');
     expect(await screen.findByRole('link', { name: 'Alpha' })).toHaveAttribute('href', '?report=1');
 
     await userEvent.click(screen.getByRole('button', { name: 'Create new report' }));
     expect(onCreateReportClicked).toHaveBeenCalled();
   });
 
-  it("shows each report's type and owner", async () => {
+  it("shows each report's type and owner, without looking up any names", async () => {
     renderPage({ reports: MIXED });
 
-    expect(await screen.findAllByText('Scatter Plot')).toHaveLength(4);
-    expect(screen.getByText('You')).toBeInTheDocument();
-    expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument();
-    expect(screen.getByText('Former user')).toBeInTheDocument();
-    expect(screen.getByText('Unknown')).toBeInTheDocument();
+    expect(await screen.findAllByText('Scatter Plot')).toHaveLength(5);
+    expect(screen.getAllByText('You')).toHaveLength(2);
+    expect(screen.getAllByText('Someone else')).toHaveLength(2);
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(noJiraRequests).not.toHaveBeenCalled();
   });
 
   describe('tabs', () => {
@@ -139,8 +136,8 @@ describe('ViewReports', () => {
       renderPage({ reports: MIXED, stars: ['2'] });
 
       expect(await tab(/Starred/)).toHaveTextContent('Starred1');
-      expect(await tab(/My reports/)).toHaveTextContent('My reports1');
-      expect(await tab(/All reports/)).toHaveTextContent('All reports4');
+      expect(await tab(/My reports/)).toHaveTextContent('My reports2');
+      expect(await tab(/All reports/)).toHaveTextContent('All reports5');
     });
 
     it('opens on Starred when something is starred', async () => {
@@ -174,12 +171,12 @@ describe('ViewReports', () => {
       expect(await screen.findByText('No starred reports yet')).toBeInTheDocument();
     });
 
-    it('My reports shows only your own', async () => {
+    it('My reports shows only your own, including Space reports you created', async () => {
       renderPage({ reports: MIXED });
 
       await userEvent.click(await tab(/My reports/));
 
-      expect(rowNames()).toEqual(['Alpha']);
+      expect(rowNames()).toEqual(['Alpha', 'Epsilon']);
     });
   });
 
@@ -198,15 +195,6 @@ describe('ViewReports', () => {
       await userEvent.type(await search(), 'ecom');
 
       expect(rowNames()).toEqual(['Alpha']);
-    });
-
-    it("filters by the owner's name once it has loaded", async () => {
-      renderPage({ reports: MIXED });
-      await screen.findByText('Ada Lovelace');
-
-      await userEvent.type(await search(), 'lovelace');
-
-      expect(rowNames()).toEqual(['Beta']);
     });
   });
 
@@ -284,14 +272,16 @@ describe('ViewReports', () => {
   });
 
   describe('delete', () => {
-    it("is offered on your own, unowned and former users' reports only", async () => {
+    it('is offered on your own and unowned reports only', async () => {
       renderPage({ reports: MIXED });
-      await screen.findByText('Former user');
+      await screen.findByRole('link', { name: 'Alpha' });
 
       expect(screen.getByRole('button', { name: 'Delete Alpha' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Delete Beta' })).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Delete Gamma' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Delete Delta' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Delete Delta' })).not.toBeInTheDocument();
+      // No `ownerId` at all, so unowned as far as delete goes, even though its creator is shown.
+      expect(screen.getByRole('button', { name: 'Delete Epsilon' })).toBeInTheDocument();
     });
 
     it('asks first, then deletes and forgets the report in stars and recents', async () => {
@@ -318,50 +308,5 @@ describe('ViewReports', () => {
 
     await waitFor(() => expect(starsStore.ids).toEqual(['3']));
     expect(await tab(/Starred/)).toHaveTextContent('Starred1');
-  });
-
-  describe('sign-in banner', () => {
-    const unauthorized = vi.fn(async () => {
-      throw Object.assign(new Error('HTTP status code: 401'), { status: 401 });
-    });
-
-    it('asks a user on an old token to sign in again', async () => {
-      const onReauthorize = vi.fn();
-      renderPage({ reports: MIXED, requester: unauthorized, props: { onReauthorize } });
-
-      expect(await screen.findByText('Sign in again to see who owns each report')).toBeInTheDocument();
-      // The page still works: your own reports are "You", everyone else's "Unknown".
-      expect(screen.getByText('You')).toBeInTheDocument();
-      expect(screen.getAllByText('Unknown')).toHaveLength(3);
-
-      await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-      expect(onReauthorize).toHaveBeenCalled();
-    });
-
-    it('can be dismissed', async () => {
-      renderPage({ reports: MIXED, requester: unauthorized, props: { onReauthorize: vi.fn() } });
-
-      await userEvent.click(await screen.findByRole('button', { name: 'Dismiss' }));
-
-      expect(screen.queryByText('Sign in again to see who owns each report')).not.toBeInTheDocument();
-    });
-
-    // Forge passes no `onReauthorize`: its scopes come from the manifest.
-    it('never shows without a way to sign in', async () => {
-      renderPage({ reports: MIXED, requester: unauthorized });
-
-      await screen.findByRole('link', { name: 'Alpha' });
-      await waitFor(() => expect(unauthorized).toHaveBeenCalled());
-
-      expect(screen.queryByText('Sign in again to see who owns each report')).not.toBeInTheDocument();
-    });
-
-    it('does not show when names load', async () => {
-      renderPage({ reports: MIXED, props: { onReauthorize: vi.fn() } });
-
-      await screen.findByText('Ada Lovelace');
-
-      expect(screen.queryByText('Sign in again to see who owns each report')).not.toBeInTheDocument();
-    });
   });
 });

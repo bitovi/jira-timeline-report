@@ -15,11 +15,6 @@ import { createLocalStarsStore } from '../reports/stars-store';
 export interface UserServices {
   readCurrentAccountId: ReadCurrentAccountId;
   starsStore: StarsStore;
-  /**
-   * Sends the user back through Atlassian's consent screen to pick up newly added scopes. Web only:
-   * a Forge app's scopes come from the manifest, so there is nothing for a user to re-consent to.
-   */
-  reauthorize?: () => void;
 }
 
 const UserServicesContext = createContext<UserServices | null>(null);

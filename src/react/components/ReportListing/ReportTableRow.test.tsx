@@ -85,40 +85,22 @@ describe('<ReportTableRow>', () => {
 
   describe('owner', () => {
     it('says "You" for your own report', () => {
-      renderRow({ isMine: true, owner: { accountId: 'me', displayName: 'Arthur P' } });
+      renderRow({ isMine: true, ownerId: 'me' });
 
       expect(screen.getByText('You')).toBeInTheDocument();
     });
 
-    it("shows someone else's name, with initials when there is no avatar", () => {
-      renderRow({ owner: { accountId: 'ada', displayName: 'Ada Lovelace', active: true } });
+    it('says "Someone else" for a report another account owns, without a name or avatar', () => {
+      const { container } = renderRow({ ownerId: 'ada' });
 
-      expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
-      expect(screen.getByText('AL')).toBeInTheDocument();
+      expect(screen.getByText('Someone else')).toBeInTheDocument();
+      expect(container.querySelector('img')).not.toBeInTheDocument();
     });
 
-    it('shows the avatar when there is one', () => {
-      const { container } = renderRow({
-        owner: { accountId: 'ada', displayName: 'Ada Lovelace', avatarUrl: 'https://example.com/a.png' },
-      });
+    it('shows a dash for a report with no recorded owner', () => {
+      renderRow();
 
-      expect(container.querySelector('img')).toHaveAttribute('src', 'https://example.com/a.png');
-    });
-
-    it('says "Former user" for a deactivated account', () => {
-      renderRow({ owner: { accountId: 'gone', displayName: 'Gone Person', active: false } });
-
-      expect(screen.getByText('Former user')).toBeInTheDocument();
-      expect(screen.queryByText('Gone Person')).not.toBeInTheDocument();
-    });
-
-    it('says "Unknown" with no owner, or no name for one', () => {
-      const { unmount } = renderRow();
-      expect(screen.getByText('Unknown')).toBeInTheDocument();
-      unmount();
-
-      renderRow({ owner: { accountId: 'someone' } });
-      expect(screen.getByText('Unknown')).toBeInTheDocument();
+      expect(screen.getByText('—')).toBeInTheDocument();
     });
   });
 });

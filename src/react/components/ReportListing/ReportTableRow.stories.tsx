@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { describeReport } from './describe-report';
 import { ReportTableRow } from './ReportTableRow';
 import { ReportTableHeader } from './ReportTableHeader';
-import { SAMPLE_ACCOUNT_IDS, SAMPLE_OWNERS, SAMPLE_REPORTS } from './sample-reports';
+import { SAMPLE_ACCOUNT_IDS, SAMPLE_REPORTS } from './sample-reports';
 
 const meta: Meta<typeof ReportTableRow> = {
   title: 'components/ReportListing/ReportTableRow',
@@ -33,7 +33,7 @@ const Row = (props: Partial<ReportTableRowProps>) => {
   return (
     <ReportTableRow
       described={describeReport(report)}
-      owner={SAMPLE_OWNERS[SAMPLE_ACCOUNT_IDS.grace]}
+      ownerId={SAMPLE_ACCOUNT_IDS.grace}
       href={`?report=${report.id}`}
       {...props}
       isStarred={isStarred}
@@ -55,14 +55,13 @@ export const Plain = story({});
 export const Starred = story({ isStarred: true });
 
 /** Your own report: "You", and the delete button on hover. */
-export const Mine = story({ isMine: true, owner: SAMPLE_OWNERS[SAMPLE_ACCOUNT_IDS.me], onDelete: () => {} });
+export const Mine = story({ isMine: true, ownerId: SAMPLE_ACCOUNT_IDS.me, onDelete: () => {} });
 
-export const SomeoneElses = story({ owner: SAMPLE_OWNERS[SAMPLE_ACCOUNT_IDS.ada] });
+/** Owned by someone else: "Someone else" until spec/041 phase 2 can look up names. */
+export const SomeoneElses = story({ ownerId: SAMPLE_ACCOUNT_IDS.ada });
 
-/** Saved before owners were recorded, or the names couldn't be loaded. */
-export const UnknownOwner = story({ owner: undefined, onDelete: () => {} });
-
-export const FormerUser = story({ owner: SAMPLE_OWNERS[SAMPLE_ACCOUNT_IDS.former], onDelete: () => {} });
+/** Saved before owners were recorded: "—", and anyone may delete it. */
+export const NoOwner = story({ ownerId: undefined, onDelete: () => {} });
 
 /** The home page's recents card. */
 export const Compact = story({ compact: true });
@@ -79,7 +78,7 @@ export const EveryReportType: Story = {
         <ReportTableRow
           key={report.id}
           described={describeReport(report)}
-          owner={report.ownerId ? SAMPLE_OWNERS[report.ownerId] : undefined}
+          ownerId={report.ownerId}
           isMine={report.ownerId === SAMPLE_ACCOUNT_IDS.me}
           isStarred={report.id === '1'}
           onToggleStar={() => {}}

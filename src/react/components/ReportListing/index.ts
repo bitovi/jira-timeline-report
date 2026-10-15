@@ -10,5 +10,5 @@ export type { ReportRowProps } from './ReportRow';
 export { useReportSearch } from './useReportSearch';
 export type { ReportSearch, UseReportSearchOptions } from './useReportSearch';
 export { ReportTableRow, ownerLabel } from './ReportTableRow';
-export type { ReportOwner, ReportTableRowProps } from './ReportTableRow';
+export type { ReportTableRowProps } from './ReportTableRow';
 export { ReportTableHeader, REPORT_TABLE_GRID } from './ReportTableHeader';

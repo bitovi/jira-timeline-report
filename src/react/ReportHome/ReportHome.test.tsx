@@ -20,7 +20,6 @@ const renderHome = (props: Partial<ReportHomeProps> = {}) => {
   render(
     <ReportHome
       recentReports={SAMPLE_REPORTS}
-      owners={{}}
       currentAccountId={null}
       starredIds={new Set()}
       {...handlers}

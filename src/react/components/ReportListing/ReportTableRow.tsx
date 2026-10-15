@@ -4,6 +4,7 @@ import type { DescribedReport } from './describe-report';
 import React from 'react';
 import { IconButton } from '@atlaskit/button/new';
 import DeleteIcon from '@atlaskit/icon/core/delete';
+import PersonIcon from '@atlaskit/icon/core/person';
 import StarStarredIcon from '@atlaskit/icon/core/star-starred';
 import StarUnstarredIcon from '@atlaskit/icon/core/star-unstarred';
 import { token } from '@atlaskit/tokens';
@@ -13,19 +14,10 @@ import { ReportTypeIcon } from '../ReportTypeIcon';
 import { HighlightedText } from './HighlightedText';
 import { REPORT_TABLE_GRID } from './ReportTableHeader';
 
-/** Who owns a report, as far as the page knows. Names are looked up at render time, never stored. */
-export interface ReportOwner {
-  accountId: string;
-  displayName?: string;
-  avatarUrl?: string;
-  /** `false` for a deactivated or deleted account. */
-  active?: boolean;
-}
-
 export interface ReportTableRowProps {
   described: DescribedReport;
-  /** Absent for a report with no recorded owner. */
-  owner?: ReportOwner;
+  /** The owner's account id. Absent for a report with no recorded owner. */
+  ownerId?: string;
   /** The owner is the current user — shown as "You". */
   isMine?: boolean;
   isStarred: boolean;
@@ -49,55 +41,32 @@ const FilledStarIcon: FC<{ label: string }> = (props) => (
   <StarStarredIcon {...props} color={token('color.icon.accent.yellow', '#E2B203')} />
 );
 
-const initials = (name: string): string =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-
-/** "You", the owner's name, "Former user" or "Unknown" — the owner column's text. */
-export const ownerLabel = (owner: ReportOwner | undefined, isMine: boolean): string => {
+/**
+ * "You", "Someone else" or "—" — the owner column's text. Ids only: putting a name on someone else's
+ * report needs `read:jira-user`, which is spec/041 phase 2.
+ */
+export const ownerLabel = (ownerId: string | undefined, isMine: boolean): string => {
   if (isMine) {
     return 'You';
   }
 
-  if (owner?.active === false) {
-    return 'Former user';
-  }
-
-  return owner?.displayName || 'Unknown';
+  return ownerId ? 'Someone else' : '—';
 };
 
-const OwnerCell: FC<{ owner?: ReportOwner; isMine: boolean }> = ({ owner, isMine }) => {
-  const label = ownerLabel(owner, isMine);
-  const known = !!owner?.displayName && owner.active !== false;
-
-  return (
-    <span className="flex min-w-0 items-center gap-2 text-sm text-neutral-801">
-      {owner?.avatarUrl ? (
-        <img src={owner.avatarUrl} alt="" className="h-6 w-6 flex-none rounded-full" />
-      ) : (
-        <span
-          aria-hidden
-          className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[10px] font-semibold ${
-            known ? 'bg-blue-101 text-neutral-800' : 'bg-neutral-20 text-neutral-300'
-          }`}
-        >
-          {known ? initials(owner!.displayName!) : '?'}
-        </span>
-      )}
-      <span className={`truncate ${label === 'Unknown' || label === 'Former user' ? 'text-neutral-300' : ''}`}>
-        {label}
+const OwnerCell: FC<{ ownerId?: string; isMine: boolean }> = ({ ownerId, isMine }) => (
+  <span className={`flex min-w-0 items-center gap-2 text-sm ${isMine ? 'text-neutral-801' : 'text-neutral-300'}`}>
+    {isMine && (
+      <span className="flex flex-none">
+        <PersonIcon label="" />
       </span>
-    </span>
-  );
-};
+    )}
+    <span className="truncate">{ownerLabel(ownerId, isMine)}</span>
+  </span>
+);
 
 /**
  * One saved report in the saved-reports table: star, type icon + name (+ JQL), owner, type badge,
- * and a delete button that shows on hover. See spec/041-saved-reports-redesign § 6.
+ * and a delete button that shows on hover. See spec/041-saved-reports-redesign/phase1.md § 6.
  *
  * Only the name is the link. The star and delete buttons are its siblings, never its children, so
  * no interactive element is nested in another and clicking them never opens the report.
@@ -106,7 +75,7 @@ const OwnerCell: FC<{ owner?: ReportOwner; isMine: boolean }> = ({ owner, isMine
  */
 export const ReportTableRow: FC<ReportTableRowProps> = ({
   described,
-  owner,
+  ownerId,
   isMine = false,
   isStarred,
   onToggleStar,
@@ -155,7 +124,7 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
         </span>
       </span>
       <span role="cell" className="min-w-0">
-        <OwnerCell owner={owner} isMine={isMine} />
+        <OwnerCell ownerId={ownerId} isMine={isMine} />
       </span>
       <span role="cell" className="min-w-0">
         {typeName && (

@@ -17,7 +17,6 @@ import { queryClient } from '../services/query';
 import { StorageProvider } from '../services/storage';
 import { RoutingProvider } from '../services/routing';
 import { JiraProvider } from '../services/jira';
-import { useUserServices } from '../services/user';
 import { useRouteData } from '../hooks/useRouteData';
 import routeData from '../../canjs/routing/route-data';
 
@@ -31,8 +30,6 @@ interface ViewReportsWrapperProps {
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ linkBuilder, interceptLinkClicks, ...viewReportProps }) => {
   const [showSettings] = useRouteData<string>('showSettings');
-  // Only the web host provides this; see `UserServices.reauthorize`.
-  const { reauthorize } = useUserServices();
 
   if (showSettings !== 'REPORTS') {
     return null;
@@ -47,7 +44,7 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ linkBuilder, intercep
               <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>
                 <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
                   <div className="absolute top-0 left-0 right-0 bottom-0 bg-neutral-20 z-50">
-                    <ViewReports {...viewReportProps} onReauthorize={reauthorize} />
+                    <ViewReports {...viewReportProps} />
                   </div>
                 </Suspense>
               </ErrorBoundary>

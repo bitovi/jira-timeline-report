@@ -40,7 +40,7 @@ export interface ReportAreaProps {
   /**
    * What to show with no JQL and no self-managed report: the home page (recent reports, create
    * buttons). A slot so this component stays pure — the home page reads storage and Jira, this
-   * doesn't. Never rendered for a logged-out (sample data) session. See spec/041 § 7.
+   * doesn't. Never rendered for a logged-out (sample data) session. See spec/041-saved-reports-redesign/phase1.md § 7.
    */
   home?: ReactNode;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */

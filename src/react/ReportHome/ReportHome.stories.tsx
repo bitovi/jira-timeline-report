@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import React, { useState } from 'react';
 
 import { ReportHome } from './ReportHome';
-import { SAMPLE_ACCOUNT_IDS, SAMPLE_OWNERS, SAMPLE_REPORTS } from '../components/ReportListing/sample-reports';
+import { SAMPLE_ACCOUNT_IDS, SAMPLE_REPORTS } from '../components/ReportListing/sample-reports';
 
 const meta: Meta<typeof ReportHome> = {
   title: 'ReportHome',
@@ -22,7 +22,6 @@ const Home = ({ withRecents }: { withRecents: boolean }) => {
   return (
     <ReportHome
       recentReports={withRecents ? SAMPLE_REPORTS : []}
-      owners={SAMPLE_OWNERS}
       currentAccountId={SAMPLE_ACCOUNT_IDS.me}
       starredIds={starredIds}
       onToggleStar={(report) =>

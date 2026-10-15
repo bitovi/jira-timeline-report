@@ -3,7 +3,7 @@ import { STARS_GET, STARS_SET } from '../../../forge-resolver/contract';
 /**
  * Where the current user's starred saved-report ids live. One list per user, never shared: stars
  * are personal, and a shared map would be a read-modify-write race between users. See
- * spec/041-saved-reports-redesign/plan.md § 5.
+ * spec/041-saved-reports-redesign/phase1.md § 5.
  *
  * The value is report ids only. Ids of reports that were since deleted stay in the list and are
  * never shown, because every view intersects it with `useAllReports`.
