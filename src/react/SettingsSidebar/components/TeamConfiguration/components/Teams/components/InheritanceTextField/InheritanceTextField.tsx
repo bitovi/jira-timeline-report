@@ -17,6 +17,7 @@ interface InheritanceTextFieldProps {
   name: keyof Configuration;
   label: string;
   min?: number;
+  step?: string;
   unit?: string;
   control: Control<Configuration>;
   register: UseFormReturn<Configuration>['register'];

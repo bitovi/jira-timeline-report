@@ -5,8 +5,11 @@ import {
   applyInheritance,
   createFullyInheritedConfig,
   createTeamFieldLookup,
+  getCapacityLevel,
   getInheritedData,
   getParentConfiguration,
+  hasSavedTeamMembers,
+  resolveTeamConfiguration,
 } from './inheritance';
 
 const createConfiguration = (overrides: Partial<Configuration> = {}): Configuration => ({
@@ -255,5 +258,138 @@ describe('getParentConfiguration', () => {
     });
 
     expect(parent.estimateField).toBe('G');
+  });
+});
+
+// spec/040 plan2: X (`pointsPerPersonDay`) resolves together with the estimate unit.
+describe('pointsPerPersonDay resolves with the unit', () => {
+  const resolve = (saved: Partial<AllTeamData>, team = 'A', level = '1') =>
+    getInheritedData(
+      (saved[team] ?? {}) as TeamConfiguration,
+      { __GLOBAL__: { defaults: {} }, ...saved } as AllTeamData,
+      [level],
+    )[level]!.pointsPerPersonDay;
+
+  test('a team with no capacity fields of its own takes the global X', () => {
+    expect(
+      resolve({ __GLOBAL__: { defaults: { estimateUnit: 'teamWeeks', pointsPerPersonDay: 0.04 } } as never }),
+    ).toBe(0.04);
+  });
+
+  test('X saved on a more specific level than the unit is read', () => {
+    expect(
+      resolve({
+        __GLOBAL__: { defaults: { estimateUnit: 'teamWeeks', pointsPerPersonDay: 0.04 } } as never,
+        A: { defaults: { pointsPerPersonDay: 0.02, teamMembers: 10 } } as never,
+      }),
+    ).toBe(0.02);
+  });
+
+  test('a level overriding the unit without X does not read a less specific X', () => {
+    expect(
+      resolve({
+        __GLOBAL__: { defaults: { estimateUnit: 'storyPoints', pointsPerPersonDay: 0.3 } } as never,
+        A: { 1: { estimateUnit: 'teamWeeks' } } as never,
+      }),
+    ).toBeNull();
+  });
+
+  test.each(['velocityPerSprint', 'estimateTeamShare'] as const)('a legacy %s on a level anchors it', (field) => {
+    expect(
+      resolve({
+        __GLOBAL__: { defaults: { pointsPerPersonDay: 0.3 } } as never,
+        A: { defaults: { [field]: field === 'velocityPerSprint' ? 21 : 'half' } } as never,
+      }),
+    ).toBeNull();
+  });
+
+  test('a headcount alone does not anchor', () => {
+    expect(
+      resolve({
+        __GLOBAL__: { defaults: { pointsPerPersonDay: 0.3 } } as never,
+        A: { 1: { teamMembers: 11 } } as never,
+      }),
+    ).toBe(0.3);
+  });
+
+  test("getParentConfiguration takes X from the team's defaults only when they anchor", () => {
+    const inheritedGlobal = { defaults: createConfiguration({ pointsPerPersonDay: 0.3 }) } as TeamConfiguration;
+
+    expect(
+      getParentConfiguration({
+        teamName: 'A',
+        hierarchyLevel: '1',
+        savedTeamData: { defaults: createConfiguration({ estimateUnit: 'teamWeeks' }) },
+        inheritedGlobal,
+      }).pointsPerPersonDay,
+    ).toBeNull();
+    expect(
+      getParentConfiguration({
+        teamName: 'A',
+        hierarchyLevel: '1',
+        savedTeamData: { defaults: createConfiguration({ teamMembers: 4 }) },
+        inheritedGlobal,
+      }).pointsPerPersonDay,
+    ).toBe(0.3);
+  });
+});
+
+describe('hasSavedTeamMembers', () => {
+  test.each([
+    ['nothing saved', {}, false],
+    ['the team level', { A: { 1: { teamMembers: 3 } } }, true],
+    ['the team defaults', { A: { defaults: { teamMembers: 3 } } }, true],
+    ['the global level', { __GLOBAL__: { defaults: {}, 1: { teamMembers: 3 } } }, true],
+    ['the global defaults', { __GLOBAL__: { defaults: { teamMembers: 3 } } }, true],
+    ['another level only', { A: { 2: { teamMembers: 3 } } }, false],
+    ['another team only', { B: { defaults: { teamMembers: 3 } } }, false],
+  ])('%s', (_name, saved, expected) => {
+    expect(hasSavedTeamMembers({ __GLOBAL__: { defaults: {} }, ...saved } as AllTeamData, 'A', '1')).toBe(expected);
+  });
+});
+
+describe('getCapacityLevel', () => {
+  test.each([
+    ['nothing saved', undefined, 'defaults'],
+    ['only a headcount at the level', { 1: { teamMembers: 4 } }, 'defaults'],
+    ['the unit at the level', { 1: { estimateUnit: 'teamWeeks' } }, '1'],
+    ['X at the level', { 1: { pointsPerPersonDay: 0.2 } }, '1'],
+    ['a legacy velocity at the level', { 1: { velocityPerSprint: 21 } }, '1'],
+  ])('%s → %s', (_name, saved, expected) => {
+    expect(getCapacityLevel(saved as TeamConfiguration | undefined, '1')).toBe(expected);
+  });
+});
+
+describe('resolveTeamConfiguration', () => {
+  const jiraFields = [] as unknown as IssueFields;
+
+  test('applies the global defaults and the team chain for one level', () => {
+    const config = resolveTeamConfiguration(
+      {
+        __GLOBAL__: { defaults: { estimateUnit: 'teamWeeks', pointsPerPersonDay: 0.04 } },
+        A: { defaults: { teamMembers: 11 }, 1: { tracks: 2 } },
+      } as unknown as AllTeamData,
+      jiraFields,
+      'A',
+      '1',
+    );
+
+    expect(config).toEqual(
+      expect.objectContaining({
+        estimateUnit: 'teamWeeks',
+        pointsPerPersonDay: 0.04,
+        teamMembers: 11,
+        tracks: 2,
+        sprintLength: 10,
+      }),
+    );
+  });
+
+  test('a team with nothing saved gets the global defaults, including the default headcount', () => {
+    const config = resolveTeamConfiguration({ __GLOBAL__: { defaults: {} } } as AllTeamData, jiraFields, 'A', '1');
+
+    expect(config).toEqual(
+      expect.objectContaining({ estimateUnit: 'storyPoints', teamMembers: 5, pointsPerPersonDay: null }),
+    );
   });
 });

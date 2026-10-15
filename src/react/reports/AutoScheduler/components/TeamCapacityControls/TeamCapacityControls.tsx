@@ -1,8 +1,8 @@
-import type { FC } from 'react';
-import type { TeamCapacity } from '../../../../services/capacity-overrides';
-import type { EstimateTeamShare, EstimateUnit } from '../../../../../jira/shared/types';
+import type { FC, ReactNode } from 'react';
+import type { TeamCapacity, TeamCapacityOverride } from '../../../../services/capacity-overrides';
+import type { EstimateUnit } from '../../../../../jira/shared/types';
 import type {
-  CapacityReadout,
+  FieldLabel,
   ItemLabel,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
@@ -14,17 +14,19 @@ import { roundTo } from '../../../../../utils/number/number';
 import { CapacityField } from './CapacityField';
 import { TrackStepper } from './TrackStepper';
 import { useTeamCommit } from './useTeamCommit';
+import { useTeamSettings } from './useTeamSettings';
 import {
   DEFAULT_ESTIMATE_UNIT,
-  DEFAULT_TEAM_SHARE,
+  describeEstimateUnit,
   formatCapacity,
+  formatRate,
   WORK_ITEMS_LABEL,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
 /**
- * A team reads as dirty when anything on its row is uncommitted — capacity, members or tracks alike. The
- * provider drops a field set back to its saved value, so "has an override" and "differs from what is
- * saved" are the same question here.
+ * A team reads as dirty when anything on its row is uncommitted — capacity, headcount or tracks alike.
+ * The provider drops a field set back to its saved value, so "has an override" and "differs from what
+ * is saved" are the same question here.
  */
 export const useTeamIsDirty = (teamName: string) => {
   const { overrides } = useCapacityOverrides();
@@ -32,7 +34,7 @@ export const useTeamIsDirty = (teamName: string) => {
 
   return (
     !!override &&
-    (override.velocityPerSprint !== undefined || override.tracks !== undefined || override.teamMembers !== undefined)
+    (override.pointsPerPersonDay !== undefined || override.tracks !== undefined || override.teamMembers !== undefined)
   );
 };
 
@@ -40,15 +42,13 @@ interface TeamCapacityInputsProps {
   teamName: string;
   /** The hierarchy level of the issues being scheduled — where a commit writes. */
   hierarchyLevel: number;
-  /** The team's effective velocity as derived — estimate units per scheduling period, whatever the unit. */
-  savedEffectiveVelocity: number;
+  /** X as derived: estimate units one person finishes per working day. */
+  savedPointsPerPersonDay: number;
+  savedTeamMembers: number;
   savedTracks: number;
-  /** The team's saved headcount, whatever the unit. Only Dev Days edits it here. */
-  savedTeamMembers?: number | null;
-  /** Working days in the scheduling period (`NormalizedTeam.daysPerSprint`). */
+  /** Working days in the scheduling period (`NormalizedTeam.daysPerSprint`) — the sprint, for the sprint units. */
   periodDays: number;
   estimateUnit?: EstimateUnit;
-  estimateTeamShare?: EstimateTeamShare;
   /** The scheduled level's name, e.g. "Epic" / "Epics". */
   itemLabel?: ItemLabel;
 }
@@ -58,79 +58,85 @@ const buttonClasses =
   'hover:bg-neutral-20 disabled:cursor-not-allowed disabled:text-neutral-50';
 
 /**
- * The left, editable half of a team header row: tracks, capacity, and — only while the team is
- * dirty — Reset and Commit. The buttons live at the end of the input group so the row grows leftward
- * and the output columns never shift.
+ * The left, editable half of a team header row: tracks, headcount and capacity, and — only while the
+ * team is dirty — Reset and Commit. The buttons live at the end of the input group so the row grows
+ * leftward and the output columns never shift.
  *
- * Capacity reads in the team's own unit (spec/040-update-team-estimation-settings). Story Points edits
- * velocity per sprint, Dev Days edits team members (its dev days per day), and the team-time units
- * have no editable capacity at all: theirs follows only from the team share, which is a setting.
+ * Capacity is `X × N` for every unit (spec/040-update-team-estimation-settings/plan2.md): the
+ * headcount is editable for every unit and scales it, tracks only divide it, and Story Points can
+ * also edit its points per sprint, which rewrites X.
  */
 export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   teamName,
   hierarchyLevel,
-  savedEffectiveVelocity,
+  savedPointsPerPersonDay,
+  savedTeamMembers,
   savedTracks,
-  savedTeamMembers: savedTeamMembersProp,
   periodDays,
   estimateUnit = DEFAULT_ESTIMATE_UNIT,
-  estimateTeamShare = DEFAULT_TEAM_SHARE,
   itemLabel = WORK_ITEMS_LABEL,
 }) => {
   const { overrides, savedCapacity, setTeamOverride, clearTeamOverride, rememberSavedCapacity, commitSavedCapacity } =
     useCapacityOverrides();
   const { commit, isSaving, isBlocked } = useTeamCommit();
+  const { config, fieldLabel } = useTeamSettings(teamName, hierarchyLevel);
 
   const override = overrides[teamName] ?? {};
   const isDirty = useTeamIsDirty(teamName);
 
   // The values passed in come from the derived pipeline, so they are the saved ones only until an
   // override lands. The provider keeps the baseline — this row is remounted on every re-derive.
-  const isDevDays = estimateUnit === 'devDays';
-  const savedTeamMembers = isDevDays ? (savedTeamMembersProp ?? undefined) : undefined;
-
   useEffect(() => {
     rememberSavedCapacity(teamName, {
-      velocityPerSprint: savedEffectiveVelocity,
+      pointsPerPersonDay: savedPointsPerPersonDay,
       tracks: savedTracks,
       teamMembers: savedTeamMembers,
     });
-  }, [rememberSavedCapacity, teamName, savedEffectiveVelocity, savedTracks, savedTeamMembers]);
+  }, [rememberSavedCapacity, teamName, savedPointsPerPersonDay, savedTracks, savedTeamMembers]);
 
   const saved = savedCapacity[teamName] ?? {
-    velocityPerSprint: savedEffectiveVelocity,
+    pointsPerPersonDay: savedPointsPerPersonDay,
     tracks: savedTracks,
     teamMembers: savedTeamMembers,
   };
 
-  const velocityPerSprint = override.velocityPerSprint ?? saved.velocityPerSprint;
-  const tracks = override.tracks ?? saved.tracks;
-  const teamMembers = override.teamMembers ?? saved.teamMembers;
+  const current: TeamCapacity = {
+    pointsPerPersonDay: override.pointsPerPersonDay ?? saved.pointsPerPersonDay,
+    tracks: override.tracks ?? saved.tracks,
+    teamMembers: override.teamMembers ?? saved.teamMembers,
+  };
+  const { pointsPerPersonDay, tracks, teamMembers } = current;
 
-  // `velocityPerSprint` is only ever overridden for Story Points; for every other unit it is the
-  // derived effective velocity, which Dev Days recomputes from an edited headcount.
-  const effectiveVelocity = isDevDays && teamMembers !== undefined ? teamMembers * periodDays : velocityPerSprint;
-  const capacity = formatCapacity(estimateUnit, estimateTeamShare, effectiveVelocity, periodDays);
-  // Dev Days can edit its headcount on this row; every other unit shows the saved one.
-  const headcount = isDevDays ? teamMembers : (savedTeamMembersProp ?? undefined);
+  const capacity = formatCapacity({ unit: estimateUnit, pointsPerPersonDay, teamMembers, sprintLength: periodDays });
 
   // `undefined` removes the field, so editing back to the saved value leaves the row clean instead of
   // arming a Commit that would write what is already stored.
-  const change = (patch: Partial<TeamCapacity>) => {
-    const next = { velocityPerSprint, tracks, teamMembers, ...patch };
+  const change = (patch: TeamCapacityOverride) => {
+    const next = { ...current, ...patch };
 
     setTeamOverride(teamName, {
-      velocityPerSprint: next.velocityPerSprint === saved.velocityPerSprint ? undefined : next.velocityPerSprint,
+      pointsPerPersonDay: next.pointsPerPersonDay === saved.pointsPerPersonDay ? undefined : next.pointsPerPersonDay,
       tracks: next.tracks === saved.tracks ? undefined : next.tracks,
       teamMembers: next.teamMembers === saved.teamMembers ? undefined : next.teamMembers,
     });
   };
 
+  // Always scales — the AutoScheduler is where you see what more people would do. Unlike the
+  // settings form, a first headcount here never re-anchors X: per-developer stays put, the team grows.
+  const changeHeadcount = (next: number) => change({ teamMembers: next });
+
+  const field = (count: number) => (count === 1 ? fieldLabel.singular : fieldLabel.plural);
+  const meaning = describeEstimateUnit(
+    { ...config, estimateUnit, pointsPerPersonDay, teamMembers, sprintLength: periodDays },
+    fieldLabel,
+    '=',
+  );
+
   return (
-    <span className="inline-flex min-w-0 items-center gap-3.5">
+    <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">
       {/* Tooltip clones its child to attach handlers and a ref, so it needs a host element. */}
       <span className="inline-flex items-center gap-1.5">
-        <Tooltip content={trackTooltip(tracks, capacity.perPeriod ?? capacity.perDay, itemLabel)}>
+        <Tooltip content={trackTooltip(tracks, capacity.team.perDay, fieldLabel, itemLabel)}>
           <span className="inline-flex">
             <TrackStepper
               value={tracks}
@@ -140,44 +146,51 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
             />
           </span>
         </Tooltip>
-        {headcount !== undefined && (
-          <span className="whitespace-nowrap text-[11px] text-neutral-500" data-testid="people-per-track">
-            ({peoplePerTrack(headcount, tracks)} each)
-          </span>
-        )}
+        <span className="whitespace-nowrap text-[11px] text-neutral-500" data-testid="people-per-track">
+          ({peoplePerTrack(teamMembers, tracks)} each)
+        </span>
       </span>
 
-      {estimateUnit === 'storyPoints' && capacity.perPeriod && (
-        <CapacityReadoutView label={capacity.perPeriod.label}>
-          <CapacityField
-            value={velocityPerSprint}
-            unitLabel={capacity.perPeriod.label}
-            isDisabled={isSaving}
-            onChange={(next) => change({ velocityPerSprint: next })}
-          />
-        </CapacityReadoutView>
-      )}
-
-      {isDevDays && teamMembers !== undefined && (
-        <CapacityReadoutView label={capacity.perDay.label}>
-          <CapacityField
-            value={teamMembers}
-            unitLabel={capacity.perDay.label}
-            isDisabled={isSaving}
-            onChange={(next) => change({ teamMembers: next })}
-          />
-        </CapacityReadoutView>
-      )}
-
-      {!isDevDays && estimateUnit !== 'storyPoints' && (
-        <Tooltip content={teamShareTooltip(estimateTeamShare, itemLabel)}>
-          <span tabIndex={0}>
-            <CapacityReadoutView label={(capacity.perPeriod ?? capacity.perDay).label}>
-              <span className="font-semibold tabular-nums">{(capacity.perPeriod ?? capacity.perDay).value}</span>
-            </CapacityReadoutView>
+      <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap" data-testid="team-capacity">
+        <CapacityField
+          name="Developers"
+          value={teamMembers}
+          unitLabel={teamMembers === 1 ? 'developer' : 'developers'}
+          isDisabled={isSaving}
+          onChange={changeHeadcount}
+        />
+        <span className="text-neutral-500">{teamMembers === 1 ? 'developer' : 'developers'}</span>
+        <Separator />
+        <Tooltip content={meaning}>
+          <span tabIndex={0} className="inline-flex items-baseline gap-1.5" data-testid="per-developer">
+            <Rate value={capacity.perPerson.perDay} label={() => ' / day (person)'} />
           </span>
         </Tooltip>
-      )}
+        <Separator />
+        <span className="inline-flex items-baseline gap-1.5" data-testid="per-team">
+          {/* Per sprint or week where the unit has one, so a headcount change shows at team scale. */}
+          {estimateUnit === 'storyPoints' && capacity.team.perPeriod !== undefined ? (
+            // Story Points keeps its points per sprint editable; the edit rewrites X at the current headcount.
+            <Rate
+              value={capacity.team.perPeriod}
+              label={(value) => `${field(value)} / sprint (team)`}
+              editable={
+                <CapacityField
+                  value={formatRate(capacity.team.perPeriod)}
+                  unitLabel={`${fieldLabel.plural} / sprint`}
+                  isDisabled={isSaving}
+                  onChange={(next) => change({ pointsPerPersonDay: next / (teamMembers * periodDays) })}
+                />
+              }
+            />
+          ) : (
+            <Rate
+              value={capacity.team.perPeriod ?? capacity.team.perDay}
+              label={(value) => `${field(value)} / ${capacity.period ?? 'day'} (team)`}
+            />
+          )}
+        </span>
+      </span>
 
       {isDirty && (
         <span className="inline-flex gap-1.5">
@@ -200,8 +213,7 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
               // Only on success: a failed write rolls the save back, and dropping the override here
               // would throw the what-if away with nothing saved in its place.
               commit(teamName, hierarchyLevel, override, {
-                onSuccess: () =>
-                  commitSavedCapacity(teamName, { velocityPerSprint: effectiveVelocity, tracks, teamMembers }),
+                onSuccess: () => commitSavedCapacity(teamName, current),
               });
             }}
           >
@@ -213,67 +225,42 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   );
 };
 
-const CapacityReadoutView: FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
-    <span className="text-neutral-500">Capacity</span>
-    {children}
-    <span className="text-[11px] text-neutral-500">{label}</span>
+const Separator = () => (
+  <span aria-hidden className="text-neutral-400">
+    ·
   </span>
 );
 
-interface TeamCapacityOutputsProps {
-  /** Effective velocity: estimate units the whole team finishes per scheduling period. */
-  velocity: number;
-  /** Working days in the scheduling period (`NormalizedTeam.daysPerSprint`). */
-  periodDays: number;
-  estimateUnit?: EstimateUnit;
-  estimateTeamShare?: EstimateTeamShare;
-  totalWorkingDays: number;
-}
-
-/**
- * The right, read-only half: capacity per working day, and a result of the simulation. A Dev Days or
- * Team Working Days team's capacity already is per day, so the inputs half shows it and this one
- * does not repeat it.
- */
-export const TeamCapacityOutputs: FC<TeamCapacityOutputsProps> = ({
-  velocity,
-  periodDays,
-  estimateUnit = DEFAULT_ESTIMATE_UNIT,
-  estimateTeamShare = DEFAULT_TEAM_SHARE,
-  totalWorkingDays,
-}) => {
-  const capacity = formatCapacity(estimateUnit, estimateTeamShare, velocity, periodDays);
+/** "0.08 / day (person)", "2 Story points / week (team)" */
+const Rate: FC<{
+  value: number;
+  label: (rounded: number) => string;
+  /** Replaces the number, for an editable one. */
+  editable?: ReactNode;
+}> = ({ value, label, editable }) => {
+  const rounded = formatRate(value);
 
   return (
-    <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">
-      {capacity.perPeriod && (
-        <Tooltip content="Capacity ÷ sprint length. A readout, not a setting.">
-          <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap" tabIndex={0}>
-            <span className="font-semibold tabular-nums">{capacity.perDay.value}</span>
-            <span className="text-neutral-500">{capacity.perDay.label}</span>
-          </span>
-        </Tooltip>
-      )}
-      <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
-        <span className="text-neutral-500">Total working days</span>
-        <span className="font-semibold tabular-nums">{roundTo(totalWorkingDays, 0)}</span>
-      </span>
-    </span>
+    <>
+      {editable ?? <span className="font-semibold tabular-nums">{rounded}</span>}
+      <span className="text-neutral-500">{label(rounded)}</span>
+    </>
   );
 };
 
-const SHARE_OF_TEAM: Record<EstimateTeamShare, string> = {
-  full: 'the whole team',
-  half: 'half the team',
-  third: 'a third of the team',
-  quarter: 'a quarter of the team',
-};
-
-/** Where a team-time capacity comes from, and where to change it. */
-function teamShareTooltip(share: EstimateTeamShare, item: ItemLabel) {
-  return `Estimates assume ${SHARE_OF_TEAM[share]} works on each ${item.singular}. Change this in Team Settings.`;
+interface TeamCapacityOutputsProps {
+  totalWorkingDays: number;
 }
+
+/** The right, read-only half: a result of the simulation. */
+export const TeamCapacityOutputs: FC<TeamCapacityOutputsProps> = ({ totalWorkingDays }) => (
+  <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">
+    <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+      <span className="text-neutral-500">Total working days</span>
+      <span className="font-semibold tabular-nums">{roundTo(totalWorkingDays, 0)}</span>
+    </span>
+  </span>
+);
 
 /** "5 people", "1 person", "0.5 people" — the team's headcount split evenly across its tracks. */
 export function peoplePerTrack(teamMembers: number, tracks: number) {
@@ -284,10 +271,9 @@ export function peoplePerTrack(teamMembers: number, tracks: number) {
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** "20 points / sprint" → "20 points per sprint", for running text. */
-const inWords = ({ value, label }: CapacityReadout) => `${value} ${label.replace(' / ', ' per ')}`;
+function trackTooltip(tracks: number, teamPerDay: number, field: FieldLabel, item: ItemLabel) {
+  const perDay = formatRate(teamPerDay);
 
-function trackTooltip(tracks: number, capacity: CapacityReadout, item: ItemLabel) {
   return (
     <div className="grid gap-1.5">
       <div className="font-semibold">
@@ -295,9 +281,10 @@ function trackTooltip(tracks: number, capacity: CapacityReadout, item: ItemLabel
       </div>
       <div>How many {item.plural} this team works on at once.</div>
       <div>
-        Working on more at once does <strong>not</strong> add capacity. The team still delivers {inWords(capacity)};
-        each {item.singular} gets a share of it, so every <em>estimated</em> {item.singular} takes proportionally longer
-        and more run at once.
+        Working on more at once does <strong>not</strong> add capacity. The team still delivers {perDay}{' '}
+        {perDay === 1 ? field.singular : field.plural} per day; each {item.singular} gets a share of the team's
+        developers, so every <em>estimated</em> {item.singular} takes proportionally longer and more run at once. Adding
+        developers is what adds capacity.
       </div>
       <div>
         {capitalize(item.plural)} with <em>no</em> estimate are the exception: their default estimate is one sprint of

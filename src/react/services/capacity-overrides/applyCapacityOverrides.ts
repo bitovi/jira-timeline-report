@@ -1,12 +1,18 @@
 import type { NormalizeIssueConfig } from '../../../jira/normalized/normalize';
 import type { CapacityOverrides } from './types';
 
-import { getDaysPerSprintDefault } from '../../../jira/normalized/defaults';
+import {
+  getDaysPerSprintDefault,
+  getPointsPerPersonDayDefault,
+  getTeamMembersDefault,
+} from '../../../jira/normalized/defaults';
 
 /**
- * Wraps the two normalize getters the Auto-Scheduler's team row can change. Everything downstream
+ * Wraps the normalize getters the Auto-Scheduler's team row can change. Everything downstream
  * (`totalPointsPerDay`, `pointsPerDayPerTrack`, every derived duration) recomputes from these, so
  * this is the whole override mechanism.
+ *
+ * Velocity is `X × N × P` for every unit, with X and N taken from the override where it has them.
  */
 export function applyCapacityOverrides(
   base: Partial<NormalizeIssueConfig>,
@@ -16,18 +22,30 @@ export function applyCapacityOverrides(
   // re-derive on every render.
   if (Object.keys(overrides).length === 0) return base;
 
+  const getPointsPerPersonDay = base.getPointsPerPersonDay ?? getPointsPerPersonDayDefault;
+  const getTeamMembers = base.getTeamMembers ?? getTeamMembersDefault;
+  const getDaysPerSprint = base.getDaysPerSprint ?? getDaysPerSprintDefault;
+
   return {
     ...base,
     getVelocity: (issue, config) => {
       const override = overrides[config!.getTeamKey(issue)];
 
-      // A Dev Days team's effective velocity is one dev-day per member per working day.
-      if (override?.teamMembers !== undefined) {
-        const getDaysPerSprint = base.getDaysPerSprint ?? getDaysPerSprintDefault;
-        return override.teamMembers * getDaysPerSprint(issue, config);
+      if (override?.pointsPerPersonDay === undefined && override?.teamMembers === undefined) {
+        return base.getVelocity!(issue, config);
       }
 
-      return override?.velocityPerSprint ?? base.getVelocity!(issue, config);
+      return (
+        (override.pointsPerPersonDay ?? getPointsPerPersonDay(issue, config)) *
+        (override.teamMembers ?? getTeamMembers(issue, config)) *
+        getDaysPerSprint(issue, config)
+      );
+    },
+    getPointsPerPersonDay: (issue, config) => {
+      return overrides[config!.getTeamKey(issue)]?.pointsPerPersonDay ?? getPointsPerPersonDay(issue, config);
+    },
+    getTeamMembers: (issue, config) => {
+      return overrides[config!.getTeamKey(issue)]?.teamMembers ?? getTeamMembers(issue, config);
     },
     getParallelWorkLimit: (issue, config) => {
       const override = overrides[config!.getTeamKey(issue)]?.tracks;

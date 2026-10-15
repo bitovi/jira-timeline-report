@@ -36,6 +36,12 @@ vi.mock('../../hooks/useUncertaintyWeight/useUncertaintyWeight.js', () => ({
 vi.mock('./components/TeamCapacityControls/useTeamCommit', () => ({
   useTeamCommit: () => ({ commit: vi.fn(), isSaving: false }),
 }));
+vi.mock('./components/TeamCapacityControls/useTeamSettings', () => ({
+  useTeamSettings: () => ({
+    config: { sprintLength: 10, teamMembers: 10, estimateUnit: 'storyPoints' },
+    fieldLabel: { singular: 'Story Point', plural: 'Story Points' },
+  }),
+}));
 // `routeData.storage` is undefined here, so only the provider is stubbed — the rest of the module
 // stays real, since replacing it wholesale would undefine `useStorage` for anything reaching for it.
 vi.mock('../../services/storage', async () => ({
@@ -96,6 +102,8 @@ const UI_DATA = {
         pointsPerDayPerTrack: 1,
         totalPointsPerDay: 1,
         velocity: 21,
+        pointsPerPersonDay: 0.21,
+        teamMembers: 10,
         daysPerSprint: 10,
       },
       hierarchyLevel: 7,
@@ -291,8 +299,9 @@ describe('AutoScheduler team capacity row', () => {
   it('renders capacity as an editable read view and the outputs as text', () => {
     renderScheduler();
 
-    expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
-    expect(screen.getByText('points / day')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /21 Story Points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Developers, 10 developers/ })).toBeInTheDocument();
+    expect(screen.getByTestId('per-team')).toHaveTextContent('21Story Points / sprint (team)');
     expect(screen.getByText('Total working days')).toBeInTheDocument();
   });
 

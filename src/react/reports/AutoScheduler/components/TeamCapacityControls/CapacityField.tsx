@@ -10,6 +10,8 @@ interface CapacityFieldProps {
   isDisabled?: boolean;
   /** Read out after the value for screen readers, e.g. "points / sprint". */
   unitLabel?: string;
+  /** What is being edited, for screen readers. */
+  name?: string;
 }
 
 // InlineEdit's outer margin and Textfield's 40px default height would both grow the team header row
@@ -25,8 +27,8 @@ const compactEdit = [
 ].join(' ');
 
 /**
- * The team's capacity — per sprint, or per day for a Dev Days team — as the standard Jira
- * click-to-edit. `EditableTitle.tsx` is the model: `InlineEdit`'s own read view is the click target,
+ * A number on the team row — the headcount, or a Story Points team's points per sprint — as the
+ * standard Jira click-to-edit. Decimals are fine (5 full-time + 1 half-time = 5.5 developers). `EditableTitle.tsx` is the model: `InlineEdit`'s own read view is the click target,
  * which works here because the team header row has no click handler of its own competing for the
  * gesture.
  */
@@ -35,6 +37,7 @@ export const CapacityField: FC<CapacityFieldProps> = ({
   onChange,
   isDisabled = false,
   unitLabel = 'points / sprint',
+  name = 'Capacity',
 }) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -45,7 +48,7 @@ export const CapacityField: FC<CapacityFieldProps> = ({
         // `InlineEdit` has no disabled state, so refusing to enter edit mode is the whole of it.
         onEdit={() => setIsEditing(!isDisabled)}
         defaultValue={String(value)}
-        editButtonLabel={`Capacity, ${value} ${unitLabel.replace(' / ', ' per ')}`}
+        editButtonLabel={`${name}, ${value} ${unitLabel.replace(' / ', ' per ')}`}
         // `Number('1e999')` is `Infinity`, which survives `> 0` and then `JSON.stringify`s to `null` —
         // a committed capacity that reads as unset.
         validate={(next) => (isCapacity(Number(next)) ? undefined : 'Enter a number greater than 0')}
@@ -56,7 +59,7 @@ export const CapacityField: FC<CapacityFieldProps> = ({
         }}
         onCancel={() => setIsEditing(false)}
         editView={({ errorMessage, ...fieldProps }) => (
-          <Textfield {...fieldProps} type="number" min={0} autoFocus width={56} />
+          <Textfield {...fieldProps} type="number" min={0} step="any" autoFocus width={56} />
         )}
         readView={() => <span className="font-semibold tabular-nums">{value}</span>}
       />

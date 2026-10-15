@@ -585,21 +585,14 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
               hierarchyLevel={team.hierarchyLevel}
               itemLabel={team.issueType ? itemLabelFor(team.issueType) : WORK_ITEMS_LABEL}
               estimateUnit={teamData.estimateUnit}
-              estimateTeamShare={teamData.estimateTeamShare}
               periodDays={teamData.daysPerSprint}
-              savedEffectiveVelocity={teamData.velocity}
+              savedPointsPerPersonDay={teamData.pointsPerPersonDay}
               savedTracks={teamData.parallelWorkLimit}
               savedTeamMembers={teamData.teamMembers}
             />
           </Suspense>
         </ErrorBoundary>
-        <TeamCapacityOutputs
-          velocity={teamData.velocity}
-          periodDays={teamData.daysPerSprint}
-          estimateUnit={teamData.estimateUnit}
-          estimateTeamShare={teamData.estimateTeamShare}
-          totalWorkingDays={totalWorkingDays(team) / teamData.parallelWorkLimit}
-        />
+        <TeamCapacityOutputs totalWorkingDays={totalWorkingDays(team) / teamData.parallelWorkLimit} />
       </div>
     </>
   );

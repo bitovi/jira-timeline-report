@@ -1,7 +1,13 @@
 import type { NormalizeIssueConfig } from '../../../../../../../jira/normalized/normalize';
 import type { AllTeamData, Configuration } from '../services/team-configuration';
 
-import { DEFAULT_ESTIMATE_UNIT, DEFAULT_TEAM_SHARE, getEffectiveVelocity, getSchedulingPeriodDays } from './estimation';
+import {
+  DEFAULT_ESTIMATE_UNIT,
+  getEffectiveVelocity,
+  getPointsPerPersonDay,
+  getSchedulingPeriodDays,
+  getTeamMembers,
+} from './estimation';
 
 const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel?: number): Configuration => {
   const key = teamKey || '';
@@ -70,8 +76,8 @@ export const createNormalizeConfiguration = (
         getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)),
       );
     },
-    // Effective velocity, in whatever unit the team estimates in, per scheduling period. A config with
-    // no `estimateUnit` resolves to story points, which is `velocityPerSprint` exactly.
+    // Effective velocity, X × N × P, in whatever unit the team estimates in, per scheduling period.
+    // A config saved before X existed derives it, which reproduces its old velocity exactly.
     getVelocity: (issue, config) => {
       return getEffectiveVelocity(
         getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)),
@@ -83,18 +89,13 @@ export const createNormalizeConfiguration = (
         DEFAULT_ESTIMATE_UNIT
       );
     },
-    getEstimateTeamShare: (issue, config) => {
-      return (
-        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).estimateTeamShare ??
-        DEFAULT_TEAM_SHARE
+    getPointsPerPersonDay: (issue, config) => {
+      return getPointsPerPersonDay(
+        getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)),
       );
     },
     getTeamMembers: (issue, config) => {
-      const { teamMembers } = getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue));
-
-      // Every unit's headcount, for the AutoScheduler's people-per-track readout. Only Dev Days turns
-      // it into capacity, and that happens in `getVelocity`, not here.
-      return teamMembers != null ? Number(teamMembers) : null;
+      return getTeamMembers(getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)));
     },
     getParallelWorkLimit: (issue, config) => {
       return Number(getConfiguration(allData, config?.getTeamKey(issue), config?.getHierarchyLevel(issue)).tracks);

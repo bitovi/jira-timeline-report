@@ -62,6 +62,8 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData
           updateFields={updateFields}
           setValue={setValue}
           savedUserData={savedUserData}
+          // The global defaults are the end of every chain.
+          hasSavedHeadcount={savedUserData.teamMembers != null}
           itemLabel={null}
           estimateFieldOptions={selectableFields}
         />

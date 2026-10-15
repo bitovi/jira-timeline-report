@@ -153,7 +153,7 @@ interface NormalizedSprint {
 /** The unit a team's estimates are written in. See spec/040-update-team-estimation-settings. */
 export type EstimateUnit = 'storyPoints' | 'devDays' | 'teamDays' | 'teamWeeks' | 'teamSprints';
 
-/** How much of the team a single estimated work item assumes — only for the team-time units. */
+/** Legacy: how much of the team a single estimated work item assumed. Read only to migrate. */
 export type EstimateTeamShare = 'full' | 'half' | 'third' | 'quarter';
 
 export interface NormalizedTeam {
@@ -161,9 +161,10 @@ export interface NormalizedTeam {
   /** Effective velocity: estimate units the whole team finishes per sprint, whatever the unit. */
   velocity: number;
   estimateUnit: EstimateUnit;
-  estimateTeamShare: EstimateTeamShare;
-  /** Headcount for every unit; only Dev Days turns it into capacity. `null` when nothing resolves. */
-  teamMembers: number | null;
+  /** Estimate units one person finishes in one working day. `velocity` = this × `teamMembers` × `daysPerSprint`. */
+  pointsPerPersonDay: number;
+  /** Headcount; drives capacity for every unit. */
+  teamMembers: number;
   /** Working days in the scheduling period: the sprint for sprint units, else a fixed default. */
   daysPerSprint: number;
   parallelWorkLimit: number;

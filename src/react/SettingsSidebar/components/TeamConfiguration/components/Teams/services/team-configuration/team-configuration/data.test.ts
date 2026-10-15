@@ -86,7 +86,8 @@ describe('Configuration Inheritance and Defaults', () => {
       dueDateField: 'Due date',
       statusSummaryField: null,
       estimateUnit: 'storyPoints',
-      teamMembers: 1,
+      teamMembers: 5,
+      pointsPerPersonDay: null,
       estimateTeamShare: 'full',
     };
 
@@ -123,6 +124,8 @@ describe('Configuration Inheritance and Defaults', () => {
     expect(teamAInheritedData[2]).toEqual({
       sprintLength: 15,
       velocityPerSprint: 30,
+      // X resolves with the unit; nothing saves one, so it is derived.
+      pointsPerPersonDay: null,
       tracks: 2,
       spreadEffortAcrossDates: false,
       estimateField: 'Story points',
@@ -134,6 +137,7 @@ describe('Configuration Inheritance and Defaults', () => {
     expect(teamAInheritedData[3]).toEqual({
       sprintLength: 15,
       velocityPerSprint: 30,
+      pointsPerPersonDay: null,
       tracks: 1,
       spreadEffortAcrossDates: false,
       estimateField: 'Story points',
@@ -159,7 +163,8 @@ describe('Configuration Inheritance and Defaults', () => {
       dueDateField: 'Due date',
       statusSummaryField: null,
       estimateUnit: 'storyPoints',
-      teamMembers: 1,
+      teamMembers: 5,
+      pointsPerPersonDay: null,
       estimateTeamShare: 'full',
     };
 
@@ -207,7 +212,8 @@ describe('Configuration Inheritance and Defaults', () => {
       dueDateField: 'Due date',
       statusSummaryField: null,
       estimateUnit: 'storyPoints',
-      teamMembers: 1,
+      teamMembers: 5,
+      pointsPerPersonDay: null,
       estimateTeamShare: 'full',
     });
 
@@ -222,7 +228,8 @@ describe('Configuration Inheritance and Defaults', () => {
       dueDateField: 'Due date',
       statusSummaryField: null,
       estimateUnit: 'storyPoints',
-      teamMembers: 1,
+      teamMembers: 5,
+      pointsPerPersonDay: null,
       estimateTeamShare: 'full',
     });
   });

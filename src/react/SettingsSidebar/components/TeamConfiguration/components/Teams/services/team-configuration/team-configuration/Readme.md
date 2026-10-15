@@ -39,29 +39,34 @@ const withInheritance = applyInheritance('__GLOBAL__', configurationsWithGlobalD
 
 ## Estimate units
 
-Teams answer capacity questions in the unit they estimate in (`estimateUnit`). The scheduler still works from three numbers per issue — velocity, days per sprint and parallel work limit — whose names predate estimate units. Each unit supplies:
+Teams answer capacity questions in the unit they estimate in (`estimateUnit`). The scheduler still works from three numbers per issue — velocity, days per sprint and parallel work limit — whose names predate estimate units. See `Teams/shared/estimation.ts` and spec/040-update-team-estimation-settings (plan.md, then plan2.md).
 
-- a **scheduling period** (the engine's "days per sprint"), in working days, and
-- an **effective velocity** (the engine's "velocity"): estimate units the whole team finishes in that period.
+**Every unit stores one number, X (`pointsPerPersonDay`)**: estimate units one person finishes in one working day. With the headcount N (`teamMembers`), the tracks T and the scheduling period P:
 
-See `Teams/shared/estimation.ts` and spec/040-update-team-estimation-settings.
+```
+team / day      = X × N
+per track / day = X × N / T      (the engine's pointsPerDayPerTrack)
+velocity        = X × N × P      (getEffectiveVelocity)
+```
 
-| `estimateUnit`          | Asks for                               | Period (P)      | Effective velocity (f = share) |
-| ----------------------- | -------------------------------------- | --------------- | ------------------------------ |
-| `storyPoints` (default) | `sprintLength`, `velocityPerSprint`    | `sprintLength`  | `velocityPerSprint`            |
-| `devDays`               | `teamMembers`                          | 10 working days | `teamMembers × P`              |
-| `teamDays`              | `estimateTeamShare`                    | 10 working days | `P / f`                        |
-| `teamWeeks`             | `estimateTeamShare` (a week is 5 days) | 10 working days | `P / (5 × f)`                  |
-| `teamSprints`           | `sprintLength`, `estimateTeamShare`    | `sprintLength`  | `1 / f`                        |
+So headcount scales capacity for every unit, tracks only divide it, and X changes only when the team redefines what one estimate unit is.
 
-`sprintLength` is stored in working days but asked in weeks (one week = `DAYS_PER_WEEK` = 5 working days), so the form shows `sprintLength / 5` and saves `weeks × 5`. Everything that reads it — the scheduler, the legacy form, saved configs — keeps working in days.
+| `estimateUnit`          | Asks for                               | Period (P)      | X                                     |
+| ----------------------- | -------------------------------------- | --------------- | ------------------------------------- |
+| `storyPoints` (default) | `sprintLength`, points per sprint      | `sprintLength`  | points per sprint / (N × sprint days) |
+| `devDays`               | —                                      | 10 working days | 1                                     |
+| `teamDays`              | people per estimate                    | 10 working days | 1 / (people × 1)                      |
+| `teamWeeks`             | people per estimate (a week is 5 days) | 10 working days | 1 / (people × 5)                      |
+| `teamSprints`           | `sprintLength`, people per estimate    | `sprintLength`  | 1 / (people × sprint days)            |
 
-`tracks` (work items in parallel) and `teamMembers` are asked for every unit, but only Dev Days turns `teamMembers` into capacity. Shares are `full` = 1, `half` = ½, `third` = ⅓, `quarter` = ¼.
+Every unit also asks for the headcount (`teamMembers`, default 5, decimals allowed) and `tracks`. Points per sprint and people per estimate aren't stored: both are shown from X (`X × N × sprint days`, `1 / (X × unit days)`) and saving either writes X. Changing a Story Points or Team Sprints sprint length rewrites X so points per sprint, or people per estimate, stay the same.
 
-**The parallel count follows the other answers** (`getDefaultTracks`). Changing the unit, the share (team-time units) or the headcount (Dev Days) also saves `tracks` at the same level, in the same write: one item per developer for Dev Days, and full 1 / half 2 / third 3 / quarter 4 for the shares. It overwrites any hand-typed value, and the team can edit it afterwards. Story Points implies nothing, so switching to it leaves `tracks` alone.
+`sprintLength` is stored in working days but asked in weeks (one week = `DAYS_PER_WEEK` = 5 working days), so the form shows `sprintLength / 5` and saves `weeks × 5`.
 
-The period cancels out of every estimated duration. Its one visible effect is the default for an **unestimated item, which always takes exactly one period**: a sprint for the sprint units, and `UNESTIMATED_WORKING_DAYS` (5) for the rest. The form says so under the unit question.
+**X resolves together with the unit.** X is in the unit's own terms, so it comes from the most specific level that saves any of `pointsPerPersonDay`, `estimateUnit`, `velocityPerSprint` or `estimateTeamShare` — never from a less specific one (`getInheritedData`). The form customizes and inherits the unit and its capacity together, and the AutoScheduler commits X to the level that anchors the unit (`getCapacityLevel`).
 
-**No unit reads a setting its form hides.** A `sprintLength` saved while on Story Points survives a switch to Dev Days, but nothing reads it until the team switches back. Likewise `velocityPerSprint` is ignored by every unit but Story Points, and `teamMembers` by every unit but Dev Days.
+**Migration.** Configs saved before X existed have none. X is derived on read from the legacy answers (`velocityPerSprint`, `estimateTeamShare`) at the saved headcount, which reproduces their old velocity exactly; nothing writes `velocityPerSprint` or `estimateTeamShare` any more. A team that never entered a headcount (no saved `teamMembers` anywhere in its chain) was derived against the default, so the first headcount it enters **re-anchors** X — capacity stays the same — and every headcount after that scales it (`pointsPerPersonDayForHeadcount`). Dev Days teams without a saved headcount go from the old default of 1 member to 5.
 
-A configuration saved without `estimateUnit` resolves to `storyPoints`, which is the original math exactly, so nothing needs migrating. Every field inherits on its own through the chain above, so a team can inherit its unit from `__GLOBAL__` and still set its own `teamMembers`.
+**The parallel count follows the other answers, in settings only** (`getDefaultTracks`). Changing the unit, the people per estimate or the headcount also saves `tracks` at the same level, in the same write: the headcount for Dev Days, and `round(headcount / people per estimate)` for the team-time units. It overwrites any hand-typed value, and the team can edit it afterwards. Story Points implies nothing. The AutoScheduler never resets tracks.
+
+The period cancels out of every estimated duration. Its one visible effect is the default for an **unestimated item, which always takes exactly one period**, whatever the headcount: a sprint for the sprint units, and `UNESTIMATED_WORKING_DAYS` (10) for the rest. The form says so under the unit question.

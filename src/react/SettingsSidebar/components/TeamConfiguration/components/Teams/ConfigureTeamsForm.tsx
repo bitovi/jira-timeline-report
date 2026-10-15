@@ -24,7 +24,9 @@ export interface ConfigureTeamsFormProps {
   update: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
   updateFields: (patch: Partial<Configuration>) => void;
   setValue: UseFormReturn<Configuration>['setValue'];
-  toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean) => void;
+  toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean, alsoWrite?: Partial<Configuration>) => void;
+  /** Did the team ever enter a headcount anywhere in this level's chain? */
+  hasSavedHeadcount?: boolean;
   /** `null` on a team's defaults; the work item type's name on a per-type accordion. */
   itemLabel?: ItemLabel | null;
 }
@@ -43,6 +45,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
   updateFields,
   setValue,
   toggleInheritance,
+  hasSavedHeadcount = false,
   itemLabel = null,
 }) => {
   const selectableFields = buildSelectableFields(jiraFields);
@@ -62,6 +65,7 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
           setValue={setValue}
           savedUserData={savedUserData}
           toggleInheritance={toggleInheritance}
+          hasSavedHeadcount={hasSavedHeadcount}
           itemLabel={itemLabel}
           estimateFieldOptions={selectableFields}
         />

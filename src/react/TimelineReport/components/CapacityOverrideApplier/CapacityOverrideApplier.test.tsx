@@ -7,8 +7,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CapacityOverridesProvider, useCapacityOverrides } from '../../../services/capacity-overrides';
 import { CapacityOverrideApplier, CAPACITY_OVERRIDE_DEBOUNCE_MS } from './CapacityOverrideApplier';
 
-const savedBase = { getVelocity: () => 8, getParallelWorkLimit: () => 4 } as Partial<NormalizeIssueConfig>;
-const resolvedBase = { getVelocity: () => 13, getParallelWorkLimit: () => 1 } as Partial<NormalizeIssueConfig>;
+const savedBase = {
+  getVelocity: () => 8,
+  getParallelWorkLimit: () => 4,
+  getTeamMembers: () => 5,
+  getDaysPerSprint: () => 10,
+} as Partial<NormalizeIssueConfig>;
+const resolvedBase = {
+  getVelocity: () => 13,
+  getParallelWorkLimit: () => 1,
+  getTeamMembers: () => 5,
+  getDaysPerSprint: () => 10,
+} as Partial<NormalizeIssueConfig>;
 
 const issue = {} as never;
 const config = { getTeamKey: () => 'ORDER' } as never;
@@ -32,7 +42,7 @@ const Harness = () => {
         readNormalizeOptions={() => resolvedBase}
         writeNormalizeOptions={writeNormalizeOptions}
       />
-      <button onClick={() => setTeamOverride('ORDER', { velocityPerSprint: 35 })}>override</button>
+      <button onClick={() => setTeamOverride('ORDER', { pointsPerPersonDay: 0.7 })}>override</button>
       <button
         onClick={() => {
           baseRef.current = savedBase;
@@ -79,7 +89,7 @@ describe('CapacityOverrideApplier', () => {
     settle();
 
     expect(written).toHaveLength(1);
-    expect(written[0].getVelocity?.(issue, config)).toBe(35);
+    expect(written[0].getVelocity?.(issue, config)).toBeCloseTo(35);
     expect(written[0].getParallelWorkLimit?.(issue, config)).toBe(1);
   });
 
@@ -101,7 +111,7 @@ describe('CapacityOverrideApplier', () => {
     settle();
 
     expect(written).toHaveLength(2);
-    expect(written[1].getVelocity?.(issue, config)).toBe(35);
+    expect(written[1].getVelocity?.(issue, config)).toBeCloseTo(35);
     expect(written[1].getParallelWorkLimit?.(issue, config)).toBe(4);
   });
 });

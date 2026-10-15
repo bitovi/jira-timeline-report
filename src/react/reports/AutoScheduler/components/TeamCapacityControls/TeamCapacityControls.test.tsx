@@ -8,44 +8,80 @@ let isSaving = false;
 let isBlocked = false;
 vi.mock('./useTeamCommit', () => ({ useTeamCommit: () => ({ commit, isSaving, isBlocked }) }));
 
+// `useTeamSettings` stays real so the row resolves the Estimate Field's name the way the report does;
+// only its two data hooks are stubbed.
+let jiraFields: Array<{ id: string; name: string }> = [];
+let savedUserAllTeamData: Record<string, unknown> = {};
+vi.mock('../../../../services/jira', () => ({ useJiraIssueFields: () => jiraFields }));
+vi.mock(
+  '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration',
+  async () => {
+    const actual = await vi.importActual<
+      typeof import('../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration')
+    >('../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration');
+
+    return { ...actual, useAllTeamData: () => ({ savedUserAllTeamData }) };
+  },
+);
+
 import { CapacityOverridesProvider } from '../../../../services/capacity-overrides';
 import { peoplePerTrack, TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
 import { itemLabelFor } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
-const inputs = (props: { savedEffectiveVelocity?: number; savedTracks?: number } = {}) => (
+type InputsProps = Partial<React.ComponentProps<typeof TeamCapacityInputs>>;
+
+// Story Points, 21 per 10-day sprint with 10 developers: X = 0.21.
+const inputs = (props: InputsProps = {}) => (
   <CapacityOverridesProvider>
     <TeamCapacityInputs
       teamName="ORDER"
       hierarchyLevel={7}
       periodDays={10}
-      savedEffectiveVelocity={props.savedEffectiveVelocity ?? 21}
-      savedTracks={props.savedTracks ?? 1}
+      savedPointsPerPersonDay={0.21}
+      savedTeamMembers={10}
+      savedTracks={1}
+      {...props}
     />
   </CapacityOverridesProvider>
 );
 
-const renderInputs = (props: { savedEffectiveVelocity?: number; savedTracks?: number } = {}) => render(inputs(props));
+const renderInputs = (props: InputsProps = {}) => render(inputs(props));
 
 /** The `onSuccess` the row hands the commit hook, which only a successful save is meant to run. */
 const commitSucceeds = () => act(() => commit.mock.calls[0][3].onSuccess());
 
-const setCapacity = async (next: string) => {
-  await userEvent.click(screen.getByRole('button', { name: /points per sprint/i }));
+const editInline = async (button: RegExp, next: string) => {
+  await userEvent.click(screen.getByRole('button', { name: button }));
   await userEvent.clear(screen.getByRole('spinbutton'));
   await userEvent.type(screen.getByRole('spinbutton'), `${next}{Enter}`);
 };
+
+const setCapacity = (next: string) => editInline(/Story Points per sprint/i, next);
+const setDevelopers = (next: string) => editInline(/^Developers,/, next);
+
+/** A readout's text with its spans run together, e.g. "0.04 / day (person)". */
+const readout = (testId: 'per-developer' | 'per-team') => screen.getByTestId(testId).textContent;
+
+const addTrack = () => userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
 
 beforeEach(() => {
   commit.mockClear();
   isSaving = false;
   isBlocked = false;
+  // An id-valued estimate field, as a name collision stores it (spec/015-field-selection).
+  jiraFields = [{ id: 'customfield_10016', name: 'Story Points' }];
+  savedUserAllTeamData = {
+    __GLOBAL__: { defaults: {} },
+    ORDER: { defaults: { estimateField: 'customfield_10016', teamMembers: 10 } },
+  };
 });
 
 describe('TeamCapacityInputs', () => {
   it('shows the saved values with no commit controls at rest', () => {
     renderInputs();
 
-    expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /21 Story Points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Developers, 10 developers/ })).toBeInTheDocument();
     expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
@@ -54,7 +90,7 @@ describe('TeamCapacityInputs', () => {
   it('reveals Reset and Commit once tracks change', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
 
     expect(screen.getByText('2 work items in parallel')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
@@ -66,14 +102,14 @@ describe('TeamCapacityInputs', () => {
 
     await setCapacity('35');
 
-    expect(screen.getByRole('button', { name: /35 points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /35 Story Points per sprint/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
   });
 
   it('puts the saved values back on Reset', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
     expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
@@ -86,14 +122,14 @@ describe('TeamCapacityInputs', () => {
     await setCapacity('35');
     await setCapacity('21');
 
-    expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /21 Story Points per sprint/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
   });
 
   it('keeps the other field overridden when one is edited back to what is saved', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
     await setCapacity('35');
     await setCapacity('21');
 
@@ -104,7 +140,7 @@ describe('TeamCapacityInputs', () => {
   it('sends the overridden values to the commit hook', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
     expect(commit).toHaveBeenCalledWith('ORDER', 7, { tracks: 2 }, expect.anything());
@@ -113,7 +149,7 @@ describe('TeamCapacityInputs', () => {
   it('keeps the override until the commit succeeds', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
     expect(screen.getByText('2 work items in parallel')).toBeInTheDocument();
@@ -123,7 +159,7 @@ describe('TeamCapacityInputs', () => {
   it('clears the override once the commit succeeds, so the row stops reading as dirty', async () => {
     renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
     commitSucceeds();
 
@@ -137,7 +173,7 @@ describe('TeamCapacityInputs', () => {
     const startCommit = async () => {
       const { rerender } = renderInputs();
 
-      await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+      await addTrack();
       await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
       isSaving = true;
@@ -153,10 +189,11 @@ describe('TeamCapacityInputs', () => {
       expect(screen.getByRole('button', { name: 'Commit' })).toBeDisabled();
     });
 
-    it('refuses to open the capacity editor', async () => {
+    it('refuses to open the capacity or headcount editor', async () => {
       await startCommit();
 
-      await userEvent.click(screen.getByRole('button', { name: /points per sprint/i }));
+      await userEvent.click(screen.getByRole('button', { name: /Story Points per sprint/i }));
+      await userEvent.click(screen.getByRole('button', { name: /^Developers,/ }));
 
       expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
     });
@@ -167,7 +204,7 @@ describe('TeamCapacityInputs', () => {
   it('will not commit while another team is being saved, but stays editable', async () => {
     const { rerender } = renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
 
     isBlocked = true;
     rerender(inputs());
@@ -180,76 +217,53 @@ describe('TeamCapacityInputs', () => {
   it('does not fall back to the overridden value when the pipeline has already re-derived', async () => {
     const { rerender } = renderInputs();
 
-    await userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
+    await addTrack();
     await setCapacity('35');
 
     // What the derived pipeline reports once the override has been applied to it.
-    rerender(
-      <CapacityOverridesProvider>
-        <TeamCapacityInputs
-          teamName="ORDER"
-          hierarchyLevel={7}
-          periodDays={10}
-          savedEffectiveVelocity={35}
-          savedTracks={2}
-        />
-      </CapacityOverridesProvider>,
-    );
+    rerender(inputs({ savedPointsPerPersonDay: 0.35, savedTracks: 2 }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
-    expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /21 Story Points per sprint/i })).toBeInTheDocument();
     expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
   });
 
   it('keeps the saved baseline when the report re-derives and remounts the row', async () => {
     // A re-derive tears the whole grid down and rebuilds it, so the row loses any state of its own.
-    const harness = (mounted: boolean, velocityPerSprint: number) => (
+    const harness = (mounted: boolean, pointsPerPersonDay: number) => (
       <CapacityOverridesProvider>
         {mounted && (
           <TeamCapacityInputs
             teamName="ORDER"
             hierarchyLevel={7}
             periodDays={10}
-            savedEffectiveVelocity={velocityPerSprint}
+            savedPointsPerPersonDay={pointsPerPersonDay}
+            savedTeamMembers={10}
             savedTracks={1}
           />
         )}
       </CapacityOverridesProvider>
     );
 
-    const { rerender } = render(harness(true, 21));
+    const { rerender } = render(harness(true, 0.21));
 
     await setCapacity('35');
 
-    rerender(harness(false, 21));
-    rerender(harness(true, 35));
+    rerender(harness(false, 0.21));
+    rerender(harness(true, 0.35));
 
     await setCapacity('21');
 
-    expect(screen.getByRole('button', { name: /21 points per sprint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /21 Story Points per sprint/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
   });
 });
 
-// spec/040-update-team-estimation-settings
-describe("TeamCapacityInputs in the team's estimate unit", () => {
-  const renderUnit = (props: Partial<React.ComponentProps<typeof TeamCapacityInputs>>) =>
-    render(
-      <CapacityOverridesProvider>
-        <TeamCapacityInputs
-          teamName="ORDER"
-          hierarchyLevel={7}
-          periodDays={10}
-          savedEffectiveVelocity={21}
-          savedTracks={1}
-          {...props}
-        />
-      </CapacityOverridesProvider>,
-    );
-
+// spec/040-update-team-estimation-settings/plan2.md: capacity is X × N for every unit.
+describe('TeamCapacityInputs headcount and readout', () => {
   it('names the scheduled level in the stepper', async () => {
-    renderUnit({ itemLabel: itemLabelFor('Epic'), savedTracks: 2 });
+    renderInputs({ itemLabel: itemLabelFor('Epic'), savedTracks: 2 });
 
     expect(screen.getByText('2 Epics in parallel')).toBeInTheDocument();
 
@@ -258,41 +272,179 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
     expect(screen.getByText('1 Epic in parallel')).toBeInTheDocument();
   });
 
-  it('a Story Points team edits velocity per sprint', async () => {
-    renderUnit({ estimateUnit: 'storyPoints' });
+  it('labels every rate with the Estimate Field name, resolved from its id', () => {
+    renderInputs();
 
-    expect(screen.getByText('points / sprint')).toBeInTheDocument();
+    expect(readout('per-developer')).toBe('0.21 / day (person)');
+    expect(readout('per-team')).toBe('21Story Points / sprint (team)');
+  });
+
+  it('falls back to "estimates" with no Estimate Field', () => {
+    savedUserAllTeamData = { __GLOBAL__: { defaults: {} }, ORDER: { defaults: { teamMembers: 10 } } };
+    // Nothing matches the defaults' name-based lookup either.
+    jiraFields = [];
+    renderInputs();
+
+    expect(readout('per-team')).toBe('21estimates / sprint (team)');
+  });
+
+  it('a Story Points edit of points per sprint overrides X at the current headcount', async () => {
+    renderInputs();
+
     await setCapacity('35');
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
-    expect(commit).toHaveBeenCalledWith('ORDER', 7, { velocityPerSprint: 35 }, expect.anything());
+    // 35 / (10 developers × 10 days)
+    expect(commit).toHaveBeenCalledWith('ORDER', 7, { pointsPerPersonDay: 0.35 }, expect.anything());
+    expect(readout('per-developer')).toBe('0.35 / day (person)');
   });
 
-  it('a Dev Days team edits its dev days per day, which are its team members', async () => {
-    // 5 members over the 5-day Dev Days period.
-    renderUnit({ estimateUnit: 'devDays', savedTeamMembers: 5, savedEffectiveVelocity: 25, periodDays: 5 });
+  // Team Weeks, 5 people per estimate: X = 1 / (5 × 5) = 0.04.
+  const teamWeeks: InputsProps = { estimateUnit: 'teamWeeks', savedPointsPerPersonDay: 0.04, savedTracks: 2 };
 
-    expect(screen.getByText('dev days / day')).toBeInTheDocument();
+  it('10 → 11 developers raises the team total by 10% and leaves the per-developer rate alone', async () => {
+    renderInputs(teamWeeks);
 
-    await userEvent.click(screen.getByRole('button', { name: /Capacity, 5 dev days per day/ }));
-    await userEvent.clear(screen.getByRole('spinbutton'));
-    await userEvent.type(screen.getByRole('spinbutton'), '8{Enter}');
+    expect(readout('per-developer')).toBe('0.04 / day (person)');
+    expect(readout('per-team')).toBe('2Story Points / week (team)');
+
+    await setDevelopers('11');
+
+    expect(readout('per-developer')).toBe('0.04 / day (person)');
+    expect(readout('per-team')).toBe('2.2Story Points / week (team)');
+  });
+
+  it('a headcount edit reads as uncommitted, leaves tracks alone, and commits only the headcount', async () => {
+    renderInputs(teamWeeks);
+
+    await setDevelopers('11');
+
+    expect(screen.getByText('2 work items in parallel')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Commit' })).toBeInTheDocument();
+
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
-    expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 8 }, expect.anything());
+    expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 11 }, expect.anything());
   });
 
-  it('a Team Weeks team has no editable capacity', () => {
-    // Half team, 10-day sprint: V = 10 / (5 × ½) = 4.
-    renderUnit({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half', savedEffectiveVelocity: 4 });
+  it('accepts a decimal headcount', async () => {
+    renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1 });
 
-    expect(screen.getByText('half-team weeks / week')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^Capacity,/ })).not.toBeInTheDocument();
+    await setDevelopers('5.5');
+
+    expect(screen.getByRole('button', { name: /Developers, 5.5 developers/ })).toBeInTheDocument();
+    expect(readout('per-team')).toBe('5.5Story Points / day (team)');
+  });
+
+  it.each([
+    ['storyPoints', 0.21],
+    ['devDays', 1],
+    ['teamDays', 0.2],
+    ['teamWeeks', 0.04],
+    ['teamSprints', 0.02],
+  ] as const)('%s edits its developers', async (estimateUnit, savedPointsPerPersonDay) => {
+    renderInputs({ estimateUnit, savedPointsPerPersonDay });
+
+    await setDevelopers('11');
+    await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+    expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 11 }, expect.anything());
+  });
+
+  it('Dev Days reads one per developer per day', () => {
+    renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1 });
+
+    expect(readout('per-developer')).toBe('1 / day (person)');
+    expect(readout('per-team')).toBe('10Story Points / day (team)');
+  });
+
+  it('Team Sprints reads per person per day and per sprint for the team', () => {
+    renderInputs({ estimateUnit: 'teamSprints', savedPointsPerPersonDay: 0.02 });
+
+    expect(readout('per-developer')).toBe('0.02 / day (person)');
+    expect(readout('per-team')).toBe('2Story Points / sprint (team)');
+  });
+
+  it('explains what one unit of the field means in the tooltip', async () => {
+    renderInputs(teamWeeks);
+
+    await userEvent.hover(screen.getByTestId('per-developer'));
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      '1 Story Point = 1 week of work for 5 people (50% of the team)',
+    );
+  });
+
+  it('the tooltip share follows an edited headcount, the people per estimate do not', async () => {
+    renderInputs(teamWeeks);
+
+    await setDevelopers('11');
+    await userEvent.hover(screen.getByTestId('per-developer'));
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      '1 Story Point = 1 week of work for 5 people (45% of the team)',
+    );
+  });
+
+  it('a Story Points tooltip names the points per sprint and the headcount', async () => {
+    renderInputs();
+
+    await userEvent.hover(screen.getByTestId('per-developer'));
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      '21 Story Points per 2-week sprint with 10 developers',
+    );
+  });
+
+  describe('a team that never entered a headcount', () => {
+    beforeEach(() => {
+      savedUserAllTeamData = {
+        __GLOBAL__: { defaults: {} },
+        ORDER: {
+          defaults: { estimateField: 'customfield_10016', estimateUnit: 'teamWeeks', estimateTeamShare: 'half' },
+        },
+      };
+    });
+
+    // Derived against the default 5: half of 5 people per estimate, X = 1 / (2.5 × 5) = 0.08.
+    const unentered: InputsProps = { ...teamWeeks, savedPointsPerPersonDay: 0.08, savedTeamMembers: 5 };
+
+    it('scales from the first edit: per-developer stays, the team grows', async () => {
+      renderInputs(unentered);
+
+      expect(readout('per-team')).toBe('2Story Points / week (team)');
+
+      await setDevelopers('10');
+
+      expect(readout('per-developer')).toBe('0.08 / day (person)');
+      expect(readout('per-team')).toBe('4Story Points / week (team)');
+    });
+
+    it('commits only the headcount; the commit pins X', async () => {
+      renderInputs(unentered);
+
+      await setDevelopers('10');
+      await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+      expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 10 }, expect.anything());
+    });
+
+    it('never re-anchors Dev Days, whose X is always 1', async () => {
+      renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1, savedTeamMembers: 5 });
+
+      await setDevelopers('10');
+
+      expect(readout('per-team')).toBe('10Story Points / day (team)');
+    });
   });
 
   it('splits the headcount across the tracks, following the stepper', async () => {
-    renderUnit({ estimateUnit: 'teamSprints', savedTeamMembers: 10, savedTracks: 2, itemLabel: itemLabelFor('Epic') });
+    renderInputs({
+      estimateUnit: 'teamSprints',
+      savedPointsPerPersonDay: 0.02,
+      savedTracks: 2,
+      itemLabel: itemLabelFor('Epic'),
+    });
 
     expect(screen.getByTestId('people-per-track')).toHaveTextContent('(5 people each)');
 
@@ -301,50 +453,23 @@ describe("TeamCapacityInputs in the team's estimate unit", () => {
     expect(screen.getByTestId('people-per-track')).toHaveTextContent('(3.3 people each)');
   });
 
-  it("follows a Dev Days team's edited headcount", async () => {
-    renderUnit({
-      estimateUnit: 'devDays',
-      savedTeamMembers: 4,
-      savedTracks: 4,
-      savedEffectiveVelocity: 20,
-      periodDays: 5,
-    });
+  it('follows an edited headcount in the split', async () => {
+    renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1, savedTeamMembers: 4, savedTracks: 4 });
 
     expect(screen.getByTestId('people-per-track')).toHaveTextContent('(1 person each)');
 
-    await userEvent.click(screen.getByRole('button', { name: /Capacity, 4 dev days per day/ }));
-    await userEvent.clear(screen.getByRole('spinbutton'));
-    await userEvent.type(screen.getByRole('spinbutton'), '8{Enter}');
+    await setDevelopers('8');
 
     expect(screen.getByTestId('people-per-track')).toHaveTextContent('(2 people each)');
-  });
-
-  it('shows no split without a headcount', () => {
-    renderUnit({ estimateUnit: 'teamWeeks' });
-
-    expect(screen.queryByTestId('people-per-track')).not.toBeInTheDocument();
-  });
-
-  it('a Team Working Days team shows its per-day capacity, read-only', () => {
-    renderUnit({ estimateUnit: 'teamDays', estimateTeamShare: 'half', savedEffectiveVelocity: 20 });
-
-    expect(screen.getByText('half-team days / day')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^Capacity,/ })).not.toBeInTheDocument();
   });
 });
 
 describe('TeamCapacityOutputs', () => {
-  it('shows per-day capacity for a unit with a longer period', () => {
-    render(<TeamCapacityOutputs velocity={20} periodDays={10} totalWorkingDays={34} />);
+  it('shows the total working days', () => {
+    render(<TeamCapacityOutputs totalWorkingDays={34.4} />);
 
-    expect(screen.getByText('points / day')).toBeInTheDocument();
     expect(screen.getByText('Total working days')).toBeInTheDocument();
-  });
-
-  it('leaves per-day capacity to the inputs when the period already is a day', () => {
-    render(<TeamCapacityOutputs velocity={50} periodDays={10} estimateUnit="devDays" totalWorkingDays={34} />);
-
-    expect(screen.queryByText('dev days / day')).not.toBeInTheDocument();
+    expect(screen.getByText('34')).toBeInTheDocument();
   });
 });
 

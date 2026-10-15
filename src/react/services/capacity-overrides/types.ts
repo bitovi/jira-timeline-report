@@ -1,8 +1,12 @@
-/** A session-only, uncommitted change to one team's scheduling inputs. */
+/**
+ * A session-only, uncommitted change to one team's scheduling inputs. Capacity is
+ * `pointsPerPersonDay × teamMembers`, so headcount scales it for every unit. See
+ * spec/040-update-team-estimation-settings/plan2.md.
+ */
 export type TeamCapacityOverride = {
-  velocityPerSprint?: number;
+  /** X, estimate units per person per working day — set by a Story Points velocity edit or a re-anchor. */
+  pointsPerPersonDay?: number;
   tracks?: number;
-  /** Dev Days teams only: their capacity is their headcount. See spec/040-update-team-estimation-settings. */
   teamMembers?: number;
 };
 
@@ -11,10 +15,9 @@ export type CapacityOverrides = Record<string, TeamCapacityOverride>;
 
 /** One team's scheduling inputs as saved — the baseline an override is measured against. */
 export type TeamCapacity = {
-  velocityPerSprint: number;
+  pointsPerPersonDay: number;
   tracks: number;
-  /** Only for a Dev Days team. */
-  teamMembers?: number;
+  teamMembers: number;
 };
 
 /** Keyed by the team key `getTeamKey` returns for an issue. */

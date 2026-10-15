@@ -28,6 +28,8 @@ interface TextFieldProps {
   name: keyof Configuration;
   label: string;
   min?: number;
+  /** `"any"` for a number that takes decimals. */
+  step?: string;
   unit?: string;
   register: UseFormReturn<Configuration>['register'];
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
@@ -55,6 +57,7 @@ const TextField: FC<TextFieldProps> = ({
   label,
   name,
   min,
+  step,
   unit,
   disabled = false,
   hideLabel = false,
@@ -79,6 +82,7 @@ const TextField: FC<TextFieldProps> = ({
         type={type}
         disabled={disabled}
         min={min}
+        step={step}
         unit={unit}
         register={register}
         onBlur={handleBlur}
@@ -101,10 +105,10 @@ const TextField: FC<TextFieldProps> = ({
 const inputClassName = '[&>input]:!flex-1 [&>input]:!p-0 !py-2 !px-2 !h-10 no-spin-container';
 
 const RegisteredInput: FC<
-  Pick<TextFieldProps, 'id' | 'name' | 'type' | 'disabled' | 'min' | 'unit' | 'register'> & {
+  Pick<TextFieldProps, 'id' | 'name' | 'type' | 'disabled' | 'min' | 'step' | 'unit' | 'register'> & {
     onBlur: (target: { name: string; value: string }) => void;
   }
-> = ({ id, name, type, disabled, min, unit, register, onBlur }) => {
+> = ({ id, name, type, disabled, min, step, unit, register, onBlur }) => {
   const props = register(name);
 
   return (
@@ -114,6 +118,7 @@ const RegisteredInput: FC<
       isDisabled={disabled}
       type={type}
       min={min}
+      step={step}
       autoComplete="off"
       elemAfterInput={unit ? <div>{unit}</div> : null}
       {...props}

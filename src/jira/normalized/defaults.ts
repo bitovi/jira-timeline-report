@@ -284,13 +284,16 @@ export function getEstimateUnitDefault(
   return 'storyPoints';
 }
 
-type MinimalEstimateTeamShareIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
+type MinimalPointsPerPersonDayIssue = Prettify<
+  MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue
+>;
 
-export function getEstimateTeamShareDefault(
-  issue: MinimalEstimateTeamShareIssue,
+/** Matches the other defaults: 21 points per 10-day sprint across 5 people. */
+export function getPointsPerPersonDayDefault(
+  issue: MinimalPointsPerPersonDayIssue,
   options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
-): NormalizedIssue['team']['estimateTeamShare'] {
-  return 'full';
+): NormalizedIssue['team']['pointsPerPersonDay'] {
+  return 21 / (10 * 5);
 }
 
 type MinimalTeamMembersIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
@@ -299,5 +302,5 @@ export function getTeamMembersDefault(
   issue: MinimalTeamMembersIssue,
   options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
 ): NormalizedIssue['team']['teamMembers'] {
-  return null;
+  return 5;
 }

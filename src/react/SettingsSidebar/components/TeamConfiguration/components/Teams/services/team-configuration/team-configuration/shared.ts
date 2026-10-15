@@ -20,15 +20,23 @@ export type IssueFields = Array<{
 export type Configuration = {
   /** Working days in a sprint. */
   sprintLength: number | null;
-  /** Story points completed per sprint (Story Points only). */
+  /**
+   * Legacy: story points completed per sprint. No longer written — read only to derive
+   * `pointsPerPersonDay` for configs saved before it existed. See spec/040 plan2.
+   */
   velocityPerSprint: number | null;
+  /**
+   * The team's capacity, X: estimate units one person finishes in one working day, in the team's
+   * estimate unit. Resolves together with `estimateUnit` (see `inheritance.ts`).
+   */
+  pointsPerPersonDay: number | null;
   /** Work items the team handles in parallel (every unit). */
   tracks: number | null;
   /** `null` resolves to `storyPoints`, which is how every config saved before spec/040 behaves. */
   estimateUnit: EstimateUnit | null;
-  /** Full-time developers */
+  /** Developers on the team. Drives capacity for every unit; decimals allowed. */
   teamMembers: number | null;
-  /** Team Working Days, Weeks and Sprints only. */
+  /** Legacy: read only to derive `pointsPerPersonDay` for configs saved before it existed. */
   estimateTeamShare: EstimateTeamShare | null;
   estimateField: string | null;
   confidenceField: string | null;
@@ -50,6 +58,7 @@ export const createEmptyConfiguration = (): Configuration => {
   return {
     sprintLength: null,
     velocityPerSprint: null,
+    pointsPerPersonDay: null,
     tracks: null,
     estimateUnit: null,
     teamMembers: null,
