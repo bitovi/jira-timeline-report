@@ -74,7 +74,7 @@ describe('<ReportHome>', () => {
     const { onCreateReport, onCreateReportOfReports } = renderHome();
 
     await userEvent.click(screen.getByRole('button', { name: 'Create new report' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Create report of reports' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create Report of Reports' }));
 
     expect(onCreateReport).toHaveBeenCalled();
     expect(onCreateReportOfReports).toHaveBeenCalled();
@@ -88,7 +88,7 @@ describe('<ReportHome>', () => {
       expect(screen.getByText(/haven't opened any reports yet/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'All saved reports' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Create new report' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Create report of reports' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Create Report of Reports' })).toBeInTheDocument();
     });
   });
 });
@@ -96,7 +96,7 @@ describe('<ReportHome>', () => {
 describe('createHomeActions', () => {
   const target = () => ({ showSettings: '', primaryReportType: 'start-due' });
 
-  it('"Create report of reports" switches the report type', () => {
+  it('"Create Report of Reports" switches the report type', () => {
     const route = target();
 
     createHomeActions(route).onCreateReportOfReports();
@@ -114,6 +114,20 @@ describe('createHomeActions', () => {
     route.showSettings = '';
     actions.onOpenSources();
     expect(route.showSettings).toBe('SOURCES');
+  });
+
+  // Leaving home this way means a later "no JQL" asks for sources rather than bouncing back here.
+  it('both Create buttons mark the report as started; Sources and All saved reports do not', () => {
+    const onStartReport = vi.fn();
+    const actions = createHomeActions(target(), onStartReport);
+
+    actions.onOpenSources();
+    actions.onViewAllReports();
+    expect(onStartReport).not.toHaveBeenCalled();
+
+    actions.onCreateReport();
+    actions.onCreateReportOfReports();
+    expect(onStartReport).toHaveBeenCalledTimes(2);
   });
 
   it('"All saved reports" opens the Saved Reports page', () => {

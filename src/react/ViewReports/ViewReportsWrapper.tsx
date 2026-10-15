@@ -43,7 +43,7 @@ const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ linkBuilder, intercep
             <JiraProvider jira={(routeData as any).jiraHelpers}>
               <ErrorBoundary fallback={<ViewReportsError onBackButtonClicked={viewReportProps.onBackButtonClicked} />}>
                 <Suspense fallback={<ViewReportSkeleton {...viewReportProps} />}>
-                  <div className="absolute top-0 left-0 right-0 bottom-0 bg-neutral-20 z-50">
+                  <div className="absolute top-0 left-0 right-0 bottom-0 bg-white z-50">
                     <ViewReports {...viewReportProps} />
                   </div>
                 </Suspense>

@@ -14,10 +14,11 @@ const base = { isLoggedIn: true, jql: 'project = X', primaryIssueType: 'Initiati
 // A stub, because home is a slot: ReportArea only decides *whether* it shows, so these tests need
 // no Jira or storage.
 const HOME = <div data-testid="home">HOME</div>;
+const SETUP = <div data-testid="setup">SETUP</div>;
 
 const renderArea = (loadingState: ReportLoadingState, overrides: Partial<ReportAreaProps> = {}) =>
   render(
-    <ReportArea {...base} home={HOME} {...overrides} loadingState={loadingState}>
+    <ReportArea {...base} home={HOME} setup={SETUP} {...overrides} loadingState={loadingState}>
       {REPORT}
     </ReportArea>,
   );
@@ -92,6 +93,20 @@ describe('<ReportArea>', () => {
     renderArea({ status: 'idle' }, { jql: '' });
     expect(screen.getByTestId('home')).toBeInTheDocument();
     expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
+  });
+
+  // Home is the landing page. Once the user has left it to build a report, a missing JQL asks for
+  // sources instead — e.g. Create Report of Reports, then switching the type to Gantt.
+  it('asks for sources instead of showing home once the user has started a report', () => {
+    renderArea({ status: 'idle' }, { jql: '', startedReport: true });
+    expect(screen.getByTestId('setup')).toBeInTheDocument();
+    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
+  });
+
+  it('shows neither home nor the sources prompt once there is a JQL', () => {
+    renderArea({ status: 'resolved' }, { startedReport: true });
+    expect(screen.queryByTestId('setup')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
   });
 
   it('does not show home once there is a JQL', () => {

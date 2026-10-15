@@ -83,7 +83,7 @@ const useSaveReport = () => {
 /**
  * `Report.updatedAt` for a write the user just made. Stamped here, in the create and update hooks
  * every user edit goes through, so callers never pass it — and never by the migration write-back,
- * which isn't a user edit. See spec/041-saved-reports-redesign/phase1.md § 3.
+ * which isn't a user edit. See spec/041-saved-reports-redesign/phase1/plan.md § 3.
  */
 const now = () => new Date().toISOString();
 

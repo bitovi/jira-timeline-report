@@ -35,7 +35,7 @@ async function main() {
         evaluation: false,
       }),
       // The account id comes from the access token's `sub` — no scope, no Jira call. Stars are per
-      // browser, like recents. See spec/041-saved-reports-redesign/phase1.md § 2.
+      // browser, like recents. See spec/041-saved-reports-redesign/phase1/plan.md § 2.
       createUserServices: () => {
         const readCurrentAccountId = createWebAccountIdReader();
 

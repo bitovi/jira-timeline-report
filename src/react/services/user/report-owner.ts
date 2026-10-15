@@ -5,7 +5,7 @@ import type { Report } from '../../../jira/reports';
  * creator. Legacy-storage reports saved before spec/041 have neither.
  *
  * Ids only — turning one into a name needs `read:jira-user`, which is phase 2. See
- * spec/041-saved-reports-redesign/phase1.md § 4.
+ * spec/041-saved-reports-redesign/phase1/plan.md § 4.
  */
 export const effectiveOwnerId = (report: Report): string | undefined => report.ownerId || report.creatorId || undefined;
 

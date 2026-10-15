@@ -29,7 +29,7 @@ export type Report = {
   /**
    * Read-only, never meaningful to write: the account id of the Reports Space work item's
    * `creator`, filled in by the space backend on read so a report with no `ownerId` can still show
-   * an owner. The space backend strips it on write. See spec/041-saved-reports-redesign/phase1.md § 3.
+   * an owner. The space backend strips it on write. See spec/041-saved-reports-redesign/phase1/plan.md § 3.
    */
   creatorId?: string;
   /**
@@ -50,7 +50,7 @@ export type Report = {
  * When the report was last changed, as far as anyone can tell: its own `updatedAt`, else (Reports
  * Space only) its work item's. A migration write-back edits the work item, so for an old report the
  * fallback can be the migration's time — fine for a fallback. See
- * spec/041-saved-reports-redesign/phase1.md § 3.
+ * spec/041-saved-reports-redesign/phase1/plan.md § 3.
  */
 export const lastUpdatedAt = (report: Report): string | undefined =>
   report.updatedAt || report.workItemUpdatedAt || undefined;

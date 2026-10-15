@@ -27,7 +27,7 @@ export const MAX_RECENT_ON_HOME = 5;
 /**
  * What you see with no report open: recent reports and the ways to start a new one. Replaces the
  * old one-line "Configure a JQL in the sidebar" prompt. Presentational — `ReportHomeContainer`
- * reads the data and wires the actions. See spec/041-saved-reports-redesign/phase1.md § 7.
+ * reads the data and wires the actions. See spec/041-saved-reports-redesign/phase1/plan.md § 7.
  */
 export const ReportHome: FC<ReportHomeProps> = ({
   recentReports,
@@ -98,7 +98,7 @@ export const ReportHome: FC<ReportHomeProps> = ({
         <Button appearance="primary" onClick={onCreateReport}>
           Create new report
         </Button>
-        <Button onClick={onCreateReportOfReports}>Create report of reports</Button>
+        <Button onClick={onCreateReportOfReports}>Create Report of Reports</Button>
       </div>
     </div>
   );

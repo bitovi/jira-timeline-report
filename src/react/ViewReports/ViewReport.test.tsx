@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';
 import userEvent from '@testing-library/user-event';
 
-import ViewReports, { pageSizeFor } from './ViewReports';
+import ViewReports, { byLastUpdated, pageSizeFor } from './ViewReports';
 import { StorageProvider } from '../services/storage';
 import { JiraProvider } from '../services/jira';
 import { UserServicesProvider } from '../services/user';
@@ -150,6 +150,41 @@ describe('ViewReports', () => {
     expect(updatedOf('Alpha').querySelector('time')).toHaveAttribute('dateTime', '2026-10-14T09:00:00.000Z');
     expect(updatedOf('Beta').querySelector('time')).toHaveAttribute('dateTime', '2026-10-13T09:00:00.000Z');
     expect(updatedOf('Gamma')).toHaveTextContent('—');
+  });
+
+  // Search filters this order but never reorders it, so it holds on every tab and every query.
+  it('sorts every tab by last updated, most recent first, undated reports last by name', async () => {
+    renderPage({
+      reports: [
+        report('1', 'Zulu', { updatedAt: '2026-10-01T00:00:00.000Z', ownerId: ME }),
+        report('2', 'Bravo', { ownerId: ME }),
+        report('3', 'Alpha', { ownerId: ME }),
+        report('4', 'Mike', { workItemUpdatedAt: '2026-10-10T00:00:00.000Z', ownerId: ME }),
+        report('5', 'Yankee', { updatedAt: '2026-10-14T00:00:00.000Z', ownerId: ME }),
+      ],
+      stars: ['1', '2', '3', '4', '5'],
+    });
+
+    const expected = ['Yankee', 'Mike', 'Zulu', 'Alpha', 'Bravo'];
+
+    await waitFor(async () => expect(await tab(/Starred/)).toHaveAttribute('aria-selected', 'true'));
+    expect(rowNames()).toEqual(expected);
+
+    await userEvent.click(await tab(/My reports/));
+    expect(rowNames()).toEqual(expected);
+
+    await userEvent.click(await tab(/All reports/));
+    expect(rowNames()).toEqual(expected);
+  });
+
+  it('byLastUpdated falls back to name for equal timestamps', () => {
+    const at = '2026-10-14T00:00:00.000Z';
+
+    expect(
+      [report('1', 'Beta', { updatedAt: at }), report('2', 'Alpha', { updatedAt: at })]
+        .sort(byLastUpdated)
+        .map((r) => r.name),
+    ).toEqual(['Alpha', 'Beta']);
   });
 
   describe('tabs', () => {

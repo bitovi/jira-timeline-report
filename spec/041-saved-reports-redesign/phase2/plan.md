@@ -2,7 +2,7 @@
 
 ## Context
 
-[Phase 1](./phase1.md) shipped the home page, the Saved Reports page, stars, `ownerId`, "My reports" and "Last updated", all without a scope change. Its owner column can only say "You", "Someone else" or "—", because turning an account id into a name needs `read:jira-user`.
+[Phase 1](../phase1/plan.md) shipped the home page, the Saved Reports page, stars, `ownerId`, "My reports" and "Last updated", all without a scope change. Its owner column can only say "You", "Someone else" or "—", because turning an account id into a name needs `read:jira-user`.
 
 Phase 2 adds that scope and puts **names and avatars** on every report, plus the things that depend on them: "Former user", search by owner, and the web sign-in banner for tokens that predate the scope.
 

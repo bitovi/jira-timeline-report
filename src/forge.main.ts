@@ -201,7 +201,7 @@ export default async function main() {
       isAlwaysLoggedIn: true,
       licensingPromise: getLicensing(),
       // The view context names the viewing user — no scope, no Jira call. Stars live in KVS, keyed
-      // by the resolver from the invocation context. See spec/041-saved-reports-redesign/phase1.md.
+      // by the resolver from the invocation context. See spec/041-saved-reports-redesign/phase1/plan.md.
       createUserServices: () => ({
         readCurrentAccountId: createForgeAccountIdReader(view),
         starsStore: createForgeStarsStore((functionKey, payload) => invoke(functionKey, payload)),

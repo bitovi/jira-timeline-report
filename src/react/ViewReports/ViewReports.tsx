@@ -36,6 +36,25 @@ const MIN_PAGE_SIZE = 6;
 export const pageSizeFor = (panelHeight: number): number =>
   Math.max(MIN_PAGE_SIZE, Math.ceil(panelHeight / ROW_HEIGHT) + 1);
 
+/**
+ * Most recently updated first; reports with no timestamp (saved before it was kept) after all of
+ * them, by name. Both timestamps are UTC ISO strings, so they compare as strings.
+ */
+export const byLastUpdated = (a: Report, b: Report): number => {
+  const aUpdated = lastUpdatedAt(a);
+  const bUpdated = lastUpdatedAt(b);
+
+  if (aUpdated && bUpdated && aUpdated !== bUpdated) {
+    return aUpdated < bUpdated ? 1 : -1;
+  }
+
+  if (!aUpdated !== !bUpdated) {
+    return aUpdated ? -1 : 1;
+  }
+
+  return a.name.localeCompare(b.name);
+};
+
 const openSources = () => {
   (routeData as unknown as { showSettings: string }).showSettings = 'SOURCES';
 };
@@ -58,7 +77,7 @@ const EmptyState: FC<{ icon: ReactNode; title: string; children: ReactNode }> = 
 
 /**
  * Every saved report: Starred / My reports / All reports tabs, search, and a table with stars,
- * owners and delete. See spec/041-saved-reports-redesign/phase1.md § 8.
+ * owners and delete. See spec/041-saved-reports-redesign/phase1/plan.md § 8.
  */
 const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportClicked = openSources }) => {
   const reports = useAllReports();
@@ -75,7 +94,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportC
     () =>
       Object.values(reports)
         .filter((report): report is Report => !!report)
-        .sort((a, b) => a.name.localeCompare(b.name)),
+        .sort(byLastUpdated),
     [reports],
   );
 

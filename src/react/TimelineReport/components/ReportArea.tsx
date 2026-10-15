@@ -40,24 +40,38 @@ export interface ReportAreaProps {
   /**
    * What to show with no JQL and no self-managed report: the home page (recent reports, create
    * buttons). A slot so this component stays pure — the home page reads storage and Jira, this
-   * doesn't. Never rendered for a logged-out (sample data) session. See spec/041-saved-reports-redesign/phase1.md § 7.
+   * doesn't. Never rendered for a logged-out (sample data) session. See spec/041-saved-reports-redesign/phase1/plan.md § 7.
    */
   home?: ReactNode;
+  /**
+   * The user has left home to build a report (a Create button, or a link that names a report
+   * type). From then on, no JQL means "this report needs sources" — `setup`, with the controls
+   * visible — rather than home, which would hide the controls they need. Resets on reload.
+   */
+  startedReport?: boolean;
+  /** What to show with no JQL once `startedReport`: a prompt to choose sources. A slot, like `home`. */
+  setup?: ReactNode;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */
   children: ReactNode;
 }
+
+type NoJqlStateProps = Pick<
+  ReportAreaProps,
+  'jql' | 'isLoggedIn' | 'selfManagesData' | 'unsupportedReportType' | 'startedReport'
+>;
+
+/** Signed in, no JQL, and a report type that needs one: home or the setup prompt, never a report. */
+const needsJql = ({ jql, isLoggedIn, selfManagesData = false, unsupportedReportType }: NoJqlStateProps): boolean =>
+  !unsupportedReportType && !jql && isLoggedIn && !selfManagesData;
 
 /**
  * Whether the report area is showing home. Shared with `TimelineReport`, which hides the report
  * controls row while it is.
  */
-export const isShowingHome = ({
-  jql,
-  isLoggedIn,
-  selfManagesData = false,
-  unsupportedReportType,
-}: Pick<ReportAreaProps, 'jql' | 'isLoggedIn' | 'selfManagesData' | 'unsupportedReportType'>): boolean =>
-  !unsupportedReportType && !jql && isLoggedIn && !selfManagesData;
+export const isShowingHome = (props: NoJqlStateProps): boolean => needsJql(props) && !props.startedReport;
+
+/** Whether the report area is showing the "choose sources" prompt instead of home. */
+export const isShowingSetup = (props: NoJqlStateProps): boolean => needsJql(props) && !!props.startedReport;
 
 /**
  * Pure view-state selector for the report area — decides which of {report / home / loading /
@@ -78,6 +92,8 @@ export const ReportArea: FC<ReportAreaProps> = ({
   unsupportedReportType,
   fillsHeight = false,
   home,
+  startedReport = false,
+  setup,
   children,
 }) => {
   const { status, rejectReason } = loadingState;
@@ -91,7 +107,8 @@ export const ReportArea: FC<ReportAreaProps> = ({
 
   return (
     <>
-      {isShowingHome({ jql, isLoggedIn, selfManagesData }) && home}
+      {isShowingHome({ jql, isLoggedIn, selfManagesData, startedReport }) && home}
+      {isShowingSetup({ jql, isLoggedIn, selfManagesData, startedReport }) && setup}
 
       {((selfManagesData && !rejected) || (resolved && primaryIssuesCount > 0)) && (
         // `report-font-scope` confines the Theme panel's font choice to the report block. It sits

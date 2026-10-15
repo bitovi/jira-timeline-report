@@ -4,7 +4,7 @@ import React from 'react';
 
 /**
  * The saved-reports table's columns: star, name, owner, last updated, type, delete. Shared by the header and every
- * row so the two can't drift out of line. See spec/041-saved-reports-redesign/phase1.md § 6.
+ * row so the two can't drift out of line. See spec/041-saved-reports-redesign/phase1/plan.md § 6.
  */
 export const REPORT_TABLE_GRID = 'grid grid-cols-[40px_minmax(0,1fr)_120px_120px_140px_40px] gap-3 px-4';
 

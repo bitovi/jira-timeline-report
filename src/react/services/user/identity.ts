@@ -1,6 +1,6 @@
 /**
  * Who is using the app, as a Jira `accountId` — the only user identifier this app ever stores (see
- * spec/041-saved-reports-redesign/phase1.md § Decisions). Never stored next to a name, email or
+ * spec/041-saved-reports-redesign/phase1/plan.md § Decisions). Never stored next to a name, email or
  * avatar — that would make it personal data.
  *
  * Each host has its own way of knowing, so the reader is chosen by the host entry point

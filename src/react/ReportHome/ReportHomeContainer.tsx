@@ -29,21 +29,23 @@ export interface HomeRouteTarget {
  *
  * - **Create new report** opens Sources: nothing can be saved without a JQL, and once there is one
  *   the existing Create flow in `SaveReports.tsx` takes over.
- * - **Create report of reports** switches the report type. It is in `SELF_MANAGED_REPORT_TYPES`, so
+ * - **Create Report of Reports** switches the report type. It is in `SELF_MANAGED_REPORT_TYPES`, so
  *   home's condition stops holding and the report area renders it — the way in to the one type that
  *   needs no JQL, since home hides the controls row that holds the type picker.
  */
-export const createHomeActions = (target: HomeRouteTarget) => ({
+export const createHomeActions = (target: HomeRouteTarget, onStartReport: () => void = () => {}) => ({
   onOpenSources: () => {
     target.showSettings = 'SOURCES';
   },
   onCreateReport: () => {
+    onStartReport();
     target.showSettings = 'SOURCES';
   },
   onViewAllReports: () => {
     target.showSettings = 'REPORTS';
   },
   onCreateReportOfReports: () => {
+    onStartReport();
     target.primaryReportType = 'report-of-reports';
   },
 });
@@ -96,14 +98,27 @@ export interface ReportHomeContainerProps {
   linkBuilder: ReturnType<LinkBuilderFactory>;
   /** See `Routing.interceptLinkClicks`. */
   interceptLinkClicks?: boolean;
+  /**
+   * Called when a Create button takes the user off home. From then on a report with no JQL shows the
+   * "choose sources" prompt instead of home. See `ReportArea`'s `startedReport`.
+   */
+  onStartReport?: () => void;
 }
 
 /**
  * Home, with its own providers: it renders inside the report area, which has none. Mounted by
  * `TimelineReport` into `ReportArea`'s `home` slot.
  */
-export const ReportHomeContainer: FC<ReportHomeContainerProps> = ({ storage, linkBuilder, interceptLinkClicks }) => {
-  const actions = useMemo(() => createHomeActions(routeData as unknown as HomeRouteTarget), []);
+export const ReportHomeContainer: FC<ReportHomeContainerProps> = ({
+  storage,
+  linkBuilder,
+  interceptLinkClicks,
+  onStartReport,
+}) => {
+  const actions = useMemo(
+    () => createHomeActions(routeData as unknown as HomeRouteTarget, onStartReport),
+    [onStartReport],
+  );
 
   return (
     <StorageProvider storage={storage}>

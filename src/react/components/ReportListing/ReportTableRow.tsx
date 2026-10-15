@@ -89,7 +89,7 @@ const UpdatedCell: FC<{ updatedAt?: string; now?: Date }> = ({ updatedAt, now })
 
 /**
  * One saved report in the saved-reports table: star, type icon + name (+ JQL), owner, last updated, type badge,
- * and a delete button that shows on hover. See spec/041-saved-reports-redesign/phase1.md § 6.
+ * and a delete button that shows on hover. See spec/041-saved-reports-redesign/phase1/plan.md § 6.
  *
  * Only the name is the link. The star and delete buttons are its siblings, never its children, so
  * no interactive element is nested in another and clicking them never opens the report.
@@ -132,7 +132,7 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
         />
       </span>
       <span role="cell" className="flex min-w-0 items-center gap-3">
-        <ReportTypeIcon tone={tone} size={compact ? 24 : 32} />
+        <ReportTypeIcon tone={tone} size={32} />
         <span className="min-w-0 flex-1">
           <Link
             href={href}

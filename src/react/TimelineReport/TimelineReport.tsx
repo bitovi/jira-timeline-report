@@ -18,6 +18,8 @@ import { useRouteData } from '../hooks/useRouteData';
 import { TimelineReportViewModel } from './timeline-report-view-model';
 import { useReportLoadingState as defaultUseReportLoadingState } from './hooks/useReportLoadingState';
 import { ReportArea, isShowingHome } from './components/ReportArea';
+import { ChooseSourcesMessage } from './components/ReportMessages';
+import { reports as REPORT_TYPES } from '../../configuration/reports';
 import { unsupportedReportType } from './unsupportedReportType';
 
 import { JiraProvider } from '../services/jira';
@@ -207,6 +209,22 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 
   const selfManagesData = SELF_MANAGED_REPORT_TYPES.has(primaryReportType);
 
+  // Home is the landing page, not "any report with no JQL": once the user leaves it to build a
+  // report, a missing JQL shows the "choose sources" prompt with the controls visible, so changing
+  // the report type can't strand them on home. Session state, not URL state — the default report
+  // type is dropped from the URL, so a Gantt with no JQL has the same URL as a first visit. A link
+  // that names a report type counts as already started.
+  const [startedReport, setStartedReport] = useState(() =>
+    new URL(window.location.href).searchParams.has('primaryReportType'),
+  );
+  const startReport = useCallback(() => setStartedReport(true), []);
+  // The sidebar's Home link navigates to the bare URL itself; this forgets the started report (no
+  // reload on Forge, so the flag would survive) and closes any open settings panel over home.
+  const goHome = useCallback(() => {
+    setStartedReport(false);
+    rd.showSettings = '';
+  }, []);
+
   // Home has its own way into each report type, so the controls row (report type picker, view
   // settings) would only be noise above it. Hidden rather than unmounted, so the controls keep their
   // state for when a report opens.
@@ -215,6 +233,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
     isLoggedIn,
     selfManagesData,
     unsupportedReportType: deadReportType,
+    startedReport,
   });
 
   const ReportControlsAny = ReportControls as ComponentType<any>;
@@ -240,6 +259,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               linkBuilder={linkBuilder}
               interceptLinkClicks={interceptLinkClicks}
               onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
+              onGoHome={goHome}
             />
           </div>
         )}
@@ -312,6 +332,20 @@ export const TimelineReport: FC<TimelineReportProps> = ({
                 storage={storage}
                 linkBuilder={linkBuilder}
                 interceptLinkClicks={interceptLinkClicks}
+                onStartReport={startReport}
+              />
+            }
+            startedReport={startedReport}
+            setup={
+              <ChooseSourcesMessage
+                reportTypeName={REPORT_TYPES.find(({ key }) => key === primaryReportType)?.name}
+                onOpenSources={() => {
+                  rd.showSettings = 'SOURCES';
+                }}
+                onBackToHome={() => {
+                  setStartedReport(false);
+                  rd.primaryReportType = REPORT_TYPES[0].key;
+                }}
               />
             }
           >

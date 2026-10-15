@@ -17,7 +17,7 @@ The single-release plan added `read:jira-user`, which makes the Forge release a 
 - **Forge:** `view.getContext().accountId`. No scope, no Jira call.
 - **Web:** the 3LO access token is a JWT whose `sub` is the account id (verified 2026-10-14 against a real token). No scope, no Jira call. Atlassian documents the token as opaque, so this is observed behavior, not a contract.
 
-So phase 1 ships the whole design **without any scope change**, as an ordinary (non-major) Forge release. Owner names and avatars move to [phase 2](./phase2.md).
+So phase 1 ships the whole design **without any scope change**, as an ordinary (non-major) Forge release. Owner names and avatars move to [phase 2](../phase2/plan.md).
 
 ### Targets: web and Forge only
 
@@ -36,7 +36,7 @@ To remove for phase 1 (each is restored in phase 2):
 - The sign-in banner on Saved Reports, the `onReauthorize` prop, and the web host's `reauthorize` wiring in `web.main.ts` / `ViewReportsWrapper.tsx`.
 - The owner's display name in the search haystack (the JQL stays).
 - Avatars and "Former user" in the owner cell (see § 6).
-- Comments that point at `spec/041-saved-reports-redesign/plan.md`: repoint them to `phase1.md` / `phase2.md` (`grep -rn "spec/041" src`).
+- Comments that point at `spec/041-saved-reports-redesign/plan.md`: repoint them to `phase1/plan.md` / `phase2/plan.md` (`grep -rn "spec/041" src`).
 
 **Decisions made:**
 
@@ -54,19 +54,19 @@ To remove for phase 1 (each is restored in phase 2):
 
 ## Design → code token map
 
-| Design                                  | Tailwind                                                                 |
-| --------------------------------------- | ------------------------------------------------------------------------ |
-| `#172B4D` text                          | `text-neutral-800`                                                       |
-| `#44546F` secondary text                | `text-neutral-801`                                                       |
-| `#626F86`, `#8590A2` muted              | `text-neutral-300` / `text-neutral-100`                                  |
-| `#DCDFE4` borders                       | `border-neutral-41`                                                      |
-| `#F1F2F4` page bg, row hover, badge     | `bg-neutral-20`                                                          |
-| `#091E420F` / `#091E4224` subtle button | Atlaskit `Button appearance="subtle"` / default                          |
-| `#0C66E4` primary                       | Atlaskit `Button appearance="primary"`                                   |
-| `#E9F2FF` active tab pill               | `bg-blue-101`                                                            |
-| `#E2B203` filled star                   | Atlaskit `StarStarredIcon` with `color.icon.accent.yellow`               |
-| Card shadow                             | `shadow-sm rounded-xl bg-white`                                          |
-| Heading `--fs-h4` Poppins bold          | Atlaskit `Heading size="large"` (keep the app's font; don't add Poppins) |
+| Design                                                     | Tailwind                                                                 |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `#172B4D` text                                             | `text-neutral-800`                                                       |
+| `#44546F` secondary text                                   | `text-neutral-801`                                                       |
+| `#626F86`, `#8590A2` muted                                 | `text-neutral-300` / `text-neutral-100`                                  |
+| `#DCDFE4` borders                                          | `border-neutral-41`                                                      |
+| `#F1F2F4` row hover, badge (page bg: keep the app's white) | `bg-neutral-20`                                                          |
+| `#091E420F` / `#091E4224` subtle button                    | Atlaskit `Button appearance="subtle"` / default                          |
+| `#0C66E4` primary                                          | Atlaskit `Button appearance="primary"`                                   |
+| `#E9F2FF` active tab pill                                  | `bg-blue-101`                                                            |
+| `#E2B203` filled star                                      | Atlaskit `StarStarredIcon` with `color.icon.accent.yellow`               |
+| Card shadow                                                | `shadow-sm rounded-xl bg-white`                                          |
+| Heading `--fs-h4` Poppins bold                             | Atlaskit `Heading size="large"` (keep the app's font; don't add Poppins) |
 
 ---
 
@@ -151,7 +151,14 @@ Already implemented (`ReportTableRow.tsx`, `ReportTableHeader.tsx`, `sample-repo
 
 Already implemented (`ReportHome.tsx`, `ReportHomeContainer.tsx`, stories, tests; `ReportArea`'s `home` slot; `NoJqlMessage` deleted; controls row hidden on home). Phase 1 change: the rows pick up the "Last updated" column and the phase 1 owner cell. Home never looked up names, so nothing else changes.
 
-As built: heading "Pick up where you left off"; "Sources" link opens the Sources panel; "RECENTLY OPENED" with "All saved reports →"; up to 5 compact recents; "Create new report" (opens Sources) and "Create report of reports" (sets `primaryReportType = 'report-of-reports'`). If saved reports fail to load, the fallback is the no-recents home.
+As built: heading "Pick up where you left off"; "Sources" link opens the Sources panel; "RECENTLY OPENED" with "All saved reports →"; up to 5 compact recents; "Create new report" (opens Sources) and "Create Report of Reports" (sets `primaryReportType = 'report-of-reports'`). If saved reports fail to load, the fallback is the no-recents home.
+
+**Home is the landing page, not "any report with no JQL".** Found in testing: Create Report of Reports, then switching the type to Gantt, dropped the user back on home with the controls hidden and no way forward. Fix:
+
+- `TimelineReport` keeps a session flag, `startedReport` (React state, not URL state). Both Create buttons set it, and a link with `primaryReportType` in the URL starts with it set. URL state alone can't do this, because `updateUrlParam` drops a param that equals its default, so a Gantt with no JQL has the same URL as a first visit.
+- With no JQL: home when `!startedReport`; otherwise `ChooseSourcesMessage` ("Gantt Chart needs work items", **Choose sources**, **← Back to home**) with the controls row visible. It's a `setup` slot on `ReportArea`, next to `home`.
+- **Back to home** clears the flag and resets `primaryReportType` to the default. A reload also lands on home.
+- **Home in the sidebar**, above Report Settings: a `Link` to `?` (the bare app URL, through the host's link handling, so it works on web and Forge and can open in a new tab). Its click clears the flag and closes any settings panel. When the URL holds unsaved work (`hasUnsavedReport`: a saved report with any param besides `report`, or a new report with anything beyond its type), it asks first: **Leave this report?** with Stay / Leave. Opening another report from home or Saved Reports still doesn't ask; one shared leave guard for every navigation is follow-up work. No feature toggle: it's the only way back to home once a report is open.
 
 ## 8. Saved Reports page
 
@@ -159,7 +166,7 @@ Already implemented (`ViewReports.tsx`, `ViewReportsLayout` `actions` slot, `Vie
 
 - **Remove the sign-in banner** and the `onReauthorize` prop. Phase 1 has no 401/403 case to recover from.
 - **Search:** `extraHaystack` keeps the JQL; drop the owner's display name. Placeholder becomes "Search by name or JQL". (Phase 2 adds owner back.)
-- **Sort:** keep sorting by name. (Sorting by last updated is a nice-to-have; not in this phase.)
+- **Sort:** every tab by last updated (`lastUpdatedAt`), most recent first; reports with no timestamp go last, by name. Search filters this order without reordering it.
 - **My reports** uses `effectiveOwnerId` (§ 4), so old Space reports you created show there too.
 - **Delete** is offered per `canDeleteReport` (mine or no `ownerId`).
 
