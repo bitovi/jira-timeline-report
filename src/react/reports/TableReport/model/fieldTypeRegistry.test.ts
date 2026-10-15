@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { JiraImage } from '../../../components/JiraImage';
 import { getFieldTypeEntry, issueKeyColumn, issueTypeColumn, summaryColumn } from './fieldTypeRegistry';
 
 import type { RenderContext, TableIssue } from './columns';
@@ -89,7 +90,7 @@ describe('identity columns', () => {
     const issue: TableIssue = { fields: { 'Issue Type': { iconUrl: 'http://icon.png' } } };
     expect(col.getValue(issue)).toBe('http://icon.png');
     const el = col.render('http://icon.png', ctx(issue)) as { type: string; props: Record<string, unknown> };
-    expect(el.type).toBe('img');
+    expect(el.type).toBe(JiraImage);
     expect(el.props.src).toBe('http://icon.png');
     expect(col.render(undefined, ctx({}))).toBe('');
   });

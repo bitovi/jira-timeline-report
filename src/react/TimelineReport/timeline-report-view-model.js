@@ -122,7 +122,11 @@ export class TimelineReportViewModel extends ObservableObject {
 
     // this all the data pre-compiled
     get rolledupAndRolledBackIssuesAndReleases() {
-      if (!this.filteredDerivedIssues || !this.rollupTimingLevelsAndCalculations || !this.routeData.normalizeOptions) {
+      if (
+        !this.filteredDerivedIssues ||
+        !this.rollupTimingLevelsAndCalculations ||
+        !this.routeData.normalizeConfiguration
+      ) {
         return [];
       }
 
@@ -130,7 +134,7 @@ export class TimelineReportViewModel extends ObservableObject {
 
       const rolledUp = rollupAndRollback(
         this.filteredDerivedIssues,
-        this.routeData.normalizeOptions,
+        this.routeData.normalizeConfiguration,
         this.rollupTimingLevelsAndCalculations,
         when,
       );

@@ -21,6 +21,12 @@ class FakeParent extends ObservableObject {
     isLoggedInObservable: { default: null },
     licensingPromise: { default: null },
     normalizeOptions: { default: null },
+    normalizeConfiguration: { default: null },
+    serverInfoPromise: {
+      get default() {
+        return Promise.resolve({ baseUrl: 'https://example.atlassian.net' });
+      },
+    },
     simplifiedIssueHierarchy: {
       get default() {
         return [];
@@ -366,8 +372,8 @@ describe('ChildReportConfig', () => {
         jiraHelpers: {
           fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields: () => Promise.resolve([jiraIssue('ONE-1')]),
         },
-        // Exactly what the shell passes: route-data.js wires `configurationPromise` to
-        // `normalizeOptions` too, not to state-helpers' `configurationPromise`.
+        // Raw team settings, exactly what the shell holds in `normalizeOptions`; the server-derived
+        // defaults are added inside `derivedIssuesRequestData`.
         normalizeOptions: {},
         fieldsToRequest: ['Status'],
       });
@@ -378,6 +384,7 @@ describe('ChildReportConfig', () => {
 
       expect(derived.map((issue) => issue.key)).toEqual(['ONE-1']);
       expect(derived[0].summary).toBe('summary for ONE-1');
+      expect(derived[0].url).toBe('https://example.atlassian.net/browse/ONE-1');
     });
 
     it('stays pending rather than throwing when the parent has no configuration yet', async () => {
@@ -604,6 +611,7 @@ describe('ChildReportConfig', () => {
       'simplifiedIssueHierarchy',
       'baseNormalizeOptions',
       'normalizeOptions',
+      'normalizeConfiguration',
       'fieldsToRequest',
       'allFieldsToRequest',
       'rawIssuesRequestData',

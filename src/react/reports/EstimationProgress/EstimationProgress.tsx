@@ -4,6 +4,7 @@ import type { DerivedIssue } from '../../../jira/derived/derive';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import ModalDialog, { ModalHeader, ModalBody, ModalFooter } from '@atlaskit/modal-dialog';
 import Button from '@atlaskit/button';
+import { JiraImage } from '../../components/JiraImage';
 
 const interactableClasses = 'hover:text-blue-400 cursor-pointer text-right inline-block';
 
@@ -343,7 +344,7 @@ const EstimationProgress: React.FC<EstimationProgressProps> = ({ filteredDerived
                 style={{ gridColumn: '1 / 1' }}
                 className="text-base grow font-semibold bg-neutral-20 sticky top-0 flex"
               >
-                {level.type.iconUrl && <img src={level.type.iconUrl} className="inline pr-1" alt="" />}
+                {level.type.iconUrl && <JiraImage src={level.type.iconUrl} className="inline pr-1" alt="" />}
                 {level.name}
               </h2>
               <div style={{ gridColumn: '2 / -1' }} className="text-base grow font-semibold bg-neutral-20 flex">

@@ -6,6 +6,8 @@
 import React from 'react';
 import Lozenge from '@atlaskit/lozenge';
 
+import { JiraImage } from '../../../components/JiraImage';
+
 import type { RenderContext } from './columns';
 
 type LozengeAppearance = 'default' | 'inprogress' | 'moved' | 'new' | 'removed' | 'success';
@@ -41,7 +43,7 @@ export function statusRender(value: unknown, ctx: RenderContext): React.ReactNod
 /** Render an issue-type icon URL as a 16×16 `<img>` (parity with the `identity:issueType` column). */
 export function iconRender(value: unknown): React.ReactNode {
   if (value == null || value === '') return '';
-  return <img src={String(value)} alt="Issue type" width={16} height={16} />;
+  return <JiraImage src={String(value)} alt="Issue type" width={16} height={16} />;
 }
 
 /**
