@@ -416,6 +416,8 @@ export class ChildReportConfig extends ObservableObject {
     jiraHelpers: sharedFromParent('jiraHelpers'),
     isLoggedInObservable: sharedFromParent('isLoggedInObservable'),
     normalizeOptions: sharedFromParent('normalizeOptions'),
+    normalizeConfiguration: sharedFromParent('normalizeConfiguration'),
+    serverInfoPromise: sharedFromParent('serverInfoPromise'),
     simplifiedIssueHierarchy: sharedFromParent('simplifiedIssueHierarchy'),
     fieldsToRequest: sharedFromParent('fieldsToRequest'),
     fieldMaps: sharedFromParent('fieldMaps'),
@@ -504,7 +506,8 @@ export class ChildReportConfig extends ObservableObject {
         return derivedIssuesRequestData(
           {
             rawIssuesRequestData: value.from(this, 'rawIssuesRequestData'),
-            configurationPromise: value.from(this, 'normalizeOptions'),
+            serverInfoPromise: value.from(this, 'serverInfoPromise'),
+            normalizeOptions: value.from(this, 'normalizeOptions'),
           },
           { listenTo, resolve },
         );

@@ -78,6 +78,32 @@ test('rawIssuesRequestData', function (assert) {
   expect(typeof requestData.value.issuesPromise).toBe('object');
 });
 
+const SERVER_INFO = value.with(Promise.resolve({ baseUrl: 'https://mistech.atlassian.net' }));
+
+/**
+ * `normalizeOptions` holds team settings only, and every writer — the initial load, a Teams save,
+ * a what-if capacity override — writes it raw. The server-derived defaults (`getUrl`, the velocity
+ * and track fallbacks) are added here, on the read side, so no writer can drop them: a Teams save
+ * used to replace the wrapped config with the raw one, and every work-item link fell back to
+ * `getUrlDefault`'s `javascript://`.
+ */
+test('derivedIssuesRequestData links issues to Jira whatever normalizeOptions was set to', async function () {
+  const rawIssuesRequestData = value.with({
+    issuesPromise: Promise.resolve([{ key: 'TEST-123', fields: { 'Issue Type': { hierarchyLevel: 7 } } }]),
+    progressData: {},
+  });
+  // What `createNormalizeConfiguration` hands a Teams save: team getters, no `getUrl`.
+  const normalizeOptions = value.with({ getVelocity: () => 21 });
+
+  const derivedIssuesData = new ResolverObservable(function (hooks) {
+    return derivedIssuesRequestData({ rawIssuesRequestData, serverInfoPromise: SERVER_INFO, normalizeOptions }, hooks);
+  });
+
+  const [issue] = await derivedIssuesData.value.issuesPromise;
+  expect(issue.url).toBe('https://mistech.atlassian.net/browse/TEST-123');
+  expect(issue.team.velocity).toBe(21);
+});
+
 test('derivedIssuesRequestData', async function (assert) {
   const rawIssuesRequestData = value.with({
     issuesPromise: Promise.resolve([
@@ -91,13 +117,14 @@ test('derivedIssuesRequestData', async function (assert) {
     ]),
     progressData: {},
   });
-  const configurationPromise = value.with(null);
+  const normalizeOptions = value.with(null);
 
   const derivedIssuesData = new ResolverObservable(function (hooks) {
     return derivedIssuesRequestData(
       {
         rawIssuesRequestData,
-        configurationPromise,
+        serverInfoPromise: SERVER_INFO,
+        normalizeOptions,
       },
       hooks,
     );
@@ -105,7 +132,7 @@ test('derivedIssuesRequestData', async function (assert) {
 
   expect(derivedIssuesData.value.issuesPromise.__isAlwaysPending).toBe(true);
 
-  configurationPromise.value = {
+  normalizeOptions.value = {
     getConfidence({ fields }) {
       return fields.CONFIDENCE;
     },
@@ -232,7 +259,8 @@ describe('two rawIssuesRequestData over identical inputs', () => {
         return derivedIssuesRequestData(
           {
             rawIssuesRequestData: shared,
-            configurationPromise: configuration,
+            serverInfoPromise: SERVER_INFO,
+            normalizeOptions: configuration,
           },
           hooks,
         );

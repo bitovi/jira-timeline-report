@@ -60,6 +60,8 @@ class FakeParent extends ObservableObjectClass {
     isLoggedInObservable: { default: null },
     licensingPromise: { default: null },
     normalizeOptions: { default: null },
+    normalizeConfiguration: { default: null },
+    serverInfoPromise: { default: null },
     simplifiedIssueHierarchy: {
       get default() {
         return [{ name: 'Epic', hierarchyLevel: 1 }];
@@ -84,7 +86,9 @@ const makeParent = () => {
 
   parent.isLoggedInObservable = valueAny.with(true);
   parent.licensingPromise = Promise.resolve({ active: true });
-  parent.normalizeOptions = { getUrl: ({ key }: any) => `/browse/${key}` };
+  parent.serverInfoPromise = Promise.resolve({ baseUrl: '' });
+  parent.normalizeOptions = {};
+  parent.normalizeConfiguration = { getUrl: ({ key }: any) => `/browse/${key}` };
 
   const record = (params: any) => {
     requested.push({ jql: params.jql, fields: params.fields });
