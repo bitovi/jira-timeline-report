@@ -1,9 +1,10 @@
 import type { FC } from 'react';
 import type { CanObservable } from '../hooks/useCanObservable';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Button from '@atlaskit/button/new';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useAllReports, useCreateReport, useRecentReports } from '../services/reports';
 import SaveReportModal from './components/SaveReportModal';
@@ -16,6 +17,7 @@ import { useQueryParams } from '../hooks/useQueryParams';
 import { useSelectedReport } from './hooks/useSelectedReports';
 import { usePrimaryReportType } from '../ReportControls/hooks/usePrimaryReportType';
 import { useReportLayout } from '../services/report-layout';
+import { currentAccountIdQuery, useUserServices } from '../services/user';
 import { toStoredSections } from '../reports/ReportOfReports/model/sections';
 import { storedQueryParams } from './storedQueryParams';
 import { detachedSearch } from './detachedSearch';
@@ -38,6 +40,21 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
   const { sections, resetSections } = useReportLayout();
 
   const { createReport, isCreating } = useCreateReport();
+  const queryClient = useQueryClient();
+  const { readCurrentAccountId } = useUserServices();
+
+  // Fetched ahead so the lookup in `handleCreate` is almost always a cache hit. Not a substitute for
+  // the guard below: an uncached Forge `getContext()` still takes a moment.
+  useEffect(() => {
+    void queryClient.prefetchQuery(currentAccountIdQuery(readCurrentAccountId));
+  }, [queryClient, readCurrentAccountId]);
+
+  // Covers the whole create, from the first click — `isCreating` only turns on once `createReport`
+  // runs, after the account-id lookup. Without it, a second Confirm during the lookup creates a
+  // duplicate report under a fresh id, and Cancel closes a modal whose save still lands later. The
+  // ref is the guard (state lags a render); the state drives the modal's disabled buttons.
+  const submitting = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { selectedReport, updateSelectedReport, isDirty } = useSelectedReport({
     reports,
     queryParamObservable,
@@ -78,7 +95,19 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     };
   };
 
-  const handleCreate = (name: string) => {
+  const handleCreate = async (name: string) => {
+    if (submitting.current) {
+      return;
+    }
+
+    submitting.current = true;
+    setIsSubmitting(true);
+
+    const finishSubmitting = () => {
+      submitting.current = false;
+      setIsSubmitting(false);
+    };
+
     const id = uuidv4();
     const params = new URLSearchParams({
       ...(storedQueryParams(routeData.serialize()) as Record<string, string>),
@@ -89,8 +118,30 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
     // type, which has none. See spec/016-report-of-reports Phase 3.
     const storedSections = toStoredSections(sections);
 
+    // Read after the report's state is captured above, so nothing can change under the await.
+    // Whoever creates the report owns it — "Copy report" comes through here too, so a copy belongs
+    // to whoever copied it. Advisory only; see `Report.ownerId`. Omitted when nobody is signed in.
+    let ownerId: string | null;
+
+    try {
+      ownerId = await queryClient.fetchQuery(currentAccountIdQuery(readCurrentAccountId));
+    } catch (error) {
+      finishSubmitting();
+      throw error;
+    }
+
+    // `useCreateReport` only skips the save when the reports cache is empty, which can't happen
+    // here: this component suspends on `useAllReports` until it is filled. So `onSettled` always
+    // runs and always releases the guard.
+
     createReport(
-      { id, name, queryParams: params.toString(), ...(storedSections.length ? { sections: storedSections } : {}) },
+      {
+        id,
+        name,
+        queryParams: params.toString(),
+        ...(storedSections.length ? { sections: storedSections } : {}),
+        ...(ownerId ? { ownerId } : {}),
+      },
       {
         onSuccess: () => {
           closeModal();
@@ -101,6 +152,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
           url.searchParams.set('report', id);
           queryParamObservable.set(url.search);
         },
+        onSettled: finishSubmitting,
       },
     );
   };
@@ -186,7 +238,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
       </div>
       <SaveReportModal
         isOpen={isOpen}
-        isCreating={isCreating}
+        isCreating={isCreating || isSubmitting}
         closeModal={closeModal}
         name={name}
         setName={setName}

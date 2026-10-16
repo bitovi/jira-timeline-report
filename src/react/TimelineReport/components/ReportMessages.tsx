@@ -1,19 +1,16 @@
 import type { FC } from 'react';
 import React from 'react';
+import Button from '@atlaskit/button/new';
+import Heading from '@atlaskit/heading';
+
+import LinkButton from '../../components/LinkButton';
 
 /**
  * Presentational view-state messages for the report shell — the non-report states from the old
- * `<timeline-report>` template (no-JQL / loading / empty / error). Pure markup with explicit props
+ * `<timeline-report>` template (loading / empty / error), plus the "choose sources" prompt. Pure markup with explicit props
  * so they can be storied credential-free (the live shell can't easily reach the error states).
  * Markup + classes are copied verbatim from the StacheElement template.
  */
-
-/** Shown when logged in but no JQL is configured yet. */
-export const NoJqlMessage: FC = () => (
-  <div className="my-2 p-2 h-780 border-box block overflow-hidden color-bg-white">
-    Configure a JQL in the sidebar on the left to get started.
-  </div>
-);
 
 export interface LoadingMessageProps {
   issuesRequested?: number;
@@ -83,5 +80,34 @@ export const ErrorMessage: FC<ErrorMessageProps> = ({ errorMessage }) => (
     <p>There was an error loading from Jira!</p>
     <p>Error message: {errorMessage}</p>
     <p>Please check your JQL is correct!</p>
+  </div>
+);
+
+export interface ChooseSourcesMessageProps {
+  /** The selected report type's display name, e.g. "Gantt Chart". */
+  reportTypeName?: string;
+  onOpenSources: () => void;
+  onBackToHome: () => void;
+}
+
+/**
+ * Shown once the user has left home to build a report that has no JQL yet. Unlike home, the report
+ * controls stay visible above it, so the report type can still be changed. See
+ * spec/041-saved-reports-redesign/phase1/plan.md § 7.
+ */
+export const ChooseSourcesMessage: FC<ChooseSourcesMessageProps> = ({
+  reportTypeName,
+  onOpenSources,
+  onBackToHome,
+}) => (
+  <div className="mx-auto flex w-full max-w-[640px] flex-col items-center gap-3 py-16 text-center">
+    <Heading size="medium">{reportTypeName ? `${reportTypeName} needs work items` : 'Choose work items'}</Heading>
+    <p className="text-neutral-801">Choose the work items to report on in Sources.</p>
+    <Button appearance="primary" onClick={onOpenSources}>
+      Choose sources
+    </Button>
+    <LinkButton type="button" onClick={onBackToHome} className="text-sm">
+      ← Back to home
+    </LinkButton>
   </div>
 );

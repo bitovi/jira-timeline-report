@@ -20,9 +20,14 @@ import { NormalizeIssueConfig } from '../../jira/normalized/normalize';
 export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
   onUpdateTeamsConfiguration: (overrides: Partial<NormalizeIssueConfig & { fields: string[] }>) => void;
+  /**
+   * Called as the Home link navigates to the bare app URL, so the app forgets the user had started a
+   * report and shows home rather than the "choose sources" prompt. No Home link without it.
+   */
+  onGoHome?: () => void;
 }
 
-const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpdateTeamsConfiguration }) => {
+const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpdateTeamsConfiguration, onGoHome }) => {
   const [showSettings] = useRouteData<string>('showSettings');
   const { features } = useAsyncFeatures();
   const unlicensed = useIsUnlicensed();
@@ -45,6 +50,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpda
           changeSettings={changeSettings}
           showStorage={!!features?.reportsStorage}
           unlicensed={unlicensed}
+          onGoHome={onGoHome}
         />
       )}
       {showSettings === 'SOURCES' && (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-import { ReportArea } from './ReportArea';
+import { ReportArea, hasStartedReport, isShowingHome } from './ReportArea';
 import type { ReportAreaProps } from './ReportArea';
 import type { ReportLoadingState } from '../hooks/useReportLoadingState';
 
@@ -11,12 +11,45 @@ import type { ReportLoadingState } from '../hooks/useReportLoadingState';
 const REPORT = <div data-testid="report-block">REPORT</div>;
 const base = { isLoggedIn: true, jql: 'project = X', primaryIssueType: 'Initiative', primaryIssuesCount: 5 };
 
+// A stub, because home is a slot: ReportArea only decides *whether* it shows, so these tests need
+// no Jira or storage.
+const HOME = <div data-testid="home">HOME</div>;
+const SETUP = <div data-testid="setup">SETUP</div>;
+
 const renderArea = (loadingState: ReportLoadingState, overrides: Partial<ReportAreaProps> = {}) =>
   render(
-    <ReportArea {...base} {...overrides} loadingState={loadingState}>
+    <ReportArea {...base} home={HOME} setup={SETUP} {...overrides} loadingState={loadingState}>
       {REPORT}
     </ReportArea>,
   );
+
+describe('hasStartedReport', () => {
+  it('is false on a first visit', () => {
+    expect(hasStartedReport(false, '')).toBe(false);
+    expect(hasStartedReport(false, '?settings=SOURCES')).toBe(false);
+  });
+
+  it('is true once a Create button set the flag', () => {
+    expect(hasStartedReport(true, '')).toBe(true);
+  });
+
+  // A saved report's type lives in the saved record, so its URL is just `?report=<id>`. Without this,
+  // a saved Report of Reports switched to Gantt (no JQL) would fall back to home with no controls.
+  it('is true whenever a saved report is open, whatever else the URL holds', () => {
+    expect(hasStartedReport(false, '?report=abc')).toBe(true);
+    expect(hasStartedReport(false, '?report=abc&primaryReportType=start-due')).toBe(true);
+  });
+});
+
+describe('isShowingHome', () => {
+  it('is false for an unsupported report type, which takes precedence', () => {
+    expect(isShowingHome({ jql: '', isLoggedIn: true, unsupportedReportType: 'table2' })).toBe(false);
+  });
+
+  it('is false for a self-managed report', () => {
+    expect(isShowingHome({ jql: '', isLoggedIn: true, selfManagesData: true })).toBe(false);
+  });
+});
 
 describe('<ReportArea>', () => {
   it('renders the report block when resolved with data', () => {
@@ -74,10 +107,35 @@ describe('<ReportArea>', () => {
     expect(screen.getByText(/Bad JQL/)).toBeInTheDocument();
   });
 
-  it('prompts for JQL when logged in with none configured', () => {
+  it('shows home when logged in with no JQL configured', () => {
     renderArea({ status: 'idle' }, { jql: '' });
-    expect(screen.getByText(/Configure a JQL/)).toBeInTheDocument();
+    expect(screen.getByTestId('home')).toBeInTheDocument();
     expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
+  });
+
+  // Home is the landing page. Once the user has left it to build a report, a missing JQL asks for
+  // sources instead — e.g. Create Report of Reports, then switching the type to Gantt.
+  it('asks for sources instead of showing home once the user has started a report', () => {
+    renderArea({ status: 'idle' }, { jql: '', startedReport: true });
+    expect(screen.getByTestId('setup')).toBeInTheDocument();
+    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
+  });
+
+  it('shows neither home nor the sources prompt once there is a JQL', () => {
+    renderArea({ status: 'resolved' }, { startedReport: true });
+    expect(screen.queryByTestId('setup')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
+  });
+
+  it('does not show home once there is a JQL', () => {
+    renderArea({ status: 'resolved' });
+    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
+  });
+
+  // Sample data: there are no saved reports to show, and nobody to own one.
+  it('does not show home to a logged-out session', () => {
+    renderArea({ status: 'idle' }, { jql: '', isLoggedIn: false });
+    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
   });
 
   // A dead report type (a saved report from before a report was renamed or removed) is dead whatever
@@ -96,7 +154,7 @@ describe('<ReportArea>', () => {
       renderArea({ status: 'pending' }, { unsupportedReportType: 'table2', jql: '', primaryIssuesCount: 0 });
 
       expect(screen.getByText(/no longer support/)).toBeInTheDocument();
-      expect(screen.queryByText(/Configure a JQL/)).not.toBeInTheDocument();
+      expect(screen.queryByTestId('home')).not.toBeInTheDocument();
       expect(screen.queryByText('Loading primary work items')).not.toBeInTheDocument();
     });
 
@@ -117,7 +175,7 @@ describe('<ReportArea>', () => {
     it('renders the report block with no JQL and no primary issues', () => {
       renderArea({ status: 'idle' }, selfManaged);
       expect(screen.getByTestId('report-block')).toBeInTheDocument();
-      expect(screen.queryByText(/Configure a JQL/)).not.toBeInTheDocument();
+      expect(screen.queryByTestId('home')).not.toBeInTheDocument();
       expect(screen.queryByText(/issues of type/)).not.toBeInTheDocument();
     });
 
@@ -138,7 +196,7 @@ describe('<ReportArea>', () => {
 
     it('does not affect reports that let the shell own the request', () => {
       renderArea({ status: 'idle' }, { jql: '', primaryIssuesCount: 0 });
-      expect(screen.getByText(/Configure a JQL/)).toBeInTheDocument();
+      expect(screen.getByTestId('home')).toBeInTheDocument();
       expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
     });
   });

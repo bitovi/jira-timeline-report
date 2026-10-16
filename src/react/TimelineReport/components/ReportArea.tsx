@@ -2,7 +2,7 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import type { ReportLoadingState } from '../hooks/useReportLoadingState';
-import { NoJqlMessage, EmptyResultMessage, ErrorMessage, UnsupportedReportTypeMessage } from './ReportMessages';
+import { EmptyResultMessage, ErrorMessage, UnsupportedReportTypeMessage } from './ReportMessages';
 import { LoadingProgressContainer } from './LoadingProgress';
 
 export interface ReportAreaProps {
@@ -37,12 +37,53 @@ export interface ReportAreaProps {
    * See `REPORT_TYPES_FILLING_HEIGHT` in TimelineReport.
    */
   fillsHeight?: boolean;
+  /**
+   * What to show with no JQL and no self-managed report: the home page (recent reports, create
+   * buttons). A slot so this component stays pure — the home page reads storage and Jira, this
+   * doesn't. Never rendered for a logged-out (sample data) session. See spec/041-saved-reports-redesign/phase1/plan.md § 7.
+   */
+  home?: ReactNode;
+  /**
+   * The user has left home to build a report (a Create button, or a link that names a report
+   * type). From then on, no JQL means "this report needs sources" — `setup`, with the controls
+   * visible — rather than home, which would hide the controls they need. Resets on reload.
+   */
+  startedReport?: boolean;
+  /** What to show with no JQL once `startedReport`: a prompt to choose sources. A slot, like `home`. */
+  setup?: ReactNode;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */
   children: ReactNode;
 }
 
+type NoJqlStateProps = Pick<
+  ReportAreaProps,
+  'jql' | 'isLoggedIn' | 'selfManagesData' | 'unsupportedReportType' | 'startedReport'
+>;
+
+/** Signed in, no JQL, and a report type that needs one: home or the setup prompt, never a report. */
+const needsJql = ({ jql, isLoggedIn, selfManagesData = false, unsupportedReportType }: NoJqlStateProps): boolean =>
+  !unsupportedReportType && !jql && isLoggedIn && !selfManagesData;
+
 /**
- * Pure view-state selector for the report area — decides which of {report / no-JQL / loading /
+ * Whether the report area is showing home. Shared with `TimelineReport`, which hides the report
+ * controls row while it is.
+ */
+export const isShowingHome = (props: NoJqlStateProps): boolean => needsJql(props) && !props.startedReport;
+
+/**
+ * Whether the user is past home: they pressed a Create button (`startedFlag`), or a saved report is
+ * open. The second is read from the URL because a saved report's type comes from the saved record,
+ * not the URL, and opening one from home or Saved Reports doesn't reload — so without it, a saved
+ * Report of Reports switched to Gantt would land back on home with the controls hidden.
+ */
+export const hasStartedReport = (startedFlag: boolean, search: string): boolean =>
+  startedFlag || !!new URLSearchParams(search).get('report');
+
+/** Whether the report area is showing the "choose sources" prompt instead of home. */
+export const isShowingSetup = (props: NoJqlStateProps): boolean => needsJql(props) && !!props.startedReport;
+
+/**
+ * Pure view-state selector for the report area — decides which of {report / home / loading /
  * empty / error} renders, from explicit props. No routeData/vm dependency, so every state
  * (including the pending LoadingProgress stepper with its growing counts) is unit-testable by
  * passing props. The report block itself is supplied as `children` and mounted only in the
@@ -59,6 +100,9 @@ export const ReportArea: FC<ReportAreaProps> = ({
   selfManagesData = false,
   unsupportedReportType,
   fillsHeight = false,
+  home,
+  startedReport = false,
+  setup,
   children,
 }) => {
   const { status, rejectReason } = loadingState;
@@ -72,7 +116,8 @@ export const ReportArea: FC<ReportAreaProps> = ({
 
   return (
     <>
-      {!jql && isLoggedIn && !selfManagesData && <NoJqlMessage />}
+      {isShowingHome({ jql, isLoggedIn, selfManagesData, startedReport }) && home}
+      {isShowingSetup({ jql, isLoggedIn, selfManagesData, startedReport }) && setup}
 
       {((selfManagesData && !rejected) || (resolved && primaryIssuesCount > 0)) && (
         // `report-font-scope` confines the Theme panel's font choice to the report block. It sits

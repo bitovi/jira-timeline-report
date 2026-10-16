@@ -1,0 +1,101 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ReportTableRowProps } from './ReportTableRow';
+
+import React, { useState } from 'react';
+
+import { describeReport } from './describe-report';
+import { ReportTableRow } from './ReportTableRow';
+import { ReportTableHeader } from './ReportTableHeader';
+import { SAMPLE_ACCOUNT_IDS, SAMPLE_REPORTS } from './sample-reports';
+
+const meta: Meta<typeof ReportTableRow> = {
+  title: 'components/ReportListing/ReportTableRow',
+  component: ReportTableRow,
+};
+
+export default meta;
+
+type Story = StoryObj<typeof ReportTableRow>;
+
+const Table = ({ children }: { children: React.ReactNode }) => (
+  <div className="bg-neutral-20 p-6">
+    <div role="table" aria-label="Saved reports" className="w-[880px] rounded-xl bg-white shadow-sm">
+      <ReportTableHeader />
+      {children}
+    </div>
+  </div>
+);
+
+const Row = (props: Partial<ReportTableRowProps>) => {
+  const [isStarred, setIsStarred] = useState(props.isStarred ?? false);
+  const report = SAMPLE_REPORTS[2];
+
+  return (
+    <ReportTableRow
+      described={describeReport(report)}
+      ownerId={SAMPLE_ACCOUNT_IDS.grace}
+      updatedAt={report.updatedAt}
+      href={`?report=${report.id}`}
+      {...props}
+      isStarred={isStarred}
+      onToggleStar={() => setIsStarred((starred) => !starred)}
+    />
+  );
+};
+
+const story = (props: Partial<ReportTableRowProps>): Story => ({
+  render: () => (
+    <Table>
+      <Row {...props} />
+    </Table>
+  ),
+});
+
+/** Stories render against a fixed "now" so the relative times don't drift. */
+const NOW = new Date('2026-10-15T12:00:00.000Z');
+
+export const Plain = story({ updatedAt: '2026-10-12T09:30:00.000Z', now: NOW });
+
+export const Starred = story({ isStarred: true });
+
+/** Your own report: "You", and the delete button on hover. */
+export const Mine = story({ isMine: true, ownerId: SAMPLE_ACCOUNT_IDS.me, onDelete: () => {} });
+
+/** Owned by someone else: "Someone else" until spec/041 phase 2 can look up names. */
+export const SomeoneElses = story({ ownerId: SAMPLE_ACCOUNT_IDS.ada });
+
+/** Saved before owners were recorded: "—", and anyone may delete it. */
+export const NoOwner = story({ ownerId: undefined, onDelete: () => {} });
+
+export const UpdatedJustNow = story({ updatedAt: '2026-10-15T11:59:30.000Z', now: NOW });
+
+/** Saved before "Last updated" was kept, in legacy storage: no timestamp at all. */
+export const NeverUpdated = story({ updatedAt: undefined });
+
+/** The home page's recents card. */
+export const Compact = story({ compact: true });
+
+export const NoJql = story({ showJql: false });
+
+export const WithSearchHighlight = story({ query: 'ecom' });
+
+/** Every type tone at once, including the neutral fallback for an unrecognized type. */
+export const EveryReportType: Story = {
+  render: () => (
+    <Table>
+      {SAMPLE_REPORTS.map((report) => (
+        <ReportTableRow
+          key={report.id}
+          described={describeReport(report)}
+          ownerId={report.ownerId}
+          updatedAt={report.updatedAt}
+          isMine={report.ownerId === SAMPLE_ACCOUNT_IDS.me}
+          isStarred={report.id === '1'}
+          onToggleStar={() => {}}
+          href={`?report=${report.id}`}
+          onDelete={() => {}}
+        />
+      ))}
+    </Table>
+  ),
+};

@@ -6,7 +6,7 @@ interface SidebarButtonProps extends ComponentProps<'button'> {
   isActive?: boolean;
 }
 
-const getButtonClasses = (isActive: boolean, className: ComponentProps<'button'>['className']) => {
+export const getButtonClasses = (isActive: boolean, className: ComponentProps<'button'>['className']) => {
   return [
     'p-2',
     'flex',

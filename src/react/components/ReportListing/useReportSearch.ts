@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import type { Report } from '../../../jira/reports';
 import type { DescribedReport } from './describe-report';
+import type { ExtraHaystack } from './report-search';
 
 import { useMemo, useState } from 'react';
 
@@ -12,6 +13,11 @@ export interface UseReportSearchOptions {
   onActivate?: (report: Report) => void;
   /** Fired when the user presses Esc in the search field. */
   onEscape?: () => void;
+  /**
+   * More text to search per report, beyond name and type. Keep it referentially stable (memoize
+   * it), or the filtered list is recomputed every render.
+   */
+  extraHaystack?: ExtraHaystack;
 }
 
 export interface ReportSearch {
@@ -35,13 +41,13 @@ export interface ReportSearch {
  */
 export const useReportSearch = (
   reports: Report[],
-  { onActivate, onEscape }: UseReportSearchOptions = {},
+  { onActivate, onEscape, extraHaystack }: UseReportSearchOptions = {},
 ): ReportSearch => {
   const [query, setQueryState] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
 
   const described = useMemo(() => reports.map(describeReport), [reports]);
-  const filtered = useMemo(() => filterReports(described, query), [described, query]);
+  const filtered = useMemo(() => filterReports(described, query, extraHaystack), [described, query, extraHaystack]);
 
   // A new query renumbers the list, so the old active index no longer means anything.
   const setQuery = (newQuery: string) => {
