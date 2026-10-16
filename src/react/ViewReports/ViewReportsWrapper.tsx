@@ -26,6 +26,8 @@ interface ViewReportsWrapperProps {
   linkBuilder?: ReturnType<LinkBuilderFactory>;
   /** See `Routing.interceptLinkClicks`. */
   interceptLinkClicks?: boolean;
+  /** See `ViewReports`' `onStartReport`. */
+  onStartReport?: () => void;
 }
 
 const ViewReportsWrapper: FC<ViewReportsWrapperProps> = ({ linkBuilder, interceptLinkClicks, ...viewReportProps }) => {

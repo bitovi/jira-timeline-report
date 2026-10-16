@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-import { ReportArea, isShowingHome } from './ReportArea';
+import { ReportArea, hasStartedReport, isShowingHome } from './ReportArea';
 import type { ReportAreaProps } from './ReportArea';
 import type { ReportLoadingState } from '../hooks/useReportLoadingState';
 
@@ -22,6 +22,24 @@ const renderArea = (loadingState: ReportLoadingState, overrides: Partial<ReportA
       {REPORT}
     </ReportArea>,
   );
+
+describe('hasStartedReport', () => {
+  it('is false on a first visit', () => {
+    expect(hasStartedReport(false, '')).toBe(false);
+    expect(hasStartedReport(false, '?settings=SOURCES')).toBe(false);
+  });
+
+  it('is true once a Create button set the flag', () => {
+    expect(hasStartedReport(true, '')).toBe(true);
+  });
+
+  // A saved report's type lives in the saved record, so its URL is just `?report=<id>`. Without this,
+  // a saved Report of Reports switched to Gantt (no JQL) would fall back to home with no controls.
+  it('is true whenever a saved report is open, whatever else the URL holds', () => {
+    expect(hasStartedReport(false, '?report=abc')).toBe(true);
+    expect(hasStartedReport(false, '?report=abc&primaryReportType=start-due')).toBe(true);
+  });
+});
 
 describe('isShowingHome', () => {
   it('is false for an unsupported report type, which takes precedence', () => {

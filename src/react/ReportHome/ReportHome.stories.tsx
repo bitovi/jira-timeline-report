@@ -16,7 +16,13 @@ type Story = StoryObj<typeof ReportHome>;
 
 const noop = () => {};
 
-const Home = ({ withRecents }: { withRecents: boolean }) => {
+const Home = ({
+  withRecents,
+  canCreateReportOfReports = true,
+}: {
+  withRecents: boolean;
+  canCreateReportOfReports?: boolean;
+}) => {
   const [starredIds, setStarredIds] = useState(new Set(['1']));
 
   return (
@@ -24,6 +30,7 @@ const Home = ({ withRecents }: { withRecents: boolean }) => {
       recentReports={withRecents ? SAMPLE_REPORTS : []}
       currentAccountId={SAMPLE_ACCOUNT_IDS.me}
       starredIds={starredIds}
+      canCreateReportOfReports={canCreateReportOfReports}
       onToggleStar={(report) =>
         setStarredIds((current) => {
           const next = new Set(current);
@@ -43,3 +50,6 @@ export const WithRecents: Story = { render: () => <Home withRecents /> };
 
 /** First visit, or every recent report has since been deleted. */
 export const NoRecents: Story = { render: () => <Home withRecents={false} /> };
+
+/** The `reportOfReports` feature is off (the default), so only "Create new report" shows. */
+export const WithoutReportOfReports: Story = { render: () => <Home withRecents canCreateReportOfReports={false} /> };

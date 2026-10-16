@@ -22,6 +22,7 @@ const renderHome = (props: Partial<ReportHomeProps> = {}) => {
       recentReports={SAMPLE_REPORTS}
       currentAccountId={null}
       starredIds={new Set()}
+      canCreateReportOfReports
       {...handlers}
       {...props}
     />,
@@ -78,6 +79,14 @@ describe('<ReportHome>', () => {
 
     expect(onCreateReport).toHaveBeenCalled();
     expect(onCreateReportOfReports).toHaveBeenCalled();
+  });
+
+  // The `reportOfReports` feature is off by default, and the report type picker hides it then.
+  it('hides "Create Report of Reports" when that feature is off', () => {
+    renderHome({ canCreateReportOfReports: false });
+
+    expect(screen.queryByRole('button', { name: 'Create Report of Reports' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create new report' })).toBeInTheDocument();
   });
 
   describe('with no recents', () => {

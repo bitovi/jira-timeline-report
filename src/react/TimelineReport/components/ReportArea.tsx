@@ -70,6 +70,15 @@ const needsJql = ({ jql, isLoggedIn, selfManagesData = false, unsupportedReportT
  */
 export const isShowingHome = (props: NoJqlStateProps): boolean => needsJql(props) && !props.startedReport;
 
+/**
+ * Whether the user is past home: they pressed a Create button (`startedFlag`), or a saved report is
+ * open. The second is read from the URL because a saved report's type comes from the saved record,
+ * not the URL, and opening one from home or Saved Reports doesn't reload — so without it, a saved
+ * Report of Reports switched to Gantt would land back on home with the controls hidden.
+ */
+export const hasStartedReport = (startedFlag: boolean, search: string): boolean =>
+  startedFlag || !!new URLSearchParams(search).get('report');
+
 /** Whether the report area is showing the "choose sources" prompt instead of home. */
 export const isShowingSetup = (props: NoJqlStateProps): boolean => needsJql(props) && !!props.startedReport;
 

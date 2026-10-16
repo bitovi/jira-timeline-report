@@ -9,6 +9,7 @@ import { token } from '@atlaskit/tokens';
 
 import { useUserServices } from '../user/UserServicesProvider';
 import { reportKeys } from './key-factory';
+import { enqueueStarsWrite, starsWritesSettled } from './stars-store';
 
 export interface StarredReports {
   starredIds: Set<string>;
@@ -27,8 +28,10 @@ const EMPTY: string[] = [];
  * Forge, localStorage on the web). Non-suspending: until the read lands everything shows unstarred.
  *
  * Writes the whole list each time — it is one small per-user value, and the store has no partial
- * update. The cache is updated first and rolled back on failure, so a click feels instant. A failed
- * read is not retried on a loop and blocks writes (see `canWrite`).
+ * update. The cache is updated first, so a click feels instant, and writes go out one at a time
+ * (`enqueueStarsWrite`), so the last one always holds the latest list. A failed write re-reads the
+ * store rather than rolling back: a per-click rollback would also undo any later click that saved.
+ * A failed read is not retried on a loop and blocks writes (see `canWrite`).
  */
 export const useStarredReports = (): StarredReports => {
   const { starsStore } = useUserServices();
@@ -47,17 +50,11 @@ export const useStarredReports = (): StarredReports => {
   });
 
   const { mutate } = useMutation({
-    mutationFn: (ids: string[]) => starsStore.write(ids),
-    onMutate: async (ids: string[]) => {
-      await queryClient.cancelQueries({ queryKey: reportKeys.starred });
-
-      const previous = queryClient.getQueryData<string[]>(reportKeys.starred);
-      queryClient.setQueryData(reportKeys.starred, ids);
-
-      return { previous };
-    },
-    onError: (error, _ids, context) => {
-      queryClient.setQueryData(reportKeys.starred, context?.previous);
+    mutationFn: (ids: string[]) => enqueueStarsWrite(starsStore, ids),
+    onError: (error) => {
+      // Re-read once the queue drains, so the list matches what was actually saved — including any
+      // later write that succeeded after this one failed.
+      void starsWritesSettled(starsStore).then(() => queryClient.invalidateQueries({ queryKey: reportKeys.starred }));
 
       console.error('Could not save starred reports', error);
 
@@ -71,6 +68,17 @@ export const useStarredReports = (): StarredReports => {
   });
 
   const starredIds = useMemo(() => new Set(data), [data]);
+
+  /**
+   * Shows `ids` at once, then queues the write. The cache is set synchronously — not in an async
+   * `onMutate` — so a second click in the same tick computes its list from this one, not from the
+   * list before it. Cancelling an in-flight read stops it overwriting the new list when it lands.
+   */
+  const writeStars = (ids: string[], options?: Parameters<typeof mutate>[1]) => {
+    void queryClient.cancelQueries({ queryKey: reportKeys.starred });
+    queryClient.setQueryData(reportKeys.starred, ids);
+    mutate(ids, options);
+  };
 
   /** The latest list, read from the cache so two quick clicks don't both start from a stale render. */
   const current = () => queryClient.getQueryData<string[]>(reportKeys.starred) ?? data;
@@ -102,7 +110,7 @@ export const useStarredReports = (): StarredReports => {
     const ids = current();
     const isStarred = ids.includes(id);
 
-    mutate(isStarred ? ids.filter((starred) => starred !== id) : [...ids, id], {
+    writeStars(isStarred ? ids.filter((starred) => starred !== id) : [...ids, id], {
       onSuccess: () => {
         showFlag({
           title: isStarred ? 'Removed from starred' : 'Added to starred',
@@ -127,7 +135,7 @@ export const useStarredReports = (): StarredReports => {
     const ids = current();
 
     if (ids.includes(id)) {
-      mutate(ids.filter((starred) => starred !== id));
+      writeStars(ids.filter((starred) => starred !== id));
     }
   };
 

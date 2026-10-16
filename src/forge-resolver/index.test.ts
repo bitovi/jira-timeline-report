@@ -58,6 +58,13 @@ describe('storage.get', () => {
 
     expect(vi.mocked(kvs.get)).not.toHaveBeenCalled();
   });
+
+  // Otherwise anyone could read another user's stars by naming their account id.
+  it('refuses a per-user stars key', async () => {
+    await expect(call('storage.get', { key: 'starred-reports:someone-else' })).rejects.toThrow(/per-user/);
+
+    expect(vi.mocked(kvs.get)).not.toHaveBeenCalled();
+  });
 });
 
 describe('storage.set', () => {
@@ -77,6 +84,13 @@ describe('storage.set', () => {
 
   it('rejects a payload with no key rather than writing to undefined', async () => {
     await expect(call('storage.set', { value: [] })).rejects.toThrow(/key/i);
+
+    expect(vi.mocked(kvs.set)).not.toHaveBeenCalled();
+  });
+
+  // Otherwise anyone could overwrite another user's stars by naming their account id.
+  it('refuses a per-user stars key', async () => {
+    await expect(call('storage.set', { key: 'starred-reports:someone-else', value: [] })).rejects.toThrow(/per-user/);
 
     expect(vi.mocked(kvs.set)).not.toHaveBeenCalled();
   });

@@ -144,6 +144,102 @@ describe('useStarredReports when the read fails', () => {
   });
 });
 
+/**
+ * A store whose writes stay open until the test settles them, like slow Forge resolver calls. Each
+ * settled write updates what a later read returns, so the test can check the screen matches it.
+ */
+const controllableStore = (initial: string[] = []) => {
+  let stored = [...initial];
+  let inFlight = 0;
+  let maxInFlight = 0;
+  const writes: Array<{ ids: string[]; succeed: () => void; fail: () => void }> = [];
+
+  const store: StarsStore = {
+    read: vi.fn(async () => [...stored]),
+    write: vi.fn(
+      (ids: string[]) =>
+        new Promise<void>((resolve, reject) => {
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          writes.push({
+            ids,
+            succeed: () => {
+              inFlight -= 1;
+              stored = [...ids];
+              resolve();
+            },
+            fail: () => {
+              inFlight -= 1;
+              reject(new Error('write failed'));
+            },
+          });
+        }),
+    ),
+  };
+
+  return { store, writes, stored: () => stored, maxInFlight: () => maxInFlight };
+};
+
+describe('useStarredReports with overlapping writes', () => {
+  // Star A then B quickly. Concurrent whole-list writes could land `[A]` after `[A, B]` and lose B.
+  it('writes one at a time, so the last write holds every star', async () => {
+    const fake = controllableStore();
+    const { result } = renderStars(fake.store);
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+    act(() => result.current.toggleStar('a'));
+    act(() => result.current.toggleStar('b'));
+
+    await waitFor(() => expect(fake.writes).toHaveLength(1));
+    expect(fake.writes[0].ids).toEqual(['a']);
+
+    await act(async () => fake.writes[0].succeed());
+    await waitFor(() => expect(fake.writes).toHaveLength(2));
+    await act(async () => fake.writes[1].succeed());
+
+    expect(fake.maxInFlight()).toBe(1);
+    expect(fake.stored()).toEqual(['a', 'b']);
+    expect([...result.current.starredIds]).toEqual(['a', 'b']);
+  });
+
+  // A per-click rollback would put back the list from before the first click, dropping B — which
+  // the second write saved.
+  it('keeps a later saved change when an earlier write fails', async () => {
+    const fake = controllableStore();
+    const { result } = renderStars(fake.store);
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    act(() => result.current.toggleStar('a'));
+    act(() => result.current.toggleStar('b'));
+
+    await waitFor(() => expect(fake.writes).toHaveLength(1));
+    await act(async () => fake.writes[0].fail());
+    await waitFor(() => expect(fake.writes).toHaveLength(2));
+    await act(async () => fake.writes[1].succeed());
+
+    await waitFor(() => expect(fake.store.read).toHaveBeenCalledTimes(2));
+    expect(fake.stored()).toEqual(['a', 'b']);
+    await waitFor(() => expect([...result.current.starredIds]).toEqual(['a', 'b']));
+  });
+
+  it('re-syncs with what was saved when a write fails', async () => {
+    const fake = controllableStore(['x']);
+    const { result } = renderStars(fake.store);
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    act(() => result.current.toggleStar('a'));
+    // Shown straight away, before the write settles. (React Query notifies on a later tick.)
+    await waitFor(() => expect([...result.current.starredIds]).toEqual(['x', 'a']));
+
+    await waitFor(() => expect(fake.writes).toHaveLength(1));
+    await act(async () => fake.writes[0].fail());
+
+    await waitFor(() => expect([...result.current.starredIds]).toEqual(['x']));
+  });
+});
+
 describe('createForgeStarsStore', () => {
   it('treats a never-written key as no stars', async () => {
     const invoke = vi.fn(async () => ({ value: undefined }));

@@ -13,6 +13,28 @@ export interface StarsStore {
   write(ids: string[]): Promise<void>;
 }
 
+/**
+ * Writes queued per store, so one store never has two writes in flight. Every write replaces the
+ * whole list, and on Forge each is its own resolver call with no ordering guarantee — star A then B
+ * sends `[A]` and `[A, B]`, and if `[A]` landed last, B would vanish on reload. One at a time, the
+ * last write is always the latest list. Keyed by store rather than per hook, because home and the
+ * Saved Reports page can both be mounted over the same store.
+ */
+const writeQueues = new WeakMap<StarsStore, Promise<void>>();
+
+/** Writes `ids` after every write already queued on `store`, whether those succeed or fail. */
+export const enqueueStarsWrite = (store: StarsStore, ids: string[]): Promise<void> => {
+  const queued = (writeQueues.get(store) ?? Promise.resolve()).catch(() => {}).then(() => store.write(ids));
+
+  writeQueues.set(store, queued);
+
+  return queued;
+};
+
+/** Resolves once every write queued on `store` so far has settled. Never rejects. */
+export const starsWritesSettled = (store: StarsStore): Promise<void> =>
+  (writeQueues.get(store) ?? Promise.resolve()).catch(() => {});
+
 /** Anything that isn't a `string[]` reads as no stars, rather than throwing over a corrupt value. */
 export const toStarIds = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];

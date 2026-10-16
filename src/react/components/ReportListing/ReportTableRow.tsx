@@ -117,7 +117,8 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
   return (
     <div
       role="row"
-      className={`group ${REPORT_TABLE_GRID} items-center border-b border-neutral-41 last:border-b-0 hover:bg-neutral-20 ${
+      // `scroll-mt-10` keeps a row scrolled into view clear of the sticky header.
+      className={`group ${REPORT_TABLE_GRID} scroll-mt-10 items-center border-b border-neutral-41 last:border-b-0 hover:bg-neutral-20 ${
         compact ? 'py-1.5' : 'py-2.5'
       } ${isActive ? 'bg-neutral-20' : ''}`}
       onMouseEnter={onMouseEnter}

@@ -27,14 +27,27 @@ import { STARS_GET, STARS_SET, STORAGE_GET, STORAGE_SET } from './contract';
 const resolver = new Resolver();
 
 /**
+ * Per-user star keys, `starred-reports:{accountId}`. Only `stars.get` / `stars.set` may touch them,
+ * because only they build the key from the invocation context.
+ */
+const STARS_KEY_PREFIX = 'starred-reports:';
+
+/**
  * The payload crosses `invoke()` from the browser, so it is untrusted input rather than a typed
  * call. A missing key would otherwise reach `kvs.get(undefined)` and fail somewhere less obvious.
+ *
+ * Per-user keys are refused: the generic handlers take the key from the payload, so allowing them
+ * would let anyone read or overwrite another user's stars by naming their account id.
  */
 const requireKey = (payload: unknown): string => {
   const key = (payload as { key?: unknown } | undefined)?.key;
 
   if (typeof key !== 'string' || !key) {
     throw new Error('[Storage Error]: the resolver was called without a key');
+  }
+
+  if (key.startsWith(STARS_KEY_PREFIX)) {
+    throw new Error('[Storage Error]: per-user keys are not available through generic storage');
   }
 
   return key;
@@ -81,7 +94,7 @@ const starsKey = (context: unknown): string => {
     throw new Error('[Stars Error]: the resolver was invoked without a user');
   }
 
-  const key = `starred-reports:${accountId}`;
+  const key = `${STARS_KEY_PREFIX}${accountId}`;
 
   if (key.length > KVS_KEY_MAX_LENGTH || !KVS_KEY_PATTERN.test(key)) {
     throw new Error('[Stars Error]: the account id cannot be used as a storage key');

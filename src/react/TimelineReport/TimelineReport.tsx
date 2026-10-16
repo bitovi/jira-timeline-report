@@ -17,7 +17,7 @@ import { useRouteData } from '../hooks/useRouteData';
 
 import { TimelineReportViewModel } from './timeline-report-view-model';
 import { useReportLoadingState as defaultUseReportLoadingState } from './hooks/useReportLoadingState';
-import { ReportArea, isShowingHome } from './components/ReportArea';
+import { ReportArea, hasStartedReport, isShowingHome } from './components/ReportArea';
 import { ChooseSourcesMessage } from './components/ReportMessages';
 import { reports as REPORT_TYPES } from '../../configuration/reports';
 import { unsupportedReportType } from './unsupportedReportType';
@@ -214,9 +214,13 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   // the report type can't strand them on home. Session state, not URL state — the default report
   // type is dropped from the URL, so a Gantt with no JQL has the same URL as a first visit. A link
   // that names a report type counts as already started.
-  const [startedReport, setStartedReport] = useState(() =>
+  const [startedReportFlag, setStartedReport] = useState(() =>
     new URL(window.location.href).searchParams.has('primaryReportType'),
   );
+  // An open saved report counts too (see `hasStartedReport`). Derived from the URL rather than
+  // stored, so it follows every navigation, and Home (which drops `report`) still clears it.
+  const urlSearch = useCanObservable(pushStateObservable as unknown as CanObservable<string>);
+  const startedReport = hasStartedReport(startedReportFlag, urlSearch ?? '');
   const startReport = useCallback(() => setStartedReport(true), []);
   // The sidebar's Home link navigates to the bare URL itself; this forgets the started report (no
   // reload on Forge, so the flag would survive) and closes any open settings panel over home.
@@ -277,6 +281,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               onBackButtonClicked={() => {
                 rd.showSettings = '';
               }}
+              onStartReport={startReport}
             />
           </div>
 

@@ -17,6 +17,9 @@ import { RoutingProvider } from '../services/routing';
 import { JiraProvider } from '../services/jira';
 import { useAllReports, useRecentReports, useStarredReports } from '../services/reports';
 import { useCurrentAccountId } from '../services/user';
+import { useAsyncFeatures } from '../services/features';
+import { getReportTypeOptions } from '../ReportControls/components/SelectReportType/utilities';
+import { reports as REPORT_TYPES } from '../../configuration/reports';
 
 /** The `routeData` keys home writes. Typed narrowly so the actions are testable with a plain object. */
 export interface HomeRouteTarget {
@@ -54,11 +57,22 @@ type HomeActions = ReturnType<typeof createHomeActions>;
 
 const NO_STARS = new Set<string>();
 
+/**
+ * Whether Report of Reports is available, by the same rule the report type picker uses, so the two
+ * never disagree. `false` while features load, so the button never appears and then vanishes.
+ */
+const useCanCreateReportOfReports = (): boolean => {
+  const { features } = useAsyncFeatures();
+
+  return !!features && getReportTypeOptions(REPORT_TYPES, features).some(({ key }) => key === 'report-of-reports');
+};
+
 const ConnectedReportHome: FC<{ actions: HomeActions }> = ({ actions }) => {
   const reports = useAllReports();
   const { recentReports: recentIds } = useRecentReports();
   const currentAccountId = useCurrentAccountId();
   const { starredIds, toggleStar } = useStarredReports();
+  const canCreateReportOfReports = useCanCreateReportOfReports();
 
   // Recents are ids in localStorage; a report deleted elsewhere just drops out here.
   const recentReports = useMemo(
@@ -72,14 +86,25 @@ const ConnectedReportHome: FC<{ actions: HomeActions }> = ({ actions }) => {
       recentReports={recentReports}
       currentAccountId={currentAccountId}
       starredIds={starredIds}
+      canCreateReportOfReports={canCreateReportOfReports}
       onToggleStar={(report) => toggleStar(report.id, report.name)}
     />
   );
 };
 
-/** Saved reports failed to load: still let the user start a report. */
+/**
+ * Saved reports failed to load: still let the user start a report. Not a Report of Reports, though —
+ * with home's own data failing, there's no confirming that feature is on.
+ */
 const ReportHomeFallback: FC<{ actions: HomeActions }> = ({ actions }) => (
-  <ReportHome {...actions} recentReports={[]} currentAccountId={null} starredIds={NO_STARS} onToggleStar={() => {}} />
+  <ReportHome
+    {...actions}
+    recentReports={[]}
+    currentAccountId={null}
+    starredIds={NO_STARS}
+    canCreateReportOfReports={false}
+    onToggleStar={() => {}}
+  />
 );
 
 const ReportHomeSkeleton: FC = () => (

@@ -15,6 +15,11 @@ export interface ReportHomeProps {
   recentReports: Report[];
   currentAccountId: string | null;
   starredIds: Set<string>;
+  /**
+   * Report of Reports is behind the `reportOfReports` feature (off by default). Only shown when the
+   * report type picker would offer it too.
+   */
+  canCreateReportOfReports: boolean;
   onToggleStar: (report: Report) => void;
   onViewAllReports: () => void;
   onCreateReport: () => void;
@@ -33,6 +38,7 @@ export const ReportHome: FC<ReportHomeProps> = ({
   recentReports,
   currentAccountId,
   starredIds,
+  canCreateReportOfReports,
   onToggleStar,
   onViewAllReports,
   onCreateReport,
@@ -98,7 +104,7 @@ export const ReportHome: FC<ReportHomeProps> = ({
         <Button appearance="primary" onClick={onCreateReport}>
           Create new report
         </Button>
-        <Button onClick={onCreateReportOfReports}>Create Report of Reports</Button>
+        {canCreateReportOfReports && <Button onClick={onCreateReportOfReports}>Create Report of Reports</Button>}
       </div>
     </div>
   );

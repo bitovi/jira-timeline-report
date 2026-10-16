@@ -12,6 +12,7 @@ import { FlagsProvider } from '@atlaskit/flag';
 import userEvent from '@testing-library/user-event';
 
 import ViewReports, { byLastUpdated, pageSizeFor } from './ViewReports';
+import { pushStateObservable } from '../../canjs/routing/state-storage';
 import { StorageProvider } from '../services/storage';
 import { JiraProvider } from '../services/jira';
 import { UserServicesProvider } from '../services/user';
@@ -187,6 +188,22 @@ describe('ViewReports', () => {
     ).toEqual(['Alpha', 'Beta']);
   });
 
+  // This page can be open over a saved report. Only opening Sources would leave that report attached,
+  // so editing it and pressing Save would overwrite it.
+  it('"Create new report" starts from a clean URL with Sources open, and marks a report as started', async () => {
+    const set = vi.spyOn(pushStateObservable, 'set').mockImplementation(() => pushStateObservable);
+    const onStartReport = vi.fn();
+
+    renderPage({ reports: MIXED, props: { onCreateReportClicked: undefined, onStartReport } });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Create new report' }));
+
+    expect(onStartReport).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith('?settings=SOURCES');
+
+    set.mockRestore();
+  });
+
   describe('tabs', () => {
     it('counts each tab', async () => {
       renderPage({ reports: MIXED, stars: ['2'] });
@@ -273,6 +290,30 @@ describe('ViewReports', () => {
       expect(rows()).toHaveLength(10);
       expect(screen.getByText('Showing 10 of 10')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+    });
+
+    // ↓ moves through every match, but only the loaded pages have links — ↵ on an unloaded row used
+    // to do nothing.
+    it('loads the page of the keyboard-selected row, scrolls to it, and opens it on Enter', async () => {
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      renderPage({ reports: many });
+
+      expect(await screen.findByText('Showing 6 of 10')).toBeInTheDocument();
+
+      await userEvent.click(await search());
+      // From the first row (index 0) to the seventh, one past the loaded six.
+      await userEvent.keyboard('{ArrowDown>6/}');
+
+      const link = await screen.findByRole('link', { name: 'Report 06' });
+      expect(screen.getByText('Showing 10 of 10')).toBeInTheDocument();
+      expect(scrollIntoView).toHaveBeenLastCalledWith({ block: 'nearest' });
+
+      const opened = vi.fn((event: Event) => event.preventDefault());
+      link.addEventListener('click', opened);
+      await userEvent.keyboard('{Enter}');
+
+      expect(opened).toHaveBeenCalledTimes(1);
     });
 
     it('starts over when the query changes', async () => {

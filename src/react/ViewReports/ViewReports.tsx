@@ -1,5 +1,6 @@
 import type { FC, KeyboardEvent, ReactNode } from 'react';
 import type { Report } from '../../jira/reports';
+import type { CanObservable } from '../hooks/useCanObservable';
 import type { DescribedReport, ExtraHaystack } from '../components/ReportListing';
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ import { ReportTableHeader, ReportTableRow, useReportSearch } from '../component
 import { useAllReports, useDeleteReport, useRecentReports, useStarredReports } from '../services/reports';
 import { useReportsStorageConfig } from '../services/reports-storage';
 import { canDeleteReport, effectiveOwnerId, isOwnedBy, useCurrentAccountId } from '../services/user';
-import routeData from '../../canjs/routing/route-data';
+import { pushStateObservable } from '../../canjs/routing/state-storage';
 import { lastUpdatedAt } from '../../jira/reports';
 
 type Tab = 'starred' | 'mine' | 'all';
@@ -55,13 +56,22 @@ export const byLastUpdated = (a: Report, b: Report): number => {
   return a.name.localeCompare(b.name);
 };
 
-const openSources = () => {
-  (routeData as unknown as { showSettings: string }).showSettings = 'SOURCES';
-};
+/**
+ * Where "Create new report" goes: a clean URL with only the Sources panel open. Dropping `report`
+ * and every setting matters because this page can be open over a saved report — only opening
+ * Sources would leave that report attached, so editing it and pressing Save would overwrite it.
+ * `settings=SOURCES` also closes this page, which is `settings=REPORTS`.
+ */
+export const FRESH_REPORT_SEARCH = '?settings=SOURCES';
 
 interface ViewReportProps {
   onBackButtonClicked: () => void;
-  /** "Create new report" — opens Sources by default, as home does. Injectable for tests. */
+  /**
+   * Tells the app the user has left home to build a report, so the page behind Sources shows the
+   * "choose sources" prompt rather than home — as home's own Create button does.
+   */
+  onStartReport?: () => void;
+  /** Replaces the whole "Create new report" action. Injectable for tests and stories. */
   onCreateReportClicked?: () => void;
 }
 
@@ -79,7 +89,14 @@ const EmptyState: FC<{ icon: ReactNode; title: string; children: ReactNode }> = 
  * Every saved report: Starred / My reports / All reports tabs, search, and a table with stars,
  * owners and delete. See spec/041-saved-reports-redesign/phase1/plan.md § 8.
  */
-const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportClicked = openSources }) => {
+const ViewReports: FC<ViewReportProps> = ({
+  onBackButtonClicked,
+  onStartReport,
+  onCreateReportClicked = () => {
+    onStartReport?.();
+    (pushStateObservable as unknown as CanObservable<string>).set(FRESH_REPORT_SEARCH);
+  },
+}) => {
   const reports = useAllReports();
   // Read here rather than in the modal: this component already suspends on `useAllReports`, so the
   // config resolves alongside the list instead of suspending the modal open.
@@ -126,17 +143,17 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportC
 
   const tableRef = useRef<HTMLDivElement>(null);
 
+  /** A rendered row's link, found by name — report names are unique (`validateName`). */
+  const findRowLink = (report: Report): HTMLAnchorElement | undefined =>
+    Array.from(tableRef.current?.querySelectorAll('a') ?? []).find(
+      (link) => link.getAttribute('aria-label') === report.name,
+    );
+
   const { query, setQuery, filtered, activeIndex, setActiveIndex, handleKeyDown } = useReportSearch(reportsByTab[tab], {
     extraHaystack,
     // Click the row's own link, so ↵ navigates exactly as a click would (including the embedded
     // hosts' interception in `Link`).
-    onActivate: (report) => {
-      const links = tableRef.current?.querySelectorAll('a') ?? [];
-
-      Array.from(links)
-        .find((link) => link.getAttribute('aria-label') === report.name)
-        ?.click();
-    },
+    onActivate: (report) => findRowLink(report)?.click(),
   });
 
   // Paging — the All tab only. Sized from the tab panel, which flex-fills the page; the table is
@@ -155,7 +172,39 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportC
     tableRef.current?.scrollTo?.({ top: 0 });
   }, [tab, query]);
 
+  // ↑/↓ move through the whole filtered list, but the All tab renders only the loaded pages. Load the
+  // page holding the selected row, or ↓ past the last one selects a row with no link and ↵ does
+  // nothing. Only ever grows, so it never undoes "Load more".
+  useEffect(() => {
+    if (tab === 'all') {
+      setPages((count) => Math.max(count, Math.floor(activeIndex / pageSize) + 1));
+    }
+  }, [tab, activeIndex, pageSize]);
+
   const visible = tab === 'all' ? filtered.slice(0, pages * pageSize) : filtered;
+
+  // Keep the keyboard-selected row on screen in the scrolling table. Keyboard only — the mouse sets
+  // the selection too (hover), and scrolling under the pointer would make the list jump. Waits on
+  // `visible` because the row may only exist once the effect above has loaded its page.
+  const scrollToActive = useRef(false);
+
+  useEffect(() => {
+    const active = filtered[activeIndex];
+    const link = scrollToActive.current && active ? findRowLink(active.report) : undefined;
+
+    if (link) {
+      scrollToActive.current = false;
+      link.closest('[role="row"]')?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [activeIndex, visible]);
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      scrollToActive.current = true;
+    }
+
+    handleKeyDown(event);
+  };
 
   const selectTab = (next: Tab) => {
     setChosenTab(next);
@@ -269,7 +318,7 @@ const ViewReports: FC<ViewReportProps> = ({ onBackButtonClicked, onCreateReportC
               aria-label="Search reports"
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={handleSearchKeyDown}
               elemBeforeInput={
                 <span className="flex pl-2 text-neutral-300">
                   <SearchIcon label="" />
