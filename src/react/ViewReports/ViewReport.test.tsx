@@ -57,7 +57,12 @@ interface RenderConfig {
   update: AppStorage['update'];
 }
 
-const renderPage = (config: Partial<RenderConfig> = {}) => {
+/**
+ * Renders the page and waits until it has finished loading. The stars are a separate read from the
+ * reports: until they land the table is a skeleton and the Starred count reads "–". Tests that act
+ * straight away pass locally, where the read resolves at once, and flake on a slower CI machine.
+ */
+const renderPage = async (config: Partial<RenderConfig> = {}) => {
   const { reports = [], stars = [], props = {} } = config;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const starsStore = memoryStars(stars);
@@ -84,6 +89,8 @@ const renderPage = (config: Partial<RenderConfig> = {}) => {
       </JiraProvider>
     </UserServicesProvider>,
   );
+
+  await screen.findByRole('table', { name: 'Saved reports' });
 
   return { starsStore, update };
 };
@@ -116,7 +123,7 @@ describe('ViewReports', () => {
 
   it('renders the page chrome and the reports', async () => {
     const onCreateReportClicked = vi.fn();
-    renderPage({ reports: MIXED, props: { onCreateReportClicked } });
+    await renderPage({ reports: MIXED, props: { onCreateReportClicked } });
 
     expect(await screen.findByText('Back to report')).toBeInTheDocument();
     expect(screen.getByText('Saved Reports')).toBeInTheDocument();
@@ -128,7 +135,7 @@ describe('ViewReports', () => {
   });
 
   it("shows each report's type and owner, without looking up any names", async () => {
-    renderPage({ reports: MIXED });
+    await renderPage({ reports: MIXED });
 
     expect(await screen.findAllByText('Scatter Plot')).toHaveLength(5);
     expect(screen.getAllByText('You')).toHaveLength(2);
@@ -138,7 +145,7 @@ describe('ViewReports', () => {
   });
 
   it('shows when each report was last updated, falling back to its work item', async () => {
-    renderPage({
+    await renderPage({
       reports: [
         report('1', 'Alpha', { updatedAt: '2026-10-14T09:00:00.000Z' }),
         report('2', 'Beta', { workItemUpdatedAt: '2026-10-13T09:00:00.000Z' }),
@@ -155,7 +162,7 @@ describe('ViewReports', () => {
 
   // Search filters this order but never reorders it, so it holds on every tab and every query.
   it('sorts every tab by last updated, most recent first, undated reports last by name', async () => {
-    renderPage({
+    await renderPage({
       reports: [
         report('1', 'Zulu', { updatedAt: '2026-10-01T00:00:00.000Z', ownerId: ME }),
         report('2', 'Bravo', { ownerId: ME }),
@@ -194,7 +201,7 @@ describe('ViewReports', () => {
     const set = vi.spyOn(pushStateObservable, 'set').mockImplementation(() => pushStateObservable);
     const onStartReport = vi.fn();
 
-    renderPage({ reports: MIXED, props: { onCreateReportClicked: undefined, onStartReport } });
+    await renderPage({ reports: MIXED, props: { onCreateReportClicked: undefined, onStartReport } });
 
     await userEvent.click(await screen.findByRole('button', { name: 'Create new report' }));
 
@@ -206,7 +213,7 @@ describe('ViewReports', () => {
 
   describe('tabs', () => {
     it('counts each tab', async () => {
-      renderPage({ reports: MIXED, stars: ['2'] });
+      await renderPage({ reports: MIXED, stars: ['2'] });
 
       expect(await tab(/Starred/)).toHaveTextContent('Starred1');
       expect(await tab(/My reports/)).toHaveTextContent('My reports2');
@@ -214,28 +221,28 @@ describe('ViewReports', () => {
     });
 
     it('opens on Starred when something is starred', async () => {
-      renderPage({ reports: MIXED, stars: ['2'] });
+      await renderPage({ reports: MIXED, stars: ['2'] });
 
       await waitFor(async () => expect(await tab(/Starred/)).toHaveAttribute('aria-selected', 'true'));
       expect(rowNames()).toEqual(['Beta']);
     });
 
     it('opens on All when nothing is starred', async () => {
-      renderPage({ reports: MIXED });
+      await renderPage({ reports: MIXED });
 
       await waitFor(async () => expect(await tab(/All reports/)).toHaveAttribute('aria-selected', 'true'));
     });
 
     // A starred id whose report was deleted doesn't count.
     it('opens on All when the only star is a deleted report', async () => {
-      renderPage({ reports: MIXED, stars: ['deleted'] });
+      await renderPage({ reports: MIXED, stars: ['deleted'] });
 
       await waitFor(async () => expect(await tab(/All reports/)).toHaveAttribute('aria-selected', 'true'));
       expect(await tab(/Starred/)).toHaveTextContent('Starred0');
     });
 
     it('stays on Starred after unstarring the last starred report', async () => {
-      renderPage({ reports: MIXED, stars: ['2'] });
+      await renderPage({ reports: MIXED, stars: ['2'] });
       await waitFor(async () => expect(await tab(/Starred/)).toHaveAttribute('aria-selected', 'true'));
 
       await userEvent.click(screen.getByRole('button', { name: 'Unstar Beta' }));
@@ -245,7 +252,7 @@ describe('ViewReports', () => {
     });
 
     it('My reports shows only your own, including Space reports you created', async () => {
-      renderPage({ reports: MIXED });
+      await renderPage({ reports: MIXED });
 
       await userEvent.click(await tab(/My reports/));
 
@@ -255,7 +262,7 @@ describe('ViewReports', () => {
 
   describe('search', () => {
     it('filters by name', async () => {
-      renderPage({ reports: MIXED });
+      await renderPage({ reports: MIXED });
 
       await userEvent.type(await search(), 'alph');
 
@@ -263,7 +270,7 @@ describe('ViewReports', () => {
     });
 
     it('filters by JQL', async () => {
-      renderPage({ reports: MIXED });
+      await renderPage({ reports: MIXED });
 
       await userEvent.type(await search(), 'ecom');
 
@@ -280,7 +287,7 @@ describe('ViewReports', () => {
     });
 
     it('loads more on the All tab', async () => {
-      renderPage({ reports: many });
+      await renderPage({ reports: many });
 
       expect(await screen.findByText('Showing 6 of 10')).toBeInTheDocument();
       expect(rows()).toHaveLength(6);
@@ -297,7 +304,7 @@ describe('ViewReports', () => {
     it('loads the page of the keyboard-selected row, scrolls to it, and opens it on Enter', async () => {
       const scrollIntoView = vi.fn();
       Element.prototype.scrollIntoView = scrollIntoView;
-      renderPage({ reports: many });
+      await renderPage({ reports: many });
 
       expect(await screen.findByText('Showing 6 of 10')).toBeInTheDocument();
 
@@ -317,7 +324,7 @@ describe('ViewReports', () => {
     });
 
     it('starts over when the query changes', async () => {
-      renderPage({ reports: many });
+      await renderPage({ reports: many });
       await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
 
       await userEvent.type(await search(), 'Report');
@@ -326,7 +333,7 @@ describe('ViewReports', () => {
     });
 
     it('does not page the other tabs', async () => {
-      renderPage({ reports: many.map((r) => ({ ...r, ownerId: ME })) });
+      await renderPage({ reports: many.map((r) => ({ ...r, ownerId: ME })) });
 
       await userEvent.click(await tab(/My reports/));
 
@@ -337,14 +344,14 @@ describe('ViewReports', () => {
 
   describe('empty states', () => {
     it('explains itself when nothing has been saved yet', async () => {
-      renderPage({ reports: [] });
+      await renderPage({ reports: [] });
 
       expect(await screen.findByText('No saved reports yet')).toBeInTheDocument();
       expect(screen.getByText('Save a report and it will show up here.')).toBeInTheDocument();
     });
 
     it('has an empty Starred tab', async () => {
-      renderPage({ reports: MIXED });
+      await renderPage({ reports: MIXED });
 
       await userEvent.click(await tab(/Starred/));
 
@@ -352,7 +359,7 @@ describe('ViewReports', () => {
     });
 
     it('has an empty My reports tab', async () => {
-      renderPage({ reports: [report('2', 'Beta', { ownerId: ADA })] });
+      await renderPage({ reports: [report('2', 'Beta', { ownerId: ADA })] });
 
       await userEvent.click(await tab(/My reports/));
 
@@ -360,7 +367,7 @@ describe('ViewReports', () => {
     });
 
     it('says when nothing matches the search', async () => {
-      renderPage({ reports: MIXED });
+      await renderPage({ reports: MIXED });
 
       await userEvent.type(await search(), 'zzz');
 
@@ -370,7 +377,7 @@ describe('ViewReports', () => {
 
   describe('delete', () => {
     it('is offered on your own and unowned reports only', async () => {
-      renderPage({ reports: MIXED });
+      await renderPage({ reports: MIXED });
       await screen.findByRole('link', { name: 'Alpha' });
 
       expect(screen.getByRole('button', { name: 'Delete Alpha' })).toBeInTheDocument();
@@ -383,7 +390,7 @@ describe('ViewReports', () => {
 
     it('asks first, then deletes and forgets the report in stars and recents', async () => {
       window.localStorage.setItem('test-app-local-reports', JSON.stringify(['1', '2']));
-      const { starsStore, update } = renderPage({ reports: MIXED, stars: ['1', '2'] });
+      const { starsStore, update } = await renderPage({ reports: MIXED, stars: ['1', '2'] });
 
       await userEvent.click(await screen.findByRole('button', { name: 'Delete Alpha' }));
 
@@ -399,7 +406,7 @@ describe('ViewReports', () => {
   });
 
   it('stars a report', async () => {
-    const { starsStore } = renderPage({ reports: MIXED });
+    const { starsStore } = await renderPage({ reports: MIXED });
 
     await userEvent.click(await screen.findByRole('button', { name: 'Star Gamma' }));
 
