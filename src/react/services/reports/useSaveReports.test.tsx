@@ -6,7 +6,7 @@ import React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
 import { StorageProvider } from '../storage';
 import { useCreateReport, useUpdateReport } from './useSaveReports';
@@ -55,8 +55,8 @@ describe('saving a report', () => {
 
   // Saving points the URL at `?report=<id>` and nothing refetches (see the `onSettled` note in
   // useSaveReports.tsx), so a `reportsData` left behind by the save is what the report renders
-  // from: no record at all for a new id, which resolves `jql` to '' — "Configure a JQL in the
-  // sidebar" over a report that was just saved with one.
+  // from: no record at all for a new id, which resolves `jql` to '' — the no-report home page
+  // over a report that was just saved with one.
   it('publishes a created report to routeData before anything can read it back', async () => {
     const created = { id: 'new-report', name: 'New', queryParams: 'report=new-report&jql=project%3DECOM' };
     const { result } = renderSaveHook(() => useCreateReport());
@@ -79,6 +79,64 @@ describe('saving a report', () => {
 
     await waitFor(() => {
       expect(reportDataFor('existing')?.queryParams).toBe('report=existing&jql=project%3DECOM');
+    });
+  });
+
+  // spec/041: the owner is set once, on create. Renaming or re-saving someone's report must not
+  // drop it, which is what replacing the stored report from form state would do.
+  it('keeps the stored ownerId on update', async () => {
+    const { result, queryClient } = renderSaveHook(() => useUpdateReport());
+    queryClient.setQueryData<Reports>(reportKeys.allReports, { existing: { ...existing, ownerId: 'owner-1' } });
+
+    result.current.updateReport('existing', { name: 'Renamed' });
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData<Reports>(reportKeys.allReports)?.existing).toMatchObject({
+        name: 'Renamed',
+        ownerId: 'owner-1',
+      });
+    });
+  });
+
+  describe('updatedAt', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-15T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('is stamped on create', async () => {
+      const { result, queryClient } = renderSaveHook(() => useCreateReport());
+
+      act(() => {
+        result.current.createReport({ id: 'new-report', name: 'New', queryParams: '' });
+      });
+
+      await waitFor(() => {
+        expect(queryClient.getQueryData<Reports>(reportKeys.allReports)?.['new-report']?.updatedAt).toBe(
+          '2026-10-15T12:00:00.000Z',
+        );
+      });
+    });
+
+    // Every edit goes through `updateReport` — renames, saved settings, report-of-reports sections —
+    // so none of their callers have to remember it.
+    it('is bumped on every update, whatever the caller passes', async () => {
+      const { result, queryClient } = renderSaveHook(() => useUpdateReport());
+      queryClient.setQueryData<Reports>(reportKeys.allReports, {
+        existing: { ...existing, updatedAt: '2020-01-01T00:00:00.000Z' },
+      });
+
+      result.current.updateReport('existing', { name: 'Renamed' });
+
+      await waitFor(() => {
+        expect(queryClient.getQueryData<Reports>(reportKeys.allReports)?.existing?.updatedAt).toBe(
+          '2026-10-15T12:00:00.000Z',
+        );
+      });
     });
   });
 

@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react';
 import type { ReportTypeTone } from '../ReportListing/report-type-meta';
 
-import React from 'react';
+import React, { cloneElement, isValidElement } from 'react';
 
 export interface ReportTypeIconProps {
   tone: ReportTypeTone;
@@ -114,6 +114,7 @@ const toneIcons: Record<ReportTypeTone, ReactNode> = {
  */
 export const ReportTypeIcon: FC<ReportTypeIconProps> = ({ tone, label, size = 32 }) => {
   const iconSize = Math.round(size / 2);
+  const icon = toneIcons[tone];
 
   return (
     <span
@@ -123,7 +124,11 @@ export const ReportTypeIcon: FC<ReportTypeIconProps> = ({ tone, label, size = 32
       aria-label={label}
       aria-hidden={label ? undefined : true}
     >
-      <span style={{ width: iconSize, height: iconSize }}>{toneIcons[tone]}</span>
+      {/* Sized on the svg itself: an inline wrapper ignores width/height, which left the glyph
+          sitting on the text baseline at whatever size the surrounding CSS gave it. */}
+      {isValidElement<{ width?: number; height?: number; style?: object }>(icon)
+        ? cloneElement(icon, { width: iconSize, height: iconSize, style: { display: 'block' } })
+        : icon}
     </span>
   );
 };

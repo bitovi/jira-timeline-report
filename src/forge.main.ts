@@ -1,11 +1,15 @@
-import { router, view } from '@forge/bridge';
+import { invoke, router, view } from '@forge/bridge';
 
 import mainHelper from './shared/main-helper.js';
 import { createForgeKvsStorage } from './jira/storage/index.forge';
 import { createForgeLinkBuilder, createForgeRouting } from './routing/index.forge';
 import { getForgeRequestHelper } from './request-helpers/forge-request-helper';
+import { createForgeImageResolver } from './request-helpers/forge-image-loader';
 import { interceptExternalLinkClicks, setExternalOpener } from './shared/open-external';
 import { setAppReloader } from './shared/reload-app';
+import { createForgeAccountIdReader } from './react/services/user/identity';
+import { createForgeStarsStore } from './react/services/reports/stars-store';
+import { setJiraImageResolver } from './shared/jira-image-src';
 
 import type { RoutingConfiguration } from './routing/common';
 
@@ -110,6 +114,9 @@ const installAppReloader = (): void => {
 export default async function main() {
   installExternalOpener();
   installAppReloader();
+  // Custom issue-type icons are gateway URLs a plain `<img>` cannot authenticate to; this fetches
+  // them through `requestJira` instead. See shared/jira-image-src.ts.
+  setJiraImageResolver(createForgeImageResolver());
 
   // Awaited before `mainHelper`, not inside `configureRouting`: `view.createHistory()` is async and
   // `AP.history` is not, so this is the one place the Forge bootstrap genuinely differs in shape
@@ -193,6 +200,12 @@ export default async function main() {
       showSidebarBranding: true,
       isAlwaysLoggedIn: true,
       licensingPromise: getLicensing(),
+      // The view context names the viewing user — no scope, no Jira call. Stars live in KVS, keyed
+      // by the resolver from the invocation context. See spec/041-saved-reports-redesign/phase1/plan.md.
+      createUserServices: () => ({
+        readCurrentAccountId: createForgeAccountIdReader(view),
+        starsStore: createForgeStarsStore((functionKey, payload) => invoke(functionKey, payload)),
+      }),
     },
   );
 }

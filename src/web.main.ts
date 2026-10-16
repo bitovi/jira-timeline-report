@@ -2,6 +2,8 @@ import mainHelper from './shared/main-helper.js';
 import { createWebAppStorage } from './jira/storage/index.web';
 import { createWebLinkBuilder } from './routing/index.web';
 import { getHostedRequestHelper } from './request-helpers/hosted-request-helper';
+import { createWebAccountIdReader } from './react/services/user/identity';
+import { createLocalStarsStore } from './react/services/reports/stars-store';
 
 async function main() {
   return mainHelper(
@@ -32,6 +34,16 @@ async function main() {
         active: true,
         evaluation: false,
       }),
+      // The account id comes from the access token's `sub` — no scope, no Jira call. Stars are per
+      // browser, like recents. See spec/041-saved-reports-redesign/phase1/plan.md § 2.
+      createUserServices: () => {
+        const readCurrentAccountId = createWebAccountIdReader();
+
+        return {
+          readCurrentAccountId,
+          starsStore: createLocalStarsStore(readCurrentAccountId),
+        };
+      },
     },
   );
 }

@@ -47,3 +47,23 @@ export const paramsMatchReport = (
   return [...params.entries()].length === 0;
   // return paramsEqual(reportParams, params);
 };
+
+/**
+ * Whether leaving the current URL would drop work the user hasn't saved. Same rule as
+ * `paramsMatchReport`: a saved report collapses the URL to `?report=<id>`, so any other param on it
+ * is an unsaved change. With no saved report open, anything beyond the report type counts — a JQL,
+ * a view setting, a report-of-reports tree. `settings` (which sidebar panel is open) never does.
+ */
+export const hasUnsavedReport = (search: string | URLSearchParams): boolean => {
+  const params = new URLSearchParams(search);
+
+  params.delete('settings');
+
+  if (params.has('report')) {
+    params.delete('report');
+  } else {
+    params.delete('primaryReportType');
+  }
+
+  return [...params.keys()].length > 0;
+};

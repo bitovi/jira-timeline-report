@@ -12,6 +12,15 @@ describe('matchesQuery', () => {
     expect(matchesQuery(described('All Outcomes'), 'zzz')).toBe(false);
   });
 
+  it('matches extra text the caller supplies', () => {
+    const withJql = described('Beta', 'jql=project%3DECOM');
+    const extra = (d: ReturnType<typeof described>) => [d.jql, undefined, 'Ada Lovelace'];
+
+    expect(matchesQuery(withJql, 'ecom', extra)).toBe(true);
+    expect(matchesQuery(withJql, 'lovelace', extra)).toBe(true);
+    expect(matchesQuery(withJql, 'ecom')).toBe(false);
+  });
+
   it('matches the report type label', () => {
     expect(matchesQuery(described('Beta', 'primaryReportType=table'), 'table')).toBe(true);
     expect(matchesQuery(described('Beta', 'primaryReportType=due'), 'scatter')).toBe(true);

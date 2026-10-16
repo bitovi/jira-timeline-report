@@ -1,4 +1,5 @@
 import TimelineReport from '../react/TimelineReport';
+import { UserServicesProvider } from '../react/services/user/UserServicesProvider';
 
 import { initSentry } from './sentry';
 
@@ -34,6 +35,10 @@ export default async function mainHelper(
     isAlwaysLoggedIn,
     createLinkBuilder,
     licensingPromise,
+    // Defaulted so a host can leave it out (Connect's plugin.main.ts does).
+    createUserServices = /** @type {((jiraHelpers: any) => import('../react/services/user/UserServicesProvider').UserServices) | undefined} */ (
+      undefined
+    ),
   },
 ) {
   initSentry(config);
@@ -55,6 +60,10 @@ export default async function mainHelper(
 
   const storage = createStorage(jiraHelpers);
   const linkBuilder = createLinkBuilder(jiraHelpers.appKey);
+
+  // Who the user is and where their stars live — host-specific, like storage. Optional: a host that
+  // provides none (Connect) gets the no-user fallback in `UserServicesProvider`. See spec/041.
+  const userServices = createUserServices?.(jiraHelpers);
 
   // Where saved reports live is a per-site setting (the legacy single record, or a work item per
   // report in a Reports Space) read once here. Deliberately not awaited: `getReportsBackend`
@@ -131,16 +140,20 @@ export default async function mainHelper(
       container.className = 'flex flex-1 overflow-hidden';
       mainContent.append(container);
 
+      const timelineReport = createElement(TimelineReport, {
+        loginComponent: loginStore,
+        storage,
+        linkBuilder,
+        // Embedded hosts build *container* URLs, so following one would navigate the whole page
+        // out from under the iframe; the click has to become an SPA route change instead.
+        interceptLinkClicks: host !== 'hosted',
+        showSidebarBranding,
+      });
+
+      // Provided once around the whole tree; the Saved Reports page is a portal, and context still
+      // reaches it.
       createRoot(container).render(
-        createElement(TimelineReport, {
-          loginComponent: loginStore,
-          storage,
-          linkBuilder,
-          // Embedded hosts build *container* URLs, so following one would navigate the whole page
-          // out from under the iframe; the click has to become an SPA route change instead.
-          interceptLinkClicks: host !== 'hosted',
-          showSidebarBranding,
-        }),
+        userServices ? createElement(UserServicesProvider, { services: userServices }, timelineReport) : timelineReport,
       );
     }
   }

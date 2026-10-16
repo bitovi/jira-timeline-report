@@ -17,7 +17,9 @@ import { useRouteData } from '../hooks/useRouteData';
 
 import { TimelineReportViewModel } from './timeline-report-view-model';
 import { useReportLoadingState as defaultUseReportLoadingState } from './hooks/useReportLoadingState';
-import { ReportArea } from './components/ReportArea';
+import { ReportArea, hasStartedReport, isShowingHome } from './components/ReportArea';
+import { ChooseSourcesMessage } from './components/ReportMessages';
+import { reports as REPORT_TYPES } from '../../configuration/reports';
 import { unsupportedReportType } from './unsupportedReportType';
 
 import { JiraProvider } from '../services/jira';
@@ -29,6 +31,7 @@ import SavedReports from '../SaveReports';
 import SampleDataNotice from '../SampleDataNotice';
 import SettingsSidebar from '../SettingsSidebar';
 import ViewReports from '../ViewReports';
+import { ReportHomeContainer } from '../ReportHome';
 import ReportFooter, { reportNeedsFooterClearance } from '../ReportFooter/ReportFooter';
 import PrintHeader from '../PrintHeader';
 
@@ -204,6 +207,39 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 
   const fillsHeight = REPORT_TYPES_FILLING_HEIGHT.has(primaryReportType);
 
+  const selfManagesData = SELF_MANAGED_REPORT_TYPES.has(primaryReportType);
+
+  // Home is the landing page, not "any report with no JQL": once the user leaves it to build a
+  // report, a missing JQL shows the "choose sources" prompt with the controls visible, so changing
+  // the report type can't strand them on home. Session state, not URL state — the default report
+  // type is dropped from the URL, so a Gantt with no JQL has the same URL as a first visit. A link
+  // that names a report type counts as already started.
+  const [startedReportFlag, setStartedReport] = useState(() =>
+    new URL(window.location.href).searchParams.has('primaryReportType'),
+  );
+  // An open saved report counts too (see `hasStartedReport`). Derived from the URL rather than
+  // stored, so it follows every navigation, and Home (which drops `report`) still clears it.
+  const urlSearch = useCanObservable(pushStateObservable as unknown as CanObservable<string>);
+  const startedReport = hasStartedReport(startedReportFlag, urlSearch ?? '');
+  const startReport = useCallback(() => setStartedReport(true), []);
+  // The sidebar's Home link navigates to the bare URL itself; this forgets the started report (no
+  // reload on Forge, so the flag would survive) and closes any open settings panel over home.
+  const goHome = useCallback(() => {
+    setStartedReport(false);
+    rd.showSettings = '';
+  }, []);
+
+  // Home has its own way into each report type, so the controls row (report type picker, view
+  // settings) would only be noise above it. Hidden rather than unmounted, so the controls keep their
+  // state for when a report opens.
+  const showingHome = isShowingHome({
+    jql,
+    isLoggedIn,
+    selfManagesData,
+    unsupportedReportType: deadReportType,
+    startedReport,
+  });
+
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
@@ -227,6 +263,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               linkBuilder={linkBuilder}
               interceptLinkClicks={interceptLinkClicks}
               onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
+              onGoHome={goHome}
             />
           </div>
         )}
@@ -239,9 +276,12 @@ export const TimelineReport: FC<TimelineReportProps> = ({
 
           <div id="view-reports" className="app-chrome-hidden">
             <ViewReports
+              linkBuilder={linkBuilder}
+              interceptLinkClicks={interceptLinkClicks}
               onBackButtonClicked={() => {
                 rd.showSettings = '';
               }}
+              onStartReport={startReport}
             />
           </div>
 
@@ -265,7 +305,10 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             />
           </div>
 
-          <div id="report-controls" className="app-chrome-hidden flex flex-wrap gap-x-1 gap-y-2 @container/controls">
+          <div
+            id="report-controls"
+            className={`app-chrome-hidden ${showingHome ? 'hidden' : 'flex'} flex-wrap gap-x-1 gap-y-2 @container/controls`}
+          >
             {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
               that fetch Jira data — e.g. the Table report's TableReportControls calling
               useJiraIssueFields — work here too. queryClient is a shared singleton, so the fields
@@ -286,9 +329,30 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             jql={jql}
             primaryIssueType={primaryIssueType}
             primaryIssuesCount={primaryIssuesOrReleases.length}
-            selfManagesData={SELF_MANAGED_REPORT_TYPES.has(primaryReportType)}
+            selfManagesData={selfManagesData}
             unsupportedReportType={deadReportType}
             fillsHeight={fillsHeight}
+            home={
+              <ReportHomeContainer
+                storage={storage}
+                linkBuilder={linkBuilder}
+                interceptLinkClicks={interceptLinkClicks}
+                onStartReport={startReport}
+              />
+            }
+            startedReport={startedReport}
+            setup={
+              <ChooseSourcesMessage
+                reportTypeName={REPORT_TYPES.find(({ key }) => key === primaryReportType)?.name}
+                onOpenSources={() => {
+                  rd.showSettings = 'SOURCES';
+                }}
+                onBackToHome={() => {
+                  setStartedReport(false);
+                  rd.primaryReportType = REPORT_TYPES[0].key;
+                }}
+              />
+            }
           >
             <div id="print-header">
               <PrintHeader />

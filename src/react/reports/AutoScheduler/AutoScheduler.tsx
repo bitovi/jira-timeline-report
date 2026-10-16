@@ -40,6 +40,7 @@ import { makeInsertBlockers } from './svg-blockers';
 import { roundTo } from '../../../utils/number/number';
 import { gridLayer } from './z-layers';
 import { IssueSummaryLabel } from './IssueSummaryLabel';
+import { TruncatedText } from './TruncatedText';
 import { StorageProvider } from '../../services/storage';
 import { TeamCapacityInputs, TeamCapacityOutputs, useTeamIsDirty } from './components/TeamCapacityControls';
 import {
@@ -559,10 +560,11 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
       />
 
       <div
-        className={`pl-2 pt-2 pb-1 pr-1 flex sticky top-0 left-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
+        className={`pl-2 pt-2 pb-1 pr-1 flex max-w-sm sticky top-0 left-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
         style={{ zIndex: gridLayer.teamHeaderLabel, gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
       >
-        <div className="text-base grow font-semibold">{team.team}</div>
+        {/* `min-w-0` lets the flex item shrink below its text width so `truncate` can clip it. */}
+        <TruncatedText text={team.team} className="text-base grow min-w-0 font-semibold" />
       </div>
 
       {/* Above `#dependencies`, which would otherwise swallow every click on the capacity read view

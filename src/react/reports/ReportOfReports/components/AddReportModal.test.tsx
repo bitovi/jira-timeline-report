@@ -233,6 +233,28 @@ describe('<AddReportModal> layout', () => {
     expect(list).not.toContainElement(reportSearch());
     expect(list).not.toContainElement(screen.getByTestId('ror-value-add'));
   });
+
+  /**
+   * The bottom fade hints at rows below the fold, so it must not draw over the last row of a list that
+   * fits — it used to, dimming a short filtered list. jsdom has no layout, so the scroll geometry is
+   * faked on the element and a scroll event triggers the re-measure.
+   */
+  it('fades the bottom of the list only while rows remain below the fold', async () => {
+    renderModal();
+
+    const list = await screen.findByTestId('add-report-list');
+    // Unlaid-out content has nothing below it.
+    expect(screen.queryByTestId('add-report-list-fade')).not.toBeInTheDocument();
+
+    Object.defineProperty(list, 'scrollHeight', { configurable: true, value: 500 });
+    Object.defineProperty(list, 'clientHeight', { configurable: true, value: 200 });
+    fireEvent.scroll(list);
+    expect(await screen.findByTestId('add-report-list-fade')).toBeInTheDocument();
+
+    list.scrollTop = 300;
+    fireEvent.scroll(list);
+    expect(screen.queryByTestId('add-report-list-fade')).not.toBeInTheDocument();
+  });
 });
 
 /**

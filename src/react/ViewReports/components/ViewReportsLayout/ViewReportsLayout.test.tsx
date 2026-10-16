@@ -26,4 +26,10 @@ describe('<ViewReportsLayout />', () => {
 
     expect(screen.getByText('Child Content')).toBeInTheDocument();
   });
+
+  it('renders actions on the title row', () => {
+    render(<ViewReportsLayout onBackButtonClicked={mockOnBackButtonClicked} actions={<button>Create</button>} />);
+
+    expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument();
+  });
 });

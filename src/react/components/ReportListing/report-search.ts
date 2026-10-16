@@ -7,22 +7,30 @@ export interface HighlightSegment {
 }
 
 /**
+ * More text a caller wants searched for a report, beyond its name and type — e.g. the Saved Reports
+ * page adds the JQL and the owner's name. Empty or missing entries are skipped.
+ */
+export type ExtraHaystack = (described: DescribedReport) => Array<string | null | undefined>;
+
+/**
  * Whether a report should survive the current query. Case-insensitive substring match against
  * the report's name and its type label ("gantt", "table", …) — the two things a person actually
- * remembers about a saved report. Pure, so both the Add Report modal and the Saved Reports page
- * filter identically.
+ * remembers about a saved report — plus whatever `extraHaystack` adds. Pure, so both the Add Report
+ * modal and the Saved Reports page filter identically.
  */
-export const matchesQuery = (described: DescribedReport, query: string): boolean => {
+export const matchesQuery = (described: DescribedReport, query: string, extraHaystack?: ExtraHaystack): boolean => {
   const lowerQuery = query.toLowerCase();
+  const haystack = [described.report.name, described.typeName, ...(extraHaystack?.(described) ?? [])];
 
-  return (
-    described.report.name.toLowerCase().includes(lowerQuery) || described.typeName.toLowerCase().includes(lowerQuery)
-  );
+  return haystack.some((text) => !!text && text.toLowerCase().includes(lowerQuery));
 };
 
 /** `described` narrowed to the rows matching `query`. An empty query filters nothing. */
-export const filterReports = (described: DescribedReport[], query: string): DescribedReport[] =>
-  query ? described.filter((d) => matchesQuery(d, query)) : described;
+export const filterReports = (
+  described: DescribedReport[],
+  query: string,
+  extraHaystack?: ExtraHaystack,
+): DescribedReport[] => (query ? described.filter((d) => matchesQuery(d, query, extraHaystack)) : described);
 
 /** Splits `text` into plain / matched segments around every case-insensitive occurrence of `query`. */
 export const highlightSegments = (text: string, query: string): HighlightSegment[] => {

@@ -43,7 +43,7 @@ const useSaveReport = () => {
       // cache — not on the next fetch, which the comment below explains never comes. Both callers
       // collapse the URL to `?report=<id>` on success, at which point every setting for the open
       // report resolves through `reportsData`: a map that predates the save has no record for a
-      // just-created id (so the report renders as "Configure a JQL in the sidebar" until something
+      // just-created id (so the report renders as the no-report home page until something
       // refetches) and the pre-update record for a just-updated one (so the save silently reverts).
       publishReportsToRouteData(toSave);
 
@@ -80,12 +80,20 @@ const useSaveReport = () => {
   return { save, isPending };
 };
 
+/**
+ * `Report.updatedAt` for a write the user just made. Stamped here, in the create and update hooks
+ * every user edit goes through, so callers never pass it — and never by the migration write-back,
+ * which isn't a user edit. See spec/041-saved-reports-redesign/phase1/plan.md § 3.
+ */
+const now = () => new Date().toISOString();
+
 export const useCreateReport = () => {
   const queryClient = useQueryClient();
   const { save, isPending } = useSaveReport();
   const { showFlag } = useFlags();
 
-  const createReport = (newReport: Report, options?: Parameters<typeof save>[1]) => {
+  const createReport = (report: Report, options?: Parameters<typeof save>[1]) => {
+    const newReport: Report = { ...report, updatedAt: now() };
     const allReports = queryClient.getQueryData<Reports>(reportKeys.allReports);
 
     if (!allReports) {
@@ -157,7 +165,7 @@ export const useUpdateReport = () => {
       return;
     }
 
-    const newReport = { ...allReports[id], ...updates };
+    const newReport = { ...allReports[id], ...updates, updatedAt: now() };
 
     save(
       { reports: { ...allReports, [id]: newReport }, report: newReport, operation: 'upsert' },

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Report } from '../../../jira/reports';
 
 import React, { useState } from 'react';
 import ShowMoreHorizontalIcon from '@atlaskit/icon/core/show-more-horizontal';
@@ -9,6 +8,7 @@ import { IconButton } from '@atlaskit/button/new';
 import { describeReport } from './describe-report';
 import { ReportRow } from './ReportRow';
 import { useReportSearch } from './useReportSearch';
+import { SAMPLE_REPORTS } from './sample-reports';
 
 const meta: Meta<typeof ReportRow> = {
   title: 'components/ReportListing/ReportRow',
@@ -18,23 +18,6 @@ const meta: Meta<typeof ReportRow> = {
 export default meta;
 
 type Story = StoryObj<typeof ReportRow>;
-
-const report = (id: string, name: string, primaryReportType: string, jql = ''): Report => ({
-  id,
-  name,
-  queryParams: new URLSearchParams({ primaryReportType, ...(jql ? { jql } : {}) }).toString(),
-});
-
-const SAMPLE_REPORTS: Report[] = [
-  report('1', 'All Outcomes', 'start-due', 'issueType = Outcome ORDER BY Rank'),
-  report('2', 'All Outcomes copy', 'start-due', 'issueType = Outcome ORDER BY Rank'),
-  report('3', 'ECom — In Progress Initiatives', 'due', 'project = ECOM AND status = "In Progress"'),
-  report('4', 'Arthur simple table', 'table'),
-  report('5', 'Q3 Flow Metrics', 'flow-metrics', 'project = ECOM'),
-  report('6', 'Cycle time by status', 'time-in-status'),
-  report('7', 'arthur test report of reports', 'report-of-reports'),
-  report('8', 'Retired grouper view', 'grouper'),
-];
 
 /** A single picker row — what the Add Report modal renders. */
 export const PickerRow: Story = {

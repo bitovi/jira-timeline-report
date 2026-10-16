@@ -19,6 +19,8 @@ export interface SettingsSidebarProps {
   /** See `Routing.interceptLinkClicks`. Defaults off, which is what Storybook and tests want. */
   interceptLinkClicks?: boolean;
   onUpdateTeamsConfiguration: (overrides: Partial<NormalizeIssueConfig & { fields: string[] }>) => void;
+  /** See `SettingsSidebar`'s `onGoHome`. */
+  onGoHome?: () => void;
 }
 
 const SettingsSidebarWrapper: FC<SettingsSidebarProps> = ({ linkBuilder, interceptLinkClicks, ...props }) => {

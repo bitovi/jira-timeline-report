@@ -58,6 +58,13 @@ describe('storage.get', () => {
 
     expect(vi.mocked(kvs.get)).not.toHaveBeenCalled();
   });
+
+  // Otherwise anyone could read another user's stars by naming their account id.
+  it('refuses a per-user stars key', async () => {
+    await expect(call('storage.get', { key: 'starred-reports:someone-else' })).rejects.toThrow(/per-user/);
+
+    expect(vi.mocked(kvs.get)).not.toHaveBeenCalled();
+  });
 });
 
 describe('storage.set', () => {
@@ -79,5 +86,101 @@ describe('storage.set', () => {
     await expect(call('storage.set', { value: [] })).rejects.toThrow(/key/i);
 
     expect(vi.mocked(kvs.set)).not.toHaveBeenCalled();
+  });
+
+  // Otherwise anyone could overwrite another user's stars by naming their account id.
+  it('refuses a per-user stars key', async () => {
+    await expect(call('storage.set', { key: 'starred-reports:someone-else', value: [] })).rejects.toThrow(/per-user/);
+
+    expect(vi.mocked(kvs.set)).not.toHaveBeenCalled();
+  });
+});
+
+describe('stars', () => {
+  // `@forge/resolver` takes `context.accountId` from the runtime's `principal`, not from the call —
+  // so that is where a test has to put the user, and it is also why a browser can't forge one.
+  const callAs = (functionKey: string, payload: unknown, principal: { accountId?: string }) =>
+    (handler as (...args: unknown[]) => Promise<unknown>)(
+      { call: { functionKey, payload }, context: {} },
+      { principal },
+    );
+
+  const alice = { accountId: '557058:f58131cb-b67d-43c7-b30d-6b58d40bd077' };
+
+  it('ignores an account id in the call context; only the runtime principal counts', async () => {
+    vi.mocked(kvs.get).mockResolvedValueOnce(undefined);
+
+    await (handler as (...args: unknown[]) => Promise<unknown>)(
+      { call: { functionKey: 'stars.get', payload: {} }, context: { accountId: 'someone-else' } },
+      { principal: alice },
+    );
+
+    expect(vi.mocked(kvs.get)).toHaveBeenCalledWith(`starred-reports:${alice.accountId}`);
+  });
+
+  describe('stars.get', () => {
+    it("reads the caller's own key, built from the context", async () => {
+      vi.mocked(kvs.get).mockResolvedValueOnce(['r1']);
+
+      await expect(callAs('stars.get', undefined, alice)).resolves.toEqual({ value: ['r1'] });
+
+      expect(vi.mocked(kvs.get)).toHaveBeenCalledWith(`starred-reports:${alice.accountId}`);
+    });
+
+    // Otherwise anyone could read anyone's stars by naming a key.
+    it('ignores any key in the payload', async () => {
+      vi.mocked(kvs.get).mockResolvedValueOnce(undefined);
+
+      await callAs('stars.get', { key: 'starred-reports:someone-else' }, alice);
+
+      expect(vi.mocked(kvs.get)).toHaveBeenCalledWith(`starred-reports:${alice.accountId}`);
+    });
+
+    it('rejects a call with no user rather than reading a shared key', async () => {
+      await expect(callAs('stars.get', undefined, {})).rejects.toThrow(/user/);
+
+      expect(vi.mocked(kvs.get)).not.toHaveBeenCalled();
+    });
+
+    it('rejects an account id that is not a valid storage key', async () => {
+      await expect(callAs('stars.get', undefined, { accountId: 'bad/id' })).rejects.toThrow(/storage key/);
+
+      expect(vi.mocked(kvs.get)).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('stars.set', () => {
+    it("writes the ids to the caller's own key", async () => {
+      vi.mocked(kvs.set).mockResolvedValueOnce(undefined as never);
+
+      await callAs('stars.set', { ids: ['r1', 'r2'] }, alice);
+
+      expect(vi.mocked(kvs.set)).toHaveBeenCalledWith(`starred-reports:${alice.accountId}`, ['r1', 'r2']);
+    });
+
+    it('ignores any key in the payload', async () => {
+      vi.mocked(kvs.set).mockResolvedValueOnce(undefined as never);
+
+      await callAs('stars.set', { key: 'starred-reports:someone-else', ids: [] }, alice);
+
+      expect(vi.mocked(kvs.set)).toHaveBeenCalledWith(`starred-reports:${alice.accountId}`, []);
+    });
+
+    it.each([[{}], [{ ids: 'r1' }], [{ ids: ['r1', 2] }], [{ ids: [{ id: 'r1' }] }]])(
+      'rejects %j, which is not a list of report ids',
+      async (payload) => {
+        await expect(callAs('stars.set', payload, alice)).rejects.toThrow(/list of report ids/);
+
+        expect(vi.mocked(kvs.set)).not.toHaveBeenCalled();
+      },
+    );
+
+    it('caps the number of stars', async () => {
+      const ids = Array.from({ length: 1001 }, (_, i) => `r${i}`);
+
+      await expect(callAs('stars.set', { ids }, alice)).rejects.toThrow(/more than 1000/);
+
+      expect(vi.mocked(kvs.set)).not.toHaveBeenCalled();
+    });
   });
 });

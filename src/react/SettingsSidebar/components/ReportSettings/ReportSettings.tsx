@@ -1,9 +1,14 @@
 import type { ComponentProps, FC } from 'react';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Heading from '@atlaskit/heading';
+import HomeIcon from '@atlaskit/icon/core/home';
 
 import SidebarButton from '../../../components/SidebarButton';
+import { getButtonClasses } from '../../../components/SidebarButton/SidebarButton';
+import Link from '../../../services/routing/Link';
+import { hasUnsavedReport } from '../../../SaveReports/hooks/useSelectedReports/utilities';
+import LeaveReportModal from './components/LeaveReportModal';
 import Branding from '../Branding';
 import FeatureRequestModal from './components/FeatureRequestModal';
 import BugReportModal from './components/BugReportModal';
@@ -18,6 +23,8 @@ interface ReportSettingsProps {
   showStorage?: boolean;
   /** The host reported an inactive license; resolved by the parent for the same reason. */
   unlicensed?: boolean;
+  /** Renders the Home link. See `SettingsSidebar`'s `onGoHome`. */
+  onGoHome?: () => void;
 }
 
 const ReportSettings: FC<ReportSettingsProps> = ({
@@ -25,9 +32,18 @@ const ReportSettings: FC<ReportSettingsProps> = ({
   showSidebarBranding,
   showStorage = false,
   unlicensed = false,
+  onGoHome,
 }) => {
   const [isFeedbackFormOpen, setIsFeedbackFormOpen] = useState(false);
   const [isBugFormOpen, setIsBugFormOpen] = useState(false);
+
+  // Home asks first when it would drop unsaved changes. The check runs in the capture phase because
+  // `Link` navigates inside its own click handler on the embedded hosts — by the time `onClick` ran,
+  // the report would already be gone. "Leave" re-clicks the same link, so navigation still goes
+  // through `Link`'s host-specific handling.
+  const homeRef = useRef<HTMLAnchorElement>(null);
+  const leaveConfirmed = useRef(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
   return (
     // `flex flex-col` so the footer links section below can be squeezed by the (shrink-0) nav
@@ -35,6 +51,43 @@ const ReportSettings: FC<ReportSettingsProps> = ({
     <div className="flex h-full flex-col overflow-hidden px-6 pt-6 pb-2">
       <div className="shrink-0">
         {showSidebarBranding && <Branding unlicensed={unlicensed} />}
+        {onGoHome && (
+          // A link to the bare app URL, not a button: it drops every report param at once, goes
+          // through the host's link handling like a saved-report link, and can open in a new tab.
+          <div className="pb-4">
+            <Link
+              ref={homeRef}
+              href="?"
+              onClickCapture={(event) => {
+                if (leaveConfirmed.current) {
+                  leaveConfirmed.current = false;
+
+                  return;
+                }
+
+                if (hasUnsavedReport(window.location.search)) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setIsLeaveModalOpen(true);
+                }
+              }}
+              onClick={onGoHome}
+              className={`${getButtonClasses(false, '')} no-underline`}
+            >
+              <HomeIcon label="" color="currentColor" />
+              Home
+            </Link>
+          </div>
+        )}
+        <LeaveReportModal
+          isOpen={isLeaveModalOpen}
+          onStay={() => setIsLeaveModalOpen(false)}
+          onLeave={() => {
+            setIsLeaveModalOpen(false);
+            leaveConfirmed.current = true;
+            homeRef.current?.click();
+          }}
+        />
         <div className="pb-1">
           <Heading size="xsmall">
             <span className="uppercase">Report Settings</span>

@@ -382,11 +382,11 @@ export class RouteData extends ObservableObject {
     get fieldsToRequestPromise() {
       return this.baseNormalizeOptionsAndFieldsToRequestPromise.then(({ fields }) => fields);
     },
+    // Team settings only — no server-derived defaults. Every writer (initial load, a Teams save, a
+    // what-if capacity override) sets it raw; readers that normalize go through
+    // `normalizeConfiguration` or `derivedIssuesRequestData`, which add `getUrl` and the fallbacks.
     get normalizeOptionsPromise() {
-      return configurationPromise({
-        serverInfoPromise: this.serverInfoPromise,
-        normalizeObservable: value.from(this, 'baseNormalizeOptions'),
-      });
+      return this.baseNormalizeOptionsPromise;
     },
 
     // THESE are settable by react
@@ -475,12 +475,24 @@ export class RouteData extends ObservableObject {
     // This can get set, but needs some base loaded normalize option
     normalizeOptions: makeAsyncFromObservableButStillSettableProperty('normalizeOptionsPromise'),
 
+    // `normalizeOptions` plus the server-derived defaults (`withServerDefaults`): what to hand
+    // `normalizeIssue` outside the `derivedIssuesRequestData` pipeline.
+    get normalizeConfigurationPromise() {
+      return configurationPromise({
+        serverInfoPromise: this.serverInfoPromise,
+        normalizeObservable: value.from(this, 'normalizeOptions'),
+      });
+    },
+    // Keeps its last value while a new one resolves, as `normalizeOptions` itself does.
+    normalizeConfiguration: makeAsyncFromObservableButStillSettableProperty('normalizeConfigurationPromise'),
+
     derivedIssuesRequestData: {
       value({ listenTo, resolve }) {
         return derivedIssuesRequestData(
           {
             rawIssuesRequestData: value.from(this, 'rawIssuesRequestData'),
-            configurationPromise: value.from(this, 'normalizeOptions'),
+            serverInfoPromise: value.from(this, 'serverInfoPromise'),
+            normalizeOptions: value.from(this, 'normalizeOptions'),
           },
           { listenTo, resolve },
         );
