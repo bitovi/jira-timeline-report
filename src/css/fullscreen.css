@@ -18,29 +18,55 @@ body.fullscreen-mode .report-chrome-hidden {
   display: none !important;
 }
 
-/* Reclaim the horizontal padding that made room for the (now-hidden) sidebar. */
+/* Replace the sidebar's padding with a centering gutter: the report is capped at the widest
+   Tailwind breakpoint that fits the screen with at least 1rem to spare on each side, and whatever
+   is left over is split evenly on both sides. Stretching edge to edge on a wide monitor looked
+   unbalanced, since a Gantt or table rarely fills the full width.
+
+   The gutter is padding on .fullish-vh, not a max-width on a child, so .fullish-vh is still the
+   scroll container: the scrollbar stays at the screen edge, and the Table report's frozen column
+   and the sticky report footer still stick to it. A padding percentage resolves against the
+   containing block's width (the full screen, now that the sidebar is gone), so
+   (100% - width) / 2 is the leftover space halved. The max() keeps at least 1rem of gutter.
+
+   Each media query's `+ 2rem` is that 1rem gutter on both sides. Without it, at exactly 1280px
+   the report would be 1280px wide and touch both edges. It's written out in each query because
+   media queries can't read custom properties. Below `sm + 2rem` no breakpoint fits, so
+   --fullscreen-width stays 100% and the gutter is just the 1rem minimum. */
 body.fullscreen-mode .fullish-vh {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  --fullscreen-width: 100%;
+  padding-left: max(1rem, (100% - var(--fullscreen-width)) / 2) !important;
+  padding-right: max(1rem, (100% - var(--fullscreen-width)) / 2) !important;
+}
+@media (min-width: calc(theme('screens.sm') + 2rem)) {
+  body.fullscreen-mode .fullish-vh {
+    --fullscreen-width: theme('screens.sm');
+  }
+}
+@media (min-width: calc(theme('screens.md') + 2rem)) {
+  body.fullscreen-mode .fullish-vh {
+    --fullscreen-width: theme('screens.md');
+  }
+}
+@media (min-width: calc(theme('screens.lg') + 2rem)) {
+  body.fullscreen-mode .fullish-vh {
+    --fullscreen-width: theme('screens.lg');
+  }
+}
+@media (min-width: calc(theme('screens.xl') + 2rem)) {
+  body.fullscreen-mode .fullish-vh {
+    --fullscreen-width: theme('screens.xl');
+  }
+}
+@media (min-width: calc(theme('screens.2xl') + 2rem)) {
+  body.fullscreen-mode .fullish-vh {
+    --fullscreen-width: theme('screens.2xl');
+  }
 }
 
-/* .fullish-vh's padding is zeroed above, so give the still-visible report name (the only
-   thing left in #saved-reports) a bit of breathing room from the edge of the screen.
-   #saved-reports normally has py-4, but the bottom padding just wastes vertical space once
-   everything else in the row is hidden. */
+/* #saved-reports normally has py-4, but the bottom padding just wastes vertical space once
+   everything but the report name is hidden. Horizontal breathing room comes from .fullish-vh's
+   gutter above, so the report name and the report line up on the same left edge. */
 body.fullscreen-mode #saved-reports {
-  padding-left: 1rem;
   padding-bottom: 0;
-}
-
-/* A report-of-reports keeps a gutter that a chart doesn't need. Reclaiming .fullish-vh's padding
-   suits a Gantt or a table, which earn something from every pixel of width — but this report is a
-   document, and its section titles, inline values and comment bodies sat flush against both screen
-   edges with nothing to hold them in.
-
-   1rem to match #saved-reports above, so the document's left edge lines up with the report name
-   rather than landing a few pixels off it. */
-body.fullscreen-mode .ror-document {
-  padding-left: 1rem;
-  padding-right: 1rem;
 }
