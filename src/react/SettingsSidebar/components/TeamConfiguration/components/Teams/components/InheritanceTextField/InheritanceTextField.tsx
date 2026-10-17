@@ -1,12 +1,14 @@
 import type { FC } from 'react';
+import type { Control, UseFormReturn } from 'react-hook-form';
 import type { FieldUpdates } from '../../ConfigureTeamsForm';
 import type { Configuration } from '../../services/team-configuration';
-import type { UseFormReturn } from 'react-hook-form';
+import type { FieldScale } from '../TextField/TextField';
 
-import React from 'react';
+import React, { useId } from 'react';
+import { useWatch } from 'react-hook-form';
 
-import TextField from '../TextField';
-import ToggleButton from '../../../../../../../components/ToggleButton';
+import TextField, { formatScaled } from '../TextField';
+import InheritanceRow from '../InheritanceRow';
 
 interface InheritanceTextFieldProps {
   isInheriting: boolean;
@@ -15,26 +17,41 @@ interface InheritanceTextFieldProps {
   name: keyof Configuration;
   label: string;
   min?: number;
+  step?: string;
   unit?: string;
+  control: Control<Configuration>;
   register: UseFormReturn<Configuration>['register'];
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
+  scale?: FieldScale;
 }
+
+/** "1 weeks" reads wrong; every unit these fields use is a plain plural. */
+const withUnit = (value: string, unit: string | undefined) => {
+  if (!unit) return value;
+
+  return `${value} ${Number(value) === 1 ? unit.replace(/s$/, '') : unit}`;
+};
 
 const InheritanceTextField: FC<InheritanceTextFieldProps> = ({
   isInheriting,
   onInheritanceChange,
+  control,
   ...textFieldProps
 }) => {
+  const id = useId();
+  const value = useWatch({ control, name: textFieldProps.name });
+  const shown = formatScaled(value, textFieldProps.scale?.factor ?? 1);
+
   return (
-    <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
-      <TextField disabled={isInheriting} {...textFieldProps} />
-      <ToggleButton
-        active={!isInheriting}
-        onActiveChange={onInheritanceChange}
-        inactiveLabel={isInheriting ? 'inheriting' : 'inherit'}
-        activeLabel={isInheriting ? 'customize' : 'customized'}
-      />
-    </div>
+    <InheritanceRow
+      id={id}
+      label={textFieldProps.label}
+      isInheriting={isInheriting}
+      onInheritanceChange={onInheritanceChange}
+      inheritedValue={shown === '' ? 'Not set' : withUnit(shown, textFieldProps.unit)}
+    >
+      <TextField hideLabel id={id} {...textFieldProps} />
+    </InheritanceRow>
   );
 };
 

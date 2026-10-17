@@ -85,6 +85,10 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 5,
+      pointsPerPersonDay: null,
+      estimateTeamShare: 'full',
     };
 
     expect(globalDefaults).toEqual(expectedDefaults);
@@ -120,6 +124,8 @@ describe('Configuration Inheritance and Defaults', () => {
     expect(teamAInheritedData[2]).toEqual({
       sprintLength: 15,
       velocityPerSprint: 30,
+      // X resolves with the unit; nothing saves one, so it is derived.
+      pointsPerPersonDay: null,
       tracks: 2,
       spreadEffortAcrossDates: false,
       estimateField: 'Story points',
@@ -131,6 +137,7 @@ describe('Configuration Inheritance and Defaults', () => {
     expect(teamAInheritedData[3]).toEqual({
       sprintLength: 15,
       velocityPerSprint: 30,
+      pointsPerPersonDay: null,
       tracks: 1,
       spreadEffortAcrossDates: false,
       estimateField: 'Story points',
@@ -155,6 +162,10 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 5,
+      pointsPerPersonDay: null,
+      estimateTeamShare: 'full',
     };
 
     expect(augmentedData.__GLOBAL__.defaults).toEqual(expectedDefaults);
@@ -200,6 +211,10 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 5,
+      pointsPerPersonDay: null,
+      estimateTeamShare: 'full',
     });
 
     expect(inheritedData['Team B']?.['3']).toEqual({
@@ -212,6 +227,10 @@ describe('Configuration Inheritance and Defaults', () => {
       startDateField: 'Start date',
       dueDateField: 'Due date',
       statusSummaryField: null,
+      estimateUnit: 'storyPoints',
+      teamMembers: 5,
+      pointsPerPersonDay: null,
+      estimateTeamShare: 'full',
     });
   });
 });

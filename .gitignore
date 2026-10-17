@@ -45,3 +45,6 @@ storybook-static
 /.forge/
 # Written by the Forge CLI: contains a JWT for the logged-in account. Never commit.
 /.container-service-assets/
+
+# for local development testing
+manifest-dev.yml

@@ -6,12 +6,12 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Flex } from '@atlaskit/primitives';
 
-import TextField from './components/TextField';
 import Select from './components/Select';
-import Hr from '../../../../../components/Hr';
 import { FormToggle } from './components/Toggle';
 import { RequiredAsterisk } from './components/Label';
 import { buildSelectableFields } from './shared/selectable-fields';
+import EstimationQuestions from './components/EstimationQuestions';
+import AdvancedSettings from './components/AdvancedSettings';
 
 export interface AllTeamsDefaultFormProps {
   save: (newConfiguration: Configuration) => void;
@@ -28,12 +28,17 @@ export interface FieldUpdates<TProperty extends keyof Configuration> {
 const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData, inheritedData, jiraFields }) => {
   const selectableFields = buildSelectableFields(jiraFields);
 
-  const { register, handleSubmit, control } = useForm<Configuration>({
+  const { register, handleSubmit, control, setValue } = useForm<Configuration>({
     defaultValues: inheritedData,
   });
 
   function update<TProperty extends keyof Configuration>({ name, value }: FieldUpdates<TProperty>) {
     save({ ...savedUserData, [name]: value });
+  }
+
+  /** Several fields in one write: separate `update`s would each spread the same saved snapshot. */
+  function updateFields(patch: Partial<Configuration>) {
+    save({ ...savedUserData, ...patch });
   }
 
   return (
@@ -46,85 +51,80 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData
       })}
     >
       <Flex direction="column" gap="space.100">
-        <div className="flex gap-1">
-          <RequiredAsterisk /> <p className="text-sm text-slate-300"> indicates a required field</p>
-        </div>
-        <Select
-          name="estimateField"
-          label="Estimate Field"
-          jiraFields={selectableFields}
+        <span className="text-xs text-slate-500">
+          <RequiredAsterisk /> indicates a required field
+        </span>
+        <EstimationQuestions
+          mode="global"
           control={control}
-          onSave={update}
-        />
-        <Select
-          name="confidenceField"
-          label="Confidence field"
-          optional
-          jiraFields={[
-            {
-              label: '',
-              options: [{ value: 'confidence-not-used', label: "Don't use confidence" }],
-            },
-            { label: 'Fields', options: selectableFields },
-          ]}
-          control={control}
-          onSave={update}
-        />
-        <Select
-          name="startDateField"
-          label="Start date field"
-          jiraFields={selectableFields}
-          control={control}
-          onSave={update}
-        />
-        <Select
-          name="dueDateField"
-          label="End date field"
-          jiraFields={selectableFields}
-          control={control}
-          onSave={update}
-        />
-        <Select
-          name="statusSummaryField"
-          label="Status summary field"
-          optional
-          jiraFields={[
-            {
-              label: '',
-              options: [{ value: 'status-summary-not-used', label: "Don't show a status summary" }],
-            },
-            { label: 'Fields', options: selectableFields },
-          ]}
-          control={control}
-          onSave={update}
-        />
-        <Hr />
-        <TextField
-          name="sprintLength"
-          type="number"
-          label="Sprint length"
-          unit="business days"
-          min={1}
           register={register}
-          onSave={update}
+          update={update}
+          updateFields={updateFields}
+          setValue={setValue}
+          savedUserData={savedUserData}
+          // The global defaults are the end of every chain.
+          hasSavedHeadcount={savedUserData.teamMembers != null}
+          itemLabel={null}
+          estimateFieldOptions={selectableFields}
         />
-        <TextField
-          name="velocityPerSprint"
-          type="number"
-          label="Capacity per sprint"
-          unit="estimating units per sprint"
-          min={1}
-          register={register}
-          onSave={update}
-        />
-        <TextField name="tracks" type="number" label="Tracks" min={1} register={register} onSave={update} />
-        <FormToggle
-          name="spreadEffortAcrossDates"
-          control={control}
-          onSave={update}
-          label="Spread effort"
-          description="Spread estimate across dates"
-        />
+        <AdvancedSettings>
+          <Select
+            name="estimateField"
+            label="Estimate Field"
+            jiraFields={selectableFields}
+            control={control}
+            onSave={update}
+          />
+          <Select
+            name="confidenceField"
+            label="Confidence field"
+            optional
+            jiraFields={[
+              {
+                label: '',
+                options: [{ value: 'confidence-not-used', label: "Don't use confidence" }],
+              },
+              { label: 'Fields', options: selectableFields },
+            ]}
+            control={control}
+            onSave={update}
+          />
+          <Select
+            name="startDateField"
+            label="Start date field"
+            jiraFields={selectableFields}
+            control={control}
+            onSave={update}
+          />
+          <Select
+            name="dueDateField"
+            label="End date field"
+            jiraFields={selectableFields}
+            control={control}
+            onSave={update}
+          />
+          <Select
+            name="statusSummaryField"
+            label="Status summary field"
+            optional
+            jiraFields={[
+              {
+                label: '',
+                options: [{ value: 'status-summary-not-used', label: "Don't show a status summary" }],
+              },
+              { label: 'Fields', options: selectableFields },
+            ]}
+            control={control}
+            onSave={update}
+          />
+          <FormToggle
+            name="spreadEffortAcrossDates"
+            control={control}
+            onSave={update}
+            label="Spread effort"
+            description="Spread estimate across dates"
+          />
+        </AdvancedSettings>
         {/* <EnableableTextField
               toggleLabel="Estimates"
               toggleDescription="Assign average estimate to issues without estimates"

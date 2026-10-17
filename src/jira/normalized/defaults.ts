@@ -274,3 +274,33 @@ export function getTeamSpreadsEffortAcrossDatesDefault(
 ): NormalizedIssue['team']['spreadEffortAcrossDates'] {
   return false;
 }
+
+type MinimalEstimateUnitIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
+
+export function getEstimateUnitDefault(
+  issue: MinimalEstimateUnitIssue,
+  options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
+): NormalizedIssue['team']['estimateUnit'] {
+  return 'storyPoints';
+}
+
+type MinimalPointsPerPersonDayIssue = Prettify<
+  MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue
+>;
+
+/** Matches the other defaults: 21 points per 10-day sprint across 5 people. */
+export function getPointsPerPersonDayDefault(
+  issue: MinimalPointsPerPersonDayIssue,
+  options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
+): NormalizedIssue['team']['pointsPerPersonDay'] {
+  return 21 / (10 * 5);
+}
+
+type MinimalTeamMembersIssue = Prettify<MinimalTeamKeyIssue & MinimalIssueTypeIssue & MinimalHierarchyLevelIssue>;
+
+export function getTeamMembersDefault(
+  issue: MinimalTeamMembersIssue,
+  options?: Pick<NormalizeIssueConfig, 'getTeamKey' | 'getType' | 'getHierarchyLevel'>,
+): NormalizedIssue['team']['teamMembers'] {
+  return 5;
+}

@@ -6,6 +6,7 @@ import { createCodeBlock } from './adf';
 
 // Todo remove. See special logic note below
 import { AllTeamData } from '../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
+import { getVelocityPerSprint } from '../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 //
 
 type StorageIssueContent = Table | Paragraph | CodeBlock;
@@ -277,7 +278,25 @@ const getUpdatedTeamTable = (
             data.tracks = config.tracks;
           }
 
-          if (config?.velocityPerSprint) {
+          // Capacity is stored per person per day now; the table still wants it per sprint.
+          if (config?.pointsPerPersonDay) {
+            const resolve = <TField extends 'teamMembers' | 'sprintLength'>(field: TField) =>
+              config[field] ??
+              teams?.[teamName]?.defaults?.[field] ??
+              __GLOBAL__?.[level]?.[field] ??
+              __GLOBAL__?.defaults?.[field] ??
+              null;
+
+            data.velocity = getVelocityPerSprint({
+              estimateUnit: config.estimateUnit ?? teams?.[teamName]?.defaults?.estimateUnit ?? null,
+              estimateTeamShare: null,
+              velocityPerSprint: null,
+              pointsPerPersonDay: config.pointsPerPersonDay,
+              teamMembers: resolve('teamMembers'),
+              sprintLength: resolve('sprintLength') ?? 10,
+              tracks: null,
+            });
+          } else if (config?.velocityPerSprint) {
             data.velocity = config.velocityPerSprint;
           }
 

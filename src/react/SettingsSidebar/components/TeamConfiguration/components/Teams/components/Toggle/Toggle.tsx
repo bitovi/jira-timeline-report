@@ -11,16 +11,30 @@ import { FieldUpdates } from '../../ConfigureTeamsForm';
 interface ToggleProps extends Pick<ComponentProps<typeof AtlasToggle>, 'onChange' | 'isChecked' | 'isDisabled'> {
   label: string;
   description: string;
+  /** Leave the label to the caller, which renders it with `htmlFor={id}` — see `InheritanceToggleField`. */
+  hideLabel?: boolean;
+  id?: string;
 }
 
-const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked, isDisabled }) => {
-  const id = useId();
+const Toggle: FC<ToggleProps> = ({
+  label,
+  description,
+  onChange,
+  isChecked,
+  isDisabled,
+  hideLabel = false,
+  id: providedId,
+}) => {
+  const generatedId = useId();
+  const id = providedId ?? generatedId;
 
   return (
     <div>
-      <Label htmlFor={id} isRequired>
-        {label}
-      </Label>
+      {!hideLabel && (
+        <Label htmlFor={id} isRequired>
+          {label}
+        </Label>
+      )}
       <div className="flex justify-between align-center">
         <div className="w-10">
           <AtlasToggle id={id} onChange={onChange} isChecked={isChecked} isDisabled={isDisabled} />
@@ -33,7 +47,7 @@ const Toggle: FC<ToggleProps> = ({ label, description, onChange, isChecked, isDi
 
 export default Toggle;
 
-interface FormToggleProps {
+interface FormToggleProps extends Pick<ToggleProps, 'hideLabel' | 'id'> {
   disabled?: boolean;
   name: keyof Configuration;
   label: string;
@@ -42,7 +56,15 @@ interface FormToggleProps {
   onSave: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
 }
 
-export const FormToggle: FC<FormToggleProps> = ({ name, label, description, control, onSave, disabled = false }) => {
+export const FormToggle: FC<FormToggleProps> = ({
+  name,
+  label,
+  description,
+  control,
+  onSave,
+  disabled = false,
+  ...labelProps
+}) => {
   return (
     <Controller
       name={name}
@@ -50,6 +72,7 @@ export const FormToggle: FC<FormToggleProps> = ({ name, label, description, cont
       disabled={disabled}
       render={({ field }) => (
         <Toggle
+          {...labelProps}
           label={label}
           isDisabled={disabled}
           description={description}
