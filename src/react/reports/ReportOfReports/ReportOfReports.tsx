@@ -100,12 +100,10 @@ const Document: FC<ReportOfReportsProps> = ({ currentReportId, childReportProps 
        exactly the work items it would have fetched alone.
        See spec/016-report-of-reports/005-optimize/001-request-dedupe. */
     <ChildQueryGroupsProvider sections={sections} reports={reports}>
-      {/* `ror-document` is a styling hook, not a layout class: fullscreen.css uses it to keep the
-          document off the screen edges once `.fullish-vh`'s gutter is reclaimed.
-          `gap-5` (20px) is the sibling spacing for the document's own top-level nodes — cards and any
+      {/* `gap-5` (20px) is the sibling spacing for the document's own top-level nodes — cards and any
           bare top-level report alike. See spec/029-report-of-reports-redesign §1. */}
       <div
-        className="ror-document flex flex-col gap-5 py-4"
+        className="flex flex-col gap-5 py-4"
         onMouseOver={() => hoverNode(null)}
         onMouseLeave={() => hoverNode(null)}
       >
