@@ -38,6 +38,12 @@ body.fullscreen-mode .fullish-vh {
   padding-left: max(1rem, (100% - var(--fullscreen-width)) / 2) !important;
   padding-right: max(1rem, (100% - var(--fullscreen-width)) / 2) !important;
 }
+@media print {
+  body.fullscreen-mode .fullish-vh {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
 @media (min-width: calc(theme('screens.sm') + 2rem)) {
   body.fullscreen-mode .fullish-vh {
     --fullscreen-width: theme('screens.sm');
