@@ -17,7 +17,21 @@ function allDescendantsHaveStoryPoints(descendants) {
   );
 }
 
-export function scoreRollup({ fieldKey, weight, descendants, now }) {
+function scoreTimelineWeighting(weighting, visibilityMonths) {
+  const months = weighting?.months ?? 0;
+  const weight = weighting?.weight ?? 0;
+  const ratio = months > 0 ? Math.max(0, Math.min(visibilityMonths / months, 1)) : 0;
+
+  return {
+    months,
+    weight,
+    ratio,
+    scorePortion: ratio * weight,
+    visibilityMonths,
+  };
+}
+
+function scoreLegacyRollup({ fieldKey, weight, descendants, now }) {
   const maxScore = 100 * weight;
   const dueDate = latestDueDate(descendants);
   const monthDistance = dueDate ? monthsBetween(now, dueDate) : Number.NEGATIVE_INFINITY;
@@ -60,4 +74,32 @@ export function scoreRollup({ fieldKey, weight, descendants, now }) {
   }
 
   throw new Error(`Unsupported roll-up field key: ${fieldKey}`);
+}
+
+export function scoreRollup({ fieldKey = 'roll-up', config, weight, descendants, now }) {
+  if (config && typeof config === 'object' && config.defined && config.refined) {
+    const dueDate = latestDueDate(descendants);
+    const visibilityMonths = dueDate ? Math.max(0, monthsBetween(now, dueDate)) : 0;
+    const defined = scoreTimelineWeighting(config.defined, visibilityMonths);
+    const refined = scoreTimelineWeighting(config.refined, visibilityMonths);
+    const totalStatusWeight = defined.weight + refined.weight;
+    const progress = totalStatusWeight > 0 ? (defined.scorePortion + refined.scorePortion) / totalStatusWeight : 0;
+    const maxScore = 100 * (config.weight ?? 0) * totalStatusWeight;
+
+    return {
+      fieldKey,
+      fieldType: 'roll-up',
+      score: maxScore * progress,
+      maxScore,
+      passed: visibilityMonths > 0,
+      breakdown: { defined, refined },
+      reasons: visibilityMonths > 0 ? undefined : ['Roll-up completion date is not in the future'],
+    };
+  }
+
+  if (typeof weight === 'number') {
+    return scoreLegacyRollup({ fieldKey, weight, descendants, now });
+  }
+
+  throw new Error('Unsupported roll-up configuration');
 }

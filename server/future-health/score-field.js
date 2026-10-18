@@ -6,6 +6,10 @@ import { scoreRichTextSections } from './score-rich-text-sections.js';
 import { scoreRollup } from './score-rollup.js';
 
 export function scoreField({ fieldKey, config, issue, descendants, now }) {
+  if (fieldKey === 'roll-up') {
+    return scoreRollup({ fieldKey, config, descendants, now });
+  }
+
   if (typeof config === 'number') {
     return scoreRollup({ fieldKey, weight: config, issue, descendants, now });
   }

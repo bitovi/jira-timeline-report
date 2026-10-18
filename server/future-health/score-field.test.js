@@ -44,4 +44,22 @@ describe('scoreField', () => {
 
     expect(result).toMatchObject({ fieldType: 'unique-increment', score: 30, passed: true });
   });
+
+  test('scores roll-up config objects with partial future visibility', () => {
+    const result = scoreField({
+      fieldKey: 'roll-up',
+      config: {
+        weight: 0.5,
+        defined: { months: 6, weight: 0.5 },
+        refined: { months: 3, weight: 0.5 },
+      },
+      issue: { key: 'INC-1', fields: { issuetype: { name: 'Increment' } } },
+      descendants: [{ key: 'TASK-1', fields: { duedate: '2026-12-18', 'Story points': 8 } }],
+      now: new Date('2026-10-18T00:00:00.000Z'),
+    });
+
+    expect(result).toMatchObject({ fieldKey: 'roll-up', fieldType: 'roll-up', passed: true });
+    expect(result.maxScore).toBe(50);
+    expect(result.score).toBeCloseTo(25, 4);
+  });
 });
