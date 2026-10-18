@@ -23,4 +23,15 @@ describe('scoreRichTextSections', () => {
       total: 1,
     });
   });
+
+  test('tracks multiple completed headings from a dynamic list', () => {
+    const html = '<h2>Problem</h2><p>Real details</p><h2>Measure of Success</h2><p>Done</p>';
+
+    expect(scoreRichTextSections({ html, headings: ['Problem', 'Opportunity', 'Measure of Success'] })).toEqual({
+      completed: ['Problem', 'Measure of Success'],
+      count: 2,
+      missing: ['Opportunity'],
+      total: 3,
+    });
+  });
 });

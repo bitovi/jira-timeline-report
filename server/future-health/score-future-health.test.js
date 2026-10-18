@@ -81,7 +81,10 @@ describe('scoreFutureHealth', () => {
       now: new Date('2026-10-18T00:00:00.000Z'),
       issues: [
         { key: 'INC-1', fields: { issuetype: { name: 'Increment' } } },
-        { key: 'TASK-1', fields: { issuetype: { name: 'Task' }, parent: { key: 'INC-1' }, duedate: '2027-05-01', 'Story points': 8 } },
+        {
+          key: 'TASK-1',
+          fields: { issuetype: { name: 'Task' }, parent: { key: 'INC-1' }, duedate: '2027-05-01', 'Story points': 8 },
+        },
       ],
       model: {
         issueType: 'Increment',

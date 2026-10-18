@@ -5,8 +5,6 @@ function readIssueField(issue, fieldKey) {
 import { scoreRichTextSections } from './score-rich-text-sections.js';
 import { scoreRollup } from './score-rollup.js';
 
-const DEFAULT_HEADINGS = ['Problem', 'Opportunity', 'Measure of Success', 'Solution', 'Out of Scope', 'Investment', 'Rationale'];
-
 export function scoreField({ fieldKey, config, issue, descendants, now }) {
   if (typeof config === 'number') {
     return scoreRollup({ fieldKey, weight: config, issue, descendants, now });
@@ -42,8 +40,10 @@ export function scoreField({ fieldKey, config, issue, descendants, now }) {
   }
 
   if (config.type === 'unique-increment' || config.type === 'unique-workstream') {
-    const summary = scoreRichTextSections({ html: readIssueField(issue, fieldKey) ?? '', headings: DEFAULT_HEADINGS });
-    const completedValue = summary.count > 0 ? (config.options.completed ?? 100) : (config.options.incomplete ?? 0);
+    const optionEntries = Object.entries(config.options ?? {});
+    const headings = optionEntries.map(([heading]) => heading);
+    const summary = scoreRichTextSections({ html: readIssueField(issue, fieldKey) ?? '', headings });
+    const completedValue = summary.completed.reduce((total, heading) => total + (config.options?.[heading] ?? 0), 0);
     const maxScore = 100 * config.weight;
 
     return {
@@ -52,7 +52,8 @@ export function scoreField({ fieldKey, config, issue, descendants, now }) {
       score: completedValue * config.weight,
       maxScore,
       passed: summary.count > 0,
-      reasons: summary.count === summary.total ? undefined : [`Missing template sections: ${summary.missing.join(', ')}`],
+      reasons:
+        summary.count === summary.total ? undefined : [`Missing template sections: ${summary.missing.join(', ')}`],
     };
   }
 

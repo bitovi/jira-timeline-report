@@ -12,7 +12,9 @@ function latestDueDate(descendants) {
 }
 
 function allDescendantsHaveStoryPoints(descendants) {
-  return descendants.every((child) => child?.fields?.['Story points'] !== undefined && child?.fields?.['Story points'] !== null);
+  return descendants.every(
+    (child) => child?.fields?.['Story points'] !== undefined && child?.fields?.['Story points'] !== null,
+  );
 }
 
 export function scoreRollup({ fieldKey, weight, descendants, now }) {
