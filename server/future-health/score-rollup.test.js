@@ -45,4 +45,24 @@ describe('scoreRollup', () => {
     expect(result.maxScore).toBe(50);
     expect(result.score).toBeCloseTo(50, 4);
   });
+
+  test('caps visibility ratios at 1 so scores do not exceed the roll-up max score', () => {
+    const result = scoreRollup({
+      fieldKey: 'roll-up',
+      config: {
+        weight: 0.5,
+        defined: { months: 6, weight: 0.3 },
+        refined: { months: 3, weight: 0.7 },
+      },
+      descendants: [{ key: 'TASK-1', fields: { duedate: '2027-06-18', 'Story points': 8 } }],
+      now,
+    });
+
+    expect(result.breakdown).toMatchObject({
+      defined: expect.objectContaining({ ratio: 1, scorePortion: 0.3 }),
+      refined: expect.objectContaining({ ratio: 1, scorePortion: 0.7 }),
+    });
+    expect(result.maxScore).toBe(50);
+    expect(result.score).toBe(50);
+  });
 });
