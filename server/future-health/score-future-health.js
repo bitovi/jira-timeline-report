@@ -18,6 +18,16 @@ function flattenLevels(model, levels = []) {
   return levels;
 }
 
+function collectKnownIssueTypes(model, types = new Set()) {
+  types.add(model.issueType);
+
+  if (model.child) {
+    collectKnownIssueTypes(model.child, types);
+  }
+
+  return types;
+}
+
 function findIssuesForLevel(parentIssue, issues, level) {
   if (!level) {
     return [];
@@ -26,13 +36,29 @@ function findIssuesForLevel(parentIssue, issues, level) {
   return issues.filter((issue) => getIssueType(issue) === level.issueType && getParentKey(issue) === parentIssue.key);
 }
 
+function collectDescendants(issue, level, allIssues) {
+  if (!level?.child) {
+    return [];
+  }
+
+  const childIssues = findIssuesForLevel(issue, allIssues, level.child);
+
+  return childIssues.flatMap((childIssue) => [childIssue, ...collectDescendants(childIssue, level.child, allIssues)]);
+}
+
 function scoreLevel(issue, level, allIssues, now) {
-  const fieldEntries = Object.entries(level.fields ?? {}).filter(([, value]) => value && typeof value === 'object');
+  const fieldEntries = Object.entries(level.fields ?? {}).filter(([, value]) => value !== undefined);
+  const descendants = collectDescendants(issue, level, allIssues);
   const fieldResults = fieldEntries.map(([fieldKey, config]) =>
-    scoreField({ fieldKey, config, issue, descendants: [], now }),
+    scoreField({ fieldKey, config, issue, descendants, now }),
   );
   const issueScore = fieldResults.reduce((total, field) => total + field.score, 0);
   const childIssues = level.child ? findIssuesForLevel(issue, allIssues, level.child) : [];
+
+  if (level.child && childIssues.length === 0) {
+    throw new Error(`Expected at least one ${level.child.issueType} child for ${issue.key}`);
+  }
+
   const childResults = childIssues.flatMap((childIssue) => scoreLevel(childIssue, level.child, allIssues, now));
 
   return [
@@ -52,6 +78,7 @@ export function scoreFutureHealth({ issueKey, issues, model, debug, now = new Da
     throw new Error(`Top-level issue ${issueKey} does not match root model issueType ${model.issueType}`);
   }
 
+  const knownIssueTypes = collectKnownIssueTypes(model);
   const issueResults = scoreLevel(rootIssue, model, issues, now);
   const groupedResults = new Map();
 
@@ -61,25 +88,39 @@ export function scoreFutureHealth({ issueKey, issues, model, debug, now = new Da
     groupedResults.set(result.issueType, group);
   }
 
+  const ignoredIssues = issues
+    .filter((issue) => !knownIssueTypes.has(getIssueType(issue)))
+    .map((issue) => ({
+      issueKey: issue.key,
+      issueType: getIssueType(issue),
+      reason: 'Issue type is not part of the provided model hierarchy',
+    }));
+
   const issueTypeSummaries = flattenLevels(model).map((level) => {
     const issuesForType = groupedResults.get(level.issueType) ?? [];
     const rawScore = issuesForType.length
       ? issuesForType.reduce((sum, issueResult) => sum + issueResult.score, 0) / issuesForType.length
       : 0;
 
-    return {
+    const summary = {
       issueType: level.issueType,
       issueCount: issuesForType.length,
       rawScore,
       weightedScore: rawScore * level.weight,
       weight: level.weight,
     };
+
+    if (debug) {
+      summary.issues = issuesForType;
+    }
+
+    return summary;
   });
 
   const futureHealthMetricScore = issueTypeSummaries.reduce((sum, summary) => sum + summary.weightedScore, 0);
 
   if (debug) {
-    return { futureHealthMetricScore, issueTypeSummaries };
+    return { futureHealthMetricScore, issueTypeSummaries, ignoredIssues };
   }
 
   return { futureHealthMetricScore, issueTypeSummaries };

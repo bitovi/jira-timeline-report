@@ -30,4 +30,24 @@ describe('POST /future-health-wellness-metric/:issueKey', () => {
       { message: 'model must be an object' },
     ]);
   });
+
+  test('returns only top-level score and issue-type summaries when debug is false', () => {
+    const res = fakeResponse();
+
+    futureHealthWellnessMetric(
+      {
+        params: { issueKey: 'INIT-1' },
+        body: {
+          issues: [{ key: 'INIT-1', fields: { issuetype: { name: 'Initiative' }, summary: 'Root' } }],
+          model: { issueType: 'Initiative', weight: 1, fields: { summary: { type: 'presence', weight: 1 } } },
+        },
+      },
+      res,
+    );
+
+    expect(res.body).toEqual({
+      futureHealthMetricScore: 100,
+      issueTypeSummaries: [{ issueType: 'Initiative', issueCount: 1, rawScore: 100, weightedScore: 100, weight: 1 }],
+    });
+  });
 });

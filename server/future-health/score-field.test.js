@@ -25,4 +25,16 @@ describe('scoreField', () => {
 
     expect(result).toMatchObject({ fieldKey: 'risk', score: 40, maxScore: 40, passed: true });
   });
+
+  test('scores unique-increment using completed headings', () => {
+    const result = scoreField({
+      fieldKey: 'workstreamDetails',
+      config: { type: 'unique-increment', weight: 0.5, options: { completed: 100, incomplete: 0 } },
+      issue: { key: 'INC-1', fields: { workstreamDetails: '<h2>Problem</h2><p>Real details</p>' } },
+      descendants: [],
+      now: new Date('2026-10-18T00:00:00.000Z'),
+    });
+
+    expect(result).toMatchObject({ fieldType: 'unique-increment', score: 50, passed: true });
+  });
 });
