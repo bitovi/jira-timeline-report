@@ -9,6 +9,7 @@ import cors from 'cors';
 import tagToDates from './tag-to-dates.js';
 import adjustedStoryPoints from './adjusted-story-points.js';
 import datesToHalfQuarterDates from './dates-to-half-quarter-dates.js';
+import futureHealthWellnessMetric from './future-health/future-health-wellness-metric.js';
 
 // configurations
 dotenv.config();
@@ -66,6 +67,8 @@ app.post('/tag-to-dates', tagToDates);
 app.post('/adjusted-story-points', adjustedStoryPoints);
 
 app.post('/dates-to-half-quarter-dates', datesToHalfQuarterDates);
+
+app.post('/future-health-wellness-metric/:issueKey', futureHealthWellnessMetric);
 
 // Start server
 app.listen(port, () => console.log(`Server is listening on port ${port}!`));
