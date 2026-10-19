@@ -3,7 +3,7 @@ import type { Report } from '../../jira/reports';
 import type { CanObservable } from '../hooks/useCanObservable';
 import type { DescribedReport, ExtraHaystack } from '../components/ReportListing';
 
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@atlaskit/button/new';
 import Textfield from '@atlaskit/textfield';
 import FolderClosedIcon from '@atlaskit/icon/core/folder-closed';
@@ -29,13 +29,11 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'all', label: 'All reports' },
 ];
 
-/** A full-height row (32px icon, `py-2.5`, border). Only used to size a page of the All tab. */
-const ROW_HEIGHT = 53;
-const MIN_PAGE_SIZE = 6;
-
-/** Enough rows to fill the panel, plus one so it always scrolls a little. */
-export const pageSizeFor = (panelHeight: number): number =>
-  Math.max(MIN_PAGE_SIZE, Math.ceil(panelHeight / ROW_HEIGHT) + 1);
+/**
+ * Rows the All tab renders per page. Every report is already loaded, so paging only limits what's
+ * drawn; a page this size overflows any panel, so there is always something to scroll to load more.
+ */
+export const PAGE_SIZE = 50;
 
 /**
  * Most recently updated first; reports with no timestamp (saved before it was kept) after all of
@@ -156,15 +154,8 @@ const ViewReports: FC<ViewReportProps> = ({
     onActivate: (report) => findRowLink(report)?.click(),
   });
 
-  // Paging — the All tab only. Sized from the tab panel, which flex-fills the page; the table is
-  // only as tall as the rows already in it.
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [pageSize, setPageSize] = useState(MIN_PAGE_SIZE);
+  // Paging — the All tab only. The next page loads as the table scrolls near its end (below).
   const [pages, setPages] = useState(1);
-
-  useLayoutEffect(() => {
-    setPageSize(pageSizeFor(panelRef.current?.clientHeight ?? 0));
-  }, []);
 
   // A new tab or query is a new list: back to the first page, scrolled to the top.
   useEffect(() => {
@@ -174,14 +165,42 @@ const ViewReports: FC<ViewReportProps> = ({
 
   // ↑/↓ move through the whole filtered list, but the All tab renders only the loaded pages. Load the
   // page holding the selected row, or ↓ past the last one selects a row with no link and ↵ does
-  // nothing. Only ever grows, so it never undoes "Load more".
+  // nothing. Only ever grows, so it never undoes scrolling.
   useEffect(() => {
     if (tab === 'all') {
-      setPages((count) => Math.max(count, Math.floor(activeIndex / pageSize) + 1));
+      setPages((count) => Math.max(count, Math.floor(activeIndex / PAGE_SIZE) + 1));
     }
-  }, [tab, activeIndex, pageSize]);
+  }, [tab, activeIndex]);
 
-  const visible = tab === 'all' ? filtered.slice(0, pages * pageSize) : filtered;
+  const visible = tab === 'all' ? filtered.slice(0, pages * PAGE_SIZE) : filtered;
+  const hasMore = visible.length < filtered.length;
+
+  // Load the next page as the sentinel after the last row nears the bottom of the scrolling table.
+  // Rebuilt per page on purpose: a fresh observer reports the sentinel's current state, so if a page
+  // still leaves it in view (a very tall panel), the next one loads too.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+
+    if (!hasMore || !sentinel || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setPages((count) => count + 1);
+        }
+      },
+      { root: tableRef.current, rootMargin: '0px 0px 200px 0px' },
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+    // `starsLoaded`: the table (and the sentinel in it) only mounts once stars load.
+  }, [hasMore, pages, tab, query, starsLoaded]);
 
   // Keep the keyboard-selected row on screen in the scrolling table. Keyboard only — the mouse sets
   // the selection too (hover), and scrolling under the pointer would make the list jump. Waits on
@@ -329,7 +348,6 @@ const ViewReports: FC<ViewReportProps> = ({
         </div>
 
         <div
-          ref={panelRef}
           role="tabpanel"
           id="saved-reports-panel"
           aria-labelledby={`saved-reports-tab-${tab}`}
@@ -370,17 +388,7 @@ const ViewReports: FC<ViewReportProps> = ({
                     />
                   );
                 })}
-            </div>
-          )}
-
-          {starsLoaded && tab === 'all' && !emptyState && (
-            <div className="flex items-center gap-3 pt-3 text-sm text-neutral-300">
-              {visible.length < filtered.length && (
-                <Button onClick={() => setPages((count) => count + 1)}>Load more</Button>
-              )}
-              <span>
-                Showing {visible.length} of {filtered.length}
-              </span>
+              {!emptyState && hasMore && <div ref={sentinelRef} aria-hidden className="h-px" />}
             </div>
           )}
         </div>
