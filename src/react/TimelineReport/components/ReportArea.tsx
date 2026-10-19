@@ -51,6 +51,8 @@ export interface ReportAreaProps {
   startedReport?: boolean;
   /** What to show with no JQL once `startedReport`: a prompt to choose sources. A slot, like `home`. */
   setup?: ReactNode;
+  /** Opens the Sources panel from the empty-result and error messages. */
+  onOpenSources?: () => void;
   /** The report block (print header + report hosts + footer); rendered only when resolved with data. */
   children: ReactNode;
 }
@@ -103,6 +105,7 @@ export const ReportArea: FC<ReportAreaProps> = ({
   home,
   startedReport = false,
   setup,
+  onOpenSources,
   children,
 }) => {
   const { status, rejectReason } = loadingState;
@@ -133,12 +136,12 @@ export const ReportArea: FC<ReportAreaProps> = ({
       )}
 
       {!selfManagesData && resolved && primaryIssuesCount === 0 && (
-        <EmptyResultMessage count={primaryIssuesCount} primaryIssueType={primaryIssueType} />
+        <EmptyResultMessage primaryIssueType={primaryIssueType} onOpenSources={onOpenSources} />
       )}
 
       {!selfManagesData && jql && pending && <LoadingProgressContainer loadingState={loadingState} />}
 
-      {rejected && <ErrorMessage errorMessage={rejectReason?.errorMessages?.[0]} />}
+      {rejected && <ErrorMessage errorMessage={rejectReason?.errorMessages?.[0]} onOpenSources={onOpenSources} />}
     </>
   );
 };
