@@ -65,10 +65,14 @@ export const TimelineBar: React.FC<TimelineBarProps> = ({
           const position = computeBarPosition(range, work, roundTo);
           return (
             <DatesTooltip key={type} data={buildWorkDatesTooltip(type, work)}>
-              <div
-                className={`${type}_time h-[6px] my-[1px] rounded-sm ${getStatusColorClass(work.status)} relative`}
-                style={{ width: `${position.widthPercent}%`, marginLeft: `max(${position.marginLeftPercent}%, 1px)` }}
-              />
+              {({ triggerProps, anchorRef }) => (
+                <div
+                  {...triggerProps}
+                  ref={anchorRef}
+                  className={`${type}_time h-[6px] my-[1px] rounded-sm ${getStatusColorClass(work.status)} relative`}
+                  style={{ width: `${position.widthPercent}%`, marginLeft: `max(${position.marginLeftPercent}%, 1px)` }}
+                />
+              )}
             </DatesTooltip>
           );
         })}
@@ -89,21 +93,22 @@ export const TimelineBar: React.FC<TimelineBarProps> = ({
   ) : (
     <div className="py-2">
       {/*
-        The tooltip trigger is the `relative` wrapper below, whose box is exactly the bar's height,
-        so `position="bottom"` anchors the tooltip to the bar's bottom edge. The absolutely
-        positioned overlay expands the *hover* area to the full row band (±8px = the `py-2`
-        padding) and full width — so hovering anywhere in the row shows the tooltip — without
-        growing the trigger's box (absolute children don't affect layout size), keeping the anchor
-        on the bar.
+        The tooltip is positioned against the bar itself (`anchorRef`), while hover is handled on the
+        `relative` wrapper. Its absolutely positioned overlay expands the *hover* area to the full
+        row band (±8px = the `py-2` padding) and full width — so hovering anywhere in the row shows
+        the tooltip.
       */}
       <DatesTooltip data={buildDatesTooltip(issue)}>
-        <div className="relative">
-          <div className="absolute" style={{ top: '-8px', bottom: '-8px', left: 0, right: 0 }} aria-hidden />
-          <div
-            className={`${density.bigBarSize} ${getStatusColorClass(rollup.status)} ${barCornerClass(position)} identifier-current-time relative z-30`}
-            style={{ width: `${position.widthPercent}%`, marginLeft: `max(${position.marginLeftPercent}%, 1px)` }}
-          />
-        </div>
+        {({ triggerProps, anchorRef }) => (
+          <div className="relative" {...triggerProps}>
+            <div className="absolute" style={{ top: '-8px', bottom: '-8px', left: 0, right: 0 }} aria-hidden />
+            <div
+              ref={anchorRef}
+              className={`${density.bigBarSize} ${getStatusColorClass(rollup.status)} ${barCornerClass(position)} identifier-current-time relative z-30`}
+              style={{ width: `${position.widthPercent}%`, marginLeft: `max(${position.marginLeftPercent}%, 1px)` }}
+            />
+          </div>
+        )}
       </DatesTooltip>
     </div>
   );
