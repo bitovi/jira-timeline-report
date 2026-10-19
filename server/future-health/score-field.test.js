@@ -62,4 +62,32 @@ describe('scoreField', () => {
     expect(result.maxScore).toBe(50);
     expect(result.score).toBeCloseTo(25, 4);
   });
+
+  test('scores nested field configs against nested issue values', () => {
+    const result = scoreField({
+      fieldKey: 'businessLead',
+      config: {
+        name: {
+          type: 'presence',
+          weight: 0.2,
+        },
+      },
+      issue: {
+        key: 'INIT-1',
+        fields: {
+          businessLead: {
+            accountId: 'abc123',
+            name: 'Ada Lovelace',
+          },
+        },
+      },
+      descendants: [],
+      now: new Date('2026-10-18T00:00:00.000Z'),
+    });
+
+    expect(result).toMatchObject({ fieldKey: 'businessLead', fieldType: 'group', score: 20, maxScore: 20, passed: true });
+    expect(result.fields).toEqual([
+      expect.objectContaining({ fieldKey: 'name', fieldType: 'presence', score: 20, maxScore: 20, passed: true }),
+    ]);
+  });
 });
