@@ -2,7 +2,7 @@ import type { ComponentProps, FC } from 'react';
 
 import React, { useRef, useState } from 'react';
 import Heading from '@atlaskit/heading';
-import HomeIcon from '@atlaskit/icon/core/home';
+import AddIcon from '@atlaskit/icon/core/add';
 
 import SidebarButton from '../../../components/SidebarButton';
 import { getButtonClasses } from '../../../components/SidebarButton/SidebarButton';
@@ -23,8 +23,8 @@ interface ReportSettingsProps {
   showStorage?: boolean;
   /** The host reported an inactive license; resolved by the parent for the same reason. */
   unlicensed?: boolean;
-  /** Renders the Home link. See `SettingsSidebar`'s `onGoHome`. */
-  onGoHome?: () => void;
+  /** Renders the New Report link. See `SettingsSidebar`'s `onNewReport`. */
+  onNewReport?: () => void;
 }
 
 const ReportSettings: FC<ReportSettingsProps> = ({
@@ -32,16 +32,16 @@ const ReportSettings: FC<ReportSettingsProps> = ({
   showSidebarBranding,
   showStorage = false,
   unlicensed = false,
-  onGoHome,
+  onNewReport,
 }) => {
   const [isFeedbackFormOpen, setIsFeedbackFormOpen] = useState(false);
   const [isBugFormOpen, setIsBugFormOpen] = useState(false);
 
-  // Home asks first when it would drop unsaved changes. The check runs in the capture phase because
+  // New Report asks first when it would drop unsaved changes. The check runs in the capture phase because
   // `Link` navigates inside its own click handler on the embedded hosts — by the time `onClick` ran,
   // the report would already be gone. "Leave" re-clicks the same link, so navigation still goes
   // through `Link`'s host-specific handling.
-  const homeRef = useRef<HTMLAnchorElement>(null);
+  const newReportRef = useRef<HTMLAnchorElement>(null);
   const leaveConfirmed = useRef(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
@@ -51,13 +51,14 @@ const ReportSettings: FC<ReportSettingsProps> = ({
     <div className="flex h-full flex-col overflow-hidden px-6 pt-6 pb-2">
       <div className="shrink-0">
         {showSidebarBranding && <Branding unlicensed={unlicensed} />}
-        {onGoHome && (
-          // A link to the bare app URL, not a button: it drops every report param at once, goes
-          // through the host's link handling like a saved-report link, and can open in a new tab.
+        {onNewReport && (
+          // A link to a blank report with Sources open, not a button: it drops every report param at
+          // once, goes through the host's link handling like a saved-report link, and can open in a
+          // new tab.
           <div className="pb-4">
             <Link
-              ref={homeRef}
-              href="?"
+              ref={newReportRef}
+              href="?settings=SOURCES"
               onClickCapture={(event) => {
                 if (leaveConfirmed.current) {
                   leaveConfirmed.current = false;
@@ -71,11 +72,11 @@ const ReportSettings: FC<ReportSettingsProps> = ({
                   setIsLeaveModalOpen(true);
                 }
               }}
-              onClick={onGoHome}
+              onClick={onNewReport}
               className={`${getButtonClasses(false, '')} no-underline`}
             >
-              <HomeIcon label="" color="currentColor" />
-              Home
+              <AddIcon label="" color="currentColor" />
+              New Report
             </Link>
           </div>
         )}
@@ -85,7 +86,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({
           onLeave={() => {
             setIsLeaveModalOpen(false);
             leaveConfirmed.current = true;
-            homeRef.current?.click();
+            newReportRef.current?.click();
           }}
         />
         <div className="pb-1">

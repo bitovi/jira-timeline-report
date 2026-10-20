@@ -222,11 +222,12 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const urlSearch = useCanObservable(pushStateObservable as unknown as CanObservable<string>);
   const startedReport = hasStartedReport(startedReportFlag, urlSearch ?? '');
   const startReport = useCallback(() => setStartedReport(true), []);
-  // The sidebar's Home link navigates to the bare URL itself; this forgets the started report (no
-  // reload on Forge, so the flag would survive) and closes any open settings panel over home.
-  const goHome = useCallback(() => {
-    setStartedReport(false);
-    rd.showSettings = '';
+  // The sidebar's New Report link navigates to a blank report itself; this does the rest of home's
+  // "Create new report" (see `createHomeActions`). Sources is also in the link's URL, but set here
+  // too in case the host's navigation lands after this runs.
+  const startNewReport = useCallback(() => {
+    setStartedReport(true);
+    rd.showSettings = 'SOURCES';
   }, []);
 
   // Home has its own way into each report type, so the controls row (report type picker, view
@@ -263,7 +264,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               linkBuilder={linkBuilder}
               interceptLinkClicks={interceptLinkClicks}
               onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
-              onGoHome={goHome}
+              onNewReport={startNewReport}
             />
           </div>
         )}
@@ -344,12 +345,8 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             setup={
               <ChooseSourcesMessage
                 reportTypeName={REPORT_TYPES.find(({ key }) => key === primaryReportType)?.name}
-                onOpenSources={() => {
-                  rd.showSettings = 'SOURCES';
-                }}
-                onBackToHome={() => {
-                  setStartedReport(false);
-                  rd.primaryReportType = REPORT_TYPES[0].key;
+                onViewAllReports={() => {
+                  rd.showSettings = 'REPORTS';
                 }}
               />
             }

@@ -1,6 +1,5 @@
 import type { FC } from 'react';
 import React from 'react';
-import Button from '@atlaskit/button/new';
 import Heading from '@atlaskit/heading';
 
 import LinkButton from '../../components/LinkButton';
@@ -86,28 +85,21 @@ export const ErrorMessage: FC<ErrorMessageProps> = ({ errorMessage }) => (
 export interface ChooseSourcesMessageProps {
   /** The selected report type's display name, e.g. "Gantt Chart". */
   reportTypeName?: string;
-  onOpenSources: () => void;
-  onBackToHome: () => void;
+  onViewAllReports: () => void;
 }
 
 /**
  * Shown once the user has left home to build a report that has no JQL yet. Unlike home, the report
- * controls stay visible above it, so the report type can still be changed. See
+ * controls stay visible above it, so the report type can still be changed. Both Create buttons open
+ * Sources beside it, and the sidebar has its own Sources button, so it offers saved reports instead. See
  * spec/041-saved-reports-redesign/phase1/plan.md § 7.
  */
-export const ChooseSourcesMessage: FC<ChooseSourcesMessageProps> = ({
-  reportTypeName,
-  onOpenSources,
-  onBackToHome,
-}) => (
+export const ChooseSourcesMessage: FC<ChooseSourcesMessageProps> = ({ reportTypeName, onViewAllReports }) => (
   <div className="mx-auto flex w-full max-w-[640px] flex-col items-center gap-3 py-16 text-center">
     <Heading size="medium">{reportTypeName ? `${reportTypeName} needs work items` : 'Choose work items'}</Heading>
     <p className="text-neutral-801">Choose the work items to report on in Sources.</p>
-    <Button appearance="primary" onClick={onOpenSources}>
-      Choose sources
-    </Button>
-    <LinkButton type="button" onClick={onBackToHome} className="text-sm">
-      ← Back to home
+    <LinkButton type="button" onClick={onViewAllReports} className="text-sm">
+      View all saved reports
     </LinkButton>
   </div>
 );

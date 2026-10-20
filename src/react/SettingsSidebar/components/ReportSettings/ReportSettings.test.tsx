@@ -32,22 +32,22 @@ describe('ReportSettings Component', () => {
     });
   });
 
-  describe('Home link', () => {
+  describe('New Report link', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => <FlagsProvider>{children}</FlagsProvider>;
 
-    it('links to the bare app URL and tells the app it is going home', () => {
-      const onGoHome = vi.fn();
-      render(<ReportSettings showSidebarBranding={false} changeSettings={vi.fn()} onGoHome={onGoHome} />, {
+    it('links to a blank report with Sources open and tells the app a report started', () => {
+      const onNewReport = vi.fn();
+      render(<ReportSettings showSidebarBranding={false} changeSettings={vi.fn()} onNewReport={onNewReport} />, {
         wrapper,
       });
 
-      const home = screen.getByRole('link', { name: 'Home' });
-      expect(home).toHaveAttribute('href', '?');
+      const newReport = screen.getByRole('link', { name: 'New Report' });
+      expect(newReport).toHaveAttribute('href', '?settings=SOURCES');
 
       // jsdom doesn't navigate; the click handler is what matters here.
-      home.addEventListener('click', (event) => event.preventDefault());
-      home.click();
-      expect(onGoHome).toHaveBeenCalledTimes(1);
+      newReport.addEventListener('click', (event) => event.preventDefault());
+      newReport.click();
+      expect(onNewReport).toHaveBeenCalledTimes(1);
     });
 
     describe('with unsaved changes', () => {
@@ -73,62 +73,62 @@ describe('ReportSettings Component', () => {
         window.history.replaceState(null, '', '/');
       });
 
-      const renderHome = () => {
-        const onGoHome = vi.fn();
-        render(<ReportSettings showSidebarBranding={false} changeSettings={vi.fn()} onGoHome={onGoHome} />, {
+      const renderNewReport = () => {
+        const onNewReport = vi.fn();
+        render(<ReportSettings showSidebarBranding={false} changeSettings={vi.fn()} onNewReport={onNewReport} />, {
           wrapper: forgeWrapper,
         });
 
-        return onGoHome;
+        return onNewReport;
       };
 
       it('asks before leaving, and goes nowhere until answered', async () => {
-        const onGoHome = renderHome();
+        const onNewReport = renderNewReport();
 
-        await userEvent.click(screen.getByRole('link', { name: 'Home' }));
+        await userEvent.click(screen.getByRole('link', { name: 'New Report' }));
 
         expect(await screen.findByText('Leave this report?')).toBeInTheDocument();
         expect(pushState).not.toHaveBeenCalled();
-        expect(onGoHome).not.toHaveBeenCalled();
+        expect(onNewReport).not.toHaveBeenCalled();
       });
 
       it('stays put on Stay', async () => {
-        const onGoHome = renderHome();
+        const onNewReport = renderNewReport();
 
-        await userEvent.click(screen.getByRole('link', { name: 'Home' }));
+        await userEvent.click(screen.getByRole('link', { name: 'New Report' }));
         await userEvent.click(await screen.findByRole('button', { name: 'Stay' }));
 
         await waitFor(() => expect(screen.queryByText('Leave this report?')).not.toBeInTheDocument());
         expect(pushState).not.toHaveBeenCalled();
-        expect(onGoHome).not.toHaveBeenCalled();
+        expect(onNewReport).not.toHaveBeenCalled();
       });
 
-      it('goes home on Leave', async () => {
-        const onGoHome = renderHome();
+      it('starts a new report on Leave', async () => {
+        const onNewReport = renderNewReport();
 
-        await userEvent.click(screen.getByRole('link', { name: 'Home' }));
+        await userEvent.click(screen.getByRole('link', { name: 'New Report' }));
         await userEvent.click(await screen.findByRole('button', { name: 'Leave' }));
 
-        expect(pushState).toHaveBeenCalledWith(null, '', '?');
-        expect(onGoHome).toHaveBeenCalledTimes(1);
+        expect(pushState).toHaveBeenCalledWith(null, '', '?settings=SOURCES');
+        expect(onNewReport).toHaveBeenCalledTimes(1);
       });
 
       it('does not ask for a saved report with no changes', async () => {
         window.history.replaceState(null, '', '/?report=abc&settings=SOURCES');
-        const onGoHome = renderHome();
+        const onNewReport = renderNewReport();
 
-        await userEvent.click(screen.getByRole('link', { name: 'Home' }));
+        await userEvent.click(screen.getByRole('link', { name: 'New Report' }));
 
         expect(screen.queryByText('Leave this report?')).not.toBeInTheDocument();
-        expect(pushState).toHaveBeenCalledWith(null, '', '?');
-        expect(onGoHome).toHaveBeenCalledTimes(1);
+        expect(pushState).toHaveBeenCalledWith(null, '', '?settings=SOURCES');
+        expect(onNewReport).toHaveBeenCalledTimes(1);
       });
     });
 
-    it('is absent when the host gives no way home', () => {
+    it('is absent without onNewReport', () => {
       render(<ReportSettings showSidebarBranding={false} changeSettings={vi.fn()} />, { wrapper });
 
-      expect(screen.queryByRole('link', { name: 'Home' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'New Report' })).not.toBeInTheDocument();
     });
   });
 });

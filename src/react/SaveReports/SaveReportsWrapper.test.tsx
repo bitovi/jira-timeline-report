@@ -80,7 +80,7 @@ describe('<SaveReportsWrapper />', () => {
       expect(screen.getByText('Saved reports')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('Create new report')).not.toBeInTheDocument();
+    expect(screen.queryByText('Save report')).not.toBeInTheDocument();
   });
 
   it('shows the create report button if jql is present', async () => {
@@ -107,7 +107,7 @@ describe('<SaveReportsWrapper />', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Saved reports')).toBeInTheDocument();
-      expect(screen.getByText('Create new report')).toBeInTheDocument();
+      expect(screen.getByText('Save report')).toBeInTheDocument();
     });
   });
 });

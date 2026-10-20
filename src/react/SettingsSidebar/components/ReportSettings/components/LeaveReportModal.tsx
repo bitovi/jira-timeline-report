@@ -10,7 +10,7 @@ interface LeaveReportModalProps {
   onLeave: () => void;
 }
 
-/** Asked before Home drops a report with unsaved changes. See `hasUnsavedReport`. */
+/** Asked before New Report drops a report with unsaved changes. See `hasUnsavedReport`. */
 const LeaveReportModal: FC<LeaveReportModalProps> = ({ isOpen, onStay, onLeave }) => (
   <ModalTransition>
     {isOpen && (
@@ -18,7 +18,7 @@ const LeaveReportModal: FC<LeaveReportModalProps> = ({ isOpen, onStay, onLeave }
         <ModalHeader>
           <ModalTitle appearance="warning">Leave this report?</ModalTitle>
         </ModalHeader>
-        <ModalBody>This report has unsaved changes. Going home won&apos;t keep them.</ModalBody>
+        <ModalBody>This report has unsaved changes. Starting a new report won&apos;t keep them.</ModalBody>
         <ModalFooter>
           <Button appearance="subtle" onClick={onStay}>
             Stay
