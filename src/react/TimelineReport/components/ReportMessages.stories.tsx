@@ -2,7 +2,13 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import React from 'react';
 
-import { LoadingMessage, EmptyResultMessage, ErrorMessage, ChooseSourcesMessage } from './ReportMessages';
+import {
+  LoadingMessage,
+  EmptyResultMessage,
+  ErrorMessage,
+  ChooseSourcesMessage,
+  UnsupportedReportTypeMessage,
+} from './ReportMessages';
 
 // Credential-free coverage of the report shell's non-report view states. The live app can't easily
 // be driven into the error/licensing states, so they're documented here.
@@ -30,10 +36,17 @@ export const ChooseSources: Story = {
 
 /** Request resolved, but nothing matched. */
 export const EmptyResult: Story = {
-  render: () => <EmptyResultMessage count={0} primaryIssueType="Initiative" />,
+  render: () => <EmptyResultMessage primaryIssueType="Initiative" onOpenSources={() => {}} />,
 };
 
 /** Request rejected with a generic Jira error. */
 export const ErrorGeneric: Story = {
-  render: () => <ErrorMessage errorMessage="Field 'foo' does not exist or is not searchable." />,
+  render: () => (
+    <ErrorMessage errorMessage="Field 'foo' does not exist or is not searchable." onOpenSources={() => {}} />
+  ),
+};
+
+/** A saved report or link names a report type this build no longer has. */
+export const UnsupportedReportType: Story = {
+  render: () => <UnsupportedReportTypeMessage reportType="table2" />,
 };

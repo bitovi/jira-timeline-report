@@ -8,12 +8,10 @@ import RecentReports from './RecentReports';
 const mockSetIsOpen = vi.fn();
 const mockOnViewReportsButtonClicked = vi.fn();
 
-const mockReports = {
-  '1': { id: '1', name: 'Report 1', queryParams: 'param1=value1' },
-  '2': { id: '2', name: 'Report 2', queryParams: 'param2=value2' },
-};
-
-const recentReports = ['1', '2'];
+const recentReports = [
+  { id: '2', name: 'Report 2', queryParams: 'param2=value2' },
+  { id: '1', name: 'Report 1', queryParams: 'param1=value1' },
+];
 
 describe('<RecentReports /> ', () => {
   let originalLocation: Location;
@@ -44,7 +42,6 @@ describe('<RecentReports /> ', () => {
     render(
       <RecentReports
         recentReports={recentReports}
-        reports={mockReports}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
         setIsOpen={mockSetIsOpen}
       />,
@@ -56,11 +53,24 @@ describe('<RecentReports /> ', () => {
     expect(screen.getByText('View all saved reports')).toBeInTheDocument();
   });
 
+  it('keeps the most recent first, not alphabetical', () => {
+    render(
+      <RecentReports
+        recentReports={recentReports}
+        onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
+        setIsOpen={mockSetIsOpen}
+      />,
+    );
+
+    expect(screen.getByText('Report 2').compareDocumentPosition(screen.getByText('Report 1'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
   it("handles 'View all saved reports' button click", () => {
     render(
       <RecentReports
         recentReports={recentReports}
-        reports={mockReports}
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
         setIsOpen={mockSetIsOpen}
       />,

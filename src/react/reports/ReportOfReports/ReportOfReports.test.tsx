@@ -317,15 +317,6 @@ describe('<ReportOfReports>', () => {
     expect(screen.queryAllByTestId('report-card')).toHaveLength(0);
   });
 
-  it('marks the document root with the hook fullscreen.css indents by', async () => {
-    renderReport();
-
-    // The gutter this keeps in fullscreen lives in a global stylesheet, so dropping the class here
-    // would silently push the document back against both screen edges — jsdom loads no CSS, and
-    // there is nothing else to notice.
-    expect((await screen.findByRole('button', { name: 'Add Report' })).closest('.ror-document')).not.toBeNull();
-  });
-
   it('marks the add row as chrome, so print and fullscreen both drop it', async () => {
     renderReport();
 

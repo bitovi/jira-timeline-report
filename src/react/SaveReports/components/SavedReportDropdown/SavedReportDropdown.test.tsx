@@ -82,7 +82,7 @@ describe('<SavedReportDropdown />', () => {
     expect(screen.getByText('Report 2')).toBeInTheDocument();
   });
 
-  it('reconciles recent reports with all reports', async () => {
+  it('tops the list up with other saved reports, the same list home shows', async () => {
     render(
       <SavedReportDropdown
         onViewReportsButtonClicked={mockOnViewReportsButtonClicked}
@@ -93,11 +93,9 @@ describe('<SavedReportDropdown />', () => {
 
     await userEvent.click(screen.getByText('Saved reports'));
 
-    await waitFor(() => {
-      expect(screen.getByText('Report 1')).toBeInTheDocument();
-      expect(screen.getByText('Report 2')).toBeInTheDocument();
-      expect(screen.getByText('Report 3')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Report 1')).toBeInTheDocument();
+    expect(screen.getByText('Report 2')).toBeInTheDocument();
+    expect(screen.getByText('Report 3')).toBeInTheDocument();
   });
 
   it("calls the view reports callback when 'View all saved reports' is clicked", async () => {

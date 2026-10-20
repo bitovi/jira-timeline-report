@@ -5,13 +5,13 @@ import type { Report } from '../../jira/reports';
 import type { StarsStore } from '../services/reports';
 
 import React, { Suspense } from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
-import { describe, it, vi } from 'vitest';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FlagsProvider } from '@atlaskit/flag';
 import userEvent from '@testing-library/user-event';
 
-import ViewReports, { byLastUpdated, pageSizeFor } from './ViewReports';
+import ViewReports, { byLastUpdated, PAGE_SIZE } from './ViewReports';
 import { pushStateObservable } from '../../canjs/routing/state-storage';
 import { StorageProvider } from '../services/storage';
 import { JiraProvider } from '../services/jira';
@@ -99,11 +99,11 @@ const tab = (name: RegExp) => screen.findByRole('tab', { name });
 const rows = () => within(screen.getByRole('table')).getAllByRole('link');
 const rowNames = () => rows().map((link) => link.getAttribute('aria-label'));
 const search = () => screen.findByRole('textbox', { name: 'Search reports' });
-/** A row's cells, in column order: star, name, owner, last updated, type, delete. */
+/** A row's cells, in column order: star, type, name, owner, last updated, delete. */
 const cellsOf = (name: string) =>
   within(screen.getByRole('link', { name }).closest('[role="row"]') as HTMLElement).getAllByRole('cell');
-const ownerOf = (name: string) => cellsOf(name)[2];
-const updatedOf = (name: string) => cellsOf(name)[3];
+const ownerOf = (name: string) => cellsOf(name)[3];
+const updatedOf = (name: string) => cellsOf(name)[4];
 
 const MIXED = [
   report('1', 'Alpha', { ownerId: ME, queryParams: 'primaryReportType=due&jql=project%3DECOM' }),
@@ -279,24 +279,72 @@ describe('ViewReports', () => {
   });
 
   describe('paging', () => {
-    const many = Array.from({ length: 10 }, (_, i) => report(String(i), `Report ${String(i).padStart(2, '0')}`));
+    // A page and a half, so the All tab starts with one page loaded and one left to scroll to.
+    const many = Array.from({ length: PAGE_SIZE + 10 }, (_, i) =>
+      report(String(i), `Report ${String(i).padStart(2, '0')}`),
+    );
 
-    it('sizes a page to fill the panel, at least 6 rows', () => {
-      expect(pageSizeFor(0)).toBe(6);
-      expect(pageSizeFor(530)).toBe(11);
+    // jsdom has no IntersectionObserver. This one records what's observed so a test can "scroll"
+    // the sentinel into view.
+    let observers: Array<{ callback: IntersectionObserverCallback; targets: Element[] }>;
+
+    beforeEach(() => {
+      observers = [];
+      vi.stubGlobal(
+        'IntersectionObserver',
+        class {
+          private entry: { callback: IntersectionObserverCallback; targets: Element[] };
+          constructor(callback: IntersectionObserverCallback) {
+            this.entry = { callback, targets: [] };
+            observers.push(this.entry);
+          }
+          observe(target: Element) {
+            this.entry.targets.push(target);
+          }
+          disconnect() {
+            observers = observers.filter((o) => o !== this.entry);
+          }
+          unobserve() {}
+          takeRecords() {
+            return [];
+          }
+        },
+      );
     });
 
-    it('loads more on the All tab', async () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const scrollToEnd = () =>
+      act(() => {
+        for (const { callback, targets } of [...observers]) {
+          callback(
+            targets.map((target) => ({ target, isIntersecting: true }) as IntersectionObserverEntry),
+            {} as IntersectionObserver,
+          );
+        }
+      });
+
+    it('loads the next page on the All tab when scrolled to the end', async () => {
       await renderPage({ reports: many });
 
-      expect(await screen.findByText('Showing 6 of 10')).toBeInTheDocument();
-      expect(rows()).toHaveLength(6);
+      await screen.findByRole('link', { name: 'Report 00' });
+      expect(rows()).toHaveLength(PAGE_SIZE);
 
-      await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
+      scrollToEnd();
 
-      expect(rows()).toHaveLength(10);
-      expect(screen.getByText('Showing 10 of 10')).toBeInTheDocument();
+      expect(rows()).toHaveLength(PAGE_SIZE + 10);
+      // Everything is loaded, so nothing is left watching for the end.
+      expect(observers).toHaveLength(0);
+    });
+
+    it('has no "Load more" button or "Showing X of Y"', async () => {
+      await renderPage({ reports: many });
+
+      await screen.findByRole('link', { name: 'Report 00' });
       expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
     });
 
     // ↓ moves through every match, but only the loaded pages have links — ↵ on an unloaded row used
@@ -306,14 +354,14 @@ describe('ViewReports', () => {
       Element.prototype.scrollIntoView = scrollIntoView;
       await renderPage({ reports: many });
 
-      expect(await screen.findByText('Showing 6 of 10')).toBeInTheDocument();
+      await screen.findByRole('link', { name: 'Report 00' });
 
       await userEvent.click(await search());
-      // From the first row (index 0) to the seventh, one past the loaded six.
-      await userEvent.keyboard('{ArrowDown>6/}');
+      // From the first row (index 0) to the first row of the unloaded page.
+      await userEvent.keyboard(`{ArrowDown>${PAGE_SIZE}/}`);
 
-      const link = await screen.findByRole('link', { name: 'Report 06' });
-      expect(screen.getByText('Showing 10 of 10')).toBeInTheDocument();
+      const link = await screen.findByRole('link', { name: `Report ${PAGE_SIZE}` });
+      expect(rows()).toHaveLength(PAGE_SIZE + 10);
       expect(scrollIntoView).toHaveBeenLastCalledWith({ block: 'nearest' });
 
       const opened = vi.fn((event: Event) => event.preventDefault());
@@ -325,11 +373,13 @@ describe('ViewReports', () => {
 
     it('starts over when the query changes', async () => {
       await renderPage({ reports: many });
-      await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+      await screen.findByRole('link', { name: 'Report 00' });
+      scrollToEnd();
+      expect(rows()).toHaveLength(PAGE_SIZE + 10);
 
       await userEvent.type(await search(), 'Report');
 
-      expect(screen.getByText('Showing 6 of 10')).toBeInTheDocument();
+      expect(rows()).toHaveLength(PAGE_SIZE);
     });
 
     it('does not page the other tabs', async () => {
@@ -337,8 +387,7 @@ describe('ViewReports', () => {
 
       await userEvent.click(await tab(/My reports/));
 
-      expect(rows()).toHaveLength(10);
-      expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
+      expect(rows()).toHaveLength(PAGE_SIZE + 10);
     });
   });
 

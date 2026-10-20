@@ -2,14 +2,19 @@ import '@testing-library/jest-dom';
 import { afterAll, vi } from 'vitest';
 
 /**
- * CanJS's observable teardown (can-event-queue/can-dom-events) sometimes unwinds a tick after
- * the test that triggered it finishes — if that lands after Vitest tears down this file's jsdom
- * `window`, can-dom-events throws `ReferenceError: window is not defined` as an unhandled error
- * that fails the whole run even though every test passed. Flushing one macrotask here, before
- * teardown, gives that straggling cleanup a `window` to run against.
+ * Reading an unbound CanJS computed (e.g. `routeData.roundTo`, pulled in by
+ * `roundDateByRoundToParam`) temporarily binds it and schedules the unbind with
+ * `setTimeout(..., 10)` (can-observation/temporarily-bind.js). If a file's last such read lands
+ * within 10ms of its end, that unbind fires after Vitest tears down the jsdom `window`, and
+ * can-dom-events throws `ReferenceError: window is not defined` as an unhandled error that fails
+ * the run even though every test passed. Waiting longer than that timer here, before teardown,
+ * lets it fire while `window` still exists — Node runs timers in deadline order, so any pending
+ * 10ms unbind always fires before this one resolves.
  */
+const CANJS_TEMPORARY_UNBIND_MS = 10;
+
 afterAll(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, CANJS_TEMPORARY_UNBIND_MS + 5));
 });
 
 window.matchMedia = vi.fn().mockImplementation((query) => ({

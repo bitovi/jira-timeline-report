@@ -1,7 +1,6 @@
 import type { FC } from 'react';
 import type { AppStorage } from '../../jira/storage/common';
 import type { LinkBuilderFactory } from '../../routing/common';
-import type { Report } from '../../jira/reports';
 
 import React, { Suspense, useMemo } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -15,7 +14,7 @@ import { queryClient } from '../services/query';
 import { StorageProvider } from '../services/storage';
 import { RoutingProvider } from '../services/routing';
 import { JiraProvider } from '../services/jira';
-import { useAllReports, useRecentReports, useStarredReports } from '../services/reports';
+import { resolveRecentReports, useAllReports, useRecentReports, useStarredReports } from '../services/reports';
 import { useCurrentAccountId } from '../services/user';
 import { useAsyncFeatures } from '../services/features';
 import { getReportTypeOptions } from '../ReportControls/components/SelectReportType/utilities';
@@ -74,11 +73,7 @@ const ConnectedReportHome: FC<{ actions: HomeActions }> = ({ actions }) => {
   const { starredIds, toggleStar } = useStarredReports();
   const canCreateReportOfReports = useCanCreateReportOfReports();
 
-  // Recents are ids in localStorage; a report deleted elsewhere just drops out here.
-  const recentReports = useMemo(
-    () => recentIds.map((id) => reports[id]).filter((report): report is Report => !!report),
-    [recentIds, reports],
-  );
+  const recentReports = useMemo(() => resolveRecentReports(recentIds, reports), [recentIds, reports]);
 
   return (
     <ReportHome

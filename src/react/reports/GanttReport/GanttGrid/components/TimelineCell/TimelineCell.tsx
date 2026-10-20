@@ -1,5 +1,6 @@
 import React from 'react';
 import { TimelineBar } from '../TimelineBar';
+import { TimelineBoundaryContext } from '../DatesTooltip';
 import type { AxisRange, IssueOrRelease, WorkTypeWithWork } from '../../types';
 
 export interface TimelineCellProps {
@@ -16,8 +17,8 @@ export interface TimelineCellProps {
 /**
  * The grid cell that hosts a row's `TimelineBar`, spanning the month columns.
  *
- * The dates tooltip lives inside `TimelineBar` (wrapping the bar element(s)) so it anchors to the
- * bar rather than this full-height cell.
+ * The dates tooltip lives inside `TimelineBar` and anchors to the bar element. This cell is the
+ * timeline area, provided as the tooltip's boundary so it never extends past the timeline.
  */
 export const TimelineCell: React.FC<TimelineCellProps> = ({
   issue,
@@ -27,15 +28,20 @@ export const TimelineCell: React.FC<TimelineCellProps> = ({
   isBreakdown,
   workTypesWithWork,
   gridColumn,
-}) => (
-  <div style={{ gridColumn, position: 'relative', zIndex: 20 }}>
-    <TimelineBar
-      issue={issue}
-      range={range}
-      roundTo={roundTo}
-      isDense={isDense}
-      isBreakdown={isBreakdown}
-      workTypesWithWork={workTypesWithWork}
-    />
-  </div>
-);
+}) => {
+  const [cell, setCell] = React.useState<HTMLElement | null>(null);
+  return (
+    <div ref={setCell} style={{ gridColumn, position: 'relative', zIndex: 20 }}>
+      <TimelineBoundaryContext.Provider value={cell}>
+        <TimelineBar
+          issue={issue}
+          range={range}
+          roundTo={roundTo}
+          isDense={isDense}
+          isBreakdown={isBreakdown}
+          workTypesWithWork={workTypesWithWork}
+        />
+      </TimelineBoundaryContext.Provider>
+    </div>
+  );
+};

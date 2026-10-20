@@ -1,35 +1,25 @@
 import type { FC } from 'react';
-import type { Report, Reports } from '../../../../jira/reports';
+import type { Report } from '../../../../jira/reports';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 
 import { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 import Hr from '../../../components/Hr';
-import { notEmpty } from '../../../../jira/shared/helpers';
 import { Link } from '../../../services/routing';
 
 interface RecentReportsProps {
-  recentReports: string[];
-  reports: Reports;
+  recentReports: Report[];
   onViewReportsButtonClicked: () => void;
   setIsOpen: (isOpen: boolean) => void;
 }
 
-const RecentReports: FC<RecentReportsProps> = ({ recentReports, reports, onViewReportsButtonClicked, setIsOpen }) => {
-  const reportsToShow = useMemo(
-    () =>
-      recentReports
-        .map((id) => reports[id])
-        .filter(notEmpty)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [recentReports, reports],
-  );
-
+/** Most recent first, the same reports home's "Recent reports" shows. See `resolveRecentReports`. */
+const RecentReports: FC<RecentReportsProps> = ({ recentReports, onViewReportsButtonClicked, setIsOpen }) => {
   return (
     <>
       <DropdownItemGroup>
         <p className="p-4 text-xs text-slate-400 font-semibold uppercase">Recent</p>
-        {reportsToShow.map((report) => (
+        {recentReports.map((report) => (
           <ReportListItem key={report.id} report={report} />
         ))}
       </DropdownItemGroup>

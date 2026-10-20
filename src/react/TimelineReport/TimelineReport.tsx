@@ -341,6 +341,9 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               />
             }
             startedReport={startedReport}
+            onOpenSources={() => {
+              rd.showSettings = 'SOURCES';
+            }}
             setup={
               <ChooseSourcesMessage
                 reportTypeName={REPORT_TYPES.find(({ key }) => key === primaryReportType)?.name}
