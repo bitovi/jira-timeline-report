@@ -224,7 +224,7 @@ const SaveReport: FC<SaveReportProps> = ({ queryParamObservable, onViewReportsBu
               See spec/016-report-of-reports. */}
           {!selectedReport && (!!queryParams.get('jql') || primaryReportType === 'report-of-reports') && (
             <Button appearance="primary" onClick={openModal}>
-              Create new report
+              Save report
             </Button>
           )}
           <SavedReportDropdown

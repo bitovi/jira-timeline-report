@@ -21,13 +21,18 @@ export interface SettingsSidebarProps {
   showSidebarBranding: boolean;
   onUpdateTeamsConfiguration: (overrides: Partial<NormalizeIssueConfig & { fields: string[] }>) => void;
   /**
-   * Called as the Home link navigates to the bare app URL, so the app forgets the user had started a
-   * report and shows home rather than the "choose sources" prompt. No Home link without it.
+   * Called as the New Report link navigates to a blank report with Sources open — what home's
+   * "Create new report" does — so the app counts the report as started and shows the "choose
+   * sources" prompt rather than home. No New Report link without it.
    */
-  onGoHome?: () => void;
+  onNewReport?: () => void;
 }
 
-const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpdateTeamsConfiguration, onGoHome }) => {
+const SettingsSidebar: FC<SettingsSidebarProps> = ({
+  showSidebarBranding,
+  onUpdateTeamsConfiguration,
+  onNewReport,
+}) => {
   const [showSettings] = useRouteData<string>('showSettings');
   const { features } = useAsyncFeatures();
   const unlicensed = useIsUnlicensed();
@@ -50,7 +55,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpda
           changeSettings={changeSettings}
           showStorage={!!features?.reportsStorage}
           unlicensed={unlicensed}
-          onGoHome={onGoHome}
+          onNewReport={onNewReport}
         />
       )}
       {showSettings === 'SOURCES' && (

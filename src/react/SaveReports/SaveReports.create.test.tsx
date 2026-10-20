@@ -73,7 +73,7 @@ describe('creating a report while the account id is still being looked up', () =
   });
 
   const openAndConfirm = async () => {
-    await userEvent.click(await screen.findByRole('button', { name: 'Create new report' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Save report' }));
 
     // The modal reads `form.name.value`. Browsers resolve `form.name` to the field named "name"
     // (forms let named fields override built-ins); jsdom returns the form's own empty `name`
