@@ -99,11 +99,11 @@ const tab = (name: RegExp) => screen.findByRole('tab', { name });
 const rows = () => within(screen.getByRole('table')).getAllByRole('link');
 const rowNames = () => rows().map((link) => link.getAttribute('aria-label'));
 const search = () => screen.findByRole('textbox', { name: 'Search reports' });
-/** A row's cells, in column order: star, name, owner, last updated, type, delete. */
+/** A row's cells, in column order: star, type, name, owner, last updated, delete. */
 const cellsOf = (name: string) =>
   within(screen.getByRole('link', { name }).closest('[role="row"]') as HTMLElement).getAllByRole('cell');
-const ownerOf = (name: string) => cellsOf(name)[2];
-const updatedOf = (name: string) => cellsOf(name)[3];
+const ownerOf = (name: string) => cellsOf(name)[3];
+const updatedOf = (name: string) => cellsOf(name)[4];
 
 const MIXED = [
   report('1', 'Alpha', { ownerId: ME, queryParams: 'primaryReportType=due&jql=project%3DECOM' }),
