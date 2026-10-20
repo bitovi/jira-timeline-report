@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Jira } from '../../../../../jira-oidc-helpers';
 import type { AppStorage } from '../../../../../jira/storage/common';
+import type { EstimateUnit } from '../../../../../jira/shared/types';
 
 import React, { Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,6 +12,7 @@ import { JiraProvider, jiraKeys } from '../../../../services/jira';
 import { StorageProvider } from '../../../../services/storage';
 import { updateTeamConfigurationKeys } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
 import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls';
+import { itemLabelFor } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
 /**
  * A stand-in for `TeamHeaderRow`'s controls row in `AutoScheduler.tsx` — the real one is a grid item,
@@ -18,14 +20,32 @@ import { TeamCapacityInputs, TeamCapacityOutputs } from './TeamCapacityControls'
  * behaviour the stories demonstrate is the behaviour the report has; `width` stands in for the grid
  * track, which is what actually squeezes in the app.
  */
-const Row = ({ width }: { width: number }) => (
+type RowProps = {
+  width: number;
+  estimateUnit?: EstimateUnit;
+  /** X: estimate units one person finishes per working day — see `shared/estimation.ts`. */
+  pointsPerPersonDay?: number;
+  teamMembers?: number;
+  periodDays?: number;
+};
+
+const Row = ({ width, estimateUnit, pointsPerPersonDay = 0.21, teamMembers = 10, periodDays = 10 }: RowProps) => (
   <div className="bg-neutral-20" style={{ maxWidth: width }}>
     <div className="pl-0 pt-1.5 pb-1 pr-3 text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-1 relative">
       <span className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
         ORDER
-        <TeamCapacityInputs teamName="ORDER" hierarchyLevel={7} savedVelocityPerSprint={21} savedTracks={1} />
+        <TeamCapacityInputs
+          teamName="ORDER"
+          hierarchyLevel={7}
+          itemLabel={itemLabelFor('Epic')}
+          periodDays={periodDays}
+          estimateUnit={estimateUnit}
+          savedPointsPerPersonDay={pointsPerPersonDay}
+          savedTracks={1}
+          savedTeamMembers={teamMembers}
+        />
       </span>
-      <TeamCapacityOutputs pointsPerDay={2.1} totalWorkingDays={38} />
+      <TeamCapacityOutputs totalWorkingDays={38} />
     </div>
   </div>
 );
@@ -35,10 +55,13 @@ const Row = ({ width }: { width: number }) => (
 const buildQueryClient = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
-  queryClient.setQueryData(jiraKeys.issueFields('auth'), []);
+  queryClient.setQueryData(jiraKeys.issueFields('auth'), [{ id: 'customfield_10016', name: 'Story Points' }]);
   queryClient.setQueryData(updateTeamConfigurationKeys.allTeamData, {
     issueHeirarchy: [],
-    savedUserData: { ORDER: { defaults: { velocityPerSprint: 21, tracks: 1 } } },
+    savedUserData: {
+      __GLOBAL__: { defaults: {} },
+      ORDER: { defaults: { estimateField: 'customfield_10016', teamMembers: 10, tracks: 1 } },
+    },
   });
 
   return queryClient;
@@ -82,3 +105,18 @@ export const Clean: StoryObj<typeof Row> = {};
 
 /** The squeezed case: the outputs drop to a second line instead of painting over the inputs. */
 export const Narrow: StoryObj<typeof Row> = { args: { width: 420 } };
+
+/** Dev Days: one per developer per day, so the team total is the headcount. */
+export const DevDays: StoryObj<typeof Row> = {
+  args: { estimateUnit: 'devDays', pointsPerPersonDay: 1 },
+};
+
+/** Team Weeks, 5 people per estimate: X = 1 / (5 × 5) = 0.04, so 10 developers do 0.4 a day. */
+export const TeamWeeks: StoryObj<typeof Row> = {
+  args: { estimateUnit: 'teamWeeks', pointsPerPersonDay: 0.04 },
+};
+
+/** Team Sprints, 5 people per estimate and 2-week sprints: X = 1 / (5 × 10) = 0.02. */
+export const TeamSprints: StoryObj<typeof Row> = {
+  args: { estimateUnit: 'teamSprints', pointsPerPersonDay: 0.02 },
+};

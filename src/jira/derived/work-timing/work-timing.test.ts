@@ -24,7 +24,7 @@ describe('work-timing', () => {
 
   const defaultOptions = {
     getDefaultConfidence: (team: NormalizedTeam) => 50,
-    getDefaultStoryPoints: (team: NormalizedTeam) => team.velocity / team.parallelWorkLimit,
+    getDefaultEstimate: (team: NormalizedTeam) => team.velocity / team.parallelWorkLimit,
     uncertaintyWeight: 80,
   };
 

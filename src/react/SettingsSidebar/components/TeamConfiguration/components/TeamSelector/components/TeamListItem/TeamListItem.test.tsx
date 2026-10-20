@@ -22,7 +22,18 @@ describe('<TeamListItem />', () => {
     render(<TeamListItem {...defaultProps} />);
 
     expect(screen.getByText(defaultProps.team.name)).toBeInTheDocument();
-    expect(screen.getByText('using defaults')).toBeInTheDocument();
+  });
+
+  it.each(['reportOnly', 'storageOnly'] as const)('marks no dot on a %s team', (status) => {
+    render(<TeamListItem {...defaultProps} team={{ ...defaultProps.team, status }} />);
+
+    expect(screen.queryByText('Has custom settings')).not.toBeInTheDocument();
+  });
+
+  it('marks a team in the report with saved settings with a dot', () => {
+    render(<TeamListItem {...defaultProps} team={{ ...defaultProps.team, status: 'storageAndReport' }} />);
+
+    expect(screen.getByText('Has custom settings')).toBeInTheDocument();
   });
 
   it('calls setSelectedTeam when the item is clicked', async () => {

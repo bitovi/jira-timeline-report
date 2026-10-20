@@ -14,6 +14,7 @@ type UseTeamFormConfig = {
   inheritedTeamData: TeamConfiguration;
   savedUserTeamData: TeamConfiguration;
   getInheritance: (issueType: keyof TeamConfiguration) => TeamConfiguration;
+  hasSavedHeadcount?: (issueType: keyof TeamConfiguration) => boolean;
 };
 
 export const useTeamForm = ({
@@ -23,6 +24,7 @@ export const useTeamForm = ({
   inheritedTeamData,
   savedUserTeamData,
   getInheritance,
+  hasSavedHeadcount,
 }: UseTeamFormConfig) => {
   const { save, isSaving } = useSaveTeamData({ teamName, hierarchyLevel, onUpdate });
   const { register, setValue, control, reset } = useForm<Configuration>({
@@ -37,15 +39,28 @@ export const useTeamForm = ({
     save({ ...savedUserTeamData[hierarchyLevel]!, [name]: value });
   }
 
-  const toggleInheritance = (field: keyof Configuration, shouldCustomize: boolean) => {
+  /** Several fields in one write: separate `update`s would each spread the same saved snapshot. */
+  function updateFields(patch: Partial<Configuration>) {
+    save({ ...savedUserTeamData[hierarchyLevel]!, ...patch });
+  }
+
+  /**
+   * `alsoWrite` goes out in the same write — for fields that only make sense together, like the
+   * estimate unit and the capacity (`pointsPerPersonDay`) expressed in it.
+   */
+  const toggleInheritance = (
+    field: keyof Configuration,
+    shouldCustomize: boolean,
+    alsoWrite?: Partial<Configuration>,
+  ) => {
     if (shouldCustomize) {
-      update({ name: field, value: inheritedTeamData[hierarchyLevel]![field] });
+      updateFields({ [field]: inheritedTeamData[hierarchyLevel]![field], ...alsoWrite });
       return;
     }
 
     setValue(field, getInheritance(hierarchyLevel)[hierarchyLevel]![field]);
 
-    update({ name: field, value: null });
+    updateFields({ [field]: null, ...alsoWrite });
   };
 
   return {
@@ -54,7 +69,10 @@ export const useTeamForm = ({
     control,
     isSaving,
     update,
+    updateFields,
+    setValue,
     savedUserData: savedUserTeamData[hierarchyLevel] || createEmptyConfiguration(),
+    hasSavedHeadcount: hasSavedHeadcount?.(hierarchyLevel) ?? false,
     inheritedUserData: inheritedTeamData[hierarchyLevel] || createEmptyConfiguration(),
   };
 };

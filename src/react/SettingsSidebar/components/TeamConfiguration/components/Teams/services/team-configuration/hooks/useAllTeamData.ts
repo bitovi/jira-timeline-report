@@ -16,6 +16,7 @@ import {
   fixAnyNonExistingFields,
   getAllTeamData,
   getParentConfiguration,
+  hasSavedTeamMembers,
 } from '../../team-configuration';
 import { getSimplifiedIssueHierarchy } from '../../../../../../../../../stateful-data/jira-data-requests';
 import { useJira } from '../../../../../../../../services/jira';
@@ -94,6 +95,8 @@ export type UseTeamData = (
   inheritedTeamData: TeamConfiguration;
   getHierarchyLevelName: (level: number | string) => string;
   getInheritance: (issueType: keyof TeamConfiguration) => TeamConfiguration;
+  /** Did the team ever enter a headcount anywhere in this level's chain? See `hasSavedTeamMembers`. */
+  hasSavedHeadcount: (issueType: keyof TeamConfiguration) => boolean;
 };
 
 /**
@@ -135,6 +138,7 @@ export const useTeamData: UseTeamData = (teamName, jiraFields) => {
 
       return issueHeirarchyLevel.name;
     },
+    hasSavedHeadcount: (issueType) => hasSavedTeamMembers(savedUserAllTeamData, teamName, issueType),
     getInheritance: (issueType) => {
       return {
         ...inherited,

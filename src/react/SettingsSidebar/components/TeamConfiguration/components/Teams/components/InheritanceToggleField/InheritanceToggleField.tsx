@@ -3,10 +3,11 @@ import type { Configuration } from '../../services/team-configuration';
 import type { Control } from 'react-hook-form';
 import type { FieldUpdates } from '../../ConfigureTeamsForm';
 
-import React from 'react';
+import React, { useId } from 'react';
+import { useWatch } from 'react-hook-form';
 
-import ToggleButton from '../../../../../../../components/ToggleButton';
 import { FormToggle } from '../Toggle';
+import InheritanceRow from '../InheritanceRow';
 
 interface InheritanceToggleFieldProps {
   isInheriting: boolean;
@@ -23,16 +24,19 @@ const InheritanceToggleField: FC<InheritanceToggleFieldProps> = ({
   onInheritanceChange,
   ...toggleProps
 }) => {
+  const id = useId();
+  const value = useWatch({ control: toggleProps.control, name: toggleProps.name });
+
   return (
-    <div className="grid grid-cols-[1fr_auto] items-end gap-x-1">
-      <FormToggle disabled={isInheriting} {...toggleProps} />
-      <ToggleButton
-        active={!isInheriting}
-        onActiveChange={onInheritanceChange}
-        inactiveLabel={isInheriting ? 'inheriting' : 'inherit'}
-        activeLabel={isInheriting ? 'customize' : 'customized'}
-      />
-    </div>
+    <InheritanceRow
+      id={id}
+      label={toggleProps.label}
+      isInheriting={isInheriting}
+      onInheritanceChange={onInheritanceChange}
+      inheritedValue={`${value ? 'On' : 'Off'}: ${toggleProps.description.toLowerCase()}`}
+    >
+      <FormToggle hideLabel id={id} {...toggleProps} />
+    </InheritanceRow>
   );
 };
 

@@ -48,12 +48,12 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({
       {/* checks that configuration issue exists */}
       <StorageCheck>
         {selectedTeam === 'global' && (
-          <div className="w-128 overflow-auto">
+          <div className="flex w-[40rem] flex-col overflow-hidden">
             <ConfigureAllTeams jiraFields={jiraFields} {...configurationProps} />
           </div>
         )}
         {!!selectedTeam && selectedTeam !== 'global' && (
-          <div key={selectedTeam} className="w-128 overflow-auto">
+          <div key={selectedTeam} className="flex w-[40rem] flex-col overflow-hidden">
             <ConfigureTeams teamName={selectedTeam} jiraFields={jiraFields} {...configurationProps} />
           </div>
         )}

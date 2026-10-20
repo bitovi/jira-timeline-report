@@ -2,8 +2,7 @@ import type { FC } from 'react';
 
 import React, { useState } from 'react';
 import Heading from '@atlaskit/heading';
-import SettingsIcon from '@atlaskit/icon/glyph/settings';
-import ArrowRightCircleIcon from '@atlaskit/icon/glyph/arrow-right-circle';
+import CustomizeIcon from '@atlaskit/icon/core/customize';
 import QuestionCircleIcon from '@atlaskit/icon/glyph/question-circle';
 import Tooltip from '@atlaskit/tooltip';
 import Textfield from '@atlaskit/textfield';
@@ -17,7 +16,7 @@ import TeamSection from './components/TeamSection';
 import OutsideReportTeams from './components/OutsideReportTeams';
 
 const OUTSIDE_REPORT_HELP_TEXT =
-  "Not seeing a team? This list only shows teams that have been configured before but aren't in this report. " +
+  "This list only shows teams that have been configured before but aren't in this report. " +
   "To configure a team that isn't listed, add its work items to this report from the Sources tab.";
 
 export interface TeamSelectorProps {
@@ -55,13 +54,15 @@ const TeamSelector: FC<TeamSelectorProps> = ({
   return (
     <>
       <div className="my-4">
-        <Heading size="small">Team Configuration</Heading>
+        <Heading size="medium">Team Settings</Heading>
       </div>
-      <p className="text-xs font-semibold text-neutral-500">DEFAULT</p>
-      <SidebarButton className="mt-2" isActive={selectedTeam === 'global'} onClick={() => setSelectedTeam('global')}>
-        <SettingsIcon label="default settings" />
-        <p className="flex-1">Default Settings</p>
-        {selectedTeam === 'global' && <ArrowRightCircleIcon label="default settings selected" />}
+      <SidebarButton
+        isActive={selectedTeam === 'global'}
+        aria-current={selectedTeam === 'global' || undefined}
+        onClick={() => setSelectedTeam('global')}
+      >
+        <CustomizeIcon label="" />
+        <p className="flex-1">Global Settings</p>
       </SidebarButton>
       <Hr />
       <div className="mt-2 mb-2">
