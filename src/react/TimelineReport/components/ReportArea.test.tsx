@@ -94,10 +94,10 @@ describe('<ReportArea>', () => {
     expect(screen.queryByText(/Loaded/)).not.toBeInTheDocument();
   });
 
-  it('shows the empty-result warning when resolved with zero issues', () => {
+  it('shows the empty-result message when resolved with zero issues', () => {
     renderArea({ status: 'resolved' }, { primaryIssuesCount: 0 });
-    expect(screen.getByText(/0 issues of type Initiative/)).toBeInTheDocument();
-    expect(screen.getByText(/Please check your JQL and the View Settings/)).toBeInTheDocument();
+    expect(screen.getByText('No Initiative work items found')).toBeInTheDocument();
+    expect(screen.getByText(/Check the JQL in Sources/)).toBeInTheDocument();
     expect(screen.queryByTestId('report-block')).not.toBeInTheDocument();
   });
 
@@ -176,7 +176,7 @@ describe('<ReportArea>', () => {
       renderArea({ status: 'idle' }, selfManaged);
       expect(screen.getByTestId('report-block')).toBeInTheDocument();
       expect(screen.queryByTestId('home')).not.toBeInTheDocument();
-      expect(screen.queryByText(/issues of type/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/work items found/)).not.toBeInTheDocument();
     });
 
     // With no JQL, getRawIssues returns undefined and derivedIssuesRequestData falls back to an
