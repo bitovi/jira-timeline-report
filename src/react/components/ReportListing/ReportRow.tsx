@@ -29,8 +29,8 @@ export type ReportRowProps = ReportRowBaseProps &
   ({ href: string; onSelect?: never } | { onSelect: () => void; href?: never });
 
 /**
- * One saved report, presented identically everywhere it's listed: type icon, name (with search
- * highlighting), the report's JQL as a secondary line, and a type badge. Used by the Add Report
+ * One saved report, presented identically everywhere it's listed: the type icon + badge,
+ * then the name (with search highlighting) and the report's JQL as a secondary line. Used by the Add Report
  * modal (as a button) and the Saved Reports page (as a link). See spec/023-report-modal.
  *
  * The interactive element's accessible name is always just `report.name` — the badge and JQL are
@@ -47,18 +47,21 @@ export const ReportRow: FC<ReportRowProps> = ({
 }) => {
   const content = (
     <>
-      <ReportTypeIcon tone={described.tone} />
+      {/* Fixed width so the names line up whatever the type; the longest badges truncate. */}
+      <span className="flex w-[170px] flex-none items-center gap-2">
+        <ReportTypeIcon tone={described.tone} />
+        {described.typeName && (
+          <span className="min-w-0 truncate whitespace-nowrap rounded-full bg-neutral-20 px-2 py-0.5 text-xs font-semibold text-neutral-801">
+            {described.typeName}
+          </span>
+        )}
+      </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium text-neutral-800">
           <HighlightedText text={described.report.name} query={query} />
         </span>
         {described.jql && <span className="block truncate text-xs text-neutral-300">{described.jql}</span>}
       </span>
-      {described.typeName && (
-        <span className="flex-none whitespace-nowrap rounded-full bg-neutral-20 px-2 py-0.5 text-xs font-semibold text-neutral-801">
-          {described.typeName}
-        </span>
-      )}
     </>
   );
 

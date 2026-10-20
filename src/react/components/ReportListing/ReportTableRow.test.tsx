@@ -24,10 +24,10 @@ const renderRow = (props: Partial<ReportTableRowProps> = {}) =>
     </div>,
   );
 
-/** The row's cells, in column order: star, name, owner, last updated, type, delete. */
+/** The row's cells, in column order: star, type, name, owner, last updated, delete. */
 const cell = (index: number) => screen.getAllByRole('cell')[index];
-const OWNER = 2;
-const UPDATED = 3;
+const OWNER = 3;
+const UPDATED = 4;
 
 describe('<ReportTableRow>', () => {
   it('renders the name as a link, the jql and the type badge', () => {

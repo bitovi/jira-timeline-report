@@ -88,7 +88,7 @@ const UpdatedCell: FC<{ updatedAt?: string; now?: Date }> = ({ updatedAt, now })
 };
 
 /**
- * One saved report in the saved-reports table: star, type icon + name (+ JQL), owner, last updated, type badge,
+ * One saved report in the saved-reports table: star, type icon + badge, name (+ JQL), owner, last updated,
  * and a delete button that shows on hover. See spec/041-saved-reports-redesign/phase1/plan.md § 6.
  *
  * Only the name is the link. The star and delete buttons are its siblings, never its children, so
@@ -132,8 +132,15 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
           onClick={onToggleStar}
         />
       </span>
-      <span role="cell" className="flex min-w-0 items-center gap-3">
+      <span role="cell" className="flex min-w-0 items-center gap-2">
         <ReportTypeIcon tone={tone} size={32} />
+        {typeName && (
+          <span className="inline-block min-w-0 truncate whitespace-nowrap rounded-full bg-neutral-20 px-2 py-0.5 text-xs font-semibold text-neutral-801 group-hover:bg-white">
+            {typeName}
+          </span>
+        )}
+      </span>
+      <span role="cell" className="flex min-w-0 items-center">
         <span className="min-w-0 flex-1">
           <Link
             href={href}
@@ -154,13 +161,6 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
       </span>
       <span role="cell" className="min-w-0">
         <UpdatedCell updatedAt={updatedAt} now={now} />
-      </span>
-      <span role="cell" className="min-w-0">
-        {typeName && (
-          <span className="inline-block max-w-full truncate whitespace-nowrap rounded-full bg-neutral-20 px-2 py-0.5 text-xs font-semibold text-neutral-801 group-hover:bg-white">
-            {typeName}
-          </span>
-        )}
       </span>
       <span role="cell" className="opacity-0 focus-within:opacity-100 group-hover:opacity-100">
         {onDelete && (
