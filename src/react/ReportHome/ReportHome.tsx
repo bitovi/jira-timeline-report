@@ -67,7 +67,7 @@ export const ReportHome: FC<ReportHomeProps> = ({
         <section aria-labelledby="report-home-recents" className="pt-8">
           <div className="flex items-center justify-between pb-2">
             <h2 id="report-home-recents" className="text-xs font-semibold uppercase tracking-wide text-neutral-300">
-              Recently opened
+              Recent reports
             </h2>
             <LinkButton type="button" onClick={onViewAllReports} className="text-sm">
               All saved reports →
