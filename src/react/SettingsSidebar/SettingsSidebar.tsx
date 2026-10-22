@@ -54,7 +54,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({ showSidebarBranding, onUpda
         />
       )}
       {showSettings === 'SOURCES' && (
-        <SidebarLayout onGoBack={returnToSettings} className="w-96">
+        <SidebarLayout onGoBack={returnToSettings} className="w-[480px]">
           <IssueSource />
         </SidebarLayout>
       )}

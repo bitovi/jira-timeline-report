@@ -2,7 +2,6 @@ import type { FC } from 'react';
 
 import React, { useId } from 'react';
 import { Checkbox } from '@atlaskit/checkbox';
-import { Label } from '@atlaskit/form';
 
 import JqlEditor from '../JqlEditor';
 
@@ -25,13 +24,11 @@ const LoadBlockers: FC<LoadBlockersProps> = ({ loadBlockers, blockerJql, setBloc
           isChecked={loadBlockers}
           onChange={(ev) => setLoadBlockers(ev.target.checked)}
         />
-        <label htmlFor={loadBlockersId}>Load all blockers recursively of JQL specified issues</label>
+        <label htmlFor={loadBlockersId}>Blockers of queried issues, recursively</label>
       </div>
       {loadBlockers && (
-        <div className="flex flex-col gap-1 pl-6">
-          {/* Caption only — the editor labels its own combobox, so there's no control to associate. */}
-          <Label htmlFor="">Optional blocker JQL filters</Label>
-          <JqlEditor query={blockerJql} onUpdate={setBlockerJql} />
+        <div className="flex flex-col pl-6">
+          <JqlEditor query={blockerJql} onUpdate={setBlockerJql} helperText="Filter blockers with JQL (optional)" />
         </div>
       )}
     </div>

@@ -2,7 +2,6 @@ import type { FC } from 'react';
 
 import React, { useId } from 'react';
 import { Checkbox } from '@atlaskit/checkbox';
-import { Label } from '@atlaskit/form';
 
 import { Accordion, AccordionContent, AccordionTitle } from '../../../../../components/Accordion';
 import JqlEditor from '../JqlEditor';
@@ -26,13 +25,11 @@ const LoadChildren: FC<LoadChildrenProps> = ({ loadChildren, childJql, setChildJ
           isChecked={loadChildren}
           onChange={(ev) => setLoadChildren(ev.target.checked)}
         />
-        <label htmlFor={loadChildrenId}>Load all children of JQL specified issues</label>
+        <label htmlFor={loadChildrenId}>Children of queried issues</label>
       </div>
       {loadChildren && (
-        <div className="flex flex-col gap-1 pl-6">
-          {/* Caption only — the editor labels its own combobox, so there's no control to associate. */}
-          <Label htmlFor="">Optional children JQL filters</Label>
-          <JqlEditor query={childJql} onUpdate={setChildJql} />
+        <div className="flex flex-col pl-6">
+          <JqlEditor query={childJql} onUpdate={setChildJql} helperText="Filter children with JQL (optional)" />
         </div>
       )}
     </div>

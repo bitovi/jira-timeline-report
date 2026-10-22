@@ -1,2 +1,2 @@
 export { FilterRowsBuilder, default } from './FilterRowsBuilder';
-export type { FilterRowsBuilderProps, FilterFieldDefinition } from './FilterRowsBuilder';
+export type { FilterRowsBuilderProps, FilterFieldDefinition, FilterRowLike } from './FilterRowsBuilder';

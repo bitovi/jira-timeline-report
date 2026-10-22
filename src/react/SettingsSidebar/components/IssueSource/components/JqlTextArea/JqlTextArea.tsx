@@ -8,37 +8,12 @@ interface JQLTextAreaProps {
   jql: string;
   setJql: (jql: string) => void;
   isLoading: boolean;
-  isSuccess: boolean;
-  totalChunks: number;
-  receivedChunks: number;
-  numberOfIssues: number;
+  /** Muted text in the editor's footer strip, below the input. */
+  helperText?: string;
 }
 
-const JQLTextArea: FC<JQLTextAreaProps> = ({
-  jql,
-  setJql,
-  isLoading,
-  isSuccess,
-  receivedChunks,
-  totalChunks,
-  numberOfIssues,
-}) => {
-  return (
-    <div className="flex flex-col">
-      <JqlEditor query={jql} onUpdate={setJql} isSearching={isLoading} />
-      <div className="text-xs h-[26px] pt-1 self-end">
-        {isLoading &&
-          (totalChunks ? (
-            <>
-              Loaded {receivedChunks} of {totalChunks} issues
-            </>
-          ) : (
-            <>Loading issues ...</>
-          ))}
-        {isSuccess && <>Loaded {numberOfIssues} issues</>}
-      </div>
-    </div>
-  );
+const JQLTextArea: FC<JQLTextAreaProps> = ({ jql, setJql, isLoading, helperText }) => {
+  return <JqlEditor query={jql} onUpdate={setJql} isSearching={isLoading} helperText={helperText} />;
 };
 
 export default JQLTextArea;

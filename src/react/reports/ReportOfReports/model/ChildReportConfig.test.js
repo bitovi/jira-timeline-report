@@ -336,6 +336,26 @@ describe('ChildReportConfig', () => {
     });
   });
 
+  describe('effectiveSourceFilterRows', () => {
+    it('prefers explicit source filter rows', () => {
+      const rows = [{ id: 'r1', field: 'issueType', operator: 'is not', value: ['Story'] }];
+      const config = childConfig('statusesToExclude=Done&sourceFilterRows=' + encodeURIComponent(JSON.stringify(rows)));
+
+      expect(config.effectiveSourceFilterRows).toEqual(rows);
+    });
+
+    // Without this, an older saved report embedded as a child silently stops excluding statuses.
+    it('migrates the legacy statusesToExclude param', () => {
+      expect(childConfig('statusesToExclude=Done,Rejected').effectiveSourceFilterRows).toEqual([
+        { id: 'legacy-statuses-to-exclude', field: 'status', operator: 'is not', value: ['Done', 'Rejected'] },
+      ]);
+    });
+
+    it('is empty when nothing is configured', () => {
+      expect(childConfig('').effectiveSourceFilterRows).toEqual([]);
+    });
+  });
+
   describe('its own fetch', () => {
     it('requests its own JQL, so two children load different issues', async () => {
       const requested = [];
@@ -430,6 +450,7 @@ describe('ChildReportConfig', () => {
       primaryReportType: 'table',
       timingCalculations: 'Epic:childrenFirstThenParent,Story:parentFirstThenChildren',
       statusesToExclude: 'Done,Cancelled',
+      sourceFilterRows: JSON.stringify([{ id: '1', field: 'labels', operator: 'is not', value: ['wontfix'] }]),
       statusesToShow: 'In Progress',
       statusesToRemove: 'Done',
       planningStatuses: 'Idea',
