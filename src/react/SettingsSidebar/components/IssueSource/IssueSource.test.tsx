@@ -78,8 +78,8 @@ describe('<IssueSource />', () => {
     const jqlTextarea = screen.getByRole('textbox');
     expect(jqlTextarea).toBeInTheDocument();
 
-    const loadIssuesButton = screen.getByRole('button', { name: /load issues/i });
-    expect(loadIssuesButton).toBeInTheDocument();
+    const applyButton = screen.getByRole('button', { name: /apply/i });
+    expect(applyButton).toBeInTheDocument();
 
     const loadChildrenCheckbox = screen.getByLabelText(/Children of queried issues/);
     expect(loadChildrenCheckbox).toBeInTheDocument();

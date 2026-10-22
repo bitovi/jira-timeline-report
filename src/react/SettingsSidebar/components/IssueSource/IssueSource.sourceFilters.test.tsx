@@ -108,17 +108,17 @@ describe('<IssueSource /> filter loaded issues', () => {
     expect(screen.getByText('Story')).toBeInTheDocument();
   });
 
-  it('Load issues turns on once the query is edited, and saves the query', async () => {
+  it('Apply turns on once the query is edited, and saves the query', async () => {
     const user = userEvent.setup();
     render(<IssueSource />);
 
-    const loadIssues = screen.getByRole('button', { name: /load issues/i });
-    expect(loadIssues).toBeDisabled();
+    const apply = screen.getByRole('button', { name: /apply/i });
+    expect(apply).toBeDisabled();
 
     await user.type(screen.getByLabelText('Add your JQL'), ' AND type = Bug');
-    expect(loadIssues).toBeEnabled();
+    expect(apply).toBeEnabled();
 
-    await user.click(loadIssues);
+    await user.click(apply);
     expect(mockRouteData.jql).toBe('project = TEST AND type = Bug');
   });
 });

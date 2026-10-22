@@ -36,7 +36,7 @@ The new rules replace `statusesToExclude` at the **same pipeline stage**. Issues
 | Operators           | `is` / `is not`, multi-value                                                                                                                  | Same as the report Filters                                                                                                               |
 | `statusesToExclude` | **Read as a `Status is not …` rule.** Apply writes only the new param                                                                         | Old URLs and saved reports keep working                                                                                                  |
 | Rollout             | **No Features toggle**                                                                                                                        | Migration covers old reports; a toggle would mean keeping two code paths                                                                 |
-| Buttons             | **"Load issues" after _Add related issues_; rules apply instantly** (changed from 2a's single footer Apply, 2026-10-21)                       | Only loading calls Jira. The rule options come from the loaded issues, so one Apply at the bottom forced "apply, add rules, apply again" |
+| Buttons             | **Apply moves to step 3, after _Add related issues_; rules apply instantly** (changed from 2a's single footer Apply, 2026-10-21)              | Only loading calls Jira. The rule options come from the loaded issues, so one Apply at the bottom forced "apply, add rules, apply again" |
 
 ## 1. Rule model and predicate
 
@@ -116,17 +116,17 @@ The panel is rebuilt in [`IssueSource.tsx`](../../src/react/SettingsSidebar/comp
 1. **Header:** "Issue source", with a muted subtitle: _"Issues are fetched from Jira, filtered here, then sent to the report."_
 2. **Query Jira** (semibold label):
    - The existing `JQLTextArea`.
-   - Helper text _"JQL for the issues your report starts from."_ below the editor. The "Loaded N issues" status moves next to Load issues (step 3).
-   - No hairline after it: Query Jira and Add related issues form one step, since Load issues saves and fetches both.
+   - Helper text _"JQL for the issues your report starts from."_ below the editor. The "Loaded N issues" status moves next to Apply (step 3).
+   - No hairline after it: Query Jira and Add related issues form one step, since Apply saves and fetches both.
 3. **Add related issues:**
    - Checkbox **"Children of queried issues"**, with the child JQL editor indented below it and helper text _"Filter children with JQL (optional)"_.
    - Checkbox **"Blockers of queried issues, recursively"**, with its JQL editor below and helper text _"Filter blockers with JQL (optional)"_. It is still gated by `features.recursiveBlockers`.
    - The JQL editor has no placeholder prop, so helper text goes in the editor's own 20px footer strip (`JqlEditor`'s `helperText`). It hides while the editor is focused or has a syntax error, when the editor uses that strip for its hints and errors.
-   - **Step 3, "Get issues from Jira"** (its own numbered step, no description): **Load issues** (primary) on the left with "Loaded N issues" after it. It saves the query, children and blockers and fetches. It is the panel's only button.
+   - **Step 3, "Get issues from Jira"** (its own numbered step, no description): **Apply** (primary) on the left. It was briefly "Load issues"; that is still the better name, but the e2e test targets "Apply", so it stays for now with "Loaded N issues" after it. It saves the query, children and blockers and fetches. It is the panel's only button.
    - A bottom hairline.
 4. **Filter loaded issues:** `FilterRowsBuilder` with `layout="stacked"`, `addLabel="+ Add rule"` and `showClearAll={false}`.
    - Changes apply instantly (`hooks/useSourceFilterRows`), like the report Filters' `useFilterRows`. Each write also sets `statusesToExclude: []`.
-   - A note always reads _"Load issues to update the filter options."_ The options come from the loaded issues, so this explains why a value can be missing.
+   - A note always reads _"Apply to update the filter options."_ The options come from the loaded issues, so this explains why a value can be missing.
    - Selects in the stacked layout get a white control background, since the panel is grey.
 
 Mockup → app details:
@@ -155,7 +155,7 @@ Mockup → app details:
 - `IssueSource.test.tsx`:
   - A rule change writes `sourceFilterRows` immediately and clears `statusesToExclude`.
   - A legacy URL renders as a `Status · is not` rule.
-  - Editing the JQL enables Load issues, and Load issues writes the JQL.
+  - Editing the JQL enables Apply, and Apply writes the JQL.
 - `FilterRowsBuilder`: the existing tests still pass (inline is the default), and there is one stacked-layout render test.
 
 ## 7. Out of scope

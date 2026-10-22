@@ -10,7 +10,7 @@ interface IssueLoadStatusProps {
   numberOfIssues: number;
 }
 
-/** The "Loaded N issues" readout shown beside the Sources panel's "Load issues" button. */
+/** The "Loaded N issues" readout shown beside the Sources panel's "Apply" button. */
 const IssueLoadStatus: FC<IssueLoadStatusProps> = ({
   isLoading,
   isSuccess,

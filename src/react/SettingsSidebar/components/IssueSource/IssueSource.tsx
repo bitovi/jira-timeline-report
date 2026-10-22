@@ -105,7 +105,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
         <Step number={3} title="Get issues from Jira">
           <div className="flex items-center gap-3">
             <Button appearance="primary" isDisabled={!applyButtonEnabled} onClick={applyJql}>
-              Load issues
+              Apply
             </Button>
             <IssueLoadStatus {...issueRequestData} />
           </div>
@@ -113,7 +113,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
         <Step number={4} title="Filter loaded issues" isLast>
           <p className="flex items-center gap-1 text-xs text-neutral-801">
             <InfoIcon label="" size="small" />
-            Load issues to update the filter options.
+            Apply to update the filter options.
           </p>
           <FilterRowsBuilder
             rows={sourceFilterRows}
