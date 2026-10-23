@@ -145,6 +145,7 @@ export const CHILD_PARAMS = {
 
   // filtering
   statusesToExclude: list(),
+  sourceFilterRows: json([]),
   statusesToShow: list(),
   statusesToRemove: list(),
   planningStatuses: list(),
@@ -653,6 +654,19 @@ export class ChildReportConfig extends ObservableObject {
       if (this.statusesToRemove && this.statusesToRemove.length) {
         return [
           { id: 'legacy-statuses-to-remove', field: 'jiraStatus', operator: 'is not', value: this.statusesToRemove },
+        ];
+      }
+      return [];
+    },
+
+    /** Seeds a `Status · is not` rule from the legacy `statusesToExclude` param, as route-data does. */
+    get effectiveSourceFilterRows() {
+      if (this.sourceFilterRows && this.sourceFilterRows.length) {
+        return this.sourceFilterRows;
+      }
+      if (this.statusesToExclude && this.statusesToExclude.length) {
+        return [
+          { id: 'legacy-statuses-to-exclude', field: 'status', operator: 'is not', value: this.statusesToExclude },
         ];
       }
       return [];

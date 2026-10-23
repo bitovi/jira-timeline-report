@@ -20,7 +20,7 @@ vi.mock('@atlaskit/jql-editor', () => ({
 }));
 
 // The autocomplete provider hook reaches into the Jira context; a no-op provider keeps this unit
-// test focused on the surrounding behavior (query value + load-progress readout).
+// test focused on the surrounding behavior (query value + helper text).
 vi.mock('../../hooks/useJqlAutocompleteProvider', () => ({
   useJqlAutocompleteProvider: () => ({}),
 }));
@@ -28,16 +28,13 @@ vi.mock('../../hooks/useJqlAutocompleteProvider', () => ({
 import JQLTextArea from './JqlTextArea';
 
 describe('<JQLTextArea />', () => {
-  it('renders the editor with the current query and the load-progress readout', () => {
+  it('renders the editor with the current query and its helper text', () => {
     render(
       <JQLTextArea
         jql="issueType in (Epic, Story) order by Rank"
         setJql={vi.fn()}
-        isLoading
-        isSuccess={false}
-        totalChunks={10}
-        receivedChunks={5}
-        numberOfIssues={10}
+        isLoading={false}
+        helperText="JQL for the issues your report starts from."
       />,
     );
 
@@ -45,7 +42,6 @@ describe('<JQLTextArea />', () => {
     expect(jqlEditor).toBeInTheDocument();
     expect(jqlEditor).toHaveValue('issueType in (Epic, Story) order by Rank');
 
-    const issuesLoadedText = screen.getByText('Loaded 5 of 10 issues');
-    expect(issuesLoadedText).toBeInTheDocument();
+    expect(screen.getByText('JQL for the issues your report starts from.')).toBeInTheDocument();
   });
 });

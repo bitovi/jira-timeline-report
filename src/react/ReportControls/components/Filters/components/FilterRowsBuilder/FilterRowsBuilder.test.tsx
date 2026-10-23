@@ -100,4 +100,35 @@ describe('FilterRowsBuilder', () => {
 
     expect(onChange).toHaveBeenCalledWith([{ id: 'row-1', field: 'jiraStatus', operator: 'is not', value: ['Done'] }]);
   });
+
+  it('stacked layout renders each row as a panel, with a custom add label and no "Clear all"', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <FilterRowsBuilder
+        rows={oneRow}
+        onChange={onChange}
+        fieldDefinitions={fieldDefinitions}
+        layout="stacked"
+        addLabel="Add rule"
+        showClearAll={false}
+      />,
+    );
+
+    const panel = screen.getByTestId('filter-row');
+    expect(within(panel).getByText('Jira Status')).toBeInTheDocument();
+    expect(within(panel).getByText('Done (9)')).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: 'Remove filter' })).toBeInTheDocument();
+    expect(screen.queryByText('Clear all filters')).not.toBeInTheDocument();
+    expect(screen.queryByText('+ Add filter')).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('Add rule'));
+    expect(onChange.mock.calls[0][0]).toHaveLength(2);
+  });
+
+  it('keeps a selected value visible even when it is not among the options', () => {
+    const rows: FilterRow[] = [{ id: 'row-1', field: 'jiraStatus', operator: 'is', value: ['Archived'] }];
+    render(<FilterRowsBuilder rows={rows} onChange={vi.fn()} fieldDefinitions={fieldDefinitions} />);
+    expect(screen.getByText('Archived')).toBeInTheDocument();
+  });
 });

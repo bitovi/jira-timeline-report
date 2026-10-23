@@ -264,7 +264,25 @@ export class RouteData extends ObservableObject {
       stringify: (x) => '' + x,
     }),
 
+    // Legacy: superseded by `sourceFilterRows` (spec/042-sources-panel-filters). Still read so old
+    // URLs and saved reports keep filtering — see `effectiveSourceFilterRows`.
     statusesToExclude: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('statusesToExclude'),
+    // Sources panel "Filter loaded issues" rules. Applied to the derived issues before rollup, so
+    // removed issues never reach any report. Raw, persisted state — empty until the user adds a rule.
+    sourceFilterRows: saveJSONToUrlButAlsoLookAtReport_DataWrapper('sourceFilterRows', [], Array, JSON),
+    // If `sourceFilterRows` is empty/unset, seed an equivalent `Status · is not` rule from the
+    // legacy `statusesToExclude` param.
+    get effectiveSourceFilterRows() {
+      if (this.sourceFilterRows && this.sourceFilterRows.length) {
+        return this.sourceFilterRows;
+      }
+      if (this.statusesToExclude && this.statusesToExclude.length) {
+        return [
+          { id: 'legacy-statuses-to-exclude', field: 'status', operator: 'is not', value: this.statusesToExclude },
+        ];
+      }
+      return [];
+    },
 
     // this is always in seconds
     compareTo: saveJSONToUrlButAlsoLookAtReport_DataWrapper('compareTo', _15DAYS_IN_S, undefined, {

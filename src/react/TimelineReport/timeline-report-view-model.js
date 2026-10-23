@@ -5,6 +5,7 @@ import routeData from '../../canjs/routing/route-data';
 import { rollupAndRollback } from '../../jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from '../../jira/rolledup/work-status/work-status';
 import { matchesAllFilterRows } from '../../jira/rollup/filter-rows/filter-rows';
+import { matchesAllSourceFilterRows } from '../../jira/rollup/filter-rows/source-filter-rows';
 import { groupIssuesByHierarchyLevelOrType } from '../../jira/rollup/rollup';
 import { defineFeatureFlag } from '../../shared/feature-flag';
 
@@ -87,13 +88,10 @@ export class TimelineReportViewModel extends ObservableObject {
 
     get filteredDerivedIssues() {
       if (this.routeData.derivedIssues) {
-        if (this.routeData.statusesToExclude?.length) {
-          return this.routeData.derivedIssues.filter(
-            ({ status }) => !this.routeData.statusesToExclude.includes(status),
-          );
-        } else {
-          return this.routeData.derivedIssues;
-        }
+        const rows = this.routeData.effectiveSourceFilterRows;
+        return rows?.length
+          ? this.routeData.derivedIssues.filter((issue) => matchesAllSourceFilterRows(issue, rows))
+          : this.routeData.derivedIssues;
       }
     },
 

@@ -31,6 +31,16 @@ vi.mock('./hooks/useRawIssueRequestData', () => ({
 // The property names here are the ones the component destructures. An earlier version of this mock
 // returned `childJQL`/`setChildJQL` while the component read `childJql`/`setChildJql`, so the child
 // filter was silently rendering with `undefined` — keep these in step with `useJQL`'s return.
+vi.mock('./hooks/useSourceFilterFieldDefinitions', () => ({
+  useSourceFilterFieldDefinitions: () => [
+    { field: 'status', label: 'Status', operators: ['is', 'is not'], options: [] },
+  ],
+}));
+
+vi.mock('./hooks/useSourceFilterRows', () => ({
+  useSourceFilterRows: () => ({ sourceFilterRows: [], setSourceFilterRows: vi.fn() }),
+}));
+
 vi.mock('./hooks/useJQL', () => ({
   useJQL: vi.fn().mockReturnValue({
     loadChildren: false,
@@ -39,8 +49,6 @@ vi.mock('./hooks/useJQL', () => ({
     childJql: '',
     setChildJql: vi.fn(),
     applyJql: vi.fn(),
-    statusesToExclude: [],
-    setStatusesToExclude: vi.fn(),
     applyButtonEnabled: true,
     loadBlockers: false,
     setLoadBlockers: vi.fn(),
@@ -64,7 +72,7 @@ describe('<IssueSource />', () => {
   it('renders without crashing', () => {
     render(<IssueSource />);
 
-    const heading = screen.getByText('Issue Source');
+    const heading = screen.getByText('Issue source');
     expect(heading).toBeInTheDocument();
 
     const jqlTextarea = screen.getByRole('textbox');
@@ -73,7 +81,7 @@ describe('<IssueSource />', () => {
     const applyButton = screen.getByRole('button', { name: /apply/i });
     expect(applyButton).toBeInTheDocument();
 
-    const loadChildrenCheckbox = screen.getByLabelText(/Load all children of JQL specified issues/);
+    const loadChildrenCheckbox = screen.getByLabelText(/Children of queried issues/);
     expect(loadChildrenCheckbox).toBeInTheDocument();
   });
 
@@ -82,7 +90,7 @@ describe('<IssueSource />', () => {
   it('hides the blockers checkbox when recursiveBlockers is off', () => {
     render(<IssueSource />);
 
-    expect(screen.queryByLabelText(/Load all blockers recursively of JQL specified issues/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Blockers of queried issues, recursively/)).not.toBeInTheDocument();
   });
 
   it('shows the blockers checkbox when recursiveBlockers is on', () => {
@@ -90,7 +98,7 @@ describe('<IssueSource />', () => {
 
     render(<IssueSource />);
 
-    expect(screen.getByLabelText(/Load all blockers recursively of JQL specified issues/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Blockers of queried issues, recursively/)).toBeInTheDocument();
   });
 
   // The features query can be in flight on first paint; `features` is undefined then, and reading
@@ -100,6 +108,6 @@ describe('<IssueSource />', () => {
 
     render(<IssueSource />);
 
-    expect(screen.getByText('Issue Source')).toBeInTheDocument();
+    expect(screen.getByText('Issue source')).toBeInTheDocument();
   });
 });

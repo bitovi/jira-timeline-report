@@ -2,6 +2,7 @@ import { ObservableObject } from '../../../can';
 import { Jira } from '../../../jira-oidc-helpers';
 import { NormalizeIssueConfig } from '../../../jira/normalized/normalize';
 import { AppStorage } from '../../../jira/storage/common';
+import type { SourceFilterRow } from '../../../jira/rollup/filter-rows/source-filter-rows';
 import { RouteData as RouteDataClass } from './route-data';
 
 type Overrides = {
@@ -16,6 +17,8 @@ type Overrides = {
   blockerJQL: string;
   jql: string;
   statusesToExclude: string[];
+  sourceFilterRows: SourceFilterRow[];
+  effectiveSourceFilterRows: SourceFilterRow[];
   primaryIssueType: string;
   secondaryIssueType: string;
   groupBy: string;
