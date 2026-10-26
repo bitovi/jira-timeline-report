@@ -260,7 +260,7 @@ describe('TeamCapacityInputs', () => {
   });
 });
 
-// spec/040-update-team-estimation-settings/plan2.md: capacity is X × N for every unit.
+// spec/040-update-team-estimation-settings/plan.md: capacity is X × N for every unit.
 describe('TeamCapacityInputs headcount and readout', () => {
   it('names the scheduled level in the stepper', async () => {
     renderInputs({ itemLabel: itemLabelFor('Epic'), savedTracks: 2 });
@@ -275,7 +275,7 @@ describe('TeamCapacityInputs headcount and readout', () => {
   it('labels every rate with the Estimate Field name, resolved from its id', () => {
     renderInputs();
 
-    expect(readout('per-developer')).toBe('0.21 / day (person)');
+    expect(readout('per-developer')).toBe('0.21Story Points / day (person)');
     expect(readout('per-team')).toBe('21Story Points / sprint (team)');
   });
 
@@ -296,7 +296,7 @@ describe('TeamCapacityInputs headcount and readout', () => {
 
     // 35 / (10 developers × 10 days)
     expect(commit).toHaveBeenCalledWith('ORDER', 7, { pointsPerPersonDay: 0.35 }, expect.anything());
-    expect(readout('per-developer')).toBe('0.35 / day (person)');
+    expect(readout('per-developer')).toBe('0.35Story Points / day (person)');
   });
 
   // Team Weeks, 5 people per estimate: X = 1 / (5 × 5) = 0.04.
@@ -305,26 +305,74 @@ describe('TeamCapacityInputs headcount and readout', () => {
   it('10 → 11 developers raises the team total by 10% and leaves the per-developer rate alone', async () => {
     renderInputs(teamWeeks);
 
-    expect(readout('per-developer')).toBe('0.04 / day (person)');
-    expect(readout('per-team')).toBe('2Story Points / week (team)');
+    expect(readout('per-developer')).toBe('0.04Story Points / day (person)');
+    expect(readout('per-team')).toBe('0.4Story Points / day (team)');
 
     await setDevelopers('11');
 
-    expect(readout('per-developer')).toBe('0.04 / day (person)');
-    expect(readout('per-team')).toBe('2.2Story Points / week (team)');
+    expect(readout('per-developer')).toBe('0.04Story Points / day (person)');
+    expect(readout('per-team')).toBe('0.44Story Points / day (team)');
   });
 
-  it('a headcount edit reads as uncommitted, leaves tracks alone, and commits only the headcount', async () => {
+  it('a headcount edit reads as uncommitted and leaves tracks alone', async () => {
     renderInputs(teamWeeks);
 
     await setDevelopers('11');
 
     expect(screen.getByText('2 work items in parallel')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Commit' })).toBeInTheDocument();
+  });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+  describe('committing a headcount on a team-time unit', () => {
+    const steps = () => screen.getByTestId('headcount-commit-steps').textContent;
 
-    expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 11 }, expect.anything());
+    it('lists the manual steps instead of saving', async () => {
+      // Half of 10 developers: 5 people per estimate, X = 1 / (5 × 5) = 0.04. Half of 11 is 5.5.
+      savedUserAllTeamData = {
+        __GLOBAL__: { defaults: {} },
+        ORDER: {
+          defaults: {
+            estimateField: 'customfield_10016',
+            estimateUnit: 'teamWeeks',
+            estimateTeamShare: 'half',
+            teamMembers: 10,
+          },
+        },
+      };
+      renderInputs(teamWeeks);
+
+      await setDevelopers('11');
+      await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+      expect(commit).not.toHaveBeenCalled();
+      expect(steps()).toContain('Make 11 developers your team size');
+      expect(steps()).toContain('Your estimates assume half team: 5 people of 10 developers.');
+      expect(steps()).toContain(
+        'In Jira, multiply each Story Points estimate by 10 ÷ 11. For example, 3 becomes 2.73.',
+      );
+      expect(steps()).toContain('set the developers to 11. Estimates will then assume half team: 5.5 people.');
+    });
+
+    it('keeps the what-if on the row after the steps are dismissed', async () => {
+      renderInputs(teamWeeks);
+
+      await setDevelopers('11');
+      await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Got it' }));
+
+      expect(screen.queryByTestId('headcount-commit-steps')).not.toBeInTheDocument();
+      expect(readout('per-team')).toBe('0.44Story Points / day (team)');
+      expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
+    });
+
+    it('still saves a tracks-only change', async () => {
+      renderInputs(teamWeeks);
+
+      await addTrack();
+      await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+      expect(commit).toHaveBeenCalledWith('ORDER', 7, { tracks: 3 }, expect.anything());
+    });
   });
 
   it('accepts a decimal headcount', async () => {
@@ -339,10 +387,7 @@ describe('TeamCapacityInputs headcount and readout', () => {
   it.each([
     ['storyPoints', 0.21],
     ['devDays', 1],
-    ['teamDays', 0.2],
-    ['teamWeeks', 0.04],
-    ['teamSprints', 0.02],
-  ] as const)('%s edits its developers', async (estimateUnit, savedPointsPerPersonDay) => {
+  ] as const)('%s commits its developers directly', async (estimateUnit, savedPointsPerPersonDay) => {
     renderInputs({ estimateUnit, savedPointsPerPersonDay });
 
     await setDevelopers('11');
@@ -351,18 +396,35 @@ describe('TeamCapacityInputs headcount and readout', () => {
     expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 11 }, expect.anything());
   });
 
+  it.each([
+    ['teamDays', 0.2],
+    ['teamWeeks', 0.04],
+    ['teamSprints', 0.02],
+  ] as const)(
+    '%s edits its developers, and Commit lists the manual steps',
+    async (estimateUnit, savedPointsPerPersonDay) => {
+      renderInputs({ estimateUnit, savedPointsPerPersonDay });
+
+      await setDevelopers('11');
+      await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
+
+      expect(commit).not.toHaveBeenCalled();
+      expect(screen.getByTestId('headcount-commit-steps')).toBeInTheDocument();
+    },
+  );
+
   it('Dev Days reads one per developer per day', () => {
     renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1 });
 
-    expect(readout('per-developer')).toBe('1 / day (person)');
+    expect(readout('per-developer')).toBe('1Story Point / day (person)');
     expect(readout('per-team')).toBe('10Story Points / day (team)');
   });
 
-  it('Team Sprints reads per person per day and per sprint for the team', () => {
+  it('Team Sprints reads per day for the person and the team', () => {
     renderInputs({ estimateUnit: 'teamSprints', savedPointsPerPersonDay: 0.02 });
 
-    expect(readout('per-developer')).toBe('0.02 / day (person)');
-    expect(readout('per-team')).toBe('2Story Points / sprint (team)');
+    expect(readout('per-developer')).toBe('0.02Story Points / day (person)');
+    expect(readout('per-team')).toBe('0.2Story Points / day (team)');
   });
 
   it('explains what one unit of the field means in the tooltip', async () => {
@@ -412,21 +474,24 @@ describe('TeamCapacityInputs headcount and readout', () => {
     it('scales from the first edit: per-developer stays, the team grows', async () => {
       renderInputs(unentered);
 
-      expect(readout('per-team')).toBe('2Story Points / week (team)');
+      expect(readout('per-team')).toBe('0.4Story Points / day (team)');
 
       await setDevelopers('10');
 
-      expect(readout('per-developer')).toBe('0.08 / day (person)');
-      expect(readout('per-team')).toBe('4Story Points / week (team)');
+      expect(readout('per-developer')).toBe('0.08Story Points / day (person)');
+      expect(readout('per-team')).toBe('0.8Story Points / day (team)');
     });
 
-    it('commits only the headcount; the commit pins X', async () => {
+    it('Commit lists the manual steps from the saved people per estimate', async () => {
       renderInputs(unentered);
 
       await setDevelopers('10');
       await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
-      expect(commit).toHaveBeenCalledWith('ORDER', 7, { teamMembers: 10 }, expect.anything());
+      expect(commit).not.toHaveBeenCalled();
+      expect(screen.getByTestId('headcount-commit-steps').textContent).toContain(
+        'multiply each Story Points estimate by 5 ÷ 10. For example, 3 becomes 1.5.',
+      );
     });
 
     it('never re-anchors Dev Days, whose X is always 1', async () => {

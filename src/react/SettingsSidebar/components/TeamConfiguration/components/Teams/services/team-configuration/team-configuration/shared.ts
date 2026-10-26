@@ -22,7 +22,7 @@ export type Configuration = {
   sprintLength: number | null;
   /**
    * Legacy: story points completed per sprint. No longer written — read only to derive
-   * `pointsPerPersonDay` for configs saved before it existed. See spec/040 plan2.
+   * `pointsPerPersonDay` for configs saved before it existed. See spec/040.
    */
   velocityPerSprint: number | null;
   /**

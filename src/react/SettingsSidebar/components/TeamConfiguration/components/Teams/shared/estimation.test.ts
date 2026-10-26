@@ -70,7 +70,7 @@ describe('getSchedulingPeriodDays', () => {
   });
 });
 
-// Configs saved before plan2 have no X: their velocity is the legacy formula, exactly.
+// Configs saved before X existed have no X: their velocity is the legacy formula, exactly.
 describe('getEffectiveVelocity (legacy configs)', () => {
   it('falls back to velocityPerSprint when no unit is saved', () => {
     expect(getEffectiveVelocity(inputs({ velocityPerSprint: 40 }))).toBe(40);
@@ -170,7 +170,7 @@ describe('getEffectiveVelocity (legacy configs)', () => {
   });
 });
 
-/** A config saved after plan2: X stored. Two-week sprints. */
+/** A config saved after X existed: X stored. Two-week sprints. */
 const withX = (unit: EstimationInputs['estimateUnit'], pointsPerPersonDay: number, teamMembers: number, tracks = 1) =>
   inputs({ estimateUnit: unit, pointsPerPersonDay, teamMembers, tracks, velocityPerSprint: null });
 
@@ -283,7 +283,7 @@ describe('getEffectiveVelocity (X × N × P)', () => {
   });
 });
 
-// spec/040 plan2 "Worked tables": 2-week sprints; per track / day and points / day (team).
+// spec/040 "Worked tables": 2-week sprints; per track / day and points / day (team).
 describe('worked tables through pointsPerDayPerTrack', () => {
   const perTrackPerDay = (config: EstimationInputs) =>
     getEffectiveVelocity(config) / getSchedulingPeriodDays(config) / Number(config.tracks);
@@ -581,7 +581,7 @@ describe('formatCapacity', () => {
     else expect(actual.perPeriod).toBeCloseTo(perPeriod);
   };
 
-  // spec/040 plan2 "AutoScheduler team bar" readout table.
+  // spec/040 "AutoScheduler team bar" readout table.
   it.each([
     ['storyPoints', 0.21, 'sprint', [0.21, 2.1], [2.1, 21], [2.31, 23.1]],
     ['devDays', 1, undefined, [1], [10], [11]],

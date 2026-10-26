@@ -13,7 +13,7 @@ import EstimationQuestions from './EstimationQuestions';
 
 const UNIT_QUESTION = /What units do you use to estimate/;
 const SPRINT_QUESTION = 'How many weeks are in a sprint?';
-const PEOPLE_QUESTION = 'How many people does one estimate assume?';
+const SHARE_QUESTION = 'How much of the team does one estimate assume?';
 const WEEK_NOTE = 'One week is 5 working days.';
 const POINTS_QUESTION = 'On average, how many story points does your team complete per sprint?';
 const MEMBERS_QUESTION = 'How many developers are on the team?';
@@ -23,7 +23,7 @@ const WARNING = /Team members will need to split their time across multiple/;
 const ALL_QUESTIONS = [
   UNIT_QUESTION,
   SPRINT_QUESTION,
-  PEOPLE_QUESTION,
+  SHARE_QUESTION,
   MEMBERS_QUESTION,
   POINTS_QUESTION,
   PARALLEL_QUESTION,
@@ -95,7 +95,12 @@ const chooseUnit = (label: string) => {
 const escape = (text: string) => new RegExp(text.replace(/[?]/g, '\\?'));
 const parallelInput = () => screen.getByLabelText(PARALLEL_QUESTION);
 const membersInput = () => screen.getByLabelText(escape(MEMBERS_QUESTION));
-const peopleInput = () => screen.getByLabelText(escape(PEOPLE_QUESTION));
+const chooseShare = (label: string) => {
+  // The unit select is first; the share select is the only other one.
+  fireEvent.keyDown(screen.getAllByRole('combobox')[1], { key: 'ArrowDown' });
+  fireEvent.click(screen.getAllByText(label).at(-1)!);
+};
+const peopleShare = () => screen.getByTestId('people-share').textContent;
 const pointsInput = () => screen.getByLabelText(escape(POINTS_QUESTION));
 const sprintWeeksInput = () => screen.getByLabelText(escape(SPRINT_QUESTION));
 
@@ -109,33 +114,32 @@ const retype = async (input: HTMLElement, text: string) => {
 const lastPatch = (updateFields: ReturnType<typeof vi.fn>) =>
   updateFields.mock.calls.at(-1)![0] as Partial<Configuration>;
 
-/** Half of 10 developers on Team Weeks: 5 people per estimate, X = 1 / (5 × 5). */
+/** Half of 10 developers on Team Weeks: 5 people per estimate, X = 1 / (5 × 5) derived from the share. */
 const halfTeamWeeks = (overrides: Partial<Configuration> = {}) =>
-  resolved({ estimateUnit: 'teamWeeks', pointsPerPersonDay: 1 / 25, tracks: 2, ...overrides });
+  resolved({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half', tracks: 2, ...overrides });
 
 describe('EstimationQuestions', () => {
   it.each([
     ['storyPoints', [UNIT_QUESTION, SPRINT_QUESTION, MEMBERS_QUESTION, POINTS_QUESTION, PARALLEL_QUESTION]],
     ['devDays', [UNIT_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION]],
-    ['teamDays', [UNIT_QUESTION, PEOPLE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION]],
-    ['teamWeeks', [UNIT_QUESTION, PEOPLE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION]],
-    ['teamSprints', [UNIT_QUESTION, SPRINT_QUESTION, PEOPLE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION]],
+    ['teamDays', [UNIT_QUESTION, SHARE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION]],
+    ['teamWeeks', [UNIT_QUESTION, SHARE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION]],
+    ['teamSprints', [UNIT_QUESTION, SPRINT_QUESTION, SHARE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION]],
   ] as const)('%s asks exactly its questions', (unit, questions) => {
     render(<Harness values={resolved({ estimateUnit: unit })} />);
 
     expect(shownQuestions()).toEqual(questions.map(String));
   });
 
-  it.each(['teamDays', 'teamWeeks', 'teamSprints'] as const)('%s offers the share shortcuts', (unit) => {
+  it.each(['teamDays', 'teamWeeks', 'teamSprints'] as const)('%s offers the four shares', (unit) => {
     render(<Harness values={resolved({ estimateUnit: unit })} />);
 
-    const shortcuts = within(screen.getByRole('group', { name: 'Share of the team' }));
-    expect(shortcuts.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Full team',
-      'Half',
-      'Third',
-      'Quarter',
-    ]);
+    fireEvent.keyDown(screen.getAllByRole('combobox')[1], { key: 'ArrowDown' });
+
+    for (const label of ['Half team', 'One third team', 'Quarter team']) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    expect(screen.getAllByText('Full team').length).toBeGreaterThan(0);
   });
 
   it('notes the length of a week only for Team Weeks', () => {
@@ -153,60 +157,53 @@ describe('EstimationQuestions', () => {
     expect(screen.getByText(POINTS_QUESTION)).toBeInTheDocument();
   });
 
-  describe('people per estimate', () => {
-    it('migrates a saved half-team share to 5 people at 10 developers', () => {
-      render(<Harness values={resolved({ estimateUnit: 'teamWeeks', estimateTeamShare: 'half' })} />);
+  describe('share of the team', () => {
+    it('shows the people a saved share means at the current headcount', () => {
+      render(<Harness values={halfTeamWeeks()} />);
 
-      expect(peopleInput()).toHaveValue(5);
-      expect(screen.getByTestId('people-share').textContent).toBe('Estimates assume 5 people (50% of the team).');
+      expect(peopleShare()).toBe('Half team of 10 developers: estimates assume 5 people.');
     });
 
     it.each([
-      ['Full team', 10, 1],
-      ['Half', 5, 2],
-      ['Third', 3.33, 3],
-      ['Quarter', 2.5, 4],
-    ] as const)('the %s shortcut fills in a share of the headcount', async (label, people, tracks) => {
+      ['Full team', 'full', 1],
+      ['One third team', 'third', 3],
+      ['Quarter team', 'quarter', 4],
+    ] as const)('choosing %s saves the share, clears X and resets the parallel count', (label, share, tracks) => {
       const updateFields = vi.fn();
-      render(<Harness values={resolved({ estimateUnit: 'teamWeeks', tracks: 7 })} updateFields={updateFields} />);
+      render(<Harness values={halfTeamWeeks({ tracks: 7 })} updateFields={updateFields} />);
 
-      await userEvent.click(screen.getByRole('button', { name: label }));
+      chooseShare(label);
 
-      const patch = lastPatch(updateFields);
-      expect(patch.pointsPerPersonDay).toBeCloseTo(1 / (people * 5));
-      expect(patch.tracks).toBe(tracks);
-      expect(peopleInput()).toHaveValue(people);
+      expect(lastPatch(updateFields)).toEqual({ estimateTeamShare: share, pointsPerPersonDay: null, tracks });
       expect(parallelInput()).toHaveValue(tracks);
     });
 
-    it('typing people writes X and resets the parallel count', async () => {
-      const updateFields = vi.fn();
-      render(<Harness values={resolved({ estimateUnit: 'teamDays', tracks: 9 })} updateFields={updateFields} />);
-
-      await retype(peopleInput(), '2');
-
-      expect(lastPatch(updateFields)).toEqual({ pointsPerPersonDay: 0.5, tracks: 5 });
-      expect(parallelInput()).toHaveValue(5);
+    it('X follows the share of the saved team', () => {
+      expect(getEffectiveVelocity(halfTeamWeeks())).toBeCloseTo(
+        getEffectiveVelocity(halfTeamWeeks({ teamMembers: 20 })),
+      );
     });
 
-    it('Team Sprints counts the sprint in its unit days', async () => {
+    it('a Team Sprints sprint length clears X, since the share defines it', async () => {
       const updateFields = vi.fn();
       render(
-        <Harness values={resolved({ estimateUnit: 'teamSprints', sprintLength: 10 })} updateFields={updateFields} />,
+        <Harness
+          values={resolved({ estimateUnit: 'teamSprints', estimateTeamShare: 'half' })}
+          updateFields={updateFields}
+        />,
       );
 
-      await retype(peopleInput(), '5');
+      await retype(sprintWeeksInput(), '3');
 
-      expect(lastPatch(updateFields).pointsPerPersonDay).toBeCloseTo(1 / 50);
+      expect(lastPatch(updateFields)).toEqual({ sprintLength: 15, pointsPerPersonDay: null });
     });
 
-    it('the share follows the headcount while the people stay', async () => {
+    it('the people follow the headcount, since the share is what is saved', async () => {
       render(<Harness values={halfTeamWeeks()} />);
 
       await retype(membersInput(), '11');
 
-      expect(peopleInput()).toHaveValue(5);
-      expect(screen.getByTestId('people-share').textContent).toBe('Estimates assume 5 people (45% of the team).');
+      expect(peopleShare()).toBe('Half team of 11 developers: estimates assume 5.5 people.');
     });
   });
 
@@ -227,24 +224,30 @@ describe('EstimationQuestions', () => {
 
     it('a team-time unit starts at the full team', () => {
       const updateFields = vi.fn();
-      render(<Harness values={resolved({ tracks: 3 })} updateFields={updateFields} />);
+      render(<Harness values={resolved({ tracks: 3, estimateTeamShare: null })} updateFields={updateFields} />);
 
       chooseUnit('Team Weeks');
 
-      const patch = lastPatch(updateFields);
-      expect(patch.estimateUnit).toBe('teamWeeks');
-      expect(patch.pointsPerPersonDay).toBeCloseTo(1 / 50);
-      expect(patch.tracks).toBe(1);
+      expect(lastPatch(updateFields)).toEqual({
+        estimateUnit: 'teamWeeks',
+        estimateTeamShare: 'full',
+        pointsPerPersonDay: null,
+        tracks: 1,
+      });
     });
 
-    it('keeps the people when moving between team-time units', () => {
+    it('keeps the share when moving between team-time units', () => {
       const updateFields = vi.fn();
       render(<Harness values={halfTeamWeeks()} updateFields={updateFields} />);
 
       chooseUnit('Team Working Days');
 
-      expect(lastPatch(updateFields).pointsPerPersonDay).toBeCloseTo(1 / 5);
-      expect(lastPatch(updateFields).tracks).toBe(2);
+      expect(lastPatch(updateFields)).toEqual({
+        estimateUnit: 'teamDays',
+        estimateTeamShare: 'half',
+        pointsPerPersonDay: null,
+        tracks: 2,
+      });
     });
 
     it('Story Points takes its points per sprint and leaves the parallel count alone', () => {
@@ -303,6 +306,42 @@ describe('EstimationQuestions', () => {
       expect(pointsInput()).toHaveValue(23.1);
       expect(parallelInput()).toHaveValue(3);
     });
+
+    it('customizes inherited points per sprint along with a headcount change, so they never read as inherited', async () => {
+      const updateFields = vi.fn();
+      render(
+        <Harness
+          mode="inheriting"
+          values={resolved({ pointsPerPersonDay: 0.21 })}
+          saved={{ ...createEmptyConfiguration(), teamMembers: 10 }}
+          updateFields={updateFields}
+        />,
+      );
+
+      await retype(membersInput(), '11');
+
+      expect(lastPatch(updateFields)).toEqual({
+        teamMembers: 11,
+        estimateUnit: 'storyPoints',
+        pointsPerPersonDay: 0.21,
+      });
+    });
+
+    it('writes only the headcount when the level already has its own points per sprint', async () => {
+      const updateFields = vi.fn();
+      render(
+        <Harness
+          mode="inheriting"
+          values={resolved({ pointsPerPersonDay: 0.21 })}
+          saved={{ ...createEmptyConfiguration(), teamMembers: 10, pointsPerPersonDay: 0.21 }}
+          updateFields={updateFields}
+        />,
+      );
+
+      await retype(membersInput(), '11');
+
+      expect(lastPatch(updateFields)).toEqual({ teamMembers: 11 });
+    });
   });
 
   describe('headcount', () => {
@@ -336,26 +375,23 @@ describe('EstimationQuestions', () => {
     });
 
     it.each(['teamDays', 'teamWeeks', 'teamSprints'] as const)(
-      '%s resets the parallel count to round(headcount / people)',
+      '%s saves only the headcount; the parallel count stays one per share',
       async (unit) => {
         const updateFields = vi.fn();
-        // 5 people per estimate, whatever the unit's days.
-        const days = { teamDays: 1, teamWeeks: 5, teamSprints: 10 }[unit];
         render(
           <Harness
-            values={resolved({ estimateUnit: unit, pointsPerPersonDay: 1 / (5 * days), tracks: 2 })}
+            values={resolved({ estimateUnit: unit, estimateTeamShare: 'half', tracks: 2 })}
             updateFields={updateFields}
           />,
         );
 
         await retype(membersInput(), '20');
 
-        expect(lastPatch(updateFields)).toEqual({ teamMembers: 20, tracks: 4 });
-        expect(parallelInput()).toHaveValue(4);
+        expect(lastPatch(updateFields)).toEqual({ teamMembers: 20, tracks: 2 });
       },
     );
 
-    it('with a stored X and a saved headcount, writes only the headcount and tracks — capacity scales', async () => {
+    it('a team-time headcount saved in settings redefines the estimates, so velocity per estimate holds', async () => {
       const updateFields = vi.fn();
       const values = halfTeamWeeks();
       render(<Harness values={values} updateFields={updateFields} hasSavedHeadcount />);
@@ -364,7 +400,23 @@ describe('EstimationQuestions', () => {
 
       const patch = lastPatch(updateFields);
       expect(patch).toEqual({ teamMembers: 11, tracks: 2 });
-      expect(getEffectiveVelocity({ ...values, ...patch }) / getEffectiveVelocity(values)).toBeCloseTo(1.1);
+      // Half of 11 is a bigger estimate, so the same share of the team finishes the same number of them.
+      expect(getEffectiveVelocity({ ...values, ...patch })).toBeCloseTo(getEffectiveVelocity(values));
+    });
+
+    it('a team-time headcount clears an X stored on the level, so the share defines it', async () => {
+      const updateFields = vi.fn();
+      render(
+        <Harness
+          values={halfTeamWeeks({ pointsPerPersonDay: 1 / 25 })}
+          saved={{ ...createEmptyConfiguration(), pointsPerPersonDay: 1 / 25 }}
+          updateFields={updateFields}
+        />,
+      );
+
+      await retype(membersInput(), '11');
+
+      expect(lastPatch(updateFields)).toEqual({ teamMembers: 11, pointsPerPersonDay: null, tracks: 2 });
     });
 
     // Regression: computed against the typed value instead of the previous one, re-anchoring was a no-op.
@@ -469,7 +521,7 @@ describe('EstimationQuestions', () => {
       await retype(membersInput(), '20');
 
       expect(summary()).toBe(
-        '1 estimate is 1 week of work for 5 people (25% of the team). 20 developers. With 4 work items in parallel.',
+        '1 estimate is 1 week of work for 10 people (50% of the team). 20 developers. With 2 work items in parallel.',
       );
     });
 
@@ -483,6 +535,17 @@ describe('EstimationQuestions', () => {
         'Work items without estimates default to 15 working days.',
       );
     });
+  });
+
+  it.each([
+    ['a share change', () => chooseShare('Full team')],
+    ['a headcount change', () => retype(membersInput(), '11')],
+  ])('shows no convert-your-estimates warning for %s', async (_change, act) => {
+    render(<Harness values={halfTeamWeeks()} />);
+
+    await act();
+
+    expect(screen.queryByText('Update your existing estimates in Jira')).not.toBeInTheDocument();
   });
 
   describe('sprint length in weeks', () => {
@@ -639,15 +702,15 @@ describe('EstimationQuestions', () => {
       );
 
       expect(shownQuestions()).toEqual(
-        [UNIT_QUESTION, SPRINT_QUESTION, PEOPLE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION].map(String),
+        [UNIT_QUESTION, SPRINT_QUESTION, SHARE_QUESTION, MEMBERS_QUESTION, PARALLEL_QUESTION].map(String),
       );
       expect(summary()).toBe(
         '1 estimate is one 2-week sprint of work for 5 people (50% of the team). 10 developers. One work item at a time.',
       );
       const unitRow = screen.getByText(UNIT_QUESTION).closest('.grid') as HTMLElement;
       expect(within(unitRow).getByTestId('inherited-value')).toHaveTextContent('Team Sprints');
-      const peopleRow = screen.getByText(PEOPLE_QUESTION).closest('.grid') as HTMLElement;
-      expect(within(peopleRow).getByTestId('inherited-value')).toHaveTextContent('5 people');
+      const shareRow = screen.getByText(SHARE_QUESTION).closest('.grid') as HTMLElement;
+      expect(within(shareRow).getByTestId('inherited-value')).toHaveTextContent('Half team');
     });
 
     it('keeps each question labelling its customized input', () => {
@@ -705,11 +768,11 @@ describe('EstimationQuestions', () => {
       const toggleInheritance = vi.fn();
       render(<Harness mode="inheriting" values={halfTeamWeeks()} toggleInheritance={toggleInheritance} />);
 
-      await toggle(PEOPLE_QUESTION);
+      await toggle(SHARE_QUESTION);
 
-      expect(toggleInheritance).toHaveBeenCalledWith('pointsPerPersonDay', true, {
+      expect(toggleInheritance).toHaveBeenCalledWith('estimateTeamShare', true, {
         estimateUnit: 'teamWeeks',
-        pointsPerPersonDay: 1 / 25,
+        estimateTeamShare: 'half',
       });
     });
 

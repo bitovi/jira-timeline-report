@@ -20,7 +20,7 @@ const CAPACITY_ANCHOR_FIELDS = [
   'estimateTeamShare',
 ] as const satisfies ReadonlyArray<keyof Configuration>;
 
-const anchorsCapacity = (config: Partial<Configuration> | undefined) =>
+export const anchorsCapacity = (config: Partial<Configuration> | undefined) =>
   CAPACITY_ANCHOR_FIELDS.some((field) => config?.[field] != null);
 
 export const getInheritedData = (
@@ -41,7 +41,7 @@ export const getInheritedData = (
     field: keyof Configuration,
   ): Configuration[keyof Configuration] => {
     // X resolves together with the unit: from the most specific level that defines capacity at all,
-    // or not at all (`null`, so it is derived from that level's legacy answers). See spec/040 plan2.
+    // or not at all (`null`, so it is derived from that level's legacy answers). See spec/040.
     if (field === 'pointsPerPersonDay') {
       return chain(heirarchyLevel).find(anchorsCapacity)?.pointsPerPersonDay ?? null;
     }

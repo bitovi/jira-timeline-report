@@ -11,17 +11,22 @@ import { useIsMutating } from '@tanstack/react-query';
 import { useCapacityOverrides } from '../../../../services/capacity-overrides';
 import { useJiraIssueFields } from '../../../../services/jira';
 import {
+  anchorsCapacity,
   createEmptyConfiguration,
   getCapacityLevel,
   resolveTeamConfiguration,
   useAllTeamData,
   useSaveAllTeamData,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
-import { pointsPerPersonDayForHeadcount } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
+import {
+  DEFAULT_ESTIMATE_UNIT,
+  getPointsPerPersonDay,
+  pointsPerPersonDayForHeadcount,
+} from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 import { sanitizeAllTeamData } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/hooks/sanitizeAllTeamData';
 import { updateTeamConfigurationKeys } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/key-factory';
 
-const CAPACITY_FIELDS = ['pointsPerPersonDay', 'tracks', 'teamMembers'] as const;
+const CAPACITY_FIELDS = ['pointsPerPersonDay', 'estimateUnit', 'tracks', 'teamMembers'] as const;
 
 type CapacityField = (typeof CAPACITY_FIELDS)[number];
 
@@ -68,14 +73,23 @@ export const useTeamCommit = () => {
       // The issue carries a number; `AllTeamData` keys its levels as numeric strings.
       const level = String(hierarchyLevel);
       const savedTeamData = savedUserAllTeamData[team];
-      const written = withPinnedPointsPerPersonDay(values, () =>
-        resolveTeamConfiguration(savedUserAllTeamData, jiraFields, team, level),
-      );
+      const resolved = resolveTeamConfiguration(savedUserAllTeamData, jiraFields, team, level);
+      const inheritsCapacity = !anchorsCapacity(savedTeamData?.[getCapacityLevel(savedTeamData, level)]);
+      const capacity = withPinnedPointsPerPersonDay(values, resolved, inheritsCapacity);
+      // X is in the unit's terms, so a team taking over its capacity takes the unit with it, the way
+      // customizing capacity in the Teams sidebar does.
+      const written: Partial<Pick<Configuration, CapacityField>> = {
+        ...capacity,
+        ...(inheritsCapacity &&
+          capacity.pointsPerPersonDay !== undefined && {
+            estimateUnit: resolved.estimateUnit ?? DEFAULT_ESTIMATE_UNIT,
+          }),
+      };
       const changed = CAPACITY_FIELDS.filter((field) => written[field] !== undefined);
 
       const fieldsByTargetLevel = changed.reduce<Record<string, CapacityField[]>>((byLevel, field) => {
         const target =
-          field === 'pointsPerPersonDay'
+          field === 'pointsPerPersonDay' || field === 'estimateUnit'
             ? String(getCapacityLevel(savedTeamData, level))
             : savedTeamData?.[level]?.[field] != null
               ? level
@@ -114,15 +128,24 @@ export const useTeamCommit = () => {
   return { commit, isSaving, isBlocked: !isSaving && isWritingTeamData };
 };
 
-/** Adds the X a headcount commit needs to keep its effect, when the override doesn't carry one. */
+/**
+ * Adds the X a headcount commit needs, when the override doesn't carry one: a derived X is pinned, or
+ * it would follow the new headcount and the change would vanish. On Story Points the team's points per
+ * sprint follow the headcount, so a team still inheriting its X takes it over: an "inheriting" velocity
+ * showing a number the inherited answer doesn't have would be wrong.
+ */
 function withPinnedPointsPerPersonDay(
   values: TeamCapacityOverride,
-  resolve: () => Configuration,
+  resolved: Configuration,
+  inheritsCapacity: boolean,
 ): TeamCapacityOverride {
   if (values.teamMembers === undefined || values.pointsPerPersonDay !== undefined) return values;
 
+  const isStoryPoints = (resolved.estimateUnit ?? DEFAULT_ESTIMATE_UNIT) === 'storyPoints';
   // "Has a saved headcount" means: pin a derived X, never re-anchor.
-  const pointsPerPersonDay = pointsPerPersonDayForHeadcount(resolve(), values.teamMembers, true);
+  const pointsPerPersonDay =
+    pointsPerPersonDayForHeadcount(resolved, values.teamMembers, true) ??
+    (isStoryPoints && inheritsCapacity ? getPointsPerPersonDay(resolved) : undefined);
 
   return pointsPerPersonDay === undefined ? values : { ...values, pointsPerPersonDay };
 }

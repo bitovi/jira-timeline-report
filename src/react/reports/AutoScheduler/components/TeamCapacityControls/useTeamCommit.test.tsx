@@ -10,21 +10,25 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const save = vi.fn();
 const saveConfigs: Array<{ onUpdate?: (config: unknown) => void } | undefined> = [];
 
+const globalDefaults = { estimateField: 'Story points', velocityPerSprint: 13, tracks: 3 };
+
 const savedUserAllTeamData = {
-  __GLOBAL__: { defaults: { estimateField: 'Story points', velocityPerSprint: 13, tracks: 3 } },
+  __GLOBAL__: { defaults: globalDefaults as Record<string, unknown> },
   ORDER: {
     defaults: { sprintLength: 10, velocityPerSprint: 21, tracks: 1, estimateField: 'Story points' },
     '9': { velocityPerSprint: 99, tracks: 9 },
   },
   STORE: { defaults: { sprintLength: 10 }, '7': { velocityPerSprint: 55, tracks: 4, estimateField: 'Days estimate' } },
   SPLIT: { defaults: { sprintLength: 10, tracks: 2 }, '7': { velocityPerSprint: 55 } },
-  // spec/040 plan2: Dev Days' X is always 1, so a headcount commit writes the headcount alone.
+  // spec/040: Dev Days' X is always 1, so a headcount commit writes the headcount alone.
   DEVS: { defaults: { estimateUnit: 'devDays', teamMembers: 4 }, '7': { teamMembers: 6 } },
   DEVS_DEFAULTS: { defaults: { estimateUnit: 'devDays', teamMembers: 4 } },
   // Entered a headcount, but X is still derived: 20 / (10 days × 4 people) = 0.5.
   DERIVED: { defaults: { teamMembers: 4, velocityPerSprint: 20, sprintLength: 10 } },
   // X already saved.
   STORED: { defaults: { pointsPerPersonDay: 0.3, teamMembers: 10 } },
+  // Inherits a saved X from __GLOBAL__, with a headcount of its own.
+  INHERITS_X: { defaults: { teamMembers: 10 } },
   // The scheduled level redefines the unit, so X belongs there.
   UNIT: { defaults: { teamMembers: 10 }, '7': { estimateUnit: 'teamWeeks' } },
 };
@@ -96,6 +100,7 @@ const settleWith = (config: unknown) => saveConfigs.at(-1)?.onUpdate?.(config);
 
 beforeEach(() => {
   save.mockClear();
+  savedUserAllTeamData.__GLOBAL__.defaults = globalDefaults;
   saveConfigs.length = 0;
 });
 
@@ -124,8 +129,12 @@ describe('useTeamCommit', () => {
     renderProbe('MARKETING');
     await userEvent.click(screen.getByText('commit'));
 
-    // The empty configuration is all nulls, and `sanitizeAllTeamData` strips those.
-    expect(savedPayload().MARKETING?.defaults).toEqual({ pointsPerPersonDay: 0.35, tracks: 2 });
+    // The empty configuration is all nulls, and `sanitizeAllTeamData` strips those. X takes its unit along.
+    expect(savedPayload().MARKETING?.defaults).toEqual({
+      estimateUnit: 'storyPoints',
+      pointsPerPersonDay: 0.35,
+      tracks: 2,
+    });
   });
 
   it('leaves __GLOBAL__ untouched when the team was inheriting its capacity from there', async () => {
@@ -213,6 +222,19 @@ describe('useTeamCommit', () => {
     await userEvent.click(screen.getByText('commit'));
 
     expect(savedPayload().STORED?.defaults).toEqual({ pointsPerPersonDay: 0.3, teamMembers: 11 });
+  });
+
+  it('takes over an inherited X on Story Points, so the changed velocity never reads as inherited', async () => {
+    savedUserAllTeamData.__GLOBAL__.defaults = { ...globalDefaults, pointsPerPersonDay: 0.2 };
+    renderProbe('INHERITS_X', { values: { teamMembers: 11 } });
+    await userEvent.click(screen.getByText('commit'));
+
+    expect(savedPayload().INHERITS_X?.defaults).toEqual({
+      estimateUnit: 'storyPoints',
+      pointsPerPersonDay: 0.2,
+      teamMembers: 11,
+    });
+    expect(savedPayload().__GLOBAL__?.defaults?.pointsPerPersonDay).toBe(0.2);
   });
 
   it('keeps an X the override already carries instead of pinning another', async () => {

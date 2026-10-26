@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from 'react';
 import type { TeamCapacity, TeamCapacityOverride } from '../../../../services/capacity-overrides';
-import type { EstimateUnit } from '../../../../../jira/shared/types';
+import type { EstimateTeamShare, EstimateUnit } from '../../../../../jira/shared/types';
 import type {
   FieldLabel,
   ItemLabel,
@@ -12,6 +12,7 @@ import Tooltip from '@atlaskit/tooltip';
 import { useCapacityOverrides } from '../../../../services/capacity-overrides';
 import { roundTo } from '../../../../../utils/number/number';
 import { CapacityField } from './CapacityField';
+import { HeadcountCommitSteps } from './HeadcountCommitSteps';
 import { TrackStepper } from './TrackStepper';
 import { useTeamCommit } from './useTeamCommit';
 import { useTeamSettings } from './useTeamSettings';
@@ -20,6 +21,8 @@ import {
   describeEstimateUnit,
   formatCapacity,
   formatRate,
+  getPeoplePerEstimate,
+  isTeamTimeUnit,
   WORK_ITEMS_LABEL,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
@@ -53,6 +56,17 @@ interface TeamCapacityInputsProps {
   itemLabel?: ItemLabel;
 }
 
+const SHARE_PHRASE: Record<EstimateTeamShare, string> = {
+  full: 'full team',
+  half: 'half team',
+  third: 'one third team',
+  quarter: 'quarter team',
+};
+
+const commitButtonClasses =
+  'rounded-[3px] border border-blue-600 bg-blue-600 px-2.5 py-[3px] text-xs font-semibold text-white ' +
+  'hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-blue-300 disabled:bg-blue-300';
+
 const buttonClasses =
   'rounded-[3px] border border-neutral-40 bg-white px-2.5 py-[3px] text-xs font-semibold text-slate-600 ' +
   'hover:bg-neutral-20 disabled:cursor-not-allowed disabled:text-neutral-50';
@@ -62,7 +76,7 @@ const buttonClasses =
  * team is dirty — Reset and Commit. The buttons live at the end of the input group so the row grows
  * leftward and the output columns never shift.
  *
- * Capacity is `X × N` for every unit (spec/040-update-team-estimation-settings/plan2.md): the
+ * Capacity is `X × N` for every unit (spec/040-update-team-estimation-settings/plan.md): the
  * headcount is editable for every unit and scales it, tracks only divide it, and Story Points can
  * also edit its points per sprint, which rewrites X.
  */
@@ -125,6 +139,18 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   // settings form, a first headcount here never re-anchors X: per-developer stays put, the team grows.
   const changeHeadcount = (next: number) => change({ teamMembers: next });
 
+  // On a team-time unit, estimates assume a share of the team, so a new headcount redefines every
+  // estimate in Jira. That can't be saved from here; Commit explains the manual steps instead.
+  const savedPeoplePerEstimate = getPeoplePerEstimate({
+    ...config,
+    estimateUnit,
+    pointsPerPersonDay: saved.pointsPerPersonDay,
+    teamMembers: saved.teamMembers,
+    sprintLength: periodDays,
+  });
+  const needsManualCommit =
+    isTeamTimeUnit(estimateUnit) && override.teamMembers !== undefined && savedPeoplePerEstimate != null;
+
   const field = (count: number) => (count === 1 ? fieldLabel.singular : fieldLabel.plural);
   const meaning = describeEstimateUnit(
     { ...config, estimateUnit, pointsPerPersonDay, teamMembers, sprintLength: periodDays },
@@ -133,7 +159,7 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
   );
 
   return (
-    <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">
+    <span className="inline-flex min-w-0 grow flex-wrap items-center gap-x-3.5 gap-y-1">
       {/* Tooltip clones its child to attach handlers and a ref, so it needs a host element. */}
       <span className="inline-flex items-center gap-1.5">
         <Tooltip content={trackTooltip(tracks, capacity.team.perDay, fieldLabel, itemLabel)}>
@@ -160,15 +186,60 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
           onChange={changeHeadcount}
         />
         <span className="text-neutral-500">{teamMembers === 1 ? 'developer' : 'developers'}</span>
-        <Separator />
+      </span>
+
+      {isDirty && (
+        <span className="inline-flex gap-1.5">
+          {/* The whole row freezes mid-commit: the values were captured at click time, so an edit
+              landing before the write returns would be dropped by the success handler. */}
+          <button
+            type="button"
+            className={buttonClasses}
+            disabled={isSaving}
+            onClick={() => clearTeamOverride(teamName)}
+          >
+            Reset
+          </button>
+          {needsManualCommit ? (
+            <HeadcountCommitSteps
+              savedTeamMembers={saved.teamMembers}
+              teamMembers={teamMembers}
+              peoplePerEstimate={savedPeoplePerEstimate!}
+              sharePhrase={SHARE_PHRASE[config.estimateTeamShare ?? 'full']}
+              field={fieldLabel}
+              className={commitButtonClasses}
+              isDisabled={isSaving}
+            />
+          ) : (
+            <button
+              type="button"
+              className={commitButtonClasses}
+              disabled={isSaving || isBlocked}
+              title={isBlocked ? 'Another team is being saved. Wait for it to finish.' : undefined}
+              onClick={() => {
+                // Only on success: a failed write rolls the save back, and dropping the override here
+                // would throw the what-if away with nothing saved in its place.
+                commit(teamName, hierarchyLevel, override, {
+                  onSuccess: () => commitSavedCapacity(teamName, current),
+                });
+              }}
+            >
+              Commit
+            </button>
+          )}
+        </span>
+      )}
+
+      {/* Right-aligned, next to the outputs: the rates read as results of the inputs on the left. */}
+      <span className="ml-auto inline-flex items-baseline gap-1.5 whitespace-nowrap" data-testid="team-rates">
         <Tooltip content={meaning}>
           <span tabIndex={0} className="inline-flex items-baseline gap-1.5" data-testid="per-developer">
-            <Rate value={capacity.perPerson.perDay} label={() => ' / day (person)'} />
+            <Rate value={capacity.perPerson.perDay} label={(value) => `${field(value)} / day (person)`} />
           </span>
         </Tooltip>
         <Separator />
         <span className="inline-flex items-baseline gap-1.5" data-testid="per-team">
-          {/* Per sprint or week where the unit has one, so a headcount change shows at team scale. */}
+          {/* Story Points reads per sprint; the team and dev units read per day, like the per-person rate. */}
           {estimateUnit === 'storyPoints' && capacity.team.perPeriod !== undefined ? (
             // Story Points keeps its points per sprint editable; the edit rewrites X at the current headcount.
             <Rate
@@ -184,43 +255,10 @@ export const TeamCapacityInputs: FC<TeamCapacityInputsProps> = ({
               }
             />
           ) : (
-            <Rate
-              value={capacity.team.perPeriod ?? capacity.team.perDay}
-              label={(value) => `${field(value)} / ${capacity.period ?? 'day'} (team)`}
-            />
+            <Rate value={capacity.team.perDay} label={(value) => `${field(value)} / day (team)`} />
           )}
         </span>
       </span>
-
-      {isDirty && (
-        <span className="inline-flex gap-1.5">
-          {/* The whole row freezes mid-commit: the values were captured at click time, so an edit
-              landing before the write returns would be dropped by the success handler. */}
-          <button
-            type="button"
-            className={buttonClasses}
-            disabled={isSaving}
-            onClick={() => clearTeamOverride(teamName)}
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            className="rounded-[3px] border border-blue-600 bg-blue-600 px-2.5 py-[3px] text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-blue-300 disabled:bg-blue-300"
-            disabled={isSaving || isBlocked}
-            title={isBlocked ? 'Another team is being saved. Wait for it to finish.' : undefined}
-            onClick={() => {
-              // Only on success: a failed write rolls the save back, and dropping the override here
-              // would throw the what-if away with nothing saved in its place.
-              commit(teamName, hierarchyLevel, override, {
-                onSuccess: () => commitSavedCapacity(teamName, current),
-              });
-            }}
-          >
-            Commit
-          </button>
-        </span>
-      )}
     </span>
   );
 };
@@ -231,7 +269,7 @@ const Separator = () => (
   </span>
 );
 
-/** "0.08 / day (person)", "2 Story points / week (team)" */
+/** "0.08 Story Points / day (person)", "0.4 Story Points / day (team)", "21 Story Points / sprint (team)" */
 const Rate: FC<{
   value: number;
   label: (rounded: number) => string;

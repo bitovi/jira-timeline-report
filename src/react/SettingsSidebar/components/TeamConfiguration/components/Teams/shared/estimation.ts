@@ -18,7 +18,13 @@
  *   velocity        = X × N × P                                   (`getEffectiveVelocity`)
  *
  * So headcount scales capacity for every unit, tracks only divide it, and X changes only when the
- * team redefines what one estimate unit is. Configs saved before X existed derive it from their
+ * team redefines what one estimate unit is.
+ *
+ * The team-time units (Team Days, Weeks, Sprints) don't store X: their estimates assume a share of the
+ * team (`estimateTeamShare`), so X = 1 / (share × saved headcount × unit days). A saved headcount
+ * change therefore redefines their estimates, which is why the AutoScheduler — where a headcount
+ * what-if holds X fixed so throughput rises — won't commit one for them, and explains the manual
+ * steps instead. Configs saved before X existed derive it from their
  * legacy answers at their own headcount, which reproduces their old velocity exactly.
  *
  * The period cancels out of every estimated duration. Its only visible effect is the default
@@ -131,7 +137,7 @@ export function getUnitDays(unit: TeamTimeUnit, sprintLength: number | null): nu
   }
 }
 
-/** The pre-X velocity — each unit's own formula, from the answers saved before plan2. */
+/** The pre-X velocity — each unit's own formula, from the answers saved before X existed. */
 function getLegacyVelocity(config: EstimationInputs): number {
   const periodDays = getSchedulingPeriodDays(config);
   const share = SHARE[config.estimateTeamShare ?? 'full'];
@@ -248,14 +254,17 @@ export function getDefaultTracks(config: EstimationInputs): number | null {
  * - **Pin** — X is still derived, so it would follow the new headcount and cancel it out. Saving
  *   the current X makes the headcount count.
  *
- * Dev Days never needs either: its X is always 1.
+ * Dev Days never needs either: its X is always 1. Neither do the team-time units: their X is their
+ * share of the saved team, so saving a new headcount is meant to redefine every estimate along with it
+ * (the AutoScheduler's what-if holds X fixed instead, and only explains how to commit).
  */
 export function pointsPerPersonDayForHeadcount(
   config: EstimationInputs,
   nextMembers: number,
   hasSavedHeadcount: boolean,
 ): number | undefined {
-  if (unitOf(config) === 'devDays') return undefined;
+  const unit = unitOf(config);
+  if (unit === 'devDays' || isTeamTimeUnit(unit)) return undefined;
 
   const current = getPointsPerPersonDay(config);
 

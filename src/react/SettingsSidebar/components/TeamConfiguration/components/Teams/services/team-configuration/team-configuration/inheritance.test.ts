@@ -261,7 +261,7 @@ describe('getParentConfiguration', () => {
   });
 });
 
-// spec/040 plan2: X (`pointsPerPersonDay`) resolves together with the estimate unit.
+// spec/040: X (`pointsPerPersonDay`) resolves together with the estimate unit.
 describe('pointsPerPersonDay resolves with the unit', () => {
   const resolve = (saved: Partial<AllTeamData>, team = 'A', level = '1') =>
     getInheritedData(

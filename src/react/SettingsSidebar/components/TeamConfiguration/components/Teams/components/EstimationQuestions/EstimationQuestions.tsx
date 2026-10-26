@@ -19,7 +19,6 @@ import {
   DAYS_PER_WEEK,
   DEFAULT_ESTIMATE_UNIT,
   describeEstimation,
-  describeShareOfTeam,
   describeUnestimated,
   fieldLabelFor,
   getDefaultTracks,
@@ -32,7 +31,6 @@ import {
   pointsPerPersonDayForHeadcount,
   pointsPerPersonDayForSprintLength,
   pointsPerPersonDayForUnit,
-  SHARE,
   usesSprintLength,
 } from '../../shared/estimation';
 import { roundTo } from '../../../../../../../../utils/number/number';
@@ -45,13 +43,19 @@ export const ESTIMATE_UNIT_OPTIONS: Array<{ value: EstimateUnit; label: string }
   { value: 'teamSprints', label: 'Team Sprints' },
 ];
 
-/** Shortcuts for "How many people does one estimate assume?" — they fill in a share of the headcount. */
-export const PEOPLE_SHORTCUTS: Array<{ value: EstimateTeamShare; label: string }> = [
+export const ESTIMATE_TEAM_SHARE_OPTIONS: Array<{ value: EstimateTeamShare; label: string }> = [
   { value: 'full', label: 'Full team' },
-  { value: 'half', label: 'Half' },
-  { value: 'third', label: 'Third' },
-  { value: 'quarter', label: 'Quarter' },
+  { value: 'half', label: 'Half team' },
+  { value: 'third', label: 'One third team' },
+  { value: 'quarter', label: 'Quarter team' },
 ];
+
+const SHARE_PHRASE: Record<EstimateTeamShare, string> = {
+  full: 'full team',
+  half: 'half team',
+  third: 'one third team',
+  quarter: 'quarter team',
+};
 
 /**
  * The fields that say what one estimate unit means. They inherit together: X is in the unit's own
@@ -75,6 +79,8 @@ const SectionHeading: FC<{ children: string }> = ({ children }) => (
 );
 
 const plural = (count: number, singular: string, many: string) => `${count} ${count === 1 ? singular : many}`;
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 export interface EstimationQuestionsProps {
   /** `global` edits the global defaults directly; `inheriting` adds an inherit/customize toggle per field. */
@@ -105,9 +111,9 @@ export interface EstimationQuestionsProps {
 
 /**
  * The capacity questions, phrased in the team's own estimate unit. Every unit's answers come down to
- * one stored number, X (`pointsPerPersonDay`), which the headcount scales — see `shared/estimation.ts`
- * and spec/040-update-team-estimation-settings/plan2.md. Points per sprint and people per estimate
- * are both shown from X, and saving either writes X.
+ * one number, X (`pointsPerPersonDay`), which the headcount scales — see `shared/estimation.ts` and
+ * spec/040-update-team-estimation-settings/plan.md. Story Points stores X (shown as points per
+ * sprint); the team-time units derive it from their share of the team, so they never store it.
  */
 const EstimationQuestions: FC<EstimationQuestionsProps> = ({
   mode,
@@ -156,15 +162,27 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
     return tracks == null ? patch : { ...patch, tracks };
   };
 
+  const share = values.estimateTeamShare ?? 'full';
+
   const saveUnit = (next: EstimateUnit) => {
-    write(withTracks({ estimateUnit: next, pointsPerPersonDay: pointsPerPersonDayForUnit(values, next) }));
+    // A team-time unit's X comes from its share, so it saves the share and clears any stored X.
+    write(
+      withTracks(
+        isTeamTimeUnit(next)
+          ? { estimateUnit: next, estimateTeamShare: share, pointsPerPersonDay: null }
+          : { estimateUnit: next, pointsPerPersonDay: pointsPerPersonDayForUnit(values, next) },
+      ),
+    );
   };
 
   const saveSprintLength = (days: number) => {
     if (!(days > 0)) return;
 
-    // Story Points keeps its points per sprint, Team Sprints its people per estimate.
-    write({ sprintLength: days, pointsPerPersonDay: pointsPerPersonDayForSprintLength(values, days) });
+    // Story Points keeps its points per sprint; Team Sprints derives X from its share and the sprint.
+    write({
+      sprintLength: days,
+      pointsPerPersonDay: unit === 'teamSprints' ? null : pointsPerPersonDayForSprintLength(values, days),
+    });
   };
 
   const saveVelocity = (velocityPerSprint: number) => {
@@ -177,24 +195,30 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
     });
   };
 
-  const savePeople = (people: number) => {
-    write(
-      withTracks({
-        pointsPerPersonDay: pointsPerPersonDayFor(unit, {
-          peoplePerEstimate: people,
-          teamMembers,
-          sprintLength: values.sprintLength,
-        }),
-      }),
-    );
+  const saveShare = (next: EstimateTeamShare) => {
+    write(withTracks({ estimateTeamShare: next, pointsPerPersonDay: null }));
   };
 
   const saveHeadcount = (next: number) => {
     if (!Number.isFinite(next) || !(next > 0)) return;
 
-    const anchored = pointsPerPersonDayForHeadcount(values, next, hasSavedHeadcount);
+    // Story Points' points per sprint follow the headcount, so a level inheriting them customizes them
+    // too: it would otherwise read "inheriting" next to a number the inherited answer doesn't have.
+    const customizesCapacity = mode !== 'global' && unit === 'storyPoints' && isCapacityInheriting;
+    const anchored =
+      pointsPerPersonDayForHeadcount(values, next, hasSavedHeadcount) ??
+      (customizesCapacity ? pointsPerPersonDay : undefined);
+    // A team-time unit's X follows its share of the saved team, so a stored one would pin it.
+    const clearsStoredX = isTeamTimeUnit(unit) && savedUserData.pointsPerPersonDay != null;
 
-    write(withTracks({ teamMembers: next, ...(anchored !== undefined && { pointsPerPersonDay: anchored }) }));
+    write(
+      withTracks({
+        teamMembers: next,
+        ...(customizesCapacity && { estimateUnit: unit }),
+        ...(anchored !== undefined && { pointsPerPersonDay: anchored }),
+        ...(clearsStoredX && { pointsPerPersonDay: null }),
+      }),
+    );
   };
 
   const inheritance = (name: keyof Configuration) => ({
@@ -204,12 +228,17 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
   });
 
   /** The unit and the capacity expressed in it customize — and inherit — together. */
-  const capacityInheritance = (name: 'estimateUnit' | 'pointsPerPersonDay') => (shouldCustomize: boolean) =>
-    toggleInheritance?.(
-      name,
-      shouldCustomize,
-      shouldCustomize ? { estimateUnit: unit, pointsPerPersonDay } : CAPACITY_FIELDS_CLEARED,
-    );
+  const capacityInheritance =
+    (name: 'estimateUnit' | 'pointsPerPersonDay' | 'estimateTeamShare') => (shouldCustomize: boolean) =>
+      toggleInheritance?.(
+        name,
+        shouldCustomize,
+        !shouldCustomize
+          ? CAPACITY_FIELDS_CLEARED
+          : isTeamTimeUnit(unit)
+            ? { estimateUnit: unit, estimateTeamShare: share }
+            : { estimateUnit: unit, pointsPerPersonDay },
+      );
 
   const isCapacityInheriting = (Object.keys(CAPACITY_FIELDS_CLEARED) as Array<keyof Configuration>).every(
     (field) => savedUserData[field] == null,
@@ -275,7 +304,13 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
   };
 
   const velocity = roundTo(getVelocityPerSprint(values), 2);
-  const people = peoplePerEstimate == null ? null : roundTo(peoplePerEstimate, 2);
+  const shareSelectProps = {
+    name: 'estimateTeamShare' as const,
+    label: 'How much of the team does one estimate assume?',
+    jiraFields: ESTIMATE_TEAM_SHARE_OPTIONS,
+    control,
+    onSave: ({ value }: FieldUpdates<keyof Configuration>) => saveShare(value as EstimateTeamShare),
+  };
 
   return (
     <>
@@ -318,32 +353,19 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
       )}
       {isTeamTimeUnit(unit) && (
         <>
-          <DerivedNumberField
-            name="peoplePerEstimate"
-            label="How many people does one estimate assume?"
-            value={peoplePerEstimate}
-            unit="people"
-            onCommit={savePeople}
-            inheritance={derivedInheritance(people == null ? 'Not set' : plural(people, 'person', 'people'))}
-          >
-            <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Share of the team">
-              {PEOPLE_SHORTCUTS.map((shortcut) => (
-                <button
-                  key={shortcut.value}
-                  type="button"
-                  className="rounded-[3px] border border-slate-300 bg-white px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-50"
-                  onClick={() => savePeople(roundTo(SHARE[shortcut.value] * teamMembers, 2))}
-                >
-                  {shortcut.label}
-                </button>
-              ))}
-            </div>
-          </DerivedNumberField>
-          {people != null && (
-            // Display only: the saved answer is the number of people, so the share follows the headcount.
+          {mode === 'global' ? (
+            <Select {...shareSelectProps} />
+          ) : (
+            <InheritanceSelect
+              {...shareSelectProps}
+              isInheriting={isCapacityInheriting}
+              onInheritanceChange={capacityInheritance('estimateTeamShare')}
+            />
+          )}
+          {peoplePerEstimate != null && (
             <p className="text-xs text-slate-500" data-testid="people-share">
-              Estimates assume <Em>{plural(people, 'person', 'people')}</Em> ({describeShareOfTeam(people, teamMembers)}
-              ).
+              {capitalize(SHARE_PHRASE[share])} of {plural(roundTo(teamMembers, 2), 'developer', 'developers')}:
+              estimates assume <Em>{plural(roundTo(peoplePerEstimate, 2), 'person', 'people')}</Em>.
             </p>
           )}
         </>
