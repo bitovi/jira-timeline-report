@@ -1,5 +1,6 @@
 import type { Configuration } from '../../services/team-configuration';
 import type { ItemLabel } from '../../shared/estimation';
+import type { AlsoWrite } from '../../useTeamForm';
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -58,7 +59,7 @@ const Harness = ({
   estimateFieldOptions?: Array<{ value: string; label: string }>;
   update?: () => void;
   updateFields?: (patch: Partial<Configuration>) => void;
-  toggleInheritance?: (field: keyof Configuration, customize: boolean, alsoWrite?: Partial<Configuration>) => void;
+  toggleInheritance?: (field: keyof Configuration, customize: boolean, alsoWrite?: AlsoWrite) => void;
   hasSavedHeadcount?: boolean;
 }) => {
   // The real forms seed `defaultValues` with the inherited data, so an inherited unit is a value too.
@@ -790,6 +791,41 @@ describe('EstimationQuestions', () => {
         pointsPerPersonDay: null,
         velocityPerSprint: null,
         estimateTeamShare: null,
+      });
+    });
+
+    describe('Story Points sprint length returning to inheritance', () => {
+      // 5 developers, 21 points per sprint: a 3-week sprint saved X = 21 / (5 × 15) = 0.28.
+      const values = resolved({ pointsPerPersonDay: 0.28, teamMembers: 5, sprintLength: 15 });
+      const parent = { ...values, sprintLength: 10 };
+
+      /** The patch the toggle saves alongside, given the parent's values. */
+      const inheritSprintLength = async (saved: Configuration) => {
+        const toggleInheritance = vi.fn();
+        render(<Harness mode="inheriting" values={values} saved={saved} toggleInheritance={toggleInheritance} />);
+
+        await toggle(SPRINT_QUESTION);
+
+        const [field, customize, alsoWrite] = toggleInheritance.mock.calls.at(-1)!;
+        expect([field, customize]).toEqual(['sprintLength', false]);
+        return (alsoWrite as Exclude<AlsoWrite, Partial<Configuration>>)(parent);
+      };
+
+      it("keeps points per sprint by recomputing this level's X for the inherited length", async () => {
+        const patch = await inheritSprintLength({
+          ...createEmptyConfiguration(),
+          sprintLength: 15,
+          pointsPerPersonDay: 0.28,
+        });
+
+        expect(patch.pointsPerPersonDay).toBeCloseTo(0.42);
+        expect(getEffectiveVelocity({ ...parent, ...patch })).toBeCloseTo(21);
+      });
+
+      it('leaves an inherited X alone', async () => {
+        const patch = await inheritSprintLength({ ...createEmptyConfiguration(), sprintLength: 15 });
+
+        expect(patch).toEqual({});
       });
     });
 

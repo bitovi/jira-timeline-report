@@ -4,7 +4,7 @@ import type { IssueFields } from './services/team-configuration';
 
 import React from 'react';
 
-import { useSaveTeamData, useTeamData } from './services/team-configuration';
+import { createEmptyConfiguration, useSaveTeamData, useTeamData } from './services/team-configuration';
 
 import AllTeamsDefaultForm from './AllTeamsDefaultsForm';
 import ConfigureTeams from './ConfigureTeams';
@@ -34,7 +34,8 @@ const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, .
       defaultsPanel={
         <AllTeamsDefaultForm
           save={save}
-          savedUserData={savedUserTeamData.defaults}
+          // Saving drops empty levels, so global settings saved only per type have no `defaults`.
+          savedUserData={savedUserTeamData.defaults ?? createEmptyConfiguration()}
           inheritedData={inheritedTeamData.defaults}
           jiraFields={jiraFields}
           {...props}

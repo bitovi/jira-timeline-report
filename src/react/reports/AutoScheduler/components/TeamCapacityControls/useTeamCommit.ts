@@ -74,16 +74,15 @@ export const useTeamCommit = () => {
       const level = String(hierarchyLevel);
       const savedTeamData = savedUserAllTeamData[team];
       const resolved = resolveTeamConfiguration(savedUserAllTeamData, jiraFields, team, level);
-      const inheritsCapacity = !anchorsCapacity(savedTeamData?.[getCapacityLevel(savedTeamData, level)]);
+      const capacityLevel = savedTeamData?.[getCapacityLevel(savedTeamData, level)];
+      const inheritsCapacity = !anchorsCapacity(capacityLevel);
       const capacity = withPinnedPointsPerPersonDay(values, resolved, inheritsCapacity);
-      // X is in the unit's terms, so a team taking over its capacity takes the unit with it, the way
-      // customizing capacity in the Teams sidebar does.
+      // X is in its unit's terms, so the level it lands on also saves the unit it is read in — or a
+      // parent later switching units would reinterpret it, as `useTeamForm.updateFields` guards against.
+      const pinsUnit = capacity.pointsPerPersonDay !== undefined && capacityLevel?.estimateUnit == null;
       const written: Partial<Pick<Configuration, CapacityField>> = {
         ...capacity,
-        ...(inheritsCapacity &&
-          capacity.pointsPerPersonDay !== undefined && {
-            estimateUnit: resolved.estimateUnit ?? DEFAULT_ESTIMATE_UNIT,
-          }),
+        ...(pinsUnit && { estimateUnit: resolved.estimateUnit ?? DEFAULT_ESTIMATE_UNIT }),
       };
       const changed = CAPACITY_FIELDS.filter((field) => written[field] !== undefined);
 

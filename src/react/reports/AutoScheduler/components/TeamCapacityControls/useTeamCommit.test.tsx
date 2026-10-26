@@ -120,6 +120,8 @@ describe('useTeamCommit', () => {
       sprintLength: 10,
       estimateField: 'Story points',
       velocityPerSprint: 21,
+      // A legacy velocity with no saved unit: the committed X takes the unit it is read in.
+      estimateUnit: 'storyPoints',
       pointsPerPersonDay: 0.35,
       tracks: 2,
     });
@@ -157,6 +159,7 @@ describe('useTeamCommit', () => {
 
     expect(savedPayload().STORE?.['7']).toEqual({
       velocityPerSprint: 55,
+      estimateUnit: 'storyPoints',
       pointsPerPersonDay: 0.35,
       tracks: 2,
       estimateField: 'Days estimate',
@@ -174,7 +177,11 @@ describe('useTeamCommit', () => {
     renderProbe('SPLIT');
     await userEvent.click(screen.getByText('commit'));
 
-    expect(savedPayload().SPLIT?.['7']).toEqual({ velocityPerSprint: 55, pointsPerPersonDay: 0.35 });
+    expect(savedPayload().SPLIT?.['7']).toEqual({
+      velocityPerSprint: 55,
+      estimateUnit: 'storyPoints',
+      pointsPerPersonDay: 0.35,
+    });
     expect(savedPayload().SPLIT?.defaults).toEqual({ sprintLength: 10, tracks: 2 });
   });
 
@@ -202,6 +209,7 @@ describe('useTeamCommit', () => {
       teamMembers: 8,
       velocityPerSprint: 20,
       sprintLength: 10,
+      estimateUnit: 'storyPoints',
       pointsPerPersonDay: 0.5,
     });
   });

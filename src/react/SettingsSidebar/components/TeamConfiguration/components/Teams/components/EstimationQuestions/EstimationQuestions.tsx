@@ -2,6 +2,7 @@ import type { FC, ReactNode } from 'react';
 import type { Control, UseFormReturn } from 'react-hook-form';
 import type { Configuration, EstimateTeamShare, EstimateUnit } from '../../services/team-configuration';
 import type { FieldUpdates } from '../../ConfigureTeamsForm';
+import type { AlsoWrite } from '../../useTeamForm';
 import type { ItemLabel } from '../../shared/estimation';
 import type { SelectableField } from '../../shared/selectable-fields';
 
@@ -93,11 +94,7 @@ export interface EstimationQuestionsProps {
   setValue: UseFormReturn<Configuration>['setValue'];
   savedUserData: Configuration;
   /** `alsoWrite` goes out in the same write as the toggled field. */
-  toggleInheritance?: (
-    field: keyof Configuration,
-    shouldCustomize: boolean,
-    alsoWrite?: Partial<Configuration>,
-  ) => void;
+  toggleInheritance?: (field: keyof Configuration, shouldCustomize: boolean, alsoWrite?: AlsoWrite) => void;
   /**
    * Did the team ever enter a headcount anywhere in this level's chain? If not, the first one
    * re-anchors capacity instead of scaling it (`pointsPerPersonDayForHeadcount`).
@@ -262,16 +259,26 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
   const ownInheritance = (
     name: 'teamMembers' | 'sprintLength',
     inheritedValue: string,
-    alsoWrite?: Partial<Configuration>,
+    { onCustomize, onInherit }: { onCustomize?: Partial<Configuration>; onInherit?: AlsoWrite } = {},
   ) =>
     mode === 'global'
       ? undefined
       : {
           isInheriting: savedUserData[name] == null,
           onInheritanceChange: (shouldCustomize: boolean) =>
-            toggleInheritance?.(name, shouldCustomize, shouldCustomize ? alsoWrite : undefined),
+            toggleInheritance?.(name, shouldCustomize, shouldCustomize ? onCustomize : onInherit),
           inheritedValue,
         };
+
+  /**
+   * A Story Points sprint length returning to inheritance keeps points per sprint, as typing the
+   * inherited length would (`saveSprintLength`) — when X is this level's own. An inherited X already
+   * matches the inherited sprint length.
+   */
+  const keepVelocityOnInheritedSprint = (parent: Configuration): Partial<Configuration> =>
+    unit === 'storyPoints' && savedUserData.pointsPerPersonDay != null && Number(parent.sprintLength) > 0
+      ? { pointsPerPersonDay: pointsPerPersonDayForSprintLength(values, Number(parent.sprintLength)) }
+      : {};
 
   // Customizing the headcount enters it, which re-anchors capacity like any first headcount.
   const anchoredOnCustomize = pointsPerPersonDayForHeadcount(values, teamMembers, hasSavedHeadcount);
@@ -348,6 +355,7 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
           inheritance={ownInheritance(
             'sprintLength',
             sprintWeeksValue == null ? 'Not set' : plural(roundTo(sprintWeeksValue, 2), 'week', 'weeks'),
+            { onInherit: keepVelocityOnInheritedSprint },
           )}
         />
       )}
@@ -382,7 +390,7 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
         inheritance={ownInheritance(
           'teamMembers',
           plural(roundTo(teamMembers, 2), 'developer', 'developers'),
-          anchoredOnCustomize === undefined ? undefined : { pointsPerPersonDay: anchoredOnCustomize },
+          anchoredOnCustomize === undefined ? {} : { onCustomize: { pointsPerPersonDay: anchoredOnCustomize } },
         )}
       />
       {unit === 'storyPoints' && (

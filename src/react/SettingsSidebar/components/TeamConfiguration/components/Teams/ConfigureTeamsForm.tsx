@@ -4,6 +4,7 @@ import type { Configuration, IssueFields } from './services/team-configuration';
 import type { NormalizeIssueConfig } from '../../../../../../jira/normalized/normalize';
 import type { Control, UseFormReturn } from 'react-hook-form';
 import type { ItemLabel } from './shared/estimation';
+import type { AlsoWrite } from './useTeamForm';
 
 import React from 'react';
 import { Flex } from '@atlaskit/primitives';
@@ -24,7 +25,7 @@ export interface ConfigureTeamsFormProps {
   update: <TProperty extends keyof Configuration>(config: FieldUpdates<TProperty>) => void;
   updateFields: (patch: Partial<Configuration>) => void;
   setValue: UseFormReturn<Configuration>['setValue'];
-  toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean, alsoWrite?: Partial<Configuration>) => void;
+  toggleInheritance: (field: keyof Configuration, shouldCustomize: boolean, alsoWrite?: AlsoWrite) => void;
   /** Did the team ever enter a headcount anywhere in this level's chain? */
   hasSavedHeadcount?: boolean;
   /** `null` on a team's defaults; the work item type's name on a per-type accordion. */

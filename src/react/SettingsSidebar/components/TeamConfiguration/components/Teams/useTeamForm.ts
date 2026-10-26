@@ -6,6 +6,10 @@ import { useForm } from 'react-hook-form';
 
 import { createEmptyConfiguration, useSaveTeamData } from './services/team-configuration';
 import { FieldUpdates } from './ConfigureTeamsForm';
+import { DEFAULT_ESTIMATE_UNIT } from './shared/estimation';
+
+/** Fields saved alongside an inheritance toggle, or a function of the values the level ends up with. */
+export type AlsoWrite = Partial<Configuration> | ((values: Configuration) => Partial<Configuration>);
 
 type UseTeamFormConfig = {
   teamName: string;
@@ -39,28 +43,44 @@ export const useTeamForm = ({
     save({ ...savedUserTeamData[hierarchyLevel]!, [name]: value });
   }
 
-  /** Several fields in one write: separate `update`s would each spread the same saved snapshot. */
+  /**
+   * Several fields in one write: separate `update`s would each spread the same saved snapshot.
+   *
+   * X is in its unit's terms, so a level saving its own X also saves the unit it is read in — or a
+   * parent later switching units would reinterpret this level's rate in the new unit.
+   */
   function updateFields(patch: Partial<Configuration>) {
-    save({ ...savedUserTeamData[hierarchyLevel]!, ...patch });
+    const saved = savedUserTeamData[hierarchyLevel] ?? createEmptyConfiguration();
+    const pinsUnit = patch.pointsPerPersonDay != null && patch.estimateUnit === undefined && saved.estimateUnit == null;
+
+    save({
+      ...saved,
+      ...patch,
+      ...(pinsUnit && { estimateUnit: inheritedTeamData[hierarchyLevel]?.estimateUnit ?? DEFAULT_ESTIMATE_UNIT }),
+    });
   }
 
   /**
    * `alsoWrite` goes out in the same write — for fields that only make sense together, like the
-   * estimate unit and the capacity (`pointsPerPersonDay`) expressed in it.
+   * estimate unit and the capacity (`pointsPerPersonDay`) expressed in it. As a function it gets the
+   * values the level ends up with (the parent's, when returning to inheritance), for a patch that
+   * depends on them.
    */
-  const toggleInheritance = (
-    field: keyof Configuration,
-    shouldCustomize: boolean,
-    alsoWrite?: Partial<Configuration>,
-  ) => {
+  const toggleInheritance = (field: keyof Configuration, shouldCustomize: boolean, alsoWrite?: AlsoWrite) => {
+    const resolve = (values: Configuration) => (typeof alsoWrite === 'function' ? alsoWrite(values) : alsoWrite);
+
     if (shouldCustomize) {
-      updateFields({ [field]: inheritedTeamData[hierarchyLevel]![field], ...alsoWrite });
+      const values = inheritedTeamData[hierarchyLevel]!;
+
+      updateFields({ [field]: values[field], ...resolve(values) });
       return;
     }
 
-    setValue(field, getInheritance(hierarchyLevel)[hierarchyLevel]![field]);
+    const parent = getInheritance(hierarchyLevel)[hierarchyLevel]!;
 
-    updateFields({ [field]: null, ...alsoWrite });
+    setValue(field, parent[field]);
+
+    updateFields({ [field]: null, ...resolve(parent) });
   };
 
   return {
