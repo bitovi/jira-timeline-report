@@ -841,14 +841,67 @@ describe('EstimationQuestions', () => {
       expect(pointsInput()).toHaveValue(30);
     });
 
-    it('customizing a never-entered headcount re-anchors X', async () => {
+    describe('a team that never entered a headcount', () => {
+      // 21 points per 10-day sprint against the default 5 developers: X = 0.42.
+      const renderNeverEntered = () => {
+        const toggleInheritance = vi.fn();
+        const updateFields = vi.fn();
+        render(
+          <Harness
+            mode="inheriting"
+            values={resolved({ teamMembers: 5, velocityPerSprint: 21 })}
+            toggleInheritance={toggleInheritance}
+            updateFields={updateFields}
+            hasSavedHeadcount={false}
+          />,
+        );
+
+        return { toggleInheritance, updateFields };
+      };
+
+      it('Customize only unlocks the field, saving nothing', async () => {
+        const { toggleInheritance, updateFields } = renderNeverEntered();
+
+        await toggle(MEMBERS_QUESTION);
+
+        expect(toggleInheritance).not.toHaveBeenCalled();
+        expect(updateFields).not.toHaveBeenCalled();
+        expect(membersInput()).toHaveValue(5);
+      });
+
+      it('the first headcount typed after Customize re-anchors, keeping points per sprint', async () => {
+        const { updateFields } = renderNeverEntered();
+
+        await toggle(MEMBERS_QUESTION);
+        await retype(membersInput(), '10');
+
+        const patch = lastPatch(updateFields);
+        expect(patch.teamMembers).toBe(10);
+        expect(patch.pointsPerPersonDay).toBeCloseTo(0.21);
+        expect(getEffectiveVelocity({ ...resolved({}), ...patch })).toBeCloseTo(21);
+      });
+
+      it('Inherit after an unsaved Customize goes back to inheriting, saving nothing', async () => {
+        const { toggleInheritance, updateFields } = renderNeverEntered();
+
+        await toggle(MEMBERS_QUESTION);
+        await toggle(MEMBERS_QUESTION);
+
+        expect(toggleInheritance).not.toHaveBeenCalled();
+        expect(updateFields).not.toHaveBeenCalled();
+        const membersRow = screen.getByText(MEMBERS_QUESTION).closest('.grid') as HTMLElement;
+        expect(within(membersRow).getByTestId('inherited-value')).toBeInTheDocument();
+      });
+    });
+
+    it('customizing a headcount inherited from a level that saved one pins a derived X', async () => {
       const toggleInheritance = vi.fn();
       render(
         <Harness
           mode="inheriting"
           values={resolved({ teamMembers: 5, velocityPerSprint: 21 })}
           toggleInheritance={toggleInheritance}
-          hasSavedHeadcount={false}
+          hasSavedHeadcount
         />,
       );
 

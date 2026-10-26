@@ -6,7 +6,7 @@ import type { AlsoWrite } from '../../useTeamForm';
 import type { ItemLabel } from '../../shared/estimation';
 import type { SelectableField } from '../../shared/selectable-fields';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import SectionMessage from '@atlaskit/section-message';
 import InformationIcon from '@atlaskit/icon/core/information';
@@ -280,8 +280,28 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
       ? { pointsPerPersonDay: pointsPerPersonDayForSprintLength(values, Number(parent.sprintLength)) }
       : {};
 
-  // Customizing the headcount enters it, which re-anchors capacity like any first headcount.
-  const anchoredOnCustomize = pointsPerPersonDayForHeadcount(values, teamMembers, hasSavedHeadcount);
+  /**
+   * A team that never entered a headcount inherits the code default. Customize then only unlocks the
+   * field: saving that default would count as the first headcount, so the one actually typed would
+   * scale capacity instead of re-anchoring it. The typed number saves on blur (`saveHeadcount`).
+   */
+  const [isEnteringFirstHeadcount, setEnteringFirstHeadcount] = useState(false);
+  // Once a headcount is in the chain, Customize saves the inherited one, pinning a derived X.
+  const pinnedOnCustomize = pointsPerPersonDayForHeadcount(values, teamMembers, true);
+  const headcountInheritance = ownInheritance(
+    'teamMembers',
+    plural(roundTo(teamMembers, 2), 'developer', 'developers'),
+    pinnedOnCustomize === undefined ? {} : { onCustomize: { pointsPerPersonDay: pinnedOnCustomize } },
+  );
+  const firstHeadcountInheritance = headcountInheritance && {
+    ...headcountInheritance,
+    isInheriting: headcountInheritance.isInheriting && !isEnteringFirstHeadcount,
+    onInheritanceChange: (shouldCustomize: boolean) => {
+      setEnteringFirstHeadcount(shouldCustomize);
+      // Nothing was saved, so there is nothing to save or clear.
+      if (hasSavedHeadcount) headcountInheritance.onInheritanceChange(shouldCustomize);
+    },
+  };
   const sprintWeeksValue = values.sprintLength == null ? null : Number(values.sprintLength) / DAYS_PER_WEEK;
 
   const derivedInheritance = (inheritedValue: string) =>
@@ -387,11 +407,7 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
         value={teamMembers}
         unit="developers"
         onCommit={saveHeadcount}
-        inheritance={ownInheritance(
-          'teamMembers',
-          plural(roundTo(teamMembers, 2), 'developer', 'developers'),
-          anchoredOnCustomize === undefined ? {} : { onCustomize: { pointsPerPersonDay: anchoredOnCustomize } },
-        )}
+        inheritance={hasSavedHeadcount ? headcountInheritance : firstHeadcountInheritance}
       />
       {unit === 'storyPoints' && (
         <DerivedNumberField
