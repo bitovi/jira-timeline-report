@@ -112,7 +112,7 @@ export interface EstimationQuestionsProps {
 /**
  * The capacity questions, phrased in the team's own estimate unit. Every unit's answers come down to
  * one number, X (`pointsPerPersonDay`), which the headcount scales — see `shared/estimation.ts` and
- * spec/040-update-team-estimation-settings/plan.md. Story Points stores X (shown as points per
+ * spec/042-update-team-estimation-settings/plan.md. Story Points stores X (shown as points per
  * sprint); the team-time units derive it from their share of the team, so they never store it.
  */
 const EstimationQuestions: FC<EstimationQuestionsProps> = ({

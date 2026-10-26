@@ -41,7 +41,7 @@ export const getInheritedData = (
     field: keyof Configuration,
   ): Configuration[keyof Configuration] => {
     // X resolves together with the unit: from the most specific level that defines capacity at all,
-    // or not at all (`null`, so it is derived from that level's legacy answers). See spec/040.
+    // or not at all (`null`, so it is derived from that level's legacy answers). See spec/042.
     if (field === 'pointsPerPersonDay') {
       return chain(heirarchyLevel).find(anchorsCapacity)?.pointsPerPersonDay ?? null;
     }

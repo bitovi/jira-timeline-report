@@ -1,7 +1,7 @@
 /**
  * A session-only, uncommitted change to one team's scheduling inputs. Capacity is
  * `pointsPerPersonDay × teamMembers`, so headcount scales it for every unit. See
- * spec/040-update-team-estimation-settings/plan.md.
+ * spec/042-update-team-estimation-settings/plan.md.
  */
 export type TeamCapacityOverride = {
   /** X, estimate units per person per working day — set by a Story Points velocity edit or a re-anchor. */

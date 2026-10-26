@@ -1,4 +1,4 @@
-# 040 — Team estimation settings
+# 042 — Team estimation settings
 
 The plan as built. It merges the original plan (estimate units, plain-language questions) and part 2 (headcount drives capacity), with every later revision folded in. Where the two disagreed, this file describes what the code does now.
 

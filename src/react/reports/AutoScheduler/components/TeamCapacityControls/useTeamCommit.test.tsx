@@ -20,7 +20,7 @@ const savedUserAllTeamData = {
   },
   STORE: { defaults: { sprintLength: 10 }, '7': { velocityPerSprint: 55, tracks: 4, estimateField: 'Days estimate' } },
   SPLIT: { defaults: { sprintLength: 10, tracks: 2 }, '7': { velocityPerSprint: 55 } },
-  // spec/040: Dev Days' X is always 1, so a headcount commit writes the headcount alone.
+  // spec/042: Dev Days' X is always 1, so a headcount commit writes the headcount alone.
   DEVS: { defaults: { estimateUnit: 'devDays', teamMembers: 4 }, '7': { teamMembers: 6 } },
   DEVS_DEFAULTS: { defaults: { estimateUnit: 'devDays', teamMembers: 4 } },
   // Entered a headcount, but X is still derived: 20 / (10 days × 4 people) = 0.5.

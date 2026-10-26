@@ -5,8 +5,8 @@ import type { AllTeamData, IssueFields } from '../services/team-configuration';
 import { createFullyInheritedConfig } from '../services/team-configuration';
 import { createNormalizeConfiguration } from './normalize';
 
-// spec/040-update-team-estimation-settings: `getVelocity` returns the effective velocity for the
-// team's estimate unit, X × N × P (spec/040), resolved through the inheritance chain. X resolves together
+// spec/042-update-team-estimation-settings: `getVelocity` returns the effective velocity for the
+// team's estimate unit, X × N × P (spec/042), resolved through the inheritance chain. X resolves together
 // with the unit.
 
 const EPIC = 1;

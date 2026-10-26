@@ -127,7 +127,7 @@ const nonFieldDefaults: Omit<
   // No default: a config without one derives it from the legacy answers (`getPointsPerPersonDay`).
   pointsPerPersonDay: null,
   tracks: 1,
-  // Story points is today's math exactly, so a config saved before spec/040 needs no migration.
+  // Story points is today's math exactly, so a config saved before spec/042 needs no migration.
   estimateUnit: 'storyPoints',
   // Every unit's capacity is per person, so a team that never entered its headcount still needs one.
   // Resolved anyway so switching units never lands on an empty answer.

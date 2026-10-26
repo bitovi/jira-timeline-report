@@ -39,7 +39,7 @@ const withInheritance = applyInheritance('__GLOBAL__', configurationsWithGlobalD
 
 ## Estimate units
 
-Teams answer capacity questions in the unit they estimate in (`estimateUnit`). The scheduler still works from three numbers per issue — velocity, days per sprint and parallel work limit — whose names predate estimate units. See `Teams/shared/estimation.ts` and spec/040-update-team-estimation-settings (plan.md).
+Teams answer capacity questions in the unit they estimate in (`estimateUnit`). The scheduler still works from three numbers per issue — velocity, days per sprint and parallel work limit — whose names predate estimate units. See `Teams/shared/estimation.ts` and spec/042-update-team-estimation-settings (plan.md).
 
 **Every unit stores one number, X (`pointsPerPersonDay`)**: estimate units one person finishes in one working day. With the headcount N (`teamMembers`), the tracks T and the scheduling period P:
 

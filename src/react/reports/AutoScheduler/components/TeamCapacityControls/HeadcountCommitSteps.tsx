@@ -27,7 +27,7 @@ const people = (count: number) => `${roundTo(count, 2)} ${roundTo(count, 2) === 
  * estimates assume a share of the team ("half team"), so saving a new team size also redefines
  * every estimate already in Jira. Status Reports can't rewrite those, so instead of saving, Commit lists
  * the two manual steps. The what-if — the same estimates, more people — stays on the row until Reset.
- * See spec/040.
+ * See spec/042.
  */
 export const HeadcountCommitSteps: FC<HeadcountCommitStepsProps> = ({
   savedTeamMembers,

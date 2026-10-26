@@ -76,7 +76,7 @@ const buttonClasses =
  * team is dirty — Reset and Commit. The buttons live at the end of the input group so the row grows
  * leftward and the output columns never shift.
  *
- * Capacity is `X × N` for every unit (spec/040-update-team-estimation-settings/plan.md): the
+ * Capacity is `X × N` for every unit (spec/042-update-team-estimation-settings/plan.md): the
  * headcount is editable for every unit and scales it, tracks only divide it, and Story Points can
  * also edit its points per sprint, which rewrites X.
  */

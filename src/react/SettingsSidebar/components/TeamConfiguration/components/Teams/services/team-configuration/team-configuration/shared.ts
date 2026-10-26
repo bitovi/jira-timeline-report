@@ -22,7 +22,7 @@ export type Configuration = {
   sprintLength: number | null;
   /**
    * Legacy: story points completed per sprint. No longer written — read only to derive
-   * `pointsPerPersonDay` for configs saved before it existed. See spec/040.
+   * `pointsPerPersonDay` for configs saved before it existed. See spec/042.
    */
   velocityPerSprint: number | null;
   /**
@@ -32,7 +32,7 @@ export type Configuration = {
   pointsPerPersonDay: number | null;
   /** Work items the team handles in parallel (every unit). */
   tracks: number | null;
-  /** `null` resolves to `storyPoints`, which is how every config saved before spec/040 behaves. */
+  /** `null` resolves to `storyPoints`, which is how every config saved before spec/042 behaves. */
   estimateUnit: EstimateUnit | null;
   /** Developers on the team. Drives capacity for every unit; decimals allowed. */
   teamMembers: number | null;

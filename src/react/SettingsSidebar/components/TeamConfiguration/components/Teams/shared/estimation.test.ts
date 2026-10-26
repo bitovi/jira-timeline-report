@@ -283,7 +283,7 @@ describe('getEffectiveVelocity (X × N × P)', () => {
   });
 });
 
-// spec/040 "Worked tables": 2-week sprints; per track / day and points / day (team).
+// spec/042 "Worked tables": 2-week sprints; per track / day and points / day (team).
 describe('worked tables through pointsPerDayPerTrack', () => {
   const perTrackPerDay = (config: EstimationInputs) =>
     getEffectiveVelocity(config) / getSchedulingPeriodDays(config) / Number(config.tracks);
@@ -581,7 +581,7 @@ describe('formatCapacity', () => {
     else expect(actual.perPeriod).toBeCloseTo(perPeriod);
   };
 
-  // spec/040 "AutoScheduler team bar" readout table.
+  // spec/042 "AutoScheduler team bar" readout table.
   it.each([
     ['storyPoints', 0.21, 'sprint', [0.21, 2.1], [2.1, 21], [2.31, 23.1]],
     ['devDays', 1, undefined, [1], [10], [11]],

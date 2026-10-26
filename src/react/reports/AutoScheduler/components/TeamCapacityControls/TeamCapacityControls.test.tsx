@@ -260,7 +260,7 @@ describe('TeamCapacityInputs', () => {
   });
 });
 
-// spec/040-update-team-estimation-settings/plan.md: capacity is X × N for every unit.
+// spec/042-update-team-estimation-settings/plan.md: capacity is X × N for every unit.
 describe('TeamCapacityInputs headcount and readout', () => {
   it('names the scheduled level in the stepper', async () => {
     renderInputs({ itemLabel: itemLabelFor('Epic'), savedTracks: 2 });

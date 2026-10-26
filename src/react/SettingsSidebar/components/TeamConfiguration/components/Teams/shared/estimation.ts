@@ -28,13 +28,13 @@
  * legacy answers at their own headcount, which reproduces their old velocity exactly.
  *
  * The period cancels out of every estimated duration. Its only visible effect is the default
- * estimate: an unestimated item takes exactly one period. See spec/040-update-team-estimation-settings.
+ * estimate: an unestimated item takes exactly one period. See spec/042-update-team-estimation-settings.
  */
 import type { Configuration, EstimateTeamShare, EstimateUnit } from '../services/team-configuration';
 
 import { roundTo } from '../../../../../../../utils/number/number';
 
-/** What a configuration that never chose a unit — every one saved before spec/040 — means. */
+/** What a configuration that never chose a unit — every one saved before spec/042 — means. */
 export const DEFAULT_ESTIMATE_UNIT: EstimateUnit = 'storyPoints';
 
 /** The headcount of a team that never entered one. */

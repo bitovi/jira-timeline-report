@@ -150,7 +150,7 @@ interface NormalizedSprint {
   endDate: Date;
 }
 
-/** The unit a team's estimates are written in. See spec/040-update-team-estimation-settings. */
+/** The unit a team's estimates are written in. See spec/042-update-team-estimation-settings. */
 export type EstimateUnit = 'storyPoints' | 'devDays' | 'teamDays' | 'teamWeeks' | 'teamSprints';
 
 /** Legacy: how much of the team a single estimated work item assumed. Read only to migrate. */
