@@ -3,7 +3,7 @@ import type { StoredNode } from './model/sections';
 import type { ComponentProps } from 'react';
 
 import React, { Suspense } from 'react';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -455,7 +455,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [stored('a'), stored('b')] });
 
       expect(await screen.findByRole('button', { name: 'Move Beta up' })).toBeInTheDocument();
-      expect(mounts).toEqual(['month', 'week']);
+      await waitFor(() => expect(mounts).toEqual(['month', 'week']));
 
       await clickControl('Move Beta up');
 
@@ -576,7 +576,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: [stored('a'), stored('b')] });
 
       expect(await screen.findByRole('button', { name: 'Collapse Alpha' })).toBeInTheDocument();
-      expect(mounts).toEqual(['month', 'week']);
+      await waitFor(() => expect(mounts).toEqual(['month', 'week']));
 
       await userEvent.click(screen.getByRole('button', { name: 'Collapse Alpha' }));
 
@@ -655,7 +655,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: withChildren });
 
       expect(await screen.findByRole('button', { name: 'Collapse Q3' })).toBeInTheDocument();
-      expect(mounts).toEqual(['month', 'week']);
+      await waitFor(() => expect(mounts).toEqual(['month', 'week']));
 
       await userEvent.click(screen.getByRole('button', { name: 'Collapse Q3' }));
       await userEvent.click(await screen.findByRole('button', { name: 'Expand Q3' }));
@@ -736,7 +736,7 @@ describe('<ReportOfReports>', () => {
       renderReport({ savedSections: withSection('Q3') });
 
       expect(await sectionTitle('Q3')).toBeInTheDocument();
-      expect(mounts).toEqual(['month']);
+      await waitFor(() => expect(mounts).toEqual(['month']));
 
       await retitleSection('Q3', 'Q4');
 

@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import React from 'react';
+import Button from '@atlaskit/button/new';
 import Heading from '@atlaskit/heading';
 import ErrorIcon from '@atlaskit/icon/core/error';
 import WarningIcon from '@atlaskit/icon/core/warning';
