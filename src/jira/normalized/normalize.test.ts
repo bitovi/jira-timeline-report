@@ -93,6 +93,9 @@ test('normalizeIssue', () => {
     team: {
       name: 'test',
       velocity: 21,
+      estimateUnit: 'storyPoints',
+      pointsPerPersonDay: 0.42,
+      teamMembers: 5,
       daysPerSprint: 10,
       parallelWorkLimit: 1,
       totalPointsPerDay: 2.1,
@@ -246,6 +249,9 @@ test('normalizeIssue with custom getters', () => {
     team: {
       name: 'new fake team key',
       velocity: 1,
+      estimateUnit: 'storyPoints',
+      pointsPerPersonDay: 0.42,
+      teamMembers: 5,
       daysPerSprint: 20,
       parallelWorkLimit: 1,
       totalPointsPerDay: 0.05,

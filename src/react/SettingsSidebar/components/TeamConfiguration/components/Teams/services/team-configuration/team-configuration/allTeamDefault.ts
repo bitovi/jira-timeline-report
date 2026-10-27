@@ -124,7 +124,15 @@ const nonFieldDefaults: Omit<
 > = {
   sprintLength: 10,
   velocityPerSprint: 21,
+  // No default: a config without one derives it from the legacy answers (`getPointsPerPersonDay`).
+  pointsPerPersonDay: null,
   tracks: 1,
+  // Story points is today's math exactly, so a config saved before spec/042 needs no migration.
+  estimateUnit: 'storyPoints',
+  // Every unit's capacity is per person, so a team that never entered its headcount still needs one.
+  // Resolved anyway so switching units never lands on an empty answer.
+  teamMembers: 5,
+  estimateTeamShare: 'full',
   spreadEffortAcrossDates: false,
 };
 
@@ -132,7 +140,11 @@ export const getGlobalDefaultData = (allTeamData: AllTeamData, jiraFields: Issue
   return {
     sprintLength: allTeamData.__GLOBAL__?.defaults?.sprintLength ?? nonFieldDefaults.sprintLength,
     velocityPerSprint: allTeamData.__GLOBAL__?.defaults?.velocityPerSprint ?? nonFieldDefaults.velocityPerSprint,
+    pointsPerPersonDay: allTeamData.__GLOBAL__?.defaults?.pointsPerPersonDay ?? nonFieldDefaults.pointsPerPersonDay,
     tracks: allTeamData.__GLOBAL__?.defaults?.tracks ?? nonFieldDefaults.tracks,
+    estimateUnit: allTeamData.__GLOBAL__?.defaults?.estimateUnit ?? nonFieldDefaults.estimateUnit,
+    teamMembers: allTeamData.__GLOBAL__?.defaults?.teamMembers ?? nonFieldDefaults.teamMembers,
+    estimateTeamShare: allTeamData.__GLOBAL__?.defaults?.estimateTeamShare ?? nonFieldDefaults.estimateTeamShare,
     spreadEffortAcrossDates:
       allTeamData.__GLOBAL__?.defaults?.spreadEffortAcrossDates ?? nonFieldDefaults.spreadEffortAcrossDates,
     estimateField: getEstimateField(allTeamData.__GLOBAL__?.defaults, jiraFields),

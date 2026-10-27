@@ -11,26 +11,39 @@ import { useIsMutating } from '@tanstack/react-query';
 import { useCapacityOverrides } from '../../../../services/capacity-overrides';
 import { useJiraIssueFields } from '../../../../services/jira';
 import {
+  anchorsCapacity,
   createEmptyConfiguration,
+  getCapacityLevel,
+  resolveTeamConfiguration,
   useAllTeamData,
   useSaveAllTeamData,
 } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration';
+import {
+  DEFAULT_ESTIMATE_UNIT,
+  getPointsPerPersonDay,
+  pointsPerPersonDayForHeadcount,
+} from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 import { sanitizeAllTeamData } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/hooks/sanitizeAllTeamData';
 import { updateTeamConfigurationKeys } from '../../../../SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/key-factory';
 
-const CAPACITY_FIELDS = ['velocityPerSprint', 'tracks'] as const;
+const CAPACITY_FIELDS = ['pointsPerPersonDay', 'estimateUnit', 'tracks', 'teamMembers'] as const;
 
 type CapacityField = (typeof CAPACITY_FIELDS)[number];
 
 /**
- * Writes a team's what-if capacity and tracks through to saved team settings, using the same
- * mutation the Teams sidebar uses.
+ * Writes a team's what-if capacity (points per person per day, headcount) and tracks through to saved
+ * team settings, using the same mutation the Teams sidebar uses.
  *
- * Writes each field to wherever the team's own saved data already holds it: the scheduled hierarchy
- * level if the team set it there, otherwise the team's `defaults` — which is also where a value
- * inherited from `__GLOBAL__` lands, so one team's commit never changes another team's capacity.
- * The two fields can target different levels, so a commit may touch both; nothing is ever removed
- * from a level it is not targeting.
+ * Headcount and tracks go wherever the team's own saved data already holds them: the scheduled
+ * hierarchy level if the team set it there, otherwise the team's `defaults` — which is also where a
+ * value inherited from `__GLOBAL__` lands, so one team's commit never changes another team's
+ * capacity. X goes to the level that anchors the team's unit (`getCapacityLevel`), so it is never
+ * read for a unit it wasn't written in. The fields can target different levels, so a commit may touch
+ * both; nothing is ever removed from a level it is not targeting.
+ *
+ * A headcount committed while X is still derived also pins X at its current value, or the derived X
+ * would follow the new headcount and the change would vanish on save. The AutoScheduler never
+ * re-anchors: what was previewed — the same per-developer rate, a bigger team — is what gets saved.
  *
  * Uses `useSaveAllTeamData` rather than `useSaveTeamData`: the latter closes over its `teamName` at
  * render time, so a row that names its team and commits in the same tick would save the team named
@@ -60,10 +73,26 @@ export const useTeamCommit = () => {
       // The issue carries a number; `AllTeamData` keys its levels as numeric strings.
       const level = String(hierarchyLevel);
       const savedTeamData = savedUserAllTeamData[team];
-      const changed = CAPACITY_FIELDS.filter((field) => values[field] !== undefined);
+      const resolved = resolveTeamConfiguration(savedUserAllTeamData, jiraFields, team, level);
+      const capacityLevel = savedTeamData?.[getCapacityLevel(savedTeamData, level)];
+      const inheritsCapacity = !anchorsCapacity(capacityLevel);
+      const capacity = withPinnedPointsPerPersonDay(values, resolved, inheritsCapacity);
+      // X is in its unit's terms, so the level it lands on also saves the unit it is read in — or a
+      // parent later switching units would reinterpret it, as `useTeamForm.updateFields` guards against.
+      const pinsUnit = capacity.pointsPerPersonDay !== undefined && capacityLevel?.estimateUnit == null;
+      const written: Partial<Pick<Configuration, CapacityField>> = {
+        ...capacity,
+        ...(pinsUnit && { estimateUnit: resolved.estimateUnit ?? DEFAULT_ESTIMATE_UNIT }),
+      };
+      const changed = CAPACITY_FIELDS.filter((field) => written[field] !== undefined);
 
       const fieldsByTargetLevel = changed.reduce<Record<string, CapacityField[]>>((byLevel, field) => {
-        const target = savedTeamData?.[level]?.[field] != null ? level : 'defaults';
+        const target =
+          field === 'pointsPerPersonDay' || field === 'estimateUnit'
+            ? String(getCapacityLevel(savedTeamData, level))
+            : savedTeamData?.[level]?.[field] != null
+              ? level
+              : 'defaults';
 
         return { ...byLevel, [target]: [...(byLevel[target] ?? []), field] };
       }, {});
@@ -75,7 +104,7 @@ export const useTeamCommit = () => {
 
         const configuration: Configuration = {
           ...saved,
-          ...Object.fromEntries(fields.map((field) => [field, values[field]])),
+          ...Object.fromEntries(fields.map((field) => [field, written[field]])),
         };
 
         return sanitizeAllTeamData(data, team, target, configuration);
@@ -92,8 +121,30 @@ export const useTeamCommit = () => {
         },
       });
     },
-    [save, savedUserAllTeamData, onTeamDataSaved],
+    [save, savedUserAllTeamData, jiraFields, onTeamDataSaved],
   );
 
   return { commit, isSaving, isBlocked: !isSaving && isWritingTeamData };
 };
+
+/**
+ * Adds the X a headcount commit needs, when the override doesn't carry one: a derived X is pinned, or
+ * it would follow the new headcount and the change would vanish. On Story Points the team's points per
+ * sprint follow the headcount, so a team still inheriting its X takes it over: an "inheriting" velocity
+ * showing a number the inherited answer doesn't have would be wrong.
+ */
+function withPinnedPointsPerPersonDay(
+  values: TeamCapacityOverride,
+  resolved: Configuration,
+  inheritsCapacity: boolean,
+): TeamCapacityOverride {
+  if (values.teamMembers === undefined || values.pointsPerPersonDay !== undefined) return values;
+
+  const isStoryPoints = (resolved.estimateUnit ?? DEFAULT_ESTIMATE_UNIT) === 'storyPoints';
+  // "Has a saved headcount" means: pin a derived X, never re-anchor.
+  const pointsPerPersonDay =
+    pointsPerPersonDayForHeadcount(resolved, values.teamMembers, true) ??
+    (isStoryPoints && inheritsCapacity ? getPointsPerPersonDay(resolved) : undefined);
+
+  return pointsPerPersonDay === undefined ? values : { ...values, pointsPerPersonDay };
+}

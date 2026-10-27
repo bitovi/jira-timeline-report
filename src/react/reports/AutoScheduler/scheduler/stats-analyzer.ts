@@ -153,6 +153,8 @@ export class StatsAnalyzer {
         teamData: firstIssue.linkedIssue.team,
         // The level of the issues being scheduled, which is the level a capacity commit targets.
         hierarchyLevel: firstIssue.linkedIssue.hierarchyLevel,
+        // Its type name, for "N Epics in parallel" on the team row.
+        issueType: firstIssue.linkedIssue.type,
         tracks: tracks,
       };
     });

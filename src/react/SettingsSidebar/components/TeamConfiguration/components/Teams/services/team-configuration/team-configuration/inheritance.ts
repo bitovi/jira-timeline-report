@@ -8,16 +8,44 @@ import { createEmptyConfiguration, createEmptyTeamConfiguration } from './shared
 import { getTeamData } from './fetcher';
 import { applyGlobalDefaultData } from './allTeamDefault';
 
+/**
+ * The fields that say what one estimate unit means. A level saving any of them defines its own
+ * capacity, so its `pointsPerPersonDay` (X) can't come from a less specific level: X is in the
+ * unit's own terms, and a legacy velocity or share on that level is what X has to be derived from.
+ */
+const CAPACITY_ANCHOR_FIELDS = [
+  'pointsPerPersonDay',
+  'estimateUnit',
+  'velocityPerSprint',
+  'estimateTeamShare',
+] as const satisfies ReadonlyArray<keyof Configuration>;
+
+export const anchorsCapacity = (config: Partial<Configuration> | undefined) =>
+  CAPACITY_ANCHOR_FIELDS.some((field) => config?.[field] != null);
+
 export const getInheritedData = (
   teamData: TeamConfiguration,
   allTeamData: AllTeamData,
   hierarchyLevels: string[],
 ): TeamConfiguration => {
+  const chain = (heirarchyLevel: (typeof hierarchyLevels)[number]) => [
+    teamData?.[heirarchyLevel],
+    teamData?.defaults,
+    allTeamData?.__GLOBAL__[heirarchyLevel],
+    allTeamData?.__GLOBAL__?.defaults,
+  ];
+
   // Inheritance logic
   const getInheritance = (
     heirarchyLevel: (typeof hierarchyLevels)[number],
     field: keyof Configuration,
   ): Configuration[keyof Configuration] => {
+    // X resolves together with the unit: from the most specific level that defines capacity at all,
+    // or not at all (`null`, so it is derived from that level's legacy answers). See spec/042.
+    if (field === 'pointsPerPersonDay') {
+      return chain(heirarchyLevel).find(anchorsCapacity)?.pointsPerPersonDay ?? null;
+    }
+
     return (
       teamData?.[heirarchyLevel]?.[field] ??
       teamData?.defaults?.[field] ??
@@ -131,9 +159,57 @@ export const getParentConfiguration = ({
   return Object.keys(globalLevel).reduce((config, field) => {
     const key = field as keyof Configuration;
 
+    if (key === 'pointsPerPersonDay' && anchorsCapacity(savedTeamData?.defaults)) {
+      return { ...config, [key]: savedTeamData?.defaults?.pointsPerPersonDay ?? null };
+    }
+
     return { ...config, [key]: savedTeamData?.defaults?.[key] ?? globalLevel[key] };
   }, {} as Configuration);
 };
+
+/**
+ * One team's fully inherited configuration at one level — what normalize schedules it with — straight
+ * from saved data. For callers outside the settings forms, like the AutoScheduler's team row.
+ */
+export const resolveTeamConfiguration = (
+  savedAllTeamData: AllTeamData,
+  jiraFields: IssueFields,
+  teamName: string,
+  hierarchyLevel: string,
+): Configuration => {
+  const levels = [hierarchyLevel];
+  const inheritedGlobal = applyInheritance('__GLOBAL__', applyGlobalDefaultData(savedAllTeamData, jiraFields), levels);
+
+  return getInheritedData(getTeamData(teamName, inheritedGlobal), inheritedGlobal, levels)[hierarchyLevel]!;
+};
+
+/**
+ * Has the team ever entered a headcount? Only a saved `teamMembers` somewhere in its chain counts:
+ * the default lives in code, not in saved data. Decides whether a headcount edit re-anchors X
+ * (`pointsPerPersonDayForHeadcount`).
+ */
+export const hasSavedTeamMembers = (
+  savedAllTeamData: AllTeamData,
+  teamName: string,
+  hierarchyLevel: keyof TeamConfiguration,
+): boolean => {
+  const team = savedAllTeamData[teamName];
+  const global = savedAllTeamData.__GLOBAL__;
+
+  return [team?.[hierarchyLevel], team?.defaults, global?.[hierarchyLevel], global?.defaults].some(
+    (config) => config?.teamMembers != null,
+  );
+};
+
+/**
+ * Where a team's own X belongs: on the level that anchors its capacity, so a less specific X is
+ * never read for a more specific unit — the scheduled level if the team defines capacity there,
+ * otherwise its `defaults`.
+ */
+export const getCapacityLevel = (
+  savedTeamData: TeamConfiguration | undefined,
+  hierarchyLevel: keyof TeamConfiguration,
+): keyof TeamConfiguration => (anchorsCapacity(savedTeamData?.[hierarchyLevel]) ? hierarchyLevel : 'defaults');
 
 export const createTeamFieldLookup = (allTeamData: AllTeamData) => {
   return {

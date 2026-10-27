@@ -13,13 +13,19 @@ const Probe = () => {
     <div>
       <output>{JSON.stringify(overrides)}</output>
       <pre data-testid="saved">{JSON.stringify(savedCapacity)}</pre>
-      <button onClick={() => setTeamOverride('ORDER', { velocityPerSprint: 35 })}>set capacity</button>
+      <button onClick={() => setTeamOverride('ORDER', { pointsPerPersonDay: 35 })}>set capacity</button>
       <button onClick={() => setTeamOverride('ORDER', { tracks: 2 })}>set tracks</button>
-      <button onClick={() => setTeamOverride('ORDER', { velocityPerSprint: undefined })}>unset capacity</button>
+      <button onClick={() => setTeamOverride('ORDER', { pointsPerPersonDay: undefined })}>unset capacity</button>
       <button onClick={() => clearTeamOverride('ORDER')}>clear</button>
-      <button onClick={() => rememberSavedCapacity('ORDER', { velocityPerSprint: 21, tracks: 1 })}>remember 21</button>
-      <button onClick={() => rememberSavedCapacity('ORDER', { velocityPerSprint: 35, tracks: 2 })}>remember 35</button>
-      <button onClick={() => commitSavedCapacity('ORDER', { velocityPerSprint: 35, tracks: 2 })}>commit 35</button>
+      <button onClick={() => rememberSavedCapacity('ORDER', { pointsPerPersonDay: 21, tracks: 1, teamMembers: 5 })}>
+        remember 21
+      </button>
+      <button onClick={() => rememberSavedCapacity('ORDER', { pointsPerPersonDay: 35, tracks: 2, teamMembers: 5 })}>
+        remember 35
+      </button>
+      <button onClick={() => commitSavedCapacity('ORDER', { pointsPerPersonDay: 35, tracks: 2, teamMembers: 5 })}>
+        commit 35
+      </button>
     </div>
   );
 };
@@ -42,14 +48,14 @@ describe('CapacityOverridesProvider', () => {
   it('records an override for a team', async () => {
     renderProbe();
     await userEvent.click(screen.getByText('set capacity'));
-    expect(screen.getByRole('status')).toHaveTextContent('{"ORDER":{"velocityPerSprint":35}}');
+    expect(screen.getByRole('status')).toHaveTextContent('{"ORDER":{"pointsPerPersonDay":35}}');
   });
 
   it('merges a second field into the same team rather than replacing it', async () => {
     renderProbe();
     await userEvent.click(screen.getByText('set capacity'));
     await userEvent.click(screen.getByText('set tracks'));
-    expect(screen.getByRole('status')).toHaveTextContent('{"ORDER":{"velocityPerSprint":35,"tracks":2}}');
+    expect(screen.getByRole('status')).toHaveTextContent('{"ORDER":{"pointsPerPersonDay":35,"tracks":2}}');
   });
 
   it('drops the team entirely on clear', async () => {
@@ -90,7 +96,7 @@ describe('CapacityOverridesProvider', () => {
   it('records a saved baseline for a team', async () => {
     renderProbe();
     await userEvent.click(screen.getByText('remember 21'));
-    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"velocityPerSprint":21,"tracks":1}}');
+    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"pointsPerPersonDay":21,"tracks":1,"teamMembers":5}}');
   });
 
   it('ignores a baseline offered while the team is overridden, since it would be the override itself', async () => {
@@ -98,7 +104,7 @@ describe('CapacityOverridesProvider', () => {
     await userEvent.click(screen.getByText('remember 21'));
     await userEvent.click(screen.getByText('set capacity'));
     await userEvent.click(screen.getByText('remember 35'));
-    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"velocityPerSprint":21,"tracks":1}}');
+    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"pointsPerPersonDay":21,"tracks":1,"teamMembers":5}}');
   });
 
   it('moves the baseline to the committed values and drops the override', async () => {
@@ -107,7 +113,7 @@ describe('CapacityOverridesProvider', () => {
     await userEvent.click(screen.getByText('set capacity'));
     await userEvent.click(screen.getByText('commit 35'));
 
-    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"velocityPerSprint":35,"tracks":2}}');
+    expect(savedCapacity()).toHaveTextContent('{"ORDER":{"pointsPerPersonDay":35,"tracks":2,"teamMembers":5}}');
     expect(screen.getByRole('status')).toHaveTextContent('{}');
   });
 

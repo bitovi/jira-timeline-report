@@ -3,11 +3,8 @@ import type { NormalizeIssueConfig } from '../../../../../../jira/normalized/nor
 import type { IssueFields } from './services/team-configuration';
 
 import React from 'react';
-import Heading from '@atlaskit/heading';
-import Spinner from '@atlaskit/spinner';
 
-import { Accordion, AccordionContent, AccordionTitle } from '../../../../../components/Accordion';
-import { useSaveTeamData, useTeamData } from './services/team-configuration';
+import { createEmptyConfiguration, useSaveTeamData, useTeamData } from './services/team-configuration';
 
 import AllTeamsDefaultForm from './AllTeamsDefaultsForm';
 import ConfigureTeams from './ConfigureTeams';
@@ -20,35 +17,31 @@ export interface ConfigureAllTeamsProps {
 const ConfigureAllTeams: FC<ConfigureAllTeamsProps> = ({ jiraFields, onUpdate, ...props }) => {
   const { savedUserTeamData, inheritedTeamData } = useTeamData('__GLOBAL__', jiraFields);
 
-  const { save, isSaving } = useSaveTeamData({
+  const { save } = useSaveTeamData({
     teamName: '__GLOBAL__',
     hierarchyLevel: 'defaults',
     onUpdate,
   });
 
   return (
-    <>
-      <Accordion startsOpen>
-        <AccordionTitle>
-          <Heading size="small">Global defaults</Heading>
-          {isSaving && (
-            <div>
-              <Spinner size="small" label="saving" />
-            </div>
-          )}
-        </AccordionTitle>
-        <AccordionContent>
-          <AllTeamsDefaultForm
-            save={save}
-            savedUserData={savedUserTeamData.defaults}
-            inheritedData={inheritedTeamData.defaults}
-            jiraFields={jiraFields}
-            {...props}
-          />
-        </AccordionContent>
-      </Accordion>
-      <ConfigureTeams jiraFields={jiraFields} teamName="__GLOBAL__" onUpdate={onUpdate} />
-    </>
+    <ConfigureTeams
+      jiraFields={jiraFields}
+      teamName="__GLOBAL__"
+      title="Global settings"
+      defaultsLabel="Global Defaults"
+      onUpdate={onUpdate}
+      // The global defaults have nothing to inherit from, so they get the plain form.
+      defaultsPanel={
+        <AllTeamsDefaultForm
+          save={save}
+          // Saving drops empty levels, so global settings saved only per type have no `defaults`.
+          savedUserData={savedUserTeamData.defaults ?? createEmptyConfiguration()}
+          inheritedData={inheritedTeamData.defaults}
+          jiraFields={jiraFields}
+          {...props}
+        />
+      }
+    />
   );
 };
 
