@@ -31,7 +31,7 @@ export const LoadingWithProgress: Story = {
 
 /** Left home to build a report, but no JQL yet. */
 export const ChooseSources: Story = {
-  render: () => <ChooseSourcesMessage reportTypeName="Gantt Chart" onOpenSources={() => {}} onBackToHome={() => {}} />,
+  render: () => <ChooseSourcesMessage reportTypeName="Gantt Chart" onViewAllReports={() => {}} />,
 };
 
 /** Request resolved, but nothing matched. */
