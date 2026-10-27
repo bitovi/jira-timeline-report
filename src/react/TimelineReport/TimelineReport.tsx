@@ -316,10 +316,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
               query is deduped with the body rather than fetched twice. */}
             <QueryClientProvider client={queryClient}>
               <JiraProvider jira={rd.jiraHelpers}>
-                <ReportControlsAny
-                  rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs}
-                  primaryIssuesOrReleasesObs={baseProps.primaryIssuesOrReleasesObs}
-                />
+                <ReportControlsAny rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs} />
               </JiraProvider>
             </QueryClientProvider>
           </div>

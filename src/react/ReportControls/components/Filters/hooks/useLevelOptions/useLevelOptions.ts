@@ -119,3 +119,15 @@ export const useLevelIssueTypeOptions = (key: LevelKey, issuesObs?: CanObservabl
 
   return countedOptions([...releases, ...issues].map(({ type }) => type).filter((type): type is string => !!type));
 };
+
+/**
+ * Every loaded status, sorted, with counts, for Exclude statuses. Reads all of `derivedIssues`
+ * (not one tab's levels), since the exclusion applies to every issue before rollup.
+ */
+export const useExcludableStatusOptions = (): Option[] => {
+  const [derivedIssues] = useRouteData<MinimalLevelIssue[] | undefined>('derivedIssues');
+
+  return countedOptions(
+    (derivedIssues ?? []).map(({ status }) => status).filter((status): status is string => !!status),
+  ).sort((a, b) => a.value.localeCompare(b.value));
+};

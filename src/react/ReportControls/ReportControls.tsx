@@ -209,10 +209,7 @@ export const ReportControlsWrapper: FC<{ children: ReactNode }> = ({ children })
   );
 };
 
-export const ReportControls: FC<Partial<FiltersProps>> = ({
-  rolledupAndRolledBackIssuesAndReleasesObs,
-  primaryIssuesOrReleasesObs,
-}) => {
+export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBackIssuesAndReleasesObs }) => {
   const [primaryReportType] = usePrimaryReportType();
 
   // A report-of-reports has no JQL, issue type, or view settings of its own — its children render
@@ -241,10 +238,7 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         <SelectIssueType />
         <div className="flex-grow" />
         <div className="self-end pb-1">
-          <Filters
-            rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
-            primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
-          />
+          <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
         </div>
       </>
     );
@@ -255,10 +249,7 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
       <ReportControlsWrapper>
         <AutoSchedulerControls />
         <div className="self-end pb-1">
-          <Filters
-            rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
-            primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
-          />
+          <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
         </div>
       </ReportControlsWrapper>
     );
@@ -276,10 +267,7 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         </div>
         <TableReportControls />
         <div className="self-end pb-1">
-          <Filters
-            rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
-            primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
-          />
+          <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
         </div>
       </>
     );
@@ -331,12 +319,9 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
       <div className="self-end pb-1">
         <ViewSettings />
       </div>
-      {/* Last on the row: with the `filtersPanel` feature on, it opens a panel from the right edge. */}
+      {/* Last on the row: it opens a panel from the right edge. */}
       <div className="self-end pb-1">
-        <Filters
-          rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
-          primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
-        />
+        <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
       </div>
     </ReportControlsWrapper>
   );

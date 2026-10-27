@@ -47,14 +47,6 @@ export const nonReportsFeatures: Feature[] = [
     featureFlag: 'recursiveBlockers',
     onByDefault: false,
   },
-  // Swaps the Filters dropdown for a right-side panel with one tab per hierarchy level. With it off,
-  // the dropdown still reads and writes the same Report on state. See spec/043-filters-redesign.
-  {
-    name: 'Filters panel',
-    subtitle: 'Filter any hierarchy level from a side panel',
-    featureFlag: 'filtersPanel',
-    onByDefault: false,
-  },
 ] as const;
 
 export const features = reports

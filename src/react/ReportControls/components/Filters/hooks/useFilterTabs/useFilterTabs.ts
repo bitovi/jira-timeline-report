@@ -33,10 +33,13 @@ export const useFilterTabs = (): FilterTab[] => {
   const [primaryIssueType] = useRouteData<string | undefined>('primaryIssueType');
   const [effectiveLevelFilters] = useRouteData<LevelFilters | undefined>('effectiveLevelFilters');
 
+  // Exclude statuses lives on All items, so it counts there (once, like a field filter row).
+  const [statusesToExclude] = useRouteData<string[] | undefined>('statusesToExclude');
+
   const count = (key: LevelKey) => countActiveFilters(effectiveLevelFilters?.[key]);
 
   return [
-    { key: ALL_LEVELS, label: 'All items', count: count(ALL_LEVELS) },
+    { key: ALL_LEVELS, label: 'All items', count: count(ALL_LEVELS) + (statusesToExclude?.length ? 1 : 0) },
     ...(primaryIssueType === RELEASE_LEVEL
       ? [{ key: RELEASE_LEVEL, label: pluralize(RELEASE_LEVEL), count: count(RELEASE_LEVEL) }]
       : []),

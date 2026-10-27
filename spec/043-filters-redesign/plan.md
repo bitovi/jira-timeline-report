@@ -18,7 +18,11 @@ The redesign:
    the mockup.
 4. Adds an **Issue Type · is / is not · [types]** field to the field filters.
 
-Gated behind a new Features-tab flag, `filtersPanel`. When it's off, the existing dropdown renders.
+Originally gated behind a `filtersPanel` Features flag; the flag and the dropdown were removed on
+2026-10-27 (see Graduation below), so the panel is always on.
+
+Exclude statuses (`statusesToExclude`) moved from Sources to the All items tab. It still removes
+issues before rollup, unlike the panel's other filters, and Clear all filters resets it.
 
 ## Decisions (agreed)
 
@@ -184,7 +188,7 @@ generalizing the existing hooks that are hard-wired to `selectedIssueType`:
 - The panel is a `createPortal` to `document.body`. A portal keeps React context, so it needs no
   re-wrapping, unlike `ViewReportsWrapper`.
 - Layout: `fixed` to the right edge, full height with a margin, rounded left corners, shadow,
-  `z-50`, `print-hidden`, a light backdrop, about 480px wide.
+  `z-50`, `print-hidden`, a light backdrop, about 560px wide.
 - Closes on Escape, the backdrop, X or Done. Open/closed is local `useState`, not a route param.
 
 **`FilterTabs.tsx`**
@@ -241,7 +245,7 @@ generalizing the existing hooks that are hard-wired to `selectedIssueType`:
    - legacy hooks reading through the resolver
 2. **Panel UI** behind `filtersPanel`: the panel, tabs, body restyle, the issueType field in the
    builder, and stories.
-3. **Graduation** (later): default the flag on, delete the dropdown, `FilterGrid`, the
+3. **Graduation** (done 2026-10-27): removed the flag, deleted the dropdown, `FilterGrid`, the
    `filters-nested-modal-visibility-override` CSS (`status-reports.css:356-359`; keep the
    ViewSettings selector) and the Cards child section.
 
@@ -282,7 +286,7 @@ generalizing the existing hooks that are hard-wired to `selectedIssueType`:
 ## Verification
 
 1. `npm run typecheck && npm run test`.
-2. Run `npm run dev` with `filtersPanel` on and the sample data:
+2. Run `npm run dev` with the sample data:
    - Report on Epic, filter Stories by Jira Status on the Stories tab. Gantt expanded rows hide the
      non-matching stories, and the epic bars and dates are unchanged.
    - Filter on the Initiatives tab while reporting on Epic: only epics under matching initiatives

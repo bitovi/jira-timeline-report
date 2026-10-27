@@ -54,6 +54,7 @@ vi.mock('../../../../canjs/routing/route-data/route-data', async () => {
       releasesToShow: list(),
       showOnlySemverReleases: { default: false },
       cardsChildFilterRows: list(),
+      statusesToExclude: list(),
       get effectiveFilterRows() {
         const self = this as any;
         if (self.filterRows?.length) return self.filterRows;
@@ -99,6 +100,7 @@ beforeEach(() => {
   data.releasesToShow = [];
   data.showOnlySemverReleases = false;
   data.cardsChildFilterRows = [];
+  data.statusesToExclude = [];
 });
 
 // jsdom has no scrolling; `ScrollableTabList` scrolls a focused tab into view.
@@ -165,7 +167,7 @@ describe('<FiltersPanel />', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Clear due date range' }));
 
     expect((data.levelFilters as LevelFilters).all).toEqual({ rows: [row()] });
-    expect(within(dialog).getByRole('button', { name: 'Clear due date range' })).toBeDisabled();
+    expect(within(dialog).queryByRole('button', { name: 'Clear due date range' })).not.toBeInTheDocument();
   });
 
   it('hides the due date range where it changes nothing', async () => {
@@ -185,6 +187,7 @@ describe('<FiltersPanel />', () => {
     data.hideUnknownInitiatives = true;
     data.scatterDateRangeStart = '2026-01-01';
     data.cardsChildFilterRows = [row()];
+    data.statusesToExclude = ['Done'];
     const { user } = await renderPanel();
 
     await user.click(screen.getByRole('button', { name: 'Clear all filters' }));
@@ -194,6 +197,7 @@ describe('<FiltersPanel />', () => {
     expect(data.hideUnknownInitiatives).toBe(false);
     expect(data.scatterDateRangeStart).toBe('');
     expect(data.cardsChildFilterRows).toEqual([]);
+    expect(data.statusesToExclude).toEqual([]);
     expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument();
   });
 
@@ -220,6 +224,21 @@ describe('<FiltersPanel />', () => {
 
     expect(screen.getAllByText('Issue Type').length).toBeGreaterThan(0);
     expect(screen.queryByText('Rollup Status')).not.toBeInTheDocument();
+  });
+
+  it('Exclude statuses is on All items only, writes statusesToExclude and counts on the badge', async () => {
+    const { user, dialog } = await renderPanel();
+
+    await user.click(within(dialog).getByLabelText('Exclude statuses'));
+    await user.click(screen.getByText('Todo (2)'));
+
+    expect(data.statusesToExclude).toEqual(['Todo']);
+    expect(within(dialog).getByRole('tab', { name: 'All items 1' })).toBeInTheDocument();
+
+    expect(within(dialog).queryByRole('button', { name: 'Clear excluded statuses' })).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('tab', { name: 'Epics' }));
+    expect(within(dialog).queryByLabelText('Exclude statuses')).not.toBeInTheDocument();
   });
 
   it('labels hide-without-dates per tab', async () => {

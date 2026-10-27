@@ -11,6 +11,7 @@ import DateRangeFilter from '../Filters/components/DateRangeFilter';
 import { useLevelFilter } from '../Filters/hooks/useLevelFilter';
 import type { FilterTab } from '../Filters/hooks/useFilterTabs';
 import {
+  useExcludableStatusOptions,
   useLevelIssueTypeOptions,
   useLevelRollupStatusOptions,
   useLevelStatusOptions,
@@ -31,7 +32,7 @@ import {
 const Section: FC<{ title: string; action?: ReactNode; children: ReactNode }> = ({ title, action, children }) => (
   // A rule between sections (not above the first), with the body's gap above it and padding below.
   <section className="flex flex-col gap-3 border-t border-neutral-41 pt-6 first-of-type:border-t-0 first-of-type:pt-0">
-    <div className="flex items-baseline justify-between">
+    <div className="flex min-h-5 items-baseline justify-between">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-801">{title}</h3>
       {action}
     </div>
@@ -39,19 +40,24 @@ const Section: FC<{ title: string; action?: ReactNode; children: ReactNode }> = 
   </section>
 );
 
-const SectionClear: FC<{ label: string; disabled: boolean; onClick: () => void }> = ({ label, disabled, onClick }) => (
-  <button
-    type="button"
-    className="text-sm font-medium text-blue-400 hover:underline disabled:text-neutral-100 disabled:no-underline"
-    aria-label={label}
-    disabled={disabled}
-    onClick={onClick}
-  >
-    Clear
-  </button>
-);
+/** Shown only while there is something to clear. */
+const SectionClear: FC<{ label: string; disabled: boolean; onClick: () => void }> = ({ label, disabled, onClick }) =>
+  disabled ? null : (
+    <button
+      type="button"
+      className="text-sm font-medium text-blue-400 hover:underline"
+      aria-label={label}
+      onClick={onClick}
+    >
+      Clear
+    </button>
+  );
 
 type Option = { label: string; value: string };
+
+// Atlaskit's Toggle insets its track by 6px (margin, border and padding) on every side. Pull the row
+// back so the track lines up with the section heading and spaces like the other sections' inputs.
+const toggleRowClassName = 'flex items-center gap-2 -my-1.5 -ml-1.5';
 
 export interface FilterTabBodyViewProps {
   tab: FilterTab;
@@ -64,6 +70,13 @@ export interface FilterTabBodyViewProps {
   releaseOptions: Option[];
   /** False hides the Due date range section, for reports where this tab's range changes nothing. */
   showDueDateRange?: boolean;
+  /**
+   * Exclude statuses (`statusesToExclude`), shown on All items only. Unlike the field filters, it
+   * removes issues before rollup, so they don't count toward their parents.
+   */
+  excludedStatuses?: string[];
+  excludableStatusOptions?: Option[];
+  onExcludedStatusesChange?: (statuses: string[]) => void;
 }
 
 /**
@@ -79,9 +92,13 @@ export const FilterTabBodyView: FC<FilterTabBodyViewProps> = ({
   issueTypeOptions,
   releaseOptions,
   showDueDateRange = true,
+  excludedStatuses = [],
+  excludableStatusOptions = [],
+  onExcludedStatusesChange,
 }) => {
   const hideWithoutDatesId = useId();
   const semverId = useId();
+  const excludeId = useId();
 
   const isAll = tab.key === ALL_LEVELS;
   const isReleases = tab.key === RELEASE_LEVEL;
@@ -147,7 +164,7 @@ export const FilterTabBodyView: FC<FilterTabBodyViewProps> = ({
             />
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className={toggleRowClassName}>
           <Toggle
             id={hideWithoutDatesId}
             isChecked={!!filter.hideWithoutDates}
@@ -158,7 +175,7 @@ export const FilterTabBodyView: FC<FilterTabBodyViewProps> = ({
           </label>
         </div>
         {isReleases && (
-          <div className="flex items-center gap-2">
+          <div className={toggleRowClassName}>
             <Toggle
               id={semverId}
               isChecked={!!filter.showOnlySemverReleases}
@@ -192,6 +209,26 @@ export const FilterTabBodyView: FC<FilterTabBodyViewProps> = ({
           />
         </Section>
       )}
+
+      {isAll && onExcludedStatusesChange && (
+        <Section title="Exclude statuses">
+          <p id={`${excludeId}-help`} className="text-sm text-neutral-801">
+            Removes these issues before rollup, so they don&apos;t count toward their parents&apos; dates or progress.
+          </p>
+          <Select
+            inputId={excludeId}
+            aria-label="Exclude statuses"
+            aria-describedby={`${excludeId}-help`}
+            isMulti
+            isSearchable
+            placeholder="Select statuses"
+            options={excludableStatusOptions}
+            value={excludedStatuses.map((status) => ({ label: status, value: status }))}
+            onChange={(options) => onExcludedStatusesChange((options ?? []).map(({ value }) => value))}
+            {...filterSelectProps}
+          />
+        </Section>
+      )}
     </div>
   );
 };
@@ -208,6 +245,7 @@ const FilterTabBody: FC<FilterTabBodyProps> = ({ tab, rolledupAndRolledBackIssue
   const [primaryIssueType] = useRouteData<string | undefined>('primaryIssueType');
   const [secondaryIssueType] = useRouteData<string | undefined>('secondaryIssueType');
   const [issueHierarchy] = useRouteData<HierarchyLevel[] | null>('issueHierarchy');
+  const [statusesToExclude, setStatusesToExclude] = useRouteData<string[] | undefined, string[]>('statusesToExclude');
   return (
     <FilterTabBodyView
       tab={tab}
@@ -223,6 +261,9 @@ const FilterTabBody: FC<FilterTabBodyProps> = ({ tab, rolledupAndRolledBackIssue
         issueHierarchy,
         primaryReportType,
       })}
+      excludedStatuses={statusesToExclude ?? []}
+      excludableStatusOptions={useExcludableStatusOptions()}
+      onExcludedStatusesChange={setStatusesToExclude}
     />
   );
 };

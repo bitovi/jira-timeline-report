@@ -34,22 +34,27 @@ interface Args {
   above: string[];
   isRelease: boolean;
   initialFilters: LevelFilters;
+  initialExcludedStatuses: string[];
 }
 
-const Harness = ({ levels, above, isRelease, initialFilters }: Args) => {
+const Harness = ({ levels, above, isRelease, initialFilters, initialExcludedStatuses }: Args) => {
   const [levelFilters, setLevelFilters] = useState<LevelFilters>(initialFilters);
+  const [excludedStatuses, setExcludedStatuses] = useState(initialExcludedStatuses);
   const keys = [ALL_LEVELS, ...(isRelease ? [RELEASE_LEVEL] : []), ...levels];
   const tabs: FilterTab[] = keys.map((key) => ({
     key,
     label: key === ALL_LEVELS ? 'All items' : pluralize(key),
-    count: countActiveFilters(levelFilters[key]),
+    count: countActiveFilters(levelFilters[key]) + (key === ALL_LEVELS && excludedStatuses.length ? 1 : 0),
   }));
 
   return (
     <FiltersPanelView
       defaultOpen
       tabs={tabs}
-      onClearAll={() => setLevelFilters({})}
+      onClearAll={() => {
+        setLevelFilters({});
+        setExcludedStatuses([]);
+      }}
       renderTab={(tab) => (
         <FilterTabBodyView
           tab={tab}
@@ -63,6 +68,9 @@ const Harness = ({ levels, above, isRelease, initialFilters }: Args) => {
               : [{ label: `${tab.key} (4)`, value: tab.key }]
           }
           releaseOptions={releaseOptions}
+          excludedStatuses={excludedStatuses}
+          excludableStatusOptions={statusOptions}
+          onExcludedStatusesChange={setExcludedStatuses}
         />
       )}
     />
@@ -77,6 +85,7 @@ const meta: Meta<Args> = {
     above: ['Initiative'],
     isRelease: false,
     initialFilters: {},
+    initialExcludedStatuses: [],
   },
 };
 
@@ -88,6 +97,7 @@ export const AllItems: Story = {
     initialFilters: {
       all: { rows: [{ id: 'r1', field: 'issueType', operator: 'is not', value: ['Story'] }] },
     },
+    initialExcludedStatuses: ['Done'],
   },
 };
 

@@ -1,7 +1,6 @@
 import type { FC } from 'react';
-import type { ExcludedStatusSelectOption } from './components/ExcludedStatusSelect';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import Button from '@atlaskit/button/new';
 import Heading from '@atlaskit/heading';
 
@@ -11,8 +10,6 @@ import { useAsyncFeatures } from '../../../services/features';
 import JQLTextArea from './components/JqlTextArea';
 import LoadChildren from './components/LoadChildren';
 import LoadBlockers from './components/LoadBlockers';
-import ExcludedStatusSelect from './components/ExcludedStatusSelect';
-import Hr from '../../../components/Hr';
 
 interface IssueSourceProps {}
 
@@ -29,9 +26,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
     childJql,
     setChildJql,
     applyJql,
-    statusesToExclude,
     loadChildren,
-    setStatusesToExclude,
     applyButtonEnabled,
     setLoadChildren,
     blockerJql,
@@ -39,13 +34,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
     loadBlockers,
     setLoadBlockers,
   } = useJQL();
-
-  const statusesToExcludeOptions = useMemo(() => toOptions(statusesToExclude), [statusesToExclude]);
-
-  const handleExcludedStatusChange = (statusesToExcludeOptions: Readonly<ExcludedStatusSelectOption[]>) => {
-    const statusesToExclude = statusesToExcludeOptions.map((option) => option.value);
-    setStatusesToExclude(statusesToExclude);
-  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,13 +58,6 @@ const IssueSource: FC<IssueSourceProps> = () => {
           />
         )}
       </div>
-      <Hr className="!my-0" />
-      <ExcludedStatusSelect
-        label="Exclude statuses"
-        placeholder="Select statuses"
-        value={statusesToExcludeOptions}
-        onChange={handleExcludedStatusChange}
-      />
       <div className="flex flex-row justify-end mt-2">
         <Button appearance="primary" isDisabled={!applyButtonEnabled} onClick={applyJql}>
           Apply
@@ -87,10 +68,3 @@ const IssueSource: FC<IssueSourceProps> = () => {
 };
 
 export default IssueSource;
-
-const toOptions = (statuses: string[]) => {
-  return statuses.map((status) => ({
-    label: status,
-    value: status,
-  }));
-};

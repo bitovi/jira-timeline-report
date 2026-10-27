@@ -22,6 +22,7 @@ export interface FiltersPanelProps {
 /**
  * Every param that holds a filter. Clear all filters resets the legacy ones too, or their
  * fallbacks in `resolveLevelFilters` (and `effectiveFilterRows`) would bring the old filters back.
+ * It includes Exclude statuses, so clearing can also change rollups.
  */
 const CLEARED_FILTER_PARAMS = {
   levelFilters: {},
@@ -34,6 +35,7 @@ const CLEARED_FILTER_PARAMS = {
   releasesToShow: [],
   showOnlySemverReleases: false,
   cardsChildFilterRows: [],
+  statusesToExclude: [],
 };
 
 export const clearAllFilters = () => {
@@ -136,7 +138,7 @@ export const FiltersPanelView: FC<FiltersPanelViewProps> = ({ tabs, renderTab, o
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
-              className={`fixed inset-y-0 right-0 z-50 flex w-[480px] max-w-full flex-col bg-white shadow-xl transition-transform duration-300 ease-out motion-reduce:transition-none ${
+              className={`fixed inset-y-0 right-0 z-50 flex w-[560px] max-w-full flex-col bg-white shadow-xl transition-transform duration-300 ease-out motion-reduce:transition-none ${
                 isShown ? 'translate-x-0' : 'translate-x-full'
               }`}
             >
@@ -171,7 +173,7 @@ export const FiltersPanelView: FC<FiltersPanelViewProps> = ({ tabs, renderTab, o
   );
 };
 
-/** {@link FiltersPanelView} over route data, behind the `filtersPanel` feature. */
+/** {@link FiltersPanelView} over route data. */
 const FiltersPanel: FC<FiltersPanelProps> = ({ rolledupAndRolledBackIssuesAndReleasesObs }) => (
   <FiltersPanelView
     tabs={useFilterTabs()}
