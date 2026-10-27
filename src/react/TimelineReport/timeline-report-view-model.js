@@ -4,7 +4,14 @@ import routeData from '../../canjs/routing/route-data';
 
 import { rollupAndRollback } from '../../jira/rolledup-and-rolledback/rollup-and-rollback';
 import { calculateReportStatuses } from '../../jira/rolledup/work-status/work-status';
-import { matchesAllFilterRows } from '../../jira/rollup/filter-rows/filter-rows';
+import {
+  ALL_LEVELS,
+  findAncestorAtLevel,
+  isLevelFilterActive,
+  matchesLevelFilter,
+  reportOnLevelKey,
+  splitLevels,
+} from '../../jira/rollup/filter-rows/level-filters';
 import { groupIssuesByHierarchyLevelOrType } from '../../jira/rollup/rollup';
 import { defineFeatureFlag } from '../../shared/feature-flag';
 
@@ -16,6 +23,10 @@ const logReportData = defineFeatureFlag(
   undefined,
   'ON',
 );
+
+// Report on and the levels below it are judged by their rolled-up dates; ancestors above Report on
+// are never rolled up, so they use their own Jira dates (`derivedTiming`).
+const rollupDates = (issueOrRelease) => issueOrRelease.rollupStatuses?.rollup ?? {};
 
 const toISO = (date) => (date instanceof Date && !isNaN(date) ? date.toISOString() : (date ?? null));
 
@@ -183,21 +194,25 @@ export class TimelineReportViewModel extends ObservableObject {
       }
       const unfilteredPrimaryIssuesOrReleases = this.groupedParentDownHierarchy[0];
 
-      const hideUnknownInitiatives = this.routeData.hideUnknownInitiatives;
-      const filterRows = this.routeData.effectiveFilterRows;
-
-      function startBeforeDue(initiative) {
-        return initiative.rollupStatuses.rollup.start < initiative.rollupStatuses.rollup.due;
-      }
+      const levels = this.routeData.effectiveLevelFilters ?? {};
+      const allFilter = levels[ALL_LEVELS];
+      const reportOnFilter = levels[reportOnLevelKey(this.routeData)];
 
       // The Scatter Plot ('due' report) only needs a due date to plot a point, so its
       // "no dates" definition is narrower than the legacy `startBeforeDue` rule (which also
       // requires a start date). Gate on that when it's the primary report so a due-only issue
-      // isn't hidden by this toggle.
-      function hasNoDueDate(initiative) {
-        return initiative.rollupStatuses?.rollup?.due == null;
-      }
-      const isScatterPlot = this.routeData.primaryReportType === 'due';
+      // isn't hidden by "Hide items without dates".
+      const scatter = this.routeData.primaryReportType === 'due';
+
+      // A row is kept only when its ancestor at each filtered level above Report on matches. Those
+      // ancestors aren't in the rolled-up list, so they come from `filteredDerivedIssues` (the same
+      // fallback `groupIssues.ts` uses for grandparent grouping). A missing ancestor doesn't match.
+      const ancestorFilters = splitLevels(this.routeData)
+        .above.filter(({ name }) => isLevelFilterActive(levels[name]))
+        .map((level) => ({ level, filter: levels[level.name] }));
+      const derivedByKey = ancestorFilters.length
+        ? new Map((this.filteredDerivedIssues ?? []).map((issue) => [issue.key, issue]))
+        : null;
 
       // lets remove stuff!
       const filtered = unfilteredPrimaryIssuesOrReleases.filter((issueOrRelease) => {
@@ -210,32 +225,20 @@ export class TimelineReportViewModel extends ObservableObject {
           return false;
         }
 
-        if (this?.routeData.releasesToShow?.length) {
-          if (!this.routeData.releasesToShow.includes(issueOrRelease.name)) {
-            return false;
-          }
-        }
-
+        // The due-date range for this level is applied by the reports themselves (Scatter needs the
+        // outside-range list), via `effectiveDueDateStart`/`End`.
+        const options = { dates: rollupDates(issueOrRelease), scatter, skipDateRange: true };
         if (
-          this.routeData.showOnlySemverReleases &&
-          this.routeData.primaryIssueType === 'Release' &&
-          !issueOrRelease.names.semver
+          !matchesLevelFilter(issueOrRelease, allFilter, options) ||
+          !matchesLevelFilter(issueOrRelease, reportOnFilter, options)
         ) {
           return false;
         }
 
-        if (
-          hideUnknownInitiatives &&
-          (isScatterPlot ? hasNoDueDate(issueOrRelease) : !startBeforeDue(issueOrRelease))
-        ) {
-          return false;
-        }
-
-        if (!matchesAllFilterRows(issueOrRelease, filterRows)) {
-          return false;
-        }
-
-        return true;
+        return ancestorFilters.every(({ level, filter }) => {
+          const ancestor = findAncestorAtLevel(issueOrRelease, derivedByKey, level.hierarchyLevel);
+          return !!ancestor && matchesLevelFilter(ancestor, filter, { dates: ancestor.derivedTiming ?? {}, scatter });
+        });
       });
 
       if (this.routeData.sortByDueDate) {
@@ -243,6 +246,34 @@ export class TimelineReportViewModel extends ObservableObject {
       } else {
         return filtered;
       }
+    },
+
+    // `rolledupAndRolledBackIssuesAndReleases` minus the issues below Report on that fail All items
+    // or their own level's filter. Only hides rows: rollup already ran on the unfiltered list, so
+    // parent dates, status and percent complete are unchanged. Reports that render children (Gantt
+    // expanded rows, Cards) read this; everything else keeps the unfiltered list.
+    get visibleIssuesOrReleases() {
+      const issues = this.rolledupAndRolledBackIssuesAndReleases;
+      const levels = this.routeData.effectiveLevelFilters ?? {};
+      const below = splitLevels(this.routeData).below;
+      const anyActive =
+        isLevelFilterActive(levels[ALL_LEVELS]) || below.some(({ name }) => isLevelFilterActive(levels[name]));
+      if (!anyActive) {
+        return issues;
+      }
+
+      const belowNameByLevel = new Map(below.map(({ name, hierarchyLevel }) => [hierarchyLevel, name]));
+      const scatter = this.routeData.primaryReportType === 'due';
+      return issues.filter((issue) => {
+        const name = issue.type === 'Release' ? undefined : belowNameByLevel.get(issue.hierarchyLevel);
+        if (!name) {
+          return true;
+        }
+        const options = { dates: rollupDates(issue), scatter };
+        return (
+          matchesLevelFilter(issue, levels[ALL_LEVELS], options) && matchesLevelFilter(issue, levels[name], options)
+        );
+      });
     },
   };
 }

@@ -33,6 +33,12 @@ export interface WorkBreakdownProps {
   primaryIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
   /** All issues/releases — used to look up card children by key. */
   allIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
+  /**
+   * `allIssuesOrReleasesObs` with rows below Report on hidden by the Filters panel (the vm's
+   * `visibleIssuesOrReleases`). When given, card children are looked up here instead, so a filtered
+   * child doesn't render. Card headers still come from the card's own rollup, which counts every child.
+   */
+  visibleIssuesOrReleasesObs?: CanObservable<IssueOrRelease[]>;
   /** Issues shown in the "Planning" fallback card (excluded from card children). */
   planningIssuesObs?: CanObservable<IssueOrRelease[]>;
   /** `cardsMode` — `'breakdown'` shows the matrix; anything else shows status. */
@@ -69,7 +75,7 @@ const toMode = (cardsMode: string): CardsMode => (cardsMode === 'breakdown' ? 'b
  */
 export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
   const primaryIssues = useCanObservable(props.primaryIssuesOrReleasesObs);
-  const allIssues = useCanObservable(props.allIssuesOrReleasesObs);
+  const allIssues = useCanObservable(props.visibleIssuesOrReleasesObs ?? props.allIssuesOrReleasesObs);
   const planningIssues = useCanObservable(props.planningIssuesObs ?? emptyIssuesObs);
   const cardsMode = useCanObservable(props.cardsModeObs);
   const filterRows = useCanObservable(props.filterRowsObs ?? emptyFilterRowsObs);

@@ -22,6 +22,11 @@ import { StorageProvider } from '../../../services/storage';
 import { useSelectedReleases } from './hooks/useSelectedReleases';
 import { useShowOnlySemverReleases } from './hooks/useOnlySemverReleases';
 import { useUnknownInitiatives } from './hooks/useUnknownInitiatives';
+import { useDateRangeFilter } from './hooks/useDateRangeFilter';
+import { useReportOnLevelKey } from './hooks/useLevelFilter';
+import { useLevelIssueTypeOptions } from './hooks/useLevelOptions';
+import FiltersPanel from '../FiltersPanel';
+import { useFeatures } from '../../../services/features';
 import { useSelectedIssueType } from '../../../services/issues/useSelectedIssueType';
 import { usePrimaryReportType } from '../../hooks/usePrimaryReportType';
 import type { CanObservable } from '../../../hooks/useCanObservable/useCanObservable';
@@ -47,6 +52,11 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
   const { filterRows, setFilterRows } = useFilterRows();
   const { filterRows: cardsChildFilterRows, setFilterRows: setCardsChildFilterRows } = useCardsChildFilterRows();
   const jiraStatusOptions = useSelectableStatuses();
+  const issueTypeOptions = useLevelIssueTypeOptions(
+    useReportOnLevelKey() ?? '',
+    rolledupAndRolledBackIssuesAndReleasesObs,
+  );
+  const dateRange = useDateRangeFilter();
   const rollupStatusOptions = useSelectableRollupStatuses(rolledupAndRolledBackIssuesAndReleasesObs);
   const { childType, statusOptions: childStatusOptions } = useSelectableChildStatuses(
     primaryIssuesOrReleasesObs,
@@ -59,6 +69,7 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
   const fieldDefinitions: FilterFieldDefinition[] = [
     { field: 'jiraStatus', label: 'Jira Status', operators: ['is', 'is not'], options: jiraStatusOptions },
     { field: 'rollupStatus', label: 'Rollup Status', operators: ['is', 'is not'], options: rollupStatusOptions },
+    { field: 'issueType', label: 'Issue Type', operators: ['is', 'is not'], options: issueTypeOptions },
   ];
 
   const childFieldDefinitions: FilterFieldDefinition[] = [
@@ -83,7 +94,10 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
     <div id="filters-nested-modal-visibility-override">
       <DropdownMenu shouldRenderToParent trigger="Filters">
         <div className="p-6 w-[550px]">
-          <p className="uppercase text-sm font-semibold text-zinc-800 pb-6">{selectedIssueType} Status Filtering</p>
+          <div className="flex items-baseline justify-between pb-6">
+            <p className="uppercase text-sm font-semibold text-zinc-800">{selectedIssueType} Status Filtering</p>
+            <ClearLink disabled={filterRows.length === 0} onClick={() => setFilterRows([])} />
+          </div>
           <FilterRowsBuilder rows={filterRows} onChange={setFilterRows} fieldDefinitions={fieldDefinitions} />
           <Hr className="my-6" />
           <IssueTypeFilters
@@ -96,7 +110,10 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
           {showCardsChildFilters && (
             <>
               <Hr className="my-6" />
-              <p className="uppercase text-sm font-semibold text-zinc-800 pb-6">Card {childType} Status Filtering</p>
+              <div className="flex items-baseline justify-between pb-6">
+                <p className="uppercase text-sm font-semibold text-zinc-800">Card {childType} Status Filtering</p>
+                <ClearLink disabled={cardsChildFilterRows.length === 0} onClick={() => setCardsChildFilterRows([])} />
+              </div>
               <FilterRowsBuilder
                 rows={cardsChildFilterRows}
                 onChange={setCardsChildFilterRows}
@@ -107,7 +124,11 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
           {supportsDateRangeFilter && (
             <>
               <Hr className="my-6" />
-              <DateRangeFilter />
+              <DateRangeFilter
+                start={dateRange.dateRangeStart}
+                end={dateRange.dateRangeEnd}
+                onChange={dateRange.applyPreset}
+              />
             </>
           )}
         </div>
@@ -116,12 +137,29 @@ const FiltersInner: FC<FiltersProps> = ({ rolledupAndRolledBackIssuesAndReleases
   );
 };
 
+const ClearLink: FC<{ disabled: boolean; onClick: () => void }> = ({ disabled, onClick }) => (
+  <button
+    type="button"
+    className="text-sm font-medium text-blue-400 hover:underline disabled:text-neutral-100 disabled:no-underline"
+    disabled={disabled}
+    onClick={onClick}
+  >
+    Clear
+  </button>
+);
+
+/** `useFeatures` suspends and needs storage, so the flag is read inside the providers below. */
+const FiltersEntry: FC<FiltersProps> = (props) => {
+  const { filtersPanel } = useFeatures();
+  return filtersPanel ? <FiltersPanel {...props} /> : <FiltersInner {...props} />;
+};
+
 const Filters: FC<FiltersProps> = (props) => (
   <ErrorBoundary fallback={() => <></>}>
     <Suspense fallback={null}>
       <QueryClientProvider client={queryClient}>
         <StorageProvider storage={routeData.storage}>
-          <FiltersInner {...props} />
+          <FiltersEntry {...props} />
         </StorageProvider>
       </QueryClientProvider>
     </Suspense>

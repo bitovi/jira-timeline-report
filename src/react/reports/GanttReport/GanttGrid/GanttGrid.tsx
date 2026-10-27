@@ -39,6 +39,12 @@ export interface GanttGridProps {
   primaryIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
   allIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
   /**
+   * `allIssuesOrReleasesObs` with rows below Report on hidden by the Filters panel (the vm's
+   * `visibleIssuesOrReleases`). Expanded rows read their children from it. Optional; defaults to
+   * `allIssuesOrReleasesObs`.
+   */
+  visibleIssuesOrReleasesObs?: CanObservable<IssueOrRelease[]>;
+  /**
    * The full, unfiltered-by-hierarchy issue set (`routeData.filteredDerivedIssues`) — used as a
    * fallback ancestor lookup for `'parent'`/`'grandparent'` grouping when an ancestor falls
    * outside `allIssuesOrReleasesObs`'s primary-type-and-below scope. Optional; defaults to none.
@@ -50,12 +56,12 @@ export interface GanttGridProps {
   breakdownObs: CanObservable<boolean>;
   showPercentCompleteObs: CanObservable<boolean>;
   /**
-   * `routeData.scatterDateRangeStart` — ISO `YYYY-MM-DD` lower bound of the due-date range
+   * `routeData.effectiveDueDateStart` — ISO `YYYY-MM-DD` lower bound of the due-date range
    * filter (shared with the Scatter Plot). Empty/omitted means unbounded on this side.
    */
   dateRangeStartObs?: CanObservable<string>;
   /**
-   * `routeData.scatterDateRangeEnd` — ISO `YYYY-MM-DD` upper bound of the due-date range
+   * `routeData.effectiveDueDateEnd` — ISO `YYYY-MM-DD` upper bound of the due-date range
    * filter (shared with the Scatter Plot). Empty/omitted means unbounded on this side.
    */
   dateRangeEndObs?: CanObservable<string>;
@@ -80,6 +86,7 @@ const NO_DERIVED_ISSUES_OBS: CanObservable<AncestorRef[]> = {
 export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const rawPrimaryIssues = useCanObservable(props.primaryIssuesOrReleasesObs);
   const allIssues = useCanObservable(props.allIssuesOrReleasesObs);
+  const visibleIssues = useCanObservable(props.visibleIssuesOrReleasesObs ?? props.allIssuesOrReleasesObs);
   const allDerivedIssues = useCanObservable(props.filteredDerivedIssuesObs ?? NO_DERIVED_ISSUES_OBS);
   const groupBy = useCanObservable(props.groupByObs);
   const primaryIssueType = useCanObservable(props.primaryIssueTypeObs);
@@ -113,7 +120,7 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const isExpanded = (key: string) => expandedKeys.has(key);
   const toggle = (issue: IssueOrRelease) => {
-    if (issue.reportingHierarchy.childKeys.length === 0) return;
+    if (getChildren(issue).length === 0) return;
     setExpandedKeys((prev) => {
       const next = new Set(prev);
       if (next.has(issue.key)) {
@@ -127,7 +134,10 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
 
   const [modalIssue, setModalIssue] = useState<IssueOrRelease | null>(null);
 
-  const getChildren = useMemo(() => makeGetChildren(allIssues), [allIssues]);
+  // Rows show only the children the Filters panel leaves visible; the percent-complete modal
+  // explains the parent's rollup, which always counts every child.
+  const getChildren = useMemo(() => makeGetChildren(visibleIssues), [visibleIssues]);
+  const getAllChildren = useMemo(() => makeGetChildren(allIssues), [allIssues]);
   const { axisStart, axisEnd } = useMemo(
     () => computeAxisRange(primaryIssues, new Date(), dateRangeFilter),
     [primaryIssues, dateRangeFilter],
@@ -165,7 +175,7 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
   const timelineGridColumn = `${gutter + 1} / span ${monthCount}`;
   const density = densityClasses(isDense);
 
-  const childIssues = modalIssue ? getChildren(modalIssue) : [];
+  const childIssues = modalIssue ? getAllChildren(modalIssue) : [];
 
   return (
     <div style={{ overflow: 'hidden' }} data-testid="gantt-grid">
@@ -200,7 +210,7 @@ export const GanttGrid: React.FC<GanttGridProps> = (props) => {
                 issue={row.issue}
                 depth={row.depth}
                 isShowingChildren={row.isShowingChildren}
-                hasChildren={row.issue.reportingHierarchy.childKeys.length > 0}
+                hasChildren={getChildren(row.issue).length > 0}
                 anyExpanded={anyExpanded}
                 onToggle={toggle}
                 showPercentComplete={showPercentComplete}

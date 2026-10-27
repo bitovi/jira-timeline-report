@@ -1,32 +1,38 @@
 import { useRouteData } from '../../../../../hooks/useRouteData';
 import { getDateRangePresets } from '../../components/DateRangeFilter/quarterPresets';
+import { useReportOnLevelFilter } from '../useLevelFilter';
 
 /**
- * "Due date range" filter — reads/writes the `scatterDateRangeStart` / `scatterDateRangeEnd`
- * route params (ISO `YYYY-MM-DD` strings, empty = unbounded). Despite the `scatter*` param
- * names (kept for URL/back-compat), this is shared by the Scatter Plot and Gantt Chart reports.
+ * "Due date range" filter for the Report on level — reads the level's effective range, which falls
+ * back to the `scatterDateRangeStart` / `scatterDateRangeEnd` route params (ISO `YYYY-MM-DD`
+ * strings, empty = unbounded). Despite the `scatter*` param names (kept for URL/back-compat), this
+ * is shared by the Scatter Plot and Gantt Chart reports. Writes go to `levelFilters` once the
+ * Filters panel has written this level.
  */
 export const useDateRangeFilter = () => {
-  const [dateRangeStart, setDateRangeStart] = useRouteData<string>('scatterDateRangeStart');
-  const [dateRangeEnd, setDateRangeEnd] = useRouteData<string>('scatterDateRangeEnd');
+  const { filter, hasOwnEntry, setFilter } = useReportOnLevelFilter();
+  const [, setLegacyStart] = useRouteData<string>('scatterDateRangeStart');
+  const [, setLegacyEnd] = useRouteData<string>('scatterDateRangeEnd');
 
-  const clearDateRange = () => {
-    setDateRangeStart('');
-    setDateRangeEnd('');
-  };
+  const dateRangeStart = filter.dueDateStart ?? '';
+  const dateRangeEnd = filter.dueDateEnd ?? '';
 
-  const applyPreset = (from: string, to: string) => {
-    setDateRangeStart(from);
-    setDateRangeEnd(to);
+  const setRange = (start: string, end: string) => {
+    if (hasOwnEntry) {
+      setFilter({ ...filter, dueDateStart: start || undefined, dueDateEnd: end || undefined });
+    } else {
+      setLegacyStart(start);
+      setLegacyEnd(end);
+    }
   };
 
   return {
     dateRangeStart,
-    setDateRangeStart,
+    setDateRangeStart: (start: string) => setRange(start, dateRangeEnd),
     dateRangeEnd,
-    setDateRangeEnd,
-    clearDateRange,
-    applyPreset,
+    setDateRangeEnd: (end: string) => setRange(dateRangeStart, end),
+    clearDateRange: () => setRange('', ''),
+    applyPreset: (from: string, to: string) => setRange(from, to),
     presets: getDateRangePresets(),
   };
 };

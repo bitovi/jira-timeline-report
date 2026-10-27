@@ -2,7 +2,6 @@ import type { FC } from 'react';
 
 import React from 'react';
 import Select from '@atlaskit/select';
-import Button from '@atlaskit/button/new';
 import { IconButton } from '@atlaskit/button/new';
 import CrossIcon from '@atlaskit/icon/glyph/cross';
 import VisuallyHidden from '@atlaskit/visually-hidden';
@@ -27,11 +26,27 @@ const makeRowId = () => `filter-row-${Math.random().toString(36).slice(2, 9)}`;
 const getFieldDefinition = (fieldDefinitions: FilterFieldDefinition[], field: FilterField) =>
   fieldDefinitions.find((def) => def.field === field) ?? fieldDefinitions[0];
 
+type StyleBase = Record<string, unknown>;
+
+// Menus portal to `document.body` so the Filters panel's scroll area doesn't clip them; the
+// z-index keeps them above the panel (`z-50`). Atlaskit's grey control fill is overridden to white.
+export const filterSelectProps = {
+  menuPortalTarget: typeof document === 'undefined' ? undefined : document.body,
+  styles: {
+    menuPortal: (base: StyleBase) => ({ ...base, zIndex: 9999 }),
+    control: (base: StyleBase) => ({
+      ...base,
+      backgroundColor: 'white',
+      '&:hover': { ...(base['&:hover'] as StyleBase | undefined), backgroundColor: 'white' },
+    }),
+  },
+};
+
 /**
  * Generic, Jira-Plans-style filter row builder: one row per entry (Field / Operator / Value
- * multi-select / remove), a "+ Add filter" button, and a "Clear all filters" action. This is a
- * pure, presentation-only component — all matching logic lives in the pure predicate module
- * `filter-rows.ts`; this component only produces/edits `FilterRow[]`.
+ * multi-select / remove) and a "+ Add filter" button. Clearing every row is the caller's job (the
+ * section heading's Clear). This is a pure, presentation-only component — all matching logic lives
+ * in the pure predicate module `filter-rows.ts`; this component only produces/edits `FilterRow[]`.
  */
 export const FilterRowsBuilder: FC<FilterRowsBuilderProps> = ({ rows, onChange, fieldDefinitions }) => {
   const updateRow = (id: string, updates: Partial<FilterRow>) => {
@@ -55,22 +70,8 @@ export const FilterRowsBuilder: FC<FilterRowsBuilderProps> = ({ rows, onChange, 
     ]);
   };
 
-  const handleClearAll = () => {
-    onChange([]);
-  };
-
   return (
     <div>
-      <div className="flex justify-end pb-2">
-        <button
-          type="button"
-          className="text-sm font-semibold text-blue-600 hover:underline disabled:text-zinc-400 disabled:no-underline"
-          onClick={handleClearAll}
-          disabled={rows.length === 0}
-        >
-          Clear all filters
-        </button>
-      </div>
       <div className="flex flex-col gap-2">
         {rows.map((row) => {
           const fieldDef = getFieldDefinition(fieldDefinitions, row.field);
@@ -79,13 +80,14 @@ export const FilterRowsBuilder: FC<FilterRowsBuilderProps> = ({ rows, onChange, 
           const selectedValues = fieldDef.options.filter((option) => row.value.includes(option.value));
 
           return (
-            <div key={row.id} className="grid grid-cols-[160px_110px_1fr_28px] gap-2 items-start">
+            <div key={row.id} className="grid grid-cols-[130px_90px_1fr_32px] gap-2 items-start">
               <div>
                 <VisuallyHidden>
                   <label htmlFor={`${row.id}-field`}>Field</label>
                 </VisuallyHidden>
                 <Select
                   inputId={`${row.id}-field`}
+                  {...filterSelectProps}
                   options={fieldOptions}
                   value={fieldOptions.find((option) => option.value === row.field)}
                   onChange={(option) => option && handleFieldChange(row, option.value)}
@@ -97,6 +99,7 @@ export const FilterRowsBuilder: FC<FilterRowsBuilderProps> = ({ rows, onChange, 
                 </VisuallyHidden>
                 <Select
                   inputId={`${row.id}-operator`}
+                  {...filterSelectProps}
                   options={operatorOptions}
                   value={operatorOptions.find((option) => option.value === row.operator)}
                   onChange={(option) => option && updateRow(row.id, { operator: option.value })}
@@ -108,6 +111,7 @@ export const FilterRowsBuilder: FC<FilterRowsBuilderProps> = ({ rows, onChange, 
                 </VisuallyHidden>
                 <Select
                   inputId={`${row.id}-value`}
+                  {...filterSelectProps}
                   isMulti
                   isSearchable
                   options={fieldDef.options}
@@ -125,10 +129,10 @@ export const FilterRowsBuilder: FC<FilterRowsBuilderProps> = ({ rows, onChange, 
           );
         })}
       </div>
-      <div className="pt-2">
-        <Button appearance="subtle" spacing="compact" onClick={handleAddFilter}>
+      <div className={rows.length ? 'pt-3' : ''}>
+        <button type="button" className="text-sm font-medium text-blue-400 hover:underline" onClick={handleAddFilter}>
           + Add filter
-        </Button>
+        </button>
       </div>
     </div>
   );

@@ -10,6 +10,12 @@ import { requiredFieldsFor } from '../../../react/reports/TableReport/model/buil
 import { deriveFieldMaps } from '../../../jira-oidc-helpers/fields.ts';
 import { CORE_FIELDS } from '../../../stateful-data/jira-data-requests.js';
 import { sameRequestedFields } from './requested-fields.ts';
+import {
+  ALL_LEVELS,
+  intersectDateRange,
+  reportOnLevelKey,
+  resolveLevelFilters,
+} from '../../../jira/rollup/filter-rows/level-filters.ts';
 
 import {
   rawIssuesRequestData,
@@ -1018,6 +1024,22 @@ export class RouteData extends ObservableObject {
         ];
       }
       return [];
+    },
+    // Filters per hierarchy level from the Filters panel — a `LevelKey → LevelFilter` map (JSON
+    // object). See `src/jira/rollup/filter-rows/level-filters.ts`.
+    levelFilters: saveJSONToUrlButAlsoLookAtReport_DataWrapper('levelFilters', {}, Object, JSON),
+    // Per-level filters (spec/043-filters-redesign) merged with the legacy filter params above.
+    get effectiveLevelFilters() {
+      return resolveLevelFilters(this);
+    },
+    // The due-date range the Report on level's reports apply: All items ∩ the Report on level.
+    get effectiveDueDateStart() {
+      const levels = this.effectiveLevelFilters;
+      return intersectDateRange(levels[ALL_LEVELS], levels[reportOnLevelKey(this)]).start;
+    },
+    get effectiveDueDateEnd() {
+      const levels = this.effectiveLevelFilters;
+      return intersectDateRange(levels[ALL_LEVELS], levels[reportOnLevelKey(this)]).end;
     },
     planningStatuses: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('planningStatuses'),
     releasesToShow: makeArrayOfStringsQueryParamValueButAlsoLookAtReportData('releasesToShow'),

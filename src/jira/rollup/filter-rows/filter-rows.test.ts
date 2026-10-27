@@ -93,6 +93,31 @@ describe('matchesFilterRow', () => {
       expect(matchesFilterRow(issue({ rollupStatuses: undefined }), r)).toBe(false);
     });
   });
+
+  describe('issueType field', () => {
+    it('"is" matches if the issue type is any of the selected values', () => {
+      const r = row({ field: 'issueType', operator: 'is', value: ['Epic', 'Release'] });
+      expect(matchesFilterRow(issue({ type: 'Epic' }), r)).toBe(true);
+      expect(matchesFilterRow(issue({ type: 'Release' }), r)).toBe(true);
+      expect(matchesFilterRow(issue({ type: 'Story' }), r)).toBe(false);
+    });
+
+    it('"is not" matches if the issue type is none of the selected values', () => {
+      const r = row({ field: 'issueType', operator: 'is not', value: ['Epic'] });
+      expect(matchesFilterRow(issue({ type: 'Story' }), r)).toBe(true);
+      expect(matchesFilterRow(issue({ type: 'Epic' }), r)).toBe(false);
+    });
+
+    it('does not read status', () => {
+      const r = row({ field: 'issueType', operator: 'is', value: ['In Progress'] });
+      expect(matchesFilterRow(issue({ status: 'In Progress', type: 'Epic' }), r)).toBe(false);
+    });
+  });
+
+  it('an unknown field imposes no constraint', () => {
+    const r = row({ field: 'somethingNew' as FilterRow['field'], operator: 'is', value: ['x'] });
+    expect(matchesFilterRow(issue({ rollupStatuses: { rollup: { status: 'blocked' } } }), r)).toBe(true);
+  });
 });
 
 describe('matchesAllFilterRows', () => {

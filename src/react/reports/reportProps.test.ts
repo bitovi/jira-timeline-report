@@ -60,6 +60,8 @@ const SHELL_PROP_KEYS_ADDED_SINCE = [
   'planningIssuesObs',
   'cardsModeObs',
   'cardsChildFilterRowsObs',
+  // 2026-10-27 — Filters per hierarchy level. spec/043-filters-redesign/plan.md Phase 1.
+  'visibleIssuesOrReleasesObs',
 ];
 
 // A stand-in for routeData / ChildReportConfig — propsFor only ever reads named properties off it.
@@ -100,6 +102,11 @@ class FakeViewModel extends ObservableObject {
       },
     },
     planningIssues: {
+      get default() {
+        return [];
+      },
+    },
+    visibleIssuesOrReleases: {
       get default() {
         return [];
       },

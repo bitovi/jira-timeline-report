@@ -239,6 +239,13 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
       <>
         <SelectReportType />
         <SelectIssueType />
+        <div className="flex-grow" />
+        <div className="self-end pb-1">
+          <Filters
+            rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
+            primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
+          />
+        </div>
       </>
     );
   }
@@ -247,6 +254,12 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
     return (
       <ReportControlsWrapper>
         <AutoSchedulerControls />
+        <div className="self-end pb-1">
+          <Filters
+            rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
+            primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
+          />
+        </div>
       </ReportControlsWrapper>
     );
   }
@@ -262,6 +275,12 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
           <SelectReportType />
         </div>
         <TableReportControls />
+        <div className="self-end pb-1">
+          <Filters
+            rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
+            primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
+          />
+        </div>
       </>
     );
   }
@@ -310,14 +329,14 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         <CompareSlider />
       </div>
       <div className="self-end pb-1">
+        <ViewSettings />
+      </div>
+      {/* Last on the row: with the `filtersPanel` feature on, it opens a panel from the right edge. */}
+      <div className="self-end pb-1">
         <Filters
           rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
           primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
         />
-      </div>
-
-      <div className="self-end pb-1">
-        <ViewSettings />
       </div>
     </ReportControlsWrapper>
   );

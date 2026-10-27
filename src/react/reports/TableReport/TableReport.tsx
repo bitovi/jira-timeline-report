@@ -104,6 +104,12 @@ export interface TableReportProps {
   primaryIssuesOrReleasesObs?: CanObservable<RollupIssue[]>;
   /** The full linked set for hierarchy mode (with `reportingHierarchy.childKeys` + rollups). */
   allIssuesOrReleasesObs?: CanObservable<RollupIssue[]>;
+  /**
+   * `allIssuesOrReleasesObs` with rows below Report on hidden by the Filters panel (the vm's
+   * `visibleIssuesOrReleases`, spec/043). The hierarchy tree takes its children from it. Optional;
+   * defaults to `allIssuesOrReleasesObs`.
+   */
+  visibleIssuesOrReleasesObs?: CanObservable<RollupIssue[]>;
 
   // --- Phase 5 persisted view state (route-data observables). All optional: when a prop is absent
   // the report falls back to a stable local observable, so it still renders standalone (e.g. in unit
@@ -726,6 +732,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   filteredDerivedIssuesObs,
   primaryIssuesOrReleasesObs,
   allIssuesOrReleasesObs,
+  visibleIssuesOrReleasesObs,
   tableColumnsObs,
   tableSortColumnObs,
   tableSortDirObs,
@@ -741,6 +748,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const filteredDerivedIssues = useCanObservable(filteredDerivedIssuesObs) || [];
   const primaryIssues = useCanObservable(primaryIssuesOrReleasesObs ?? EMPTY_OBS) || [];
   const allRollupIssues = useCanObservable(allIssuesOrReleasesObs ?? EMPTY_OBS) || [];
+  const visibleRollupIssues = useCanObservable(visibleIssuesOrReleasesObs ?? allIssuesOrReleasesObs ?? EMPTY_OBS) || [];
   const fields = useJiraIssueFields() as IssueFields;
 
   const catalog = useMemo(() => buildColumnCatalog(fields), [fields]);
@@ -758,6 +766,12 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // Hierarchy-mode issue sets (Phase 2): the fully rolled-up roots + full linked set.
   const hierarchyRoots = useMemo<TableIssue[]>(() => primaryIssues.map(toHierarchyIssue), [primaryIssues]);
   const hierarchyAll = useMemo<TableIssue[]>(() => allRollupIssues.map(toHierarchyIssue), [allRollupIssues]);
+  // The tree's children: the full set minus rows the Filters panel hides below Report on. Filter
+  // options and the Percent Complete modal keep using the full set, as the Gantt's modal does.
+  const hierarchyVisible = useMemo<TableIssue[]>(
+    () => (visibleRollupIssues === allRollupIssues ? hierarchyAll : visibleRollupIssues.map(toHierarchyIssue)),
+    [visibleRollupIssues, allRollupIssues, hierarchyAll],
+  );
 
   // --- Phase 5 persisted configuration (route-data observables, with local fallback) ---------------
   // Configuration that should survive reload / be URL-shareable lives in observables. The per-column
@@ -851,7 +865,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // Hierarchy rows: filter the full set, then depth-first flatten from surviving roots; column sort
   // (if any) orders within siblings (design §4); collapsed rows hide their descendants.
   const hierarchyRows = useMemo(() => {
-    const filteredAll = applyFilters(hierarchyAll, columns, filters);
+    const filteredAll = applyFilters(hierarchyVisible, columns, filters);
     const roots = applyFilters(hierarchyRoots, columns, filters);
     // A `tree` sort nests by the reporting hierarchy; an asc/desc sort on a column orders within
     // siblings (design §4). Absent an explicit column sort, siblings default to Jira Rank order
@@ -863,7 +877,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
           (sort!.dir === 'desc' ? -1 : 1) * sortColumn.compare(sortColumn.getValue(a), sortColumn.getValue(b))
       : compareRank;
     return buildHierarchyRows({ roots, allIssues: filteredAll, collapsedKeys, compareSiblings });
-  }, [hierarchyAll, hierarchyRoots, columns, filters, sort, collapsedKeys]);
+  }, [hierarchyVisible, hierarchyRoots, columns, filters, sort, collapsedKeys]);
 
   const rows = isHierarchy ? hierarchyRows : flatRows;
 

@@ -1,24 +1,31 @@
 import type { MinimalDerivedIssue } from '../../../../../services/issues';
 import { useDerivedIssues } from '../../../../../services/issues';
 import { useRouteData } from '../../../../../hooks/useRouteData';
+import { useReportOnLevelFilter } from '../useLevelFilter';
 
 export const useSelectedReleases = () => {
   const releases = useSelectableReleases();
 
-  const [selectedReleases, setSelectedReleases] = useRouteData<string, string[]>('releasesToShow');
+  const { filter, hasOwnEntry, setFilter } = useReportOnLevelFilter();
+  const [, setLegacySelectedReleases] = useRouteData<string, string[]>('releasesToShow');
 
   const handleSelectedReleasesChange = (newReleases: Readonly<{ value: string }[]> | { value: string }[]) => {
-    setSelectedReleases(newReleases.map(({ value }) => value));
+    const releasesToShow = newReleases.map(({ value }) => value);
+    if (hasOwnEntry) {
+      setFilter({ ...filter, releasesToShow });
+    } else {
+      setLegacySelectedReleases(releasesToShow);
+    }
   };
 
   return {
     releases,
-    selectedReleases: convertToSelectValue(selectedReleases) ?? [],
+    selectedReleases: convertToSelectValue((filter.releasesToShow ?? []).join(',')) ?? [],
     setSelectedReleases: handleSelectedReleasesChange,
   };
 };
 
-const useSelectableReleases = () => {
+export const useSelectableReleases = () => {
   const derivedIssues = useDerivedIssues();
 
   return getReleasesFromDerivedIssues(derivedIssues || []);

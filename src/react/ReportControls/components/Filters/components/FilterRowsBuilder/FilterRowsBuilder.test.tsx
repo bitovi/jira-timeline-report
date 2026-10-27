@@ -62,19 +62,9 @@ describe('FilterRowsBuilder', () => {
     expect(onChange).toHaveBeenCalledWith([]);
   });
 
-  it('"Clear all filters" empties the rows array', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<FilterRowsBuilder rows={oneRow} onChange={onChange} fieldDefinitions={fieldDefinitions} />);
-
-    await user.click(screen.getByText('Clear all filters'));
-
-    expect(onChange).toHaveBeenCalledWith([]);
-  });
-
-  it('"Clear all filters" is disabled when there are no rows', () => {
-    render(<FilterRowsBuilder rows={[]} onChange={vi.fn()} fieldDefinitions={fieldDefinitions} />);
-    expect(screen.getByText('Clear all filters').closest('button')).toBeDisabled();
+  it('has no Clear all of its own (the section heading owns it)', () => {
+    render(<FilterRowsBuilder rows={oneRow} onChange={vi.fn()} fieldDefinitions={fieldDefinitions} />);
+    expect(screen.queryByText('Clear all filters')).not.toBeInTheDocument();
   });
 
   it("changing a row's Field resets its Value to [] and Operator to the first allowed operator", async () => {

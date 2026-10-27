@@ -14,6 +14,12 @@ import { daysBetween } from '../../../../utils/date/days-between.js';
 import { isoToLocalDate } from '../../../../utils/date/local.js';
 import { roundDate } from '../../../../utils/date/round.js';
 import { nowUTC } from '../../../../utils/date/utc';
+import {
+  ALL_LEVELS,
+  intersectDateRange,
+  reportOnLevelKey,
+  resolveLevelFilters,
+} from '../../../../jira/rollup/filter-rows/level-filters';
 
 const _15DAYS_IN_S = (DAY_IN_MS / 1000) * 15;
 const ROUND_OPTIONS = ['day', ...Object.keys(roundDate)];
@@ -205,6 +211,7 @@ export const CHILD_PARAMS = {
   // a second place to keep that rule.
   cardsMode: string('status'),
   cardsChildFilterRows: json([]),
+  levelFilters: json({}),
 
   // Table report
 
@@ -656,6 +663,20 @@ export class ChildReportConfig extends ObservableObject {
         ];
       }
       return [];
+    },
+
+    // Per-level filters (spec/043-filters-redesign) merged with the legacy filter params above.
+    get effectiveLevelFilters() {
+      return resolveLevelFilters(this);
+    },
+    // The due-date range the Report on level's reports apply: All items ∩ the Report on level.
+    get effectiveDueDateStart() {
+      const levels = this.effectiveLevelFilters;
+      return intersectDateRange(levels[ALL_LEVELS], levels[reportOnLevelKey(this)]).start;
+    },
+    get effectiveDueDateEnd() {
+      const levels = this.effectiveLevelFilters;
+      return intersectDateRange(levels[ALL_LEVELS], levels[reportOnLevelKey(this)]).end;
     },
 
     /** Reports read this off routeData to decide whether a status list is available. */

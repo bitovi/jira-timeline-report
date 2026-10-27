@@ -66,6 +66,18 @@ describe('buildBoard', () => {
     expect(board.cards[0].matrixRows.some((r) => r.key === 'P-1')).toBe(false);
   });
 
+  // WorkBreakdown passes the vm's `visibleIssuesOrReleases` here (spec/043): a child missing from it
+  // doesn't render, while the card header still reflects the card's own rollup.
+  test('children come from the issues it is given, and the header is unchanged', () => {
+    const full = buildBoard(primaryIssues, allIssues, 'breakdown');
+    const visible = allIssues.filter((issue) => issue.key !== 'S-2');
+    const board = buildBoard(primaryIssues, visible, 'breakdown');
+    expect(board.cards[0].matrixRows.map((r) => r.key)).not.toContain('S-2');
+    expect(board.cards[0].matrixRows).toHaveLength(full.cards[0].matrixRows.length - 1);
+    expect(board.cards[0].headerColumns).toEqual(full.cards[0].headerColumns);
+    expect(board.cards[0].status).toBe(full.cards[0].status);
+  });
+
   test('derives density from the number of cards', () => {
     expect(buildBoard(primaryIssues, allIssues, 'breakdown').density).toBe('light');
   });

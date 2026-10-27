@@ -1,7 +1,13 @@
 import { useRouteData } from '../../../../../hooks/useRouteData';
+import { useReportOnLevelFilter } from '../useLevelFilter';
 
 export const useUnknownInitiatives = () => {
-  const [hideUnknownInitiatives, setHideUnknownInitiatives] = useRouteData<boolean>('hideUnknownInitiatives');
+  const { filter, hasOwnEntry, setFilter } = useReportOnLevelFilter();
+  const [, setLegacy] = useRouteData<boolean>('hideUnknownInitiatives');
 
-  return { hideUnknownInitiatives, setHideUnknownInitiatives };
+  return {
+    hideUnknownInitiatives: !!filter.hideWithoutDates,
+    setHideUnknownInitiatives: (hideWithoutDates: boolean) =>
+      hasOwnEntry ? setFilter({ ...filter, hideWithoutDates }) : setLegacy(hideWithoutDates),
+  };
 };
