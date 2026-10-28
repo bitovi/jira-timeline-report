@@ -818,7 +818,12 @@ export function gridStartDayFor(statsUIData: StatsUIData, includeStartTail = fal
     earliest = Math.min(earliest, startDays[Math.floor(startDays.length * 0.01)]);
   }
   for (const result of statsUIData.simulationIssueResults) {
-    earliest = Math.min(earliest, result.startDateWithTimeEnoughToFinish, result.startDayBottom, result.ownWindowStart);
+    earliest = Math.min(
+      earliest,
+      result.startDateWithTimeEnoughToFinish,
+      result.startDayBottom,
+      result.ownShouldStartDay,
+    );
   }
   return Math.floor(earliest);
 }
@@ -830,8 +835,8 @@ function gridUIData(
   includeStartTail = false,
 ) {
   const gridStartDay = gridStartDayFor(statsUIData, includeStartTail);
-  // Bars come from the plan pass, which can end a little past the simulation's finish when it can't
-  // be calibrated exactly; whiskers never do, but are included for safety.
+  // Bars come from the plan pass, which can end past the simulation's finish (a long chain does: the
+  // typical epic is calibrated, not the last); should-end ticks never do, but are included for safety.
   const lastDay =
     Math.ceil(
       statsUIData.simulationIssueResults.reduce(

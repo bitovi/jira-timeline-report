@@ -1,4 +1,4 @@
-# Auto-Scheduler: one consistent plan, with each epic's own risk as a whisker
+# Auto-Scheduler: one consistent plan, with when each epic might start, should start and should end
 
 Extends [backward-scheduling.md](./backward-scheduling.md). Where they disagree, this file wins.
 
@@ -28,7 +28,7 @@ You cannot have all three:
 
 The old non-Monte-Carlo scheduler gave up (3): it stacked p% lengths, so six epics at 90% finished
 around day 270 instead of the simulation's ~200. The current bars give up (2). This spec gives up
-(1) exactly, keeps it close for the typical epic, and shows each epic's own window as a whisker. It
+(1) exactly, keeps it close for the typical epic, and marks when each epic might start, should start and should end. It
 also loosens (3): the plan's last date is close to, but not exactly, the overall p% finish, which
 stays in the Overall timing row.
 
@@ -40,8 +40,8 @@ stays in the Overall timing row.
   construction, because the real scheduler placed them, and every bar is a real adjusted size.
 - **The bar is what gets written to Jira**, and what "Freeze" reproduces. Freezing a plan and
   running again gives the same bars, with no over-capacity track.
-- **Each epic's own risk is the thin line (the whisker).** It is the same thin line drawn today for
-  "might start", now also reaching past the bar's end to the epic's own p% finish.
+- **Each epic's own estimate is marks over the bar**: a dot for when it might start, and ticks for
+  when it should start and end. See "Might start, should start, should end".
 - **No toggle.** The previous per-epic bars are not kept as an option. Their dates overlap on a
   track, and freezing them recreates this bug.
 
@@ -75,7 +75,7 @@ shapes, in opposite directions:
 One dial can't fit both, so it is fitted to the epics instead:
 
 1. **Target.** Each forward item's own p% finish: its `dueDayTop` from the simulation (the mean at
-   "average"), the right end of its whisker. Frozen items don't move; work feeding a frozen item is
+   "average"), its should-end tick. Frozen items don't move; work feeding a frozen item is
    placed from the frozen dates, so neither counts.
 2. **Measure.** The **median**, over those items, of plan end − own finish. Half the items end on or
    before their own date, half after. The median, not the mean, so one huge, uncertain epic can't
@@ -123,8 +123,8 @@ Bars come out slightly longer than each epic's median length, which is correct, 
 | Row / track an epic is shown on         | most common track across runs                                 | plan track                                                  |
 | Over-capacity track                     | most common track ≥ track limit                               | plan track ≥ track limit                                    |
 | Blocker lines                           | between bar ends and starts                                   | unchanged, but bars are now plan dates                      |
-| Thin line (whisker)                     | `startDayBottom` → `dueDayTop`                                | the item's own window (see below)                           |
-| Might start                             | left end of the thin line                                     | a dot at `startDayBottom`                                   |
+| Thin line                               | `startDayBottom` → `dueDayTop`                                | replaced by a might-start dot (see below)                   |
+| Should start / should end               | the bar's ends                                                | ticks at `ownShouldStartDay` / `ownShouldEndDay`            |
 | Tooltip                                 | "Must start", "Must end"                                      | plan dates, plus "_p_% chance done by _date_" (`dueDayTop`) |
 | **Update Epic Dates**                   | bar dates                                                     | plan dates                                                  |
 | Team "Total Working Days"               | sum of `adjustedDaysOfWork`                                   | sum of plan lengths                                         |
@@ -159,23 +159,46 @@ the same reason.
   `track` the plan track. `planQuantile` is in the UI data.
 - The row's thin line has `data-testid="issue-range-line"`.
 
-## The whisker and the might-start dot
+## Might start, should start, should end
 
-Everything sits on one line, centred behind the bar, so the bar, the whisker and the dot read as one
-row.
+People want to know how early an epic might start and, roughly, when it should start and end — and
+a coherent plan to write to Jira. Each epic row answers exactly that, over its gray plan bar:
 
-- **Whisker**: the thin 4px blue→green line. It spans what the old bar spanned: the item's own
-  adjusted size at the slider's risk, ending at its own percentile end — `[ownDueDayTop −
-own length, ownDueDayTop]`. Its length is the number the
-  [Statistical Software Estimator](https://bitovi.github.io/statistical-software-estimator/) teaches
-  for one epic. Work feeding a frozen item is mirrored from its early start —
-  `[startDayBottom, min(startDayBottom + own length, ownDueDayTop)]` — the anchoring its bars used
-  before the plan pass.
-- **Might-start dot**: an 8px blue circle at `startDayBottom`, the early tail of when the item could
-  begin. Drawn over the bar, so it stays visible when it falls inside it. For forward work it is
-  usually left of the whisker: the early start comes before the late start the whisker implies.
-  They meet when nothing comes before the item, at "average", and for mirrored work.
-- Frozen items get neither.
+```
+  ●            |                         |
+might start  should start           should end
+                 ╔═══════════════════╗          ← plan bar (written to Jira)
+```
+
+- **Might start** (blue dot, 8px): `startDayBottom`, the start early enough that only `100 − p`% of
+  runs start earlier. It can sit far left of the bar in a long chain; that's fine.
+- **Should start** (blue tick, 2px × 16px): `ownShouldStartDay` = own finish − own adjusted size at
+  the slider. Start here and, taking its p% size, it still ends by its own p% date.
+- **Should end** (green tick): `ownShouldEndDay`, the epic's own finish at the slider.
+- The gap between the ticks is the epic's own adjusted size — the number the
+  [Statistical Software Estimator](https://bitovi.github.io/statistical-software-estimator/) teaches.
+  A bar ending after the green tick runs late against the epic's own estimate; a bar starting after
+  the blue tick has squeezed time.
+- Work feeding a frozen item is mirrored: its safe number is the early start, so it should start at
+  `startDayBottom` and end its size later, capped at its own finish.
+- All three marks are drawn over the bar with a white outline, so they show inside it. Frozen items
+  get none.
+
+**Language.** "Should", not "must": these come from the epic's own estimate and are guidance.
+"Must start by" stays only for the frozen-item deadline, which really is a hard dependency.
+
+Tooltip (epic): "Plan starts", "Might start", "Should start"; "_N_ days in the plan", "_M_ days at
+_p_%"; "Plan ends", "Should end: _date_ (_p_% likely)" — "(on average)" at "average".
+
+**Overall timing** keeps full-height bands: a blue start band and a green delivery band. The
+delivery range is what execs need, and thin lines were too thin to read.
+
+Tried and dropped:
+
+- A whisker for the epic's own size window plus a might-start dot: both ends were the same kind of
+  percentile edge, drawn differently.
+- Thin blue start-range and green finish-range lines (on one level, then on two): later epics'
+  ranges overlapped so much they added confusion, not information.
 
 ## Out of scope
 
@@ -205,6 +228,6 @@ UI:
 
 - **Whisker.** When `dueDayTop` is after the plan end, the thin line extends past the bar. When it
   is before, the line ends at the bar.
-- **Tooltip.** Shows "90% chance done by _date_" at 90, and "Done by _date_ on average" at average.
+- **Tooltip.** Shows "Should end: _date_ (90% likely)" at 90, and "(on average)" at average.
 - **Update Epic Dates** writes the plan dates.
 - **Grouping.** Track rows group by plan track, and the over-capacity label follows the plan track.

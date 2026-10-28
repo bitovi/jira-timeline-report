@@ -78,25 +78,26 @@ describe('applyPlan', () => {
     mostCommonTrack: 1,
   };
 
-  it('draws the bar at the planned position and keeps the item’s own window for the whisker', () => {
+  it('draws the bar at the planned position and keeps the item’s own size and should-start/end dates', () => {
     expect(applyPlan(own, { startDay: 4, dueDay: 12, track: 0 })).toMatchObject({
       startDateWithTimeEnoughToFinish: 4,
       dueDayTop: 12,
       adjustedDaysOfWork: 8,
       track: 0,
       ownDueDayTop: 20,
+      ownDaysOfWork: 9,
       // Its own 9-day size, ending at its own percentile end.
-      ownWindowStart: 11,
-      ownWindowEnd: 20,
+      ownShouldStartDay: 11,
+      ownShouldEndDay: 20,
     });
   });
 
-  it('mirrors the window of work feeding a frozen item from its early start', () => {
+  it('mirrors work feeding a frozen item from its early start, capped at its own finish', () => {
     expect(applyPlan(own, { startDay: 4, dueDay: 12, track: 0 }, { backward: true })).toMatchObject({
-      ownWindowStart: 6,
-      ownWindowEnd: 15,
+      ownShouldStartDay: 6,
+      ownShouldEndDay: 15,
     });
-    expect(applyPlan({ ...own, dueDayTop: 10 }, undefined, { backward: true }).ownWindowEnd).toBe(10);
+    expect(applyPlan({ ...own, dueDayTop: 10 }, undefined, { backward: true }).ownShouldEndDay).toBe(10);
   });
 
   it('keeps the item’s own bar until there is a plan', () => {

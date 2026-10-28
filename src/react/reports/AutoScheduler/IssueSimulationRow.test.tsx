@@ -19,9 +19,10 @@ function result({
   bar = [0, 5],
   isOverflowTrack = false,
   beforeStartPercent = 0,
-  ownDue,
-  ownWindow,
   mightStart,
+  shouldStart,
+  shouldEnd,
+  ownSize,
 }: {
   frozen?: { startDay: number | null; dueDay: number | null } | null;
   start?: Date;
@@ -29,9 +30,10 @@ function result({
   bar?: [number, number];
   isOverflowTrack?: boolean;
   beforeStartPercent?: number;
-  ownDue?: number;
-  ownWindow?: [number, number];
   mightStart?: number;
+  shouldStart?: number;
+  shouldEnd?: number;
+  ownSize?: number;
 }) {
   return {
     linkedIssue: {
@@ -53,9 +55,10 @@ function result({
     startDateWithTimeEnoughToFinish: bar[0],
     dueDayBottom: bar[1],
     dueDayTop: bar[1],
-    ownDueDayTop: ownDue ?? bar[1],
-    ownWindowStart: (ownWindow ?? bar)[0],
-    ownWindowEnd: (ownWindow ?? bar)[1],
+    ownDueDayTop: shouldEnd ?? bar[1],
+    ownShouldStartDay: shouldStart ?? bar[0],
+    ownShouldEndDay: shouldEnd ?? bar[1],
+    ownDaysOfWork: ownSize ?? bar[1] - bar[0],
     track: 0,
     adjustedDaysOfWork: bar[1] - bar[0],
     isOverflowTrack,
@@ -169,34 +172,46 @@ describe('IssueSimulationRow', () => {
     expect(bar.style.width).toBe('50%');
   });
 
-  it('draws the whisker over the span the item’s own adjusted size covers', () => {
-    renderRow(result({ bar: [0, 5], ownWindow: [3, 12] }));
+  it('marks might start with a dot, and should start and should end with ticks, over the bar', () => {
+    const { container } = renderRow(result({ bar: [4, 9], mightStart: 2, shouldStart: 3, shouldEnd: 12 }));
 
-    const line = screen.getByTestId('issue-range-line');
-    expect(line.style.left).toBe('15%');
-    expect(line.style.width).toBe('45%');
+    const dot = screen.getByTestId('might-start-dot');
+    const startTick = screen.getByTestId('should-start-tick');
+    const endTick = screen.getByTestId('should-end-tick');
+    expect(dot.style.left).toBe('10%');
+    expect(startTick.style.left).toBe('15%');
+    expect(startTick).toHaveClass('bg-blue-400');
+    expect(endTick.style.left).toBe('60%');
+    expect(endTick).toHaveClass('bg-green-400');
+    // After the bar in the DOM, so they paint over it.
+    const bar = container.querySelector('#ORDER-1')!;
+    for (const mark of [dot, startTick, endTick]) {
+      expect(bar.compareDocumentPosition(mark)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    }
   });
 
-  it('marks when the item might start with a dot on the same line', () => {
-    renderRow(result({ bar: [4, 9], mightStart: 2, ownWindow: [5, 12] }));
-
-    expect(screen.getByTestId('might-start-dot').style.left).toBe('10%');
-  });
-
-  it('draws neither whisker nor dot for a frozen item', () => {
+  it('draws no dot and no ticks for a frozen item', () => {
     renderRow(result({ frozen: { startDay: 0, dueDay: 5 } }), { isFrozen: true });
 
-    expect(screen.queryByTestId('issue-range-line')).not.toBeInTheDocument();
     expect(screen.queryByTestId('might-start-dot')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('should-start-tick')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('should-end-tick')).not.toBeInTheDocument();
+  });
+
+  it('gives the plan’s size and the item’s own size at the slider’s risk', async () => {
+    const { container } = renderRow(result({ bar: [0, 5], ownSize: 8, shouldStart: 1 }), { uncertaintyWeight: 80 });
+
+    await userEvent.hover(container.querySelector('#ORDER-1')!);
+    expect((await screen.findAllByText('5 days in the plan'))[0]).toBeInTheDocument();
+    expect(screen.getAllByText('8 days at 80%')[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Should start:\s*Jan 6, 2026/)[0]).toBeInTheDocument();
   });
 
   describe('previewing a freeze from the lock', () => {
     const lock = (name = 'Freeze Checkout') => screen.getByRole('button', { name });
 
-    it('fills in the Jira dates and fades the bar, whisker and dot', async () => {
-      const { container } = renderRow(
-        result({ start: new Date(2026, 0, 12), due: new Date(2026, 0, 16), ownWindow: [0, 8], mightStart: 0 }),
-      );
+    it('fills in the Jira dates and fades the bar, dot and ticks', async () => {
+      const { container } = renderRow(result({ start: new Date(2026, 0, 12), due: new Date(2026, 0, 16) }));
 
       await userEvent.hover(lock());
 
@@ -204,8 +219,9 @@ describe('IssueSimulationRow', () => {
       expect(shadow).toHaveAttribute('data-previewing', 'true');
       expect(shadow).not.toHaveClass('blur-xs');
       expect(container.querySelector('#ORDER-1')).toHaveClass('opacity-25');
-      expect(screen.getByTestId('issue-range-line')).toHaveClass('opacity-25');
       expect(screen.getByTestId('might-start-dot')).toHaveClass('opacity-25');
+      expect(screen.getByTestId('should-start-tick')).toHaveClass('opacity-25');
+      expect(screen.getByTestId('should-end-tick')).toHaveClass('opacity-25');
 
       await userEvent.unhover(lock());
 
@@ -233,7 +249,7 @@ describe('IssueSimulationRow', () => {
       expect(shadow.style.width).toBe('25%');
     });
 
-    it('marks the one held date, and fades only the whisker, for an item with one date', async () => {
+    it('marks the one held date, and fades only the dot and ticks, for an item with one date', async () => {
       const { container } = renderRow(result({ due: new Date(2026, 0, 16) }));
 
       await userEvent.hover(lock());
@@ -241,7 +257,7 @@ describe('IssueSimulationRow', () => {
       expect(screen.queryByTestId('jira-dates-shadow')).not.toBeInTheDocument();
       // Due Fri 16th is exclusive day 10.
       expect(screen.getByTestId('freeze-preview-date').style.left).toBe('50%');
-      expect(screen.getByTestId('issue-range-line')).toHaveClass('opacity-25');
+      expect(screen.getByTestId('should-end-tick')).toHaveClass('opacity-25');
       expect(container.querySelector('#ORDER-1')).not.toHaveClass('opacity-25');
     });
 
@@ -263,25 +279,27 @@ describe('IssueSimulationRow', () => {
       await userEvent.hover(lock());
 
       expect(screen.queryByTestId('freeze-preview-date')).not.toBeInTheDocument();
-      expect(screen.getByTestId('issue-range-line')).not.toHaveClass('opacity-25');
+      expect(screen.getByTestId('should-end-tick')).not.toHaveClass('opacity-25');
       expect(container.querySelector('#ORDER-1')).not.toHaveClass('opacity-25');
     });
   });
 
-  it('says when the item on its own is done by, at the slider’s risk', async () => {
-    // Bar ends day 5 (last day worked: Fri Jan 9); its own finish ends day 9 (last day: Thu Jan 15).
-    const { container } = renderRow(result({ bar: [0, 5], ownDue: 9 }), { uncertaintyWeight: 90 });
+  it('says when the item should end, and how likely that is', async () => {
+    // Bar ends day 5 (last day worked: Fri Jan 9); it should end by day 9 (last day: Thu Jan 15).
+    const { container } = renderRow(result({ bar: [0, 5], shouldStart: 1, shouldEnd: 9 }), {
+      uncertaintyWeight: 90,
+    });
 
     await userEvent.hover(container.querySelector('#ORDER-1')!);
-    expect((await screen.findAllByText(/Must end:\s*Jan 9, 2026/))[0]).toBeInTheDocument();
-    expect(screen.getAllByText('90% chance done by Jan 15, 2026')[0]).toBeInTheDocument();
+    expect((await screen.findAllByText(/Plan ends:\s*Jan 9, 2026/))[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Should end:\s*Jan 15, 2026\s*\(90% likely\)/)[0]).toBeInTheDocument();
   });
 
-  it('words the item’s own finish as an average at average', async () => {
-    const { container } = renderRow(result({ bar: [0, 5], ownDue: 9 }));
+  it('words should-end as an average at average', async () => {
+    const { container } = renderRow(result({ bar: [0, 5], shouldStart: 1, shouldEnd: 9 }));
 
     await userEvent.hover(container.querySelector('#ORDER-1')!);
-    expect((await screen.findAllByText('Done by Jan 15, 2026 on average'))[0]).toBeInTheDocument();
+    expect((await screen.findAllByText(/Should end:\s*Jan 15, 2026\s*\(on average\)/))[0]).toBeInTheDocument();
   });
 
   it('says how often a bar that starts before the start date starts early', async () => {
@@ -298,7 +316,7 @@ describe('IssueSimulationRow', () => {
     const { container } = renderRow(result({ bar: [2, 8], beforeStartPercent: 7 }));
 
     await userEvent.hover(container.querySelector('#ORDER-1')!);
-    expect(await screen.findByText(/Must start:/)).toBeInTheDocument();
+    expect((await screen.findAllByText(/Plan starts:/))[0]).toBeInTheDocument();
     expect(screen.queryByText(/Starts before the start date/)).not.toBeInTheDocument();
   });
 

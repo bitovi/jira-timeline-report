@@ -45,4 +45,4 @@ The following starts from the bottom and builds up.
   blockers.
 
 - **stats-analyzer.ts**  
-  Contains logic for analyzing simulation statistics, such as calculating start and due days for issues, aggregating results, and preparing data for the UI. Defines types and functions for working with simulation results. Bars come from the plan pass; each item's own percentile finish (`ownDueDayTop`) is its whisker.
+  Contains logic for analyzing simulation statistics, such as calculating start and due days for issues, aggregating results, and preparing data for the UI. Defines types and functions for working with simulation results. Bars come from the plan pass; each item's own estimate gives its should-start and should-end ticks.

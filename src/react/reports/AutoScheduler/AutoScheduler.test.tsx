@@ -73,8 +73,9 @@ function issueResult(key: string, daysAdded: number) {
     dueDayBottom: 10,
     dueDayTop: 10,
     ownDueDayTop: 10,
-    ownWindowStart: 0,
-    ownWindowEnd: 10,
+    ownShouldStartDay: 0,
+    ownShouldEndDay: 10,
+    ownDaysOfWork: 10,
     track: 0,
     adjustedDaysOfWork: 10,
   };

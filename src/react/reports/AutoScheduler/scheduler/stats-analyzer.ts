@@ -421,10 +421,12 @@ export function withOverlapInfo<T extends OverlapCandidate>(
 
 /**
  * Puts an item's bar where the plan pass placed it (spec/044 consistent-plan.md). The item's own
- * numbers from the simulation stay alongside: `ownDueDayTop`, its own percentile end, and its own
- * window — the span its own adjusted size covers, which the row draws as the whisker. A forward
- * item's window ends at its own percentile end. Work feeding a frozen item is mirrored: its safe
- * number is the early start, so its window starts there (capped at its latest due).
+ * numbers from the simulation stay alongside for the row's marks and tooltip:
+ * - `ownDaysOfWork`, its own adjusted size at the slider (the estimator's number);
+ * - `ownShouldEndDay`, its own finish at the slider;
+ * - `ownShouldStartDay`, the latest start that still finishes by then at that size.
+ * Work feeding a frozen item is mirrored: its safe number is the early start, so it should start
+ * then and end that size later (capped at its own finish).
  * Without a planned position (no plan yet) the bar keeps its own dates.
  */
 export function applyPlan<
@@ -439,11 +441,18 @@ export function applyPlan<
   result: T,
   planned: PlannedItem | undefined,
   { backward = false }: { backward?: boolean } = {},
-): T & { ownDueDayTop: number; ownWindowStart: number; ownWindowEnd: number; track: number } {
+): T & {
+  ownDueDayTop: number;
+  ownDaysOfWork: number;
+  ownShouldStartDay: number;
+  ownShouldEndDay: number;
+  track: number;
+} {
   const own = {
     ownDueDayTop: result.dueDayTop,
-    ownWindowStart: backward ? result.startDayBottom : result.dueDayTop - result.adjustedDaysOfWork,
-    ownWindowEnd: backward
+    ownDaysOfWork: result.adjustedDaysOfWork,
+    ownShouldStartDay: backward ? result.startDayBottom : result.dueDayTop - result.adjustedDaysOfWork,
+    ownShouldEndDay: backward
       ? Math.min(result.startDayBottom + result.adjustedDaysOfWork, result.dueDayTop)
       : result.dueDayTop,
   };

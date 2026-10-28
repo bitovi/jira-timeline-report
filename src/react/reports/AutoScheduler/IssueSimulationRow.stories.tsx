@@ -15,9 +15,10 @@ type RowArgs = {
   jiraStart?: Date;
   jiraDue?: Date;
   bar: [number, number];
+  /** The early tail of when it could start: the dot. */
   mightStart?: number;
-  /** The span the item's own adjusted size covers at the slider's risk: the whisker. */
-  ownWindow?: [number, number];
+  /** When its own estimate says it should start and end, at the slider's risk: the ticks. */
+  should?: [number, number];
   isOverflowTrack?: boolean;
   mustStartByDay?: number;
   lateForFrozenPercent?: number;
@@ -53,9 +54,10 @@ function toResult(args: RowArgs) {
     startDateWithTimeEnoughToFinish: args.bar[0],
     dueDayBottom: args.bar[1],
     dueDayTop: args.bar[1],
-    ownDueDayTop: (args.ownWindow ?? args.bar)[1],
-    ownWindowStart: (args.ownWindow ?? args.bar)[0],
-    ownWindowEnd: (args.ownWindow ?? args.bar)[1],
+    ownDueDayTop: (args.should ?? args.bar)[1],
+    ownShouldStartDay: (args.should ?? args.bar)[0],
+    ownShouldEndDay: (args.should ?? args.bar)[1],
+    ownDaysOfWork: (args.should ?? args.bar)[1] - (args.should ?? args.bar)[0],
     track: 0,
     adjustedDaysOfWork: args.bar[1] - args.bar[0],
     isOverflowTrack: args.isOverflowTrack ?? false,
@@ -96,15 +98,21 @@ export default meta;
 
 /** Unfrozen, with its Jira dates (days 15–25) shadowed behind the scheduled bar. Hover the label for the lock. */
 export const WithJiraShadow: StoryObj<typeof Row> = {
-  args: { frozen: null, jiraStart: new Date(2026, 0, 26), jiraDue: new Date(2026, 1, 6), bar: [4, 12], mightStart: 2 },
+  args: {
+    frozen: null,
+    jiraStart: new Date(2026, 0, 26),
+    jiraDue: new Date(2026, 1, 6),
+    bar: [4, 12],
+    startRange: [2, 6],
+  },
 };
 
 /**
- * The plan gives this item days 4–12. On its own, at 80%, it needs 12 days and finishes by day 18:
- * the whisker spans days 6–18. The dot is when it might start (day 2).
+ * The plan gives this item days 4–12. It might start as early as day 2 (the dot); at its own 80% size
+ * of 12 days it should start by day 6 and end by day 18 (the ticks).
  */
-export const Whisker: StoryObj<typeof Row> = {
-  args: { frozen: null, bar: [4, 12], mightStart: 2, ownWindow: [6, 18] },
+export const ShouldStartAndEnd: StoryObj<typeof Row> = {
+  args: { frozen: null, bar: [4, 12], mightStart: 2, should: [6, 18] },
 };
 
 /** Frozen with both dates: a solid, locked bar exactly on its Jira dates, so no shadow. */

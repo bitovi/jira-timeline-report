@@ -283,19 +283,6 @@ export const IssueSimulationRow: React.FC<{
                     style={{ left: percent(heldDay) }}
                   />
                 )}
-              {/* The whisker, centred behind the bar: the span this item's own adjusted size covers at
-                  the slider's risk (spec/044 consistent-plan.md). Blue is start, green is end; the bar
-                  nearly always covers the middle, where they blend. */}
-              {!frozen && (
-                <div
-                  data-testid="issue-range-line"
-                  className={`transition-all duration-100 absolute bg-gradient-to-r from-blue-200 to-green-200 from-45% to-55% h-1 top-2.5 border-box ${fadeIfReplaced}`}
-                  style={{
-                    left: percent(issue.ownWindowStart),
-                    width: percentWidth(issue.ownWindowStart, issue.ownWindowEnd),
-                  }}
-                />
-              )}
               {/* The BIG Line */}
               <div
                 id={issue.linkedIssue.key}
@@ -320,15 +307,30 @@ export const IssueSimulationRow: React.FC<{
                   </span>
                 )}
               </div>
-              {/* Might start: the early tail of when this item could begin. Drawn over the bar so it
-                  stays visible when it falls inside it. */}
+              {/* Over the bar, so each stays visible inside it: when the item might start (dot), and
+                  when its own estimate says it should start and end (ticks) — the span between the
+                  ticks is its adjusted size at the slider (spec/044 consistent-plan.md). */}
               {!frozen && (
-                <div
-                  data-testid="might-start-dot"
-                  aria-hidden
-                  className={`transition-all duration-100 pointer-events-none absolute top-2 h-2 w-2 -translate-x-1/2 rounded-full bg-blue-400 ring-1 ring-white ${fadeIfReplaced}`}
-                  style={{ left: percent(issue.startDayBottom) }}
-                />
+                <>
+                  <div
+                    data-testid="might-start-dot"
+                    aria-hidden
+                    className={`transition-all duration-100 pointer-events-none absolute top-2 h-2 w-2 -translate-x-1/2 rounded-full bg-blue-400 ring-1 ring-white ${fadeIfReplaced}`}
+                    style={{ left: percent(issue.startDayBottom) }}
+                  />
+                  <div
+                    data-testid="should-start-tick"
+                    aria-hidden
+                    className={`transition-all duration-100 pointer-events-none absolute top-1 h-4 w-0.5 -translate-x-1/2 bg-blue-400 ring-1 ring-white ${fadeIfReplaced}`}
+                    style={{ left: percent(issue.ownShouldStartDay) }}
+                  />
+                  <div
+                    data-testid="should-end-tick"
+                    aria-hidden
+                    className={`transition-all duration-100 pointer-events-none absolute top-1 h-4 w-0.5 -translate-x-1/2 bg-green-400 ring-1 ring-white ${fadeIfReplaced}`}
+                    style={{ left: percent(issue.ownShouldEndDay) }}
+                  />
+                </>
               )}
             </>
           )}
@@ -356,8 +358,11 @@ export const IssueSimulationRow: React.FC<{
                   <div className="flex gap-2 items-start z-50" ref={ref} style={style}>
                     <div className="z-50 text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
                       {frozen && <div className="font-semibold">Frozen at its Jira dates</div>}
-                      <div>Must start: {monthDateFormatter.format(issueDates.startDateWithTimeEnoughToFinish)}</div>
+                      <div>Plan starts: {monthDateFormatter.format(issueDates.startDateWithTimeEnoughToFinish)}</div>
                       {!frozen && <div>Might start: {monthDateFormatter.format(issueDates.startDateBottom)}</div>}
+                      {!frozen && issueDates.shouldStartDate && (
+                        <div>Should start: {monthDateFormatter.format(issueDates.shouldStartDate)}</div>
+                      )}
                       <FrozenConstraintLines
                         issue={fullIssue}
                         selectedStartDate={selectedStartDate}
@@ -366,7 +371,13 @@ export const IssueSimulationRow: React.FC<{
                     </div>
 
                     <div className=" text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
-                      <div>{Math.round(issue.adjustedDaysOfWork)} days</div>
+                      <div>{Math.round(issue.adjustedDaysOfWork)} days in the plan</div>
+                      {!frozen && (
+                        <div>
+                          {Math.round(fullIssue.ownDaysOfWork)} days{' '}
+                          {uncertaintyWeight === 'average' ? 'on average' : `at ${uncertaintyWeight}%`}
+                        </div>
+                      )}
                       <div>{Math.round(issue.adjustedDaysOfWork * velocityPerTrack)} adjusted points</div>
                       <div>
                         <span className={fullIssue.linkedIssue.storyPointsMedian == null ? `text-orange-400` : ''}>
@@ -383,12 +394,11 @@ export const IssueSimulationRow: React.FC<{
                     </div>
 
                     <div className="z-50 text-sm rounded-[3px] text-white bg-neutral-801 py-0.5 px-1.5 border border-white">
-                      <div>Must end: {monthDateFormatter.format(issueDates.dueDateTop)}</div>
-                      {!frozen && issueDates.ownDueDate && (
+                      <div>Plan ends: {monthDateFormatter.format(issueDates.dueDateTop)}</div>
+                      {!frozen && issueDates.shouldEndDate && (
                         <div>
-                          {uncertaintyWeight === 'average'
-                            ? `Done by ${monthDateFormatter.format(issueDates.ownDueDate)} on average`
-                            : `${uncertaintyWeight}% chance done by ${monthDateFormatter.format(issueDates.ownDueDate)}`}
+                          Should end: {monthDateFormatter.format(issueDates.shouldEndDate)}{' '}
+                          {uncertaintyWeight === 'average' ? '(on average)' : `(${uncertaintyWeight}% likely)`}
                         </div>
                       )}
                     </div>
@@ -512,7 +522,8 @@ export function getDatesFromSimulationIssue(
       ? {
           startDateWithTimeEnoughToFinish: businessDayOffsetToDate(startDate, issue.startDateWithTimeEnoughToFinish),
           dueDateTop: rangeEndDate,
-          ownDueDate: null,
+          shouldStartDate: null,
+          shouldEndDate: null,
         }
       : barDates(issue, startDate)),
     dueDateBottom: businessDayOffsetToDate(startDate, issue.dueDayBottom),
@@ -526,12 +537,16 @@ export function getDatesFromSimulationIssue(
  * so bars that touch stay touching once written — and freezing them doesn't overlap a track.
  */
 function barDates(issue: SimulationIssueResult, startDate: Date) {
-  const startDay = Math.round(issue.startDateWithTimeEnoughToFinish);
-  const lastDay = (endDay: number) => businessDayOffsetToDate(startDate, Math.max(startDay, Math.round(endDay) - 1));
-  return {
-    startDateWithTimeEnoughToFinish: businessDayOffsetToDate(startDate, startDay),
-    dueDateTop: lastDay(issue.dueDayTop),
-    /** The item's own `p`% finish from the simulation, for "p% chance done by". */
-    ownDueDate: lastDay(issue.ownDueDayTop),
+  /** A span's dates: its start, and its last day worked — never before the start. */
+  const span = (from: number, to: number) => {
+    const first = Math.round(from);
+    return [
+      businessDayOffsetToDate(startDate, first),
+      businessDayOffsetToDate(startDate, Math.max(first, Math.round(to) - 1)),
+    ] as const;
   };
+  const [startDateWithTimeEnoughToFinish, dueDateTop] = span(issue.startDateWithTimeEnoughToFinish, issue.dueDayTop);
+  /** When the item's own estimate says it should start and end, at the slider's risk. */
+  const [shouldStartDate, shouldEndDate] = span(issue.ownShouldStartDay, issue.ownShouldEndDay);
+  return { startDateWithTimeEnoughToFinish, dueDateTop, shouldStartDate, shouldEndDate };
 }
