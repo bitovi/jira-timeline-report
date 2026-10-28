@@ -12,11 +12,17 @@ import type { FilterTab } from '../Filters/hooks/useFilterTabs';
 import type { MinimalLevelIssue } from '../Filters/hooks/useLevelOptions';
 import type { CanObservable } from '../../../hooks/useCanObservable/useCanObservable';
 import routeData from '../../../../canjs/routing/route-data';
+import { useRouteData } from '../../../hooks/useRouteData';
 import { ALL_LEVELS } from '../../../../jira/rollup/filter-rows/level-filters';
 
 export interface FiltersPanelProps {
   /** All rolled-up issues/releases — Rollup Status and Issue Type options come from it. */
   rolledupAndRolledBackIssuesAndReleasesObs?: CanObservable<MinimalLevelIssue[]>;
+  /**
+   * Show only Exclude statuses, with no tabs. For reports that read `filteredDerivedIssues` directly
+   * (Estimation Progress, Flow Metrics, Time in Status): it's the only filter that affects them.
+   */
+  excludeStatusesOnly?: boolean;
 }
 
 /**
@@ -36,6 +42,10 @@ const CLEARED_FILTER_PARAMS = {
   showOnlySemverReleases: false,
   cardsChildFilterRows: [],
   statusesToExclude: [],
+};
+
+const clearExcludedStatuses = () => {
+  routeData.statusesToExclude = [];
 };
 
 export const clearAllFilters = () => {
@@ -71,14 +81,15 @@ export const FiltersPanelView: FC<FiltersPanelViewProps> = ({ tabs, renderTab, o
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const portalRootRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(defaultOpen);
 
   const selectedTab = tabs.find(({ key }) => key === selectedKey) ?? tabs[0];
   const total = tabs.reduce((sum, { count }) => sum + count, 0);
+  const hasTabs = tabs.length > 1;
 
-  const close = () => {
-    setIsOpen(false);
-    triggerRef.current?.focus();
-  };
+  // Focus returns to the trigger in the effect below, once the background is no longer inert.
+  const close = () => setIsOpen(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -114,6 +125,26 @@ export const FiltersPanelView: FC<FiltersPanelViewProps> = ({ tabs, renderTab, o
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isOpen, isMounted]);
 
+  // Modal: make everything else in <body> inert while open, so Tab and clicks can't reach the
+  // obscured page. Select menus portal to <body> after this runs, so they stay usable.
+  useEffect(() => {
+    if (!isOpen || !isMounted) {
+      return;
+    }
+    const others = [...document.body.children].filter(
+      (element) => element !== portalRootRef.current && !element.hasAttribute('inert'),
+    );
+    others.forEach((element) => element.setAttribute('inert', ''));
+    return () => others.forEach((element) => element.removeAttribute('inert'));
+  }, [isOpen, isMounted]);
+
+  useEffect(() => {
+    if (wasOpenRef.current && !isOpen) {
+      triggerRef.current?.focus();
+    }
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
+
   return (
     <>
       <Button ref={triggerRef} isSelected={isOpen} onClick={() => setIsOpen((open) => !open)}>
@@ -126,7 +157,7 @@ export const FiltersPanelView: FC<FiltersPanelViewProps> = ({ tabs, renderTab, o
       </Button>
       {isMounted &&
         createPortal(
-          <div className="print-hidden">
+          <div ref={portalRootRef} className="print-hidden">
             <div
               className={`fixed inset-0 z-50 bg-neutral-800/20 transition-opacity duration-300 motion-reduce:transition-none ${
                 isShown ? 'opacity-100' : 'opacity-0'
@@ -148,11 +179,12 @@ export const FiltersPanelView: FC<FiltersPanelViewProps> = ({ tabs, renderTab, o
                 </h2>
                 <IconButton ref={closeRef} appearance="subtle" icon={CrossIcon} label="Close filters" onClick={close} />
               </div>
-              <FilterTabs tabs={tabs} selectedKey={selectedTab.key} onSelect={setSelectedKey} />
+              {/* A single tab needs no tab strip. */}
+              {hasTabs && <FilterTabs tabs={tabs} selectedKey={selectedTab.key} onSelect={setSelectedKey} />}
               <div
-                role="tabpanel"
-                id={FILTER_TAB_PANEL_ID}
-                aria-labelledby={filterTabId(selectedTab.key)}
+                {...(hasTabs
+                  ? { role: 'tabpanel', id: FILTER_TAB_PANEL_ID, 'aria-labelledby': filterTabId(selectedTab.key) }
+                  : {})}
                 className="flex-1 overflow-y-auto px-6 py-5"
               >
                 <React.Fragment key={selectedTab.key}>{renderTab(selectedTab)}</React.Fragment>
@@ -174,14 +206,26 @@ export const FiltersPanelView: FC<FiltersPanelViewProps> = ({ tabs, renderTab, o
 };
 
 /** {@link FiltersPanelView} over route data. */
-const FiltersPanel: FC<FiltersPanelProps> = ({ rolledupAndRolledBackIssuesAndReleasesObs }) => (
-  <FiltersPanelView
-    tabs={useFilterTabs()}
-    onClearAll={clearAllFilters}
-    renderTab={(tab) => (
-      <FilterTabBody tab={tab} rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
-    )}
-  />
-);
+const FiltersPanel: FC<FiltersPanelProps> = ({ rolledupAndRolledBackIssuesAndReleasesObs, excludeStatusesOnly }) => {
+  const tabs = useFilterTabs();
+  const [statusesToExclude] = useRouteData<string[] | undefined>('statusesToExclude');
+
+  return (
+    <FiltersPanelView
+      // Clear all only clears what the panel shows, so it never touches filters hidden on this report.
+      tabs={
+        excludeStatusesOnly ? [{ key: ALL_LEVELS, label: 'All items', count: statusesToExclude?.length ? 1 : 0 }] : tabs
+      }
+      onClearAll={excludeStatusesOnly ? clearExcludedStatuses : clearAllFilters}
+      renderTab={(tab) => (
+        <FilterTabBody
+          tab={tab}
+          excludeOnly={excludeStatusesOnly}
+          rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
+        />
+      )}
+    />
+  );
+};
 
 export default FiltersPanel;

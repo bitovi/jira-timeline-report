@@ -77,11 +77,11 @@ const data = routeData as unknown as FakeRouteData;
 
 const row = (overrides = {}) => ({ id: 'r1', field: 'jiraStatus', operator: 'is', value: ['Done'], ...overrides });
 
-const renderPanel = async () => {
+const renderPanel = async (props: { excludeStatusesOnly?: boolean } = {}) => {
   const user = userEvent.setup();
   render(
     <Suspense fallback="loading">
-      <FiltersPanel />
+      <FiltersPanel {...props} />
     </Suspense>,
   );
   await user.click(screen.getByRole('button', { name: /^Filters/ }));
@@ -136,6 +136,41 @@ describe('<FiltersPanel />', () => {
     await closeWith(user);
     // It slides out before it unmounts.
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('makes the rest of the page inert while open, and returns focus on close', async () => {
+    const outside = document.body.appendChild(document.createElement('button'));
+    const { user, dialog } = await renderPanel();
+
+    expect(outside).toHaveAttribute('inert');
+    expect(dialog.closest('[inert]')).toBeNull();
+
+    await user.keyboard('{Escape}');
+
+    expect(outside).not.toHaveAttribute('inert');
+    expect(document.querySelector('[inert]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Filters' })).toHaveFocus();
+    outside.remove();
+  });
+
+  it('leaves elements that were already inert alone on close', async () => {
+    const alreadyInert = document.body.appendChild(document.createElement('div'));
+    alreadyInert.setAttribute('inert', '');
+    const { user } = await renderPanel();
+
+    await user.keyboard('{Escape}');
+
+    expect(alreadyInert).toHaveAttribute('inert');
+    alreadyInert.remove();
+  });
+
+  it('keeps Select menus usable while the page is inert', async () => {
+    const { user, dialog } = await renderPanel();
+
+    await user.click(within(dialog).getByLabelText('Exclude statuses'));
+    await user.click(screen.getByText('Todo (2)'));
+
+    expect(data.statusesToExclude).toEqual(['Todo']);
   });
 
   it('badges each tab, and the trigger, with its active filter count', async () => {
@@ -239,6 +274,35 @@ describe('<FiltersPanel />', () => {
 
     await user.click(within(dialog).getByRole('tab', { name: 'Epics' }));
     expect(within(dialog).queryByLabelText('Exclude statuses')).not.toBeInTheDocument();
+  });
+
+  describe('excludeStatusesOnly', () => {
+    it('shows only Exclude statuses, with no tabs, and badges it', async () => {
+      data.statusesToExclude = ['Done'];
+      data.levelFilters = { Story: { rows: [row()] } };
+      const { dialog } = await renderPanel({ excludeStatusesOnly: true });
+
+      expect(within(dialog).queryByRole('tablist')).not.toBeInTheDocument();
+      expect(within(dialog).getByLabelText('Exclude statuses')).toBeInTheDocument();
+      expect(within(dialog).queryByText('Field filters')).not.toBeInTheDocument();
+      expect(within(dialog).queryByText('Options')).not.toBeInTheDocument();
+      expect(within(dialog).queryByText('Due date range')).not.toBeInTheDocument();
+      // Filters this report can't show don't count.
+      expect(screen.getByRole('button', { name: 'Filters 1' })).toBeInTheDocument();
+    });
+
+    it('Clear all filters clears only the excluded statuses', async () => {
+      data.statusesToExclude = ['Done'];
+      data.levelFilters = { Story: { rows: [row()] } };
+      data.hideUnknownInitiatives = true;
+      const { user } = await renderPanel({ excludeStatusesOnly: true });
+
+      await user.click(screen.getByRole('button', { name: 'Clear all filters' }));
+
+      expect(data.statusesToExclude).toEqual([]);
+      expect(data.levelFilters).toEqual({ Story: { rows: [row()] } });
+      expect(data.hideUnknownInitiatives).toBe(true);
+    });
   });
 
   it('labels hide-without-dates per tab', async () => {

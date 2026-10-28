@@ -77,6 +77,8 @@ export interface FilterTabBodyViewProps {
   excludedStatuses?: string[];
   excludableStatusOptions?: Option[];
   onExcludedStatusesChange?: (statuses: string[]) => void;
+  /** Only the Exclude statuses section, for reports where it's the only filter that applies. */
+  excludeOnly?: boolean;
 }
 
 /**
@@ -95,6 +97,7 @@ export const FilterTabBodyView: FC<FilterTabBodyViewProps> = ({
   excludedStatuses = [],
   excludableStatusOptions = [],
   onExcludedStatusesChange,
+  excludeOnly = false,
 }) => {
   const hideWithoutDatesId = useId();
   const semverId = useId();
@@ -127,87 +130,95 @@ export const FilterTabBodyView: FC<FilterTabBodyViewProps> = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start gap-2 rounded bg-blue-101 px-3 py-2 text-sm text-neutral-800">
-        <span className="shrink-0 text-blue-400">
-          <InfoIcon label="" size="small" />
-        </span>
-        {isAll ? 'These filters apply to every issue type in the report.' : `These filters apply to ${tab.label}.`}
-      </div>
-
-      <Section
-        title="Field filters"
-        action={
-          <SectionClear label="Clear field filters" disabled={rows.length === 0} onClick={() => update({ rows: [] })} />
-        }
-      >
-        <FilterRowsBuilder
-          rows={rows}
-          onChange={(next) => update({ rows: next })}
-          fieldDefinitions={fieldDefinitions}
-        />
-      </Section>
-
-      <Section title="Options">
-        {isReleases && (
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-neutral-800" htmlFor={`${semverId}-releases`}>
-              Releases
-            </label>
-            <Select
-              inputId={`${semverId}-releases`}
-              isMulti
-              isSearchable
-              options={releaseOptions}
-              value={selectedReleases}
-              onChange={(options) => update({ releasesToShow: (options ?? []).map(({ value }) => value) })}
-              {...filterSelectProps}
-            />
+      {!excludeOnly && (
+        <>
+          <div className="flex items-start gap-2 rounded bg-blue-101 px-3 py-2 text-sm text-neutral-800">
+            <span className="shrink-0 text-blue-400">
+              <InfoIcon label="" size="small" />
+            </span>
+            {isAll ? 'These filters apply to every issue type in the report.' : `These filters apply to ${tab.label}.`}
           </div>
-        )}
-        <div className={toggleRowClassName}>
-          <Toggle
-            id={hideWithoutDatesId}
-            isChecked={!!filter.hideWithoutDates}
-            onChange={({ target }) => update({ hideWithoutDates: target.checked || undefined })}
-          />
-          <label className="text-sm text-neutral-800" htmlFor={hideWithoutDatesId}>
-            Hide {isAll ? 'items' : tab.label} without dates
-          </label>
-        </div>
-        {isReleases && (
-          <div className={toggleRowClassName}>
-            <Toggle
-              id={semverId}
-              isChecked={!!filter.showOnlySemverReleases}
-              onChange={({ target }) => update({ showOnlySemverReleases: target.checked || undefined })}
-            />
-            <label className="text-sm text-neutral-800" htmlFor={semverId}>
-              Limit to SemVer releases only
-            </label>
-          </div>
-        )}
-      </Section>
 
-      {showDueDateRange && (
-        <Section
-          title="Due date range"
-          action={
-            <SectionClear
-              label="Clear due date range"
-              disabled={!filter.dueDateStart && !filter.dueDateEnd}
-              onClick={() => update({ dueDateStart: undefined, dueDateEnd: undefined })}
+          <Section
+            title="Field filters"
+            action={
+              <SectionClear
+                label="Clear field filters"
+                disabled={rows.length === 0}
+                onClick={() => update({ rows: [] })}
+              />
+            }
+          >
+            <FilterRowsBuilder
+              rows={rows}
+              onChange={(next) => update({ rows: next })}
+              fieldDefinitions={fieldDefinitions}
             />
-          }
-        >
-          <DateRangeFilter
-            idPrefix={`filters-panel-${tab.key}-range`}
-            hideHeading
-            hideClear
-            start={filter.dueDateStart ?? ''}
-            end={filter.dueDateEnd ?? ''}
-            onChange={(start, end) => update({ dueDateStart: start || undefined, dueDateEnd: end || undefined })}
-          />
-        </Section>
+          </Section>
+
+          <Section title="Options">
+            {isReleases && (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-neutral-800" htmlFor={`${semverId}-releases`}>
+                  Releases
+                </label>
+                <Select
+                  inputId={`${semverId}-releases`}
+                  isMulti
+                  isSearchable
+                  options={releaseOptions}
+                  value={selectedReleases}
+                  onChange={(options) => update({ releasesToShow: (options ?? []).map(({ value }) => value) })}
+                  {...filterSelectProps}
+                />
+              </div>
+            )}
+            <div className={toggleRowClassName}>
+              <Toggle
+                id={hideWithoutDatesId}
+                isChecked={!!filter.hideWithoutDates}
+                onChange={({ target }) => update({ hideWithoutDates: target.checked || undefined })}
+              />
+              <label className="text-sm text-neutral-800" htmlFor={hideWithoutDatesId}>
+                Hide {isAll ? 'items' : tab.label} without dates
+              </label>
+            </div>
+            {isReleases && (
+              <div className={toggleRowClassName}>
+                <Toggle
+                  id={semverId}
+                  isChecked={!!filter.showOnlySemverReleases}
+                  onChange={({ target }) => update({ showOnlySemverReleases: target.checked || undefined })}
+                />
+                <label className="text-sm text-neutral-800" htmlFor={semverId}>
+                  Limit to SemVer releases only
+                </label>
+              </div>
+            )}
+          </Section>
+
+          {showDueDateRange && (
+            <Section
+              title="Due date range"
+              action={
+                <SectionClear
+                  label="Clear due date range"
+                  disabled={!filter.dueDateStart && !filter.dueDateEnd}
+                  onClick={() => update({ dueDateStart: undefined, dueDateEnd: undefined })}
+                />
+              }
+            >
+              <DateRangeFilter
+                idPrefix={`filters-panel-${tab.key}-range`}
+                hideHeading
+                hideClear
+                start={filter.dueDateStart ?? ''}
+                end={filter.dueDateEnd ?? ''}
+                onChange={(start, end) => update({ dueDateStart: start || undefined, dueDateEnd: end || undefined })}
+              />
+            </Section>
+          )}
+        </>
       )}
 
       {isAll && onExcludedStatusesChange && (
@@ -235,11 +246,12 @@ export const FilterTabBodyView: FC<FilterTabBodyViewProps> = ({
 
 interface FilterTabBodyProps {
   tab: FilterTab;
+  excludeOnly?: boolean;
   rolledupAndRolledBackIssuesAndReleasesObs?: CanObservable<MinimalLevelIssue[]>;
 }
 
 /** {@link FilterTabBodyView} reading and writing this tab's `levelFilters` entry. */
-const FilterTabBody: FC<FilterTabBodyProps> = ({ tab, rolledupAndRolledBackIssuesAndReleasesObs }) => {
+const FilterTabBody: FC<FilterTabBodyProps> = ({ tab, excludeOnly, rolledupAndRolledBackIssuesAndReleasesObs }) => {
   const { filter, setFilter } = useLevelFilter(tab.key);
   const [primaryReportType] = usePrimaryReportType();
   const [primaryIssueType] = useRouteData<string | undefined>('primaryIssueType');
@@ -264,6 +276,7 @@ const FilterTabBody: FC<FilterTabBodyProps> = ({ tab, rolledupAndRolledBackIssue
       excludedStatuses={statusesToExclude ?? []}
       excludableStatusOptions={useExcludableStatusOptions()}
       onExcludedStatusesChange={setStatusesToExclude}
+      excludeOnly={excludeOnly}
     />
   );
 };

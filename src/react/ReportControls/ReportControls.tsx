@@ -227,6 +227,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBac
       <>
         <SelectReportType />
         <SelectIssueType />
+        <div className="flex-grow" />
+        <div className="self-end pb-1">
+          <Filters excludeStatusesOnly />
+        </div>
       </>
     );
   }
@@ -288,6 +292,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBac
         <div className="self-end pb-1">
           <ViewSettings />
         </div>
+        {/* These reports read issues before rollup, where only Exclude statuses applies. */}
+        <div className="self-end pb-1">
+          <Filters excludeStatusesOnly />
+        </div>
       </>
     );
   }
@@ -306,6 +314,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBac
         </div>
         <div className="self-end pb-1">
           <ViewSettings />
+        </div>
+        {/* These reports read issues before rollup, where only Exclude statuses applies. */}
+        <div className="self-end pb-1">
+          <Filters excludeStatusesOnly />
         </div>
       </>
     );

@@ -23,6 +23,8 @@ Originally gated behind a `filtersPanel` Features flag; the flag and the dropdow
 
 Exclude statuses (`statusesToExclude`) moved from Sources to the All items tab. It still removes
 issues before rollup, unlike the panel's other filters, and Clear all filters resets it.
+Estimation Progress, Flow Metrics and Time in Status read issues before rollup, so their Filters
+button opens an exclude-only panel (no tabs); there, Clear all filters clears only the exclusions.
 
 ## Decisions (agreed)
 
