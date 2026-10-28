@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 
 import type { StatsUIData, SimulationIssueResult, MinimalSimulationIssueResult } from './scheduler/stats-analyzer';
 import type { GridUIData } from './AutoScheduler';
-import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days';
+import { businessDayOffsetToDate } from './scheduler/business-day-offset';
 import { gridLayer } from './z-layers';
 
 import { Popper } from '@atlaskit/popper';
@@ -16,8 +16,17 @@ type Column = {
 type Props = {
   issue: MinimalSimulationIssueResult | SimulationIssueResult;
   gridNumberOfDays: number;
+  /** Offset of the grid's first column; negative when the grid begins before the start date. */
+  gridStartDay?: number;
   startOrDue: 'start' | 'due';
   selectedStartDate: Date;
+  /**
+   * A day whose column, when it holds most runs, is drawn full height but left out of the scale, so
+   * the rest of the distribution stays readable.
+   */
+  capDay?: number;
+  /** Replaces "issue starts before or on" in the per-day hover text. */
+  subject?: string;
 };
 
 const monthDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -26,9 +35,17 @@ const monthDateFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 });
 
-export const IssueSimulationDays: React.FC<Props> = ({ issue, gridNumberOfDays, startOrDue, selectedStartDate }) => {
+export const IssueSimulationDays: React.FC<Props> = ({
+  issue,
+  gridNumberOfDays,
+  gridStartDay = 0,
+  startOrDue,
+  selectedStartDate,
+  capDay,
+  subject,
+}) => {
   const rawColumnData = startOrDue === 'start' ? issue.startDays : issue.dueDays;
-  const columns = createColumnData(rawColumnData, gridNumberOfDays, startOrDue);
+  const columns = createColumnData(rawColumnData, gridNumberOfDays, startOrDue, gridStartDay, capDay);
 
   return (
     <>
@@ -49,6 +66,7 @@ export const IssueSimulationDays: React.FC<Props> = ({ issue, gridNumberOfDays, 
             gridNumberOfDays={gridNumberOfDays}
             startOrDue={startOrDue}
             selectedStartDate={selectedStartDate}
+            subject={subject}
           />
         ))}
       </div>
@@ -61,12 +79,14 @@ function SimulationDay({
   column,
   startOrDue,
   selectedStartDate,
+  subject,
 }: {
   issue: MinimalSimulationIssueResult | SimulationIssueResult;
   column: ColumnData;
   gridNumberOfDays: number;
   startOrDue: 'start' | 'due';
   selectedStartDate: Date;
+  subject?: string;
 }) {
   const [dataElement, setDataElement] = useState<HTMLElement | null>(null);
 
@@ -74,10 +94,6 @@ function SimulationDay({
     <>
       <div
         onMouseEnter={(e) => {
-          console.log(
-            'TOOLTIP',
-            monthDateFormatter.format(getUTCEndDateFromStartDateAndBusinessDays(selectedStartDate, column.day)),
-          );
           setDataElement(e.currentTarget);
         }}
         onMouseLeave={() => setDataElement(null)}
@@ -97,14 +113,14 @@ function SimulationDay({
       {dataElement && (
         <Popper referenceElement={dataElement} placement="bottom">
           {({ ref, style }: { ref: React.Ref<HTMLDivElement>; style: React.CSSProperties }) => {
-            const date = getUTCEndDateFromStartDateAndBusinessDays(selectedStartDate, column.day);
+            const date = businessDayOffsetToDate(selectedStartDate, column.day);
             const values = issue[startOrDue === 'start' ? 'startDays' : 'dueDays'];
 
             const index = values.findIndex((value) => {
               return value > column.day;
             });
             const cumulativeProbability = (index === -1 ? values.length : index) / values.length;
-            const timingName = startOrDue === 'start' ? 'starts before or on' : 'ends after or on';
+            const timingName = subject ?? (startOrDue === 'start' ? 'starts before or on' : 'ends after or on');
             const pastTenseName = startOrDue === 'start' ? 'started' : 'ended';
             let probability = startOrDue === 'start' ? cumulativeProbability * 100 : (1 - cumulativeProbability) * 100;
             const color = startOrDue === 'start' ? 'bg-blue-500' : 'bg-green-500';
@@ -114,7 +130,7 @@ function SimulationDay({
                 <div className="p-2">
                   <div className={`${color} rounded text-white text-center p-1`}>
                     <h5>{toFixed(probability, 1)}% chance</h5>
-                    <p className="text-sm">issue {timingName}</p>
+                    <p className="text-sm">{subject ? timingName : `issue ${timingName}`}</p>
                     <p>{monthDateFormatter.format(date)}.</p>
                   </div>
                   <div className="bg-neutral-200 rounded text-white mt-2 p-1 text-center">
@@ -137,35 +153,54 @@ export interface ColumnData {
   percentValue: number;
   totalCount: number;
   day: number;
+  /** Drawn full height and left out of the scale; see `capDay`. */
+  capped?: boolean;
 }
 
 function toFixed(num: Number, precision: number) {
   return (+(Math.round(+(num + 'e' + precision)) + 'e' + -precision)).toFixed(precision);
 }
 
-export function createColumnData(values: number[], days: number, type: ColumnType): ColumnData[] {
+export function createColumnData(
+  values: number[],
+  days: number,
+  type: ColumnType,
+  firstDay = 0,
+  capDay?: number,
+): ColumnData[] {
   const columnData: ColumnData[] = [];
 
   for (let i = 0; i < days; i++) {
     columnData.push({
       percentValue: 0,
       totalCount: 0,
-      day: i,
+      day: firstDay + i,
     });
   }
 
   let largestCount = 0;
 
   for (const dueDay of values) {
-    const rounded = Math.round(dueDay);
-    if (columnData[rounded]) {
-      columnData[rounded].totalCount++;
-      largestCount = Math.max(largestCount, columnData[rounded].totalCount);
+    const column = columnData[Math.round(dueDay) - firstDay];
+    if (column) {
+      column.totalCount++;
+      largestCount = Math.max(largestCount, column.totalCount);
     }
   }
 
+  // A column holding most runs would flatten everything else; scale to the next-largest instead.
+  const cappedColumn = capDay === undefined ? undefined : columnData[capDay - firstDay];
+  if (cappedColumn && cappedColumn.totalCount * 2 > values.length) {
+    cappedColumn.capped = true;
+    largestCount = Math.max(0, ...columnData.filter((column) => !column.capped).map((column) => column.totalCount));
+  }
+
   for (const column of columnData) {
-    column.percentValue = largestCount > 0 ? (column.totalCount / largestCount) * 100 : 0;
+    column.percentValue = column.capped
+      ? 100
+      : largestCount > 0
+        ? Math.min(100, (column.totalCount / largestCount) * 100)
+        : 0;
   }
 
   return columnData;

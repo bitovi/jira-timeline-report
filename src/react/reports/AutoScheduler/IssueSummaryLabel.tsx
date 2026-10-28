@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 
 import React from 'react';
 
@@ -13,6 +13,8 @@ interface IssueSummaryLabelProps {
   /** Extra classes for the text itself. The two call sites differ only in their hover treatment. */
   textClassName?: string;
   gridRowStart: number;
+  /** Rendered before the summary, e.g. the freeze toggle. */
+  leading?: ReactNode;
 }
 
 /**
@@ -25,15 +27,17 @@ export const IssueSummaryLabel: FC<IssueSummaryLabelProps> = ({
   openInNewTab = false,
   textClassName,
   gridRowStart,
+  leading,
 }) => (
   <div
-    className="pl-5 self-center pr-2 max-w-sm sticky left-0 bg-white"
+    className={`self-center pr-2 max-w-sm sticky left-0 bg-white ${leading ? 'group flex items-center gap-1 pl-1' : 'pl-5'}`}
     style={{ zIndex: gridLayer.labelColumn, gridRow: gridRowStart, gridColumnStart: 'what' }}
   >
+    {leading}
     <TruncatedText
       text={summary}
       hasFocusableChild={!!url}
-      className={['text-gray-600', textClassName].filter(Boolean).join(' ')}
+      className={['text-gray-600', leading ? 'min-w-0' : '', textClassName].filter(Boolean).join(' ')}
     >
       {url ? (
         <a href={url} target={openInNewTab ? '_blank' : undefined}>

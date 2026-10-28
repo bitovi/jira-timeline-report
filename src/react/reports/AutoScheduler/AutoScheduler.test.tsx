@@ -32,6 +32,12 @@ vi.mock('../../hooks/useSelectedStartDate/useSelectedStartDate.js', () => ({
 vi.mock('../../hooks/useUncertaintyWeight/useUncertaintyWeight.js', () => ({
   useUncertaintyWeight: () => ['average'],
 }));
+// The frozen set is URL-backed in the app; here it's a plain set the bulk-action tests can inspect.
+let frozenIssues = new Set<string>();
+const setFrozenIssues = vi.fn((keys: Iterable<string>) => {
+  frozenIssues = new Set(keys);
+});
+vi.mock('./hooks/useFrozenIssues', () => ({ useFrozenIssues: () => [frozenIssues, setFrozenIssues] }));
 // Committing reaches storage through suspense queries; the row's wiring is what's under test here.
 vi.mock('./components/TeamCapacityControls/useTeamCommit', () => ({
   useTeamCommit: () => ({ commit: vi.fn(), isSaving: false }),
@@ -66,6 +72,8 @@ function issueResult(key: string, daysAdded: number) {
     startDateWithTimeEnoughToFinish: 0,
     dueDayBottom: 10,
     dueDayTop: 10,
+    ownDueDayTop: 10,
+    track: 0,
     adjustedDaysOfWork: 10,
   };
 }
@@ -82,6 +90,7 @@ const UI_DATA = {
     adjustedDaysOfWork: 0,
   },
   planSpread: null,
+  planStart: { startDay: 0, startDayLate: 0, beforeStartPercent: 0, startDays: [] },
   criticalPath: {
     meanLength: 53.8,
     iterations: 100,
@@ -129,6 +138,8 @@ const openRail = () => userEvent.click(screen.getByRole('button', { expanded: fa
 beforeEach(() => {
   setUIStates.length = 0;
   throwOnConstruct = null;
+  frozenIssues = new Set();
+  setFrozenIssues.mockClear();
 });
 
 describe('AutoScheduler contradictory Blocks links', () => {
@@ -315,5 +326,132 @@ describe('AutoScheduler team capacity row', () => {
 
     expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
     expect(document.querySelector('[data-team-row="ORDER"][data-dirty="true"]')).toBeInTheDocument();
+  });
+});
+
+describe('AutoScheduler freezing', () => {
+  const datedResult = (key: string, team: string, dated: boolean) => {
+    const result = issueResult(key, 0);
+    return {
+      ...result,
+      linkedIssue: {
+        ...result.linkedIssue,
+        team: { name: team, parallelWorkLimit: 1 },
+        linkedBlocks: [],
+        frozen: null,
+        derivedTiming: { ...result.linkedIssue.derivedTiming, ...(dated ? { due: new Date(2026, 1, 2) } : {}) },
+      },
+      isOverflowTrack: false,
+    };
+  };
+  const teamData = UI_DATA.teams[0].teamData;
+  const ORDER = [datedResult('ORDER-1', 'ORDER', true), datedResult('ORDER-2', 'ORDER', false)];
+  const STORE = [datedResult('STORE-1', 'STORE', true)];
+  const uiData = {
+    ...UI_DATA,
+    simulationIssueResults: [...ORDER, ...STORE],
+    teams: [
+      { team: 'ORDER', teamData, hierarchyLevel: 7, tracks: [ORDER] },
+      { team: 'STORE', teamData, hierarchyLevel: 7, tracks: [STORE] },
+    ],
+  } as unknown as StatsUIData;
+
+  function renderWithFrozen(initial: string[]) {
+    frozenIssues = new Set(initial);
+    const issues = ['ORDER-1', 'ORDER-2', 'STORE-1'].map((key) => ({ key })) as never;
+    render(withOverrides(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />));
+    act(() => {
+      setUIStates[setUIStates.length - 1](uiData);
+    });
+  }
+
+  it('freezes only the rows in that team that have dates', async () => {
+    renderWithFrozen(['STALE-9']);
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Freeze all with dates' })[0]);
+
+    expect([...frozenIssues].sort()).toEqual(['ORDER-1', 'STALE-9']);
+  });
+
+  it('offers Unfreeze all once every freezable row is frozen, and leaves other teams alone', async () => {
+    renderWithFrozen(['ORDER-1', 'STORE-1']);
+
+    const buttons = screen.getAllByRole('button', { name: 'Unfreeze all' });
+    expect(buttons).toHaveLength(2);
+    await userEvent.click(buttons[0]);
+
+    expect([...frozenIssues]).toEqual(['STORE-1']);
+  });
+
+  it('toggles a single row', async () => {
+    renderWithFrozen([]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Freeze Summary of ORDER-1' }));
+
+    expect([...frozenIssues]).toEqual(['ORDER-1']);
+    expect(screen.getByRole('button', { name: 'Freeze Summary of ORDER-2' })).toHaveAttribute('aria-disabled', 'true');
+  });
+});
+
+describe('AutoScheduler work before the start date', () => {
+  it('extends the grid left and marks the start date', () => {
+    const early = { ...issueResult('STORE-17', 0), startDayBottom: -6, startDateWithTimeEnoughToFinish: -6 };
+    const uiData = {
+      ...UI_DATA,
+      simulationIssueResults: [early],
+      planStart: { startDay: -6, startDayLate: 0, beforeStartPercent: 64, startDays: [-6] },
+      teams: [{ ...UI_DATA.teams[0], tracks: [[early]] }],
+    } as unknown as StatsUIData;
+    const issues = [{ key: 'STORE-17' }] as never;
+    render(withOverrides(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />));
+    act(() => {
+      setUIStates[setUIStates.length - 1](uiData);
+    });
+
+    expect(screen.getByTestId('start-date-line').style.gridColumn).toBe('8 / span 1');
+    // Six business days before Monday Jan 5, 2026.
+    expect(screen.queryByText(/Work must start by/)).not.toBeInTheDocument();
+    expect((document.getElementById('STORE-17') as HTMLElement).style.left).toBe('0%');
+  });
+
+  it('says nothing when fewer runs start early than the risk the slider accepts', () => {
+    const uiData = {
+      ...UI_DATA,
+      planStart: { startDay: 0, startDayLate: 0, beforeStartPercent: 23, startDays: [] },
+    } as unknown as StatsUIData;
+    const issues = EPICS.map((key) => ({ key })) as never;
+    render(withOverrides(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />));
+    act(() => {
+      setUIStates[setUIStates.length - 1](uiData);
+    });
+
+    expect(screen.queryByText(/Starts before the start date/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Work must start by/)).not.toBeInTheDocument();
+  });
+
+  it('reaches back to the earliest run start while the overall-timing histograms are open', async () => {
+    const startDays = [-10, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const uiData = {
+      ...UI_DATA,
+      endDaySimulationResult: { ...UI_DATA.endDaySimulationResult, startDays, dueDays: [91] },
+      planStart: { startDay: 0, startDayLate: 0, beforeStartPercent: 10, startDays },
+    } as unknown as StatsUIData;
+    const issues = EPICS.map((key) => ({ key })) as never;
+    render(withOverrides(<AutoScheduler primaryIssuesOrReleasesObs={issues} allIssuesOrReleasesObs={issues} />));
+    act(() => {
+      setUIStates[setUIStates.length - 1](uiData);
+    });
+    expect(screen.queryByTestId('start-date-line')).not.toBeInTheDocument();
+
+    await userEvent.click(document.getElementById('end-date')!);
+
+    expect(screen.getByTestId('start-date-line').style.gridColumn).toBe('12 / span 1');
+  });
+
+  it('draws no start-date line when nothing starts early', () => {
+    renderScheduler();
+
+    expect(screen.queryByTestId('start-date-line')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Work must start by/)).not.toBeInTheDocument();
   });
 });

@@ -444,6 +444,7 @@ describe('ChildReportConfig', () => {
       showPercentComplete: 'false',
       uncertaintyWeight: '80',
       selectedStartDate: '2026-06-01T00:00:00.000Z',
+      frozenIssues: 'ORDER-1,ORDER-2',
       groupBy: 'team',
       cardsMode: 'breakdown',
       cardsChildFilterRows: JSON.stringify([{ id: '1', field: 'jiraStatus', operator: 'is', value: ['QA'] }]),

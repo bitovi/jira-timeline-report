@@ -20,11 +20,31 @@ function getCenterLeft(el: HTMLElement) {
   return { x: rect.left, y: rect.top + rect.height / 2 };
 }
 
+const DEFAULT_STROKE = '#97a0af';
+/** A blocker that finishes after the frozen item it blocks is due to start. */
+export const LATE_STROKE = '#FF8B00';
+
+/** The stroke a path returns to when it stops being highlighted. */
+function baseStroke(pathEl: Element) {
+  return pathEl.getAttribute('data-base-stroke') || DEFAULT_STROKE;
+}
+
+/**
+ * True when `blocker` ends (at the current slider position) after the frozen item it blocks starts.
+ * Both sides are the bars as drawn, so the orange line always agrees with the picture.
+ */
+export function isLateForFrozen(
+  blocker: { dueDayTop: number },
+  blocked: { linkedIssue: { frozen?: unknown }; startDateWithTimeEnoughToFinish: number },
+) {
+  return Boolean(blocked.linkedIssue.frozen) && blocker.dueDayTop > blocked.startDateWithTimeEnoughToFinish + 1e-6;
+}
+
 // Helper to create SVG path element
 export function path(attributes: Record<string, string>): SVGPathElement {
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   path.setAttribute('fill', 'none');
-  path.setAttribute('stroke', '#97a0af');
+  path.setAttribute('stroke', DEFAULT_STROKE);
   for (const attr in attributes) {
     path.setAttributeNS(null, attr, attributes[attr]);
   }
@@ -42,11 +62,13 @@ function makeCurveBetweenPoints(
     } ${end.y - start.y}`;
 }
 
-// Draws SVG blockers between issues in the grid
-export function makeInsertBlockers(statsUIData: any | null) {
+// Draws SVG blockers between issues in the grid. Takes a getter so a memoised drawer still reads the
+// latest results — late-blocker colouring follows the uncertainty slider.
+export function makeInsertBlockers(getStatsUIData: () => any | null) {
   const insertTheBlockers = () => {
     // Draw blockers after DOM is rendered
     const svg = document.getElementById('dependencies')?.querySelector('svg') as SVGSVGElement | null;
+    const statsUIData = getStatsUIData();
     if (!svg || !statsUIData) return;
 
     // Remove previous blockers
@@ -73,8 +95,11 @@ export function makeInsertBlockers(statsUIData: any | null) {
         const blocked = elementsAndWorkMap[blocking.key];
         if (!blocked) continue;
         const blockedPoint = minusPoint(getCenterLeft(blocked.element), getTopLeft(svg));
+        const stroke = isLateForFrozen(work, blocked.work) ? LATE_STROKE : DEFAULT_STROKE;
         const blockingPath = path({
           d: makeCurveBetweenPoints(blockerPoint, blockedPoint),
+          stroke,
+          'data-base-stroke': stroke,
         });
         blockingPath.classList.add('path-blocker');
         blockingPath.id = work.linkedIssue.key + '-' + blocking.key;
@@ -84,7 +109,7 @@ export function makeInsertBlockers(statsUIData: any | null) {
   };
 
   return () => {
-    if (!statsUIData) return;
+    if (!getStatsUIData()) return;
     setTimeout(() => {
       insertTheBlockers();
     }, 100); // delay to enable the animation to complete
@@ -102,7 +127,7 @@ export function highlightUpstream(linkedIssue: any, highlight = true, visited = 
         document.getElementById(`${blocker.key}-${linkedIssue.key}`) ||
         document.querySelector(`.path-blocker[id='${blocker.key}-${linkedIssue.key}']`);
       if (pathEl) {
-        pathEl.setAttribute('stroke', highlight ? '#BF2600' : '#97a0af'); // red-500 for upstream
+        pathEl.setAttribute('stroke', highlight ? '#BF2600' : baseStroke(pathEl)); // red-500 for upstream
         pathEl.setAttribute('stroke-width', highlight ? '3' : '2');
       }
       // Recurse upstream
@@ -122,7 +147,7 @@ export function highlightDownstream(linkedIssue: any, highlight = true, visited 
         document.getElementById(`${linkedIssue.key}-${blocked.key}`) ||
         document.querySelector(`.path-blocker[id='${linkedIssue.key}-${blocked.key}']`);
       if (pathEl) {
-        pathEl.setAttribute('stroke', highlight ? '#0065FF' : '#97a0af'); // blue-300 for downstream
+        pathEl.setAttribute('stroke', highlight ? '#0065FF' : baseStroke(pathEl)); // blue-300 for downstream
         pathEl.setAttribute('stroke-width', highlight ? '3' : '2');
       }
       // Recurse downstream

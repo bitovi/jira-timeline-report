@@ -190,6 +190,7 @@ export const CHILD_PARAMS = {
     stringify: fromString,
     defaultRaw: 'average',
   },
+  frozenIssues: string(),
   selectedStartDate: {
     parse: (raw) => (raw ? new Date(raw) : nowUTC()),
     stringify: (value) => (value ? value.toISOString() : nowUTC().toISOString()),

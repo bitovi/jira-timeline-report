@@ -214,6 +214,12 @@ export class RouteData extends ObservableObject {
         return value.toString();
       },
     }),
+    // Auto-Scheduler items held at their Jira dates: sorted, de-duplicated, comma-separated keys.
+    // See spec/044-autoscheduler-frozen-items.
+    frozenIssues: saveJSONToUrlButAlsoLookAtReport_DataWrapper('frozenIssues', '', String, {
+      parse: (x) => '' + x,
+      stringify: (x) => '' + x,
+    }),
     selectedStartDate: saveJSONToUrlButAlsoLookAtReport_DataWrapper('selectedStartDate', nowUTC(), String, {
       parse: (dateString) => {
         if (!dateString) {

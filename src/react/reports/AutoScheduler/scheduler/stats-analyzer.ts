@@ -4,6 +4,9 @@ import { runMonteCarlo } from './monte-carlo';
 import type { BatchDatas, BatchIssueData } from './monte-carlo';
 
 import type { LinkedIssue } from './link-issues';
+import { linkIssues } from './link-issues';
+import { calibratePlan } from './plan';
+import type { Plan, PlannedItem } from './plan';
 
 import { computeLogSpread } from './log-spread';
 import { CriticalityAccumulator } from './criticality-accumulator';
@@ -42,26 +45,39 @@ export type MinimalSimulationIssue = {
 export class StatsAnalyzer {
   simulationIssues: SimulationData[];
   lastDays: number[];
+  /** Sorted. Per iteration, when the plan's first non-frozen item started; negative before day 0. */
+  firstStartDays: number[] = [];
   percentComplete: number;
   uncertaintyWeight: number | 'average';
   setUIState: (data: StatsUIData) => void;
   _teardown: () => void;
   criticalityAccumulator = new CriticalityAccumulator();
   criticalPathAccumulator = new CriticalPathAccumulator();
+  iterations = 0;
+  /** A separate copy for the plan pass, which must not touch the simulation's mutable work items. */
+  planIssues: LinkedIssue[];
+  planCache?: { plan: Plan; uncertaintyWeight: UncertaintyWeight; finish: number; start: number; final: boolean };
   constructor({
     issues,
     uncertaintyWeight,
     setUIState,
+    frozenKeys,
+    startDate,
   }: {
     issues: DerivedIssue[];
     uncertaintyWeight: number | 'average';
     setUIState: (data: StatsUIData) => void;
+    frozenKeys?: ReadonlySet<string>;
+    startDate?: Date;
   }) {
     const { linkedIssues, runBatchAndLoop, teardown } = runMonteCarlo(issues, {
       onBatch: this.onBatch.bind(this),
       onComplete: this.onComplete.bind(this),
+      frozenKeys,
+      startDate,
     });
     this._teardown = teardown;
+    this.planIssues = linkIssues(issues, false, { frozenKeys, startDate });
     // initialize data for each linkedIssue
     this.simulationIssues = linkedIssues.map((linkedIssue, i) => {
       return {
@@ -71,6 +87,9 @@ export class StatsAnalyzer {
         dueDays: [],
         daysOfWork: [],
         trackNumbers: [],
+        mustStartByDays: [],
+        lateForFrozenCount: 0,
+        beforeStartCount: 0,
       };
     });
     this.lastDays = [];
@@ -96,8 +115,13 @@ export class StatsAnalyzer {
       insertSortedArrayInPlace(simulationIssue.dueDays, batchForIssue.dueDays);
       insertSortedArrayInPlace(simulationIssue.startDays, batchForIssue.startDays);
       insertSortedArrayInPlace(simulationIssue.trackNumbers, batchForIssue.trackNumbers);
+      insertSortedArrayInPlace(simulationIssue.mustStartByDays, batchForIssue.mustStartByDays);
+      simulationIssue.lateForFrozenCount += batchForIssue.lateForFrozenCount;
+      simulationIssue.beforeStartCount += batchForIssue.beforeStartCount;
     }
+    this.iterations += batchData.lastDays.length;
     insertSortedArrayInPlace(this.lastDays, batchData.lastDays);
+    insertSortedArrayInPlace(this.firstStartDays, batchData.firstStartDays);
     this.criticalityAccumulator.merge(batchData.criticalityAccumulator);
     this.criticalPathAccumulator.merge(batchData.criticalPathAccumulator);
 
@@ -110,22 +134,36 @@ export class StatsAnalyzer {
   dataForUI() {
     const endDaySimulation: MinimalSimulationIssue = {
       linkedIssue: {
-        summary: 'Due Date',
+        summary: 'Overall timing',
         key: '[~DUE DATE~]',
       },
-      startDays: [0],
+      // Each run's earliest start, so the row's start histogram is the plan's start distribution.
+      startDays: this.firstStartDays.length ? this.firstStartDays : [0],
       dueDays: this.lastDays,
       daysOfWork: [0],
       trackNumbers: [0],
     };
 
+    const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
+    const planStart = planStartAtWeight(this.firstStartDays, this.uncertaintyWeight);
+    const plan = this.planFor(endDaySimulationResult.dueDayTop, planStart.startDay);
+
     // lets calculate the stats based on the uncertainty threshold
     // while we're at it, lets also get the last run data ...
     const simulationIssueResults = this.simulationIssues.map((simulationIssue) => {
-      const result = getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight);
       const key = simulationIssue.linkedIssue.key;
+      const result = applyPlan(
+        getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight),
+        plan.items.get(key),
+      );
       return {
         ...result,
+        mustStartByDay: mustStartByAtWeight(simulationIssue.mustStartByDays, this.uncertaintyWeight),
+        lateForFrozenPercent: this.iterations ? (simulationIssue.lateForFrozenCount / this.iterations) * 100 : 0,
+        beforeStartPercent: this.iterations ? (simulationIssue.beforeStartCount / this.iterations) * 100 : 0,
+        isOverflowTrack: result.track >= simulationIssue.linkedIssue.team.parallelWorkLimit,
+        // Filled in per team below; needs every frozen item on the team.
+        overlapInfo: undefined as OverlapInfo | undefined,
         criticalityIndex: this.criticalityAccumulator.criticalityIndex(key),
         meanWorkDays: this.criticalityAccumulator.meanWorkDays(key),
         meanQueuedDays: this.criticalityAccumulator.meanQueuedDays(key),
@@ -133,8 +171,6 @@ export class StatsAnalyzer {
         sequencingCriticalityIndex: this.criticalPathAccumulator.onPathIndex(key),
       };
     });
-
-    const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
 
     // Multiplicative spread of the whole-plan completion distribution, reported alongside the
     // per-issue confidences. `lastDays` is kept sorted ascending.
@@ -146,7 +182,7 @@ export class StatsAnalyzer {
       (simulationIssueResult) => simulationIssueResult.linkedIssue.team.name,
     );
     const teams = Object.entries(teamGroups).map(([teamName, simulationIssueResults]) => {
-      const tracks = groupByTrack(simulationIssueResults);
+      const tracks = groupByTrack(withOverlapInfo(simulationIssueResults));
       const firstIssue = last(tracks[0]);
       return {
         team: teamName,
@@ -173,6 +209,8 @@ export class StatsAnalyzer {
       // Unconditionally a mean, unlike `endDaySimulationResult`, so it stays comparable to
       // `criticalPath.meanLength` at every slider position.
       meanPlanFinishDays: average(this.lastDays),
+      planStart,
+      planQuantile: plan.quantile,
       planSpread,
       simulationIssueResults,
       teams,
@@ -181,6 +219,31 @@ export class StatsAnalyzer {
   }
   teardown() {
     this._teardown();
+  }
+  /**
+   * The plan calibrated to the simulation's finish (or start) at the slider. Recalibrated only when
+   * the slider changes, a target moves by half a day, or the simulation finishes — a full search is
+   * about a dozen scheduler runs, and `dataForUI` runs once per batch.
+   */
+  planFor(finish: number, start: number): Plan {
+    const final = this.percentComplete >= 100;
+    const cached = this.planCache;
+    if (
+      cached &&
+      cached.uncertaintyWeight === this.uncertaintyWeight &&
+      cached.final === final &&
+      Math.abs(cached.finish - finish) < 0.5 &&
+      Math.abs(cached.start - start) < 0.5
+    ) {
+      return cached.plan;
+    }
+    const plan = calibratePlan(this.planIssues, {
+      finish,
+      start,
+      fallbackQuantile: this.uncertaintyWeight === 'average' ? 50 : this.uncertaintyWeight,
+    });
+    this.planCache = { plan, uncertaintyWeight: this.uncertaintyWeight, finish, start, final };
+    return plan;
   }
 }
 type MinimalSimulationIssueFields = {
@@ -233,11 +296,133 @@ export function getUncertaintyThresholdData<T extends MinimalSimulationIssueFiel
   };
 }
 
-function groupByTrack<T extends { mostCommonTrack: number }>(items: T[]): T[][] {
+/**
+ * The deadline at slider `p`: the `(100 − p)`th percentile, the earliest start that is still safe in
+ * `p`% of runs. The mean at `average`. `undefined` when nothing frozen is downstream.
+ */
+export function mustStartByAtWeight(sortedDays: number[], uncertaintyWeight: UncertaintyWeight): number | undefined {
+  if (!sortedDays.length) return undefined;
+  if (uncertaintyWeight === 'average') return average(sortedDays);
+  const index = Math.min(Math.round((sortedDays.length * (100 - uncertaintyWeight)) / 100), sortedDays.length - 1);
+  return sortedDays[Math.max(index, 0)];
+}
+
+/**
+ * When work has to begin for the frozen dates to hold. `startDay` is the start that is early enough
+ * in the slider's share of runs — the median at `average`, not the mean: a minority of runs that
+ * start weeks early would otherwise drag an "average" date before the start date even when most
+ * runs never go there. `beforeStartPercent` reports that minority on its own.
+ */
+export function planStartAtWeight(sortedFirstStartDays: number[], uncertaintyWeight: UncertaintyWeight) {
+  const runs = sortedFirstStartDays.length;
+  let early = 0;
+  while (early < runs && sortedFirstStartDays[early] < 0) early++;
+  const weight = uncertaintyWeight === 'average' ? 50 : uncertaintyWeight;
+  return {
+    startDay: mustStartByAtWeight(sortedFirstStartDays, weight) ?? 0,
+    /**
+     * The other end of the start band — the mirror of the finish band's `dueDayBottom`/`dueDayTop`:
+     * the start that is early enough in only `100 − p`% of runs. Equal to `startDay` at 50%.
+     */
+    startDayLate: mustStartByAtWeight(sortedFirstStartDays, 100 - weight) ?? 0,
+    beforeStartPercent: runs ? (early / runs) * 100 : 0,
+    startDays: sortedFirstStartDays,
+  };
+}
+
+export type OverlapInfo = {
+  /** Items holding a track regardless of capacity that overlap at the busiest point of the window. */
+  overlapping: number;
+  tracks: number;
+  /** Business-day offsets where more such items overlap than there are tracks. */
+  startDay: number;
+  endDay: number;
+};
+
+type OverlapCandidate = {
+  linkedIssue: { frozen: unknown | null; team: { parallelWorkLimit: number } };
+  isOverflowTrack: boolean;
+  startDateWithTimeEnoughToFinish: number;
+  dueDayTop: number;
+};
+
+/**
+ * For each item on an overflow track, the window it is over capacity in, for its tooltip. Spans are
+ * the bars as drawn at the current slider position, so the tooltip agrees with what is on screen.
+ */
+export function withOverlapInfo<T extends OverlapCandidate>(
+  teamResults: T[],
+): Array<T & { overlapInfo?: OverlapInfo }> {
+  // Everything that holds a track regardless of capacity: frozen items, and deadline work moved onto
+  // an over-capacity track.
+  const frozen = teamResults.filter((result) => result.linkedIssue.frozen || result.isOverflowTrack);
+  return teamResults.map((result) => {
+    if (!result.isOverflowTrack) return result;
+    const tracks = result.linkedIssue.team.parallelWorkLimit;
+    const start = result.startDateWithTimeEnoughToFinish;
+    const end = result.dueDayTop;
+
+    // Sweep the frozen spans clipped to this item's span.
+    const events: Array<[number, number]> = [];
+    for (const other of frozen) {
+      const from = Math.max(other.startDateWithTimeEnoughToFinish, start);
+      const to = Math.min(other.dueDayTop, end);
+      if (from < to) events.push([from, 1], [to, -1]);
+    }
+    events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+
+    let active = 0;
+    let overlapping = 0;
+    let windowStart: number | null = null;
+    let windowEnd = end;
+    for (const [day, delta] of events) {
+      const wasOver = active > tracks;
+      active += delta;
+      overlapping = Math.max(overlapping, active);
+      if (!wasOver && active > tracks && windowStart === null) windowStart = day;
+      if (wasOver && active <= tracks) windowEnd = day;
+    }
+    return {
+      ...result,
+      overlapInfo: {
+        overlapping: Math.max(overlapping, tracks + 1),
+        tracks,
+        startDay: windowStart ?? start,
+        endDay: windowStart === null ? end : windowEnd,
+      },
+    };
+  });
+}
+
+/**
+ * Puts an item's bar where the plan pass placed it (spec/044 consistent-plan.md). The item's own
+ * percentile end, from the simulation, moves to `ownDueDayTop`: the end of its whisker and the
+ * "p% chance done by" date. Without a planned position (no plan yet) the bar keeps its own dates.
+ */
+export function applyPlan<
+  T extends {
+    dueDayTop: number;
+    adjustedDaysOfWork: number;
+    startDateWithTimeEnoughToFinish: number;
+    mostCommonTrack: number;
+  },
+>(result: T, planned: PlannedItem | undefined): T & { ownDueDayTop: number; track: number } {
+  if (!planned) return { ...result, ownDueDayTop: result.dueDayTop, track: result.mostCommonTrack };
+  return {
+    ...result,
+    ownDueDayTop: result.dueDayTop,
+    startDateWithTimeEnoughToFinish: planned.startDay,
+    dueDayTop: planned.dueDay,
+    adjustedDaysOfWork: planned.dueDay - planned.startDay,
+    track: planned.track,
+  };
+}
+
+function groupByTrack<T extends { track: number }>(items: T[]): T[][] {
   const trackMap = new Map<number, T[]>();
 
   for (const item of items) {
-    const track = item.mostCommonTrack;
+    const track = item.track;
     if (!trackMap.has(track)) {
       trackMap.set(track, []);
     }

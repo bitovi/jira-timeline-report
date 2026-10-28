@@ -17,6 +17,8 @@ export function runMonteCarlo(
     batches = 500,
     timeBetweenBatches = 1,
     probabilisticallySelectIssueTiming = true,
+    frozenKeys,
+    startDate,
   }: {
     onBatch(BatchResults: { batchData: BatchDatas; percentComplete: number }): void;
     onComplete(): void;
@@ -24,13 +26,17 @@ export function runMonteCarlo(
     batches?: number;
     timeBetweenBatches?: number;
     probabilisticallySelectIssueTiming?: boolean;
+    /** Issues held at their Jira dates. See spec/044-autoscheduler-frozen-items. */
+    frozenKeys?: ReadonlySet<string>;
+    /** Day 0 of the plan; frozen items' Jira dates are converted to offsets from it. */
+    startDate?: Date;
   },
 ) {
   // we are going to track the start/due date of each work item in the simulation
   // something else can deal with composing the stats
 
   // make the issues we will work with
-  const linkedIssues = linkIssues(issues, probabilisticallySelectIssueTiming);
+  const linkedIssues = linkIssues(issues, probabilisticallySelectIssueTiming, { frozenKeys, startDate });
 
   let batchesRemaining = batches;
   const totalSimulations = batchSize * batches;
@@ -71,11 +77,19 @@ export type BatchIssueData = {
   dueDays: number[];
   daysOfWork: number[];
   trackNumbers: number[];
+  /** Only iterations where the item had a finite deadline from a frozen item downstream. */
+  mustStartByDays: number[];
+  /** Iterations where it finished after a frozen item it directly blocks was due to start. */
+  lateForFrozenCount: number;
+  /** Iterations where it started before the start date (day 0). */
+  beforeStartCount: number;
 };
 
 export type BatchDatas = {
   batchIssueData: BatchIssueData[];
   lastDays: number[];
+  /** Per iteration, the earliest start of any non-frozen item, capped at 0 — when work has to begin. */
+  firstStartDays: number[];
   criticalityAccumulator: CriticalityAccumulator;
   criticalPathAccumulator: CriticalPathAccumulator;
 };
@@ -87,7 +101,12 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     dueDays: [],
     daysOfWork: [],
     trackNumbers: [],
+    mustStartByDays: [],
+    lateForFrozenCount: 0,
+    beforeStartCount: 0,
   }));
+  const firstStartDays: number[] = [];
+  const anyFrozen = linkedIssues.some((issue) => issue.frozen);
 
   const lastDays: number[] = [];
   const criticalityAccumulator = new CriticalityAccumulator();
@@ -123,6 +142,7 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
 
     let lastDay = 0;
     let lastIssue: LinkedIssue | null = null;
+    let firstStartDay = Number.POSITIVE_INFINITY;
 
     for (let li = 0; li < linkedIssues.length; li++) {
       const linkedIssue = linkedIssues[li];
@@ -136,6 +156,22 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
       items[li].dueDays.push(dueDay);
       items[li].trackNumbers.push(workItem.track as number);
 
+      if (anyFrozen) {
+        // For backward work the bar's own start already is the must-start date.
+        if (workItem.mustStartBy !== undefined && linkedIssue.scheduleDirection === 'forward') {
+          items[li].mustStartByDays.push(workItem.mustStartBy);
+        }
+        if (isLateForFrozen(linkedIssue)) {
+          items[li].lateForFrozenCount++;
+        }
+        if (startDay < 0) {
+          items[li].beforeStartCount++;
+        }
+        if (!linkedIssue.frozen && startDay < firstStartDay) {
+          firstStartDay = startDay;
+        }
+      }
+
       if (dueDay > lastDay) {
         lastDay = dueDay;
         lastIssue = linkedIssue;
@@ -143,6 +179,9 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     }
 
     lastDays[i] = lastDay;
+    // Capped at day 0: a run whose first work starts after the start date needed no early start,
+    // and that is all this distribution answers. Its exact late start would only scatter noise.
+    firstStartDays[i] = Math.min(0, firstStartDay);
 
     if (lastIssue) {
       const hops = traceDrivingChain(lastIssue as unknown as TraceLinkedIssue);
@@ -150,5 +189,22 @@ function runBatch(linkedIssues: LinkedIssue[], { batchSize }: { batchSize: numbe
     }
   }
 
-  return { batchIssueData: items, lastDays, criticalityAccumulator, criticalPathAccumulator };
+  return { batchIssueData: items, lastDays, firstStartDays, criticalityAccumulator, criticalPathAccumulator };
+}
+
+/** The item's end, unclipped for frozen items, so one that ends before the plan still compares correctly. */
+function endDay(issue: LinkedIssue): number {
+  const work = issue.mutableWorkItem;
+  return issue.frozen ? (work.frozenDueDay as number) : (work.startDay as number) + work.daysOfWork;
+}
+
+/** True when this item ends after a frozen item it directly blocks is due to start. */
+export function isLateForFrozen(issue: LinkedIssue): boolean {
+  let end: number | null = null;
+  for (const blocked of issue.linkedBlocks) {
+    if (!blocked.frozen) continue;
+    end ??= endDay(issue);
+    if (end > (blocked.mutableWorkItem.frozenStartDay as number)) return true;
+  }
+  return false;
 }

@@ -18,7 +18,8 @@ import Link from '@atlaskit/link';
 import { IssueSimulationRow } from './IssueSimulationRow';
 import UpdateModal from './components/UpdateModal/UpdateModal';
 import { StatsAnalyzer } from './scheduler/stats-analyzer';
-import { BlocksCycleError } from './scheduler/link-issues';
+import { BlocksCycleError, canFreeze } from './scheduler/link-issues';
+import { useFrozenIssues } from './hooks/useFrozenIssues';
 import { CanObservable } from '../../hooks/useCanObservable/useCanObservable.js';
 import { useCanObservable } from '../../hooks/useCanObservable';
 import { useUncertaintyWeight } from '../../hooks/useUncertaintyWeight/useUncertaintyWeight.js';
@@ -28,6 +29,7 @@ import { queryClient } from '../../services/query/queryClient';
 import { bestFitRanges } from '../../../utils/date/best-fit-ranges';
 import routeData from '../../../canjs/routing/route-data/index';
 import { getUTCEndDateFromStartDateAndBusinessDays } from '../../../utils/date/business-days.js';
+import { businessDayOffsetToDate } from './scheduler/business-day-offset';
 import {
   buildCriticalPathEpics,
   CriticalPathEpicsTable,
@@ -160,10 +162,42 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   const [selectedStartDate] = useSelectedStartDate();
   const [uncertaintyWeight] = useUncertaintyWeight();
+  const [frozenIssues, setFrozenIssues] = useFrozenIssues();
+
+  // The frozen keys that actually apply to this data. Keys for issues that aren't loaded (or have no
+  // Jira dates) stay in the URL but don't restart the simulation.
+  const frozenSignature = useMemo(
+    () =>
+      primary
+        .filter((issue) => frozenIssues.has(issue.key) && canFreeze(issue))
+        .map((issue) => issue.key)
+        .sort()
+        .join(','),
+    [primary, frozenIssues],
+  );
+  // Frozen items' day offsets are relative to the start date, so it only restarts the run while
+  // something is frozen; otherwise it only changes how results are drawn.
+  const frozenStartTime = frozenSignature ? selectedStartDate.getTime() : null;
+
+  const toggleFrozen = useCallback(
+    (keys: string[], frozen: boolean) => {
+      const next = new Set(frozenIssues);
+      for (const key of keys) {
+        if (frozen) next.add(key);
+        else next.delete(key);
+      }
+      setFrozenIssues(next);
+    },
+    [frozenIssues, setFrozenIssues],
+  );
+  const onToggleFreeze = useCallback((key: string, frozen: boolean) => toggleFrozen([key], frozen), [toggleFrozen]);
 
   // `workItemsToHighlight` is derived below (from `selection` and `routes`), not stored, so it can
   // never go stale relative to the live simulation data.
   const [selection, setSelection] = useState<CriticalPathSelection>(null);
+  // While the overall-timing histograms are open the grid reaches back to the earliest run's start,
+  // so the early-start tail is drawn rather than cut off at the left edge.
+  const [overallTimingOpen, setOverallTimingOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
 
   // stuff to get the monte-carlo data going
@@ -181,6 +215,8 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
       statsAnalyzer = new StatsAnalyzer({
         issues: primary,
         uncertaintyWeight: uncertaintyWeight,
+        frozenKeys: new Set(frozenSignature ? frozenSignature.split(',') : []),
+        startDate: selectedStartDate,
         setUIState: (newUIData) => {
           setUIData(newUIData);
         },
@@ -199,7 +235,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
     return () => {
       statsAnalyzer.teardown();
     };
-  }, [primary]);
+  }, [primary, frozenSignature, frozenStartTime]);
 
   useEffect(() => {
     const statsAnalyzer = statsAnalyzerRef.current;
@@ -209,7 +245,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
 
   // stuff to draw the blockers right
   const svgRef = useRef<SVGSVGElement>(null);
-  const updateBlockers = useCallback(makeInsertBlockers(uiData), [uiData?.percentComplete === 100]);
+  const uiDataRef = useRef(uiData);
+  uiDataRef.current = uiData;
+  const updateBlockers = useCallback(
+    makeInsertBlockers(() => uiDataRef.current),
+    [uiData?.percentComplete === 100],
+  );
   useEffect(updateBlockers, [uiData?.percentComplete === 100, uiData]);
 
   useEffect(() => {
@@ -284,7 +325,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
   }
 
   // converts the stats into data for a grid
-  const gridData = gridUIData(uiData, selectedStartDate, workItemsToHighlight);
+  const gridData = gridUIData(uiData, selectedStartDate, workItemsToHighlight, overallTimingOpen);
 
   if (!gridData) {
     return <EmptyTimeRangeMessage />;
@@ -408,6 +449,33 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
               );
             })}
 
+            {/* Only when work is drawn before the start date: a dashed line marks where the plan was
+                meant to begin, so the bars left of it read as "has to start earlier than planned". */}
+            {/* Two pieces so the line can sit above the date labels but below the pinned label
+                column, which the body rows scroll under. */}
+            {gridData.gridStartDay < 0 && (
+              <>
+                <div
+                  title="Start date"
+                  className="pointer-events-none sticky top-0 border-l-2 border-dashed border-orange-400"
+                  style={{
+                    zIndex: gridLayer.dateHeader + 1,
+                    gridRow: '1 / span 1',
+                    gridColumn: `${2 - gridData.gridStartDay} / span 1`,
+                  }}
+                />
+                <div
+                  data-testid="start-date-line"
+                  className="pointer-events-none border-l-2 border-dashed border-orange-400"
+                  style={{
+                    zIndex: gridLayer.startDateLine,
+                    gridRow: `2 / span ${gridData.rowsCount - 1}`,
+                    gridColumn: `${2 - gridData.gridStartDay} / span 1`,
+                  }}
+                />
+              </>
+            )}
+
             <div
               className="bg-neutral-20 pt-2 pb-1 "
               style={{
@@ -450,6 +518,9 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
               gridData={gridData}
               selectedStartDate={selectedStartDate}
               uncertaintyWeight={uncertaintyWeight}
+              planStart={uiData.planStart}
+              detailsOpen={overallTimingOpen}
+              onDetailsOpenChange={setOverallTimingOpen}
             />
 
             {/* Team Tracks */}
@@ -458,7 +529,12 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                 {/* Only show team if it has visible tracks/issues */}
                 {team.gridifiedTracks.length > 0 && (
                   <>
-                    <TeamHeaderRow team={team} gridNumberOfDays={gridData.gridNumberOfDays} />
+                    <TeamHeaderRow
+                      team={team}
+                      gridNumberOfDays={gridData.gridNumberOfDays}
+                      frozenIssues={frozenIssues}
+                      onToggleFrozen={toggleFrozen}
+                    />
 
                     {team.gridifiedTracks.map(
                       (gridifiedTrack, trackIdx) =>
@@ -472,7 +548,10 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                                 gridColumnStart: 'what',
                               }}
                             >
-                              <div className="text-xs grow">Track {trackIdx + 1}</div>
+                              <div className="text-xs grow">
+                                Track {trackIdx + 1}
+                                {gridifiedTrack.issues[0].isOverflowTrack ? ' (over capacity)' : ''}
+                              </div>
                             </div>
 
                             {gridifiedTrack.issues.map((issue, issueIdx) => (
@@ -483,6 +562,8 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                                 gridData={gridData}
                                 selectedStartDate={selectedStartDate}
                                 uncertaintyWeight={uncertaintyWeight}
+                                isFrozen={frozenIssues.has(issue.linkedIssue.key)}
+                                onToggleFreeze={onToggleFreeze}
                               />
                             ))}
                           </React.Fragment>
@@ -538,8 +619,20 @@ export default function AutoSchedulerWrapper(props: AutoSchedulerProps) {
  * A team's header row. Split out because the dirty treatment needs `useTeamIsDirty`, and a hook
  * cannot be called inside the `gridifiedTeams.map` in `AutoScheduler`'s body.
  */
-const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> = ({ team, gridNumberOfDays }) => {
+const TeamHeaderRow: FC<{
+  team: GridifiedStatsTeam;
+  gridNumberOfDays: number;
+  frozenIssues: ReadonlySet<string>;
+  onToggleFrozen: (keys: string[], frozen: boolean) => void;
+}> = ({ team, gridNumberOfDays, frozenIssues, onToggleFrozen }) => {
   const isDirty = useTeamIsDirty(team.team);
+
+  // Only this team's visible rows, so "Unfreeze all" never touches another team or a filtered row.
+  const freezableKeys = team.gridifiedTracks
+    .flatMap((track) => track.issues)
+    .filter((issue) => canFreeze(issue.linkedIssue))
+    .map((issue) => issue.linkedIssue.key);
+  const allFrozen = freezableKeys.length > 0 && freezableKeys.every((key) => frozenIssues.has(key));
 
   return (
     <>
@@ -585,10 +678,21 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
             />
           </Suspense>
         </ErrorBoundary>
-        <TeamCapacityOutputs
-          pointsPerDay={team.teamData.totalPointsPerDay}
-          totalWorkingDays={totalWorkingDays(team) / team.teamData.parallelWorkLimit}
-        />
+        <div className="flex items-center gap-x-4">
+          {freezableKeys.length > 0 && (
+            <button
+              type="button"
+              className="text-xs text-neutral-600 underline-offset-2 hover:underline"
+              onClick={() => onToggleFrozen(freezableKeys, !allFrozen)}
+            >
+              {allFrozen ? 'Unfreeze all' : 'Freeze all with dates'}
+            </button>
+          )}
+          <TeamCapacityOutputs
+            pointsPerDay={team.teamData.totalPointsPerDay}
+            totalWorkingDays={totalWorkingDays(team) / team.teamData.parallelWorkLimit}
+          />
+        </div>
       </div>
     </>
   );
@@ -672,10 +776,47 @@ const SimulationData: React.FC<{
   );
 };
 
-function gridUIData(statsUIData: StatsUIData, startDate: Date, workItemsToHighlight?: Set<string> | null) {
-  const gridNumberOfDays = Math.ceil(statsUIData.endDaySimulationResult.dueDayTop) + 1;
-  const endDate = getUTCEndDateFromStartDateAndBusinessDays(startDate, gridNumberOfDays + 1);
-  const timeRanges = bestFitRanges(startDate, endDate, 12) as Array<{
+/**
+ * The grid's first day, as a business-day offset from the start date: 0, or earlier when a bar
+ * starts before the start date (work scheduled backward from a frozen item, or a frozen item's own
+ * dates). Jira-date shadows don't count; they're clipped.
+ */
+export function gridStartDayFor(statsUIData: StatsUIData, includeStartTail = false): number {
+  // The overall-timing row's start band too, so it is never clipped — and, while its histograms are
+  // open, the 1st-percentile start. Not the very earliest: a few runs whose estimates blow up can
+  // start a year early and would squash the whole plan into a sliver. The histogram counts the
+  // runs cut off at its left edge.
+  let earliest = Math.min(0, statsUIData.planStart?.startDay ?? 0);
+  const startDays = statsUIData.planStart?.startDays ?? [];
+  if (includeStartTail && startDays.length) {
+    earliest = Math.min(earliest, startDays[Math.floor(startDays.length * 0.01)]);
+  }
+  for (const result of statsUIData.simulationIssueResults) {
+    earliest = Math.min(earliest, result.startDateWithTimeEnoughToFinish, result.startDayBottom);
+  }
+  return Math.floor(earliest);
+}
+
+function gridUIData(
+  statsUIData: StatsUIData,
+  startDate: Date,
+  workItemsToHighlight?: Set<string> | null,
+  includeStartTail = false,
+) {
+  const gridStartDay = gridStartDayFor(statsUIData, includeStartTail);
+  // Bars come from the plan pass, which can end a little past the simulation's finish when it can't
+  // be calibrated exactly; whiskers never do, but are included for safety.
+  const lastDay =
+    Math.ceil(
+      statsUIData.simulationIssueResults.reduce(
+        (latest, result) => Math.max(latest, result.dueDayTop, result.ownDueDayTop),
+        statsUIData.endDaySimulationResult.dueDayTop,
+      ),
+    ) + 1;
+  const endDate = getUTCEndDateFromStartDateAndBusinessDays(startDate, lastDay + 1);
+  // Unchanged when nothing starts early, so a plan with no frozen items lays out exactly as before.
+  const gridStartDate = gridStartDay < 0 ? businessDayOffsetToDate(startDate, gridStartDay) : startDate;
+  const timeRanges = bestFitRanges(gridStartDate, endDate, 12) as Array<{
     startDay: number;
     days: number;
     prettyStart: String;
@@ -698,6 +839,8 @@ function gridUIData(statsUIData: StatsUIData, startDate: Date, workItemsToHighli
   };
   return {
     gridNumberOfDays: last.startDay + last.days,
+    /** Business-day offset of the grid's first column; day `d` is `d - gridStartDay` columns in. */
+    gridStartDay,
     timeRanges,
     gridifiedTeams,
     rowsCount: lastTeam.style.gridRowStart + lastTeam.gridRowSpan,

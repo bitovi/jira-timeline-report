@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTransition } from '@atlaskit/modal-dialog';
 import DynamicTable from '@atlaskit/dynamic-table';
 import { Checkbox } from '@atlaskit/checkbox';
@@ -19,6 +19,7 @@ import { useSelectedIssueType } from '../../../../services/issues';
 import { useJira } from '../../../../services/jira';
 import { useRouteData } from '../../../../hooks/useRouteData';
 import routeData from '../../../../../canjs/routing/route-data';
+import { reloadIssues } from '../../../../../canjs/controls/timeline-configuration/state-helpers';
 import { Jira } from '../../../../../jira-oidc-helpers';
 import type { FieldsData } from '../../../../../jira-oidc-helpers/types';
 
@@ -34,6 +35,9 @@ const jiraDataFormatter = new Intl.DateTimeFormat('en-CA', {
 });
 
 class AutoSchedulerSyncError extends Error {
+  /** Issues that did save before the others failed, so the caller knows Jira has changed. */
+  savedCount = 0;
+
   constructor(
     public screenErrorMessages: { url: string; summary: string; missingKeys: string[] }[],
     public errors: string[],
@@ -69,13 +73,16 @@ const updateFromSimulation = async (
       field: 'dueDateField',
     });
 
-    return {
-      ...workItem,
-      updates: {
-        [startDateField]: jiraDataFormatter.format(workItem.dates.startDateWithTimeEnoughToFinish),
-        [dueDateField]: jiraDataFormatter.format(workItem.dates.dueDateTop),
-      },
-    };
+    // A frozen item's held date is already in Jira; only the date the scheduler filled in is written.
+    const updates: Record<string, string> = {};
+    if (workItem.frozen?.startDay == null) {
+      updates[startDateField] = jiraDataFormatter.format(workItem.dates.startDateWithTimeEnoughToFinish);
+    }
+    if (workItem.frozen?.dueDay == null) {
+      updates[dueDateField] = jiraDataFormatter.format(workItem.dates.dueDateTop);
+    }
+
+    return { ...workItem, updates };
   });
 
   const results = await Promise.allSettled(
@@ -98,6 +105,7 @@ const updateFromSimulation = async (
 
   if (errors.length) {
     const error = new AutoSchedulerSyncError([], []);
+    error.savedCount = results.length - errors.length;
 
     for (const erroredOutput of errors) {
       const { reason } = erroredOutput.result;
@@ -136,6 +144,11 @@ function formatDateOrNull(date: Date | null) {
   return date ? jiraDataFormatter.format(date) : null;
 }
 
+/** Nothing to write back: both of its dates are held at what Jira already has. */
+function isFrozenWithBothDates(linkedIssue: LinkedIssue) {
+  return linkedIssue.frozen?.startDay != null && linkedIssue.frozen?.dueDay != null;
+}
+
 const useUpdateIssuesWithSimulationData = () => {
   const jira = useJira();
   const { showFlag } = useFlags();
@@ -169,7 +182,16 @@ interface UpdateModalProps {
   startDate: Date;
 }
 
-const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
+const UpdateModal: FC<UpdateModalProps> = ({ onClose: closeModal, issues, startDate }) => {
+  // The report shows Jira's dates (the shadows, frozen items) from the issues it loaded, so after a
+  // save they must be fetched again. Not until the modal closes: the reload unmounts the report, and
+  // with it a partial-failure message the user hasn't read yet.
+  const jiraChanged = useRef(false);
+  const onClose = () => {
+    closeModal();
+    if (jiraChanged.current) reloadIssues();
+  };
+
   const { selectedIssueType } = useSelectedIssueType();
   const [selectedIssueMap, setSelectedIssueMap] = useState<Record<string, boolean>>({});
 
@@ -179,8 +201,12 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
 
   const { saveIssues, isPending, error } = useUpdateIssuesWithSimulationData();
 
+  const updatableResults = issues.simulationIssueResults.filter(
+    ({ linkedIssue }) => !isFrozenWithBothDates(linkedIssue),
+  );
+
   const save = () => {
-    const issuesToSave = issues.simulationIssueResults
+    const issuesToSave = updatableResults
       .filter(({ linkedIssue }) => selectedIssueMap[linkedIssue.key])
       .map((issue) => {
         return {
@@ -189,11 +215,19 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         };
       });
 
-    saveIssues(issuesToSave, { onSuccess: () => onClose() });
+    saveIssues(issuesToSave, {
+      onSuccess: () => {
+        jiraChanged.current = true;
+        onClose();
+      },
+      onError: (error) => {
+        if (error.savedCount > 0) jiraChanged.current = true;
+      },
+    });
   };
 
   const selectAll = (newValue: boolean) => {
-    const newMapping = issues.simulationIssueResults.reduce(
+    const newMapping = updatableResults.reduce(
       (map, { linkedIssue }) => ({ ...map, [linkedIssue.key]: newValue }),
       {} as typeof selectedIssueMap,
     );
@@ -206,9 +240,9 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
   };
 
   const selectedCount = Object.values(selectedIssueMap).filter(Boolean).length;
-  const allSelected = selectedCount === issues.simulationIssueResults.length;
+  const allSelected = selectedCount === updatableResults.length;
 
-  const rows = issues.simulationIssueResults.map((issue) => {
+  const rows = updatableResults.map((issue) => {
     const dates = getDatesFromSimulationIssue(issue, startDate);
     const { key } = issue.linkedIssue;
 
@@ -237,7 +271,10 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         },
         {
           key: `${key}-new-start-date`,
-          content: formatDateOrNull(dates.startDateWithTimeEnoughToFinish),
+          content:
+            issue.linkedIssue.frozen?.startDay != null
+              ? formatDateOrNull(issue.linkedIssue.derivedTiming.start ?? null)
+              : formatDateOrNull(dates.startDateWithTimeEnoughToFinish),
         },
         {
           key: `${key}-current-due-date`,
@@ -245,7 +282,10 @@ const UpdateModal: FC<UpdateModalProps> = ({ onClose, issues, startDate }) => {
         },
         {
           key: `${key}-new-due-date`,
-          content: formatDateOrNull(dates.dueDateTop),
+          content:
+            issue.linkedIssue.frozen?.dueDay != null
+              ? formatDateOrNull(issue.linkedIssue.derivedTiming.due ?? null)
+              : formatDateOrNull(dates.dueDateTop),
         },
       ],
     };

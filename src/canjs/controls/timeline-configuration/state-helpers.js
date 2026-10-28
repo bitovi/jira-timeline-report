@@ -4,6 +4,21 @@ import { normalizeIssue } from '../../../jira/normalized/normalize.ts';
 
 import { getServerInfo, getRawIssues } from '../../../stateful-data/jira-data-requests.js';
 import { getVelocityDefault, getParallelWorkLimitDefault } from '../../../jira/normalized/defaults.ts';
+import { __clearRawIssuesCache } from '../../../stateful-data/raw-issues-cache.ts';
+
+// Read by every `rawIssuesRequestData`, so bumping it re-runs each one even though none of its
+// inputs changed.
+const issuesReloadCount = value.with(0);
+
+/**
+ * Fetches every report's issues from Jira again. For edits the app itself makes in Jira (e.g. the
+ * Auto-Scheduler's Update Dates), which change nothing the request depends on. The shared cache is
+ * dropped first, or the re-run request would be handed the result it already has.
+ */
+export function reloadIssues() {
+  __clearRawIssuesCache();
+  issuesReloadCount.value++;
+}
 
 const typesToHierarchyLevel = { Epic: 1, Story: 0, Initiative: 2 };
 export function csvToRawIssues(csvIssues) {
@@ -32,6 +47,7 @@ export function rawIssuesRequestData(
   const progressData = value.with(null);
 
   const promise = value.returnedBy(function rawIssuesPromise() {
+    issuesReloadCount.value;
     progressData.value = null;
     return getRawIssues(
       {

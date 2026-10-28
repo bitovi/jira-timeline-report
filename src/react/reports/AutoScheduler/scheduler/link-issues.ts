@@ -3,6 +3,7 @@ import type { DerivedIssue } from '../../../../jira/derived/derive';
 import { partition, indexByKey, groupBy } from '../../../../utils/array/array-helpers';
 import { getEstimationData } from '../../../../jira/derived/work-timing/work-timing';
 import { getBlocksKeys } from '../../../../jira/linked-issue/blocks-links';
+import { jiraDayOffsets } from './business-day-offset';
 
 type Mutable<T> = {
   -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer U>
@@ -21,13 +22,48 @@ export type LinkedIssue = DerivedIssue & {
   readonly linkedBlocks: LinkedIssue[];
   readonly linkedBlockedBy: LinkedIssue[];
   readonly blocksWorkDepth: number;
+  /**
+   * Set when the user froze this issue at its Jira dates. Business-day offsets from the plan start
+   * (`selectedStartDate`), possibly negative; `dueDay` is exclusive. At least one is non-null.
+   */
+  readonly frozen: FrozenOffsets | null;
+  /**
+   * How the scheduler places this item (spec/044 backward-scheduling.md): `frozen` at its Jira
+   * dates, `backward` as late as possible before the frozen items downstream of it, otherwise
+   * `forward` from the start date.
+   */
+  readonly scheduleDirection: ScheduleDirection;
+  /** Own days plus the longest chain of blockers upstream — the mirror of `blocksWorkDepth`. */
+  readonly blockedByWorkDepth: number;
   readonly mutableWorkItem: {
     daysOfWork: number;
     startDay: number | null;
     artificiallyDelayed?: boolean;
     track?: number;
+    /** Frozen only: this iteration's start/due, which can be before day 0. */
+    frozenStartDay?: number;
+    frozenDueDay?: number;
+    /** The day this work must finish by so every frozen item downstream of it can start on time. */
+    latestFinish?: number;
+    mustStartBy?: number;
   };
 };
+
+export type FrozenOffsets = { startDay: number | null; dueDay: number | null };
+
+export type ScheduleDirection = 'frozen' | 'backward' | 'forward';
+
+export type LinkIssuesOptions = {
+  /** Keys the user froze. Keys not in `issues`, or whose issue has no Jira dates, are ignored. */
+  frozenKeys?: ReadonlySet<string>;
+  /** The plan's day 0. Only read when something is frozen. */
+  startDate?: Date;
+};
+
+/** An issue can be frozen when Jira gives it a start or a due date (fields, falling back to sprints). */
+export function canFreeze(issue: Pick<DerivedIssue, 'derivedTiming'>): boolean {
+  return Boolean(issue.derivedTiming?.start || issue.derivedTiming?.due);
+}
 type LinkedIssueBuilderIndex = Record<string, LinkedIssueBuilder>;
 type LinkedIssueIndex = Record<string, LinkedIssue>;
 
@@ -44,7 +80,11 @@ export class BlocksCycleError extends Error {
   }
 }
 
-export function linkIssues(issues: DerivedIssue[], probablisticallySelectIssueTiming: boolean): LinkedIssue[] {
+export function linkIssues(
+  issues: DerivedIssue[],
+  probablisticallySelectIssueTiming: boolean,
+  { frozenKeys, startDate }: LinkIssuesOptions = {},
+): LinkedIssue[] {
   const clones = issues.map((issue) => {
     return {
       linkedChildren: [],
@@ -52,6 +92,12 @@ export function linkIssues(issues: DerivedIssue[], probablisticallySelectIssueTi
       linkedBlocks: [],
       linkedBlockedBy: [],
       blocksWorkDepth: -1,
+      blockedByWorkDepth: -1,
+      scheduleDirection: 'forward',
+      frozen:
+        frozenKeys?.has(issue.key) && startDate && canFreeze(issue)
+          ? jiraDayOffsets(startDate, issue.derivedTiming)
+          : null,
       mutableWorkItem: {
         daysOfWork: issue.derivedTiming.deterministicTotalDaysOfWork,
         startDay: null,
@@ -72,6 +118,8 @@ export function linkIssues(issues: DerivedIssue[], probablisticallySelectIssueTi
   }
 
   clones.forEach(setBlocksWorkDepthDeterministically);
+  clones.forEach(setBlockedByWorkDepthDeterministically);
+  assignScheduleDirections(clones);
   clones.sort((iA, iB) => iB.blocksWorkDepth - iA.blocksWorkDepth);
 
   return clones as LinkedIssue[];
@@ -109,10 +157,49 @@ function findBlocksCycle(issues: LinkedIssueBuilder[]): LinkedIssueBuilder[] | n
   return null;
 }
 
-export function resetLinkedIssue(issue: LinkedIssue) {
-  issue.mutableWorkItem.artificiallyDelayed = undefined;
-  issue.mutableWorkItem.startDay = null;
-  issue.mutableWorkItem.daysOfWork = getEstimationData(issue, {}).probablisticTotalDaysOfWork;
+/**
+ * Prepares an issue for one scheduling run. Without `quantile` each length is a fresh random sample
+ * (one Monte Carlo iteration); with it, every length is that percentile of its distribution, for
+ * the plan pass in plan.ts.
+ */
+export function resetLinkedIssue(issue: LinkedIssue, quantile?: number) {
+  const work = issue.mutableWorkItem;
+  work.artificiallyDelayed = undefined;
+  work.startDay = null;
+
+  work.latestFinish = undefined;
+  work.mustStartBy = undefined;
+
+  const length = () =>
+    quantile === undefined
+      ? getEstimationData(issue, {}).probablisticTotalDaysOfWork
+      : getEstimationData(issue, { uncertaintyWeight: quantile }).deterministicTotalDaysOfWork;
+
+  const frozen = issue.frozen;
+  if (!frozen) {
+    work.daysOfWork = length();
+    return;
+  }
+
+  // Dates held fixed are not randomised; a missing date is filled in from this iteration's length.
+  let start: number, due: number;
+  if (frozen.startDay != null && frozen.dueDay != null) {
+    start = frozen.startDay;
+    due = Math.max(frozen.dueDay, frozen.startDay);
+  } else {
+    const sampled = length();
+    if (frozen.startDay != null) {
+      start = frozen.startDay;
+      due = start + sampled;
+    } else {
+      due = frozen.dueDay as number;
+      start = due - sampled;
+    }
+  }
+  work.frozenStartDay = start;
+  work.frozenDueDay = due;
+  // The whole span takes capacity, including any part before the start date.
+  work.daysOfWork = due - start;
 }
 
 // `findBlocksCycle` in `linkIssues` guarantees the graph is acyclic before this ever runs, so it
@@ -129,6 +216,52 @@ function setBlocksWorkDepthDeterministically(issue: LinkedIssueBuilder): number 
       issue.linkedBlocks.reduce((max, issue) => {
         return Math.max(max, setBlocksWorkDepthDeterministically(issue));
       }, 0));
+  }
+}
+
+function setBlockedByWorkDepthDeterministically(issue: LinkedIssueBuilder): number {
+  if (issue.blockedByWorkDepth !== -1) {
+    return issue.blockedByWorkDepth;
+  }
+  return (issue.blockedByWorkDepth =
+    issue.derivedTiming.deterministicTotalDaysOfWork +
+    issue.linkedBlockedBy.reduce((max, blocker) => Math.max(max, setBlockedByWorkDepthDeterministically(blocker)), 0));
+}
+
+/**
+ * Backward = not downstream of any frozen item, and blocks a frozen or backward item. Defined that
+ * way rather than "upstream of a frozen item" so a backward item's deadline never depends on a
+ * forward item placed after it (X → Y → frozen, with Y after another frozen item, leaves X forward,
+ * with a deadline through Y). It also means a backward item's blockers are always backward.
+ */
+function assignScheduleDirections(issues: LinkedIssueBuilder[]) {
+  const frozen = issues.filter((issue) => issue.frozen);
+  if (!frozen.length) return;
+
+  const downstream = new Set<string>();
+  const markDownstream = (issue: LinkedIssueBuilder) => {
+    for (const blocked of issue.linkedBlocks) {
+      if (downstream.has(blocked.key)) continue;
+      downstream.add(blocked.key);
+      markDownstream(blocked);
+    }
+  };
+  frozen.forEach(markDownstream);
+
+  const isBackward = new Map<string, boolean>();
+  const backward = (issue: LinkedIssueBuilder): boolean => {
+    const memo = isBackward.get(issue.key);
+    if (memo !== undefined) return memo;
+    const result =
+      !issue.frozen &&
+      !downstream.has(issue.key) &&
+      issue.linkedBlocks.some((blocked) => blocked.frozen || backward(blocked));
+    isBackward.set(issue.key, result);
+    return result;
+  };
+
+  for (const issue of issues) {
+    issue.scheduleDirection = issue.frozen ? 'frozen' : backward(issue) ? 'backward' : 'forward';
   }
 }
 

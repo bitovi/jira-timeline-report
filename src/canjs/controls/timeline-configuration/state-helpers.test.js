@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { ObservableObject, value } from '../../../can.js';
-import { rawIssuesRequestData, derivedIssuesRequestData } from './state-helpers.js';
+import { rawIssuesRequestData, derivedIssuesRequestData, reloadIssues } from './state-helpers.js';
 
 const ResolverObservable = (function () {
   class T extends ObservableObject {
@@ -272,5 +272,50 @@ describe('two rawIssuesRequestData over identical inputs', () => {
     expect(second[0].confidence).toBe(20);
     // The derived objects keep the raw issue by reference; neither pass wrote through it.
     expect(first[0].issue).toBe(rawIssues[0]);
+  });
+});
+
+/**
+ * Nothing about a request changes when issues are edited in Jira from inside the app (the Auto-
+ * Scheduler's Update Dates), so without an explicit reload the edited dates never show up — and the
+ * shared cache would serve the stale result even if the request did re-run.
+ */
+describe('reloadIssues', () => {
+  beforeEach(() => {
+    __clearRawIssuesCache();
+  });
+
+  test('refetches the same request, past the shared cache', async () => {
+    let calls = 0;
+    const jiraHelpers = {
+      fetchAllJiraIssuesWithJQLAndFetchAllChangelogUsingNamedFields() {
+        calls++;
+        return Promise.resolve([{ key: `TEST-${calls}` }]);
+      },
+    };
+
+    const requestData = new ResolverObservable(function (hooks) {
+      return rawIssuesRequestData(
+        {
+          jql: value.with('project = ORDER'),
+          childJQL: value.with(''),
+          isLoggedIn: value.with(true),
+          loadChildren: value.with(false),
+          blockerJQL: value.with(''),
+          loadBlockers: value.with(false),
+          jiraHelpers,
+          fields: value.with([]),
+        },
+        hooks,
+      );
+    });
+    requestData.on(() => {});
+
+    expect(await requestData.value.issuesPromise).toEqual([{ key: 'TEST-1' }]);
+
+    reloadIssues();
+
+    expect(calls).toBe(2);
+    expect(await requestData.value.issuesPromise).toEqual([{ key: 'TEST-2' }]);
   });
 });

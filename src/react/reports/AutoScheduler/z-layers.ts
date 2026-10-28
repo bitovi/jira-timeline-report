@@ -8,6 +8,8 @@ export const gridLayer = {
   dependencies: 1,
   /** Epic bars, their day columns, and the summary metrics. */
   row: 30,
+  /** The dashed start-date line, over the bars it divides but under the pinned label column. */
+  startDateLine: 31,
   /**
    * The pinned `what` column. Above the bars and the day-column rules, which slide under it when the
    * grid is scrolled sideways; below the team header, whose own name cell is pinned on both axes.

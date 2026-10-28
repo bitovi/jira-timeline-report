@@ -197,10 +197,9 @@ export function withSharedRawIssues(
 /**
  * Drop every cached entry, for every site.
  *
- * Nothing in production calls this. Tests do — and it is the hook a Refresh button must call, because
- * there is no way to force a data reload today (the only refetch triggers are the four observables
- * `rawIssuesRequestData` listens to, and switching sites does a hard page reload). Whoever adds that
- * button will not think to look here.
+ * Tests call this directly. In production it is called only through `reloadIssues` (state-helpers.js),
+ * which also re-runs every `rawIssuesRequestData` — clearing alone refetches nothing, since none of
+ * the request's inputs changed. A Refresh button should call `reloadIssues`, not this.
  */
 export function __clearRawIssuesCache(): void {
   // A `WeakMap` can't be enumerated, so swap the whole thing out: every live `jiraHelpers` gets a
